@@ -1,0 +1,14 @@
+# visual_style_anchor_v6 生成提示词
+
+```text
+Use case: precise-object-edit
+Asset type: ProjectCake gameplay composition anchor v6, UI scale and payment-space correction
+Input images: Image 1 is the v5 edit target
+Primary request: make exactly three localized layout corrections while preserving the approved v5 composition.
+Correction 1 — patience frame: reduce the empty patience-meter frame above the customer's head to roughly 55 percent of its current width and about 55 percent of its current height. Keep it centered above the head, compact and clearly readable as a small HUD element, with generous separation from the hair and canvas edge. It must remain completely empty: no text, numbers or filled value.
+Correction 2 — order card: reduce the empty order-requirements card at the upper-right of the customer's head to roughly 60 to 65 percent of its current width and height. Keep it compact in the upper-right customer zone, with only three or four small blank icon placeholders and two or three short blank rows. It must not dominate the customer, touch the face or hair, reach the sauce bottles, or cover the payment tray. No readable text, letters or numbers.
+Correction 3 — payment/griddle separation: the central griddle must not intrude into, sit behind, touch or visually overlap the long payment tray's space. Create a clearly visible 24 to 36 pixel band of bare countertop between the bottom outline of the long payment tray and the top outline of the griddle. Keep the payment tray at its current correct position, length and shallow shape. Move the griddle slightly downward and reduce its vertical footprint only as much as necessary to preserve this gap while keeping the griddle fully visible and avoiding overlap with the bottom controls. Keep the griddle horizontally centered and close to the current width; it may become slightly flatter in the fixed near-top-down perspective, but do not make it dramatically smaller.
+Absolute invariants: preserve the complete half-body customer behind the separating counter; preserve full uncropped hair; preserve the long empty payment tray spanning from near the chopstick holder to near the sauce-bottle area; preserve exactly six vegetarian bins on the left and six meat bins on the right; preserve the chopsticks, napkins, bottles, plant, bottom heat-control/tool strip, workbench size, fixed 16:9 near-top-down camera, warm palette, bold deep-brown outlines, large flat color blocks and minimal texture.
+Payment and UI constraints: no coins, banknotes, currency symbols, prices, hands exchanging money or payment shadows. UI frames contain no readable Chinese characters, English letters or numbers; actual content will be rendered in Godot.
+No extra customers, extra bins, second griddle, extra cooking stations, magical content, brands, logos, watermarks, photorealism, 3D gloss, painterly texture, thin lines, camera zoom, crop or perspective drift.
+```

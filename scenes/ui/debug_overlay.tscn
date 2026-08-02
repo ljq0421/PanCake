@@ -1,0 +1,79 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/debug_overlay.gd" id="1_overlay"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_debug"]
+bg_color = Color(0.035, 0.045, 0.06, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.88, 0.88, 0.80)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+
+[node name="DebugOverlay" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_overlay")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DebugPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 742.0
+offset_bottom = 224.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_debug")
+
+[node name="Labels" type="VBoxContainer" parent="Root/DebugPanel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Header" type="Label" parent="Root/DebugPanel/Labels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 1, 0.94, 1)
+theme_override_font_sizes/font_size = 20
+text = "M0 DEBUG OVERLAY"
+
+[node name="PerformanceLabel" type="Label" parent="Root/DebugPanel/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "FPS"
+
+[node name="ModelLabel" type="Label" parent="Root/DebugPanel/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Model"
+
+[node name="CursorLabel" type="Label" parent="Root/DebugPanel/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cursor"
+
+[node name="ModeLabel" type="Label" parent="Root/DebugPanel/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Heatmap"
+
+[node name="LegendLabel" type="Label" parent="Root/DebugPanel/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.78, 0.82, 1)
+text = "浅黄=薄 · 金黄=适中 · 橙褐=厚 · 暗红=破洞"

@@ -1,0 +1,283 @@
+extends SceneTree
+
+var _failures := PackedStringArray()
+
+
+func _initialize() -> void:
+	_run()
+
+
+func _run() -> void:
+	_test_two_sided_cooking_and_two_sauces()
+	_test_egg_spreading_and_score()
+	_test_order_and_session_guards()
+	_test_every_order_combination()
+	_test_ingredients_affect_fold_and_score()
+	_test_repair_tags_and_score_caps()
+	_finish()
+
+
+func _test_two_sided_cooking_and_two_sauces() -> void:
+	var model := _uniform_pancake(48, 0.42)
+	model.advance_cooking(4.0, 0.8)
+	var first_side := model.mean_side_doneness(false)
+	_check(first_side > 0.0 and is_zero_approx(model.mean_side_doneness(true)), "cooking initially advances only the first side")
+	model.flip()
+	model.advance_cooking(3.0, 0.8)
+	_check(model.is_flipped and model.mean_side_doneness(true) > 0.0, "flip exposes and cooks the independent second side")
+	var center := Vector2(24, 24)
+	var sweet_stroke := model.begin_sauce_stroke()
+	model.apply_sauce_sample(center, 0.35, 6.0, sweet_stroke, 9999, OrderService.SAUCE_SWEET)
+	var sweet_total := model.total_sauce(OrderService.SAUCE_SWEET)
+	var chili_stroke := model.begin_sauce_stroke()
+	model.apply_sauce_sample(center, 0.35, 6.0, chili_stroke, 9999, OrderService.SAUCE_CHILI)
+	_check(sweet_total > 0.0 and model.total_sauce(OrderService.SAUCE_CHILI) > 0.0, "sweet and chili sauce write independent concentration fields")
+	model.reset()
+	_check(model.total_sauce(OrderService.SAUCE_SWEET) == 0.0 and model.total_sauce(OrderService.SAUCE_CHILI) == 0.0 and not model.is_flipped, "reset clears both sauces and flip state")
+
+
+func _test_egg_spreading_and_score() -> void:
+	var model := _uniform_pancake(128, 0.42)
+	var center := Vector2(64, 64)
+	var crack_result := model.crack_egg(center)
+	_check(bool(crack_result.success) and model.egg_state == PancakeModel.EggState.CRACKED, "cracking an egg creates a model-backed liquid layer")
+	var initial_summary := model.calculate_egg_spread_summary()
+	var initial_mass := model.total_egg_amount()
+	for ring in 10:
+		var radius := 6.0 + float(ring) * 4.2
+		for step in 56:
+			var angle := TAU * float(step) / 56.0
+			var radial := Vector2(cos(angle), sin(angle) * model.parameters.pan_height_ratio)
+			var sample := center + radial * radius
+			model.apply_egg_spreader_sample(sample, Vector2.from_angle(angle), 70.0)
+	var spread_summary := model.calculate_egg_spread_summary()
+	_check(model.yolk_broken and model.egg_state == PancakeModel.EggState.SPREADING, "T-spreader contact breaks the yolk and enters the spreading state")
+	_check(float(spread_summary.coverage_ratio) > float(initial_summary.coverage_ratio), "continuous circular samples expand egg coverage")
+	_check(float(spread_summary.score) > float(initial_summary.score), "expanded, broken-yolk egg receives a higher spread score")
+	_check(model.total_egg_amount() <= initial_mass * 1.001, "egg spreading does not create liquid mass")
+
+	var order := OrderService.new().order_at(0)
+	var good_model := _uniform_pancake(64, 0.42)
+	var poor_model := _uniform_pancake(64, 0.42)
+	_seed_even_egg(good_model)
+	_seed_poor_egg(poor_model)
+	for scored_model in [good_model, poor_model]:
+		scored_model.doneness.fill(0.64)
+		scored_model.back_doneness.fill(0.64)
+		scored_model.sauce_concentration.fill(0.35)
+	var good_ingredients := _classic_ingredients(good_model)
+	var poor_ingredients := _classic_ingredients(poor_model)
+	var good_fold := PancakeFoldModel.new(good_model, good_ingredients)
+	var poor_fold := PancakeFoldModel.new(poor_model, poor_ingredients)
+	_fold_both(good_fold)
+	_fold_both(poor_fold)
+	good_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	poor_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	var good_score := PancakeScorer.evaluate_order(good_model, good_ingredients, good_fold, order, 48.0, 0.6)
+	var poor_score := PancakeScorer.evaluate_order(poor_model, poor_ingredients, poor_fold, order, 48.0, 0.6)
+	_check(float(good_score.dimensions.egg) > float(poor_score.dimensions.egg), "egg coverage and uniformity produce an independent score dimension")
+	_check(float(good_score.score) > float(poor_score.score), "egg spreading quality changes the final customer score")
+
+
+func _test_order_and_session_guards() -> void:
+	var service := OrderService.new()
+	var first := service.next_order()
+	var second := service.next_order()
+	_check(first.id == &"classic" and second.id == &"chili_ham", "order service provides a deterministic playable order sequence")
+	var model := _uniform_pancake(48, 0.42)
+	var ingredients := IngredientModel.new()
+	var session := P1Session.new()
+	session.start(first)
+	_check(bool(session.confirm_spread(model).success) and session.phase == P1Session.Phase.FIRST_SIDE, "sufficient coverage advances from spreading to first-side cooking")
+	var early_flip := session.request_flip(model, ingredients)
+	_check(not bool(early_flip.success), "flip is blocked before the required egg is placed")
+	ingredients.place(IngredientModel.EGG, Vector2(24, 24), 0.0, model)
+	_seed_even_egg(model)
+	model.doneness.fill(0.50)
+	_check(bool(session.request_flip(model, ingredients).success) and session.phase == P1Session.Phase.SECOND_SIDE, "egg and readable first-side doneness unlock flipping")
+	var early_finish := session.finish_cooking(model)
+	_check(not bool(early_finish.success), "second side cannot be skipped immediately after flipping")
+	model.back_doneness.fill(0.52)
+	_check(bool(session.finish_cooking(model).success) and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "cooked second side unlocks sauce and fillings")
+	_check(bool(session.begin_folding().success) and session.phase == P1Session.Phase.FOLD, "state machine reaches folding without a dead end")
+	_check(bool(session.mark_ready_for_package().success) and session.phase == P1Session.Phase.PACKAGE, "state machine reaches packaging without direct phase mutation")
+	_check(bool(session.mark_packaged().success) and session.phase == P1Session.Phase.READY_TO_SERVE, "valid packaging reaches the serving phase")
+	_check(bool(session.finish({"score": 80.0}).success) and session.phase == P1Session.Phase.RESULT and session.payment_ready, "serving reaches a payable result")
+
+
+func _test_every_order_combination() -> void:
+	var service := OrderService.new()
+	for order_index in OrderService.ORDERS.size():
+		var order := service.order_at(order_index)
+		var model := _uniform_pancake(64, 0.42)
+		_seed_even_egg(model)
+		model.doneness.fill(_target_doneness(order.heat_preference))
+		model.back_doneness.fill(_target_doneness(order.heat_preference))
+		for sauce_type in order.sauces:
+			var field: PackedFloat32Array = model.chili_sauce_concentration if sauce_type == OrderService.SAUCE_CHILI else model.sauce_concentration
+			field.fill(0.35)
+		var ingredients := IngredientModel.new()
+		var ingredient_offset := 0
+		for ingredient_type in order.ingredients:
+			ingredients.place(ingredient_type, Vector2(28 + ingredient_offset * 3, 30 + ingredient_offset * 2), 0.0, model)
+			ingredient_offset += 1
+		var fold := PancakeFoldModel.new(model, ingredients)
+		_fold_both(fold)
+		fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+		var result := PancakeScorer.evaluate_order(model, ingredients, fold, order, 45.0, 0.7)
+		_check(is_equal_approx(float(result.dimensions.order), 100.0) and result.missing_ingredients.is_empty() and result.missing_sauces.is_empty(), "order correctness accepts combination %s" % order.id)
+
+
+func _test_ingredients_affect_fold_and_score() -> void:
+	var order := OrderService.new().order_at(0)
+	var model := _uniform_pancake(64, 0.42)
+	_seed_even_egg(model)
+	model.doneness.fill(0.64)
+	model.back_doneness.fill(0.64)
+	model.sauce_concentration.fill(0.35)
+	var ingredients := IngredientModel.new()
+	ingredients.place(IngredientModel.EGG, Vector2(32, 32), 0.0, model)
+	ingredients.place(IngredientModel.BAOCUI, Vector2(31, 28), 0.1, model)
+	ingredients.place(IngredientModel.SCALLION, Vector2(35, 36), -0.2, model)
+	var fold := PancakeFoldModel.new(model, ingredients)
+	_fold_both(fold)
+	_check(fold.can_use_bag(), "two intact folds expose the normal paper-bag path")
+	fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	var complete := PancakeScorer.evaluate_order(model, ingredients, fold, order, 48.0, 0.60)
+	var missing_ingredients := IngredientModel.new()
+	var missing_fold := PancakeFoldModel.new(model, missing_ingredients)
+	_fold_both(missing_fold)
+	missing_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	var incomplete := PancakeScorer.evaluate_order(model, missing_ingredients, missing_fold, order, 48.0, 0.60)
+	_check(float(complete.dimensions.order) > float(incomplete.dimensions.order), "missing required ingredients reduce order correctness")
+	_check(float(complete.score) > float(incomplete.score) and not str(complete.feedback).is_empty(), "complete product scores above an incomplete order and produces customer feedback")
+
+	var loaded_ingredients := IngredientModel.new()
+	loaded_ingredients.place(IngredientModel.BAOCUI, Vector2(10, 32), 0.0, model)
+	loaded_ingredients.place(IngredientModel.HAM_SAUSAGE, Vector2(12, 30), 0.0, model)
+	var loaded_fold := PancakeFoldModel.new(model, loaded_ingredients)
+	var loaded_result := _fold_left(loaded_fold)
+	_check(loaded_result.outcome == PancakeFoldModel.OUTCOME_THICK, "heavy fillings in a flap create a visible bulged-fold outcome")
+
+
+func _test_repair_tags_and_score_caps() -> void:
+	var order := OrderService.new().order_at(0)
+	var sleeve_model := _uniform_pancake(64, 0.42)
+	_seed_even_egg(sleeve_model)
+	sleeve_model.doneness.fill(0.64)
+	sleeve_model.back_doneness.fill(0.64)
+	sleeve_model.sauce_concentration.fill(0.35)
+	var sleeve_ingredients := IngredientModel.new()
+	sleeve_ingredients.place(IngredientModel.EGG, Vector2(10, 32), 0.0, sleeve_model)
+	sleeve_ingredients.place(IngredientModel.BAOCUI, Vector2(12, 30), 0.0, sleeve_model)
+	sleeve_ingredients.place(IngredientModel.SCALLION, Vector2(34, 35), 0.0, sleeve_model)
+	var sleeve_fold := PancakeFoldModel.new(sleeve_model, sleeve_ingredients)
+	_fold_both(sleeve_fold)
+	_check(bool(sleeve_fold.package_with(PancakeFoldModel.PACKAGE_SLEEVE).success), "a minor fold issue can select the paper-sleeve repair")
+	var sleeve_result := PancakeScorer.evaluate_order(sleeve_model, sleeve_ingredients, sleeve_fold, order, 48.0, 0.6)
+	_check(float(sleeve_result.score_caps.fold) == 90.0 and float(sleeve_result.dimensions.fold) <= 90.0 and sleeve_result.tags.has("纸套加固"), "paper-sleeve repair saves its label and 90-point structure cap")
+
+	var tray_model := _uniform_pancake(64, 0.42)
+	_seed_even_egg(tray_model)
+	tray_model.doneness.fill(0.64)
+	tray_model.back_doneness.fill(0.64)
+	tray_model.sauce_concentration.fill(0.35)
+	tray_model.damage[32 * tray_model.grid_size + 8] = 1.0
+	var tray_ingredients := IngredientModel.new()
+	var tray_fold := PancakeFoldModel.new(tray_model, tray_ingredients)
+	var torn := _fold_left(tray_fold)
+	_check(torn.outcome == PancakeFoldModel.OUTCOME_TORN and bool(tray_fold.package_with(PancakeFoldModel.PACKAGE_TRAY).success), "a severe tear can select the tray rescue")
+	var tray_result := PancakeScorer.evaluate_order(tray_model, tray_ingredients, tray_fold, order, 48.0, 0.6)
+	_check(float(tray_result.score_caps.fold) == 55.0 and float(tray_result.dimensions.fold) <= 55.0 and tray_result.tags.has("托盘挽救"), "tray rescue saves its label and 55-point structure cap")
+
+
+func _target_doneness(preference: StringName) -> float:
+	match preference:
+		&"light":
+			return 0.48
+		&"well_done":
+			return 0.76
+	return 0.64
+
+
+func _uniform_pancake(size: int, thickness: float) -> PancakeModel:
+	var model := PancakeModel.new(size)
+	for y in size:
+		for x in size:
+			if not model.is_inside_pan(Vector2(x, y), 0.84):
+				continue
+			var index := y * size + x
+			model.coverage[index] = 1.0
+			model.thickness[index] = thickness
+			model.wetness[index] = 0.25
+	return model
+
+
+func _seed_even_egg(model: PancakeModel) -> void:
+	var center := Vector2(model.grid_size - 1, model.grid_size - 1) * 0.5
+	var radii := Vector2(float(model.grid_size) * 0.5, float(model.grid_size) * 0.5 * model.parameters.pan_height_ratio)
+	for index in model.cell_count:
+		if model.coverage[index] <= 0.0:
+			continue
+		var position := Vector2(index % model.grid_size, index / model.grid_size)
+		if ((position - center) / radii).length() > 0.74:
+			continue
+		model.egg_white[index] = 0.08
+		model.egg_yolk[index] = 0.03
+		model.egg_doneness[index] = 0.72
+	model.egg_state = PancakeModel.EggState.SPREADING
+	model.yolk_broken = true
+
+
+func _seed_poor_egg(model: PancakeModel) -> void:
+	var center := Vector2(model.grid_size - 1, model.grid_size - 1) * 0.5
+	for index in model.cell_count:
+		if model.coverage[index] <= 0.0:
+			continue
+		var position := Vector2(index % model.grid_size, index / model.grid_size)
+		if position.distance_to(center) > float(model.grid_size) * 0.13:
+			continue
+		model.egg_white[index] = 0.65
+		model.egg_yolk[index] = 0.25
+		model.egg_doneness[index] = 0.72
+	model.egg_state = PancakeModel.EggState.SPREADING
+	model.yolk_broken = true
+
+
+func _classic_ingredients(model: PancakeModel) -> IngredientModel:
+	var ingredients := IngredientModel.new()
+	ingredients.place(IngredientModel.EGG, Vector2(model.grid_size * 0.50, model.grid_size * 0.50), 0.0, model)
+	ingredients.place(IngredientModel.BAOCUI, Vector2(model.grid_size * 0.48, model.grid_size * 0.44), 0.1, model)
+	ingredients.place(IngredientModel.SCALLION, Vector2(model.grid_size * 0.55, model.grid_size * 0.56), -0.2, model)
+	return ingredients
+
+
+func _fold_left(fold: PancakeFoldModel) -> Dictionary:
+	var size := fold.pancake_model.grid_size
+	fold.begin_drag(Vector2(size * 0.12, size * 0.5))
+	return fold.release_drag(Vector2(size * 0.54, size * 0.5))
+
+
+func _fold_both(fold: PancakeFoldModel) -> void:
+	var size := fold.pancake_model.grid_size
+	fold.begin_drag(Vector2(size * 0.12, size * 0.5))
+	fold.release_drag(Vector2(size * 0.54, size * 0.5))
+	fold.begin_drag(Vector2(size * 0.88, size * 0.5))
+	fold.release_drag(Vector2(size * 0.46, size * 0.5))
+
+
+func _check(condition: bool, message: String) -> void:
+	if condition:
+		print("PASS: %s" % message)
+	else:
+		_failures.append(message)
+		push_error("FAIL: %s" % message)
+
+
+func _finish() -> void:
+	if _failures.is_empty():
+		print("P1 vertical-slice self-check PASS")
+		quit(0)
+	else:
+		print("P1 vertical-slice self-check FAIL (%d)" % _failures.size())
+		quit(1)

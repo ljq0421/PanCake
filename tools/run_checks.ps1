@@ -1,0 +1,32 @@
+$ErrorActionPreference = 'Stop'
+$godot = 'D:\Godot\Godot_v4.7.1-stable_win64_console.exe'
+$project = Split-Path -Parent $PSScriptRoot
+$sandboxData = Join-Path $project '.godot-user'
+New-Item -ItemType Directory -Force -Path (Join-Path $sandboxData 'Roaming'), (Join-Path $sandboxData 'Local') | Out-Null
+$env:APPDATA = Join-Path $sandboxData 'Roaming'
+$env:LOCALAPPDATA = Join-Path $sandboxData 'Local'
+$checks = @(
+    'res://tests/unit/pancake_model_self_check.gd',
+    'res://tests/unit/p0_2_simulation_self_check.gd',
+    'res://tests/unit/p0_4_sauce_self_check.gd',
+    'res://tests/unit/p0_5_fold_self_check.gd',
+    'res://tests/unit/p1_vertical_slice_self_check.gd',
+    'res://tests/integration/p0_2_interaction_self_check.gd',
+    'res://tests/integration/p0_3_renderer_self_check.gd',
+    'res://tests/integration/p0_4_interaction_self_check.gd',
+    'res://tests/integration/p0_5_interaction_self_check.gd',
+    'res://tests/integration/p1_interaction_self_check.gd',
+    'res://tests/integration/m0_self_check.gd'
+)
+
+foreach ($check in $checks) {
+    Write-Host "Running $check"
+    $logFile = Join-Path $env:TEMP ("projectcake-check-{0}.log" -f [Guid]::NewGuid().ToString('N'))
+    & $godot --headless --path $project --log-file $logFile -s $check
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Godot log: $logFile"
+        exit $LASTEXITCODE
+    }
+}
+
+Write-Host 'All Project Cake checks passed.'

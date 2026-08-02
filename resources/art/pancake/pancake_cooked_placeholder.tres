@@ -1,0 +1,14 @@
+[gd_resource type="GradientTexture2D" load_steps=2 format=3]
+
+[sub_resource type="Gradient" id="Gradient_cooked"]
+offsets = PackedFloat32Array(0, 0.32, 0.66, 1)
+colors = PackedColorArray(0.58, 0.23, 0.06, 1, 0.91, 0.52, 0.11, 1, 0.69, 0.29, 0.06, 1, 0.95, 0.65, 0.2, 1)
+
+[resource]
+gradient = SubResource("Gradient_cooked")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.2, 0.08)
+fill_to = Vector2(0.8, 0.92)
+repeat = 2

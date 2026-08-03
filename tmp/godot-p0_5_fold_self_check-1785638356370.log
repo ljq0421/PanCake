@@ -1,0 +1,28 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+PASS: left covered edge can be grabbed
+PASS: releasing before the fold line does not commit
+PASS: cancelled fold remains retryable
+PASS: drag updates deformation before release without auto-completing
+PASS: crossing the line and releasing commits an intact fold
+PASS: left edge is available for the test fold
+PASS: an obviously thick flap produces a bulged fold
+PASS: left edge is available for the test fold
+PASS: an overcooked flap produces a brittle crack
+PASS: left edge is available for the test fold
+PASS: a pre-existing hole produces a severe tear
+PASS: left edge is available for the test fold
+PASS: right edge is available for the test fold
+PASS: a right-side hole does not incorrectly damage the left fold
+PASS: the same hole is retained when its right-side region folds
+PASS: left edge is available for the test fold
+PASS: right edge is available for the test fold
+PASS: two minor cracked folds can be rescued with a paper sleeve
+PASS: paper sleeve rescue records a permanent structure penalty
+PASS: left edge is available for the test fold
+PASS: a severe first-fold tear exposes the tray rescue without requiring another fold
+PASS: tray rescue completes with a large portability penalty
+PASS: reset always escapes a completed or failed fold state
+P0.5 fold self-check PASS

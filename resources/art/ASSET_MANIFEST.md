@@ -1,11 +1,68 @@
 # ProjectCake 美术资源清单
 
+## 固定摊位分层装饰 v1（2026-08-02）
+
+- `status`: art-complete-alpha-audit-passed-preview-checked-runtime-integration-pending-human-review-pending
+- `scope`: 仅新增 5 张固定摊位装饰透明层；未修改玩法、场景业务逻辑、存档、经济、配料或工具。
+- `generator`: Codex 内置 `image_gen`，每层单独生成；`workstation_backplate_v1.png` 为几何权威，`workstation_backplate_upgrade_v1.png` 仅作升级母题参考，`visual_style_anchor_v8.png` 为批准画风参考。
+- `background_removal`: imagegen 技能 `remove_chroma_key.py`，border auto-key、soft matte、thresholds 12/220、despill。
+- `deterministic_build_and_audit`: `tools/build_workstation_decor_assets.py`
+- `audit_report`: `tmp/validation/workstation_decor_v1/workstation_decor_audit_v1.json`
+- `contact_sheet`: `tmp/validation/workstation_decor_v1/workstation_decor_contact_sheet_v1.png`
+- `stage_previews`: `tmp/validation/workstation_decor_v1/workstation_decor_stage_00_v1.png` 至 `workstation_decor_stage_05_v1.png`；另有 `workstation_decor_stage_05_full_1920x1080_v1.png`。
+- `canvas_contract`: 5 张正式层均为 1671 x 941 RGBA，统一左上角锚点 `(0,0)`；1920 x 1080 预览只做整画布缩放。
+- `safety_audit`: 顾客、订单卡、中央操作区和底部控制区禁画矩形内可见像素均为 0；任意两装饰层的可见像素交叠为 0；四角 alpha 均为 0；不透明品红/绿色键色残留为 0。
+- `content_exclusions`: 无文字、伪文字、数字、价格、按钮、人物、食物、配料、工具、鏊子、动态订单内容、Logo 或水印。
+- `godot_import`: 本纯美术任务未运行；没有手工修改 `.godot/imported` 或 `.png.import`。
+- `runtime_integration`: pending；素材已生成不等于升级功能已实现。
+- `human_review`: pending；仍需在真实游戏缩放并带顾客、订单卡和控制层时确认。
+
+| 层 | 升级语义 | 正式文件 | alpha bbox | 透明占比 | SHA-256 |
+| --- | --- | --- | --- | ---: | --- |
+| A | 配料架扩建：两侧青绿/黄铜外支架，不填充 12 个槽内 | `res://resources/art/workstation/decor/tier_01_ingredient_rack/ingredient_rack_support_v1.png` | `(110,480)-(1550,820)` | 0.949623 | `85ae7b9f1095fa7c25ad341d7de2ba27d9222fb723c7591f19558f5a4347549c` |
+| B | 储料改善：短挂架与 3 枚完全空白收纳标签 | `res://resources/art/workstation/decor/tier_02_storage/storage_label_rail_v1.png` | `(120,150)-(540,305)` | 0.967973 | `12213d819588c72290c8e25df2f26a37392c25c0bac1698a1cd7f1dc6bc6afd8` |
+| C | 清晰订单板：右上小型完全空白夹板底图 | `res://resources/art/workstation/decor/tier_03_order/blank_order_clipboard_v1.png` | `(1415,140)-(1565,352)` | 0.981104 | `ab47c7a5b3cf8c34d556f767c29f4c1779873a4569301def74e5dc2a1eb52e90` |
+| D | 候餐与遮雨：顶部短雨棚边饰和两盏外侧不发光小灯 | `res://resources/art/workstation/decor/tier_04_shelter/awning_side_lamps_v1.png` | `(20,0)-(1655,225)` | 0.919382 | `a354d1d0fdee51ee8d4f85de760aa9e77d6813029a3a2afb1e7f8552fa5e85b0` |
+| E | 整体翻新：长托盘空心包边与 3 枚无脸无字熟客照片夹 | `res://resources/art/workstation/decor/tier_05_finish/tray_trim_customer_clips_v1.png` | `(321,150)-(1348,475)` | 0.960945 | `26ce39126da8db832bfa5301a53ce4b33df6c6659e31a99724a6304cee87fb52` |
+
+完整提示词与源图对应记录：
+
+- `res://resources/art/prompts/workstation_decor_ingredient_rack_support_v1.md`
+- `res://resources/art/prompts/workstation_decor_storage_label_rail_v1.md`
+- `res://resources/art/prompts/workstation_decor_blank_order_clipboard_v1.md`
+- `res://resources/art/prompts/workstation_decor_awning_side_lamps_v1.md`
+- `res://resources/art/prompts/workstation_decor_tray_trim_customer_clips_v1.md`
+
 ## 记录约定
 
 - 所有文字均由 Godot 排版，不写入 AI 图片。
 - `status: review` 表示仅完成生成与本地视觉检查，尚未完成人工方向确认。
 - `godot_import: pending` 与人工视觉确认是两个独立验收项。
 - 内置 `image_gen` 未向本次任务暴露具体模型名，因此不推测模型版本。
+
+## 顾客基础三态完成审计（2026-08-02）
+
+- `design_scope`: `docs/game_design.md` 首版范围与 `docs/development_plan.md` P2 范围均明确为 3 名顾客；当前磁盘已经形成 `customer_01` 至 `customer_10` 的扩展阵容。设计文档、资产清单和磁盘均没有 `customer_11` 或更高编号需求，因此不得仅按连续编号继续外推新顾客。
+- `completed_files`: `customer_01` 至 `customer_10` 的 `neutral`、`impatient`、`satisfied` 共 30 张最终 RGBA PNG 全部存在；对应的 30 个最终键控源、30 份提示词和 30 个 `.png.import` sidecar 全部存在。
+- `pixel_audit`: passed 30/30 — 四角 alpha 全部为 0，四条画布边缘非透明像素全部为 0，透明占比为 78.75% 至 83.49%，最终非透明区域中的强绿色/强品红键色残留全部为 0；30 个当前 SHA-256、尺寸和 alpha 边界框均与各自条目一致。
+- `composition_audit`: passed 30/30 — 接触表逐项复核确认完整头发和发梢、双耳、双肩、前臂、双手与腰部下缘均未裁切；三态身份、服装、人物尺度、画布和建议锚点保持稳定；未发现工作台、订单卡、耐心条、付款物、文字、品牌、水印或烘焙投影。
+- `audit_contact_sheet`: `tmp/imagegen/customer_audit_matrix.png`
+- `audit_script`: `res://tmp/customer_texture_audit.gd`
+- `godot_texture_load`: passed 30/30 — `D:\Godot\Godot_v4.7.1-stable_win64_console.exe` 逐张加载全部最终 PNG 为 `Texture2D`，并读取图像尺寸与 alpha 类型；退出码 0，日志为 `tmp/godot-customer-textures-1785635274267.log`。Windows 系统根证书读取失败是独立环境告警，不影响本地纹理加载结果。
+- `human_review_boundary`: accepted 30/30 — 用户于 2026-08-02 查看完整三态接触表和完成矩阵后明确回复“确认。”；该确认作为 `customer_01` 至 `customer_10` 全部中性、不耐烦、满意基础状态的真人视觉验收。像素检查、Godot 加载和真人视觉确认仍是三类独立证据。
+
+| 顾客 | 中性 | 不耐烦 | 满意 | 像素检查 | Godot 4.7.1 加载 | 真人视觉状态 |
+|---|---|---|---|---|---|---|
+| `customer_01` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_02` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_03` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_04` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_05` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_06` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_07` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_08` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_09` | complete | complete | complete | passed | passed | 三态 accepted |
+| `customer_10` | complete | complete | complete | passed | passed | 三态 accepted |
 
 ## pancake_raw_texture_v1
 
@@ -25,6 +82,34 @@
 - `visual_check`: 通过。暖奶油色生面糊、稀疏杂粮颗粒与宽缓湿润色块可读；无饼边、器皿、配料、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and an 814,554-byte `CompressedTexture2D` cache.
 - `runtime_shader_check`: passed — 2026-08-01，在 `workstation.tscn` 的 `PancakeVisual` ShaderMaterial 中作为 `raw_texture` 运行；Godot 4.7.1 Forward Mobile 实机冒烟与截图通过。
+- `human_review`: pending
+
+## egg_spread_material_v1
+
+- `status`: review-runtime-integrated
+- `purpose`: Shader material for the thin egg-white film, yolk drag streaks, bubbles, and set speckles during continuous T-spreader input.
+- `final_file`: `res://resources/art/workstation/textures/egg_spread_material_v1.png`
+- `source_file`: `C:/Users/Administrator/.codex/generated_images/019fbfe6-fb7b-7ea1-a941-efa775f2502e/exec-340363fa-1274-4d6a-8778-3f3fe47d5b49.png`
+- `prompt_file`: `res://resources/art/prompts/egg_spread_material_v1.md`
+- `generator`: Codex built-in `image_gen`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGB
+- `sha256`: `76c3f10c55194a275ae9b8dd8c51f00143dde09c2c987f0e698c285d6e43dd15`
+- `runtime_integration`: shader parameter `egg_surface_texture`
+- `human_review`: pending
+
+## pancake_fold_back_texture_v1
+
+- `status`: review-runtime-integrated
+- `purpose`: Textured underside used by the dynamically deformed left and right pancake flaps after they cross the fold midpoint.
+- `final_file`: `res://resources/art/workstation/textures/pancake_fold_back_texture_v1.png`
+- `source_file`: `C:/Users/Administrator/.codex/generated_images/019fbfe6-fb7b-7ea1-a941-efa775f2502e/exec-f17f310d-3046-49d2-8508-716f3bff0632.png`
+- `prompt_file`: `res://resources/art/prompts/pancake_fold_back_texture_v1.md`
+- `generator`: Codex built-in `image_gen`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGB
+- `sha256`: `27a4e1d68b47a939e49082fa2da7e60fb8740265088ec5eab2fde59ce90acd82`
+- `runtime_integration`: `PancakeFoldOverlay.pancake_back_texture`
 - `human_review`: pending
 
 ## pancake_cooked_texture_v1
@@ -87,7 +172,7 @@
 - `visual_check`: 通过。完整头发及所有发梢、双耳、双肩、前臂和双手均在画布内；身份、绿衣、正面半身比例与 V8 顾客一致；无工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 289,104-byte `CompressedTexture2D` cache with alpha.
 - `runtime_scene_check`: passed — 2026-08-01，作为 P1 `CustomerPortrait` 默认状态接入；订单、耐心条与人物保持独立场景节点，Forward Mobile 接单截图通过。
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_01_impatient_v1
 
@@ -108,7 +193,7 @@
 - `visual_check`: 通过。人物身份、发型、服装、比例和完整裁切保持一致；眉头内压、眼睛轻微眯起、小幅下弯嘴清楚表达不耐烦，但没有怒吼、符号化蒸汽或夸张变形；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 292,998-byte `CompressedTexture2D` cache with alpha.
 - `runtime_scene_check`: passed — 2026-08-01，作为 P1 顾客耐心低于 30% 或低分评价状态接入，同锚点纹理切换路径通过自动检查。
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_01_satisfied_v1
 
@@ -129,7 +214,7 @@
 - `visual_check`: 通过。人物身份、发型、服装、比例和完整裁切保持一致；闭眼弧线、放松眉形与微笑形成明确满意反馈，但没有爱心、星光、手势或夸张动作；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 296,584-byte `CompressedTexture2D` cache with alpha.
 - `runtime_scene_check`: passed — 2026-08-01，作为 P1 70 分及以上评价状态接入；出餐评价与收款路径通过自动检查和 Forward Mobile 截图。
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_02_neutral_v1
 
@@ -149,7 +234,7 @@
 - `alpha_check`: 通过。四角完全透明；透明占比 0.7957；半透明占比 0.0027；不透明占比 0.2017；画布边缘无非透明像素；未检测到残留品红像素。
 - `visual_check`: 通过。成年女性身份、肩长深栗色波浪发、砖红上衣、奶油色圆领和芥末色腰部与 customer_01 明显不同；完整头发及所有发梢、双耳、双肩、前臂、双手和腰部下缘均在画布内；主体约 450 px 宽，与 customer_01 约 451 px 的宽度接近；粗深棕轮廓、暖色大色块和三层以内明暗符合 V8。无工作台、UI、订单卡、耐心条、付款物、背景投影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 336,624-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_02_impatient_v1
 
@@ -170,7 +255,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7964；半透明占比 0.0026；不透明占比 0.2010；未检测到残留品红像素。
 - `visual_check`: 通过。人物身份、发型、服装、比例、双手与完整裁切保持一致；内压眉形、轻微眯眼和小幅下弯嘴清楚表达耐心接近耗尽，没有怒吼、泪水、蒸汽、漫画符号或身体姿态变化；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 330,910-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_02_satisfied_v1
 
@@ -191,7 +276,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7964；半透明占比 0.0026；不透明占比 0.2010；未检测到残留品红像素。
 - `visual_check`: 通过。人物身份、发型、服装、比例、双手与完整裁切保持一致；闭眼弧线、放松眉形、小幅闭嘴微笑和轻微暖脸颊形成明确满意反馈，没有张嘴大笑、爱心、星光、手势或夸张动作；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 324,206-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_03_neutral_v1
 
@@ -211,7 +296,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7926；半透明占比 0.0027；不透明占比 0.2048；未检测到残留品红像素。
 - `visual_check`: 通过。年长女性身份、银灰侧后盘发、较成熟脸型、褪色蓝绿色短袖外套、暖米色内搭和陶土色腰部与前两名顾客明显不同；完整头发、盘发、双耳、双肩、前臂、双手和腰部下缘均在画布内；约 491 px 的较宽轮廓来自外套与年长体型，比 customer_02 宽约 9%，作为身份差异保留；粗深棕轮廓、暖色大色块和有限明暗符合 V8。无工作台、UI、订单卡、耐心条、付款物、背景投影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 353,446-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_03_impatient_v1
 
@@ -232,7 +317,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7933；半透明占比 0.0026；不透明占比 0.2040；未检测到残留品红像素。
 - `visual_check`: 通过。年长身份、银灰盘发、服装、宽轮廓、双手与完整裁切保持一致；内压眉形、轻微眯眼和压平嘴形表达严肃催促与耐心接近耗尽，没有怒吼、泪水、蒸汽、漫画符号或身体姿态变化；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 353,182-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_03_satisfied_v1
 
@@ -253,7 +338,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7932；半透明占比 0.0025；不透明占比 0.2043；未检测到残留品红像素。
 - `visual_check`: 通过。年长身份、银灰盘发、服装、宽轮廓、双手与完整裁切保持一致；闭眼弧线、放松眉形、克制闭嘴微笑与保留的年长面部线条形成明确满意反馈，没有年轻化、张嘴大笑、爱心、星光、手势或夸张动作；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 349,884-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_04_neutral_v1
 
@@ -274,7 +359,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7877；半透明占比 0.0028；不透明占比 0.2095；未检测到残留品红像素。
 - `visual_check`: 通过。中年男性身份、暖棕肤色、紧密深色短卷发、较宽角形脸、海军蓝 Polo、赭色领边和砖棕腰部与前三名顾客明显不同；完整卷发、双耳、双肩、前臂、双手和腰部下缘均在画布内；修正后 505 px 宽，保留较宽男性体型但不再明显超出 customer_03；粗深棕轮廓、暖色大色块和有限明暗符合 V8。无工作台、UI、订单卡、耐心条、付款物、背景投影、文字、品牌或水印。
 - `godot_import`: passed for texture — Godot 4.7.1 generated the `.png.import` sidecar and a 332,154-byte `CompressedTexture2D` cache with alpha. The same project scan separately reported existing `workstation.gd` parse errors for undeclared methods, plus user-level root-certificate and editor-settings warnings; these did not prevent this texture cache from being written.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_04_impatient_v1
 
@@ -295,7 +380,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7880；半透明占比 0.0028；不透明占比 0.2092；未检测到残留品红像素。
 - `visual_check`: 通过。中年男性身份、肤色、卷发、Polo、修正后的宽轮廓、双手与完整裁切保持一致；内压眉形、轻微眯眼和小幅下弯嘴清楚表达耐心接近耗尽，没有怒吼、泪水、蒸汽、漫画符号或身体姿态变化；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 333,122-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_04_satisfied_v1
 
@@ -316,7 +401,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7882；半透明占比 0.0028；不透明占比 0.2090；未检测到残留品红像素。
 - `visual_check`: 通过。中年男性身份、肤色、卷发、Polo、修正后的宽轮廓、双手与完整裁切保持一致；闭眼弧线、放松眉形、克制闭嘴微笑和轻微暖脸颊形成明确满意反馈，没有张嘴大笑、爱心、星光、手势或夸张动作；无 UI、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 326,470-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_05_neutral_v1
 
@@ -337,7 +422,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.8094；半透明占比 0.0027；不透明占比 0.1879；未检测到残留绿色像素。
 - `visual_check`: 通过。年轻成年女性身份、窄椭圆脸、齐刘海齐下巴直短发、灰紫方领上衣、暖米色腰部和 451 px 纤细轮廓与前四名顾客明显不同；完整头发、刘海、双耳、双肩、前臂、双手和腰部下缘均在画布内；上衣已清除细小深色噪点，恢复 V8 大色块与有限明暗；无工作台、UI、订单卡、耐心条、付款物、背景投影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 288,540-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; it separately reported user-level root-certificate and editor-settings save warnings after asset import completed.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_05_impatient_v1
 
@@ -358,7 +443,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.8097；半透明占比 0.0026；不透明占比 0.1877；未检测到残留绿色像素。
 - `visual_check`: 通过。同一年轻成年女性身份、窄椭圆脸、齐刘海齐下巴直短发、双耳、梅紫方领上衣、暖米色腰部、姿势和手位均保持；轻微压低眉心、略收窄眼睛和克制下弯嘴型清楚表达不耐烦但不愤怒；完整头发、双肩、前臂、双手和腰部下缘均未裁切；上衣无微噪点；无工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 296,176-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_05_satisfied_v1
 
@@ -379,7 +464,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.8090；半透明占比 0.0026；不透明占比 0.1884；未检测到残留绿色像素。
 - `visual_check`: 通过。同一年轻成年女性身份、窄椭圆脸、齐刘海齐下巴直短发、双耳、梅紫方领上衣、暖米色腰部、姿势和手位均保持；放松眉形、闭合上弯眼和克制闭口微笑清楚表达满意且不过度夸张；完整头发、双肩、前臂、双手和腰部下缘均未裁切；上衣无微噪点；无爱心、闪光、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 298,624-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_06_neutral_v1
 
@@ -400,7 +485,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.8051；半透明占比 0.0030；不透明占比 0.1918；未检测到残留品红像素。
 - `visual_check`: 通过但保留一项真人确认。偏瘦老年男性身份、长矩形脸、高额角后梳银发、浅蓝短袖衬衫、暖芥末色 V 领背心和砖红腰部与 customer_01–05 明显不同；470 px 轮廓与 y=973 腰部底边进入既有顾客区间；完整头发、双耳、双肩、前臂、双手和腰部下缘均在画布内；服装保持粗深棕轮廓和干净大色块；无工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。顶部透明留白为 56 px，少于提示词理想值 78 px，但头发及抗锯齿边界完整且未触碰画布，需要真人确认该纵向尺度是否接受。
 - `godot_import`: passed — Godot 4.7.1 explicitly reimported the PNG, generated the `.png.import` sidecar, and wrote a 339,680-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending — 请重点确认老年男性方向、芥末色背心以及 56 px 头顶留白是否可接受；确认后再制作不耐烦与满意状态。
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认老年男性身份、芥末色背心、头顶留白及三态表现。
 
 ## customer_06_impatient_v1
 
@@ -422,7 +507,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.8062；半透明占比 0.0030；不透明占比 0.1908；未检测到残留品红像素。
 - `visual_check`: 通过。同一老年男性身份、高额角后梳银发、长矩形脸、突出鼻型、原有年龄线、浅蓝衬衫、芥末色背心、砖红腰部、手位和姿势均保持；平缓微收的眉眼和浅下弯嘴型表达轻度等候疲惫，而非愤怒；完整头发、双耳、双肩、前臂、双手和腰部下缘未裁切；无新增眉心紧绷线、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 explicitly reimported the PNG, generated the `.png.import` sidecar, and wrote a 323,246-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_06_satisfied_v1
 
@@ -443,7 +528,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.8063；半透明占比 0.0031；不透明占比 0.1906；未检测到残留品红像素。
 - `visual_check`: 通过。同一老年男性身份、高额角后梳银发、长矩形脸、突出鼻型、原有年龄线、浅蓝衬衫、芥末色背心、砖红腰部、手位和姿势均保持；放松眉形、闭合上弯眼和克制闭口微笑表达平静满意；完整头发、双耳、双肩、前臂、双手和腰部下缘未裁切；无爱心、闪光、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 explicitly reimported the PNG, generated the `.png.import` sidecar, and wrote a 328,594-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_07_neutral_v1
 
@@ -464,7 +549,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7875；半透明占比 0.0026；不透明占比 0.2099；未检测到残留品红像素。
 - `visual_check`: 通过。丰润中年女性身份、圆方脸、铜红短层次发、少量明确雀斑、暖金色船领上衣和深青绿腰部与 customer_01–06 明显不同；最终 541 px 较宽轮廓为有意身份设计，867 px 高度和 y=976 腰部底边回到既有顾客区间；完整头发、双耳、双肩、前臂、双手和腰部下缘均在画布内；服装保持粗深棕轮廓和干净大色块；无工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 explicitly reimported the PNG, generated the `.png.import` sidecar, and wrote a 330,574-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending — 请重点确认丰润体型、铜红短发、雀斑密度和暖金色上衣是否可接受；确认后再制作不耐烦与满意状态。
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认丰润体型、铜红短发、雀斑密度、暖金色上衣及三态表现。
 
 ## customer_07_impatient_v1
 
@@ -485,7 +570,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7883；半透明占比 0.0026；不透明占比 0.2092；未检测到残留品红像素。
 - `visual_check`: 通过。同一丰润中年女性身份、圆方脸、铜红短层次发、雀斑范围、暖金色船领上衣、深青绿腰部、手位和姿势均保持；轻微下压眉形、略收窄眼睛和浅下弯嘴型表达轻度不耐烦而非愤怒；完整头发、双耳、双肩、前臂、双手和腰部下缘未裁切；无新增皱纹、汗滴、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 explicitly reimported the PNG, generated the `.png.import` sidecar, and wrote a 313,396-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_07_satisfied_v1
 
@@ -506,7 +591,7 @@
 - `alpha_check`: 通过。四角和全部画布边缘完全透明；透明占比 0.7882；半透明占比 0.0025；不透明占比 0.2093；未检测到残留品红像素。
 - `visual_check`: 通过。同一丰润中年女性身份、圆方脸、铜红短层次发、雀斑范围、暖金色船领上衣、深青绿腰部、手位和姿势均保持；放松眉形、闭合上弯眼和克制闭口微笑表达满意；雀斑没有被腮红覆盖或扩散；完整头发、双耳、双肩、前臂、双手和腰部下缘未裁切；无爱心、闪光、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 explicitly reimported the PNG, generated the `.png.import` sidecar, and wrote a 340,468-byte `CompressedTexture2D` cache with alpha. Headless import exited with code 0; user-level root-certificate and editor-settings save warnings are recorded separately from texture validation.
-- `human_review`: pending
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认。
 
 ## customer_08_neutral_v1
 
@@ -547,7 +632,7 @@
 - `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,313,218 px（83.4922%），半透明 4,159 px（0.2644%），不透明 255,487 px（16.2434%）；非透明区域中近品红和强品红残留均为 0 px。
 - `visual_check`: 通过。同一偏瘦年轻成年男性身份、窄长脸、浅蜂蜜金及肩直发、完整发梢、双耳、炭灰两扣 Henley、暖赤褐色腰部、手位和姿势均保持；压低眉形、半收眼睑和浅下弯闭口表达克制不耐烦而非愤怒。无新增皱纹、汗滴、漫画符号、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 明确扫描并导入最终 PNG，生成 `.png.import` sidecar 和 300,018-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
-- `human_review`: pending — 请确认当前眉眼压低程度是否符合“轻度不耐烦”而不是过于严肃。
+- `human_review`: accepted — 用户在查看 customer_08 两个表情状态后要求继续下一名顾客。
 
 ## customer_08_satisfied_v1
 
@@ -567,7 +652,131 @@
 - `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,313,047 px（83.4813%），半透明 4,207 px（0.2675%），不透明 255,610 px（16.2512%）；非透明区域中近品红和强品红残留均为 0 px。
 - `visual_check`: 通过。同一偏瘦年轻成年男性身份、窄长脸、浅蜂蜜金及肩直发、完整发梢、双耳、炭灰两扣 Henley、暖赤褐色腰部、手位和姿势均保持；放松眉形、闭合上弯眼和加宽闭口微笑表达温和满意。无牙齿、腮红、爱心、闪光、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 明确扫描并导入最终 PNG，生成 `.png.import` sidecar 和 291,904-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
-- `human_review`: pending — 请确认闭眼微笑的满意程度是否合适，或是否希望眼睛保持微睁。
+- `human_review`: accepted — 用户在查看 customer_08 两个表情状态后要求继续下一名顾客。
+
+## customer_09_neutral_v1
+
+- `status`: review
+- `purpose`: P1 第九名顾客的独立中性半身 Sprite2D 单张确认稿；耐心条、订单卡、付款内容、工作台和阴影由独立 UI/素材层提供。
+- `final_file`: `res://resources/art/customers/customer_09/customer_09_neutral_v1.png`
+- `source_file`: `tmp/imagegen/customers_v9/customer_09_neutral_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_09_neutral_v1.md`
+- `rejected_attempts`: `tmp/imagegen/customers_v9/customer_09_neutral_v1_rejected_overscale_bottom_crop_chromakey.png`（过大且下缘裁切）、`customer_09_neutral_v1_rejected_attempt2_bottom_crop_chromakey.png`（位置过低且下缘裁切）、`customer_09_neutral_v1_rejected_attempt3_underscale_fullskirt_chromakey.png`（过小且接近全身裙装）、`customer_09_neutral_v1_rejected_attempt4_underscale_chromakey.png`（完整但占画略小）。
+- `generator`: Codex 内置 `image_gen` 生成新身份，并围绕比例、垂直位置和完整下缘进行有针对性的身份锁定构图修正，随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(540,75)-(979,959)`，宽 439 px、高 884 px；最下方可见像素 y=958，四周均与画布边缘分离。
+- `suggested_counter_pivot`: 约 `(760,958)`；后续表情状态必须共用同一画布、人物尺度、可见边界和该锚点。
+- `sha256`: `1A601D35C194421FC02AA09CFC1333A760EA3E96396FB0FDE4E92081E9C6D7B8`
+- `processing`: 最终绿色键控源使用 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` 去背；最终图未在本地裁切、缩放或调色。
+- `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,293,404 px（82.2324%），半透明 3,413 px（0.2170%），不透明 276,047 px（17.5506%）；非透明区域中近绿色和强绿色残留均为 0 px；源图和最终图均为 1536 x 1024。
+- `visual_check`: 通过。成年女性身份、深暖棕肤色、柔和心形脸、蓝黑长侧辫、完整辫梢和双耳、珊瑚橙立领裹襟上衣、深靛蓝腰部与 customer_01—08 明显区分；439 px 宽、884 px 高的中等体型进入既有顾客占画区间；粗深棕轮廓、干净大色块和有限明暗符合 V8。完整头发、双肩、前臂、双手和下装下缘均未裁切；无工作台、UI、订单卡、耐心条、付款物、背景投影、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 已识别最终 PNG，生成 `.png.import` sidecar 和 281,934-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
+- `human_review`: accepted for identity lock — 用户在查看中性稿后要求继续，已据此从最终中性绿幕源独立制作不耐烦与满意状态。
+
+## customer_09_impatient_v1
+
+- `status`: review
+- `purpose`: P1 第九名顾客的不耐烦半身 Sprite2D 状态；只改变眉形、眼睑和嘴型，耐心条、订单卡、付款内容、工作台和阴影由独立 UI/素材层提供。
+- `final_file`: `res://resources/art/customers/customer_09/customer_09_impatient_v1.png`
+- `source_file`: `tmp/imagegen/customers_v9/customer_09_impatient_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_09_impatient_v1.md`
+- `rejected_attempts`: `tmp/imagegen/customers_v9/customer_09_impatient_v1_rejected_too_angry_chromakey.png`（眉间与嘴角张力过强，读作生气）
+- `generator`: Codex 内置 `image_gen` 从中性绿幕源进行身份锁定表情编辑，并进行一次只降低表情张力的定向修正，随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(541,76)-(979,959)`，宽 438 px、高 883 px；相对中性稿四边差异为 `(+1,+1,0,0)`，最大 1 px。
+- `suggested_counter_pivot`: `(760,958)`，与中性稿共用同一画布和锚点。
+- `sha256`: `10020ABD756B1A2589F78A10B62943EAEB7775BF2A398D414C3174835D5DC1A6`
+- `processing`: 从 `customer_09_neutral_v1_chromakey.png` 独立生成；最终绿色键控源使用 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` 去背；最终图未在本地裁切、缩放或调色。
+- `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,294,020 px（82.2716%），半透明 3,193 px（0.2030%），不透明 275,651 px（17.5254%）；非透明区域中近绿色和强绿色残留均为 0 px。
+- `visual_check`: 通过。同一成年女性身份、深暖棕肤色、心形脸、蓝黑长侧辫、珊瑚橙裹襟上衣、深靛蓝下装、手位和完整轮廓均保持；略压眉形、稍收眼睑和近乎平直的闭口表达克制不耐烦，不再读作愤怒。无眉间皱纹、汗滴、漫画符号、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 已识别最终 PNG，生成 `.png.import` sidecar 和 283,622-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
+- `human_review`: accepted — 用户在查看 customer_09 两个表情状态后要求继续下一名顾客。
+
+## customer_09_satisfied_v1
+
+- `status`: review
+- `purpose`: P1 第九名顾客的满意半身 Sprite2D 状态；只改变眉形、眼睑和嘴型，订单 UI、工作台和阴影保持独立。
+- `final_file`: `res://resources/art/customers/customer_09/customer_09_satisfied_v1.png`
+- `source_file`: `tmp/imagegen/customers_v9/customer_09_satisfied_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_09_satisfied_v1.md`
+- `generator`: Codex 内置 `image_gen` 从最终中性绿幕源独立进行一次身份锁定表情编辑，随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(541,76)-(979,959)`，宽 438 px、高 883 px；相对中性稿四边差异为 `(+1,+1,0,0)`，最大 1 px。
+- `suggested_counter_pivot`: `(760,958)`，与中性稿共用同一画布和锚点。
+- `sha256`: `3163C3DF4D73227C8526061B51220AA2788C71CD1A08B8DF3203EDB0747F2F8B`
+- `processing`: 从 `customer_09_neutral_v1_chromakey.png` 独立生成，未从不耐烦稿串联编辑；最终绿色键控源使用 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` 去背；最终图未在本地裁切、缩放或调色。
+- `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,294,069 px（82.2747%），半透明 3,300 px（0.2098%），不透明 275,495 px（17.5155%）；非透明区域中近绿色和强绿色残留均为 0 px。
+- `visual_check`: 通过。同一成年女性身份、深暖棕肤色、心形脸、蓝黑长侧辫、珊瑚橙裹襟上衣、深靛蓝下装、手位和完整轮廓均保持；放松眉形、闭合上弯眼和加宽闭口微笑表达温和满意。无腮红、牙齿、爱心、闪光、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 已识别最终 PNG，生成 `.png.import` sidecar 和 283,376-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
+- `human_review`: accepted — 用户在查看 customer_09 两个表情状态后要求继续下一名顾客。
+
+## customer_10_neutral_v1
+
+- `status`: review
+- `purpose`: P1 第十名顾客的独立中性半身 Sprite2D 单张确认稿；耐心条、订单卡、付款内容、工作台和阴影由独立 UI/素材层提供。
+- `final_file`: `res://resources/art/customers/customer_10/customer_10_neutral_v1.png`
+- `source_file`: `tmp/imagegen/customers_v10/customer_10_neutral_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_10_neutral_v1.md`
+- `rejected_attempts`: `tmp/imagegen/customers_v10/customer_10_neutral_v1_rejected_overscale_chromakey.png`（身份合格但人物占画过大）
+- `generator`: Codex 内置 `image_gen` 生成新身份并进行一次只调整整体比例/位置的身份锁定修正，随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(507,82)-(1018,960)`，宽 511 px、高 878 px；最下方可见像素 y=959，四周均与画布边缘分离。
+- `suggested_counter_pivot`: 约 `(762,959)`；后续表情状态必须共用同一画布、人物尺度、可见边界和该锚点。
+- `sha256`: `BBDB2AB3EDA2814FFCB927B9AD3D3717946861D8994D1ABF72E94432305D40D5`
+- `processing`: 最终绿色键控源使用 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` 去背；最终图未在本地裁切、缩放或调色。
+- `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,250,023 px（79.4743%），半透明 3,234 px（0.2056%），不透明 319,607 px（20.3201%）；非透明区域中近绿色和强绿色残留均为 0 px；源图和最终图均为 1536 x 1024。
+- `visual_check`: 通过。结实宽体中年男性身份、暖橄榄肤色、完整秃顶轮廓、窄侧后发茬、分离式深色小胡子与短山羊胡、暗酒红短袖敞领衬衫、米色内搭和暖卡其腰部与 customer_01—09 明显区分；511 px 宽、878 px 高的宽体轮廓进入既有顾客区间；粗深棕轮廓、干净大色块和有限明暗符合 V8。完整头部、双耳、双肩、前臂、双手和腰部下缘均未裁切；无工作台、UI、订单卡、耐心条、付款物、背景投影、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 明确重新导入最终 PNG，生成 `.png.import` sidecar 和 310,102-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
+- `human_review`: accepted for identity lock — 用户在查看中性稿后要求继续，已据此从最终中性绿幕源独立制作不耐烦与满意状态。
+
+## customer_10_impatient_v1
+
+- `status`: review
+- `purpose`: P1 第十名顾客的不耐烦半身 Sprite2D 状态；只改变眉形、眼睑和嘴型，耐心条、订单卡、付款内容、工作台和阴影由独立 UI/素材层提供。
+- `final_file`: `res://resources/art/customers/customer_10/customer_10_impatient_v1.png`
+- `source_file`: `tmp/imagegen/customers_v10/customer_10_impatient_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_10_impatient_v1.md`
+- `rejected_attempts`: `tmp/imagegen/customers_v10/customer_10_impatient_v1_rejected_too_angry_chromakey.png`（眉峰内压和眼神张力过强，读作生气而非轻度等待不耐烦）
+- `generator`: Codex 内置 `image_gen` 从中性绿幕源进行身份锁定表情编辑；首稿过怒后，又从同一中性源独立进行一次只降低眉眼张力的定向修正，随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(507,83)-(1018,959)`，宽 511 px、高 876 px；相对中性稿四边差异为 `(0,+1,0,-1)`，最大 1 px。
+- `suggested_counter_pivot`: `(762,959)`，与中性稿共用同一画布和锚点。
+- `sha256`: `6F9AFFF9931F18C7C0692C26BA950CF931748E58C303ECB39038E813F9EDDBB0`
+- `processing`: 从 `customer_10_neutral_v1_chromakey.png` 独立生成；最终绿色键控源使用 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` 去背；最终图未在本地裁切、缩放或调色。
+- `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,250,981 px（79.5352%），半透明 3,007 px（0.1912%），不透明 318,876 px（20.2736%）；非透明区域中近绿色和强绿色残留均为 0 px。
+- `visual_check`: 通过。同一结实宽体中年男性身份、完整秃顶轮廓、窄侧后发茬、分离式小胡子与短山羊胡、暗酒红敞领衬衫、米色内搭、暖卡其腰部、手位和完整轮廓均保持；近水平略低眉形、轻收上眼睑和近乎平直的闭口表达克制的不耐烦。无怒眉 V 形、眉间皱纹、汗滴、漫画符号、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 已重新导入最终 PNG，生成 1,012-byte `.png.import` sidecar 和 311,756-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认当前轻度不耐烦强度。
+
+## customer_10_satisfied_v1
+
+- `status`: review
+- `purpose`: P1 第十名顾客的满意半身 Sprite2D 状态；只改变眉形、眼睑和嘴型，订单 UI、工作台和阴影保持独立。
+- `final_file`: `res://resources/art/customers/customer_10/customer_10_satisfied_v1.png`
+- `source_file`: `tmp/imagegen/customers_v10/customer_10_satisfied_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_10_satisfied_v1.md`
+- `generator`: Codex 内置 `image_gen` 从最终中性绿幕源独立进行一次身份锁定表情编辑，随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(507,83)-(1018,959)`，宽 511 px、高 876 px；相对中性稿四边差异为 `(0,+1,0,-1)`，最大 1 px。
+- `suggested_counter_pivot`: `(762,959)`，与中性稿共用同一画布和锚点。
+- `sha256`: `32D46E27F6F25F8232E95568F0E1E2860AFD046247DDA15B3EF5412B1B9BAD17`
+- `processing`: 从 `customer_10_neutral_v1_chromakey.png` 独立生成，未从不耐烦稿串联编辑；最终绿色键控源使用 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` 去背；最终图未在本地裁切、缩放或调色。
+- `alpha_check`: 通过。四角 alpha 均为 0，顶部/底部/左侧/右侧非透明边缘像素均为 0；透明 1,250,715 px（79.5183%），半透明 2,946 px（0.1873%），不透明 319,203 px（20.2944%）；非透明区域中近绿色和强绿色残留均为 0 px。
+- `visual_check`: 通过。同一结实宽体中年男性身份、完整秃顶轮廓、窄侧后发茬、分离式小胡子与短山羊胡、暗酒红敞领衬衫、米色内搭、暖卡其腰部、手位和完整轮廓均保持；放松眉形、闭合上弯眼和胡须下方的闭口微笑表达温和满意。无腮红、牙齿、爱心、闪光、工作台、UI、订单卡、耐心条、付款物、阴影、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 已重新导入最终 PNG，生成 1,012-byte `.png.import` sidecar 和 309,830-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
+- `human_review`: accepted — 用户于 2026-08-02 查看完整三态接触表后确认闭眼轻笑和胡须下方闭口笑线。
 
 ## payment_cash_small_v1
 
@@ -1331,6 +1540,48 @@ Payment-layer constraint: tray remains empty; no coins, banknotes, currency symb
 No text, letters, numbers, signage, brands, logos, watermarks, extra people, extra props, new ingredients, magical content, photorealism, painterly texture, thin lines, or glossy 3D.
 ```
 
+## ingredient_stock_states_v1
+
+- `status`: review-runtime-integrated
+- `purpose`: picture-only 1–6 portion feedback for the four P1 ingredients; no numeric stock counter is rendered.
+- `final_files`: 24 RGBA PNGs under `res://resources/art/ingredients/{egg,baocui,ham_sausage,scallion}/stock/`
+- `prompt_file`: `res://resources/art/prompts/ingredient_stock_states_v1.md`
+- `generator`: Codex built-in `image_gen`; chroma removal with the ImageGen helper; deterministic atlas crop/normalization with `tools/build_ingredient_stock_assets.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 512 x 512 px RGBA per state
+- `asset_check`: passed; dimensions, alpha, transparent corners, visible content, and distinct state files
+- `godot_import`: passed with Godot 4.7.1
+- `runtime_integration`: passed; all 24 textures are stable `.tscn` resources and the rack selects the matching current-stock image
+- `human_review`: pending
+
+## ingredient_restock_containers_v1
+
+- `status`: review-runtime-integrated
+- `purpose`: clickable egg carton, baocui tin, ham freshness box, and scallion enamel jar above the left-side ingredient rack.
+- `final_files`: `res://resources/art/workstation/restock/egg_carton_v1.png`, `baocui_tin_v1.png`, `ham_fresh_box_v1.png`, `scallion_enamel_jar_v1.png`
+- `prompt_file`: `res://resources/art/prompts/ingredient_restock_containers_v1.md`
+- `generator`: Codex built-in `image_gen`; chroma removal with the ImageGen helper; normalization with `tools/build_ingredient_stock_assets.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 512 x 512 px RGBA per prop
+- `asset_check`: passed; dimensions, alpha, transparent corners, and visible content
+- `godot_import`: passed with Godot 4.7.1
+- `runtime_integration`: passed; four scene-backed controls refill only their matching ingredient
+- `human_review`: pending
+
+## workstation_backplate_v2
+
+- `status`: review-runtime-integrated
+- `purpose`: remove the baked-in upper-left napkin box and chopstick holder so the four refill-container controls replace them without overlap.
+- `final_file`: `res://resources/art/workstation/background/workstation_backplate_v2.png`
+- `source_file`: `tmp/imagegen/ingredient_stock/backplate/workstation_backplate_v2_imagegen_source.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_backplate_v2.md`
+- `generator`: Codex built-in `image_gen`, precise-object-edit mode; bounded deterministic regional composite with `tools/build_workstation_backplate_v2.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `processing`: one-pixel model canvas drift normalized; only the former napkin/chopstick region is composited; pixels outside the feathered edit mask are validated unchanged
+- `godot_import`: passed with Godot 4.7.1
+- `runtime_integration`: passed; `workstation.tscn` uses v2 while refill containers remain independent controls
+- `human_review`: pending
+
 ## visual_style_anchor_v3
 
 - `status`: superseded-draft
@@ -1429,6 +1680,200 @@ Avoid: photorealism, 3D gloss, thin linework, extra props, extra customers, new 
 - `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
 - `visual_check`: passed — 恰好 14 个分离的小肉松团，覆盖范围宽且留有明显间隙。
 - `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 527,500-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## start_menu_background_v1
+
+- `status`: integrated-runtime-verified
+- `purpose`: PC 开始页 16:9 背景；提供左侧菜单留白与开摊前的安静工作台叙事。
+- `final_file`: `res://resources/art/ui/start_menu/start_menu_background_v1.png`
+- `source_file`: `C:/Users/Administrator/.codex/generated_images/019fc040-fcc9-78e3-a051-69679de0ef3e/exec-622d9aa3-5bb9-49c8-b375-2da4d564791e.png`
+- `prompt_file`: `res://resources/art/prompts/start_menu_background_v1.md`
+- `generator`: Codex 内置 `image_gen`，以 `visual_style_anchor_v8_builtin_source.png` 作为严格画风参考。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGB
+- `sha256`: `C748C342E0BEE4E047A079696E7381A6426EB04F71D5E53E63A7AB546B3233E1`
+- `visual_check`: passed — 暖橙、深棕粗描边与青绿色点缀和现有工作台一致；左侧 UI 留白清楚；无人物、文字、品牌或水印。
+- `godot_import`: passed — Godot 4.7.1 已生成 `.png.import` 并能作为 `Texture2D` 加载。
+- `runtime_integration`: passed — `start_menu.tscn` 以 cover 模式接入；D3D12 Forward Mobile 1920x1080 截图通过。
+- `human_review`: pending
+
+## P3 候选素材批次（2026-08-02）
+
+- `stage_scope`: 本批只生成用户点名的少量 P3 候选美术，不代表 P2 评审已通过，也不代表 P3 已进入正式量产。
+- `shared_generator`: Codex 内置 `image_gen`。
+- `shared_style_reference`: `res://resources/art/style_guides/visual_style_anchor_v8.png` 与现有 P2 底板/顾客/UI。
+- `shared_text_policy`: 所有招牌、照片、事件内容、配方信息和选项区域均为空白；文字由 Godot 动态排版。
+- `shared_import_check`: Godot 4.7.1 headless editor import passed；运行时场景接入与真人视觉验收仍为 pending。
+
+## workstation_backplate_mid_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 中期固定摊位候选外观；增加深青木饰、熟客照片夹和空白菜单架，不改变核心交互区域。
+- `final_file`: `res://resources/art/workstation/background/workstation_backplate_mid_v1.png`
+- `source_file`: `tmp/imagegen/p3_stall_v1/workstation_backplate_mid_v1_builtin_source.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_backplate_mid_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1671 x 941 px RGB
+- `sha256`: `BE86E502527361626CFA1E607D2A65860D3E6FC34D774AD1FB887103C5FF54E5`
+- `geometry_check`: passed for canvas and visual layout — 12 个空配料槽、中央空操作区、收款托盘和底部控制区保留；精确交互坐标须在接入后复核。
+- `visual_check`: passed — 阶段成长清楚，无顾客、配料、动态 UI、文字、品牌或水印。
+- `godot_import`: passed — 生成 `.png.import` 与 1,613,100-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## workstation_backplate_late_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 后期固定摊位候选外观；增加奖牌、收藏品、配方展示框和固定灯具，不自动化核心操作。
+- `final_file`: `res://resources/art/workstation/background/workstation_backplate_late_v1.png`
+- `source_file`: `tmp/imagegen/p3_stall_v1/workstation_backplate_late_v1_builtin_source.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_backplate_late_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1671 x 941 px RGB
+- `sha256`: `213FA2386D6F6D7FC8024609CB952D9AC250A0C9A7F24B72230894B57D0E1A76`
+- `geometry_check`: passed for canvas and visual layout — 12 个空配料槽、中央空操作区、收款托盘和底部控制区保留；精确交互坐标须在接入后复核。
+- `visual_check`: passed — 中后期差异可读，装饰没有进入操作台核心区域；无文字、品牌或水印。
+- `godot_import`: passed — 生成 `.png.import` 与 1,691,730-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## customer_01_regular_greeting_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 熟客特殊问候状态；保持 `customer_01` 身份，改为右手挥手和熟悉顾客的明亮表情。
+- `final_file`: `res://resources/art/customers/customer_01/customer_01_regular_greeting_v1.png`
+- `source_file`: `tmp/imagegen/p3_characters_ui_v1/customer_01_regular_greeting_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_01_regular_greeting_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1427 x 1102 px RGBA，与现有 `customer_01` 画布一致
+- `alpha_bbox`: (345, 101) - (936, 972)
+- `sha256`: `C553CC4DB1683E5D98DF2AB7F43905DF613CDCCB8BDFA771BDA4897E0EAAE1ED`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红键色残留 0。
+- `visual_check`: passed — 身份、服装和固定视角保留；挥手五指可读，无附件、文字或额外肢体。
+- `godot_import`: passed — 生成 `.png.import` 与 342,918-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## regular_customer_badge_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 熟客独立胸章附件；由 Godot 叠加到人物层，不烘焙进角色状态图。
+- `final_file`: `res://resources/art/customers/attachments/regular_customer_badge_v1.png`
+- `source_file`: `tmp/imagegen/p3_characters_ui_v1/regular_customer_badge_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/regular_customer_badge_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGBA
+- `alpha_bbox`: (209, 185) - (1044, 1064)
+- `sha256`: `9061EB4BBABAAF12723D507A31F4E0E8A3393A635B26B6E253B05438C86DF4B7`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红键色残留 0。
+- `visual_check`: passed — 黄铜、青绿珐琅和无文字煎饼符号在小尺寸下仍可辨认。
+- `godot_import`: passed — 生成 `.png.import` 与 456,888-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending — 具体胸口挂点需在人物场景中校准。
+- `human_review`: pending
+
+## supplier_01_neutral_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 供应商事件角色中性状态；角色层与事件面板、文本、物品和阴影分离。
+- `final_file`: `res://resources/art/suppliers/supplier_01/supplier_01_neutral_v1.png`
+- `source_file`: `tmp/imagegen/p3_characters_ui_v1/supplier_01_neutral_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/supplier_01_neutral_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (517, 112) - (1017, 976)
+- `suggested_counter_pivot`: 约 (767, 976)
+- `sha256`: `4C616A44BDFADA6829141EDF7D59C943A585770B4DD07D28C794AB608684FF48`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红键色残留 0。
+- `visual_check`: passed — 发髻、砖红工作外套、青绿围裙、双手和中性商务表情完整；无文字、道具或额外肢体。
+- `godot_import`: passed — 生成 `.png.import` 与 374,996-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## supplier_event_panel_base_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 供应商事件空白面板；左侧头像、右侧标题/描述和两个选项由 Godot 动态填充。
+- `final_file`: `res://resources/art/ui/supplier_event/supplier_event_panel_base_v1.png`
+- `source_file`: `tmp/imagegen/p3_characters_ui_v1/supplier_event_panel_base_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/supplier_event_panel_base_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (91, 71) - (1581, 858)
+- `sha256`: `86D384CFB33C2063F142CD2D74FFDF52632E42E1189F509E04187C284A745DB1`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红键色残留 0。
+- `visual_check`: passed — 头像窗、标题区、描述区和双选项区层级清楚，内容全部空白。
+- `godot_import`: passed — 生成 `.png.import` 与 599,638-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## signature_recipe_panel_base_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 招牌配方展示空白面板；成品图、六个配料图标、品质章和文字由 Godot 动态填充。
+- `final_file`: `res://resources/art/ui/recipe/signature_recipe_panel_base_v1.png`
+- `source_file`: `tmp/imagegen/p3_characters_ui_v1/signature_recipe_panel_base_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/signature_recipe_panel_base_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (193, 41) - (1474, 891)
+- `sha256`: `9427065AAD5B1F9A52F12EE6438C6CE105E3CE83D9B3371F6CCD671898A56E1E`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红键色残留 0。
+- `visual_check`: passed — 标题、成品圆窗、六个配料位、品质章和备注条均为空白，无 AI 文字。
+- `godot_import`: passed — 生成 `.png.import` 与 909,976-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## weather_rain_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 雨天独立叠加层；只包含稀疏雨线和上部飞溅，不修改摊位底板。
+- `final_file`: `res://resources/art/workstation/overlays/weather_rain_v1.png`
+- `source_file`: `tmp/imagegen/p3_overlays_v1/weather_rain_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/weather_rain_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1671 x 941 px RGBA
+- `alpha_bbox`: (18, 7) - (1645, 416)
+- `sha256`: `2089E5B79CF2E4F773965F5F64269149967EDC252998B8CA054F8448F57FFFD2`
+- `alpha_check`: passed after `--edge-contract 1` — 画布边缘非透明像素 0；品红键色残留 0。
+- `visual_check`: passed in composite — 雨线集中在上部背景，中央操作台与配料槽未遮挡。
+- `godot_import`: passed — 生成 `.png.import` 与 62,882-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## lighting_string_lights_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 夜间灯串独立层；灯泡和轻微光晕由图层提供，全屏夜色由 Godot 遮罩控制。
+- `final_file`: `res://resources/art/workstation/overlays/lighting_string_lights_v1.png`
+- `source_file`: `tmp/imagegen/p3_overlays_v1/lighting_string_lights_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/lighting_string_lights_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1671 x 941 px RGBA
+- `alpha_bbox`: (13, 94) - (1660, 300)
+- `sha256`: `F21FC8BFD06B5DAC9E1D7556F078D761407B5F4773951BF6A452D23B2071A6B4`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红键色残留 0；保留 19,555 个光晕抗锯齿/半透明像素。
+- `visual_check`: passed in composite — 灯串位于上部，不遮挡操作台；未烘焙夜色背景。
+- `godot_import`: passed — 生成 `.png.import` 与 132,124-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## festival_spring_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P3 春节独立装饰层；左右各两盏灯笼和角部挂结，中央招牌/顾客区留空。
+- `final_file`: `res://resources/art/workstation/overlays/festival_spring_v1.png`
+- `source_file`: `tmp/imagegen/p3_overlays_v1/festival_spring_v1_chromakey.png`
+- `rejected_attempts`: `tmp/imagegen/p3_overlays_v1/festival_spring_v1_attempt1_obstructive_chromakey.png`、`tmp/imagegen/p3_overlays_v1/festival_spring_v1_attempt2_center_obstruction_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/festival_spring_v1.md`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1671 x 941 px RGBA
+- `alpha_bbox`: (0, 0) - (1671, 221)
+- `sha256`: `D4947D9A102D8FCBE7A0F0F775DC61D21DBD6B5FA221CC6AF2B7A9FA87F85E61`
+- `alpha_check`: passed — 品红键色残留 0；37 个画布边缘非透明像素来自按设计贴边的顶部挂线，不是键色污染。
+- `visual_check`: passed in composite after two rejected layouts — 中央招牌、顾客区、收款托盘和工作台完全无遮挡，无文字或汉字。
+- `godot_import`: passed — 生成 `.png.import` 与 111,560-byte `CompressedTexture2D` 缓存。
 - `runtime_integration`: pending
 - `human_review`: pending
 
@@ -1558,3 +2003,714 @@ Avoid: photorealism, 3D gloss, thin linework, extra props, extra customers, new 
 - `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 583,654-byte `CompressedTexture2D` 缓存。
 - `runtime_integration`: pending — BusinessDayService、结算字段与日结场景绑定尚未实现。
 - `human_review`: pending
+
+## batter_spreader_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 T 形刮板升级外观；加宽不锈钢横杆与防烫握把表达更稳定的手动摊面容错，不代表自动摊面。
+- `final_file`: `res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/batter_spreader_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/batter_spreader_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen` 精确对象编辑；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (402, 105) - (1305, 817)
+- `sha256`: `90074B2570DA12EA601BBDD43306025A106D5A293A4BC7EB9C4C1457187F68F1`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — T 形轮廓、加宽钢横杆、青绿色握把与黄铜连接环均清楚；无文字和自动化部件。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 222,768-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending — 尚未加入升级数据与工具换图路径。
+- `human_review`: pending
+
+## heat_controller_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 温控器升级外观；旋钮、冷热色刻度块和指示灯增强火候信息反馈，不自动控制烹饪。
+- `final_file`: `res://resources/art/workstation/tools/heat_controller_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/heat_controller_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/heat_controller_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen`；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1671 x 941 px RGBA
+- `alpha_bbox`: (498, 34) - (1171, 830)
+- `sha256`: `64C5DBA185FC4BE25E1BD479472FAABA44CD7B4E7F118262E191AF9B4C1F6359`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 手动旋钮、红色指针、冷热色弧形刻度和短电缆可读，未误读为时钟或计时器；无文字和数字。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 476,716-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending — 尚未定义温控升级参数、购买条件和场景绑定。
+- `human_review`: pending
+
+## sauce_brush_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 酱刷升级外观；宽硅胶刷头表达更均匀的手动覆盖与易清洁性。
+- `final_file`: `res://resources/art/workstation/tools/sauce_brush_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/sauce_brush_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/sauce_brush_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen` 精确对象编辑；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (368, 65) - (1209, 857)
+- `sha256`: `FF32E967AD9AA67A5562C5DC202570C4E7260CF8A64A16DF855AD784C10B2147`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 宽刷头、六条粗硅胶槽、钢箍、黄铜铆钉和防滑握把可读；无酱料、文字或自动化部件。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 302,654-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending — 尚未加入升级数据与工具换图路径。
+- `human_review`: pending
+
+## reinforced_paper_sleeve_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 加固纸套升级外观；双层开口、青绿色加固带和侧面扣件表达对轻微裂口的手动支撑。
+- `final_file`: `res://resources/art/workstation/tools/reinforced_paper_sleeve_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/reinforced_paper_sleeve_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/reinforced_paper_sleeve_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen`；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (500, 90) - (1167, 817)
+- `sha256`: `F7B135B4E335C987F12FAD7C1DDDF68ECA5B7854FD0ECDC9FEDB3055DC2881B4`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 开口与内层明确，未误读为平纸、信封或封闭纸袋；无食物、文字和图案。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 380,914-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending — 尚未加入升级数据与纸套按钮换图路径。
+- `human_review`: pending
+
+## batter_ladle_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 面糊勺升级外观；清晰内沿、黄铜连接环与防烫握把表达更稳定的手动定量取用。
+- `final_file`: `res://resources/art/workstation/tools/batter_ladle_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/batter_ladle_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/batter_ladle_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen` 精确对象编辑；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (418, 84) - (1290, 844)
+- `sha256`: `E8CEBA883C6BA16ECCA6781D24447FF4F1585774A211261868F5C0F540CB2487`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 空圆勺、内沿、青绿色握把和端帽均清楚；无刻度文字、面糊或自动泵。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 237,080-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## folding_spatula_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 折叠铲升级外观；薄圆前缘与两条加强槽表达更稳定的手动折叠控制。
+- `final_file`: `res://resources/art/workstation/tools/folding_spatula_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/folding_spatula_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/folding_spatula_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen` 精确对象编辑；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (357, 76) - (1267, 845)
+- `sha256`: `EFE01F0B44F150EE02A0DD86198FE4B3427D0B757326B5C03A845AC0B5E4230C`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 宽铲头、两条加强槽、黄铜铲箍和防滑握把均清楚；无食物或自动化部件。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 265,016-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## ingredient_tongs_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 配料夹升级外观；双防滑握区与宽硅胶夹头表达更安全的手动整理。
+- `final_file`: `res://resources/art/workstation/tools/ingredient_tongs_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/ingredient_tongs_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/ingredient_tongs_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen` 精确对象编辑；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (366, 60) - (1390, 847)
+- `sha256`: `A857B7C2EE2234F296B3DD8E511EEB7D83CD452FE6A7A991784A99E56663B56A`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 开口夹形、黄铜铰点、双握区和浅色硅胶夹头可读；无配料或自动锁定结构。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 294,830-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## oil_absorbent_paper_upgrade_v1
+
+- `status`: review-runtime-integration-pending
+- `purpose`: P2 吸油纸升级外观；加固边、稀疏压纹、折线与拉片表达更强吸油和更易取用。
+- `final_file`: `res://resources/art/workstation/tools/oil_absorbent_paper_upgrade_v1.png`
+- `source_file`: `tmp/imagegen/p2_tool_upgrades_v1/oil_absorbent_paper_upgrade_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/oil_absorbent_paper_upgrade_v1.md`
+- `generator`: Codex 内置 `image_gen` 精确对象编辑；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1672 x 941 px RGBA
+- `alpha_bbox`: (392, 66) - (1274, 849)
+- `sha256`: `06E4F09E57F536A571607F9FE3197EF52038F53E3DCCD46B1469FE3526070486`
+- `alpha_check`: passed — 画布边缘非透明像素 0；品红/绿色键色残留 0。
+- `visual_check`: passed at contact-sheet scale — 单张纸、青绿色加固边、稀疏压纹、两条折线和角部拉片可读，未误读为纸套或纸堆。
+- `godot_import`: passed — Godot 4.7.1 生成 `.png.import` 与 382,808-byte `CompressedTexture2D` 缓存。
+- `runtime_integration`: pending
+- `human_review`: pending
+
+## paper_bag_package_v1
+
+- `status`: runtime-integrated-human-review-pending
+- `purpose`: Finished normal paper-bag serving state, replacing the generated rectangle placeholder.
+- `final_file`: `res://resources/art/workstation/packaging/paper_bag_package_v1.png`
+- `source_file`: `tmp/imagegen/package_serving_v1/paper_bag_package_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/paper_bag_package_v1.md`
+- `generator`: Codex built-in `image_gen`, then `remove_chroma_key.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGBA
+- `sha256`: `20affe2426d6bd21b2f4c7f40e1355f677fb6617427e47fd1b94cb0f3d20fd7e`
+- `alpha_check`: passed; transparent corner pixels and zero green fringe pixels
+- `runtime_integration`: `PancakeFoldOverlay.current_package_texture()` maps `PACKAGE_BAG` to this asset
+- `human_review`: pending
+
+## reinforced_paper_sleeve_package_v1
+
+- `status`: runtime-integrated-human-review-pending
+- `purpose`: Finished reinforced-sleeve rescue state, replacing the generated rectangle placeholder.
+- `final_file`: `res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png`
+- `source_file`: `tmp/imagegen/package_serving_v1/reinforced_paper_sleeve_package_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/reinforced_paper_sleeve_package_v1.md`
+- `generator`: Codex built-in `image_gen`, then `remove_chroma_key.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGBA
+- `sha256`: `206e01425f7ab7f42c9335d630f011e04aef4647a80f28aa797d9c76bf12b0e0`
+- `alpha_check`: passed; transparent corner pixels and zero green fringe pixels
+- `runtime_integration`: `PancakeFoldOverlay.current_package_texture()` maps `PACKAGE_SLEEVE` to this asset
+- `human_review`: pending
+
+## serving_tray_package_v1
+
+- `status`: runtime-integrated-human-review-pending
+- `purpose`: Finished tray rescue state for a severely torn fold, replacing the generated rectangle placeholder.
+- `final_file`: `res://resources/art/workstation/packaging/serving_tray_package_v1.png`
+- `source_file`: `tmp/imagegen/package_serving_v1/serving_tray_package_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/serving_tray_package_v1.md`
+- `generator`: Codex built-in `image_gen`, then `remove_chroma_key.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGBA
+- `sha256`: `607ceb3d4bb646612068491e9758769c8a6807477eef61e28c22ef5c96e8fe24`
+- `alpha_check`: passed; transparent corner pixels and zero green fringe pixels
+- `runtime_integration`: `PancakeFoldOverlay.current_package_texture()` maps `PACKAGE_TRAY` to this asset
+- `human_review`: pending
+
+## customer_01_accepting_bag_v1
+
+- `status`: runtime-integrated-human-review-pending
+- `purpose`: Customer 01 receiving the packaged pancake after the player clicks the finished bag.
+- `final_file`: `res://resources/art/customers/customer_01/customer_01_accepting_bag_v1.png`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_01_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_01_accepting_bag_v1.md`
+- `generator`: Codex built-in `image_gen`, then `remove_chroma_key.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1419 x 1108 px RGBA
+- `sha256`: `372d6ed8da063f064cdcf6e14a223dec1c44943c254d099929ac7f494e9ce907`
+- `alpha_check`: passed; transparent corner pixels and zero magenta fringe pixels
+- `runtime_integration`: `Workstation._complete_handoff_animation()` swaps the customer portrait to the cropped action sprite
+- `human_review`: pending
+
+## customer_01_paying_coins_v1
+
+- `status`: runtime-integrated-human-review-pending
+- `purpose`: Customer 01 paying with coins immediately after receiving the packaged pancake.
+- `final_file`: `res://resources/art/customers/customer_01/customer_01_paying_coins_v1.png`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_01_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_01_paying_coins_v1.md`
+- `generator`: Codex built-in `image_gen`, then `remove_chroma_key.py`
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1422 x 1106 px RGBA
+- `sha256`: `bc899842b05607d330c5c945888727c076766a2176b5b9d8812a1c3878a884a7`
+- `alpha_check`: passed; transparent corner pixels and zero magenta fringe pixels
+- `runtime_integration`: `Workstation._show_customer_payment()` swaps the customer portrait and moves a coin into the payment slot
+- `human_review`: pending
+
+<!-- customer-service-all-customers-v1 -->
+# Customer service action portraits — all customers v1
+
+- Scope: customer_01 through customer_10, each with `accepting_bag` and `paying_coins`.
+- Batch status: 20/20 final PNGs and 20/20 cropped AtlasTextures pass pixel and Godot 4.7.1 loading checks.
+- Runtime note: customer_01 is already wired into the handoff/payment flow; customer_02—10 are art-complete but runtime mapping remains pending because this art-only task does not modify business scripts or scene logic.
+- Human review: pending for the full 20-image contact sheet.
+- Contact sheet: `tmp/imagegen/customer_service_v1/customer_service_contact_sheet_v1.png`.
+- Pixel audit: `tmp/imagegen/customer_service_v1/customer_service_pixel_audit_v1.json` (`all_pass: true`).
+- Godot audit: `tmp/customer_service_texture_audit.gd`; result `png=20 cropped=20 failures=0`.
+
+| Customer | Accepting bag | Paying coins | Pixel | Godot | Runtime | Human |
+|---|---|---|---|---|---|---|
+| customer_01 | complete | complete | pass | pass | integrated | pending |
+| customer_02 | complete | complete | pass | pass | pending | pending |
+| customer_03 | complete | complete | pass | pass | pending | pending |
+| customer_04 | complete | complete | pass | pass | pending | pending |
+| customer_05 | complete | complete | pass | pass | pending | pending |
+| customer_06 | complete | complete | pass | pass | pending | pending |
+| customer_07 | complete | complete | pass | pass | pending | pending |
+| customer_08 | complete | complete | pass | pass | pending | pending |
+| customer_09 | complete | complete | pass | pass | pending | pending |
+| customer_10 | complete | complete | pass | pass | pending | pending |
+
+## customer_02_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_02/customer_02_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_02/customer_02_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_02_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_02_accepting_bag_v1.md`
+- `rejected_processing_record`: `tmp/imagegen/customer_service_v1/customer_02_accepting_bag_v1_rejected_softmatte_alpha.png`; rejected because dominance-based soft matte removed warm skin; accepted source reprocessed with hard border key
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (545, 77) - (974, 968); cropped size 429 x 891
+- `transparent_ratio`: 0.808053
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `632bbfcdbfd39b69e98f1f6fec0a3746a1d3d8f092cdccbc4dccaeea559dccf4`
+- `suggested_anchor`: cropped bottom-center `(x=214.5, y=891)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_02_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_02 exactly: adult woman, warm skin, shoulder-length deep chestnut wavy hair, brick-red short-sleeve top with cream rounded collar, mustard-yellow lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_02_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_02/customer_02_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_02/customer_02_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_02_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_02_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (435, 70) - (1070, 962); cropped size 635 x 892
+- `transparent_ratio`: 0.772299
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `b3b4ddbd74bdab536a883cf241782d44d2a8559cdf230460f49c3ce7af858674`
+- `suggested_anchor`: cropped bottom-center `(x=317.5, y=892)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_02_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_02 exactly: adult woman, warm skin, shoulder-length deep chestnut wavy hair, brick-red short-sleeve top with cream rounded collar, mustard-yellow lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_03_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_03/customer_03_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_03/customer_03_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_03_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_03_accepting_bag_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGBA
+- `alpha_bbox`: (338, 83) - (922, 1170); cropped size 584 x 1087
+- `transparent_ratio`: 0.723262
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `b934aba7ade0eb3c8e371db8f898ab964c7a2d4e7810beb8bc37b652ad75a988`
+- `suggested_anchor`: cropped bottom-center `(x=292.0, y=1087)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_03_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_03 exactly: older woman, warm skin, silver-gray hair swept into a side/back bun, faded teal short-sleeve outer layer, warm cream inner blouse, terracotta lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_03_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_03/customer_03_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_03/customer_03_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_03_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_03_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1254 x 1254 px RGBA
+- `alpha_bbox`: (275, 77) - (957, 1179); cropped size 682 x 1102
+- `transparent_ratio`: 0.701997
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `e69327a875a8dbeb4b25f23ea6d6523866ff10a10ce54c7be3bed3b33e78648f`
+- `suggested_anchor`: cropped bottom-center `(x=341.0, y=1102)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_03_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_03 exactly: older woman, warm skin, silver-gray hair swept into a side/back bun, faded teal short-sleeve outer layer, warm cream inner blouse, terracotta lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_04_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_04/customer_04_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_04/customer_04_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_04_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_04_accepting_bag_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (506, 79) - (1017, 977); cropped size 511 x 898
+- `transparent_ratio`: 0.803453
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `f8576b416fe3cc3630f2f28a82a286ce7e1f7f8a0b7704ce81bd035e2aad39e3`
+- `suggested_anchor`: cropped bottom-center `(x=255.5, y=898)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_04_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_04 exactly: middle-aged man, warm brown skin, close dark curly hair, navy polo with ochre collar and sleeve trim, brick-brown lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_04_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_04/customer_04_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_04/customer_04_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_04_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_04_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (422, 61) - (1097, 988); cropped size 675 x 927
+- `transparent_ratio`: 0.762576
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `f1b453316eb4d96a03a0c65b128049ae3971876fe80d47cfa827228098ab546b`
+- `suggested_anchor`: cropped bottom-center `(x=337.5, y=927)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_04_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_04 exactly: middle-aged man, warm brown skin, close dark curly hair, navy polo with ochre collar and sleeve trim, brick-brown lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_05_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_05/customer_05_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_05/customer_05_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_05_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_05_accepting_bag_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (534, 75) - (995, 976); cropped size 461 x 901
+- `transparent_ratio`: 0.810920
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `25e22a11503596b03df9d1bc7339372923b1d734623b8af1baefd47846a7fb35`
+- `suggested_anchor`: cropped bottom-center `(x=230.5, y=901)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_05_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_05 exactly: young adult woman, warm skin, narrow oval face, blunt bangs and chin-length dark bob, mauve square-neck short-sleeve top, warm cream lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_05_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_05/customer_05_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_05/customer_05_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_05_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_05_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (440, 63) - (1067, 977); cropped size 627 x 914
+- `transparent_ratio`: 0.778761
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `2e2b64e7e3a0dc6d240530bbd1c93e814d8055793b10b730b31de47add50c811`
+- `suggested_anchor`: cropped bottom-center `(x=313.5, y=914)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_05_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_05 exactly: young adult woman, warm skin, narrow oval face, blunt bangs and chin-length dark bob, mauve square-neck short-sleeve top, warm cream lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_06_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_06/customer_06_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_06/customer_06_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_06_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_06_accepting_bag_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1448 x 1086 px RGBA
+- `alpha_bbox`: (479, 45) - (988, 1068); cropped size 509 x 1023
+- `transparent_ratio`: 0.779931
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `887fbd2e1b10f96a075fb8c35a745a834d3ea0b5847e0015de58ff733e0c8662`
+- `suggested_anchor`: cropped bottom-center `(x=254.5, y=1023)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_06_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_06 exactly: slim elderly man, long rectangular face, swept-back silver hair, light-blue shirt, mustard V-neck vest, brick-red lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_06_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_06/customer_06_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_06/customer_06_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_06_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_06_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (404, 40) - (1086, 970); cropped size 682 x 930
+- `transparent_ratio`: 0.767265
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `20b3c1b92a4303add398c224a569f4ce8a6c2b3826b2c9837dbdcc2febb81706`
+- `suggested_anchor`: cropped bottom-center `(x=341.0, y=930)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_06_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_06 exactly: slim elderly man, long rectangular face, swept-back silver hair, light-blue shirt, mustard V-neck vest, brick-red lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_07_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_07/customer_07_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_07/customer_07_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_07_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_07_accepting_bag_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (467, 85) - (1060, 991); cropped size 593 x 906
+- `transparent_ratio`: 0.763533
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `5f69ecc9abab8240dd67170dd0223c1fb3c806d90b0b269b61caeabd5c2b5fe7`
+- `suggested_anchor`: cropped bottom-center `(x=296.5, y=906)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_07_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_07 exactly: full-figured middle-aged woman, warm fair skin with freckles, copper-red short layered hair, warm gold boat-neck top, deep teal lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_07_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_07/customer_07_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_07/customer_07_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_07_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_07_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (398, 79) - (1100, 963); cropped size 702 x 884
+- `transparent_ratio`: 0.764083
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `e7b9c758841b242cc897554be9c13327ab0b35cc593549e9be1545ae4eae5c48`
+- `suggested_anchor`: cropped bottom-center `(x=351.0, y=884)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_07_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_07 exactly: full-figured middle-aged woman, warm fair skin with freckles, copper-red short layered hair, warm gold boat-neck top, deep teal lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_08_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_08/customer_08_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_08/customer_08_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_08_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_08_accepting_bag_v1.md`
+- `rejected_processing_record`: `tmp/imagegen/customer_service_v1/customer_08_accepting_bag_v1_rejected_bottom_crop.png`; rejected because lower trouser edge touched the canvas; regenerated with explicit bottom margin
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (578, 89) - (953, 863); cropped size 375 x 774
+- `transparent_ratio`: 0.874565
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `1b1ba9b85e2b113c917d6c267474bb2000174195ed701d98e19dcb8d59a817ec`
+- `suggested_anchor`: cropped bottom-center `(x=187.5, y=774)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_08_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_08 exactly: slim young adult man, narrow face, honey-blond shoulder-length straight hair, charcoal two-button Henley, warm rust-brown trousers; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. This is the accepted targeted composition correction: scale the complete customer-and-bag figure to about 82% canvas height and leave at least 70 pixels of clean key color below the complete lower waist/trouser edge. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_08_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_08/customer_08_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_08/customer_08_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_08_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_08_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (423, 59) - (1080, 987); cropped size 657 x 928
+- `transparent_ratio`: 0.773405
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `d29c116c7af178b070ff531d69bb67e76a91d9d7bea1c791391123d0c682ab0e`
+- `suggested_anchor`: cropped bottom-center `(x=328.5, y=928)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_08_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_08 exactly: slim young adult man, narrow face, honey-blond shoulder-length straight hair, charcoal two-button Henley, warm rust-brown trousers; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_09_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_09/customer_09_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_09/customer_09_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_09_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_09_accepting_bag_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (528, 60) - (985, 1007); cropped size 457 x 947
+- `transparent_ratio`: 0.806113
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `644a042a726a7d338d22807c7c65aaf1cfdf77116fa25ac246637be9d853dc4a`
+- `suggested_anchor`: cropped bottom-center `(x=228.5, y=947)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_09_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_09 exactly: adult woman, deep warm-brown skin, heart-shaped face, blue-black long side braid, coral-orange wrap/collar top, deep indigo lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_09_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_09/customer_09_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_09/customer_09_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_09_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_09_paying_coins_v1.md`
+- `rejected_processing_record`: none; first visual candidate accepted
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1530 x 1028 px RGBA
+- `alpha_bbox`: (450, 67) - (1090, 977); cropped size 640 x 910
+- `transparent_ratio`: 0.782324
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `e50209e71f138ae00311e96ffe2e205dad2d62b760123cd25348212a5152ac33`
+- `suggested_anchor`: cropped bottom-center `(x=320.0, y=910)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_09_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_09 exactly: adult woman, deep warm-brown skin, heart-shaped face, blue-black long side braid, coral-orange wrap/collar top, deep indigo lower garment; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_10_accepting_bag_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer receives the completed filled paper bag with both hands.
+- `final_file`: `res://resources/art/customers/customer_10/customer_10_accepting_bag_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_10/customer_10_accepting_bag_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_10_accepting_bag_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_10_accepting_bag_v1.md`
+- `rejected_processing_record`: `tmp/imagegen/customer_service_v1/customer_10_accepting_bag_v1_rejected_bottom_crop.png`; rejected because lower trouser edge touched the canvas; regenerated with explicit bottom margin
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1536 x 1024 px RGBA
+- `alpha_bbox`: (529, 88) - (998, 887); cropped size 469 x 799
+- `transparent_ratio`: 0.841776
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `bbd74c1a7b2e16fbb8a78d7b8b81c9d70e202e877edf86b86f3380b665be03d3`
+- `suggested_anchor`: cropped bottom-center `(x=234.5, y=799)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_10_accepting_bag_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_10 exactly: sturdy broad middle-aged man, warm olive skin, bald head with dark side stubble, dark mustache and short goatee, dark burgundy open-collar shirt over cream undershirt, warm khaki trousers; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased receiving expression; both forearms extend forward and down, with two complete hands firmly gripping the left and right sides of exactly one upright filled paper bag centered against the torso. Exactly one person, two arms, two hands and one bag; no coins. This is the accepted targeted composition correction: scale the complete figure/action to about 82% canvas height and leave at least 70 pixels of clean key color below the complete lower trouser/waist edge. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```
+
+## customer_10_paying_coins_v1
+
+- `status`: art-complete-godot-import-passed-runtime-integration-pending-human-review-pending
+- `purpose`: Customer holds the received bag under the left arm and offers exactly three coins with the right hand.
+- `final_file`: `res://resources/art/customers/customer_10/customer_10_paying_coins_v1.png`
+- `cropped_resource`: `res://resources/art/customers/customer_10/customer_10_paying_coins_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_service_v1/customer_10_paying_coins_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/customer_10_paying_coins_v1.md`
+- `rejected_processing_record`: `tmp/imagegen/customer_service_v1/customer_10_paying_coins_v1_rejected_bottom_crop.png`; rejected because lower trouser edge touched the canvas; regenerated with explicit bottom margin
+- `generator`: Codex built-in `image_gen`; chroma removal with the imagegen skill `remove_chroma_key.py` using border auto-key and hard alpha
+- `generated_on`: 2026-08-02 (Asia/Shanghai)
+- `size`: 1535 x 1024 px RGBA
+- `alpha_bbox`: (447, 87) - (1037, 932); cropped size 590 x 845
+- `transparent_ratio`: 0.809129
+- `alpha_check`: passed; corners `[0,0,0,0]`, canvas-edge nontransparent pixels 0, key-color residue 0, partial alpha 0
+- `sha256`: `97f8d1b726e82ecdc74dcc3e31a4762fc4d6585a1865a23c823ca5c77b53475d`
+- `suggested_anchor`: cropped bottom-center `(x=295.0, y=845)`; align to the existing customer waist baseline in the workstation
+- `godot_import`: passed with Godot 4.7.1; PNG `Texture2D` and cropped `AtlasTexture` loaded with alpha
+- `runtime_integration`: pending (art-only scope)
+- `human_review`: pending
+- `complete_prompt`:
+
+```text
+Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_10_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_10 exactly: sturdy broad middle-aged man, warm olive skin, bald head with dark side stubble, dark mustache and short goatee, dark burgundy open-collar shirt over cream undershirt, warm khaki trousers; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. This is the accepted targeted composition correction: scale the complete figure/action to about 82% canvas height and leave at least 70 pixels of clean key color below the complete lower trouser/waist edge. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
+```

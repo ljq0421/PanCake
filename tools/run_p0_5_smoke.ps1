@@ -6,5 +6,6 @@ New-Item -ItemType Directory -Force -Path (Join-Path $sandboxData 'Roaming'), (J
 $env:APPDATA = Join-Path $sandboxData 'Roaming'
 $env:LOCALAPPDATA = Join-Path $sandboxData 'Local'
 
-& $godot --path $project -s res://tests/integration/p0_5_mobile_smoke.gd
+$logFile = Join-Path $env:TEMP ("projectcake-p0-5-smoke-{0}.log" -f [Guid]::NewGuid().ToString('N'))
+& $godot --path $project --log-file $logFile -s res://tests/integration/p0_5_mobile_smoke.gd
 exit $LASTEXITCODE

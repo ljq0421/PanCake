@@ -1,0 +1,75 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+WARNING: Could not write ProjectCake save data
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _write_save (res://scripts/services/game_session_store.gd:174)
+       [1] begin_new_game (res://scripts/services/game_session_store.gd:40)
+       [2] _run (res://tests/integration/p1_interaction_self_check.gd:15)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+[ProjectCake][bootstrap] M0 main scene started with Mobile renderer
+PASS: pausing the scene tree freezes cooking time and customer patience
+PASS: P1 customer, order and patience nodes are stable scene content
+PASS: cropped customer artwork keeps its original proportions
+PASS: cropped customer artwork reaches the reference counter edge
+PASS: griddle container keeps the reference slot gap without exceeding the worktop
+PASS: P1 ingredient rack and pancake layer are stable scene content
+PASS: P1 owns two-sauce selection and fire control
+PASS: sweet and chili bottle hit regions do not overlap
+PASS: P1 renderer uploads the independent chili-sauce field
+PASS: first customer receives a concrete verifiable order
+PASS: the player is not asked to confirm a sufficiently spread pancake
+PASS: automatic pour is reachable through the overlapping tool racks
+PASS: the T-shaped spreader can be selected
+PASS: releasing a sufficiently spread pancake automatically enters first-side cooking
+PASS: dragging from the ingredient rack onto the real pancake surface places business data
+PASS: egg drop creates the liquid simulation and visible raw-egg landing state
+PASS: egg drop automatically selects the existing T-shaped spreader
+PASS: flip remains blocked until the egg has actually been spread
+PASS: real workstation spread samples break the yolk and replace the landing sprite with the grid layer
+PASS: continuous T-spreader input reaches the model-backed egg coverage gate
+PASS: renderer uploads the spread egg field
+PASS: step action performs the guarded real flip path
+PASS: both sauce bottles respond during the cooked second-side stage
+PASS: clicking a sauce bottle completes a ready second side without another confirmation click
+PASS: holding the chili bottle creates a visible chili blob on the pancake
+PASS: sauce and filling time no longer burns the finished pancake
+PASS: sweet and chili squeeze amounts remain independent
+PASS: the sauce brush consumes and spreads the squeezed sweet sauce
+PASS: all filling controls can place their ingredients after the filling phase unlocks
+PASS: step action enters the continuous folding path
+PASS: the fold spatula can be selected when folding is available
+PASS: intact folds unlock normal packaging
+PASS: paper bag completes packaging without a rescue penalty
+PASS: paper-bag completion renders its dedicated finished-product artwork
+PASS: packaged product itself becomes the explicit customer-handoff target
+PASS: clicking the bag starts the visible handoff instead of opening evaluation
+PASS: handoff clears the delivered pancake and fillings from the griddle
+PASS: handoff does not force an evaluation panel
+PASS: customer acceptance uses the dedicated bag-holding artwork
+PASS: customer payment uses the dedicated paying artwork and starts a visible coin flight
+WARNING: Could not write ProjectCake save data
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _write_save (res://scripts/services/game_session_store.gd:174)
+       [1] record_order_completed (res://scripts/services/game_session_store.gd:76)
+       [2] _complete_payment_animation (res://scripts/gameplay/workstation.gd:1072)
+       [3] _run (res://tests/integration/p1_interaction_self_check.gd:170)
+PASS: coin settlement opens only the compact non-modal order summary
+PASS: compact summary removes overlapping order dialogue
+PASS: large evaluation stays closed and coins finish inside the payment slot
+PASS: optional order details retain all runtime score dimensions
+PASS: closing optional details returns to the compact summary
+[ProjectCake][simulation] Pancake grid reset in 84 us
+PASS: skipping the compact summary advances to the next customer and restores the empty griddle
+WARNING: Could not write ProjectCake save data
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _write_save (res://scripts/services/game_session_store.gd:174)
+       [1] end_business_day (res://scripts/services/game_session_store.gd:105)
+       [2] end_business_day (res://scripts/gameplay/workstation.gd:1119)
+       [3] _run (res://tests/integration/p1_interaction_self_check.gd:193)
+PASS: ending business opens a read-only today bill with one aligned ledger row
+P1 interaction self-check PASS

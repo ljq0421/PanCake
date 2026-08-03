@@ -1,0 +1,25 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_01/customer_01_accepting_bag_v1.png 1419x1108 crop=[P: (474.0, 104.0), S: (466.0, 874.0)] alpha=2
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_01/customer_01_paying_coins_v1.png 1422x1106 crop=[P: (412.0, 91.0), S: (580.0, 909.0)] alpha=2
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_02/customer_02_accepting_bag_v1.png 1536x1024 crop=[P: (545.0, 77.0), S: (429.0, 891.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_02/customer_02_paying_coins_v1.png 1535x1024 crop=[P: (435.0, 70.0), S: (635.0, 892.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_03/customer_03_accepting_bag_v1.png 1254x1254 crop=[P: (338.0, 83.0), S: (584.0, 1087.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_03/customer_03_paying_coins_v1.png 1254x1254 crop=[P: (275.0, 77.0), S: (682.0, 1102.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_04/customer_04_accepting_bag_v1.png 1536x1024 crop=[P: (506.0, 79.0), S: (511.0, 898.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_04/customer_04_paying_coins_v1.png 1536x1024 crop=[P: (422.0, 61.0), S: (675.0, 927.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_05/customer_05_accepting_bag_v1.png 1535x1024 crop=[P: (534.0, 75.0), S: (461.0, 901.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_05/customer_05_paying_coins_v1.png 1535x1024 crop=[P: (440.0, 63.0), S: (627.0, 914.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_06/customer_06_accepting_bag_v1.png 1448x1086 crop=[P: (479.0, 45.0), S: (509.0, 1023.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_06/customer_06_paying_coins_v1.png 1536x1024 crop=[P: (404.0, 40.0), S: (682.0, 930.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_07/customer_07_accepting_bag_v1.png 1535x1024 crop=[P: (467.0, 85.0), S: (593.0, 906.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_07/customer_07_paying_coins_v1.png 1535x1024 crop=[P: (398.0, 79.0), S: (702.0, 884.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_08/customer_08_accepting_bag_v1.png 1535x1024 crop=[P: (578.0, 89.0), S: (375.0, 774.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_08/customer_08_paying_coins_v1.png 1536x1024 crop=[P: (423.0, 59.0), S: (657.0, 928.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_09/customer_09_accepting_bag_v1.png 1536x1024 crop=[P: (528.0, 60.0), S: (457.0, 947.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_09/customer_09_paying_coins_v1.png 1530x1028 crop=[P: (450.0, 67.0), S: (640.0, 910.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_10/customer_10_accepting_bag_v1.png 1536x1024 crop=[P: (529.0, 88.0), S: (469.0, 799.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_OK res://resources/art/customers/customer_10/customer_10_paying_coins_v1.png 1535x1024 crop=[P: (447.0, 87.0), S: (590.0, 845.0)] alpha=1
+CUSTOMER_SERVICE_TEXTURE_AUDIT png=20 cropped=20 failures=0

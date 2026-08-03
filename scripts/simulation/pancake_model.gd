@@ -28,8 +28,6 @@ const FIELD_NAMES: Array[StringName] = [
 const SCRAPER_FAN_ANGLES: Array[float] = [-0.55, -0.28, 0.0, 0.0, 0.0, 0.28, 0.55]
 const SCRAPER_PUSH_FRACTIONS: Array[float] = [0.78, 0.88, 0.42, 0.70, 1.0, 0.88, 0.78]
 const SCRAPER_PUSH_WEIGHTS: Array[float] = [0.10, 0.13, 0.12, 0.17, 0.25, 0.13, 0.10]
-const EGG_SPLAT_OFFSETS: Array[Vector2i] = [Vector2i.ZERO, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
-const EGG_SPLAT_WEIGHTS: Array[float] = [0.40, 0.15, 0.15, 0.15, 0.15]
 
 enum EggState {
 	NONE,
@@ -64,6 +62,13 @@ var _sauce_stroke_serial := 0
 var _sauce_sample_serial := 0
 var _sauce_previous_sample_serial := -1
 var _sauce_active_stroke_id := 0
+var _egg_source_stamp := PackedInt32Array()
+var _egg_sample_serial := 0
+var _egg_delta_stamp := PackedInt32Array()
+var _egg_white_deltas := PackedFloat32Array()
+var _egg_yolk_deltas := PackedFloat32Array()
+var _egg_cooked_mass_deltas := PackedFloat32Array()
+var _egg_delta_serial := 0
 
 
 func _init(size: int = 256, simulation_parameters: PancakeSimulationParameters = null) -> void:
@@ -88,6 +93,11 @@ func _allocate_fields() -> void:
 	egg_yolk.resize(cell_count)
 	egg_doneness.resize(cell_count)
 	_sauce_footprint_stamp.resize(cell_count)
+	_egg_source_stamp.resize(cell_count)
+	_egg_delta_stamp.resize(cell_count)
+	_egg_white_deltas.resize(cell_count)
+	_egg_yolk_deltas.resize(cell_count)
+	_egg_cooked_mass_deltas.resize(cell_count)
 
 
 func reset() -> void:
@@ -112,6 +122,13 @@ func reset() -> void:
 	_sauce_sample_serial = 0
 	_sauce_previous_sample_serial = -1
 	_sauce_active_stroke_id = 0
+	_egg_source_stamp.fill(-1)
+	_egg_sample_serial = 0
+	_egg_delta_stamp.fill(-1)
+	_egg_white_deltas.fill(0.0)
+	_egg_yolk_deltas.fill(0.0)
+	_egg_cooked_mass_deltas.fill(0.0)
+	_egg_delta_serial = 0
 	last_update_usec = Time.get_ticks_usec() - started
 	revision += 1
 	changed.emit()
@@ -339,7 +356,7 @@ func total_egg_amount() -> float:
 	return total
 
 
-func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float) -> Dictionary:
+func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, commit_change: bool = true) -> Dictionary:
 	var started := Time.get_ticks_usec()
 	if egg_state == EggState.NONE or is_flipped:
 		return {"changed_cells": 0, "moved_mass": 0.0, "yolk_broken": yolk_broken}
@@ -349,26 +366,29 @@ func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_
 	var radius := parameters.scraper_width * 0.5
 	var bar_half_thickness := parameters.spreader_bar_thickness * 0.5
 	var crossbar_direction := safe_direction.orthogonal()
-	var min_x := maxi(floori(center.x - radius), 0)
-	var max_x := mini(ceili(center.x + radius), grid_size - 1)
-	var min_y := maxi(floori(center.y - radius), 0)
-	var max_y := mini(ceili(center.y + radius), grid_size - 1)
 	var speed_factor := clampf(1.08 - maxf(speed_cells_per_second, 0.0) / 260.0, 0.32, 1.0)
-	var white_deltas: Dictionary = {}
-	var yolk_deltas: Dictionary = {}
-	var cooked_mass_deltas: Dictionary = {}
+	var affected_indices := PackedInt32Array()
 	var moved_mass := 0.0
-	for y in range(min_y, max_y + 1):
-		for x in range(min_x, max_x + 1):
-			var source_position := Vector2(x, y)
+	_egg_sample_serial += 1
+	_egg_delta_serial += 1
+	var crossbar_steps := ceili(radius)
+	var radial_steps := ceili(bar_half_thickness)
+	for crossbar_step in range(-crossbar_steps, crossbar_steps + 1):
+		# The crossbar is wider than one grid cell. Sampling every other cell through
+		# its thickness keeps continuous strokes responsive without changing the
+		# visible footprint or the mass-conserving destination fan.
+		for radial_step in range(-radial_steps, radial_steps + 1, 2):
+			var sample_position := center + crossbar_direction * float(crossbar_step) + safe_direction * float(radial_step)
+			var source_cell := Vector2i(roundi(sample_position.x), roundi(sample_position.y))
+			if not is_in_bounds(source_cell):
+				continue
+			var source_index := index_of(source_cell)
+			if _egg_source_stamp[source_index] == _egg_sample_serial:
+				continue
+			_egg_source_stamp[source_index] = _egg_sample_serial
+			var source_position := Vector2(source_cell)
 			if not is_inside_pan(source_position):
 				continue
-			var source_offset := source_position - center
-			var crossbar_distance := absf(source_offset.dot(crossbar_direction))
-			var radial_distance := absf(source_offset.dot(safe_direction))
-			if crossbar_distance > radius or radial_distance > bar_half_thickness:
-				continue
-			var source_index := y * grid_size + x
 			if coverage[source_index] <= 0.0 or damage[source_index] >= parameters.hole_damage_threshold:
 				continue
 			var source_white := egg_white[source_index]
@@ -376,8 +396,8 @@ func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_
 			var source_total := source_white + source_yolk
 			if source_total < parameters.egg_coverage_minimum:
 				continue
-			var crossbar_falloff := 1.0 - crossbar_distance / maxf(radius, 0.001)
-			var radial_falloff := 1.0 - radial_distance / maxf(bar_half_thickness, 0.001)
+			var crossbar_falloff := 1.0 - absf(float(crossbar_step)) / maxf(radius, 0.001)
+			var radial_falloff := 1.0 - absf(float(radial_step)) / maxf(bar_half_thickness, 0.001)
 			var liquid_factor := maxf(pow(1.0 - clampf(egg_doneness[source_index], 0.0, 1.0), 1.6), 0.08)
 			var transfer_factor := parameters.egg_spread_transfer_ratio * crossbar_falloff * radial_falloff * liquid_factor * speed_factor
 			var moved_white := source_white * transfer_factor
@@ -387,62 +407,78 @@ func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_
 			if moved <= 0.000001:
 				continue
 			var moved_cooked_mass := moved * egg_doneness[source_index]
-			white_deltas[source_index] = float(white_deltas.get(source_index, 0.0)) - moved_white
-			yolk_deltas[source_index] = float(yolk_deltas.get(source_index, 0.0)) - moved_yolk
-			cooked_mass_deltas[source_index] = float(cooked_mass_deltas.get(source_index, 0.0)) - moved_cooked_mass
+			if _egg_delta_stamp[source_index] != _egg_delta_serial:
+				_egg_delta_stamp[source_index] = _egg_delta_serial
+				_egg_white_deltas[source_index] = 0.0
+				_egg_yolk_deltas[source_index] = 0.0
+				_egg_cooked_mass_deltas[source_index] = 0.0
+				affected_indices.append(source_index)
+			_egg_white_deltas[source_index] -= moved_white
+			_egg_yolk_deltas[source_index] -= moved_yolk
+			_egg_cooked_mass_deltas[source_index] -= moved_cooked_mass
 			if moved_yolk > 0.000001:
 				yolk_broken = true
 			for band_index in SCRAPER_FAN_ANGLES.size():
 				var distance_scale := parameters.egg_spread_push_distance * SCRAPER_PUSH_FRACTIONS[band_index]
 				var fan_direction := safe_direction.rotated(SCRAPER_FAN_ANGLES[band_index])
-				var target_center := Vector2i(source_position + fan_direction * distance_scale)
-				var valid_splat_indices := PackedInt32Array()
-				var valid_splat_weights := PackedFloat32Array()
-				var valid_weight_total := 0.0
-				for splat_index in EGG_SPLAT_OFFSETS.size():
-					var target_position := target_center + EGG_SPLAT_OFFSETS[splat_index]
-					if not is_in_bounds(target_position) or not is_inside_pan(Vector2(target_position)):
-						continue
-					var target_index := index_of(target_position)
-					if coverage[target_index] <= 0.0 or damage[target_index] >= parameters.hole_damage_threshold:
-						continue
-					valid_splat_indices.append(target_index)
-					valid_splat_weights.append(EGG_SPLAT_WEIGHTS[splat_index])
-					valid_weight_total += EGG_SPLAT_WEIGHTS[splat_index]
-				if valid_splat_indices.is_empty():
+				var target_position := Vector2i(source_position + fan_direction * distance_scale)
+				if not is_in_bounds(target_position) or not is_inside_pan(Vector2(target_position)):
 					continue
-				var band_portion := SCRAPER_PUSH_WEIGHTS[band_index]
-				for splat_index in valid_splat_indices.size():
-					var target_index := valid_splat_indices[splat_index]
-					var normalized_splat_weight := valid_splat_weights[splat_index] / valid_weight_total
-					var portion := band_portion * normalized_splat_weight
-					white_deltas[target_index] = float(white_deltas.get(target_index, 0.0)) + moved_white * portion
-					yolk_deltas[target_index] = float(yolk_deltas.get(target_index, 0.0)) + moved_yolk * portion
-					cooked_mass_deltas[target_index] = float(cooked_mass_deltas.get(target_index, 0.0)) + moved_cooked_mass * portion
+				var target_index := index_of(target_position)
+				if coverage[target_index] <= 0.0 or damage[target_index] >= parameters.hole_damage_threshold:
+					continue
+				var portion := SCRAPER_PUSH_WEIGHTS[band_index]
+				if _egg_delta_stamp[target_index] != _egg_delta_serial:
+					_egg_delta_stamp[target_index] = _egg_delta_serial
+					_egg_white_deltas[target_index] = 0.0
+					_egg_yolk_deltas[target_index] = 0.0
+					_egg_cooked_mass_deltas[target_index] = 0.0
+					affected_indices.append(target_index)
+				_egg_white_deltas[target_index] += moved_white * portion
+				_egg_yolk_deltas[target_index] += moved_yolk * portion
+				_egg_cooked_mass_deltas[target_index] += moved_cooked_mass * portion
 			moved_mass += moved
-	var affected_indices: Array = white_deltas.keys()
-	for index_variant in yolk_deltas.keys():
-		if not affected_indices.has(index_variant):
-			affected_indices.append(index_variant)
-	affected_indices.sort()
-	for index_variant in affected_indices:
-		var index: int = index_variant
+	for index in affected_indices:
 		var old_total := egg_white[index] + egg_yolk[index]
 		var old_cooked_mass := old_total * egg_doneness[index]
-		egg_white[index] = clampf(egg_white[index] + float(white_deltas.get(index, 0.0)), 0.0, parameters.egg_maximum_concentration)
-		egg_yolk[index] = clampf(egg_yolk[index] + float(yolk_deltas.get(index, 0.0)), 0.0, parameters.egg_maximum_concentration)
+		egg_white[index] = clampf(egg_white[index] + _egg_white_deltas[index], 0.0, parameters.egg_maximum_concentration)
+		egg_yolk[index] = clampf(egg_yolk[index] + _egg_yolk_deltas[index], 0.0, parameters.egg_maximum_concentration)
 		var new_total := egg_white[index] + egg_yolk[index]
 		if new_total <= 0.000001:
 			egg_doneness[index] = 0.0
 		else:
-			var new_cooked_mass := clampf(old_cooked_mass + float(cooked_mass_deltas.get(index, 0.0)), 0.0, new_total)
+			var new_cooked_mass := clampf(old_cooked_mass + _egg_cooked_mass_deltas[index], 0.0, new_total)
 			egg_doneness[index] = new_cooked_mass / new_total
 	if moved_mass > 0.0 and egg_state != EggState.SET:
 		egg_state = EggState.SPREADING
 	last_update_usec = Time.get_ticks_usec() - started
-	_commit_change(affected_indices.size())
+	if commit_change:
+		_commit_change(affected_indices.size())
 	return {
 		"changed_cells": affected_indices.size(),
+		"moved_mass": moved_mass,
+		"yolk_broken": yolk_broken,
+	}
+
+
+func apply_egg_spreader_path(samples: PackedVector2Array, speed_cells_per_second: float) -> Dictionary:
+	var started := Time.get_ticks_usec()
+	var changed_cells := 0
+	var moved_mass := 0.0
+	var center := Vector2(grid_size - 1, grid_size - 1) * 0.5
+	for sample in samples:
+		var offset := sample - center
+		var polar_offset := Vector2(offset.x, offset.y / maxf(parameters.pan_height_ratio, 0.01))
+		if polar_offset.length() <= 1.0:
+			continue
+		var result := apply_egg_spreader_sample(sample, polar_offset.normalized(), speed_cells_per_second, false)
+		changed_cells += int(result.changed_cells)
+		moved_mass += float(result.moved_mass)
+	if changed_cells > 0:
+		_commit_change(changed_cells)
+	last_update_usec = Time.get_ticks_usec() - started
+	return {
+		"changed_cells": changed_cells,
 		"moved_mass": moved_mass,
 		"yolk_broken": yolk_broken,
 	}
@@ -518,8 +554,12 @@ func is_egg_spread_enough() -> bool:
 	return has_egg() and yolk_broken and float(summary.coverage_ratio) >= parameters.egg_minimum_spread_coverage
 
 
-func flip() -> void:
+func flip(complete_back_side_immediately: bool = false) -> void:
 	is_flipped = not is_flipped
+	if complete_back_side_immediately:
+		for index in cell_count:
+			if coverage[index] > 0.0:
+				back_doneness[index] = maxf(back_doneness[index], doneness[index])
 	revision += 1
 	changed.emit()
 

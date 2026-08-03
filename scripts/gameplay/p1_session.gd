@@ -11,6 +11,8 @@ enum Phase {
 	FOLD,
 	PACKAGE,
 	READY_TO_SERVE,
+	HANDOFF,
+	PAYMENT,
 	RESULT,
 }
 
@@ -18,7 +20,7 @@ var order: Dictionary = {}
 var phase: Phase = Phase.SPREAD
 var elapsed_seconds := 0.0
 var patience_seconds := 72.0
-var heat_level := 0.65
+var heat_level := 0.50
 var result: Dictionary = {}
 var payment_ready := false
 
@@ -28,14 +30,14 @@ func start(next_order: Dictionary) -> void:
 	phase = Phase.SPREAD
 	elapsed_seconds = 0.0
 	patience_seconds = float(order.get("time_limit", 72.0))
-	heat_level = 0.65
+	heat_level = 0.50
 	result.clear()
 	payment_ready = false
 	changed.emit()
 
 
 func advance_time(delta: float) -> void:
-	if phase == Phase.RESULT:
+	if phase in [Phase.HANDOFF, Phase.PAYMENT, Phase.RESULT]:
 		return
 	var safe_delta := maxf(delta, 0.0)
 	elapsed_seconds += safe_delta
@@ -71,17 +73,17 @@ func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictiona
 		}
 	if model.mean_side_doneness(false) < 0.30:
 		return {"success": false, "reason": "底面还太生，颜色转金黄后再翻"}
-	model.flip()
-	phase = Phase.SECOND_SIDE
+	model.flip(true)
+	phase = Phase.SAUCE_AND_FILLINGS
 	changed.emit()
 	return {"success": true}
 
 
 func finish_cooking(model: PancakeModel) -> Dictionary:
+	if phase == Phase.SAUCE_AND_FILLINGS:
+		return {"success": true}
 	if phase != Phase.SECOND_SIDE:
 		return {"success": false, "reason": "需要先完成翻面"}
-	if model.mean_side_doneness(true) < 0.28:
-		return {"success": false, "reason": "第二面还没熟，继续观察颜色"}
 	phase = Phase.SAUCE_AND_FILLINGS
 	changed.emit()
 	return {"success": true}
@@ -111,10 +113,26 @@ func mark_packaged() -> Dictionary:
 	return {"success": true}
 
 
-func finish(score_result: Dictionary) -> Dictionary:
+func begin_handoff(score_result: Dictionary) -> Dictionary:
 	if phase != Phase.READY_TO_SERVE:
-		return {"success": false, "reason": "成品尚未完成包装"}
+		return {"success": false, "reason": "成品尚未完成包装，不能递给顾客"}
 	result = score_result.duplicate(true)
+	phase = Phase.HANDOFF
+	changed.emit()
+	return {"success": true}
+
+
+func begin_payment() -> Dictionary:
+	if phase != Phase.HANDOFF:
+		return {"success": false, "reason": "顾客尚未接到餐品"}
+	phase = Phase.PAYMENT
+	changed.emit()
+	return {"success": true}
+
+
+func finish_payment() -> Dictionary:
+	if phase != Phase.PAYMENT:
+		return {"success": false, "reason": "顾客尚未完成付款"}
 	phase = Phase.RESULT
 	payment_ready = true
 	changed.emit()
@@ -128,7 +146,7 @@ func phase_label() -> String:
 		Phase.FIRST_SIDE:
 			return "打蛋、摊蛋并观察第一面火候"
 		Phase.SECOND_SIDE:
-			return "观察第二面火候"
+			return "翻面完成，准备刷酱"
 		Phase.SAUCE_AND_FILLINGS:
 			return "刷酱并摆放配料"
 		Phase.FOLD:
@@ -136,7 +154,11 @@ func phase_label() -> String:
 		Phase.PACKAGE:
 			return "选择包装"
 		Phase.READY_TO_SERVE:
-			return "可以出餐"
+			return "点击成品递给顾客"
+		Phase.HANDOFF:
+			return "顾客正在接餐"
+		Phase.PAYMENT:
+			return "顾客正在付款"
 		Phase.RESULT:
-			return "顾客评价"
+			return "本单已结算"
 	return "制作中"

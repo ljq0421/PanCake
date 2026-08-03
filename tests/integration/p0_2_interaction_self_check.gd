@@ -54,27 +54,27 @@ func _run() -> void:
 	workstation._update_spreader_speed(8.0, 0.5)
 	_check(workstation._spreader_speed_label() == "快", "sustained fast circling reaches the thick-pancake band")
 	workstation._spreader_angle_initialized = false
-	surface.pointer_local_position = Vector2(400, 300)
+	var pan_center := surface.size * 0.5
+	surface.pointer_local_position = pan_center + Vector2(100, 0)
 	workstation._update_spreader_artwork(0.0)
 	var rotation_before_dead_zone := workstation.spreader_artwork.rotation
-	surface.pointer_local_position = Vector2(300, 300) + Vector2.from_angle(0.08) * 100.0
+	surface.pointer_local_position = pan_center + Vector2.from_angle(0.08) * 100.0
 	workstation._update_spreader_artwork(1.0 / 60.0)
 	_check(is_equal_approx(workstation.spreader_artwork.rotation, rotation_before_dead_zone), "small pointer-angle jitter stays inside the T-spreader rotation dead zone")
 	var rotation_before := workstation.spreader_artwork.rotation
-	surface.pointer_local_position = Vector2(300, 100)
+	surface.pointer_local_position = pan_center + Vector2(0, -200)
 	workstation._update_spreader_artwork(1.0 / 60.0)
 	var rotation_step := absf(wrapf(workstation.spreader_artwork.rotation - rotation_before, -PI, PI))
 	_check(rotation_step <= workstation.parameters.spreader_max_turn_rate / 60.0 + 0.0001, "T-spreader turn rate is capped instead of snapping to the pointer radius")
-	_press_surface(surface, Vector2(320, 300))
+	_press_surface(surface, pan_center + Vector2(20, 0))
 	for frame in range(1, 61):
-		var position := Vector2(320, 300).lerp(Vector2(430, 300), float(frame) / 60.0)
+		var position := (pan_center + Vector2(20, 0)).lerp(pan_center + Vector2(130, 0), float(frame) / 60.0)
 		_move_surface(surface, position)
 		workstation._process(1.0 / 60.0)
-	_release_surface(surface, Vector2(430, 300))
+	_release_surface(surface, pan_center + Vector2(130, 0))
 	var straight_snapshot := workstation.pancake_model.snapshot()
 	_check(_max_difference(poured_snapshot.thickness, straight_snapshot.thickness) < 0.0001, "straight outward dragging does not replace the required circular spreading motion")
 
-	var pan_center := Vector2(300, 300)
 	_press_surface(surface, pan_center + Vector2(40, 0))
 	for frame in range(1, 81):
 		var angle := float(frame) * 0.012
@@ -98,10 +98,11 @@ func _run() -> void:
 	_release_surface(surface, surface.pointer_local_position)
 	var scraped_snapshot := workstation.pancake_model.snapshot()
 	_check(_max_difference(straight_snapshot.thickness, scraped_snapshot.thickness) > 0.0001, "center-outward circular motion changes the pancake thickness distribution")
-	_check(surface.cursor_is_t_spreader, "active spreading tool keeps the T-spreader cursor mode")
+	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "releasing a sufficiently spread pancake automatically advances without a confirm button")
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE and not surface.cursor_is_t_spreader, "automatic spread completion returns the T-spreader")
 
 	_cancel_surface(surface, surface.pointer_local_position)
-	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE, "right mouse returns current tool")
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE, "right mouse remains safe after automatic tool return")
 	_check(not workstation.spreader_artwork.visible, "returning the spreader hides its artwork")
 	_check(not surface.pointer_pressed, "release/cancel leaves no stuck pointer state")
 	_check(workstation.pancake_model.validate().is_empty(), "scene interaction leaves model fields valid")

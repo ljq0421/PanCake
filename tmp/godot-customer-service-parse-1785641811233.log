@@ -1,0 +1,40 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+ERROR: Node not found: "%Workstation" (relative to "/root/Main").
+   at: get_node (scene/main/node.cpp:1975)
+   GDScript backtrace (most recent call first):
+       [0] @implicit_ready (res://scripts/main/main.gd:7)
+       [1] _run (res://tests/integration/p0_5_interaction_self_check.gd:15)
+SCRIPT ERROR: Invalid access to property or key 'daily_bill_closed' on a base object of type 'null instance'.
+   at: _ready (res://scripts/main/main.gd:15)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/main/main.gd:15)
+       [1] _run (res://tests/integration/p0_5_interaction_self_check.gd:15)
+PASS: workstation scene owns stable fold controls and overlay
+PASS: fold overlay textures both the pancake top and revealed underside
+PASS: fold overlay owns dedicated paper-bag, reinforced-sleeve, and tray artwork
+PASS: workstation scene owns both rescue choices
+PASS: fold button selects the continuous fold tool
+PASS: fold tool exposes visible fold lines and edge handles
+PASS: mouse movement deforms the flap before release
+PASS: dragging the left edge over its line commits the left fold
+PASS: committed left fold makes the original pancake region transparent instead of painting a fake griddle color
+PASS: starting a fold locks earlier preparation tools
+PASS: dragging the right edge over its line commits the right fold
+PASS: completed non-severe folds expose both safe completion choices
+PASS: paper sleeve completes the real workstation path
+PASS: reinforced sleeve state renders its dedicated finished-product artwork
+PASS: completed packaging hides the old folded pancake below the serving artwork
+[ProjectCake][simulation] Pancake grid reset in 84 us
+PASS: a hole in the dragged region creates a severe workstation fold failure
+PASS: severe failure disables sleeve but immediately enables tray
+PASS: tray rescues a severe failure without a dead end
+PASS: tray rescue state renders its dedicated finished-product artwork
+[ProjectCake][simulation] Pancake grid reset in 173 us
+PASS: reset restores the complete pancake surface mask
+PASS: reset restores the unpackaged pancake surface
+PASS: R/reset clears folding, packaging, pointer, and tool state
+P0.5 interaction self-check PASS

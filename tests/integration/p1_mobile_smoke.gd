@@ -8,6 +8,9 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var game_session := root.get_node_or_null("GameSession")
+	if game_session != null:
+		game_session.call("begin_new_game")
 	var main := MAIN_SCENE.instantiate()
 	root.add_child(main)
 	await process_frame
@@ -36,6 +39,23 @@ func _run() -> void:
 	_fill_complete_product(workstation)
 	workstation.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	workstation.p1_session.changed.emit()
+	workstation.pancake_model.sauce_concentration.fill(0.0)
+	workstation.sauce_tool_states[OrderService.SAUCE_SWEET].add(0.46)
+	workstation.sauce_tool_states[OrderService.SAUCE_CHILI].add(0.28)
+	workstation._refresh_sauce_load_display()
+	workstation.pancake_surface.force_texture_upload()
+	await process_frame
+	await process_frame
+	var sauce_blob_path := capture_directory.path_join("p1_sauce_blob_latest.png")
+	if root.get_texture().get_image().save_png(sauce_blob_path) != OK:
+		_fail("Failed to save P1 sauce-blob capture")
+		return
+	for state in workstation.sauce_tool_states.values():
+		state.reset()
+	workstation._refresh_sauce_load_display()
+	workstation.pancake_model.sauce_concentration.fill(0.35)
+	workstation.pancake_model.revision += 1
+	workstation.pancake_model.changed.emit()
 	workstation.pancake_surface.force_texture_upload()
 	await process_frame
 	await process_frame
@@ -50,12 +70,33 @@ func _run() -> void:
 	workstation.fold_model.begin_drag(Vector2(116, 64))
 	workstation.fold_model.release_drag(Vector2(58, 64))
 	workstation.bag_button.pressed.emit()
-	workstation.step_action_button.pressed.emit()
-	await process_frame
-	await process_frame
+	await create_timer(0.32).timeout
+	var paper_bag_path := capture_directory.path_join("p1_paper_bag_latest.png")
+	if root.get_texture().get_image().save_png(paper_bag_path) != OK:
+		_fail("Failed to save P1 paper-bag capture")
+		return
+	workstation.serve_product_button.pressed.emit()
+	await create_timer(0.55).timeout
+	var accepting_path := capture_directory.path_join("p1_customer_accepting_bag_latest.png")
+	if root.get_texture().get_image().save_png(accepting_path) != OK:
+		_fail("Failed to save P1 customer-accepting capture")
+		return
+	await create_timer(0.58).timeout
+	var paying_path := capture_directory.path_join("p1_customer_paying_latest.png")
+	if root.get_texture().get_image().save_png(paying_path) != OK:
+		_fail("Failed to save P1 customer-paying capture")
+		return
+	await create_timer(0.58).timeout
 	var result_path := capture_directory.path_join("p1_result_latest.png")
 	if root.get_texture().get_image().save_png(result_path) != OK:
 		_fail("Failed to save P1 result capture")
+		return
+	workstation.end_business_day()
+	await process_frame
+	await process_frame
+	var daily_bill_path := capture_directory.path_join("p1_daily_bill_latest.png")
+	if root.get_texture().get_image().save_png(daily_bill_path) != OK:
+		_fail("Failed to save P1 daily-bill capture")
 		return
 
 	var frame_msec := PackedFloat32Array()
@@ -71,7 +112,7 @@ func _run() -> void:
 		_fail("P1 rendered vertical slice missed 60 FPS target: p95 %.2f ms" % p95)
 		return
 	print("Mobile P1 vertical-slice smoke-check PASS (render p95 %.2f ms)" % p95)
-	print("Validation captures: %s, %s, %s, %s" % [order_path, egg_spread_path, production_path, result_path])
+	print("Validation captures: %s, %s, %s, %s, %s, %s, %s, %s" % [order_path, egg_spread_path, sauce_blob_path, production_path, accepting_path, paying_path, result_path, daily_bill_path])
 	main.queue_free()
 	await process_frame
 	await process_frame

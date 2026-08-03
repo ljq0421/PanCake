@@ -1,0 +1,35 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_01/customer_01_neutral_v1.png 1427x1102 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_01/customer_01_impatient_v1.png 1427x1102 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_01/customer_01_satisfied_v1.png 1427x1102 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_02/customer_02_neutral_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_02/customer_02_impatient_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_02/customer_02_satisfied_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_03/customer_03_neutral_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_03/customer_03_impatient_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_03/customer_03_satisfied_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_04/customer_04_neutral_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_04/customer_04_impatient_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_04/customer_04_satisfied_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_05/customer_05_neutral_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_05/customer_05_impatient_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_05/customer_05_satisfied_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_06/customer_06_neutral_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_06/customer_06_impatient_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_06/customer_06_satisfied_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_07/customer_07_neutral_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_07/customer_07_impatient_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_07/customer_07_satisfied_v1.png 1535x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_08/customer_08_neutral_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_08/customer_08_impatient_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_08/customer_08_satisfied_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_09/customer_09_neutral_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_09/customer_09_impatient_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_09/customer_09_satisfied_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_10/customer_10_neutral_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_10/customer_10_impatient_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_OK res://resources/art/customers/customer_10/customer_10_satisfied_v1.png 1536x1024 format=5 alpha=2
+CUSTOMER_TEXTURE_AUDIT loaded=30 failures=0

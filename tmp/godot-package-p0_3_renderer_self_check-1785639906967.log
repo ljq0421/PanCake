@@ -1,0 +1,51 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: No loader found for resource: res://resources/art/workstation/packaging/paper_bag_package_v1.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+ERROR: No loader found for resource: res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+ERROR: No loader found for resource: res://resources/art/workstation/packaging/serving_tray_package_v1.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+ERROR: res://scenes/gameplay/workstation.tscn:1046 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/packaging/paper_bag_package_v1.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/gameplay/workstation.tscn:1047 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/gameplay/workstation.tscn:1048 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/packaging/serving_tray_package_v1.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+PASS: scene owns a stable PancakeVisual node
+PASS: PancakeVisual owns the P0.3 shader material
+PASS: shader uses the approved raw pancake texture candidate
+PASS: shader uses the approved cooked pancake texture candidate
+PASS: shader uses the confirmed charred pancake texture candidate
+PASS: shader uses the approved pancake edge texture candidate
+PASS: spread egg uses the dedicated hand-drawn material texture
+PASS: shader mask uses the shared griddle aspect ratio
+PASS: renderer owns reusable pancake, damage, sauce and egg data textures
+PASS: field texture uses configured render size
+PASS: damage texture uses configured render size
+PASS: sauce texture uses configured render size
+PASS: egg texture uses configured render size
+PASS: coverage maps to the field texture red channel
+PASS: normalized thickness maps to the field texture green channel
+PASS: wetness maps to the field texture blue channel
+PASS: doneness maps to the field texture alpha channel
+PASS: damage maps to the R8 damage texture
+PASS: damage upload uses a compact single-channel texture
+PASS: sauce concentration maps to the R8 sauce texture
+PASS: sauce upload uses a compact single-channel texture
+PASS: egg white and yolk map to independent texture channels
+PASS: egg doneness maps to the egg texture blue channel
+PASS: renderer does not upload before the configured interval
+PASS: renderer uploads after the configured interval
+PASS: steady field uploads reuse one GPU texture
+PASS: steady damage uploads reuse one GPU texture
+PASS: steady sauce uploads reuse one GPU texture
+PASS: steady egg uploads reuse one GPU texture
+PASS: renderer records the current model revision
+PASS: debug view switches the same shader to thickness data
+PASS: appearance view restores shader composition
+PASS: render texture size is runtime-configurable
+P0.3 renderer self-check PASS

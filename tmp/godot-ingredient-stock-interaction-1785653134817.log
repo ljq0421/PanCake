@@ -1,0 +1,26 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+[ProjectCake][bootstrap] M0 main scene started with Mobile renderer
+PASS: new game starts the egg tray at the sixth image state
+PASS: egg tray owns six scene-backed stock textures
+PASS: full tray renders the sixth stock image without a number
+PASS: four matching physical restock controls are stable scene content
+PASS: ingredient rack uses pictures and words instead of numeric stock labels
+PASS: focused stock test reaches the guarded egg phase
+PASS: failed off-griddle placement still consumes one egg
+PASS: failed placement does not create pancake ingredient data
+PASS: failed placement immediately switches to the fifth stock image
+PASS: successful placement also consumes exactly one egg
+PASS: successful placement still creates ingredient business data
+[ProjectCake][simulation] Pancake grid reset in 74 us
+PASS: resetting a failed pancake does not refund consumed ingredients
+PASS: empty stock shows the word empty and no numeric counter
+PASS: empty tray enables its matching restock container
+PASS: clicking the egg carton refills the tray
+PASS: restock restores the sixth image state
+PASS: full tray returns the matching restock container to its idle state
+PASS: restocked quantity persists through the shared save service
+INGREDIENT_STOCK_INTERACTION_SELF_CHECK_PASS

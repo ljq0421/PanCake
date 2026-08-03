@@ -1,0 +1,22 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+PASS: egg starts with six visual stock states
+PASS: baocui starts with six visual stock states
+PASS: ham_sausage starts with six visual stock states
+PASS: scallion starts with six visual stock states
+PASS: available egg stock can be consumed
+PASS: available egg stock can be consumed
+PASS: available egg stock can be consumed
+PASS: available egg stock can be consumed
+PASS: available egg stock can be consumed
+PASS: available egg stock can be consumed
+PASS: six attempts empty the egg tray
+PASS: empty stock cannot become negative
+PASS: matching restock fills the tray
+PASS: loaded stock clamps below zero
+PASS: loaded stock preserves valid remaining quantity
+PASS: loaded stock clamps above capacity
+PASS: missing old-save stock defaults to full
+INGREDIENT_STOCK_SELF_CHECK_PASS

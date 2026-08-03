@@ -21,6 +21,13 @@ func _run() -> void:
 	_fill_uniform_pancake(workstation.pancake_model)
 
 	_check(workstation.fold_button != null and workstation.fold_overlay != null, "workstation scene owns stable fold controls and overlay")
+	_check(workstation.fold_overlay.pancake_front_texture != null and workstation.fold_overlay.pancake_back_texture != null, "fold overlay textures both the pancake top and revealed underside")
+	_check(
+		workstation.fold_overlay.paper_bag_package_texture != null
+		and workstation.fold_overlay.reinforced_sleeve_package_texture != null
+		and workstation.fold_overlay.serving_tray_package_texture != null,
+		"fold overlay owns dedicated paper-bag, reinforced-sleeve, and tray artwork"
+	)
 	_check(workstation.paper_sleeve_button != null and workstation.tray_button != null, "workstation scene owns both rescue choices")
 	workstation.fold_button.pressed.emit()
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.FOLD, "fold button selects the continuous fold tool")
@@ -30,10 +37,17 @@ func _run() -> void:
 	_move_surface(surface, Vector2(180, 300))
 	workstation._process(1.0 / 60.0)
 	_check(float(workstation.fold_model.drag_progress) > 0.0 and workstation.fold_model.completed_fold_count() == 0, "mouse movement deforms the flap before release")
+	var arc_profile: PackedVector2Array = workstation.fold_overlay.get_fold_arc_profile(FOLD_MODEL_SCRIPT.REGION_LEFT, 0.55)
+	_check(arc_profile.size() > 20 and _maximum_profile_bend(arc_profile) > 8.0, "dragged flap uses a tessellated curved profile instead of one flat reflected plane")
 	_move_surface(surface, Vector2(300, 300))
 	workstation._process(1.0 / 60.0)
 	_release_surface(surface, Vector2(300, 300))
 	_check(workstation.fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT), "dragging the left edge over its line commits the left fold")
+	_check(workstation.fold_overlay.is_fold_animation_active(), "committing a fold starts the visible completion and soft-settle animation")
+	await create_timer(0.65).timeout
+	_check(not workstation.fold_overlay.is_fold_animation_active(), "fold completion animation settles back to a stable rendered state")
+	var surface_material := workstation.pancake_surface.pancake_visual.material as ShaderMaterial
+	_check(is_equal_approx(float(surface_material.get_shader_parameter(&"fold_left_progress")), 1.0), "committed left fold makes the original pancake region transparent instead of painting a fake griddle color")
 	_check(workstation.scraper_button.disabled and workstation.sauce_brush_button.disabled, "starting a fold locks earlier preparation tools")
 
 	_press_surface(surface, Vector2(490, 300))
@@ -44,6 +58,11 @@ func _run() -> void:
 	_check(not workstation.paper_sleeve_button.disabled and not workstation.tray_button.disabled, "completed non-severe folds expose both safe completion choices")
 	workstation.paper_sleeve_button.pressed.emit()
 	_check(workstation.fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_SLEEVE, "paper sleeve completes the real workstation path")
+	_check(
+		workstation.fold_overlay.current_package_texture().resource_path.ends_with("reinforced_paper_sleeve_package_v1.png"),
+		"reinforced sleeve state renders its dedicated finished-product artwork"
+	)
+	_check(is_equal_approx(float(surface_material.get_shader_parameter(&"package_hidden")), 1.0), "completed packaging hides the old folded pancake below the serving artwork")
 
 	workstation.reset_pancake()
 	_fill_uniform_pancake(workstation.pancake_model)
@@ -54,7 +73,13 @@ func _run() -> void:
 	_check(workstation.paper_sleeve_button.disabled and not workstation.tray_button.disabled, "severe failure disables sleeve but immediately enables tray")
 	workstation.tray_button.pressed.emit()
 	_check(workstation.fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_TRAY, "tray rescues a severe failure without a dead end")
+	_check(
+		workstation.fold_overlay.current_package_texture().resource_path.ends_with("serving_tray_package_v1.png"),
+		"tray rescue state renders its dedicated finished-product artwork"
+	)
 	workstation.reset_pancake()
+	_check(is_zero_approx(float(surface_material.get_shader_parameter(&"fold_left_progress"))) and is_zero_approx(float(surface_material.get_shader_parameter(&"fold_right_progress"))), "reset restores the complete pancake surface mask")
+	_check(is_zero_approx(float(surface_material.get_shader_parameter(&"package_hidden"))), "reset restores the unpackaged pancake surface")
 	_check(workstation.fold_model.completed_fold_count() == 0 and workstation.tool_controller.current_tool == ToolController.Tool.NONE, "R/reset clears folding, packaging, pointer, and tool state")
 
 	main.queue_free()
@@ -115,6 +140,22 @@ func _release_surface(surface: PancakeHeatmap, position: Vector2) -> void:
 	event.pressed = false
 	event.position = position
 	surface._gui_input(event)
+
+
+func _maximum_profile_bend(profile: PackedVector2Array) -> float:
+	if profile.size() < 3:
+		return 0.0
+	var chord_start := profile[0]
+	var chord_end := profile[profile.size() - 1]
+	var chord := chord_end - chord_start
+	var chord_length := chord.length()
+	if chord_length <= 0.001:
+		return 0.0
+	var maximum := 0.0
+	for point in profile:
+		var distance := absf(chord.cross(point - chord_start)) / chord_length
+		maximum = maxf(maximum, distance)
+	return maximum
 
 
 func _check(condition: bool, message: String) -> void:

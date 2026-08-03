@@ -1,0 +1,53 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+[ProjectCake][bootstrap] M0 main scene started with Mobile renderer
+PASS: pausing the scene tree freezes cooking time and customer patience
+PASS: P1 customer, order and patience nodes are stable scene content
+PASS: cropped customer artwork keeps its original proportions
+PASS: cropped customer artwork reaches the reference counter edge
+PASS: griddle container keeps the reference slot gap without exceeding the worktop
+PASS: P1 ingredient rack and pancake layer are stable scene content
+PASS: P1 owns two-sauce selection and fire control
+PASS: sweet and chili bottle hit regions do not overlap
+PASS: P1 renderer uploads the independent chili-sauce field
+PASS: first customer receives a concrete verifiable order
+PASS: the player is not asked to confirm a sufficiently spread pancake
+PASS: automatic pour is reachable through the overlapping tool racks
+PASS: the T-shaped spreader can be selected
+PASS: releasing a sufficiently spread pancake automatically enters first-side cooking
+PASS: dragging from the ingredient rack onto the real pancake surface places business data
+PASS: egg drop creates the liquid simulation and visible raw-egg landing state
+PASS: egg drop automatically selects the existing T-shaped spreader
+PASS: flip remains blocked until the egg has actually been spread
+PASS: real workstation spread samples break the yolk and replace the landing sprite with the grid layer
+PASS: continuous T-spreader input reaches the model-backed egg coverage gate
+PASS: renderer uploads the spread egg field
+PASS: step action performs the guarded real flip path
+PASS: both sauce bottles respond during the cooked second-side stage
+PASS: clicking a sauce bottle completes a ready second side without another confirmation click
+PASS: holding the chili bottle creates a visible chili blob on the pancake
+PASS: sauce and filling time no longer burns the finished pancake
+PASS: sweet and chili squeeze amounts remain independent
+PASS: the sauce brush consumes and spreads the squeezed sweet sauce
+PASS: all filling controls can place their ingredients after the filling phase unlocks
+PASS: step action enters the continuous folding path
+PASS: the fold spatula can be selected when folding is available
+PASS: intact folds unlock normal packaging
+PASS: paper bag completes packaging without a rescue penalty
+PASS: paper-bag completion renders its dedicated finished-product artwork
+WARNING: Could not write ProjectCake save data
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _write_save (res://scripts/services/game_session_store.gd:115)
+       [1] record_order_completed (res://scripts/services/game_session_store.gd:59)
+       [2] _serve_order (res://scripts/gameplay/workstation.gd:964)
+       [3] _advance_p1_step (res://scripts/gameplay/workstation.gd:856)
+       [4] _run (res://tests/integration/p1_interaction_self_check.gd:150)
+PASS: serve action opens the model-backed evaluation result
+PASS: result includes visible payment feedback and all runtime score dimensions
+[ProjectCake][simulation] Pancake grid reset in 78 us
+PASS: collecting payment resets production and advances to the next order
+P1 interaction self-check PASS

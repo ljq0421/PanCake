@@ -10,10 +10,16 @@ uniform sampler2D raw_texture : repeat_enable, filter_linear;
 uniform sampler2D cooked_texture : repeat_enable, filter_linear;
 uniform sampler2D charred_texture : repeat_enable, filter_linear;
 uniform sampler2D edge_texture : repeat_enable, filter_linear;
+uniform sampler2D egg_surface_texture : repeat_enable, filter_linear;
 uniform sampler2D sweet_sauce_texture : repeat_enable, filter_linear;
 uniform sampler2D chili_sauce_texture : repeat_enable, filter_linear;
 uniform vec2 field_texel_size = vec2(0.0078125);
 uniform float pan_height_ratio = 0.694;
+uniform float fold_left_line_ratio = 0.38;
+uniform float fold_right_line_ratio = 0.62;
+uniform float fold_left_progress = 0.0;
+uniform float fold_right_progress = 0.0;
+uniform float package_hidden = 0.0;
 uniform int view_mode = 0;
 
 vec3 thickness_heat(float value) {
@@ -87,13 +93,28 @@ void fragment() {
 		pancake_color *= mix(0.86, 1.08, clamp(thickness * 1.25, 0.0, 1.0));
 		pancake_color = mix(pancake_color, pancake_color * mix(0.62, 0.82, edge_detail), edge * 0.72);
 		pancake_color = mix(pancake_color, vec3(0.30, 0.055, 0.025), damage * 0.78);
+		vec4 egg_left = texture(egg_texture, UV - vec2(field_texel_size.x * 2.0, 0.0));
+		vec4 egg_right = texture(egg_texture, UV + vec2(field_texel_size.x * 2.0, 0.0));
+		vec4 egg_up = texture(egg_texture, UV - vec2(0.0, field_texel_size.y * 2.0));
+		vec4 egg_down = texture(egg_texture, UV + vec2(0.0, field_texel_size.y * 2.0));
+		float egg_neighbor_amount = max(max(egg_left.a, egg_right.a), max(egg_up.a, egg_down.a));
+		float egg_visual_amount = max(egg_fields.a, egg_neighbor_amount * 0.72);
 		float egg_total = egg_fields.r + egg_fields.g;
 		float egg_white_ratio = egg_fields.r / max(egg_total, 0.001);
 		vec3 raw_egg_color = mix(vec3(1.0, 0.53, 0.02), vec3(1.0, 0.95, 0.73), egg_white_ratio);
 		vec3 set_egg_color = mix(vec3(0.94, 0.39, 0.015), vec3(1.0, 0.88, 0.57), egg_white_ratio);
 		vec3 egg_color = mix(raw_egg_color, set_egg_color, smoothstep(0.18, 0.78, egg_fields.b));
-		float egg_visibility = smoothstep(0.001, 0.040, egg_fields.a) * coverage;
+		vec3 egg_material = texture(egg_surface_texture, detail_uv * 1.18 + vec2(0.07, 0.03)).rgb;
+		float egg_material_warmth = clamp(egg_material.r - egg_material.b, 0.0, 1.0);
+		float yolk_streak = smoothstep(0.07, 0.19, egg_material_warmth);
+		float white_gloss = smoothstep(0.86, 0.99, min(egg_material.g, egg_material.b));
+		vec3 egg_material_boosted = mix(vec3(1.0, 0.92, 0.67), vec3(1.0, 0.58, 0.035), yolk_streak * 0.68);
+		egg_material_boosted = mix(egg_material_boosted, vec3(1.0, 0.98, 0.84), white_gloss * 0.42);
+		egg_color = mix(egg_color, egg_material_boosted, 0.88);
+		float egg_visibility = smoothstep(0.0005, 0.022, egg_visual_amount) * coverage;
 		float egg_opacity = mix(0.64, 0.94, egg_fields.b);
+		float egg_edge = clamp((egg_neighbor_amount - egg_fields.a) * 5.0, 0.0, 1.0);
+		egg_color = mix(egg_color, vec3(1.0, 0.96, 0.77), egg_edge * 0.32);
 		pancake_color = mix(pancake_color, egg_color, egg_visibility * egg_opacity);
 		float sauce_visibility = smoothstep(0.015, 0.32, sauce);
 		vec3 sweet_color = texture(sweet_sauce_texture, detail_uv).rgb;
@@ -104,6 +125,14 @@ void fragment() {
 
 		float alpha = smoothstep(0.02, 0.32, coverage) * pan_mask;
 		alpha *= 1.0 - smoothstep(0.91, 1.0, damage);
+		float left_fold_source = 1.0 - step(fold_left_line_ratio, UV.x);
+		float right_fold_source = step(fold_right_line_ratio, UV.x);
+		float folded_source = max(
+			left_fold_source * clamp(fold_left_progress, 0.0, 1.0),
+			right_fold_source * clamp(fold_right_progress, 0.0, 1.0)
+		);
+		alpha *= 1.0 - folded_source;
+		alpha *= 1.0 - clamp(package_hidden, 0.0, 1.0);
 		COLOR = vec4(pancake_color, alpha);
 	}
 }

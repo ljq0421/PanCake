@@ -1,0 +1,48 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+PASS: cooking initially advances only the first side
+PASS: flip exposes and cooks the independent second side
+PASS: sweet and chili sauce write independent concentration fields
+PASS: reset clears both sauces and flip state
+PASS: minimum heat still cooks a normal pancake within one novice minute
+PASS: minimum heat leaves a safe non-charred novice window after one minute
+PASS: default heat does not make a normal pancake brittle during a 35-second learning window
+PASS: cracking an egg creates a model-backed liquid layer
+PASS: T-spreader contact breaks the yolk and enters the spreading state
+PASS: continuous circular samples expand egg coverage
+PASS: four beginner circles reach the minimum egg-spread gate
+PASS: four beginner circles visibly spread egg across most of the pancake (actual 99.3 percent)
+PASS: expanded, broken-yolk egg receives a higher spread score
+PASS: egg spreading does not create liquid mass
+PASS: egg coverage and uniformity produce an independent score dimension
+PASS: egg spreading quality changes the final customer score
+Egg spread bounded-frame maxima (usec): [5401, 5475, 6032, 5380]
+PASS: the bounded egg frame budget stays below 16 ms
+PASS: egg spreading cost stays bounded as coverage grows
+PASS: order service provides a deterministic playable order sequence
+PASS: sufficient coverage advances from spreading to first-side cooking
+PASS: flip is blocked before the required egg is placed
+PASS: egg and readable first-side doneness unlock flipping
+PASS: second side cannot be skipped immediately after flipping
+PASS: cooked second side unlocks sauce and fillings
+PASS: state machine reaches folding without a dead end
+PASS: state machine reaches packaging without direct phase mutation
+PASS: valid packaging reaches the serving phase
+PASS: clicking the packaged product starts a guarded customer handoff
+PASS: customer acceptance advances to the payment phase
+PASS: coin settlement reaches the completed result
+PASS: order correctness accepts combination classic
+PASS: order correctness accepts combination chili_ham
+PASS: order correctness accepts combination double_sauce
+PASS: order correctness accepts combination scallion_light
+PASS: two intact folds expose the normal paper-bag path
+PASS: missing required ingredients reduce order correctness
+PASS: complete product scores above an incomplete order and produces customer feedback
+PASS: heavy fillings in a flap create a visible bulged-fold outcome
+PASS: a minor fold issue can select the paper-sleeve repair
+PASS: paper-sleeve repair saves its label and 90-point structure cap
+PASS: a severe tear can select the tray rescue
+PASS: tray rescue saves its label and 55-point structure cap
+P1 vertical-slice self-check PASS

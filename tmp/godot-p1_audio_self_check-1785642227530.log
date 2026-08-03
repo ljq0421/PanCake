@@ -1,0 +1,40 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+PASS: kitchen cues use the settings-controlled SFX bus
+PASS: continuous sizzle uses the settings-controlled SFX bus
+PASS: all seven P1 kitchen cues are bound in the stable workstation scene
+PASS: pour cue loads as an AudioStream
+PASS: pour cue uses its dedicated source asset
+PASS: pour cue is a non-placeholder kitchen recording length
+PASS: scrape cue loads as an AudioStream
+PASS: scrape cue uses its dedicated source asset
+PASS: scrape cue is a non-placeholder kitchen recording length
+PASS: sizzle cue loads as an AudioStream
+PASS: sizzle cue uses its dedicated source asset
+PASS: sizzle cue is a non-placeholder kitchen recording length
+PASS: flip cue loads as an AudioStream
+PASS: flip cue uses its dedicated source asset
+PASS: flip cue is a non-placeholder kitchen recording length
+PASS: sauce cue loads as an AudioStream
+PASS: sauce cue uses its dedicated source asset
+PASS: sauce cue is a non-placeholder kitchen recording length
+PASS: fold cue loads as an AudioStream
+PASS: fold cue uses its dedicated source asset
+PASS: fold cue is a non-placeholder kitchen recording length
+PASS: serve cue loads as an AudioStream
+PASS: serve cue uses its dedicated source asset
+PASS: serve cue is a non-placeholder kitchen recording length
+PASS: automatic measured pour triggers batter-drop audio once
+PASS: poured batter on active heat requests the continuous cooking sizzle
+PASS: audio path fixture reaches first-side cooking
+PASS: accepted distance-sampled spreading triggers scraper audio
+PASS: successful guarded flip triggers flip audio once
+PASS: audio path fixture reaches sauce phase
+PASS: a sauce sample that changes cells triggers brush audio
+PASS: a committed continuous fold triggers fold audio
+PASS: valid order handoff triggers serve audio once
+PASS: cooking sizzle is stopped outside the cooking phases
+P1 AUDIO SELF-CHECK PASS

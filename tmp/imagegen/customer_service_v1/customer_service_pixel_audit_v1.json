@@ -1,0 +1,502 @@
+[
+  {
+    "file": "resources/art/customers/customer_01/customer_01_accepting_bag_v1.png",
+    "size": [
+      1419,
+      1108
+    ],
+    "bbox": [
+      474,
+      104,
+      940,
+      978
+    ],
+    "transparent_ratio": 0.813678,
+    "partial_alpha": 3722,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "372d6ed8da063f064cdcf6e14a223dec1c44943c254d099929ac7f494e9ce907",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_01/customer_01_paying_coins_v1.png",
+    "size": [
+      1422,
+      1106
+    ],
+    "bbox": [
+      412,
+      91,
+      992,
+      1000
+    ],
+    "transparent_ratio": 0.788026,
+    "partial_alpha": 3756,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "bc899842b05607d330c5c945888727c076766a2176b5b9d8812a1c3878a884a7",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_02/customer_02_accepting_bag_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      545,
+      77,
+      974,
+      968
+    ],
+    "transparent_ratio": 0.808053,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "632bbfcdbfd39b69e98f1f6fec0a3746a1d3d8f092cdccbc4dccaeea559dccf4",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_02/customer_02_paying_coins_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      435,
+      70,
+      1070,
+      962
+    ],
+    "transparent_ratio": 0.772299,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "b3b4ddbd74bdab536a883cf241782d44d2a8559cdf230460f49c3ce7af858674",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_03/customer_03_accepting_bag_v1.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "bbox": [
+      338,
+      83,
+      922,
+      1170
+    ],
+    "transparent_ratio": 0.723262,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "b934aba7ade0eb3c8e371db8f898ab964c7a2d4e7810beb8bc37b652ad75a988",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_03/customer_03_paying_coins_v1.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "bbox": [
+      275,
+      77,
+      957,
+      1179
+    ],
+    "transparent_ratio": 0.701997,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "e69327a875a8dbeb4b25f23ea6d6523866ff10a10ce54c7be3bed3b33e78648f",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_04/customer_04_accepting_bag_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      506,
+      79,
+      1017,
+      977
+    ],
+    "transparent_ratio": 0.803453,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "f8576b416fe3cc3630f2f28a82a286ce7e1f7f8a0b7704ce81bd035e2aad39e3",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_04/customer_04_paying_coins_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      422,
+      61,
+      1097,
+      988
+    ],
+    "transparent_ratio": 0.762576,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "f1b453316eb4d96a03a0c65b128049ae3971876fe80d47cfa827228098ab546b",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_05/customer_05_accepting_bag_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      534,
+      75,
+      995,
+      976
+    ],
+    "transparent_ratio": 0.81092,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "25e22a11503596b03df9d1bc7339372923b1d734623b8af1baefd47846a7fb35",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_05/customer_05_paying_coins_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      440,
+      63,
+      1067,
+      977
+    ],
+    "transparent_ratio": 0.778761,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "2e2b64e7e3a0dc6d240530bbd1c93e814d8055793b10b730b31de47add50c811",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_06/customer_06_accepting_bag_v1.png",
+    "size": [
+      1448,
+      1086
+    ],
+    "bbox": [
+      479,
+      45,
+      988,
+      1068
+    ],
+    "transparent_ratio": 0.779931,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "887fbd2e1b10f96a075fb8c35a745a834d3ea0b5847e0015de58ff733e0c8662",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_06/customer_06_paying_coins_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      404,
+      40,
+      1086,
+      970
+    ],
+    "transparent_ratio": 0.767265,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "20b3c1b92a4303add398c224a569f4ce8a6c2b3826b2c9837dbdcc2febb81706",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_07/customer_07_accepting_bag_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      467,
+      85,
+      1060,
+      991
+    ],
+    "transparent_ratio": 0.763533,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "5f69ecc9abab8240dd67170dd0223c1fb3c806d90b0b269b61caeabd5c2b5fe7",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_07/customer_07_paying_coins_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      398,
+      79,
+      1100,
+      963
+    ],
+    "transparent_ratio": 0.764083,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "e7b9c758841b242cc897554be9c13327ab0b35cc593549e9be1545ae4eae5c48",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_08/customer_08_accepting_bag_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      578,
+      89,
+      953,
+      863
+    ],
+    "transparent_ratio": 0.874565,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "1b1ba9b85e2b113c917d6c267474bb2000174195ed701d98e19dcb8d59a817ec",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_08/customer_08_paying_coins_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      423,
+      59,
+      1080,
+      987
+    ],
+    "transparent_ratio": 0.773405,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "d29c116c7af178b070ff531d69bb67e76a91d9d7bea1c791391123d0c682ab0e",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_09/customer_09_accepting_bag_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      528,
+      60,
+      985,
+      1007
+    ],
+    "transparent_ratio": 0.806113,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "644a042a726a7d338d22807c7c65aaf1cfdf77116fa25ac246637be9d853dc4a",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_09/customer_09_paying_coins_v1.png",
+    "size": [
+      1530,
+      1028
+    ],
+    "bbox": [
+      450,
+      67,
+      1090,
+      977
+    ],
+    "transparent_ratio": 0.782324,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "e50209e71f138ae00311e96ffe2e205dad2d62b760123cd25348212a5152ac33",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_10/customer_10_accepting_bag_v1.png",
+    "size": [
+      1536,
+      1024
+    ],
+    "bbox": [
+      529,
+      88,
+      998,
+      887
+    ],
+    "transparent_ratio": 0.841776,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "bbd74c1a7b2e16fbb8a78d7b8b81c9d70e202e877edf86b86f3380b665be03d3",
+    "pass": true
+  },
+  {
+    "file": "resources/art/customers/customer_10/customer_10_paying_coins_v1.png",
+    "size": [
+      1535,
+      1024
+    ],
+    "bbox": [
+      447,
+      87,
+      1037,
+      932
+    ],
+    "transparent_ratio": 0.809129,
+    "partial_alpha": 0,
+    "corner_alpha": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "edge_nonzero": 0,
+    "opaque_magenta_like": 0,
+    "sha256": "97f8d1b726e82ecdc74dcc3e31a4762fc4d6585a1865a23c823ca5c77b53475d",
+    "pass": true
+  }
+]

@@ -26,10 +26,12 @@ func _run() -> void:
 	var cooked_texture := material.get_shader_parameter(&"cooked_texture") as Texture2D
 	var charred_texture := material.get_shader_parameter(&"charred_texture") as Texture2D
 	var edge_texture := material.get_shader_parameter(&"edge_texture") as Texture2D
+	var egg_surface_texture := material.get_shader_parameter(&"egg_surface_texture") as Texture2D
 	_check(raw_texture != null and raw_texture.resource_path == "res://resources/art/workstation/textures/pancake_raw_texture_v1.png", "shader uses the approved raw pancake texture candidate")
 	_check(cooked_texture != null and cooked_texture.resource_path == "res://resources/art/workstation/textures/pancake_cooked_texture_v1.png", "shader uses the approved cooked pancake texture candidate")
 	_check(charred_texture != null and charred_texture.resource_path == "res://resources/art/workstation/textures/pancake_charred_texture_v1.png", "shader uses the confirmed charred pancake texture candidate")
 	_check(edge_texture != null and edge_texture.resource_path == "res://resources/art/workstation/textures/pancake_edge_texture_v1.png", "shader uses the approved pancake edge texture candidate")
+	_check(egg_surface_texture != null and egg_surface_texture.resource_path == "res://resources/art/workstation/textures/egg_spread_material_v1.png", "spread egg uses the dedicated hand-drawn material texture")
 	_check(is_equal_approx(float(material.get_shader_parameter(&"pan_height_ratio")), model.parameters.pan_height_ratio), "shader mask uses the shared griddle aspect ratio")
 
 	var center := Vector2i(model.grid_size / 2, model.grid_size / 2)

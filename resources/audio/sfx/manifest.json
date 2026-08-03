@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "generator": "project-cake-kitchen-sfx-v1",
+  "generated_on": "2026-08-02",
+  "origin": "Original deterministic procedural synthesis; no third-party recordings, samples, or melodies.",
+  "format": {
+    "sample_rate_hz": 32000,
+    "channels": 1,
+    "sample_width_bits": 16,
+    "encoding": "PCM"
+  },
+  "cues": [
+    {
+      "cue": "batter_drop",
+      "file": "batter_drop.wav",
+      "description": "Thick batter falling onto hot iron: wet body, three soft plops, short pan contact.",
+      "trigger": "A successful automatic measured batter pour.",
+      "seed": 1101,
+      "duration_seconds": 0.72,
+      "sha256": "ae15cc2ac9841f8478f5734694862acf7bb4a7d5b911a42abb77535c4730756b"
+    },
+    {
+      "cue": "spreader_scrape",
+      "file": "spreader_scrape.wav",
+      "description": "T-spreader dragging through wet batter with a restrained metal-on-iron edge.",
+      "trigger": "Accepted distance-sampled batter or egg spreading movement.",
+      "seed": 1102,
+      "duration_seconds": 0.42,
+      "sha256": "275ba9684c90cb8612f21445b6468b522e14bafba8b041db56d843a7a1b2ddb4"
+    },
+    {
+      "cue": "cooking_sizzle",
+      "file": "cooking_sizzle.wav",
+      "description": "Seamless hot-iron cooking bed with many small moisture crackles.",
+      "trigger": "Loops while poured batter is actively cooking; heat and moisture drive level and pitch.",
+      "seed": 1103,
+      "duration_seconds": 2.4,
+      "sha256": "484a5f82401fa64ea4384543f0a420f29a6b713708e28bf6d3229464eb5aaf20"
+    },
+    {
+      "cue": "pancake_flip",
+      "file": "pancake_flip.wav",
+      "description": "Spatula lift, brief pancake whoosh, iron tap, and soft landing.",
+      "trigger": "A successful guarded first-side flip.",
+      "seed": 1104,
+      "duration_seconds": 0.56,
+      "sha256": "844c58f8972dc311aaef588cde883bdef4e4b814b62db9b10a721733932f294f"
+    },
+    {
+      "cue": "sauce_brush",
+      "file": "sauce_brush.wav",
+      "description": "Wet sauce brush dragging across a cooked pancake.",
+      "trigger": "A brush sample that actually applies sauce to new cells.",
+      "seed": 1105,
+      "duration_seconds": 0.38,
+      "sha256": "7e3ebc15899bcdc11bee6a73eb4a7e6138d8a20ea826f02eae6f21499f9b1eba"
+    },
+    {
+      "cue": "pancake_fold",
+      "file": "pancake_fold.wav",
+      "description": "Cooked pancake rustle, crease, and soft fold landing.",
+      "trigger": "Each successfully committed left or right fold.",
+      "seed": 1106,
+      "duration_seconds": 0.48,
+      "sha256": "36a97edf9b4f3de07332b75197ecf00c251a79e7f6749d8d60b673b2271c2b3f"
+    },
+    {
+      "cue": "order_serve",
+      "file": "order_serve.wav",
+      "description": "Wrapped order slide, counter set-down, and restrained two-note service accent.",
+      "trigger": "A valid serve action that opens the customer result.",
+      "seed": 1107,
+      "duration_seconds": 0.78,
+      "sha256": "b6ea404f31187c51957b1a82e359f2a101fd3781ab80dbe703bfd96e29bcb105"
+    }
+  ]
+}

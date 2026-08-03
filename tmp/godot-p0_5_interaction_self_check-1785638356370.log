@@ -1,0 +1,24 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+[ProjectCake][bootstrap] M0 main scene started with Mobile renderer
+PASS: workstation scene owns stable fold controls and overlay
+PASS: fold overlay textures both the pancake top and revealed underside
+PASS: workstation scene owns both rescue choices
+PASS: fold button selects the continuous fold tool
+PASS: fold tool exposes visible fold lines and edge handles
+PASS: mouse movement deforms the flap before release
+PASS: dragging the left edge over its line commits the left fold
+PASS: starting a fold locks earlier preparation tools
+PASS: dragging the right edge over its line commits the right fold
+PASS: completed non-severe folds expose both safe completion choices
+PASS: paper sleeve completes the real workstation path
+[ProjectCake][simulation] Pancake grid reset in 79 us
+PASS: a hole in the dragged region creates a severe workstation fold failure
+PASS: severe failure disables sleeve but immediately enables tray
+PASS: tray rescues a severe failure without a dead end
+[ProjectCake][simulation] Pancake grid reset in 73 us
+PASS: R/reset clears folding, packaging, pointer, and tool state
+P0.5 interaction self-check PASS

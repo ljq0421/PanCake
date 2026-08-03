@@ -17,6 +17,14 @@ TRANSPARENT_ASSETS = [
     ROOT / "resources/art/ui/economy/reputation_v1.png",
     ROOT / "resources/art/ui/economy/upgrade_v1.png",
     ROOT / "resources/art/ui/day_summary/day_summary_panel_base_v1.png",
+    ROOT / "resources/art/workstation/tools/batter_ladle_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/batter_spreader_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/folding_spatula_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/heat_controller_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/ingredient_tongs_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/oil_absorbent_paper_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/reinforced_paper_sleeve_upgrade_v1.png",
+    ROOT / "resources/art/workstation/tools/sauce_brush_upgrade_v1.png",
 ]
 OPAQUE_ASSETS = [
     ROOT / "resources/art/workstation/background/workstation_backplate_upgrade_v1.png",

@@ -92,6 +92,20 @@ func force_texture_upload() -> void:
 	_rebuild_heatmap_texture()
 
 
+func set_fold_visual_state(left_progress: float, right_progress: float, package_hidden: bool = false) -> void:
+	if not is_instance_valid(pancake_visual):
+		return
+	var shader_material := pancake_visual.material as ShaderMaterial
+	if shader_material == null:
+		return
+	shader_material.set_shader_parameter(&"fold_left_progress", clampf(left_progress, 0.0, 1.0))
+	shader_material.set_shader_parameter(&"fold_right_progress", clampf(right_progress, 0.0, 1.0))
+	shader_material.set_shader_parameter(&"package_hidden", 1.0 if package_hidden else 0.0)
+	if model != null:
+		shader_material.set_shader_parameter(&"fold_left_line_ratio", model.parameters.fold_left_line_ratio)
+		shader_material.set_shader_parameter(&"fold_right_line_ratio", model.parameters.fold_right_line_ratio)
+
+
 func get_renderer_diagnostics() -> Dictionary:
 	return {
 		"texture_size": _allocated_texture_size,

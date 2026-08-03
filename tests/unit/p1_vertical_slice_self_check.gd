@@ -1,5 +1,7 @@
 extends SceneTree
 
+const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
+
 var _failures := PackedStringArray()
 
 
@@ -9,8 +11,11 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_two_sided_cooking_and_two_sauces()
+	_test_beginner_heat_window()
 	_test_egg_spreading_and_score()
+	_test_egg_spread_performance()
 	_test_order_and_session_guards()
+	_test_customer_queue_rotation()
 	_test_every_order_combination()
 	_test_ingredients_affect_fold_and_score()
 	_test_repair_tags_and_score_caps()
@@ -36,6 +41,19 @@ func _test_two_sided_cooking_and_two_sauces() -> void:
 	_check(model.total_sauce(OrderService.SAUCE_SWEET) == 0.0 and model.total_sauce(OrderService.SAUCE_CHILI) == 0.0 and not model.is_flipped, "reset clears both sauces and flip state")
 
 
+func _test_beginner_heat_window() -> void:
+	var minimum_heat_model := _uniform_pancake(48, 0.42)
+	for step in 1200:
+		minimum_heat_model.advance_cooking(0.05, 0.20)
+	var minimum_heat_doneness := minimum_heat_model.mean_side_doneness(false)
+	_check(minimum_heat_doneness >= 0.30, "minimum heat still cooks a normal pancake within one novice minute")
+	_check(minimum_heat_doneness < 0.72, "minimum heat leaves a safe non-charred novice window after one minute")
+	var default_heat_model := _uniform_pancake(48, 0.42)
+	for step in 700:
+		default_heat_model.advance_cooking(0.05, 0.50)
+	_check(default_heat_model.mean_side_doneness(false) < 0.86, "default heat does not make a normal pancake brittle during a 35-second learning window")
+
+
 func _test_egg_spreading_and_score() -> void:
 	var model := _uniform_pancake(128, 0.42)
 	var center := Vector2(64, 64)
@@ -43,16 +61,22 @@ func _test_egg_spreading_and_score() -> void:
 	_check(bool(crack_result.success) and model.egg_state == PancakeModel.EggState.CRACKED, "cracking an egg creates a model-backed liquid layer")
 	var initial_summary := model.calculate_egg_spread_summary()
 	var initial_mass := model.total_egg_amount()
-	for ring in 10:
-		var radius := 6.0 + float(ring) * 4.2
-		for step in 56:
-			var angle := TAU * float(step) / 56.0
+	# Four widening circles model a hesitant first-time player, not a perfect long automation trace.
+	for ring in 4:
+		var radius := 6.0 + float(ring) * 9.0
+		for step in 36:
+			var angle := TAU * float(step) / 36.0
 			var radial := Vector2(cos(angle), sin(angle) * model.parameters.pan_height_ratio)
 			var sample := center + radial * radius
 			model.apply_egg_spreader_sample(sample, Vector2.from_angle(angle), 70.0)
 	var spread_summary := model.calculate_egg_spread_summary()
 	_check(model.yolk_broken and model.egg_state == PancakeModel.EggState.SPREADING, "T-spreader contact breaks the yolk and enters the spreading state")
 	_check(float(spread_summary.coverage_ratio) > float(initial_summary.coverage_ratio), "continuous circular samples expand egg coverage")
+	_check(float(spread_summary.coverage_ratio) >= model.parameters.egg_minimum_spread_coverage, "four beginner circles reach the minimum egg-spread gate")
+	_check(
+		float(spread_summary.coverage_ratio) >= 0.55,
+		"four beginner circles visibly spread egg across most of the pancake (actual %.1f percent)" % (float(spread_summary.coverage_ratio) * 100.0)
+	)
 	_check(float(spread_summary.score) > float(initial_summary.score), "expanded, broken-yolk egg receives a higher spread score")
 	_check(model.total_egg_amount() <= initial_mass * 1.001, "egg spreading does not create liquid mass")
 
@@ -79,6 +103,39 @@ func _test_egg_spreading_and_score() -> void:
 	_check(float(good_score.score) > float(poor_score.score), "egg spreading quality changes the final customer score")
 
 
+func _test_egg_spread_performance() -> void:
+	var model := _uniform_pancake(128, 0.42)
+	var center := Vector2(64, 64)
+	model.crack_egg(center)
+	var frame_times_usec := PackedInt64Array()
+	var ring_maximums_usec := PackedInt64Array()
+	for ring in 4:
+		var samples := PackedVector2Array()
+		var radius := 6.0 + float(ring) * 9.0
+		for step in 36:
+			var angle := TAU * float(step) / 36.0
+			var radial := Vector2(cos(angle), sin(angle) * model.parameters.pan_height_ratio)
+			samples.append(center + radial * radius)
+		var ring_maximum_usec := 0
+		for frame_start in range(0, samples.size(), model.parameters.egg_max_samples_per_frame):
+			var frame_samples := PackedVector2Array()
+			for sample_index in range(frame_start, mini(frame_start + model.parameters.egg_max_samples_per_frame, samples.size())):
+				frame_samples.append(samples[sample_index])
+			var started := Time.get_ticks_usec()
+			model.apply_egg_spreader_path(frame_samples, 70.0)
+			var frame_time_usec := Time.get_ticks_usec() - started
+			frame_times_usec.append(frame_time_usec)
+			ring_maximum_usec = maxi(ring_maximum_usec, frame_time_usec)
+		ring_maximums_usec.append(ring_maximum_usec)
+	var maximum_frame_usec := 0
+	for frame_time_usec in frame_times_usec:
+		maximum_frame_usec = maxi(maximum_frame_usec, frame_time_usec)
+	var bounded_growth_limit := maxi(ring_maximums_usec[0] * 3, 12000)
+	print("Egg spread bounded-frame maxima (usec): %s" % [ring_maximums_usec])
+	_check(maximum_frame_usec <= 16000, "the bounded egg frame budget stays below 16 ms")
+	_check(ring_maximums_usec[ring_maximums_usec.size() - 1] <= bounded_growth_limit, "egg spreading cost stays bounded as coverage grows")
+
+
 func _test_order_and_session_guards() -> void:
 	var service := OrderService.new()
 	var first := service.next_order()
@@ -94,17 +151,36 @@ func _test_order_and_session_guards() -> void:
 	ingredients.place(IngredientModel.EGG, Vector2(24, 24), 0.0, model)
 	_seed_even_egg(model)
 	model.doneness.fill(0.50)
-	_check(bool(session.request_flip(model, ingredients).success) and session.phase == P1Session.Phase.SECOND_SIDE, "egg and readable first-side doneness unlock flipping")
-	var early_finish := session.finish_cooking(model)
-	_check(not bool(early_finish.success), "second side cannot be skipped immediately after flipping")
-	model.back_doneness.fill(0.52)
-	_check(bool(session.finish_cooking(model).success) and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "cooked second side unlocks sauce and fillings")
+	_check(bool(session.request_flip(model, ingredients).success) and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "successful flip immediately unlocks sauce and fillings")
+	_check(is_equal_approx(model.mean_side_doneness(true), model.mean_side_doneness(false)), "quick flip settles the second-side heat without a waiting stage")
 	_check(bool(session.begin_folding().success) and session.phase == P1Session.Phase.FOLD, "state machine reaches folding without a dead end")
 	_check(bool(session.mark_ready_for_package().success) and session.phase == P1Session.Phase.PACKAGE, "state machine reaches packaging without direct phase mutation")
 	_check(bool(session.mark_packaged().success) and session.phase == P1Session.Phase.READY_TO_SERVE, "valid packaging reaches the serving phase")
-	_check(bool(session.finish({"score": 80.0}).success) and session.phase == P1Session.Phase.RESULT and session.payment_ready, "serving reaches a payable result")
+	_check(bool(session.begin_handoff({"score": 80.0}).success) and session.phase == P1Session.Phase.HANDOFF and not session.payment_ready, "clicking the packaged product starts a guarded customer handoff")
+	_check(bool(session.begin_payment().success) and session.phase == P1Session.Phase.PAYMENT and not session.payment_ready, "customer acceptance advances to the payment phase")
+	_check(bool(session.finish_payment().success) and session.phase == P1Session.Phase.RESULT and session.payment_ready, "coin settlement reaches the completed result")
 
 
+func _test_customer_queue_rotation() -> void:
+	var queue: RefCounted = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(OrderService.new())
+	var initial: Array = queue.call("queue_snapshot")
+	_check(
+		initial.size() == 3
+		and initial[0].id == &"customer_01"
+		and initial[1].id == &"customer_02"
+		and initial[2].id == &"customer_03",
+		"customer service starts with one active customer and two visible waiting customers"
+	)
+	var next_customer: Dictionary = queue.call("advance_queue")
+	var waiting: Array = queue.call("waiting_customers")
+	_check(
+		next_customer.id == &"customer_02"
+		and next_customer.order.id == &"chili_ham"
+		and waiting.size() == 2
+		and waiting[0].id == &"customer_03"
+		and waiting[1].id == &"customer_01",
+		"completing an order advances the queue and replenishes its tail without a manual accept step"
+	)
 func _test_every_order_combination() -> void:
 	var service := OrderService.new()
 	for order_index in OrderService.ORDERS.size():

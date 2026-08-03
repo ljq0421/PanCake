@@ -6,6 +6,8 @@ New-Item -ItemType Directory -Force -Path (Join-Path $sandboxData 'Roaming'), (J
 $env:APPDATA = Join-Path $sandboxData 'Roaming'
 $env:LOCALAPPDATA = Join-Path $sandboxData 'Local'
 $checks = @(
+	'res://tests/integration/start_menu_self_check.gd',
+	'res://tests/unit/ingredient_stock_self_check.gd',
     'res://tests/unit/pancake_model_self_check.gd',
     'res://tests/unit/p0_2_simulation_self_check.gd',
     'res://tests/unit/p0_4_sauce_self_check.gd',
@@ -15,6 +17,8 @@ $checks = @(
     'res://tests/integration/p0_3_renderer_self_check.gd',
     'res://tests/integration/p0_4_interaction_self_check.gd',
     'res://tests/integration/p0_5_interaction_self_check.gd',
+	'res://tests/integration/p1_audio_self_check.gd',
+	'res://tests/integration/ingredient_stock_interaction_self_check.gd',
     'res://tests/integration/p1_interaction_self_check.gd',
     'res://tests/integration/m0_self_check.gd'
 )

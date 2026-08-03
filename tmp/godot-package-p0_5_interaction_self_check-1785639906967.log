@@ -1,0 +1,39 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: No loader found for resource: res://resources/art/workstation/packaging/paper_bag_package_v1.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+ERROR: No loader found for resource: res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+ERROR: No loader found for resource: res://resources/art/workstation/packaging/serving_tray_package_v1.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+ERROR: res://scenes/gameplay/workstation.tscn:1046 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/packaging/paper_bag_package_v1.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/gameplay/workstation.tscn:1047 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/gameplay/workstation.tscn:1048 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/packaging/serving_tray_package_v1.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+[ProjectCake][workstation] PancakeModel ready: 128x128
+[ProjectCake][bootstrap] M0 main scene started with Mobile renderer
+PASS: workstation scene owns stable fold controls and overlay
+PASS: fold overlay textures both the pancake top and revealed underside
+ERROR: FAIL: fold overlay owns dedicated paper-bag, reinforced-sleeve, and tray artwork
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _check (res://tests/integration/p0_5_interaction_self_check.gd:143)
+       [1] _run (res://tests/integration/p0_5_interaction_self_check.gd:25)
+PASS: workstation scene owns both rescue choices
+PASS: fold button selects the continuous fold tool
+PASS: fold tool exposes visible fold lines and edge handles
+PASS: mouse movement deforms the flap before release
+PASS: dragging the left edge over its line commits the left fold
+PASS: committed left fold makes the original pancake region transparent instead of painting a fake griddle color
+PASS: starting a fold locks earlier preparation tools
+PASS: dragging the right edge over its line commits the right fold
+PASS: completed non-severe folds expose both safe completion choices
+PASS: paper sleeve completes the real workstation path
+SCRIPT ERROR: Invalid access to property or key 'resource_path' on a base object of type 'Nil'.
+   at: _run (res://tests/integration/p0_5_interaction_self_check.gd:56)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/p0_5_interaction_self_check.gd:56)

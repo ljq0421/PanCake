@@ -13,6 +13,10 @@ func _init(next_progression: RefCounted) -> void:
 	for device_id in CATALOG.DEVICE_DEFINITIONS:
 		_machines[device_id] = EQUIPMENT_BATCH_MODEL.new(device_id)
 	_sync_machine_ownership()
+	for device_id in Dictionary(progression.get("equipment_batches")):
+		if _machines.has(device_id):
+			(_machines[device_id] as RefCounted).call("load_snapshot", progression.get("equipment_batches")[device_id])
+	_sync_progression_batches()
 
 
 func load_input(device_id: StringName, recipe_id: StringName, quantity: int = 1) -> Dictionary:
@@ -30,14 +34,18 @@ func perform_action(device_id: StringName, action: StringName) -> Dictionary:
 	var machine := _machine(device_id)
 	if machine == null:
 		return _failure(&"unknown_equipment")
-	return machine.call("perform_action", action)
+	var result: Dictionary = machine.call("perform_action", action)
+	_sync_progression_batches()
+	return result
 
 
 func start(device_id: StringName) -> Dictionary:
 	var machine := _machine(device_id)
 	if machine == null:
 		return _failure(&"unknown_equipment")
-	return machine.call("start")
+	var result: Dictionary = machine.call("start")
+	_sync_progression_batches()
+	return result
 
 
 func advance_time(delta: float) -> void:
@@ -45,13 +53,16 @@ func advance_time(delta: float) -> void:
 	for machine in _machines.values():
 		machine.call("advance_time", delta)
 	_run_completion_automation()
+	_sync_progression_batches()
 
 
 func collect(device_id: StringName, quantity: int = 1) -> Dictionary:
 	var machine := _machine(device_id)
 	if machine == null:
 		return _failure(&"unknown_equipment")
-	return machine.call("collect", quantity)
+	var result: Dictionary = machine.call("collect", quantity)
+	_sync_progression_batches()
+	return result
 
 
 func add_topping(product: Dictionary, add_on_id: StringName) -> Dictionary:
@@ -110,6 +121,7 @@ func _load_consuming_stock(device_id: StringName, recipe_id: StringName, quantit
 		return _failure(&"inventory_transaction_failed")
 	loaded["consumed_stock_id"] = stock_id
 	loaded["consumed_quantity"] = quantity
+	_sync_progression_batches()
 	return loaded
 
 
@@ -135,6 +147,15 @@ func _run_completion_automation() -> void:
 		var result: Dictionary = machine.call("collect", int(machine.get("loaded_quantity")))
 		if bool(result.get("success", false)):
 			_collected_products.append(result.product)
+
+
+func _sync_progression_batches() -> void:
+	var batches := {}
+	for device_id in _machines:
+		var snapshot: Dictionary = (_machines[device_id] as RefCounted).call("snapshot")
+		if bool(snapshot.get("owned", false)):
+			batches[device_id] = snapshot
+	progression.set("equipment_batches", batches)
 
 
 func _machine(device_id: StringName) -> RefCounted:

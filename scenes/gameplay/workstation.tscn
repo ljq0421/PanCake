@@ -1,4 +1,4 @@
-[gd_scene load_steps=99 format=3]
+[gd_scene load_steps=103 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/workstation.gd" id="1_workstation"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="2_heatmap"]
@@ -26,6 +26,10 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="24_baocui"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png" id="25_ham"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_scattered_v1.png" id="26_scallion"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1.png" id="87_meat_floss_scattered"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1.png" id="88_pork_slices"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png" id="89_meat_floss_pile"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png" id="90_pork_portion"]
 [ext_resource type="Texture2D" path="res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres" id="27_customer"]
 [ext_resource type="Texture2D" path="res://resources/art/payments/payment_cash_small_v1.png" id="28_payment"]
 [ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_base_v1.png" id="29_order_card"]
@@ -898,31 +902,127 @@ theme_override_font_sizes/font_size = 16
 text = "葱花"
 horizontal_alignment = 1
 
-[node name="ReserveIngredientSlot1" type="Button" parent="SafeArea/IngredientRack"]
+[node name="MeatFlossButton" type="Button" parent="SafeArea/IngredientRack"]
+unique_name_in_owner = true
 layout_mode = 0
 offset_left = 15.0
 offset_top = 389.0
 offset_right = 205.0
 offset_bottom = 497.0
-mouse_filter = 2
-theme_override_colors/font_disabled_color = Color(0.54, 0.48, 0.40, 1)
-theme_override_font_sizes/font_size = 16
+tooltip_text = "按住并拖动肉松到饼面"
+theme_override_styles/normal = SubResource("StyleBox_table_button")
+theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
-disabled = true
-text = "待上架小料"
+script = ExtResource("53_stock_slot")
+ingredient_type = &"meat_floss"
+stock_textures = Array[Texture2D]([ExtResource("89_meat_floss_pile"), ExtResource("89_meat_floss_pile"), ExtResource("89_meat_floss_pile"), ExtResource("89_meat_floss_pile"), ExtResource("89_meat_floss_pile"), ExtResource("89_meat_floss_pile")])
 
-[node name="ReserveIngredientSlot2" type="Button" parent="SafeArea/IngredientRack"]
+[node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/MeatFlossButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 4.0
+offset_right = -20.0
+offset_bottom = -26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("89_meat_floss_pile")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EmptyLabel" type="Label" parent="SafeArea/IngredientRack/MeatFlossButton"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.30, 1)
+theme_override_font_sizes/font_size = 28
+text = "空"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label" type="Label" parent="SafeArea/IngredientRack/MeatFlossButton"]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -28.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
+theme_override_font_sizes/font_size = 16
+text = "肉松"
+horizontal_alignment = 1
+
+[node name="PorkTenderloinButton" type="Button" parent="SafeArea/IngredientRack"]
+unique_name_in_owner = true
 layout_mode = 0
 offset_left = 215.0
 offset_top = 389.0
 offset_right = 405.0
 offset_bottom = 497.0
-mouse_filter = 2
-theme_override_colors/font_disabled_color = Color(0.54, 0.48, 0.40, 1)
-theme_override_font_sizes/font_size = 16
+tooltip_text = "按住并拖动里脊肉到饼面"
+theme_override_styles/normal = SubResource("StyleBox_table_button")
+theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
-disabled = true
-text = "待上架小料"
+script = ExtResource("53_stock_slot")
+ingredient_type = &"pork_tenderloin"
+stock_textures = Array[Texture2D]([ExtResource("90_pork_portion"), ExtResource("90_pork_portion"), ExtResource("90_pork_portion"), ExtResource("90_pork_portion"), ExtResource("90_pork_portion"), ExtResource("90_pork_portion")])
+
+[node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/PorkTenderloinButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 4.0
+offset_right = -20.0
+offset_bottom = -26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("90_pork_portion")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EmptyLabel" type="Label" parent="SafeArea/IngredientRack/PorkTenderloinButton"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -26.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.30, 1)
+theme_override_font_sizes/font_size = 28
+text = "空"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label" type="Label" parent="SafeArea/IngredientRack/PorkTenderloinButton"]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -28.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
+theme_override_font_sizes/font_size = 16
+text = "里脊肉"
+horizontal_alignment = 1
 
 [node name="LeftRack" type="Panel" parent="SafeArea"]
 layout_mode = 0
@@ -1354,6 +1454,8 @@ egg_texture = ExtResource("30_egg_whole")
 baocui_texture = ExtResource("24_baocui")
 ham_texture = ExtResource("25_ham")
 scallion_texture = ExtResource("26_scallion")
+meat_floss_texture = ExtResource("87_meat_floss_scattered")
+pork_tenderloin_texture = ExtResource("88_pork_slices")
 
 [node name="SpreaderArtwork" type="Sprite2D" parent="SafeArea/PanBase/PancakeSurface"]
 unique_name_in_owner = true
@@ -1961,11 +2063,12 @@ text = "收起"
 unique_name_in_owner = true
 visible = false
 process_mode = 3
+z_index = 100
 layout_mode = 0
-offset_left = 420.0
-offset_top = 140.0
-offset_right = 1500.0
-offset_bottom = 930.0
+offset_left = 330.0
+offset_top = 80.0
+offset_right = 1590.0
+offset_bottom = 900.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="Margin" type="MarginContainer" parent="SafeArea/DailyBillPanel"]
@@ -1977,7 +2080,7 @@ theme_override_constants/margin_bottom = 30
 
 [node name="VBox" type="VBoxContainer" parent="SafeArea/DailyBillPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 10
 
 [node name="DailyBillTitleLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox"]
 unique_name_in_owner = true
@@ -2032,7 +2135,7 @@ text = "收入"
 horizontal_alignment = 2
 
 [node name="RowsScroll" type="ScrollContainer" parent="SafeArea/DailyBillPanel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 470)
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
@@ -2044,9 +2147,83 @@ theme_override_constants/h_separation = 18
 theme_override_constants/v_separation = 10
 columns = 4
 
-[node name="DailyBillCloseButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+[node name="GrowthSeparator" type="HSeparator" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="GrowthHeadlineLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 26
+text = "给明天选一项成长"
+horizontal_alignment = 1
+
+[node name="GrowthBalanceLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 18
+text = "现有 0 金币 · 声誉 0"
+horizontal_alignment = 1
+
+[node name="GrowthTickets" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="GrowthTicket1" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.80, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "成长票 1"
+
+[node name="GrowthTicket2" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.80, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "成长票 2"
+
+[node name="GrowthTicket3" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.80, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "成长票 3"
+
+[node name="GrowthMessageLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 18
+text = "每天最多购买一项，也可以暂不购买。"
+horizontal_alignment = 1
+
+[node name="GrowthActions" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="DailyBillCloseButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
+size_flags_horizontal = 1
 theme_override_font_sizes/font_size = 22
-text = "结束今日营业并返回开始页"
+text = "返回开始页"
+
+[node name="BeginNextDayButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+text = "不购买，直接开始下一天"

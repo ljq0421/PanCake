@@ -74,7 +74,10 @@ func refill(ingredient_type: StringName) -> bool:
 func set_current(ingredient_type: StringName, quantity: int) -> bool:
 	if not has_ingredient(ingredient_type):
 		return false
-	_stock[ingredient_type] = clampi(quantity, 0, capacity(ingredient_type))
+	var next_quantity := clampi(quantity, 0, capacity(ingredient_type))
+	if current(ingredient_type) == next_quantity:
+		return true
+	_stock[ingredient_type] = next_quantity
 	changed.emit(ingredient_type, current(ingredient_type))
 	return true
 
@@ -82,6 +85,8 @@ func set_current(ingredient_type: StringName, quantity: int) -> bool:
 func set_capacity(ingredient_type: StringName, next_capacity: int) -> bool:
 	if not has_ingredient(ingredient_type) or next_capacity < 0:
 		return false
+	if capacity(ingredient_type) == next_capacity:
+		return true
 	_capacities[ingredient_type] = next_capacity
 	_stock[ingredient_type] = mini(current(ingredient_type), next_capacity)
 	changed.emit(ingredient_type, current(ingredient_type))

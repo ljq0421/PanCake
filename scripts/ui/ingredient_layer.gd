@@ -7,6 +7,8 @@ const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd
 @export var baocui_texture: Texture2D
 @export var ham_texture: Texture2D
 @export var scallion_texture: Texture2D
+@export var meat_floss_texture: Texture2D
+@export var pork_tenderloin_texture: Texture2D
 
 var model: IngredientModel
 var fold_model: RefCounted
@@ -116,6 +118,10 @@ func _texture_for(ingredient_type: StringName) -> Texture2D:
 			return ham_texture
 		IngredientModel.SCALLION:
 			return scallion_texture
+		IngredientModel.MEAT_FLOSS:
+			return meat_floss_texture
+		IngredientModel.PORK_TENDERLOIN:
+			return pork_tenderloin_texture
 	return null
 
 
@@ -129,4 +135,8 @@ func _scale_for(ingredient_type: StringName) -> float:
 			return 0.13
 		IngredientModel.SCALLION:
 			return 0.11
+		IngredientModel.MEAT_FLOSS:
+			return 0.16
+		IngredientModel.PORK_TENDERLOIN:
+			return 0.13
 	return 0.12

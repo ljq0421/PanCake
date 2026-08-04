@@ -8,6 +8,7 @@ const PANCAKE_SCORER_SCRIPT := preload("res://scripts/gameplay/pancake_scorer.gd
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_model.gd")
 const INGREDIENT_STOCK_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_stock_model.gd")
+const EXPANSION_CATALOG := preload("res://scripts/data/workstation_expansion_catalog.gd")
 const ORDER_SERVICE_SCRIPT := preload("res://scripts/services/order_service.gd")
 const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
@@ -84,6 +85,8 @@ const SPREADER_SPEED_FAST := 1
 @onready var baocui_button: Button = %BaocuiButton
 @onready var ham_button: Button = %HamButton
 @onready var scallion_button: Button = %ScallionButton
+@onready var meat_floss_button: Button = %MeatFlossButton
+@onready var pork_tenderloin_button: Button = %PorkTenderloinButton
 @onready var egg_restock_button: Button = %EggRestockButton
 @onready var baocui_restock_button: Button = %BaocuiRestockButton
 @onready var ham_restock_button: Button = %HamRestockButton
@@ -133,6 +136,10 @@ const SPREADER_SPEED_FAST := 1
 @onready var daily_bill_stats_label: Label = %DailyBillStatsLabel
 @onready var daily_bill_rows: GridContainer = %DailyBillRows
 @onready var daily_bill_close_button: Button = %DailyBillCloseButton
+@onready var growth_balance_label: Label = %GrowthBalanceLabel
+@onready var growth_message_label: Label = %GrowthMessageLabel
+@onready var begin_next_day_button: Button = %BeginNextDayButton
+@onready var growth_ticket_buttons: Array[Button] = [%GrowthTicket1, %GrowthTicket2, %GrowthTicket3]
 
 var pancake_model: PancakeModel
 var _scrape_sampler: StrokeSampler
@@ -144,6 +151,11 @@ var _spreader_max_radius := 0.0
 var _spreader_direction_grace_remaining := 0
 var _spreader_smoothed_angular_speed := 0.0
 var _spreader_speed_initialized := false
+var _growth_recommendations: Array[Dictionary] = []
+var _spreader_width_multiplier := 1.0
+var _press_spreader_owned := false
+var _automatic_brush_owned := false
+var _press_spreader_used := false
 var _spreader_speed_band := SPREADER_SPEED_MEDIUM
 var _spreader_smoothed_angle := 0.0
 var _spreader_angle_initialized := false
@@ -186,13 +198,17 @@ func _ready() -> void:
 		parameters = PancakeSimulationParameters.new()
 	pancake_model = PancakeModel.new(parameters.grid_size, parameters)
 	ingredient_model = INGREDIENT_MODEL_SCRIPT.new()
-	ingredient_stock_model = INGREDIENT_STOCK_MODEL_SCRIPT.new(_saved_ingredient_stock())
+	ingredient_stock_model = INGREDIENT_STOCK_MODEL_SCRIPT.new(_saved_ingredient_stock(), EXPANSION_CATALOG.stock_ids())
 	fold_model = FOLD_MODEL_SCRIPT.new(pancake_model, ingredient_model)
 	var unlocked_ingredient_ids: Array[StringName] = IngredientModel.TYPES.duplicate()
 	if has_meta(&"unlocked_ingredient_ids"):
 		unlocked_ingredient_ids.clear()
 		for ingredient_id in Array(get_meta(&"unlocked_ingredient_ids")):
 			unlocked_ingredient_ids.append(StringName(ingredient_id))
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("unlocked_ingredient_ids"):
+		unlocked_ingredient_ids.clear()
+		unlocked_ingredient_ids.assign(game_session.call("unlocked_ingredient_ids"))
 	order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
 	customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
 	p1_session = P1_SESSION_SCRIPT.new()
@@ -232,12 +248,17 @@ func _ready() -> void:
 	payment_collection_area.pressed.connect(_collect_payment)
 	payment_collection_area.mouse_entered.connect(_collect_payment)
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
+	begin_next_day_button.pressed.connect(_begin_next_business_day)
+	for ticket_index in growth_ticket_buttons.size():
+		growth_ticket_buttons[ticket_index].pressed.connect(_on_growth_ticket_pressed.bind(ticket_index))
 	step_action_button.pressed.connect(_advance_p1_step)
 	heat_slider.value_changed.connect(_on_heat_changed)
 	_connect_ingredient_slot(egg_button, IngredientModel.EGG)
 	_connect_ingredient_slot(baocui_button, IngredientModel.BAOCUI)
 	_connect_ingredient_slot(ham_button, IngredientModel.HAM_SAUSAGE)
 	_connect_ingredient_slot(scallion_button, IngredientModel.SCALLION)
+	_connect_ingredient_slot(meat_floss_button, IngredientModel.MEAT_FLOSS)
+	_connect_ingredient_slot(pork_tenderloin_button, IngredientModel.PORK_TENDERLOIN)
 	ingredient_stock_model.changed.connect(_on_ingredient_stock_changed)
 	fold_model.changed.connect(_refresh_fold_ui)
 	tool_controller.tool_changed.connect(_on_tool_changed)
@@ -249,6 +270,71 @@ func _ready() -> void:
 	_refresh_ingredient_stock_ui()
 	_refresh_p1_ui()
 	_log_info(&"workstation", "PancakeModel ready: %dx%d" % [parameters.grid_size, parameters.grid_size])
+
+
+func apply_progression_effects(snapshot: Dictionary) -> void:
+	var owned_items := Array(snapshot.get("owned_items", []))
+	_spreader_width_multiplier = 1.35 if owned_items.has("tool.spreader.wide") else 1.0
+	_press_spreader_owned = owned_items.has("tool.spreader.press_once")
+	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic")
+
+
+func use_press_spreader() -> Dictionary:
+	if not _press_spreader_owned:
+		return {"success": false, "reason": &"tool_not_owned"}
+	if _press_spreader_used:
+		tool_status_label.text = "单次压饼器每张饼只能使用一次"
+		return {"success": false, "reason": &"already_used"}
+	if p1_session == null or p1_session.phase != P1Session.Phase.SPREAD or not pour_used:
+		tool_status_label.text = "倒入面糊后、进入煎制前才能使用压饼器"
+		return {"success": false, "reason": &"wrong_phase"}
+	var result: Dictionary = pancake_model.call("apply_standard_press_spread")
+	_press_spreader_used = true
+	p1_session.call("advance_time", 1.2)
+	tool_status_label.text = "压饼器已完成标准摊平 · 本张已使用"
+	result["success"] = int(result.get("changed_cells", 0)) > 0
+	return result
+
+
+func use_automatic_sauce_brush() -> Dictionary:
+	if not _automatic_brush_owned:
+		return {"success": false, "reason": &"tool_not_owned"}
+	if p1_session == null or p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
+		tool_status_label.text = "翻面后才能使用自动酱刷"
+		return {"success": false, "reason": &"wrong_phase"}
+	var required_sauces: Array = p1_session.order.get("sauces", [])
+	for sauce_type_variant in required_sauces:
+		var sauce_type := StringName(sauce_type_variant)
+		var state: RefCounted = sauce_tool_states.get(sauce_type)
+		if state == null or float(state.get("load")) <= 0.0:
+			tool_status_label.text = "自动酱刷仍需先把%s挤到刷头" % OrderService.sauce_display_name(sauce_type)
+			return {"success": false, "reason": &"sauce_not_loaded", "sauce_type": sauce_type}
+	var total_changed := 0
+	var covered_cells := maxi(pancake_model.covered_cell_count(), 1)
+	for sauce_type_variant in required_sauces:
+		var sauce_type := StringName(sauce_type_variant)
+		var state: RefCounted = sauce_tool_states[sauce_type]
+		var load_per_cell := parameters.sauce_brush_capacity / float(covered_cells)
+		var remaining_cells := floori(float(state.get("load")) / maxf(load_per_cell, 0.000001))
+		var stroke_id := pancake_model.begin_sauce_stroke()
+		var changed_for_sauce := 0
+		var step := maxi(roundi(parameters.sauce_brush_radius * 1.35), 1)
+		for y in range(step / 2, pancake_model.grid_size, step):
+			for x in range(step / 2, pancake_model.grid_size, step):
+				if remaining_cells <= 0:
+					break
+				var result := pancake_model.apply_sauce_sample(Vector2(x, y), parameters.sauce_layer_concentration, parameters.sauce_brush_radius, stroke_id, remaining_cells, sauce_type)
+				var changed := int(result.get("newly_layered_cells", 0))
+				remaining_cells -= changed
+				changed_for_sauce += changed
+			if remaining_cells <= 0:
+				break
+		state.call("consume", float(changed_for_sauce) * load_per_cell)
+		total_changed += changed_for_sauce
+	p1_session.call("advance_time", 1.5 * float(required_sauces.size()))
+	_refresh_sauce_load_display()
+	tool_status_label.text = "自动酱刷已按订单完成刷酱 · 已消耗酱料与时间"
+	return {"success": total_changed > 0, "changed_cells": total_changed}
 
 
 func _process(delta: float) -> void:
@@ -290,6 +376,7 @@ func reset_pancake() -> void:
 	ingredient_layer.visible = true
 	sauce_blob_overlay.visible = true
 	pour_used = false
+	_press_spreader_used = false
 	_spread_shape_locked = false
 	ladle_button.disabled = false
 	pancake_surface.clear_trace()
@@ -373,7 +460,7 @@ func _process_scraper(grid_position: Vector2, delta: float) -> void:
 			_previous_scrape_sample = sample
 			continue
 		var outward_direction := Vector2.from_angle(_spreader_smoothed_angle)
-		var result := pancake_model.apply_scraper_sample(sample, outward_direction, effect_speed)
+		var result := pancake_model.apply_scraper_sample(sample, outward_direction, effect_speed, _spreader_width_multiplier)
 		_previous_scrape_sample = sample
 		_spreader_max_radius = maxf(_spreader_max_radius, sample_offset.length())
 		applied_sample = true
@@ -404,7 +491,7 @@ func _process_egg_scraper(grid_position: Vector2, delta: float) -> void:
 	var raw_angular_speed := angular_delta / maxf(delta, 0.000001)
 	_update_spreader_speed(raw_angular_speed, delta)
 	var effect_speed := _spreader_effect_speed()
-	var result := pancake_model.apply_egg_spreader_path(samples, effect_speed)
+	var result := pancake_model.apply_egg_spreader_path(samples, effect_speed, _spreader_width_multiplier)
 	var applied_sample := int(result.changed_cells) > 0
 	if not samples.is_empty():
 		_previous_scrape_sample = samples[samples.size() - 1]
@@ -1128,6 +1215,8 @@ func _refresh_ingredient_stock_ui() -> void:
 		IngredientModel.BAOCUI: baocui_button,
 		IngredientModel.HAM_SAUSAGE: ham_button,
 		IngredientModel.SCALLION: scallion_button,
+		IngredientModel.MEAT_FLOSS: meat_floss_button,
+		IngredientModel.PORK_TENDERLOIN: pork_tenderloin_button,
 	}
 	var restock_buttons := {
 		IngredientModel.EGG: egg_restock_button,
@@ -1138,9 +1227,11 @@ func _refresh_ingredient_stock_ui() -> void:
 	for ingredient_type in IngredientModel.TYPES:
 		var current_stock: int = ingredient_stock_model.current(ingredient_type)
 		(slots[ingredient_type] as Button).call("set_stock_quantity", current_stock)
+		if not restock_buttons.has(ingredient_type):
+			continue
 		var restock_button := restock_buttons[ingredient_type] as Button
 		var legacy_rack_visible := (restock_button.get_parent() as CanvasItem).visible
-		restock_button.disabled = not legacy_rack_visible or current_stock >= INGREDIENT_STOCK_MODEL_SCRIPT.CAPACITY
+		restock_button.disabled = not legacy_rack_visible or current_stock >= ingredient_stock_model.capacity(ingredient_type)
 		restock_button.mouse_filter = Control.MOUSE_FILTER_STOP if legacy_rack_visible else Control.MOUSE_FILTER_IGNORE
 		restock_button.tooltip_text = "托盘已满" if legacy_rack_visible and restock_button.disabled else ""
 
@@ -1357,25 +1448,27 @@ func end_business_day() -> void:
 
 func _populate_daily_bill(bill: Dictionary) -> void:
 	daily_bill_title_label.text = "第%d日 · 今日账单" % int(bill.get("day", 1))
-	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 平均 %d分" % [
+	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 平均 %d分 · 声誉 %+d" % [
 		int(bill.get("order_count", 0)),
 		int(bill.get("total_coins", 0)),
 		roundi(float(bill.get("average_score", 0.0))),
+		int(bill.get("reputation_delta", 0)),
 	]
 	for child in daily_bill_rows.get_children():
 		child.queue_free()
 	var entries: Array = bill.get("orders", [])
 	if entries.is_empty():
 		_add_bill_row("—", "今天还没有完成订单", "—", "0金币")
-		return
-	for index in entries.size():
-		var entry: Dictionary = entries[index]
-		_add_bill_row(
-			str(index + 1),
-			str(entry.get("title", "未命名订单")),
-			"%d分" % int(entry.get("score", 0)),
-			"+%d金币" % int(entry.get("coins", 0))
-		)
+	else:
+		for index in entries.size():
+			var entry: Dictionary = entries[index]
+			_add_bill_row(
+				str(index + 1),
+				str(entry.get("title", "未命名订单")),
+				"%d分" % int(entry.get("score", 0)),
+				"+%d金币" % int(entry.get("coins", 0))
+			)
+	_refresh_growth_section()
 
 
 func _add_bill_row(index_text: String, title_text: String, score_text: String, income_text: String) -> void:
@@ -1395,6 +1488,74 @@ func _add_bill_row(index_text: String, title_text: String, score_text: String, i
 func _close_daily_bill() -> void:
 	daily_bill_panel.visible = false
 	daily_bill_closed.emit()
+
+
+func _refresh_growth_section(message: String = "") -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	_growth_recommendations.clear()
+	if game_session == null or not game_session.has_method("growth_recommendations"):
+		growth_balance_label.text = "成长服务暂不可用"
+		growth_message_label.text = "可以返回开始页，今日进度仍会保留。"
+		for button in growth_ticket_buttons:
+			button.visible = false
+		begin_next_day_button.disabled = true
+		return
+	var snapshot: Dictionary = game_session.call("workstation_progression_snapshot")
+	_growth_recommendations.assign(game_session.call("growth_recommendations", growth_ticket_buttons.size()))
+	growth_balance_label.text = "现有 %d 金币 · 声誉 %d · 店铺%d级 · 购买后第%d天生效" % [
+		int(snapshot.get("coins", 0)),
+		int(snapshot.get("reputation", 0)),
+		int(snapshot.get("stall_tier", 0)),
+		int(snapshot.get("current_day", 1)) + 1,
+	]
+	for index in growth_ticket_buttons.size():
+		var button := growth_ticket_buttons[index]
+		button.visible = index < _growth_recommendations.size()
+		if not button.visible:
+			continue
+		var recommendation := _growth_recommendations[index]
+		button.set_meta(&"growth_item_id", StringName(recommendation.get("item_id", "")))
+		button.text = "[%s] %s\n%s\n%d 金币\n%s" % [
+			str(recommendation.get("category", "成长")),
+			str(recommendation.get("label", "未命名")),
+			str(recommendation.get("description", "")),
+			int(recommendation.get("price", 0)),
+			str(recommendation.get("status_text", "")),
+		]
+		button.tooltip_text = str(recommendation.get("status_text", ""))
+		button.disabled = not bool(recommendation.get("can_purchase", false))
+	var pending_purchase := StringName(snapshot.get("pending_purchase", ""))
+	begin_next_day_button.disabled = false
+	begin_next_day_button.text = "确认选择并开始下一天" if not pending_purchase.is_empty() else "不购买，直接开始下一天"
+	growth_message_label.text = message if not message.is_empty() else (
+		"已选择一项成长，明日装上。" if not pending_purchase.is_empty() else "每天最多购买一项，也可以暂不购买。"
+	)
+
+
+func _on_growth_ticket_pressed(ticket_index: int) -> void:
+	if ticket_index < 0 or ticket_index >= _growth_recommendations.size():
+		return
+	var item_id := StringName(_growth_recommendations[ticket_index].get("item_id", ""))
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or item_id.is_empty():
+		return
+	var result: Dictionary = game_session.call("purchase_growth", item_id)
+	if bool(result.get("success", false)):
+		_refresh_growth_section("已付款并盖章：明日装上。")
+	else:
+		_refresh_growth_section("未能购买：%s" % str(result.get("reason", "条件不足")))
+
+
+func _begin_next_business_day() -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return
+	var result: Dictionary = game_session.call("begin_next_business_day")
+	if not bool(result.get("success", false)):
+		growth_message_label.text = "下一营业日未能开始，请返回开始页后重试。"
+		return
+	daily_bill_panel.visible = false
+	get_tree().reload_current_scene()
 
 
 func _refresh_p1_ui() -> void:

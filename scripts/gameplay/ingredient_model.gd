@@ -7,13 +7,17 @@ const EGG: StringName = &"egg"
 const BAOCUI: StringName = &"baocui"
 const HAM_SAUSAGE: StringName = &"ham_sausage"
 const SCALLION: StringName = &"scallion"
-const TYPES: Array[StringName] = [EGG, BAOCUI, HAM_SAUSAGE, SCALLION]
+const MEAT_FLOSS: StringName = &"meat_floss"
+const PORK_TENDERLOIN: StringName = &"pork_tenderloin"
+const TYPES: Array[StringName] = [EGG, BAOCUI, HAM_SAUSAGE, SCALLION, MEAT_FLOSS, PORK_TENDERLOIN]
 
 const DEFINITIONS := {
 	EGG: {"label": "鸡蛋", "structural_load": 0.16, "wetness": 0.30},
 	BAOCUI: {"label": "薄脆", "structural_load": 0.42, "wetness": 0.0},
 	HAM_SAUSAGE: {"label": "火腿肠", "structural_load": 0.34, "wetness": 0.05},
 	SCALLION: {"label": "葱花", "structural_load": 0.06, "wetness": 0.04},
+	MEAT_FLOSS: {"label": "肉松", "structural_load": 0.20, "wetness": 0.02},
+	PORK_TENDERLOIN: {"label": "里脊肉", "structural_load": 0.55, "wetness": 0.08},
 }
 
 var placements: Array[Dictionary] = []

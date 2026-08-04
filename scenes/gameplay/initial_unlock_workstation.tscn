@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/workstation.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/ui/initial_unlock_workstation_adapter.gd" id="2_adapter"]
@@ -7,6 +7,9 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="5_ladle_display"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1.png" id="6_spreader_display"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1.png" id="7_brush_display"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png" id="8_wide_spreader"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png" id="9_automatic_brush"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png" id="10_press_spreader"]
 [sub_resource type="StyleBoxFlat" id="StyleBox_tool_rack"]
 bg_color = Color(0.28, 0.105, 0.045, 0.96)
 border_width_left = 5
@@ -151,10 +154,10 @@ visible = false
 [node name="Label" parent="SafeArea/IngredientRack/ScallionButton" index="2"]
 visible = false
 
-[node name="ReserveIngredientSlot1" parent="SafeArea/IngredientRack" index="4"]
+[node name="MeatFlossButton" parent="SafeArea/IngredientRack" index="4"]
 visible = false
 
-[node name="ReserveIngredientSlot2" parent="SafeArea/IngredientRack" index="5"]
+[node name="PorkTenderloinButton" parent="SafeArea/IngredientRack" index="5"]
 visible = false
 
 [node name="LeftRack" parent="SafeArea" index="11"]
@@ -517,6 +520,8 @@ tooltip_text = "尚未解锁"
 theme_override_styles/normal = SubResource("StyleBox_clear")
 theme_override_styles/disabled = SubResource("StyleBox_clear")
 disabled = true
+icon = ExtResource("8_wide_spreader")
+expand_icon = true
 metadata/item_id = &"tool.spreader.wide"
 metadata/show_locked_cover = false
 
@@ -542,6 +547,8 @@ tooltip_text = "尚未解锁"
 theme_override_styles/normal = SubResource("StyleBox_clear")
 theme_override_styles/disabled = SubResource("StyleBox_clear")
 disabled = true
+icon = ExtResource("9_automatic_brush")
+expand_icon = true
 metadata/item_id = &"tool.sauce_brush.automatic"
 metadata/show_locked_cover = false
 
@@ -567,6 +574,8 @@ tooltip_text = "尚未解锁"
 theme_override_styles/normal = SubResource("StyleBox_clear")
 theme_override_styles/disabled = SubResource("StyleBox_clear")
 disabled = true
+icon = ExtResource("10_press_spreader")
+expand_icon = true
 metadata/item_id = &"tool.spreader.press_once"
 metadata/show_locked_cover = false
 

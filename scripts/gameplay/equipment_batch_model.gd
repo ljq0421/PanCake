@@ -188,6 +188,23 @@ func snapshot() -> Dictionary:
 	}
 
 
+func load_snapshot(data: Dictionary) -> void:
+	if not owned or data.is_empty():
+		return
+	var restored_state := StringName(data.get("state", STATE_IDLE))
+	if not restored_state in [STATE_IDLE, STATE_LOADING, STATE_PROCESSING, STATE_SAFE_HOLD, STATE_DECAYING, STATE_HOLDING]:
+		restored_state = STATE_IDLE
+	state = restored_state
+	recipe_id = StringName(data.get("recipe_id", ""))
+	loaded_quantity = clampi(int(data.get("loaded_quantity", 0)), 0, capacity())
+	processing_elapsed = clampf(float(data.get("processing_elapsed", 0.0)), 0.0, duration_seconds())
+	completed_elapsed = maxf(float(data.get("completed_elapsed", 0.0)), 0.0)
+	quality = clampf(float(data.get("quality", CATALOG.QUALITY_INITIAL)), 0.0, CATALOG.QUALITY_INITIAL)
+	_actions = Dictionary(data.get("actions", {})).duplicate(true)
+	if loaded_quantity <= 0 or recipe_id.is_empty():
+		_reset_to_idle()
+
+
 static func decorate_product(product: Dictionary, add_on_id: StringName) -> Dictionary:
 	var definition := CATALOG.recipe_definition(add_on_id)
 	if definition.is_empty() or definition.get("kind", &"") != &"add_on":

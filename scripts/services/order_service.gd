@@ -45,6 +45,26 @@ const ORDERS: Array[Dictionary] = [
 		"payment_coins": 5,
 		"customer_line": "不要火腿和薄脆，嫩一点就好。",
 	},
+	{
+		"id": &"meat_floss_sweet",
+		"title": "甜酱肉松煎饼",
+		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.MEAT_FLOSS, IngredientModel.SCALLION],
+		"sauces": [SAUCE_SWEET],
+		"heat_preference": &"golden",
+		"time_limit": 84.0,
+		"payment_coins": 28,
+		"customer_line": "肉松铺匀些，甜酱和葱花都要。",
+	},
+	{
+		"id": &"tenderloin_double_sauce",
+		"title": "双酱里脊煎饼",
+		"ingredients": [IngredientModel.EGG, IngredientModel.PORK_TENDERLOIN, IngredientModel.SCALLION],
+		"sauces": [SAUCE_SWEET, SAUCE_CHILI],
+		"heat_preference": &"well_done",
+		"time_limit": 88.0,
+		"payment_coins": 36,
+		"customer_line": "里脊配双酱，饼皮要结实一点。",
+	},
 ]
 
 var _cursor := 0

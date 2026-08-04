@@ -7,6 +7,11 @@ $env:APPDATA = Join-Path $sandboxData 'Roaming'
 $env:LOCALAPPDATA = Join-Path $sandboxData 'Local'
 $checks = @(
 	'res://tests/integration/start_menu_self_check.gd',
+	'res://tests/unit/game_session_progression_self_check.gd',
+	'res://tests/integration/daily_growth_self_check.gd',
+	'res://tests/integration/ingredient_unlock_self_check.gd',
+	'res://tests/integration/tool_equipment_effect_self_check.gd',
+	'res://tests/integration/stall_upgrade_self_check.gd',
 	'res://tests/unit/ingredient_stock_self_check.gd',
 	'res://tests/unit/payment_coin_model_self_check.gd',
 	'res://tests/unit/progression_refill_self_check.gd',

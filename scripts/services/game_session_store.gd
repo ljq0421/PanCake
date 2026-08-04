@@ -2,17 +2,13 @@ extends Node
 
 signal settings_changed(current_settings: Dictionary)
 signal coins_changed(current_coins: int)
+signal progression_changed(snapshot: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 const DEFAULT_ORDER_COINS := 3
-const DEFAULT_INGREDIENT_STOCK := {
-	"egg": 6,
-	"baocui": 6,
-	"ham_sausage": 0,
-	"scallion": 6,
-}
+const PROGRESSION_SERVICE := preload("res://scripts/services/workstation_progression_service.gd")
 const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
 	"sfx_volume": 85.0,
@@ -21,10 +17,12 @@ const DEFAULT_SETTINGS := {
 
 var _save_data: Dictionary = {}
 var _settings: Dictionary = DEFAULT_SETTINGS.duplicate(true)
+var _progression: RefCounted
 
 
 func _ready() -> void:
 	_load_save()
+	_restore_progression()
 	_load_settings()
 	apply_settings()
 
@@ -35,19 +33,19 @@ func has_save() -> bool:
 
 func begin_new_game() -> void:
 	var now := int(Time.get_unix_time_from_system())
+	_progression = PROGRESSION_SERVICE.new()
 	_save_data = {
 		"version": SAVE_VERSION,
 		"started_at_unix": now,
 		"last_played_at_unix": now,
 		"orders_completed": 0,
-		"current_day": 1,
 		"day_open": true,
 		"today_orders": [],
-		"coins": 0,
-		"refill_progress": {},
-		"ingredient_stock": DEFAULT_INGREDIENT_STOCK.duplicate(true),
+		"today_reputation_delta": 0,
+		"progression": _progression.call("snapshot"),
 	}
 	_write_save()
+	progression_changed.emit(workstation_progression_snapshot())
 
 
 func continue_game() -> bool:
@@ -82,6 +80,7 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 	var today_orders: Array = _save_data.get("today_orders", [])
 	today_orders.append(entry)
 	_save_data["today_orders"] = today_orders
+	_record_progression_for_order(result)
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
 
@@ -97,80 +96,70 @@ func today_bill() -> Dictionary:
 		total_coins += int(entry.get("coins", 0))
 		total_score += float(entry.get("score", 0.0))
 	return {
-		"day": int(_save_data.get("current_day", 1)),
+		"day": int(_progression.get("current_day")),
 		"orders": orders,
 		"order_count": orders.size(),
 		"total_coins": total_coins,
 		"average_score": total_score / maxf(float(orders.size()), 1.0),
+		"reputation_delta": int(_save_data.get("today_reputation_delta", 0)),
+		"reputation": int(_progression.get("reputation")),
+		"coins": int(_progression.get("coins")),
 	}
 
 
 func ingredient_stock_snapshot() -> Dictionary:
-	if not has_save():
-		return DEFAULT_INGREDIENT_STOCK.duplicate(true)
-	_ensure_day_fields()
-	return Dictionary(_save_data.get("ingredient_stock", DEFAULT_INGREDIENT_STOCK)).duplicate(true)
+	_ensure_progression()
+	return Dictionary(_progression.get("inventory").call("snapshot")).duplicate(true)
 
 
 func save_ingredient_stock(snapshot: Dictionary) -> void:
 	if not has_save():
 		return
-	var sanitized := {}
-	for ingredient_id in DEFAULT_INGREDIENT_STOCK:
-		sanitized[ingredient_id] = clampi(int(snapshot.get(ingredient_id, DEFAULT_INGREDIENT_STOCK[ingredient_id])), 0, 6)
-	_save_data["ingredient_stock"] = sanitized
+	_ensure_progression()
+	var inventory: RefCounted = _progression.get("inventory")
+	if Dictionary(inventory.call("snapshot")) != snapshot:
+		inventory.call("load_snapshot", snapshot)
+	_sync_progression_to_save()
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
 
 
 func workstation_progression_snapshot() -> Dictionary:
-	if not has_save():
-		return {
-			"coins": 0,
-			"current_day": 1,
-			"ingredient_stock": DEFAULT_INGREDIENT_STOCK.duplicate(true),
-			"refill_progress": {},
-		}
-	_ensure_day_fields()
-	return {
-		"coins": int(_save_data.get("coins", 0)),
-		"current_day": int(_save_data.get("current_day", 1)),
-		"ingredient_stock": ingredient_stock_snapshot(),
-		"refill_progress": Dictionary(_save_data.get("refill_progress", {})).duplicate(true),
-	}
+	_ensure_progression()
+	return Dictionary(_progression.call("snapshot")).duplicate(true)
+
+
+func progression_service() -> RefCounted:
+	_ensure_progression()
+	return _progression
 
 
 func save_workstation_progression(snapshot: Dictionary) -> void:
 	if not has_save():
 		return
-	_ensure_day_fields()
-	var previous_coins := int(_save_data.get("coins", 0))
-	_save_data["coins"] = maxi(int(snapshot.get("coins", previous_coins)), 0)
-	var progress := {}
-	for stock_id in Dictionary(snapshot.get("refill_progress", {})):
-		progress[str(stock_id)] = maxf(float(snapshot.refill_progress[stock_id]), 0.0)
-	_save_data["refill_progress"] = progress
-	var inventory_snapshot := Dictionary(snapshot.get("ingredient_stock", {}))
-	if not inventory_snapshot.is_empty():
-		var sanitized := {}
-		for ingredient_id in DEFAULT_INGREDIENT_STOCK:
-			sanitized[ingredient_id] = clampi(int(inventory_snapshot.get(ingredient_id, DEFAULT_INGREDIENT_STOCK[ingredient_id])), 0, 6)
-		_save_data["ingredient_stock"] = sanitized
+	_ensure_progression()
+	var previous_coins := int(_progression.get("coins"))
+	if Dictionary(_progression.call("snapshot")) != snapshot:
+		_progression.call("load_snapshot", snapshot)
+	_sync_progression_to_save()
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
-	if int(_save_data["coins"]) != previous_coins:
-		coins_changed.emit(int(_save_data["coins"]))
+	if int(_progression.get("coins")) != previous_coins:
+		coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(workstation_progression_snapshot())
 
 
 func credit_coins(amount: int) -> int:
 	if not has_save():
 		return 0
-	_ensure_day_fields()
-	_save_data["coins"] = int(_save_data.get("coins", 0)) + maxi(amount, 0)
+	_ensure_progression()
+	_progression.call("credit", amount)
+	_sync_progression_to_save()
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
-	coins_changed.emit(int(_save_data["coins"]))
-	return int(_save_data["coins"])
+	coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(workstation_progression_snapshot())
+	return int(_progression.get("coins"))
 
 
 func end_business_day() -> Dictionary:
@@ -182,6 +171,51 @@ func end_business_day() -> Dictionary:
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
 	return Dictionary(_save_data["last_bill"]).duplicate(true)
+
+
+func purchase_growth(item_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var result: Dictionary = _progression.call("purchase", item_id)
+	if bool(result.get("success", false)):
+		_sync_progression_to_save()
+		_write_save()
+		coins_changed.emit(int(_progression.get("coins")))
+		progression_changed.emit(workstation_progression_snapshot())
+	return result
+
+
+func growth_recommendations(limit: int = 3) -> Array[Dictionary]:
+	_ensure_progression()
+	return Array(_progression.call("growth_recommendations", limit)).duplicate(true)
+
+
+func growth_purchase_status(item_id: StringName) -> Dictionary:
+	_ensure_progression()
+	return Dictionary(_progression.call("purchase_status", item_id)).duplicate(true)
+
+
+func unlocked_ingredient_ids() -> Array[StringName]:
+	_ensure_progression()
+	var result: Array[StringName] = []
+	result.assign(_progression.call("unlocked_ingredient_ids"))
+	return result
+
+
+func begin_next_business_day() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var result: Dictionary = _progression.call("begin_next_business_day")
+	_save_data["day_open"] = true
+	_save_data["today_orders"] = []
+	_save_data["today_reputation_delta"] = 0
+	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
+	_sync_progression_to_save()
+	_write_save()
+	progression_changed.emit(workstation_progression_snapshot())
+	return result
 
 
 func resume_summary() -> String:
@@ -235,21 +269,62 @@ func _load_save() -> void:
 		_ensure_day_fields()
 
 
+func _restore_progression() -> void:
+	if has_save():
+		_progression = PROGRESSION_SERVICE.new(Dictionary(_save_data.get("progression", {})))
+	else:
+		_progression = PROGRESSION_SERVICE.new()
+
+
+func _ensure_progression() -> void:
+	if _progression == null:
+		_restore_progression()
+
+
+func _sync_progression_to_save() -> void:
+	if _save_data.is_empty():
+		return
+	_ensure_progression()
+	_save_data["progression"] = _progression.call("snapshot")
+
+
+func _record_progression_for_order(result: Dictionary) -> void:
+	_ensure_progression()
+	var score := roundi(float(result.get("score", 0.0)))
+	var lifetime_orders := int(_progression.call("metric", &"lifetime_orders")) + 1
+	var score_total := int(_progression.call("metric", &"score_total")) + score
+	_progression.call("set_metric", &"lifetime_orders", lifetime_orders)
+	_progression.call("set_metric", &"score_total", score_total)
+	_progression.call("set_metric", &"average_score", roundi(float(score_total) / float(lifetime_orders)))
+	if score >= 65:
+		_progression.call("set_metric", &"manual_spread_good", int(_progression.call("metric", &"manual_spread_good")) + 1)
+	var reputation_delta := _reputation_delta_for_score(score)
+	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
+	_save_data["today_reputation_delta"] = int(_save_data.get("today_reputation_delta", 0)) + reputation_delta
+	_sync_progression_to_save()
+
+
+func _reputation_delta_for_score(score: int) -> int:
+	if score >= 85:
+		return 4
+	if score >= 70:
+		return 3
+	if score >= 60:
+		return 2
+	if score >= 45:
+		return 1
+	return -1
+
+
 func _ensure_day_fields() -> void:
 	if _save_data.is_empty():
 		return
-	if not _save_data.has("current_day"):
-		_save_data["current_day"] = 1
 	if not _save_data.has("day_open"):
 		_save_data["day_open"] = true
 	if not _save_data.has("today_orders"):
 		_save_data["today_orders"] = []
-	if not _save_data.has("ingredient_stock"):
-		_save_data["ingredient_stock"] = DEFAULT_INGREDIENT_STOCK.duplicate(true)
-	if not _save_data.has("coins"):
-		_save_data["coins"] = 0
-	if not _save_data.has("refill_progress"):
-		_save_data["refill_progress"] = {}
+	if not _save_data.has("today_reputation_delta"):
+		_save_data["today_reputation_delta"] = 0
 
 
 func _write_save() -> void:

@@ -90,8 +90,8 @@ func _check_scene_contract() -> void:
 	var baocui_button := workstation.get_node("SafeArea/IngredientRack/BaocuiButton") as Button
 	var ham_button := workstation.get_node("SafeArea/IngredientRack/HamButton") as Button
 	var scallion_button := workstation.get_node("SafeArea/IngredientRack/ScallionButton") as Button
-	var reserve_ingredient_1 := workstation.get_node("SafeArea/IngredientRack/ReserveIngredientSlot1") as Button
-	var reserve_ingredient_2 := workstation.get_node("SafeArea/IngredientRack/ReserveIngredientSlot2") as Button
+	var meat_floss_button := workstation.get_node("SafeArea/IngredientRack/MeatFlossButton") as Button
+	var pork_tenderloin_button := workstation.get_node("SafeArea/IngredientRack/PorkTenderloinButton") as Button
 	var pan_base := workstation.get_node("SafeArea/PanBase") as Control
 	var griddle_artwork := workstation.get_node("SafeArea/PanBase/GriddleArtwork") as Sprite2D
 	var spreader_artwork := workstation.get_node("SafeArea/PanBase/PancakeSurface/SpreaderArtwork") as Sprite2D
@@ -112,7 +112,7 @@ func _check_scene_contract() -> void:
 	_check(not fold_button.visible and sauce_brush_button.size == Vector2(105, 145), "fold stays state-driven while the sauce brush covers its confirmed holder")
 	_check(ladle_button.global_position.x < 600.0 and spreader_button.global_position.x < 600.0 and fold_button.global_position.x < 600.0 and sauce_brush_button.global_position.x < 600.0, "all four tools are hosted by the left tool rack")
 	_check(egg_button.visible and baocui_button.visible and scallion_button.visible and not ham_button.visible and ham_button.disabled, "only egg, baocui, and scallion occupy opening-day tray slots")
-	_check(reserve_ingredient_1.disabled and reserve_ingredient_2.disabled and not reserve_ingredient_1.visible and not reserve_ingredient_2.visible, "legacy reserve controls do not add permanent tray UI")
+	_check(meat_floss_button.disabled and pork_tenderloin_button.disabled and not meat_floss_button.visible and not pork_tenderloin_button.visible, "later permanent ingredient trays remain hidden until their progression unlocks")
 	_check(ladle_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_ladle_v1.png", "automatic pour uses the approved tabletop ladle artwork")
 	_check(spreader_button_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1.png", "spreader selection uses the approved tabletop artwork")
 	_check(fold_tool_artwork.texture.resource_path == "res://resources/art/workstation/tools/folding_spatula_v1.png", "fold selection uses the approved tabletop spatula artwork")

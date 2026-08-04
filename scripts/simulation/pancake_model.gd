@@ -356,14 +356,14 @@ func total_egg_amount() -> float:
 	return total
 
 
-func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, commit_change: bool = true) -> Dictionary:
+func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, commit_change: bool = true, width_multiplier: float = 1.0) -> Dictionary:
 	var started := Time.get_ticks_usec()
 	if egg_state == EggState.NONE or is_flipped:
 		return {"changed_cells": 0, "moved_mass": 0.0, "yolk_broken": yolk_broken}
 	var safe_direction := direction.normalized()
 	if safe_direction.is_zero_approx():
 		return {"changed_cells": 0, "moved_mass": 0.0, "yolk_broken": yolk_broken}
-	var radius := parameters.scraper_width * 0.5
+	var radius := parameters.scraper_width * 0.5 * maxf(width_multiplier, 0.1)
 	var bar_half_thickness := parameters.spreader_bar_thickness * 0.5
 	var crossbar_direction := safe_direction.orthogonal()
 	var speed_factor := clampf(1.08 - maxf(speed_cells_per_second, 0.0) / 260.0, 0.32, 1.0)
@@ -461,7 +461,7 @@ func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_
 	}
 
 
-func apply_egg_spreader_path(samples: PackedVector2Array, speed_cells_per_second: float) -> Dictionary:
+func apply_egg_spreader_path(samples: PackedVector2Array, speed_cells_per_second: float, width_multiplier: float = 1.0) -> Dictionary:
 	var started := Time.get_ticks_usec()
 	var changed_cells := 0
 	var moved_mass := 0.0
@@ -471,7 +471,7 @@ func apply_egg_spreader_path(samples: PackedVector2Array, speed_cells_per_second
 		var polar_offset := Vector2(offset.x, offset.y / maxf(parameters.pan_height_ratio, 0.01))
 		if polar_offset.length() <= 1.0:
 			continue
-		var result := apply_egg_spreader_sample(sample, polar_offset.normalized(), speed_cells_per_second, false)
+		var result := apply_egg_spreader_sample(sample, polar_offset.normalized(), speed_cells_per_second, false, width_multiplier)
 		changed_cells += int(result.changed_cells)
 		moved_mass += float(result.moved_mass)
 	if changed_cells > 0:
@@ -582,12 +582,12 @@ func mean_side_doneness(back_side: bool) -> float:
 	return total / maxf(float(count), 1.0)
 
 
-func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float) -> Dictionary:
+func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, width_multiplier: float = 1.0) -> Dictionary:
 	var started := Time.get_ticks_usec()
 	var safe_direction := direction.normalized()
 	if safe_direction.is_zero_approx():
 		return {"changed_cells": 0, "moved_mass": 0.0, "new_holes": 0, "peak_damage": 0.0}
-	var radius := parameters.scraper_width * 0.5
+	var radius := parameters.scraper_width * 0.5 * maxf(width_multiplier, 0.1)
 	var bar_half_thickness := parameters.spreader_bar_thickness * 0.5
 	var crossbar_direction := safe_direction.orthogonal()
 	var min_x := maxi(floori(center.x - radius), 0)
@@ -686,6 +686,23 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 		"new_holes": new_holes,
 		"peak_damage": peak_damage,
 	}
+
+
+func apply_standard_press_spread() -> Dictionary:
+	var center := Vector2(grid_size - 1, grid_size - 1) * 0.5
+	var changed_cells := 0
+	var moved_mass := 0.0
+	var new_holes := 0
+	for ring_radius in [0.0, 5.0, 10.0, 15.0, 20.0, 25.0]:
+		var sample_count := 1 if ring_radius <= 0.0 else 16
+		for sample_index in sample_count:
+			var direction: Vector2 = Vector2.RIGHT.rotated(TAU * float(sample_index) / float(sample_count))
+			var sample: Vector2 = center + direction * float(ring_radius)
+			var result := apply_scraper_sample(sample, direction, 72.0, 1.35)
+			changed_cells += int(result.get("changed_cells", 0))
+			moved_mass += float(result.get("moved_mass", 0.0))
+			new_holes += int(result.get("new_holes", 0))
+	return {"changed_cells": changed_cells, "moved_mass": moved_mass, "new_holes": new_holes}
 
 
 func begin_sauce_stroke() -> int:

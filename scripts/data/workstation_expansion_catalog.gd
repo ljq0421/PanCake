@@ -32,6 +32,10 @@ const TOOL_SAUCE_BRUSH_AUTO: StringName = &"tool.sauce_brush.automatic"
 const INGREDIENT_BOX_BASIC: StringName = &"capacity.ingredient_box.basic"
 const INGREDIENT_BOX_INTERMEDIATE: StringName = &"capacity.ingredient_box.intermediate"
 const INGREDIENT_BOX_ADVANCED: StringName = &"capacity.ingredient_box.advanced"
+const UNLOCK_INGREDIENT_HAM: StringName = &"ingredient_unlock.ham_sausage"
+const UNLOCK_INGREDIENT_MEAT_FLOSS: StringName = &"ingredient_unlock.meat_floss"
+const UNLOCK_INGREDIENT_PORK_TENDERLOIN: StringName = &"ingredient_unlock.pork_tenderloin"
+const STALL_FIXED: StringName = &"stall.fixed_shop"
 
 const UPGRADE_SOY_BASIC: StringName = &"equipment.soy_milk.basic"
 const UPGRADE_SOY_INTERMEDIATE: StringName = &"equipment.soy_milk.intermediate"
@@ -62,6 +66,8 @@ const STOCK_EGG: StringName = &"egg"
 const STOCK_BAOCUI: StringName = &"baocui"
 const STOCK_HAM_SAUSAGE: StringName = &"ham_sausage"
 const STOCK_SCALLION: StringName = &"scallion"
+const STOCK_MEAT_FLOSS: StringName = &"meat_floss"
+const STOCK_PORK_TENDERLOIN: StringName = &"pork_tenderloin"
 const STOCK_SOY_YELLOW: StringName = &"raw.soy.yellow_bean"
 const STOCK_SOY_RED: StringName = &"raw.soy.red_bean"
 const STOCK_SOY_BLACK: StringName = &"raw.soy.black_bean"
@@ -146,6 +152,10 @@ const PURCHASE_DEFINITIONS := {
 	TOOL_SAUCE_BRUSH_AUTO: {"kind": &"owned_item", "price": 48, "requires_owned": TOOL_SAUCE_BRUSH_MANUAL, "min_day": 9, "min_reputation": 120, "metric": &"expanded_good", "metric_value": 14},
 	INGREDIENT_BOX_INTERMEDIATE: {"kind": &"ingredient_box", "price": 30, "target_tier": TIER_INTERMEDIATE, "requires_owned": INGREDIENT_BOX_BASIC, "min_day": 6, "min_reputation": 70},
 	INGREDIENT_BOX_ADVANCED: {"kind": &"ingredient_box", "price": 65, "target_tier": TIER_ADVANCED, "requires_owned": INGREDIENT_BOX_INTERMEDIATE, "min_day": 14, "min_reputation": 220},
+	UNLOCK_INGREDIENT_HAM: {"kind": &"ingredient_unlock", "price": 18, "min_day": 3, "min_reputation": 20, "metric": &"average_score", "metric_value": 65},
+	UNLOCK_INGREDIENT_MEAT_FLOSS: {"kind": &"ingredient_unlock", "price": 32, "min_day": 8, "metric": &"youtiao_good", "metric_value": 4},
+	UNLOCK_INGREDIENT_PORK_TENDERLOIN: {"kind": &"ingredient_unlock", "price": 50, "min_day": 9, "metric": &"expanded_good", "metric_value": 14},
+	STALL_FIXED: {"kind": &"stall", "price": 120, "target_tier": 1, "min_day": 14, "min_reputation": 220, "metric": &"all_equipment_good", "metric_value": 3},
 	UPGRADE_SOY_BASIC: {"kind": &"equipment", "price": 30, "device_id": DEVICE_SOY_MILK, "target_tier": TIER_BASIC, "min_day": 4, "min_reputation": 35, "metric": &"lifetime_orders", "metric_value": 12},
 	UPGRADE_SOY_INTERMEDIATE: {"kind": &"equipment", "price": 24, "device_id": DEVICE_SOY_MILK, "target_tier": TIER_INTERMEDIATE, "metric": &"soy_good", "metric_value": 4},
 	UPGRADE_SOY_ADVANCED: {"kind": &"equipment", "price": 54, "device_id": DEVICE_SOY_MILK, "target_tier": TIER_ADVANCED, "min_day": 14, "min_reputation": 220},
@@ -170,12 +180,48 @@ const PURCHASE_DEFINITIONS := {
 	UNLOCK_ADD_ON_CHOCOLATE: {"kind": &"owned_item", "price": 30, "requires_equipment": DEVICE_EGG_WAFFLE},
 }
 
+const PURCHASE_PRESENTATION := {
+	TOOL_SPREADER_WIDE: {"label": "加宽刮板", "category": "工具", "description": "手动摊饼覆盖更宽，容错更高。"},
+	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "每张饼可一键完成一次标准摊平。"},
+	TOOL_SAUCE_BRUSH_AUTO: {"label": "自动酱刷", "category": "工具", "description": "按订单自动刷酱，仍消耗酱料与时间。"},
+	INGREDIENT_BOX_INTERMEDIATE: {"label": "十格小料盒", "category": "容量", "description": "每种小料容量提升到 10 份。"},
+	INGREDIENT_BOX_ADVANCED: {"label": "十四格小料盒", "category": "容量", "description": "每种小料容量提升到 14 份。"},
+	UNLOCK_INGREDIENT_HAM: {"label": "火腿肠", "category": "永久小料", "description": "永久上架火腿肠；解锁后需自行补货。"},
+	UNLOCK_INGREDIENT_MEAT_FLOSS: {"label": "肉松", "category": "永久小料", "description": "永久上架肉松；松散铺料更考验分布。"},
+	UNLOCK_INGREDIENT_PORK_TENDERLOIN: {"label": "里脊肉", "category": "永久小料", "description": "永久上架里脊肉；份量扎实、结构负担更高。"},
+	STALL_FIXED: {"label": "固定店铺", "category": "店铺", "description": "从流动摊车升级为固定店铺，工作位保持不变。"},
+	UPGRADE_SOY_BASIC: {"label": "豆浆机", "category": "设备", "description": "解锁豆浆批量制作。"},
+	UPGRADE_SOY_INTERMEDIATE: {"label": "豆浆机改良", "category": "设备", "description": "缩短豆浆制作时间。"},
+	UPGRADE_SOY_ADVANCED: {"label": "豆浆机扩容", "category": "设备", "description": "单批容量提升到 4 份。"},
+	UPGRADE_YOUTIAO_BASIC: {"label": "炸油条机", "category": "设备", "description": "解锁油条批量制作。"},
+	UPGRADE_YOUTIAO_INTERMEDIATE: {"label": "炸油条机改良", "category": "设备", "description": "缩短油条制作时间。"},
+	UPGRADE_YOUTIAO_ADVANCED: {"label": "炸油条机扩容", "category": "设备", "description": "单批容量提升到 4 份。"},
+	UPGRADE_EGG_WAFFLE_BASIC: {"label": "鸡蛋仔机", "category": "设备", "description": "解锁鸡蛋仔制作。"},
+	UPGRADE_EGG_WAFFLE_INTERMEDIATE: {"label": "鸡蛋仔机改良", "category": "设备", "description": "缩短鸡蛋仔制作时间。"},
+	UPGRADE_EGG_WAFFLE_ADVANCED: {"label": "鸡蛋仔机扩容", "category": "设备", "description": "单批容量提升到 2 份。"},
+	AUTO_SOY_LOAD: {"label": "豆浆自动上料", "category": "自动化", "description": "自动消耗一份原料并装入豆浆机。"},
+	AUTO_SOY_EXTRACT: {"label": "豆浆自动出料", "category": "自动化", "description": "完成后自动取出豆浆。"},
+	AUTO_YOUTIAO_LOAD: {"label": "油条自动上料", "category": "自动化", "description": "自动消耗一份面胚并装入炸锅。"},
+	AUTO_YOUTIAO_EXTRACT: {"label": "油条自动出锅", "category": "自动化", "description": "满足出锅条件后自动收取。"},
+	AUTO_EGG_WAFFLE_LOAD: {"label": "鸡蛋仔自动上料", "category": "自动化", "description": "自动消耗一份面糊并装入机器。"},
+	AUTO_EGG_WAFFLE_OPEN: {"label": "鸡蛋仔自动开盖", "category": "自动化", "description": "烘烤完成后自动开盖。"},
+	AUTO_EGG_WAFFLE_EXTRACT: {"label": "鸡蛋仔自动出料", "category": "自动化", "description": "开盖后自动收取成品。"},
+	UNLOCK_RECIPE_SOY_RED: {"label": "红豆豆浆配方", "category": "配方", "description": "豆浆机可制作红豆豆浆。"},
+	UNLOCK_RECIPE_SOY_BLACK: {"label": "黑豆豆浆配方", "category": "配方", "description": "豆浆机可制作黑豆豆浆。"},
+	UNLOCK_RECIPE_YOUTIAO_SESAME: {"label": "芝麻油条配方", "category": "配方", "description": "炸锅可制作芝麻油条。"},
+	UNLOCK_RECIPE_YOUTIAO_SCALLION: {"label": "葱香油条配方", "category": "配方", "description": "炸锅可制作葱香油条。"},
+	UNLOCK_ADD_ON_STRAWBERRY: {"label": "草莓酱加料", "category": "配方", "description": "鸡蛋仔可搭配草莓酱。"},
+	UNLOCK_ADD_ON_CHOCOLATE: {"label": "巧克力酱加料", "category": "配方", "description": "鸡蛋仔可搭配巧克力酱。"},
+}
+
 # Prices and timings are deliberately centralized placeholders pending economy calibration.
 const REFILL_DEFINITIONS := {
 	STOCK_EGG: {"unit_cost": 1, "unit_seconds": 0.20},
 	STOCK_BAOCUI: {"unit_cost": 1, "unit_seconds": 0.225},
 	STOCK_HAM_SAUSAGE: {"unit_cost": 2, "unit_seconds": 0.2666667},
 	STOCK_SCALLION: {"unit_cost": 1, "unit_seconds": 0.1666667},
+	STOCK_MEAT_FLOSS: {"unit_cost": 2, "unit_seconds": 0.24},
+	STOCK_PORK_TENDERLOIN: {"unit_cost": 3, "unit_seconds": 0.28},
 	STOCK_SOY_YELLOW: {"unit_cost": 1, "unit_seconds": 1.25},
 	STOCK_SOY_RED: {"unit_cost": 2, "unit_seconds": 1.45},
 	STOCK_SOY_BLACK: {"unit_cost": 2, "unit_seconds": 1.55},
@@ -222,6 +268,18 @@ static func purchase_definition(item_id: StringName) -> Dictionary:
 	return Dictionary(PURCHASE_DEFINITIONS.get(item_id, {})).duplicate(true)
 
 
+static func purchase_presentation(item_id: StringName) -> Dictionary:
+	var fallback := {"label": str(item_id), "category": "成长", "description": "购买后在下一营业日生效。"}
+	return Dictionary(PURCHASE_PRESENTATION.get(item_id, fallback)).duplicate(true)
+
+
+static func purchase_ids() -> Array[StringName]:
+	var result: Array[StringName] = []
+	for item_id in PURCHASE_DEFINITIONS:
+		result.append(item_id)
+	return result
+
+
 static func item_effect(item_id: StringName) -> Dictionary:
 	return Dictionary(ITEM_EFFECTS.get(item_id, {})).duplicate(true)
 
@@ -235,6 +293,18 @@ static func stock_ids() -> Array[StringName]:
 	for stock_id in REFILL_DEFINITIONS:
 		result.append(stock_id)
 	return result
+
+
+static func starter_ingredient_ids() -> Array[StringName]:
+	return [STOCK_EGG, STOCK_BAOCUI, STOCK_SCALLION]
+
+
+static func ingredient_unlock_item(stock_id: StringName) -> StringName:
+	return {
+		STOCK_HAM_SAUSAGE: UNLOCK_INGREDIENT_HAM,
+		STOCK_MEAT_FLOSS: UNLOCK_INGREDIENT_MEAT_FLOSS,
+		STOCK_PORK_TENDERLOIN: UNLOCK_INGREDIENT_PORK_TENDERLOIN,
+	}.get(stock_id, &"")
 
 
 static func automation_for(device_id: StringName, action: StringName) -> StringName:

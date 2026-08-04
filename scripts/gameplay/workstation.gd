@@ -188,7 +188,12 @@ func _ready() -> void:
 	ingredient_model = INGREDIENT_MODEL_SCRIPT.new()
 	ingredient_stock_model = INGREDIENT_STOCK_MODEL_SCRIPT.new(_saved_ingredient_stock())
 	fold_model = FOLD_MODEL_SCRIPT.new(pancake_model, ingredient_model)
-	order_service = ORDER_SERVICE_SCRIPT.new()
+	var unlocked_ingredient_ids: Array[StringName] = IngredientModel.TYPES.duplicate()
+	if has_meta(&"unlocked_ingredient_ids"):
+		unlocked_ingredient_ids.clear()
+		for ingredient_id in Array(get_meta(&"unlocked_ingredient_ids")):
+			unlocked_ingredient_ids.append(StringName(ingredient_id))
+	order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
 	customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
 	p1_session = P1_SESSION_SCRIPT.new()
 	payment_coin_model = PAYMENT_COIN_MODEL_SCRIPT.new()
@@ -229,14 +234,10 @@ func _ready() -> void:
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	step_action_button.pressed.connect(_advance_p1_step)
 	heat_slider.value_changed.connect(_on_heat_changed)
-	egg_button.gui_input.connect(_on_ingredient_gui_input.bind(IngredientModel.EGG))
-	baocui_button.gui_input.connect(_on_ingredient_gui_input.bind(IngredientModel.BAOCUI))
-	ham_button.gui_input.connect(_on_ingredient_gui_input.bind(IngredientModel.HAM_SAUSAGE))
-	scallion_button.gui_input.connect(_on_ingredient_gui_input.bind(IngredientModel.SCALLION))
-	egg_restock_button.pressed.connect(_restock_ingredient.bind(IngredientModel.EGG))
-	baocui_restock_button.pressed.connect(_restock_ingredient.bind(IngredientModel.BAOCUI))
-	ham_restock_button.pressed.connect(_restock_ingredient.bind(IngredientModel.HAM_SAUSAGE))
-	scallion_restock_button.pressed.connect(_restock_ingredient.bind(IngredientModel.SCALLION))
+	_connect_ingredient_slot(egg_button, IngredientModel.EGG)
+	_connect_ingredient_slot(baocui_button, IngredientModel.BAOCUI)
+	_connect_ingredient_slot(ham_button, IngredientModel.HAM_SAUSAGE)
+	_connect_ingredient_slot(scallion_button, IngredientModel.SCALLION)
 	ingredient_stock_model.changed.connect(_on_ingredient_stock_changed)
 	fold_model.changed.connect(_refresh_fold_ui)
 	tool_controller.tool_changed.connect(_on_tool_changed)
@@ -999,10 +1000,21 @@ func _on_ingredient_gui_input(event: InputEvent, ingredient_type: StringName) ->
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
+	_begin_ingredient_drag(ingredient_type, get_viewport().get_mouse_position())
+
+
+func _connect_ingredient_slot(slot: Button, ingredient_type: StringName) -> void:
+	if slot.has_signal("drag_requested"):
+		slot.connect("drag_requested", _begin_ingredient_drag)
+	else:
+		slot.gui_input.connect(_on_ingredient_gui_input.bind(ingredient_type))
+
+
+func _begin_ingredient_drag(ingredient_type: StringName, press_position: Vector2) -> void:
 	if not _confirm_spread_for_next_action():
 		return
 	if not ingredient_stock_model.has_stock(ingredient_type):
-		tool_status_label.text = "%s托盘已经空了，点击上方补料容器" % IngredientModel.display_name(ingredient_type)
+		tool_status_label.text = "%s托盘已经空了，请原地长按当前小料盘补货" % IngredientModel.display_name(ingredient_type)
 		return
 	if ingredient_model.has_type(ingredient_type):
 		tool_status_label.text = "%s已经放过一份" % IngredientModel.display_name(ingredient_type)
@@ -1011,7 +1023,7 @@ func _on_ingredient_gui_input(event: InputEvent, ingredient_type: StringName) ->
 		tool_status_label.text = "当前步骤不能放配料"
 		return
 	_ingredient_drag_type = ingredient_type
-	_ingredient_drag_start = get_viewport().get_mouse_position()
+	_ingredient_drag_start = press_position
 	ingredient_drag_preview.texture = _ingredient_texture(ingredient_type)
 	ingredient_drag_preview.visible = true
 	ingredient_drag_preview.global_position = _ingredient_drag_start - ingredient_drag_preview.size * 0.5
@@ -1127,10 +1139,10 @@ func _refresh_ingredient_stock_ui() -> void:
 		var current_stock: int = ingredient_stock_model.current(ingredient_type)
 		(slots[ingredient_type] as Button).call("set_stock_quantity", current_stock)
 		var restock_button := restock_buttons[ingredient_type] as Button
-		restock_button.disabled = current_stock >= INGREDIENT_STOCK_MODEL_SCRIPT.CAPACITY
-		restock_button.tooltip_text = (
-			"托盘已满" if restock_button.disabled else "点击补满%s托盘" % IngredientModel.display_name(ingredient_type)
-		)
+		var legacy_rack_visible := (restock_button.get_parent() as CanvasItem).visible
+		restock_button.disabled = not legacy_rack_visible or current_stock >= INGREDIENT_STOCK_MODEL_SCRIPT.CAPACITY
+		restock_button.mouse_filter = Control.MOUSE_FILTER_STOP if legacy_rack_visible else Control.MOUSE_FILTER_IGNORE
+		restock_button.tooltip_text = "托盘已满" if legacy_rack_visible and restock_button.disabled else ""
 
 
 func _serve_order() -> void:
@@ -1250,6 +1262,9 @@ func _collect_payment() -> void:
 		if is_instance_valid(coin):
 			coin.queue_free()
 	_pending_payment_sprites.clear()
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("credit_coins"):
+		game_session.call("credit_coins", collected)
 	tool_status_label.text = "已一次收取 %d 金币；当前顾客订单继续" % collected
 
 
@@ -1436,12 +1451,11 @@ func _refresh_p1_ui() -> void:
 		_set_customer_portrait_state(P1Session.REACTION_NEUTRAL)
 	_refresh_customer_queue()
 	var spread_can_continue := p1_session.phase == P1Session.Phase.SPREAD and pancake_model.covered_cell_count() > 0
-	var ingredient_phase := spread_can_continue or p1_session.phase == P1Session.Phase.FIRST_SIDE or p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
-	egg_button.disabled = not ingredient_phase or ingredient_model.has_type(IngredientModel.EGG) or not ingredient_stock_model.has_stock(IngredientModel.EGG)
+	egg_button.disabled = false
 	scraper_button.disabled = _folding_locks_preparation() or not _scraper_can_act()
-	baocui_button.disabled = not ingredient_phase or ingredient_model.has_type(IngredientModel.BAOCUI) or not ingredient_stock_model.has_stock(IngredientModel.BAOCUI)
-	ham_button.disabled = not ingredient_phase or ingredient_model.has_type(IngredientModel.HAM_SAUSAGE) or not ingredient_stock_model.has_stock(IngredientModel.HAM_SAUSAGE)
-	scallion_button.disabled = not ingredient_phase or ingredient_model.has_type(IngredientModel.SCALLION) or not ingredient_stock_model.has_stock(IngredientModel.SCALLION)
+	baocui_button.disabled = false
+	ham_button.disabled = not ham_button.visible
+	scallion_button.disabled = false
 	var sauce_phase_locked := p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS
 	var sauce_action_locked := sauce_phase_locked and not spread_can_continue
 	sauce_brush_button.disabled = sauce_action_locked or _folding_locks_preparation()

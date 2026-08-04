@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/workstation.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/ui/initial_unlock_workstation_adapter.gd" id="2_adapter"]
@@ -7,7 +7,6 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="5_ladle_display"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1.png" id="6_spreader_display"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1.png" id="7_brush_display"]
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_tool_rack"]
 bg_color = Color(0.28, 0.105, 0.045, 0.96)
 border_width_left = 5
@@ -72,6 +71,7 @@ corner_radius_top_right = 12
 [sub_resource type="StyleBoxEmpty" id="StyleBox_tray_locked"]
 
 [node name="InitialUnlockWorkstation" instance=ExtResource("1_base")]
+metadata/unlocked_ingredient_ids = Array[StringName]([&"egg", &"baocui", &"scallion"])
 
 [node name="RestockRack" parent="SafeArea" index="9"]
 visible = false
@@ -88,6 +88,9 @@ offset_left = 0.0
 offset_top = 0.0
 offset_right = 127.5
 offset_bottom = 58.0
+drag_threshold_pixels = 10.0
+hold_threshold_seconds = 0.1
+metadata/refill_enabled = true
 
 [node name="Artwork" parent="SafeArea/IngredientRack/EggButton" index="0"]
 offset_left = 8.0
@@ -106,6 +109,9 @@ offset_left = 133.5
 offset_top = 0.0
 offset_right = 261.0
 offset_bottom = 58.0
+drag_threshold_pixels = 10.0
+hold_threshold_seconds = 0.1
+metadata/refill_enabled = true
 
 [node name="Artwork" parent="SafeArea/IngredientRack/BaocuiButton" index="0"]
 offset_left = 8.0
@@ -129,6 +135,9 @@ offset_left = 267.0
 offset_top = 0.0
 offset_right = 394.5
 offset_bottom = 58.0
+drag_threshold_pixels = 10.0
+hold_threshold_seconds = 0.1
+metadata/refill_enabled = true
 
 [node name="Artwork" parent="SafeArea/IngredientRack/ScallionButton" index="0"]
 offset_left = 8.0

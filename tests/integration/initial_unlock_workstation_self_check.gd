@@ -41,6 +41,7 @@ func _run() -> void:
 	await process_frame
 	_check_layout(workstation)
 	_check_locked_slots(workstation)
+	_check_direct_refill(workstation)
 	_check_tools(workstation)
 	_check_input_mapping(workstation)
 	workstation.queue_free()
@@ -125,6 +126,20 @@ func _check_locked_slots(workstation: Node) -> void:
 		_check(ids.has(str(CATALOG.DEVICE_YOUTIAO)), "youtiao fryer keeps its fixed opening-day slot")
 		_check(ids.has(str(CATALOG.DEVICE_EGG_WAFFLE)), "egg-waffle machine keeps its fixed opening-day slot")
 		_check(not ids.has("steamer") and not ids.has("bao_steamer"), "no steamer device is present")
+
+
+func _check_direct_refill(workstation: Node) -> void:
+	var inventory: RefCounted = workstation.get("ingredient_stock_model")
+	_check(int(inventory.call("current", CATALOG.STOCK_HAM_SAUSAGE)) == 0, "opening-day workstation has no hidden ham-sausage stock")
+	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout/RightZone/RefillDrawerHandle") == null, "opening-day workstation has no refill drawer handle")
+	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout/RightZone/RefillDrawer") == null, "opening-day workstation has no refill drawer")
+	for button_name in ["EggButton", "BaocuiButton", "ScallionButton"]:
+		var ingredient := workstation.get_node_or_null("SafeArea/IngredientRack/%s" % button_name) as Button
+		_check(ingredient != null and bool(ingredient.get_meta(&"refill_enabled", false)), "%s supports direct hold-to-refill on the serving tray" % button_name)
+		_check(ingredient != null and ingredient.has_signal("drag_requested") and ingredient.has_signal("hold_requested"), "%s keeps separate drag and hold gesture signals" % button_name)
+		_check(ingredient != null and is_equal_approx(float(ingredient.get("hold_threshold_seconds")), 0.1), "%s starts refill after a 0.1-second stationary hold" % button_name)
+	var legacy_rack := workstation.get_node_or_null("SafeArea/RestockRack") as CanvasItem
+	_check(legacy_rack != null and not legacy_rack.visible, "legacy one-click restock controls stay hidden after formal integration")
 
 
 func _check_tools(workstation: Node) -> void:

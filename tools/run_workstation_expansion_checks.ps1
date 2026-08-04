@@ -10,7 +10,9 @@ $checks = @(
     'res://tests/unit/ingredient_stock_self_check.gd',
     'res://tests/unit/equipment_batch_self_check.gd',
     'res://tests/unit/progression_refill_self_check.gd',
-    'res://tests/unit/workstation_expansion_asset_self_check.gd'
+    'res://tests/unit/workstation_expansion_asset_self_check.gd',
+	'res://tests/integration/initial_unlock_workstation_self_check.gd',
+	'res://tests/integration/workstation_hold_refill_self_check.gd'
 )
 
 foreach ($check in $checks) {

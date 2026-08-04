@@ -1,6 +1,6 @@
 # 工作台初始解锁场景交付记录
 
-更新日期：2026-08-03（Asia/Shanghai）
+更新日期：2026-08-04（Asia/Shanghai）
 
 ## 当前入口与边界
 
@@ -8,8 +8,18 @@
 - 可复用工作台：`res://scenes/gameplay/initial_unlock_workstation.tscn`。
 - 适配器：`res://scripts/ui/initial_unlock_workstation_adapter.gd`。
 - 场景继续继承正式 `workstation.tscn`，复用同一套煎饼、订单、顾客、付款和评分状态；没有建立第二套业务状态源。
-- 正式新游戏入口暂未替换。当前固定订单序列仍含未解锁火腿订单，在订单池按永久成长快照过滤前直接替换会制造不可完成订单。
+- 正式新游戏入口已经切换到 `initial_unlock_workstation.tscn`。场景根节点声明首日已解锁小料，订单服务据此过滤火腿等未解锁配方，避免生成不可完成订单。
 - 本轮未修改并行美术目录 `resources/art/workstation/expansion`、概念稿、生成记录或 `docs/workstation_expansion_asset_audit.md`。
+
+## 小料长按补货
+
+- 右侧前三个首日盘位同时承担拖取与补货：按下后移动超过 10px 进入既有拖取路径，原地按住 0.1 秒进入补货。
+- 场景不再包含补料抽屉、抽屉把手或第二套补货热区；鸡蛋、薄脆、香葱盘位在 `.tscn` 中声明 `refill_enabled`。
+- 盘位长按复用 `IngredientStockSlot` 的 `hold_requested / hold_advanced / hold_released` 信号并调用现有 `HoldRefillService`；锁定、满库存或金币不足时拒绝手势。
+- 每完成一份立即增加一份库存并扣除单份费用；松开时将未完成的内部耗时交给服务保留，续按可接着补。画面只更新盘内份数，不显示环形、条形或百分比进度。
+- 料盘小料单份耗时按相对原始值 6 倍速度标定：鸡蛋 0.20 秒、薄脆 0.225 秒、火腿约 0.267 秒、香葱约 0.167 秒；设备原料和设备加工时间不受影响。
+- `GameSessionStore` 持久化金币、库存和补货内部进度；适配器与工作台共用同一个 `IngredientStockModel`，不维护第二份库存。
+- 悬停和失败说明复用左上状态说明条，不覆盖工作台；盘内不显示小料名称或补货进度文字。
 
 ## 当前首日视觉结构
 
@@ -43,7 +53,8 @@
 
 ### 自动化 / headless
 
-- `initial_unlock_workstation_self_check.gd`：通过。覆盖 1920×1080 三段布局、右侧实体盘像素净空、按源图测量的 4×3 盘位边界、前三个基础小料按钮与实体盘重合、收款槽左侧三个工具筒、工具下沉遮挡及完整热区、第四铲子位不存在、3 个设备锚点、首日工具所有权、鏊子输入/配料/折叠映射以及资源加载。
+- `initial_unlock_workstation_self_check.gd`：通过。覆盖 1920×1080 三段布局、右侧实体盘像素净空、按源图测量的 4×3 盘位边界、前三个基础小料盘的拖取/长按双手势、抽屉不存在、收款槽左侧三个工具筒、3 个设备锚点、鏊子输入/配料/折叠映射以及资源加载。
+- `workstation_hold_refill_self_check.gd`：通过。覆盖 10px 拖动阈值、0.1 秒长按阈值、逐份扣费、松手续补、满仓/金币不足停止、共享库存对象和真实主场景入口。
 - `tools/run_workstation_expansion_checks.ps1`：通过。
 - `tools/run_checks.ps1`：全部现有回归通过。
 - 每次直接 headless 调用均使用独立可写 `--log-file`；批量脚本为每个检查生成 GUID 日志名。
@@ -51,11 +62,13 @@
 
 ### GPU / 非 headless
 
-- Godot 4.6.1，D3D12 Forward Mobile，NVIDIA GeForce RTX 5070，窗口 1920×1080。
+- Godot 4.7.1，D3D12 Forward Mobile，NVIDIA GeForce RTX 5070，窗口 1920×1080。
 - `initial_unlock_workstation_gpu_smoke.gd`：通过。
 - 截图：`res://tmp/validation/initial_unlock_workstation_gpu_1920x1080.png`。
+- 补货后截图：`res://tmp/validation/workstation_hold_refill_gpu_1920x1080.png`。
+- 真实 GUI 事件验证补充覆盖同一盘位短拖、原地长按、鼠标移出盘位后松开、续补、逐份扣费与库存显示，以及不遮挡工作台的悬停说明。
 - 真实 GUI 事件验证：倒面糊、鏊子边缘拖动、鸡蛋拖放和 4×3 盘位几何均通过。
-- 视觉检查：鏊子右缘与料盘之间存在连续台面净空；三个暖米白金属筒完整位于收款槽左侧，摊饼勺、摊面杆和酱刷的柄部进入筒内并由前壁遮挡；无第四筒或铲子；鸡蛋、薄脆、香葱分别完整位于第一排前三盘且不跨行；右侧实体盘保持 4×3；右下锁定槽清晰；状态条未遮台面。
+- 视觉检查：鏊子右缘与料盘之间存在连续台面净空；三个暖米白金属筒完整位于收款槽左侧；无第四筒或铲子；鸡蛋、薄脆、香葱分别完整位于第一排前三盘且不跨行；盘架下方不再有抽屉把手；右下锁定槽清晰；状态条未遮台面。
 
 ### 人工鼠标 / 人工视觉
 
@@ -67,4 +80,4 @@
 2. 日结购买继续使用现有 `purchase(UPGRADE_SOY_BASIC)` 与 `begin_next_business_day()`，不新增设备状态字段。
 3. 适配器从现有 `ExpansionProductionService.machine_snapshot(DEVICE_SOY_MILK)` 得到 `owned/state`；拥有后启用固定 `InteractionArea`，并给 `EquipmentArt` 绑定经美术审计批准的豆浆机纹理。
 4. 设备操作只适配现有 `load_input / perform_action / start / collect`；渲染使用 `machine_snapshot()`。
-5. 正式切换新游戏入口前，让订单池读取成长快照并排除未解锁火腿及扩展商品。
+5. 正式入口已完成首日配方过滤；后续新增成长商品时，继续由场景解锁声明或永久成长快照扩展订单池，不要绕开过滤器直接加入固定订单。

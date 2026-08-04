@@ -35,8 +35,10 @@ func _run() -> void:
 		"cropped customer artwork reaches the reference counter edge"
 	)
 	_check(
-		pan_base != null and absf(pan_base.position.y - 455.0) <= 1.0 and absf(pan_base.size.y - 585.0) <= 1.0,
-		"griddle container keeps the reference slot gap without exceeding the worktop"
+		pan_base != null
+		and pan_base.position.distance_to(Vector2(740.0, 525.0)) <= 1.0
+		and pan_base.size.distance_to(Vector2(520.0, 468.0)) <= 1.0,
+		"griddle container uses the confirmed twenty-percent-smaller initial-unlock geometry"
 	)
 	_check(workstation.ingredient_layer != null and workstation.egg_button != null and workstation.scallion_button != null, "P1 ingredient rack and pancake layer are stable scene content")
 	_check(workstation.chili_sauce_refill_button != null and workstation.heat_slider != null, "P1 owns two-sauce selection and fire control")
@@ -61,11 +63,12 @@ func _run() -> void:
 
 	_fill_product_base(workstation.pancake_model)
 	workstation.pour_used = true
-	workstation._on_pointer_ended(Vector2(300, 300))
+	var surface_local_center := workstation.pancake_surface.size * 0.5
+	workstation._on_pointer_ended(surface_local_center)
 	workstation._refresh_p1_ui()
 	_check(workstation.p1_session.phase == P1Session.Phase.SPREAD and not workstation.step_action_button.visible, "spreader release freezes the shape without exposing a completion button")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE and workstation.scraper_button.disabled, "the released batter spreader cannot keep shaping")
-	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * Vector2(300, 300)
+	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * surface_local_center
 	if DisplayServer.get_name() == "headless":
 		var ingredient_press := InputEventMouseButton.new()
 		ingredient_press.button_index = MOUSE_BUTTON_LEFT
@@ -134,14 +137,13 @@ func _run() -> void:
 		await process_frame
 	_check(workstation.pancake_model.total_sauce() > 0.0 and float(workstation.sauce_tool_state.load) < sweet_load_before_brush, "the sauce brush consumes and spreads the squeezed sweet sauce")
 	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(-70, -30))
-	await _place_ingredient_from_rack(workstation, workstation.ham_button, IngredientModel.HAM_SAUSAGE, surface_center + Vector2(55, -20))
 	await _place_ingredient_from_rack(workstation, workstation.scallion_button, IngredientModel.SCALLION, surface_center + Vector2(15, 65))
 	_check(
 		workstation.ingredient_model.has_type(IngredientModel.BAOCUI)
-		and workstation.ingredient_model.has_type(IngredientModel.HAM_SAUSAGE)
 		and workstation.ingredient_model.has_type(IngredientModel.SCALLION),
-		"all filling controls can place their ingredients after the filling phase unlocks"
+		"all opening-day filling controls can place their ingredients after the filling phase unlocks"
 	)
+	_check(not workstation.ham_button.visible and workstation.ham_button.disabled, "locked ham remains absent and non-interactive on the opening-day workstation")
 	workstation.ingredient_model.placements[1]["position"] = Vector2(28, 56)
 	workstation.ingredient_model.placements[2]["position"] = Vector2(100, 58)
 	workstation.ingredient_model.changed.emit()
@@ -156,12 +158,15 @@ func _run() -> void:
 	_fold_both(workstation)
 	_check(
 		workstation.ingredient_layer.visual_alpha_for(IngredientModel.BAOCUI) <= 0.001
-		and workstation.ingredient_layer.visual_alpha_for(IngredientModel.HAM_SAUSAGE) <= 0.001
 		and workstation.ingredient_layer.visual_alpha_for(IngredientModel.SCALLION) <= 0.001,
-		"all fillings are visually enclosed after both pancake sides are folded"
+		"all opening-day fillings are visually enclosed after both pancake sides are folded"
 	)
 	_check(workstation.p1_session.phase == P1Session.Phase.PACKAGE and not workstation.bag_button.disabled, "intact folds unlock normal packaging")
-	_check(workstation.packaging_choices.visible and workstation.bag_button.global_position.x < 600.0, "contextual packaging choices stay off the six right-hand ingredient slots")
+	_check(
+		workstation.packaging_choices.visible
+		and not workstation.bag_button.get_global_rect().intersects(workstation.get_node("SafeArea/IngredientRack").get_global_rect()),
+		"contextual packaging choices stay off the right-hand ingredient trays"
+	)
 	workstation.bag_button.pressed.emit()
 	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE, "paper bag completes packaging without a rescue penalty")
 	_check(
@@ -189,7 +194,7 @@ func _run() -> void:
 	workstation._complete_payment_animation()
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and workstation.p1_session.order.id == &"chili_ham"
+		and workstation.p1_session.order.id == &"scallion_light"
 		and workstation.payment_coin_model.pending_total == 3
 		and workstation.payment_coin_model.pending_denominations == [2, 1]
 		and workstation._pending_payment_sprites.size() == 2
@@ -214,7 +219,7 @@ func _run() -> void:
 		await _click_control(workstation.payment_collection_area)
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and workstation.p1_session.order.id == &"chili_ham"
+		and workstation.p1_session.order.id == &"scallion_light"
 		and workstation.payment_coin_model.pending_total == 0
 		and workstation._pending_payment_sprites.is_empty()
 		and not workstation.payment_collection_area.visible
@@ -247,7 +252,7 @@ func _run() -> void:
 	_check(not workstation.result_panel.visible and workstation.order_summary_card.visible, "closing optional details returns to the non-blocking compact summary")
 	workstation.summary_dismiss_button.pressed.emit()
 	_check(
-		workstation.p1_session.order.id == &"chili_ham"
+		workstation.p1_session.order.id == &"scallion_light"
 		and workstation.pancake_model.covered_cell_count() == 0
 		and workstation.pancake_visual.visible
 		and workstation.ingredient_layer.visible
@@ -353,14 +358,15 @@ func _fold_both(workstation: Workstation) -> void:
 
 func _spread_egg_with_workstation(workstation: Workstation) -> void:
 	var center := Vector2(workstation.pancake_model.grid_size - 1, workstation.pancake_model.grid_size - 1) * 0.5
-	workstation._on_pointer_started(Vector2(300, 300))
+	var surface_center := workstation.pancake_surface.size * 0.5
+	workstation._on_pointer_started(surface_center)
 	for ring in 4:
 		var radius := 6.0 + float(ring) * 9.0
 		for step in 36:
 			var angle := TAU * float(step) / 36.0
 			var radial := Vector2(cos(angle), sin(angle) * workstation.parameters.pan_height_ratio)
 			workstation._process_scraper(center + radial * radius, 1.0 / 60.0)
-	workstation._on_pointer_ended(Vector2(300, 300))
+	workstation._on_pointer_ended(surface_center)
 
 
 func _check(condition: bool, message: String) -> void:

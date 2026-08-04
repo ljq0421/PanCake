@@ -172,10 +172,10 @@ const PURCHASE_DEFINITIONS := {
 
 # Prices and timings are deliberately centralized placeholders pending economy calibration.
 const REFILL_DEFINITIONS := {
-	STOCK_EGG: {"unit_cost": 1, "unit_seconds": 1.20},
-	STOCK_BAOCUI: {"unit_cost": 1, "unit_seconds": 1.35},
-	STOCK_HAM_SAUSAGE: {"unit_cost": 2, "unit_seconds": 1.60},
-	STOCK_SCALLION: {"unit_cost": 1, "unit_seconds": 1.00},
+	STOCK_EGG: {"unit_cost": 1, "unit_seconds": 0.20},
+	STOCK_BAOCUI: {"unit_cost": 1, "unit_seconds": 0.225},
+	STOCK_HAM_SAUSAGE: {"unit_cost": 2, "unit_seconds": 0.2666667},
+	STOCK_SCALLION: {"unit_cost": 1, "unit_seconds": 0.1666667},
 	STOCK_SOY_YELLOW: {"unit_cost": 1, "unit_seconds": 1.25},
 	STOCK_SOY_RED: {"unit_cost": 2, "unit_seconds": 1.45},
 	STOCK_SOY_BLACK: {"unit_cost": 2, "unit_seconds": 1.55},

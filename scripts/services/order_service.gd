@@ -48,16 +48,30 @@ const ORDERS: Array[Dictionary] = [
 ]
 
 var _cursor := 0
+var _active_orders: Array[Dictionary] = []
+
+
+func _init(unlocked_ingredient_ids: Array[StringName] = IngredientModel.TYPES) -> void:
+	for order in ORDERS:
+		var available := true
+		for ingredient_id in Array(order.get("ingredients", [])):
+			if not unlocked_ingredient_ids.has(StringName(ingredient_id)):
+				available = false
+				break
+		if available:
+			_active_orders.append(order)
+	if _active_orders.is_empty():
+		_active_orders.append(ORDERS[0])
 
 
 func next_order() -> Dictionary:
 	var order := order_at(_cursor)
-	_cursor = (_cursor + 1) % ORDERS.size()
+	_cursor = (_cursor + 1) % _active_orders.size()
 	return order
 
 
 func order_at(index: int) -> Dictionary:
-	return ORDERS[posmod(index, ORDERS.size())].duplicate(true)
+	return _active_orders[posmod(index, _active_orders.size())].duplicate(true)
 
 
 static func sauce_display_name(sauce_type: StringName) -> String:

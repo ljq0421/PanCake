@@ -19,7 +19,7 @@ func _init(snapshot: Dictionary = {}) -> void:
 	owned_items[CATALOG.TOOL_SPREADER_BASIC] = true
 	owned_items[CATALOG.TOOL_SAUCE_BRUSH_MANUAL] = true
 	owned_items[CATALOG.INGREDIENT_BOX_BASIC] = true
-	for stock_id in [CATALOG.STOCK_EGG, CATALOG.STOCK_BAOCUI, CATALOG.STOCK_HAM_SAUSAGE, CATALOG.STOCK_SCALLION]:
+	for stock_id in [CATALOG.STOCK_EGG, CATALOG.STOCK_BAOCUI, CATALOG.STOCK_SCALLION]:
 		inventory.call("set_current", stock_id, 6)
 	if not snapshot.is_empty():
 		load_snapshot(snapshot)

@@ -11,9 +11,18 @@ const HOLD_REFILL_SERVICE := preload("res://scripts/services/hold_refill_service
 var progression: RefCounted
 var production: RefCounted
 var hold_refill: RefCounted
+var _hovered_source: Button
+var _hover_previous_instructions := ""
+var _active_refill_source: Button
+var _active_refill_stock_id: StringName = &""
 
 
 func _ready() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_signal("coins_changed"):
+		var changed := Signal(session, &"coins_changed")
+		if not changed.is_connected(_on_session_coins_changed):
+			changed.connect(_on_session_coins_changed)
 	call_deferred("apply_progression_snapshot", initial_progression_snapshot)
 
 
@@ -22,15 +31,35 @@ func _process(delta: float) -> void:
 		production.call("advance_time", delta)
 
 
+func _input(event: InputEvent) -> void:
+	if _active_refill_stock_id.is_empty() or not (event is InputEventMouseButton):
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
+		_release_active_refill()
+
+
 func apply_progression_snapshot(snapshot: Dictionary) -> void:
-	progression = PROGRESSION_SERVICE.new(snapshot)
+	var effective_snapshot := snapshot.duplicate(true)
+	if effective_snapshot.is_empty():
+		var session := get_node_or_null("/root/GameSession")
+		if session != null and session.has_method("workstation_progression_snapshot"):
+			effective_snapshot = Dictionary(session.call("workstation_progression_snapshot"))
+	progression = PROGRESSION_SERVICE.new(effective_snapshot)
+	var workstation := get_parent().get_parent()
+	var live_inventory: Variant = workstation.get("ingredient_stock_model")
+	if live_inventory is RefCounted:
+		live_inventory.call("load_snapshot", Dictionary(effective_snapshot.get("ingredient_stock", {})))
+		progression.set("inventory", live_inventory)
 	production = PRODUCTION_SERVICE.new(progression)
 	hold_refill = HOLD_REFILL_SERVICE.new(progression)
 	_refresh_owned_tools()
 	_refresh_device_slots()
 	_refresh_ingredient_trays()
 	_bind_workstation_state()
+	_bind_direct_refill_slots()
 	_hide_direct_ingredient_labels()
+	_refresh_refill_source_tooltips()
 
 
 func progression_snapshot() -> Dictionary:
@@ -111,6 +140,25 @@ func _refresh_ingredient_trays() -> void:
 		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+func _bind_direct_refill_slots() -> void:
+	for slot in _direct_ingredient_slots():
+		var requested := Signal(slot, &"hold_requested")
+		if not requested.is_connected(_on_refill_hold_requested):
+			requested.connect(_on_refill_hold_requested)
+		var advanced := Signal(slot, &"hold_advanced")
+		if not advanced.is_connected(_on_refill_hold_advanced):
+			advanced.connect(_on_refill_hold_advanced)
+		var released := Signal(slot, &"hold_released")
+		if not released.is_connected(_on_refill_hold_released):
+			released.connect(_on_refill_hold_released)
+		var entered_handler := _on_source_hovered.bind(slot)
+		if not slot.mouse_entered.is_connected(entered_handler):
+			slot.mouse_entered.connect(entered_handler)
+		var exited_handler := _on_source_unhovered.bind(slot)
+		if not slot.mouse_exited.is_connected(exited_handler):
+			slot.mouse_exited.connect(exited_handler)
+
+
 func _bind_workstation_state() -> void:
 	var workstation := get_parent().get_parent()
 	var stock_model: Variant = workstation.get("ingredient_stock_model")
@@ -118,6 +166,192 @@ func _bind_workstation_state() -> void:
 		var changed := Signal(stock_model, &"changed")
 		if not changed.is_connected(_hide_direct_ingredient_labels):
 			changed.connect(_hide_direct_ingredient_labels)
+		if not changed.is_connected(_on_live_stock_changed):
+			changed.connect(_on_live_stock_changed)
+
+
+func _on_refill_hold_requested(stock_id: StringName) -> void:
+	var source := _slot_for_stock(stock_id)
+	if progression == null or hold_refill == null or source == null or source.disabled:
+		if source != null:
+			source.call("reject_hold")
+		return
+	var refill_status: Dictionary = hold_refill.call("status", stock_id)
+	if not bool(refill_status.get("success", false)):
+		source.call("reject_hold")
+		_refresh_source_tooltip(source, stock_id, &"unknown_refill_entry")
+		_show_refill_message(stock_id, &"unknown_refill_entry")
+		return
+	if int(refill_status.get("current_stock", 0)) >= int(refill_status.get("capacity", 0)):
+		source.call("reject_hold")
+		_refresh_source_tooltip(source, stock_id, &"capacity_reached")
+		_show_refill_message(stock_id, &"capacity_reached")
+		return
+	if int(progression.get("coins")) < int(refill_status.get("unit_cost", 0)):
+		source.call("reject_hold")
+		_refresh_source_tooltip(source, stock_id, &"insufficient_coins")
+		_show_refill_message(stock_id, &"insufficient_coins")
+		return
+	_release_active_refill()
+	_active_refill_source = source
+	_active_refill_stock_id = stock_id
+	source.call("accept_hold")
+	_refresh_source_tooltip(source, stock_id)
+
+
+func _on_refill_hold_advanced(stock_id: StringName, delta: float) -> void:
+	if stock_id != _active_refill_stock_id:
+		return
+	_advance_active_refill(delta)
+
+
+func _on_refill_hold_released(stock_id: StringName) -> void:
+	if stock_id != _active_refill_stock_id:
+		return
+	_release_active_refill()
+
+
+func _advance_active_refill(delta: float) -> void:
+	if hold_refill == null or _active_refill_stock_id.is_empty():
+		return
+	var stock_id := _active_refill_stock_id
+	var source := _active_refill_source
+	var result: Dictionary = hold_refill.call("advance_hold", stock_id, maxf(delta, 0.0))
+	if int(result.get("completed_units", 0)) > 0 or bool(result.get("auto_stopped", false)):
+		_persist_progression()
+	if source != null:
+		_refresh_source_tooltip(source, stock_id, StringName(result.get("reason", &"")))
+	if bool(result.get("auto_stopped", false)):
+		hold_refill.call("release", stock_id)
+		_clear_active_refill()
+		_show_refill_message(stock_id, StringName(result.get("reason", &"")))
+
+
+func _release_active_refill() -> void:
+	var had_active_refill := not _active_refill_stock_id.is_empty()
+	if had_active_refill and hold_refill != null:
+		hold_refill.call("release", _active_refill_stock_id)
+	if had_active_refill:
+		_persist_progression()
+	_clear_active_refill()
+	_refresh_refill_source_tooltips()
+
+
+func _clear_active_refill() -> void:
+	if _active_refill_source != null:
+		_active_refill_source.call("stop_hold")
+	_active_refill_source = null
+	_active_refill_stock_id = &""
+
+
+func _on_live_stock_changed(_ingredient_type: StringName, _current_stock: int) -> void:
+	_hide_direct_ingredient_labels()
+	_refresh_refill_source_tooltips()
+
+
+func _on_session_coins_changed(current_coins: int) -> void:
+	if progression == null:
+		return
+	progression.set("coins", maxi(current_coins, 0))
+	_refresh_refill_source_tooltips()
+
+
+func _persist_progression() -> void:
+	if progression == null:
+		return
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("save_workstation_progression"):
+		session.call("save_workstation_progression", progression.call("snapshot"))
+
+
+func _refresh_refill_source_tooltips() -> void:
+	for source in _direct_ingredient_slots():
+		var stock_id := StringName(str(source.get("ingredient_type")))
+		_refresh_source_tooltip(source, stock_id)
+
+
+func _refresh_source_tooltip(source: Button, stock_id: StringName, reason: StringName = &"") -> void:
+	if hold_refill == null or progression == null:
+		return
+	var refill_status: Dictionary = hold_refill.call("status", stock_id)
+	if not bool(refill_status.get("success", false)):
+		return
+	var current := int(refill_status.get("current_stock", 0))
+	var capacity := int(refill_status.get("capacity", 0))
+	var unit_cost := int(refill_status.get("unit_cost", 0))
+	var unit_seconds := float(refill_status.get("unit_seconds", 0.0))
+	var state_hint := "按住持续补货"
+	if reason == &"capacity_reached" or current >= capacity:
+		state_hint = "已满"
+	elif reason == &"insufficient_coins" or int(progression.get("coins")) < unit_cost:
+		state_hint = "金币不足"
+	var help_text := "%s · 每份 %d 金币 · %.2f 秒\n当前 %d/%d · 余额 %d · %s" % [
+		IngredientModel.display_name(stock_id),
+		unit_cost,
+		unit_seconds,
+		current,
+		capacity,
+		int(progression.get("coins")),
+		state_hint,
+	]
+	source.tooltip_text = ""
+	source.set_meta(&"refill_help_text", help_text)
+	if _hovered_source == source:
+		_set_hover_instructions(help_text)
+
+
+func _on_source_hovered(source: Button) -> void:
+	var instructions := get_node_or_null("../BottomStrip/Instructions") as Label
+	if instructions == null:
+		return
+	_hovered_source = source
+	_hover_previous_instructions = instructions.text
+	_set_hover_instructions(str(source.get_meta(&"refill_help_text", "")))
+
+
+func _on_source_unhovered(source: Button) -> void:
+	if _hovered_source != source:
+		return
+	var instructions := get_node_or_null("../BottomStrip/Instructions") as Label
+	if instructions != null:
+		instructions.text = _hover_previous_instructions
+	_hovered_source = null
+	_hover_previous_instructions = ""
+
+
+func _set_hover_instructions(help_text: String) -> void:
+	var instructions := get_node_or_null("../BottomStrip/Instructions") as Label
+	if instructions != null:
+		instructions.text = help_text
+
+
+func _show_refill_message(ingredient_type: StringName, reason: StringName) -> void:
+	var status_label := get_node_or_null("../BottomStrip/ToolStatusLabel") as Label
+	if status_label == null:
+		return
+	match reason:
+		&"capacity_reached":
+			status_label.text = "%s盘已经满了" % IngredientModel.display_name(ingredient_type)
+		&"insufficient_coins":
+			status_label.text = "金币不足，无法继续补%s" % IngredientModel.display_name(ingredient_type)
+		_:
+			status_label.text = "当前无法补充%s" % IngredientModel.display_name(ingredient_type)
+
+
+func _direct_ingredient_slots() -> Array[Button]:
+	var result: Array[Button] = []
+	for slot_name in [&"EggButton", &"BaocuiButton", &"ScallionButton"]:
+		var slot := get_node_or_null("../IngredientRack/%s" % slot_name) as Button
+		if slot != null:
+			result.append(slot)
+	return result
+
+
+func _slot_for_stock(stock_id: StringName) -> Button:
+	for slot in _direct_ingredient_slots():
+		if StringName(str(slot.get("ingredient_type"))) == stock_id:
+			return slot
+	return null
 
 
 func _hide_direct_ingredient_labels(_ingredient_type: StringName = &"", _current_stock: int = 0) -> void:

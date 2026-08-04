@@ -1630,6 +1630,7 @@ tooltip_text = "金币待收取：点击或将鼠标扫过收款槽"
 [node name="ResultPanel" type="PanelContainer" parent="SafeArea"]
 unique_name_in_owner = true
 visible = false
+z_index = 20
 layout_mode = 0
 offset_left = 430.0
 offset_top = 170.0

@@ -55,12 +55,16 @@ func _run() -> void:
 
 	while workstation.ingredient_stock_model.has_stock(IngredientModel.EGG):
 		workstation.ingredient_stock_model.consume(IngredientModel.EGG)
-	_check(workstation.egg_button.empty_label.visible and not workstation.egg_button.artwork.visible, "empty stock shows the word empty and no numeric counter")
-	_check(not workstation.egg_restock_button.disabled, "empty tray enables its matching restock container")
-	workstation.egg_restock_button.pressed.emit()
-	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 6, "clicking the egg carton refills the tray")
+	_check(not workstation.egg_button.empty_label.visible and not workstation.egg_button.artwork.visible, "empty stock leaves the pan visibly empty without permanent text")
+	_check(workstation.egg_restock_button.disabled and not workstation.egg_restock_button.get_parent().visible, "empty tray does not expose the legacy one-click restock container")
+	var adapter := workstation.get_node("SafeArea/InitialUnlockAdapter")
+	adapter.get("progression").set("coins", 20)
+	var refill: RefCounted = adapter.call("refill_service")
+	var unit_seconds := float(refill.call("status", IngredientModel.EGG).unit_seconds)
+	refill.call("advance_hold", IngredientModel.EGG, unit_seconds * 6.0)
+	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 6, "the shared hold-refill service restores six visible portions one unit at a time")
 	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v1.png"), "restock restores the sixth image state")
-	_check(workstation.egg_restock_button.disabled, "full tray returns the matching restock container to its idle state")
+	_check(workstation.egg_restock_button.disabled, "the hidden legacy restock control remains disabled at full stock")
 
 	if game_session != null:
 		_check(int(game_session.call("ingredient_stock_snapshot").get("egg", -1)) == 6, "restocked quantity persists through the shared save service")

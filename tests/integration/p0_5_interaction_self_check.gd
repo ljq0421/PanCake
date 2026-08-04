@@ -49,15 +49,15 @@ func _run() -> void:
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.FOLD, "fold button selects the continuous fold tool")
 	_check(bool(workstation.fold_overlay.guides_visible), "fold tool exposes visible fold lines and edge handles")
 
-	_press_surface(surface, Vector2(110, 300))
-	_move_surface(surface, Vector2(180, 300))
+	_press_surface(surface, _scaled_surface_point(surface, Vector2(110, 300)))
+	_move_surface(surface, _scaled_surface_point(surface, Vector2(180, 300)))
 	workstation._process(1.0 / 60.0)
 	_check(float(workstation.fold_model.drag_progress) > 0.0 and workstation.fold_model.completed_fold_count() == 0, "mouse movement deforms the flap before release")
 	var arc_profile: PackedVector2Array = workstation.fold_overlay.get_fold_arc_profile(FOLD_MODEL_SCRIPT.REGION_LEFT, 0.55)
 	_check(arc_profile.size() > 20 and _maximum_profile_bend(arc_profile) > 8.0, "dragged flap uses a tessellated curved profile instead of one flat reflected plane")
-	_move_surface(surface, Vector2(300, 300))
+	_move_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	workstation._process(1.0 / 60.0)
-	_release_surface(surface, Vector2(300, 300))
+	_release_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	_check(workstation.fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT), "dragging the left edge over its line commits the left fold")
 	_check(workstation.fold_overlay.is_fold_animation_active(), "committing a fold starts the visible completion and soft-settle animation")
 	await create_timer(0.65).timeout
@@ -66,10 +66,10 @@ func _run() -> void:
 	_check(is_equal_approx(float(surface_material.get_shader_parameter(&"fold_left_progress")), 1.0), "committed left fold makes the original pancake region transparent instead of painting a fake griddle color")
 	_check(workstation.scraper_button.disabled and workstation.sauce_brush_button.disabled, "starting a fold locks earlier preparation tools")
 
-	_press_surface(surface, Vector2(490, 300))
-	_move_surface(surface, Vector2(300, 300))
+	_press_surface(surface, _scaled_surface_point(surface, Vector2(490, 300)))
+	_move_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	workstation._process(1.0 / 60.0)
-	_release_surface(surface, Vector2(300, 300))
+	_release_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	_check(workstation.fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT), "dragging the right edge over its line commits the right fold")
 	_check(not workstation.paper_sleeve_button.disabled and not workstation.tray_button.disabled, "completed non-severe folds expose both safe completion choices")
 	workstation.paper_sleeve_button.pressed.emit()
@@ -84,7 +84,7 @@ func _run() -> void:
 	_fill_uniform_pancake(workstation.pancake_model)
 	_set_hole(workstation.pancake_model, Vector2i(25, 64))
 	workstation.fold_button.pressed.emit()
-	_drag_surface(workstation, surface, Vector2(110, 300), Vector2(300, 300))
+	_drag_surface(workstation, surface, _scaled_surface_point(surface, Vector2(110, 300)), _scaled_surface_point(surface, Vector2(300, 300)))
 	_check(workstation.fold_model.maximum_severity() == 2, "a hole in the dragged region creates a severe workstation fold failure")
 	_check(workstation.paper_sleeve_button.disabled and not workstation.tray_button.disabled, "severe failure disables sleeve but immediately enables tray")
 	workstation.tray_button.pressed.emit()
@@ -102,6 +102,10 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	_finish()
+
+
+func _scaled_surface_point(surface: Control, old_point: Vector2) -> Vector2:
+	return Vector2(old_point.x * surface.size.x / 600.0, old_point.y * surface.size.y / 600.0)
 
 
 func _fill_uniform_pancake(model: PancakeModel) -> void:

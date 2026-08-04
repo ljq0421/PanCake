@@ -1,6 +1,7 @@
 extends Node
 
 signal settings_changed(current_settings: Dictionary)
+signal coins_changed(current_coins: int)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
@@ -9,7 +10,7 @@ const DEFAULT_ORDER_COINS := 3
 const DEFAULT_INGREDIENT_STOCK := {
 	"egg": 6,
 	"baocui": 6,
-	"ham_sausage": 6,
+	"ham_sausage": 0,
 	"scallion": 6,
 }
 const DEFAULT_SETTINGS := {
@@ -42,6 +43,8 @@ func begin_new_game() -> void:
 		"current_day": 1,
 		"day_open": true,
 		"today_orders": [],
+		"coins": 0,
+		"refill_progress": {},
 		"ingredient_stock": DEFAULT_INGREDIENT_STOCK.duplicate(true),
 	}
 	_write_save()
@@ -120,6 +123,56 @@ func save_ingredient_stock(snapshot: Dictionary) -> void:
 	_write_save()
 
 
+func workstation_progression_snapshot() -> Dictionary:
+	if not has_save():
+		return {
+			"coins": 0,
+			"current_day": 1,
+			"ingredient_stock": DEFAULT_INGREDIENT_STOCK.duplicate(true),
+			"refill_progress": {},
+		}
+	_ensure_day_fields()
+	return {
+		"coins": int(_save_data.get("coins", 0)),
+		"current_day": int(_save_data.get("current_day", 1)),
+		"ingredient_stock": ingredient_stock_snapshot(),
+		"refill_progress": Dictionary(_save_data.get("refill_progress", {})).duplicate(true),
+	}
+
+
+func save_workstation_progression(snapshot: Dictionary) -> void:
+	if not has_save():
+		return
+	_ensure_day_fields()
+	var previous_coins := int(_save_data.get("coins", 0))
+	_save_data["coins"] = maxi(int(snapshot.get("coins", previous_coins)), 0)
+	var progress := {}
+	for stock_id in Dictionary(snapshot.get("refill_progress", {})):
+		progress[str(stock_id)] = maxf(float(snapshot.refill_progress[stock_id]), 0.0)
+	_save_data["refill_progress"] = progress
+	var inventory_snapshot := Dictionary(snapshot.get("ingredient_stock", {}))
+	if not inventory_snapshot.is_empty():
+		var sanitized := {}
+		for ingredient_id in DEFAULT_INGREDIENT_STOCK:
+			sanitized[ingredient_id] = clampi(int(inventory_snapshot.get(ingredient_id, DEFAULT_INGREDIENT_STOCK[ingredient_id])), 0, 6)
+		_save_data["ingredient_stock"] = sanitized
+	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
+	_write_save()
+	if int(_save_data["coins"]) != previous_coins:
+		coins_changed.emit(int(_save_data["coins"]))
+
+
+func credit_coins(amount: int) -> int:
+	if not has_save():
+		return 0
+	_ensure_day_fields()
+	_save_data["coins"] = int(_save_data.get("coins", 0)) + maxi(amount, 0)
+	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
+	_write_save()
+	coins_changed.emit(int(_save_data["coins"]))
+	return int(_save_data["coins"])
+
+
 func end_business_day() -> Dictionary:
 	if not has_save():
 		return today_bill()
@@ -193,6 +246,10 @@ func _ensure_day_fields() -> void:
 		_save_data["today_orders"] = []
 	if not _save_data.has("ingredient_stock"):
 		_save_data["ingredient_stock"] = DEFAULT_INGREDIENT_STOCK.duplicate(true)
+	if not _save_data.has("coins"):
+		_save_data["coins"] = 0
+	if not _save_data.has("refill_progress"):
+		_save_data["refill_progress"] = {}
 
 
 func _write_save() -> void:

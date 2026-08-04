@@ -32,6 +32,7 @@ func _check_progression_and_pending_activation() -> void:
 	var state := _ready_progression()
 	_check(state.call("owns", CATALOG.TOOL_SPREADER_BASIC), "basic spreader is permanently owned at start")
 	_check(state.call("owns", CATALOG.TOOL_SAUCE_BRUSH_MANUAL), "manual sauce brush is permanently owned at start")
+	_check(int(state.get("inventory").call("current", CATALOG.STOCK_HAM_SAUSAGE)) == 0, "ham sausage has no opening-day stock before it is unlocked")
 	_check(CATALOG.item_effect(CATALOG.TOOL_SPREADER_WIDE).width_multiplier == 1.35, "wide spreader exposes queryable effect data")
 	_check(CATALOG.item_effect(CATALOG.TOOL_PRESS).uses_per_pancake == 1, "press tool exposes one-use-per-pancake effect")
 	_check(_reason(state.call("purchase", CATALOG.UPGRADE_SOY_INTERMEDIATE)) == &"missing_previous_tier", "equipment tiers cannot be skipped")

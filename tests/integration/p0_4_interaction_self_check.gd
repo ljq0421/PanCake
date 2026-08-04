@@ -50,7 +50,15 @@ func _run() -> void:
 	workstation.sauce_brush_button.pressed.emit()
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH, "sauce brush button selects the brush tool")
 	var load_before := float(workstation.sauce_tool_state.load)
-	_brush_path(workstation, surface, [Vector2(205, 250), Vector2(395, 250), Vector2(395, 350), Vector2(205, 350)])
+	var surface_center := surface.size * 0.5
+	var brush_half_width := surface.size.x * 0.32
+	var brush_half_height := surface.size.y * 0.16
+	_brush_path(workstation, surface, [
+		surface_center + Vector2(-brush_half_width, -brush_half_height),
+		surface_center + Vector2(brush_half_width, -brush_half_height),
+		surface_center + Vector2(brush_half_width, brush_half_height),
+		surface_center + Vector2(-brush_half_width, brush_half_height),
+	])
 	var sauce_after_first_stroke := workstation.pancake_model.total_sauce()
 	_check(sauce_after_first_stroke > 0.0, "brush path deposits sauce through the workstation interaction path")
 	_check(float(workstation.sauce_tool_state.load) < load_before, "painted area consumes the visible sauce blob")
@@ -62,7 +70,13 @@ func _run() -> void:
 	for frame in 120:
 		workstation._process(1.0 / 60.0)
 	workstation.sauce_refill_button.button_up.emit()
-	var same_press_layers := _brush_out_and_back(workstation, surface, Vector2(205, 300), Vector2(395, 300), center_cell)
+	var same_press_layers := _brush_out_and_back(
+		workstation,
+		surface,
+		surface_center - Vector2(surface.size.x * 0.2, 0.0),
+		surface_center + Vector2(surface.size.x * 0.2, 0.0),
+		center_cell
+	)
 	_check(same_press_layers[0] > concentration_after_first, "the first pass adds a concentration layer")
 	_check(same_press_layers[1] > same_press_layers[0], "returning over the same area without releasing adds another concentration layer")
 
@@ -71,7 +85,7 @@ func _run() -> void:
 	_check(surface.heatmap_field == PancakeModel.FIELD_SAUCE_CONCENTRATION and int(material.get_shader_parameter(&"view_mode")) == 6, "sauce debug view reads the shared renderer data")
 	workstation.set_heatmap_field(PancakeHeatmap.VIEW_APPEARANCE)
 
-	_cancel_surface(surface, Vector2(330, 300))
+	_cancel_surface(surface, surface_center)
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE, "right mouse returns the sauce brush")
 	workstation.reset_pancake()
 	_check(is_zero_approx(workstation.pancake_model.total_sauce()), "reset clears sauce concentration")

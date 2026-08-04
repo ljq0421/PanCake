@@ -72,7 +72,7 @@ func _check_scene_contract() -> void:
 	var safe_area := workstation.get_node("SafeArea") as Control
 	_check(safe_area.size == Vector2(1920, 1080), "central safe area is fixed at baseline canvas")
 	var surface := workstation.pancake_surface
-	_check(surface.size == Vector2(600, 555), "pan logic view matches the reference griddle perspective")
+	_check(surface.size == Vector2(480, 450), "pan logic view uses the confirmed twenty-percent-smaller griddle surface")
 	var background_artwork := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
 	var left_rack := workstation.get_node("SafeArea/LeftRack") as Panel
 	var right_rack := workstation.get_node("SafeArea/RightRack") as Panel
@@ -107,12 +107,12 @@ func _check_scene_contract() -> void:
 	_check((left_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "left tool rack no longer draws a floating panel")
 	_check((ingredient_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "right ingredient rack no longer draws a floating panel")
 	_check(left_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and right_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and ingredient_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE, "overlapping rack panels do not intercept their child or sibling controls")
-	_check(left_rack.position.x <= 120.0 and ingredient_rack.position.x >= 1300.0, "tool rack is left and the six-slot ingredient rack is right")
-	_check(ladle_button.size == Vector2(190, 105) and spreader_button.size == Vector2(190, 105), "top-row tray cells are the ladle and spreader click regions")
-	_check(fold_button.size == Vector2(190, 108) and sauce_brush_button.size == Vector2(190, 108), "middle-row tray cells are the fold spatula and sauce brush click regions")
+	_check(left_rack.position.x <= 30.0 and ingredient_rack.position.x >= 1280.0, "tool rack is left and the fixed 4x3 ingredient tray is right")
+	_check(ladle_button.size == Vector2(105, 145) and spreader_button.size == Vector2(106, 145), "ladle and spreader inputs cover their confirmed tool holders")
+	_check(not fold_button.visible and sauce_brush_button.size == Vector2(105, 145), "fold stays state-driven while the sauce brush covers its confirmed holder")
 	_check(ladle_button.global_position.x < 600.0 and spreader_button.global_position.x < 600.0 and fold_button.global_position.x < 600.0 and sauce_brush_button.global_position.x < 600.0, "all four tools are hosted by the left tool rack")
-	_check(egg_button.global_position.x >= 1340.0 and baocui_button.global_position.x >= 1540.0 and ham_button.global_position.x >= 1340.0 and scallion_button.global_position.x >= 1540.0, "four active ingredients occupy the first four right-hand slots")
-	_check(reserve_ingredient_1.disabled and reserve_ingredient_2.disabled and reserve_ingredient_1.global_position.x >= 1340.0 and reserve_ingredient_2.global_position.x >= 1540.0, "the remaining two right-hand slots are reserved for future ingredients")
+	_check(egg_button.visible and baocui_button.visible and scallion_button.visible and not ham_button.visible and ham_button.disabled, "only egg, baocui, and scallion occupy opening-day tray slots")
+	_check(reserve_ingredient_1.disabled and reserve_ingredient_2.disabled and not reserve_ingredient_1.visible and not reserve_ingredient_2.visible, "legacy reserve controls do not add permanent tray UI")
 	_check(ladle_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_ladle_v1.png", "automatic pour uses the approved tabletop ladle artwork")
 	_check(spreader_button_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1.png", "spreader selection uses the approved tabletop artwork")
 	_check(fold_tool_artwork.texture.resource_path == "res://resources/art/workstation/tools/folding_spatula_v1.png", "fold selection uses the approved tabletop spatula artwork")
@@ -121,17 +121,16 @@ func _check_scene_contract() -> void:
 	_check(griddle_artwork.texture.resource_path == "res://resources/art/workstation/griddle/griddle_base_v1.png", "griddle artwork uses the approved layered asset")
 	_check(griddle_artwork.get_index() < surface.get_index(), "griddle artwork renders behind the pancake interaction surface")
 	_check(
-		is_equal_approx(griddle_artwork.scale.x, 0.616114) and is_equal_approx(griddle_artwork.scale.y, 0.55),
-		"griddle artwork uses the controlled reference-perspective scale"
+		is_equal_approx(griddle_artwork.scale.x, 0.492891) and is_equal_approx(griddle_artwork.scale.y, 0.49),
+		"griddle artwork uses the confirmed initial-unlock scale"
 	)
 	_check(spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1.png", "spreader scene node uses the approved T-shaped artwork")
 	_check(is_equal_approx(spreader_artwork.scale.x, spreader_artwork.scale.y), "spreader artwork preserves its source aspect ratio")
 	_check(spreader_artwork.get_index() > pancake_visual.get_index() and spreader_artwork.get_index() < fold_overlay.get_index(), "spreader artwork renders over the pancake and below fold overlays")
 	_check(sauce_blob_overlay.get_index() > pancake_visual.get_index() and sauce_blob_overlay.get_index() < ingredient_layer.get_index(), "unspread sauce blobs render over the pancake and below solid fillings")
-	_check(pan_base.size == Vector2(650, 585), "griddle host fits the 600x555 interaction surface")
-	_check(pan_base.position.y == 455.0 and pan_base.position.y + pan_base.size.y == 1040.0, "griddle keeps the reference slot gap and worktop bottom edge")
-	var usable_pan_bottom := surface.global_position.y + surface.size.y * (0.5 + workstation.pancake_model.parameters.pan_height_ratio * 0.5)
-	_check(usable_pan_bottom <= bottom_strip.global_position.y, "bottom HUD does not cover the usable elliptical pancake interaction area")
+	_check(pan_base.size == Vector2(520, 468), "griddle host fits the 480x450 interaction surface")
+	_check(pan_base.position == Vector2(740, 525) and pan_base.position.y + pan_base.size.y == 993.0, "griddle keeps the confirmed initial-unlock worktop bounds")
+	_check(not surface.get_global_rect().intersects(bottom_strip.get_global_rect()), "relocated status HUD does not cover the pancake interaction area")
 	_check(foreground_lip.texture.resource_path == "res://resources/art/workstation/foreground/workstation_front_lip_v1.png", "foreground lip uses the approved occlusion asset")
 	_check(foreground_lip.get_index() > pan_base.get_index() and foreground_lip.get_index() < bottom_strip.get_index(), "foreground lip renders above dynamic content and below engine UI")
 	_check(foreground_lip.mouse_filter == Control.MOUSE_FILTER_IGNORE, "foreground lip ignores mouse input")

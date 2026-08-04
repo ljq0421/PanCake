@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/main.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/workstation.tscn" id="2_workstation"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="2_workstation"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="3_debug"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_pause"]

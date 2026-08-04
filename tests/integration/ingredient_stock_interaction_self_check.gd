@@ -25,7 +25,7 @@ func _run() -> void:
 	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v1.png"), "full tray renders the sixth stock image without a number")
 	_check(workstation.egg_restock_button != null and workstation.baocui_restock_button != null and workstation.ham_restock_button != null and workstation.scallion_restock_button != null, "four matching physical restock controls are stable scene content")
 	var background_artwork := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background_artwork.texture.resource_path.ends_with("workstation_backplate_v2.png"), "refill containers replace the removed napkin box and chopstick holder")
+	_check(background_artwork.texture.resource_path.ends_with("workstation_backplate_morning_mobile_cart_v1.png"), "initial mobile-cart backplate keeps the refill-container shelf clear")
 	_check(workstation.ingredient_layer.baocui_texture.resource_path.ends_with("baocui_broken_v1.png"), "placed baocui uses the visibly broken sheet artwork")
 	_check(_ingredient_rack_has_no_digits(workstation), "ingredient rack uses pictures and words instead of numeric stock labels")
 
@@ -33,12 +33,13 @@ func _run() -> void:
 	workstation.pour_used = true
 	workstation._select_scraper()
 	workstation._on_pointer_ended(Vector2(300, 300))
-	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "focused stock test reaches the guarded egg phase")
+	workstation._refresh_p1_ui()
 
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
 	workstation._on_ingredient_gui_input(press, IngredientModel.EGG)
+	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "the egg intent implicitly reaches the guarded egg phase")
 	workstation._finish_ingredient_drag(Vector2(-400.0, -400.0))
 	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 5, "failed off-griddle placement still consumes one egg")
 	_check(not workstation.ingredient_model.has_type(IngredientModel.EGG), "failed placement does not create pancake ingredient data")

@@ -15,6 +15,7 @@ func _run() -> void:
 	_test_egg_spreading_and_score()
 	_test_egg_spread_performance()
 	_test_order_and_session_guards()
+	_test_customer_reaction_persists_after_handoff()
 	_test_customer_queue_rotation()
 	_test_every_order_combination()
 	_test_ingredients_affect_fold_and_score()
@@ -141,11 +142,26 @@ func _test_order_and_session_guards() -> void:
 	var first := service.next_order()
 	var second := service.next_order()
 	_check(first.id == &"classic" and second.id == &"chili_ham", "order service provides a deterministic playable order sequence")
+	var empty_model := PancakeModel.new(48)
+	var empty_session := P1Session.new()
+	empty_session.start(first)
+	_check(not bool(empty_session.confirm_spread(empty_model).success), "spreading cannot finish when no pancake exists")
+	var tiny_model := PancakeModel.new(48)
+	var tiny_index := tiny_model.index_of(Vector2i(24, 24))
+	tiny_model.coverage[tiny_index] = 1.0
+	tiny_model.thickness[tiny_index] = 0.42
+	var tiny_session := P1Session.new()
+	tiny_session.start(first)
+	_check(
+		bool(tiny_session.confirm_spread(tiny_model).success)
+		and tiny_session.phase == P1Session.Phase.FIRST_SIDE,
+		"any real pancake shape can finish spreading without a fifty-percent coverage gate"
+	)
 	var model := _uniform_pancake(48, 0.42)
 	var ingredients := IngredientModel.new()
 	var session := P1Session.new()
 	session.start(first)
-	_check(bool(session.confirm_spread(model).success) and session.phase == P1Session.Phase.FIRST_SIDE, "sufficient coverage advances from spreading to first-side cooking")
+	_check(bool(session.confirm_spread(model).success) and session.phase == P1Session.Phase.FIRST_SIDE, "internal spread confirmation advances to first-side cooking")
 	var early_flip := session.request_flip(model, ingredients)
 	_check(not bool(early_flip.success), "flip is blocked before the required egg is placed")
 	ingredients.place(IngredientModel.EGG, Vector2(24, 24), 0.0, model)
@@ -159,6 +175,48 @@ func _test_order_and_session_guards() -> void:
 	_check(bool(session.begin_handoff({"score": 80.0}).success) and session.phase == P1Session.Phase.HANDOFF and not session.payment_ready, "clicking the packaged product starts a guarded customer handoff")
 	_check(bool(session.begin_payment().success) and session.phase == P1Session.Phase.PAYMENT and not session.payment_ready, "customer acceptance advances to the payment phase")
 	_check(bool(session.finish_payment().success) and session.phase == P1Session.Phase.RESULT and session.payment_ready, "coin settlement reaches the completed result")
+
+
+func _test_customer_reaction_persists_after_handoff() -> void:
+	var order := OrderService.new().order_at(0)
+	var waited_satisfied := _ready_session(order)
+	waited_satisfied.advance_time(float(order.time_limit) * 0.75)
+	_check(waited_satisfied.is_impatient_now(), "customer becomes impatient before receiving the order")
+	waited_satisfied.begin_handoff({"score": 82.0})
+	_check(
+		waited_satisfied.impatient_at_handoff
+		and waited_satisfied.post_handoff_reaction() == P1Session.REACTION_IMPATIENT,
+		"a good pancake does not erase impatience already reached while waiting"
+	)
+	var waited_dissatisfied := _ready_session(order)
+	waited_dissatisfied.advance_time(float(order.time_limit) * 0.75)
+	waited_dissatisfied.begin_handoff({"score": 55.0})
+	_check(
+		waited_dissatisfied.post_handoff_reaction() == P1Session.REACTION_VERY_UNHAPPY,
+		"an impatient customer becomes more unhappy when the pancake is also unsatisfactory"
+	)
+	var timely_dissatisfied := _ready_session(order)
+	timely_dissatisfied.begin_handoff({"score": 55.0})
+	_check(
+		timely_dissatisfied.post_handoff_reaction() == P1Session.REACTION_IMPATIENT,
+		"an on-time but unsatisfactory pancake still produces the ordinary unhappy reaction"
+	)
+
+
+func _ready_session(order: Dictionary) -> P1Session:
+	var model := _uniform_pancake(48, 0.42)
+	var ingredients := IngredientModel.new()
+	var session := P1Session.new()
+	session.start(order)
+	session.confirm_spread(model)
+	ingredients.place(IngredientModel.EGG, Vector2(24, 24), 0.0, model)
+	_seed_even_egg(model)
+	model.doneness.fill(0.50)
+	session.request_flip(model, ingredients)
+	session.begin_folding()
+	session.mark_ready_for_package()
+	session.mark_packaged()
+	return session
 
 
 func _test_customer_queue_rotation() -> void:

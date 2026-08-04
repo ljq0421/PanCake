@@ -1,5 +1,40 @@
 # ProjectCake 美术资源清单
 
+## 清晨移动摊车底板 v1（2026-08-03）
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: 替换初始营业场景的全局橙黄固定摊位观感，建立约 7:00 的清晨早餐时段与小型移动煎饼车语义；后续成长再过渡到半固定、固定摊位。
+- `final_file`: `res://resources/art/workstation/background/workstation_backplate_morning_mobile_cart_v1.png`
+- `source_file`: `tmp/imagegen/morning_mobile_cart_v1/workstation_backplate_morning_mobile_cart_v1_builtin_source.png`
+- `edit_target`: `res://resources/art/workstation/background/workstation_backplate_v2.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_backplate_morning_mobile_cart_v1.md`
+- `generator`: Codex 内置 `image_gen`，`lighting-weather` + `precise-object-edit`。
+- `size`: 1671 x 941 px，RGB PNG。
+- `sha256`: `FA8A0C9E5B219A8E0F67B77FEEDA0EDEF86B6A51125CE77DB422DBB3EE33783F`
+- `visual_check`: passed — 上部顾客区改为冷灰蓝清晨街面，车体改为米白珐琅、旧青绿与少量砖红，下缘增加克制的便携车架/把手线索；无全局橙黄夕照、人物、文字、UI、鏊子、食物或支付物。
+- `composition_check`: passed — 保留长收款托盘、十二个槽、中央鏊子安装区、底部控制底座、右侧酱瓶与植物的构图位置；正式运行场景仍使用原有节点坐标。
+- `godot_import`: passed — Godot 4.7.1 已生成正式 PNG 的 `.png.import` 旁车，并可作为 `Texture2D` 加载。
+- `runtime_scene_check`: passed — `workstation.tscn` 已切换资源引用；完整 `tools/run_checks.ps1` 通过，Forward Mobile / D3D12 在 NVIDIA GeForce RTX 5070 上生成完整 P1 截图，P95 16.85 ms。
+- `human_review`: pending — 仍需人工确认早餐时间感、移动摊车辨识度及带完整 UI/顾客后的整体色彩平衡。
+
+## 清晨移动摊车开始页背景 v1（2026-08-03）
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: 将开始页从琥珀橙固定档口调整为与初始营业场景一致的清晨户外移动煎饼车，并同步收敛菜单、设置与确认弹窗色板。
+- `final_file`: `res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v1.png`
+- `source_files`: `tmp/imagegen/start_menu_morning_mobile_cart_v1/start_menu_background_morning_mobile_cart_v1_builtin_source.png`、`start_menu_background_morning_mobile_cart_v1_corrected_builtin_source.png`
+- `edit_target`: `res://resources/art/ui/start_menu/start_menu_background_v1.png`
+- `palette_reference`: `res://resources/art/workstation/background/workstation_backplate_morning_mobile_cart_v1.png`
+- `prompt_file`: `res://resources/art/prompts/start_menu_background_morning_mobile_cart_v1.md`
+- `generator`: Codex 内置 `image_gen`；先执行 `lighting-weather` + `precise-object-edit`，再执行一次定点文化语义修正。
+- `size`: 1672 x 941 px，RGB PNG。
+- `sha256`: `EADA97E7F0BDDDD3CF60222F069DA4AA222C7ED460ACFC0BFD4B5AE4C60EDD63`
+- `visual_check`: passed — 左侧菜单安全区保持低细节，右侧为米白珐琅、旧青绿、冷灰蓝清晨街面的移动早餐摊；中央背板已恢复干净留白，预留给后续游戏名称，灯具关闭，无全局橙黄泛光。
+- `cultural_check`: passed — 招财猫及其展示架已移除；留白区不放置海报或替代吉祥物；保留蒸笼、筷筒、锅铲、酱瓶和搪瓷材质等中式早餐摊线索；未加入日式文字、门帘、灯笼、达摩、文字、价格或伪书法。
+- `godot_import`: passed — Godot 4.7.1 已生成 `.png.import` 旁车并可作为 `Texture2D` 加载。
+- `runtime_scene_check`: passed — `start_menu.tscn` 已切换到新背景，并将菜单、按钮、设置页和确认弹窗改为深青灰/米白色板；完整 `tools/run_checks.ps1` 已通过，海报回退后又通过 `start_menu_self_check.gd` 与 Forward Mobile `run_start_menu_smoke.ps1`。
+- `human_review`: pending — 仍需人工确认中式早餐摊辨识度、清晨氛围和标题/按钮视觉层级。
+
 ## 固定摊位分层装饰 v1（2026-08-02）
 
 - `status`: art-complete-alpha-audit-passed-preview-checked-runtime-integration-pending-human-review-pending
@@ -796,6 +831,29 @@
 - `visual_check`: 通过。恰好一张青色空白纸币和三枚金色硬币，横向紧凑、适合长托盘；没有文字、数字、货币符号、国家标识、投影、品牌或水印。
 - `godot_import`: passed — Godot 4.7.1 generated the `.png.import` sidecar and a 162,002-byte `CompressedTexture2D` cache with alpha.
 - `runtime_scene_check`: passed — 2026-08-01，接入 P1 评价与收款反馈；付款素材与评分、下一订单业务状态保持独立。
+- `human_review`: pending
+
+## payment_coin_denominations_v1
+
+- `status`: runtime-integrated; human review pending
+- `purpose`: P1 收款槽中的独立可堆叠金币，支持 1、2、5、10、20 五种面额、单笔多枚付款、跨订单累积与一次收取。
+- `final_files`: `res://resources/art/payments/coin_{1,2,5,10,20}_v1.png`
+- `source_files`: `tmp/imagegen/payment_denominations_v1/coin_{1,2,5,10,20}_v1_chromakey.png`
+- `prompt_file`: `res://resources/art/prompts/payment_coin_denominations_v1.md`
+- `generator`: Codex 内置 `image_gen`，每个面额独立生成；随后使用技能自带 `remove_chroma_key.py` 去背并以 Lanczos 缩放。
+- `generated_on`: 2026-08-03 (Asia/Shanghai)
+- `size`: 每张 256 x 256 px
+- `pixel_format`: RGBA
+- `variants`:
+  - `coin_1_v1.png`: 铜橙；alpha bbox `(44, 39) - (210, 210)`；SHA-256 `958E7F452963472A5474A99A9B8E955FABA65CAC73BE5EBE3F0D7B6C73F98360`
+  - `coin_2_v1.png`: 银蓝；alpha bbox `(38, 35) - (217, 218)`；SHA-256 `FEE0A1A5FD0F5EADFF2AD1C74EDF2758C670A45017923EFB2A4CB25BB4E84F47`
+  - `coin_5_v1.png`: 金黄；alpha bbox `(34, 32) - (220, 222)`；SHA-256 `090103D0903A70F701C0E43C84A6F4A37395D901E4284AF29CCC38D49CFC151A`
+  - `coin_10_v1.png`: 玫瑰铜；alpha bbox `(31, 30) - (224, 225)`；SHA-256 `0AFCFDCC66EF858485EC9BE2DC2A36CFAEB03A07778A21BB957F9F0EE5A8BFE2`
+  - `coin_20_v1.png`: 紫色；alpha bbox `(30, 27) - (226, 229)`；SHA-256 `AE44AE382EDB90E99E342CE6FEE00000A782E3CD3729143977437321248C37F3`
+- `alpha_check`: passed — 五张图四角 alpha 均为 0，非透明 bbox 完整位于画布内；透明像素分别为 43,631 / 40,422 / 38,364 / 36,510 / 35,292，半透明边缘分别为 1,627 / 1,755 / 1,805 / 1,876 / 1,944 px。
+- `visual_check`: passed — 五个阿拉伯数字均清晰，颜色可区分；每张只有一枚正面圆币，无托盘、额外硬币、货币符号、品牌、水印或残留绿色背景。
+- `godot_import`: passed — Godot 4.7.1 已生成五个 `.png.import` 旁车，五张纹理均可作为 `Texture2D` 加载。
+- `runtime_scene_check`: passed — `PaymentCoinLayer` 按订单金额动态拆分并渲染多枚硬币；待收金币独立于当前 `P1Session`，下一位顾客不等待收款。
 - `human_review`: pending
 
 ## order_card_base_v1
@@ -2714,3 +2772,152 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 ```text
 Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_10_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_10 exactly: sturdy broad middle-aged man, warm olive skin, bald head with dark side stubble, dark mustache and short goatee, dark burgundy open-collar shirt over cream undershirt, warm khaki trousers; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. This is the accepted targeted composition correction: scale the complete figure/action to about 82% canvas height and leave at least 70 pixels of clean key color below the complete lower trouser/waist edge. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
 ```
+<!-- workstation-expansion-first-batch-v1 -->
+# 工作台扩展首批独立设备与工具 v1
+
+- `status`: generated-imported-runtime-integration-pending
+- `generated_on`: 2026-08-03 (Asia/Shanghai)
+- `generator`: Codex built-in `image_gen`; flat `#ff00ff` chroma-key backgrounds; local alpha removal with `C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py`; deterministic crop/fit/key-fringe cleanup with `tools/normalize_workstation_expansion_asset.py`
+- `prompt_file`: `res://resources/art/prompts/workstation_expansion_assets_v1.md`
+- `design_sources`: `docs/workstation_expansion_plan.md`, `docs/game_design.md`, `docs/development_plan.md`, `tmp/concepts/workstation_expansion_v1/workstation_expansion_concept_v3_1920x1080.png`, `tmp/concepts/workstation_expansion_v1/workstation_expansion_overlay.svg`
+- `validation`: `tools/audit_workstation_expansion_assets.py`, `tests/unit/workstation_expansion_asset_self_check.gd`, `tmp/validation/workstation_expansion_v1/workstation_expansion_asset_audit_v1.json`, `tmp/validation/workstation_expansion_v1/workstation_expansion_contact_sheet_v1.png`
+- `alpha_processing`: `--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`; tier-2 fryer retried with `--edge-contract 1`, then the normalizer removed only remaining forbidden magenta-key pixels.
+- `godot_import`: passed with Godot 4.7.1; `WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 7 textures`
+- `project_checks`: passed; `tools/run_checks.ps1` ended with `All Project Cake checks passed.`
+- `runtime_integration`: pending; no scene, gameplay script, progression data, save data, or device state machine was changed in this art batch.
+- `human_review`: pending
+
+| 资产 | 正式文件 | 尺寸 | alpha bbox | SHA-256 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| 豆浆机基础级，最大 2 杯/16 秒 | `res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png` | 1024×512 RGBA | `(280,28)-(743,484)` | `ce1180c29007109d022d0c126826e1b5b581c75c5fa69b1b8e1d1c267763b81a` | 已生成、已导入、未接入、待人工确认 |
+| 豆浆机中级，最大 2 杯/12 秒 | `res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v1.png` | 1024×512 RGBA | `(278,28)-(745,484)` | `3ac48a007048b84416d422c0291e5e54a602af370f58eb120d681832e325b0e0` | 已生成、已导入、未接入、待人工确认 |
+| 炸油条机基础级，最大 2 根/12 秒 | `res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png` | 1024×384 RGBA | `(56,32)-(967,352)` | `955006ffbf1cf080857cee8c7d5f4d4a5967e4d6d863acad8baa296acdb306c2` | 已生成、已导入、未接入、待人工确认 |
+| 炸油条机中级，最大 2 根/9 秒 | `res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_v1.png` | 1024×384 RGBA | `(56,33)-(967,351)` | `9c89aacb6cac6660dd4e4f1284c4b7975a71c65aff10ac6d929dde10caa51cd0` | 已生成、已导入、未接入、待人工确认 |
+| 炸油条机高级，最大 4 根/9 秒/无限保温 | `res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_v1.png` | 1024×384 RGBA | `(56,25)-(967,358)` | `e41c183eb390639801a73be105bf1a3a6476489dc662cca89da74dde64822758` | 已生成、已导入、未接入、待人工确认 |
+| 压饼神器（稳定 ID `single_press_spreader`） | `res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png` | 1024×1024 RGBA | `(125,56)-(898,967)` | `b60021375c5687204e22e0469d3e797794d8bb77d874d530f83b863bf57067a6` | 已生成、已导入、未接入、待人工确认 |
+| 自动酱刷 | `res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png` | 1024×1024 RGBA | `(155,56)-(869,967)` | `b371b75d0714ef1a5ddd21fc91497aa18efad9af4642a989c50179f5ed1e10ef` | 已生成、已导入、未接入、待人工确认 |
+
+所有 7 张正式图均为 RGBA、四角 alpha 为 0、禁用的品红键色残留为 0。图中无文字、数字、emoji、logo 或水印。
+
+## 首批当时的拒绝稿与未完成项（已由继续批次补齐）
+
+- 豆浆机基础档第一稿为高塔比例，在目标设备位缩放后过窄，未采用；源图保留在 `tmp/imagegen/workstation_expansion_v1/sources/soy_milk_machine_tier_1_v1_chromakey.png`。
+- 豆浆机高级稿错误生成 6 杯，违反最大 4 杯规格，未进入 `resources`；拒绝稿保留在 `tmp/imagegen/workstation_expansion_v1/sources/soy_milk_machine_tier_3_rejected_six_cups.png`。首批随后的“恰好 4 个空杯位”调用无产物；继续批次最终成功生成严格 4 杯正式稿。
+- 鸡蛋仔基础机、4×3 小料盘和锁定槽盖板在首批调用时无产物；当时未切换到 CLI/API 备用路径，也未用手工 SVG 或占位图替代。继续批次已全部通过内置 `image_gen` 生成。
+- 小料盒 6/10/14 三档、默认配方原料/成品图标以及红豆/黑豆、芝麻/葱香、草莓/巧克力变体在首批结束时尚未生成；继续批次已全部补齐。
+
+<!-- workstation-expansion-continuation-v1 -->
+# 工作台扩展继续批次 v1：设备补齐、托盘、容量盒与首批配方
+
+本节是上方“工作台扩展首批独立设备与工具 v1”的继续记录，并取代其“未完成项”状态；原拒绝稿和无产物调用记录保留用于追溯。
+
+- `status`: generated-imported-runtime-integration-pending-human-review-pending
+- `generated_on`: 2026-08-03 (Asia/Shanghai)
+- `new_asset_count`: 27；与首批 7 张合计 34 张工作台扩展素材
+- `generator`: Codex built-in `image_gen`
+- `prompt_file`: `res://resources/art/prompts/workstation_expansion_assets_v1.md`
+- `source_pattern`: `tmp/imagegen/workstation_expansion_v1/sources/<asset_id>_chromakey.png`
+- `alpha_intermediate_pattern`: `tmp/imagegen/workstation_expansion_v1/sources/<asset_id>_alpha.png`
+- `alpha_processing`: `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`
+- `normalization`: `tools/normalize_workstation_expansion_asset.py`；机器 1024×512、托盘 512×240、盖板/容量盒/配方图标 512×512
+- `validation`: `tmp/validation/workstation_expansion_v1/workstation_expansion_asset_audit_v1.json` 与 `workstation_expansion_contact_sheet_v1.png`
+- `pixel_audit`: passed；34/34 RGBA，四角 alpha `[0,0,0,0]`，品红键色残留 0
+- `godot_import`: passed with Godot 4.7.1；`WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 34 textures`
+- `project_checks`: passed；`tools/run_checks.ps1` 输出 `All Project Cake checks passed.`
+- `runtime_integration`: pending；本次未修改玩法代码、场景绑定、配方数据、升级数据或存档结构
+- `human_review`: pending；接触表初检不替代真实游戏缩放与玩家视角验收
+
+## 新增设备、托盘与容量盒（9 张）
+
+- `res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v1.png`：高级豆浆机，严格 2×2 共 4 杯，单中央处理/出液组件。
+- `res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_1_v1.png`：基础鸡蛋仔机，单工位、手动合盖/控温。
+- `res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_2_v1.png`：中级鸡蛋仔机，单工位、加速硬件，无无限保温。
+- `res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_3_v1.png`：高级鸡蛋仔机，严格双工位、手动保温盖；成品未取出仍占容量。
+- `res://resources/art/workstation/expansion/trays/ingredient_tray_4x3_v1.png`：严格 4×3 共 12 个空槽。
+- `res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png`：单槽实体锁浮雕盖板。
+- `res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_1_v1.png`：基础 6 份容量语义。
+- `res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_2_v1.png`：中级 10 份容量语义，同占地、单层加固圈。
+- `res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_3_v1.png`：高级 14 份容量语义，同占地、双层加固圈。
+
+## 默认配方原料与成品（6 张）
+
+- `res://resources/art/ingredients/soybean/yellow_soybean_portion_v1.png`
+- `res://resources/art/products/soy_milk/plain_soy_milk_cup_v1.png`
+- `res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1.png`
+- `res://resources/art/products/youtiao/plain_youtiao_v1.png`
+- `res://resources/art/ingredients/egg_waffle/plain_egg_waffle_batter_v1.png`
+- `res://resources/art/products/egg_waffle/plain_egg_waffle_v1.png`
+
+## 首轮口味变体原料与成品（12 张）
+
+- `res://resources/art/ingredients/beans/red_bean_portion_v1.png`
+- `res://resources/art/ingredients/beans/black_bean_portion_v1.png`
+- `res://resources/art/products/soy_milk/red_bean_soy_milk_cup_v1.png`
+- `res://resources/art/products/soy_milk/black_bean_soy_milk_cup_v1.png`
+- `res://resources/art/ingredients/youtiao/sesame_youtiao_dough_v1.png`
+- `res://resources/art/ingredients/youtiao/scallion_youtiao_dough_v1.png`
+- `res://resources/art/products/youtiao/sesame_youtiao_v1.png`
+- `res://resources/art/products/youtiao/scallion_youtiao_v1.png`
+- `res://resources/art/ingredients/sauces/strawberry_sauce_bottle_v1.png`
+- `res://resources/art/ingredients/sauces/chocolate_sauce_bottle_v1.png`
+- `res://resources/art/products/egg_waffle/strawberry_egg_waffle_v1.png`
+- `res://resources/art/products/egg_waffle/chocolate_egg_waffle_v1.png`
+
+## 拒绝稿与失败调用
+
+- `tmp/imagegen/workstation_expansion_v1/sources/soy_milk_machine_tier_3_rejected_six_cups.png`：错误 6 杯，违反最大 4 杯规格，未进入 `resources`。
+- 黑豆份量、红豆豆浆与葱香成品油条各有一次内置生成调用长时间无返回，调用已终止且无产物；随后使用更聚焦的编辑提示成功生成正式文件。
+- 高级豆浆机第一次归一化误把 `--margin` 当像素传入，产生单像素输出；正式文件随后以比例值 `0.055` 重新生成并覆盖，审计哈希以最终文件为准。
+
+<!-- workstation-expansion-recipes-batch-2 -->
+# 工作台扩展配方第二批：花生至果干碎
+
+- `status`: generated-imported-runtime-integration-pending-human-review-pending
+- `generated_on`: 2026-08-04 (Asia/Shanghai)
+- `new_asset_count`: 18；工作台扩展专用审计总数由 34 增至 52
+- `generator`: Codex built-in `image_gen`；一张图一次独立生成/编辑调用
+- `prompt_file`: `res://resources/art/prompts/workstation_expansion_assets_v1.md` 的 “Second expansion recipe batch”
+- `source_pattern`: `tmp/imagegen/workstation_expansion_v1/sources/<asset_id>_chromakey.png`
+- `alpha_intermediate_pattern`: `tmp/imagegen/workstation_expansion_v1/sources/<asset_id>_alpha.png`
+- `alpha_processing`: 默认 `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`
+- `normalization`: `tools/normalize_workstation_expansion_asset.py --width 512 --height 512 --margin 0.06`
+- `validation`: `tmp/validation/workstation_expansion_v1/workstation_expansion_asset_audit_v1.json` 与 `workstation_expansion_contact_sheet_v1.png`
+- `pixel_audit`: passed；52/52 RGBA、透明四角、检测到的洋红残留 0
+- `godot_import`: passed with Godot 4.7.1；`WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 52 textures`
+- `project_checks`: passed；`tools/run_checks.ps1` 输出 `All Project Cake checks passed.`（根证书读取警告与通过状态分开记录）
+- `runtime_integration`: pending；当前 catalog 没有本批 9 种新配方/小料 ID，本批未改玩法代码
+- `human_review`: pending；接触表初检不等于真实工作台缩放验收
+
+## 豆浆扩展（6 张）
+
+- `res://resources/art/ingredients/nuts/peanut_portion_v1.png`
+- `res://resources/art/ingredients/beans/mung_bean_portion_v1.png`
+- `res://resources/art/ingredients/grains/five_grain_mix_portion_v1.png`
+- `res://resources/art/products/soy_milk/peanut_soy_milk_cup_v1.png`
+- `res://resources/art/products/soy_milk/mung_bean_soy_milk_cup_v1.png`
+- `res://resources/art/products/soy_milk/five_grain_soy_milk_cup_v1.png`
+
+## 油条扩展（6 张）
+
+- `res://resources/art/ingredients/youtiao/glutinous_rice_youtiao_dough_v1.png`
+- `res://resources/art/ingredients/youtiao/multigrain_youtiao_dough_v1.png`
+- `res://resources/art/ingredients/youtiao/filled_youtiao_dough_v1.png`
+- `res://resources/art/products/youtiao/glutinous_rice_youtiao_v1.png`
+- `res://resources/art/products/youtiao/multigrain_youtiao_v1.png`
+- `res://resources/art/products/youtiao/filled_youtiao_v1.png`
+
+“夹心”只锁定了结构，尚未锁定馅味。正式图与稳定 ID `filled` 不宣称豆沙、肉馅、奶油或其他具体口味。
+
+## 鸡蛋仔扩展（6 张）
+
+- `res://resources/art/ingredients/egg_waffle/matcha_egg_waffle_batter_v1.png`
+- `res://resources/art/ingredients/egg_waffle/sesame_topping_portion_v1.png`
+- `res://resources/art/ingredients/egg_waffle/dried_fruit_topping_portion_v1.png`
+- `res://resources/art/products/egg_waffle/matcha_egg_waffle_v1.png`
+- `res://resources/art/products/egg_waffle/sesame_egg_waffle_v1.png`
+- `res://resources/art/products/egg_waffle/dried_fruit_egg_waffle_v1.png`
+
+## 第二批拒绝记录
+
+- `tmp/imagegen/workstation_expansion_v1/sources/glutinous_rice_youtiao_v1_magenta_rejected.png`：绘制内容正确，但洋红软去背令金黄色主体发灰，未进入 `resources`。
+- 正式 `glutinous_rice_youtiao_v1` 使用纯 `#00ff00` 色键重生成；其余 17 张使用纯 `#ff00ff` 色键。两者都使用内置 imagegen 与同一软边透明处理流程，没有改用 CLI/API、手工 SVG 或占位图。

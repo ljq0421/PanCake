@@ -12,6 +12,7 @@ const ORDERS: Array[Dictionary] = [
 		"sauces": [SAUCE_SWEET],
 		"heat_preference": &"golden",
 		"time_limit": 72.0,
+		"payment_coins": 3,
 		"customer_line": "来一份经典的，薄脆和葱花都要。",
 	},
 	{
@@ -21,6 +22,7 @@ const ORDERS: Array[Dictionary] = [
 		"sauces": [SAUCE_CHILI],
 		"heat_preference": &"well_done",
 		"time_limit": 76.0,
+		"payment_coins": 12,
 		"customer_line": "火腿加辣酱，边缘煎香一点。",
 	},
 	{
@@ -30,6 +32,7 @@ const ORDERS: Array[Dictionary] = [
 		"sauces": [SAUCE_SWEET, SAUCE_CHILI],
 		"heat_preference": &"golden",
 		"time_limit": 82.0,
+		"payment_coins": 22,
 		"customer_line": "两种酱都刷，配料给我放匀。",
 	},
 	{
@@ -39,6 +42,7 @@ const ORDERS: Array[Dictionary] = [
 		"sauces": [SAUCE_SWEET],
 		"heat_preference": &"light",
 		"time_limit": 68.0,
+		"payment_coins": 5,
 		"customer_line": "不要火腿和薄脆，嫩一点就好。",
 	},
 ]

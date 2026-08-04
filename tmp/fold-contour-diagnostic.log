@@ -1,0 +1,18 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Expected loop variable name after "for".
+   at: GDScript::reload (res://scripts/ui/pancake_fold_overlay.gd:519)
+ERROR: Failed to load script "res://scripts/ui/pancake_fold_overlay.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+SCRIPT ERROR: Invalid call. Nonexistent function 'set_fold_model' in base 'Control'.
+   at: Workstation._ready (res://scripts/gameplay/workstation.gd:186)
+   GDScript backtrace (most recent call first):
+       [0] _ready (res://scripts/gameplay/workstation.gd:186)
+       [1] _run (res://tests/integration/p0_5_interaction_self_check.gd:15)
+[ProjectCake][bootstrap] M0 main scene started with Mobile renderer
+SCRIPT ERROR: Invalid call. Nonexistent function 'get_fold_source_span' in base 'Control'.
+   at: _run (res://tests/integration/p0_5_interaction_self_check.gd:22)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/p0_5_interaction_self_check.gd:22)

@@ -1,12 +1,17 @@
 class_name IngredientLayer
 extends Control
 
+const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
+
 @export var egg_texture: Texture2D
 @export var baocui_texture: Texture2D
 @export var ham_texture: Texture2D
 @export var scallion_texture: Texture2D
 
 var model: IngredientModel
+var fold_model: RefCounted
+var _left_fold_progress := 0.0
+var _right_fold_progress := 0.0
 
 
 func _ready() -> void:
@@ -23,8 +28,18 @@ func set_model(value: IngredientModel) -> void:
 	_rebuild_sprites()
 
 
+func set_fold_model(value: RefCounted) -> void:
+	if fold_model != null and fold_model.changed.is_connected(_refresh_fold_visibility):
+		fold_model.changed.disconnect(_refresh_fold_visibility)
+	fold_model = value
+	if fold_model != null:
+		fold_model.changed.connect(_refresh_fold_visibility)
+	_refresh_fold_visibility()
+
+
 func _rebuild_sprites() -> void:
 	for child in get_children():
+		remove_child(child)
 		child.queue_free()
 	if model == null:
 		return
@@ -39,7 +54,56 @@ func _rebuild_sprites() -> void:
 		sprite.rotation = float(placement.rotation)
 		sprite.scale = Vector2.ONE * _scale_for(placement.type)
 		sprite.modulate = Color(0.90, 0.90, 0.90, 1.0) if bool(placement.damaged) else Color.WHITE
+		sprite.set_meta(&"ingredient_type", placement.type)
+		sprite.set_meta(&"grid_x", float((placement.position as Vector2).x))
 		add_child(sprite)
+	_apply_fold_visibility()
+
+
+func _refresh_fold_visibility() -> void:
+	_left_fold_progress = 0.0
+	_right_fold_progress = 0.0
+	if fold_model != null and fold_model.pancake_model != null:
+		_left_fold_progress = 1.0 if fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT) else 0.0
+		_right_fold_progress = 1.0 if fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT) else 0.0
+		if fold_model.active_region == FOLD_MODEL_SCRIPT.REGION_LEFT:
+			_left_fold_progress = float(fold_model.drag_progress)
+		elif fold_model.active_region == FOLD_MODEL_SCRIPT.REGION_RIGHT:
+			_right_fold_progress = float(fold_model.drag_progress)
+	_apply_fold_visibility()
+
+
+func _apply_fold_visibility() -> void:
+	if fold_model == null or fold_model.pancake_model == null:
+		return
+	var grid_maximum := maxf(float(fold_model.pancake_model.grid_size - 1), 1.0)
+	var left_line := float(fold_model.pancake_model.parameters.fold_left_line_ratio) * grid_maximum
+	var right_line := float(fold_model.pancake_model.parameters.fold_right_line_ratio) * grid_maximum
+	var fillings_enclosed: bool = (
+		fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT)
+		and fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT)
+	)
+	for child in get_children():
+		var sprite := child as Sprite2D
+		if sprite == null or not sprite.has_meta(&"grid_x"):
+			continue
+		var grid_x := float(sprite.get_meta(&"grid_x"))
+		var fold_progress := 0.0
+		if grid_x <= left_line:
+			fold_progress = _left_fold_progress
+		elif grid_x >= right_line:
+			fold_progress = _right_fold_progress
+		var color := sprite.modulate
+		color.a = 0.0 if fillings_enclosed else 1.0 - clampf(fold_progress, 0.0, 1.0)
+		sprite.modulate = color
+
+
+func visual_alpha_for(ingredient_type: StringName) -> float:
+	for child in get_children():
+		var sprite := child as Sprite2D
+		if sprite != null and sprite.has_meta(&"ingredient_type") and StringName(str(sprite.get_meta(&"ingredient_type"))) == ingredient_type:
+			return sprite.modulate.a
+	return 0.0
 
 
 func _texture_for(ingredient_type: StringName) -> Texture2D:

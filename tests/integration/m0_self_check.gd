@@ -102,7 +102,7 @@ func _check_scene_contract() -> void:
 	var foreground_lip := workstation.get_node("SafeArea/ForegroundLip") as TextureRect
 	var bottom_strip := workstation.get_node("SafeArea/BottomStrip") as Control
 	var step_action_button := workstation.get_node("SafeArea/P1ControlBar/StepActionButton") as Button
-	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_backplate_v2.png", "background artwork uses the cleared refill-container backplate")
+	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_backplate_morning_mobile_cart_v1.png", "background artwork uses the cleared morning mobile-cart backplate")
 	_check(background_artwork.get_index() < pan_base.get_index(), "background artwork renders behind interactive content")
 	_check((left_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "left tool rack no longer draws a floating panel")
 	_check((ingredient_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "right ingredient rack no longer draws a floating panel")
@@ -135,7 +135,7 @@ func _check_scene_contract() -> void:
 	_check(foreground_lip.texture.resource_path == "res://resources/art/workstation/foreground/workstation_front_lip_v1.png", "foreground lip uses the approved occlusion asset")
 	_check(foreground_lip.get_index() > pan_base.get_index() and foreground_lip.get_index() < bottom_strip.get_index(), "foreground lip renders above dynamic content and below engine UI")
 	_check(foreground_lip.mouse_filter == Control.MOUSE_FILTER_IGNORE, "foreground lip ignores mouse input")
-	_check(not step_action_button.visible and step_action_button.text != "确认面饼", "spreading has no manual confirm-pancake action")
+	_check(not step_action_button.visible and step_action_button.text != "完成摊饼", "spreading exposes no explicit completion action")
 	main.queue_free()
 	await process_frame
 	await process_frame

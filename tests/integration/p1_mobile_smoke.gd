@@ -69,6 +69,11 @@ func _run() -> void:
 	workstation.fold_model.release_drag(Vector2(70, 64))
 	workstation.fold_model.begin_drag(Vector2(116, 64))
 	workstation.fold_model.release_drag(Vector2(58, 64))
+	await create_timer(0.32).timeout
+	var folded_path := capture_directory.path_join("p1_folded_latest.png")
+	if root.get_texture().get_image().save_png(folded_path) != OK:
+		_fail("Failed to save P1 folded-product capture")
+		return
 	workstation.bag_button.pressed.emit()
 	await create_timer(0.32).timeout
 	var paper_bag_path := capture_directory.path_join("p1_paper_bag_latest.png")
@@ -86,7 +91,13 @@ func _run() -> void:
 	if root.get_texture().get_image().save_png(paying_path) != OK:
 		_fail("Failed to save P1 customer-paying capture")
 		return
-	await create_timer(0.58).timeout
+	var payment_deadline_msec := Time.get_ticks_msec() + 2000
+	while workstation._payment_animation_active and Time.get_ticks_msec() < payment_deadline_msec:
+		await process_frame
+	if workstation._payment_animation_active:
+		_fail("Customer payment animation did not settle before capture")
+		return
+	await process_frame
 	var result_path := capture_directory.path_join("p1_result_latest.png")
 	if root.get_texture().get_image().save_png(result_path) != OK:
 		_fail("Failed to save P1 result capture")
@@ -112,7 +123,7 @@ func _run() -> void:
 		_fail("P1 rendered vertical slice missed 60 FPS target: p95 %.2f ms" % p95)
 		return
 	print("Mobile P1 vertical-slice smoke-check PASS (render p95 %.2f ms)" % p95)
-	print("Validation captures: %s, %s, %s, %s, %s, %s, %s, %s" % [order_path, egg_spread_path, sauce_blob_path, production_path, accepting_path, paying_path, result_path, daily_bill_path])
+	print("Validation captures: %s, %s, %s, %s, %s, %s, %s, %s, %s" % [order_path, egg_spread_path, sauce_blob_path, production_path, folded_path, accepting_path, paying_path, result_path, daily_bill_path])
 	main.queue_free()
 	await process_frame
 	await process_frame

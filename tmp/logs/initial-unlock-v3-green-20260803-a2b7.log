@@ -1,0 +1,29 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+ERROR: No loader found for resource: res://resources/art/workstation/background/workstation_initial_unlock_redraw_v3.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:27)
+ERROR: No loader found for resource: res://resources/art/workstation/tools/countertop_tool_cups_initial_v3.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:332)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:27)
+ERROR: res://scenes/gameplay/initial_unlock_workstation.tscn:32 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/background/workstation_initial_unlock_redraw_v3.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:27)
+ERROR: res://scenes/gameplay/initial_unlock_workstation.tscn:32 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/background/workstation_initial_unlock_redraw_v3.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:27)
+ERROR: Failed loading resource: res://scenes/gameplay/initial_unlock_workstation.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:27)
+ERROR: initial-unlock workstation scene loads without missing resources
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://tests/integration/initial_unlock_workstation_self_check.gd:198)
+       [1] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:30)

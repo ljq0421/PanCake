@@ -1,0 +1,25 @@
+Godot Engine v4.6.1.stable.official.14d19694e - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2570)
+ERROR: No loader found for resource: res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5.png (expected type: Texture2D)
+   at: _load (core/io/resource_loader.cpp:358)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:30)
+ERROR: res://scenes/gameplay/initial_unlock_workstation.tscn:39 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:40)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:30)
+ERROR: res://scenes/gameplay/initial_unlock_workstation.tscn:39 - Parse Error: [ext_resource] referenced non-existent resource at: res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5.png.
+   at: _printerr (scene/resources/resource_format_text.cpp:40)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:30)
+ERROR: Failed loading resource: res://scenes/gameplay/initial_unlock_workstation.tscn.
+   at: _load (core/io/resource_loader.cpp:343)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:30)
+ERROR: initial-unlock workstation scene loads without missing resources
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://tests/integration/initial_unlock_workstation_self_check.gd:249)
+       [1] _run (res://tests/integration/initial_unlock_workstation_self_check.gd:33)

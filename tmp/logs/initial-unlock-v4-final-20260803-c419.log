@@ -1,0 +1,96 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+PASS: initial-unlock workstation scene loads without missing resources
+[ProjectCake][workstation] PancakeModel ready: 128x128
+PASS: workstation keeps a 1920x1080 scene-first safe area
+PASS: left zone is 620px wide at the planned workstation origin
+PASS: center zone is 520px wide with a 20px left gap
+PASS: right zone is 540px wide with a 20px center gap
+PASS: PanBase is reduced by exactly twenty percent to 520x468
+PASS: PancakeSurface matches the redrawn griddle footprint without entering the front cabinet
+PASS: griddle input surface starts below the payment controls
+PASS: griddle artwork is vertically centered inside the redrawn mounting area
+PASS: griddle artwork preserves width while staying above the front cabinet
+PASS: visible griddle bottom remains inside the physical worktop boundary
+PASS: one redrawn physical counter reaches both screen edges without a left seam
+PASS: workstation uses the continuous worktop with the physical 4x3 pans shifted fully into the right zone
+PASS: the physical right-side tray artwork leaves a clean gap beside the griddle
+PASS: the taller tool holders sit on the worktop below the payment slot
+PASS: four cylindrical holders fill the stable opening-day tool zone
+PASS: tool zone uses the taller clean-enamel cylindrical containers instead of the flat worn row
+PASS: tool containers and their input rack sit below the payment slot on the physical worktop
+PASS: status and instruction strip is relocated above the workstation
+PASS: status strip no longer covers any worktop edge
+PASS: all twelve fixed 4x3 tray positions exist in the scene
+PASS: TraySlot01 starts locked and cannot take ingredients
+PASS: TraySlot01 leaves the physical metal pan artwork visible
+PASS: TraySlot02 starts locked and cannot take ingredients
+PASS: TraySlot02 leaves the physical metal pan artwork visible
+PASS: TraySlot03 starts locked and cannot take ingredients
+PASS: TraySlot03 leaves the physical metal pan artwork visible
+PASS: TraySlot04 starts locked and cannot take ingredients
+PASS: TraySlot04 leaves the physical metal pan artwork visible
+PASS: TraySlot05 starts locked and cannot take ingredients
+PASS: TraySlot05 leaves the physical metal pan artwork visible
+PASS: TraySlot06 starts locked and cannot take ingredients
+PASS: TraySlot06 leaves the physical metal pan artwork visible
+PASS: TraySlot07 starts locked and cannot take ingredients
+PASS: TraySlot07 leaves the physical metal pan artwork visible
+PASS: TraySlot08 starts locked and cannot take ingredients
+PASS: TraySlot08 leaves the physical metal pan artwork visible
+PASS: TraySlot09 starts locked and cannot take ingredients
+PASS: TraySlot09 leaves the physical metal pan artwork visible
+PASS: TraySlot10 starts locked and cannot take ingredients
+PASS: TraySlot10 leaves the physical metal pan artwork visible
+PASS: TraySlot11 starts locked and cannot take ingredients
+PASS: TraySlot11 leaves the physical metal pan artwork visible
+PASS: TraySlot12 starts locked and cannot take ingredients
+PASS: TraySlot12 leaves the physical metal pan artwork visible
+PASS: exactly three expansion-device slots exist
+PASS: SoyMilkMachineSlot starts non-interactive
+PASS: SoyMilkMachineSlot keeps UI framing transparent
+PASS: SoyMilkMachineSlot leaves a flat tabletop for its future countertop machine
+PASS: EggWaffleMachineSlot starts non-interactive
+PASS: EggWaffleMachineSlot keeps UI framing transparent
+PASS: EggWaffleMachineSlot leaves a flat tabletop for its future countertop machine
+PASS: YoutiaoFryerSlot starts non-interactive
+PASS: YoutiaoFryerSlot keeps UI framing transparent
+PASS: the right fryer bay keeps a clear locked-equipment state
+PASS: soy-milk machine keeps its fixed opening-day slot
+PASS: youtiao fryer keeps its fixed opening-day slot
+PASS: egg-waffle machine keeps its fixed opening-day slot
+PASS: no steamer device is present
+PASS: ScraperButton is owned on day one and remains in its stable cylindrical holder
+PASS: SauceBrushButton is owned on day one and remains in its stable cylindrical holder
+PASS: FoldButton is owned on day one and remains in its stable cylindrical holder
+PASS: LadleButton has a stable visible scene-backed display
+PASS: LadleButton display is centered over its input region
+PASS: ScraperButton has a stable visible scene-backed display
+PASS: ScraperButton display is centered over its input region
+PASS: SauceBrushButton has a stable visible scene-backed display
+PASS: SauceBrushButton display is centered over its input region
+PASS: FoldButton has a stable visible scene-backed display
+PASS: FoldButton display is centered over its input region
+PASS: the cylinder front wall occludes tool handles without intercepting input
+PASS: the basic spreader is immediately operable in the opening spread phase
+PASS: three upgrade-tool hooks are reserved in the scene
+PASS: WideSpreaderHook is unavailable on day one
+PASS: WideSpreaderHook has no misleading empty hook in the opening-day scene
+PASS: WideSpreaderHook draws no upgrade-tool UI tile
+PASS: AutomaticBrushHook is unavailable on day one
+PASS: AutomaticBrushHook has no misleading empty hook in the opening-day scene
+PASS: AutomaticBrushHook draws no upgrade-tool UI tile
+PASS: PressSpreaderHook is unavailable on day one
+PASS: PressSpreaderHook has no misleading empty hook in the opening-day scene
+PASS: PressSpreaderHook draws no upgrade-tool UI tile
+PASS: scaled pointer sample (0.12, 0.21) maps to the same simulation coordinate
+PASS: ingredient placement for (0.12, 0.21) follows the independent horizontal and vertical scale
+PASS: scaled pointer sample (0.5, 0.5) maps to the same simulation coordinate
+PASS: ingredient placement for (0.5, 0.5) follows the independent horizontal and vertical scale
+PASS: scaled pointer sample (0.84, 0.68) maps to the same simulation coordinate
+PASS: ingredient placement for (0.84, 0.68) follows the independent horizontal and vertical scale
+PASS: left fold path remains on the same simulation fold line
+PASS: scaled griddle edge preserves the inside-pan decision
+INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS

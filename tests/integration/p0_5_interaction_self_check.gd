@@ -18,6 +18,22 @@ func _run() -> void:
 	var workstation := main.get_node("Workstation") as Workstation
 	workstation.set_process(false)
 	var surface := workstation.pancake_surface
+	_check(
+		workstation.fold_overlay.get_fold_source_span(FOLD_MODEL_SCRIPT.REGION_LEFT, 0.5).is_empty()
+		and workstation.fold_overlay.get_fold_arc_profile(FOLD_MODEL_SCRIPT.REGION_LEFT, 0.5).is_empty(),
+		"an empty pancake model produces no invented fold silhouette or arc"
+	)
+	_fill_uniform_pancake(workstation.pancake_model)
+	var regular_span: PackedVector2Array = workstation.fold_overlay.get_fold_source_span(FOLD_MODEL_SCRIPT.REGION_LEFT, 0.55)
+	_sculpt_irregular_left_edge(workstation.pancake_model)
+	var notched_span: PackedVector2Array = workstation.fold_overlay.get_fold_source_span(FOLD_MODEL_SCRIPT.REGION_LEFT, 0.55)
+	_check(
+		regular_span.size() == 2
+		and notched_span.size() == 2
+		and notched_span[0].y > regular_span[0].y + 24.0
+		and is_equal_approx(notched_span[1].y, regular_span[1].y),
+		"fold source silhouette follows an actual missing upper edge instead of restoring a circular arc"
+	)
 	_fill_uniform_pancake(workstation.pancake_model)
 
 	_check(workstation.fold_button != null and workstation.fold_overlay != null, "workstation scene owns stable fold controls and overlay")
@@ -108,6 +124,25 @@ func _set_hole(model: PancakeModel, cell: Vector2i) -> void:
 	model.coverage[index] = 0.0
 	model.thickness[index] = 0.0
 	model.damage[index] = 1.0
+	model.revision += 1
+	model.changed.emit()
+
+
+func _sculpt_irregular_left_edge(model: PancakeModel) -> void:
+	for x in range(22, 34):
+		var distance_from_center := absf(float(x) - 27.5) / 5.5
+		var trim_cells := 4 + roundi((1.0 - distance_from_center) * 6.0)
+		var removed := 0
+		for y in model.grid_size:
+			var index := y * model.grid_size + x
+			if model.coverage[index] <= 0.0:
+				continue
+			model.coverage[index] = 0.0
+			model.thickness[index] = 0.0
+			model.wetness[index] = 0.0
+			removed += 1
+			if removed >= trim_cells:
+				break
 	model.revision += 1
 	model.changed.emit()
 

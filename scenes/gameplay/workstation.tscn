@@ -1,4 +1,4 @@
-[gd_scene load_steps=95 format=3]
+[gd_scene load_steps=99 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/workstation.gd" id="1_workstation"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="2_heatmap"]
@@ -12,7 +12,7 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_edge_texture_v1.png" id="10_edge"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_fold_overlay.gd" id="11_fold_overlay"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_v1.png" id="12_griddle"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_backplate_v2.png" id="13_backplate"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_backplate_morning_mobile_cart_v1.png" id="13_backplate"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/foreground/workstation_front_lip_v1.png" id="14_front_lip"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1.png" id="15_spreader"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="16_ladle"]
@@ -81,14 +81,15 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/restock/baocui_tin_v1.png" id="79_baocui_tin"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/restock/ham_fresh_box_v1.png" id="80_ham_box"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/restock/scallion_enamel_jar_v1.png" id="81_scallion_jar"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_1_v1.png" id="82_coin_1"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_2_v1.png" id="83_coin_2"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_5_v1.png" id="84_coin_5"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_10_v1.png" id="85_coin_10"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_20_v1.png" id="86_coin_20"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_payment"]
 atlas = ExtResource("28_payment")
 region = Rect2(281, 390, 1020, 259)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_coin"]
-atlas = ExtResource("28_payment")
-region = Rect2(807, 449, 154, 154)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pancake"]
 shader = ExtResource("6_pancake_shader")
@@ -360,20 +361,19 @@ offset_top = 295.0
 offset_right = 991.0
 offset_bottom = 391.0
 mouse_filter = 2
-texture = SubResource("AtlasTexture_coin")
+texture = ExtResource("82_coin_1")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PaymentCollectionArea" type="Control" parent="SafeArea"]
+[node name="PaymentCoinLayer" type="Control" parent="SafeArea"]
 unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 390.0
-offset_top = 468.0
-offset_right = 1530.0
-offset_bottom = 552.0
-mouse_default_cursor_shape = 2
-tooltip_text = "金币待收取：点击或将鼠标扫过收款槽"
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="CustomerStrip" type="Panel" parent="SafeArea"]
 layout_mode = 0
@@ -1613,6 +1613,19 @@ theme_override_font_sizes/font_size = 20
 text = "当前无破洞风险"
 horizontal_alignment = 2
 vertical_alignment = 1
+
+[node name="PaymentCollectionArea" type="Button" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 390.0
+offset_top = 468.0
+offset_right = 1530.0
+offset_bottom = 552.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+tooltip_text = "金币待收取：点击或将鼠标扫过收款槽"
 
 [node name="ResultPanel" type="PanelContainer" parent="SafeArea"]
 unique_name_in_owner = true

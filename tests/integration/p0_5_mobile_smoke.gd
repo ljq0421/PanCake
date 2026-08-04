@@ -17,6 +17,7 @@ func _run() -> void:
 	workstation.set_process(false)
 	var surface := workstation.pancake_surface
 	_fill_uniform_pancake(workstation.pancake_model)
+	_sculpt_irregular_left_edge(workstation.pancake_model)
 	workstation.pour_used = true
 	workstation.fold_button.pressed.emit()
 	var capture_directory := ProjectSettings.globalize_path("res://tmp/validation")
@@ -36,6 +37,7 @@ func _run() -> void:
 		return
 	_release_surface(surface, preview_midpoint)
 	await process_frame
+	_fill_uniform_pancake(workstation.pancake_model)
 
 	var drag_started := Time.get_ticks_usec()
 	_drag_surface(workstation, surface, Vector2(110, 300), Vector2(300, 300), 90)
@@ -137,6 +139,27 @@ func _set_hole(model: PancakeModel, cell: Vector2i) -> void:
 	model.coverage[index] = 0.0
 	model.thickness[index] = 0.0
 	model.damage[index] = 1.0
+	model.revision += 1
+	model.changed.emit()
+
+
+func _sculpt_irregular_left_edge(model: PancakeModel) -> void:
+	# Deterministic hand-spread wobble for the visual artifact: the lifted flap
+	# must retain this missing upper edge instead of becoming an ideal half-disc.
+	for x in range(22, 34):
+		var distance_from_center := absf(float(x) - 27.5) / 5.5
+		var trim_cells := 4 + roundi((1.0 - distance_from_center) * 6.0)
+		var removed := 0
+		for y in model.grid_size:
+			var index := y * model.grid_size + x
+			if model.coverage[index] <= 0.0:
+				continue
+			model.coverage[index] = 0.0
+			model.thickness[index] = 0.0
+			model.wetness[index] = 0.0
+			removed += 1
+			if removed >= trim_cells:
+				break
 	model.revision += 1
 	model.changed.emit()
 

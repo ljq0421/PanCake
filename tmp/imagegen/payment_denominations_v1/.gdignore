@@ -1,0 +1,1 @@
+# Keep traceable ImageGen sources out of Godot's runtime import scan.

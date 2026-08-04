@@ -3,6 +3,13 @@ extends RefCounted
 
 signal changed
 
+const IMPATIENT_RATIO_THRESHOLD := 0.30
+const SATISFIED_SCORE_THRESHOLD := 70.0
+const REACTION_NEUTRAL: StringName = &"neutral"
+const REACTION_IMPATIENT: StringName = &"impatient"
+const REACTION_SATISFIED: StringName = &"satisfied"
+const REACTION_VERY_UNHAPPY: StringName = &"very_unhappy"
+
 enum Phase {
 	SPREAD,
 	FIRST_SIDE,
@@ -23,6 +30,7 @@ var patience_seconds := 72.0
 var heat_level := 0.50
 var result: Dictionary = {}
 var payment_ready := false
+var impatient_at_handoff := false
 
 
 func start(next_order: Dictionary) -> void:
@@ -33,6 +41,7 @@ func start(next_order: Dictionary) -> void:
 	heat_level = 0.50
 	result.clear()
 	payment_ready = false
+	impatient_at_handoff = false
 	changed.emit()
 
 
@@ -49,10 +58,24 @@ func patience_ratio() -> float:
 	return clampf(patience_seconds / maxf(float(order.get("time_limit", 72.0)), 0.001), 0.0, 1.0)
 
 
+func is_impatient_now() -> bool:
+	return patience_ratio() <= IMPATIENT_RATIO_THRESHOLD
+
+
+func post_handoff_reaction() -> StringName:
+	if result.is_empty():
+		return REACTION_NEUTRAL
+	var dissatisfied := float(result.get("score", 0.0)) < SATISFIED_SCORE_THRESHOLD
+	if impatient_at_handoff and dissatisfied:
+		return REACTION_VERY_UNHAPPY
+	if impatient_at_handoff or dissatisfied:
+		return REACTION_IMPATIENT
+	return REACTION_SATISFIED
+
+
 func confirm_spread(model: PancakeModel) -> Dictionary:
-	var summary := model.calculate_summary()
-	if float(summary.coverage_ratio) < 0.50:
-		return {"success": false, "reason": "面饼还没有摊开，至少覆盖半个鏊面"}
+	if model.covered_cell_count() <= 0:
+		return {"success": false, "reason": "当前没有可继续制作的面饼"}
 	phase = Phase.FIRST_SIDE
 	changed.emit()
 	return {"success": true}
@@ -117,6 +140,7 @@ func begin_handoff(score_result: Dictionary) -> Dictionary:
 	if phase != Phase.READY_TO_SERVE:
 		return {"success": false, "reason": "成品尚未完成包装，不能递给顾客"}
 	result = score_result.duplicate(true)
+	impatient_at_handoff = is_impatient_now()
 	phase = Phase.HANDOFF
 	changed.emit()
 	return {"success": true}

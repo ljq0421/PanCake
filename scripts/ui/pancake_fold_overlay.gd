@@ -10,6 +10,8 @@ const FOLD_PROFILE_STEPS := 56
 const FOLD_EARLY_BEND_RATIO := 0.58
 const FOLD_LANDED_BEND_RATIO := 0.22
 const FOLD_HEIGHT_SCREEN_FACTOR := 0.15
+const FOLD_VISIBLE_COVERAGE_MIN := 0.02
+const FOLD_VISIBLE_DAMAGE_MAX := 0.98
 
 @export var pancake_front_texture: Texture2D
 @export var pancake_back_texture: Texture2D
@@ -149,9 +151,11 @@ func _draw() -> void:
 
 
 func _draw_guides() -> void:
+	var geometry := _pancake_geometry()
+	if not bool(geometry.get("has_coverage", false)):
+		return
 	var left_x: float = size.x * float(fold_model.pancake_model.parameters.fold_left_line_ratio)
 	var right_x: float = size.x * float(fold_model.pancake_model.parameters.fold_right_line_ratio)
-	var geometry := _pancake_geometry()
 	var left_span := _guide_span(left_x, geometry)
 	var right_span := _guide_span(right_x, geometry)
 	var guide_color := Color(0.98, 0.91, 0.42, 0.90)
@@ -172,8 +176,11 @@ func _draw_region(region: StringName) -> void:
 	if not folded and not active and not animated:
 		return
 	var progress: float = _animated_progress if animated else (1.0 if folded else float(fold_model.drag_progress))
-	var source_polygon := _segment_polygon(region)
-	var flap_polygon := _transform_polygon(source_polygon, region, progress)
+	var profile := _build_fold_profile(region, progress)
+	if not bool(profile.get("has_coverage", false)):
+		return
+	var source_polygon := _segment_polygon(region, profile)
+	var flap_polygon := _transform_polygon(source_polygon, progress, profile)
 	var result: Dictionary = fold_model.get_region_result(region)
 	var severity := int(result.get("severity", 0)) if folded else 0
 	var flap_color := Color(1.0, 0.98, 0.91, 0.99)
@@ -181,7 +188,6 @@ func _draw_region(region: StringName) -> void:
 		flap_color = Color(0.92, 0.72, 0.48, 0.99)
 	elif severity >= 2:
 		flap_color = Color(0.76, 0.43, 0.31, 0.99)
-	var profile := _build_fold_profile(region, progress)
 	_draw_flap_shadow(flap_polygon, region, progress, profile)
 	_draw_curved_flap(region, progress, flap_color, profile)
 	_draw_arc_highlight(region, progress, profile)
@@ -295,37 +301,28 @@ func _draw_fold_crease(region: StringName, progress: float, severity: int) -> vo
 	draw_line(from + Vector2(highlight_offset, 0.0), to + Vector2(highlight_offset, 0.0), highlight_color, 2.0, true)
 
 
-func _segment_polygon(region: StringName) -> PackedVector2Array:
-	var geometry := _pancake_geometry()
-	var center: Vector2 = geometry.center
-	var radii: Vector2 = geometry.radii
-	var line_ratio: float = fold_model.pancake_model.parameters.fold_left_line_ratio if region == FOLD_MODEL_SCRIPT.REGION_LEFT else fold_model.pancake_model.parameters.fold_right_line_ratio
-	var line_x := size.x * line_ratio
-	var dx := clampf((line_x - center.x) / maxf(radii.x, 0.001), -0.999, 0.999)
-	var base_angle := acos(dx)
+func _segment_polygon(region: StringName, profile: Dictionary) -> PackedVector2Array:
 	var points := PackedVector2Array()
-	var steps := 18
-	if region == FOLD_MODEL_SCRIPT.REGION_LEFT:
-		var top_angle := TAU - base_angle
-		for step in range(steps + 1):
-			var angle := lerpf(top_angle, base_angle, float(step) / float(steps))
-			points.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
-	else:
-		var top_angle := TAU - base_angle
-		for step in range(steps + 1):
-			var angle := lerpf(top_angle, TAU + base_angle, float(step) / float(steps))
-			points.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
+	# Trace the actual grid-derived upper edge outwards and the lower edge back
+	# towards the crease. This keeps missing corners and hand-spread wobble in
+	# the lifted silhouette instead of replacing them with an ideal ellipse.
+	for column in range(FOLD_MESH_COLUMNS + 1):
+		var distance_ratio := float(column) / float(FOLD_MESH_COLUMNS)
+		points.append(_source_fold_span(region, distance_ratio, profile)[0])
+	for column in range(FOLD_MESH_COLUMNS, -1, -1):
+		var distance_ratio := float(column) / float(FOLD_MESH_COLUMNS)
+		points.append(_source_fold_span(region, distance_ratio, profile)[1])
 	return points
 
 
 func _pancake_geometry() -> Dictionary:
-	var model = fold_model.pancake_model
+	var model: PancakeModel = fold_model.pancake_model
 	var minimum := Vector2i(model.grid_size, model.grid_size)
 	var maximum := Vector2i(-1, -1)
 	for y in model.grid_size:
 		for x in model.grid_size:
 			var index: int = y * int(model.grid_size) + x
-			if model.coverage[index] <= 0.0 and model.damage[index] < model.parameters.hole_damage_threshold:
+			if not _is_visible_pancake_cell(model, index):
 				continue
 			minimum.x = mini(minimum.x, x)
 			minimum.y = mini(minimum.y, y)
@@ -334,7 +331,8 @@ func _pancake_geometry() -> Dictionary:
 	if maximum.x < minimum.x:
 		return {
 			"center": size * 0.5,
-			"radii": Vector2(size.x * 0.36, size.y * 0.36 * model.parameters.pan_height_ratio),
+			"radii": Vector2.ZERO,
+			"has_coverage": false,
 		}
 	var grid_extent := Vector2(maximum - minimum + Vector2i.ONE)
 	var center_grid := Vector2(minimum + maximum) * 0.5 + Vector2(0.5, 0.5)
@@ -343,11 +341,10 @@ func _pancake_geometry() -> Dictionary:
 		grid_extent.x / float(model.grid_size) * size.x,
 		grid_extent.y / float(model.grid_size) * size.y
 	) * 0.5
-	return {"center": center_local, "radii": radii_local}
+	return {"center": center_local, "radii": radii_local, "has_coverage": true}
 
 
-func _transform_polygon(source: PackedVector2Array, region: StringName, progress: float) -> PackedVector2Array:
-	var profile := _build_fold_profile(region, progress)
+func _transform_polygon(source: PackedVector2Array, progress: float, profile: Dictionary) -> PackedVector2Array:
 	var transformed := PackedVector2Array()
 	for point in source:
 		transformed.append(_transform_fold_point(point, progress, profile))
@@ -357,7 +354,17 @@ func _transform_polygon(source: PackedVector2Array, region: StringName, progress
 func get_fold_arc_profile(region: StringName, progress: float) -> PackedVector2Array:
 	if fold_model == null or fold_model.pancake_model == null:
 		return PackedVector2Array()
-	return _build_fold_profile(region, progress).points
+	var profile := _build_fold_profile(region, progress)
+	return profile.points if bool(profile.get("has_coverage", false)) else PackedVector2Array()
+
+
+func get_fold_source_span(region: StringName, distance_ratio: float) -> PackedVector2Array:
+	if fold_model == null or fold_model.pancake_model == null:
+		return PackedVector2Array()
+	var profile := _build_fold_profile(region, 0.0)
+	if not bool(profile.get("has_coverage", false)):
+		return PackedVector2Array()
+	return PackedVector2Array(_source_fold_span(region, distance_ratio, profile))
 
 
 func _build_fold_profile(region: StringName, progress: float) -> Dictionary:
@@ -376,9 +383,22 @@ func _build_fold_profile(region: StringName, progress: float) -> Dictionary:
 	var x_offsets := PackedFloat32Array([0.0])
 	var heights := PackedFloat32Array([0.0])
 	var angles := PackedFloat32Array([0.0])
+	var source_tops := PackedFloat32Array()
+	var source_bottoms := PackedFloat32Array()
 	var points := PackedVector2Array([Vector2(line_x, center.y)])
 	var x_offset := 0.0
 	var height := 0.0
+	for step in range(FOLD_PROFILE_STEPS + 1):
+		var source_ratio := float(step) / float(FOLD_PROFILE_STEPS)
+		var source_x := line_x + side * flap_width * source_ratio
+		var source_span := _coverage_span_at_x(source_x, region, geometry)
+		source_tops.append(source_span.x)
+		source_bottoms.append(source_span.y)
+	# The simulation grid is intentionally coarse enough to be affordable. A
+	# short weighted filter reproduces the shader's linear sampling at the rim,
+	# while broad missing corners and hand-made asymmetry remain intact.
+	source_tops = _smooth_contour(source_tops, 2)
+	source_bottoms = _smooth_contour(source_bottoms, 2)
 	for step in range(1, FOLD_PROFILE_STEPS + 1):
 		var t0 := float(step - 1) / float(FOLD_PROFILE_STEPS)
 		var t1 := float(step) / float(FOLD_PROFILE_STEPS)
@@ -397,6 +417,7 @@ func _build_fold_profile(region: StringName, progress: float) -> Dictionary:
 		))
 	return {
 		"region": region,
+		"has_coverage": bool(geometry.get("has_coverage", false)),
 		"line_x": line_x,
 		"center": center,
 		"radii": radii,
@@ -406,6 +427,8 @@ func _build_fold_profile(region: StringName, progress: float) -> Dictionary:
 		"x_offsets": x_offsets,
 		"heights": heights,
 		"angles": angles,
+		"source_tops": source_tops,
+		"source_bottoms": source_bottoms,
 		"points": points,
 	}
 
@@ -445,15 +468,42 @@ func _source_fold_strip(region: StringName, t0: float, t1: float, profile: Dicti
 
 
 func _source_fold_span(_region: StringName, distance_ratio: float, profile: Dictionary) -> Array[Vector2]:
-	var center: Vector2 = profile.center
-	var radii: Vector2 = profile.radii
 	var line_x: float = profile.line_x
 	var side: float = profile.side
 	var flap_width: float = profile.flap_width
-	var x := line_x + side * flap_width * clampf(distance_ratio, 0.0, 1.0)
-	var normalized_x := clampf((x - center.x) / maxf(radii.x, 1.0), -1.0, 1.0)
-	var half_height := radii.y * sqrt(maxf(1.0 - normalized_x * normalized_x, 0.0))
-	return [Vector2(x, center.y - half_height), Vector2(x, center.y + half_height)]
+	var ratio := clampf(distance_ratio, 0.0, 1.0)
+	var x := line_x + side * flap_width * ratio
+	var top := _profile_value(profile.source_tops, ratio)
+	var bottom := _profile_value(profile.source_bottoms, ratio)
+	return [Vector2(x, top), Vector2(x, bottom)]
+
+
+func _coverage_span_at_x(local_x: float, region: StringName, geometry: Dictionary) -> Vector2:
+	var center: Vector2 = geometry.center
+	if not bool(geometry.get("has_coverage", false)):
+		return Vector2(center.y, center.y)
+	var model = fold_model.pancake_model
+	var side := -1.0 if region == FOLD_MODEL_SCRIPT.REGION_LEFT else 1.0
+	var sample_x := clampf(local_x - side * 0.01, 0.0, maxf(size.x - 0.01, 0.0))
+	var grid_x := clampi(floori(sample_x / maxf(size.x, 1.0) * float(model.grid_size)), 0, model.grid_size - 1)
+	var top_y: int = model.grid_size
+	var bottom_y: int = -1
+	for grid_y in model.grid_size:
+		var index: int = grid_y * model.grid_size + grid_x
+		if not _is_visible_pancake_cell(model, index):
+			continue
+		top_y = mini(top_y, grid_y)
+		bottom_y = maxi(bottom_y, grid_y)
+	if bottom_y < top_y:
+		return Vector2(center.y, center.y)
+	return Vector2(
+		float(top_y) / float(model.grid_size) * size.y,
+		float(bottom_y + 1) / float(model.grid_size) * size.y
+	)
+
+
+func _is_visible_pancake_cell(model: PancakeModel, index: int) -> bool:
+	return model.coverage[index] > FOLD_VISIBLE_COVERAGE_MIN and model.damage[index] < FOLD_VISIBLE_DAMAGE_MAX
 
 
 func _profile_value(values: PackedFloat32Array, distance_ratio: float) -> float:
@@ -466,6 +516,20 @@ func _profile_value(values: PackedFloat32Array, distance_ratio: float) -> float:
 func _profile_angle(profile: Dictionary, distance_ratio: float) -> float:
 	var angles: PackedFloat32Array = profile.angles
 	return _profile_value(angles, distance_ratio)
+
+
+func _smooth_contour(values: PackedFloat32Array, passes: int) -> PackedFloat32Array:
+	var smoothed := values.duplicate()
+	for pass_index in maxi(passes, 0):
+		var previous := smoothed
+		smoothed = previous.duplicate()
+		for index in range(1, previous.size() - 1):
+			smoothed[index] = (
+				previous[index - 1]
+				+ previous[index] * 2.0
+				+ previous[index + 1]
+			) * 0.25
+	return smoothed
 
 
 func _fold_surface_color(tint: Color, angle: float) -> Color:
@@ -489,11 +553,10 @@ func _settle_wave(region: StringName) -> float:
 
 
 func _guide_span(line_x: float, geometry: Dictionary) -> Vector2:
-	var center: Vector2 = geometry.center
-	var radii: Vector2 = geometry.radii
-	var normalized_x := clampf((line_x - center.x) / maxf(radii.x, 0.001), -1.0, 1.0)
-	var half_height := radii.y * sqrt(maxf(1.0 - normalized_x * normalized_x, 0.0))
-	return Vector2(center.y - half_height, center.y + half_height)
+	var left_distance := absf(line_x - size.x * float(fold_model.pancake_model.parameters.fold_left_line_ratio))
+	var right_distance := absf(line_x - size.x * float(fold_model.pancake_model.parameters.fold_right_line_ratio))
+	var region: StringName = FOLD_MODEL_SCRIPT.REGION_LEFT if left_distance <= right_distance else FOLD_MODEL_SCRIPT.REGION_RIGHT
+	return _coverage_span_at_x(line_x, region, geometry)
 
 
 func _draw_cracks(polygon: PackedVector2Array, severity: int) -> void:

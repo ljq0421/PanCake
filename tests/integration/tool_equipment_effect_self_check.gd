@@ -68,8 +68,11 @@ func _run() -> void:
 	var press_hook := workstation.get_node("SafeArea/ExpansionLayout/LeftZone/UpgradeToolHooks/PressSpreaderHook") as Button
 	_check(wide_hook.visible and press_hook.visible, "owned tools appear on their fixed scene-backed hooks")
 	var soy_art := workstation.get_node("SafeArea/ExpansionLayout/DeviceSlots/SoyMilkMachineSlot/EquipmentArt") as TextureRect
+	var waffle_art := workstation.get_node("SafeArea/ExpansionLayout/DeviceSlots/EggWaffleMachineSlot/EquipmentArt") as TextureRect
+	var fryer_art := workstation.get_node("SafeArea/ExpansionLayout/DeviceSlots/YoutiaoFryerSlot/EquipmentArt") as TextureRect
 	var soy_hit := workstation.get_node("SafeArea/ExpansionLayout/DeviceSlots/SoyMilkMachineSlot/InteractionArea") as Button
 	_check(soy_art.visible and "tier_2" in soy_art.texture.resource_path, "equipment tier swaps to its matching machine artwork")
+	_check(soy_art.size == Vector2(370, 190) and waffle_art.size == Vector2(440, 225) and fryer_art.size == Vector2(460, 150), "three machine artworks compensate their distinct transparent margins at countertop scale")
 	_check("单批2份" in soy_hit.tooltip_text and "12秒" in soy_hit.tooltip_text, "equipment UI exposes the tier's actual capacity and duration")
 	var adapter := workstation.get_node("SafeArea/InitialUnlockAdapter")
 	var production: RefCounted = adapter.call("production_service")

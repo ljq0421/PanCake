@@ -1,6 +1,7 @@
 extends SceneTree
 
 const START_MENU_SCENE := preload("res://scenes/main/start_menu.tscn")
+const GAME_SCENE := preload("res://scenes/main/main.tscn")
 
 
 func _initialize() -> void:
@@ -36,10 +37,30 @@ func _run() -> void:
 	if root.get_texture().get_image().save_png(confirmation_path) != OK:
 		_fail("Failed to save new-game confirmation capture")
 		return
+	menu.queue_free()
+	await process_frame
+	await process_frame
+
+	var gameplay := GAME_SCENE.instantiate()
+	root.add_child(gameplay)
+	await process_frame
+	await process_frame
+	var gameplay_path := capture_directory.path_join("gameplay_ui_latest.png")
+	if root.get_texture().get_image().save_png(gameplay_path) != OK:
+		_fail("Failed to save gameplay UI capture")
+		return
+	gameplay.call("_set_paused", true)
+	await process_frame
+	await process_frame
+	var pause_path := capture_directory.path_join("pause_overlay_latest.png")
+	if root.get_texture().get_image().save_png(pause_path) != OK:
+		_fail("Failed to save pause-overlay capture")
+		return
+	gameplay.call("_set_paused", false)
 
 	print("START MENU VISUAL SMOKE PASS")
-	print("Validation captures: %s, %s, %s" % [menu_path, settings_path, confirmation_path])
-	menu.queue_free()
+	print("Validation captures: %s, %s, %s, %s, %s" % [menu_path, settings_path, confirmation_path, gameplay_path, pause_path])
+	gameplay.queue_free()
 	await process_frame
 	await process_frame
 	quit(0)

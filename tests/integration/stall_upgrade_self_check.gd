@@ -23,7 +23,8 @@ func _run() -> void:
 	await process_frame
 	var mobile_positions := _workstation_rects(mobile)
 	var mobile_background := mobile.get_node("SafeArea/BackgroundArtwork") as TextureRect
-	_check("morning_mobile_cart" in mobile_background.texture.resource_path, "level-zero store uses the mobile-cart backplate")
+	var original_background_path := mobile_background.texture.resource_path
+	_check("morning_mobile_cart" in original_background_path, "workstation starts with the scene-authored backplate")
 	mobile.queue_free()
 	await process_frame
 
@@ -44,8 +45,8 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	var fixed_background := fixed.get_node("SafeArea/BackgroundArtwork") as TextureRect
-	_check(fixed_background.texture.resource_path == "res://resources/art/workstation/background/workstation_backplate_upgrade_v1.png", "fixed-store level swaps to the approved upgrade artwork")
-	_check(_workstation_rects(fixed) == mobile_positions, "store artwork swap preserves every established workstation rectangle")
+	_check(fixed_background.texture.resource_path == original_background_path, "store level does not replace the workstation background")
+	_check(_workstation_rects(fixed) == mobile_positions, "store upgrade preserves every established workstation rectangle")
 	var status: Dictionary = session.growth_purchase_status(CATALOG.STALL_FIXED)
 	_check(bool(status.get("already_owned", false)), "growth service recognizes the fixed store as permanently owned")
 	fixed.queue_free()

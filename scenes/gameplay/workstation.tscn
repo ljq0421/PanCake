@@ -1,4 +1,4 @@
-[gd_scene load_steps=103 format=3]
+[gd_scene load_steps=109 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/workstation.gd" id="1_workstation"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="2_heatmap"]
@@ -141,19 +141,19 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.35, 0.18, 0.06, 0.72)
+border_color = Color(1, 0.82, 0.44, 0.9)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_table_button_pressed"]
-bg_color = Color(0.20, 0.10, 0.04, 0.28)
+bg_color = Color(0.10, 0.36, 0.31, 0.32)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1, 0.78, 0.34, 0.90)
+border_color = Color(1, 0.82, 0.44, 0.95)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
@@ -172,7 +172,7 @@ corner_radius_bottom_right = 325
 corner_radius_bottom_left = 325
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
-bg_color = Color(0.14, 0.095, 0.065, 0.90)
+bg_color = Color(0.045, 0.09, 0.1, 0.92)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -182,33 +182,108 @@ corner_radius_bottom_left = 12
 font_size = 30
 font_color = Color(0.96, 0.91, 0.80, 1)
 outline_size = 6
-outline_color = Color(0.10, 0.08, 0.07, 1)
+outline_color = Color(0.045, 0.09, 0.1, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_p1_card"]
-bg_color = Color(0.16, 0.09, 0.045, 0.94)
+bg_color = Color(0.045, 0.09, 0.1, 0.96)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.88, 0.56, 0.20, 0.95)
+border_color = Color(1, 0.82, 0.44, 0.95)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_patience_bg"]
-bg_color = Color(0.16, 0.08, 0.04, 0.92)
+bg_color = Color(0.075, 0.14, 0.15, 0.94)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_patience_fill"]
-bg_color = Color(0.35, 0.82, 0.46, 1)
+bg_color = Color(0.25, 0.72, 0.57, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.10, 0.36, 0.31, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.85, 0.68, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_hover"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.14, 0.46, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_pressed"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.075, 0.28, 0.24, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_disabled"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.13, 0.16, 0.16, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.32, 0.38, 0.37, 0.76)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_slider"]
+bg_color = Color(0.18, 0.26, 0.26, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.36, 0.5, 0.48, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_slider_fill"]
+bg_color = Color(0.25, 0.72, 0.57, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [node name="Workstation" type="Control"]
 process_mode = 1
@@ -1576,6 +1651,9 @@ min_value = 20.0
 max_value = 100.0
 step = 5.0
 value = 50.0
+theme_override_styles/slider = SubResource("StyleBox_slider")
+theme_override_styles/grabber_area = SubResource("StyleBox_slider_fill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBox_slider_fill")
 
 [node name="PackagingChoices" type="Control" parent="SafeArea/P1ControlBar"]
 unique_name_in_owner = true
@@ -1641,6 +1719,11 @@ offset_top = 12.0
 offset_right = 464.0
 offset_bottom = 72.0
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "翻面"
 
 [node name="ServeButton" type="Button" parent="SafeArea/P1ControlBar"]
@@ -1652,6 +1735,11 @@ offset_top = 12.0
 offset_right = 464.0
 offset_bottom = 72.0
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "出餐并查看评价"
 
 [node name="BottomStrip" type="Panel" parent="SafeArea"]
@@ -2001,6 +2089,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "关闭本单详情"
 
 [node name="OrderSummaryCard" type="PanelContainer" parent="SafeArea"]
@@ -2050,6 +2143,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "查看本单"
 
 [node name="SummaryDismissButton" type="Button" parent="SafeArea/OrderSummaryCard/Margin/VBox/Actions"]
@@ -2057,6 +2155,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 44)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "收起"
 
 [node name="DailyBillPanel" type="PanelContainer" parent="SafeArea"]
@@ -2178,6 +2281,11 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.80, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "成长票 1"
 
 [node name="GrowthTicket2" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets"]
@@ -2188,6 +2296,11 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.80, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "成长票 2"
 
 [node name="GrowthTicket3" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets"]
@@ -2198,6 +2311,11 @@ size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.80, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "成长票 3"
 
 [node name="GrowthMessageLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox"]
@@ -2218,6 +2336,11 @@ custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 1
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "返回开始页"
 
 [node name="BeginNextDayButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions"]
@@ -2226,4 +2349,9 @@ custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "不购买，直接开始下一天"

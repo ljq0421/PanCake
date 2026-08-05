@@ -68,7 +68,13 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	gameplay.call("_set_paused", true)
-	_check(paused and (gameplay.get_node("PausePanel") as Control).visible, "gameplay pause exposes navigation controls")
+	var pause_panel := gameplay.get_node("PausePanel") as Control
+	var workstation := gameplay.get_node("Workstation") as Control
+	_check(paused and pause_panel.visible, "gameplay pause exposes navigation controls")
+	_check(
+		pause_panel.z_index > _maximum_effective_z_index(workstation),
+		"pause overlay renders above every workstation surface"
+	)
 	_check(gameplay.has_node("PausePanel/Content/ResumeButton"), "pause overlay provides continue game")
 	_check(gameplay.has_node("PausePanel/Content/EndBusinessButton"), "pause overlay provides end business and daily bill entry")
 	_check(gameplay.has_node("PausePanel/Content/MainMenuButton"), "pause overlay provides return to start page")
@@ -84,6 +90,15 @@ func _run() -> void:
 		bool(previous_settings.fullscreen)
 	)
 	_finish()
+
+
+func _maximum_effective_z_index(item: CanvasItem, parent_z := 0) -> int:
+	var effective_z := item.z_index + parent_z if item.z_as_relative else item.z_index
+	var maximum := effective_z
+	for child in item.get_children():
+		if child is CanvasItem:
+			maximum = maxi(maximum, _maximum_effective_z_index(child as CanvasItem, effective_z))
+	return maximum
 
 
 func _check(condition: bool, description: String) -> void:

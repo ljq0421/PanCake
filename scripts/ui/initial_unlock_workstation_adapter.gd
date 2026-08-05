@@ -22,9 +22,6 @@ const DEVICE_TIER_TEXTURES := {
 		preload("res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_3_v1.png"),
 	],
 }
-const MOBILE_STALL_TEXTURE := preload("res://resources/art/workstation/background/workstation_backplate_morning_mobile_cart_v1.png")
-const FIXED_STALL_TEXTURE := preload("res://resources/art/workstation/background/workstation_backplate_upgrade_v1.png")
-
 @export var initial_progression_snapshot: Dictionary = {}
 
 var progression: RefCounted
@@ -91,7 +88,6 @@ func apply_progression_snapshot(snapshot: Dictionary) -> void:
 		workstation.call("apply_progression_effects", progression.call("snapshot"))
 	_refresh_owned_tools()
 	_refresh_device_slots()
-	_refresh_storefront()
 	_refresh_ingredient_trays()
 	_bind_workstation_state()
 	_bind_direct_refill_slots()
@@ -325,13 +321,6 @@ func _show_device_message(message: String) -> void:
 	var status_label := get_node_or_null("../BottomStrip/ToolStatusLabel") as Label
 	if status_label != null:
 		status_label.text = message
-
-
-func _refresh_storefront() -> void:
-	var background := get_node_or_null("../BackgroundArtwork") as TextureRect
-	if background == null or progression == null:
-		return
-	background.texture = FIXED_STALL_TEXTURE if int(progression.get("stall_tier")) >= 1 else MOBILE_STALL_TEXTURE
 
 
 func _refresh_ingredient_trays() -> void:

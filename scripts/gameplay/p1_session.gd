@@ -146,6 +146,16 @@ func begin_handoff(score_result: Dictionary) -> Dictionary:
 	return {"success": true}
 
 
+func begin_handoff_from_tray(score_result: Dictionary) -> Dictionary:
+	if phase != Phase.SPREAD:
+		return {"success": false, "reason": "当前订单正在制作，不能直接交付托盘成品"}
+	result = score_result.duplicate(true)
+	impatient_at_handoff = is_impatient_now()
+	phase = Phase.HANDOFF
+	changed.emit()
+	return {"success": true}
+
+
 func begin_payment() -> Dictionary:
 	if phase != Phase.HANDOFF:
 		return {"success": false, "reason": "顾客尚未接到餐品"}

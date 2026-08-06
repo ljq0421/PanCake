@@ -187,6 +187,14 @@ static func evaluate_order(
 	for tag in repair_tags:
 		tags.append(tag)
 	var feedback := _feedback_for(overall, tags, patience_ratio)
+	var applied_ingredient_ids: Array[StringName] = []
+	for ingredient_type in IngredientModel.TYPES:
+		if ingredients.has_type(ingredient_type):
+			applied_ingredient_ids.append(ingredient_type)
+	var applied_sauce_ids: Array[StringName] = []
+	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
+		if float(evaluate_sauce_type(model, sauce_type).get("coverage_ratio", 0.0)) > 0.08:
+			applied_sauce_ids.append(sauce_type)
 	return {
 		"score": overall,
 		"dimensions": {
@@ -215,6 +223,8 @@ static func evaluate_order(
 		"feedback": feedback,
 		"missing_ingredients": missing_ingredients,
 		"missing_sauces": missing_sauces,
+		"applied_ingredient_ids": applied_ingredient_ids,
+		"applied_sauce_ids": applied_sauce_ids,
 		"score_caps": score_caps,
 	}
 

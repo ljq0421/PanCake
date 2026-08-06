@@ -34,6 +34,12 @@ func _run() -> void:
 	})
 	await process_frame
 	await process_frame
+	var locked_click_layers := workstation.get_node("SafeArea/FiveAreaStationClickLayers") as Control
+	for click_layer_name in [&"FreshSoyMilkLockedClickLayer", &"YoutiaoLockedClickLayer", &"PackagedDrinkLockedClickLayer", &"SteamerLockedClickLayer"]:
+		var click_layer := locked_click_layers.get_node(NodePath(str(click_layer_name))) as Button
+		_click_control(click_layer)
+		await process_frame
+		_check(not str(click_layer.get_meta(&"unlock_condition", "")).is_empty(), "real pointer click reaches %s and preserves its explicit lock condition" % click_layer_name)
 	await RenderingServer.frame_post_draw
 	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)
 	DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
@@ -119,8 +125,8 @@ func _run() -> void:
 	_check(not (egg.get_node("Label") as CanvasItem).visible and not (egg.get_node("EmptyLabel") as CanvasItem).visible, "direct ingredient container keeps player-visible text labels hidden")
 	var refill_help := str(egg.get_meta(&"refill_help_text", ""))
 	_check(refill_help.contains("每份") and refill_help.contains("当前") and not refill_help.contains("%") and not refill_help.contains("进度") and egg.tooltip_text.is_empty(), "tray hover help uses the off-worktop instruction strip for price, time, and capacity without refill progress")
-	_check(_material_rail_has_eighteen_positions(workstation), "runtime material rail has 18 physical wells: 6 locked, 3 starters, 9 locked")
-	_check(_opening_day_material_controls_align(workstation), "opening-day controls occupy the central three material slots")
+	_check(_material_rail_has_eighteen_positions(workstation), "runtime material rail has exactly one fixed row of 18 wells")
+	_check(_opening_day_material_controls_align(workstation), "opening-day controls occupy Slots07-Slot09")
 	_move_at(egg_tray_center)
 	await create_timer(0.25).timeout
 	var instructions := workstation.get_node("SafeArea/BottomStrip/Instructions") as Label
@@ -130,6 +136,28 @@ func _run() -> void:
 	var refill_image := root.get_texture().get_image()
 	var refill_save_error := refill_image.save_png(refill_output_absolute)
 	_check(refill_save_error == OK and refill_image.get_size() == Vector2i(1920, 1080), "captured the real main-game refill result in a 1920x1080 GPU frame")
+	var session_progression: RefCounted = game_session.call("progression_service")
+	var owned_growth: Dictionary = Dictionary(session_progression.get("owned_growth_ids")).duplicate(true)
+	owned_growth[&"growth.capacity.pancake_holding_tray.two_slots"] = true
+	session_progression.set("owned_growth_ids", owned_growth)
+	var active_formal_order: Dictionary = game_session.call("active_formal_order")
+	var active_item: Dictionary = Dictionary(Array(active_formal_order.get("items", []))[0])
+	var tray_product := {
+		"product_instance_id": &"gpu.route.pancake.1",
+		"product_id": active_item.get("product_id", &"product.pancake.custom"),
+		"heat_preference": active_item.get("heat_preference", &""),
+		"ingredient_ids": Array(active_item.get("ingredient_ids", [])),
+		"sauce_ids": Array(active_item.get("sauce_ids", [])),
+		"score": 88.0,
+	}
+	var stored_for_route: Dictionary = game_session.call("store_pancake_product", tray_product)
+	workstation.call("reset_pancake")
+	workstation.call("_refresh_pancake_holding_tray")
+	var holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
+	_check(bool(stored_for_route.get("success", false)) and holding_slot.visible and not holding_slot.disabled, "formal tray displays a stored pancake for the active formal order")
+	_click_control(holding_slot)
+	await process_frame
+	_check(game_session.call("active_formal_order").is_empty() and Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", [])[0].is_empty(), "real tray click routes the product into and settles the active formal order")
 	game.queue_free()
 	await process_frame
 	_finish(output_absolute, refill_output_absolute)
@@ -245,12 +273,14 @@ func _slow_drag(from: Vector2, to: Vector2, frames: int) -> void:
 
 
 func _material_rail_has_eighteen_positions(workstation: Node) -> bool:
-	var artwork := workstation.get_node_or_null("SafeArea/LockedIngredientArtwork") as Control
-	var interactions := workstation.get_node_or_null("SafeArea/LockedIngredientInteractions") as Control
-	return artwork != null and interactions != null \
-		and artwork.get_child_count() == 15 and interactions.get_child_count() == 15 \
-		and artwork.get_node_or_null("Slot06") != null and artwork.get_node_or_null("Slot10") != null \
-		and artwork.get_node_or_null("Slot07") == null and artwork.get_node_or_null("Slot08") == null and artwork.get_node_or_null("Slot09") == null
+	var dock := workstation.get_node_or_null("SafeArea/MaterialDock") as Control
+	if dock == null or dock.get_child_count() != 18 or int(dock.get_meta(&"slot_count", 0)) != 18:
+		return false
+	for index in 18:
+		var slot := dock.get_node_or_null("Slot%02d" % (index + 1)) as Control
+		if slot == null or int(slot.get_meta(&"slot_index", 0)) != index + 1:
+			return false
+	return true
 
 
 func _opening_day_material_controls_align(workstation: Node) -> bool:
@@ -259,8 +289,8 @@ func _opening_day_material_controls_align(workstation: Node) -> bool:
 		return false
 	var expected_positions := {
 		"EggButton": Vector2(6.0, 0.0),
-		"ScallionButton": Vector2(111.0, 0.0),
-		"BaocuiButton": Vector2(216.0, 0.0),
+		"BaocuiButton": Vector2(111.0, 0.0),
+		"ScallionButton": Vector2(216.0, 0.0),
 	}
 	for button_name in expected_positions:
 		var ingredient := workstation.get_node_or_null("SafeArea/IngredientRack/%s" % button_name) as Control

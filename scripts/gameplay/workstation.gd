@@ -5,6 +5,7 @@ signal daily_bill_closed
 
 const SAUCE_TOOL_STATE_SCRIPT := preload("res://scripts/gameplay/sauce_tool_state.gd")
 const PANCAKE_SCORER_SCRIPT := preload("res://scripts/gameplay/pancake_scorer.gd")
+const FIVE_AREA_PANCAKE_PRODUCTION_SERVICE := preload("res://scripts/services/five_area_pancake_production_service.gd")
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_model.gd")
 const INGREDIENT_STOCK_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_stock_model.gd")
@@ -36,6 +37,17 @@ const CUSTOMER_TEXTURES := {
 		&"paying_coins": preload("res://resources/art/customers/customer_03/customer_03_paying_coins_cropped.tres"),
 	},
 }
+const ORDER_CARD_COIN_TEXTURE := preload("res://resources/art/ui/economy/currency_coin_v1.png")
+const ORDER_CARD_DISH_TEXTURE := preload("res://resources/art/workstation/textures/pancake_cooked_texture_v1.png")
+const ORDER_CARD_INGREDIENT_TEXTURES := {
+	IngredientModel.EGG: preload("res://resources/art/ingredients/egg/egg_whole_v1.png"),
+	IngredientModel.BAOCUI: preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
+	IngredientModel.HAM_SAUSAGE: preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
+	IngredientModel.SCALLION: preload("res://resources/art/ingredients/scallion/scallion_scattered_v1.png"),
+	IngredientModel.MEAT_FLOSS: preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
+	IngredientModel.PORK_TENDERLOIN: preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
+}
+const ORDER_CARD_INGREDIENT_SLOT_GROUPS := [[0, 1, 4, 5], [2, 3, 6, 7]]
 const DEFAULT_ORDER_COINS := 3
 const PAYMENT_SLOT_COIN_SIZE := Vector2(48.0, 48.0)
 const PAYMENT_COIN_START_POSITION := Vector2(842.0, 312.0)
@@ -95,7 +107,12 @@ const SPREADER_SPEED_FAST := 1
 @onready var queue_status_label: Label = %QueueStatusLabel
 @onready var waiting_customer_portraits: Array[TextureRect] = [%WaitingCustomer1, %WaitingCustomer2]
 @onready var customer_line_label: Label = %CustomerLineLabel
-@onready var order_text_label: Label = %OrderTextLabel
+@onready var order_coin_icon: TextureRect = %OrderCoinIcon
+@onready var order_amount_label: Label = %OrderAmountLabel
+@onready var order_dish_icons: Array[TextureRect] = [%OrderDish1, %OrderDish2]
+@onready var order_ingredient_icons: Array[TextureRect] = [%OrderIngredient01, %OrderIngredient02, %OrderIngredient03, %OrderIngredient04, %OrderIngredient05, %OrderIngredient06, %OrderIngredient07, %OrderIngredient08]
+@onready var order_heart: Label = %OrderHeart
+@onready var order_patience_bar: ProgressBar = %OrderPatienceBar
 @onready var patience_bar: ProgressBar = %PatienceBar
 @onready var phase_label: Label = %PhaseLabel
 @onready var heat_slider: HSlider = %HeatSlider
@@ -125,6 +142,9 @@ const SPREADER_SPEED_FAST := 1
 @onready var kitchen_audio: AudioStreamPlayer = %KitchenAudio
 @onready var p1_control_bar: Panel = %P1ControlBar
 @onready var serve_product_button: Button = %ServeProductButton
+@onready var store_pancake_button: Button = %StorePancakeButton
+@onready var pancake_holding_tray: Panel = %PancakeHoldingTray
+@onready var pancake_holding_slots: Array[Button] = [%PancakeHoldingSlot01, %PancakeHoldingSlot02]
 @onready var handoff_product_sprite: TextureRect = %HandoffProductSprite
 @onready var order_summary_card: PanelContainer = %OrderSummaryCard
 @onready var summary_score_label: Label = %SummaryScoreLabel
@@ -174,6 +194,9 @@ var order_service: OrderService
 var customer_queue: RefCounted
 var p1_session: P1Session
 var payment_coin_model: RefCounted
+var five_area_pancake_production: RefCounted
+var _formal_order_id: StringName = &""
+var _handoff_product_from_tray: Dictionary = {}
 var current_sauce_type: StringName = OrderService.SAUCE_SWEET
 var _ingredient_drag_type: StringName = &""
 var _ingredient_drag_start := Vector2.ZERO
@@ -206,6 +229,8 @@ func _ready() -> void:
 		for ingredient_id in Array(get_meta(&"unlocked_ingredient_ids")):
 			unlocked_ingredient_ids.append(StringName(ingredient_id))
 	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("uses_five_area_progression") and bool(game_session.call("uses_five_area_progression")):
+		five_area_pancake_production = FIVE_AREA_PANCAKE_PRODUCTION_SERVICE.new(game_session)
 	if game_session != null and game_session.has_method("unlocked_ingredient_ids"):
 		unlocked_ingredient_ids.clear()
 		unlocked_ingredient_ids.assign(game_session.call("unlocked_ingredient_ids"))
@@ -242,6 +267,9 @@ func _ready() -> void:
 	tray_button.pressed.connect(_use_tray)
 	bag_button.pressed.connect(_use_bag)
 	serve_product_button.pressed.connect(_serve_order)
+	store_pancake_button.pressed.connect(_store_current_pancake)
+	for tray_index in pancake_holding_slots.size():
+		pancake_holding_slots[tray_index].pressed.connect(_serve_pancake_from_holding_tray.bind(tray_index))
 	next_order_button.pressed.connect(_close_result_detail)
 	summary_view_button.pressed.connect(_open_result_detail)
 	summary_dismiss_button.pressed.connect(_dismiss_order_summary)
@@ -263,7 +291,10 @@ func _ready() -> void:
 	fold_model.changed.connect(_refresh_fold_ui)
 	tool_controller.tool_changed.connect(_on_tool_changed)
 	p1_session.changed.connect(_refresh_p1_ui)
-	p1_session.start(customer_queue.current_customer().order)
+	var first_order: Dictionary = _legacy_order_from_active_formal_order(customer_queue.current_customer().order)
+	p1_session.start(first_order)
+	_ensure_formal_pancake_order(first_order)
+	_refresh_pancake_holding_tray()
 	_on_tool_changed(tool_controller.current_tool)
 	_update_sauce_status()
 	_refresh_fold_ui()
@@ -338,6 +369,9 @@ func use_automatic_sauce_brush() -> Dictionary:
 
 
 func _process(delta: float) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("advance_pancake_holding_tray"):
+		game_session.call("advance_pancake_holding_tray", delta)
 	_update_surface_readout()
 	_update_spreader_artwork(delta)
 	if p1_session != null and not _result_detail_open:
@@ -404,6 +438,7 @@ func reset_pancake() -> void:
 	payment_sprite.visible = false
 	handoff_product_sprite.visible = false
 	serve_product_button.visible = false
+	store_pancake_button.visible = false
 	fold_overlay.visible = true
 	_result_detail_open = false
 	ingredient_drag_preview.visible = false
@@ -1185,6 +1220,8 @@ func _ingredient_texture(ingredient_type: StringName) -> Texture2D:
 
 func _saved_ingredient_stock() -> Dictionary:
 	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("pancake_legacy_inventory_snapshot"):
+		return Dictionary(session.call("pancake_legacy_inventory_snapshot"))
 	if session != null and session.has_method("ingredient_stock_snapshot"):
 		return Dictionary(session.call("ingredient_stock_snapshot"))
 	return {}
@@ -1192,6 +1229,9 @@ func _saved_ingredient_stock() -> Dictionary:
 
 func _persist_ingredient_stock() -> void:
 	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("save_pancake_legacy_inventory"):
+		session.call("save_pancake_legacy_inventory", ingredient_stock_model.snapshot())
+		return
 	if session != null and session.has_method("save_ingredient_stock"):
 		session.call("save_ingredient_stock", ingredient_stock_model.snapshot())
 
@@ -1252,8 +1292,13 @@ func _serve_order() -> void:
 	if not bool(handoff_result.get("success", false)):
 		tool_status_label.text = str(handoff_result.get("reason", "当前不能递餐"))
 		return
+	_begin_pancake_handoff_visual(score_result)
+
+
+func _begin_pancake_handoff_visual(score_result: Dictionary) -> void:
 	_populate_result(score_result)
 	serve_product_button.visible = false
+	store_pancake_button.visible = false
 	handoff_product_sprite.texture = fold_overlay.current_package_texture()
 	handoff_product_sprite.position = Vector2(810.0, 590.0)
 	handoff_product_sprite.size = Vector2(300.0, 300.0)
@@ -1276,6 +1321,91 @@ func _serve_order() -> void:
 	kitchen_audio.call("set_sizzle", false, 0.0)
 	kitchen_audio.call("play_cue", &"serve")
 	_refresh_p1_ui()
+
+
+func _store_current_pancake() -> void:
+	if p1_session.phase != P1Session.Phase.READY_TO_SERVE or five_area_pancake_production == null:
+		return
+	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(pancake_model, ingredient_model, fold_model, p1_session.order, p1_session.elapsed_seconds, p1_session.patience_ratio())
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return
+	var product_result: Dictionary = five_area_pancake_production.call("settle_completed_pancake", score_result, p1_session.order, {"package_result": fold_model.package_result})
+	if not bool(product_result.get("success", false)):
+		tool_status_label.text = "无法存入暂存托盘：%s" % str(product_result.get("reason", "unknown"))
+		return
+	var stored: Dictionary = game_session.call("store_pancake_product", product_result.get("product", {}))
+	if not bool(stored.get("success", false)):
+		tool_status_label.text = "无法存入暂存托盘：%s" % str(stored.get("reason", "unknown"))
+		return
+	tool_status_label.text = "煎饼已存入成品暂存托盘；点击匹配格交付当前订单。"
+	p1_session.start(p1_session.order)
+	reset_pancake()
+	_refresh_pancake_holding_tray()
+
+
+func _serve_pancake_from_holding_tray(slot_index: int) -> void:
+	if five_area_pancake_production == null or p1_session.phase != P1Session.Phase.SPREAD:
+		return
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return
+	var formal_order: Dictionary = game_session.call("active_formal_order") if game_session.has_method("active_formal_order") else {}
+	if formal_order.is_empty() or _formal_order_id.is_empty():
+		tool_status_label.text = "当前订单未进入正式订单服务。"
+		return
+	var items: Array = Array(formal_order.get("items", []))
+	if items.is_empty():
+		tool_status_label.text = "正式订单没有可交付条目。"
+		return
+	var formal_item: Dictionary = Dictionary(items[0])
+	var tray_preview: Dictionary = game_session.call("preview_pancake_tray_delivery", slot_index, formal_item)
+	if not bool(tray_preview.get("success", false)):
+		tool_status_label.text = "暂存煎饼不能交付：%s" % str(tray_preview.get("reason", "unknown"))
+		_refresh_pancake_holding_tray()
+		return
+	var order_service_ref: RefCounted = game_session.call("order_service")
+	var order_preview: Dictionary = order_service_ref.call("preview_attach_product", _formal_order_id, 0, tray_preview.get("product", {}))
+	if not bool(order_preview.get("success", false)) or not bool(order_preview.get("will_match", false)):
+		tool_status_label.text = "暂存煎饼不匹配当前正式订单。"
+		return
+	var delivered: Dictionary = game_session.call("serve_pancake_tray_delivery", slot_index, formal_item)
+	if not bool(delivered.get("success", false)):
+		tool_status_label.text = "暂存煎饼不能交付：%s" % str(delivered.get("reason", "unknown"))
+		_refresh_pancake_holding_tray()
+		return
+	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, 0, delivered.get("served_product", {}))
+	if not bool(attached.get("success", false)):
+		tool_status_label.text = "正式订单接收成品失败：%s" % str(attached.get("reason", "unknown"))
+		return
+	var settled_formal: Dictionary = game_session.call("settle_formal_order", _formal_order_id)
+	if not bool(settled_formal.get("success", false)):
+		tool_status_label.text = "正式订单结算失败：%s" % str(settled_formal.get("reason", "unknown"))
+		return
+	var result := {"score": float(delivered.get("final_score", 0.0)), "grade": delivered.get("grade", &"D"), "area_id": &"area.pancake", "product_id": &"product.pancake.custom", "feedback": "成品暂存托盘交付", "dimensions": {}}
+	var handoff := p1_session.begin_handoff_from_tray(result)
+	if not bool(handoff.get("success", false)):
+		tool_status_label.text = str(handoff.get("reason", "无法交付"))
+		return
+	_handoff_product_from_tray = Dictionary(delivered.get("served_product", {})).duplicate(true)
+	_refresh_pancake_holding_tray()
+	_begin_pancake_handoff_visual(result)
+
+
+func _refresh_pancake_holding_tray() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var unlocked := false
+	if session != null and session.has_method("progression_service"):
+		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots"))
+	pancake_holding_tray.visible = unlocked
+	if not unlocked or session == null or not session.has_method("pancake_holding_tray_snapshot"):
+		return
+	var slots: Array = Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	for index in pancake_holding_slots.size():
+		var slot := Dictionary(slots[index]) if index < slots.size() else {}
+		var button := pancake_holding_slots[index]
+		button.text = "暂存格 %d\n%s" % [index + 1, "空" if slot.is_empty() else "%s · %s" % [str(slot.get("state", "fresh")), str(slot.get("product_id", "煎饼"))]]
+		button.disabled = slot.is_empty()
 
 
 func _complete_handoff_animation() -> void:
@@ -1325,7 +1455,21 @@ func _complete_payment_animation() -> void:
 		return
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null:
-		game_session.call("record_order_completed", p1_session.order, p1_session.result, _current_payment_amount)
+		var result_for_session := p1_session.result.duplicate(true)
+		if not _handoff_product_from_tray.is_empty():
+			result_for_session["area_id"] = &"area.pancake"
+			result_for_session["product_id"] = &"product.pancake.custom"
+			_handoff_product_from_tray.clear()
+		elif five_area_pancake_production != null:
+			var production_result: Dictionary = five_area_pancake_production.call("settle_completed_pancake", result_for_session, p1_session.order, {"package_result": fold_model.package_result})
+			if not bool(production_result.get("success", false)):
+				tool_status_label.text = "煎饼库存结算失败：%s" % str(production_result.get("reason", "unknown"))
+				return
+			result_for_session["area_id"] = production_result.get("area_id", &"area.pancake")
+			result_for_session["product_id"] = production_result.get("product_id", &"product.pancake.custom")
+			if not _settle_formal_pancake_product(production_result.get("product", {})):
+				return
+		game_session.call("record_order_completed", p1_session.order, result_for_session, _current_payment_amount)
 	summary_score_label.text = "本单 %d分 · +%d金币" % [roundi(float(p1_session.result.get("score", 0.0))), _current_payment_amount]
 	summary_feedback_label.text = str(p1_session.result.get("feedback", "本单已完成"))
 	_result_detail_open = false
@@ -1394,19 +1538,19 @@ func _order_payment_coins(order: Dictionary) -> int:
 
 
 func _populate_result(score_result: Dictionary) -> void:
-	result_title_label.text = "顾客评价 · %d分" % roundi(float(score_result.score))
-	var dimensions: Dictionary = score_result.dimensions
-	result_detail_label.text = str(score_result.feedback)
-	integrity_score_label.text = "完整度  %d" % roundi(float(dimensions.integrity))
-	thickness_score_label.text = "厚薄  %d" % roundi(float(dimensions.thickness))
-	heat_score_label.text = "火候  %d" % roundi(float(dimensions.heat))
-	egg_score_label.text = "摊蛋  %d" % roundi(float(dimensions.egg))
-	sauce_score_label.text = "酱料  %d" % roundi(float(dimensions.sauce))
-	ingredient_score_label.text = "配料  %d" % roundi(float(dimensions.ingredients))
-	fold_score_label.text = "折叠  %d" % roundi(float(dimensions.fold))
-	order_score_label.text = "订单  %d" % roundi(float(dimensions.order))
-	time_score_label.text = "时间  %d" % roundi(float(dimensions.time))
-	var result_tags: String = " · ".join(score_result.tags)
+	result_title_label.text = "顾客评价 · %d分" % roundi(float(score_result.get("score", 0.0)))
+	var dimensions: Dictionary = Dictionary(score_result.get("dimensions", {}))
+	result_detail_label.text = str(score_result.get("feedback", "本单已完成"))
+	integrity_score_label.text = "完整度  %d" % roundi(float(dimensions.get("integrity", 0.0)))
+	thickness_score_label.text = "厚薄  %d" % roundi(float(dimensions.get("thickness", 0.0)))
+	heat_score_label.text = "火候  %d" % roundi(float(dimensions.get("heat", 0.0)))
+	egg_score_label.text = "摊蛋  %d" % roundi(float(dimensions.get("egg", 0.0)))
+	sauce_score_label.text = "酱料  %d" % roundi(float(dimensions.get("sauce", 0.0)))
+	ingredient_score_label.text = "配料  %d" % roundi(float(dimensions.get("ingredients", 0.0)))
+	fold_score_label.text = "折叠  %d" % roundi(float(dimensions.get("fold", 0.0)))
+	order_score_label.text = "订单  %d" % roundi(float(dimensions.get("order", 0.0)))
+	time_score_label.text = "时间  %d" % roundi(float(dimensions.get("time", 0.0)))
+	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
 	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
 
 
@@ -1414,7 +1558,56 @@ func _start_next_order() -> void:
 	reset_pancake()
 	var next_customer: Dictionary = customer_queue.advance_queue()
 	p1_session.start(next_customer.order)
+	_ensure_formal_pancake_order(next_customer.order)
 	_refresh_p1_ui()
+
+
+func _legacy_order_from_active_formal_order(fallback: Dictionary) -> Dictionary:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("active_formal_order"):
+		return fallback
+	var active: Dictionary = game_session.call("active_formal_order")
+	if active.is_empty():
+		return fallback
+	var legacy: Dictionary = Dictionary(Dictionary(active.get("metadata", {})).get("legacy_order", {}))
+	if legacy.is_empty():
+		return fallback
+	_formal_order_id = StringName(active.get("order_id", &""))
+	return legacy
+
+
+func _ensure_formal_pancake_order(legacy_order: Dictionary) -> void:
+	if five_area_pancake_production == null:
+		return
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("active_formal_order"):
+		return
+	var active: Dictionary = game_session.call("active_formal_order")
+	if not active.is_empty():
+		_formal_order_id = StringName(active.get("order_id", &""))
+		return
+	var opened: Dictionary = game_session.call("open_pancake_order", legacy_order)
+	if bool(opened.get("success", false)):
+		_formal_order_id = StringName(Dictionary(opened.get("order", {})).get("order_id", &""))
+	else:
+		tool_status_label.text = "正式订单创建失败：%s" % str(opened.get("reason", "unknown"))
+
+
+func _settle_formal_pancake_product(product: Dictionary) -> bool:
+	if _formal_order_id.is_empty():
+		return true
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return true
+	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, 0, product)
+	if not bool(attached.get("success", false)):
+		tool_status_label.text = "正式订单接收成品失败：%s" % str(attached.get("reason", "unknown"))
+		return false
+	var settled: Dictionary = game_session.call("settle_formal_order", _formal_order_id)
+	if not bool(settled.get("success", false)):
+		tool_status_label.text = "正式订单结算失败：%s" % str(settled.get("reason", "unknown"))
+		return false
+	return true
 
 
 func _open_result_detail() -> void:
@@ -1500,12 +1693,19 @@ func _refresh_growth_section(message: String = "") -> void:
 			button.visible = false
 		begin_next_day_button.disabled = true
 		return
-	var snapshot: Dictionary = game_session.call("workstation_progression_snapshot")
-	_growth_recommendations.assign(game_session.call("growth_recommendations", growth_ticket_buttons.size()))
-	growth_balance_label.text = "现有 %d 金币 · 声誉 %d · 店铺%d级 · 购买后第%d天生效" % [
+	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot") if game_session.has_method("five_area_progression_snapshot") else game_session.call("workstation_progression_snapshot")
+	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 2)
+	for recommendation in Array(grouped_recommendations.get("install", [])).slice(0, 2):
+		var install_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
+		install_ticket["slot_title"] = "安装位"
+		_growth_recommendations.append(install_ticket)
+	for recommendation in Array(grouped_recommendations.get("content", [])).slice(0, 1):
+		var content_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
+		content_ticket["slot_title"] = "内容位"
+		_growth_recommendations.append(content_ticket)
+	growth_balance_label.text = "现有 %d 金币 · 声誉 %d · 安装位与内容位各可预订一项 · 第%d天生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
-		int(snapshot.get("stall_tier", 0)),
 		int(snapshot.get("current_day", 1)) + 1,
 	]
 	for index in growth_ticket_buttons.size():
@@ -1514,34 +1714,35 @@ func _refresh_growth_section(message: String = "") -> void:
 		if not button.visible:
 			continue
 		var recommendation := _growth_recommendations[index]
-		button.set_meta(&"growth_item_id", StringName(recommendation.get("item_id", "")))
-		button.text = "[%s] %s\n%s\n%d 金币\n%s" % [
-			str(recommendation.get("category", "成长")),
-			str(recommendation.get("label", "未命名")),
-			str(recommendation.get("description", "")),
+		button.set_meta(&"growth_item_id", StringName(recommendation.get("growth_id", "")))
+		var status_text := _growth_ticket_status_text(recommendation)
+		button.text = "[%s] %s\n%d 金币\n%s" % [
+			str(recommendation.get("slot_title", "成长")),
+			str(recommendation.get("growth_id", "未命名")).trim_prefix("growth."),
 			int(recommendation.get("price", 0)),
-			str(recommendation.get("status_text", "")),
+			status_text,
 		]
-		button.tooltip_text = str(recommendation.get("status_text", ""))
+		button.tooltip_text = status_text
 		button.disabled = not bool(recommendation.get("can_purchase", false))
-	var pending_purchase := StringName(snapshot.get("pending_purchase", ""))
+	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
+	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
 	begin_next_day_button.disabled = false
-	begin_next_day_button.text = "确认选择并开始下一天" if not pending_purchase.is_empty() else "不购买，直接开始下一天"
+	begin_next_day_button.text = "确认预订并开始下一天" if not pending_install.is_empty() or not pending_content.is_empty() else "不购买，直接开始下一天"
 	growth_message_label.text = message if not message.is_empty() else (
-		"已选择一项成长，明日装上。" if not pending_purchase.is_empty() else "每天最多购买一项，也可以暂不购买。"
+		"安装：%s\n内容：%s" % [_growth_pending_text(pending_install), _growth_pending_text(pending_content)]
 	)
 
 
 func _on_growth_ticket_pressed(ticket_index: int) -> void:
 	if ticket_index < 0 or ticket_index >= _growth_recommendations.size():
 		return
-	var item_id := StringName(_growth_recommendations[ticket_index].get("item_id", ""))
+	var item_id := StringName(_growth_recommendations[ticket_index].get("growth_id", ""))
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null or item_id.is_empty():
 		return
 	var result: Dictionary = game_session.call("purchase_growth", item_id)
 	if bool(result.get("success", false)):
-		_refresh_growth_section("已付款并盖章：明日装上。")
+		_refresh_growth_section("已扣费并预订：对应购买位将在明日激活。")
 	else:
 		_refresh_growth_section("未能购买：%s" % str(result.get("reason", "条件不足")))
 
@@ -1558,12 +1759,76 @@ func _begin_next_business_day() -> void:
 	get_tree().reload_current_scene()
 
 
+func _growth_ticket_status_text(recommendation: Dictionary) -> String:
+	if bool(recommendation.get("can_purchase", false)):
+		return "可预订，明日生效"
+	match StringName(recommendation.get("reason", &"")):
+		&"purchase_slot_occupied":
+			return "该购买位已有明日预订"
+		&"area_locked":
+			return "前置区域未解锁"
+		&"day_requirement":
+			return "营业天数尚未达到"
+		&"insufficient_coins":
+			return "金币不足"
+	return "暂不满足条件"
+
+
+func _growth_pending_text(growth_id: StringName) -> String:
+	return "空位（可不购买）" if growth_id.is_empty() else "已预订 %s" % str(growth_id).trim_prefix("growth.")
+
+
+func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:
+	var items: Array[Dictionary] = []
+	var raw_items: Array = Array(order.get("items", order.get("products", [])))
+	for raw_item in raw_items:
+		if raw_item is Dictionary:
+			items.append((raw_item as Dictionary).duplicate(true))
+	if items.is_empty():
+		items.append(order.duplicate(true))
+	if items.size() > 2:
+		items.resize(2)
+	return items
+
+
+func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
+	for dish_icon in order_dish_icons:
+		dish_icon.texture = null
+		dish_icon.visible = false
+	for ingredient_icon in order_ingredient_icons:
+		ingredient_icon.texture = null
+		ingredient_icon.visible = false
+	var items := _order_items_for_card(order)
+	var coin_total := 0
+	for dish_index in items.size():
+		var item: Dictionary = items[dish_index]
+		coin_total += int(item.get("payment_coins", 0))
+		var dish_icon := order_dish_icons[dish_index]
+		dish_icon.texture = ORDER_CARD_DISH_TEXTURE
+		dish_icon.visible = true
+		var ingredient_ids: Array = Array(item.get("ingredients", []))
+		var slot_indices: Array = ORDER_CARD_INGREDIENT_SLOT_GROUPS[dish_index]
+		for ingredient_index in mini(ingredient_ids.size(), slot_indices.size()):
+			var ingredient_id := StringName(ingredient_ids[ingredient_index])
+			var ingredient_texture := ORDER_CARD_INGREDIENT_TEXTURES.get(ingredient_id) as Texture2D
+			if ingredient_texture == null:
+				continue
+			var ingredient_icon := order_ingredient_icons[int(slot_indices[ingredient_index])]
+			ingredient_icon.texture = ingredient_texture
+			ingredient_icon.visible = true
+	order_coin_icon.texture = ORDER_CARD_COIN_TEXTURE
+	order_coin_icon.visible = coin_total > 0
+	order_amount_label.text = str(coin_total)
+	order_patience_bar.value = clampf(patience_ratio, 0.0, 1.0) * 100.0
+	order_heart.modulate = Color.WHITE if patience_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
+
+
 func _refresh_p1_ui() -> void:
 	if p1_session == null or p1_session.order.is_empty():
 		return
-	order_text_label.text = OrderService.format_requirements(p1_session.order)
 	customer_line_label.text = "“%s”" % str(p1_session.order.customer_line)
 	patience_bar.value = p1_session.patience_ratio() * 100.0
+	_refresh_order_card_ui(p1_session.order, p1_session.patience_ratio())
 	phase_label.text = "当前步骤：%s · 已用时 %.0f秒" % [p1_session.phase_label(), p1_session.elapsed_seconds]
 	heat_label.text = "火力 %d%%" % roundi(p1_session.heat_level * 100.0)
 	if not heat_slider.has_focus():
@@ -1598,6 +1863,7 @@ func _refresh_p1_ui() -> void:
 	]
 	step_action_button.disabled = false
 	serve_product_button.visible = p1_session.phase == P1Session.Phase.READY_TO_SERVE
+	store_pancake_button.visible = serve_product_button.visible and pancake_holding_tray.visible
 	var transaction_phase := p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
 	p1_control_bar.visible = not transaction_phase and not _result_detail_open
 	result_panel.visible = _result_detail_open

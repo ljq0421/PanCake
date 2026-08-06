@@ -2773,6 +2773,22 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, customer_10_paying_coins_v1. Image 1 is the exact neutral identity/outfit authority; the customer_01 action sprite is pose/action reference only; paper-bag, coin when applicable, and visual_style_anchor_v8 images are motif/style references. Preserve customer_10 exactly: sturdy broad middle-aged man, warm olive skin, bald head with dark side stubble, dark mustache and short goatee, dark burgundy open-collar shirt over cream undershirt, warm khaki trousers; keep the same face, age, body proportions, palette and bold deep-brown outline. Change only expression and arms: pleased polite payment; tuck exactly one upright filled paper bag under the subject's LEFT arm (viewer-right side), while the RIGHT forearm reaches toward the player (viewer-left) with one complete open palm holding exactly THREE clearly separated round gold coins. Exactly one person, two arms, two hands, one bag and three coins. This is the accepted targeted composition correction: scale the complete figure/action to about 82% canvas height and leave at least 70 pixels of clean key color below the complete lower trouser/waist edge. Centered waist-up half-body; preserve all hair tips, both ears, both shoulders, both forearms, both complete hands, the bag, coins when applicable, and the complete lower waist edge fully inside the canvas with generous margin. Match ProjectCake warm flat 2D cartoon style, chunky readable shapes, thick deep-brown outer lines, simple color blocks and no more than about three shade levels. Background must be one perfectly uniform flat chroma color #ff00ff reaching every edge and corner, with no gradient, texture, floor, halo, glow, cast shadow, reflection or vignette. Do not add text, numbers, logo, watermark, UI, order card, patience bar, cash note, extra props, extra limbs, extra fingers, floating symbols or background.
 ```
 <!-- workstation-expansion-first-batch-v1 -->
+# order_card_multi_dish_v2
+
+- `status`: generated-imported-runtime-integration-passed-human-review-pending
+- `purpose`: 顾客头顶的多菜订单 HUD 空白框架；运行时绘制金币与总价、至多两道菜、8 个原料图标和耐心进度。
+- `final_file`: `res://resources/art/ui/order/order_card_multi_dish_v2.png`
+- `source_file`: `res://tmp/imagegen/order_card_multi_dish_v2/order_card_multi_dish_chromakey_v2.png`
+- `prompt_file`: `res://resources/art/prompts/order_card_multi_dish_v2.md`
+- `generator`: Codex 内置 `image_gen`，以 `tmp/validation/workstation_hold_refill_gpu_1920x1080.png` 的最新 GPU 运行时画面为唯一画风基准；随后使用技能自带 `remove_chroma_key.py`。
+- `generated_on`: 2026-08-06 (Asia/Shanghai)
+- `layout_contract`: 顶部金额槽作为压住外框顶边的窄挂签；两枚无菜名的圆形菜品槽紧贴挂签下方，卡片上半部不保留大块无用途纸张；下方严格 2 行 x 4 列原料槽，左两列暖米色、右两列低饱和青绿以区分两道菜；底部为缩小的空心心形耐心槽和约原高度三分之一的细胶囊进度槽，两者上移并与下框保持均匀小内边距，第二行原料槽与其上缘的空白压缩为原来的约三分之一。所有内容均由 Godot 动态绘制。
+- `processing`: `--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`。
+- `image_audit`: 1131 x 1391 RGBA；透明 0.448277，半透明 0.002591，不透明 0.549132；非透明像素中的强品红键色为 0；SHA-256 `282A919383F2180AECB65A22496A3F294CB6978EA7C0828C15FBA66F1949E509`。
+- `godot_import`: passed — Godot 4.7.1 headless import exited 0 and generated the `.png.import` sidecar. The root-certificate and editor-settings-save messages are environment warnings after the asset import.
+- `runtime_integration`: passed — `workstation.tscn` owns the two dish wells, 8 stable material widgets, coin/amount header, and compact patience widgets; `initial_unlock_workstation.tscn` places the card to the customer's right, clear of the tutorial strip. The 2026-08-06 real 1920x1080 GPU smoke run displayed the populated single-dish card and passed.
+- `human_review`: pending — the GPU screenshot verifies rendering, but final art-direction acceptance remains a player-facing review.
+
 # 工作台扩展首批独立设备与工具 v1
 
 - `status`: generated-imported-runtime-integration-pending

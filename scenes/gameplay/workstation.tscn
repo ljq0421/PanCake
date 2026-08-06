@@ -32,7 +32,7 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png" id="90_pork_portion"]
 [ext_resource type="Texture2D" path="res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres" id="27_customer"]
 [ext_resource type="Texture2D" path="res://resources/art/payments/payment_cash_small_v1.png" id="28_payment"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_base_v1.png" id="29_order_card"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_multi_dish_v2.png" id="29_order_card"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_whole_v1.png" id="30_egg_whole"]
 [ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_integrity_v1.png" id="31_quality_integrity"]
 [ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_thickness_uniformity_v1.png" id="32_quality_thickness"]
@@ -209,6 +209,16 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_card_progress_bg"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_card_progress_fill"]
+bg_color = Color(0.32, 0.72, 0.44, 0.96)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_ui_button"]
 content_margin_top = 10.0
@@ -401,9 +411,9 @@ horizontal_alignment = 2
 [node name="OrderCard" type="TextureRect" parent="SafeArea"]
 layout_mode = 0
 offset_left = 1260.0
-offset_top = 136.0
-offset_right = 1600.0
-offset_bottom = 406.0
+offset_top = 94.0
+offset_right = 1560.0
+offset_bottom = 464.0
 mouse_filter = 2
 texture = ExtResource("29_order_card")
 expand_mode = 1
@@ -411,6 +421,7 @@ stretch_mode = 5
 
 [node name="OrderTextLabel" type="Label" parent="SafeArea/OrderCard"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -430,6 +441,171 @@ text = "经典杂粮煎饼\n配料：鸡蛋、薄脆、葱花\n酱料：甜面�
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
+
+[node name="OrderCoinIcon" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 108.0
+offset_top = 45.0
+offset_right = 130.0
+offset_bottom = 67.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderAmountLabel" type="Label" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 132.0
+offset_top = 40.0
+offset_right = 194.0
+offset_bottom = 72.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.28, 0.13, 0.04, 1)
+theme_override_colors/font_outline_color = Color(1, 0.92, 0.68, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OrderDish1" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 68.0
+offset_top = 95.0
+offset_right = 130.0
+offset_bottom = 157.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderDish2" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 172.0
+offset_top = 95.0
+offset_right = 234.0
+offset_bottom = 157.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient01" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 60.0
+offset_top = 179.0
+offset_right = 88.0
+offset_bottom = 207.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient02" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 109.0
+offset_top = 179.0
+offset_right = 137.0
+offset_bottom = 207.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient03" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 163.0
+offset_top = 179.0
+offset_right = 191.0
+offset_bottom = 207.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient04" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 212.0
+offset_top = 179.0
+offset_right = 240.0
+offset_bottom = 207.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient05" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 60.0
+offset_top = 230.0
+offset_right = 88.0
+offset_bottom = 258.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient06" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 109.0
+offset_top = 230.0
+offset_right = 137.0
+offset_bottom = 258.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient07" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 163.0
+offset_top = 230.0
+offset_right = 191.0
+offset_bottom = 258.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderIngredient08" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 212.0
+offset_top = 230.0
+offset_right = 240.0
+offset_bottom = 258.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderHeart" type="Label" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 60.0
+offset_top = 276.0
+offset_right = 86.0
+offset_bottom = 302.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.78, 0.22, 0.18, 1)
+theme_override_colors/font_outline_color = Color(0.38, 0.13, 0.06, 0.8)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 21
+text = "♥"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OrderPatienceBar" type="ProgressBar" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 92.0
+offset_top = 285.0
+offset_right = 238.0
+offset_bottom = 302.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBox_order_card_progress_bg")
+theme_override_styles/fill = SubResource("StyleBox_order_card_progress_fill")
+value = 100.0
+show_percentage = false
 
 [node name="PaymentSprite" type="TextureRect" parent="SafeArea"]
 unique_name_in_owner = true
@@ -1571,6 +1747,48 @@ mouse_default_cursor_shape = 2
 flat = true
 tooltip_text = "点击包装好的煎饼，递给顾客"
 
+[node name="PancakeHoldingTray" type="Panel" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1180.0
+offset_top = 705.0
+offset_right = 1510.0
+offset_bottom = 860.0
+
+[node name="Title" type="Label" parent="SafeArea/PancakeHoldingTray"]
+layout_mode = 2
+text = "煎饼成品暂存（两格）"
+horizontal_alignment = 1
+
+[node name="PancakeHoldingSlot01" type="Button" parent="SafeArea/PancakeHoldingTray"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 14.0
+offset_top = 52.0
+offset_right = 158.0
+offset_bottom = 136.0
+text = "暂存格 1\n空"
+
+[node name="PancakeHoldingSlot02" type="Button" parent="SafeArea/PancakeHoldingTray"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 172.0
+offset_top = 52.0
+offset_right = 316.0
+offset_bottom = 136.0
+text = "暂存格 2\n空"
+
+[node name="StorePancakeButton" type="Button" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1190.0
+offset_top = 875.0
+offset_right = 1500.0
+offset_bottom = 925.0
+text = "存入成品暂存托盘"
+
 [node name="HandoffProductSprite" type="TextureRect" parent="SafeArea"]
 unique_name_in_owner = true
 visible = false
@@ -2258,7 +2476,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
 theme_override_font_sizes/font_size = 26
-text = "给明天选一项成长"
+text = "为明天预订成长：安装位 + 内容位"
 horizontal_alignment = 1
 
 [node name="GrowthBalanceLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox"]
@@ -2323,7 +2541,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
 theme_override_font_sizes/font_size = 18
-text = "每天最多购买一项，也可以暂不购买。"
+text = "安装与内容各可预订一项；购买立即扣费，明日同时生效。"
 horizontal_alignment = 1
 
 [node name="GrowthActions" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox"]

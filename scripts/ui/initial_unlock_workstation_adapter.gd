@@ -61,10 +61,11 @@ func _input(event: InputEvent) -> void:
 func apply_progression_snapshot(snapshot: Dictionary) -> void:
 	var effective_snapshot := snapshot.duplicate(true)
 	var session := get_node_or_null("/root/GameSession")
-	if effective_snapshot.is_empty():
+	var formal_five_area_session := session != null and session.has_method("uses_five_area_progression") and bool(session.call("uses_five_area_progression"))
+	if effective_snapshot.is_empty() and not formal_five_area_session:
 		if session != null and session.has_method("workstation_progression_snapshot"):
 			effective_snapshot = Dictionary(session.call("workstation_progression_snapshot"))
-	if snapshot.is_empty() and session != null and session.has_method("progression_service"):
+	if snapshot.is_empty() and not formal_five_area_session and session != null and session.has_method("progression_service"):
 		progression = session.call("progression_service")
 	else:
 		progression = PROGRESSION_SERVICE.new(effective_snapshot)
@@ -84,6 +85,7 @@ func apply_progression_snapshot(snapshot: Dictionary) -> void:
 	_refresh_owned_tools()
 	_refresh_device_slots()
 	_refresh_ingredient_trays()
+	_refresh_formal_five_area_state(session)
 	_bind_workstation_state()
 	_bind_direct_refill_slots()
 	_bind_locked_art_interactions()
@@ -359,7 +361,7 @@ func _bind_direct_refill_slots() -> void:
 func _bind_locked_art_interactions() -> void:
 	# Locked stations are deliberately art-first: transparent Buttons only supply
 	# the click contract while the visible response is a short physical lock pulse.
-	for parent_path in [&"../PhysicalStationInteractions", &"../LockedIngredientInteractions"]:
+	for parent_path in [&"../FiveAreaStationClickLayers", &"../LockedIngredientInteractions"]:
 		var interaction_parent := get_node_or_null(NodePath(parent_path))
 		if interaction_parent == null:
 			continue
@@ -381,6 +383,9 @@ func _on_locked_art_pressed(button: Button) -> void:
 	artwork.scale = Vector2(0.9, 0.9)
 	var pulse := create_tween()
 	pulse.tween_property(artwork, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var unlock_condition := str(button.get_meta(&"unlock_condition", ""))
+	if not unlock_condition.is_empty():
+		_show_device_message("%s" % unlock_condition)
 	button.release_focus()
 
 
@@ -487,6 +492,30 @@ func _persist_progression() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	if session != null and session.has_method("save_workstation_progression"):
 		session.call("save_workstation_progression", progression.call("snapshot"))
+
+
+func _refresh_formal_five_area_state(session: Node) -> void:
+	if session == null or not session.has_method("uses_five_area_progression") or not bool(session.call("uses_five_area_progression")):
+		return
+	if not session.has_method("five_area_progression_snapshot"):
+		return
+	var formal_snapshot: Dictionary = session.call("five_area_progression_snapshot")
+	var unlocked: Dictionary = {}
+	for area_id in Array(formal_snapshot.get("unlocked_area_ids", [])):
+		unlocked[StringName(area_id)] = true
+	for button_path in ["../FiveAreaStationClickLayers/FreshSoyMilkLockedClickLayer", "../FiveAreaStationClickLayers/YoutiaoLockedClickLayer", "../FiveAreaStationClickLayers/PackagedDrinkLockedClickLayer", "../FiveAreaStationClickLayers/SteamerLockedClickLayer"]:
+		var station_button := get_node_or_null(button_path) as Button
+		if station_button == null:
+			continue
+		var area_id := StringName(station_button.get_meta(&"area_id", &""))
+		var area_is_unlocked := bool(unlocked.get(area_id, false))
+		station_button.set_meta(&"formal_area_unlocked", area_is_unlocked)
+		station_button.disabled = area_is_unlocked
+		station_button.tooltip_text = "该区已解锁，生产交互将在对应区域接入时开放。" if area_is_unlocked else str(station_button.get_meta(&"unlock_condition", "区域尚未解锁"))
+		var locked_art_path: NodePath = station_button.get_meta(&"locked_art_path", NodePath())
+		var locked_art: CanvasItem = get_node_or_null(locked_art_path) as CanvasItem
+		if locked_art != null:
+			locked_art.visible = not area_is_unlocked
 
 
 func _refresh_refill_source_tooltips() -> void:

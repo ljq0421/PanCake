@@ -1,0 +1,38 @@
+extends SceneTree
+
+const SERVICE = preload("res://scripts/services/five_area_progression_service.gd")
+var _failures: Array[String] = []
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
+	var progression = SERVICE.new()
+	progression.coins = 100
+	progression.current_day = 3
+	var install = progression.purchase(&"growth.area.packaged_drink")
+	_check(install.get("success") and progression.coins == 70, "installation purchase charges immediately")
+	var content = progression.purchase(&"growth.add_on.pancake.red_chili")
+	_check(content.get("success") and progression.coins == 62, "content purchase may coexist with installation pending")
+	_check(progression.purchase(&"growth.tool.pancake.wide_spreader").get("reason") == &"purchase_slot_occupied", "second installation pending is rejected")
+	_check(not progression.begin_next_business_day().get("success"), "activation requires business day to be closed")
+	progression.set_day_open(false)
+	var activation = progression.begin_next_business_day()
+	_check(activation.get("success") and progression.owns_area(&"area.packaged_drink"), "installation activates the following day")
+	_check(progression.owns_stock(&"stock.pancake.sauce.red_chili"), "content activates the following day")
+	_check(progression.pending_install_purchase.is_empty() and progression.pending_content_purchase.is_empty(), "activation clears both pending slots")
+	var restored = SERVICE.new(progression.snapshot())
+	_check(restored.owns_area(&"area.packaged_drink") and restored.owns_stock(&"stock.pancake.sauce.red_chili"), "snapshot restores activation state")
+	var rollback = SERVICE.new({"coins": 50, "current_day": 4, "day_open": false, "pending_install_purchase": "growth.missing", "pending_content_purchase": ""})
+	var rollback_before := rollback.snapshot()
+	_check(not rollback.begin_next_business_day().get("success") and rollback.snapshot() == rollback_before, "invalid pending activation rolls back atomically")
+	if _failures.is_empty():
+		print("FIVE_AREA_PROGRESSION_SERVICE_SELF_CHECK_PASS")
+		quit(0)
+		return
+	printerr("FIVE_AREA_PROGRESSION_SERVICE_SELF_CHECK_FAIL\n" + "\n".join(_failures))
+	quit(1)
+
+func _check(condition: bool, message: String) -> void:
+	if not condition:
+		_failures.append(message)

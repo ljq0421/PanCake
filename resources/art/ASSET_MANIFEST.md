@@ -2921,3 +2921,41 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 
 - `tmp/imagegen/workstation_expansion_v1/sources/glutinous_rice_youtiao_v1_magenta_rejected.png`：绘制内容正确，但洋红软去背令金黄色主体发灰，未进入 `resources`。
 - 正式 `glutinous_rice_youtiao_v1` 使用纯 `#00ff00` 色键重生成；其余 17 张使用纯 `#ff00ff` 色键。两者都使用内置 imagegen 与同一软边透明处理流程，没有改用 CLI/API、手工 SVG 或占位图。
+
+## 2026-08-05 退役与初始工作台替换
+
+- 本清单上方所有鸡蛋仔机器、原料、成品、草莓酱与巧克力酱条目均为历史记录；对应资源已从 `resources` 删除，不再被目录、场景或测试引用。
+- `res://resources/art/workstation/background/initial_unlock_five_zone_backdrop_v5.png` 是现役初始工作台环境底图：中式煎饼铺、加深五区柜台、柜台前沿两排十二个实体小料凹槽。生成提示词与使用边界见 `resources/art/prompts/initial_unlock_five_zone_backdrop_v5.md`。
+
+## griddle_base_compact_v2
+
+- `status`: generated, imported, runtime-integrated, visually reviewed
+- `purpose`: Compact the jianbing griddle so its charcoal-black cooking face stays within the central tabletop bay.
+- `final_file`: `res://resources/art/workstation/griddle/griddle_base_compact_v2.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fd495-eaf8-7242-9372-048190bfa0da\exec-92e718a0-b60c-4283-a4b1-e67e82bfb61c.png`
+- `prompt_file`: `res://resources/art/prompts/griddle_base_compact_v2.md`
+- `generator`: Codex built-in `image_gen`, then `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`
+- `generated_on`: 2026-08-06 (Asia/Shanghai)
+- `size`: 1254 x 1254 px, RGBA
+- `alpha_check`: four corners are fully transparent; 844,580 of 1,572,516 pixels are transparent
+- `sha256`: `192B47FCCA4D37BD79E979454D481E2662B334E6A5D56F0CA374D13398CC5DC0`
+- `runtime_scene_check`: `SafeArea/PanBase/GriddleArtwork`, scale `0.41`, GPU screenshot and pointer interaction pass
+- `visual_check`: agent-inspected 1920x1080 GPU screenshot; compact rim stays within the central tabletop bay
+- `human_review`: pending
+
+## griddle_base_angled_ellipse_v3
+
+- `status`: derived, imported, runtime-integrated
+- `purpose`: Correct the jianbing griddle to the user's slightly angled view: the black cooking surface is a horizontal ellipse rather than a top-down circle.
+- `final_file`: `res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3.png`
+- `source_file`: `res://resources/art/workstation/griddle/griddle_base_compact_v2.png`
+- `reference_file`: `C:\Users\Administrator\AppData\Local\Temp\codex-clipboard-13d8ae19-3a59-430c-a74b-2566b7d64b7a.png`
+- `prompt_file`: `res://resources/art/prompts/griddle_base_angled_ellipse_v3.md`
+- `processing`: vertically resampled the approved v2 RGBA art to 68% around its center using Lanczos, retaining transparent corners; three built-in image-generation candidates were inspected and rejected because their perspective was less faithful to the reference.
+- `generated_on`: 2026-08-06 (Asia/Shanghai)
+- `size`: 1254 x 1254 px, RGBA; visible alpha bounds `955 x 665 px` (1.44:1)
+- `alpha_check`: four corners are fully transparent
+- `sha256`: `F7F165126CE42447604BDB4DB73C6DCF43F8492B2AD6558276995338884F037A`
+- `runtime_scene_check`: `SafeArea/PanBase/GriddleArtwork`; the pancake shader, direct-ingredient drop validation, and pointer trace all use `pan_height_ratio` to stay inside the matching oval.
+- `visual_check`: agent-inspected 1920x1080 GPU frames at `tmp/validation/initial_unlock_workstation_gpu_1920x1080.png` and `tmp/validation/workstation_hold_refill_gpu_1920x1080.png`; the black cook face, batter, egg, and fillings remain inside the same horizontal oval.
+- `human_review`: pending

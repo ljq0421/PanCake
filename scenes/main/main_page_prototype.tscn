@@ -1,0 +1,1166 @@
+[gd_scene format=3 uid="uid://b0w7olj4xy2gb"]
+
+[ext_resource type="Script" uid="uid://crw0g20ccxksh" path="res://scripts/ui/main_page_prototype.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="Style_header"]
+bg_color = Color(0.18, 0.075, 0.035, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.91, 0.53, 0.18, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="Style_pill"]
+bg_color = Color(0.34, 0.16, 0.07, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.79, 0.44, 0.16, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="Style_station_selected"]
+bg_color = Color(0.58, 0.29, 0.085, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(1, 0.82, 0.35, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[sub_resource type="StyleBoxFlat" id="Style_station_hover"]
+bg_color = Color(0.49, 0.25, 0.09, 0.98)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.73, 0.29, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.27, 0.12, 0.055, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.59, 0.31, 0.12, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="Style_order"]
+bg_color = Color(0.97, 0.86, 0.66, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.64, 0.31, 0.09, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="Style_order_hover"]
+bg_color = Color(1, 0.93, 0.75, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.9, 0.48, 0.12, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="Style_station"]
+bg_color = Color(0.39, 0.19, 0.075, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.66, 0.36, 0.14, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_stations"]
+
+[sub_resource type="StyleBoxFlat" id="Style_pan_disc"]
+bg_color = Color(0.085, 0.07, 0.06, 1)
+border_width_left = 16
+border_width_top = 16
+border_width_right = 16
+border_width_bottom = 16
+border_color = Color(0.55, 0.31, 0.13, 1)
+corner_radius_top_left = 190
+corner_radius_top_right = 190
+corner_radius_bottom_right = 190
+corner_radius_bottom_left = 190
+shadow_color = Color(0.03, 0.015, 0.008, 0.75)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="Style_material_soy"]
+bg_color = Color(0.8, 0.67, 0.38, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.25, 0.08, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_material_youtiao"]
+bg_color = Color(0.86, 0.49, 0.16, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.18, 0.04, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_material_pancake"]
+bg_color = Color(0.42, 0.6, 0.25, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.16, 0.29, 0.07, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_material_locked"]
+bg_color = Color(0.21, 0.18, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.38, 0.29, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_material_drink"]
+bg_color = Color(0.75, 0.47, 0.23, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.34, 0.17, 0.07, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_overlay"]
+content_margin_left = 38.0
+content_margin_top = 32.0
+content_margin_right = 38.0
+content_margin_bottom = 32.0
+bg_color = Color(0.17, 0.07, 0.035, 0.99)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.72, 0.25, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+
+[node name="MainPagePrototype" type="Control" unique_id=382899563]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1185600274]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.11, 0.045, 0.02, 1)
+
+[node name="Header" type="Panel" parent="." unique_id=1015817081]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 1896.0
+offset_bottom = 100.0
+theme_override_styles/panel = SubResource("Style_header")
+
+[node name="ShopTitle" type="Label" parent="Header" unique_id=1933413906]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 8.0
+offset_right = 330.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(1, 0.79, 0.34, 1)
+theme_override_font_sizes/font_size = 42
+text = "煎饼铺 · 晨市"
+vertical_alignment = 1
+
+[node name="PrototypeTag" type="Label" parent="Header" unique_id=2002788319]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 13.0
+offset_right = 456.0
+offset_bottom = 69.0
+theme_override_colors/font_color = Color(0.91, 0.63, 0.31, 1)
+theme_override_font_sizes/font_size = 15
+text = "页面原型
+流程尚未接入"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CoinPill" type="Panel" parent="Header" unique_id=852768694]
+layout_mode = 0
+offset_left = 470.0
+offset_top = 13.0
+offset_right = 680.0
+offset_bottom = 69.0
+theme_override_styles/panel = SubResource("Style_pill")
+
+[node name="Label" type="Label" parent="Header/CoinPill" unique_id=2074326506]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.61, 1)
+theme_override_font_sizes/font_size = 24
+text = "金币  1286"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MoodPill" type="Panel" parent="Header" unique_id=1940233384]
+layout_mode = 0
+offset_left = 696.0
+offset_top = 13.0
+offset_right = 906.0
+offset_bottom = 69.0
+theme_override_styles/panel = SubResource("Style_pill")
+
+[node name="Label" type="Label" parent="Header/MoodPill" unique_id=1280631483]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.75, 0.94, 0.62, 1)
+theme_override_font_sizes/font_size = 24
+text = "口碑  92%"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ComboPill" type="Panel" parent="Header" unique_id=316630091]
+layout_mode = 0
+offset_left = 922.0
+offset_top = 13.0
+offset_right = 1132.0
+offset_bottom = 69.0
+theme_override_styles/panel = SubResource("Style_pill")
+
+[node name="Label" type="Label" parent="Header/ComboPill" unique_id=447720028]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.54, 0.26, 1)
+theme_override_font_sizes/font_size = 24
+text = "连击  ×6"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OrderPill" type="Panel" parent="Header" unique_id=1054855146]
+layout_mode = 0
+offset_left = 1148.0
+offset_top = 13.0
+offset_right = 1358.0
+offset_bottom = 69.0
+theme_override_styles/panel = SubResource("Style_pill")
+
+[node name="Label" type="Label" parent="Header/OrderPill" unique_id=1775273]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.61, 1)
+theme_override_font_sizes/font_size = 24
+text = "出餐  12/20"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TimePill" type="Panel" parent="Header" unique_id=1038693074]
+layout_mode = 0
+offset_left = 1374.0
+offset_top = 13.0
+offset_right = 1574.0
+offset_bottom = 69.0
+theme_override_styles/panel = SubResource("Style_pill")
+
+[node name="Label" type="Label" parent="Header/TimePill" unique_id=1409197191]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.61, 1)
+theme_override_font_sizes/font_size = 24
+text = "时间  02:30"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PauseButton" type="Button" parent="Header" unique_id=1117427646]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1590.0
+offset_top = 13.0
+offset_right = 1696.0
+offset_bottom = 69.0
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "暂停"
+
+[node name="SettingsButton" type="Button" parent="Header" unique_id=1326423900]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1712.0
+offset_top = 13.0
+offset_right = 1840.0
+offset_bottom = 69.0
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "设置"
+
+[node name="CustomerField" type="Panel" parent="." unique_id=882164741]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 108.0
+offset_right = 1896.0
+offset_bottom = 497.0
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="QueueLabel" type="Label" parent="CustomerField" unique_id=1880279797]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 14.0
+offset_right = 238.0
+offset_bottom = 48.0
+theme_override_colors/font_color = Color(1, 0.72, 0.28, 1)
+theme_override_font_sizes/font_size = 20
+text = "候餐队列 · 点击查看订单"
+
+[node name="Order1" type="Button" parent="CustomerField" unique_id=743455057 groups=["main_page_order_card"]]
+layout_mode = 0
+offset_left = 250.0
+offset_top = 18.0
+offset_right = 545.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(0.25, 0.1, 0.035, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_order")
+theme_override_styles/pressed = SubResource("Style_order_hover")
+theme_override_styles/hover = SubResource("Style_order_hover")
+text = "顾客 01
+经典煎饼
+鸡蛋 · 薄脆 · 香葱
+耐心  ♥ ♥ ♥ ♥"
+metadata/order_name = "经典煎饼"
+
+[node name="Order2" type="Button" parent="CustomerField" unique_id=1418197623 groups=["main_page_order_card"]]
+layout_mode = 0
+offset_left = 575.0
+offset_top = 18.0
+offset_right = 870.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(0.25, 0.1, 0.035, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_order")
+theme_override_styles/pressed = SubResource("Style_order_hover")
+theme_override_styles/hover = SubResource("Style_order_hover")
+text = "顾客 02
+加热成品豆奶
+饮品正确 · 必须加热
+耐心  ♥ ♥ ♥ ♥ ♥"
+metadata/order_name = "加热成品豆奶"
+
+[node name="Order3" type="Button" parent="CustomerField" unique_id=40731667 groups=["main_page_order_card"]]
+layout_mode = 0
+offset_left = 900.0
+offset_top = 18.0
+offset_right = 1195.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(0.25, 0.1, 0.035, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_order")
+theme_override_styles/pressed = SubResource("Style_order_hover")
+theme_override_styles/hover = SubResource("Style_order_hover")
+text = "顾客 03
+油条煎饼
+油条可加入煎饼
+耐心  ♥ ♥ ♥"
+metadata/order_name = "油条煎饼"
+
+[node name="Order4" type="Button" parent="CustomerField" unique_id=1839243587 groups=["main_page_order_card"]]
+layout_mode = 0
+offset_left = 1225.0
+offset_top = 18.0
+offset_right = 1520.0
+offset_bottom = 365.0
+theme_override_colors/font_color = Color(0.25, 0.1, 0.035, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_order")
+theme_override_styles/pressed = SubResource("Style_order_hover")
+theme_override_styles/hover = SubResource("Style_order_hover")
+text = "顾客 04
+蒸品组合
+馒头 / 菜包 / 肉包
+耐心  ♥ ♥ ♥ ♥"
+metadata/order_name = "蒸品组合"
+
+[node name="NextCustomer" type="Panel" parent="CustomerField" unique_id=1929850092]
+layout_mode = 0
+offset_left = 1550.0
+offset_top = 18.0
+offset_right = 1845.0
+offset_bottom = 365.0
+theme_override_styles/panel = SubResource("Style_pill")
+
+[node name="Label" type="Label" parent="CustomerField/NextCustomer" unique_id=803594868]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -45.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.96, 0.76, 0.42, 1)
+theme_override_font_sizes/font_size = 21
+text = "下一位顾客
+正在排队
+…"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Worktop" type="Panel" parent="." unique_id=722161995]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 509.0
+offset_right = 1896.0
+offset_bottom = 870.0
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="SoyMilkStation" type="Button" parent="Worktop" unique_id=661624757]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 24.0
+offset_top = 15.0
+offset_right = 268.0
+offset_bottom = 338.0
+theme_override_colors/font_color = Color(1, 0.88, 0.66, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_stations")
+text = "现磨豆浆机
+
+选豆 · 加水
+磨煮 · 接杯
+
+下方 3 格原料位"
+
+[node name="YoutiaoStation" type="Button" parent="Worktop" unique_id=1939392111]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 286.0
+offset_top = 15.0
+offset_right = 536.0
+offset_bottom = 340.0
+theme_override_colors/font_color = Color(1, 0.88, 0.66, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_stations")
+text = "油条锅
+
+下胚 · 炸制 · 沥油
+
+位于豆浆右侧
+位于煎饼左侧"
+
+[node name="PancakeStation" type="Button" parent="Worktop" unique_id=1764353641]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 576.0
+offset_top = 15.0
+offset_right = 1296.0
+offset_bottom = 342.0
+theme_override_colors/font_color = Color(1, 0.86, 0.5, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_stations")
+text = "煎饼操作 · 屏幕正中"
+
+[node name="PanDisc" type="Panel" parent="Worktop/PancakeStation" unique_id=1008135888]
+layout_mode = 0
+offset_left = 195.0
+offset_top = 40.0
+offset_right = 525.0
+offset_bottom = 278.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_pan_disc")
+
+[node name="CenterMark" type="Label" parent="Worktop/PancakeStation/PanDisc" unique_id=2134222471]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.82, 0.58, 0.28, 1)
+theme_override_font_sizes/font_size = 20
+text = "摊面区
+固定中心 X = 960"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BatterSourceButton" type="Button" parent="Worktop" unique_id=1617904157 groups=["main_page_pancake_tool"]]
+unique_name_in_owner = true
+z_index = 3
+layout_mode = 0
+offset_left = 588.0
+offset_top = 82.0
+offset_right = 724.0
+offset_bottom = 248.0
+theme_override_colors/font_color = Color(1, 0.86, 0.58, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "面糊桶
+
+点击舀取
+一勺面糊"
+metadata/tool_id = &"batter_ladle"
+metadata/display_name = "面糊桶与面糊勺"
+
+[node name="SpreaderToolButton" type="Button" parent="Worktop" unique_id=2007450681 groups=["main_page_pancake_tool"]]
+unique_name_in_owner = true
+z_index = 3
+layout_mode = 0
+offset_left = 1166.0
+offset_top = 38.0
+offset_right = 1284.0
+offset_bottom = 118.0
+theme_override_colors/font_color = Color(1, 0.86, 0.58, 1)
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "摊饼器
+摊圆"
+metadata/tool_id = &"spreader"
+metadata/display_name = "基础摊饼器"
+
+[node name="SauceBrushToolButton" type="Button" parent="Worktop" unique_id=1490541553 groups=["main_page_pancake_tool"]]
+unique_name_in_owner = true
+z_index = 3
+layout_mode = 0
+offset_left = 1166.0
+offset_top = 129.0
+offset_right = 1284.0
+offset_bottom = 209.0
+theme_override_colors/font_color = Color(1, 0.86, 0.58, 1)
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "甜面酱刷
+刷酱"
+metadata/tool_id = &"sweet_sauce_brush"
+metadata/display_name = "甜面酱刷"
+
+[node name="FoldSpatulaToolButton" type="Button" parent="Worktop" unique_id=977436987 groups=["main_page_pancake_tool"]]
+unique_name_in_owner = true
+z_index = 3
+layout_mode = 0
+offset_left = 1166.0
+offset_top = 218.0
+offset_right = 1284.0
+offset_bottom = 298.0
+theme_override_colors/font_color = Color(1, 0.86, 0.58, 1)
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "折叠铲
+折叠"
+metadata/tool_id = &"fold_spatula"
+metadata/display_name = "折叠铲"
+
+[node name="FeedbackLabel" type="Label" parent="Worktop" unique_id=1519334264]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 734.0
+offset_top = 302.0
+offset_right = 1156.0
+offset_bottom = 334.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.66, 1)
+theme_override_font_sizes/font_size = 14
+text = "煎饼操作台已就绪（制作流程尚未接入）"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FinishedDrinkStation" type="Button" parent="Worktop" unique_id=815735334]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1336.0
+offset_top = 15.0
+offset_right = 1586.0
+offset_bottom = 338.0
+theme_override_colors/font_color = Color(1, 0.88, 0.66, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_stations")
+text = "成品饮品柜
+
+在售饮品自动摆放
+无标注即常温
+标注加热才加热
+下方 1×1 补货位"
+
+[node name="DimSumStation" type="Button" parent="Worktop" unique_id=666488041]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1604.0
+offset_top = 15.0
+offset_right = 1848.0
+offset_bottom = 341.0
+theme_override_colors/font_color = Color(1, 0.88, 0.66, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_stations")
+text = "多层蒸笼
+
+馒头 · 菜包 · 肉包
+按层码放 · 独立熟度
+
+后续升级解锁"
+
+[node name="MaterialDock" type="Panel" parent="." unique_id=494639785]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 885.0
+offset_right = 1896.0
+offset_bottom = 1070.0
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Slots" type="GridContainer" parent="MaterialDock" unique_id=1581578167]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 21.0
+offset_right = 1848.0
+offset_bottom = 185.0
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 18
+
+[node name="SoyBean" type="Button" parent="MaterialDock/Slots" unique_id=1749849661 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.12, 0.035, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_material_soy")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "黄豆"
+metadata/slot_id = &"soy_bean"
+metadata/display_name = "黄豆"
+metadata/station_name = "豆浆"
+metadata/station_id = &"soy_milk"
+metadata/grid_column = 1
+metadata/grid_row = 1
+
+[node name="RedBean" type="Button" parent="MaterialDock/Slots" unique_id=90278805 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "红豆
+待解锁"
+metadata/slot_id = &"red_bean"
+metadata/display_name = "红豆"
+metadata/station_name = "豆浆"
+metadata/station_id = &"soy_milk"
+metadata/grid_column = 2
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="BlackBean" type="Button" parent="MaterialDock/Slots" unique_id=542931194 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "黑豆
+待解锁"
+metadata/slot_id = &"black_bean"
+metadata/display_name = "黑豆"
+metadata/station_name = "豆浆"
+metadata/station_id = &"soy_milk"
+metadata/grid_column = 3
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="YoutiaoDough" type="Button" parent="MaterialDock/Slots" unique_id=169965042 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.22, 0.09, 0.02, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_material_youtiao")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "油条面胚"
+metadata/slot_id = &"youtiao_dough"
+metadata/display_name = "油条面胚"
+metadata/station_name = "油条"
+metadata/station_id = &"youtiao"
+metadata/grid_column = 4
+metadata/grid_row = 1
+
+[node name="Egg" type="Button" parent="MaterialDock/Slots" unique_id=537295862 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.15, 0.035, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_material_pancake")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "鸡蛋"
+metadata/slot_id = &"egg"
+metadata/display_name = "鸡蛋"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 5
+metadata/grid_row = 1
+
+[node name="Baocui" type="Button" parent="MaterialDock/Slots" unique_id=1326183294 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.15, 0.035, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_material_pancake")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "薄脆"
+metadata/slot_id = &"baocui"
+metadata/display_name = "薄脆"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 6
+metadata/grid_row = 1
+
+[node name="Scallion" type="Button" parent="MaterialDock/Slots" unique_id=597708830 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.15, 0.035, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("Style_material_pancake")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "香葱"
+metadata/slot_id = &"scallion"
+metadata/display_name = "香葱"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 7
+metadata/grid_row = 1
+
+[node name="ChiliSauce" type="Button" parent="MaterialDock/Slots" unique_id=1495037408 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "辣椒酱
+待解锁"
+metadata/slot_id = &"chili_sauce"
+metadata/display_name = "辣椒酱"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 8
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="YoutiaoForPancake" type="Button" parent="MaterialDock/Slots" unique_id=785044079 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.15, 0.035, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_pancake")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "油条成品
+加入煎饼"
+metadata/slot_id = &"youtiao_for_pancake"
+metadata/display_name = "油条成品"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 9
+metadata/grid_row = 1
+
+[node name="HamSausage" type="Button" parent="MaterialDock/Slots" unique_id=1182394128 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "火腿肠
+待解锁"
+metadata/slot_id = &"ham_sausage"
+metadata/display_name = "火腿肠"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 10
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="Tenderloin" type="Button" parent="MaterialDock/Slots" unique_id=1298505514 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "里脊
+待解锁"
+metadata/slot_id = &"tenderloin"
+metadata/display_name = "里脊"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 11
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="PorkFloss" type="Button" parent="MaterialDock/Slots" unique_id=1218792028 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "肉松
+待解锁"
+metadata/slot_id = &"pork_floss"
+metadata/display_name = "肉松"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 12
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="Cilantro" type="Button" parent="MaterialDock/Slots" unique_id=1668105385 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "香菜
+待解锁"
+metadata/slot_id = &"cilantro"
+metadata/display_name = "香菜"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 13
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="Pickle" type="Button" parent="MaterialDock/Slots" unique_id=644207000 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "榨菜
+待解锁"
+metadata/slot_id = &"pickle"
+metadata/display_name = "榨菜"
+metadata/station_name = "煎饼"
+metadata/station_id = &"pancake"
+metadata/grid_column = 14
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="DrinkStockCrate" type="Button" parent="MaterialDock/Slots" unique_id=1422465749 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.09, 0.035, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_material_drink")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "饮品补货箱
+自动摆放"
+metadata/slot_id = &"drink_stock_crate"
+metadata/display_name = "饮品补货箱"
+metadata/station_name = "成品饮品"
+metadata/station_id = &"finished_drinks"
+metadata/grid_column = 15
+metadata/grid_row = 1
+
+[node name="MantouSemiFinished" type="Button" parent="MaterialDock/Slots" unique_id=973760193 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "馒头半成品
+待解锁"
+metadata/slot_id = &"mantou_semi_finished"
+metadata/display_name = "馒头半成品"
+metadata/station_name = "蒸品"
+metadata/station_id = &"dim_sum"
+metadata/grid_column = 16
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="VegetableBunSemiFinished" type="Button" parent="MaterialDock/Slots" unique_id=877889681 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "菜包半成品
+待解锁"
+metadata/slot_id = &"vegetable_bun_semi_finished"
+metadata/display_name = "菜包半成品"
+metadata/station_name = "蒸品"
+metadata/station_id = &"dim_sum"
+metadata/grid_column = 17
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="MeatBunSemiFinished" type="Button" parent="MaterialDock/Slots" unique_id=1196671409 groups=["main_page_material_slot"]]
+custom_minimum_size = Vector2(95, 164)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_material_locked")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "肉包半成品
+待解锁"
+metadata/slot_id = &"meat_bun_semi_finished"
+metadata/display_name = "肉包半成品"
+metadata/station_name = "蒸品"
+metadata/station_id = &"dim_sum"
+metadata/grid_column = 18
+metadata/grid_row = 1
+metadata/locked = true
+
+[node name="PauseOverlay" type="Control" parent="." unique_id=1993893822]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 100
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Dim" type="ColorRect" parent="PauseOverlay" unique_id=1306414690]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.035, 0.015, 0.008, 0.82)
+
+[node name="Dialog" type="PanelContainer" parent="PauseOverlay" unique_id=1667018247]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -190.0
+offset_right = 300.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_overlay")
+
+[node name="Rows" type="VBoxContainer" parent="PauseOverlay/Dialog" unique_id=2116287696]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="PauseOverlay/Dialog/Rows" unique_id=397674244]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.34, 1)
+theme_override_font_sizes/font_size = 38
+text = "暂停看火"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="PauseOverlay/Dialog/Rows" unique_id=1756153280]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.67, 1)
+theme_override_font_sizes/font_size = 18
+text = "这是独立主页面原型，现有游戏页面未被修改。"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="PauseOverlay/Dialog/Rows" unique_id=840236001]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "继续预览"
+
+[node name="ReturnButton" type="Button" parent="PauseOverlay/Dialog/Rows" unique_id=833116476]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("Style_pill")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "返回现有开始页"
+
+[node name="SettingsOverlay" type="Control" parent="." unique_id=285393988]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 101
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Dim" type="ColorRect" parent="SettingsOverlay" unique_id=254962911]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.035, 0.015, 0.008, 0.82)
+
+[node name="Dialog" type="PanelContainer" parent="SettingsOverlay" unique_id=25557208]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -210.0
+offset_right = 340.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_overlay")
+
+[node name="Rows" type="VBoxContainer" parent="SettingsOverlay/Dialog" unique_id=864122840]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="SettingsOverlay/Dialog/Rows" unique_id=1244666275]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.34, 1)
+theme_override_font_sizes/font_size = 36
+text = "页面设置占位"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="SettingsOverlay/Dialog/Rows" unique_id=1926387886]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.67, 1)
+theme_override_font_sizes/font_size = 18
+text = "本轮只验证主页面结构与点击路径。
+音量、画质和控制设置暂不接入。"
+horizontal_alignment = 1
+
+[node name="ScaleCheck" type="CheckButton" parent="SettingsOverlay/Dialog/Rows" unique_id=342011029]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.84, 0.72, 1)
+theme_override_font_sizes/font_size = 19
+disabled = true
+button_pressed = true
+text = "保持煎饼操作台固定居中"
+
+[node name="CloseSettingsButton" type="Button" parent="SettingsOverlay/Dialog/Rows" unique_id=779705241]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_station")
+theme_override_styles/pressed = SubResource("Style_station_selected")
+theme_override_styles/hover = SubResource("Style_station_hover")
+text = "关闭"

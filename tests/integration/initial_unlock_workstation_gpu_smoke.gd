@@ -45,6 +45,12 @@ func _run() -> void:
 	var egg := workstation.get_node("SafeArea/IngredientRack/EggButton") as Button
 	var baocui := workstation.get_node("SafeArea/IngredientRack/BaocuiButton") as Button
 	var surface := workstation.get_node("SafeArea/PanBase/PancakeSurface") as Control
+	var outside_pan_press := InputEventMouseButton.new()
+	outside_pan_press.button_index = MOUSE_BUTTON_LEFT
+	outside_pan_press.pressed = true
+	outside_pan_press.position = Vector2(surface.size.x * 0.05, surface.size.y * 0.05)
+	surface.call("_gui_input", outside_pan_press)
+	_check(not bool(surface.get("pointer_pressed")), "the interactive pancake surface rejects a local click outside the elliptical cooking face")
 	_click_control(ladle)
 	await process_frame
 	_click_at(surface.get_global_rect().get_center())
@@ -105,7 +111,7 @@ func _run() -> void:
 	var progression: RefCounted = adapter.get("progression")
 	_check(int(progression.get("coins")) == 18, "two completed real-time portions deduct exactly two unit costs")
 	var egg_artwork := egg.get_node("Artwork") as TextureRect
-	_check(egg_artwork.texture.resource_path.ends_with("egg_stock_3_v1.png"), "the pan itself shows the third stock image after refill")
+	_check(egg_artwork.texture != null and egg_artwork.texture.resource_path.ends_with("egg_stock_3_v1.png"), "the clickable egg well updates to the third real stock artwork after refill")
 
 	await _slow_drag(baocui.get_global_rect().get_center(), surface.get_global_rect().get_center() + Vector2(40.0, 20.0), 24)
 	await process_frame
@@ -113,8 +119,8 @@ func _run() -> void:
 	_check(not (egg.get_node("Label") as CanvasItem).visible and not (egg.get_node("EmptyLabel") as CanvasItem).visible, "direct ingredient container keeps player-visible text labels hidden")
 	var refill_help := str(egg.get_meta(&"refill_help_text", ""))
 	_check(refill_help.contains("每份") and refill_help.contains("当前") and not refill_help.contains("%") and not refill_help.contains("进度") and egg.tooltip_text.is_empty(), "tray hover help uses the off-worktop instruction strip for price, time, and capacity without refill progress")
-	_check(_tray_grid_is_four_by_three(workstation), "runtime tray geometry is a visible 4x3 grid")
-	_check(_day_one_ingredients_align_with_trays(workstation), "day-one ingredient controls remain inside the first three physical trays")
+	_check(_material_rail_has_eighteen_positions(workstation), "runtime material rail has 18 physical wells: 6 locked, 3 starters, 9 locked")
+	_check(_opening_day_material_controls_align(workstation), "opening-day controls occupy the central three material slots")
 	_move_at(egg_tray_center)
 	await create_timer(0.25).timeout
 	var instructions := workstation.get_node("SafeArea/BottomStrip/Instructions") as Label
@@ -238,25 +244,27 @@ func _slow_drag(from: Vector2, to: Vector2, frames: int) -> void:
 	_release_at(to)
 
 
-func _tray_grid_is_four_by_three(workstation: Node) -> bool:
-	var grid := workstation.get_node("SafeArea/ExpansionLayout/RightZone/IngredientTrayGrid") as GridContainer
-	if grid.columns != 4 or grid.get_child_count() != 12:
+func _material_rail_has_eighteen_positions(workstation: Node) -> bool:
+	var artwork := workstation.get_node_or_null("SafeArea/LockedIngredientArtwork") as Control
+	var interactions := workstation.get_node_or_null("SafeArea/LockedIngredientInteractions") as Control
+	return artwork != null and interactions != null \
+		and artwork.get_child_count() == 15 and interactions.get_child_count() == 15 \
+		and artwork.get_node_or_null("Slot06") != null and artwork.get_node_or_null("Slot10") != null \
+		and artwork.get_node_or_null("Slot07") == null and artwork.get_node_or_null("Slot08") == null and artwork.get_node_or_null("Slot09") == null
+
+
+func _opening_day_material_controls_align(workstation: Node) -> bool:
+	var rack := workstation.get_node_or_null("SafeArea/IngredientRack") as Control
+	if rack == null or rack.position.distance_to(Vector2(648.0, 925.0)) > 1.0 or rack.size.distance_to(Vector2(305.0, 120.0)) > 1.0:
 		return false
-	var first := grid.get_child(0) as Control
-	var fourth := grid.get_child(3) as Control
-	var fifth := grid.get_child(4) as Control
-	return absf(first.position.y - fourth.position.y) < 1.0 and fifth.position.y > first.position.y + first.size.y
-
-
-func _day_one_ingredients_align_with_trays(workstation: Node) -> bool:
-	var grid := workstation.get_node("SafeArea/ExpansionLayout/RightZone/IngredientTrayGrid") as GridContainer
-	var button_names := ["EggButton", "BaocuiButton", "ScallionButton"]
-	for index in button_names.size():
-		var tray := grid.get_child(index) as Control
-		var ingredient := workstation.get_node("SafeArea/IngredientRack/%s" % button_names[index]) as Control
-		if ingredient.get_global_rect().position.distance_to(tray.get_global_rect().position) > 1.0:
-			return false
-		if ingredient.get_global_rect().size.distance_to(tray.get_global_rect().size) > 1.0:
+	var expected_positions := {
+		"EggButton": Vector2(6.0, 0.0),
+		"ScallionButton": Vector2(111.0, 0.0),
+		"BaocuiButton": Vector2(216.0, 0.0),
+	}
+	for button_name in expected_positions:
+		var ingredient := workstation.get_node_or_null("SafeArea/IngredientRack/%s" % button_name) as Control
+		if ingredient == null or ingredient.position.distance_to(expected_positions[button_name]) > 1.0 or ingredient.size.distance_to(Vector2(89.0, 120.0)) > 1.0:
 			return false
 	return true
 

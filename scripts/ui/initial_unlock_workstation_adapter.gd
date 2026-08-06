@@ -16,11 +16,6 @@ const DEVICE_TIER_TEXTURES := {
 		preload("res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_v1.png"),
 		preload("res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_v1.png"),
 	],
-	CATALOG.DEVICE_EGG_WAFFLE: [
-		preload("res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_1_v1.png"),
-		preload("res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_2_v1.png"),
-		preload("res://resources/art/workstation/expansion/machines/egg_waffle_machine_tier_3_v1.png"),
-	],
 }
 @export var initial_progression_snapshot: Dictionary = {}
 
@@ -91,6 +86,7 @@ func apply_progression_snapshot(snapshot: Dictionary) -> void:
 	_refresh_ingredient_trays()
 	_bind_workstation_state()
 	_bind_direct_refill_slots()
+	_bind_locked_art_interactions()
 	_hide_direct_ingredient_labels()
 	_refresh_refill_source_tooltips()
 
@@ -199,7 +195,6 @@ func _device_label(device_id: StringName) -> String:
 	return str({
 		CATALOG.DEVICE_SOY_MILK: "豆浆机",
 		CATALOG.DEVICE_YOUTIAO: "炸油条机",
-		CATALOG.DEVICE_EGG_WAFFLE: "鸡蛋仔机",
 	}.get(device_id, str(device_id)))
 
 
@@ -289,16 +284,14 @@ func _record_device_quality(device_id: StringName, quality: float) -> void:
 	var metric_id := {
 		CATALOG.DEVICE_SOY_MILK: &"soy_good",
 		CATALOG.DEVICE_YOUTIAO: &"youtiao_good",
-		CATALOG.DEVICE_EGG_WAFFLE: &"egg_waffle_good",
 	}.get(device_id, &"") as StringName
 	if metric_id.is_empty():
 		return
 	progression.call("set_metric", metric_id, int(progression.call("metric", metric_id)) + 1)
 	var soy_good := int(progression.call("metric", &"soy_good"))
 	var youtiao_good := int(progression.call("metric", &"youtiao_good"))
-	var waffle_good := int(progression.call("metric", &"egg_waffle_good"))
 	progression.call("set_metric", &"soy_youtiao_good", mini(soy_good, youtiao_good))
-	progression.call("set_metric", &"all_equipment_good", mini(soy_good, mini(youtiao_good, waffle_good)))
+	progression.call("set_metric", &"all_equipment_good", mini(soy_good, youtiao_good))
 
 
 func _persist_active_production(delta: float) -> void:
@@ -361,6 +354,34 @@ func _bind_direct_refill_slots() -> void:
 		var exited_handler := _on_source_unhovered.bind(slot)
 		if not slot.mouse_exited.is_connected(exited_handler):
 			slot.mouse_exited.connect(exited_handler)
+
+
+func _bind_locked_art_interactions() -> void:
+	# Locked stations are deliberately art-first: transparent Buttons only supply
+	# the click contract while the visible response is a short physical lock pulse.
+	for parent_path in [&"../PhysicalStationInteractions", &"../LockedIngredientInteractions"]:
+		var interaction_parent := get_node_or_null(NodePath(parent_path))
+		if interaction_parent == null:
+			continue
+		for child in interaction_parent.get_children():
+			var button := child as Button
+			if button == null:
+				continue
+			var handler := _on_locked_art_pressed.bind(button)
+			if not button.pressed.is_connected(handler):
+				button.pressed.connect(handler)
+
+
+func _on_locked_art_pressed(button: Button) -> void:
+	var art_path := button.get_meta(&"locked_art_path", NodePath()) as NodePath
+	var artwork := get_node_or_null(art_path) as Control
+	if artwork == null:
+		return
+	artwork.pivot_offset = artwork.size * 0.5
+	artwork.scale = Vector2(0.9, 0.9)
+	var pulse := create_tween()
+	pulse.tween_property(artwork, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	button.release_focus()
 
 
 func _bind_workstation_state() -> void:

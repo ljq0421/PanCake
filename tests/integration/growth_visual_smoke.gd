@@ -49,7 +49,6 @@ func _run() -> void:
 	progression.get("owned_items")[CATALOG.TOOL_SAUCE_BRUSH_AUTO] = true
 	progression.get("equipment_levels")[CATALOG.DEVICE_SOY_MILK] = CATALOG.TIER_INTERMEDIATE
 	progression.get("equipment_levels")[CATALOG.DEVICE_YOUTIAO] = CATALOG.TIER_BASIC
-	progression.get("equipment_levels")[CATALOG.DEVICE_EGG_WAFFLE] = CATALOG.TIER_BASIC
 	session.save_workstation_progression(progression.call("snapshot"))
 	main = MAIN_SCENE.instantiate()
 	root.add_child(main)

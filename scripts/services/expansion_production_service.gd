@@ -137,8 +137,6 @@ func _run_completion_automation() -> void:
 		var machine: RefCounted = _machines[device_id]
 		if not bool(machine.call("has_output")):
 			continue
-		if device_id == CATALOG.DEVICE_EGG_WAFFLE and progression.call("owns", CATALOG.AUTO_EGG_WAFFLE_OPEN):
-			machine.call("perform_action", CATALOG.ACTION_OPEN_LID)
 		var extract_module := CATALOG.automation_for(device_id, &"auto_extract")
 		if extract_module.is_empty() or not bool(progression.call("owns", extract_module)):
 			continue

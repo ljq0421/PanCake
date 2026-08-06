@@ -1,12 +1,13 @@
 extends RefCounted
 
+# The catalog intentionally contains only the remaining five-zone roadmap data.
+# Egg-waffle equipment and its recipes were retired with the opening-workstation redesign.
 const TIER_BASIC := 0
 const TIER_INTERMEDIATE := 1
 const TIER_ADVANCED := 2
 
 const DEVICE_SOY_MILK: StringName = &"soy_milk_machine"
 const DEVICE_YOUTIAO: StringName = &"youtiao_fryer"
-const DEVICE_EGG_WAFFLE: StringName = &"egg_waffle_machine"
 
 const RECIPE_SOY_YELLOW: StringName = &"soy_milk.yellow_bean"
 const RECIPE_SOY_RED: StringName = &"soy_milk.red_bean"
@@ -14,14 +15,8 @@ const RECIPE_SOY_BLACK: StringName = &"soy_milk.black_bean"
 const RECIPE_YOUTIAO_PLAIN: StringName = &"youtiao.plain"
 const RECIPE_YOUTIAO_SESAME: StringName = &"youtiao.sesame"
 const RECIPE_YOUTIAO_SCALLION: StringName = &"youtiao.scallion"
-const RECIPE_EGG_WAFFLE_PLAIN: StringName = &"egg_waffle.plain_batter"
-const ADD_ON_STRAWBERRY: StringName = &"egg_waffle.add_on.strawberry_sauce"
-const ADD_ON_CHOCOLATE: StringName = &"egg_waffle.add_on.chocolate_sauce"
 
 const ACTION_ADD_WATER: StringName = &"add_water"
-const ACTION_CLOSE_LID: StringName = &"close_lid"
-const ACTION_CONTROL_TEMPERATURE: StringName = &"control_temperature"
-const ACTION_OPEN_LID: StringName = &"open_lid"
 const ACTION_DRAIN_OIL: StringName = &"drain_oil"
 
 const TOOL_SPREADER_BASIC: StringName = &"tool.spreader.basic"
@@ -43,24 +38,16 @@ const UPGRADE_SOY_ADVANCED: StringName = &"equipment.soy_milk.advanced"
 const UPGRADE_YOUTIAO_BASIC: StringName = &"equipment.youtiao.basic"
 const UPGRADE_YOUTIAO_INTERMEDIATE: StringName = &"equipment.youtiao.intermediate"
 const UPGRADE_YOUTIAO_ADVANCED: StringName = &"equipment.youtiao.advanced"
-const UPGRADE_EGG_WAFFLE_BASIC: StringName = &"equipment.egg_waffle.basic"
-const UPGRADE_EGG_WAFFLE_INTERMEDIATE: StringName = &"equipment.egg_waffle.intermediate"
-const UPGRADE_EGG_WAFFLE_ADVANCED: StringName = &"equipment.egg_waffle.advanced"
 
 const AUTO_SOY_LOAD: StringName = &"automation.soy_milk.auto_load"
 const AUTO_SOY_EXTRACT: StringName = &"automation.soy_milk.auto_extract"
 const AUTO_YOUTIAO_LOAD: StringName = &"automation.youtiao.auto_load"
 const AUTO_YOUTIAO_EXTRACT: StringName = &"automation.youtiao.auto_extract"
-const AUTO_EGG_WAFFLE_LOAD: StringName = &"automation.egg_waffle.auto_load"
-const AUTO_EGG_WAFFLE_OPEN: StringName = &"automation.egg_waffle.auto_open_lid"
-const AUTO_EGG_WAFFLE_EXTRACT: StringName = &"automation.egg_waffle.auto_extract"
 
 const UNLOCK_RECIPE_SOY_RED: StringName = &"recipe_unlock.soy_milk.red_bean"
 const UNLOCK_RECIPE_SOY_BLACK: StringName = &"recipe_unlock.soy_milk.black_bean"
 const UNLOCK_RECIPE_YOUTIAO_SESAME: StringName = &"recipe_unlock.youtiao.sesame"
 const UNLOCK_RECIPE_YOUTIAO_SCALLION: StringName = &"recipe_unlock.youtiao.scallion"
-const UNLOCK_ADD_ON_STRAWBERRY: StringName = &"recipe_unlock.egg_waffle.strawberry_sauce"
-const UNLOCK_ADD_ON_CHOCOLATE: StringName = &"recipe_unlock.egg_waffle.chocolate_sauce"
 
 const STOCK_EGG: StringName = &"egg"
 const STOCK_BAOCUI: StringName = &"baocui"
@@ -74,18 +61,14 @@ const STOCK_SOY_BLACK: StringName = &"raw.soy.black_bean"
 const STOCK_YOUTIAO_PLAIN: StringName = &"raw.youtiao.plain_dough"
 const STOCK_YOUTIAO_SESAME: StringName = &"raw.youtiao.sesame_dough"
 const STOCK_YOUTIAO_SCALLION: StringName = &"raw.youtiao.scallion_dough"
-const STOCK_EGG_WAFFLE_BATTER: StringName = &"raw.egg_waffle.plain_batter"
-const STOCK_STRAWBERRY_SAUCE: StringName = &"raw.egg_waffle.strawberry_sauce"
-const STOCK_CHOCOLATE_SAUCE: StringName = &"raw.egg_waffle.chocolate_sauce"
 
-# The decay rate remains a balancing parameter. The 0-100 range matches PancakeScorer.
 const QUALITY_INITIAL := 100.0
 const QUALITY_SAFE_SECONDS := 5.0
 const QUALITY_DECAY_PER_SECOND_PLACEHOLDER := 2.0
 
 const DEVICE_DEFINITIONS := {
 	DEVICE_SOY_MILK: {
-		"label": "豆浆机",
+		"label": "现磨豆浆机",
 		"tiers": [
 			{"capacity": 2, "duration_seconds": 16.0, "purchase_price": 30, "infinite_hold": true},
 			{"capacity": 2, "duration_seconds": 12.0, "purchase_price": 24, "infinite_hold": true},
@@ -95,7 +78,7 @@ const DEVICE_DEFINITIONS := {
 		"required_before_collect": [],
 	},
 	DEVICE_YOUTIAO: {
-		"label": "炸油条机",
+		"label": "油条锅",
 		"tiers": [
 			{"capacity": 2, "duration_seconds": 12.0, "purchase_price": 60, "infinite_hold": false},
 			{"capacity": 2, "duration_seconds": 9.0, "purchase_price": 48, "infinite_hold": false},
@@ -103,16 +86,6 @@ const DEVICE_DEFINITIONS := {
 		],
 		"required_before_start": [],
 		"required_before_collect": [ACTION_DRAIN_OIL],
-	},
-	DEVICE_EGG_WAFFLE: {
-		"label": "鸡蛋仔机器",
-		"tiers": [
-			{"capacity": 1, "duration_seconds": 20.0, "purchase_price": 90, "infinite_hold": false},
-			{"capacity": 1, "duration_seconds": 15.0, "purchase_price": 66, "infinite_hold": false},
-			{"capacity": 2, "duration_seconds": 15.0, "purchase_price": 108, "infinite_hold": true},
-		],
-		"required_before_start": [ACTION_CLOSE_LID, ACTION_CONTROL_TEMPERATURE],
-		"required_before_collect": [ACTION_OPEN_LID],
 	},
 }
 
@@ -123,9 +96,6 @@ const RECIPE_DEFINITIONS := {
 	RECIPE_YOUTIAO_PLAIN: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "原味油条", "stock_id": STOCK_YOUTIAO_PLAIN, "unlock_item": &""},
 	RECIPE_YOUTIAO_SESAME: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "芝麻油条", "stock_id": STOCK_YOUTIAO_SESAME, "unlock_item": UNLOCK_RECIPE_YOUTIAO_SESAME},
 	RECIPE_YOUTIAO_SCALLION: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "葱香油条", "stock_id": STOCK_YOUTIAO_SCALLION, "unlock_item": UNLOCK_RECIPE_YOUTIAO_SCALLION},
-	RECIPE_EGG_WAFFLE_PLAIN: {"kind": &"main", "device_id": DEVICE_EGG_WAFFLE, "label": "原味鸡蛋仔", "stock_id": STOCK_EGG_WAFFLE_BATTER, "unlock_item": &""},
-	ADD_ON_STRAWBERRY: {"kind": &"add_on", "device_id": DEVICE_EGG_WAFFLE, "label": "草莓酱", "stock_id": STOCK_STRAWBERRY_SAUCE, "unlock_item": UNLOCK_ADD_ON_STRAWBERRY},
-	ADD_ON_CHOCOLATE: {"kind": &"add_on", "device_id": DEVICE_EGG_WAFFLE, "label": "巧克力酱", "stock_id": STOCK_CHOCOLATE_SAUCE, "unlock_item": UNLOCK_ADD_ON_CHOCOLATE},
 }
 
 const ITEM_EFFECTS := {
@@ -141,9 +111,6 @@ const ITEM_EFFECTS := {
 	AUTO_SOY_EXTRACT: {"action": &"auto_extract", "device_id": DEVICE_SOY_MILK},
 	AUTO_YOUTIAO_LOAD: {"action": &"auto_load", "device_id": DEVICE_YOUTIAO, "consumes_input": true},
 	AUTO_YOUTIAO_EXTRACT: {"action": &"auto_extract", "device_id": DEVICE_YOUTIAO},
-	AUTO_EGG_WAFFLE_LOAD: {"action": &"auto_load", "device_id": DEVICE_EGG_WAFFLE, "consumes_input": true},
-	AUTO_EGG_WAFFLE_OPEN: {"action": &"auto_open_lid", "device_id": DEVICE_EGG_WAFFLE},
-	AUTO_EGG_WAFFLE_EXTRACT: {"action": &"auto_extract", "device_id": DEVICE_EGG_WAFFLE},
 }
 
 const PURCHASE_DEFINITIONS := {
@@ -155,66 +122,31 @@ const PURCHASE_DEFINITIONS := {
 	UNLOCK_INGREDIENT_HAM: {"kind": &"ingredient_unlock", "price": 18, "min_day": 3, "min_reputation": 20, "metric": &"average_score", "metric_value": 65},
 	UNLOCK_INGREDIENT_MEAT_FLOSS: {"kind": &"ingredient_unlock", "price": 32, "min_day": 8, "metric": &"youtiao_good", "metric_value": 4},
 	UNLOCK_INGREDIENT_PORK_TENDERLOIN: {"kind": &"ingredient_unlock", "price": 50, "min_day": 9, "metric": &"expanded_good", "metric_value": 14},
-	STALL_FIXED: {"kind": &"stall", "price": 120, "target_tier": 1, "min_day": 14, "min_reputation": 220, "metric": &"all_equipment_good", "metric_value": 3},
+	STALL_FIXED: {"kind": &"stall", "price": 120, "target_tier": 1, "min_day": 14, "min_reputation": 220, "metric": &"all_equipment_good", "metric_value": 2},
 	UPGRADE_SOY_BASIC: {"kind": &"equipment", "price": 30, "device_id": DEVICE_SOY_MILK, "target_tier": TIER_BASIC, "min_day": 4, "min_reputation": 35, "metric": &"lifetime_orders", "metric_value": 12},
 	UPGRADE_SOY_INTERMEDIATE: {"kind": &"equipment", "price": 24, "device_id": DEVICE_SOY_MILK, "target_tier": TIER_INTERMEDIATE, "metric": &"soy_good", "metric_value": 4},
 	UPGRADE_SOY_ADVANCED: {"kind": &"equipment", "price": 54, "device_id": DEVICE_SOY_MILK, "target_tier": TIER_ADVANCED, "min_day": 14, "min_reputation": 220},
 	UPGRADE_YOUTIAO_BASIC: {"kind": &"equipment", "price": 60, "device_id": DEVICE_YOUTIAO, "target_tier": TIER_BASIC, "min_day": 7, "min_reputation": 85, "metric": &"lifetime_orders", "metric_value": 22},
 	UPGRADE_YOUTIAO_INTERMEDIATE: {"kind": &"equipment", "price": 48, "device_id": DEVICE_YOUTIAO, "target_tier": TIER_INTERMEDIATE, "metric": &"youtiao_good", "metric_value": 4},
 	UPGRADE_YOUTIAO_ADVANCED: {"kind": &"equipment", "price": 84, "device_id": DEVICE_YOUTIAO, "target_tier": TIER_ADVANCED, "min_day": 14, "min_reputation": 220},
-	UPGRADE_EGG_WAFFLE_BASIC: {"kind": &"equipment", "price": 90, "device_id": DEVICE_EGG_WAFFLE, "target_tier": TIER_BASIC, "min_day": 10, "min_reputation": 140, "metric": &"soy_youtiao_good", "metric_value": 6},
-	UPGRADE_EGG_WAFFLE_INTERMEDIATE: {"kind": &"equipment", "price": 66, "device_id": DEVICE_EGG_WAFFLE, "target_tier": TIER_INTERMEDIATE, "metric": &"egg_waffle_good", "metric_value": 8},
-	UPGRADE_EGG_WAFFLE_ADVANCED: {"kind": &"equipment", "price": 108, "device_id": DEVICE_EGG_WAFFLE, "target_tier": TIER_ADVANCED, "min_day": 14, "min_reputation": 220},
 	AUTO_SOY_LOAD: {"kind": &"owned_item", "price": 60, "requires_equipment": DEVICE_SOY_MILK},
 	AUTO_SOY_EXTRACT: {"kind": &"owned_item", "price": 72, "requires_equipment": DEVICE_SOY_MILK},
 	AUTO_YOUTIAO_LOAD: {"kind": &"owned_item", "price": 72, "requires_equipment": DEVICE_YOUTIAO},
 	AUTO_YOUTIAO_EXTRACT: {"kind": &"owned_item", "price": 86, "requires_equipment": DEVICE_YOUTIAO},
-	AUTO_EGG_WAFFLE_LOAD: {"kind": &"owned_item", "price": 96, "requires_equipment": DEVICE_EGG_WAFFLE},
-	AUTO_EGG_WAFFLE_OPEN: {"kind": &"owned_item", "price": 70, "requires_equipment": DEVICE_EGG_WAFFLE},
-	AUTO_EGG_WAFFLE_EXTRACT: {"kind": &"owned_item", "price": 112, "requires_equipment": DEVICE_EGG_WAFFLE},
 	UNLOCK_RECIPE_SOY_RED: {"kind": &"owned_item", "price": 16, "requires_equipment": DEVICE_SOY_MILK},
 	UNLOCK_RECIPE_SOY_BLACK: {"kind": &"owned_item", "price": 24, "requires_equipment": DEVICE_SOY_MILK},
 	UNLOCK_RECIPE_YOUTIAO_SESAME: {"kind": &"owned_item", "price": 18, "requires_equipment": DEVICE_YOUTIAO},
 	UNLOCK_RECIPE_YOUTIAO_SCALLION: {"kind": &"owned_item", "price": 24, "requires_equipment": DEVICE_YOUTIAO},
-	UNLOCK_ADD_ON_STRAWBERRY: {"kind": &"owned_item", "price": 22, "requires_equipment": DEVICE_EGG_WAFFLE},
-	UNLOCK_ADD_ON_CHOCOLATE: {"kind": &"owned_item", "price": 30, "requires_equipment": DEVICE_EGG_WAFFLE},
 }
 
 const PURCHASE_PRESENTATION := {
-	TOOL_SPREADER_WIDE: {"label": "加宽刮板", "category": "工具", "description": "手动摊饼覆盖更宽，容错更高。"},
-	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "每张饼可一键完成一次标准摊平。"},
-	TOOL_SAUCE_BRUSH_AUTO: {"label": "自动酱刷", "category": "工具", "description": "按订单自动刷酱，仍消耗酱料与时间。"},
-	INGREDIENT_BOX_INTERMEDIATE: {"label": "十格小料盒", "category": "容量", "description": "每种小料容量提升到 10 份。"},
-	INGREDIENT_BOX_ADVANCED: {"label": "十四格小料盒", "category": "容量", "description": "每种小料容量提升到 14 份。"},
-	UNLOCK_INGREDIENT_HAM: {"label": "火腿肠", "category": "永久小料", "description": "永久上架火腿肠；解锁后需自行补货。"},
-	UNLOCK_INGREDIENT_MEAT_FLOSS: {"label": "肉松", "category": "永久小料", "description": "永久上架肉松；松散铺料更考验分布。"},
-	UNLOCK_INGREDIENT_PORK_TENDERLOIN: {"label": "里脊肉", "category": "永久小料", "description": "永久上架里脊肉；份量扎实、结构负担更高。"},
-	STALL_FIXED: {"label": "固定店铺", "category": "店铺", "description": "从流动摊车升级为固定店铺，工作位保持不变。"},
-	UPGRADE_SOY_BASIC: {"label": "豆浆机", "category": "设备", "description": "解锁豆浆批量制作。"},
-	UPGRADE_SOY_INTERMEDIATE: {"label": "豆浆机改良", "category": "设备", "description": "缩短豆浆制作时间。"},
-	UPGRADE_SOY_ADVANCED: {"label": "豆浆机扩容", "category": "设备", "description": "单批容量提升到 4 份。"},
-	UPGRADE_YOUTIAO_BASIC: {"label": "炸油条机", "category": "设备", "description": "解锁油条批量制作。"},
-	UPGRADE_YOUTIAO_INTERMEDIATE: {"label": "炸油条机改良", "category": "设备", "description": "缩短油条制作时间。"},
-	UPGRADE_YOUTIAO_ADVANCED: {"label": "炸油条机扩容", "category": "设备", "description": "单批容量提升到 4 份。"},
-	UPGRADE_EGG_WAFFLE_BASIC: {"label": "鸡蛋仔机", "category": "设备", "description": "解锁鸡蛋仔制作。"},
-	UPGRADE_EGG_WAFFLE_INTERMEDIATE: {"label": "鸡蛋仔机改良", "category": "设备", "description": "缩短鸡蛋仔制作时间。"},
-	UPGRADE_EGG_WAFFLE_ADVANCED: {"label": "鸡蛋仔机扩容", "category": "设备", "description": "单批容量提升到 2 份。"},
-	AUTO_SOY_LOAD: {"label": "豆浆自动上料", "category": "自动化", "description": "自动消耗一份原料并装入豆浆机。"},
-	AUTO_SOY_EXTRACT: {"label": "豆浆自动出料", "category": "自动化", "description": "完成后自动取出豆浆。"},
-	AUTO_YOUTIAO_LOAD: {"label": "油条自动上料", "category": "自动化", "description": "自动消耗一份面胚并装入炸锅。"},
-	AUTO_YOUTIAO_EXTRACT: {"label": "油条自动出锅", "category": "自动化", "description": "满足出锅条件后自动收取。"},
-	AUTO_EGG_WAFFLE_LOAD: {"label": "鸡蛋仔自动上料", "category": "自动化", "description": "自动消耗一份面糊并装入机器。"},
-	AUTO_EGG_WAFFLE_OPEN: {"label": "鸡蛋仔自动开盖", "category": "自动化", "description": "烘烤完成后自动开盖。"},
-	AUTO_EGG_WAFFLE_EXTRACT: {"label": "鸡蛋仔自动出料", "category": "自动化", "description": "开盖后自动收取成品。"},
-	UNLOCK_RECIPE_SOY_RED: {"label": "红豆豆浆配方", "category": "配方", "description": "豆浆机可制作红豆豆浆。"},
-	UNLOCK_RECIPE_SOY_BLACK: {"label": "黑豆豆浆配方", "category": "配方", "description": "豆浆机可制作黑豆豆浆。"},
-	UNLOCK_RECIPE_YOUTIAO_SESAME: {"label": "芝麻油条配方", "category": "配方", "description": "炸锅可制作芝麻油条。"},
-	UNLOCK_RECIPE_YOUTIAO_SCALLION: {"label": "葱香油条配方", "category": "配方", "description": "炸锅可制作葱香油条。"},
-	UNLOCK_ADD_ON_STRAWBERRY: {"label": "草莓酱加料", "category": "配方", "description": "鸡蛋仔可搭配草莓酱。"},
-	UNLOCK_ADD_ON_CHOCOLATE: {"label": "巧克力酱加料", "category": "配方", "description": "鸡蛋仔可搭配巧克力酱。"},
+	TOOL_SPREADER_WIDE: {"label": "加宽摊饼器", "category": "工具", "description": "增加手动摊面覆盖宽度。"},
+	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "每张饼可完成一次标准摊平。"},
+	TOOL_SAUCE_BRUSH_AUTO: {"label": "自动酱刷", "category": "工具", "description": "按订单自动刷酱。"},
+	UPGRADE_SOY_BASIC: {"label": "现磨豆浆机", "category": "设备", "description": "解锁豆浆区。"},
+	UPGRADE_YOUTIAO_BASIC: {"label": "油条锅", "category": "设备", "description": "解锁油条区。"},
 }
 
-# Prices and timings are deliberately centralized placeholders pending economy calibration.
 const REFILL_DEFINITIONS := {
 	STOCK_EGG: {"unit_cost": 1, "unit_seconds": 0.20},
 	STOCK_BAOCUI: {"unit_cost": 1, "unit_seconds": 0.225},
@@ -228,32 +160,24 @@ const REFILL_DEFINITIONS := {
 	STOCK_YOUTIAO_PLAIN: {"unit_cost": 2, "unit_seconds": 1.50},
 	STOCK_YOUTIAO_SESAME: {"unit_cost": 2, "unit_seconds": 1.65},
 	STOCK_YOUTIAO_SCALLION: {"unit_cost": 2, "unit_seconds": 1.70},
-	STOCK_EGG_WAFFLE_BATTER: {"unit_cost": 3, "unit_seconds": 1.80},
-	STOCK_STRAWBERRY_SAUCE: {"unit_cost": 2, "unit_seconds": 1.25},
-	STOCK_CHOCOLATE_SAUCE: {"unit_cost": 2, "unit_seconds": 1.25},
 }
-
 
 static func device_tier(device_id: StringName, tier: int) -> Dictionary:
 	var device: Dictionary = DEVICE_DEFINITIONS.get(device_id, {})
 	var tiers: Array = device.get("tiers", [])
 	if tier < 0 or tier >= tiers.size():
 		return {}
-	var result: Dictionary = tiers[tier]
-	result = result.duplicate(true)
+	var result: Dictionary = tiers[tier].duplicate(true)
 	result["safe_seconds"] = QUALITY_SAFE_SECONDS
 	result["initial_quality"] = QUALITY_INITIAL
 	result["decay_per_second"] = QUALITY_DECAY_PER_SECOND_PLACEHOLDER
 	return result
 
-
 static func device_definition(device_id: StringName) -> Dictionary:
 	return Dictionary(DEVICE_DEFINITIONS.get(device_id, {})).duplicate(true)
 
-
 static func recipe_definition(recipe_id: StringName) -> Dictionary:
 	return Dictionary(RECIPE_DEFINITIONS.get(recipe_id, {})).duplicate(true)
-
 
 static func main_recipe_ids(device_id: StringName) -> Array[StringName]:
 	var result: Array[StringName] = []
@@ -263,15 +187,11 @@ static func main_recipe_ids(device_id: StringName) -> Array[StringName]:
 			result.append(recipe_id)
 	return result
 
-
 static func purchase_definition(item_id: StringName) -> Dictionary:
 	return Dictionary(PURCHASE_DEFINITIONS.get(item_id, {})).duplicate(true)
 
-
 static func purchase_presentation(item_id: StringName) -> Dictionary:
-	var fallback := {"label": str(item_id), "category": "成长", "description": "购买后在下一营业日生效。"}
-	return Dictionary(PURCHASE_PRESENTATION.get(item_id, fallback)).duplicate(true)
-
+	return Dictionary(PURCHASE_PRESENTATION.get(item_id, {"label": str(item_id), "category": "成长", "description": "下个营业日生效。"})).duplicate(true)
 
 static func purchase_ids() -> Array[StringName]:
 	var result: Array[StringName] = []
@@ -279,14 +199,11 @@ static func purchase_ids() -> Array[StringName]:
 		result.append(item_id)
 	return result
 
-
 static func item_effect(item_id: StringName) -> Dictionary:
 	return Dictionary(ITEM_EFFECTS.get(item_id, {})).duplicate(true)
 
-
 static func refill_definition(stock_id: StringName) -> Dictionary:
 	return Dictionary(REFILL_DEFINITIONS.get(stock_id, {})).duplicate(true)
-
 
 static func stock_ids() -> Array[StringName]:
 	var result: Array[StringName] = []
@@ -294,10 +211,8 @@ static func stock_ids() -> Array[StringName]:
 		result.append(stock_id)
 	return result
 
-
 static func starter_ingredient_ids() -> Array[StringName]:
 	return [STOCK_EGG, STOCK_BAOCUI, STOCK_SCALLION]
-
 
 static func ingredient_unlock_item(stock_id: StringName) -> StringName:
 	return {
@@ -305,7 +220,6 @@ static func ingredient_unlock_item(stock_id: StringName) -> StringName:
 		STOCK_MEAT_FLOSS: UNLOCK_INGREDIENT_MEAT_FLOSS,
 		STOCK_PORK_TENDERLOIN: UNLOCK_INGREDIENT_PORK_TENDERLOIN,
 	}.get(stock_id, &"")
-
 
 static func automation_for(device_id: StringName, action: StringName) -> StringName:
 	for item_id in ITEM_EFFECTS:

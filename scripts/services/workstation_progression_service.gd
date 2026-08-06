@@ -331,9 +331,8 @@ func _metric_label(metric_id: StringName) -> String:
 		&"expanded_good": "扩展小料良好次数",
 		&"soy_good": "豆浆良好次数",
 		&"youtiao_good": "油条良好次数",
-		&"egg_waffle_good": "鸡蛋仔良好次数",
 		&"soy_youtiao_good": "豆浆与油条良好次数",
-		&"all_equipment_good": "三类设备良好次数",
+		&"all_equipment_good": "豆浆与油条良好次数",
 	}
 	return str(labels.get(metric_id, str(metric_id)))
 
@@ -342,7 +341,6 @@ func _device_label(device_id: StringName) -> String:
 	var labels := {
 		CATALOG.DEVICE_SOY_MILK: "豆浆机",
 		CATALOG.DEVICE_YOUTIAO: "炸油条机",
-		CATALOG.DEVICE_EGG_WAFFLE: "鸡蛋仔机",
 	}
 	return str(labels.get(device_id, str(device_id)))
 

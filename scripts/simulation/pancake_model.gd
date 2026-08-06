@@ -57,6 +57,10 @@ var egg_doneness := PackedFloat32Array()
 var egg_state: EggState = EggState.NONE
 var yolk_broken := false
 var is_flipped := false
+## Intermediate pancake griddle protection caps cooking at the current order's
+## target.  The workstation owns the target selection; the model only enforces
+## the supplied safe cap and remains UI-independent.
+var cooking_doneness_cap := 1.0
 var _sauce_footprint_stamp := PackedInt32Array()
 var _sauce_stroke_serial := 0
 var _sauce_sample_serial := 0
@@ -271,12 +275,12 @@ func advance_cooking(delta_seconds: float, heat_level: float = 0.65) -> int:
 		var edge_factor := lerpf(1.0, 1.0 + parameters.edge_cooking_boost, smoothstep(0.55, 1.0, normalized_radius))
 		var thickness_resistance := clampf(0.45 + thickness[index] * 0.75, 0.45, 2.4)
 		var cooking_delta := parameters.cooking_rate * safe_heat * edge_factor * safe_delta / thickness_resistance
-		target_field[index] = minf(target_field[index] + cooking_delta, 1.0)
+		target_field[index] = minf(target_field[index] + cooking_delta, clampf(cooking_doneness_cap, 0.0, 1.0))
 		wetness[index] = maxf(wetness[index] - parameters.solidification_rate * safe_delta / thickness_resistance, 0.0)
 		var egg_amount := egg_white[index] + egg_yolk[index]
 		if egg_amount >= parameters.egg_coverage_minimum:
 			var egg_cooking_delta := parameters.egg_cooking_rate * safe_heat * edge_factor * safe_delta
-			egg_doneness[index] = minf(egg_doneness[index] + egg_cooking_delta, 1.0)
+			egg_doneness[index] = minf(egg_doneness[index] + egg_cooking_delta, clampf(cooking_doneness_cap, 0.0, 1.0))
 			egg_amount_total += egg_amount
 			egg_doneness_total += egg_doneness[index] * egg_amount
 		changed_cells += 1

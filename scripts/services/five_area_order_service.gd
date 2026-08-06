@@ -4,6 +4,11 @@ extends RefCounted
 ## Formal order state is UI-independent.  Stage 7 will replace only candidate
 ## generation/tutorial selection, not the persisted order transaction.
 
+## Pancake production currently supports sweet-flour and red-chili sauce.  The
+## formal contract nevertheless owns the upper bound so a malformed order can
+## never introduce a third sauce when more sauce content is added later.
+const MAX_SAUCE_REQUIREMENTS_PER_ITEM := 2
+
 var _orders: Dictionary = {}
 var _active_order_id: StringName = &""
 var _sequence: int = 0
@@ -41,7 +46,16 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		var item: Dictionary = Dictionary(source_item).duplicate(true)
 		if StringName(item.get("area_id", &"")).is_empty() or StringName(item.get("product_id", &"")).is_empty():
 			return {"success": false, "reason": &"invalid_order_item"}
+		var sauce_ids := _normalized_ids(item.get("sauce_ids", []))
+		if sauce_ids.size() > MAX_SAUCE_REQUIREMENTS_PER_ITEM:
+			return {
+				"success": false,
+				"reason": &"too_many_sauce_requirements",
+				"max_sauce_requirements": MAX_SAUCE_REQUIREMENTS_PER_ITEM,
+				"requested_sauce_count": sauce_ids.size(),
+			}
 		item["quantity"] = maxi(int(item.get("quantity", 1)), 1)
+		item["sauce_ids"] = sauce_ids
 		item["prepared_product_instance_ids"] = PackedStringArray()
 		normalized_items.append(item)
 	var order: Dictionary = {
@@ -129,6 +143,18 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 	return {"success": true, "settlement_id": settlement_id, "order_success": success, "mismatch_reasons": all_reasons, "item_results": item_results}
 
 
+func abandon_active_order(reason: StringName = &"business_day_expired") -> Dictionary:
+	if _active_order_id.is_empty() or not _orders.has(_active_order_id):
+		return {"success": false, "reason": &"order_not_active"}
+	var order: Dictionary = _orders[_active_order_id]
+	order["state"] = &"abandoned"
+	order["abandon_reason"] = reason
+	_orders[_active_order_id] = order
+	var abandoned_order_id := _active_order_id
+	_active_order_id = &""
+	return {"success": true, "order_id": abandoned_order_id, "reason": reason}
+
+
 func _active_item(order_id: StringName, item_index: int) -> Dictionary:
 	if order_id.is_empty() or order_id != _active_order_id or not _orders.has(order_id):
 		return {}
@@ -150,11 +176,13 @@ func _product_mismatch_reasons(item: Dictionary, product: Dictionary) -> PackedS
 
 
 static func _same_ids(left: Variant, right: Variant) -> bool:
-	var a: PackedStringArray = PackedStringArray(Array(left).map(func(v): return str(v)))
-	var b: PackedStringArray = PackedStringArray(Array(right).map(func(v): return str(v)))
-	a.sort()
-	b.sort()
-	return a == b
+	return _normalized_ids(left) == _normalized_ids(right)
+
+
+static func _normalized_ids(source: Variant) -> PackedStringArray:
+	var ids := PackedStringArray(Array(source).map(func(value): return str(value)))
+	ids.sort()
+	return ids
 
 
 func _restore(source: Dictionary) -> void:

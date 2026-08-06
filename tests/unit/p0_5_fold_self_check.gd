@@ -2,6 +2,7 @@ extends SceneTree
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const INGREDIENT_LAYER_SCRIPT := preload("res://scripts/ui/ingredient_layer.gd")
+const FOLD_OVERLAY_SCRIPT := preload("res://scripts/ui/pancake_fold_overlay.gd")
 
 var _failures := PackedStringArray()
 
@@ -13,6 +14,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_drag_must_cross_fold_line()
 	_test_fold_occludes_landing_area_fillings()
+	_test_right_then_left_uses_the_mirrored_clip()
 	_test_material_conditions_create_distinct_results()
 	_test_damage_keeps_its_regional_effect()
 	_test_rescue_paths_never_dead_end()
@@ -52,6 +54,33 @@ func _test_fold_occludes_landing_area_fillings() -> void:
 		"a completed left fold hides fillings from both the lifted flap and its covered landing area"
 	)
 	layer.free()
+
+
+func _test_right_then_left_uses_the_mirrored_clip() -> void:
+	var model := _uniform_pancake(64, 0.55, 0.55)
+	var fold: RefCounted = FOLD_MODEL_SCRIPT.new(model)
+	var overlay: PancakeFoldOverlay = FOLD_OVERLAY_SCRIPT.new()
+	overlay.size = Vector2(600.0, 600.0)
+	root.add_child(overlay)
+	overlay.set_fold_model(fold)
+	_fold_right(fold)
+	_check(
+		is_inf(overlay.right_fold_clip_min_x()),
+		"a completed right flap remains whole until the moving left flap reaches its tail"
+	)
+	_check(fold.begin_drag(Vector2(8, 32)), "left edge is available after a completed right fold")
+	fold.update_drag(Vector2(18, 32))
+	var moving_left_edge := overlay.left_fold_outer_edge_x(float(fold.drag_progress))
+	var landed_left_edge := overlay.left_fold_outer_edge_x(1.0)
+	_check(
+		is_equal_approx(overlay.right_fold_clip_min_x(), moving_left_edge),
+		"the moving left flap clips the right tail at its current outer edge"
+	)
+	_check(
+		moving_left_edge < landed_left_edge - 1.0,
+		"the mirrored right-tail clip advances progressively as the left flap folds inward"
+	)
+	overlay.queue_free()
 
 
 func _test_material_conditions_create_distinct_results() -> void:

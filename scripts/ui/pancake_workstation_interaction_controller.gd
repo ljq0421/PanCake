@@ -10,6 +10,8 @@ const INGREDIENT_STOCK_IDS := {
 	&"scallion": &"stock.pancake.scallion",
 	&"meat_floss": &"stock.pancake.meat_floss",
 	&"pork_tenderloin": &"stock.pancake.pork_tenderloin",
+	&"coriander": &"stock.pancake.coriander",
+	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 }
 
 var _restock: RefCounted
@@ -292,7 +294,7 @@ func _direct_ingredient_slots() -> Array[Button]:
 
 func _all_direct_ingredient_slots() -> Array[Button]:
 	var result: Array[Button] = []
-	for slot_name in [&"EggButton", &"BaocuiButton", &"ScallionButton", &"HamButton", &"MeatFlossButton", &"PorkTenderloinButton"]:
+	for slot_name in [&"EggButton", &"BaocuiButton", &"ScallionButton", &"HamButton", &"MeatFlossButton", &"PorkTenderloinButton", &"CorianderButton", &"PreservedMustardButton"]:
 		var slot := get_node_or_null("../IngredientRack/%s" % slot_name) as Button
 		if slot != null:
 			result.append(slot)

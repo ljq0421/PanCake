@@ -146,10 +146,10 @@ func _draw() -> void:
 		return
 	if guides_visible:
 		_draw_guides()
-	# The left flap stays visible until the moving right flap actually reaches its
-	# tail. Its clip boundary follows the current outer edge of that right flap.
-	_draw_region(FOLD_MODEL_SCRIPT.REGION_LEFT, left_fold_clip_max_x())
-	_draw_region(FOLD_MODEL_SCRIPT.REGION_RIGHT)
+	# Whichever flap landed first remains visible until the opposite flap reaches
+	# its tail. Each tail is clipped against that moving opposite outer edge.
+	_draw_region(FOLD_MODEL_SCRIPT.REGION_LEFT, -INF, left_fold_clip_max_x())
+	_draw_region(FOLD_MODEL_SCRIPT.REGION_RIGHT, right_fold_clip_min_x(), INF)
 
 
 func left_fold_clip_max_x() -> float:
@@ -168,21 +168,45 @@ func left_fold_clip_max_x() -> float:
 
 
 func right_fold_outer_edge_x(progress: float) -> float:
+	return _fold_outer_edge_x(FOLD_MODEL_SCRIPT.REGION_RIGHT, progress, true)
+
+
+func right_fold_clip_min_x() -> float:
+	if fold_model == null or not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
+		return -INF
+	var left_progress := 0.0
+	if fold_model.active_region == FOLD_MODEL_SCRIPT.REGION_LEFT:
+		left_progress = float(fold_model.drag_progress)
+	elif _animated_region == FOLD_MODEL_SCRIPT.REGION_LEFT:
+		left_progress = _animated_progress
+	elif fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
+		left_progress = 1.0
+	else:
+		return -INF
+	return left_fold_outer_edge_x(left_progress)
+
+
+func left_fold_outer_edge_x(progress: float) -> float:
+	return _fold_outer_edge_x(FOLD_MODEL_SCRIPT.REGION_LEFT, progress, false)
+
+
+func _fold_outer_edge_x(region: StringName, progress: float, find_maximum: bool) -> float:
 	if fold_model == null or fold_model.pancake_model == null:
-		return INF
-	var profile := _build_fold_profile(FOLD_MODEL_SCRIPT.REGION_RIGHT, progress)
+		return INF if find_maximum else -INF
+	var profile := _build_fold_profile(region, progress)
 	if not bool(profile.get("has_coverage", false)):
-		return INF
-	var maximum_x := -INF
+		return INF if find_maximum else -INF
+	var edge_x := -INF if find_maximum else INF
 	for step in range(FOLD_PROFILE_STEPS + 1):
 		var source_span := _source_fold_span(
-			FOLD_MODEL_SCRIPT.REGION_RIGHT,
+			region,
 			float(step) / float(FOLD_PROFILE_STEPS),
 			profile
 		)
 		for point in source_span:
-			maximum_x = maxf(maximum_x, _transform_fold_point(point, progress, profile).x)
-	return maximum_x
+			var transformed_x := _transform_fold_point(point, progress, profile).x
+			edge_x = maxf(edge_x, transformed_x) if find_maximum else minf(edge_x, transformed_x)
+	return edge_x
 
 
 func _draw_guides() -> void:
@@ -204,7 +228,7 @@ func _draw_guides() -> void:
 		draw_arc(center + Vector2(radii.x * 0.92, 0.0), size.x * 0.040, PI - 1.2, PI + 1.2, 20, Color(0.45, 0.94, 0.94, 0.95), 5.0, true)
 
 
-func _draw_region(region: StringName, clip_max_x: float = INF) -> void:
+func _draw_region(region: StringName, clip_min_x: float = -INF, clip_max_x: float = INF) -> void:
 	var folded: bool = fold_model.is_region_folded(region)
 	var active: bool = fold_model.active_region == region
 	var animated: bool = _animated_region == region
@@ -223,12 +247,12 @@ func _draw_region(region: StringName, clip_max_x: float = INF) -> void:
 		flap_color = Color(0.92, 0.72, 0.48, 0.99)
 	elif severity >= 2:
 		flap_color = Color(0.76, 0.43, 0.31, 0.99)
-	_draw_flap_shadow(flap_polygon, region, progress, profile, clip_max_x)
-	_draw_curved_flap(region, progress, flap_color, profile, clip_max_x)
-	if is_inf(clip_max_x):
+	_draw_flap_shadow(flap_polygon, region, progress, profile, clip_min_x, clip_max_x)
+	_draw_curved_flap(region, progress, flap_color, profile, clip_min_x, clip_max_x)
+	if is_inf(clip_min_x) and is_inf(clip_max_x):
 		_draw_arc_highlight(region, progress, profile)
 	_draw_fold_crease(region, progress, severity)
-	if not is_inf(clip_max_x):
+	if not is_inf(clip_min_x) or not is_inf(clip_max_x):
 		return
 	var edge_color := Color(0.29, 0.13, 0.045, 0.78)
 	if pancake_edge_texture != null:
@@ -246,6 +270,7 @@ func _draw_flap_shadow(
 	region: StringName,
 	progress: float,
 	profile: Dictionary,
+	clip_min_x: float = -INF,
 	clip_max_x: float = INF
 ) -> void:
 	var lift := sin(clampf(progress, 0.0, 1.0) * PI)
@@ -271,14 +296,21 @@ func _draw_flap_shadow(
 		var shadow_quad := PackedVector2Array()
 		for source_point in source_quad:
 			shadow_quad.append(_transform_fold_point(source_point, progress, profile) + offset)
-		var clipped_shadow := _clip_polygon_right(shadow_quad, PackedVector2Array(), PackedColorArray(), clip_max_x)
+		var clipped_shadow := _clip_polygon_horizontal(shadow_quad, PackedVector2Array(), PackedColorArray(), clip_min_x, clip_max_x)
 		var clipped_shadow_points: PackedVector2Array = clipped_shadow.points
 		if clipped_shadow_points.size() < 3:
 			continue
 		draw_colored_polygon(clipped_shadow_points, Color(0.13, 0.045, 0.012, alpha))
 
 
-func _draw_curved_flap(region: StringName, progress: float, tint: Color, profile: Dictionary, clip_max_x: float = INF) -> void:
+func _draw_curved_flap(
+	region: StringName,
+	progress: float,
+	tint: Color,
+	profile: Dictionary,
+	clip_min_x: float = -INF,
+	clip_max_x: float = INF
+) -> void:
 	# Each strip receives its own projected position, face texture, and lighting.
 	# A single polygon can only interpolate between its outline vertices, which
 	# makes the fold read as a rigid card even when the silhouette is softened.
@@ -301,7 +333,7 @@ func _draw_curved_flap(region: StringName, progress: float, tint: Color, profile
 		var colors := PackedColorArray([color0, color1, color1, color0])
 		var midpoint_angle := _profile_angle(profile, (t0 + t1) * 0.5)
 		var texture := pancake_front_texture if cos(midpoint_angle) >= 0.0 else pancake_back_texture
-		var clipped_surface := _clip_polygon_right(folded_quad, uvs, colors, clip_max_x)
+		var clipped_surface := _clip_polygon_horizontal(folded_quad, uvs, colors, clip_min_x, clip_max_x)
 		var clipped_points: PackedVector2Array = clipped_surface.points
 		if clipped_points.size() < 3:
 			continue
@@ -313,13 +345,29 @@ func _draw_curved_flap(region: StringName, progress: float, tint: Color, profile
 			draw_polygon(clipped_points, clipped_colors, clipped_uvs, texture)
 
 
-func _clip_polygon_right(
+func _clip_polygon_horizontal(
 	points: PackedVector2Array,
 	uvs: PackedVector2Array,
 	colors: PackedColorArray,
+	clip_min_x: float,
 	clip_max_x: float
 ) -> Dictionary:
-	if is_inf(clip_max_x):
+	var clipped := {"points": points, "uvs": uvs, "colors": colors}
+	if not is_inf(clip_min_x):
+		clipped = _clip_polygon_x(clipped.points, clipped.uvs, clipped.colors, clip_min_x, true)
+	if not is_inf(clip_max_x):
+		clipped = _clip_polygon_x(clipped.points, clipped.uvs, clipped.colors, clip_max_x, false)
+	return clipped
+
+
+func _clip_polygon_x(
+	points: PackedVector2Array,
+	uvs: PackedVector2Array,
+	colors: PackedColorArray,
+	clip_x: float,
+	keep_greater: bool
+) -> Dictionary:
+	if points.is_empty():
 		return {"points": points, "uvs": uvs, "colors": colors}
 	var clipped_points := PackedVector2Array()
 	var clipped_uvs := PackedVector2Array()
@@ -328,11 +376,11 @@ func _clip_polygon_right(
 		var previous_index := posmod(index - 1, points.size())
 		var previous_point := points[previous_index]
 		var current_point := points[index]
-		var previous_inside := previous_point.x <= clip_max_x
-		var current_inside := current_point.x <= clip_max_x
+		var previous_inside := previous_point.x >= clip_x if keep_greater else previous_point.x <= clip_x
+		var current_inside := current_point.x >= clip_x if keep_greater else current_point.x <= clip_x
 		if previous_inside != current_inside:
 			var denominator := current_point.x - previous_point.x
-			var ratio := 0.0 if is_zero_approx(denominator) else clampf((clip_max_x - previous_point.x) / denominator, 0.0, 1.0)
+			var ratio := 0.0 if is_zero_approx(denominator) else clampf((clip_x - previous_point.x) / denominator, 0.0, 1.0)
 			clipped_points.append(previous_point.lerp(current_point, ratio))
 			if not uvs.is_empty():
 				clipped_uvs.append(uvs[previous_index].lerp(uvs[index], ratio))

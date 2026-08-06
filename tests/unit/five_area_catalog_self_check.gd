@@ -13,7 +13,7 @@ func _run() -> void:
 	var expected_slots := {
 		1: &"stock.fresh_soy_milk.yellow_bean", 2: &"stock.fresh_soy_milk.black_bean", 3: &"stock.youtiao.plain_dough",
 		4: &"stock.pancake.meat_floss", 5: &"stock.pancake.ham_sausage", 6: &"stock.pancake.coriander",
-		7: &"stock.pancake.egg", 8: &"stock.pancake.baocui", 9: &"stock.pancake.scallion", 10: &"stock.pancake.pork_tenderloin",
+		7: &"stock.pancake.egg", 8: &"stock.pancake.baocui", 9: &"stock.pancake.scallion", 10: &"stock.pancake.pork_tenderloin", 11: &"stock.pancake.preserved_mustard",
 		16: &"stock.packaged_drink.milk", 17: &"stock.steamer.vegetable_bun", 18: &"stock.steamer.mantou",
 	}
 	for slot_index in range(1, 19):

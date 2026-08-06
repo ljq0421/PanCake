@@ -45,6 +45,18 @@ func queue_snapshot() -> Array[Dictionary]:
 	return _queue.duplicate(true)
 
 
+## Continue-game restore uses the persisted formal order as the sole current
+## customer.  Future customers are generated only after that order leaves the
+## counter, so scene loading never advances the deterministic order stream.
+func restore_active_customer(order: Dictionary, customer_id: StringName = &"customer_01") -> void:
+	_queue.clear()
+	_queue.append({"id": customer_id, "order": order.duplicate(true)})
+
+
+func set_order_provider(next_order_service: RefCounted) -> void:
+	_order_service = next_order_service
+
+
 func _create_customer() -> Dictionary:
 	var customer_id := CUSTOMER_IDS[_customer_cursor % CUSTOMER_IDS.size()]
 	_customer_cursor += 1

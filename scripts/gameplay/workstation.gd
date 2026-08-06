@@ -10,9 +10,11 @@ const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd
 const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_model.gd")
 const INGREDIENT_STOCK_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_stock_model.gd")
 const ORDER_SERVICE_SCRIPT := preload("res://scripts/services/order_service.gd")
+const FIVE_AREA_PANCAKE_ORDER_PROVIDER := preload("res://scripts/services/five_area_pancake_order_provider.gd")
 const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
+const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const CUSTOMER_TEXTURES := {
 	&"customer_01": {
 		&"neutral": preload("res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres"),
@@ -75,6 +77,8 @@ const SPREADER_SPEED_FAST := 1
 @onready var ladle_button: Button = %LadleButton
 @onready var scraper_button: Button = %ScraperButton
 @onready var sauce_brush_button: Button = %SauceBrushButton
+@onready var press_spreader_button: Button = get_node("SafeArea/LeftRack/PressSpreaderButton") as Button
+@onready var automatic_sauce_brush_button: Button = get_node("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
 @onready var sauce_refill_button: Button = %SauceRefillButton
 @onready var sauce_status_label: Label = %SauceStatusLabel
 @onready var fold_button: Button = %FoldButton
@@ -85,6 +89,7 @@ const SPREADER_SPEED_FAST := 1
 @onready var spreader_artwork: Sprite2D = %SpreaderArtwork
 @onready var tool_status_label: Label = %ToolStatusLabel
 @onready var warning_label: Label = %WarningLabel
+@onready var business_day_timer_label: Label = _resolve_business_day_timer_label()
 @onready var warning_tone: AudioStreamPlayer = %DamageWarningTone
 @onready var surface_readout_label: Label = %SurfaceReadoutLabel
 @onready var chili_sauce_refill_button: Button = %ChiliSauceRefillButton
@@ -98,6 +103,8 @@ const SPREADER_SPEED_FAST := 1
 @onready var scallion_button: Button = %ScallionButton
 @onready var meat_floss_button: Button = %MeatFlossButton
 @onready var pork_tenderloin_button: Button = %PorkTenderloinButton
+@onready var coriander_button: Button = get_node("SafeArea/IngredientRack/CorianderButton") as Button
+@onready var preserved_mustard_button: Button = get_node("SafeArea/IngredientRack/PreservedMustardButton") as Button
 @onready var egg_restock_button: Button = %EggRestockButton
 @onready var baocui_restock_button: Button = %BaocuiRestockButton
 @onready var ham_restock_button: Button = %HamRestockButton
@@ -113,6 +120,7 @@ const SPREADER_SPEED_FAST := 1
 @onready var order_heart_fill: Polygon2D = %OrderHeartFill
 @onready var order_patience_bar: ProgressBar = %OrderPatienceBar
 @onready var patience_bar: ProgressBar = %PatienceBar
+@onready var tutorial_guide_label: Label = get_node("SafeArea/BottomStrip/TutorialGuideLabel") as Label
 @onready var phase_label: Label = %PhaseLabel
 @onready var heat_slider: HSlider = %HeatSlider
 @onready var heat_label: Label = %HeatLabel
@@ -152,6 +160,7 @@ const SPREADER_SPEED_FAST := 1
 @onready var summary_view_button: Button = %SummaryViewButton
 @onready var summary_dismiss_button: Button = %SummaryDismissButton
 @onready var daily_bill_panel: PanelContainer = %DailyBillPanel
+@onready var business_day_closed_shield: Control = %BusinessDayClosedShield
 @onready var daily_bill_title_label: Label = %DailyBillTitleLabel
 @onready var daily_bill_stats_label: Label = %DailyBillStatsLabel
 @onready var daily_bill_rows: GridContainer = %DailyBillRows
@@ -175,6 +184,7 @@ var _growth_recommendations: Array[Dictionary] = []
 var _spreader_width_multiplier := 1.0
 var _press_spreader_owned := false
 var _automatic_brush_owned := false
+var _intermediate_griddle_owned := false
 var _press_spreader_used := false
 var _spreader_speed_band := SPREADER_SPEED_MEDIUM
 var _spreader_smoothed_angle := 0.0
@@ -190,7 +200,7 @@ var _squeezing_sauce := false
 var fold_model: RefCounted
 var ingredient_model: IngredientModel
 var ingredient_stock_model
-var order_service: OrderService
+var order_service: RefCounted
 var customer_queue: RefCounted
 var p1_session: P1Session
 var payment_coin_model: RefCounted
@@ -214,6 +224,18 @@ var _payment_flight_sprites: Array[TextureRect] = []
 var _pending_payment_sprites: Array[TextureRect] = []
 var _customer_reaction_tween: Tween
 var _customer_visual_state: StringName = &""
+var business_day_timer: RefCounted
+var _business_day_closed := false
+var _last_persisted_business_second := -1
+
+
+func _resolve_business_day_timer_label() -> Label:
+	# The initial-unlock gameplay scene intentionally hides the inherited
+	# BottomStrip, so its live countdown is a direct SafeArea child instead.
+	var entry_scene_label := get_node_or_null("SafeArea/BusinessDayTimerLabel") as Label
+	if entry_scene_label != null:
+		return entry_scene_label
+	return get_node_or_null("SafeArea/BottomStrip/BusinessDayTimerLabel") as Label
 
 
 func _ready() -> void:
@@ -234,9 +256,31 @@ func _ready() -> void:
 	if game_session != null and game_session.has_method("unlocked_ingredient_ids"):
 		unlocked_ingredient_ids.clear()
 		unlocked_ingredient_ids.assign(game_session.call("unlocked_ingredient_ids"))
-	order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
-	customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
+	var formal_active: Dictionary = {}
+	if game_session != null and game_session.has_method("active_formal_order"):
+		formal_active = Dictionary(game_session.call("active_formal_order"))
+	if game_session != null and game_session.has_method("next_filtered_pancake_order") and bool(game_session.call("is_five_area_save_active")):
+		var five_area_provider: RefCounted = FIVE_AREA_PANCAKE_ORDER_PROVIDER.new(game_session)
+		if formal_active.is_empty():
+			order_service = five_area_provider
+			customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
+		else:
+			# Do not generate a fresh three-customer queue before restoring the
+			# persisted active formal order.
+			order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
+			customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service, 1)
+			var restored_legacy: Dictionary = Dictionary(Dictionary(formal_active.get("metadata", {})).get("legacy_order", {}))
+			customer_queue.call("restore_active_customer", restored_legacy if not restored_legacy.is_empty() else order_service.call("next_order"))
+			customer_queue.call("set_order_provider", five_area_provider)
+	else:
+		order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
+		customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
 	p1_session = P1_SESSION_SCRIPT.new()
+	var business_day_remaining := BUSINESS_DAY_TIMER_SCRIPT.DEFAULT_DURATION_SECONDS
+	if game_session != null and game_session.has_method("business_day_remaining_seconds"):
+		business_day_remaining = float(game_session.call("business_day_remaining_seconds"))
+	business_day_timer = BUSINESS_DAY_TIMER_SCRIPT.new(business_day_remaining)
+	_last_persisted_business_second = ceili(business_day_remaining)
 	payment_coin_model = PAYMENT_COIN_MODEL_SCRIPT.new()
 	_scrape_sampler = StrokeSampler.new(parameters.scraper_sample_spacing)
 	_egg_sampler = StrokeSampler.new(parameters.egg_sample_spacing)
@@ -258,6 +302,8 @@ func _ready() -> void:
 	ladle_button.pressed.connect(_select_ladle)
 	scraper_button.pressed.connect(_select_scraper)
 	sauce_brush_button.pressed.connect(_select_sauce_brush)
+	press_spreader_button.pressed.connect(use_press_spreader)
+	automatic_sauce_brush_button.pressed.connect(use_automatic_sauce_brush)
 	sauce_refill_button.button_down.connect(_on_sauce_squeeze_started)
 	sauce_refill_button.button_up.connect(_on_sauce_squeeze_ended)
 	chili_sauce_refill_button.button_down.connect(_on_chili_sauce_squeeze_started)
@@ -288,6 +334,8 @@ func _ready() -> void:
 	_connect_ingredient_slot(scallion_button, IngredientModel.SCALLION)
 	_connect_ingredient_slot(meat_floss_button, IngredientModel.MEAT_FLOSS)
 	_connect_ingredient_slot(pork_tenderloin_button, IngredientModel.PORK_TENDERLOIN)
+	_connect_ingredient_slot(coriander_button, IngredientModel.CORIANDER)
+	_connect_ingredient_slot(preserved_mustard_button, IngredientModel.PRESERVED_MUSTARD)
 	ingredient_stock_model.changed.connect(_on_ingredient_stock_changed)
 	fold_model.changed.connect(_refresh_fold_ui)
 	tool_controller.tool_changed.connect(_on_tool_changed)
@@ -310,6 +358,8 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	_spreader_width_multiplier = 1.35 if owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader") else 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
+	_intermediate_griddle_owned = int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 1)) >= 2
+	_refresh_growth_tool_buttons()
 
 
 func use_press_spreader() -> Dictionary:
@@ -370,7 +420,21 @@ func use_automatic_sauce_brush() -> Dictionary:
 	return {"success": total_changed > 0, "changed_cells": total_changed}
 
 
+func _refresh_growth_tool_buttons() -> void:
+	if press_spreader_button == null or automatic_sauce_brush_button == null:
+		return
+	press_spreader_button.visible = _press_spreader_owned
+	automatic_sauce_brush_button.visible = _automatic_brush_owned
+	var in_spread := p1_session != null and p1_session.phase == P1Session.Phase.SPREAD and pour_used and not _press_spreader_used
+	press_spreader_button.disabled = not in_spread
+	var in_sauce := p1_session != null and p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+	automatic_sauce_brush_button.disabled = not in_sauce
+
+
 func _process(delta: float) -> void:
+	_advance_business_day_timer(delta)
+	if _business_day_closed:
+		return
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null and game_session.has_method("advance_pancake_holding_tray"):
 		game_session.call("advance_pancake_holding_tray", delta)
@@ -384,6 +448,7 @@ func _process(delta: float) -> void:
 	_simulation_accumulator += delta
 	while _simulation_accumulator + 0.000001 >= parameters.simulation_step_seconds:
 		if pour_used and not _folding_locks_preparation() and _is_active_cooking_phase():
+			pancake_model.cooking_doneness_cap = PANCAKE_SCORER_SCRIPT.heat_target_for(StringName(p1_session.order.get("heat_preference", &"golden"))) if _intermediate_griddle_owned else 1.0
 			pancake_model.advance_cooking(parameters.simulation_step_seconds, p1_session.heat_level)
 		else:
 			pancake_model.advance_solidification(parameters.simulation_step_seconds)
@@ -403,6 +468,45 @@ func _process(delta: float) -> void:
 			_process_sauce_brush(grid_position)
 		ToolController.Tool.FOLD:
 			fold_model.update_drag(grid_position)
+
+
+func _advance_business_day_timer(delta: float) -> void:
+	if business_day_timer == null or _business_day_closed:
+		return
+	var timer_state: Dictionary = business_day_timer.call("advance", delta)
+	var remaining := maxi(int(timer_state.get("remaining_whole_seconds", 0)), 0)
+	var warning_active := bool(timer_state.get("warning_active", false))
+	if business_day_timer_label != null:
+		business_day_timer_label.text = "距离打烊 %02d:%02d · 归零即结算" % [remaining / 60, remaining % 60] if warning_active else "营业倒计时 %02d:%02d" % [remaining / 60, remaining % 60]
+		business_day_timer_label.add_theme_color_override("font_color", Color(1, 0.36, 0.24, 1) if warning_active else Color(1, 0.82, 0.34, 1))
+	if remaining != _last_persisted_business_second:
+		_last_persisted_business_second = remaining
+		var game_session := get_node_or_null("/root/GameSession")
+		if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
+			game_session.call("set_business_day_remaining_seconds", float(timer_state.get("remaining_seconds", 0.0)))
+	if bool(timer_state.get("expired_now", false)):
+		_end_business_day_for_timer()
+
+
+func _end_business_day_for_timer() -> void:
+	if _business_day_closed:
+		return
+	_business_day_closed = true
+	if _handoff_tween != null and _handoff_tween.is_valid():
+		_handoff_tween.kill()
+	if _payment_tween != null and _payment_tween.is_valid():
+		_payment_tween.kill()
+	business_day_closed_shield.visible = true
+	var queued_customers: int = customer_queue.call("queue_snapshot").size() if customer_queue != null else 0
+	var formal_order_abandoned := false
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("abandon_active_formal_order"):
+		formal_order_abandoned = bool(Dictionary(game_session.call("abandon_active_formal_order", &"business_day_expired")).get("success", false))
+	end_business_day({
+		"reason": &"timer_expired",
+		"unserved_customer_count": queued_customers,
+		"formal_order_abandoned": formal_order_abandoned,
+	})
 
 
 func reset_pancake() -> void:
@@ -1272,6 +1376,8 @@ func _refresh_ingredient_stock_ui() -> void:
 		IngredientModel.SCALLION: scallion_button,
 		IngredientModel.MEAT_FLOSS: meat_floss_button,
 		IngredientModel.PORK_TENDERLOIN: pork_tenderloin_button,
+		IngredientModel.CORIANDER: coriander_button,
+		IngredientModel.PRESERVED_MUSTARD: preserved_mustard_button,
 	}
 	var restock_buttons := {
 		IngredientModel.EGG: egg_restock_button,
@@ -1643,11 +1749,15 @@ func _dismiss_order_summary() -> void:
 	_refresh_p1_ui()
 
 
-func end_business_day() -> void:
+func end_business_day(cutoff: Dictionary = {}) -> void:
+	if daily_bill_panel.visible:
+		return
+	_business_day_closed = true
+	business_day_closed_shield.visible = true
 	var game_session := get_node_or_null("/root/GameSession")
 	var bill := {"day": 1, "orders": [], "order_count": 0, "total_coins": 0, "average_score": 0.0}
 	if game_session != null:
-		bill = game_session.call("end_business_day")
+		bill = game_session.call("end_business_day", cutoff)
 	_populate_daily_bill(bill)
 	result_panel.visible = false
 	order_summary_card.visible = false
@@ -1656,11 +1766,16 @@ func end_business_day() -> void:
 
 func _populate_daily_bill(bill: Dictionary) -> void:
 	daily_bill_title_label.text = "第%d日 · 今日账单" % int(bill.get("day", 1))
-	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 平均 %d分 · 声誉 %+d" % [
+	var cutoff: Dictionary = Dictionary(bill.get("cutoff", {}))
+	var cutoff_summary := ""
+	if StringName(cutoff.get("reason", &"")) == &"timer_expired":
+		cutoff_summary = " · 打烊超时 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
+	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
 		int(bill.get("order_count", 0)),
 		int(bill.get("total_coins", 0)),
 		roundi(float(bill.get("average_score", 0.0))),
 		int(bill.get("reputation_delta", 0)),
+		cutoff_summary,
 	]
 	for child in daily_bill_rows.get_children():
 		child.queue_free()
@@ -1842,12 +1957,19 @@ func _refresh_p1_ui() -> void:
 	if p1_session == null or p1_session.order.is_empty():
 		return
 	customer_line_label.text = "“%s”" % str(p1_session.order.customer_line)
+	patience_bar.visible = p1_session.has_patience_countdown
+	order_patience_bar.visible = p1_session.has_patience_countdown
+	tutorial_guide_label.visible = not p1_session.has_patience_countdown
+	if tutorial_guide_label.visible:
+		get_node("SafeArea/BottomStrip").visible = true
+		tutorial_guide_label.text = str(p1_session.order.get("tutorial_guide", "新手指引：本单不计倒计时。"))
 	patience_bar.value = p1_session.patience_ratio() * 100.0
 	_refresh_order_card_ui(p1_session.order, p1_session.patience_ratio())
 	phase_label.text = "当前步骤：%s · 已用时 %.0f秒" % [p1_session.phase_label(), p1_session.elapsed_seconds]
 	heat_label.text = "火力 %d%%" % roundi(p1_session.heat_level * 100.0)
 	if not heat_slider.has_focus():
 		heat_slider.value = p1_session.heat_level * 100.0
+	_refresh_growth_tool_buttons()
 	match p1_session.phase:
 		P1Session.Phase.SPREAD:
 			step_action_button.text = ""

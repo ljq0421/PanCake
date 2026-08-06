@@ -32,6 +32,7 @@ var heat_level := 0.50
 var result: Dictionary = {}
 var payment_ready := false
 var impatient_at_handoff := false
+var has_patience_countdown := true
 
 
 func start(next_order: Dictionary) -> void:
@@ -39,6 +40,7 @@ func start(next_order: Dictionary) -> void:
 	phase = Phase.SPREAD
 	elapsed_seconds = 0.0
 	patience_seconds = float(order.get("time_limit", 72.0))
+	has_patience_countdown = not bool(order.get("tutorial_no_countdown", false))
 	heat_level = 0.50
 	result.clear()
 	payment_ready = false
@@ -51,11 +53,14 @@ func advance_time(delta: float) -> void:
 		return
 	var safe_delta := maxf(delta, 0.0)
 	elapsed_seconds += safe_delta
-	patience_seconds = maxf(patience_seconds - safe_delta, 0.0)
+	if has_patience_countdown:
+		patience_seconds = maxf(patience_seconds - safe_delta, 0.0)
 	changed.emit()
 
 
 func patience_ratio() -> float:
+	if not has_patience_countdown:
+		return 1.0
 	return clampf(patience_seconds / maxf(float(order.get("time_limit", 72.0)), 0.001), 0.0, 1.0)
 
 

@@ -29,6 +29,13 @@ func _run() -> void:
 	var inventory: Dictionary = session.call("inventory_snapshot")
 	_check(inventory.has("stock.pancake.sauce.sweet_flour") and int(inventory.get("stock.pancake.sauce.sweet_flour", 0)) == 6, "sweet flour sauce is normal inventory")
 	_check(inventory.has("stock.packaged_drink.milk") and int(inventory.get("stock.packaged_drink.milk", 1)) == 0, "locked stock is persisted independently from unlock ownership")
+	var queue_first: Dictionary = session.call("next_filtered_pancake_order")
+	var queue_second: Dictionary = session.call("next_filtered_pancake_order")
+	var queue_third: Dictionary = session.call("next_filtered_pancake_order")
+	_check(not bool(queue_first.get("tutorial_no_countdown", false)) and bool(queue_second.get("tutorial_no_countdown", false)) and not bool(queue_third.get("tutorial_no_countdown", false)), "formal pancake queue filters to unlocked stock and reserves the single tutorial for the second customer")
+	var tutorial_result: Dictionary = session.call("record_order_completed", queue_second, {"score": 80.0}, 0)
+	var tutorial_snapshot: Dictionary = progression.call("tutorial_snapshot")
+	_check(bool(tutorial_result.get("success", false)) and str(tutorial_snapshot.get("active_id", "")).is_empty(), "a completed no-countdown tutorial order clears its persisted tutorial state")
 	var formal_open: Dictionary = session.call("open_formal_order", [
 		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [], "heat_preference": &"golden"},
 		{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 1},

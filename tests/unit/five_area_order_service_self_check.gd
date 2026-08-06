@@ -20,6 +20,12 @@ func _run() -> void:
 	var pancake_product := {"product_instance_id": &"product.2", "product_id": &"product.pancake.custom", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": []}
 	var drink_product := {"product_instance_id": &"product.3", "product_id": &"product.packaged_drink.milk"}
 	_check(bool(service.call("attach_product", multi_id, 0, pancake_product).get("success", false)) and bool(service.call("attach_product", multi_id, 1, drink_product).get("success", false)), "formal order routes products to distinct multi-item entries")
+	var sauce_contract: RefCounted = ORDERS.new()
+	var double_sauce: Dictionary = sauce_contract.call("open_pancake_order", {"id": &"order.pancake.double_sauce", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]})
+	_check(bool(double_sauce.get("success", false)), "formal pancake order accepts the confirmed two-sauce maximum")
+	var over_sauce_contract: RefCounted = ORDERS.new()
+	var over_sauced: Dictionary = over_sauce_contract.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "sauce_ids": [&"sauce.one", &"sauce.two", &"sauce.three"]}])
+	_check(not bool(over_sauced.get("success", true)) and over_sauced.get("reason", &"") == &"too_many_sauce_requirements", "formal order rejects a third sauce requirement")
 	var restored: RefCounted = ORDERS.new(service.call("snapshot"))
 	_check(Dictionary(restored.call("active_order")).get("order_id", &"") == multi_id and bool(restored.call("settle_order", multi_id).get("order_success", false)), "active multi-item formal order survives snapshot restore")
 	var wrong: RefCounted = ORDERS.new()

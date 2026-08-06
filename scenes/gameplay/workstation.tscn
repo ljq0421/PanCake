@@ -1963,10 +1963,23 @@ theme_override_font_sizes/font_size = 20
 text = "当前工具：未拿工具"
 vertical_alignment = 1
 
+[node name="BusinessDayTimerLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=2090000010]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 650.0
+offset_top = 2.0
+offset_right = 1010.0
+offset_bottom = 28.0
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 22
+text = "营业倒计时 02:00"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=998117803]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 560.0
+offset_left = 1020.0
 offset_top = 2.0
 offset_right = 1628.0
 offset_bottom = 28.0
@@ -2362,6 +2375,18 @@ theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "收起"
+
+[node name="BusinessDayClosedShield" type="Control" parent="SafeArea" unique_id=2090000011]
+unique_name_in_owner = true
+visible = false
+z_index = 90
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
 
 [node name="DailyBillPanel" type="PanelContainer" parent="SafeArea" unique_id=569511349]
 unique_name_in_owner = true

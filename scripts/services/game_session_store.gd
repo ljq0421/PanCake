@@ -9,10 +9,12 @@ const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
 const SAVE_VERSION := 3
 const SAVE_KIND := "five_area_v1"
+const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_HOLDING_TRAY_MODEL := preload("res://scripts/gameplay/pancake_holding_tray_model.gd")
 const FIVE_AREA_ORDER_SERVICE := preload("res://scripts/services/five_area_order_service.gd")
+const FIVE_AREA_PANCAKE_ORDER_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
 	&"baocui": &"stock.pancake.baocui",
@@ -20,6 +22,8 @@ const LEGACY_PANCAKE_STOCK_IDS := {
 	&"ham_sausage": &"stock.pancake.ham_sausage",
 	&"meat_floss": &"stock.pancake.meat_floss",
 	&"pork_tenderloin": &"stock.pancake.pork_tenderloin",
+	&"coriander": &"stock.pancake.coriander",
+	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 }
 const LEGACY_PANCAKE_SAUCE_STOCK_IDS := {
 	&"sweet_flour": &"stock.pancake.sauce.sweet_flour",
@@ -32,6 +36,8 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"scallion": &"stock.pancake.scallion",
 	&"meat_floss": &"stock.pancake.meat_floss",
 	&"pork_tenderloin": &"stock.pancake.pork_tenderloin",
+	&"coriander": &"stock.pancake.coriander",
+	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 }
 const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
@@ -81,14 +87,18 @@ func begin_new_game() -> Dictionary:
 		"started_at_unix": now,
 		"last_played_at_unix": now,
 		"day_open": true,
+		"business_day_remaining_seconds": BUSINESS_DAY_DURATION_SECONDS,
 		"orders_completed": 0,
 		"today_orders": [],
 		"today_reputation_delta": 0,
+		"today_cutoff": {},
 		"progression": _progression.call("snapshot"),
 		"inventory": _new_inventory_snapshot(),
 		"restock_progress": {},
 		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
 		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
+		"pancake_order_cursor": 0,
+		"pancake_orders_issued_today": 0,
 	}
 	_write_save()
 	progression_changed.emit(five_area_progression_snapshot())
@@ -102,6 +112,19 @@ func continue_game() -> bool:
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
 	return true
+
+
+func business_day_remaining_seconds() -> float:
+	if not has_save():
+		return BUSINESS_DAY_DURATION_SECONDS
+	return clampf(float(_save_data.get("business_day_remaining_seconds", BUSINESS_DAY_DURATION_SECONDS)), 0.0, BUSINESS_DAY_DURATION_SECONDS)
+
+
+func set_business_day_remaining_seconds(remaining_seconds: float) -> void:
+	if not has_save():
+		return
+	_save_data["business_day_remaining_seconds"] = clampf(remaining_seconds, 0.0, BUSINESS_DAY_DURATION_SECONDS)
+	_touch_and_write()
 
 
 func resume_summary() -> String:
@@ -146,6 +169,30 @@ func open_pancake_order(template: Dictionary) -> Dictionary:
 		"sauce_ids": sauce_ids,
 		"heat_preference": StringName(template.get("heat_preference", &"")),
 	}], {"legacy_order": template.duplicate(true)})
+
+
+func next_filtered_pancake_order() -> Dictionary:
+	if not has_save():
+		return {}
+	_ensure_progression()
+	var issued_today := maxi(int(_save_data.get("pancake_orders_issued_today", 0)), 0)
+	var tutorial: Dictionary = Dictionary(_progression.call("tutorial_snapshot"))
+	# A region/device tutorial is reserved for the second queue position.  The
+	# first customer remains a normal order and a single active tutorial cannot
+	# duplicate across the rest of the day.
+	if issued_today != 1:
+		tutorial = {}
+	var generated: Dictionary = FIVE_AREA_PANCAKE_ORDER_GENERATOR.generate(
+		five_area_progression_snapshot(),
+		tutorial,
+		int(_save_data.get("pancake_order_cursor", 0))
+	)
+	if not bool(generated.get("success", false)):
+		return {}
+	_save_data["pancake_order_cursor"] = int(generated.get("next_cursor", 0))
+	_save_data["pancake_orders_issued_today"] = issued_today + 1
+	_touch_and_write()
+	return Dictionary(generated.get("order", {})).duplicate(true)
 
 
 func open_formal_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
@@ -430,12 +477,26 @@ func growth_purchase_status(growth_id: StringName) -> Dictionary:
 	return Dictionary(_progression.call("purchase_status", growth_id)).duplicate(true)
 
 
-func end_business_day() -> Dictionary:
+func abandon_active_formal_order(reason: StringName = &"business_day_expired") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("abandon_active_order", reason)
+	if bool(result.get("success", false)):
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+	return result
+
+
+func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
 	_save_data["day_open"] = false
 	_progression.call("set_day_open", false)
+	_save_data["today_cutoff"] = cutoff.duplicate(true)
+	if StringName(cutoff.get("reason", &"")) == &"timer_expired":
+		_save_data["business_day_remaining_seconds"] = 0.0
 	_ensure_pancake_holding_tray()
 	var tray_waste: Array = _pancake_holding_tray.call("clear_for_day_end")
 	_sync_pancake_holding_tray_to_save()
@@ -455,8 +516,12 @@ func begin_next_business_day() -> Dictionary:
 	if not bool(result.get("success", false)):
 		return result
 	_save_data["day_open"] = true
+	_save_data["business_day_remaining_seconds"] = BUSINESS_DAY_DURATION_SECONDS
 	_save_data["today_orders"] = []
 	_save_data["today_reputation_delta"] = 0
+	_save_data["today_cutoff"] = {}
+	_save_data["pancake_orders_issued_today"] = 0
+	_progression.call("advance_tutorial_for_new_business_day")
 	_sync_progression_to_save()
 	_touch_and_write()
 	progression_changed.emit(five_area_progression_snapshot())
@@ -473,6 +538,9 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 	if str(settled_result.get("grade", "")).is_empty():
 		settled_result["grade"] = _grade_for_score(float(settled_result.get("score", 0.0)))
 	var mastery_result: Dictionary = _progression.call("record_area_result", area_id, settled_result)
+	var tutorial_completion := {}
+	if bool(order.get("tutorial_no_countdown", false)) and float(settled_result.get("score", 0.0)) >= 70.0:
+		tutorial_completion = _progression.call("complete_tutorial", StringName(order.get("tutorial_kind", &"")), StringName(order.get("tutorial_id", &"")))
 	var payment_coins := maxi(earned_coins, 0)
 	var reputation_delta := _reputation_delta_for_result(settled_result)
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
@@ -494,7 +562,7 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 	coins_changed.emit(int(_progression.get("coins")))
 	progression_changed.emit(five_area_progression_snapshot())
 	# Payment coins are credited only when the player collects the visual payment.
-	return {"success": true, "mastery": mastery_result, "pending_payment_coins": payment_coins, "reputation_delta": reputation_delta}
+	return {"success": true, "mastery": mastery_result, "tutorial_completion": tutorial_completion, "pending_payment_coins": payment_coins, "reputation_delta": reputation_delta}
 
 
 func today_bill() -> Dictionary:
@@ -513,6 +581,7 @@ func today_bill() -> Dictionary:
 		"total_coins": total_coins,
 		"average_score": total_score / maxf(float(orders.size()), 1.0),
 		"reputation_delta": int(_save_data.get("today_reputation_delta", 0)),
+		"cutoff": Dictionary(_save_data.get("today_cutoff", {})).duplicate(true),
 	}
 
 
@@ -596,14 +665,22 @@ func _ensure_save_shape() -> void:
 		_save_data["restock_progress"] = {}
 	if not _save_data.has("day_open"):
 		_save_data["day_open"] = true
+	if not _save_data.has("business_day_remaining_seconds"):
+		_save_data["business_day_remaining_seconds"] = BUSINESS_DAY_DURATION_SECONDS
 	if not _save_data.has("today_orders"):
 		_save_data["today_orders"] = []
 	if not _save_data.has("today_reputation_delta"):
 		_save_data["today_reputation_delta"] = 0
+	if not _save_data.has("today_cutoff"):
+		_save_data["today_cutoff"] = {}
 	if not _save_data.has("pancake_holding_tray"):
 		_save_data["pancake_holding_tray"] = PANCAKE_HOLDING_TRAY_MODEL.new().snapshot()
 	if not _save_data.has("formal_orders"):
 		_save_data["formal_orders"] = FIVE_AREA_ORDER_SERVICE.new().snapshot()
+	if not _save_data.has("pancake_order_cursor"):
+		_save_data["pancake_order_cursor"] = 0
+	if not _save_data.has("pancake_orders_issued_today"):
+		_save_data["pancake_orders_issued_today"] = 0
 
 
 func _new_inventory_snapshot() -> Dictionary:

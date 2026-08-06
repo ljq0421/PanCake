@@ -238,6 +238,10 @@ static func _heat_target(preference: StringName) -> float:
 	return 0.64
 
 
+static func heat_target_for(preference: StringName) -> float:
+	return _heat_target(preference)
+
+
 static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio: float) -> String:
 	if tags.has("蛋黄没有摊开") or tags.has("鸡蛋覆盖不足"):
 		return "鸡蛋还没摊开，翻面前要让蛋黄和蛋白铺到更大的饼面。"

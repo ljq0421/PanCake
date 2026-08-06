@@ -28,6 +28,13 @@ var owned_growth_ids: Dictionary = {}
 var area_mastery: Dictionary = {}
 var pending_install_purchase: StringName = &""
 var pending_content_purchase: StringName = &""
+## Tutorial state uses stable region/device IDs and is never inferred from UI.
+var tutorial_completed_area_ids: Dictionary = {}
+var tutorial_queue_area_ids: Array[StringName] = [&"area.pancake"]
+var tutorial_queue_device_ids: Array[StringName] = []
+var tutorial_active_kind: StringName = &"area"
+var tutorial_active_id: StringName = &"area.pancake"
+var tutorial_failure_count_by_id: Dictionary = {}
 
 
 func _init(snapshot: Dictionary = {}) -> void:
@@ -116,6 +123,44 @@ func record_area_result(area_id: StringName, result: Dictionary) -> Dictionary:
 	return {"success": true, "area_id": area_id, "mastery_gained": gained, "mastery": mastery_value(area_id)}
 
 
+func tutorial_snapshot() -> Dictionary:
+	return {
+		"completed_area_ids": _snapshot_id_set(tutorial_completed_area_ids),
+		"queue_area_ids": tutorial_queue_area_ids.duplicate(),
+		"queue_device_ids": tutorial_queue_device_ids.duplicate(),
+		"active_kind": tutorial_active_kind,
+		"active_id": tutorial_active_id,
+		"failure_count_by_id": tutorial_failure_count_by_id.duplicate(true),
+	}
+
+
+func complete_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
+	if tutorial_active_kind != kind or tutorial_active_id != tutorial_id:
+		return {"success": false, "reason": &"tutorial_not_active"}
+	if kind == &"area":
+		tutorial_completed_area_ids[tutorial_id] = true
+		tutorial_queue_area_ids.erase(tutorial_id)
+	elif kind == &"device":
+		tutorial_queue_device_ids.erase(tutorial_id)
+	else:
+		return {"success": false, "reason": &"tutorial_kind_invalid"}
+	tutorial_active_kind = &""
+	tutorial_active_id = &""
+	return {"success": true, "kind": kind, "tutorial_id": tutorial_id}
+
+
+func advance_tutorial_for_new_business_day() -> Dictionary:
+	if not tutorial_active_id.is_empty():
+		return {"success": true, "active_kind": tutorial_active_kind, "active_id": tutorial_active_id}
+	if not tutorial_queue_area_ids.is_empty():
+		tutorial_active_kind = &"area"
+		tutorial_active_id = tutorial_queue_area_ids.front()
+	elif not tutorial_queue_device_ids.is_empty():
+		tutorial_active_kind = &"device"
+		tutorial_active_id = tutorial_queue_device_ids.front()
+	return {"success": true, "active_kind": tutorial_active_kind, "active_id": tutorial_active_id}
+
+
 func begin_next_business_day() -> Dictionary:
 	if day_open:
 		return {"success": false, "reason": &"business_day_open"}
@@ -153,6 +198,7 @@ func snapshot() -> Dictionary:
 		"area_mastery": area_mastery.duplicate(true),
 		"pending_install_purchase": str(pending_install_purchase),
 		"pending_content_purchase": str(pending_content_purchase),
+		"tutorial": tutorial_snapshot(),
 	}
 
 
@@ -172,6 +218,13 @@ func load_snapshot(value: Dictionary) -> void:
 	area_mastery = Dictionary(value.get("area_mastery", {})).duplicate(true)
 	pending_install_purchase = StringName(value.get("pending_install_purchase", ""))
 	pending_content_purchase = StringName(value.get("pending_content_purchase", ""))
+	var tutorial: Dictionary = Dictionary(value.get("tutorial", {}))
+	tutorial_completed_area_ids = _load_id_set(tutorial.get("completed_area_ids", []))
+	tutorial_queue_area_ids = _load_id_array(tutorial.get("queue_area_ids", [&"area.pancake"]))
+	tutorial_queue_device_ids = _load_id_array(tutorial.get("queue_device_ids", []))
+	tutorial_active_kind = StringName(tutorial.get("active_kind", &"area"))
+	tutorial_active_id = StringName(tutorial.get("active_id", &"area.pancake"))
+	tutorial_failure_count_by_id = Dictionary(tutorial.get("failure_count_by_id", {})).duplicate(true)
 
 
 func _evaluate_purchase(growth_id: StringName) -> Dictionary:
@@ -187,6 +240,10 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	var required_area: StringName = definition.get("requires_area_id", &"")
 	if not required_area.is_empty() and not owns_area(required_area):
 		return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"area_locked", "required_area_id": required_area}
+	for required_growth_variant in Array(definition.get("requires_growth_ids", [])):
+		var required_growth_id := StringName(required_growth_variant)
+		if not owns_growth(required_growth_id):
+			return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"growth_requirement", "required_growth_id": required_growth_id}
 	var min_day := int(definition.get("min_day", 1))
 	if current_day < min_day:
 		return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"day_requirement", "min_day": min_day}
@@ -201,9 +258,13 @@ func _apply_growth(growth_id: StringName, definition: Dictionary) -> void:
 	var area_id: StringName = definition.get("area_id", &"")
 	if not area_id.is_empty():
 		unlocked_area_ids[area_id] = true
+		if not tutorial_completed_area_ids.has(area_id) and not tutorial_queue_area_ids.has(area_id):
+			tutorial_queue_area_ids.append(area_id)
 	var device_id: StringName = definition.get("device_id", &"")
 	if not device_id.is_empty():
 		device_tiers[device_id] = maxi(device_tier(device_id), int(definition.get("target_tier", 1)))
+		if definition.get("kind", &"") == &"device_tier" and not tutorial_queue_device_ids.has(device_id):
+			tutorial_queue_device_ids.append(device_id)
 	for recipe_id in definition.get("unlock_recipe_ids", []):
 		unlocked_recipe_ids[recipe_id] = true
 	for stock_id in definition.get("unlock_stock_ids", []):
@@ -236,6 +297,15 @@ func _load_id_set(source: Variant) -> Dictionary:
 	var result := {}
 	for value in Array(source):
 		result[StringName(value)] = true
+	return result
+
+
+func _load_id_array(source: Variant) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for raw_id in Array(source):
+		var id := StringName(raw_id)
+		if not id.is_empty() and not result.has(id):
+			result.append(id)
 	return result
 
 

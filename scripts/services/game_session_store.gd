@@ -25,6 +25,14 @@ const LEGACY_PANCAKE_SAUCE_STOCK_IDS := {
 	&"sweet_flour": &"stock.pancake.sauce.sweet_flour",
 	&"red_chili": &"stock.pancake.sauce.red_chili",
 }
+const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
+	&"egg": &"stock.pancake.egg",
+	&"baocui": &"stock.pancake.baocui",
+	&"ham_sausage": &"stock.pancake.ham_sausage",
+	&"scallion": &"stock.pancake.scallion",
+	&"meat_floss": &"stock.pancake.meat_floss",
+	&"pork_tenderloin": &"stock.pancake.pork_tenderloin",
+}
 const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
 	"sfx_volume": 85.0,
@@ -94,6 +102,14 @@ func continue_game() -> bool:
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 	_write_save()
 	return true
+
+
+func resume_summary() -> String:
+	if not has_save():
+		return "还没有营业记录，新游戏会从第一位顾客开始。"
+	var timestamp := int(_save_data.get("last_played_at_unix", 0))
+	var orders := int(_save_data.get("orders_completed", 0))
+	return "上次营业  %s  ·  已完成 %d 单" % [_format_timestamp(timestamp), orders]
 
 
 func reset_incompatible_development_save() -> Dictionary:
@@ -223,16 +239,102 @@ func five_area_progression_snapshot() -> Dictionary:
 	return Dictionary(_progression.call("snapshot")).duplicate(true)
 
 
-## Kept temporarily so unrelated title UI can query a snapshot.  It is no
-## longer a write path for the retired three-device adapter.
-func workstation_progression_snapshot() -> Dictionary:
-	return five_area_progression_snapshot()
-
-
 func inventory_snapshot() -> Dictionary:
 	if not has_save():
 		return _new_inventory_snapshot()
 	return Dictionary(_save_data.get("inventory", {})).duplicate(true)
+
+
+func five_area_restock_status(stock_id: StringName) -> Dictionary:
+	_ensure_progression()
+	var definition := CATALOG.stock_definition(stock_id)
+	if definition.is_empty():
+		return {"success": false, "reason": &"unknown_stock", "stock_id": stock_id}
+	if not _progression.call("owns_stock", stock_id):
+		return {"success": false, "reason": &"stock_locked", "stock_id": stock_id}
+	var inventory := inventory_snapshot()
+	var key := str(stock_id)
+	var capacity := maxi(int(definition.get("restock_capacity", 0)), 0)
+	if capacity <= 0:
+		return {"success": false, "reason": &"restock_unavailable", "stock_id": stock_id}
+	var unit_seconds := maxf(float(definition.get("refill_seconds", 0.0)), 0.001)
+	return {
+		"success": true,
+		"reason": &"",
+		"stock_id": stock_id,
+		"unit_cost": maxi(int(definition.get("restock_unit_cost", 0)), 0),
+		"unit_seconds": unit_seconds,
+		"current_stock": maxi(int(inventory.get(key, 0)), 0),
+		"capacity": capacity,
+		"progress_seconds": maxf(float(Dictionary(_save_data.get("restock_progress", {})).get(key, 0.0)), 0.0),
+		"coins": maxi(int(_progression.get("coins")), 0),
+	}
+
+
+func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save", "stock_id": stock_id}
+	var status := five_area_restock_status(stock_id)
+	if not bool(status.get("success", false)):
+		return status
+	var current := int(status.get("current_stock", 0))
+	var capacity := int(status.get("capacity", 0))
+	var unit_cost := int(status.get("unit_cost", 0))
+	var unit_seconds := float(status.get("unit_seconds", 0.001))
+	if current >= capacity:
+		return _five_area_restock_result(status, false, &"capacity_reached", 0, 0)
+	if int(_progression.get("coins")) < unit_cost:
+		return _five_area_restock_result(status, false, &"insufficient_coins", 0, 0)
+	var progress_by_stock := Dictionary(_save_data.get("restock_progress", {})).duplicate(true)
+	var stock_key := str(stock_id)
+	var progress := maxf(float(progress_by_stock.get(stock_key, 0.0)), 0.0) + maxf(delta, 0.0)
+	var inventory := inventory_snapshot()
+	var completed_units := 0
+	var charged_coins := 0
+	var reason: StringName = &""
+	while progress + 0.0000001 >= unit_seconds:
+		current = maxi(int(inventory.get(stock_key, 0)), 0)
+		if current >= capacity:
+			reason = &"capacity_reached"
+			progress = 0.0
+			break
+		if int(_progression.get("coins")) < unit_cost:
+			reason = &"insufficient_coins"
+			progress = 0.0
+			break
+		inventory[stock_key] = current + 1
+		_progression.set("coins", int(_progression.get("coins")) - unit_cost)
+		progress = maxf(progress - unit_seconds, 0.0)
+		completed_units += 1
+		charged_coins += unit_cost
+	if reason.is_empty() and int(inventory.get(stock_key, 0)) >= capacity:
+		reason = &"capacity_reached"
+		progress = 0.0
+	progress_by_stock[stock_key] = progress
+	_save_data["inventory"] = _normalize_inventory(inventory)
+	_save_data["restock_progress"] = progress_by_stock
+	_sync_progression_to_save()
+	_touch_and_write()
+	if completed_units > 0:
+		coins_changed.emit(int(_progression.get("coins")))
+		inventory_changed.emit(inventory_snapshot())
+		progression_changed.emit(five_area_progression_snapshot())
+	var result_status := five_area_restock_status(stock_id)
+	return _five_area_restock_result(result_status, true, reason, completed_units, charged_coins)
+
+
+func stable_pancake_stock_id(ingredient_id: StringName) -> StringName:
+	return PANCAKE_LEGACY_TO_STABLE_STOCK_IDS.get(ingredient_id, &"") as StringName
+
+
+func _five_area_restock_result(status: Dictionary, success: bool, reason: StringName, completed_units: int, charged_coins: int) -> Dictionary:
+	var result := status.duplicate(true)
+	result["success"] = success
+	result["reason"] = reason
+	result["completed_units"] = completed_units
+	result["charged_coins"] = charged_coins
+	result["auto_stopped"] = not reason.is_empty()
+	return result
 
 
 func pancake_legacy_inventory_snapshot() -> Dictionary:
@@ -291,10 +393,6 @@ func save_inventory(snapshot: Dictionary) -> Dictionary:
 	_touch_and_write()
 	inventory_changed.emit(normalized.duplicate(true))
 	return {"success": true, "inventory": normalized.duplicate(true)}
-
-
-func save_workstation_progression(_retired_snapshot: Dictionary) -> Dictionary:
-	return {"success": false, "reason": &"retired_legacy_progression_write"}
 
 
 func credit_coins(amount: int) -> int:
@@ -566,6 +664,13 @@ func _set_bus_volume(bus_name: StringName, percent: float) -> void:
 	var normalized := clampf(percent / 100.0, 0.0, 1.0)
 	AudioServer.set_bus_mute(bus_index, normalized <= 0.0001)
 	AudioServer.set_bus_volume_db(bus_index, linear_to_db(maxf(normalized, 0.0001)))
+
+
+func _format_timestamp(timestamp: int) -> String:
+	if timestamp <= 0:
+		return "未知时间"
+	var datetime := Time.get_datetime_dict_from_unix_time(timestamp)
+	return "%04d/%02d/%02d  %02d:%02d" % [datetime.year, datetime.month, datetime.day, datetime.hour, datetime.minute]
 
 
 func _reputation_delta_for_result(result: Dictionary) -> int:

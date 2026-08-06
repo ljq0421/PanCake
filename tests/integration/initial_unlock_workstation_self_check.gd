@@ -69,12 +69,13 @@ func _check_five_zone_layout(workstation: Node) -> void:
 	var customer := workstation.get_node_or_null("SafeArea/CustomerPortrait") as Control
 	var order_card := workstation.get_node_or_null("SafeArea/OrderCard") as Control
 	_check(_rect_matches(customer, Rect2(800.0, 222.0, 270.0, 406.0)), "customer remains close while ending above the countertop edge")
-	_check(_rect_matches(order_card, Rect2(1240.0, 190.0, 300.0, 370.0)) and order_card.texture != null and order_card.texture.resource_path.ends_with("order_card_multi_dish_v2.png"), "the compact multi-dish order card is positioned beside the customer without covering the tutorial strip")
+	_check(_rect_matches(order_card, Rect2(1240.0, 190.0, 300.0, 370.0)) and order_card.texture != null and order_card.texture.resource_path.ends_with("order_card_multi_dish_v3.png"), "the compact multi-dish order card is positioned beside the customer without covering the tutorial strip")
 	var payment_coin := workstation.get_node_or_null("SafeArea/OrderCard/OrderCoinIcon") as TextureRect
 	var payment_amount := workstation.get_node_or_null("SafeArea/OrderCard/OrderAmountLabel") as Label
-	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeart") as Label
+	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
 	var order_patience := workstation.get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
 	_check(payment_coin != null and payment_amount != null and heart != null and order_patience != null, "order card owns scene-defined payment and patience widgets")
+	_check(heart != null and heart.position.distance_to(Vector2(56.0, 289.0)) <= 0.05 and heart.polygon.size() == 12 and _rect_matches(order_patience, Rect2(84.0, 288.0, 156.0, 13.0)), "heart and patience fills align with the compact card's printed inner slots")
 	for icon_index in 8:
 		var icon := workstation.get_node_or_null("SafeArea/OrderCard/OrderIngredient%02d" % (icon_index + 1)) as TextureRect
 		_check(icon != null, "OrderIngredient%02d is a stable ingredient slot" % (icon_index + 1))
@@ -85,7 +86,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 	var amount := workstation.get_node_or_null("SafeArea/OrderCard/OrderAmountLabel") as Label
 	var first_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish1") as TextureRect
 	var second_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish2") as TextureRect
-	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeart") as Label
+	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
 	var patience := workstation.get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
 	_check(coin != null and coin.visible and coin.texture != null and amount != null and not amount.text.is_empty(), "runtime order data fills the coin and amount in the card header")
 	_check(first_dish != null and first_dish.visible and first_dish.texture != null and second_dish != null and not second_dish.visible, "a current single-dish order fills only the first of two reserved dish wells")

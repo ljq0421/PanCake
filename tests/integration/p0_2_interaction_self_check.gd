@@ -36,13 +36,14 @@ func _run() -> void:
 
 	workstation.scraper_button.pressed.emit()
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER, "clicking spreader button selects the T-shaped spreader")
-	surface.pointer_local_position = Vector2(300, 300)
+	surface.pointer_local_position = surface.size * 0.5
 	workstation._update_spreader_artwork(0.0)
 	_check(workstation.spreader_artwork.visible, "formal spreader artwork becomes visible over the griddle")
 	_check(workstation.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1.png", "T-shaped spreader uses the approved artwork")
+	_check(workstation.parameters.scraper_width >= 76.0 and workstation.parameters.spreader_bar_thickness >= 18.0, "T-spreader has a forgiving contact footprint")
 	_check(workstation.parameters.spreader_min_circularity <= 0.20, "spreading accepts a very loose curved gesture instead of requiring a near-perfect circle")
-	_check(workstation.parameters.spreader_inward_tolerance >= 16.0, "spreading tolerates broad inward hand wobble")
-	_check(workstation.parameters.spreader_direction_grace_samples >= 4, "several brief off-angle samples receive direction grace")
+	_check(workstation.parameters.spreader_inward_tolerance >= 40.0, "spreading tolerates broad inward hand wobble")
+	_check(workstation.parameters.spreader_direction_grace_samples >= 12, "several brief off-angle samples receive direction grace")
 	workstation._spreader_speed_initialized = false
 	workstation._spreader_speed_band = Workstation.SPREADER_SPEED_MEDIUM
 	workstation._update_spreader_speed(2.0, 1.0 / 60.0)
@@ -58,7 +59,7 @@ func _run() -> void:
 	surface.pointer_local_position = pan_center + Vector2(100, 0)
 	workstation._update_spreader_artwork(0.0)
 	var rotation_before_dead_zone := workstation.spreader_artwork.rotation
-	surface.pointer_local_position = pan_center + Vector2.from_angle(0.08) * 100.0
+	surface.pointer_local_position = pan_center + Vector2.from_angle(0.04) * 100.0
 	workstation._update_spreader_artwork(1.0 / 60.0)
 	_check(is_equal_approx(workstation.spreader_artwork.rotation, rotation_before_dead_zone), "small pointer-angle jitter stays inside the T-spreader rotation dead zone")
 	var rotation_before := workstation.spreader_artwork.rotation
@@ -127,6 +128,14 @@ func _run() -> void:
 	_check(not workstation.spreader_artwork.visible, "returning the spreader hides its artwork")
 	_check(not surface.pointer_pressed, "release/cancel leaves no stuck pointer state")
 	_check(workstation.pancake_model.validate().is_empty(), "scene interaction leaves model fields valid")
+	var discard_elapsed := workstation.p1_session.elapsed_seconds
+	var discard_patience := workstation.p1_session.patience_seconds
+	var discard_order_id: StringName = StringName(workstation.p1_session.order.get("id", &""))
+	workstation.discard_current_pancake_button.pressed.emit()
+	_check(workstation.discard_current_pancake_button.visible and workstation.discard_current_pancake_button.get_global_rect().position.x > 1400.0, "trash can is available in the page's lower-right corner")
+	_check(workstation.p1_session.phase == P1Session.Phase.SPREAD and workstation.p1_session.order.id == discard_order_id, "trash can restarts the same current order")
+	_check(is_equal_approx(workstation.p1_session.elapsed_seconds, discard_elapsed) and is_equal_approx(workstation.p1_session.patience_seconds, discard_patience), "trash can preserves customer waiting time")
+	_check(workstation.pancake_model.covered_cell_count() == 0 and not workstation.ingredient_model.has_type(IngredientModel.SCALLION), "trash can clears the discarded pancake data")
 	workstation.reset_pancake()
 	_check(not workstation.pour_used and not workstation.ladle_button.disabled, "reset restores the single pour allowance")
 

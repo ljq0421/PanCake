@@ -9,7 +9,6 @@ const FIVE_AREA_PANCAKE_PRODUCTION_SERVICE := preload("res://scripts/services/fi
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_model.gd")
 const INGREDIENT_STOCK_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_stock_model.gd")
-const EXPANSION_CATALOG := preload("res://scripts/data/workstation_expansion_catalog.gd")
 const ORDER_SERVICE_SCRIPT := preload("res://scripts/services/order_service.gd")
 const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
@@ -111,13 +110,14 @@ const SPREADER_SPEED_FAST := 1
 @onready var order_amount_label: Label = %OrderAmountLabel
 @onready var order_dish_icons: Array[TextureRect] = [%OrderDish1, %OrderDish2]
 @onready var order_ingredient_icons: Array[TextureRect] = [%OrderIngredient01, %OrderIngredient02, %OrderIngredient03, %OrderIngredient04, %OrderIngredient05, %OrderIngredient06, %OrderIngredient07, %OrderIngredient08]
-@onready var order_heart: Label = %OrderHeart
+@onready var order_heart_fill: Polygon2D = %OrderHeartFill
 @onready var order_patience_bar: ProgressBar = %OrderPatienceBar
 @onready var patience_bar: ProgressBar = %PatienceBar
 @onready var phase_label: Label = %PhaseLabel
 @onready var heat_slider: HSlider = %HeatSlider
 @onready var heat_label: Label = %HeatLabel
 @onready var step_action_button: Button = %StepActionButton
+@onready var discard_current_pancake_button: Button = %DiscardCurrentPancakeButton
 @onready var packaging_choices: Control = %PackagingChoices
 @onready var bag_button: Button = %BagButton
 @onready var serve_button: Button = %ServeButton
@@ -221,7 +221,7 @@ func _ready() -> void:
 		parameters = PancakeSimulationParameters.new()
 	pancake_model = PancakeModel.new(parameters.grid_size, parameters)
 	ingredient_model = INGREDIENT_MODEL_SCRIPT.new()
-	ingredient_stock_model = INGREDIENT_STOCK_MODEL_SCRIPT.new(_saved_ingredient_stock(), EXPANSION_CATALOG.stock_ids())
+	ingredient_stock_model = INGREDIENT_STOCK_MODEL_SCRIPT.new(_saved_ingredient_stock(), IngredientModel.TYPES)
 	fold_model = FOLD_MODEL_SCRIPT.new(pancake_model, ingredient_model)
 	var unlocked_ingredient_ids: Array[StringName] = IngredientModel.TYPES.duplicate()
 	if has_meta(&"unlocked_ingredient_ids"):
@@ -280,6 +280,7 @@ func _ready() -> void:
 	for ticket_index in growth_ticket_buttons.size():
 		growth_ticket_buttons[ticket_index].pressed.connect(_on_growth_ticket_pressed.bind(ticket_index))
 	step_action_button.pressed.connect(_advance_p1_step)
+	discard_current_pancake_button.pressed.connect(_discard_current_pancake)
 	heat_slider.value_changed.connect(_on_heat_changed)
 	_connect_ingredient_slot(egg_button, IngredientModel.EGG)
 	_connect_ingredient_slot(baocui_button, IngredientModel.BAOCUI)
@@ -305,9 +306,10 @@ func _ready() -> void:
 
 func apply_progression_effects(snapshot: Dictionary) -> void:
 	var owned_items := Array(snapshot.get("owned_items", []))
-	_spreader_width_multiplier = 1.35 if owned_items.has("tool.spreader.wide") else 1.0
-	_press_spreader_owned = owned_items.has("tool.spreader.press_once")
-	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic")
+	var owned_growth_ids := Array(snapshot.get("owned_growth_ids", []))
+	_spreader_width_multiplier = 1.35 if owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader") else 1.0
+	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
+	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
 
 
 func use_press_spreader() -> Dictionary:
@@ -445,6 +447,18 @@ func reset_pancake() -> void:
 	egg_crack_artwork.visible = false
 	_ingredient_drag_type = &""
 	_log_info(&"simulation", "Pancake grid reset in %d us" % pancake_model.last_update_usec)
+
+
+func _discard_current_pancake() -> void:
+	if p1_session == null or p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]:
+		return
+	var elapsed_seconds := p1_session.elapsed_seconds
+	var patience_seconds := p1_session.patience_seconds
+	reset_pancake()
+	p1_session.elapsed_seconds = elapsed_seconds
+	p1_session.patience_seconds = patience_seconds
+	p1_session.changed.emit()
+	tool_status_label.text = "已丢弃当前煎饼；顾客仍在等待，请重新制作"
 
 
 func set_heatmap_field(field_name: StringName) -> void:
@@ -1090,6 +1104,7 @@ func _advance_p1_step() -> void:
 			action_result = p1_session.request_flip(pancake_model, ingredient_model)
 			if bool(action_result.success):
 				tool_controller.clear_tool()
+				egg_crack_artwork.visible = false
 				tool_status_label.text = "翻面完成：现在直接挤酱并放入小料"
 				kitchen_audio.call("play_cue", &"flip")
 		P1Session.Phase.SECOND_SIDE:
@@ -1693,7 +1708,7 @@ func _refresh_growth_section(message: String = "") -> void:
 			button.visible = false
 		begin_next_day_button.disabled = true
 		return
-	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot") if game_session.has_method("five_area_progression_snapshot") else game_session.call("workstation_progression_snapshot")
+	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
 	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 2)
 	for recommendation in Array(grouped_recommendations.get("install", [])).slice(0, 2):
 		var install_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
@@ -1820,7 +1835,7 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	order_coin_icon.visible = coin_total > 0
 	order_amount_label.text = str(coin_total)
 	order_patience_bar.value = clampf(patience_ratio, 0.0, 1.0) * 100.0
-	order_heart.modulate = Color.WHITE if patience_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
+	order_heart_fill.modulate = Color.WHITE if patience_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
 
 
 func _refresh_p1_ui() -> void:
@@ -1862,7 +1877,16 @@ func _refresh_p1_ui() -> void:
 		P1Session.Phase.FOLD,
 	]
 	step_action_button.disabled = false
+	step_action_button.tooltip_text = ""
+	if p1_session.phase == P1Session.Phase.FIRST_SIDE:
+		var flip_readiness := p1_session.flip_readiness(pancake_model, ingredient_model)
+		var can_flip := bool(flip_readiness.get("success", false))
+		step_action_button.disabled = not can_flip
+		if not can_flip:
+			step_action_button.text = "翻面（尚未就绪）"
+			step_action_button.tooltip_text = str(flip_readiness.get("reason", "请先完成翻面准备"))
 	serve_product_button.visible = p1_session.phase == P1Session.Phase.READY_TO_SERVE
+	discard_current_pancake_button.visible = p1_session.phase not in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
 	store_pancake_button.visible = serve_product_button.visible and pancake_holding_tray.visible
 	var transaction_phase := p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
 	p1_control_bar.visible = not transaction_phase and not _result_detail_open

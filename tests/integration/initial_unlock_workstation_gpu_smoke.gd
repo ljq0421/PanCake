@@ -22,16 +22,18 @@ func _run() -> void:
 	var game_session := root.get_node_or_null("GameSession")
 	if game_session != null:
 		game_session.call("begin_new_game")
+		game_session.call("credit_coins", 20)
+		var initial_inventory: Dictionary = game_session.call("inventory_snapshot")
+		initial_inventory["stock.pancake.egg"] = 2
+		initial_inventory["stock.pancake.baocui"] = 2
+		initial_inventory["stock.pancake.scallion"] = 2
+		game_session.call("save_inventory", initial_inventory)
 	var game := MAIN_SCENE.instantiate()
 	root.add_child(game)
 	for _frame in 12:
 		await process_frame
 	var workstation := game.get_node("Workstation")
-	var adapter := workstation.get_node("SafeArea/InitialUnlockAdapter")
-	adapter.call("apply_progression_snapshot", {
-		"coins": 20,
-		"ingredient_stock": {"egg": 2, "baocui": 2, "ham_sausage": 0, "scallion": 2},
-	})
+	var controller := workstation.get_node("SafeArea/PancakeWorkstationInteractionController")
 	await process_frame
 	await process_frame
 	var locked_click_layers := workstation.get_node("SafeArea/FiveAreaStationClickLayers") as Control
@@ -80,13 +82,14 @@ func _run() -> void:
 	_check(bool(egg.get_meta(&"refill_enabled", false)), "the real main-game egg tray supports direct hold refill")
 	_check(is_equal_approx(float(egg.get("hold_threshold_seconds")), 0.1), "the real main-game egg tray uses the 0.1-second hold threshold")
 	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout/RightZone/RefillDrawer") == null, "the real main-game workstation has no refill drawer")
-	var egg_unit_seconds := float(adapter.call("refill_service").call("status", &"egg").unit_seconds)
+	var egg_stock := &"stock.pancake.egg"
+	var egg_unit_seconds := float(controller.get("_restock").call("status", egg_stock).unit_seconds)
 	_check(is_equal_approx(egg_unit_seconds, 0.20), "real main-game egg refill uses the six-times-speed 0.20-second per-unit duration")
-	var refill_service: RefCounted = adapter.call("refill_service")
+	var refill_service: RefCounted = controller.get("_restock")
 	var egg_tray_center := egg.get_global_rect().get_center()
 	_press_at(egg_tray_center)
 	await process_frame
-	var first_hold_started := await _wait_until(func() -> bool: return StringName(adapter.get("_active_refill_stock_id")) == &"egg", 0.50)
+	var first_hold_started := await _wait_until(func() -> bool: return StringName(controller.get("_active_refill_stock_id")) == egg_stock, 0.50)
 	_check(first_hold_started, "an unmoved real GUI press starts refill directly on the egg tray")
 	var first_unit_completed := await _wait_until(func() -> bool: return int(stock_model.call("current", &"egg")) >= 2, 0.10 + egg_unit_seconds + 0.50)
 	_release_at(egg_tray_center)
@@ -95,9 +98,9 @@ func _run() -> void:
 
 	_press_at(egg_tray_center)
 	await process_frame
-	var partial_hold_started := await _wait_until(func() -> bool: return StringName(adapter.get("_active_refill_stock_id")) == &"egg", 0.50)
+	var partial_hold_started := await _wait_until(func() -> bool: return StringName(controller.get("_active_refill_stock_id")) == egg_stock, 0.50)
 	var partial_progress_reached := await _wait_until(
-		func() -> bool: return float(refill_service.call("status", &"egg").progress_seconds) >= egg_unit_seconds * 0.30,
+		func() -> bool: return float(refill_service.call("status", egg_stock).progress_seconds) >= egg_unit_seconds * 0.30,
 		egg_unit_seconds,
 	)
 	var outside_tray := egg_tray_center + Vector2(-180.0, 0.0)
@@ -105,17 +108,17 @@ func _run() -> void:
 	await process_frame
 	_release_at(outside_tray)
 	await process_frame
-	var saved_progress := float(refill_service.call("status", &"egg").progress_seconds)
-	_check(partial_hold_started and partial_progress_reached and StringName(adapter.get("_active_refill_stock_id")) == &"" and int(stock_model.call("current", &"egg")) == 2 and saved_progress >= egg_unit_seconds * 0.30 and saved_progress < egg_unit_seconds, "real GUI release outside the tray still stops refill and keeps unfinished time internally")
+	var saved_progress := float(refill_service.call("status", egg_stock).progress_seconds)
+	_check(partial_hold_started and partial_progress_reached and StringName(controller.get("_active_refill_stock_id")) == &"" and int(stock_model.call("current", &"egg")) == 2 and saved_progress >= egg_unit_seconds * 0.30 and saved_progress < egg_unit_seconds, "real GUI release outside the tray still stops refill and keeps unfinished time internally")
 	_press_at(egg_tray_center)
 	await process_frame
-	var resumed_hold_started := await _wait_until(func() -> bool: return StringName(adapter.get("_active_refill_stock_id")) == &"egg", 0.50)
+	var resumed_hold_started := await _wait_until(func() -> bool: return StringName(controller.get("_active_refill_stock_id")) == egg_stock, 0.50)
 	var resumed_unit_completed := await _wait_until(func() -> bool: return int(stock_model.call("current", &"egg")) >= 3, egg_unit_seconds + 0.50)
 	_release_at(egg_tray_center)
 	await process_frame
 	_check(resumed_hold_started and resumed_unit_completed and int(stock_model.call("current", &"egg")) == 3, "a later real GUI hold resumes the saved partial portion")
-	var progression: RefCounted = adapter.get("progression")
-	_check(int(progression.get("coins")) == 18, "two completed real-time portions deduct exactly two unit costs")
+	var progression: Dictionary = game_session.call("five_area_progression_snapshot")
+	_check(int(progression.get("coins", 0)) == 18, "two completed real-time portions deduct exactly two formal coins")
 	var egg_artwork := egg.get_node("Artwork") as TextureRect
 	_check(egg_artwork.texture != null and egg_artwork.texture.resource_path.ends_with("egg_stock_3_v1.png"), "the clickable egg well updates to the third real stock artwork after refill")
 

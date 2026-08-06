@@ -59,6 +59,10 @@ func _run() -> void:
 	workstation._process(1.0 / 60.0)
 	_release_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	_check(workstation.fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT), "dragging the left edge over its line commits the left fold")
+	_check(
+		is_inf(float(workstation.fold_overlay.call("left_fold_clip_max_x"))),
+		"the completed left flap remains whole until the right flap reaches its tail"
+	)
 	_check(workstation.fold_overlay.is_fold_animation_active(), "committing a fold starts the visible completion and soft-settle animation")
 	await create_timer(0.65).timeout
 	_check(not workstation.fold_overlay.is_fold_animation_active(), "fold completion animation settles back to a stable rendered state")
@@ -67,10 +71,30 @@ func _run() -> void:
 	_check(workstation.scraper_button.disabled and workstation.sauce_brush_button.disabled, "starting a fold locks earlier preparation tools")
 
 	_press_surface(surface, _scaled_surface_point(surface, Vector2(490, 300)))
+	_move_surface(surface, _scaled_surface_point(surface, Vector2(390, 300)))
+	workstation._process(1.0 / 60.0)
+	var moving_right_edge := float(workstation.fold_overlay.call("right_fold_outer_edge_x", float(workstation.fold_model.drag_progress)))
+	var landed_right_edge := float(workstation.fold_overlay.call("right_fold_outer_edge_x", 1.0))
+	_check(
+		is_equal_approx(
+			float(workstation.fold_overlay.call("left_fold_clip_max_x")),
+			moving_right_edge
+		),
+		"the moving right flap clips the left tail at its current outer edge"
+	)
+	_check(moving_right_edge > landed_right_edge + 1.0, "the left-tail clip advances progressively as the right flap folds inward")
 	_move_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	workstation._process(1.0 / 60.0)
 	_release_surface(surface, _scaled_surface_point(surface, Vector2(300, 300)))
 	_check(workstation.fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT), "dragging the right edge over its line commits the right fold")
+	await create_timer(0.65).timeout
+	_check(
+		is_equal_approx(
+			float(workstation.fold_overlay.call("left_fold_clip_max_x")),
+			landed_right_edge
+		),
+		"after the right fold lands, the left tail is clipped at the final right outer edge"
+	)
 	_check(not workstation.paper_sleeve_button.disabled and not workstation.tray_button.disabled, "completed non-severe folds expose both safe completion choices")
 	workstation.paper_sleeve_button.pressed.emit()
 	_check(workstation.fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_SLEEVE, "paper sleeve completes the real workstation path")

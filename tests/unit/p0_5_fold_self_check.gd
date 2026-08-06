@@ -1,6 +1,7 @@
 extends SceneTree
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
+const INGREDIENT_LAYER_SCRIPT := preload("res://scripts/ui/ingredient_layer.gd")
 
 var _failures := PackedStringArray()
 
@@ -11,6 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_drag_must_cross_fold_line()
+	_test_fold_occludes_landing_area_fillings()
 	_test_material_conditions_create_distinct_results()
 	_test_damage_keeps_its_regional_effect()
 	_test_rescue_paths_never_dead_end()
@@ -28,6 +30,28 @@ func _test_drag_must_cross_fold_line() -> void:
 	_check(float(fold.drag_progress) > 0.0 and not fold.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT), "drag updates deformation before release without auto-completing")
 	var committed: Dictionary = fold.release_drag(Vector2(34, 32))
 	_check(bool(committed.committed) and committed.outcome == FOLD_MODEL_SCRIPT.OUTCOME_INTACT, "crossing the line and releasing commits an intact fold")
+
+
+func _test_fold_occludes_landing_area_fillings() -> void:
+	var model := _uniform_pancake(64, 0.55, 0.55)
+	var ingredients := IngredientModel.new()
+	var layer: IngredientLayer = INGREDIENT_LAYER_SCRIPT.new()
+	layer.size = Vector2(600.0, 600.0)
+	_check(
+		bool(ingredients.place(IngredientModel.BAOCUI, Vector2(12, 32), 0.0, model).success)
+		and bool(ingredients.place(IngredientModel.SCALLION, Vector2(32, 32), 0.0, model).success),
+		"test fillings can be placed on the flap source and its landing area"
+	)
+	var fold: RefCounted = FOLD_MODEL_SCRIPT.new(model, ingredients)
+	layer.set_model(ingredients)
+	layer.set_fold_model(fold)
+	_fold_left(fold)
+	_check(
+		layer.visual_alpha_for(IngredientModel.BAOCUI) <= 0.001
+		and layer.visual_alpha_for(IngredientModel.SCALLION) <= 0.001,
+		"a completed left fold hides fillings from both the lifted flap and its covered landing area"
+	)
+	layer.free()
 
 
 func _test_material_conditions_create_distinct_results() -> void:

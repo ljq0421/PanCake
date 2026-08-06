@@ -5,6 +5,7 @@ signal changed
 
 const IMPATIENT_RATIO_THRESHOLD := 0.30
 const SATISFIED_SCORE_THRESHOLD := 70.0
+const MINIMUM_FLIP_DONENESS := 0.30
 const REACTION_NEUTRAL: StringName = &"neutral"
 const REACTION_IMPATIENT: StringName = &"impatient"
 const REACTION_SATISFIED: StringName = &"satisfied"
@@ -82,23 +83,20 @@ func confirm_spread(model: PancakeModel) -> Dictionary:
 
 
 func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictionary:
-	if phase != Phase.FIRST_SIDE:
-		return {"success": false, "reason": "当前还不能翻面"}
-	if not ingredients.has_type(IngredientModel.EGG):
-		return {"success": false, "reason": "翻面前先把鸡蛋打到饼面"}
-	if not model.is_egg_spread_enough():
-		var egg_summary := model.calculate_egg_spread_summary()
-		if not bool(egg_summary.yolk_broken):
-			return {"success": false, "reason": "先用 T 形摊面器把蛋黄摊开"}
-		return {
-			"success": false,
-			"reason": "鸡蛋覆盖还不足（当前 %d%%）" % roundi(float(egg_summary.coverage_ratio) * 100.0),
-		}
-	if model.mean_side_doneness(false) < 0.30:
-		return {"success": false, "reason": "底面还太生，颜色转金黄后再翻"}
+	var readiness := flip_readiness(model, ingredients)
+	if not bool(readiness.get("success", false)):
+		return readiness
 	model.flip(true)
 	phase = Phase.SAUCE_AND_FILLINGS
 	changed.emit()
+	return {"success": true}
+
+
+func flip_readiness(model: PancakeModel, ingredients: IngredientModel) -> Dictionary:
+	if phase != Phase.FIRST_SIDE:
+		return {"success": false, "reason": "当前还不能翻面"}
+	if model.mean_side_doneness(false) < MINIMUM_FLIP_DONENESS:
+		return {"success": false, "reason": "底面还太生，颜色转金黄后再翻"}
 	return {"success": true}
 
 

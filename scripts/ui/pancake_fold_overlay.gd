@@ -146,8 +146,43 @@ func _draw() -> void:
 		return
 	if guides_visible:
 		_draw_guides()
-	_draw_region(FOLD_MODEL_SCRIPT.REGION_LEFT)
+	# The left flap stays visible until the moving right flap actually reaches its
+	# tail. Its clip boundary follows the current outer edge of that right flap.
+	_draw_region(FOLD_MODEL_SCRIPT.REGION_LEFT, left_fold_clip_max_x())
 	_draw_region(FOLD_MODEL_SCRIPT.REGION_RIGHT)
+
+
+func left_fold_clip_max_x() -> float:
+	if fold_model == null or not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
+		return INF
+	var right_progress := 0.0
+	if fold_model.active_region == FOLD_MODEL_SCRIPT.REGION_RIGHT:
+		right_progress = float(fold_model.drag_progress)
+	elif _animated_region == FOLD_MODEL_SCRIPT.REGION_RIGHT:
+		right_progress = _animated_progress
+	elif fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
+		right_progress = 1.0
+	else:
+		return INF
+	return right_fold_outer_edge_x(right_progress)
+
+
+func right_fold_outer_edge_x(progress: float) -> float:
+	if fold_model == null or fold_model.pancake_model == null:
+		return INF
+	var profile := _build_fold_profile(FOLD_MODEL_SCRIPT.REGION_RIGHT, progress)
+	if not bool(profile.get("has_coverage", false)):
+		return INF
+	var maximum_x := -INF
+	for step in range(FOLD_PROFILE_STEPS + 1):
+		var source_span := _source_fold_span(
+			FOLD_MODEL_SCRIPT.REGION_RIGHT,
+			float(step) / float(FOLD_PROFILE_STEPS),
+			profile
+		)
+		for point in source_span:
+			maximum_x = maxf(maximum_x, _transform_fold_point(point, progress, profile).x)
+	return maximum_x
 
 
 func _draw_guides() -> void:
@@ -169,7 +204,7 @@ func _draw_guides() -> void:
 		draw_arc(center + Vector2(radii.x * 0.92, 0.0), size.x * 0.040, PI - 1.2, PI + 1.2, 20, Color(0.45, 0.94, 0.94, 0.95), 5.0, true)
 
 
-func _draw_region(region: StringName) -> void:
+func _draw_region(region: StringName, clip_max_x: float = INF) -> void:
 	var folded: bool = fold_model.is_region_folded(region)
 	var active: bool = fold_model.active_region == region
 	var animated: bool = _animated_region == region
@@ -188,10 +223,13 @@ func _draw_region(region: StringName) -> void:
 		flap_color = Color(0.92, 0.72, 0.48, 0.99)
 	elif severity >= 2:
 		flap_color = Color(0.76, 0.43, 0.31, 0.99)
-	_draw_flap_shadow(flap_polygon, region, progress, profile)
-	_draw_curved_flap(region, progress, flap_color, profile)
-	_draw_arc_highlight(region, progress, profile)
+	_draw_flap_shadow(flap_polygon, region, progress, profile, clip_max_x)
+	_draw_curved_flap(region, progress, flap_color, profile, clip_max_x)
+	if is_inf(clip_max_x):
+		_draw_arc_highlight(region, progress, profile)
 	_draw_fold_crease(region, progress, severity)
+	if not is_inf(clip_max_x):
+		return
 	var edge_color := Color(0.29, 0.13, 0.045, 0.78)
 	if pancake_edge_texture != null:
 		edge_color = Color(0.34, 0.15, 0.04, 0.78)
@@ -207,7 +245,8 @@ func _draw_flap_shadow(
 	_flap_polygon: PackedVector2Array,
 	region: StringName,
 	progress: float,
-	profile: Dictionary
+	profile: Dictionary,
+	clip_max_x: float = INF
 ) -> void:
 	var lift := sin(clampf(progress, 0.0, 1.0) * PI)
 	var direction := -1.0 if region == FOLD_MODEL_SCRIPT.REGION_LEFT else 1.0
@@ -232,10 +271,14 @@ func _draw_flap_shadow(
 		var shadow_quad := PackedVector2Array()
 		for source_point in source_quad:
 			shadow_quad.append(_transform_fold_point(source_point, progress, profile) + offset)
-		draw_colored_polygon(shadow_quad, Color(0.13, 0.045, 0.012, alpha))
+		var clipped_shadow := _clip_polygon_right(shadow_quad, PackedVector2Array(), PackedColorArray(), clip_max_x)
+		var clipped_shadow_points: PackedVector2Array = clipped_shadow.points
+		if clipped_shadow_points.size() < 3:
+			continue
+		draw_colored_polygon(clipped_shadow_points, Color(0.13, 0.045, 0.012, alpha))
 
 
-func _draw_curved_flap(region: StringName, progress: float, tint: Color, profile: Dictionary) -> void:
+func _draw_curved_flap(region: StringName, progress: float, tint: Color, profile: Dictionary, clip_max_x: float = INF) -> void:
 	# Each strip receives its own projected position, face texture, and lighting.
 	# A single polygon can only interpolate between its outline vertices, which
 	# makes the fold read as a rigid card even when the silhouette is softened.
@@ -258,10 +301,50 @@ func _draw_curved_flap(region: StringName, progress: float, tint: Color, profile
 		var colors := PackedColorArray([color0, color1, color1, color0])
 		var midpoint_angle := _profile_angle(profile, (t0 + t1) * 0.5)
 		var texture := pancake_front_texture if cos(midpoint_angle) >= 0.0 else pancake_back_texture
+		var clipped_surface := _clip_polygon_right(folded_quad, uvs, colors, clip_max_x)
+		var clipped_points: PackedVector2Array = clipped_surface.points
+		if clipped_points.size() < 3:
+			continue
+		var clipped_uvs: PackedVector2Array = clipped_surface.uvs
+		var clipped_colors: PackedColorArray = clipped_surface.colors
 		if texture == null:
-			draw_colored_polygon(folded_quad, color0 * Color(0.93, 0.62, 0.23, 1.0))
+			draw_colored_polygon(clipped_points, color0 * Color(0.93, 0.62, 0.23, 1.0))
 		else:
-			draw_polygon(folded_quad, colors, uvs, texture)
+			draw_polygon(clipped_points, clipped_colors, clipped_uvs, texture)
+
+
+func _clip_polygon_right(
+	points: PackedVector2Array,
+	uvs: PackedVector2Array,
+	colors: PackedColorArray,
+	clip_max_x: float
+) -> Dictionary:
+	if is_inf(clip_max_x):
+		return {"points": points, "uvs": uvs, "colors": colors}
+	var clipped_points := PackedVector2Array()
+	var clipped_uvs := PackedVector2Array()
+	var clipped_colors := PackedColorArray()
+	for index in points.size():
+		var previous_index := posmod(index - 1, points.size())
+		var previous_point := points[previous_index]
+		var current_point := points[index]
+		var previous_inside := previous_point.x <= clip_max_x
+		var current_inside := current_point.x <= clip_max_x
+		if previous_inside != current_inside:
+			var denominator := current_point.x - previous_point.x
+			var ratio := 0.0 if is_zero_approx(denominator) else clampf((clip_max_x - previous_point.x) / denominator, 0.0, 1.0)
+			clipped_points.append(previous_point.lerp(current_point, ratio))
+			if not uvs.is_empty():
+				clipped_uvs.append(uvs[previous_index].lerp(uvs[index], ratio))
+			if not colors.is_empty():
+				clipped_colors.append(colors[previous_index].lerp(colors[index], ratio))
+		if current_inside:
+			clipped_points.append(current_point)
+			if not uvs.is_empty():
+				clipped_uvs.append(uvs[index])
+			if not colors.is_empty():
+				clipped_colors.append(colors[index])
+	return {"points": clipped_points, "uvs": clipped_uvs, "colors": clipped_colors}
 
 
 func _draw_arc_highlight(region: StringName, progress: float, profile: Dictionary) -> void:

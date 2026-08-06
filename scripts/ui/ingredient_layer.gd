@@ -81,6 +81,10 @@ func _apply_fold_visibility() -> void:
 	var grid_maximum := maxf(float(fold_model.pancake_model.grid_size - 1), 1.0)
 	var left_line := float(fold_model.pancake_model.parameters.fold_left_line_ratio) * grid_maximum
 	var right_line := float(fold_model.pancake_model.parameters.fold_right_line_ratio) * grid_maximum
+	# A flap covers both its source cells and its landing cells.  Hiding only the
+	# source side lets fillings in the middle show through the folded pancake.
+	var left_landing_edge := lerpf(left_line, minf(grid_maximum, left_line * 2.0), _left_fold_progress)
+	var right_landing_edge := lerpf(right_line, maxf(0.0, right_line * 2.0 - grid_maximum), _right_fold_progress)
 	var fillings_enclosed: bool = (
 		fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT)
 		and fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT)
@@ -90,14 +94,33 @@ func _apply_fold_visibility() -> void:
 		if sprite == null or not sprite.has_meta(&"grid_x"):
 			continue
 		var grid_x := float(sprite.get_meta(&"grid_x"))
-		var fold_progress := 0.0
-		if grid_x <= left_line:
-			fold_progress = _left_fold_progress
-		elif grid_x >= right_line:
-			fold_progress = _right_fold_progress
+		var fold_progress := _fold_occlusion_progress(
+			grid_x,
+			left_line,
+			right_line,
+			left_landing_edge,
+			right_landing_edge
+		)
 		var color := sprite.modulate
 		color.a = 0.0 if fillings_enclosed else 1.0 - clampf(fold_progress, 0.0, 1.0)
 		sprite.modulate = color
+
+
+func _fold_occlusion_progress(
+	grid_x: float,
+	left_line: float,
+	right_line: float,
+	left_landing_edge: float,
+	right_landing_edge: float
+) -> float:
+	var progress := 0.0
+	# The lifted source is no longer visible, and the space below the landed flap
+	# is covered as the fold travels inwards.
+	if grid_x <= maxf(left_line, left_landing_edge):
+		progress = maxf(progress, _left_fold_progress)
+	if grid_x >= minf(right_line, right_landing_edge):
+		progress = maxf(progress, _right_fold_progress)
+	return progress
 
 
 func visual_alpha_for(ingredient_type: StringName) -> float:

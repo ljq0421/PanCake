@@ -2786,7 +2786,7 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `processing`: `--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`。
 - `image_audit`: 1131 x 1391 RGBA；透明 0.448277，半透明 0.002591，不透明 0.549132；非透明像素中的强品红键色为 0；SHA-256 `282A919383F2180AECB65A22496A3F294CB6978EA7C0828C15FBA66F1949E509`。
 - `godot_import`: passed — Godot 4.7.1 headless import exited 0 and generated the `.png.import` sidecar. The root-certificate and editor-settings-save messages are environment warnings after the asset import.
-- `runtime_integration`: passed — `workstation.tscn` owns the two dish wells, 8 stable material widgets, coin/amount header, and compact patience widgets; `initial_unlock_workstation.tscn` places the card to the customer's right, clear of the tutorial strip. The 2026-08-06 real 1920x1080 GPU smoke run displayed the populated single-dish card and passed.
+- `runtime_integration`: passed — `workstation.tscn` owns the two dish wells, 8 stable material widgets, coin/amount header, and compact patience widgets. The heart is a scene-defined filled polygon aligned to the printed heart well, not a text-glyph icon; `initial_unlock_workstation.tscn` places the card to the customer's right, clear of the tutorial strip. The 2026-08-06 real 1920x1080 GPU smoke run displayed the populated single-dish card and passed.
 - `human_review`: pending — the GPU screenshot verifies rendering, but final art-direction acceptance remains a player-facing review.
 
 # 工作台扩展首批独立设备与工具 v1

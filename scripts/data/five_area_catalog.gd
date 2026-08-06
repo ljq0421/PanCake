@@ -72,9 +72,9 @@ const MATERIAL_SLOT_DEFINITIONS := {
 
 const STOCK_DEFINITIONS := {
 	&"stock.pancake.batter": {"area_id": &"area.pancake", "category": &"base", "refill_seconds": 0.25, "material_slot_id": &""},
-	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "material_slot_id": &"slot.07"},
-	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "material_slot_id": &"slot.08"},
-	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "material_slot_id": &"slot.09"},
+	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.20, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.07"},
+	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.225, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.08"},
+	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.1666667, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.09"},
 	&"stock.pancake.sauce.sweet_flour": {"area_id": &"area.pancake", "category": &"sauce", "refill_seconds": 0.25, "material_slot_id": &"", "surface_input_id": &"ui.pancake.sweet_flour_sauce_brush"},
 	&"stock.pancake.sauce.red_chili": {"area_id": &"area.pancake", "category": &"sauce", "refill_seconds": 0.25, "material_slot_id": &"", "surface_input_id": &"ui.pancake.red_chili_sauce_brush"},
 	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "material_slot_id": &"slot.05"},

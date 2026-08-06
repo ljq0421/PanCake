@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cxp7ixjpm7323"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/workstation.tscn" id="1_base"]
-[ext_resource type="Script" uid="uid://bp5mbcogteqrq" path="res://scripts/ui/initial_unlock_workstation_adapter.gd" id="2_adapter"]
+[ext_resource type="Script" path="res://scripts/ui/pancake_workstation_interaction_controller.gd" id="2_adapter"]
 [ext_resource type="Texture2D" uid="uid://bam3an4gh4y0h" path="res://resources/art/workstation/background/workstation_initial_unlock_redraw_v4.png" id="3_worktop"]
 [ext_resource type="Texture2D" uid="uid://csc2ctaejgbqa" path="res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5.png" id="4_tool_cups"]
 [ext_resource type="Texture2D" uid="uid://dvjiaqj2f06j4" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="5_ladle_display"]
@@ -516,7 +516,7 @@ offset_right = 682.0
 offset_bottom = 210.0
 theme_override_font_sizes/font_size = 14
 
-[node name="InitialUnlockAdapter" type="Node" parent="SafeArea" index="27" unique_id=52739600]
+[node name="PancakeWorkstationInteractionController" type="Node" parent="SafeArea" index="27" unique_id=52739600]
 unique_name_in_owner = true
 script = ExtResource("2_adapter")
 

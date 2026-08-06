@@ -92,7 +92,11 @@ func force_texture_upload() -> void:
 	_rebuild_heatmap_texture()
 
 
-func set_fold_visual_state(left_progress: float, right_progress: float, package_hidden: bool = false) -> void:
+func set_fold_visual_state(
+	left_progress: float,
+	right_progress: float,
+	package_hidden: bool = false
+) -> void:
 	if not is_instance_valid(pancake_visual):
 		return
 	var shader_material := pancake_visual.material as ShaderMaterial

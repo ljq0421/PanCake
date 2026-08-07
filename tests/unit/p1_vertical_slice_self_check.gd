@@ -57,6 +57,14 @@ func _test_beginner_heat_window() -> void:
 
 
 func _test_egg_spreading_and_score() -> void:
+	var multi_egg_model := _uniform_pancake(128, 0.42)
+	_check(bool(multi_egg_model.crack_egg(Vector2(54, 64)).success), "the first egg can be cracked onto the pancake")
+	var first_egg_mass := multi_egg_model.total_egg_amount()
+	_check(
+		bool(multi_egg_model.crack_egg(Vector2(74, 64)).success)
+		and multi_egg_model.total_egg_amount() > first_egg_mass,
+		"the pancake simulation accepts and accumulates a second egg"
+	)
 	var model := _uniform_pancake(128, 0.42)
 	var center := Vector2(64, 64)
 	var crack_result := model.crack_egg(center)
@@ -163,9 +171,31 @@ func _test_order_and_session_guards() -> void:
 	var session := P1Session.new()
 	session.start(first)
 	_check(bool(session.confirm_spread(model).success) and session.phase == P1Session.Phase.FIRST_SIDE, "internal spread confirmation advances to first-side cooking")
+	var early_model := _uniform_pancake(48, 0.42)
+	var early_ingredients := IngredientModel.new()
+	var early_session := P1Session.new()
+	early_session.start(first)
+	early_session.confirm_spread(early_model)
+	early_model.doneness.fill(0.05)
+	var early_readiness := early_session.flip_readiness(early_model, early_ingredients)
+	var early_flip := early_session.request_flip(early_model, early_ingredients)
+	_check(
+		bool(early_readiness.get("success", false))
+		and bool(early_readiness.get("early_flip", false))
+		and bool(early_flip.get("success", false))
+		and early_model.is_flipped,
+		"an undercooked pancake may flip immediately with an explicit quality warning"
+	)
 	model.doneness.fill(0.50)
 	_check(bool(session.flip_readiness(model, ingredients).success), "egg is optional and does not block flip readiness")
 	_check(bool(session.request_flip(model, ingredients).success) and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "egg-free pancake can flip immediately once the bottom is cooked")
+	var early_score := PancakeScorer.evaluate_order(early_model, early_ingredients, PancakeFoldModel.new(early_model, early_ingredients), first, 0.0, 1.0)
+	var ready_score := PancakeScorer.evaluate_order(model, ingredients, PancakeFoldModel.new(model, ingredients), first, 0.0, 1.0)
+	_check(
+		float(Dictionary(early_score.get("dimensions", {})).get("heat", 0.0)) < float(Dictionary(ready_score.get("dimensions", {})).get("heat", 0.0))
+		and float(early_score.get("score", 0.0)) < float(ready_score.get("score", 0.0)),
+		"early flipping is permitted but produces a lower heat dimension and lower order score"
+	)
 	var egg_model := _uniform_pancake(48, 0.42)
 	var egg_session := P1Session.new()
 	egg_session.start(first)

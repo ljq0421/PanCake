@@ -21,6 +21,7 @@ const ACTION_DRAIN_OIL: StringName = &"drain_oil"
 
 const TOOL_SPREADER_BASIC: StringName = &"tool.spreader.basic"
 const TOOL_SPREADER_WIDE: StringName = &"tool.spreader.wide"
+const WIDE_SPREADER_WIDTH_MULTIPLIER := 1.65
 const TOOL_PRESS: StringName = &"tool.spreader.press_once"
 const TOOL_SAUCE_BRUSH_MANUAL: StringName = &"tool.sauce_brush.manual"
 const TOOL_SAUCE_BRUSH_AUTO: StringName = &"tool.sauce_brush.automatic"
@@ -100,7 +101,7 @@ const RECIPE_DEFINITIONS := {
 
 const ITEM_EFFECTS := {
 	TOOL_SPREADER_BASIC: {"manual": true, "width_multiplier": 1.0},
-	TOOL_SPREADER_WIDE: {"manual": true, "width_multiplier": 1.35},
+	TOOL_SPREADER_WIDE: {"manual": true, "width_multiplier": WIDE_SPREADER_WIDTH_MULTIPLIER},
 	TOOL_PRESS: {"automatic_standard_spread": true, "uses_per_pancake": 1, "consumable": false},
 	TOOL_SAUCE_BRUSH_MANUAL: {"manual": true},
 	TOOL_SAUCE_BRUSH_AUTO: {"automatic_order_sauce": true, "still_consumes_sauce": true, "still_uses_time": true},
@@ -140,7 +141,7 @@ const PURCHASE_DEFINITIONS := {
 }
 
 const PURCHASE_PRESENTATION := {
-	TOOL_SPREADER_WIDE: {"label": "加宽摊饼器", "category": "工具", "description": "增加手动摊面覆盖宽度。"},
+	TOOL_SPREADER_WIDE: {"label": "宽头摊饼器", "category": "工具", "description": "手动摊面有效宽度 +65%；仍需连续绕圈摊开。"},
 	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "每张饼可完成一次标准摊平。"},
 	TOOL_SAUCE_BRUSH_AUTO: {"label": "自动酱刷", "category": "工具", "description": "按订单自动刷酱。"},
 	UPGRADE_SOY_BASIC: {"label": "现磨豆浆机", "category": "设备", "description": "解锁豆浆区。"},

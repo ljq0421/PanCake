@@ -188,6 +188,7 @@ static func evaluate_order(
 		tags.append(tag)
 	var feedback := _feedback_for(overall, tags, patience_ratio)
 	var applied_ingredient_ids: Array[StringName] = []
+	var applied_ingredient_quantities := ingredients.quantities()
 	for ingredient_type in IngredientModel.TYPES:
 		if ingredients.has_type(ingredient_type):
 			applied_ingredient_ids.append(ingredient_type)
@@ -224,6 +225,7 @@ static func evaluate_order(
 		"missing_ingredients": missing_ingredients,
 		"missing_sauces": missing_sauces,
 		"applied_ingredient_ids": applied_ingredient_ids,
+		"applied_ingredient_quantities": applied_ingredient_quantities,
 		"applied_sauce_ids": applied_sauce_ids,
 		"score_caps": score_caps,
 	}

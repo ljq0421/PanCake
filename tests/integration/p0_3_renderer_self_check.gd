@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
 const CHANNEL_TOLERANCE := 1.5 / 255.0
 
 var _failures := PackedStringArray()

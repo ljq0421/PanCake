@@ -1,7 +1,7 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
 
 var _failures := PackedStringArray()
 
@@ -69,6 +69,7 @@ func _check_scene_contract() -> void:
 	_check(workstation.pancake_model.grid_size == 128, "workstation loads simplified 128x128 parameter resource")
 	_check(workstation.pancake_surface.model == workstation.pancake_model, "heatmap reads the same model instance")
 	_check(workstation.pancake_surface.heatmap_field == PancakeHeatmap.VIEW_APPEARANCE, "intuitive pancake appearance is the default view")
+	_check(not workstation.pancake_surface.draw_pointer_trace, "player view keeps the white spread trajectory hidden")
 	var safe_area := workstation.get_node("SafeArea") as Control
 	_check(safe_area.size == Vector2(1920, 1080), "central safe area is fixed at baseline canvas")
 	var surface := workstation.pancake_surface

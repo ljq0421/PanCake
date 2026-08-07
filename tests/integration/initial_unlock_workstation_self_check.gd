@@ -17,6 +17,9 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var game_session := root.get_node_or_null("GameSession")
+	if game_session != null:
+		game_session.call("begin_new_game")
 	var packed := load(SCENE_PATH) as PackedScene
 	_check(packed != null, "initial-unlock workstation loads with its scene-owned art")
 	if packed == null:
@@ -75,7 +78,7 @@ func _check_five_zone_layout(workstation: Node) -> void:
 	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
 	var order_patience := workstation.get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
 	_check(payment_coin != null and payment_amount != null and heart != null and order_patience != null, "order card owns scene-defined payment and patience widgets")
-	_check(heart != null and heart.position.distance_to(Vector2(56.0, 289.0)) <= 0.05 and heart.polygon.size() == 12 and _rect_matches(order_patience, Rect2(84.0, 288.0, 156.0, 13.0)), "heart and patience fills align with the compact card's printed inner slots")
+	_check(heart != null and heart.position.distance_to(Vector2(56.0, 289.0)) <= 0.05 and heart.polygon.size() >= 12 and _rect_matches(order_patience, Rect2(84.0, 288.0, 156.0, 13.0)), "heart and patience fills align with the compact card's printed inner slots")
 	for icon_index in 8:
 		var icon := workstation.get_node_or_null("SafeArea/OrderCard/OrderIngredient%02d" % (icon_index + 1)) as TextureRect
 		_check(icon != null, "OrderIngredient%02d is a stable ingredient slot" % (icon_index + 1))
@@ -108,6 +111,15 @@ func _check_material_grid(workstation: Node) -> void:
 		var slot := material_dock.get_node_or_null("Slot%02d" % (index + 1)) as Control if material_dock != null else null
 		_check(slot != null and int(slot.get_meta(&"slot_index", 0)) == index + 1, "MaterialDock Slot%02d is present" % (index + 1))
 	_check(artwork != null and hit_areas != null, "ingredient row has dedicated artwork and click layers")
+	var sauce_button := workstation.get_node_or_null("SafeArea/RightRack/SauceRefillButton") as Control
+	var sauce_overlaps_slot := false
+	if sauce_button != null and material_dock != null:
+		for slot in material_dock.get_children():
+			if sauce_button.get_global_rect().intersects((slot as Control).get_global_rect()):
+				sauce_overlaps_slot = true
+				break
+	_check(sauce_button != null and not sauce_overlaps_slot, "sweet flour sauce remains a countertop control and does not occupy an ingredient slot")
+	_check(workstation.get_node_or_null("SafeArea/DailyBillPanel/Margin/VBox/GrowthMessageLabel") == null, "daily bill removes the obsolete install/content empty-state label")
 	if material_dock == null or artwork == null or hit_areas == null:
 		return
 	_check(artwork.get_child_count() == 15 and hit_areas.get_child_count() == 15, "18 physical ingredient wells resolve to 3 starters and 15 locked positions")

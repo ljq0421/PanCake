@@ -1,6 +1,7 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
+const PAYMENT_COIN_MODEL := preload("res://scripts/gameplay/payment_coin_model.gd")
 
 var _failures := PackedStringArray()
 
@@ -26,18 +27,18 @@ func _run() -> void:
 	paused = false
 	_check(is_equal_approx(workstation.p1_session.elapsed_seconds, elapsed_before_pause), "pausing the scene tree freezes cooking time and customer patience")
 	workstation.set_process(false)
-	_check(workstation.customer_portrait != null and workstation.order_text_label != null and workstation.patience_bar != null, "P1 customer, order and patience nodes are stable scene content")
+	_check(workstation.customer_portrait != null and workstation.order_amount_label != null and workstation.patience_bar != null, "P1 customer, order and patience nodes are stable scene content")
 	_check(workstation.customer_portrait.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "cropped customer artwork keeps its original proportions")
 	var pan_base := workstation.get_node("SafeArea/PanBase") as Control
 	_check(
 		workstation.customer_portrait.texture.resource_path.ends_with("_cropped.tres")
-		and absf(workstation.customer_portrait.position.y + workstation.customer_portrait.size.y - 460.0) <= 1.0,
-		"cropped customer artwork reaches the reference counter edge"
+		and Rect2(workstation.customer_portrait.position, workstation.customer_portrait.size) == Rect2(800.0, 222.0, 270.0, 406.0),
+		"cropped customer artwork uses the initial-unlock customer bay"
 	)
 	_check(
 		pan_base != null
-		and pan_base.position.distance_to(Vector2(740.0, 525.0)) <= 1.0
-		and pan_base.size.distance_to(Vector2(520.0, 468.0)) <= 1.0,
+		and pan_base.position.distance_to(Vector2(750.0, 562.0)) <= 1.0
+		and pan_base.size.distance_to(Vector2(420.0, 382.0)) <= 1.0,
 		"griddle container uses the confirmed twenty-percent-smaller initial-unlock geometry"
 	)
 	_check(workstation.ingredient_layer != null and workstation.egg_button != null and workstation.scallion_button != null, "P1 ingredient rack and pancake layer are stable scene content")
@@ -47,7 +48,17 @@ func _run() -> void:
 		"sweet and chili bottle hit regions do not overlap"
 	)
 	_check(workstation.pancake_surface.get_renderer_diagnostics().chili_sauce_texture != null, "P1 renderer uploads the independent chili-sauce field")
-	_check(workstation.p1_session.order.id == &"classic" and workstation.order_text_label.text.contains("经典杂粮煎饼"), "first customer receives a concrete verifiable order")
+	var first_order_id := StringName(workstation.p1_session.order.get("id", &""))
+	var first_payment_coins := int(workstation.p1_session.order.get("payment_coins", 0))
+	var first_payment_denominations: Array[int] = PAYMENT_COIN_MODEL.decompose(first_payment_coins)
+	_check(
+		str(first_order_id).begins_with("order.pancake.")
+		and first_payment_coins > 0
+		and workstation.order_coin_icon.visible
+		and workstation.order_amount_label.text == str(first_payment_coins)
+		and workstation.order_dish_icons[0].visible,
+		"first customer receives a concrete data-driven order"
+	)
 	_check(not workstation.step_action_button.visible and workstation.step_action_button.text != "完成摊饼", "spreading adds no explicit completion action")
 	if DisplayServer.get_name() == "headless":
 		workstation._select_ladle()
@@ -81,8 +92,13 @@ func _run() -> void:
 	_check(workstation.ingredient_model.has_type(IngredientModel.EGG), "dragging from the ingredient rack onto the real pancake surface places business data")
 	_check(workstation.pancake_model.has_egg() and workstation.egg_crack_artwork.visible, "egg drop creates the liquid simulation and visible raw-egg landing state")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER, "egg drop automatically selects the existing T-shaped spreader")
-	workstation.step_action_button.pressed.emit()
-	_check(not workstation.pancake_model.is_flipped and workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "flip remains blocked until the egg has actually been spread")
+	workstation._refresh_p1_ui()
+	_check(
+		not workstation.step_action_button.disabled
+		and workstation.step_action_button.text.contains("尚未就绪")
+		and workstation.step_action_button.tooltip_text.contains("降低"),
+		"the real flip control remains enabled before readiness and warns about the order-rating penalty"
+	)
 	_spread_egg_with_workstation(workstation)
 	var egg_summary := workstation.pancake_model.calculate_egg_spread_summary()
 	_check(workstation.pancake_model.yolk_broken and not workstation.egg_crack_artwork.visible, "real workstation spread samples break the yolk and replace the landing sprite with the grid layer")
@@ -138,10 +154,12 @@ func _run() -> void:
 	_check(workstation.pancake_model.total_sauce() > 0.0 and float(workstation.sauce_tool_state.load) < sweet_load_before_brush, "the sauce brush consumes and spreads the squeezed sweet sauce")
 	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(-70, -30))
 	await _place_ingredient_from_rack(workstation, workstation.scallion_button, IngredientModel.SCALLION, surface_center + Vector2(15, 65))
+	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(70, -35))
 	_check(
 		workstation.ingredient_model.has_type(IngredientModel.BAOCUI)
-		and workstation.ingredient_model.has_type(IngredientModel.SCALLION),
-		"all opening-day filling controls can place their ingredients after the filling phase unlocks"
+		and workstation.ingredient_model.has_type(IngredientModel.SCALLION)
+		and workstation.ingredient_model.count_type(IngredientModel.BAOCUI) == 2,
+		"opening-day filling controls allow repeated portions after the filling phase unlocks"
 	)
 	_check(not workstation.ham_button.visible and workstation.ham_button.disabled, "locked ham remains absent and non-interactive on the opening-day workstation")
 	workstation.ingredient_model.placements[1]["position"] = Vector2(28, 56)
@@ -150,16 +168,21 @@ func _run() -> void:
 	workstation.step_action_button.pressed.emit()
 	_check(workstation.p1_session.phase == P1Session.Phase.FOLD and workstation.tool_controller.current_tool == ToolController.Tool.FOLD, "step action enters the continuous folding path")
 	workstation.tool_controller.clear_tool()
-	if DisplayServer.get_name() == "headless":
-		workstation._select_fold()
-	else:
-		await _click_control(workstation.fold_button)
-	_check(workstation.tool_controller.current_tool == ToolController.Tool.FOLD, "the fold spatula can be selected when folding is available")
+	var fold_edge := Vector2(workstation.pancake_surface.size.x * 0.12, workstation.pancake_surface.size.y * 0.5)
+	workstation._on_pointer_started(fold_edge)
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.FOLD and workstation.fold_model.active_region != PancakeFoldModel.REGION_NONE, "an exposed pancake edge starts folding without an extra fold-tool click")
+	workstation._on_cancel_requested()
 	_fold_both(workstation)
 	_check(
 		workstation.ingredient_layer.visual_alpha_for(IngredientModel.BAOCUI) <= 0.001
 		and workstation.ingredient_layer.visual_alpha_for(IngredientModel.SCALLION) <= 0.001,
 		"all opening-day fillings are visually enclosed after both pancake sides are folded"
+	)
+	var surface_material := workstation.pancake_visual.material as ShaderMaterial
+	_check(
+		not workstation.sauce_blob_overlay.visible
+		and is_equal_approx(float(surface_material.get_shader_parameter(&"fillings_enclosed")), 1.0),
+		"folding both sides encloses sauce blobs and the brushed sauce layer"
 	)
 	_check(workstation.p1_session.phase == P1Session.Phase.PACKAGE and not workstation.bag_button.disabled, "intact folds unlock normal packaging")
 	_check(
@@ -186,18 +209,20 @@ func _run() -> void:
 	)
 	workstation._show_customer_payment()
 	_check(
-		workstation._payment_flight_sprites.size() == 2
-		and workstation._current_payment_denominations == [2, 1]
+		workstation._current_payment_amount == first_payment_coins
+		and workstation._payment_flight_sprites.size() == first_payment_denominations.size()
+		and workstation._current_payment_denominations == first_payment_denominations
 		and workstation.customer_portrait.texture.resource_path.ends_with("customer_01_paying_coins_cropped.tres"),
-		"customer payment uses the dedicated paying artwork and starts multiple denomination coin flights"
+		"customer payment uses the dedicated paying artwork and starts the order's denomination coin flights"
 	)
 	workstation._complete_payment_animation()
+	var next_order_id := StringName(workstation.p1_session.order.get("id", &""))
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and workstation.p1_session.order.id == &"scallion_light"
-		and workstation.payment_coin_model.pending_total == 3
-		and workstation.payment_coin_model.pending_denominations == [2, 1]
-		and workstation._pending_payment_sprites.size() == 2
+		and str(next_order_id).begins_with("order.pancake.")
+		and workstation.payment_coin_model.pending_total == first_payment_coins
+		and workstation.payment_coin_model.pending_denominations == first_payment_denominations
+		and workstation._pending_payment_sprites.size() == first_payment_denominations.size()
 		and workstation.payment_collection_area.visible
 		and workstation.order_summary_card.visible,
 		"settled denomination coins remain in the slot while the next customer starts automatically"
@@ -218,7 +243,7 @@ func _run() -> void:
 		await _click_control(workstation.payment_collection_area)
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and workstation.p1_session.order.id == &"scallion_light"
+		and StringName(workstation.p1_session.order.get("id", &"")) == next_order_id
 		and workstation.payment_coin_model.pending_total == 0
 		and workstation._pending_payment_sprites.is_empty()
 		and not workstation.payment_collection_area.visible
@@ -251,7 +276,7 @@ func _run() -> void:
 	_check(not workstation.result_panel.visible and workstation.order_summary_card.visible, "closing optional details returns to the non-blocking compact summary")
 	workstation.summary_dismiss_button.pressed.emit()
 	_check(
-		workstation.p1_session.order.id == &"scallion_light"
+		StringName(workstation.p1_session.order.get("id", &"")) == next_order_id
 		and workstation.pancake_model.covered_cell_count() == 0
 		and workstation.pancake_visual.visible
 		and workstation.ingredient_layer.visible
@@ -262,7 +287,7 @@ func _run() -> void:
 	_check(
 		workstation.daily_bill_panel.visible
 		and workstation.daily_bill_stats_label.text.contains("完成 1 单")
-		and workstation.daily_bill_stats_label.text.contains("收入 3 金币")
+		and workstation.daily_bill_stats_label.text.contains("收入 %d 金币" % first_payment_coins)
 		and workstation.daily_bill_rows.get_child_count() == 4,
 		"ending business opens a read-only today bill with one aligned ledger row"
 	)

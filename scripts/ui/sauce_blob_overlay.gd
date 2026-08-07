@@ -8,13 +8,28 @@ const CHILI_HIGHLIGHT := Color(1.0, 0.22, 0.055, 0.72)
 
 var sweet_ratio := 0.0
 var chili_ratio := 0.0
+var left_fold_progress := 0.0
+var right_fold_progress := 0.0
 
 
 func set_amounts(next_sweet_ratio: float, next_chili_ratio: float) -> void:
 	sweet_ratio = clampf(next_sweet_ratio, 0.0, 1.0)
 	chili_ratio = clampf(next_chili_ratio, 0.0, 1.0)
-	visible = sweet_ratio > 0.001 or chili_ratio > 0.001
+	_refresh_visibility()
 	queue_redraw()
+
+
+func set_fold_progress(next_left_progress: float, next_right_progress: float) -> void:
+	left_fold_progress = clampf(next_left_progress, 0.0, 1.0)
+	right_fold_progress = clampf(next_right_progress, 0.0, 1.0)
+	_refresh_visibility()
+	queue_redraw()
+
+
+func _refresh_visibility() -> void:
+	var has_blob := sweet_ratio > 0.001 or chili_ratio > 0.001
+	var fillings_enclosed := left_fold_progress >= 0.999 and right_fold_progress >= 0.999
+	visible = has_blob and not fillings_enclosed
 
 
 func _draw() -> void:

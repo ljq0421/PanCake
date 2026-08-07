@@ -129,6 +129,11 @@ func _reset_gesture() -> void:
 
 func set_stock_quantity(quantity: int) -> void:
 	var clamped := clampi(quantity, 0, stock_textures.size())
+	if stock_textures.is_empty():
+		artwork.visible = false
+		empty_label.visible = true
+		empty_label.text = "%s\n%s" % [IngredientModel.display_name(ingredient_type), "%d份" % maxi(quantity, 0) if quantity > 0 else "缺货"]
+		return
 	artwork.visible = clamped > 0
 	empty_label.visible = clamped == 0
 	if clamped > 0:

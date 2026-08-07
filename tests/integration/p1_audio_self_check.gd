@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
 
 const EXPECTED_STREAMS := {
 	&"pour": "res://resources/audio/sfx/batter_drop.wav",

@@ -29,6 +29,9 @@ func _run() -> void:
 	var inventory: Dictionary = session.call("inventory_snapshot")
 	_check(inventory.has("stock.pancake.sauce.sweet_flour") and int(inventory.get("stock.pancake.sauce.sweet_flour", 0)) == 6, "sweet flour sauce is normal inventory")
 	_check(inventory.has("stock.packaged_drink.milk") and int(inventory.get("stock.packaged_drink.milk", 1)) == 0, "locked stock is persisted independently from unlock ownership")
+	var bill_entry: Dictionary = session.call("record_order_completed", {"id": "bill-cost", "title": "成本账单"}, {"score": 80.0, "material_cost": 3}, 9)
+	var bill_with_cost: Dictionary = session.call("today_bill")
+	_check(bool(bill_entry.get("success", false)) and int(bill_with_cost.get("total_cost", 0)) == 3 and int(bill_with_cost.get("total_profit", 0)) == 6, "daily bill preserves material cost and gross profit alongside income")
 	var queue_first: Dictionary = session.call("next_filtered_pancake_order")
 	var queue_second: Dictionary = session.call("next_filtered_pancake_order")
 	var queue_third: Dictionary = session.call("next_filtered_pancake_order")
@@ -61,6 +64,15 @@ func _run() -> void:
 		_check(restored.call("owns_area", &"area.packaged_drink") and restored.call("owns_stock", &"stock.pancake.sauce.red_chili"), "save reload restores both activated purchase channels")
 	else:
 		_check(progression.call("owns_area", &"area.packaged_drink") and progression.call("owns_stock", &"stock.pancake.sauce.red_chili"), "in-memory activated state remains coherent without sandbox storage")
+	session.call("begin_new_game")
+	progression = session.call("progression_service")
+	progression.set("coins", 40)
+	progression.set("current_day", 8)
+	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.coriander").get("success", false)), "coriander content unlock can be purchased")
+	session.call("end_business_day")
+	_check(bool(session.call("begin_next_business_day").get("success", false)), "coriander unlock activates on the next business day")
+	var coriander_stock: Dictionary = session.call("five_area_restock_status", &"stock.pancake.coriander")
+	_check(bool(coriander_stock.get("success", false)) and int(coriander_stock.get("current_stock", 0)) == int(coriander_stock.get("capacity", 0)), "newly activated coriander has a stocked and refillable material tray")
 	_finish()
 
 func _check(condition: bool, message: String) -> void:

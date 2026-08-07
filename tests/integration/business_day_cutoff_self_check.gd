@@ -1,6 +1,7 @@
 extends SceneTree
 
 const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
+const MAIN_SCENE := preload("res://scenes/main/main.tscn")
 
 var _failures: Array[String] = []
 
@@ -29,6 +30,20 @@ func _run() -> void:
 	_check(Dictionary(game_session.call("active_formal_order")).is_empty(), "hard cutoff abandons the active formal order instead of allowing overtime settlement")
 	_check(is_zero_approx(float(game_session.call("business_day_remaining_seconds"))), "hard cutoff persists zero remaining business time")
 	workstation.queue_free()
+	game_session.call("begin_new_game")
+	var main: Control = MAIN_SCENE.instantiate()
+	root.add_child(main)
+	await process_frame
+	var quick_end_button := main.get_node("DebugOverlay/Root/DebugPanel/Labels/QuickEndBusinessDayButton") as Button
+	quick_end_button.emit_signal("pressed")
+	await process_frame
+	var early_end_bill: Dictionary = game_session.call("today_bill")
+	var early_end_cutoff: Dictionary = Dictionary(early_end_bill.get("cutoff", {}))
+	_check(StringName(early_end_cutoff.get("reason", &"")) == &"test_early_end", "debug quick-end button records a distinct test early-end cutoff")
+	_check(main.workstation.daily_bill_panel.visible and main.workstation.business_day_closed_shield.visible, "debug quick-end button opens the normal daily bill and locks the workstation")
+	_check(Dictionary(game_session.call("active_formal_order")).is_empty(), "debug quick-end button abandons the active formal order")
+	_check(is_zero_approx(float(game_session.call("business_day_remaining_seconds"))), "debug quick-end button persists zero remaining business time")
+	main.queue_free()
 	_finish()
 
 

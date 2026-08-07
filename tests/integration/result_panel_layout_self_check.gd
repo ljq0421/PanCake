@@ -55,11 +55,11 @@ func _run() -> void:
 		_check(control.is_visible_in_tree(), "%s remains visible" % node_name)
 		_check(panel_rect.encloses(control.get_global_rect()), "%s remains inside the result panel" % node_name)
 
-	var expansion_layout := workstation.get_node_or_null("SafeArea/ExpansionLayout") as CanvasItem
-	_check(expansion_layout != null, "opening-day workstation expansion layout is present")
-	if expansion_layout != null:
+	var station_artwork := workstation.get_node_or_null("SafeArea/FiveAreaStationArtwork") as CanvasItem
+	_check(station_artwork != null, "opening-day five-area workstation artwork is present")
+	if station_artwork != null:
 		_check(
-			panel.z_index > _maximum_effective_z_index(expansion_layout),
+			panel.z_index > _maximum_effective_z_index(station_artwork),
 			"result panel renders above every workstation foreground layer"
 		)
 

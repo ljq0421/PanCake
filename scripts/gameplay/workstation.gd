@@ -15,6 +15,10 @@ const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
+const WORKSTATION_EXPANSION_CATALOG := preload("res://scripts/data/workstation_expansion_catalog.gd")
+const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const BASIC_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_v1.png")
+const WIDE_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png")
 const CUSTOMER_TEXTURES := {
 	&"customer_01": {
 		&"neutral": preload("res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres"),
@@ -167,8 +171,11 @@ const SPREADER_SPEED_FAST := 1
 @onready var daily_bill_rows: GridContainer = %DailyBillRows
 @onready var daily_bill_close_button: Button = %DailyBillCloseButton
 @onready var growth_balance_label: Label = %GrowthBalanceLabel
-@onready var growth_message_label: Label = %GrowthMessageLabel
 @onready var begin_next_day_button: Button = %BeginNextDayButton
+@onready var unlock_progress_button: Button = %UnlockProgressButton
+@onready var unlock_progress_panel: PanelContainer = %UnlockProgressPanel
+@onready var unlock_progress_label: Label = %UnlockProgressLabel
+@onready var unlock_progress_close_button: Button = %UnlockProgressCloseButton
 @onready var growth_ticket_buttons: Array[Button] = [%GrowthTicket1, %GrowthTicket2, %GrowthTicket3]
 
 var pancake_model: PancakeModel
@@ -183,6 +190,7 @@ var _spreader_smoothed_angular_speed := 0.0
 var _spreader_speed_initialized := false
 var _growth_recommendations: Array[Dictionary] = []
 var _spreader_width_multiplier := 1.0
+var _wide_spreader_owned := false
 var _press_spreader_owned := false
 var _automatic_brush_owned := false
 var _intermediate_griddle_owned := false
@@ -219,6 +227,7 @@ var _handoff_tween: Tween
 var _payment_tween: Tween
 var _payment_waiting_collection := false
 var _payment_animation_active := false
+var _recovering_completed_payment := false
 var _current_payment_amount := 0
 var _current_payment_denominations: Array[int] = []
 var _payment_flight_sprites: Array[TextureRect] = []
@@ -227,6 +236,7 @@ var _customer_reaction_tween: Tween
 var _customer_visual_state: StringName = &""
 var business_day_timer: RefCounted
 var _business_day_closed := false
+var _business_day_expiration_pending := false
 var _last_persisted_business_second := -1
 
 
@@ -323,6 +333,8 @@ func _ready() -> void:
 	payment_collection_area.pressed.connect(_collect_payment)
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
+	unlock_progress_button.pressed.connect(_open_unlock_progress)
+	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
 	for ticket_index in growth_ticket_buttons.size():
 		growth_ticket_buttons[ticket_index].pressed.connect(_on_growth_ticket_pressed.bind(ticket_index))
 	step_action_button.pressed.connect(_advance_p1_step)
@@ -351,17 +363,32 @@ func _ready() -> void:
 	_refresh_ingredient_stock_ui()
 	_refresh_p1_ui()
 	_refresh_global_status()
+	_refresh_spreader_upgrade_presentation()
 	_log_info(&"workstation", "PancakeModel ready: %dx%d" % [parameters.grid_size, parameters.grid_size])
 
 
 func apply_progression_effects(snapshot: Dictionary) -> void:
 	var owned_items := Array(snapshot.get("owned_items", []))
 	var owned_growth_ids := Array(snapshot.get("owned_growth_ids", []))
-	_spreader_width_multiplier = 1.35 if owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader") else 1.0
+	_wide_spreader_owned = owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader")
+	_spreader_width_multiplier = WORKSTATION_EXPANSION_CATALOG.WIDE_SPREADER_WIDTH_MULTIPLIER if _wide_spreader_owned else 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
 	_intermediate_griddle_owned = int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 1)) >= 2
+	_refresh_spreader_upgrade_presentation()
 	_refresh_growth_tool_buttons()
+
+
+func _refresh_spreader_upgrade_presentation() -> void:
+	var texture := WIDE_SPREADER_TEXTURE if _wide_spreader_owned else BASIC_SPREADER_TEXTURE
+	if spreader_artwork != null:
+		spreader_artwork.texture = texture
+	if scraper_button == null:
+		return
+	var rack_artwork := scraper_button.get_node_or_null("Artwork") as TextureRect
+	if rack_artwork != null:
+		rack_artwork.texture = texture
+	scraper_button.tooltip_text = "宽头摊饼器：有效宽度 +65%，仍需连续绕圈摊开" if _wide_spreader_owned else "拿起 T 形摊饼器"
 
 
 func use_press_spreader() -> Dictionary:
@@ -444,6 +471,7 @@ func _process(delta: float) -> void:
 	_update_spreader_artwork(delta)
 	if p1_session != null and not _result_detail_open:
 		p1_session.advance_time(delta)
+	_recover_completed_payment_if_needed()
 	if _squeezing_sauce:
 		sauce_tool_state.add(parameters.sauce_squeeze_rate * delta)
 		_refresh_sauce_load_display()
@@ -487,12 +515,30 @@ func _advance_business_day_timer(delta: float) -> void:
 		if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
 			game_session.call("set_business_day_remaining_seconds", float(timer_state.get("remaining_seconds", 0.0)))
 	if bool(timer_state.get("expired_now", false)):
+		if p1_session != null and p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]:
+			# Let the current customer's handoff and payment finish.  Killing either
+			# tween here leaves P1Session in a transaction phase with no live callback.
+			_business_day_expiration_pending = true
+			return
 		_end_business_day_for_timer()
 
 
 func _end_business_day_for_timer() -> void:
+	_end_business_day_at_cutoff(&"timer_expired")
+
+
+func end_business_day_early_for_testing() -> void:
+	_end_business_day_at_cutoff(&"test_early_end")
+
+
+func can_end_business_day_early_for_testing() -> bool:
+	return not _business_day_closed and not daily_bill_panel.visible
+
+
+func _end_business_day_at_cutoff(cutoff_reason: StringName) -> void:
 	if _business_day_closed:
 		return
+	_business_day_expiration_pending = false
 	_business_day_closed = true
 	if _handoff_tween != null and _handoff_tween.is_valid():
 		_handoff_tween.kill()
@@ -502,10 +548,14 @@ func _end_business_day_for_timer() -> void:
 	var queued_customers: int = customer_queue.call("queue_snapshot").size() if customer_queue != null else 0
 	var formal_order_abandoned := false
 	var game_session := get_node_or_null("/root/GameSession")
+	if business_day_timer != null:
+		business_day_timer.set("remaining_seconds", 0.0)
+	if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
+		game_session.call("set_business_day_remaining_seconds", 0.0)
 	if game_session != null and game_session.has_method("abandon_active_formal_order"):
-		formal_order_abandoned = bool(Dictionary(game_session.call("abandon_active_formal_order", &"business_day_expired")).get("success", false))
+		formal_order_abandoned = bool(Dictionary(game_session.call("abandon_active_formal_order", cutoff_reason)).get("success", false))
 	end_business_day({
-		"reason": &"timer_expired",
+		"reason": cutoff_reason,
 		"unserved_customer_count": queued_customers,
 		"formal_order_abandoned": formal_order_abandoned,
 	})
@@ -703,6 +753,13 @@ func _apply_sauce_brush_sample(grid_position: Vector2) -> void:
 func _on_pointer_started(local_position: Vector2) -> void:
 	var grid_position := PancakeSpace.local_to_grid_position(local_position, pancake_surface.size, pancake_model.grid_size)
 	_last_process_grid_position = grid_position
+	# Grabbing an exposed edge is the fold command itself.  It enters the guarded
+	# FOLD phase when appropriate, then begins the same drag without requiring a
+	# separate FoldButton click.
+	if p1_session != null and p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS and _is_fold_grab_edge(grid_position):
+		p1_session.begin_folding()
+	if p1_session != null and p1_session.phase == P1Session.Phase.FOLD and tool_controller.current_tool != ToolController.Tool.FOLD:
+		_select_fold()
 	match tool_controller.current_tool:
 		ToolController.Tool.LADLE:
 			pancake_surface.pointer_pressed = false
@@ -728,6 +785,14 @@ func _on_pointer_started(local_position: Vector2) -> void:
 				tool_status_label.text = "请抓住尚未折叠的左侧或右侧饼皮边缘"
 		_:
 			tool_status_label.text = "请先点击左侧工具"
+
+
+func _is_fold_grab_edge(grid_position: Vector2) -> bool:
+	if pancake_model == null:
+		return false
+	var ratio := grid_position.x / maxf(float(pancake_model.grid_size - 1), 1.0)
+	var edge_ratio := pancake_model.parameters.fold_grab_edge_ratio
+	return ratio <= edge_ratio or ratio >= 1.0 - edge_ratio
 
 
 func _on_pointer_ended(local_position: Vector2) -> void:
@@ -882,8 +947,10 @@ func _on_tool_changed(tool: ToolController.Tool) -> void:
 			pancake_surface.cursor_radius_pixels = parameters.pour_radius / float(parameters.grid_size) * pancake_surface.size.x
 			pancake_surface.cursor_is_t_spreader = false
 		ToolController.Tool.SCRAPER:
-			pancake_surface.cursor_radius_pixels = parameters.scraper_width * 0.5 / float(parameters.grid_size) * pancake_surface.size.x
+			pancake_surface.cursor_radius_pixels = parameters.scraper_width * _spreader_width_multiplier * 0.5 / float(parameters.grid_size) * pancake_surface.size.x
 			pancake_surface.cursor_is_t_spreader = true
+			if _wide_spreader_owned:
+				tool_status_label.text = "当前工具：宽头摊饼器 · 有效宽度 +65%"
 		ToolController.Tool.SAUCE_BRUSH:
 			pancake_surface.cursor_radius_pixels = parameters.sauce_brush_radius / float(parameters.grid_size) * pancake_surface.size.x
 			pancake_surface.cursor_is_t_spreader = false
@@ -1030,6 +1097,7 @@ func _refresh_fold_ui() -> void:
 		right_visual_progress,
 		fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE
 	)
+	sauce_blob_overlay.call("set_fold_progress", left_visual_progress, right_visual_progress)
 	var left: Dictionary = fold_model.get_region_result(FOLD_MODEL_SCRIPT.REGION_LEFT)
 	var right: Dictionary = fold_model.get_region_result(FOLD_MODEL_SCRIPT.REGION_RIGHT)
 	var left_text: String = fold_model.result_label(left) if bool(left.get("folded", false)) else "待折"
@@ -1091,6 +1159,14 @@ func _confirm_spread_for_next_action() -> bool:
 
 
 func _auto_pour_center() -> void:
+	if five_area_pancake_production != null:
+		var availability: Dictionary = five_area_pancake_production.call("can_produce")
+		if not bool(availability.get("success", false)):
+			if StringName(availability.get("stock_id", &"")) == &"stock.pancake.batter":
+				tool_status_label.text = "面糊已经用完；请结束本日营业，下一营业日会补满基础面糊"
+			else:
+				tool_status_label.text = "当前无法制作煎饼：%s" % str(availability.get("reason", "unknown"))
+			return
 	var center := Vector2(pancake_model.grid_size - 1, pancake_model.grid_size - 1) * 0.5
 	pancake_model.add_batter(center, parameters.automatic_pour_amount, parameters.automatic_pour_radius)
 	pour_used = true
@@ -1217,7 +1293,11 @@ func _advance_p1_step() -> void:
 			if bool(action_result.success):
 				tool_controller.clear_tool()
 				egg_crack_artwork.visible = false
-				tool_status_label.text = "翻面完成：现在直接挤酱并放入小料"
+				tool_status_label.text = (
+					"已提前翻面：本单火候分和订单评价会降低；现在可继续挤酱并放入小料"
+					if bool(action_result.get("early_flip", false))
+					else "翻面完成：现在直接挤酱并放入小料"
+				)
 				kitchen_audio.call("play_cue", &"flip")
 		P1Session.Phase.SECOND_SIDE:
 			action_result = p1_session.finish_cooking(pancake_model)
@@ -1264,9 +1344,6 @@ func _begin_ingredient_drag(ingredient_type: StringName, press_position: Vector2
 		return
 	if not ingredient_stock_model.has_stock(ingredient_type):
 		tool_status_label.text = "%s托盘已经空了，请原地长按当前小料盘补货" % IngredientModel.display_name(ingredient_type)
-		return
-	if ingredient_model.has_type(ingredient_type):
-		tool_status_label.text = "%s已经放过一份" % IngredientModel.display_name(ingredient_type)
 		return
 	if p1_session.phase != P1Session.Phase.FIRST_SIDE and p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
 		tool_status_label.text = "当前步骤不能放配料"
@@ -1591,9 +1668,9 @@ func _complete_payment_animation() -> void:
 	var payment_result := p1_session.finish_payment()
 	if not bool(payment_result.get("success", false)):
 		return
+	var result_for_session := p1_session.result.duplicate(true)
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null:
-		var result_for_session := p1_session.result.duplicate(true)
 		if not _handoff_product_from_tray.is_empty():
 			result_for_session["area_id"] = &"area.pancake"
 			result_for_session["product_id"] = &"product.pancake.custom"
@@ -1605,9 +1682,16 @@ func _complete_payment_animation() -> void:
 				return
 			result_for_session["area_id"] = production_result.get("area_id", &"area.pancake")
 			result_for_session["product_id"] = production_result.get("product_id", &"product.pancake.custom")
+			result_for_session["material_cost"] = int(production_result.get("material_cost", 0))
 			if not _settle_formal_pancake_product(production_result.get("product", {})):
 				return
-		game_session.call("record_order_completed", p1_session.order, result_for_session, _current_payment_amount)
+	_finalize_completed_payment(result_for_session)
+
+
+func _finalize_completed_payment(result_for_session: Dictionary) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null:
+		game_session.call("record_order_completed", p1_session.order, result_for_session, _current_payment_amount, _formal_order_id)
 	summary_score_label.text = "本单 %d分 · +%d金币" % [roundi(float(p1_session.result.get("score", 0.0))), _current_payment_amount]
 	summary_feedback_label.text = str(p1_session.result.get("feedback", "本单已完成"))
 	_result_detail_open = false
@@ -1621,8 +1705,54 @@ func _complete_payment_animation() -> void:
 	_payment_waiting_collection = payment_coin_model.has_pending()
 	payment_collection_area.visible = true
 	payment_collection_area.tooltip_text = "待收取 %d 金币：点击或将鼠标扫过收款槽" % payment_coin_model.pending_total
+	if _business_day_expiration_pending:
+		_end_business_day_for_timer()
+		return
 	_start_next_order()
 	tool_status_label.text = "下一位顾客已到摊前；收款槽中待收取 %d 金币" % payment_coin_model.pending_total
+
+
+func _recover_completed_payment_if_needed() -> void:
+	# finish_payment() changes the session to RESULT before the durable order
+	# bookkeeping runs.  If a callback is interrupted after the formal order is
+	# already settled, the old code left this scene with no actionable control.
+	# The settled record is authoritative, so complete the idempotent tail on the
+	# next frame and proceed to the queued customer.
+	if _recovering_completed_payment or p1_session == null:
+		return
+	if p1_session.phase != P1Session.Phase.RESULT or _formal_order_id.is_empty():
+		return
+	if not _formal_pancake_order_is_settled():
+		# RESULT means the customer has already received the pancake and paid.
+		# Inventory validation belongs before that point; never discard a paid
+		# order and force the player to cook the same customer again.  Rebuild the
+		# product snapshot and finish only the durable formal-order tail.
+		if five_area_pancake_production == null:
+			return
+		var recovered_product: Dictionary = five_area_pancake_production.call(
+			"create_product_snapshot",
+			p1_session.result,
+			p1_session.order,
+			{"package_result": fold_model.package_result},
+		)
+		if not _settle_formal_pancake_product(recovered_product):
+			return
+	_recovering_completed_payment = true
+	var recovered_result := p1_session.result.duplicate(true)
+	recovered_result["area_id"] = &"area.pancake"
+	recovered_result["product_id"] = &"product.pancake.custom"
+	_finalize_completed_payment(recovered_result)
+
+
+func _formal_pancake_order_is_settled() -> bool:
+	if _formal_order_id.is_empty():
+		return false
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("formal_order_snapshot"):
+		return false
+	var formal_snapshot: Dictionary = game_session.call("formal_order_snapshot")
+	var saved_order: Dictionary = Dictionary(Dictionary(formal_snapshot.get("orders", {})).get(str(_formal_order_id), {}))
+	return StringName(saved_order.get("state", &"")) == &"settled"
 
 
 func _collect_payment() -> void:
@@ -1693,6 +1823,7 @@ func _populate_result(score_result: Dictionary) -> void:
 
 
 func _start_next_order() -> void:
+	_recovering_completed_payment = false
 	reset_pancake()
 	var next_customer: Dictionary = customer_queue.advance_queue()
 	p1_session.start(next_customer.order)
@@ -1740,9 +1871,7 @@ func _settle_formal_pancake_product(product: Dictionary) -> bool:
 	# A prior completion can have persisted the formal order just before the
 	# scene callback is retried.  In that case, do not try to attach the same
 	# pancake again; the order is already safely settled and gameplay can move on.
-	var formal_snapshot: Dictionary = game_session.call("formal_order_snapshot") if game_session.has_method("formal_order_snapshot") else {}
-	var saved_order: Dictionary = Dictionary(Dictionary(formal_snapshot.get("orders", {})).get(str(_formal_order_id), {}))
-	if StringName(saved_order.get("state", &"")) == &"settled":
+	if _formal_pancake_order_is_settled():
 		return true
 	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, 0, product)
 	if not bool(attached.get("success", false)):
@@ -1797,9 +1926,13 @@ func _populate_daily_bill(bill: Dictionary) -> void:
 	var cutoff_summary := ""
 	if StringName(cutoff.get("reason", &"")) == &"timer_expired":
 		cutoff_summary = " · 打烊超时 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
-	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
+	elif StringName(cutoff.get("reason", &"")) == &"test_early_end":
+		cutoff_summary = " · 测试提前结束，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
+	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 成本 %d 金币 · 毛利 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
 		int(bill.get("order_count", 0)),
 		int(bill.get("total_coins", 0)),
+		int(bill.get("total_cost", 0)),
+		int(bill.get("total_profit", 0)),
 		roundi(float(bill.get("average_score", 0.0))),
 		int(bill.get("reputation_delta", 0)),
 		cutoff_summary,
@@ -1816,7 +1949,11 @@ func _populate_daily_bill(bill: Dictionary) -> void:
 				str(index + 1),
 				str(entry.get("title", "未命名订单")),
 				"%d分" % int(entry.get("score", 0)),
-				"+%d金币" % int(entry.get("coins", 0))
+				"+%d / 成本 %d / 毛利 %d" % [
+					int(entry.get("coins", 0)),
+					int(entry.get("cost", 0)),
+					int(entry.get("profit", int(entry.get("coins", 0)) - int(entry.get("cost", 0)))),
+				]
 			)
 	_refresh_growth_section()
 
@@ -1836,6 +1973,7 @@ func _add_bill_row(index_text: String, title_text: String, score_text: String, i
 
 
 func _close_daily_bill() -> void:
+	unlock_progress_panel.visible = false
 	daily_bill_panel.visible = false
 	daily_bill_closed.emit()
 
@@ -1844,30 +1982,57 @@ func _refresh_growth_section(message: String = "") -> void:
 	var game_session := get_node_or_null("/root/GameSession")
 	_growth_recommendations.clear()
 	if game_session == null or not game_session.has_method("growth_recommendations"):
-		growth_balance_label.text = "成长服务暂不可用"
-		growth_message_label.text = "可以返回开始页，今日进度仍会保留。"
+		growth_balance_label.text = "成长服务暂不可用，可以返回开始页；今日进度仍会保留。"
 		for button in growth_ticket_buttons:
 			button.visible = false
 		begin_next_day_button.disabled = true
 		return
 	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
-	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 2)
-	for recommendation in Array(grouped_recommendations.get("install", [])).slice(0, 2):
-		var install_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
-		install_ticket["slot_title"] = "安装位"
-		_growth_recommendations.append(install_ticket)
-	for recommendation in Array(grouped_recommendations.get("content", [])).slice(0, 1):
-		var content_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
-		content_ticket["slot_title"] = "内容位"
-		_growth_recommendations.append(content_ticket)
-	growth_balance_label.text = "现有 %d 金币 · 声誉 %d · 安装位与内容位各可预订一项 · 第%d天生效" % [
+	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
+	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
+	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 3)
+	if not pending_install.is_empty():
+		_growth_recommendations.append({"growth_id": pending_install, "slot_title": "安装位", "purchased": true})
+		var next_install_ticket: Dictionary = {}
+		for recommendation_variant in Array(grouped_recommendations.get("install", [])):
+			var recommendation := Dictionary(recommendation_variant)
+			if StringName(recommendation.get("growth_id", "")) == pending_install:
+				continue
+			next_install_ticket = recommendation.duplicate(true)
+			break
+		if next_install_ticket.is_empty():
+			_growth_recommendations.append({"hidden": true})
+		else:
+			next_install_ticket["slot_title"] = "安装位"
+			next_install_ticket["selected_slot_label"] = "安装"
+			next_install_ticket["selected_growth_id"] = pending_install
+			_growth_recommendations.append(next_install_ticket)
+	else:
+		for recommendation in Array(grouped_recommendations.get("install", [])).slice(0, 2):
+			var install_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
+			install_ticket["slot_title"] = "安装位"
+			_growth_recommendations.append(install_ticket)
+		while _growth_recommendations.size() < 2:
+			_growth_recommendations.append({"hidden": true})
+	if not pending_content.is_empty():
+		_growth_recommendations.append({"growth_id": pending_content, "slot_title": "内容位", "purchased": true})
+	else:
+		var content_recommendations: Array = Array(grouped_recommendations.get("content", [])).slice(0, 1)
+		if content_recommendations.is_empty():
+			_growth_recommendations.append({"hidden": true})
+		else:
+			var content_ticket: Dictionary = Dictionary(content_recommendations[0]).duplicate(true)
+			content_ticket["slot_title"] = "内容位"
+			_growth_recommendations.append(content_ticket)
+	var balance_text := "现有 %d 金币 · 声誉 %d · 安装位与内容位各可预订一项 · 第%d天生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
 		int(snapshot.get("current_day", 1)) + 1,
 	]
+	growth_balance_label.text = balance_text if message.is_empty() else "%s\n%s" % [balance_text, message]
 	for index in growth_ticket_buttons.size():
 		var button := growth_ticket_buttons[index]
-		button.visible = index < _growth_recommendations.size()
+		button.visible = index < _growth_recommendations.size() and not bool(_growth_recommendations[index].get("hidden", false))
 		if not button.visible:
 			continue
 		var recommendation := _growth_recommendations[index]
@@ -1875,18 +2040,15 @@ func _refresh_growth_section(message: String = "") -> void:
 		var status_text := _growth_ticket_status_text(recommendation)
 		button.text = "[%s] %s\n%s" % [
 			str(recommendation.get("slot_title", "成长")),
-			_growth_ticket_display_name(StringName(recommendation.get("growth_id", ""))),
+			("已购买：" if bool(recommendation.get("purchased", false)) else "") + _growth_ticket_display_name(StringName(recommendation.get("growth_id", ""))),
 			status_text,
 		]
 		button.tooltip_text = status_text
-		button.disabled = not bool(recommendation.get("can_purchase", false))
-	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
-	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
+		button.disabled = bool(recommendation.get("purchased", false)) or not bool(recommendation.get("can_purchase", false))
 	begin_next_day_button.disabled = false
 	begin_next_day_button.text = "确认预订并开始下一天" if not pending_install.is_empty() or not pending_content.is_empty() else "不购买，直接开始下一天"
-	growth_message_label.text = message if not message.is_empty() else (
-		"安装：%s\n内容：%s" % [_growth_pending_text(pending_install), _growth_pending_text(pending_content)]
-	)
+	if unlock_progress_panel.visible:
+		_refresh_unlock_progress()
 
 
 func _on_growth_ticket_pressed(ticket_index: int) -> void:
@@ -1909,13 +2071,21 @@ func _begin_next_business_day() -> void:
 		return
 	var result: Dictionary = game_session.call("begin_next_business_day")
 	if not bool(result.get("success", false)):
-		growth_message_label.text = "下一营业日未能开始，请返回开始页后重试。"
+		growth_balance_label.text = "下一营业日未能开始，请返回开始页后重试。"
 		return
 	daily_bill_panel.visible = false
 	get_tree().reload_current_scene()
 
 
 func _growth_ticket_status_text(recommendation: Dictionary) -> String:
+	if bool(recommendation.get("purchased", false)):
+		return "已预订，将在明日生效"
+	var selected_growth_id := StringName(recommendation.get("selected_growth_id", ""))
+	if not selected_growth_id.is_empty():
+		return "已选择%s：%s，当前项不可选择" % [
+			str(recommendation.get("selected_slot_label", "该购买位")),
+			_growth_ticket_display_name(selected_growth_id),
+		]
 	if bool(recommendation.get("can_purchase", false)):
 		return "可预订，明日生效"
 	match StringName(recommendation.get("reason", &"")):
@@ -1959,8 +2129,47 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 	return str(names.get(growth_id, "未命名成长项目"))
 
 
-func _growth_pending_text(growth_id: StringName) -> String:
-	return "空位（可不购买）" if growth_id.is_empty() else "已预订 %s" % str(growth_id).trim_prefix("growth.")
+func _open_unlock_progress() -> void:
+	_refresh_unlock_progress()
+	unlock_progress_panel.visible = true
+	unlock_progress_close_button.grab_focus()
+
+
+func _close_unlock_progress() -> void:
+	unlock_progress_panel.visible = false
+	unlock_progress_button.grab_focus()
+
+
+func _refresh_unlock_progress() -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("five_area_progression_snapshot"):
+		unlock_progress_label.text = "当前无法读取解锁进度。"
+		return
+	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
+	var install_names := PackedStringArray(["基础煎饼档口与基础鏊子"])
+	var content_names := PackedStringArray(["基础内容：面糊、鸡蛋、薄脆、葱花、甜面酱"])
+	for growth_id_variant in Array(snapshot.get("owned_growth_ids", [])):
+		var growth_id := StringName(growth_id_variant)
+		var definition: Dictionary = FIVE_AREA_CATALOG.growth_definition(growth_id)
+		if definition.get("purchase_slot", &"") == &"install":
+			install_names.append(_growth_ticket_display_name(growth_id))
+		elif definition.get("purchase_slot", &"") == &"content":
+			content_names.append(_growth_ticket_display_name(growth_id))
+	install_names.sort()
+	content_names.sort()
+	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
+	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
+	unlock_progress_label.text = (
+		"已解锁安装（%d）\n• %s\n\n已解锁内容（%d）\n• %s\n\n明日生效（尚未计入已解锁）\n• 安装：%s\n• 内容：%s"
+		% [
+			install_names.size(),
+			"\n• ".join(install_names),
+			content_names.size(),
+			"\n• ".join(content_names),
+			"无" if pending_install.is_empty() else _growth_ticket_display_name(pending_install),
+			"无" if pending_content.is_empty() else _growth_ticket_display_name(pending_content),
+		]
+	)
 
 
 func _bind_global_status(game_session: Node) -> void:
@@ -2060,9 +2269,9 @@ func _refresh_p1_ui() -> void:
 		P1Session.Phase.SECOND_SIDE:
 			step_action_button.text = "确认火候"
 		P1Session.Phase.SAUCE_AND_FILLINGS:
-			step_action_button.text = "开始折叠"
+			step_action_button.text = ""
 		P1Session.Phase.FOLD, P1Session.Phase.PACKAGE:
-			step_action_button.text = "完成折叠并选择包装"
+			step_action_button.text = ""
 		P1Session.Phase.READY_TO_SERVE:
 			step_action_button.text = ""
 		P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT:
@@ -2077,8 +2286,6 @@ func _refresh_p1_ui() -> void:
 	step_action_button.visible = p1_session.phase in [
 		P1Session.Phase.FIRST_SIDE,
 		P1Session.Phase.SECOND_SIDE,
-		P1Session.Phase.SAUCE_AND_FILLINGS,
-		P1Session.Phase.FOLD,
 	]
 	step_action_button.disabled = false
 	step_action_button.tooltip_text = ""
@@ -2086,7 +2293,10 @@ func _refresh_p1_ui() -> void:
 		var flip_readiness := p1_session.flip_readiness(pancake_model, ingredient_model)
 		var can_flip := bool(flip_readiness.get("success", false))
 		step_action_button.disabled = not can_flip
-		if not can_flip:
+		if bool(flip_readiness.get("early_flip", false)):
+			step_action_button.text = "翻面（尚未就绪）"
+			step_action_button.tooltip_text = str(flip_readiness.get("quality_warning", "提前翻面会降低订单评价"))
+		elif not can_flip:
 			step_action_button.text = "翻面（尚未就绪）"
 			step_action_button.tooltip_text = str(flip_readiness.get("reason", "请先完成翻面准备"))
 	serve_product_button.visible = p1_session.phase == P1Session.Phase.READY_TO_SERVE

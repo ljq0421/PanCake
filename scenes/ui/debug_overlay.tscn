@@ -38,7 +38,7 @@ layout_mode = 0
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 742.0
-offset_bottom = 224.0
+offset_bottom = 300.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_debug")
 
@@ -77,3 +77,12 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.82, 1)
 text = "浅黄=薄 · 金黄=适中 · 橙褐=厚 · 暗红=破洞"
+
+[node name="QuickEndBusinessDayButton" type="Button" parent="Root/DebugPanel/Labels"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+mouse_filter = 0
+theme_override_colors/font_color = Color(1, 0.88, 0.68, 1)
+theme_override_font_sizes/font_size = 18
+text = "测试：提前结束当前营业日"

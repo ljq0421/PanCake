@@ -5,7 +5,9 @@ signal changed
 
 const IMPATIENT_RATIO_THRESHOLD := 0.30
 const SATISFIED_SCORE_THRESHOLD := 70.0
-const MINIMUM_FLIP_DONENESS := 0.30
+## This is a quality recommendation, not an interaction gate.  Players may
+## flip earlier and accept the lower two-sided heat score at settlement.
+const RECOMMENDED_FLIP_DONENESS := 0.30
 const REACTION_NEUTRAL: StringName = &"neutral"
 const REACTION_IMPATIENT: StringName = &"impatient"
 const REACTION_SATISFIED: StringName = &"satisfied"
@@ -97,7 +99,7 @@ func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictiona
 	model.flip(true)
 	phase = Phase.SAUCE_AND_FILLINGS
 	changed.emit()
-	return {"success": true}
+	return readiness.duplicate(true)
 
 
 func flip_readiness(model: PancakeModel, ingredients: IngredientModel) -> Dictionary:
@@ -105,9 +107,16 @@ func flip_readiness(model: PancakeModel, ingredients: IngredientModel) -> Dictio
 		return {"success": false, "reason": "当前还不能翻面"}
 	if ingredients != null and ingredients.has_toppings():
 		return {"success": false, "reason": "面饼上已有小料，不能翻面，请直接折叠", "requires_folding": true}
-	if model.mean_side_doneness(false) < MINIMUM_FLIP_DONENESS:
-		return {"success": false, "reason": "底面还太生，颜色转金黄后再翻"}
-	return {"success": true}
+	var current_doneness := model.mean_side_doneness(false)
+	if current_doneness < RECOMMENDED_FLIP_DONENESS:
+		return {
+			"success": true,
+			"early_flip": true,
+			"current_doneness": current_doneness,
+			"recommended_doneness": RECOMMENDED_FLIP_DONENESS,
+			"quality_warning": "现在也可以翻面，但饼皮偏生会降低火候分和订单评价。",
+		}
+	return {"success": true, "early_flip": false}
 
 
 func finish_cooking(model: PancakeModel) -> Dictionary:

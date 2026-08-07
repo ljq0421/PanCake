@@ -10,7 +10,15 @@ func _initialize() -> void:
 		printerr("FLATTEN_FAILED: source scene could not load")
 		quit(1)
 		return
-	var root := source.instantiate(PackedScene.GEN_EDIT_STATE_MAIN)
+	var source_root := source.instantiate(PackedScene.GEN_EDIT_STATE_MAIN)
+	# Do not retain the inherited PackedScene link. The standalone replacement
+	# must own every node before being packed, otherwise Godot writes the base
+	# workstation scene back as an instance reference.
+	var root := source_root.duplicate(
+		Node.DUPLICATE_SIGNALS | Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS
+	)
+	_make_subtree_owned_by(root, root)
+	source_root.queue_free()
 	var packed := PackedScene.new()
 	var pack_error := packed.pack(root)
 	if pack_error != OK:
@@ -25,3 +33,9 @@ func _initialize() -> void:
 		return
 	print("FLATTEN_INITIAL_UNLOCK_WORKSTATION_PASS")
 	quit(0)
+
+
+func _make_subtree_owned_by(node: Node, root: Node) -> void:
+	for child in node.get_children():
+		child.owner = root
+		_make_subtree_owned_by(child, root)

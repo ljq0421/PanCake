@@ -20,6 +20,7 @@ const VIEW_MODES := {
 
 @export_range(1.0, 60.0, 1.0) var heatmap_update_hz: float = 12.0
 @export_range(32, 512, 1) var render_texture_size: int = 128
+@export var draw_pointer_trace := false
 
 @onready var pancake_visual: TextureRect = %PancakeVisual
 
@@ -104,6 +105,7 @@ func set_fold_visual_state(
 		return
 	shader_material.set_shader_parameter(&"fold_left_progress", clampf(left_progress, 0.0, 1.0))
 	shader_material.set_shader_parameter(&"fold_right_progress", clampf(right_progress, 0.0, 1.0))
+	shader_material.set_shader_parameter(&"fillings_enclosed", 1.0 if left_progress >= 0.999 and right_progress >= 0.999 else 0.0)
 	shader_material.set_shader_parameter(&"package_hidden", 1.0 if package_hidden else 0.0)
 	if model != null:
 		shader_material.set_shader_parameter(&"fold_left_line_ratio", model.parameters.fold_left_line_ratio)
@@ -278,7 +280,7 @@ func _draw() -> void:
 			var position := grid_step * index
 			draw_line(Vector2(position, 0), Vector2(position, size.y), Color(1, 1, 1, 0.10), 1.0)
 			draw_line(Vector2(0, position), Vector2(size.x, position), Color(1, 1, 1, 0.10), 1.0)
-	if _trace_points.size() > 1:
+	if draw_pointer_trace and _trace_points.size() > 1:
 		draw_polyline(_trace_points, Color(0.96, 0.96, 1.0, 0.76), 3.0, true)
 	if mouse_grid_cell.x >= 0 and model != null:
 		var local_position := PancakeSpace.grid_to_local(mouse_grid_cell, size, model.grid_size)

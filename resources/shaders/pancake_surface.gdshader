@@ -19,6 +19,7 @@ uniform float fold_left_line_ratio = 0.38;
 uniform float fold_right_line_ratio = 0.62;
 uniform float fold_left_progress = 0.0;
 uniform float fold_right_progress = 0.0;
+uniform float fillings_enclosed = 0.0;
 uniform float package_hidden = 0.0;
 uniform int view_mode = 0;
 
@@ -112,15 +113,21 @@ void fragment() {
 		egg_material_boosted = mix(egg_material_boosted, vec3(1.0, 0.98, 0.84), white_gloss * 0.42);
 		egg_color = mix(egg_color, egg_material_boosted, 0.88);
 		float egg_visibility = smoothstep(0.0005, 0.022, egg_visual_amount) * coverage;
+		float left_landing_edge = mix(fold_left_line_ratio, min(1.0, fold_left_line_ratio * 2.0), clamp(fold_left_progress, 0.0, 1.0));
+		float right_landing_edge = mix(fold_right_line_ratio, max(0.0, fold_right_line_ratio * 2.0 - 1.0), clamp(fold_right_progress, 0.0, 1.0));
+		float left_filling_occlusion = (1.0 - step(max(fold_left_line_ratio, left_landing_edge), UV.x)) * clamp(fold_left_progress, 0.0, 1.0);
+		float right_filling_occlusion = step(min(fold_right_line_ratio, right_landing_edge), UV.x) * clamp(fold_right_progress, 0.0, 1.0);
+		float filling_visibility = (1.0 - max(left_filling_occlusion, right_filling_occlusion)) * (1.0 - clamp(fillings_enclosed, 0.0, 1.0));
+		egg_visibility *= filling_visibility;
 		float egg_opacity = mix(0.64, 0.94, egg_fields.b);
 		float egg_edge = clamp((egg_neighbor_amount - egg_fields.a) * 5.0, 0.0, 1.0);
 		egg_color = mix(egg_color, vec3(1.0, 0.96, 0.77), egg_edge * 0.32);
 		pancake_color = mix(pancake_color, egg_color, egg_visibility * egg_opacity);
-		float sauce_visibility = smoothstep(0.015, 0.32, sauce);
+		float sauce_visibility = smoothstep(0.015, 0.32, sauce) * filling_visibility;
 		vec3 sweet_color = texture(sweet_sauce_texture, detail_uv).rgb;
 		vec3 chili_color = texture(chili_sauce_texture, detail_uv).rgb;
 		pancake_color = mix(pancake_color, sweet_color, sauce_visibility * 0.82);
-		float chili_visibility = smoothstep(0.015, 0.32, chili_sauce);
+		float chili_visibility = smoothstep(0.015, 0.32, chili_sauce) * filling_visibility;
 		pancake_color = mix(pancake_color, chili_color, chili_visibility * 0.80);
 
 		float alpha = smoothstep(0.02, 0.32, coverage) * pan_mask;

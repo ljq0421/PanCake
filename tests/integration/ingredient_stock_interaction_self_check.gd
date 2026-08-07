@@ -45,13 +45,17 @@ func _run() -> void:
 	_check(not workstation.ingredient_model.has_type(IngredientModel.EGG), "failed placement does not create pancake ingredient data")
 	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_5_v1.png"), "failed placement immediately switches to the fifth stock image")
 
-	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * Vector2(300, 300)
+	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * (workstation.pancake_surface.size * 0.5)
 	workstation._on_ingredient_gui_input(press, IngredientModel.EGG)
 	workstation._finish_ingredient_drag(surface_center)
 	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 4, "successful placement also consumes exactly one egg")
 	_check(workstation.ingredient_model.has_type(IngredientModel.EGG), "successful placement still creates ingredient business data")
+	workstation._on_ingredient_gui_input(press, IngredientModel.EGG)
+	workstation._finish_ingredient_drag(surface_center + Vector2(80.0, 0.0))
+	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 3, "a second egg consumes another real portion")
+	_check(workstation.ingredient_model.count_type(IngredientModel.EGG) == 2, "the same pancake accepts more than one egg")
 	workstation.reset_pancake()
-	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 4, "resetting a failed pancake does not refund consumed ingredients")
+	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 3, "resetting a failed pancake does not refund consumed ingredients")
 
 	while workstation.ingredient_stock_model.has_stock(IngredientModel.EGG):
 		workstation.ingredient_stock_model.consume(IngredientModel.EGG)

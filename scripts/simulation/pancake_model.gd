@@ -292,8 +292,8 @@ func advance_cooking(delta_seconds: float, heat_level: float = 0.65) -> int:
 
 
 func can_crack_egg(center: Vector2) -> Dictionary:
-	if has_egg():
-		return {"success": false, "reason": "鸡蛋已经打入饼面"}
+	if is_flipped:
+		return {"success": false, "reason": "鸡蛋需要在翻面前打入饼面"}
 	if not is_inside_pan(center):
 		return {"success": false, "reason": "请把鸡蛋打在鏊面内"}
 	var cell := Vector2i(roundi(center.x), roundi(center.y))

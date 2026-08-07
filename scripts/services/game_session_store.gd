@@ -39,6 +39,12 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"coriander": &"stock.pancake.coriander",
 	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 }
+const DAILY_PANCAKE_CONSUMABLE_STOCK := {
+	&"stock.pancake.batter": 6,
+	&"stock.pancake.sauce.sweet_flour": 6,
+	&"stock.pancake.sauce.red_chili": 6,
+}
+const RECONCILED_FORMAL_ORDER_IDS_KEY := "reconciled_formal_order_ids"
 const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
 	"sfx_volume": 85.0,
@@ -56,6 +62,7 @@ var _incompatible_development_save_removed := false
 func _ready() -> void:
 	_load_save()
 	_restore_progression()
+	_reconcile_unrecorded_settled_orders()
 	_load_settings()
 	apply_settings()
 
@@ -97,6 +104,7 @@ func begin_new_game() -> Dictionary:
 		"restock_progress": {},
 		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
 		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
+		RECONCILED_FORMAL_ORDER_IDS_KEY: [],
 		"pancake_order_cursor": 0,
 		"pancake_orders_issued_today": 0,
 	}
@@ -522,13 +530,40 @@ func begin_next_business_day() -> Dictionary:
 	_save_data["today_cutoff"] = {}
 	_save_data["pancake_orders_issued_today"] = 0
 	_progression.call("advance_tutorial_for_new_business_day")
+	_replenish_daily_pancake_consumables()
+	_provision_activated_stock(Array(result.get("activated_growth_ids", [])))
 	_sync_progression_to_save()
 	_touch_and_write()
+	inventory_changed.emit(inventory_snapshot())
 	progression_changed.emit(five_area_progression_snapshot())
 	return result
 
 
-func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, earned_coins: int = 0) -> Dictionary:
+func _replenish_daily_pancake_consumables() -> void:
+	var inventory := inventory_snapshot()
+	for stock_id in DAILY_PANCAKE_CONSUMABLE_STOCK:
+		if not bool(_progression.call("owns_stock", stock_id)):
+			continue
+		var key := str(stock_id)
+		inventory[key] = maxi(int(inventory.get(key, 0)), int(DAILY_PANCAKE_CONSUMABLE_STOCK[stock_id]))
+	_save_data["inventory"] = _normalize_inventory(inventory)
+
+
+func _provision_activated_stock(activated_growth_ids: Array) -> void:
+	var inventory := inventory_snapshot()
+	for growth_id_variant in activated_growth_ids:
+		var definition := CATALOG.growth_definition(StringName(growth_id_variant))
+		for stock_id_variant in Array(definition.get("unlock_stock_ids", [])):
+			var stock_id := StringName(stock_id_variant)
+			var stock_definition := CATALOG.stock_definition(stock_id)
+			var capacity := maxi(int(stock_definition.get("restock_capacity", 0)), 0)
+			if capacity > 0:
+				var key := str(stock_id)
+				inventory[key] = maxi(int(inventory.get(key, 0)), capacity)
+	_save_data["inventory"] = _normalize_inventory(inventory)
+
+
+func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, earned_coins: int = 0, formal_order_id: StringName = &"") -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
@@ -542,18 +577,24 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 	if bool(order.get("tutorial_no_countdown", false)) and float(settled_result.get("score", 0.0)) >= 70.0:
 		tutorial_completion = _progression.call("complete_tutorial", StringName(order.get("tutorial_kind", &"")), StringName(order.get("tutorial_id", &"")))
 	var payment_coins := maxi(earned_coins, 0)
+	var material_cost := maxi(int(settled_result.get("material_cost", 0)), 0)
 	var reputation_delta := _reputation_delta_for_result(settled_result)
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
 	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
-	today_orders.append({
+	var completed_order := {
 		"order_id": str(order.get("id", "unknown")),
 		"title": str(order.get("title", "煎饼订单")),
 		"area_id": str(area_id),
 		"score": roundi(float(settled_result.get("score", 0.0))),
 		"grade": str(settled_result.get("grade", "C")),
 		"coins": payment_coins,
+		"cost": material_cost,
+		"profit": payment_coins - material_cost,
 		"result": settled_result,
-	})
+	}
+	if not formal_order_id.is_empty():
+		completed_order["formal_order_id"] = str(formal_order_id)
+	today_orders.append(completed_order)
 	_save_data["today_orders"] = today_orders
 	_save_data["orders_completed"] = int(_save_data.get("orders_completed", 0)) + 1
 	_save_data["today_reputation_delta"] = int(_save_data.get("today_reputation_delta", 0)) + reputation_delta
@@ -570,15 +611,19 @@ func today_bill() -> Dictionary:
 		return {"day": 1, "orders": [], "order_count": 0, "total_coins": 0, "average_score": 0.0, "reputation_delta": 0}
 	var orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
 	var total_coins := 0
+	var total_cost := 0
 	var total_score := 0.0
 	for entry in orders:
 		total_coins += int(entry.get("coins", 0))
+		total_cost += maxi(int(entry.get("cost", 0)), 0)
 		total_score += float(entry.get("score", 0.0))
 	return {
 		"day": int(_progression.get("current_day")),
 		"orders": orders,
 		"order_count": orders.size(),
 		"total_coins": total_coins,
+		"total_cost": total_cost,
+		"total_profit": total_coins - total_cost,
 		"average_score": total_score / maxf(float(orders.size()), 1.0),
 		"reputation_delta": int(_save_data.get("today_reputation_delta", 0)),
 		"cutoff": Dictionary(_save_data.get("today_cutoff", {})).duplicate(true),
@@ -681,6 +726,74 @@ func _ensure_save_shape() -> void:
 		_save_data["pancake_order_cursor"] = 0
 	if not _save_data.has("pancake_orders_issued_today"):
 		_save_data["pancake_orders_issued_today"] = 0
+	if not _save_data.has(RECONCILED_FORMAL_ORDER_IDS_KEY):
+		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = []
+
+
+func _reconcile_unrecorded_settled_orders() -> void:
+	if not has_save():
+		return
+	# A payment callback can stop after the formal order is durable but before
+	# the daily bill and collected coins are written.  The formal settlement is
+	# authoritative, so repair that missing tail once at startup.
+	var reconciled_ids := PackedStringArray(Array(_save_data.get(RECONCILED_FORMAL_ORDER_IDS_KEY, [])))
+	var recorded_formal_ids := {}
+	var legacy_record_counts := {}
+	for completed_order_value in Array(_save_data.get("today_orders", [])):
+		var completed_order: Dictionary = Dictionary(completed_order_value)
+		var recorded_formal_id := StringName(completed_order.get("formal_order_id", &""))
+		if not recorded_formal_id.is_empty():
+			recorded_formal_ids[recorded_formal_id] = true
+			continue
+		var legacy_order_id := str(completed_order.get("order_id", ""))
+		legacy_record_counts[legacy_order_id] = int(legacy_record_counts.get(legacy_order_id, 0)) + 1
+	var formal_orders: Dictionary = Dictionary(Dictionary(_save_data.get("formal_orders", {})).get("orders", {}))
+	var settled_orders: Array[Dictionary] = []
+	for raw_formal_order_id in formal_orders:
+		var formal_order_id := StringName(raw_formal_order_id)
+		var formal_order: Dictionary = Dictionary(formal_orders[raw_formal_order_id])
+		if StringName(formal_order.get("state", &"")) == &"settled":
+			settled_orders.append({"order_id": formal_order_id, "order": formal_order})
+	settled_orders.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return int(Dictionary(left.get("order", {})).get("sequence", 0)) < int(Dictionary(right.get("order", {})).get("sequence", 0))
+	)
+	var reconciliation_changed := false
+	for entry in settled_orders:
+		var formal_order_id: StringName = entry.get("order_id", &"")
+		if reconciled_ids.has(str(formal_order_id)) or recorded_formal_ids.has(formal_order_id):
+			continue
+		var formal_order: Dictionary = Dictionary(entry.get("order", {}))
+		var legacy_order: Dictionary = Dictionary(Dictionary(formal_order.get("metadata", {})).get("legacy_order", {}))
+		var legacy_order_id := str(legacy_order.get("id", ""))
+		# Older saves do not have formal-order IDs on daily-bill rows.  Consume a
+		# matching legacy row once so that upgrading cannot pay it a second time.
+		if not legacy_order_id.is_empty() and int(legacy_record_counts.get(legacy_order_id, 0)) > 0:
+			legacy_record_counts[legacy_order_id] = int(legacy_record_counts[legacy_order_id]) - 1
+			reconciled_ids.append(str(formal_order_id))
+			reconciliation_changed = true
+			continue
+		var items: Array = Array(formal_order.get("items", []))
+		var product: Dictionary = Dictionary(items[0].get("attached_product", {})) if not items.is_empty() else {}
+		if legacy_order.is_empty() or product.is_empty():
+			continue
+		var score := float(product.get("score", 0.0))
+		var recovered_result := {
+			"area_id": product.get("area_id", &"area.pancake"),
+			"product_id": product.get("product_id", &"product.pancake.custom"),
+			"score": score,
+			"grade": _grade_for_score(score),
+			"dimensions": Dictionary(product.get("dimension_scores", {})).duplicate(true),
+			"material_cost": int(product.get("material_cost", 0)),
+			"feedback": "已恢复中断前完成的订单",
+		}
+		var payment_coins := maxi(int(legacy_order.get("payment_coins", 0)), 0)
+		record_order_completed(legacy_order, recovered_result, payment_coins, formal_order_id)
+		credit_coins(payment_coins)
+		reconciled_ids.append(str(formal_order_id))
+		reconciliation_changed = true
+	if reconciliation_changed:
+		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = reconciled_ids
+		_touch_and_write()
 
 
 func _new_inventory_snapshot() -> Dictionary:

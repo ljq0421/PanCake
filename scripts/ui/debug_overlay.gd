@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var cursor_label: Label = %CursorLabel
 @onready var mode_label: Label = %ModeLabel
 @onready var legend_label: Label = %LegendLabel
+@onready var quick_end_business_day_button: Button = %QuickEndBusinessDayButton
 
 var workstation: Workstation
 var _refresh_elapsed := 0.0
@@ -16,6 +17,7 @@ var _refresh_elapsed := 0.0
 func _ready() -> void:
 	workstation = get_node(workstation_path) as Workstation
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	quick_end_business_day_button.pressed.connect(_end_business_day_early_for_testing)
 	_refresh_labels()
 
 
@@ -49,9 +51,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				workstation.set_heatmap_field(PancakeModel.FIELD_SAUCE_CONCENTRATION)
 
 
+func _end_business_day_early_for_testing() -> void:
+	if workstation != null:
+		workstation.end_business_day_early_for_testing()
+
+
 func _refresh_labels() -> void:
 	if workstation == null or workstation.pancake_model == null:
 		return
+	quick_end_business_day_button.disabled = not workstation.can_end_business_day_early_for_testing()
 	var model := workstation.pancake_model
 	var summary := model.calculate_summary()
 	performance_label.text = "FPS %d  |  model update %d us  |  revision %d" % [

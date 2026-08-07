@@ -14,6 +14,14 @@ const INGREDIENT_STOCK_IDS := {
 	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 }
 
+const MATERIAL_SLOT_STOCK_IDS := {
+	&"Slot04": &"stock.pancake.meat_floss",
+	&"Slot05": &"stock.pancake.ham_sausage",
+	&"Slot06": &"stock.pancake.coriander",
+	&"Slot10": &"stock.pancake.pork_tenderloin",
+	&"Slot11": &"stock.pancake.preserved_mustard",
+}
+
 var _restock: RefCounted
 var _hovered_source: Button
 var _hover_previous_instructions := ""
@@ -63,6 +71,7 @@ func _refresh_formal_state() -> void:
 	if workstation != null and workstation.has_method("apply_progression_effects"):
 		workstation.call("apply_progression_effects", Dictionary(session.call("five_area_progression_snapshot")))
 	_refresh_ingredient_trays()
+	_refresh_material_slot_locks()
 	_sync_live_ingredient_stock()
 	_refresh_formal_five_area_state()
 	_refresh_refill_source_tooltips()
@@ -81,6 +90,25 @@ func _refresh_ingredient_trays() -> void:
 		slot.visible = is_unlocked
 		slot.disabled = not is_unlocked
 		slot.mouse_filter = Control.MOUSE_FILTER_STOP if is_unlocked else Control.MOUSE_FILTER_IGNORE
+
+
+func _refresh_material_slot_locks() -> void:
+	var session := _session()
+	if session == null:
+		return
+	var formal_snapshot: Dictionary = session.call("five_area_progression_snapshot")
+	var unlocked_stock_ids: Dictionary = {}
+	for stock_id in Array(formal_snapshot.get("unlocked_stock_ids", [])):
+		unlocked_stock_ids[StringName(stock_id)] = true
+	for slot_name in MATERIAL_SLOT_STOCK_IDS:
+		var unlocked := bool(unlocked_stock_ids.get(MATERIAL_SLOT_STOCK_IDS[slot_name], false))
+		var locked_art := get_node_or_null("../LockedIngredientArtwork/%s" % slot_name) as CanvasItem
+		if locked_art != null:
+			locked_art.visible = not unlocked
+		var locked_button := get_node_or_null("../LockedIngredientInteractions/%sLockedButton" % slot_name) as Button
+		if locked_button != null:
+			locked_button.disabled = unlocked
+			locked_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if unlocked else Control.MOUSE_FILTER_STOP
 
 
 func _sync_live_ingredient_stock() -> void:
@@ -255,6 +283,9 @@ func _refresh_formal_five_area_state() -> void:
 		var locked_art := get_node_or_null(station_button.get_meta(&"locked_art_path", NodePath())) as CanvasItem
 		if locked_art != null:
 			locked_art.visible = not area_is_unlocked
+		var active_art := get_node_or_null(station_button.get_meta(&"active_art_path", NodePath())) as CanvasItem
+		if active_art != null:
+			active_art.visible = area_is_unlocked
 
 
 func _bind_locked_art_interactions() -> void:

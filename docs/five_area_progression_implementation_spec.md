@@ -375,7 +375,7 @@ static func validate_catalog() -> PackedStringArray
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.tool.pancake.wide_spreader` | 安装 | 12 | D2，Q(pancake)4 | 摊面有效宽度×1.25 |
+| `growth.tool.pancake.wide_spreader` | 安装 | 12 | D2，Q(pancake)4 | 摊面有效宽度×1.65；升级外观和指示圈同步放大 |
 | `growth.add_on.pancake.red_chili` | 内容 | 8 | D2，Q(pancake)5 | 解锁辣酱库存与订单 |
 | `growth.add_on.pancake.ham_sausage` | 内容 | 12 | D4，Q(pancake)8 | 解锁火腿肠 |
 | `growth.equipment.pancake.intermediate` | 安装 | 24 | D4，Q(pancake)8 | 扩大合格火候窗口 |

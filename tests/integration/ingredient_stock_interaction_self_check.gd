@@ -25,7 +25,7 @@ func _run() -> void:
 	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v1.png"), "full tray renders the sixth stock image without a number")
 	_check(workstation.egg_restock_button != null and workstation.baocui_restock_button != null and workstation.ham_restock_button != null and workstation.scallion_restock_button != null, "four matching physical restock controls are stable scene content")
 	var background_artwork := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background_artwork.texture.resource_path.ends_with("workstation_backplate_morning_mobile_cart_v1.png"), "initial mobile-cart backplate keeps the refill-container shelf clear")
+	_check(background_artwork.texture.resource_path.ends_with("workstation_18_single_row_1920x1080.png"), "initial workstation uses the formal 18-slot single-row backplate")
 	_check(workstation.ingredient_layer.baocui_texture.resource_path.ends_with("baocui_broken_v1.png"), "placed baocui uses the visibly broken sheet artwork")
 	_check(_ingredient_rack_has_no_digits(workstation), "ingredient rack uses pictures and words instead of numeric stock labels")
 
@@ -59,7 +59,9 @@ func _run() -> void:
 
 	while workstation.ingredient_stock_model.has_stock(IngredientModel.EGG):
 		workstation.ingredient_stock_model.consume(IngredientModel.EGG)
-	_check(not workstation.egg_button.empty_label.visible and not workstation.egg_button.artwork.visible, "empty stock leaves the pan visibly empty without permanent text")
+	_check(not workstation.egg_button.artwork.visible, "empty stock hides the depleted ingredient artwork")
+	_check(workstation.egg_button.empty_label.visible, "empty stock shows the scene-backed sold-out label")
+	_check(not workstation.egg_button.empty_label.text.strip_edges().is_empty() and not _text_has_digits(workstation.egg_button.empty_label.text), "empty stock uses a word-only sold-out state")
 	_check(workstation.egg_restock_button.disabled and not workstation.egg_restock_button.get_parent().visible, "empty tray does not expose the legacy one-click restock container")
 	game_session.call("credit_coins", 20)
 	var refill: RefCounted = workstation.get_node("SafeArea/PancakeWorkstationInteractionController").get("_restock")
@@ -103,6 +105,13 @@ func _ingredient_rack_has_no_digits(workstation: Workstation) -> bool:
 			if character >= "0" and character <= "9":
 				return false
 	return true
+
+
+func _text_has_digits(text: String) -> bool:
+	for character in text:
+		if character >= "0" and character <= "9":
+			return true
+	return false
 
 
 func _check(condition: bool, message: String) -> void:

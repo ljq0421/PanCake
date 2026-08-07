@@ -16,6 +16,7 @@ var day_open := true
 var unlocked_area_ids: Dictionary = {&"area.pancake": true}
 var device_tiers: Dictionary = {&"device.pancake_griddle": 1}
 var unlocked_recipe_ids: Dictionary = {&"recipe.pancake.base": true}
+var unlocked_product_ids: Dictionary = {&"product.pancake.custom": true}
 var unlocked_stock_ids: Dictionary = {
 	&"stock.pancake.batter": true,
 	&"stock.pancake.egg": true,
@@ -24,8 +25,11 @@ var unlocked_stock_ids: Dictionary = {
 	&"stock.pancake.sauce.sweet_flour": true,
 }
 var unlocked_automation_ids: Dictionary = {}
+var owned_assist_ids: Dictionary = {}
 var owned_growth_ids: Dictionary = {}
 var area_mastery: Dictionary = {}
+var area_mastery_details: Dictionary = {}
+var applied_mastery_settlement_ids: Dictionary = {}
 var pending_install_purchase: StringName = &""
 var pending_content_purchase: StringName = &""
 ## Tutorial state uses stable region/device IDs and is never inferred from UI.
@@ -54,6 +58,10 @@ func owns_recipe(recipe_id: StringName) -> bool:
 	return bool(unlocked_recipe_ids.get(recipe_id, false))
 
 
+func owns_product(product_id: StringName) -> bool:
+	return bool(unlocked_product_ids.get(product_id, false))
+
+
 func owns_stock(stock_id: StringName) -> bool:
 	return bool(unlocked_stock_ids.get(stock_id, false))
 
@@ -62,12 +70,34 @@ func owns_automation(automation_id: StringName) -> bool:
 	return bool(unlocked_automation_ids.get(automation_id, false))
 
 
+func owns_assist(assist_id: StringName) -> bool:
+	return bool(owned_assist_ids.get(assist_id, false))
+
+
 func device_tier(device_id: StringName) -> int:
 	return int(device_tiers.get(device_id, 0))
 
 
 func mastery_value(area_id: StringName) -> int:
-	return int(area_mastery.get(area_id, 0))
+	var details := mastery_snapshot(area_id)
+	if area_id == &"area.packaged_drink":
+		return int(details.get("correct_temperature", 0))
+	return int(details.get("qualified", area_mastery.get(area_id, 0)))
+
+
+func mastery_snapshot(area_id: StringName) -> Dictionary:
+	var details: Dictionary = Dictionary(area_mastery_details.get(area_id, {})).duplicate(true)
+	if not details.has("qualified"):
+		details["qualified"] = int(area_mastery.get(area_id, 0))
+	if not details.has("a_grade"):
+		details["a_grade"] = 0
+	if not details.has("correct_temperature"):
+		details["correct_temperature"] = int(area_mastery.get(area_id, 0)) if area_id == &"area.packaged_drink" else 0
+	if not details.has("correct_streak_current"):
+		details["correct_streak_current"] = 0
+	if not details.has("correct_streak_best"):
+		details["correct_streak_best"] = 0
+	return details
 
 
 func set_day_open(value: bool) -> void:
@@ -116,11 +146,33 @@ func growth_recommendations(limit_per_slot: int = 3) -> Dictionary:
 func record_area_result(area_id: StringName, result: Dictionary) -> Dictionary:
 	if not owns_area(area_id):
 		return {"success": false, "reason": &"area_locked"}
+	var settlement_id := StringName(result.get("settlement_id", &""))
+	if not settlement_id.is_empty() and applied_mastery_settlement_ids.has(settlement_id):
+		return {"success": true, "changed": false, "reason": &"already_recorded", "area_id": area_id, "mastery": mastery_value(area_id), "details": mastery_snapshot(area_id)}
+	var details := mastery_snapshot(area_id)
 	var grade := str(result.get("grade", ""))
-	var gained := 1 if grade == "A" or grade == "B" else 0
-	if gained > 0:
-		area_mastery[area_id] = mastery_value(area_id) + gained
-	return {"success": true, "area_id": area_id, "mastery_gained": gained, "mastery": mastery_value(area_id)}
+	var gained := 0
+	if area_id == &"area.packaged_drink":
+		var correct := bool(result.get("correct_temperature", false))
+		if correct:
+			gained = 1
+			details["correct_temperature"] = int(details.get("correct_temperature", 0)) + 1
+			details["correct_streak_current"] = int(details.get("correct_streak_current", 0)) + 1
+			details["correct_streak_best"] = maxi(int(details.get("correct_streak_best", 0)), int(details.get("correct_streak_current", 0)))
+		else:
+			details["correct_streak_current"] = 0
+		details["qualified"] = int(details.get("correct_temperature", 0))
+	else:
+		gained = 1 if grade == "A" or grade == "B" else 0
+		if gained > 0:
+			details["qualified"] = int(details.get("qualified", 0)) + 1
+		if grade == "A":
+			details["a_grade"] = int(details.get("a_grade", 0)) + 1
+	area_mastery_details[area_id] = details
+	area_mastery[area_id] = int(details.get("correct_temperature", 0)) if area_id == &"area.packaged_drink" else int(details.get("qualified", 0))
+	if not settlement_id.is_empty():
+		applied_mastery_settlement_ids[settlement_id] = true
+	return {"success": true, "changed": true, "area_id": area_id, "mastery_gained": gained, "mastery": mastery_value(area_id), "details": details.duplicate(true)}
 
 
 func tutorial_snapshot() -> Dictionary:
@@ -192,10 +244,14 @@ func snapshot() -> Dictionary:
 		"unlocked_area_ids": _snapshot_id_set(unlocked_area_ids),
 		"device_tiers": device_tiers.duplicate(true),
 		"unlocked_recipe_ids": _snapshot_id_set(unlocked_recipe_ids),
+		"unlocked_product_ids": _snapshot_id_set(unlocked_product_ids),
 		"unlocked_stock_ids": _snapshot_id_set(unlocked_stock_ids),
 		"unlocked_automation_ids": _snapshot_id_set(unlocked_automation_ids),
+		"owned_assist_ids": _snapshot_id_set(owned_assist_ids),
 		"owned_growth_ids": _snapshot_id_set(owned_growth_ids),
 		"area_mastery": area_mastery.duplicate(true),
+		"area_mastery_details": area_mastery_details.duplicate(true),
+		"applied_mastery_settlement_ids": _snapshot_id_set(applied_mastery_settlement_ids),
 		"pending_install_purchase": str(pending_install_purchase),
 		"pending_content_purchase": str(pending_content_purchase),
 		"tutorial": tutorial_snapshot(),
@@ -212,10 +268,14 @@ func load_snapshot(value: Dictionary) -> void:
 		unlocked_area_ids[&"area.pancake"] = true
 	device_tiers = Dictionary(value.get("device_tiers", {&"device.pancake_griddle": 1})).duplicate(true)
 	unlocked_recipe_ids = _load_id_set(value.get("unlocked_recipe_ids", [&"recipe.pancake.base"]))
+	unlocked_product_ids = _load_id_set(value.get("unlocked_product_ids", [&"product.pancake.custom"]))
 	unlocked_stock_ids = _load_id_set(value.get("unlocked_stock_ids", []))
 	unlocked_automation_ids = _load_id_set(value.get("unlocked_automation_ids", []))
+	owned_assist_ids = _load_id_set(value.get("owned_assist_ids", []))
 	owned_growth_ids = _load_id_set(value.get("owned_growth_ids", []))
 	area_mastery = Dictionary(value.get("area_mastery", {})).duplicate(true)
+	area_mastery_details = Dictionary(value.get("area_mastery_details", {})).duplicate(true)
+	applied_mastery_settlement_ids = _load_id_set(value.get("applied_mastery_settlement_ids", []))
 	pending_install_purchase = StringName(value.get("pending_install_purchase", ""))
 	pending_content_purchase = StringName(value.get("pending_content_purchase", ""))
 	var tutorial: Dictionary = Dictionary(value.get("tutorial", {}))
@@ -247,6 +307,27 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	var min_day := int(definition.get("min_day", 1))
 	if current_day < min_day:
 		return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"day_requirement", "min_day": min_day}
+	var min_reputation := int(definition.get("min_reputation", 0))
+	if reputation < min_reputation:
+		return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"reputation_requirement", "min_reputation": min_reputation, "current_reputation": reputation}
+	var tutorial_area_id := StringName(definition.get("requires_tutorial_area_id", &""))
+	if not tutorial_area_id.is_empty() and not tutorial_completed_area_ids.has(tutorial_area_id):
+		return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"tutorial_requirement", "required_tutorial_area_id": tutorial_area_id}
+	if bool(definition.get("requires_all_areas", false)):
+		for area_id in CATALOG.UNLOCK_AREA_IDS:
+			if not owns_area(area_id):
+				return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"all_areas_requirement", "required_area_id": area_id}
+	var mastery_requirements: Dictionary = Dictionary(definition.get("requires_mastery", {}))
+	for mastery_area_variant in mastery_requirements:
+		var mastery_area_id := StringName(mastery_area_variant)
+		var current_mastery := mastery_snapshot(mastery_area_id)
+		var required_values: Dictionary = Dictionary(mastery_requirements[mastery_area_variant])
+		for metric_variant in required_values:
+			var metric := str(metric_variant)
+			var required_value := int(required_values[metric_variant])
+			var current_value := int(current_mastery.get(metric, 0))
+			if current_value < required_value:
+				return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"mastery_requirement", "mastery_area_id": mastery_area_id, "mastery_metric": StringName(metric), "current_mastery": current_value, "required_mastery": required_value}
 	var price := int(definition.get("price", 0))
 	if coins < price:
 		return {"growth_id": growth_id, "purchase_slot": slot, "can_purchase": false, "reason": &"insufficient_coins", "price": price, "current_coins": coins}
@@ -267,11 +348,16 @@ func _apply_growth(growth_id: StringName, definition: Dictionary) -> void:
 			tutorial_queue_device_ids.append(device_id)
 	for recipe_id in definition.get("unlock_recipe_ids", []):
 		unlocked_recipe_ids[recipe_id] = true
+	for product_id in definition.get("unlock_product_ids", []):
+		unlocked_product_ids[product_id] = true
 	for stock_id in definition.get("unlock_stock_ids", []):
 		unlocked_stock_ids[stock_id] = true
 	var automation_id: StringName = definition.get("automation_id", &"")
 	if not automation_id.is_empty():
 		unlocked_automation_ids[automation_id] = true
+	var assist_id: StringName = definition.get("assist_id", &"")
+	if not assist_id.is_empty():
+		owned_assist_ids[assist_id] = true
 
 
 func _pending_for(slot: StringName) -> StringName:

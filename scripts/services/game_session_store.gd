@@ -4,6 +4,7 @@ signal settings_changed(current_settings: Dictionary)
 signal coins_changed(current_coins: int)
 signal progression_changed(snapshot: Dictionary)
 signal inventory_changed(snapshot: Dictionary)
+signal production_changed(snapshot: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
@@ -14,6 +15,7 @@ const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progressi
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_HOLDING_TRAY_MODEL := preload("res://scripts/gameplay/pancake_holding_tray_model.gd")
 const FIVE_AREA_ORDER_SERVICE := preload("res://scripts/services/five_area_order_service.gd")
+const FIVE_AREA_PRODUCTION_SERVICE := preload("res://scripts/services/five_area_production_service.gd")
 const FIVE_AREA_PANCAKE_ORDER_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -56,6 +58,7 @@ var _settings: Dictionary = DEFAULT_SETTINGS.duplicate(true)
 var _progression: RefCounted
 var _pancake_holding_tray: RefCounted
 var _order_service: RefCounted
+var _production_service: RefCounted
 var _incompatible_development_save_removed := false
 
 
@@ -88,6 +91,7 @@ func begin_new_game() -> Dictionary:
 	_progression = PROGRESSION_SERVICE.new()
 	_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new()
 	_order_service = FIVE_AREA_ORDER_SERVICE.new()
+	_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self)
 	_save_data = {
 		"version": SAVE_VERSION,
 		"save_kind": SAVE_KIND,
@@ -104,6 +108,7 @@ func begin_new_game() -> Dictionary:
 		"restock_progress": {},
 		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
 		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
+		"production": _production_service.call("snapshot"),
 		RECONCILED_FORMAL_ORDER_IDS_KEY: [],
 		"pancake_order_cursor": 0,
 		"pancake_orders_issued_today": 0,
@@ -111,6 +116,7 @@ func begin_new_game() -> Dictionary:
 	_write_save()
 	progression_changed.emit(five_area_progression_snapshot())
 	inventory_changed.emit(inventory_snapshot())
+	production_changed.emit(five_area_production_snapshot())
 	return {"success": true, "snapshot": _save_data.duplicate(true)}
 
 
@@ -162,6 +168,11 @@ func progression_service() -> RefCounted:
 func order_service() -> RefCounted:
 	_ensure_order_service()
 	return _order_service
+
+
+func production_service() -> RefCounted:
+	_ensure_production_service()
+	return _production_service
 
 
 func open_pancake_order(template: Dictionary) -> Dictionary:
@@ -235,6 +246,184 @@ func attach_formal_order_product(order_id: StringName, item_index: int, product:
 	return result
 
 
+func preview_attach_formal_order_product(order_id: StringName, item_index: int, product: Dictionary) -> Dictionary:
+	_ensure_order_service()
+	return Dictionary(_order_service.call("preview_attach_product", order_id, item_index, product)).duplicate(true)
+
+
+func mark_formal_order_production_started(order_id: StringName, source_instance_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("mark_production_started", order_id, source_instance_id)
+	if bool(result.get("success", false)):
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+	return result
+
+
+func five_area_production_snapshot() -> Dictionary:
+	_ensure_production_service()
+	return Dictionary(_production_service.call("snapshot")).duplicate(true)
+
+
+func f3_machine_snapshot(device_id: StringName) -> Dictionary:
+	_ensure_production_service()
+	return Dictionary(_production_service.call("machine_snapshot", device_id)).duplicate(true)
+
+
+func advance_f3_production(delta: float) -> void:
+	if not has_save() or delta <= 0.0 or get_tree().paused:
+		return
+	_ensure_progression()
+	if not bool(_progression.get("day_open")):
+		return
+	_ensure_production_service()
+	_production_service.call("advance_time", delta)
+	_sync_production_to_save()
+	production_changed.emit(five_area_production_snapshot())
+
+
+func load_f3_drink(slot_index: int, product_id: StringName, order_id: StringName = &"") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("load_drink", slot_index, product_id)
+	if bool(result.get("success", false)):
+		_mark_f3_order_started(order_id, StringName("device.packaged_drink_heater.slot.%d" % slot_index))
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func deliver_room_temperature_drink(order_id: StringName, item_index: int, product_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	var preview_product := {
+		"product_instance_id": &"preview.room_temperature_drink",
+		"area_id": &"area.packaged_drink",
+		"product_id": product_id,
+		"temperature_mode": &"room_temperature",
+		"ingredient_ids": PackedStringArray(),
+		"sauce_ids": PackedStringArray(),
+	}
+	var order_preview := preview_attach_formal_order_product(order_id, item_index, preview_product)
+	if not bool(order_preview.get("success", false)):
+		return order_preview
+	if not bool(order_preview.get("will_match", false)):
+		return {"success": false, "reason": &"order_item_mismatch", "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
+	_ensure_production_service()
+	var inventory_rollback := inventory_snapshot()
+	var production_rollback := five_area_production_snapshot()
+	var created: Dictionary = _production_service.call("create_room_temperature_drink", product_id)
+	if not bool(created.get("success", false)):
+		return created
+	var attached := attach_formal_order_product(order_id, item_index, Dictionary(created.get("product", {})))
+	if not bool(attached.get("success", false)):
+		_production_service.call("load_snapshot", production_rollback)
+		save_inventory(inventory_rollback)
+		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
+	_mark_f3_order_started(order_id, StringName("stock.%s" % product_id))
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return {"success": true, "product": created.get("product", {}), "order_result": attached}
+
+
+func deliver_heated_drink(slot_index: int, order_id: StringName, item_index: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var production_preview: Dictionary = _production_service.call("preview_collect_drink", slot_index)
+	if not bool(production_preview.get("success", false)):
+		return production_preview
+	var order_preview := preview_attach_formal_order_product(order_id, item_index, Dictionary(production_preview.get("product", {})))
+	if not bool(order_preview.get("success", false)):
+		return order_preview
+	if not bool(order_preview.get("will_match", false)):
+		return {"success": false, "reason": &"order_item_mismatch", "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
+	var rollback := five_area_production_snapshot()
+	var collected: Dictionary = _production_service.call("collect_drink", slot_index)
+	if not bool(collected.get("success", false)):
+		return collected
+	var attached := attach_formal_order_product(order_id, item_index, Dictionary(collected.get("product", {})))
+	if not bool(attached.get("success", false)):
+		_production_service.call("load_snapshot", rollback)
+		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return {"success": true, "product": collected.get("product", {}), "order_result": attached}
+
+
+func discard_f3_drink(slot_index: int) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("discard_drink", slot_index)
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func load_f3_youtiao(recipe_id: StringName, quantity: int, order_id: StringName = &"") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("load_batch", &"device.youtiao_fryer", recipe_id, quantity)
+	if bool(result.get("success", false)):
+		_mark_f3_order_started(order_id, &"device.youtiao_fryer")
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("perform_action", &"device.youtiao_fryer", action_id)
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var preview: Dictionary = _production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1)
+	if not bool(preview.get("success", false)):
+		return preview
+	var order_preview := preview_attach_formal_order_product(order_id, item_index, Dictionary(preview.get("product", {})))
+	if not bool(order_preview.get("success", false)):
+		return order_preview
+	var rollback := five_area_production_snapshot()
+	var collected: Dictionary = _production_service.call("collect_batch", &"device.youtiao_fryer", 1)
+	if not bool(collected.get("success", false)):
+		return collected
+	var attached := attach_formal_order_product(order_id, item_index, Dictionary(collected.get("product", {})))
+	if not bool(attached.get("success", false)):
+		_production_service.call("load_snapshot", rollback)
+		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return {"success": true, "product": collected.get("product", {}), "order_result": attached, "will_match": order_preview.get("will_match", false), "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
+
+
+func discard_f3_youtiao() -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("discard_batch", &"device.youtiao_fryer")
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
 func settle_formal_order(order_id: StringName) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
@@ -244,6 +433,60 @@ func settle_formal_order(order_id: StringName) -> Dictionary:
 		_sync_formal_orders_to_save()
 		_touch_and_write()
 	return result
+
+
+func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_order_service()
+	_ensure_progression()
+	var order := active_formal_order()
+	if StringName(order.get("order_id", &"")) != order_id:
+		return {"success": false, "reason": &"order_not_active"}
+	var settlement: Dictionary = _order_service.call("settle_order", order_id, submit_incomplete)
+	if not bool(settlement.get("success", false)):
+		return settlement
+	if bool(settlement.get("already_settled", false)):
+		return settlement
+	var settlement_id := StringName(settlement.get("settlement_id", &"settlement.%s" % order_id))
+	var mastery_results: Array[Dictionary] = []
+	var items: Array = Array(order.get("items", []))
+	var item_results: Array = Array(settlement.get("item_results", []))
+	var all_grades := PackedStringArray()
+	var base_coins := 0
+	for item_index in range(item_results.size()):
+		var item: Dictionary = Dictionary(items[item_index]) if item_index < items.size() else {}
+		var item_result: Dictionary = Dictionary(item_results[item_index])
+		var product: Dictionary = Dictionary(item_result.get("product", {}))
+		var area_id := StringName(item.get("area_id", product.get("area_id", &"")))
+		var grade := StringName(product.get("grade", &"A" if area_id == &"area.packaged_drink" else &"waste"))
+		all_grades.append(str(grade))
+		var mastery_payload := {
+			"settlement_id": StringName("%s.item.%d" % [settlement_id, item_index]),
+			"grade": grade,
+			"correct_temperature": area_id == &"area.packaged_drink" and bool(item_result.get("success", false)),
+		}
+		mastery_results.append(Dictionary(_progression.call("record_area_result", area_id, mastery_payload)))
+		if bool(settlement.get("order_success", false)):
+			var product_definition := CATALOG.product_definition(StringName(item.get("product_id", &"")))
+			base_coins += maxi(int(product_definition.get("base_sell_price", 0)), 0) * maxi(int(item.get("quantity", 1)), 1)
+	var reputation_delta := _f3_reputation_delta(bool(settlement.get("order_success", false)), all_grades)
+	_progression.set("coins", int(_progression.get("coins")) + base_coins)
+	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
+	var teaching_area_id := StringName(order.get("teaching_area_id", Dictionary(order.get("metadata", {})).get("teaching_area_id", &"")))
+	var tutorial_completion := {}
+	if bool(settlement.get("order_success", false)) and not teaching_area_id.is_empty():
+		tutorial_completion = _progression.call("complete_tutorial", &"area", teaching_area_id)
+	_sync_formal_orders_to_save()
+	_sync_progression_to_save()
+	_touch_and_write()
+	coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(five_area_progression_snapshot())
+	settlement["mastery_results"] = mastery_results
+	settlement["earned_coins"] = base_coins
+	settlement["reputation_delta"] = reputation_delta
+	settlement["tutorial_completion"] = tutorial_completion
+	return settlement
 
 
 func pancake_holding_tray_snapshot() -> Dictionary:
@@ -531,8 +774,10 @@ func begin_next_business_day() -> Dictionary:
 	_save_data["pancake_orders_issued_today"] = 0
 	_progression.call("advance_tutorial_for_new_business_day")
 	_replenish_daily_pancake_consumables()
-	_provision_activated_stock(Array(result.get("activated_growth_ids", [])))
+	result["restock_required_ids"] = _provision_activated_stock(Array(result.get("activated_growth_ids", [])))
 	_sync_progression_to_save()
+	_ensure_production_service()
+	_sync_production_to_save()
 	_touch_and_write()
 	inventory_changed.emit(inventory_snapshot())
 	progression_changed.emit(five_area_progression_snapshot())
@@ -549,8 +794,9 @@ func _replenish_daily_pancake_consumables() -> void:
 	_save_data["inventory"] = _normalize_inventory(inventory)
 
 
-func _provision_activated_stock(activated_growth_ids: Array) -> void:
+func _provision_activated_stock(activated_growth_ids: Array) -> PackedStringArray:
 	var inventory := inventory_snapshot()
+	var restock_required := PackedStringArray()
 	for growth_id_variant in activated_growth_ids:
 		var definition := CATALOG.growth_definition(StringName(growth_id_variant))
 		for stock_id_variant in Array(definition.get("unlock_stock_ids", [])):
@@ -559,8 +805,11 @@ func _provision_activated_stock(activated_growth_ids: Array) -> void:
 			var capacity := maxi(int(stock_definition.get("restock_capacity", 0)), 0)
 			if capacity > 0:
 				var key := str(stock_id)
-				inventory[key] = maxi(int(inventory.get(key, 0)), capacity)
+				inventory[key] = maxi(int(inventory.get(key, 0)), 0)
+				if int(inventory[key]) <= 0 and not restock_required.has(key):
+					restock_required.append(key)
 	_save_data["inventory"] = _normalize_inventory(inventory)
+	return restock_required
 
 
 func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, earned_coins: int = 0, formal_order_id: StringName = &"") -> Dictionary:
@@ -659,7 +908,9 @@ func _load_save() -> void:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if file == null:
 		return
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	var save_text := file.get_as_text()
+	file.close()
+	var parsed: Variant = JSON.parse_string(save_text)
 	if parsed is Dictionary and int(parsed.get("version", 0)) == SAVE_VERSION and str(parsed.get("save_kind", "")) == SAVE_KIND:
 		_save_data = parsed.duplicate(true)
 		_ensure_save_shape()
@@ -672,6 +923,7 @@ func _restore_progression() -> void:
 	_progression = PROGRESSION_SERVICE.new(Dictionary(_save_data.get("progression", {}))) if has_save() else PROGRESSION_SERVICE.new()
 	_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new(Dictionary(_save_data.get("pancake_holding_tray", {})))
 	_order_service = FIVE_AREA_ORDER_SERVICE.new(Dictionary(_save_data.get("formal_orders", {})))
+	_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self, Dictionary(_save_data.get("production", {})))
 
 
 func _ensure_progression() -> void:
@@ -689,6 +941,14 @@ func _ensure_order_service() -> void:
 		_order_service = FIVE_AREA_ORDER_SERVICE.new(Dictionary(_save_data.get("formal_orders", {})))
 
 
+func _ensure_production_service() -> void:
+	_ensure_progression()
+	if _production_service == null:
+		_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self, Dictionary(_save_data.get("production", {})))
+	else:
+		_production_service.call("configure", _progression, self)
+
+
 func _sync_progression_to_save() -> void:
 	if has_save():
 		_save_data["progression"] = five_area_progression_snapshot()
@@ -702,6 +962,16 @@ func _sync_pancake_holding_tray_to_save() -> void:
 func _sync_formal_orders_to_save() -> void:
 	if has_save():
 		_save_data["formal_orders"] = formal_order_snapshot()
+
+
+func _sync_production_to_save() -> void:
+	if has_save() and _production_service != null:
+		_save_data["production"] = Dictionary(_production_service.call("snapshot")).duplicate(true)
+
+
+func _mark_f3_order_started(order_id: StringName, source_id: StringName) -> void:
+	if not order_id.is_empty():
+		mark_formal_order_production_started(order_id, source_id)
 
 
 func _ensure_save_shape() -> void:
@@ -722,6 +992,8 @@ func _ensure_save_shape() -> void:
 		_save_data["pancake_holding_tray"] = PANCAKE_HOLDING_TRAY_MODEL.new().snapshot()
 	if not _save_data.has("formal_orders"):
 		_save_data["formal_orders"] = FIVE_AREA_ORDER_SERVICE.new().snapshot()
+	if not _save_data.has("production"):
+		_save_data["production"] = FIVE_AREA_PRODUCTION_SERVICE.new().snapshot()
 	if not _save_data.has("pancake_order_cursor"):
 		_save_data["pancake_order_cursor"] = 0
 	if not _save_data.has("pancake_orders_issued_today"):
@@ -870,6 +1142,23 @@ func _reputation_delta_for_result(result: Dictionary) -> int:
 	if grade == "B":
 		return 2
 	return 0
+
+
+func _f3_reputation_delta(order_success: bool, grades: PackedStringArray) -> int:
+	if not order_success:
+		return -2
+	var has_b := false
+	var has_c := false
+	for grade in grades:
+		if grade == "C":
+			has_c = true
+		elif grade == "B":
+			has_b = true
+	if has_c:
+		return 1
+	if has_b:
+		return 3
+	return 4
 
 
 func _grade_for_score(score: float) -> String:

@@ -51,7 +51,11 @@ func _run() -> void:
 	var stable_item: Dictionary = Dictionary(Array(Dictionary(legacy_pancake_order.get("order", {})).get("items", []))[0])
 	_check(Array(stable_item.get("ingredient_ids", [])).has("stock.pancake.egg") and Array(stable_item.get("sauce_ids", [])).has("stock.pancake.sauce.sweet_flour"), "legacy pancake order maps to stable formal product requirements")
 	progression.set("coins", 100)
+	progression.set("reputation", 20)
 	progression.set("current_day", 3)
+	progression.set("area_mastery", {&"area.pancake": 6})
+	progression.set("area_mastery_details", {&"area.pancake": {"qualified": 6, "a_grade": 0}})
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true})
 	_check(bool(session.call("purchase_growth", &"growth.area.packaged_drink").get("success", false)), "installation pending purchase saves immediately")
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content pending purchase saves immediately")
 	session.call("end_business_day")
@@ -72,7 +76,7 @@ func _run() -> void:
 	session.call("end_business_day")
 	_check(bool(session.call("begin_next_business_day").get("success", false)), "coriander unlock activates on the next business day")
 	var coriander_stock: Dictionary = session.call("five_area_restock_status", &"stock.pancake.coriander")
-	_check(bool(coriander_stock.get("success", false)) and int(coriander_stock.get("current_stock", 0)) == int(coriander_stock.get("capacity", 0)), "newly activated coriander has a stocked and refillable material tray")
+	_check(bool(coriander_stock.get("success", false)) and int(coriander_stock.get("current_stock", -1)) == 0 and int(coriander_stock.get("capacity", 0)) > 0, "newly activated coriander is refillable but does not receive free stock")
 	_finish()
 
 func _check(condition: bool, message: String) -> void:

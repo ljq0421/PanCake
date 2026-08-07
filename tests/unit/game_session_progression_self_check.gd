@@ -19,6 +19,12 @@ func _run() -> void:
 	_check(progression.call("owns_area", &"area.pancake") and not progression.call("owns_area", &"area.packaged_drink"), "new game only unlocks pancake")
 	progression.set("coins", 100)
 	progression.set("current_day", 3)
+	progression.set("reputation", 20)
+	progression.set("area_mastery", {&"area.pancake": 6})
+	progression.set("area_mastery_details", {
+		&"area.pancake": {"qualified": 6, "a_grade": 1},
+	})
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true})
 	var install: Dictionary = session.call("purchase_growth", &"growth.area.packaged_drink")
 	var content: Dictionary = session.call("purchase_growth", &"growth.add_on.pancake.red_chili")
 	_check(bool(install.get("success", false)) and bool(content.get("success", false)), "session persists independent install and content pending purchases")

@@ -8,8 +8,14 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var progression = SERVICE.new()
+	var tutorial: Dictionary = progression.tutorial_snapshot()
+	_check(tutorial.get("active_kind", &"") == &"area" and tutorial.get("active_id", &"") == &"area.pancake", "new progression begins with the pancake-area tutorial")
+	_check(bool(progression.complete_tutorial(&"area", &"area.pancake").get("success", false)), "area tutorial completion is persisted by stable area ID")
 	progression.coins = 100
+	progression.reputation = 20
 	progression.current_day = 3
+	progression.area_mastery = {&"area.pancake": 6}
+	progression.area_mastery_details = {&"area.pancake": {"qualified": 6, "a_grade": 0}}
 	var install = progression.purchase(&"growth.area.packaged_drink")
 	_check(install.get("success") and progression.coins == 70, "installation purchase charges immediately")
 	var content = progression.purchase(&"growth.add_on.pancake.red_chili")
@@ -31,9 +37,6 @@ func _run() -> void:
 	var press_ready = SERVICE.new({"coins": 100, "current_day": 20, "owned_growth_ids": [&"growth.tool.pancake.wide_spreader", &"growth.equipment.pancake.intermediate", &"growth.automation.pancake.auto_sauce_brush"], "unlocked_area_ids": [&"area.pancake"]})
 	var press_purchase: Dictionary = press_ready.purchase(&"growth.automation.pancake.press_once")
 	_check(bool(press_purchase.get("success", false)) and int(press_purchase.get("charged_coins", 0)) == 60, "press automation costs the confirmed 60 coins after all prerequisites")
-	var tutorial: Dictionary = progression.tutorial_snapshot()
-	_check(tutorial.get("active_kind", &"") == &"area" and tutorial.get("active_id", &"") == &"area.pancake", "new progression begins with the pancake-area tutorial")
-	_check(bool(progression.complete_tutorial(&"area", &"area.pancake").get("success", false)), "area tutorial completion is persisted by stable area ID")
 	if _failures.is_empty():
 		print("FIVE_AREA_PROGRESSION_SERVICE_SELF_CHECK_PASS")
 		quit(0)

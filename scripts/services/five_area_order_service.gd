@@ -55,6 +55,10 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 				"requested_sauce_count": sauce_ids.size(),
 			}
 		item["quantity"] = maxi(int(item.get("quantity", 1)), 1)
+		var normalized_temperature := normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))
+		if normalized_temperature.is_empty():
+			return {"success": false, "reason": &"invalid_temperature_mode", "value": item.get("temperature_mode")}
+		item["temperature_mode"] = normalized_temperature
 		item["sauce_ids"] = sauce_ids
 		item["prepared_product_instance_ids"] = PackedStringArray()
 		normalized_items.append(item)
@@ -64,6 +68,8 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		"complexity": &"single" if normalized_items.size() == 1 else &"multi_item",
 		"state": &"active",
 		"items": normalized_items,
+		"production_started": false,
+		"production_source_ids": PackedStringArray(),
 		"metadata": metadata.duplicate(true),
 	}
 	_orders[order_id] = order
@@ -108,11 +114,27 @@ func attach_product(order_id: StringName, item_index: int, product: Dictionary) 
 	var ids: PackedStringArray = item.get("prepared_product_instance_ids", PackedStringArray())
 	ids.append(str(product.get("product_instance_id", "")))
 	item["prepared_product_instance_ids"] = ids
-	item["attached_product"] = product.duplicate(true)
+	var reserved_product := product.duplicate(true)
+	reserved_product["status"] = &"reserved"
+	reserved_product["owner_order_id"] = order_id
+	item["attached_product"] = reserved_product
 	items[item_index] = item
 	order["items"] = items
 	_orders[order_id] = order
 	return {"success": true, "will_match": preview.get("will_match", false), "mismatch_reasons": preview.get("mismatch_reasons", PackedStringArray())}
+
+
+func mark_production_started(order_id: StringName, source_instance_id: StringName) -> Dictionary:
+	if order_id.is_empty() or order_id != _active_order_id or not _orders.has(order_id):
+		return {"success": false, "reason": &"order_not_active"}
+	var order: Dictionary = _orders[order_id]
+	var sources: PackedStringArray = order.get("production_source_ids", PackedStringArray())
+	if not source_instance_id.is_empty() and not sources.has(str(source_instance_id)):
+		sources.append(str(source_instance_id))
+	order["production_started"] = true
+	order["production_source_ids"] = sources
+	_orders[order_id] = order
+	return {"success": true, "changed": true, "order_id": order_id, "production_source_ids": sources}
 
 
 func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dictionary:
@@ -131,13 +153,25 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 		var attached: Array = Array(item.get("prepared_product_instance_ids", []))
 		if attached.size() < int(item.get("quantity", 1)) and not submit_incomplete:
 			return {"success": false, "reason": &"missing_order_item"}
-		var product: Dictionary = Dictionary(item.get("attached_product", {}))
+		var product: Dictionary = Dictionary(item.get("attached_product", {})).duplicate(true)
 		var reasons := PackedStringArray(["missing_order_item"]) if product.is_empty() else _product_mismatch_reasons(item, product)
 		if attached.size() < int(item.get("quantity", 1)):
 			reasons.append("incomplete_quantity")
 		all_reasons.append_array(reasons)
 		item_results.append({"product_id": item.get("product_id", &""), "success": reasons.is_empty(), "mismatch_reasons": reasons, "product": product})
 	var success := all_reasons.is_empty()
+	for item_index in range(item_results.size()):
+		var result_entry: Dictionary = item_results[item_index]
+		var finalized_product: Dictionary = Dictionary(result_entry.get("product", {})).duplicate(true)
+		if not finalized_product.is_empty():
+			finalized_product["status"] = &"consumed" if success else &"wasted"
+			result_entry["product"] = finalized_product
+			item_results[item_index] = result_entry
+			var stored_item: Dictionary = Array(order.get("items", []))[item_index]
+			stored_item["attached_product"] = finalized_product
+			var stored_items: Array = Array(order.get("items", [])).duplicate(true)
+			stored_items[item_index] = stored_item
+			order["items"] = stored_items
 	var settlement_id := StringName("settlement.%s" % order_id)
 	_settled_order_ids[order_id] = true
 	order["state"] = &"settled"
@@ -169,13 +203,29 @@ func _product_mismatch_reasons(item: Dictionary, product: Dictionary) -> PackedS
 	var reasons := PackedStringArray()
 	if StringName(product.get("product_id", &"")) != StringName(item.get("product_id", &"")):
 		reasons.append("product_id")
-	if StringName(product.get("heat_preference", &"")) != StringName(item.get("heat_preference", &"")):
-		reasons.append("heat_preference")
+	var area_id := StringName(item.get("area_id", &""))
+	if area_id == &"area.pancake":
+		if StringName(product.get("heat_preference", &"")) != StringName(item.get("heat_preference", &"")):
+			reasons.append("heat_preference")
+	else:
+		var expected_temperature := normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))
+		var actual_temperature := normalized_temperature_mode(product.get("temperature_mode", &"room_temperature"))
+		if expected_temperature.is_empty() or actual_temperature.is_empty() or actual_temperature != expected_temperature:
+			reasons.append("temperature_mode")
 	if not _same_ids(product.get("ingredient_ids", []), item.get("ingredient_ids", [])):
 		reasons.append("ingredient_ids")
 	if not _same_ids(product.get("sauce_ids", []), item.get("sauce_ids", [])):
 		reasons.append("sauce_ids")
 	return reasons
+
+
+static func normalized_temperature_mode(value: Variant) -> StringName:
+	var normalized := StringName(value)
+	if normalized.is_empty() or normalized == &"normal" or normalized == &"room_temperature":
+		return &"room_temperature"
+	if normalized == &"heated":
+		return &"heated"
+	return &""
 
 
 static func _same_ids(left: Variant, right: Variant) -> bool:

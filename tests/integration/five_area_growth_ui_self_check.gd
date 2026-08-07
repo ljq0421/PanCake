@@ -21,6 +21,12 @@ func _run() -> void:
 	_check(int(progression.get("coins")) == 100, "order settlement does not double-credit uncollected payment")
 	session.call("credit_coins", 5)
 	_check(int(progression.get("coins")) == 105, "payment collection credits coins exactly once")
+	progression.set("reputation", 20)
+	progression.set("area_mastery", {&"area.pancake": 6})
+	progression.set("area_mastery_details", {
+		&"area.pancake": {"qualified": 6, "a_grade": 1},
+	})
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true})
 	var station = WORKSTATION_SCENE.instantiate()
 	root.add_child(station)
 	await process_frame
@@ -32,18 +38,18 @@ func _run() -> void:
 	var ticket_3 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket3") as Button
 	_check("安装位" in ticket_1.text and "内容位" in ticket_3.text, "growth UI exposes separate install and content purchase slots")
 	_check(not "growth." in ticket_1.text and not "金币" in ticket_1.text, "growth tickets show localized names without exposing the purchase cost")
-	_check(station.global_status_label.text.contains("金币 105") and station.global_status_label.text.contains("营业日 3") and station.global_status_label.text.contains("声誉 4"), "workstation status strip renders the current coins, business day, and reputation")
+	_check(station.global_status_label.text.contains("金币 105") and station.global_status_label.text.contains("营业日 3") and station.global_status_label.text.contains("声誉 20"), "workstation status strip renders the current coins, business day, and reputation")
 	_check(station.call("_growth_ticket_status_text", {"reason": &"day_requirement", "min_day": 4}).contains("3/4"), "day-gated growth status shows completed and required business days")
 	_check(bool(session.call("purchase_growth", &"growth.area.packaged_drink").get("success", false)), "install purchase accepted from settlement state")
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content purchase accepted alongside install state")
 	station.call("_refresh_growth_section")
-	_check("已购买" in ticket_1.text and "成品饮品档口" in ticket_1.text and ticket_1.disabled, "purchased installation slot keeps the purchased item instead of changing to another recommendation")
+	_check("已购买" in ticket_1.text and "成品饮品柜" in ticket_1.text and ticket_1.disabled, "purchased installation slot keeps the purchased item instead of changing to another recommendation")
 	_check(ticket_2.visible and ticket_2.disabled and "已选择安装" in ticket_2.text, "the second installation candidate remains visible but explains that the installation slot is already selected")
 	_check("已购买" in ticket_3.text and "辣椒酱" in ticket_3.text and ticket_3.disabled, "purchased content slot keeps the purchased item instead of changing to another recommendation")
 	station.call("_open_unlock_progress")
 	var unlock_panel := station.get_node("SafeArea/UnlockProgressPanel") as PanelContainer
 	var unlock_label := station.get_node("SafeArea/UnlockProgressPanel/Margin/VBox/Scroll/UnlockProgressLabel") as Label
-	_check(unlock_panel.visible and unlock_label.text.contains("已解锁安装") and unlock_label.text.contains("明日生效") and unlock_label.text.contains("成品饮品档口"), "unlock-progress view separates active unlocks from tomorrow's pending purchases")
+	_check(unlock_panel.visible and unlock_label.text.contains("已解锁安装") and unlock_label.text.contains("明日生效") and unlock_label.text.contains("成品饮品柜"), "unlock-progress view separates active unlocks from tomorrow's pending purchases")
 	station.call("_close_unlock_progress")
 	var pending: Dictionary = session.call("five_area_progression_snapshot")
 	_check(str(pending.get("pending_install_purchase", "")) == "growth.area.packaged_drink" and str(pending.get("pending_content_purchase", "")) == "growth.add_on.pancake.red_chili", "two pending purchases are presented as independent state")
@@ -61,7 +67,7 @@ func _run() -> void:
 	refreshed_station.call("_open_unlock_progress")
 	var activated_unlock_label := refreshed_station.get_node("SafeArea/UnlockProgressPanel/Margin/VBox/Scroll/UnlockProgressLabel") as Label
 	_check(
-		activated_unlock_label.text.contains("成品饮品档口")
+		activated_unlock_label.text.contains("成品饮品柜")
 		and activated_unlock_label.text.contains("辣椒酱")
 		and activated_unlock_label.text.contains("安装：无")
 		and activated_unlock_label.text.contains("内容：无"),

@@ -2101,10 +2101,21 @@ func _growth_ticket_status_text(recommendation: Dictionary) -> String:
 			return "营业天数未达到 %d/%d" % [current_day, int(recommendation.get("min_day", current_day))]
 		&"insufficient_coins":
 			return "金币不足"
+		&"reputation_requirement":
+			return "口碑未达到 %d/%d" % [int(recommendation.get("current_reputation", 0)), int(recommendation.get("min_reputation", 0))]
+		&"tutorial_requirement":
+			return "需先完成前一区域教学"
+		&"mastery_requirement":
+			return "熟练度未达到 %d/%d" % [int(recommendation.get("current_mastery", 0)), int(recommendation.get("required_mastery", 0))]
+		&"all_areas_requirement":
+			return "需先解锁全部五个区域"
 	return "暂不满足条件"
 
 
 func _growth_ticket_display_name(growth_id: StringName) -> String:
+	var catalog_definition: Dictionary = FIVE_AREA_CATALOG.growth_definition(growth_id)
+	if not str(catalog_definition.get("label", "")).is_empty():
+		return str(catalog_definition.get("label"))
 	var names := {
 		&"growth.tool.pancake.wide_spreader": "宽刮板",
 		&"growth.add_on.pancake.red_chili": "辣椒酱",

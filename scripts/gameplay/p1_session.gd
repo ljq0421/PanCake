@@ -90,6 +90,9 @@ func confirm_spread(model: PancakeModel) -> Dictionary:
 func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictionary:
 	var readiness := flip_readiness(model, ingredients)
 	if not bool(readiness.get("success", false)):
+		if bool(readiness.get("requires_folding", false)):
+			phase = Phase.FOLD
+			changed.emit()
 		return readiness
 	model.flip(true)
 	phase = Phase.SAUCE_AND_FILLINGS
@@ -100,6 +103,8 @@ func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictiona
 func flip_readiness(model: PancakeModel, ingredients: IngredientModel) -> Dictionary:
 	if phase != Phase.FIRST_SIDE:
 		return {"success": false, "reason": "当前还不能翻面"}
+	if ingredients != null and ingredients.has_toppings():
+		return {"success": false, "reason": "面饼上已有小料，不能翻面，请直接折叠", "requires_folding": true}
 	if model.mean_side_doneness(false) < MINIMUM_FLIP_DONENESS:
 		return {"success": false, "reason": "底面还太生，颜色转金黄后再翻"}
 	return {"success": true}
@@ -118,6 +123,18 @@ func finish_cooking(model: PancakeModel) -> Dictionary:
 func begin_folding() -> Dictionary:
 	if phase != Phase.SAUCE_AND_FILLINGS and phase != Phase.FOLD:
 		return {"success": false, "reason": "完成翻面后才能折叠"}
+	phase = Phase.FOLD
+	changed.emit()
+	return {"success": true}
+
+
+func begin_folding_after_topping(ingredients: IngredientModel) -> Dictionary:
+	if phase == Phase.FOLD:
+		return {"success": true}
+	if phase != Phase.FIRST_SIDE:
+		return {"success": false, "reason": "当前不能因小料直接进入折叠"}
+	if ingredients == null or not ingredients.has_toppings():
+		return {"success": false, "reason": "放置小料后才能跳过翻面"}
 	phase = Phase.FOLD
 	changed.emit()
 	return {"success": true}

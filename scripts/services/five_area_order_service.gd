@@ -117,7 +117,10 @@ func attach_product(order_id: StringName, item_index: int, product: Dictionary) 
 
 func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dictionary:
 	if _settled_order_ids.has(order_id):
-		return {"success": false, "reason": &"already_settled"}
+		# Settlement may be retried after the order state has already been
+		# persisted.  It must not create a second settlement, but callers also
+		# must not be left in a completed-payment screen with no way forward.
+		return {"success": true, "already_settled": true, "settlement_id": StringName("settlement.%s" % order_id)}
 	var order: Dictionary = _orders.get(order_id, {})
 	if order.is_empty() or order_id != _active_order_id:
 		return {"success": false, "reason": &"order_not_active"}

@@ -90,6 +90,7 @@ const SPREADER_SPEED_FAST := 1
 @onready var tool_status_label: Label = %ToolStatusLabel
 @onready var warning_label: Label = %WarningLabel
 @onready var business_day_timer_label: Label = _resolve_business_day_timer_label()
+@onready var global_status_label: Label = %GlobalStatusLabel
 @onready var warning_tone: AudioStreamPlayer = %DamageWarningTone
 @onready var surface_readout_label: Label = %SurfaceReadoutLabel
 @onready var chili_sauce_refill_button: Button = %ChiliSauceRefillButton
@@ -320,7 +321,6 @@ func _ready() -> void:
 	summary_view_button.pressed.connect(_open_result_detail)
 	summary_dismiss_button.pressed.connect(_dismiss_order_summary)
 	payment_collection_area.pressed.connect(_collect_payment)
-	payment_collection_area.mouse_entered.connect(_collect_payment)
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
 	for ticket_index in growth_ticket_buttons.size():
@@ -340,6 +340,7 @@ func _ready() -> void:
 	fold_model.changed.connect(_refresh_fold_ui)
 	tool_controller.tool_changed.connect(_on_tool_changed)
 	p1_session.changed.connect(_refresh_p1_ui)
+	_bind_global_status(game_session)
 	var first_order: Dictionary = _legacy_order_from_active_formal_order(customer_queue.current_customer().order)
 	p1_session.start(first_order)
 	_ensure_formal_pancake_order(first_order)
@@ -349,6 +350,7 @@ func _ready() -> void:
 	_refresh_fold_ui()
 	_refresh_ingredient_stock_ui()
 	_refresh_p1_ui()
+	_refresh_global_status()
 	_log_info(&"workstation", "PancakeModel ready: %dx%d" % [parameters.grid_size, parameters.grid_size])
 
 
@@ -1206,6 +1208,12 @@ func _advance_p1_step() -> void:
 			return
 		P1Session.Phase.FIRST_SIDE:
 			action_result = p1_session.request_flip(pancake_model, ingredient_model)
+			if bool(action_result.get("requires_folding", false)):
+				tool_controller.clear_tool()
+				_select_fold()
+				tool_status_label.text = "小料已在饼面上，跳过翻面，直接开始折叠"
+				_refresh_p1_ui()
+				return
 			if bool(action_result.success):
 				tool_controller.clear_tool()
 				egg_crack_artwork.visible = false
@@ -1317,7 +1325,16 @@ func _finish_ingredient_drag(viewport_position: Vector2) -> void:
 			tool_controller.select_tool(ToolController.Tool.SCRAPER)
 			tool_status_label.text = "鸡蛋已打入；用 T 形摊面器连续画圈摊开蛋黄和蛋白"
 		else:
-			tool_status_label.text = "%s已放到饼面，可继续调整下一种配料" % IngredientModel.display_name(_ingredient_drag_type)
+			if p1_session.phase == P1Session.Phase.FIRST_SIDE:
+				var fold_transition := p1_session.begin_folding_after_topping(ingredient_model)
+				if bool(fold_transition.get("success", false)):
+					tool_controller.clear_tool()
+					_select_fold()
+					tool_status_label.text = "%s已放到饼面，跳过翻面，直接开始折叠" % IngredientModel.display_name(_ingredient_drag_type)
+				else:
+					tool_status_label.text = str(fold_transition.get("reason", "无法进入折叠阶段"))
+			else:
+				tool_status_label.text = "%s已放到饼面，可继续调整下一种配料" % IngredientModel.display_name(_ingredient_drag_type)
 	else:
 		tool_status_label.text = "%s；本次用料已损耗" % str(result.reason)
 	_ingredient_drag_type = &""
@@ -1720,10 +1737,20 @@ func _settle_formal_pancake_product(product: Dictionary) -> bool:
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null:
 		return true
+	# A prior completion can have persisted the formal order just before the
+	# scene callback is retried.  In that case, do not try to attach the same
+	# pancake again; the order is already safely settled and gameplay can move on.
+	var formal_snapshot: Dictionary = game_session.call("formal_order_snapshot") if game_session.has_method("formal_order_snapshot") else {}
+	var saved_order: Dictionary = Dictionary(Dictionary(formal_snapshot.get("orders", {})).get(str(_formal_order_id), {}))
+	if StringName(saved_order.get("state", &"")) == &"settled":
+		return true
 	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, 0, product)
 	if not bool(attached.get("success", false)):
-		tool_status_label.text = "正式订单接收成品失败：%s" % str(attached.get("reason", "unknown"))
-		return false
+		# An interrupted callback can leave the product attached while the final
+		# settlement has not yet run.  Let the idempotent settlement below finish it.
+		if StringName(attached.get("reason", &"")) != &"capacity_full":
+			tool_status_label.text = "正式订单接收成品失败：%s" % str(attached.get("reason", "unknown"))
+			return false
 	var settled: Dictionary = game_session.call("settle_formal_order", _formal_order_id)
 	if not bool(settled.get("success", false)):
 		tool_status_label.text = "正式订单结算失败：%s" % str(settled.get("reason", "unknown"))
@@ -1846,10 +1873,9 @@ func _refresh_growth_section(message: String = "") -> void:
 		var recommendation := _growth_recommendations[index]
 		button.set_meta(&"growth_item_id", StringName(recommendation.get("growth_id", "")))
 		var status_text := _growth_ticket_status_text(recommendation)
-		button.text = "[%s] %s\n%d 金币\n%s" % [
+		button.text = "[%s] %s\n%s" % [
 			str(recommendation.get("slot_title", "成长")),
-			str(recommendation.get("growth_id", "未命名")).trim_prefix("growth."),
-			int(recommendation.get("price", 0)),
+			_growth_ticket_display_name(StringName(recommendation.get("growth_id", ""))),
 			status_text,
 		]
 		button.tooltip_text = status_text
@@ -1898,14 +1924,70 @@ func _growth_ticket_status_text(recommendation: Dictionary) -> String:
 		&"area_locked":
 			return "前置区域未解锁"
 		&"day_requirement":
-			return "营业天数尚未达到"
+			var game_session := get_node_or_null("/root/GameSession")
+			var current_day := 1
+			if game_session != null and game_session.has_method("five_area_progression_snapshot"):
+				current_day = int(Dictionary(game_session.call("five_area_progression_snapshot")).get("current_day", 1))
+			return "营业天数未达到 %d/%d" % [current_day, int(recommendation.get("min_day", current_day))]
 		&"insufficient_coins":
 			return "金币不足"
 	return "暂不满足条件"
 
 
+func _growth_ticket_display_name(growth_id: StringName) -> String:
+	var names := {
+		&"growth.tool.pancake.wide_spreader": "宽刮板",
+		&"growth.add_on.pancake.red_chili": "辣椒酱",
+		&"growth.add_on.pancake.ham_sausage": "火腿肠",
+		&"growth.equipment.pancake.intermediate": "煎饼鏊子升级",
+		&"growth.add_on.pancake.meat_floss": "肉松",
+		&"growth.capacity.pancake_holding_tray.two_slots": "双格暂存托盘",
+		&"growth.add_on.pancake.coriander": "香菜",
+		&"growth.add_on.pancake.preserved_mustard": "榨菜",
+		&"growth.add_on.pancake.pork_tenderloin": "里脊肉",
+		&"growth.automation.pancake.auto_sauce_brush": "自动刷酱",
+		&"growth.automation.pancake.press_once": "一键压饼",
+		&"growth.area.packaged_drink": "成品饮品档口",
+		&"growth.product.packaged_drink.soy_milk": "豆奶饮品",
+		&"growth.area.youtiao": "油条档口",
+		&"growth.recipe.youtiao.oil_cake": "油饼配方",
+		&"growth.area.fresh_soy_milk": "现磨豆浆档口",
+		&"growth.recipe.fresh_soy_milk.black_bean": "黑豆豆浆配方",
+		&"growth.area.steamer": "蒸品档口",
+		&"growth.recipe.steamer.vegetable_bun": "菜包配方",
+	}
+	return str(names.get(growth_id, "未命名成长项目"))
+
+
 func _growth_pending_text(growth_id: StringName) -> String:
 	return "空位（可不购买）" if growth_id.is_empty() else "已预订 %s" % str(growth_id).trim_prefix("growth.")
+
+
+func _bind_global_status(game_session: Node) -> void:
+	if game_session == null:
+		return
+	var callback := Callable(self, "_on_global_status_changed")
+	for signal_name in [&"coins_changed", &"progression_changed"]:
+		if game_session.has_signal(signal_name) and not game_session.is_connected(signal_name, callback):
+			game_session.connect(signal_name, callback)
+
+
+func _on_global_status_changed(_value: Variant = null) -> void:
+	_refresh_global_status()
+
+
+func _refresh_global_status() -> void:
+	if global_status_label == null:
+		return
+	var game_session := get_node_or_null("/root/GameSession")
+	var snapshot: Dictionary = {}
+	if game_session != null and game_session.has_method("five_area_progression_snapshot"):
+		snapshot = Dictionary(game_session.call("five_area_progression_snapshot"))
+	global_status_label.text = "金币 %d  ·  营业日 %d  ·  声誉 %d" % [
+		int(snapshot.get("coins", 0)),
+		int(snapshot.get("current_day", 1)),
+		int(snapshot.get("reputation", 0)),
+	]
 
 
 func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:

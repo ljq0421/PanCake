@@ -208,11 +208,10 @@ func _run() -> void:
 	_check(
 		workstation.payment_collection_area.pressed.is_connected(workstation._collect_payment)
 		and workstation.payment_collection_area.mouse_filter == Control.MOUSE_FILTER_STOP
-		and workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment)
+		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment)
 		and workstation.payment_collection_area.get_index() > workstation.scallion_restock_button.get_parent().get_index(),
-		"the top-layer payment button accepts both click and mouse-sweep collection paths"
+		"the top-layer payment button requires a click and cannot collect on mouse hover"
 	)
-	workstation.payment_collection_area.mouse_entered.disconnect(workstation._collect_payment)
 	if DisplayServer.get_name() == "headless":
 		workstation.payment_collection_area.pressed.emit()
 	else:

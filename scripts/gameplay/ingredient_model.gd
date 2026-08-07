@@ -72,6 +72,13 @@ func has_type(ingredient_type: StringName) -> bool:
 	return count_type(ingredient_type) > 0
 
 
+func has_toppings() -> bool:
+	for placement in placements:
+		if StringName(placement.get("type", &"")) != EGG:
+			return true
+	return false
+
+
 func quantities() -> Dictionary:
 	var result := {}
 	for ingredient_type in TYPES:

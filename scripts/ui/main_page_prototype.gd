@@ -14,6 +14,9 @@ const START_MENU_SCENE := "res://scenes/main/start_menu.tscn"
 @onready var resume_button: Button = %ResumeButton
 @onready var return_button: Button = %ReturnButton
 @onready var close_settings_button: Button = %CloseSettingsButton
+@onready var coin_label: Label = $Header/CoinPill/Label
+@onready var reputation_label: Label = $Header/MoodPill/Label
+@onready var business_day_label: Label = $Header/ComboPill/Label
 
 var selected_station_id: StringName = &"pancake"
 var last_clicked_slot: StringName = &""
@@ -64,6 +67,8 @@ func _ready() -> void:
 	resume_button.pressed.connect(_close_pause)
 	return_button.pressed.connect(_return_to_start_menu)
 	close_settings_button.pressed.connect(_close_settings)
+	_bind_global_status()
+	_refresh_global_status()
 	_select_station(&"pancake")
 
 
@@ -142,3 +147,27 @@ func _return_to_start_menu() -> void:
 	var error := get_tree().change_scene_to_file(START_MENU_SCENE)
 	if error != OK:
 		push_error("Could not return to start menu: %s" % error_string(error))
+
+
+func _bind_global_status() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		return
+	var callback := Callable(self, "_on_global_status_changed")
+	for signal_name in [&"coins_changed", &"progression_changed"]:
+		if session.has_signal(signal_name) and not session.is_connected(signal_name, callback):
+			session.connect(signal_name, callback)
+
+
+func _on_global_status_changed(_value: Variant = null) -> void:
+	_refresh_global_status()
+
+
+func _refresh_global_status() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var snapshot: Dictionary = {}
+	if session != null and session.has_method("five_area_progression_snapshot"):
+		snapshot = Dictionary(session.call("five_area_progression_snapshot"))
+	coin_label.text = "金币  %d" % int(snapshot.get("coins", 0))
+	reputation_label.text = "声誉  %d" % int(snapshot.get("reputation", 0))
+	business_day_label.text = "营业日  %d" % int(snapshot.get("current_day", 1))

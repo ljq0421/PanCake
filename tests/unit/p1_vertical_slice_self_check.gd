@@ -15,6 +15,7 @@ func _run() -> void:
 	_test_egg_spreading_and_score()
 	_test_egg_spread_performance()
 	_test_order_and_session_guards()
+	_test_toppings_skip_flip_and_begin_folding()
 	_test_customer_reaction_persists_after_handoff()
 	_test_customer_queue_rotation()
 	_test_every_order_combination()
@@ -182,6 +183,39 @@ func _test_order_and_session_guards() -> void:
 	_check(bool(session.begin_handoff({"score": 80.0}).success) and session.phase == P1Session.Phase.HANDOFF and not session.payment_ready, "clicking the packaged product starts a guarded customer handoff")
 	_check(bool(session.begin_payment().success) and session.phase == P1Session.Phase.PAYMENT and not session.payment_ready, "customer acceptance advances to the payment phase")
 	_check(bool(session.finish_payment().success) and session.phase == P1Session.Phase.RESULT and session.payment_ready, "coin settlement reaches the completed result")
+
+
+func _test_toppings_skip_flip_and_begin_folding() -> void:
+	var order := OrderService.new().order_at(0)
+	var model := _uniform_pancake(48, 0.42)
+	var ingredients := IngredientModel.new()
+	var session := P1Session.new()
+	session.start(order)
+	session.confirm_spread(model)
+	ingredients.place(IngredientModel.BAOCUI, Vector2(24, 24), 0.0, model)
+	_check(ingredients.has_toppings(), "non-egg ingredients are recognized as toppings")
+	var fold_result := session.begin_folding_after_topping(ingredients)
+	_check(
+		bool(fold_result.get("success", false))
+		and session.phase == P1Session.Phase.FOLD
+		and not model.is_flipped,
+		"placing a topping before flipping skips the flip and enters folding"
+	)
+	var guarded_model := _uniform_pancake(48, 0.42)
+	var guarded_ingredients := IngredientModel.new()
+	var guarded_session := P1Session.new()
+	guarded_session.start(order)
+	guarded_session.confirm_spread(guarded_model)
+	guarded_model.doneness.fill(0.80)
+	guarded_ingredients.place(IngredientModel.BAOCUI, Vector2(24, 24), 0.0, guarded_model)
+	var flip_result := guarded_session.request_flip(guarded_model, guarded_ingredients)
+	_check(
+		not bool(flip_result.get("success", false))
+		and bool(flip_result.get("requires_folding", false))
+		and guarded_session.phase == P1Session.Phase.FOLD
+		and not guarded_model.is_flipped,
+		"the flip action remains guarded if a topping was already placed"
+	)
 
 
 func _test_customer_reaction_persists_after_handoff() -> void:

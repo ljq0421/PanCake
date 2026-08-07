@@ -30,6 +30,9 @@ func _run() -> void:
 	var ticket_1 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket1") as Button
 	var ticket_3 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket3") as Button
 	_check("安装位" in ticket_1.text and "内容位" in ticket_3.text, "growth UI exposes separate install and content purchase slots")
+	_check(not "growth." in ticket_1.text and not "金币" in ticket_1.text, "growth tickets show localized names without exposing the purchase cost")
+	_check(station.global_status_label.text.contains("金币 105") and station.global_status_label.text.contains("营业日 3") and station.global_status_label.text.contains("声誉 4"), "workstation status strip renders the current coins, business day, and reputation")
+	_check(station.call("_growth_ticket_status_text", {"reason": &"day_requirement", "min_day": 4}).contains("3/4"), "day-gated growth status shows completed and required business days")
 	_check(bool(session.call("purchase_growth", &"growth.area.packaged_drink").get("success", false)), "install purchase accepted from settlement state")
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content purchase accepted alongside install state")
 	var pending: Dictionary = session.call("five_area_progression_snapshot")

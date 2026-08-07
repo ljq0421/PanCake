@@ -11,7 +11,8 @@ func _run() -> void:
 	_check(bool(service.call("preview_attach_product", order_id, 0, product).get("will_match", false)), "formal order previews matching tray product")
 	_check(bool(service.call("attach_product", order_id, 0, product).get("success", false)), "formal order reserves matched product")
 	var settled: Dictionary = service.call("settle_order", order_id)
-	_check(bool(settled.get("order_success", false)) and not bool(service.call("settle_order", order_id).get("success", false)), "formal order settles exactly once")
+	var repeated_settlement: Dictionary = service.call("settle_order", order_id)
+	_check(bool(settled.get("order_success", false)) and bool(repeated_settlement.get("success", false)) and bool(repeated_settlement.get("already_settled", false)), "formal order settles once and safely accepts a retry")
 	var multi: Dictionary = service.call("open_order", [
 		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [], "heat_preference": &"golden"},
 		{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 1},

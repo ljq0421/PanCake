@@ -17,6 +17,7 @@ const PRODUCT_STOCK_IDS := {
 }
 
 @onready var tier_label: Label = %TierLabel
+@onready var mastery_label: Label = %MasteryLabel
 @onready var order_label: Label = %OrderLabel
 @onready var selection_label: Label = %SelectionLabel
 @onready var feedback_label: Label = %FeedbackLabel
@@ -123,6 +124,12 @@ func _refresh() -> void:
 	var unlocked_products := PackedStringArray(Array(_snapshot.get("unlocked_product_ids", [])))
 	var tier := int(machine.get("tier", 0))
 	tier_label.text = ["基础 · 1位 / 2秒", "中级 · 2位 / 1秒", "高级 · 4位 / 持续保温"][clampi(tier, 0, 2)]
+	var mastery: Dictionary = Dictionary(_snapshot.get("mastery", {}))
+	mastery_label.text = "熟练度 · 正确温度 %d · 当前连对 %d · 最高连对 %d" % [
+		int(mastery.get("correct_temperature", 0)),
+		int(mastery.get("correct_streak_current", 0)),
+		int(mastery.get("correct_streak_best", 0)),
+	]
 	var item := Dictionary(_snapshot.get("order_item", {}))
 	if item.is_empty():
 		order_label.text = "当前订单项：未选择"

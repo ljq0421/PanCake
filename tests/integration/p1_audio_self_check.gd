@@ -22,9 +22,12 @@ func _initialize() -> void:
 func _run() -> void:
 	var workstation := WORKSTATION_SCENE.instantiate() as Workstation
 	root.add_child(workstation)
-	await process_frame
-	await process_frame
+	# This check drives every production phase directly. Disable the live order
+	# clock immediately after _ready(), before yielding a frame, so a restored
+	# near-expiry order cannot reset the fixture.
 	workstation.set_process(false)
+	await process_frame
+	await process_frame
 	var audio: AudioStreamPlayer = workstation.kitchen_audio
 	_check(audio.bus == &"SFX", "kitchen cues use the settings-controlled SFX bus")
 	_check((audio.get_node("CookingSizzle") as AudioStreamPlayer).bus == &"SFX", "continuous sizzle uses the settings-controlled SFX bus")
@@ -69,11 +72,22 @@ func _run() -> void:
 	workstation.ingredient_model.place(IngredientModel.BAOCUI, Vector2(62, 56), 0.0, workstation.pancake_model)
 	workstation.ingredient_model.place(IngredientModel.SCALLION, Vector2(68, 70), 0.0, workstation.pancake_model)
 	workstation._advance_p1_step()
-	_commit_fold(workstation, Vector2(110, 300), Vector2(300, 300), Vector2(70, 64))
+	var surface_size := workstation.pancake_surface.size
+	_commit_fold(
+		workstation,
+		Vector2(surface_size.x * 0.08, surface_size.y * 0.50),
+		Vector2(surface_size.x * 0.55, surface_size.y * 0.50),
+		Vector2(70, 64)
+	)
 	diagnostics = audio.call("get_diagnostics")
 	_check(int(diagnostics.cue_counts.get(&"fold", 0)) > 0, "a committed continuous fold triggers fold audio")
 
-	_commit_fold(workstation, Vector2(490, 300), Vector2(300, 300), Vector2(58, 64))
+	_commit_fold(
+		workstation,
+		Vector2(surface_size.x * 0.92, surface_size.y * 0.50),
+		Vector2(surface_size.x * 0.45, surface_size.y * 0.50),
+		Vector2(58, 64)
+	)
 	workstation._use_bag()
 	workstation._serve_order()
 	diagnostics = audio.call("get_diagnostics")

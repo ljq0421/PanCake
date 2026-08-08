@@ -84,6 +84,21 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "提交完整订单"
 
+[node name="RefuseOrderButton" type="Button" parent="SafeArea/Content/OrderTargetBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "婉拒订单"
+
+[node name="SkipTutorialButton" type="Button" parent="SafeArea/Content/OrderTargetBar"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "跳过教学"
+
 [node name="Stations" type="HBoxContainer" parent="SafeArea/Content"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -110,4 +125,3 @@ text = "F3 站点等待活动订单。"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
-

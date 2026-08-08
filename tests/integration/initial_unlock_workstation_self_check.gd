@@ -4,9 +4,9 @@ const SCENE_PATH := "res://scenes/gameplay/initial_unlock_workstation.tscn"
 const CATALOG := preload("res://scripts/data/workstation_expansion_catalog.gd")
 const CENTRAL_PAN_BAY := Rect2(640.0, 500.0, 620.0, 420.0)
 const STARTER_SLOT_RECTS := {
-	&"egg": Rect2(6.0, 0.0, 89.0, 120.0),
-	&"baocui": Rect2(111.0, 0.0, 89.0, 120.0),
-	&"scallion": Rect2(216.0, 0.0, 89.0, 120.0),
+	&"egg": Rect2(6.0, 0.0, 89.0, 89.0),
+	&"baocui": Rect2(111.0, 0.0, 89.0, 89.0),
+	&"scallion": Rect2(216.0, 0.0, 89.0, 89.0),
 }
 
 var _failures := PackedStringArray()
@@ -42,7 +42,7 @@ func _run() -> void:
 
 func _check_five_zone_layout(workstation: Node) -> void:
 	var background := workstation.get_node_or_null("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background != null and background.texture != null and background.texture.get_size() == Vector2(1920.0, 1080.0), "the 1920x1080 single-row background is the active workstation map")
+	_check(background != null and background.texture != null and background.texture.get_size() == Vector2(1920.0, 1080.0) and background.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v6.png"), "the 1920x1080 enhanced-divider tabletop background is the active workstation map")
 	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout") == null and workstation.get_node_or_null("SafeArea/LegacyFiveZonePrototype") == null and workstation.get_node_or_null("SafeArea/LegacyMaterialDockPrototype") == null, "retired 12-slot, three-device, and prototype overlay nodes are removed from the formal scene")
 	var station_art := workstation.get_node_or_null("SafeArea/FiveAreaStationArtwork") as Control
 	var station_hits := workstation.get_node_or_null("SafeArea/FiveAreaStationClickLayers") as Control
@@ -100,7 +100,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 		if icon != null and icon.visible and icon.texture != null:
 			visible_ingredients += 1
 	_check(visible_ingredients > 0 and visible_ingredients <= 4, "runtime single-dish ingredients occupy only that dish's four color-grouped hint slots")
-	_check(heart != null and heart.visible and patience != null and not patience.visible and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the first-customer tutorial keeps the compact order card but correctly hides its patience countdown")
+	_check(heart != null and heart.visible and patience != null and patience.visible and is_equal_approx(float(workstation.p1_session.order.get("time_limit", 0.0)), 108.0), "the first-customer tutorial keeps the compact order card and uses the 1.5x formal patience countdown")
 
 
 func _check_material_grid(workstation: Node) -> void:
@@ -110,7 +110,7 @@ func _check_material_grid(workstation: Node) -> void:
 	_check(material_dock != null and material_dock.get_child_count() == 18 and int(material_dock.get_meta(&"slot_count", 0)) == 18 and StringName(material_dock.get_meta(&"layout", &"")) == &"single_row", "MaterialDock owns exactly one fixed row of 18 stable slots")
 	for index in 18:
 		var slot := material_dock.get_node_or_null("Slot%02d" % (index + 1)) as Control if material_dock != null else null
-		_check(slot != null and int(slot.get_meta(&"slot_index", 0)) == index + 1, "MaterialDock Slot%02d is present" % (index + 1))
+		_check(slot != null and int(slot.get_meta(&"slot_index", 0)) == index + 1 and _rect_matches(slot, Rect2(slot.position.x, 956.0, 89.0, 89.0)), "MaterialDock Slot%02d is present as a 89x89 bottom-aligned square" % (index + 1))
 	_check(artwork != null and hit_areas != null, "ingredient row has dedicated artwork and click layers")
 	var sauce_button := workstation.get_node_or_null("SafeArea/RightRack/SauceRefillButton") as Control
 	var sauce_overlaps_slot := false
@@ -135,7 +135,9 @@ func _check_material_grid(workstation: Node) -> void:
 
 func _check_opening_day_controls(workstation: Node) -> void:
 	var rack := workstation.get_node_or_null("SafeArea/IngredientRack") as Control
-	_check(_rect_matches(rack, Rect2(648.0, 925.0, 305.0, 120.0)), "the scene keeps one stable ingredient-control parent")
+	_check(_rect_matches(rack, Rect2(648.0, 956.0, 305.0, 89.0)), "the scene keeps one stable ingredient-control parent")
+	var discard := workstation.get_node_or_null("SafeArea/DiscardCurrentPancakeButton") as Button
+	_check(_rect_matches(discard, Rect2(1450.0, 902.0, 150.0, 52.0)), "discard-current-pancake stays above the square material row without covering a slot")
 	var controls := {
 		&"egg": workstation.get_node_or_null("SafeArea/IngredientRack/EggButton") as Control,
 		&"scallion": workstation.get_node_or_null("SafeArea/IngredientRack/ScallionButton") as Control,
@@ -213,7 +215,7 @@ func _check_player_feedback_controls(workstation: Node, game_session: Node) -> v
 		_check(is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "starting tray delivery does not mutate the pancake on the griddle")
 		workstation.p1_session.begin_payment()
 		workstation.p1_session.finish_payment()
-		workstation.call("_start_next_order")
+		workstation.call("_finalize_completed_payment", workstation.p1_session.result.duplicate(true))
 		_check(workstation.p1_session.phase == production_phase_before and is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "the next customer resumes the exact griddle phase and pancake mass after tray payment")
 	var tray_slot := workstation.get_node_or_null("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
 	_check(tray_slot != null and tray_slot.visible and not tray_slot.disabled, "empty holding slots remain clickable to explain how to store and deliver a pancake")

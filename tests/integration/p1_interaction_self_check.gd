@@ -234,6 +234,9 @@ func _run() -> void:
 		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment),
 		"no broad payment-slot hit target or hover collection path remains"
 	)
+	var customer_before_collection := Dictionary(workstation.customer_queue.current_customer()).duplicate(true)
+	var waiting_before_collection := Array(workstation.customer_queue.waiting_customers()).duplicate(true)
+	var portrait_before_collection := workstation.customer_portrait.texture.resource_path
 	if DisplayServer.get_name() == "headless":
 		var click := InputEventMouseButton.new()
 		click.button_index = MOUSE_BUTTON_LEFT
@@ -247,18 +250,16 @@ func _run() -> void:
 		and workstation.payment_coin_model.pending_total == 0
 		and workstation._pending_payment_sprites.is_empty()
 		and not workstation.payment_collection_area.visible
-		and workstation.customer_queue.current_customer().id == &"customer_02"
-		and workstation.customer_queue.waiting_customers()[0].id == &"customer_03"
-		and workstation.customer_queue.waiting_customers()[1].id == &"customer_01"
-		and workstation.customer_portrait.texture.resource_path.ends_with("customer_02_neutral_cropped.tres")
-		and workstation.waiting_customer_portraits[0].texture.resource_path.ends_with("customer_03_neutral_cropped.tres")
-		and workstation.waiting_customer_portraits[1].texture.resource_path.ends_with("customer_01_neutral_cropped.tres"),
+		and workstation.customer_queue.current_customer() == customer_before_collection
+		and workstation.customer_queue.waiting_customers() == waiting_before_collection
+		and workstation.customer_portrait.texture.resource_path == portrait_before_collection,
 		"clicking a visible coin collects every pending coin without changing the active customer"
 	)
 	_check(workstation.customer_line_label.visible and workstation.phase_label.visible, "the next customer order stays actionable behind the optional previous-order summary")
 	workstation._set_customer_portrait_state(P1Session.REACTION_VERY_UNHAPPY)
+	var current_customer_id := str(workstation.customer_queue.current_customer().get("id", &"customer_01"))
 	_check(
-		workstation.customer_portrait.texture.resource_path.ends_with("customer_02_impatient_cropped.tres")
+		workstation.customer_portrait.texture.resource_path.ends_with("%s_impatient_cropped.tres" % current_customer_id)
 		and workstation.customer_portrait.modulate.g < 0.8,
 		"the stronger unhappy state keeps the impatient face and adds a visibly intensified reaction"
 	)

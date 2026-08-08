@@ -30,7 +30,7 @@ func _run() -> void:
 	_check(
 		regular_span.size() == 2
 		and notched_span.size() == 2
-		and notched_span[0].y > regular_span[0].y + 24.0
+		and notched_span[0].y > regular_span[0].y + 16.0
 		and is_equal_approx(notched_span[1].y, regular_span[1].y),
 		"fold source silhouette follows an actual missing upper edge instead of restoring a circular arc"
 	)

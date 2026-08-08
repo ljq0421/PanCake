@@ -25,7 +25,7 @@ func _run() -> void:
 	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v1.png"), "full tray renders the sixth stock image without a number")
 	_check(workstation.egg_restock_button != null and workstation.baocui_restock_button != null and workstation.ham_restock_button != null and workstation.scallion_restock_button != null, "four matching physical restock controls are stable scene content")
 	var background_artwork := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background_artwork.texture.resource_path.ends_with("workstation_18_single_row_1920x1080.png"), "initial workstation uses the formal 18-slot single-row backplate")
+	_check(background_artwork.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v6.png"), "initial workstation uses the enhanced-divider, square-slot 18-slot backplate")
 	_check(workstation.ingredient_layer.baocui_texture.resource_path.ends_with("baocui_broken_v1.png"), "placed baocui uses the visibly broken sheet artwork")
 	_check(_ingredient_rack_has_no_digits(workstation), "ingredient rack uses pictures and words instead of numeric stock labels")
 

@@ -198,7 +198,37 @@ func complete_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
 		return {"success": false, "reason": &"tutorial_kind_invalid"}
 	tutorial_active_kind = &""
 	tutorial_active_id = &""
+	tutorial_failure_count_by_id.erase(tutorial_id)
+	tutorial_failure_count_by_id.erase(str(tutorial_id))
 	return {"success": true, "kind": kind, "tutorial_id": tutorial_id}
+
+
+func record_tutorial_failure(kind: StringName, tutorial_id: StringName) -> Dictionary:
+	if tutorial_active_kind != kind or tutorial_active_id != tutorial_id:
+		return {"success": false, "reason": &"tutorial_not_active"}
+	var failures := int(tutorial_failure_count_by_id.get(tutorial_id, tutorial_failure_count_by_id.get(str(tutorial_id), 0))) + 1
+	tutorial_failure_count_by_id[tutorial_id] = failures
+	var ended := failures >= 2
+	if ended:
+		_end_tutorial_without_mastery(kind, tutorial_id)
+	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "failure_count": failures, "tutorial_ended": ended}
+
+
+func skip_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
+	if tutorial_active_kind != kind or tutorial_active_id != tutorial_id:
+		return {"success": false, "reason": &"tutorial_not_active"}
+	_end_tutorial_without_mastery(kind, tutorial_id)
+	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "tutorial_ended": true, "skipped": true}
+
+
+func _end_tutorial_without_mastery(kind: StringName, tutorial_id: StringName) -> void:
+	if kind == &"area":
+		tutorial_completed_area_ids[tutorial_id] = true
+		tutorial_queue_area_ids.erase(tutorial_id)
+	elif kind == &"device":
+		tutorial_queue_device_ids.erase(tutorial_id)
+	tutorial_active_kind = &""
+	tutorial_active_id = &""
 
 
 func advance_tutorial_for_new_business_day() -> Dictionary:

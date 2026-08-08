@@ -47,7 +47,8 @@ func _run() -> void:
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content purchase accepted alongside install state")
 	station.call("_refresh_growth_section")
 	_check("已购买" in ticket_1.text and "成品饮品柜" in ticket_1.text and ticket_1.disabled, "purchased installation slot keeps the purchased item instead of changing to another recommendation")
-	_check(ticket_2.visible and ticket_2.disabled and "已选择安装" in ticket_2.text, "the second installation candidate remains visible but explains that the installation slot is already selected")
+	_check(ticket_2.visible and ticket_2.disabled and "该购买位已有预订" in ticket_2.text, "the second installation candidate remains visible with the compact occupied-slot status")
+	_check("已选择安装" in ticket_2.tooltip_text, "the occupied installation candidate keeps the full selected-item explanation in its tooltip")
 	_check("已购买" in ticket_3.text and "辣椒酱" in ticket_3.text and ticket_3.disabled, "purchased content slot keeps the purchased item instead of changing to another recommendation")
 	station.call("_open_unlock_progress")
 	var unlock_panel := station.get_node("SafeArea/UnlockProgressPanel") as PanelContainer
@@ -57,6 +58,11 @@ func _run() -> void:
 	var pending: Dictionary = session.call("five_area_progression_snapshot")
 	_check(str(pending.get("pending_install_purchase", "")) == "growth.area.packaged_drink" and str(pending.get("pending_content_purchase", "")) == "growth.add_on.pancake.red_chili", "two pending purchases are presented as independent state")
 	_check(bool(session.call("begin_next_business_day").get("success", false)), "next day activates both purchases")
+	progression.set("area_mastery", {&"area.pancake": 6, &"area.packaged_drink": 3})
+	progression.set("area_mastery_details", {
+		&"area.pancake": {"qualified": 6, "a_grade": 1},
+		&"area.packaged_drink": {"correct_temperature": 3, "correct_streak_current": 2, "correct_streak_best": 3},
+	})
 	station.queue_free()
 	await process_frame
 	var refreshed_station = WORKSTATION_SCENE.instantiate()
@@ -67,7 +73,17 @@ func _run() -> void:
 	var drink_placeholder := refreshed_station.get_node("SafeArea/FiveAreaStationArtwork/PackagedDrinkPlaceholder") as CanvasItem
 	var drink_click := refreshed_station.get_node("SafeArea/FiveAreaStationClickLayers/PackagedDrinkLockedClickLayer") as Button
 	var chili_button := refreshed_station.get_node("SafeArea/RightRack/ChiliSauceRefillButton") as Button
-	_check(not drink_lock.visible and drink_placeholder.visible and drink_click.disabled, "scene reload replaces the activated packaged-drink lock with the explicit UI art placeholder")
+	_check(not drink_lock.visible and drink_placeholder.visible and not drink_click.disabled, "scene reload replaces the activated packaged-drink lock and keeps the drink area click-targetable")
+	drink_click.emit_signal("pressed")
+	await process_frame
+	var f3_overlay := refreshed_station.get_node("F3StationOverlay") as Control
+	var drink_station := refreshed_station.get_node("F3StationOverlay/F3StationsWorkbench/SafeArea/Content/Stations/PackagedDrinkStation") as Control
+	var milk_button := drink_station.get_node("Margin/Content/ProductShelf/MilkButton") as Button
+	var mastery_label := drink_station.get_node("Margin/Content/MasteryLabel") as Label
+	_check(f3_overlay.visible and milk_button.text.contains("纯牛奶") and not milk_button.text.contains("未解锁"), "clicking the activated area opens the sellable drink shelf with the starter product")
+	_check(mastery_label.text.contains("正确温度 3") and mastery_label.text.contains("最高连对 3"), "the drink shelf presents its temperature and streak mastery")
+	refreshed_station.call("_close_f3_station")
+	_check(not f3_overlay.visible and refreshed_station.global_status_label.text.contains("熟练度（饮品正确温度）3"), "the main status strip also exposes drink mastery after unlock")
 	_check(chili_button.visible and chili_button.mouse_filter == Control.MOUSE_FILTER_STOP, "activated chili sauce appears as a usable sauce control")
 	refreshed_station.call("_open_unlock_progress")
 	var activated_unlock_label := refreshed_station.get_node("SafeArea/UnlockProgressPanel/Margin/VBox/Scroll/UnlockProgressLabel") as Label

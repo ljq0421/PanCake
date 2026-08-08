@@ -103,12 +103,12 @@ func _check_scene_contract() -> void:
 	var foreground_lip := workstation.get_node("SafeArea/ForegroundLip") as TextureRect
 	var bottom_strip := workstation.get_node("SafeArea/BottomStrip") as Control
 	var step_action_button := workstation.get_node("SafeArea/P1ControlBar/StepActionButton") as Button
-	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_18_single_row_1920x1080.png", "background artwork uses the formal 18-slot single-row workstation map")
+	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v6.png", "background artwork uses the enhanced-divider, square-slot 18-slot workstation map")
 	_check(background_artwork.get_index() < pan_base.get_index(), "background artwork renders behind interactive content")
 	_check((left_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "left tool rack no longer draws a floating panel")
 	_check((ingredient_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "right ingredient rack no longer draws a floating panel")
 	_check(left_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and right_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and ingredient_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE, "overlapping rack panels do not intercept their child or sibling controls")
-	_check(left_rack.position == Vector2(604, 630) and ingredient_rack.position == Vector2(648, 925) and ingredient_rack.size == Vector2(305, 120), "tools flank the central griddle and starter ingredients occupy Slots07-Slot09")
+	_check(left_rack.position == Vector2(604, 630) and ingredient_rack.position == Vector2(648, 956) and ingredient_rack.size == Vector2(305, 89), "tools flank the central griddle and starter ingredients occupy square Slots07-Slot09")
 	_check(ladle_button.size == Vector2(126, 164) and spreader_button.size == Vector2(122, 76), "ladle and spreader inputs cover the formal five-area tool hit regions")
 	_check(fold_button.size == Vector2(122, 76) and fold_button.toggle_mode and sauce_brush_button.size == Vector2(122, 76), "fold and sauce tools keep their state-driven five-area hit regions")
 	_check(ladle_button.get_global_rect().end.x <= pan_base.get_global_rect().position.x and spreader_button.global_position.x >= pan_base.get_global_rect().end.x and fold_button.global_position.x >= pan_base.get_global_rect().end.x and sauce_brush_button.global_position.x >= pan_base.get_global_rect().end.x, "the four pancake tools flank rather than cover the central griddle")

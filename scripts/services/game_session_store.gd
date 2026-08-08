@@ -5,6 +5,8 @@ signal coins_changed(current_coins: int)
 signal progression_changed(snapshot: Dictionary)
 signal inventory_changed(snapshot: Dictionary)
 signal production_changed(snapshot: Dictionary)
+signal order_changed(snapshot: Dictionary)
+signal order_settled(result: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
@@ -17,6 +19,7 @@ const PANCAKE_HOLDING_TRAY_MODEL := preload("res://scripts/gameplay/pancake_hold
 const FIVE_AREA_ORDER_SERVICE := preload("res://scripts/services/five_area_order_service.gd")
 const FIVE_AREA_PRODUCTION_SERVICE := preload("res://scripts/services/five_area_production_service.gd")
 const FIVE_AREA_PANCAKE_ORDER_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
+const FIVE_AREA_PLAYABLE_ORDER_GENERATOR := preload("res://scripts/services/five_area_playable_order_generator.gd")
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
 	&"baocui": &"stock.pancake.baocui",
@@ -112,6 +115,9 @@ func begin_new_game() -> Dictionary:
 		RECONCILED_FORMAL_ORDER_IDS_KEY: [],
 		"pancake_order_cursor": 0,
 		"pancake_orders_issued_today": 0,
+		"order_rng_seed": now,
+		"order_sequence": 0,
+		"tutorial_order_generated_day": 0,
 	}
 	_write_save()
 	progression_changed.emit(five_area_progression_snapshot())
@@ -214,14 +220,113 @@ func next_filtered_pancake_order() -> Dictionary:
 	return Dictionary(generated.get("order", {})).duplicate(true)
 
 
+func ensure_active_playable_order() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	_ensure_order_service()
+	var active := active_formal_order()
+	if not active.is_empty():
+		return {"success": true, "created": false, "order": active}
+	if not bool(_progression.get("day_open")):
+		return {"success": false, "reason": &"business_day_closed"}
+	var next_sequence := maxi(int(_save_data.get("order_sequence", 0)), 0) + 1
+	var generated: Dictionary = FIVE_AREA_PLAYABLE_ORDER_GENERATOR.generate(
+		five_area_progression_snapshot(),
+		inventory_snapshot(),
+		int(_save_data.get("order_rng_seed", 1)),
+		next_sequence,
+		int(_progression.get("current_day")),
+		int(_save_data.get("tutorial_order_generated_day", 0))
+	)
+	if not bool(generated.get("success", false)):
+		return generated
+	var metadata := Dictionary(generated.get("metadata", {})).duplicate(true)
+	metadata["generated_sequence"] = next_sequence
+	generated["metadata"] = metadata
+	var result: Dictionary = _order_service.call("ensure_queue", 1, generated)
+	if not bool(result.get("success", false)):
+		return result
+	if bool(result.get("created", false)):
+		_save_data["order_sequence"] = next_sequence
+		if int(generated.get("tutorial_generated_day", 0)) > 0:
+			_save_data["tutorial_order_generated_day"] = int(generated.get("tutorial_generated_day", 0))
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+		order_changed.emit(Dictionary(result.get("order", {})).duplicate(true))
+	return result
+
+
+func waiting_formal_orders() -> Array[Dictionary]:
+	_ensure_order_service()
+	return Array(_order_service.call("waiting_orders")).duplicate(true)
+
+
+func advance_formal_order_patience(delta: float) -> Dictionary:
+	if not has_save() or delta <= 0.0 or get_tree().paused:
+		return {"success": true, "changed": false}
+	_ensure_progression()
+	if not bool(_progression.get("day_open")):
+		return {"success": true, "changed": false}
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("advance_patience", delta)
+	if bool(result.get("changed", false)) or bool(result.get("success", false)) and bool(result.get("expired", false)):
+		_sync_formal_orders_to_save()
+	if StringName(result.get("terminal_state", &"")) == &"expired" and not bool(result.get("already_settled", false)):
+		_finalize_failed_formal_order(result)
+	else:
+		_save_data["formal_orders"] = formal_order_snapshot()
+	return result
+
+
+func preview_formal_order_refusal(order_id: StringName) -> Dictionary:
+	_ensure_order_service()
+	return Dictionary(_order_service.call("preview_refusal", order_id)).duplicate(true)
+
+
+func refuse_formal_order(order_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("refuse_order", order_id)
+	if bool(result.get("success", false)) and not bool(result.get("already_settled", false)):
+		_finalize_failed_formal_order(result)
+	return result
+
+
+func skip_active_area_tutorial() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var tutorial := Dictionary(_progression.call("tutorial_snapshot"))
+	var kind := StringName(tutorial.get("active_kind", &""))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	if kind != &"area" or tutorial_id.is_empty():
+		return {"success": false, "reason": &"tutorial_not_active"}
+	var active := active_formal_order()
+	if not active.is_empty() and StringName(active.get("teaching_area_id", &"")) == tutorial_id:
+		var abandoned := abandon_active_formal_order(&"tutorial_skipped")
+		if not bool(abandoned.get("success", false)):
+			return abandoned
+	var result: Dictionary = _progression.call("skip_tutorial", kind, tutorial_id)
+	if bool(result.get("success", false)):
+		_sync_progression_to_save()
+		_touch_and_write()
+		progression_changed.emit(five_area_progression_snapshot())
+		order_changed.emit({})
+	return result
+
+
 func open_formal_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
 	var result: Dictionary = _order_service.call("open_order", items, metadata)
 	if bool(result.get("success", false)):
+		_save_data["order_sequence"] = maxi(int(_save_data.get("order_sequence", 0)), int(Dictionary(result.get("order", {})).get("sequence", 0)))
 		_sync_formal_orders_to_save()
 		_touch_and_write()
+		order_changed.emit(Dictionary(result.get("order", {})).duplicate(true))
 	return result
 
 
@@ -259,6 +364,7 @@ func mark_formal_order_production_started(order_id: StringName, source_instance_
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
+		order_changed.emit(active_formal_order())
 	return result
 
 
@@ -475,8 +581,28 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
 	var teaching_area_id := StringName(order.get("teaching_area_id", Dictionary(order.get("metadata", {})).get("teaching_area_id", &"")))
 	var tutorial_completion := {}
+	var tutorial_failure := {}
 	if bool(settlement.get("order_success", false)) and not teaching_area_id.is_empty():
 		tutorial_completion = _progression.call("complete_tutorial", &"area", teaching_area_id)
+	elif not bool(settlement.get("order_success", false)) and not teaching_area_id.is_empty():
+		tutorial_failure = _progression.call("record_tutorial_failure", &"area", teaching_area_id)
+	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
+	var primary_item: Dictionary = Dictionary(items[0]) if not items.is_empty() else {}
+	today_orders.append({
+		"order_id": str(order_id),
+		"title": _formal_order_title(order),
+		"area_id": str(primary_item.get("area_id", &"")),
+		"score": 100 if bool(settlement.get("order_success", false)) else 0,
+		"grade": "A" if bool(settlement.get("order_success", false)) else "C",
+		"coins": base_coins,
+		"cost": 0,
+		"profit": base_coins,
+		"formal_order_id": str(order_id),
+		"result": settlement.duplicate(true),
+	})
+	_save_data["today_orders"] = today_orders
+	_save_data["orders_completed"] = int(_save_data.get("orders_completed", 0)) + 1
+	_save_data["today_reputation_delta"] = int(_save_data.get("today_reputation_delta", 0)) + reputation_delta
 	_sync_formal_orders_to_save()
 	_sync_progression_to_save()
 	_touch_and_write()
@@ -486,7 +612,60 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	settlement["earned_coins"] = base_coins
 	settlement["reputation_delta"] = reputation_delta
 	settlement["tutorial_completion"] = tutorial_completion
+	settlement["tutorial_failure"] = tutorial_failure
+	order_changed.emit({})
+	order_settled.emit(settlement.duplicate(true))
 	return settlement
+
+
+func _finalize_failed_formal_order(result: Dictionary) -> void:
+	_ensure_progression()
+	var reputation_delta := int(result.get("reputation_delta", -2))
+	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
+	var order := Dictionary(result.get("order", {}))
+	var teaching_area_id := StringName(result.get("teaching_area_id", order.get("teaching_area_id", &"")))
+	var tutorial_failure := {}
+	if not teaching_area_id.is_empty():
+		tutorial_failure = _progression.call("record_tutorial_failure", &"area", teaching_area_id)
+	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
+	today_orders.append({
+		"order_id": str(result.get("order_id", &"")),
+		"title": _formal_order_title(order),
+		"area_id": str(teaching_area_id if not teaching_area_id.is_empty() else _formal_order_area_id(order)),
+		"score": 0,
+		"grade": "失败",
+		"coins": 0,
+		"cost": 0,
+		"profit": 0,
+		"formal_order_id": str(result.get("order_id", &"")),
+		"result": result.duplicate(true),
+	})
+	_save_data["today_orders"] = today_orders
+	_save_data["today_reputation_delta"] = int(_save_data.get("today_reputation_delta", 0)) + reputation_delta
+	_sync_formal_orders_to_save()
+	_sync_progression_to_save()
+	_touch_and_write()
+	result["tutorial_failure"] = tutorial_failure
+	progression_changed.emit(five_area_progression_snapshot())
+	order_changed.emit({})
+	order_settled.emit(result.duplicate(true))
+
+
+func _formal_order_area_id(order: Dictionary) -> StringName:
+	var items: Array = Array(order.get("items", []))
+	return &"" if items.is_empty() else StringName(Dictionary(items[0]).get("area_id", &""))
+
+
+func _formal_order_title(order: Dictionary) -> String:
+	var metadata := Dictionary(order.get("metadata", {}))
+	var legacy := Dictionary(metadata.get("legacy_order", {}))
+	if not legacy.is_empty():
+		return str(legacy.get("title", "煎饼订单"))
+	var items: Array = Array(order.get("items", []))
+	if items.is_empty():
+		return "正式订单"
+	var product := CATALOG.product_definition(StringName(Dictionary(items[0]).get("product_id", &"")))
+	return "%s订单" % str(product.get("label", "正式商品"))
 
 
 func pancake_holding_tray_snapshot() -> Dictionary:
@@ -825,7 +1004,14 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 	var tutorial_completion := {}
 	# Tutorial completion is about finishing the guided interaction path.  Its
 	# score still enters mastery/billing, but it is not a pass/fail gate.
-	if bool(order.get("tutorial_no_countdown", false)):
+	var formal_teaching_area_id: StringName = &""
+	if not formal_order_id.is_empty():
+		var formal_orders := Dictionary(formal_order_snapshot().get("orders", {}))
+		var formal_order := Dictionary(formal_orders.get(formal_order_id, formal_orders.get(str(formal_order_id), {})))
+		formal_teaching_area_id = StringName(formal_order.get("teaching_area_id", Dictionary(formal_order.get("metadata", {})).get("teaching_area_id", &"")))
+	if not formal_teaching_area_id.is_empty():
+		tutorial_completion = _progression.call("complete_tutorial", &"area", formal_teaching_area_id)
+	elif bool(order.get("tutorial_no_countdown", false)):
 		tutorial_completion = _progression.call("complete_tutorial", StringName(order.get("tutorial_kind", &"")), StringName(order.get("tutorial_id", &"")))
 	var payment_coins := maxi(earned_coins, 0)
 	var material_cost := maxi(int(settled_result.get("material_cost", 0)), 0)
@@ -1000,6 +1186,12 @@ func _ensure_save_shape() -> void:
 		_save_data["pancake_order_cursor"] = 0
 	if not _save_data.has("pancake_orders_issued_today"):
 		_save_data["pancake_orders_issued_today"] = 0
+	if not _save_data.has("order_rng_seed"):
+		_save_data["order_rng_seed"] = maxi(int(_save_data.get("started_at_unix", 1)), 1)
+	if not _save_data.has("order_sequence"):
+		_save_data["order_sequence"] = maxi(int(Dictionary(_save_data.get("formal_orders", {})).get("sequence", 0)), 0)
+	if not _save_data.has("tutorial_order_generated_day"):
+		_save_data["tutorial_order_generated_day"] = 0
 	if not _save_data.has(RECONCILED_FORMAL_ORDER_IDS_KEY):
 		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = []
 

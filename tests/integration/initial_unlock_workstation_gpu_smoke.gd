@@ -80,6 +80,18 @@ func _run() -> void:
 	var initial_image := root.get_texture().get_image()
 	var save_error := initial_image.save_png(output_absolute)
 	_check(save_error == OK and initial_image.get_size() == Vector2i(1920, 1080), "captured the untouched opening-day workstation in a real 1920x1080 GPU frame")
+	var discard := workstation.get_node("SafeArea/DiscardCurrentPancakeButton") as Button
+	var discard_rect := Rect2(1450.0, 902.0, 150.0, 52.0)
+	_check(discard != null and discard.get_global_rect().position.distance_to(discard_rect.position) <= 1.0 and discard.get_global_rect().size.distance_to(discard_rect.size) <= 1.0 and discard.get_global_rect().end.y <= 956.0, "discard-current-pancake is a real 150x52 control above, not over, the square material row")
+	if discard != null:
+		_move_at(discard.get_global_rect().get_center())
+		await process_frame
+		var discard_hovered := root.gui_get_hovered_control()
+		_press_at(discard.get_global_rect().get_center())
+		await process_frame
+		_release_at(discard.get_global_rect().get_center())
+		await process_frame
+		_check(discard_hovered == discard and discard.visible and not discard.disabled, "real pointer click reaches the relocated redo control")
 	var ladle := workstation.get_node("SafeArea/LeftRack/LadleButton") as Button
 	var egg := workstation.get_node("SafeArea/IngredientRack/EggButton") as Button
 	var baocui := workstation.get_node("SafeArea/IngredientRack/BaocuiButton") as Button
@@ -373,12 +385,12 @@ func _material_rail_has_eighteen_positions(workstation: Node) -> bool:
 
 func _opening_day_material_controls_align(workstation: Node) -> bool:
 	var rack := workstation.get_node_or_null("SafeArea/IngredientRack") as Control
-	if rack == null or rack.position.distance_to(Vector2(648.0, 925.0)) > 1.0 or rack.size.distance_to(Vector2(305.0, 120.0)) > 1.0:
+	if rack == null or rack.position.distance_to(Vector2(648.0, 956.0)) > 1.0 or rack.size.distance_to(Vector2(305.0, 89.0)) > 1.0:
 		return false
 	var expected_rects := {
-		"EggButton": Rect2(654.0, 925.0, 89.0, 120.0),
-		"BaocuiButton": Rect2(759.0, 925.0, 89.0, 120.0),
-		"ScallionButton": Rect2(864.0, 925.0, 89.0, 120.0),
+		"EggButton": Rect2(654.0, 956.0, 89.0, 89.0),
+		"BaocuiButton": Rect2(759.0, 956.0, 89.0, 89.0),
+		"ScallionButton": Rect2(864.0, 956.0, 89.0, 89.0),
 	}
 	for button_name in expected_rects:
 		var ingredient := workstation.get_node_or_null("SafeArea/IngredientRack/%s" % button_name) as Control

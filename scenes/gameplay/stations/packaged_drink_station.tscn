@@ -66,6 +66,13 @@ theme_override_colors/font_color = Color(0.95, 0.89, 0.78, 1)
 theme_override_font_sizes/font_size = 18
 text = "当前订单项：未选择"
 
+[node name="MasteryLabel" type="Label" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.38, 1)
+theme_override_font_sizes/font_size = 17
+text = "熟练度 · 正确温度 0 · 当前连对 0 · 最高连对 0"
+
 [node name="RuleLabel" type="Label" parent="Margin/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.69, 0.77, 0.75, 1)
@@ -190,4 +197,3 @@ text = "成品饮品柜尚未解锁"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
-

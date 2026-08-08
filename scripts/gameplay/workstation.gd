@@ -182,6 +182,12 @@ const SPREADER_SPEED_FAST := 1
 @onready var unlock_progress_label: Label = %UnlockProgressLabel
 @onready var unlock_progress_close_button: Button = %UnlockProgressCloseButton
 @onready var growth_ticket_buttons: Array[Button] = [%GrowthTicket1, %GrowthTicket2, %GrowthTicket3]
+@onready var station_interaction_controller: PancakeWorkstationInteractionController = %PancakeWorkstationInteractionController
+@onready var f3_station_overlay: Control = %F3StationOverlay
+@onready var f3_stations_workbench: Control = %F3StationsWorkbench
+@onready var f3_station_close_button: Button = %CloseButton
+@onready var refuse_active_order_button: Button = %RefuseActiveOrderButton
+@onready var skip_active_tutorial_button: Button = %SkipActiveTutorialButton
 
 var pancake_model: PancakeModel
 var _scrape_sampler: StrokeSampler
@@ -220,6 +226,8 @@ var p1_session: P1Session
 var payment_coin_model: RefCounted
 var five_area_pancake_production: RefCounted
 var _formal_order_id: StringName = &""
+var _refusal_confirmation_order_id: StringName = &""
+var _skip_confirmation_tutorial_id: StringName = &""
 var _handoff_product_from_tray: Dictionary = {}
 var _resume_production_after_tray_handoff := false
 var current_sauce_type: StringName = OrderService.SAUCE_SWEET
@@ -276,19 +284,17 @@ func _ready() -> void:
 	var formal_active: Dictionary = {}
 	if game_session != null and game_session.has_method("active_formal_order"):
 		formal_active = Dictionary(game_session.call("active_formal_order"))
-	if game_session != null and game_session.has_method("next_filtered_pancake_order") and bool(game_session.call("is_five_area_save_active")):
-		var five_area_provider: RefCounted = FIVE_AREA_PANCAKE_ORDER_PROVIDER.new(game_session)
-		if formal_active.is_empty():
-			order_service = five_area_provider
-			customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
-		else:
-			# Do not generate a fresh three-customer queue before restoring the
-			# persisted active formal order.
-			order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
-			customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service, 1)
-			var restored_legacy: Dictionary = Dictionary(Dictionary(formal_active.get("metadata", {})).get("legacy_order", {}))
-			customer_queue.call("restore_active_customer", restored_legacy if not restored_legacy.is_empty() else order_service.call("next_order"))
-			customer_queue.call("set_order_provider", five_area_provider)
+	if game_session != null and game_session.has_method("ensure_active_playable_order") and bool(game_session.call("is_five_area_save_active")):
+		# The formal service owns the deterministic stream. The legacy queue is
+		# retained only as a one-customer adapter for the pancake simulator.
+		order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
+		customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service, 1)
+		var ensured: Dictionary = game_session.call("ensure_active_playable_order")
+		if bool(ensured.get("success", false)):
+			formal_active = Dictionary(ensured.get("order", {}))
+		var restored_legacy: Dictionary = Dictionary(Dictionary(formal_active.get("metadata", {})).get("legacy_order", {}))
+		if not restored_legacy.is_empty():
+			customer_queue.call("restore_active_customer", restored_legacy)
 	else:
 		order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
 		customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service)
@@ -341,6 +347,12 @@ func _ready() -> void:
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
 	unlock_progress_button.pressed.connect(_open_unlock_progress)
 	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
+	station_interaction_controller.station_requested.connect(_open_f3_station)
+	f3_station_close_button.pressed.connect(_close_f3_station)
+	if f3_stations_workbench.has_signal("order_finished"):
+		f3_stations_workbench.connect("order_finished", _on_playable_order_finished)
+	refuse_active_order_button.pressed.connect(_on_refuse_active_order_pressed)
+	skip_active_tutorial_button.pressed.connect(_on_skip_active_tutorial_pressed)
 	for ticket_index in growth_ticket_buttons.size():
 		growth_ticket_buttons[ticket_index].pressed.connect(_on_growth_ticket_pressed.bind(ticket_index))
 	step_action_button.pressed.connect(_advance_p1_step)
@@ -370,7 +382,10 @@ func _ready() -> void:
 	_bind_global_status(game_session)
 	var first_order: Dictionary = _legacy_order_from_active_formal_order(customer_queue.current_customer().order)
 	p1_session.start(first_order)
-	_ensure_formal_pancake_order(first_order)
+	if _uses_playable_formal_orders():
+		_route_active_playable_order(false)
+	else:
+		_ensure_formal_pancake_order(first_order)
 	_refresh_pancake_holding_tray()
 	_on_tool_changed(tool_controller.current_tool)
 	_update_sauce_status()
@@ -381,6 +396,127 @@ func _ready() -> void:
 	_refresh_spreader_upgrade_presentation()
 	_refresh_sauce_brush_upgrade_presentation()
 	_log_info(&"workstation", "PancakeModel ready: %dx%d" % [parameters.grid_size, parameters.grid_size])
+
+
+func _open_f3_station(_area_id: StringName) -> void:
+	f3_station_overlay.visible = true
+	if f3_stations_workbench.has_method("refresh_from_session"):
+		f3_stations_workbench.call("refresh_from_session")
+	f3_station_close_button.grab_focus()
+
+
+func _close_f3_station() -> void:
+	f3_station_overlay.visible = false
+	_refresh_global_status()
+
+
+func _uses_playable_formal_orders() -> bool:
+	var game_session := get_node_or_null("/root/GameSession")
+	return game_session != null and game_session.has_method("ensure_active_playable_order") and bool(game_session.call("is_five_area_save_active"))
+
+
+func _route_active_playable_order(restart_pancake: bool = true) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("ensure_active_playable_order"):
+		return
+	var ensured: Dictionary = game_session.call("ensure_active_playable_order")
+	if not bool(ensured.get("success", false)):
+		_formal_order_id = &""
+		_refresh_main_order_controls({})
+		var reason := StringName(ensured.get("reason", &""))
+		if reason == &"tutorial_restock_required":
+			var area_id := StringName(ensured.get("teaching_area_id", &""))
+			var missing := PackedStringArray(ensured.get("missing_stock_ids", PackedStringArray()))
+			tool_status_label.text = "教学待补货：%s" % "、".join(missing)
+			if area_id == &"area.packaged_drink" or area_id == &"area.youtiao":
+				_open_f3_station(area_id)
+		else:
+			tool_status_label.text = "当前没有可生成的正式订单：%s" % str(reason)
+		return
+	var active := Dictionary(ensured.get("order", {}))
+	_formal_order_id = StringName(active.get("order_id", &""))
+	_refresh_main_order_controls(active)
+	var items: Array = Array(active.get("items", []))
+	if items.is_empty():
+		return
+	var area_id := StringName(Dictionary(items[0]).get("area_id", &""))
+	if area_id == &"area.pancake":
+		_close_f3_station()
+		var legacy := Dictionary(Dictionary(active.get("metadata", {})).get("legacy_order", {}))
+		if legacy.is_empty():
+			tool_status_label.text = "正式煎饼订单缺少制作模板。"
+			return
+		customer_queue.call("restore_active_customer", legacy)
+		if restart_pancake:
+			reset_pancake()
+			p1_session.start(legacy)
+			_refresh_p1_ui()
+	else:
+		_open_f3_station(area_id)
+		tool_status_label.text = "已切换到%s正式订单。" % ("成品饮品" if area_id == &"area.packaged_drink" else "油条")
+
+
+func _on_playable_order_finished(result: Dictionary = {}) -> void:
+	_refusal_confirmation_order_id = &""
+	_skip_confirmation_tutorial_id = &""
+	var earned := int(result.get("earned_coins", 0))
+	var reputation_delta := int(result.get("reputation_delta", 0))
+	tool_status_label.text = "订单已结束 · 金币 +%d · 口碑 %+d" % [earned, reputation_delta]
+	_route_active_playable_order(true)
+
+
+func _on_refuse_active_order_pressed() -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return
+	var active: Dictionary = game_session.call("active_formal_order")
+	var order_id := StringName(active.get("order_id", &""))
+	if order_id.is_empty():
+		return
+	if _refusal_confirmation_order_id != order_id:
+		var preview: Dictionary = game_session.call("preview_formal_order_refusal", order_id)
+		if not bool(preview.get("success", false)):
+			tool_status_label.text = "当前不能婉拒订单。"
+			return
+		_refusal_confirmation_order_id = order_id
+		refuse_active_order_button.text = "确认婉拒（口碑 %d）" % int(preview.get("reputation_delta", -1))
+		tool_status_label.text = "再次点击确认婉拒。"
+		return
+	var result: Dictionary = game_session.call("refuse_formal_order", order_id)
+	if bool(result.get("success", false)):
+		_on_playable_order_finished(result)
+
+
+func _on_skip_active_tutorial_pressed() -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return
+	var tutorial := Dictionary(Dictionary(game_session.call("five_area_progression_snapshot")).get("tutorial", {}))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	if tutorial_id.is_empty():
+		return
+	if _skip_confirmation_tutorial_id != tutorial_id:
+		_skip_confirmation_tutorial_id = tutorial_id
+		skip_active_tutorial_button.text = "确认跳过教学"
+		tool_status_label.text = "再次点击确认；跳过教学不会增加熟练度。"
+		return
+	var result: Dictionary = game_session.call("skip_active_area_tutorial")
+	if bool(result.get("success", false)):
+		_on_playable_order_finished(result)
+
+
+func _refresh_main_order_controls(order: Dictionary) -> void:
+	var order_id := StringName(order.get("order_id", &""))
+	if order_id != _refusal_confirmation_order_id:
+		_refusal_confirmation_order_id = &""
+		refuse_active_order_button.text = "婉拒订单"
+	var teaching_area_id := StringName(order.get("teaching_area_id", &""))
+	refuse_active_order_button.disabled = order_id.is_empty()
+	skip_active_tutorial_button.visible = not teaching_area_id.is_empty()
+	skip_active_tutorial_button.disabled = teaching_area_id.is_empty()
+	if teaching_area_id.is_empty():
+		_skip_confirmation_tutorial_id = &""
+		skip_active_tutorial_button.text = "跳过教学"
 
 
 func apply_progression_effects(snapshot: Dictionary) -> void:
@@ -533,6 +669,15 @@ func _process(delta: float) -> void:
 	if _business_day_closed:
 		return
 	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("advance_formal_order_patience") and not _formal_order_time_paused():
+		var patience_result: Dictionary = game_session.call("advance_formal_order_patience", delta)
+		if StringName(patience_result.get("terminal_state", &"")) == &"expired" and not bool(patience_result.get("already_settled", false)):
+			_on_playable_order_finished(patience_result)
+		else:
+			var active_order: Dictionary = game_session.call("active_formal_order")
+			var active_items: Array = Array(active_order.get("items", []))
+			if p1_session != null and not active_items.is_empty() and StringName(Dictionary(active_items[0]).get("area_id", &"")) == &"area.pancake":
+				p1_session.patience_seconds = float(active_order.get("remaining_patience_seconds", p1_session.patience_seconds))
 	if game_session != null and game_session.has_method("advance_pancake_holding_tray"):
 		game_session.call("advance_pancake_holding_tray", delta)
 	_update_surface_readout()
@@ -566,6 +711,10 @@ func _process(delta: float) -> void:
 			_process_sauce_brush(grid_position)
 		ToolController.Tool.FOLD:
 			fold_model.update_drag(grid_position)
+
+
+func _formal_order_time_paused() -> bool:
+	return get_tree().paused or daily_bill_panel.visible or unlock_progress_panel.visible or _result_detail_open or _order_summary_visible
 
 
 func _advance_business_day_timer(delta: float) -> void:
@@ -1978,6 +2127,27 @@ func _populate_result(score_result: Dictionary) -> void:
 
 func _start_next_order() -> void:
 	_recovering_completed_payment = false
+	if _uses_playable_formal_orders():
+		var preserve_formal_production := _resume_production_after_tray_handoff and p1_session.has_suspended_tray_production()
+		if preserve_formal_production:
+			var game_session := get_node_or_null("/root/GameSession")
+			var ensured: Dictionary = game_session.call("ensure_active_playable_order") if game_session != null else {}
+			var active := Dictionary(ensured.get("order", {}))
+			var items: Array = Array(active.get("items", []))
+			var legacy := Dictionary(Dictionary(active.get("metadata", {})).get("legacy_order", {}))
+			if not items.is_empty() and StringName(Dictionary(items[0]).get("area_id", &"")) == &"area.pancake" and not legacy.is_empty():
+				var resumed: Dictionary = p1_session.resume_production_for_next_order(legacy)
+				if bool(resumed.get("success", false)):
+					_formal_order_id = StringName(active.get("order_id", &""))
+					customer_queue.call("restore_active_customer", legacy)
+					_resume_production_after_tray_handoff = false
+					_restore_in_progress_after_tray_handoff()
+					_refresh_main_order_controls(active)
+					_refresh_p1_ui()
+					return
+		_resume_production_after_tray_handoff = false
+		_route_active_playable_order(true)
+		return
 	var preserve_production := _resume_production_after_tray_handoff and p1_session.has_suspended_tray_production()
 	var next_customer: Dictionary = customer_queue.advance_queue()
 	if preserve_production:
@@ -2422,6 +2592,13 @@ func _refresh_global_status() -> void:
 		int(snapshot.get("reputation", 0)),
 		pancake_mastery,
 	]
+	if Array(snapshot.get("unlocked_area_ids", [])).has("area.packaged_drink"):
+		var details_by_area: Dictionary = Dictionary(snapshot.get("area_mastery_details", {}))
+		var drink_mastery: Dictionary = Dictionary(details_by_area.get(
+			&"area.packaged_drink",
+			details_by_area.get("area.packaged_drink", {}),
+		))
+		global_status_label.text += "  ·  熟练度（饮品正确温度）%d" % int(drink_mastery.get("correct_temperature", 0))
 
 
 func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:

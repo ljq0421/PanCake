@@ -16,9 +16,10 @@ func _run() -> void:
 	_check(drink.has_signal("intent_requested"), "drink station exposes intent signal")
 	for path in ["Margin/Content/ProductShelf/MilkButton", "Margin/Content/HeaterSlots/HeaterSlot1", "Margin/Content/HeaterSlots/HeaterSlot4", "LockOverlay"]:
 		_check(drink.has_node(path), "drink station keeps stable node %s" % path)
-	drink.call("apply_snapshot", {"machine": {"tier": 2, "slots": [{"state": &"empty"}, {"state": &"empty"}, {"state": &"empty"}, {"state": &"empty"}]}, "inventory": {"stock.packaged_drink.milk": 2}, "unlocked_product_ids": ["product.packaged_drink.milk"], "order_id": &"order.test", "item_index": 0, "order_item": {"product_id": &"product.packaged_drink.milk", "temperature_mode": &"heated"}})
+	drink.call("apply_snapshot", {"machine": {"tier": 2, "slots": [{"state": &"empty"}, {"state": &"empty"}, {"state": &"empty"}, {"state": &"empty"}]}, "inventory": {"stock.packaged_drink.milk": 2}, "unlocked_product_ids": ["product.packaged_drink.milk"], "mastery": {"correct_temperature": 7, "correct_streak_current": 2, "correct_streak_best": 5}, "order_id": &"order.test", "item_index": 0, "order_item": {"product_id": &"product.packaged_drink.milk", "temperature_mode": &"heated"}})
 	drink.call("set_locked", false, "")
 	_check("高级" in (drink.get_node("Margin/Content/Header/TierLabel") as Label).text, "drink station renders advanced tier")
+	_check("正确温度 7" in (drink.get_node("Margin/Content/MasteryLabel") as Label).text and "最高连对 5" in (drink.get_node("Margin/Content/MasteryLabel") as Label).text, "drink station renders area-specific mastery")
 	_check(not (drink.get_node("Margin/Content/HeaterSlots/HeaterSlot4") as Button).disabled, "advanced drink slot four is interactive")
 	drink.queue_free()
 
@@ -52,4 +53,3 @@ func _finish() -> void:
 		return
 	printerr("F3_STATION_SCENE_SELF_CHECK_FAIL\n" + "\n".join(_failures))
 	quit(1)
-

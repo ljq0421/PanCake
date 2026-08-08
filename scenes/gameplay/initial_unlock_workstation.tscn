@@ -12,7 +12,7 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="10_oa5o0"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="11_1wi16"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="12_wd07g"]
-[ext_resource type="Texture2D" uid="uid://32qu2w6ehod4" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080.png" id="13_nrgyx"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v6.png" id="13_nrgyx"]
 [ext_resource type="Texture2D" path="res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres" id="14_2kg7p"]
 [ext_resource type="Texture2D" uid="uid://ufrhlritjp3m" path="res://resources/art/ui/order/order_card_multi_dish_v3.png" id="15_rdwwv"]
 [ext_resource type="Texture2D" uid="uid://dfm5ihdvdkscq" path="res://resources/art/ingredients/egg/egg_whole_v1.png" id="16_r8aep"]
@@ -95,6 +95,7 @@
 [ext_resource type="Texture2D" uid="uid://dknlk2asldge6" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png" id="93_i48ma"]
 [ext_resource type="Texture2D" uid="uid://bhjgy30eq2k28" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png" id="94_3ju16"]
 [ext_resource type="Texture2D" uid="uid://brtdw4orj2viy" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png" id="95_tud4u"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/f3_stations_workbench.tscn" id="96_f3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_patience_bg"]
 bg_color = Color(0.075, 0.14, 0.15, 0.94)
@@ -786,6 +787,25 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
+[node name="SkipActiveTutorialButton" type="Button" parent="SafeArea/CustomerStrip" unique_id=1198295306]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1370.0
+offset_top = 15.0
+offset_right = 1520.0
+offset_bottom = 69.0
+text = "跳过教学"
+
+[node name="RefuseActiveOrderButton" type="Button" parent="SafeArea/CustomerStrip" unique_id=613603982]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1534.0
+offset_top = 15.0
+offset_right = 1696.0
+offset_bottom = 69.0
+text = "婉拒订单"
+
 [node name="Worktop" type="Panel" parent="SafeArea" unique_id=811446608]
 visible = false
 layout_mode = 0
@@ -989,7 +1009,7 @@ horizontal_alignment = 1
 z_index = 8
 layout_mode = 0
 offset_left = 648.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 953.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -1000,7 +1020,7 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 6.0
 offset_right = 95.0
-offset_bottom = 120.0
+offset_bottom = 89.0
 tooltip_text = "按住并拖动鸡蛋到饼面"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
@@ -1066,7 +1086,7 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 111.0
 offset_right = 200.0
-offset_bottom = 120.0
+offset_bottom = 89.0
 tooltip_text = "按住并拖动薄脆到饼面"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
@@ -1197,7 +1217,7 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 216.0
 offset_right = 305.0
-offset_bottom = 120.0
+offset_bottom = 89.0
 tooltip_text = "按住并拖动葱花到饼面"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
@@ -1387,7 +1407,7 @@ visible = false
 layout_mode = 0
 offset_left = -98.0
 offset_right = -9.0
-offset_bottom = 120.0
+offset_bottom = 89.0
 tooltip_text = "香菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
@@ -1421,7 +1441,7 @@ visible = false
 layout_mode = 0
 offset_left = 424.0
 offset_right = 518.0
-offset_bottom = 120.0
+offset_bottom = 89.0
 tooltip_text = "榨菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
@@ -2258,18 +2278,17 @@ vertical_alignment = 1
 [node name="DiscardCurrentPancakeButton" type="Button" parent="SafeArea" unique_id=560247048]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1636.0
-offset_top = 926.0
-offset_right = 1788.0
-offset_bottom = 1008.0
+offset_left = 1450.0
+offset_top = 902.0
+offset_right = 1600.0
+offset_bottom = 954.0
 tooltip_text = "丢弃当前煎饼并重新制作；不会重置顾客耐心"
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-text = "🗑 垃圾桶
-重做本张"
+text = "重做本张"
 
 [node name="PancakeWorkstationInteractionController" type="Node" parent="SafeArea" unique_id=1634264072]
 unique_name_in_owner = true
@@ -2700,8 +2719,8 @@ theme_override_styles/panel = SubResource("StyleBox_station_active")
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_font_sizes/font_size = 23
-text = "成品饮品机
-（美术待补，UI占位）"
+text = "成品饮品柜
+点击打开商品与加热台"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -2883,7 +2902,7 @@ mouse_filter = 2
 [node name="Slot01" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1140943330]
 layout_mode = 0
 offset_left = 28.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 117.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2893,7 +2912,7 @@ stretch_mode = 5
 [node name="Slot02" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=414974060]
 layout_mode = 0
 offset_left = 132.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 221.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2903,7 +2922,7 @@ stretch_mode = 5
 [node name="Slot03" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=532179726]
 layout_mode = 0
 offset_left = 237.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 326.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2913,7 +2932,7 @@ stretch_mode = 5
 [node name="Slot04" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=2065065545]
 layout_mode = 0
 offset_left = 341.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 430.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2923,7 +2942,7 @@ stretch_mode = 5
 [node name="Slot05" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1620999244]
 layout_mode = 0
 offset_left = 445.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 534.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2933,7 +2952,7 @@ stretch_mode = 5
 [node name="Slot06" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1076451417]
 layout_mode = 0
 offset_left = 550.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 639.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2943,7 +2962,7 @@ stretch_mode = 5
 [node name="Slot10" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=644724379]
 layout_mode = 0
 offset_left = 968.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1057.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2953,7 +2972,7 @@ stretch_mode = 5
 [node name="Slot11" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=990231957]
 layout_mode = 0
 offset_left = 1073.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1162.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2963,7 +2982,7 @@ stretch_mode = 5
 [node name="Slot12" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1160260522]
 layout_mode = 0
 offset_left = 1177.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1266.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2973,7 +2992,7 @@ stretch_mode = 5
 [node name="Slot13" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1988777659]
 layout_mode = 0
 offset_left = 1282.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1371.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2983,7 +3002,7 @@ stretch_mode = 5
 [node name="Slot14" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1458983727]
 layout_mode = 0
 offset_left = 1386.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1475.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -2993,7 +3012,7 @@ stretch_mode = 5
 [node name="Slot15" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=917350198]
 layout_mode = 0
 offset_left = 1491.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1580.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -3003,7 +3022,7 @@ stretch_mode = 5
 [node name="Slot16" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=346964195]
 layout_mode = 0
 offset_left = 1595.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1684.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -3013,7 +3032,7 @@ stretch_mode = 5
 [node name="Slot17" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=401975375]
 layout_mode = 0
 offset_left = 1700.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1789.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -3023,7 +3042,7 @@ stretch_mode = 5
 [node name="Slot18" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=32206691]
 layout_mode = 0
 offset_left = 1804.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1893.0
 offset_bottom = 1045.0
 texture = ExtResource("94_3ju16")
@@ -3043,7 +3062,7 @@ mouse_filter = 2
 [node name="Slot01LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1026987123]
 layout_mode = 0
 offset_left = 28.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 117.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3054,7 +3073,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot01")
 [node name="Slot02LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1497554710]
 layout_mode = 0
 offset_left = 132.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 221.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3065,7 +3084,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot02")
 [node name="Slot03LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1898611224]
 layout_mode = 0
 offset_left = 237.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 326.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3076,7 +3095,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot03")
 [node name="Slot04LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1862532882]
 layout_mode = 0
 offset_left = 341.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 430.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3096,14 +3115,13 @@ theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
 theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 14
-text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Slot05LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1846101564]
 layout_mode = 0
 offset_left = 445.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 534.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3114,7 +3132,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot05")
 [node name="Slot06LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1504354024]
 layout_mode = 0
 offset_left = 550.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 639.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3125,7 +3143,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot06")
 [node name="Slot10LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=271046535]
 layout_mode = 0
 offset_left = 968.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1057.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3145,14 +3163,13 @@ theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
 theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 14
-text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Slot11LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=625899937]
 layout_mode = 0
 offset_left = 1073.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1162.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3163,7 +3180,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot11")
 [node name="Slot12LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1560133708]
 layout_mode = 0
 offset_left = 1177.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1266.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3174,7 +3191,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot12")
 [node name="Slot13LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=27541067]
 layout_mode = 0
 offset_left = 1282.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1371.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3185,7 +3202,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot13")
 [node name="Slot14LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1997079269]
 layout_mode = 0
 offset_left = 1386.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1475.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3196,7 +3213,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot14")
 [node name="Slot15LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=816268250]
 layout_mode = 0
 offset_left = 1491.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1580.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3207,7 +3224,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot15")
 [node name="Slot16LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1204592122]
 layout_mode = 0
 offset_left = 1595.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1684.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3218,7 +3235,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot16")
 [node name="Slot17LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1764996594]
 layout_mode = 0
 offset_left = 1700.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1789.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3229,7 +3246,7 @@ metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot17")
 [node name="Slot18LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=902494801]
 layout_mode = 0
 offset_left = 1804.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1893.0
 offset_bottom = 1045.0
 tooltip_text = "此小料槽尚未解锁"
@@ -3252,7 +3269,7 @@ metadata/layout = &"single_row"
 [node name="Slot01" type="Control" parent="SafeArea/MaterialDock" unique_id=148403081]
 anchors_preset = 0
 offset_left = 28.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 117.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3261,7 +3278,7 @@ metadata/slot_index = 1
 [node name="Slot02" type="Control" parent="SafeArea/MaterialDock" unique_id=2113838290]
 anchors_preset = 0
 offset_left = 132.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 221.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3270,7 +3287,7 @@ metadata/slot_index = 2
 [node name="Slot03" type="Control" parent="SafeArea/MaterialDock" unique_id=1862567597]
 anchors_preset = 0
 offset_left = 237.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 326.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3279,7 +3296,7 @@ metadata/slot_index = 3
 [node name="Slot04" type="Control" parent="SafeArea/MaterialDock" unique_id=1682462363]
 anchors_preset = 0
 offset_left = 341.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 430.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3288,107 +3305,107 @@ metadata/slot_index = 4
 [node name="Slot05" type="Control" parent="SafeArea/MaterialDock" unique_id=613750640]
 anchors_preset = 0
 offset_left = 445.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 534.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 5
-metadata/worktop_rect = Rect2(445, 925, 89, 120)
+metadata/worktop_rect = Rect2(445, 956, 89, 89)
 
 [node name="Slot06" type="Control" parent="SafeArea/MaterialDock" unique_id=1245667871]
 anchors_preset = 0
 offset_left = 550.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 639.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 6
-metadata/worktop_rect = Rect2(550, 925, 89, 120)
+metadata/worktop_rect = Rect2(550, 956, 89, 89)
 
 [node name="Slot07" type="Control" parent="SafeArea/MaterialDock" unique_id=401489307]
 anchors_preset = 0
 offset_left = 654.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 743.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 7
-metadata/worktop_rect = Rect2(654, 925, 89, 120)
+metadata/worktop_rect = Rect2(654, 956, 89, 89)
 
 [node name="Slot08" type="Control" parent="SafeArea/MaterialDock" unique_id=422425779]
 anchors_preset = 0
 offset_left = 759.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 848.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 8
-metadata/worktop_rect = Rect2(759, 925, 89, 120)
+metadata/worktop_rect = Rect2(759, 956, 89, 89)
 
 [node name="Slot09" type="Control" parent="SafeArea/MaterialDock" unique_id=1152362661]
 anchors_preset = 0
 offset_left = 864.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 953.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 9
-metadata/worktop_rect = Rect2(864, 925, 89, 120)
+metadata/worktop_rect = Rect2(864, 956, 89, 89)
 
 [node name="Slot10" type="Control" parent="SafeArea/MaterialDock" unique_id=208628683]
 anchors_preset = 0
 offset_left = 968.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1057.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 10
-metadata/worktop_rect = Rect2(968, 925, 89, 120)
+metadata/worktop_rect = Rect2(968, 956, 89, 89)
 
 [node name="Slot11" type="Control" parent="SafeArea/MaterialDock" unique_id=922078895]
 anchors_preset = 0
 offset_left = 1073.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1162.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 11
-metadata/worktop_rect = Rect2(1073, 925, 89, 120)
+metadata/worktop_rect = Rect2(1073, 956, 89, 89)
 
 [node name="Slot12" type="Control" parent="SafeArea/MaterialDock" unique_id=1380210896]
 anchors_preset = 0
 offset_left = 1177.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1266.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 12
-metadata/worktop_rect = Rect2(1177, 925, 89, 120)
+metadata/worktop_rect = Rect2(1177, 956, 89, 89)
 
 [node name="Slot13" type="Control" parent="SafeArea/MaterialDock" unique_id=1644027480]
 anchors_preset = 0
 offset_left = 1282.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1371.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 13
-metadata/worktop_rect = Rect2(1282, 925, 89, 120)
+metadata/worktop_rect = Rect2(1282, 956, 89, 89)
 
 [node name="Slot14" type="Control" parent="SafeArea/MaterialDock" unique_id=1033216885]
 anchors_preset = 0
 offset_left = 1386.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1475.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 14
-metadata/worktop_rect = Rect2(1386, 925, 89, 120)
+metadata/worktop_rect = Rect2(1386, 956, 89, 89)
 
 [node name="Slot15" type="Control" parent="SafeArea/MaterialDock" unique_id=990870241]
 anchors_preset = 0
 offset_left = 1491.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1580.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3397,7 +3414,7 @@ metadata/slot_index = 15
 [node name="Slot16" type="Control" parent="SafeArea/MaterialDock" unique_id=1750948124]
 anchors_preset = 0
 offset_left = 1595.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1684.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3406,7 +3423,7 @@ metadata/slot_index = 16
 [node name="Slot17" type="Control" parent="SafeArea/MaterialDock" unique_id=976731268]
 anchors_preset = 0
 offset_left = 1700.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1789.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3415,7 +3432,7 @@ metadata/slot_index = 17
 [node name="Slot18" type="Control" parent="SafeArea/MaterialDock" unique_id=994354595]
 anchors_preset = 0
 offset_left = 1804.0
-offset_top = 925.0
+offset_top = 956.0
 offset_right = 1893.0
 offset_bottom = 1045.0
 mouse_filter = 2
@@ -3548,7 +3565,6 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
@@ -3558,15 +3574,14 @@ theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "成长票 1"
-clip_text = true
 autowrap_mode = 2
+clip_text = true
 
 [node name="GrowthTicket2" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=875673759]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
@@ -3576,15 +3591,14 @@ theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "成长票 2"
-clip_text = true
 autowrap_mode = 2
+clip_text = true
 
 [node name="GrowthTicket3" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=609619251]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 1.0
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
@@ -3594,8 +3608,8 @@ theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
 text = "成长票 3"
-clip_text = true
 autowrap_mode = 2
+clip_text = true
 
 [node name="GrowthActions" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=415184221]
 layout_mode = 2
@@ -3742,3 +3756,31 @@ offset_right = 316.0
 offset_bottom = 136.0
 text = "暂存格 2
 空"
+
+[node name="F3StationOverlay" type="Control" parent="." unique_id=301145272]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 120
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="F3StationsWorkbench" parent="F3StationOverlay" unique_id=2003630976 instance=ExtResource("96_f3")]
+unique_name_in_owner = true
+layout_mode = 1
+offset_top = 62.0
+
+[node name="CloseButton" type="Button" parent="F3StationOverlay" unique_id=1280649538]
+unique_name_in_owner = true
+z_index = 5
+layout_mode = 0
+offset_left = 1740.0
+offset_top = 8.0
+offset_right = 1880.0
+offset_bottom = 58.0
+theme_override_font_sizes/font_size = 20
+text = "返回摊位"

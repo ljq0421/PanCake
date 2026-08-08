@@ -2975,3 +2975,81 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `runtime_scene_check`: `SafeArea/PanBase/GriddleArtwork`; the pancake shader, direct-ingredient drop validation, and pointer trace all use `pan_height_ratio` to stay inside the matching oval.
 - `visual_check`: agent-inspected 1920x1080 GPU frames at `tmp/validation/initial_unlock_workstation_gpu_1920x1080.png` and `tmp/validation/workstation_hold_refill_gpu_1920x1080.png`; the black cook face, batter, egg, and fillings remain inside the same horizontal oval.
 - `human_review`: pending
+
+## workstation_18_single_row_1920x1080_v6
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: makes the one existing material-rail divider slightly easier to read without changing its nine-pixel geometry or adding a second line.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v6.png`
+- `source_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v5.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v6.md`
+- `generator`: deterministic raster contrast correction of the v5 asset
+- `processing`: `y=947..948` is brightened by 10 percent; `y=949..951` is retained; `y=952..955` is darkened by 16 percent.
+- `sha256`: `F91E6627F5481EB55F708A529638DD7EF12EBAF1253F7E085A96C6975BC27938`
+- `visual_check`: agent inspection passed — a single warm wood divider is more legible without a second line.
+- `godot_import`: passed — Godot 4.7.1 imported the `1920x1080` PNG as a `Texture2D`.
+- `runtime_scene_check`: passed — v6 is referenced by `initial_unlock_workstation.tscn`; targeted headless checks and the D3D12 GPU smoke test passed.
+- `human_review`: pending
+
+## workstation_18_single_row_1920x1080_v5
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: removes v4's duplicate tabletop/material-rail divider and moves the original warm wooden divider style to the square-well row's upper edge.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v5.png`
+- `source_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v4.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v5.md`
+- `generator`: deterministic raster correction of the Codex built-in `image_gen` v4 asset
+- `processing`: blends away the old `y=889..900` seam and resamples its warm wood-divider styling to `y=947..955`, replacing the v4 dark divider.
+- `sha256`: `2A10CC6CDA707200FC7A61C6B07FF93798956B99DE75583056399F2CA0301A10`
+- `visual_check`: agent inspection passed — one warm wooden divider remains immediately above the compact square well rail.
+- `godot_import`: passed — Godot 4.7.1 imported the `1920x1080` PNG as a `Texture2D`.
+- `runtime_scene_check`: passed — v5 is referenced by `initial_unlock_workstation.tscn`; targeted headless checks and the D3D12 GPU smoke test passed.
+- `human_review`: pending
+
+## workstation_18_single_row_1920x1080_v4
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: corrects v3 by making everything from `y=630` to the canvas bottom a true full-width tabletop, with 18 square visual wells and an explicit material-rail divider.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v4.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fda46-3ef2-7a01-90ce-da8c99cd02cf\exec-0c233a80-98d8-4ebc-821a-ade32513f385.png`
+- `edit_target`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v3.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v4.md`
+- `generator`: Codex built-in `image_gen`, `precise-object-edit`
+- `processing`: HighQualityBicubic resize from `1672x941` to `1920x1080`, then deterministic geometry correction for the y=630 table edge, y=947..955 divider, and `89x89` well rail.
+- `sha256`: `4252507E32921D99E373630117A0F389A44C3CDA9258376D552E50909F4F319B`
+- `visual_check`: agent inspection passed — full-width tabletop, clear material-rail divider, and compact square visual wells.
+- `godot_import`: passed — Godot 4.7.1 imported the `1920x1080` PNG as a `Texture2D`.
+- `runtime_scene_check`: passed — v4 is referenced by `initial_unlock_workstation.tscn`; targeted headless checks and the D3D12 GPU smoke test passed, including material-slot and relocated redo-control pointer coverage.
+- `human_review`: pending
+
+## workstation_18_single_row_1920x1080_v3
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: replaces the v2 framed countertop with one continuous light-top-down wooden work surface; keeps the existing five runtime zones unpainted and changes the fixed bottom row to 18 square `89x89` wells.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v3.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fda46-3ef2-7a01-90ce-da8c99cd02cf\exec-7bbd3d89-e13d-4043-ae6f-570d5efcb0c5.png`
+- `edit_target`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v2.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v3.md`
+- `generator`: Codex built-in `image_gen`, `precise-object-edit`
+- `processing`: HighQualityBicubic deterministic resize from `1672x941` to `1920x1080`; no crop or compositing.
+- `sha256`: `F168ABB55FF1335703015D6199877AEDE5C82E3F980FF206C8B94B7179F33BA3`
+- `visual_check`: agent inspection passed — y=630 through the canvas bottom is a continuous wooden worktop without pre-painted five-zone frames; the bottom row contains 18 compact square wells.
+- `godot_import`: passed — Godot 4.7.1 imported the `1920x1080` PNG as a `Texture2D`.
+- `runtime_scene_check`: passed — v3 is referenced by `initial_unlock_workstation.tscn`; the targeted headless checks and real D3D12 GPU smoke test passed, including square material-slot hit areas and the relocated redo control.
+- `human_review`: pending
+
+## workstation_18_single_row_1920x1080_v2
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: removes the two back-wall wooden base cabinets and unifies the 18-slot worktable into a light top-down, simplified hand-painted gameplay view without changing the interaction map.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v2.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fda46-3ef2-7a01-90ce-da8c99cd02cf\exec-bce5af4e-1777-4b60-a15c-c6d5bcd80d2f.png`
+- `edit_target`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v2.md`
+- `generator`: Codex built-in `image_gen`, `precise-object-edit`
+- `processing`: high-quality deterministic resize from 1672x941 to 1920x1080.
+- `sha256`: `70999876780D3E4975EB7BACB57E5D01B9628830007D7FB4F18D4629383208EE`
+- `visual_check`: passed — both back-wall base cabinets are removed; the pale plaster wall and gray brick skirting are continuous; the 18 slots, central work area, and HUD-safe upper area remain visible in the real 1920x1080 GPU frame.
+- `godot_import`: passed — Godot 4.7.1 imported the 1920x1080 PNG as a `Texture2D`.
+- `runtime_scene_check`: passed — `initial_unlock_workstation.tscn` uses v2; headless layout and ingredient checks plus the real D3D12 GPU smoke test passed.
+- `human_review`: pending

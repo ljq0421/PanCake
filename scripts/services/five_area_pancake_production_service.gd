@@ -97,6 +97,11 @@ func settle_completed_pancake(score_result: Dictionary, order: Dictionary = {}, 
 	var accounting: Dictionary = _session.call("consume_inventory_stock_ids", consumed)
 	if not bool(accounting.get("success", false)):
 		return accounting
+	if _session.has_method("active_formal_order") and _session.has_method("mark_formal_order_production_started"):
+		var active: Dictionary = _session.call("active_formal_order")
+		var items: Array = Array(active.get("items", []))
+		if not items.is_empty() and StringName(Dictionary(items[0]).get("area_id", &"")) == &"area.pancake":
+			_session.call("mark_formal_order_production_started", StringName(active.get("order_id", &"")), &"device.pancake_griddle")
 	var product := create_product_snapshot(score_result, order, fold_snapshot)
 	return {
 		"success": true,

@@ -1,8 +1,14 @@
 class_name PancakeWorkstationInteractionController
 extends Node
 
+signal station_requested(area_id: StringName)
+
 const RESTOCK_SERVICE := preload("res://scripts/services/five_area_restock_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const INTERACTIVE_STATION_AREAS: Array[StringName] = [
+	&"area.packaged_drink",
+	&"area.youtiao",
+]
 
 const INGREDIENT_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -30,6 +36,7 @@ var _hovered_source: Button
 var _hover_previous_instructions := ""
 var _active_refill_source: Button
 var _active_refill_stock_id: StringName = &""
+var _unlocked_station_areas: Dictionary = {}
 
 
 func _ready() -> void:
@@ -309,13 +316,17 @@ func _refresh_formal_five_area_state() -> void:
 	var unlocked: Dictionary = {}
 	for area_id in Array(formal_snapshot.get("unlocked_area_ids", [])):
 		unlocked[StringName(area_id)] = true
+	_unlocked_station_areas = unlocked
 	for button_path in ["../FiveAreaStationClickLayers/FreshSoyMilkLockedClickLayer", "../FiveAreaStationClickLayers/YoutiaoLockedClickLayer", "../FiveAreaStationClickLayers/PackagedDrinkLockedClickLayer", "../FiveAreaStationClickLayers/SteamerLockedClickLayer"]:
 		var station_button := get_node_or_null(button_path) as Button
 		if station_button == null:
 			continue
 		var area_is_unlocked := bool(unlocked.get(StringName(station_button.get_meta(&"area_id", &"")), false))
-		station_button.disabled = area_is_unlocked
-		station_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if area_is_unlocked else Control.MOUSE_FILTER_STOP
+		var area_id := StringName(station_button.get_meta(&"area_id", &""))
+		var can_open_station := area_is_unlocked and INTERACTIVE_STATION_AREAS.has(area_id)
+		station_button.disabled = area_is_unlocked and not can_open_station
+		station_button.mouse_filter = Control.MOUSE_FILTER_STOP if not area_is_unlocked or can_open_station else Control.MOUSE_FILTER_IGNORE
+		station_button.tooltip_text = "点击打开%s操作台" % _station_label(area_id) if can_open_station else station_button.tooltip_text
 		var locked_art := get_node_or_null(station_button.get_meta(&"locked_art_path", NodePath())) as CanvasItem
 		if locked_art != null:
 			locked_art.visible = not area_is_unlocked
@@ -339,6 +350,11 @@ func _bind_locked_art_interactions() -> void:
 
 
 func _on_locked_art_pressed(button: Button) -> void:
+	var area_id := StringName(button.get_meta(&"area_id", &""))
+	if bool(_unlocked_station_areas.get(area_id, false)) and INTERACTIVE_STATION_AREAS.has(area_id):
+		station_requested.emit(area_id)
+		button.release_focus()
+		return
 	var artwork := get_node_or_null(button.get_meta(&"locked_art_path", NodePath())) as Control
 	if artwork != null:
 		artwork.pivot_offset = artwork.size * 0.5
@@ -352,6 +368,13 @@ func _on_locked_art_pressed(button: Button) -> void:
 	if status_label != null:
 		status_label.text = condition
 	button.release_focus()
+
+
+static func _station_label(area_id: StringName) -> String:
+	match area_id:
+		&"area.packaged_drink": return "成品饮品"
+		&"area.youtiao": return "油条"
+	return "分区"
 
 
 func _direct_ingredient_slots() -> Array[Button]:

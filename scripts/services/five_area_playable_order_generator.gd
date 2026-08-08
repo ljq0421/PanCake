@@ -1,9 +1,7 @@
 class_name FiveAreaPlayableOrderGenerator
 extends RefCounted
 
-## Pure deterministic candidate generation for the areas that currently have
-## complete production interactions. Soy-milk and steamer data intentionally do
-## not enter this list until their production routes exist.
+## Pure deterministic candidate generation for all five formal areas.
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
 
@@ -11,15 +9,21 @@ const PLAYABLE_AREA_IDS: Array[StringName] = [
 	&"area.pancake",
 	&"area.packaged_drink",
 	&"area.youtiao",
+	&"area.fresh_soy_milk",
+	&"area.steamer",
 ]
 const BASE_PATIENCE_SECONDS := {
 	&"area.pancake": 72.0,
 	&"area.packaged_drink": 24.0,
 	&"area.youtiao": 36.0,
+	&"area.fresh_soy_milk": 32.0,
+	&"area.steamer": 44.0,
 }
 const TUTORIAL_PRODUCT_IDS := {
 	&"area.packaged_drink": &"product.packaged_drink.milk",
 	&"area.youtiao": &"product.youtiao.plain",
+	&"area.fresh_soy_milk": &"product.fresh_soy_milk.yellow_bean",
+	&"area.steamer": &"product.steamer.mantou",
 }
 
 
@@ -51,12 +55,99 @@ static func generate(
 	if eligible_areas.is_empty():
 		return {"success": false, "reason": &"no_eligible_playable_order"}
 
-	var area_id := _weighted_area(eligible_areas, progression, seed, sequence)
-	if area_id == &"area.pancake":
-		return _pancake_candidate(progression, {}, seed, sequence, false)
-	var product_ids := _eligible_product_ids(area_id, progression)
-	var product_id := _weighted_product(product_ids, seed, sequence)
-	return _product_candidate(area_id, product_id, progression, seed, sequence, false)
+	var item_count := _complexity_item_count(progression, eligible_areas.size(), seed, sequence)
+	var remaining_areas := eligible_areas.duplicate()
+	var selected_candidates: Array[Dictionary] = []
+	for item_index in range(item_count):
+		var area_id := _weighted_area(remaining_areas, progression, seed + item_index * 7919, sequence)
+		remaining_areas.erase(area_id)
+		var candidate: Dictionary
+		if area_id == &"area.pancake":
+			candidate = _pancake_candidate(progression, {}, seed + item_index * 104729, sequence, false)
+		else:
+			var product_ids := _eligible_product_ids(area_id, progression)
+			var product_id := _weighted_product(product_ids, seed + item_index * 104729, sequence)
+			candidate = _product_candidate(area_id, product_id, progression, seed + item_index * 104729, sequence, false)
+		if not bool(candidate.get("success", false)):
+			return candidate
+		selected_candidates.append(candidate)
+	return _combine_candidates(selected_candidates)
+
+
+static func generate_queue_candidates(
+	progression: Dictionary,
+	inventory: Dictionary,
+	seed: int,
+	first_sequence: int,
+	count: int,
+	current_day: int,
+	tutorial_generated_day: int
+) -> Dictionary:
+	var candidates: Array[Dictionary] = []
+	var generated_tutorial_day := tutorial_generated_day
+	for offset in range(clampi(count, 0, 4)):
+		var generated := generate(progression, inventory, seed, first_sequence + offset, current_day, generated_tutorial_day)
+		if not bool(generated.get("success", false)):
+			if not candidates.is_empty():
+				return {
+					"success": true,
+					"candidates": candidates,
+					"tutorial_generated_day": generated_tutorial_day,
+					"deferred_reason": generated.get("reason", &"no_eligible_playable_order"),
+				}
+			return generated
+		if int(generated.get("tutorial_generated_day", 0)) > 0:
+			generated_tutorial_day = int(generated.get("tutorial_generated_day", 0))
+		candidates.append(generated)
+	return {"success": true, "candidates": candidates, "tutorial_generated_day": generated_tutorial_day}
+
+
+static func _complexity_item_count(progression: Dictionary, eligible_count: int, seed: int, sequence: int) -> int:
+	if eligible_count < 2:
+		return 1
+	var unlocked := _id_set(progression.get("unlocked_area_ids", []))
+	var completed := _id_set(Dictionary(progression.get("tutorial", {})).get("completed_area_ids", []))
+	for area_id in PLAYABLE_AREA_IDS:
+		if not unlocked.has(area_id) or not completed.has(area_id):
+			return 1
+	var roll := _roll(seed, sequence, 113, 100)
+	if roll < 72:
+		return 1
+	if roll < 92:
+		return mini(2, eligible_count)
+	return mini(3, eligible_count)
+
+
+static func _combine_candidates(candidates: Array[Dictionary]) -> Dictionary:
+	if candidates.size() == 1:
+		return candidates[0]
+	var items: Array = []
+	var required_stock_ids: Array = []
+	var patience_values: Array[float] = []
+	var base_coins := 0
+	for candidate in candidates:
+		items.append_array(Array(candidate.get("items", [])))
+		required_stock_ids.append_array(Array(candidate.get("required_stock_ids", [])))
+		var metadata := Dictionary(candidate.get("metadata", {}))
+		patience_values.append(float(metadata.get("patience_seconds", 0.0)))
+		base_coins += maxi(int(metadata.get("base_coins", 1)), 1)
+	patience_values.sort()
+	var max_patience: float = float(patience_values.pop_back())
+	var patience: float = max_patience + 10.0 * float(items.size() - 1)
+	for value in patience_values:
+		patience += 0.6 * value
+	var multiplier := 1.15 if items.size() == 2 else 1.30
+	return {
+		"success": true,
+		"items": items,
+		"metadata": {
+			"teaching_area_id": &"",
+			"patience_seconds": snappedf(patience, 0.1),
+			"base_coins": maxi(roundi(float(base_coins) * multiplier), 1),
+			"reward_multiplier": multiplier,
+		},
+		"required_stock_ids": required_stock_ids,
+	}
 
 
 static func _teaching_candidate(area_id: StringName, progression: Dictionary, inventory: Dictionary) -> Dictionary:
@@ -100,9 +191,11 @@ static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, se
 	var legacy := Dictionary(generated.get("order", {})).duplicate(true)
 	var template_id := StringName(legacy.get("id", &""))
 	var template := CATALOG.pancake_order_template(template_id)
-	var patience := float(BASE_PATIENCE_SECONDS[&"area.pancake"]) * (1.5 if teaching else 1.0)
+	var patience := float(BASE_PATIENCE_SECONDS[&"area.pancake"])
 	legacy["time_limit"] = patience
-	legacy.erase("tutorial_no_countdown")
+	legacy["tutorial_no_countdown"] = teaching
+	if teaching:
+		legacy["tutorial_guide"] = "新手指引：按顺序完成这张基础煎饼；教学单不限时。"
 	return {
 		"success": true,
 		"items": [{
@@ -120,6 +213,7 @@ static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, se
 			"teaching_area_id": &"area.pancake" if teaching else &"",
 			"tutorial_kind": &"area" if teaching else &"",
 			"tutorial_id": &"area.pancake" if teaching else &"",
+			"tutorial_no_countdown": teaching,
 			"patience_seconds": patience,
 			"base_coins": maxi(int(legacy.get("payment_coins", 1)), 1),
 		},
@@ -137,7 +231,7 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 		var tutorial := Dictionary(progression.get("tutorial", {}))
 		if _id_set(tutorial.get("completed_area_ids", [])).has(area_id) and _roll(seed, sequence, 79, 100) < 35:
 			temperature_mode = &"heated"
-	var patience := float(BASE_PATIENCE_SECONDS.get(area_id, 24.0)) * (1.5 if teaching else 1.0)
+	var patience := float(BASE_PATIENCE_SECONDS.get(area_id, 24.0))
 	return {
 		"success": true,
 		"items": [{
@@ -153,6 +247,7 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 			"teaching_area_id": area_id if teaching else &"",
 			"tutorial_kind": &"area" if teaching else &"",
 			"tutorial_id": area_id if teaching else &"",
+			"tutorial_no_countdown": teaching,
 			"patience_seconds": patience,
 			"base_coins": maxi(int(product.get("base_sell_price", 1)), 1),
 		},

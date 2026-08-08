@@ -35,6 +35,30 @@ func _run() -> void:
 	var wrong_product := product.duplicate(true)
 	wrong_product["ingredient_ids"] = []
 	_check(bool(wrong.call("attach_product", wrong_id, 0, wrong_product).get("success", false)) and not bool(wrong.call("settle_order", wrong_id).get("order_success", true)), "wrong manually produced product settles as an order mismatch instead of blocking the day")
+	var patience: RefCounted = ORDERS.new()
+	patience.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom"}], {"patience_seconds": 10.0})
+	patience.call("open_order", [{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk"}], {"patience_seconds": 24.0})
+	patience.call("advance_patience", 2.0)
+	_check(is_equal_approx(float(Dictionary(patience.call("active_order")).get("remaining_patience_seconds", 0.0)), 8.0), "normal active order patience advances exactly once")
+	_check(is_equal_approx(float(Dictionary(Array(patience.call("waiting_orders"))[0]).get("remaining_patience_seconds", 0.0)), 24.0), "waiting order patience stays frozen until activation")
+	var patience_restored: RefCounted = ORDERS.new(patience.call("snapshot"))
+	_check(is_equal_approx(float(Dictionary(patience_restored.call("active_order")).get("remaining_patience_seconds", 0.0)), 8.0), "normal remaining patience survives snapshot restore")
+	var tutorial: RefCounted = ORDERS.new()
+	var tutorial_opened: Dictionary = tutorial.call("open_order", [{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk"}], {"teaching_area_id": &"area.packaged_drink", "patience_seconds": 24.0})
+	tutorial.call("advance_patience", 20.0)
+	var tutorial_order: Dictionary = Dictionary(tutorial.call("active_order"))
+	_check(bool(Dictionary(tutorial_opened.get("order", {})).get("tutorial_no_countdown", false)) and is_equal_approx(float(tutorial_order.get("remaining_patience_seconds", 0.0)), 24.0), "teaching order is normalized as unlimited and never consumes patience")
+	var legacy_snapshot: Dictionary = Dictionary(tutorial.call("snapshot"))
+	var legacy_order_id: String = str(tutorial_order.get("order_id", &""))
+	var legacy_orders: Dictionary = Dictionary(legacy_snapshot.get("orders", {}))
+	var legacy_order: Dictionary = Dictionary(legacy_orders.get(legacy_order_id, {}))
+	legacy_order.erase("tutorial_no_countdown")
+	legacy_order["remaining_patience_seconds"] = 3.0
+	legacy_orders[legacy_order_id] = legacy_order
+	legacy_snapshot["orders"] = legacy_orders
+	var normalized_legacy: RefCounted = ORDERS.new(legacy_snapshot)
+	var normalized_order: Dictionary = Dictionary(normalized_legacy.call("active_order"))
+	_check(bool(normalized_order.get("tutorial_no_countdown", false)) and is_equal_approx(float(normalized_order.get("remaining_patience_seconds", 0.0)), 24.0), "old teaching snapshot gains the unlimited flag without a save-version migration")
 	_finish()
 func _check(condition: bool, message: String) -> void:
 	if condition: print("PASS: %s" % message)

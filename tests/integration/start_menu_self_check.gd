@@ -38,6 +38,9 @@ func _run() -> void:
 	menu.call("_refresh_save_state")
 	_check(session.has_save() and not continue_button.disabled, "new game creates a resumable session")
 	_check("已完成 0 单" in session.resume_summary(), "new session summary is player-readable")
+	session.call("mark_session_left")
+	_check(session.call("is_business_paused"), "returning to the start page persists a paused business session")
+	_check(session.call("continue_game") and session.call("is_business_paused"), "continue keeps timers paused until the gameplay scene finishes binding")
 
 	menu.call("_open_settings")
 	var settings_overlay := menu.get_node("SettingsOverlay") as Control
@@ -67,6 +70,7 @@ func _run() -> void:
 	root.add_child(gameplay)
 	await process_frame
 	await process_frame
+	_check(not session.call("is_business_paused"), "gameplay scene resumes business only after workstation binding completes")
 	gameplay.call("_set_paused", true)
 	var pause_panel := gameplay.get_node("PausePanel") as Control
 	var workstation := gameplay.get_node("Workstation") as Control

@@ -14,6 +14,7 @@ const MAX_SAUCE_REQUIREMENTS_PER_ITEM := 2
 
 var _orders: Dictionary = {}
 var _active_order_id: StringName = &""
+var _queue_order_ids: Array[StringName] = []
 var _sequence: int = 0
 var _settled_order_ids: Dictionary = {}
 var _terminal_results: Dictionary = {}
@@ -39,8 +40,8 @@ func open_pancake_order(template: Dictionary) -> Dictionary:
 ## Items are stable data records: area/product/quantity plus product-specific
 ## matching attributes.  A route attaches a produced instance to one item.
 func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
-	if not _active_order_id.is_empty():
-		return {"success": false, "reason": &"active_order_exists"}
+	if _queue_order_ids.size() >= 4:
+		return {"success": false, "reason": &"queue_full"}
 	if items.is_empty():
 		return {"success": false, "reason": &"missing_order_items"}
 	_sequence += 1
@@ -66,24 +67,35 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		item["sauce_ids"] = sauce_ids
 		item["prepared_product_instance_ids"] = PackedStringArray()
 		normalized_items.append(item)
+	var initial_state := &"active" if _active_order_id.is_empty() else &"waiting"
+	var tutorial_no_countdown := _metadata_has_no_countdown(metadata)
+	var complexity := &"single"
+	if normalized_items.size() == 2:
+		complexity = &"double"
+	elif normalized_items.size() >= 3:
+		complexity = &"triple"
 	var order: Dictionary = {
 		"order_id": order_id,
 		"sequence": _sequence,
-		"complexity": &"single" if normalized_items.size() == 1 else &"multi_item",
-		"state": &"active",
+		"complexity": complexity,
+		"state": initial_state,
+		"status": initial_state,
 		"items": normalized_items,
 		"patience_seconds": maxf(float(metadata.get("patience_seconds", 0.0)), 0.0),
 		"remaining_patience_seconds": maxf(float(metadata.get("patience_seconds", 0.0)), 0.0),
 		"teaching_area_id": StringName(metadata.get("teaching_area_id", &"")),
+		"tutorial_no_countdown": tutorial_no_countdown,
 		"base_coins": maxi(int(metadata.get("base_coins", 1)), 1),
-		"reward_multiplier": 1.0,
+		"reward_multiplier": float(metadata.get("reward_multiplier", 1.0)),
 		"production_started": false,
 		"production_source_ids": PackedStringArray(),
 		"metadata": metadata.duplicate(true),
 	}
 	_orders[order_id] = order
-	_active_order_id = order_id
-	queue_changed.emit([order.duplicate(true)])
+	_queue_order_ids.append(order_id)
+	if initial_state == &"active":
+		_active_order_id = order_id
+	queue_changed.emit(queue_snapshot())
 	return {"success": true, "order": order.duplicate(true)}
 
 
@@ -96,31 +108,70 @@ func current_order() -> Dictionary:
 
 
 func waiting_orders() -> Array[Dictionary]:
-	return []
+	var result: Array[Dictionary] = []
+	for order_id in _queue_order_ids:
+		if order_id == _active_order_id or not _orders.has(order_id):
+			continue
+		var order := Dictionary(_orders[order_id])
+		if StringName(order.get("state", &"")) == &"waiting":
+			result.append(order.duplicate(true))
+	return result
 
 
-## The playable vertical slice deliberately requests one active order.  Passing
-## the generated candidate keeps selection pure and makes a future four-order
-## queue additive instead of coupling the service to GameSessionStore.
-func ensure_queue(target_size: int = 1, generated_candidate: Dictionary = {}) -> Dictionary:
-	if target_size != 1:
-		return {"success": false, "reason": &"waiting_queue_deferred", "supported_size": 1}
-	if not _active_order_id.is_empty():
-		return {"success": true, "created": false, "order": active_order(), "queue": [active_order()]}
-	if generated_candidate.is_empty():
+func ensure_queue(target_size: int = 4, generated_candidates: Variant = {}) -> Dictionary:
+	var requested_size := clampi(target_size, 1, 4)
+	var candidates: Array = Array(generated_candidates) if generated_candidates is Array else ([generated_candidates] if generated_candidates is Dictionary and not Dictionary(generated_candidates).is_empty() else [])
+	var created_orders: Array[Dictionary] = []
+	for raw_candidate in candidates:
+		if _queue_order_ids.size() >= requested_size:
+			break
+		var candidate := Dictionary(raw_candidate)
+		var opened := open_order(Array(candidate.get("items", [])), Dictionary(candidate.get("metadata", {})))
+		if not bool(opened.get("success", false)):
+			return opened
+		created_orders.append(Dictionary(opened.get("order", {})).duplicate(true))
+	if _queue_order_ids.is_empty() and candidates.is_empty():
 		return {"success": false, "reason": &"missing_generated_candidate"}
-	var opened := open_order(Array(generated_candidate.get("items", [])), Dictionary(generated_candidate.get("metadata", {})))
-	if bool(opened.get("success", false)):
-		opened["created"] = true
-		opened["queue"] = [Dictionary(opened.get("order", {})).duplicate(true)]
-	return opened
+	return {
+		"success": true,
+		"created": not created_orders.is_empty(),
+		"created_orders": created_orders,
+		"order": active_order(),
+		"queue": queue_snapshot(),
+		"needs_candidates": maxi(requested_size - _queue_order_ids.size(), 0),
+	}
+
+
+func queue_snapshot() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for order_id in _queue_order_ids:
+		if _orders.has(order_id):
+			result.append(Dictionary(_orders[order_id]).duplicate(true))
+	return result
+
+
+func activate_order(order_id: StringName) -> Dictionary:
+	if not _active_order_id.is_empty():
+		return {"success": false, "reason": &"active_order_exists"}
+	if not _orders.has(order_id) or not _queue_order_ids.has(order_id):
+		return {"success": false, "reason": &"order_not_waiting"}
+	var order := Dictionary(_orders[order_id])
+	if StringName(order.get("state", &"")) != &"waiting":
+		return {"success": false, "reason": &"order_not_waiting"}
+	order["state"] = &"active"
+	order["status"] = &"active"
+	_orders[order_id] = order
+	_active_order_id = order_id
+	queue_changed.emit(queue_snapshot())
+	return {"success": true, "order": order.duplicate(true)}
 
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 2,
+		"version": 3,
 		"sequence": _sequence,
 		"active_order_id": str(_active_order_id),
+		"queue_order_ids": PackedStringArray(_queue_order_ids.map(func(value): return str(value))),
 		"orders": _orders.duplicate(true),
 		"settled_order_ids": _settled_order_ids.keys(),
 		"terminal_results": _terminal_results.duplicate(true),
@@ -131,12 +182,19 @@ func advance_patience(delta: float) -> Dictionary:
 	if delta <= 0.0 or _active_order_id.is_empty() or not _orders.has(_active_order_id):
 		return {"success": true, "changed": false, "order": active_order()}
 	var order: Dictionary = _orders[_active_order_id]
+	if bool(order.get("tutorial_no_countdown", false)):
+		return {"success": true, "changed": false, "expired": false, "order": order.duplicate(true)}
 	var remaining := maxf(float(order.get("remaining_patience_seconds", order.get("patience_seconds", 0.0))) - delta, 0.0)
 	order["remaining_patience_seconds"] = snappedf(remaining, 0.1)
 	_orders[_active_order_id] = order
 	if remaining > 0.0:
 		return {"success": true, "changed": true, "expired": false, "order": order.duplicate(true)}
 	return _finish_failure(_active_order_id, &"expired", &"patience_expired", -2)
+
+
+func advance_time(delta: float) -> Array[Dictionary]:
+	var result := advance_patience(delta)
+	return [result] if bool(result.get("changed", false)) or result.has("terminal_state") else []
 
 
 func preview_refusal(order_id: StringName) -> Dictionary:
@@ -247,11 +305,14 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 	var settlement_id := StringName("settlement.%s" % order_id)
 	_settled_order_ids[order_id] = true
 	order["state"] = &"settled"
+	order["status"] = &"completed" if success else &"failed"
 	_orders[order_id] = order
 	_active_order_id = &""
 	var result := {"success": true, "settlement_id": settlement_id, "order_id": order_id, "order_success": success, "mismatch_reasons": all_reasons, "item_results": item_results, "terminal_state": &"completed" if success else &"failed"}
 	_terminal_results[order_id] = result.duplicate(true)
-	queue_changed.emit([])
+	_remove_from_queue(order_id)
+	_activate_next_waiting()
+	queue_changed.emit(queue_snapshot())
 	order_settled.emit(result.duplicate(true))
 	return result
 
@@ -261,12 +322,26 @@ func abandon_active_order(reason: StringName = &"business_day_expired") -> Dicti
 		return {"success": false, "reason": &"order_not_active"}
 	var order: Dictionary = _orders[_active_order_id]
 	order["state"] = &"abandoned"
+	order["status"] = &"expired" if reason == &"business_day_expired" else &"failed"
 	order["abandon_reason"] = reason
 	_orders[_active_order_id] = order
 	var abandoned_order_id := _active_order_id
 	_active_order_id = &""
-	queue_changed.emit([])
-	return {"success": true, "order_id": abandoned_order_id, "reason": reason}
+	_remove_from_queue(abandoned_order_id)
+	var abandoned_waiting := PackedStringArray()
+	if reason == &"business_day_expired":
+		for waiting_id in _queue_order_ids.duplicate():
+			var waiting := Dictionary(_orders.get(waiting_id, {}))
+			waiting["state"] = &"abandoned"
+			waiting["status"] = &"expired"
+			waiting["abandon_reason"] = reason
+			_orders[waiting_id] = waiting
+			abandoned_waiting.append(str(waiting_id))
+		_queue_order_ids.clear()
+	else:
+		_activate_next_waiting()
+	queue_changed.emit(queue_snapshot())
+	return {"success": true, "order_id": abandoned_order_id, "abandoned_waiting_order_ids": abandoned_waiting, "reason": reason}
 
 
 func _finish_failure(order_id: StringName, terminal_state: StringName, reason: StringName, reputation_delta: int) -> Dictionary:
@@ -287,6 +362,7 @@ func _finish_failure(order_id: StringName, terminal_state: StringName, reason: S
 			stored_items[item_index] = item
 	order["items"] = stored_items
 	order["state"] = terminal_state
+	order["status"] = terminal_state
 	order["failure_reason"] = reason
 	_orders[order_id] = order
 	_active_order_id = &""
@@ -303,7 +379,9 @@ func _finish_failure(order_id: StringName, terminal_state: StringName, reason: S
 		"order": order.duplicate(true),
 	}
 	_terminal_results[order_id] = result.duplicate(true)
-	queue_changed.emit([])
+	_remove_from_queue(order_id)
+	_activate_next_waiting()
+	queue_changed.emit(queue_snapshot())
 	order_settled.emit(result.duplicate(true))
 	return result
 
@@ -360,7 +438,27 @@ func _restore(source: Dictionary) -> void:
 	_orders.clear()
 	for raw_order_id in Dictionary(source.get("orders", {})):
 		var order_id: StringName = StringName(raw_order_id)
-		_orders[order_id] = Dictionary(source["orders"][raw_order_id]).duplicate(true)
+		var order := Dictionary(source["orders"][raw_order_id]).duplicate(true)
+		var metadata := Dictionary(order.get("metadata", {}))
+		var tutorial_no_countdown := bool(order.get("tutorial_no_countdown", false)) or not StringName(order.get("teaching_area_id", &"")).is_empty() or _metadata_has_no_countdown(metadata)
+		order["tutorial_no_countdown"] = tutorial_no_countdown
+		if tutorial_no_countdown:
+			order["remaining_patience_seconds"] = maxf(float(order.get("patience_seconds", order.get("remaining_patience_seconds", 0.0))), 0.0)
+		_orders[order_id] = order
+	_queue_order_ids.clear()
+	for raw_order_id in Array(source.get("queue_order_ids", [])):
+		var queued_id := StringName(raw_order_id)
+		if _orders.has(queued_id) and not _queue_order_ids.has(queued_id):
+			_queue_order_ids.append(queued_id)
+	if _queue_order_ids.is_empty():
+		var restorable: Array[Dictionary] = []
+		for order_id in _orders:
+			var order := Dictionary(_orders[order_id])
+			if StringName(order.get("state", &"")) in [&"active", &"waiting"]:
+				restorable.append({"order_id": order_id, "sequence": int(order.get("sequence", 0))})
+		restorable.sort_custom(func(left: Dictionary, right: Dictionary) -> bool: return int(left.get("sequence", 0)) < int(right.get("sequence", 0)))
+		for entry in restorable:
+			_queue_order_ids.append(StringName(entry.get("order_id", &"")))
 	_settled_order_ids.clear()
 	for raw_order_id in Array(source.get("settled_order_ids", [])):
 		_settled_order_ids[StringName(raw_order_id)] = true
@@ -369,3 +467,32 @@ func _restore(source: Dictionary) -> void:
 		_terminal_results[StringName(raw_order_id)] = Dictionary(source["terminal_results"][raw_order_id]).duplicate(true)
 	if _active_order_id.is_empty() or not _orders.has(_active_order_id):
 		_active_order_id = &""
+		_activate_next_waiting()
+
+
+func _metadata_has_no_countdown(metadata: Dictionary) -> bool:
+	return (
+		bool(metadata.get("tutorial_no_countdown", false))
+		or not StringName(metadata.get("teaching_area_id", &"")).is_empty()
+		or bool(Dictionary(metadata.get("legacy_order", {})).get("tutorial_no_countdown", false))
+	)
+
+
+func _remove_from_queue(order_id: StringName) -> void:
+	_queue_order_ids.erase(order_id)
+
+
+func _activate_next_waiting() -> void:
+	if not _active_order_id.is_empty():
+		return
+	for order_id in _queue_order_ids:
+		if not _orders.has(order_id):
+			continue
+		var order := Dictionary(_orders[order_id])
+		if StringName(order.get("state", &"")) != &"waiting":
+			continue
+		order["state"] = &"active"
+		order["status"] = &"active"
+		_orders[order_id] = order
+		_active_order_id = order_id
+		return

@@ -27,7 +27,16 @@ func _run() -> void:
 	paused = false
 	_check(is_equal_approx(workstation.p1_session.elapsed_seconds, elapsed_before_pause), "pausing the scene tree freezes cooking time and customer patience")
 	workstation.set_process(false)
+	game_session.call("set_business_paused", true)
+	var elapsed_before_business_pause := workstation.p1_session.elapsed_seconds
+	workstation._process(1.0)
+	_check(is_equal_approx(workstation.p1_session.elapsed_seconds, elapsed_before_business_pause), "a persisted business pause also freezes the local pancake session clock")
+	game_session.call("set_business_paused", false)
 	_check(workstation.customer_portrait != null and workstation.order_amount_label != null and workstation.patience_bar != null, "P1 customer, order and patience nodes are stable scene content")
+	var tutorial_patience_before := float(Dictionary(game_session.call("active_formal_order")).get("remaining_patience_seconds", 0.0))
+	workstation._process(1.0)
+	var tutorial_patience_after := float(Dictionary(game_session.call("active_formal_order")).get("remaining_patience_seconds", 0.0))
+	_check(is_equal_approx(tutorial_patience_before, tutorial_patience_after) and workstation.patience_text_label.text == "教学单·不限时", "opening tutorial is visibly unlimited in both the formal service and pancake UI")
 	_check(workstation.customer_portrait.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_CENTERED, "cropped customer artwork keeps its original proportions")
 	var pan_base := workstation.get_node("SafeArea/PanBase") as Control
 	_check(

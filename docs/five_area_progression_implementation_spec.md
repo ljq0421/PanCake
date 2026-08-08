@@ -653,7 +653,7 @@ func owns_growth(growth_id: StringName) -> bool
 func mastery_value(metric_id: StringName) -> int
 func purchase_status(growth_id: StringName) -> Dictionary
 func purchase(growth_id: StringName) -> Dictionary
-func growth_recommendations(limit_per_slot: int = 3) -> Dictionary
+func growth_recommendations(limit_total: int = 3) -> Dictionary
 func record_area_result(area_id: StringName, result: Dictionary) -> Dictionary
 func complete_tutorial(area_id: StringName) -> Dictionary
 func record_tutorial_failure(area_id: StringName) -> Dictionary
@@ -664,11 +664,14 @@ func begin_next_business_day() -> Dictionary
 
 ```gdscript
 {
+    "recommended": Array[Dictionary],
     "install": Array[Dictionary],
     "content": Array[Dictionary],
     "nearest_locked": Array[Dictionary],
 }
 ```
+
+`limit_total` 限制总候选数；UI 只按 `recommended` 的顺序展示，其他三个数组保留为兼容分组字段。
 
 ### 8.2 购买事务
 
@@ -1086,7 +1089,7 @@ func load_snapshot(snapshot: Dictionary) -> Dictionary
 max(item_patience) + 0.6 × sum(other_item_patience) + 10 × (item_count - 1)
 ```
 
-教学单在最终结果上乘 `1.5`。计算结果保留到0.1秒。
+教学单不限时，不消耗 `remaining_patience_seconds`；界面必须明确显示“教学单·不限时”。普通订单的计算结果保留到0.1秒。
 
 ### 11.8 订单结构
 
@@ -1107,6 +1110,7 @@ max(item_patience) + 0.6 × sum(other_item_patience) + 10 × (item_count - 1)
     ],
     "patience_seconds": 24.0,
     "remaining_patience_seconds": 24.0,
+    "tutorial_no_countdown": false,
     "teaching_area_id": &"",
     "base_coins": 5,
     "reward_multiplier": 1.0,
@@ -1116,7 +1120,7 @@ max(item_patience) + 0.6 × sum(other_item_patience) + 10 × (item_count - 1)
 }
 ```
 
-队列固定最多4单：位置0是唯一 `active` 订单，位置1～3为 `waiting`。只有活动订单消耗顾客耐心、接收成品并允许交付或婉拒；等待订单完整展示，玩家可以据此提前启动批次，但成品必须继续占用机器或可见暂存设施。活动订单进入终态后，第一张等待订单转为活动，随后补满队列。
+队列固定最多4单：位置0是唯一 `active` 订单，位置1～3为 `waiting`。只有非教学的活动订单消耗顾客耐心、接收成品并允许交付或婉拒；教学活动订单不限时，等待订单激活前不消耗耐心。等待订单完整展示，玩家可以据此提前启动批次，但成品必须继续占用机器或可见暂存设施。活动订单进入终态后，第一张等待订单转为活动，随后补满队列。
 
 当前活动订单存在时，首次执行任何消耗生产原料的动作，控制器必须调用 `mark_production_started()`。补货、丢弃成品和纯 UI 选择不计为开始生产。等待订单不能被标记为开始生产。
 

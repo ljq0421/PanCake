@@ -38,11 +38,12 @@ func _run() -> void:
 	_set_active_tutorial(progression, &"area.youtiao", [&"area.pancake", &"area.packaged_drink"])
 	# Teaching priority is per day. Move to a new day without exercising the
 	# growth purchase surface so this integration remains about order routing.
+	session.call("abandon_active_formal_order", &"business_day_expired")
 	progression.set("current_day", int(progression.get("current_day")) + 1)
 	var youtiao_opened: Dictionary = session.call("ensure_active_playable_order")
 	var youtiao_order := Dictionary(youtiao_opened.get("order", {}))
 	var youtiao_id := StringName(youtiao_order.get("order_id", &""))
-	_check(_area_id(youtiao_order) == &"area.youtiao" and is_equal_approx(float(youtiao_order.get("patience_seconds", 0.0)), 54.0), "next-day youtiao teaching routes with 1.5x patience")
+	_check(_area_id(youtiao_order) == &"area.youtiao" and bool(youtiao_order.get("tutorial_no_countdown", false)) and is_equal_approx(float(youtiao_order.get("patience_seconds", 0.0)), 36.0), "next-day youtiao teaching routes as an unlimited-time tutorial order")
 	_check(bool(Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1, youtiao_id)).get("success", false)), "starting the youtiao batch consumes its teaching stock")
 	session.call("perform_f3_youtiao_action", &"start")
 	session.call("advance_f3_production", 12.0)
@@ -70,6 +71,9 @@ func _run() -> void:
 
 
 func _check_active_f3_restore(session: Node) -> void:
+	# Direct restore fixtures own their queue. Clear the normal four-card queue
+	# left by the preceding live-loop assertions before opening a targeted order.
+	session.call("abandon_active_formal_order", &"business_day_expired")
 	var inventory: Dictionary = session.call("inventory_snapshot")
 	inventory["stock.packaged_drink.milk"] = 2
 	inventory["stock.youtiao.plain_dough"] = 2

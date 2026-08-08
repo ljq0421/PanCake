@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[node name="PancakeHoldingTray" type="HBoxContainer"]
+metadata/_edit_group_ = true
+
+[node name="Slot01" type="Button" parent="."]
+custom_minimum_size = Vector2(96, 72)
+layout_mode = 2
+text = "托盘1"
+
+[node name="Slot02" type="Button" parent="."]
+custom_minimum_size = Vector2(96, 72)
+layout_mode = 2
+text = "托盘2"

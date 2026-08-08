@@ -12,7 +12,7 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="10_oa5o0"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="11_1wi16"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="12_wd07g"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v6.png" id="13_nrgyx"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v7.png" id="13_nrgyx"]
 [ext_resource type="Texture2D" path="res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres" id="14_2kg7p"]
 [ext_resource type="Texture2D" uid="uid://ufrhlritjp3m" path="res://resources/art/ui/order/order_card_multi_dish_v3.png" id="15_rdwwv"]
 [ext_resource type="Texture2D" uid="uid://dfm5ihdvdkscq" path="res://resources/art/ingredients/egg/egg_whole_v1.png" id="16_r8aep"]
@@ -96,6 +96,18 @@
 [ext_resource type="Texture2D" uid="uid://bhjgy30eq2k28" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png" id="94_3ju16"]
 [ext_resource type="Texture2D" uid="uid://brtdw4orj2viy" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png" id="95_tud4u"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/f3_stations_workbench.tscn" id="96_f3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_1_five_area_v2.png" id="97_cor1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_2_five_area_v2.png" id="98_cor2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_3_five_area_v2.png" id="99_cor3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_4_five_area_v2.png" id="100_cor4"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_5_five_area_v2.png" id="101_cor5"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_6_five_area_v2.png" id="102_cor6"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_1_five_area_v2.png" id="103_mus1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_2_five_area_v2.png" id="104_mus2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_3_five_area_v2.png" id="105_mus3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_4_five_area_v2.png" id="106_mus4"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_5_five_area_v2.png" id="107_mus5"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_6_five_area_v2.png" id="108_mus6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_patience_bg"]
 bg_color = Color(0.075, 0.14, 0.15, 0.94)
@@ -463,6 +475,22 @@ theme_override_styles/background = SubResource("StyleBox_patience_bg")
 theme_override_styles/fill = SubResource("StyleBox_patience_fill")
 value = 100.0
 show_percentage = false
+
+[node name="PatienceTextLabel" type="Label" parent="SafeArea"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 790.0
+offset_top = 18.0
+offset_right = 1130.0
+offset_bottom = 44.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
+text = "耐心 72秒"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CustomerLineLabel" type="Label" parent="SafeArea" unique_id=260785827]
 unique_name_in_owner = true
@@ -1412,6 +1440,7 @@ tooltip_text = "香菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
 ingredient_type = &"coriander"
+stock_textures = Array[Texture2D]([ExtResource("97_cor1"), ExtResource("98_cor2"), ExtResource("99_cor3"), ExtResource("100_cor4"), ExtResource("101_cor5"), ExtResource("102_cor6")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1420,9 +1449,16 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 3.0
+offset_right = -8.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("102_cor6")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="EmptyLabel" type="Label" parent="SafeArea/IngredientRack/CorianderButton" unique_id=911050882]
 layout_mode = 1
@@ -1446,6 +1482,7 @@ tooltip_text = "榨菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
 ingredient_type = &"preserved_mustard"
+stock_textures = Array[Texture2D]([ExtResource("103_mus1"), ExtResource("104_mus2"), ExtResource("105_mus3"), ExtResource("106_mus4"), ExtResource("107_mus5"), ExtResource("108_mus6")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1454,9 +1491,16 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 3.0
+offset_right = -8.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("108_mus6")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="EmptyLabel" type="Label" parent="SafeArea/IngredientRack/PreservedMustardButton" unique_id=2034123349]
 layout_mode = 1
@@ -3545,7 +3589,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
 theme_override_font_sizes/font_size = 26
-text = "为明天预订成长：安装位 + 内容位"
+text = "营业后成长预订：安装位 + 内容位"
 horizontal_alignment = 1
 
 [node name="GrowthBalanceLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1533421848]

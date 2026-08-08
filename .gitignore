@@ -4,3 +4,5 @@
 /android/
 /tmp/validation/
 /tmp/logs
+*.log
+/tmp

@@ -72,6 +72,7 @@ func _run() -> void:
 	progression = session.call("progression_service")
 	progression.set("coins", 40)
 	progression.set("current_day", 8)
+	progression.set("area_mastery_details", {&"area.pancake": {"qualified": 16, "a_grade": 0}})
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.coriander").get("success", false)), "coriander content unlock can be purchased")
 	session.call("end_business_day")
 	_check(bool(session.call("begin_next_business_day").get("success", false)), "coriander unlock activates on the next business day")

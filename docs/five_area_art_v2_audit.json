@@ -1,0 +1,4947 @@
+{
+  "manifest": "D:\\Project\\ProjectCake\\project-cake\\docs\\five_area_art_v2_manifest.json",
+  "totals": {
+    "planned": 146,
+    "present": 50,
+    "valid": 38,
+    "invalid": 12
+  },
+  "entries": [
+    {
+      "asset_id": "baocui_broken_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/baocui_broken_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_broken_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_broken_five_area_v2_key.png",
+      "imagegen_source_sha256": "0e08c32fd12fd68635a378d0ae3aa91f208ffb4e0bc8b55bac62e936bff24932",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28944,
+      "possible_key_pixels": 0,
+      "sha256": "883bdb88c03e2ffa4bf99c2fd8dd46d871ad2c339fdf78a014a12dca6155c53d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "baocui_intact_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/baocui_intact_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_intact_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_intact_five_area_v2_key.png",
+      "imagegen_source_sha256": "10b3c2ac7318d6f077eed167c06e707f1503d8aa5caa20c02f3e07e732e96b14",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 32268,
+      "possible_key_pixels": 0,
+      "sha256": "186d676ac122cd6ce139c05f9b9cfb9cfe749ab3d1192bffd38f7abbd263e064",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "baocui_stock_1_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_stock_1_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_stock_1_five_area_v2_key.png",
+      "imagegen_source_sha256": "2a0602dac8ae2bf24563ed6904be804a3cfa723ed45a0c6e88a9eabb957a0ea3",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 25901,
+      "possible_key_pixels": 0,
+      "sha256": "0da380f59f90bd283771905c1cbd75bf15c489d1b523d446b9e24db1a87b13a8",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "baocui_stock_2_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_stock_2_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_stock_2_five_area_v2_key.png",
+      "imagegen_source_sha256": "dabcaa542fdfa016fbf7d0c9e82d35a244538a73939b3938e4ee2164ad6e0137",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23211,
+      "possible_key_pixels": 0,
+      "sha256": "6b084184fa58bc907f0cd5375cf8b1293846bf792409478b0452efb56aa16ca5",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "baocui_stock_3_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_stock_3_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_stock_3_five_area_v2_key.png",
+      "imagegen_source_sha256": "7d16f08c06681038e71067d2f428635aa8a0bf48b6173c1fb4b1ddbbcfd505f1",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 27549,
+      "possible_key_pixels": 0,
+      "sha256": "1ee69ff1fad519591532b1cb2f255b26dbe30760e84b42f8a52b007b00c5180d",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "baocui_stock_4_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_stock_4_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_stock_4_five_area_v2_key.png",
+      "imagegen_source_sha256": "a35ed69908e568a2647df91a81fcce3432cdb505a15a9b6f23dba95872287ab7",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28808,
+      "possible_key_pixels": 0,
+      "sha256": "16d7d01f487e4b6efef43be08e1db640f3b152226c397ea7971d2b2aec40e932",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "baocui_stock_5_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_stock_5_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_stock_5_five_area_v2_key.png",
+      "imagegen_source_sha256": "e4f68853f47fbdb9a625174f3a322d561895f9c980ed4f6b01b00792ec2bc5eb",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30211,
+      "possible_key_pixels": 0,
+      "sha256": "f7914ead4509cbaaa95b9e6b03fc4ecf5dd6cc472721b9c89f638e447bd60be0",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "baocui_stock_6_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_stock_6_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/baocui_stock_6_five_area_v2_key.png",
+      "imagegen_source_sha256": "0351f661cbb7a76633ce476293dca875ae5c5e544cb821ea2f9274fbbf396d1f",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 36287,
+      "possible_key_pixels": 0,
+      "sha256": "4fea75c0ceab9498c03a8f32b499198fe57670431dde466f631ce3aa78b19154",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "black_bean_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/black_bean_portion_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/black_bean_portion_five_area_v2_key.png",
+      "imagegen_source_sha256": "9466ca4356d83ae55948d53f7e6fa1da384c73db1a758bb4fcfbc7c94297eb88",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34463,
+      "possible_key_pixels": 0,
+      "sha256": "6ff303bba09f1cdbb4919cfea7ee087df106ce3cff262f7061b3c4fdcc4d735f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "mung_bean_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/beans/mung_bean_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/mung_bean_portion_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/mung_bean_portion_five_area_v2_key.png",
+      "imagegen_source_sha256": "11e0c8f5032bcd9597e6000cec8aaf747c5a8011d5cd44e4e3ce9d7975c0bee2",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33848,
+      "possible_key_pixels": 0,
+      "sha256": "f3c78badeffc059c276a74992105171f0db1141252078d93c7cfde59df0b3b5c",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "red_bean_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/red_bean_portion_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/red_bean_portion_five_area_v2_key.png",
+      "imagegen_source_sha256": "ddbbdd9a88c180f608bd2c7e4bfe638a85e8fd3afde67af5bde3a493518afe9d",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30049,
+      "possible_key_pixels": 0,
+      "sha256": "df36503af3c2187103164bde80c3d07e23b6e11c8004d3603f9dd428ac0e2054",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "egg_cracked_raw_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/egg_cracked_raw_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_cracked_raw_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_cracked_raw_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "6df93eccec923c3c3fe9c133d9ed85a0b306749128c93ab79203f704fd2a4377",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 32973,
+      "possible_key_pixels": 0,
+      "sha256": "095c389b92979c3ac3925f88fe49116e99e7060093306ccf540792480520d97d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "egg_cracked_raw_v2_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/egg_cracked_raw_v2_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_cracked_raw_v2_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_cracked_raw_five_area_v2_key.png",
+      "imagegen_source_sha256": "7ea1bfbbc3ed0b1d14b714c38d95fba97645764dd54471242d71427ec3d49881",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 31415,
+      "possible_key_pixels": 0,
+      "sha256": "48b2a14d7fba7466c50697050fc4c141d4f64c6d8d2d6581d738fe6033d6232f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "egg_whole_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_whole_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_whole_five_area_v2_key.png",
+      "imagegen_source_sha256": "365f00f7dc452ffc9a23a29dc0b1e354cff6e05cbe04b2eaf115d551cbce6c09",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29337,
+      "possible_key_pixels": 0,
+      "sha256": "dec933b65b117580ef505356e0ab3a2bccb3213ddcd6bd2911d3bc6952ec0d3d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "egg_stock_1_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_stock_1_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_stock_1_five_area_v2_key.png",
+      "imagegen_source_sha256": "dd3a54341883d717d9591f93a083821ca22689965c311986d3457efcc97bed83",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28634,
+      "possible_key_pixels": 0,
+      "sha256": "24037c028222da859d78614c8a7cc3bb6bda903d11f38e9c5cc2939022aedad8",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "egg_stock_2_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_stock_2_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_stock_2_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "24aae19d1034caaed25f4e69087322e881ff2496ac75a5d0d28750617fb00ff1",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 27125,
+      "possible_key_pixels": 0,
+      "sha256": "44a816010e58d5d40fdc0fbe4661557335efe2bc50e8fb24ce0b93c382d000bd",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "egg_stock_3_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_stock_3_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_stock_3_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "2ee36006948b67358da40b14310f3a3e52848d0cbee3dee11bce3e538a845f62",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33976,
+      "possible_key_pixels": 0,
+      "sha256": "8521a268c0326357ceebe44e6e6ceebce138b588a4492c5fe127c7dc2df09378",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "egg_stock_4_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_4_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_stock_4_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_stock_4_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "c6051609429048017cf2d26ce573e447bc425c6990020b8e1de3ab960fec6c2f",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28844,
+      "possible_key_pixels": 0,
+      "sha256": "41e2b47600fe77efd6eadb6dda94dd11ca4e702eed9c4821b0171c639f641412",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "egg_stock_5_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_5_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_stock_5_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_stock_5_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "9779b9582bdc90b81445cb169f43cbdb2275d6fbf80ed10bbc1971d332785bdf",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29993,
+      "possible_key_pixels": 0,
+      "sha256": "887032f355846f7fa193467b6416d802fa856075f9fad6bb63b3631b1c111142",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "egg_stock_6_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_6_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_stock_6_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/egg_stock_6_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "b04f4e332adbacbc98d34c6f1f4539e26ec8d4f0ae9243790432848195031bc9",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34941,
+      "possible_key_pixels": 0,
+      "sha256": "d6be90b4c5f870e959319c2eb884c1a8dc4660a5066751b685ca14f2c3ef0b6b",
+      "godot_import_present": true,
+      "dimensions_ok": false,
+      "alpha_ok": true,
+      "status": "invalid"
+    },
+    {
+      "asset_id": "five_grain_mix_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/five_grain_mix_portion_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/five_grain_mix_portion_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "1fdd9345f45e60feadfcedb322fcf393c59172b594541f784ba71d90a96b2de8",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34415,
+      "possible_key_pixels": 0,
+      "sha256": "fa758fb5bdeebc1d7b73b2795f8d08da1d9552dc8563528d584f391cbfb9b8f2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "ham_sausage_slices_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_slices_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_slices_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "db91ce271a414f138a4cd4d00c294f2176ead83fbdd54d943b40e08cfc5b7e8c",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 26661,
+      "possible_key_pixels": 0,
+      "sha256": "7ae04ade0df587b3d08c28c987ba5ec50ef6875f59fa9181b768cfbe7216e3b9",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "ham_sausage_whole_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/ham_sausage_whole_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_whole_v1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_whole_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "efc8541112cc3f8f08852bdec7607dc3a3e7d3d604e063f380fd075eed014ed1",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 25108,
+      "possible_key_pixels": 0,
+      "sha256": "f2301036e90a5e12343c89053c0df5cb7f59848670251d43ec6abbcbc02e2f13",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "ham_sausage_stock_1_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_1_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_2_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_2_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_3_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_3_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_4_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_4_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_5_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_5_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_6_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_6_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_floss_pile_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/meat_floss_pile_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_floss_scattered_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/meat_floss_scattered_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "peanut_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/nuts/peanut_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/peanut_portion_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pork_tenderloin_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/pork_tenderloin_portion_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pork_tenderloin_slices_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/pork_tenderloin_slices_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_pile_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/scallion_pile_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_pile_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_scattered_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_scattered_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_1_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_1_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_2_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_2_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_3_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_3_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_4_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_4_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_5_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_5_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_6_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_6_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "yellow_soybean_portion_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/soybean/yellow_soybean_portion_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/yellow_soybean_portion_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "filled_youtiao_dough_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/filled_youtiao_dough_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/filled_youtiao_dough_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "glutinous_rice_youtiao_dough_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/glutinous_rice_youtiao_dough_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/glutinous_rice_youtiao_dough_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "multigrain_youtiao_dough_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/multigrain_youtiao_dough_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/multigrain_youtiao_dough_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "plain_youtiao_dough_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/plain_youtiao_dough_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_youtiao_dough_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/scallion_youtiao_dough_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_youtiao_dough_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sesame_youtiao_dough_v1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/sesame_youtiao_dough_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/sesame_youtiao_dough_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_10_v1_five_area_v2",
+      "target_path": "res://resources/art/payments/coin_10_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coin_10_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_1_v1_five_area_v2",
+      "target_path": "res://resources/art/payments/coin_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coin_1_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_20_v1_five_area_v2",
+      "target_path": "res://resources/art/payments/coin_20_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coin_20_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_2_v1_five_area_v2",
+      "target_path": "res://resources/art/payments/coin_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coin_2_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_5_v1_five_area_v2",
+      "target_path": "res://resources/art/payments/coin_5_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coin_5_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "payment_cash_small_v1_five_area_v2",
+      "target_path": "res://resources/art/payments/payment_cash_small_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/payment_cash_small_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_bean_soy_milk_cup_v1_five_area_v2",
+      "target_path": "res://resources/art/products/soy_milk/black_bean_soy_milk_cup_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/black_bean_soy_milk_cup_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "five_grain_soy_milk_cup_v1_five_area_v2",
+      "target_path": "res://resources/art/products/soy_milk/five_grain_soy_milk_cup_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/five_grain_soy_milk_cup_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "mung_bean_soy_milk_cup_v1_five_area_v2",
+      "target_path": "res://resources/art/products/soy_milk/mung_bean_soy_milk_cup_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/mung_bean_soy_milk_cup_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "peanut_soy_milk_cup_v1_five_area_v2",
+      "target_path": "res://resources/art/products/soy_milk/peanut_soy_milk_cup_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/peanut_soy_milk_cup_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "plain_soy_milk_cup_v1_five_area_v2",
+      "target_path": "res://resources/art/products/soy_milk/plain_soy_milk_cup_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/plain_soy_milk_cup_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "red_bean_soy_milk_cup_v1_five_area_v2",
+      "target_path": "res://resources/art/products/soy_milk/red_bean_soy_milk_cup_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/red_bean_soy_milk_cup_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "filled_youtiao_v1_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/filled_youtiao_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/filled_youtiao_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "glutinous_rice_youtiao_v1_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/glutinous_rice_youtiao_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/glutinous_rice_youtiao_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "multigrain_youtiao_v1_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/multigrain_youtiao_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/multigrain_youtiao_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "plain_youtiao_v1_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/plain_youtiao_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_youtiao_v1_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/scallion_youtiao_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_youtiao_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sesame_youtiao_v1_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/sesame_youtiao_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/sesame_youtiao_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "supplier_01_neutral_v1_five_area_v2",
+      "target_path": "res://resources/art/suppliers/supplier_01/supplier_01_neutral_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        768
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/supplier_01_neutral_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "day_summary_panel_base_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/day_summary/day_summary_panel_base_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/day_summary_panel_base_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "currency_coin_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/economy/currency_coin_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/currency_coin_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "reputation_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/economy/reputation_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/reputation_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/economy/upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "order_card_base_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/order/order_card_base_v1_five_area_v2.png",
+      "expected_canvas": [
+        600,
+        740
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/order_card_base_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "order_card_multi_dish_v2_five_area_v2",
+      "target_path": "res://resources/art/ui/order/order_card_multi_dish_v2_five_area_v2.png",
+      "expected_canvas": [
+        600,
+        740
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/order_card_multi_dish_v2_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "order_card_multi_dish_v3_five_area_v2",
+      "target_path": "res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png",
+      "expected_canvas": [
+        600,
+        740
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/order_card_multi_dish_v3_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_egg_spread_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_egg_spread_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_fold_stability_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_fold_stability_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_fold_stability_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_heat_uniformity_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_heat_uniformity_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_heat_uniformity_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_ingredient_distribution_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_ingredient_distribution_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_ingredient_distribution_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_integrity_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_integrity_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_integrity_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_order_correctness_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_order_correctness_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_order_correctness_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_preparation_time_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_preparation_time_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_preparation_time_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_sauce_coverage_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_sauce_coverage_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_sauce_coverage_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_thickness_uniformity_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/quality/quality_thickness_uniformity_v1_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/quality_thickness_uniformity_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "signature_recipe_panel_base_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/recipe/signature_recipe_panel_base_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/signature_recipe_panel_base_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "supplier_event_panel_base_v1_five_area_v2",
+      "target_path": "res://resources/art/ui/supplier_event/supplier_event_panel_base_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/supplier_event_panel_base_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_rack_support_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/decor/tier_01_ingredient_rack/ingredient_rack_support_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ingredient_rack_support_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "storage_label_rail_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/decor/tier_02_storage/storage_label_rail_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/storage_label_rail_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "blank_order_clipboard_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/decor/tier_03_order/blank_order_clipboard_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/blank_order_clipboard_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "awning_side_lamps_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/decor/tier_04_shelter/awning_side_lamps_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/awning_side_lamps_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "tray_trim_customer_clips_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/decor/tier_05_finish/tray_trim_customer_clips_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/tray_trim_customer_clips_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_1_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/small_ingredient_box_tier_1_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_2_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/small_ingredient_box_tier_2_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_3_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/small_ingredient_box_tier_3_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_1_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/soy_milk_machine_tier_1_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_2_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/soy_milk_machine_tier_2_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_3_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/soy_milk_machine_tier_3_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_1_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/youtiao_fryer_tier_1_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_2_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/youtiao_fryer_tier_2_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_3_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/youtiao_fryer_tier_3_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "automatic_sauce_brush_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/automatic_sauce_brush_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "single_press_spreader_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/tools/single_press_spreader_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/single_press_spreader_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_slot_locked_cover_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ingredient_slot_locked_cover_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_tray_4x3_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/trays/ingredient_tray_4x3_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ingredient_tray_4x3_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "workstation_front_lip_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/foreground/workstation_front_lip_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/workstation_front_lip_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "griddle_base_angled_ellipse_v3_five_area_v2",
+      "target_path": "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/griddle_base_angled_ellipse_v3_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/griddle_base_angled_ellipse_five_area_v2_key.png",
+      "imagegen_source_sha256": "7dfc60585b36131d831fa433402a77a219d05eac01ee3b3e28dd72e2c0cc614c",
+      "imagegen_source_name_inferred": true,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 446205,
+      "possible_key_pixels": 0,
+      "sha256": "54192331b7e01feb8fb792b680054aac42bcf93ba5307520479395fdbe5ea4ea",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "griddle_base_compact_v2_five_area_v2",
+      "target_path": "res://resources/art/workstation/griddle/griddle_base_compact_v2_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/griddle_base_compact_v2_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "griddle_base_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/griddle/griddle_base_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/griddle_base_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_01_egg_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_01_egg_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_01_egg_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_02_baocui_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_02_baocui_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_03_scallion_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_03_scallion_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_04_sweet_flour_sauce_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_04_sweet_flour_sauce_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_04_sweet_flour_sauce_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_05_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_05_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_05_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_06_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_06_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_06_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_07_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_07_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_07_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_08_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_08_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_08_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_09_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_09_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_09_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_10_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_10_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_10_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_11_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_11_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_11_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_12_locked_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_12_locked_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/slot_12_locked_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "festival_spring_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/overlays/festival_spring_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/festival_spring_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "lighting_string_lights_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/overlays/lighting_string_lights_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/lighting_string_lights_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "weather_rain_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/overlays/weather_rain_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/weather_rain_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "paper_bag_package_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/packaging/paper_bag_package_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/paper_bag_package_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "reinforced_paper_sleeve_package_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/reinforced_paper_sleeve_package_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "serving_tray_package_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/packaging/serving_tray_package_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/serving_tray_package_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_tin_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/restock/baocui_tin_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/baocui_tin_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_carton_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/restock/egg_carton_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_carton_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_fresh_box_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/restock/ham_fresh_box_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ham_fresh_box_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_enamel_jar_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/restock/scallion_enamel_jar_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/scallion_enamel_jar_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_spread_material_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/egg_spread_material_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/egg_spread_material_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_charred_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/pancake_charred_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/pancake_charred_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_cooked_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/pancake_cooked_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/pancake_cooked_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_edge_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/pancake_edge_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/pancake_edge_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_fold_back_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/pancake_fold_back_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/pancake_fold_back_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_raw_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/pancake_raw_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/pancake_raw_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "red_chili_sauce_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/red_chili_sauce_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/red_chili_sauce_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sweet_flour_sauce_texture_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "prompt_record": "resources/art/prompts/five_area_v2/sweet_flour_sauce_texture_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_ladle_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/batter_ladle_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/batter_ladle_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_ladle_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/batter_ladle_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/batter_ladle_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_spreader_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/batter_spreader_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_spreader_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/batter_spreader_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "countertop_tool_cups_initial_v3_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v3_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/countertop_tool_cups_initial_v3_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "countertop_tool_cups_initial_v4_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v4_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/countertop_tool_cups_initial_v4_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "folding_spatula_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/folding_spatula_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/folding_spatula_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "folding_spatula_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/folding_spatula_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/folding_spatula_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "heat_controller_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/heat_controller_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/heat_controller_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_tongs_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/ingredient_tongs_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ingredient_tongs_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_tongs_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/ingredient_tongs_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/ingredient_tongs_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_absorbent_paper_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/oil_absorbent_paper_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/oil_absorbent_paper_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_absorbent_paper_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/oil_absorbent_paper_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/oil_absorbent_paper_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "payment_slot_tool_cups_initial_v5_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/payment_slot_tool_cups_initial_v5_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "reinforced_paper_sleeve_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/reinforced_paper_sleeve_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/reinforced_paper_sleeve_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sauce_brush_upgrade_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/sauce_brush_upgrade_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/sauce_brush_upgrade_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sauce_brush_v1_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/sauce_brush_v1_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "wall_tool_rack_initial_v2_five_area_v2",
+      "target_path": "res://resources/art/workstation/tools/wall_tool_rack_initial_v2_five_area_v2.png",
+      "expected_canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/wall_tool_rack_initial_v2_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "packaged_drink_heater_tier_1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/packaged_drink_heater_tier_1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/packaged_drink_heater_tier_1_five_area_v2_key.png",
+      "imagegen_source_sha256": "c811d2cac487b0b01e63f05f3780fea5ff3df20d876fb131a1524110a73be6f1",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 195925,
+      "possible_key_pixels": 0,
+      "sha256": "daf0a169e1b528cbbd7b82fa49c927356880ddd2736146a9df656cb5cf142add",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "packaged_drink_heater_tier_2_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_2_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/packaged_drink_heater_tier_2_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/packaged_drink_heater_tier_2_five_area_v2_key.png",
+      "imagegen_source_sha256": "42abbaf8cb782f7091ab3f0ebac1bd4224c29a02063140c6b6fb27c26811368e",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 148556,
+      "possible_key_pixels": 0,
+      "sha256": "31334f638bcb7d3e3f343950199a33b6d1fbf7ce3baf3a9f56605caf100a68ae",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "packaged_drink_heater_tier_3_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_3_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/packaged_drink_heater_tier_3_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/packaged_drink_heater_tier_3_five_area_v2_key.png",
+      "imagegen_source_sha256": "7f5f24a2144200554ef04e0caea18e0663f0e83b9eaf5d973b7c52c54bb6f57b",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 184717,
+      "possible_key_pixels": 0,
+      "sha256": "4e91923089156a38b338310b5b9eb435551f8f731af35aae976607b44aa2b23a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "steamer_tier_1_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/steamer_tier_1_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/steamer_tier_1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/steamer_tier_1_five_area_v2_key.png",
+      "imagegen_source_sha256": "4508c2144d50412e134601a187560594708799a1699ba01eabd4731efc7e5d4e",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 178242,
+      "possible_key_pixels": 0,
+      "sha256": "99271c1520e389253ff16797dbd9db13d966286d498dd68d19496a247d453735",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "steamer_tier_2_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/steamer_tier_2_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/steamer_tier_2_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/steamer_tier_2_five_area_v2_key.png",
+      "imagegen_source_sha256": "e32bf784b61ec4804b7093543ea6cba15eb5b7e76be77790d4baeaf5f20647c1",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 148852,
+      "possible_key_pixels": 0,
+      "sha256": "3e01d56708e99e6c3e383d387c227e8c32d3b06fef8c6f5b9ec9fc3c20056190",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "steamer_tier_3_five_area_v2",
+      "target_path": "res://resources/art/workstation/expansion/machines/steamer_tier_3_five_area_v2.png",
+      "expected_canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/steamer_tier_3_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/steamer_tier_3_five_area_v2_key.png",
+      "imagegen_source_sha256": "65198cab088b626d8da6adb6d7bc29d90adc7f89e340a02f39f9701846ec950f",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 131393,
+      "possible_key_pixels": 0,
+      "sha256": "773cb240ad39c42b3bc2a382672897057ed2831b820a178d5881a6a02d464a4a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_pile_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/coriander_pile_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_pile_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_pile_five_area_v2_key.png",
+      "imagegen_source_sha256": "a299fbac3d4b7ee70324b9f0e83053c626358eb0708c16cb69932d688c4f3b4b",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23181,
+      "possible_key_pixels": 0,
+      "sha256": "9c765f61599bd72c4f32c1a8bc813128fbb557575ff9ff7625f79759d2cac449",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_scattered_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_scattered_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_scattered_five_area_v2_key.png",
+      "imagegen_source_sha256": "6fb10853f18f84cf38839e69fdc8412ee6a3eff8f4b72056b5cd544171289e20",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 20847,
+      "possible_key_pixels": 0,
+      "sha256": "6db2e4b0448502648cbc1872c67bd8cc6a30e3015625d9089a039efe739b8ffc",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_stock_1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_stock_1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_stock_1_five_area_v2_key.png",
+      "imagegen_source_sha256": "8538bbac4f4ec40985ea5e7ca65fbc9db3f83b46c1cea28feccdde4a7ddd2a21",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 75841,
+      "possible_key_pixels": 0,
+      "sha256": "ef10040c6c063966dc13a8ef1446d9e6cd2b5bcf8c9b3187ce5747f66023646d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_stock_2_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_2_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_stock_2_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_stock_2_five_area_v2_key.png",
+      "imagegen_source_sha256": "6ea7cd6a2079782107794ec373d6b554ad4e13ebe1f41ad9c72f26877a93991a",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 53021,
+      "possible_key_pixels": 0,
+      "sha256": "1ad685e9e61191e743da03513448ec9c1e7499d69bfad67443cda77a138dbcc1",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_stock_3_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_3_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_stock_3_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_stock_3_five_area_v2_key.png",
+      "imagegen_source_sha256": "d73e2c7c4dd1c8bff7380cf91c79bbb2e7ce29140f41fd9f79ce099015268c2e",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 63239,
+      "possible_key_pixels": 0,
+      "sha256": "2f8582c455d874e3d6c3fc25ca04c9e8a896eb70fcbb26a4d612155df89eccfc",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_stock_4_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_4_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_stock_4_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_stock_4_five_area_v2_key.png",
+      "imagegen_source_sha256": "10e08a6c5d716239f099a793295624b714696ce01519e313fe80d4be685fa923",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 79288,
+      "possible_key_pixels": 0,
+      "sha256": "5d70ef8a09f590d137691177e01ca1687f8220f418f658b95e3012658b2c3b4c",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_stock_5_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_5_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_stock_5_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_stock_5_five_area_v2_key.png",
+      "imagegen_source_sha256": "058a56dd07fd265a9262c88605c96f9882b99b89764e98cf332f33d35945405a",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 43881,
+      "possible_key_pixels": 0,
+      "sha256": "e1ab734f4ff59b66100ef0a6456cb781d971894a08d91debb99768cc34766274",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "coriander_stock_6_five_area_v2",
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_6_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/coriander_stock_6_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coriander_stock_6_five_area_v2_key.png",
+      "imagegen_source_sha256": "c0ebf08182e7a5d61851d71c84081c99f693acfb51a4f511b1b43ea2c360836b",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 62081,
+      "possible_key_pixels": 0,
+      "sha256": "ef28dabe9d78f0a57dddfb6c9935193e3995995e0fb712e84d1bff3705a51699",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_pile_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_pile_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_pile_five_area_v2_key.png",
+      "imagegen_source_sha256": "50e89d5bb8928f15c8e5f0dd2b59f3779520482de6291a233b9a0a63ba891269",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28149,
+      "possible_key_pixels": 0,
+      "sha256": "abb84d453a3538030a4e764a47845b7724f95630b112779c91440cae0d1c657c",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_scattered_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_scattered_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_scattered_five_area_v2_key.png",
+      "imagegen_source_sha256": "951fa1bf9457dcbb1e15580ad8677ce0abc37c3bedb850dd8b73b54a0f34cbaa",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29090,
+      "possible_key_pixels": 0,
+      "sha256": "6b8d6829a1bf649293dea23300202149947994680557da9c0609b00b71f457c2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_1_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_1_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_stock_1_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_stock_1_five_area_v2_key.png",
+      "imagegen_source_sha256": "14f846999327020e0559c299c8e51a76169647d94b4cb31571cb6c6e1de25707",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 59916,
+      "possible_key_pixels": 0,
+      "sha256": "d5711f61979b6e8297c3c0bcbb7c33b8b2a7ac29f755799e6b4252fe422d8d31",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_2_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_2_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_stock_2_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_stock_2_five_area_v2_key.png",
+      "imagegen_source_sha256": "f124aa91c088f49705b7e7b7bb31690c13e3c808ea29f1f40b5996727c29926a",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 45799,
+      "possible_key_pixels": 0,
+      "sha256": "9005b5919c6e90662a2842512b35fd367fee501bea3e458abfca8cd9c624ff96",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_3_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_3_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_stock_3_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_stock_3_five_area_v2_key.png",
+      "imagegen_source_sha256": "6a6e85d536d095d78e08980bd0add64228e1379525b7f83d5925832cdedb3490",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 45733,
+      "possible_key_pixels": 0,
+      "sha256": "b85ceb9884df2670e7a303e8fc2467c7a2bea91b0c85393a1dc1fe8fbc5e41d3",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_4_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_4_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_stock_4_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_stock_4_five_area_v2_key.png",
+      "imagegen_source_sha256": "a50ac2733338368c71422d01d2ba0b88d7b8eefbbf36f95c62e23b5389499048",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 58206,
+      "possible_key_pixels": 0,
+      "sha256": "2904b656ae949c1ac48801eb6f8dbd2de85027bcb0b606af6bdaf4796e168567",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_5_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_5_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_stock_5_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_stock_5_five_area_v2_key.png",
+      "imagegen_source_sha256": "1fe60cb547da77258b2af8ee7935ac1283a3be93371ffec4eea0be809c9f7342",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 60918,
+      "possible_key_pixels": 0,
+      "sha256": "a51de4d3ae55f24ece6c8eeee8bc48f1b54b301dda37ac77c2ded1233ba0720e",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_6_five_area_v2",
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_6_five_area_v2.png",
+      "expected_canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/preserved_mustard_stock_6_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/preserved_mustard_stock_6_five_area_v2_key.png",
+      "imagegen_source_sha256": "68429477673136490c1f33503d56ad05486526809c1f9274b890ad3740322f7e",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 73984,
+      "possible_key_pixels": 0,
+      "sha256": "adaaa89df75be3ae63474763c6cc2ea843201bb5b893ab0ef3cc17bb66439ef2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "milk_package_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/milk_package_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/milk_package_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/milk_package_five_area_v2_key.png",
+      "imagegen_source_sha256": "951a74b7b68476d8b92e2df9519564fc70b8ddf64328dc9bfb62f911ca0f43bc",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29590,
+      "possible_key_pixels": 0,
+      "sha256": "9046686458f18a4f7cb58f8f5e8ab1beda0b20d54c5c9f1ab04446a843471d37",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "milk_heated_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/milk_heated_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/milk_heated_five_area_v2.json",
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/milk_heated_five_area_v2_key.png",
+      "imagegen_source_sha256": "351d15973e2dd50f8e5a45e18c5c6ae054cd6eed54e06c84b7bc02cf6beeac84",
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 20372,
+      "possible_key_pixels": 0,
+      "sha256": "9cdb09388d271d16fb0ce315b701c8fad4fae6a1b6cde309a9dbd58dbef226c5",
+      "godot_import_present": false,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "soy_milk_package_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/soy_milk_package_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/soy_milk_package_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 26076,
+      "possible_key_pixels": 0,
+      "sha256": "9e772aff7514a3db1d77b3deb030aefd837319c12b8455f96f8f8a799a06a0f5",
+      "godot_import_present": false,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "soy_milk_heated_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/soy_milk_heated_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/soy_milk_heated_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 19650,
+      "possible_key_pixels": 0,
+      "sha256": "609e2167cdd26aaed750b2600d1587f3f789ee7ef6f806fb2aa7343f93fed57e",
+      "godot_import_present": false,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
+    },
+    {
+      "asset_id": "walnut_package_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/walnut_package_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/walnut_package_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "walnut_heated_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/walnut_heated_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/walnut_heated_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_sesame_package_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/black_sesame_package_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/black_sesame_package_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_sesame_heated_five_area_v2",
+      "target_path": "res://resources/art/products/packaged_drink/black_sesame_heated_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/black_sesame_heated_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_cake_dough_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/oil_cake_dough_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_cake_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/oil_cake_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/oil_cake_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sugar_oil_cake_dough_five_area_v2",
+      "target_path": "res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/sugar_oil_cake_dough_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "sugar_oil_cake_five_area_v2",
+      "target_path": "res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/sugar_oil_cake_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "mantou_steaming_five_area_v2",
+      "target_path": "res://resources/art/ingredients/steamer/mantou_steaming_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/mantou_steaming_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "mantou_cooked_five_area_v2",
+      "target_path": "res://resources/art/products/steamer/mantou_cooked_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/mantou_cooked_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "vegetable_bun_steaming_five_area_v2",
+      "target_path": "res://resources/art/ingredients/steamer/vegetable_bun_steaming_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/vegetable_bun_steaming_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "vegetable_bun_cooked_five_area_v2",
+      "target_path": "res://resources/art/products/steamer/vegetable_bun_cooked_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/vegetable_bun_cooked_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_bun_steaming_five_area_v2",
+      "target_path": "res://resources/art/ingredients/steamer/meat_bun_steaming_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/meat_bun_steaming_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_bun_cooked_five_area_v2",
+      "target_path": "res://resources/art/products/steamer/meat_bun_cooked_five_area_v2.png",
+      "expected_canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "prompt_record": "resources/art/prompts/five_area_v2/meat_bun_cooked_five_area_v2.json",
+      "imagegen_source": null,
+      "imagegen_source_sha256": null,
+      "imagegen_source_name_inferred": false,
+      "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
+      "human_visual_review": "pending",
+      "status": "planned"
+    }
+  ]
+}

@@ -16,7 +16,6 @@ const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
-const WORKSTATION_EXPANSION_CATALOG := preload("res://scripts/data/workstation_expansion_catalog.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const BASIC_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_v1.png")
 const WIDE_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png")
@@ -130,6 +129,7 @@ const SPREADER_SPEED_FAST := 1
 @onready var order_heart_fill: Polygon2D = %OrderHeartFill
 @onready var order_patience_bar: ProgressBar = %OrderPatienceBar
 @onready var patience_bar: ProgressBar = %PatienceBar
+@onready var patience_text_label: Label = %PatienceTextLabel
 @onready var tutorial_guide_label: Label = get_node("SafeArea/BottomStrip/TutorialGuideLabel") as Label
 @onready var phase_label: Label = %PhaseLabel
 @onready var heat_slider: HSlider = %HeatSlider
@@ -523,10 +523,10 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	var owned_items := Array(snapshot.get("owned_items", []))
 	var owned_growth_ids := Array(snapshot.get("owned_growth_ids", []))
 	_wide_spreader_owned = owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader")
-	_spreader_width_multiplier = WORKSTATION_EXPANSION_CATALOG.WIDE_SPREADER_WIDTH_MULTIPLIER if _wide_spreader_owned else 1.0
+	_spreader_width_multiplier = FIVE_AREA_CATALOG.PANCAKE_WIDE_SPREADER_WIDTH_MULTIPLIER if _wide_spreader_owned else 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
-	_intermediate_griddle_owned = int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 1)) >= 2
+	_intermediate_griddle_owned = int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 0)) >= 1
 	_refresh_spreader_upgrade_presentation()
 	_refresh_sauce_brush_upgrade_presentation()
 	_refresh_growth_tool_buttons()
@@ -669,21 +669,33 @@ func _process(delta: float) -> void:
 	if _business_day_closed:
 		return
 	var game_session := get_node_or_null("/root/GameSession")
-	if game_session != null and game_session.has_method("advance_formal_order_patience") and not _formal_order_time_paused():
+	var formal_time_paused := _formal_order_time_paused()
+	var active_formal_order: Dictionary = {}
+	var mirrors_formal_pancake_patience := false
+	if game_session != null and game_session.has_method("advance_formal_order_patience") and not formal_time_paused:
 		var patience_result: Dictionary = game_session.call("advance_formal_order_patience", delta)
 		if StringName(patience_result.get("terminal_state", &"")) == &"expired" and not bool(patience_result.get("already_settled", false)):
 			_on_playable_order_finished(patience_result)
-		else:
-			var active_order: Dictionary = game_session.call("active_formal_order")
-			var active_items: Array = Array(active_order.get("items", []))
-			if p1_session != null and not active_items.is_empty() and StringName(Dictionary(active_items[0]).get("area_id", &"")) == &"area.pancake":
-				p1_session.patience_seconds = float(active_order.get("remaining_patience_seconds", p1_session.patience_seconds))
+	if game_session != null and game_session.has_method("active_formal_order"):
+		active_formal_order = game_session.call("active_formal_order")
+		var active_items: Array = Array(active_formal_order.get("items", []))
+		mirrors_formal_pancake_patience = p1_session != null and not active_items.is_empty() and StringName(Dictionary(active_items[0]).get("area_id", &"")) == &"area.pancake"
+		if mirrors_formal_pancake_patience:
+			p1_session.mirror_formal_patience(
+				float(active_formal_order.get("remaining_patience_seconds", p1_session.patience_seconds)),
+				bool(active_formal_order.get("tutorial_no_countdown", false))
+			)
 	if game_session != null and game_session.has_method("advance_pancake_holding_tray"):
 		game_session.call("advance_pancake_holding_tray", delta)
+	if game_session != null and game_session.has_method("advance_f3_production") and not formal_time_paused:
+		game_session.call("advance_f3_production", delta)
 	_update_surface_readout()
 	_update_spreader_artwork(delta)
-	if p1_session != null and not _result_detail_open:
-		p1_session.advance_time(delta)
+	if p1_session != null and not formal_time_paused:
+		if mirrors_formal_pancake_patience:
+			p1_session.advance_elapsed_time(delta)
+		else:
+			p1_session.advance_time(delta)
 	_recover_completed_payment_if_needed()
 	if _squeezing_sauce:
 		sauce_tool_state.add(parameters.sauce_squeeze_rate * delta)
@@ -714,7 +726,9 @@ func _process(delta: float) -> void:
 
 
 func _formal_order_time_paused() -> bool:
-	return get_tree().paused or daily_bill_panel.visible or unlock_progress_panel.visible or _result_detail_open or _order_summary_visible
+	var game_session := get_node_or_null("/root/GameSession")
+	var business_paused := game_session != null and game_session.has_method("is_business_paused") and bool(game_session.call("is_business_paused"))
+	return business_paused or get_tree().paused or daily_bill_panel.visible or unlock_progress_panel.visible or _result_detail_open or _order_summary_visible
 
 
 func _advance_business_day_timer(delta: float) -> void:
@@ -2341,43 +2355,30 @@ func _refresh_growth_section(message: String = "") -> void:
 	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
 	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
 	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 3)
+	var recommended: Array = Array(grouped_recommendations.get("recommended", []))
 	if not pending_install.is_empty():
-		_growth_recommendations.append({"growth_id": pending_install, "slot_title": "安装位", "purchased": true})
-		var next_install_ticket: Dictionary = {}
-		for recommendation_variant in Array(grouped_recommendations.get("install", [])):
-			var recommendation := Dictionary(recommendation_variant)
-			if StringName(recommendation.get("growth_id", "")) == pending_install:
-				continue
-			next_install_ticket = recommendation.duplicate(true)
-			break
-		if next_install_ticket.is_empty():
-			_growth_recommendations.append({"hidden": true})
-		else:
-			next_install_ticket["slot_title"] = "安装位"
-			next_install_ticket["selected_slot_label"] = "安装"
-			next_install_ticket["selected_growth_id"] = pending_install
-			_growth_recommendations.append(next_install_ticket)
-	else:
-		for recommendation in Array(grouped_recommendations.get("install", [])).slice(0, 2):
-			var install_ticket: Dictionary = Dictionary(recommendation).duplicate(true)
-			install_ticket["slot_title"] = "安装位"
-			_growth_recommendations.append(install_ticket)
-		while _growth_recommendations.size() < 2:
-			_growth_recommendations.append({"hidden": true})
+		_growth_recommendations.append({"growth_id": pending_install, "slot_title": "安装位", "purchased": true, "can_purchase": false})
 	if not pending_content.is_empty():
-		_growth_recommendations.append({"growth_id": pending_content, "slot_title": "内容位", "purchased": true})
-	else:
-		var content_recommendations: Array = Array(grouped_recommendations.get("content", [])).slice(0, 1)
-		if content_recommendations.is_empty():
-			_growth_recommendations.append({"hidden": true})
-		else:
-			var content_ticket: Dictionary = Dictionary(content_recommendations[0]).duplicate(true)
-			content_ticket["slot_title"] = "内容位"
-			_growth_recommendations.append(content_ticket)
-	var balance_text := "现有 %d 金币 · 声誉 %d · 安装位与内容位各可预订一项 · 第%d天生效" % [
+		_growth_recommendations.append({"growth_id": pending_content, "slot_title": "内容位", "purchased": true, "can_purchase": false})
+	for recommendation_variant in recommended:
+		if _growth_recommendations.size() >= 3:
+			break
+		var recommendation: Dictionary = Dictionary(recommendation_variant).duplicate(true)
+		var growth_id := StringName(recommendation.get("growth_id", ""))
+		if growth_id == pending_install or growth_id == pending_content:
+			continue
+		var purchase_slot := StringName(recommendation.get("purchase_slot", &""))
+		recommendation["slot_title"] = "安装位" if purchase_slot == &"install" else "内容位"
+		var selected_growth_id := pending_install if purchase_slot == &"install" else pending_content
+		if not selected_growth_id.is_empty():
+			recommendation["selected_slot_label"] = "安装" if purchase_slot == &"install" else "内容"
+			recommendation["selected_growth_id"] = selected_growth_id
+		_growth_recommendations.append(recommendation)
+	while _growth_recommendations.size() < 3:
+		_growth_recommendations.append({"hidden": true})
+	var balance_text := "现有 %d 金币 · 声誉 %d · 安装位与内容位各可预订一项 · 已预订项目于下一营业日生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
-		int(snapshot.get("current_day", 1)) + 1,
 	]
 	growth_balance_label.text = balance_text if message.is_empty() else "%s · %s" % [balance_text, message]
 	for index in growth_ticket_buttons.size():
@@ -2439,27 +2440,37 @@ func _growth_ticket_status_text(recommendation: Dictionary) -> String:
 		]
 	if bool(recommendation.get("can_purchase", false)):
 		return "可预订，明日生效"
-	if StringName(recommendation.get("reason", &"")) == &"tutorial_requirement":
-		return _tutorial_requirement_text(recommendation)
-	match StringName(recommendation.get("reason", &"")):
+	var missing_requirements: Array = Array(recommendation.get("missing_requirements", []))
+	if not missing_requirements.is_empty():
+		var explanations := PackedStringArray()
+		for requirement_variant in missing_requirements:
+			var explanation := _growth_requirement_text(Dictionary(requirement_variant))
+			if not explanation.is_empty() and not explanations.has(explanation):
+				explanations.append(explanation)
+		if not explanations.is_empty():
+			return "；".join(explanations)
+	return _growth_requirement_text(recommendation)
+
+
+func _growth_requirement_text(requirement: Dictionary) -> String:
+	match StringName(requirement.get("reason", &"")):
 		&"purchase_slot_occupied":
 			return "该购买位已有明日预订"
 		&"area_locked":
-			return "前置区域未解锁"
+			return "前置区域未解锁：%s" % _tutorial_area_label(StringName(requirement.get("required_area_id", &"")))
+		&"growth_requirement":
+			return "需先解锁：%s" % _growth_ticket_display_name(StringName(requirement.get("required_growth_id", &"")))
 		&"day_requirement":
-			var game_session := get_node_or_null("/root/GameSession")
-			var current_day := 1
-			if game_session != null and game_session.has_method("five_area_progression_snapshot"):
-				current_day = int(Dictionary(game_session.call("five_area_progression_snapshot")).get("current_day", 1))
-			return "营业天数未达到 %d/%d" % [current_day, int(recommendation.get("min_day", current_day))]
+			var current_day := int(requirement.get("current_day", 1))
+			return "营业天数未达到 %d/%d" % [current_day, int(requirement.get("min_day", current_day))]
 		&"insufficient_coins":
-			return "金币不足"
+			return "金币不足 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]
 		&"reputation_requirement":
-			return "口碑未达到 %d/%d" % [int(recommendation.get("current_reputation", 0)), int(recommendation.get("min_reputation", 0))]
+			return "口碑未达到 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
 		&"tutorial_requirement":
-			return "需先完成前一区域教学"
+			return _tutorial_requirement_text(requirement)
 		&"mastery_requirement":
-			return "熟练度未达到 %d/%d" % [int(recommendation.get("current_mastery", 0)), int(recommendation.get("required_mastery", 0))]
+			return "熟练度未达到 %d/%d" % [int(requirement.get("current_mastery", 0)), int(requirement.get("required_mastery", 0))]
 		&"all_areas_requirement":
 			return "需先解锁全部五个区域"
 	return "暂不满足条件"
@@ -2470,13 +2481,14 @@ func _growth_ticket_compact_status_text(recommendation: Dictionary) -> String:
 		return "已预订，明日生效"
 	if not StringName(recommendation.get("selected_growth_id", "")).is_empty():
 		return "该购买位已有预订"
-	if StringName(recommendation.get("reason", &"")) == &"tutorial_requirement":
-		return "需先完成对应区域教学"
-	return _growth_ticket_status_text(recommendation)
+	var missing_requirements: Array = Array(recommendation.get("missing_requirements", []))
+	if not missing_requirements.is_empty():
+		return _growth_requirement_text(Dictionary(missing_requirements.front()))
+	return _growth_requirement_text(recommendation)
 
 
 func _tutorial_requirement_text(recommendation: Dictionary) -> String:
-	var required_area_id := StringName(recommendation.get("requires_tutorial_area_id", &""))
+	var required_area_id := StringName(recommendation.get("requires_tutorial_area_id", recommendation.get("required_tutorial_area_id", &"")))
 	var area_label := _tutorial_area_label(required_area_id)
 	if required_area_id == &"area.pancake":
 		return "先完成煎饼教学：当前营业日第 1 位顾客会出现免倒计时教学单，完成整套制作与交付即可。"
@@ -2652,6 +2664,8 @@ func _refresh_p1_ui() -> void:
 	customer_line_label.text = "“%s”" % str(p1_session.order.customer_line)
 	patience_bar.visible = p1_session.has_patience_countdown
 	order_patience_bar.visible = p1_session.has_patience_countdown
+	patience_text_label.visible = true
+	patience_text_label.text = "耐心 %d秒" % ceili(p1_session.patience_seconds) if p1_session.has_patience_countdown else "教学单·不限时"
 	tutorial_guide_label.visible = not p1_session.has_patience_countdown
 	if tutorial_guide_label.visible:
 		get_node("SafeArea/BottomStrip").visible = true

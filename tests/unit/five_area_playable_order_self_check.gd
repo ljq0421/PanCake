@@ -17,23 +17,29 @@ func _run() -> void:
 	var first: Dictionary = GENERATOR.generate(progression, empty_inventory, 24680, 7, 8, 0)
 	var repeated: Dictionary = GENERATOR.generate(progression, empty_inventory, 24680, 7, 8, 0)
 	_check(first == repeated, "fixed seed and sequence generate an identical playable order")
-	_check(bool(first.get("success", false)) and Array(first.get("items", [])).size() == 1, "the three-area slice always generates a single-item order")
-	_check(_is_supported_area(_area_id(first)), "normal generation excludes soy-milk and steamer even when their data is unlocked")
+	_check(bool(first.get("success", false)) and Array(first.get("items", [])).size() >= 1 and Array(first.get("items", [])).size() <= 3, "full-table generation produces one to three items")
+	_check(_is_supported_area(_area_id(first)), "normal generation uses a supported five-area product")
 	_check(bool(first.get("success", false)), "normal generation ignores zero physical stock")
 
 	var seen := {}
 	var heated_count := 0
 	var sampled_only_supported := true
+	var complexity_counts := {1: 0, 2: 0, 3: 0}
 	for sequence in range(1, 401):
 		var generated: Dictionary = GENERATOR.generate(progression, empty_inventory, 24680, sequence, 8, 0)
+		var generated_items := Array(generated.get("items", []))
+		complexity_counts[generated_items.size()] = int(complexity_counts.get(generated_items.size(), 0)) + 1
+		for generated_item in generated_items:
+			var generated_area_id := StringName(Dictionary(generated_item).get("area_id", &""))
+			seen[generated_area_id] = true
+			sampled_only_supported = sampled_only_supported and _is_supported_area(generated_area_id)
 		var area_id := _area_id(generated)
-		seen[area_id] = true
-		sampled_only_supported = sampled_only_supported and _is_supported_area(area_id)
 		var item := _item(generated)
 		if area_id == &"area.packaged_drink" and StringName(item.get("temperature_mode", &"")) == &"heated":
 			heated_count += 1
-	_check(seen.has(&"area.pancake") and seen.has(&"area.packaged_drink") and seen.has(&"area.youtiao"), "deterministic weighted sampling can reach all three playable areas")
+	_check(seen.has(&"area.pancake") and seen.has(&"area.packaged_drink") and seen.has(&"area.youtiao") and seen.has(&"area.fresh_soy_milk") and seen.has(&"area.steamer"), "deterministic weighted sampling can reach all five playable areas")
 	_check(sampled_only_supported, "sampled normal orders stay inside the playable area allowlist")
+	_check(int(complexity_counts[1]) > int(complexity_counts[2]) and int(complexity_counts[2]) > int(complexity_counts[3]) and int(complexity_counts[3]) > 0, "deterministic full-table sampling follows the 72/20/8 ordering")
 	_check(heated_count > 0, "completed drink training enables deterministic heated-drink orders")
 
 	var teaching_progression := progression.duplicate(true)
@@ -48,7 +54,7 @@ func _run() -> void:
 	stocked_inventory["stock.packaged_drink.milk"] = 1
 	var teaching: Dictionary = GENERATOR.generate(teaching_progression, stocked_inventory, 9, 1, 3, 0)
 	_check(_area_id(teaching) == &"area.packaged_drink" and StringName(_item(teaching).get("temperature_mode", &"")) == &"room_temperature", "starter drink teaching is a room-temperature single item")
-	_check(is_equal_approx(float(Dictionary(teaching.get("metadata", {})).get("patience_seconds", 0.0)), 36.0), "drink teaching receives the specified 1.5x patience")
+	_check(bool(Dictionary(teaching.get("metadata", {})).get("tutorial_no_countdown", false)) and is_equal_approx(float(Dictionary(teaching.get("metadata", {})).get("patience_seconds", 0.0)), 24.0), "drink teaching is explicitly unlimited instead of receiving a hidden countdown")
 
 	var service: RefCounted = ORDER_SERVICE.new()
 	var opened: Dictionary = service.call("ensure_queue", 1, teaching)
@@ -67,11 +73,17 @@ func _run() -> void:
 	service.call("advance_patience", 10.0)
 	var restored: RefCounted = ORDER_SERVICE.new(service.call("snapshot"))
 	var restored_order: Dictionary = restored.call("current_order")
-	_check(is_equal_approx(float(restored_order.get("remaining_patience_seconds", 0.0)), 26.0), "remaining patience survives snapshot restore")
+	_check(is_equal_approx(float(restored_order.get("remaining_patience_seconds", 0.0)), 24.0), "tutorial patience remains unchanged across snapshot restore")
 	var expired: Dictionary = restored.call("advance_patience", 30.0)
-	_check(StringName(expired.get("terminal_state", &"")) == &"expired" and int(expired.get("reputation_delta", 0)) == -2, "patience exhaustion produces the formal expired loss")
-	_check(Array(restored.call("waiting_orders")).is_empty(), "the current slice exposes no waiting orders")
-	_check(StringName(Dictionary(restored.call("ensure_queue", 4, teaching)).get("reason", &"")) == &"waiting_queue_deferred", "four-order queue activation remains explicitly deferred")
+	_check(not expired.has("terminal_state") and not bool(expired.get("changed", true)), "tutorial patience never reaches an expired terminal state")
+	service = ORDER_SERVICE.new()
+	var queue_candidates: Array = Array(GENERATOR.generate_queue_candidates(progression, empty_inventory, 24680, 21, 4, 8, 0).get("candidates", []))
+	var queued: Dictionary = service.call("ensure_queue", 4, queue_candidates)
+	_check(bool(queued.get("success", false)) and Array(queued.get("queue", [])).size() == 4 and Array(service.call("waiting_orders")).size() == 3, "four-order queue exposes one active and three waiting orders")
+	var waiting_before: Dictionary = Dictionary(Array(service.call("waiting_orders"))[0])
+	service.call("advance_time", 3.0)
+	var waiting_after: Dictionary = Dictionary(Array(service.call("waiting_orders"))[0])
+	_check(is_equal_approx(float(waiting_before.get("remaining_patience_seconds", 0.0)), float(waiting_after.get("remaining_patience_seconds", 0.0))), "waiting orders do not consume patience")
 
 	var progression_service: RefCounted = PROGRESSION_SERVICE.new()
 	var first_failure: Dictionary = progression_service.call("record_tutorial_failure", &"area", &"area.pancake")
@@ -117,7 +129,7 @@ func _inventory(value: int) -> Dictionary:
 	var result := {}
 	for stock_id in [
 		"stock.pancake.batter", "stock.pancake.egg", "stock.pancake.baocui", "stock.pancake.scallion", "stock.pancake.sauce.sweet_flour",
-		"stock.packaged_drink.milk", "stock.youtiao.plain_dough",
+		"stock.packaged_drink.milk", "stock.youtiao.plain_dough", "stock.fresh_soy_milk.yellow_bean", "stock.steamer.mantou",
 	]:
 		result[stock_id] = value
 	return result

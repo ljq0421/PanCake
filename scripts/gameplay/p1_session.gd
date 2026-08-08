@@ -55,11 +55,25 @@ func start(next_order: Dictionary) -> void:
 
 
 func advance_time(delta: float) -> void:
+	_advance_time(delta, true)
+
+
+func advance_elapsed_time(delta: float) -> void:
+	_advance_time(delta, false)
+
+
+func mirror_formal_patience(remaining_seconds: float, tutorial_no_countdown: bool) -> void:
+	patience_seconds = maxf(remaining_seconds, 0.0)
+	has_patience_countdown = not tutorial_no_countdown
+	changed.emit()
+
+
+func _advance_time(delta: float, advance_patience: bool) -> void:
 	if phase in [Phase.HANDOFF, Phase.PAYMENT, Phase.RESULT]:
 		return
 	var safe_delta := maxf(delta, 0.0)
 	elapsed_seconds += safe_delta
-	if has_patience_countdown:
+	if advance_patience and has_patience_countdown:
 		patience_seconds = maxf(patience_seconds - safe_delta, 0.0)
 	changed.emit()
 

@@ -9,13 +9,19 @@ signal stock_changed(stock_id: StringName, current: int)
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const DRINK_MODEL := preload("res://scripts/gameplay/packaged_drink_heater_model.gd")
 const YOUTIAO_MODEL := preload("res://scripts/gameplay/youtiao_fryer_model.gd")
+const SOY_MODEL := preload("res://scripts/gameplay/fresh_soy_milk_machine_model.gd")
+const STEAMER_MODEL := preload("res://scripts/gameplay/steamer_layers_model.gd")
 const DRINK_DEVICE := &"device.packaged_drink_heater"
 const YOUTIAO_DEVICE := &"device.youtiao_fryer"
+const SOY_DEVICE := &"device.fresh_soy_milk_machine"
+const STEAMER_DEVICE := &"device.steamer"
 
 var _session: Node
 var _progression: RefCounted
 var _drink: RefCounted = DRINK_MODEL.new()
 var _youtiao: RefCounted = YOUTIAO_MODEL.new()
+var _soy: RefCounted = SOY_MODEL.new()
+var _steamer: RefCounted = STEAMER_MODEL.new()
 var _product_sequence := 0
 var _waste_events: Array[Dictionary] = []
 var _youtiao_job_profile: Dictionary = {}
@@ -41,8 +47,12 @@ func advance_time(delta: float) -> void:
 	_sync_ownership()
 	_drink.call("advance_time", step)
 	_youtiao.call("advance_time", step, _owns_automation(&"automation.youtiao.auto_lift"))
+	_soy.call("advance_time", step, _owns_automation(&"automation.fresh_soy_milk.auto_cup_rack"))
+	_steamer.call("advance_time", step)
 	machine_changed.emit(DRINK_DEVICE, machine_snapshot(DRINK_DEVICE))
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
+	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	machine_changed.emit(STEAMER_DEVICE, machine_snapshot(STEAMER_DEVICE))
 
 
 func machine_snapshot(device_id: StringName) -> Dictionary:
@@ -51,6 +61,10 @@ func machine_snapshot(device_id: StringName) -> Dictionary:
 		return Dictionary(_drink.call("snapshot")).duplicate(true)
 	if device_id == YOUTIAO_DEVICE:
 		return Dictionary(_youtiao.call("snapshot")).duplicate(true)
+	if device_id == SOY_DEVICE:
+		return Dictionary(_soy.call("snapshot")).duplicate(true)
+	if device_id == STEAMER_DEVICE:
+		return Dictionary(_steamer.call("snapshot")).duplicate(true)
 	return {"device_id": device_id, "owned": false, "state": &"unsupported"}
 
 
@@ -58,6 +72,8 @@ func all_machine_snapshots() -> Dictionary:
 	return {
 		DRINK_DEVICE: machine_snapshot(DRINK_DEVICE),
 		YOUTIAO_DEVICE: machine_snapshot(YOUTIAO_DEVICE),
+		SOY_DEVICE: machine_snapshot(SOY_DEVICE),
+		STEAMER_DEVICE: machine_snapshot(STEAMER_DEVICE),
 	}
 
 
@@ -130,6 +146,8 @@ func discard_drink(slot_index: int) -> Dictionary:
 
 
 func load_batch(device_id: StringName, recipe_id: StringName, quantity: int) -> Dictionary:
+	if device_id == SOY_DEVICE:
+		return load_soy_batch(recipe_id, quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
 	_sync_ownership()
@@ -159,6 +177,8 @@ func load_batch(device_id: StringName, recipe_id: StringName, quantity: int) -> 
 
 
 func perform_action(device_id: StringName, action_id: StringName) -> Dictionary:
+	if device_id == SOY_DEVICE:
+		return perform_soy_action(action_id)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
 	var result: Dictionary
@@ -175,6 +195,8 @@ func perform_action(device_id: StringName, action_id: StringName) -> Dictionary:
 
 
 func preview_collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
+	if device_id == SOY_DEVICE:
+		return preview_collect_soy(quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
 	var preview: Dictionary = _youtiao.call("preview_collect", quantity)
@@ -185,6 +207,8 @@ func preview_collect_batch(device_id: StringName, quantity: int = 1) -> Dictiona
 
 
 func collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
+	if device_id == SOY_DEVICE:
+		return collect_soy(quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
 	var result: Dictionary = _youtiao.call("collect", quantity)
@@ -200,6 +224,8 @@ func collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
 
 
 func discard_batch(device_id: StringName) -> Dictionary:
+	if device_id == SOY_DEVICE:
+		return discard_soy()
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
 	var before := machine_snapshot(YOUTIAO_DEVICE)
@@ -234,16 +260,179 @@ func run_confirmed_youtiao_auto_load() -> Dictionary:
 	return load_batch(YOUTIAO_DEVICE, StringName(_youtiao_job_profile.get("recipe_id", &"")), int(_youtiao_job_profile.get("quantity", 0)))
 
 
+func load_soy_batch(recipe_id: StringName, quantity: int) -> Dictionary:
+	_sync_ownership()
+	if not _owns_recipe(recipe_id):
+		return _failure(&"recipe_locked", {"recipe_id": recipe_id})
+	var recipe := CATALOG.recipe_definition(recipe_id)
+	if StringName(recipe.get("area_id", &"")) != &"area.fresh_soy_milk":
+		return _failure(&"invalid_recipe", {"recipe_id": recipe_id})
+	var source_stock_ids := Array(recipe.get("stock_ids", []))
+	if source_stock_ids.size() != 1:
+		return _failure(&"invalid_recipe_stock", {"recipe_id": recipe_id})
+	var stock_id := StringName(source_stock_ids[0])
+	var stock_ids: Array[StringName] = []
+	for _unit in range(quantity):
+		stock_ids.append(stock_id)
+	var rollback := Dictionary(_soy.call("snapshot")).duplicate(true)
+	var loaded: Dictionary = _soy.call("load_recipe", recipe_id, quantity)
+	if not bool(loaded.get("success", false)):
+		return loaded
+	var consumed := _consume(stock_ids)
+	if not bool(consumed.get("success", false)):
+		_soy.call("load_snapshot", rollback)
+		return consumed
+	_emit_stock(stock_id)
+	if _owns_automation(&"automation.fresh_soy_milk.auto_water_start"):
+		_soy.call("add_water")
+		_soy.call("start")
+	loaded["consumed_stock_ids"] = PackedStringArray(stock_ids.map(func(value): return str(value)))
+	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return loaded
+
+
+func perform_soy_action(action_id: StringName) -> Dictionary:
+	var result: Dictionary
+	match action_id:
+		&"add_water":
+			result = _soy.call("add_water")
+		&"start":
+			result = _soy.call("start")
+		_:
+			return _failure(&"unsupported_action", {"action_id": action_id})
+	if bool(result.get("success", false)):
+		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return result
+
+
+func preview_collect_soy(quantity: int = 1) -> Dictionary:
+	var preview: Dictionary = _soy.call("preview_collect", quantity)
+	if not bool(preview.get("success", false)):
+		return preview
+	var product := _new_product(StringName(preview.get("product_id", &"")), &"area.fresh_soy_milk", &"room_temperature", float(preview.get("quality", 0.0)), StringName(preview.get("grade", &"waste")), false)
+	return _success({"product": product, "quantity": quantity})
+
+
+func collect_soy(quantity: int = 1) -> Dictionary:
+	var result: Dictionary = _soy.call("collect", quantity)
+	if not bool(result.get("success", false)):
+		return result
+	return _commit_products_from_result(result, &"area.fresh_soy_milk", quantity, SOY_DEVICE)
+
+
+func collect_soy_output(slot_index: int) -> Dictionary:
+	var result: Dictionary = _soy.call("collect_output", slot_index)
+	if not bool(result.get("success", false)):
+		return result
+	var committed := _commit_products_from_result(result, &"area.fresh_soy_milk", 1, SOY_DEVICE)
+	committed["slot_index"] = slot_index
+	return committed
+
+
+func discard_soy() -> Dictionary:
+	var before := machine_snapshot(SOY_DEVICE)
+	var result: Dictionary = _soy.call("discard")
+	if not bool(result.get("success", false)):
+		return result
+	var recipe := CATALOG.recipe_definition(StringName(result.get("recipe_id", &"")))
+	var stock_ids := Array(recipe.get("stock_ids", []))
+	var unit_cost := _stock_cost(StringName(stock_ids[0])) if not stock_ids.is_empty() else 0
+	var entry := _record_waste(&"area.fresh_soy_milk", SOY_DEVICE, StringName(recipe.get("product_id", &"")), &"soy_spoiled", int(result.get("quantity", 0)), unit_cost * int(result.get("quantity", 0)))
+	entry["quality_before_discard"] = float(before.get("quality", 0.0))
+	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return _success({"waste": entry})
+
+
+func discard_soy_output(slot_index: int) -> Dictionary:
+	var result: Dictionary = _soy.call("discard_output", slot_index)
+	if not bool(result.get("success", false)):
+		return result
+	var recipe := CATALOG.recipe_definition(StringName(result.get("recipe_id", &"")))
+	var stock_ids := Array(recipe.get("stock_ids", []))
+	var unit_cost := _stock_cost(StringName(stock_ids[0])) if not stock_ids.is_empty() else 0
+	var entry := _record_waste(&"area.fresh_soy_milk", &"output.fresh_soy_milk", StringName(recipe.get("product_id", &"")), &"soy_output_discarded", 1, unit_cost)
+	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return _success({"waste": entry})
+
+
+func load_steamer_layer(layer_index: int, recipe_id: StringName, quantity: int = 1) -> Dictionary:
+	_sync_ownership()
+	if not _owns_recipe(recipe_id):
+		return _failure(&"recipe_locked", {"recipe_id": recipe_id})
+	var recipe := CATALOG.recipe_definition(recipe_id)
+	if StringName(recipe.get("area_id", &"")) != &"area.steamer":
+		return _failure(&"invalid_recipe", {"recipe_id": recipe_id})
+	var source_stock_ids := Array(recipe.get("stock_ids", []))
+	if source_stock_ids.size() != 1:
+		return _failure(&"invalid_recipe_stock")
+	var stock_id := StringName(source_stock_ids[0])
+	var stock_ids: Array[StringName] = []
+	for _unit in range(quantity):
+		stock_ids.append(stock_id)
+	var rollback := Dictionary(_steamer.call("snapshot")).duplicate(true)
+	var loaded: Dictionary = _steamer.call("load_layer", layer_index, recipe_id, quantity)
+	if not bool(loaded.get("success", false)):
+		return loaded
+	var consumed := _consume(stock_ids)
+	if not bool(consumed.get("success", false)):
+		_steamer.call("load_snapshot", rollback)
+		return consumed
+	_emit_stock(stock_id)
+	loaded["consumed_stock_ids"] = PackedStringArray(stock_ids.map(func(value): return str(value)))
+	machine_changed.emit(STEAMER_DEVICE, machine_snapshot(STEAMER_DEVICE))
+	return loaded
+
+
+func perform_steamer_action(layer_index: int, action_id: StringName) -> Dictionary:
+	if action_id != &"start":
+		return _failure(&"unsupported_action", {"action_id": action_id})
+	var result: Dictionary = _steamer.call("start_layer", layer_index)
+	if bool(result.get("success", false)):
+		machine_changed.emit(STEAMER_DEVICE, machine_snapshot(STEAMER_DEVICE))
+	return result
+
+
+func preview_collect_steamer(layer_index: int) -> Dictionary:
+	var preview: Dictionary = _steamer.call("preview_collect", layer_index)
+	if not bool(preview.get("success", false)):
+		return preview
+	var product := _new_product(StringName(preview.get("product_id", &"")), &"area.steamer", &"room_temperature", float(preview.get("quality", 0.0)), StringName(preview.get("grade", &"waste")), false)
+	return _success({"product": product, "quantity": int(preview.get("quantity", 1)), "layer_index": layer_index})
+
+
+func collect_steamer(layer_index: int) -> Dictionary:
+	var result: Dictionary = _steamer.call("collect", layer_index)
+	if not bool(result.get("success", false)):
+		return result
+	var committed := _commit_products_from_result(result, &"area.steamer", int(result.get("quantity", 1)), STEAMER_DEVICE)
+	committed["layer_index"] = layer_index
+	return committed
+
+
+func discard_steamer(layer_index: int) -> Dictionary:
+	var result: Dictionary = _steamer.call("discard", layer_index)
+	if not bool(result.get("success", false)):
+		return result
+	var recipe := CATALOG.recipe_definition(StringName(result.get("recipe_id", &"")))
+	var stock_ids := Array(recipe.get("stock_ids", []))
+	var unit_cost := _stock_cost(StringName(stock_ids[0])) if not stock_ids.is_empty() else 0
+	var entry := _record_waste(&"area.steamer", StringName("%s.layer.%d" % [STEAMER_DEVICE, layer_index]), StringName(recipe.get("product_id", &"")), &"steamer_discarded", int(result.get("quantity", 0)), unit_cost * int(result.get("quantity", 0)))
+	machine_changed.emit(STEAMER_DEVICE, machine_snapshot(STEAMER_DEVICE))
+	return _success({"waste": entry})
+
+
 func waste_events() -> Array[Dictionary]:
 	return _waste_events.duplicate(true)
 
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 1,
+		"version": 2,
 		"product_sequence": _product_sequence,
 		"packaged_drink_heater": _drink.call("snapshot"),
 		"youtiao_fryer": _youtiao.call("snapshot"),
+		"fresh_soy_milk_machine": _soy.call("snapshot"),
+		"steamer": _steamer.call("snapshot"),
 		"waste_events": _waste_events.duplicate(true),
 		"youtiao_job_profile": _youtiao_job_profile.duplicate(true),
 	}
@@ -258,9 +447,15 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	_sync_ownership()
 	var drink_result: Dictionary = _drink.call("load_snapshot", Dictionary(value.get("packaged_drink_heater", {})))
 	var youtiao_result: Dictionary = _youtiao.call("load_snapshot", Dictionary(value.get("youtiao_fryer", {})))
+	var soy_result: Dictionary = _soy.call("load_snapshot", Dictionary(value.get("fresh_soy_milk_machine", {})))
+	var steamer_result: Dictionary = _steamer.call("load_snapshot", Dictionary(value.get("steamer", {})))
 	if not bool(drink_result.get("success", false)):
 		return drink_result
-	return youtiao_result
+	if not bool(youtiao_result.get("success", false)):
+		return youtiao_result
+	if not bool(soy_result.get("success", false)):
+		return soy_result
+	return steamer_result
 
 
 func _sync_ownership() -> void:
@@ -270,6 +465,10 @@ func _sync_ownership() -> void:
 		_drink.call("configure_owned", int(_progression.call("device_tier", DRINK_DEVICE)))
 	if bool(_progression.call("owns_area", &"area.youtiao")):
 		_youtiao.call("configure_owned", int(_progression.call("device_tier", YOUTIAO_DEVICE)))
+	if bool(_progression.call("owns_area", &"area.fresh_soy_milk")):
+		_soy.call("configure_owned", int(_progression.call("device_tier", SOY_DEVICE)))
+	if bool(_progression.call("owns_area", &"area.steamer")):
+		_steamer.call("configure_owned", int(_progression.call("device_tier", STEAMER_DEVICE)))
 
 
 func _owns_product(product_id: StringName) -> bool:
@@ -314,6 +513,16 @@ func _new_product(product_id: StringName, area_id: StringName, temperature_mode:
 		"status": &"available",
 		"owner_order_id": &"",
 	}
+
+
+func _commit_products_from_result(result: Dictionary, area_id: StringName, quantity: int, source_device_id: StringName) -> Dictionary:
+	var products: Array[Dictionary] = []
+	for _unit in range(maxi(quantity, 0)):
+		var product := _new_product(StringName(result.get("product_id", &"")), area_id, &"room_temperature", float(result.get("quality", 0.0)), StringName(result.get("grade", &"waste")))
+		products.append(product)
+		product_created.emit(product.duplicate(true))
+	machine_changed.emit(source_device_id, machine_snapshot(source_device_id))
+	return _success({"products": products, "product": products[0] if not products.is_empty() else {}, "remaining_quantity": result.get("remaining_quantity", 0)})
 
 
 func _record_waste(area_id: StringName, source_id: StringName, product_id: StringName, reason: StringName, quantity: int, attributed_cost: int) -> Dictionary:

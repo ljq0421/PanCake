@@ -1,0 +1,3291 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "included": "all existing formal art PNGs except backgrounds, customers, and style guides; plus 40 explicit five-area gaps",
+    "excluded": [
+      "backgrounds",
+      "customers",
+      "style_guides"
+    ],
+    "naming": "same-directory *_five_area_v2.png siblings"
+  },
+  "counts": {
+    "total": 196,
+    "families": {
+      "item_icon": 59,
+      "ingredient_slot_icon": 36,
+      "ui_icon": 18,
+      "supplier_portrait": 1,
+      "ui_panel": 3,
+      "order_card": 3,
+      "wide_workstation_decor": 9,
+      "workstation_sprite": 44,
+      "machine": 12,
+      "griddle": 3,
+      "shader_texture": 8
+    }
+  },
+  "entries": [
+    {
+      "asset_id": "baocui_broken_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/baocui_broken_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/baocui_broken_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "bffce7b3b5b5479762abe35898499878dea8415d921db55733a4e4c0be4a1285",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_intact_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/baocui_intact_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/baocui_intact_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "19d3a647a24137251402982f8c99c13e7d741410258503cb4dcc184de16c077e",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_stock_1_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e1e6eae5517d2c8f78f0f293497ca1f18557a65ce01007d9e998542d2cdeea81",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_stock_2_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "00c8a60c84bcac4f7a31214d48b2f85ddc9d01f9d6ff8fb227066d4c0b60e7c2",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_stock_3_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7e2d71aadbb5efe7fff7b88a98fe0622ea37b74ca6d82c1c6331b42a2b13c1ae",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_stock_4_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "1f24f15c830f37be1c29ecfa628237d1d69e9b9d4734d49b6ebf390a6e00d686",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_stock_5_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ee64e9d921d00d756d8558691b880e8df1ee2d0a88cae835df4d7c3722287fb6",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_stock_6_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1.png",
+      "target_path": "res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ae8cdd2b9b09b8cc643fca6231aa484dce339478f56bfbb845fe9d0c0a8f3b28",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_bean_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/beans/black_bean_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "106624b23de2bc93f89d288c26a38540d3672179d54e9297bb93e7c5a9a9b9d5",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "mung_bean_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/beans/mung_bean_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/beans/mung_bean_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a26cfa06383ddc840adb5e0f5b52bfed6eeb78483115d8fff29c0d795d897a6c",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "red_bean_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/beans/red_bean_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "d491abc66dc48acae45120cb2194017ad43a9f592112b45ec8cd0109da9d40db",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_cracked_raw_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/egg_cracked_raw_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/egg_cracked_raw_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a0aaeeb885d5fde9d8f9ce5d30929a7301d4516bdc578a133adc9271effb4339",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_cracked_raw_v2_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/egg_cracked_raw_v2.png",
+      "target_path": "res://resources/art/ingredients/egg/egg_cracked_raw_v2_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "73c5f57b5c6cb023d4f73a0b0515a26c69469f77b125af0d194dac34205b037f",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_whole_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/egg_whole_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "6735d8490026a1bb4b5f63f2ba8c7d2a348b0a166fff7cf5d509a28023527357",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_stock_1_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/stock/egg_stock_1_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_1_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7c773ebb32abaca06c5b01f35155010ebc7a81181a52aeec895393a8ced32819",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_stock_2_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/stock/egg_stock_2_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_2_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "4aba22b2340d94a14c5551cf45ba77057e6858c78f5e635424f2f5c73fd024b1",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_stock_3_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/stock/egg_stock_3_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_3_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f33bf9899e6238a91308b77c17bdde15f42ea0d266f38d2b9df04ef6cb3dc8b9",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_stock_4_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/stock/egg_stock_4_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_4_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "b3ff98aef9eb4b86c52db907fdaf9f8e24d7d5cf6d7dd00c2f9cb4cf016e8e48",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_stock_5_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/stock/egg_stock_5_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_5_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "915b467d509cc9628923040e9a42d40e1c6c32e2c1fae1cb5d959c49d575930d",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_stock_6_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/egg/stock/egg_stock_6_v1.png",
+      "target_path": "res://resources/art/ingredients/egg/stock/egg_stock_6_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "c602f183904efa95f902e3045d8a6b8c2854c184ecde93328569257100c113bf",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "five_grain_mix_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/grains/five_grain_mix_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "08c1cac95310be80b240fe7de7c0ca9534b020183d2ff9a29a622942dae2fd52",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_slices_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "c45d052ffdb1b81080d5a944d0f2056739915f2a461fb68489071d3090497f1c",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_whole_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/ham_sausage_whole_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/ham_sausage_whole_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "930250a5fee8ab319a0932b552865c1fa990f896ddc98e20a749ac43d514a6c3",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_1_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "0be3814fd327ccae28a977937adaeb96a38226bdeb455846125ac210bcc92b35",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_2_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "9c4406dfcc491e80301fc837d266fdd9fb933eafb01a734b188e3eaf986e6200",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_3_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "707dea7435c0100790a9cbc426e0bd8f06299b6ba8dfd6f44f7cb76d7f649344",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_4_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "068a9c5acb1e6d06313a647113e866bc0ff300acd1b2492034fd58243bd3e4f8",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_5_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "1efc7c8b3da53b087f471b788a5dc1458c8b3046a01c152f29caec99fc943ae5",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_sausage_stock_6_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1.png",
+      "target_path": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "249fb384770c2a769e21c3e676e7d7291229512161646bfc20e6ed39c89458e0",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_floss_pile_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png",
+      "target_path": "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7bee81995798f8b5dded4dbf529a0329809037e3a30293771a168cca6e19f8e4",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_floss_scattered_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1.png",
+      "target_path": "res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "8f9bef3c408c8714ee06eb47e686965f19e2850052bf3aa51005492991dd579e",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "peanut_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/nuts/peanut_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/nuts/peanut_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "790f6a01e0de29c67e97bc00d366c01af6f2fb059b41e1f39b94f745bbe34c07",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pork_tenderloin_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "4636081e64f7595e637d577c32ca7aad864c43b66bd7996e72fed8ae4e124b63",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pork_tenderloin_slices_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1.png",
+      "target_path": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e2e32fb56d485a9690260cf2e46c2b079b20f1880950c42d360040923daea1bc",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_pile_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/scallion_pile_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/scallion_pile_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a0eb1accdb4e65b665b82f0ceb11049b33793a344d9aa1a78f9828d9fd87a98f",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_scattered_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/scallion_scattered_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "5210d2b22dc5842f1659179e76496e205d5a323b2d32f1111d07a1b90db8f96a",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_1_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "5a9ce3ea586a5e3ed1ba4ad77ea9ae0bb954b8727d592e2dcb9fcfa27bcf1441",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_2_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "d640a66bbb6b05775e91bb5c262babcd8e2c2e74b4e9c3aa3ac7267819669d07",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_3_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "195d7ad688e5ed4f3de090de85e1eb6081fa5a3e9759685d40037e0cd7139a0e",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_4_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7a78a097f17c51b6dd7803f0cfb090750cad279c547fd3093ef8ef2964796bc3",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_5_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "9fc5c4c700f3ae62e60cbaab8a336ee9ac2d5adb151cb4ca0d602ca67a9e9435",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_stock_6_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1.png",
+      "target_path": "res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "93807c5f1279e9661f646a6d1538020a49bc52c79ebde21031ae95400f893e6b",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "yellow_soybean_portion_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/soybean/yellow_soybean_portion_v1.png",
+      "target_path": "res://resources/art/ingredients/soybean/yellow_soybean_portion_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "b9fc7a17014064ef4d1aa872ae4e47aca3605e83c34f317e9c8cd4b5c2ea6111",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "filled_youtiao_dough_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/youtiao/filled_youtiao_dough_v1.png",
+      "target_path": "res://resources/art/ingredients/youtiao/filled_youtiao_dough_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "2e18e2fc7874811b77efdbd10dbe13d8a316cb46d85370585a4853e71607128a",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "glutinous_rice_youtiao_dough_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/youtiao/glutinous_rice_youtiao_dough_v1.png",
+      "target_path": "res://resources/art/ingredients/youtiao/glutinous_rice_youtiao_dough_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e329569fe81a1aec337fc1eae8cbf723ec592a1f0122c258214a857f33d9bb18",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "multigrain_youtiao_dough_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/youtiao/multigrain_youtiao_dough_v1.png",
+      "target_path": "res://resources/art/ingredients/youtiao/multigrain_youtiao_dough_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "33b740077177c4fab7bdfe5096f0990e581fccbb14300e11a1e396359cfc09fa",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "plain_youtiao_dough_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1.png",
+      "target_path": "res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "eefebd6cc6c909cea9eb35b600924f2cdf7127fd19d1beea2f3537768a0467ba",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_youtiao_dough_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/youtiao/scallion_youtiao_dough_v1.png",
+      "target_path": "res://resources/art/ingredients/youtiao/scallion_youtiao_dough_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "30f58941400fa7fb90bea83bc98fc2b6a18ad38c038bd23e3826ee1da43af5d9",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sesame_youtiao_dough_v1_five_area_v2",
+      "source_path": "res://resources/art/ingredients/youtiao/sesame_youtiao_dough_v1.png",
+      "target_path": "res://resources/art/ingredients/youtiao/sesame_youtiao_dough_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "57a564d3c74d9d1c9b52e52724c5c9c0986abdb9d513818c21336a42bca16c66",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_10_v1_five_area_v2",
+      "source_path": "res://resources/art/payments/coin_10_v1.png",
+      "target_path": "res://resources/art/payments/coin_10_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "0afcfdcc66ef858485ec9be2dc2a36cfaeb03a07778a21bb957f9f0ee5a8bfe2",
+      "runtime_references": [
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_1_v1_five_area_v2",
+      "source_path": "res://resources/art/payments/coin_1_v1.png",
+      "target_path": "res://resources/art/payments/coin_1_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "958e7f452963472a5474a99a9b8e955faba65cac73be5ebe3f0d7b6c73f98360",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_20_v1_five_area_v2",
+      "source_path": "res://resources/art/payments/coin_20_v1.png",
+      "target_path": "res://resources/art/payments/coin_20_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ae44ae382edb90e99e342ce6fee00000a782e3cd3729143977437321248c37f3",
+      "runtime_references": [
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_2_v1_five_area_v2",
+      "source_path": "res://resources/art/payments/coin_2_v1.png",
+      "target_path": "res://resources/art/payments/coin_2_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "fee0a1a5fd0f5eadff2ad1c74edf2758c670a45017923efb2a4cb25bb4e84f47",
+      "runtime_references": [
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coin_5_v1_five_area_v2",
+      "source_path": "res://resources/art/payments/coin_5_v1.png",
+      "target_path": "res://resources/art/payments/coin_5_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "090103d0903a70f701c0e43c84a6f4a37395d901e4284af29ccc38d49cfc151a",
+      "runtime_references": [
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "payment_cash_small_v1_five_area_v2",
+      "source_path": "res://resources/art/payments/payment_cash_small_v1.png",
+      "target_path": "res://resources/art/payments/payment_cash_small_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "9724a259a133e73c84a188f5b2f3226d917ed761df96a470466ce190500b656b",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_bean_soy_milk_cup_v1_five_area_v2",
+      "source_path": "res://resources/art/products/soy_milk/black_bean_soy_milk_cup_v1.png",
+      "target_path": "res://resources/art/products/soy_milk/black_bean_soy_milk_cup_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "10d0001c7476994ad585aecbf2432a5f79f1e21578d55899d5b6b0fa1da773b3",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "five_grain_soy_milk_cup_v1_five_area_v2",
+      "source_path": "res://resources/art/products/soy_milk/five_grain_soy_milk_cup_v1.png",
+      "target_path": "res://resources/art/products/soy_milk/five_grain_soy_milk_cup_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "2638dec0ca382a61b23c0f16318f136b009cf96b66ce995155871c191906d731",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "mung_bean_soy_milk_cup_v1_five_area_v2",
+      "source_path": "res://resources/art/products/soy_milk/mung_bean_soy_milk_cup_v1.png",
+      "target_path": "res://resources/art/products/soy_milk/mung_bean_soy_milk_cup_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "55e32f6355cbb8441d0d97ec9343b60e100e75551cfbafdc64e15cba0b520cd3",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "peanut_soy_milk_cup_v1_five_area_v2",
+      "source_path": "res://resources/art/products/soy_milk/peanut_soy_milk_cup_v1.png",
+      "target_path": "res://resources/art/products/soy_milk/peanut_soy_milk_cup_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "d27346265c12539b433cb5c8cb520c97de1080a0e154c1898736bcb7b8c1f2a6",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "plain_soy_milk_cup_v1_five_area_v2",
+      "source_path": "res://resources/art/products/soy_milk/plain_soy_milk_cup_v1.png",
+      "target_path": "res://resources/art/products/soy_milk/plain_soy_milk_cup_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "76fec4cebed9b6a156040eb061bce2053cb2afc7362fafc23918de9e5a2c1262",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "red_bean_soy_milk_cup_v1_five_area_v2",
+      "source_path": "res://resources/art/products/soy_milk/red_bean_soy_milk_cup_v1.png",
+      "target_path": "res://resources/art/products/soy_milk/red_bean_soy_milk_cup_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "426c87c0d8b76606c5f9c92655cf7cdd86bb847dfcebeadd0ab3d04d69d0316a",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "filled_youtiao_v1_five_area_v2",
+      "source_path": "res://resources/art/products/youtiao/filled_youtiao_v1.png",
+      "target_path": "res://resources/art/products/youtiao/filled_youtiao_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e5fa50c960dd39a58660ea89e1eb97f1bc4c7d35ed30d94fb408cd44f3ad2b71",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "glutinous_rice_youtiao_v1_five_area_v2",
+      "source_path": "res://resources/art/products/youtiao/glutinous_rice_youtiao_v1.png",
+      "target_path": "res://resources/art/products/youtiao/glutinous_rice_youtiao_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "bd7917705bb8916687668973116d44daee22c9c26d5c71dd7ca0949dd4275d00",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "multigrain_youtiao_v1_five_area_v2",
+      "source_path": "res://resources/art/products/youtiao/multigrain_youtiao_v1.png",
+      "target_path": "res://resources/art/products/youtiao/multigrain_youtiao_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "6987bed521b0830e5de47d5760b4b38653a1cbfa1742083b96a0c492fd6307cb",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "plain_youtiao_v1_five_area_v2",
+      "source_path": "res://resources/art/products/youtiao/plain_youtiao_v1.png",
+      "target_path": "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "34e0e4eaebdb06e441957d1f9d5d5b13011972ae4fdfd40ceed47883bf474af5",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_youtiao_v1_five_area_v2",
+      "source_path": "res://resources/art/products/youtiao/scallion_youtiao_v1.png",
+      "target_path": "res://resources/art/products/youtiao/scallion_youtiao_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "519920514773f40119a12baae9f2531037daa1f2315ae5e0ddfda115375ad236",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sesame_youtiao_v1_five_area_v2",
+      "source_path": "res://resources/art/products/youtiao/sesame_youtiao_v1.png",
+      "target_path": "res://resources/art/products/youtiao/sesame_youtiao_v1_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "b4031110b50ab2ec001a872c8324acb65bdae0d96d36e0cad8115cbca9e27feb",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "supplier_01_neutral_v1_five_area_v2",
+      "source_path": "res://resources/art/suppliers/supplier_01/supplier_01_neutral_v1.png",
+      "target_path": "res://resources/art/suppliers/supplier_01/supplier_01_neutral_v1_five_area_v2.png",
+      "family": "supplier_portrait",
+      "canvas": [
+        512,
+        768
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "4c616a44bdfada6829141edf7d59c943a585770b4dd07d28c794ab608684ff48",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "day_summary_panel_base_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/day_summary/day_summary_panel_base_v1.png",
+      "target_path": "res://resources/art/ui/day_summary/day_summary_panel_base_v1_five_area_v2.png",
+      "family": "ui_panel",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "6ccd8b1a264163cb5b09a9989ad6ecfd3801947a1536c0e9cb8d798aee09ca81",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "currency_coin_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/economy/currency_coin_v1.png",
+      "target_path": "res://resources/art/ui/economy/currency_coin_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "61984d7f39db3ea865e82d538d631970c60787a0588c8df5e2c9ee53ead75d22",
+      "runtime_references": [
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "reputation_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/economy/reputation_v1.png",
+      "target_path": "res://resources/art/ui/economy/reputation_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "4b0b00351cab49689f4c27d314922ad31f6dce3d7609abfc0ae0aaf9148ec6f1",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/economy/upgrade_v1.png",
+      "target_path": "res://resources/art/ui/economy/upgrade_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "dbd1795a3151688f89a7e96d203413b3f80ed67518c3ba33e55886562cc67580",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "order_card_base_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/order/order_card_base_v1.png",
+      "target_path": "res://resources/art/ui/order/order_card_base_v1_five_area_v2.png",
+      "family": "order_card",
+      "canvas": [
+        600,
+        740
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ca4bb3f46ba37744bd92d6c3fea96b81124a42ca8d1ec241afaf7f3cd894faca",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "order_card_multi_dish_v2_five_area_v2",
+      "source_path": "res://resources/art/ui/order/order_card_multi_dish_v2.png",
+      "target_path": "res://resources/art/ui/order/order_card_multi_dish_v2_five_area_v2.png",
+      "family": "order_card",
+      "canvas": [
+        600,
+        740
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "282a919383f2180aecb65a22496a3f294cb6978ea7c0828c15fba66f1949e509",
+      "runtime_references": [
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "order_card_multi_dish_v3_five_area_v2",
+      "source_path": "res://resources/art/ui/order/order_card_multi_dish_v3.png",
+      "target_path": "res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png",
+      "family": "order_card",
+      "canvas": [
+        600,
+        740
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "8ed998730224ca0cc9f4df7ea0a33be658c98f13f60211022fba72e38c3ea793",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_egg_spread_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_egg_spread_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "183c2c53ca7d27db15f1a9ee3f0ff85e335ce86351de53a83c7e0627b626301b",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_fold_stability_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_fold_stability_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_fold_stability_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "be15b2b30d62f30f7bff5f3c72526888969e835faff2d3d354d63510054a8404",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_heat_uniformity_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_heat_uniformity_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_heat_uniformity_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ac4c0650e8439f1bc0270b8ce1ad12e01fb59195d34e68f22976b16d6f1e6bb0",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_ingredient_distribution_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_ingredient_distribution_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_ingredient_distribution_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "56d0ce1ef25dcbd6510f7cb0e25959ee4333cf681c1282691aa17945eac18369",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_integrity_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_integrity_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_integrity_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "0a0dcb74ddb8a399ded587c41374a8ca3618d30098d1c8ede8ac429cec7fddeb",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_order_correctness_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_order_correctness_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_order_correctness_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a48939c670376b85605193bfab32167d44bfe17e7cc74b3100a90ce47a2fbac4",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_preparation_time_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_preparation_time_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_preparation_time_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "0cd2dfb8809d1171c0b644ac1ea11878fda376f1fa5e653fb3ac8268fc3a1a36",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_sauce_coverage_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_sauce_coverage_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_sauce_coverage_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "04554caf5b8033862b6a8203a677a24c8741dfe2df1e4fb7a769d1192bc547e2",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "quality_thickness_uniformity_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/quality/quality_thickness_uniformity_v1.png",
+      "target_path": "res://resources/art/ui/quality/quality_thickness_uniformity_v1_five_area_v2.png",
+      "family": "ui_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "3dfe7fb2102abafc2dcea5eedc4008ce6f46a12ba6b4c4267a78ac271c9c79b2",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "signature_recipe_panel_base_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/recipe/signature_recipe_panel_base_v1.png",
+      "target_path": "res://resources/art/ui/recipe/signature_recipe_panel_base_v1_five_area_v2.png",
+      "family": "ui_panel",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "9427065aad5b1f9a52f12ee6438c6ce105e3ce83d9b3371f6ccd671898a56e1e",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "supplier_event_panel_base_v1_five_area_v2",
+      "source_path": "res://resources/art/ui/supplier_event/supplier_event_panel_base_v1.png",
+      "target_path": "res://resources/art/ui/supplier_event/supplier_event_panel_base_v1_five_area_v2.png",
+      "family": "ui_panel",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "86d384cfb33c2063f142cd2d74ffdf52632e42e1189f509e04187c284a745db1",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_rack_support_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/decor/tier_01_ingredient_rack/ingredient_rack_support_v1.png",
+      "target_path": "res://resources/art/workstation/decor/tier_01_ingredient_rack/ingredient_rack_support_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "85ae7b9f1095fa7c25ad341d7de2ba27d9222fb723c7591f19558f5a4347549c",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "storage_label_rail_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/decor/tier_02_storage/storage_label_rail_v1.png",
+      "target_path": "res://resources/art/workstation/decor/tier_02_storage/storage_label_rail_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "12213d819588c72290c8e25df2f26a37392c25c0bac1698a1cd7f1dc6bc6afd8",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "blank_order_clipboard_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/decor/tier_03_order/blank_order_clipboard_v1.png",
+      "target_path": "res://resources/art/workstation/decor/tier_03_order/blank_order_clipboard_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ab47c7a5b3cf8c34d556f767c29f4c1779873a4569301def74e5dc2a1eb52e90",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "awning_side_lamps_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/decor/tier_04_shelter/awning_side_lamps_v1.png",
+      "target_path": "res://resources/art/workstation/decor/tier_04_shelter/awning_side_lamps_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a354d1d0fdee51ee8d4f85de760aa9e77d6813029a3a2afb1e7f8552fa5e85b0",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "tray_trim_customer_clips_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/decor/tier_05_finish/tray_trim_customer_clips_v1.png",
+      "target_path": "res://resources/art/workstation/decor/tier_05_finish/tray_trim_customer_clips_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "26ce39126da8db832bfa5301a53ce4b33df6c6659e31a99724a6304cee87fb52",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_1_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_1_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_1_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "59e7ee4240c1e94cf20a109f448fd84e35eb4dc93c6b1f09732f987199a95dd3",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_2_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_2_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_2_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "c4e4a3f89b80c8958912ccd366b628eae978149febb27e4a8f5c5dab22d3c2c5",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_3_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_3_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_3_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "d3fb8a44c9fff1dffd46a153f3bfc79b29ebd3792283926034fc7112fc2e0943",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_1_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ce1180c29007109d022d0c126826e1b5b581c75c5fa69b1b8e1d1c267763b81a",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_2_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "3ac48a007048b84416d422c0291e5e54a602af370f58eb120d681832e325b0e0",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_3_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "9916cf8844b2d6b445e927bb4ae27230358a7e132c050b54e45847ad0fbee1e0",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_1_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "955006ffbf1cf080857cee8c7d5f4d4a5967e4d6d863acad8baa296acdb306c2",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_2_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_v1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "9c89aacb6cac6660dd4e4f1284c4b7975a71c65aff10ac6d929dde10caa51cd0",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_3_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_v1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e41c183eb390639801a73be105bf1a3a6476489dc662cca89da74dde64822758",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "automatic_sauce_brush_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "b371b75d0714ef1a5ddd21fc91497aa18efad9af4642a989c50179f5ed1e10ef",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "tests/unit/workstation_expansion_asset_self_check.gd",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "single_press_spreader_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/tools/single_press_spreader_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "b60021375c5687204e22e0469d3e797794d8bb77d874d530f83b863bf57067a6",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "tests/unit/workstation_expansion_asset_self_check.gd",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_slot_locked_cover_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "fc48259e7884543a6b112713f9c42d6e8e5f4cbc9514466c51478236036ff012",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_tray_4x3_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/expansion/trays/ingredient_tray_4x3_v1.png",
+      "target_path": "res://resources/art/workstation/expansion/trays/ingredient_tray_4x3_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7ba4e796918b8badac84ccde0bed2a2712d6677301ad7b145213f6042cf3e3c7",
+      "runtime_references": [
+        "tests/unit/workstation_expansion_asset_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "workstation_front_lip_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/foreground/workstation_front_lip_v1.png",
+      "target_path": "res://resources/art/workstation/foreground/workstation_front_lip_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "c667055231c45209370faef8cd8125666f622790d3409c9e2df83629665d9e7d",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/m0_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "griddle_base_angled_ellipse_v3_five_area_v2",
+      "source_path": "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3.png",
+      "target_path": "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3_five_area_v2.png",
+      "family": "griddle",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f7f165126ce42447604bdb4db73c6dcf43f8492b2ad6558276995338884f037a",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "tests/integration/m0_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "griddle_base_compact_v2_five_area_v2",
+      "source_path": "res://resources/art/workstation/griddle/griddle_base_compact_v2.png",
+      "target_path": "res://resources/art/workstation/griddle/griddle_base_compact_v2_five_area_v2.png",
+      "family": "griddle",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "192b47fcca4d37bd79e979454d481e2662b334e6a5d56f0ca374d13398cc5dc0",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "griddle_base_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/griddle/griddle_base_v1.png",
+      "target_path": "res://resources/art/workstation/griddle/griddle_base_v1_five_area_v2.png",
+      "family": "griddle",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "d9c5992b9432f185cf9034046021801330c65ff834cc64016d9ff0c47c7f709c",
+      "runtime_references": [
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_01_egg_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_01_egg_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_01_egg_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "668f0275a6a37db017139c1cf9300d16c839c90159ad3c3b49a832e632f012b6",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_02_baocui_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "8b2db1dcac07957fa79f03f42169e52c58e828655215439c925fee0c32c830e1",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_03_scallion_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "02568bc61aef055352ebf0de77e8acb32eeb6b4fc614bf367653d07d5619f9a7",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_04_sweet_flour_sauce_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_04_sweet_flour_sauce_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_04_sweet_flour_sauce_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "3431784c00c05cf3f009bc62d15cfae06b346a80e1a546d8cd96600c92074400",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_05_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_05_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_05_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e6116eeb2f8568bb08abb58f753e8f000c4ee56ad6848b7f57a88fdd69386b9d",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_06_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_06_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_06_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7cee51146a16f94ab0b4c6f03831f8d56dbe5342f58cbe35726973091a9a0668",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_07_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_07_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_07_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a81616e0fa6440608cbc5424072a0adab1f959b2925662fde032d31286f63d7e",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_08_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_08_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_08_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a304586cac08be8192853da3f641a8381c45ebd38d75d5789f0a550a4defc288",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_09_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_09_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_09_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "3c74445e19d3ebbee35a7049f333b495a2e9dbee2aa6f9a4a056a348152d2840",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_10_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_10_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_10_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "eb783e29236d4c3118f5d3edf7202051cf4525a91b72371928a4296b21f49470",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_11_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_11_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_11_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7c922d6b95065a7a63514457093126ed2e08b3ea4935236047c2cfbad81076f3",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "slot_12_locked_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/material_slots/individual/slot_12_locked_v1.png",
+      "target_path": "res://resources/art/workstation/material_slots/individual/slot_12_locked_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "6946037dd463cb184c0bb81593316cf44deaf140af36d1c283e65efd7b1f7eef",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "festival_spring_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/overlays/festival_spring_v1.png",
+      "target_path": "res://resources/art/workstation/overlays/festival_spring_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "d4947d9a102d8fcbe7a0f0f775dc61d21dbd6b5fa221cc6af2b7a9fa87f85e61",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "lighting_string_lights_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/overlays/lighting_string_lights_v1.png",
+      "target_path": "res://resources/art/workstation/overlays/lighting_string_lights_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f21fc8bfd06b5dac9e1d7556f078d761407b5f4773951bf6a452d23b2071a6b4",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "weather_rain_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/overlays/weather_rain_v1.png",
+      "target_path": "res://resources/art/workstation/overlays/weather_rain_v1_five_area_v2.png",
+      "family": "wide_workstation_decor",
+      "canvas": [
+        1024,
+        576
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "2089e5b79cf2e4f773965f5f64269149967edc252998b8ca054f8448f57fffd2",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "paper_bag_package_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/packaging/paper_bag_package_v1.png",
+      "target_path": "res://resources/art/workstation/packaging/paper_bag_package_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "20affe2426d6bd21b2f4c7f40e1355f677fb6617427e47fd1b94cb0f3d20fd7e",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "reinforced_paper_sleeve_package_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png",
+      "target_path": "res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "206e01425f7ab7f42c9335d630f011e04aef4647a80f28aa797d9c76bf12b0e0",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "serving_tray_package_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/packaging/serving_tray_package_v1.png",
+      "target_path": "res://resources/art/workstation/packaging/serving_tray_package_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "607ceb3d4bb646612068491e9758769c8a6807477eef61e28c22ef5c96e8fe24",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "baocui_tin_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/restock/baocui_tin_v1.png",
+      "target_path": "res://resources/art/workstation/restock/baocui_tin_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "afe3450c4cfe32bfdcaa6bba54599aa11e09e770f8434123dbaaec2ac85301f9",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_carton_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/restock/egg_carton_v1.png",
+      "target_path": "res://resources/art/workstation/restock/egg_carton_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "db881cdfa57ccf732bf36cd6ccf34592525134256ebfeba3a675bf2be1ec13f3",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ham_fresh_box_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/restock/ham_fresh_box_v1.png",
+      "target_path": "res://resources/art/workstation/restock/ham_fresh_box_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "fdc2a600d59b32970e4a5be927afacd114e68eba0615b68a65febeb39a3cb69c",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "scallion_enamel_jar_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/restock/scallion_enamel_jar_v1.png",
+      "target_path": "res://resources/art/workstation/restock/scallion_enamel_jar_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "6505435c7d0025b66023f7b873ea76bcf9bce14c8d2f27241769c76e87f47fab",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "egg_spread_material_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/egg_spread_material_v1.png",
+      "target_path": "res://resources/art/workstation/textures/egg_spread_material_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "76c3f10c55194a275ae9b8dd8c51f00143dde09c2c987f0e698c285d6e43dd15",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/p0_3_renderer_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_charred_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/pancake_charred_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/pancake_charred_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "526f16914979fdfc289696f8b082e71253ace209bcccd560d999dfd5ca7057be",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/p0_3_renderer_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_cooked_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/pancake_cooked_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/pancake_cooked_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "dc93955df0784f01c47d2be341b8ebcbed3fe5353bac055b3ff0e3d0420c257c",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/p0_3_renderer_self_check.gd",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_edge_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/pancake_edge_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/pancake_edge_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "420d6435487011d611e232ffba133ca79d6ec97ac1295f327e80ccfc4b332998",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/p0_3_renderer_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_fold_back_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/pancake_fold_back_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/pancake_fold_back_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "27a4e1d68b47a939e49082fa2da7e60fb8740265088ec5eab2fde59ce90acd82",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "pancake_raw_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/pancake_raw_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/pancake_raw_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "2bac9f6f5586d48d850c09d44ea08596a1fe8a7d3df8fd8a12af18b76672ffec",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/p0_3_renderer_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "red_chili_sauce_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/red_chili_sauce_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f466b8a2baf97fb330fbb69c061d59d3e2b99650b3e0412a43deb074d7268103",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sweet_flour_sauce_texture_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png",
+      "target_path": "res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1_five_area_v2.png",
+      "family": "shader_texture",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "alpha_mode": "opaque_tile",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "abf46cf837a8818389bee8e82b669bed02a83a9b9403387254146ab5721c9c21",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_ladle_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/batter_ladle_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/batter_ladle_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e8ceba883c6ba16ecca6781d24447ff4f1585774a211261868f5c0f540cb2487",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_ladle_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/batter_ladle_v1.png",
+      "target_path": "res://resources/art/workstation/tools/batter_ladle_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "8176387de0152d860a7a9eb131ec7c494459676b30692891645bd152bdc5944a",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/m0_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_spreader_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "90074b2570da12ea601bbdd43306025a106d5a293a4bc7eb9c4c1457187f68f1",
+      "runtime_references": [
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "batter_spreader_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/batter_spreader_v1.png",
+      "target_path": "res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "2b7e0cbba1e0b76d7383f205b11f80ce5e28eeb60d0ccce74d3fc0d83128da46",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/m0_self_check.gd",
+        "tests/integration/p0_2_interaction_self_check.gd",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "countertop_tool_cups_initial_v3_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v3.png",
+      "target_path": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v3_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "e4afd13e91aeca9527156ebc8554818c6b642af2532d6a38c266f82dfc70a1be",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "countertop_tool_cups_initial_v4_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v4.png",
+      "target_path": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v4_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f501a962deeaa841357a2d6329d69841bc88007816073f46f5582b3170817e5a",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "folding_spatula_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/folding_spatula_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/folding_spatula_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "efe01f0b44f150ee02a0dd86198fe4b3427d0b757326b5c03a845ac0b5e4230c",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "folding_spatula_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/folding_spatula_v1.png",
+      "target_path": "res://resources/art/workstation/tools/folding_spatula_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f8244e52d5d101dcd1d209305d11bc25812373b69a44077cdd48da96026b6b30",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/m0_self_check.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "heat_controller_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/heat_controller_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/heat_controller_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "64c5dba185fc4be25e1bd479472faaba44cd7b4e7f118262e191af9b4c1f6359",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_tongs_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/ingredient_tongs_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/ingredient_tongs_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a857b7c2ee2234f296b3dd8e511eeb7d83cd452fe6a7a991784a99e56663b56a",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "ingredient_tongs_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/ingredient_tongs_v1.png",
+      "target_path": "res://resources/art/workstation/tools/ingredient_tongs_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "7c76cd43e8baed55690182a47a45ef1733cd517b6fad1d634dfee017888dc33a",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_absorbent_paper_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/oil_absorbent_paper_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/oil_absorbent_paper_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "06e4f09e57f536a571607f9fe3197ef52038f53e3dccd46b1469fe3526070486",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_absorbent_paper_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/oil_absorbent_paper_v1.png",
+      "target_path": "res://resources/art/workstation/tools/oil_absorbent_paper_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "dc619ac19959df6285130820f3cd02ec216c79421ce57c26e298df69f2820bcc",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "payment_slot_tool_cups_initial_v5_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5.png",
+      "target_path": "res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "a98ce597be34b70c2517337ff53122d9c6cda34db165f039a54095bc45911483",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "reinforced_paper_sleeve_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/reinforced_paper_sleeve_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/reinforced_paper_sleeve_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "f7b135b4e335c987f12fad7c1dddf68eca5b7854fd0ecdc9fedb3055dc2881b4",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sauce_brush_upgrade_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/sauce_brush_upgrade_v1.png",
+      "target_path": "res://resources/art/workstation/tools/sauce_brush_upgrade_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "ff32e967ad9aa67a5562c5dc202570c4e7260cf8a64a16df855ad784c10b2147",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sauce_brush_v1_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/sauce_brush_v1.png",
+      "target_path": "res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "96f1f591c2fc0b32daeab8fd6ab23b521b4c4931f89602a3e57551c252305c06",
+      "runtime_references": [
+        "scenes/gameplay/initial_unlock_workstation.tscn",
+        "scenes/gameplay/workstation.tscn",
+        "tests/integration/m0_self_check.gd",
+        "scripts/gameplay/workstation.gd"
+      ],
+      "status": "planned"
+    },
+    {
+      "asset_id": "wall_tool_rack_initial_v2_five_area_v2",
+      "source_path": "res://resources/art/workstation/tools/wall_tool_rack_initial_v2.png",
+      "target_path": "res://resources/art/workstation/tools/wall_tool_rack_initial_v2_five_area_v2.png",
+      "family": "workstation_sprite",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "existing_reference_to_switch",
+      "source_sha256": "2389cfc094639826febe6a1a1a681e0abb6d03bb469274acdf8723b5c23542eb",
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "packaged_drink_heater_tier_1_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "packaged_drink_heater_tier_2_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_2_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "packaged_drink_heater_tier_3_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_3_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "steamer_tier_1_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/workstation/expansion/machines/steamer_tier_1_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "steamer_tier_2_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/workstation/expansion/machines/steamer_tier_2_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "steamer_tier_3_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/workstation/expansion/machines/steamer_tier_3_five_area_v2.png",
+      "family": "machine",
+      "canvas": [
+        1024,
+        512
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_pile_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/coriander_pile_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_scattered_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_stock_1_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_stock_2_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_2_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_stock_3_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_3_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_stock_4_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_4_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_stock_5_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_5_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "coriander_stock_6_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_6_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_pile_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_scattered_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_1_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_1_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_2_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_2_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_3_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_3_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_4_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_4_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_5_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_5_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "preserved_mustard_stock_6_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_6_five_area_v2.png",
+      "family": "ingredient_slot_icon",
+      "canvas": [
+        384,
+        384
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "milk_package_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/milk_package_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "milk_heated_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/milk_heated_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_package_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/soy_milk_package_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "soy_milk_heated_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/soy_milk_heated_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "walnut_package_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/walnut_package_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "walnut_heated_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/walnut_heated_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_sesame_package_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/black_sesame_package_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "black_sesame_heated_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/packaged_drink/black_sesame_heated_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_cake_dough_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "oil_cake_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/youtiao/oil_cake_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sugar_oil_cake_dough_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "sugar_oil_cake_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "mantou_steaming_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/steamer/mantou_steaming_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "mantou_cooked_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/steamer/mantou_cooked_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "vegetable_bun_steaming_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/steamer/vegetable_bun_steaming_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "vegetable_bun_cooked_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/steamer/vegetable_bun_cooked_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_bun_steaming_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/ingredients/steamer/meat_bun_steaming_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    },
+    {
+      "asset_id": "meat_bun_cooked_five_area_v2",
+      "source_path": null,
+      "target_path": "res://resources/art/products/steamer/meat_bun_cooked_five_area_v2.png",
+      "family": "item_icon",
+      "canvas": [
+        256,
+        256
+      ],
+      "alpha_mode": "rgba_cutout",
+      "runtime_state": "new_five_area_binding",
+      "source_sha256": null,
+      "runtime_references": [],
+      "status": "planned"
+    }
+  ]
+}

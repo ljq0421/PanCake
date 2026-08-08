@@ -7,6 +7,8 @@ signal inventory_changed(snapshot: Dictionary)
 signal production_changed(snapshot: Dictionary)
 signal order_changed(snapshot: Dictionary)
 signal order_settled(result: Dictionary)
+signal daily_goal_changed(snapshot: Dictionary)
+signal business_ledger_changed(snapshot: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
@@ -20,6 +22,9 @@ const FIVE_AREA_ORDER_SERVICE := preload("res://scripts/services/five_area_order
 const FIVE_AREA_PRODUCTION_SERVICE := preload("res://scripts/services/five_area_production_service.gd")
 const FIVE_AREA_PANCAKE_ORDER_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
 const FIVE_AREA_PLAYABLE_ORDER_GENERATOR := preload("res://scripts/services/five_area_playable_order_generator.gd")
+const BUSINESS_REPORT_SERVICE := preload("res://scripts/services/business_report_service.gd")
+const DAILY_GOAL_SERVICE := preload("res://scripts/services/daily_goal_service.gd")
+const ATTENTION_SERVICE := preload("res://scripts/services/attention_service.gd")
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
 	&"baocui": &"stock.pancake.baocui",
@@ -62,6 +67,8 @@ var _progression: RefCounted
 var _pancake_holding_tray: RefCounted
 var _order_service: RefCounted
 var _production_service: RefCounted
+var _business_report_service: RefCounted
+var _daily_goal_service: RefCounted
 var _incompatible_development_save_removed := false
 
 
@@ -95,12 +102,16 @@ func begin_new_game() -> Dictionary:
 	_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new()
 	_order_service = FIVE_AREA_ORDER_SERVICE.new()
 	_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self)
+	_business_report_service = BUSINESS_REPORT_SERVICE.new()
+	_business_report_service.call("begin_day", 1)
+	_daily_goal_service = DAILY_GOAL_SERVICE.new()
 	_save_data = {
 		"version": SAVE_VERSION,
 		"save_kind": SAVE_KIND,
 		"started_at_unix": now,
 		"last_played_at_unix": now,
 		"day_open": true,
+		"business_paused": false,
 		"business_day_remaining_seconds": BUSINESS_DAY_DURATION_SECONDS,
 		"orders_completed": 0,
 		"today_orders": [],
@@ -112,6 +123,10 @@ func begin_new_game() -> Dictionary:
 		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
 		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
 		"production": _production_service.call("snapshot"),
+		"today_ledger": _business_report_service.call("snapshot"),
+		"daily_goal": _daily_goal_service.call("snapshot"),
+		"last_bill": {},
+		"ledger_event_sequence": 0,
 		RECONCILED_FORMAL_ORDER_IDS_KEY: [],
 		"pancake_order_cursor": 0,
 		"pancake_orders_issued_today": 0,
@@ -119,6 +134,7 @@ func begin_new_game() -> Dictionary:
 		"order_sequence": 0,
 		"tutorial_order_generated_day": 0,
 	}
+	_configure_service_connections()
 	_write_save()
 	progression_changed.emit(five_area_progression_snapshot())
 	inventory_changed.emit(inventory_snapshot())
@@ -130,6 +146,7 @@ func continue_game() -> bool:
 	if not has_save():
 		return false
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
+	_save_data["business_paused"] = true
 	_write_save()
 	return true
 
@@ -181,6 +198,44 @@ func production_service() -> RefCounted:
 	return _production_service
 
 
+func business_report_service() -> RefCounted:
+	_ensure_business_services()
+	return _business_report_service
+
+
+func daily_goal_service() -> RefCounted:
+	_ensure_business_services()
+	return _daily_goal_service
+
+
+func current_daily_goal() -> Dictionary:
+	_ensure_business_services()
+	return Dictionary(_daily_goal_service.call("current_goal")).duplicate(true)
+
+
+func is_business_paused() -> bool:
+	return bool(_save_data.get("business_paused", false))
+
+
+func set_business_paused(paused: bool) -> void:
+	if not has_save() or is_business_paused() == paused:
+		return
+	_save_data["business_paused"] = paused
+	_touch_and_write()
+
+
+func mark_session_left() -> void:
+	if not has_save():
+		return
+	_save_data["business_paused"] = true
+	_sync_progression_to_save()
+	_sync_pancake_holding_tray_to_save()
+	_sync_formal_orders_to_save()
+	_sync_production_to_save()
+	_sync_business_services_to_save()
+	_touch_and_write()
+
+
 func open_pancake_order(template: Dictionary) -> Dictionary:
 	var ingredient_ids := _stable_pancake_stock_ids(Array(template.get("ingredients", template.get("ingredient_ids", []))), LEGACY_PANCAKE_STOCK_IDS)
 	var sauce_ids := _stable_pancake_stock_ids(Array(template.get("sauces", template.get("sauce_ids", []))), LEGACY_PANCAKE_SAUCE_STOCK_IDS)
@@ -225,35 +280,43 @@ func ensure_active_playable_order() -> Dictionary:
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
 	_ensure_order_service()
-	var active := active_formal_order()
-	if not active.is_empty():
-		return {"success": true, "created": false, "order": active}
 	if not bool(_progression.get("day_open")):
 		return {"success": false, "reason": &"business_day_closed"}
+	var queue: Array = Array(_order_service.call("queue_snapshot"))
+	var needed := maxi(4 - queue.size(), 0)
+	if needed <= 0:
+		return {"success": true, "created": false, "order": active_formal_order(), "queue": queue}
 	var next_sequence := maxi(int(_save_data.get("order_sequence", 0)), 0) + 1
-	var generated: Dictionary = FIVE_AREA_PLAYABLE_ORDER_GENERATOR.generate(
+	var generated_batch: Dictionary = FIVE_AREA_PLAYABLE_ORDER_GENERATOR.generate_queue_candidates(
 		five_area_progression_snapshot(),
 		inventory_snapshot(),
 		int(_save_data.get("order_rng_seed", 1)),
 		next_sequence,
+		needed,
 		int(_progression.get("current_day")),
 		int(_save_data.get("tutorial_order_generated_day", 0))
 	)
-	if not bool(generated.get("success", false)):
-		return generated
-	var metadata := Dictionary(generated.get("metadata", {})).duplicate(true)
-	metadata["generated_sequence"] = next_sequence
-	generated["metadata"] = metadata
-	var result: Dictionary = _order_service.call("ensure_queue", 1, generated)
+	if not bool(generated_batch.get("success", false)):
+		if not queue.is_empty():
+			return {"success": true, "created": false, "order": active_formal_order(), "queue": queue, "needs_candidates": needed, "deferred_reason": generated_batch.get("reason", &"no_eligible_playable_order")}
+		return generated_batch
+	var candidates: Array = Array(generated_batch.get("candidates", []))
+	for candidate_index in range(candidates.size()):
+		var candidate := Dictionary(candidates[candidate_index]).duplicate(true)
+		var metadata := Dictionary(candidate.get("metadata", {})).duplicate(true)
+		metadata["generated_sequence"] = next_sequence + candidate_index
+		candidate["metadata"] = metadata
+		candidates[candidate_index] = candidate
+	var result: Dictionary = _order_service.call("ensure_queue", 4, candidates)
 	if not bool(result.get("success", false)):
 		return result
 	if bool(result.get("created", false)):
-		_save_data["order_sequence"] = next_sequence
-		if int(generated.get("tutorial_generated_day", 0)) > 0:
-			_save_data["tutorial_order_generated_day"] = int(generated.get("tutorial_generated_day", 0))
+		_save_data["order_sequence"] = next_sequence + candidates.size() - 1
+		if int(generated_batch.get("tutorial_generated_day", 0)) > 0:
+			_save_data["tutorial_order_generated_day"] = int(generated_batch.get("tutorial_generated_day", 0))
 		_sync_formal_orders_to_save()
 		_touch_and_write()
-		order_changed.emit(Dictionary(result.get("order", {})).duplicate(true))
+		order_changed.emit({"active": Dictionary(result.get("order", {})).duplicate(true), "queue": Array(result.get("queue", [])).duplicate(true)})
 	return result
 
 
@@ -263,7 +326,7 @@ func waiting_formal_orders() -> Array[Dictionary]:
 
 
 func advance_formal_order_patience(delta: float) -> Dictionary:
-	if not has_save() or delta <= 0.0 or get_tree().paused:
+	if not has_save() or delta <= 0.0 or get_tree().paused or is_business_paused():
 		return {"success": true, "changed": false}
 	_ensure_progression()
 	if not bool(_progression.get("day_open")):
@@ -379,7 +442,7 @@ func f3_machine_snapshot(device_id: StringName) -> Dictionary:
 
 
 func advance_f3_production(delta: float) -> void:
-	if not has_save() or delta <= 0.0 or get_tree().paused:
+	if not has_save() or delta <= 0.0 or get_tree().paused or is_business_paused():
 		return
 	_ensure_progression()
 	if not bool(_progression.get("day_open")):
@@ -530,6 +593,117 @@ func discard_f3_youtiao() -> Dictionary:
 	return result
 
 
+func load_f4_soy(recipe_id: StringName, quantity: int, order_id: StringName = &"") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("load_soy_batch", recipe_id, quantity)
+	if bool(result.get("success", false)):
+		_mark_f3_order_started(order_id, &"device.fresh_soy_milk_machine")
+		_persist_production_change()
+	return result
+
+
+func perform_f4_soy_action(action_id: StringName) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("perform_soy_action", action_id)
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
+	_ensure_production_service()
+	var preview: Dictionary
+	if output_slot_index >= 0:
+		var rack := Array(Dictionary(_production_service.call("machine_snapshot", &"device.fresh_soy_milk_machine")).get("output_rack", []))
+		if output_slot_index >= rack.size() or Dictionary(rack[output_slot_index]).is_empty():
+			return {"success": false, "reason": &"output_slot_empty"}
+		var cup := Dictionary(rack[output_slot_index])
+		var recipe := CATALOG.recipe_definition(StringName(cup.get("recipe_id", &"")))
+		preview = {"success": true, "product": {"product_instance_id": &"preview.soy_output", "area_id": &"area.fresh_soy_milk", "product_id": recipe.get("product_id", &""), "temperature_mode": &"room_temperature", "ingredient_ids": PackedStringArray(), "sauce_ids": PackedStringArray()}}
+	else:
+		preview = _production_service.call("preview_collect_soy", 1)
+	return _collect_and_attach_product(order_id, item_index, preview, "collect_soy_output" if output_slot_index >= 0 else "collect_soy", [output_slot_index] if output_slot_index >= 0 else [1])
+
+
+func discard_f4_soy(output_slot_index: int = -1) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("discard_soy_output", output_slot_index) if output_slot_index >= 0 else _production_service.call("discard_soy")
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func load_f4_steamer_layer(layer_index: int, recipe_id: StringName, quantity: int = 1, order_id: StringName = &"") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("load_steamer_layer", layer_index, recipe_id, quantity)
+	if bool(result.get("success", false)):
+		_mark_f3_order_started(order_id, StringName("device.steamer.layer.%d" % layer_index))
+		_persist_production_change()
+	return result
+
+
+func perform_f4_steamer_action(layer_index: int, action_id: StringName) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("perform_steamer_action", layer_index, action_id)
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func deliver_f4_steamer(layer_index: int, order_id: StringName, item_index: int) -> Dictionary:
+	_ensure_production_service()
+	var preview: Dictionary = _production_service.call("preview_collect_steamer", layer_index)
+	return _collect_and_attach_product(order_id, item_index, preview, "collect_steamer", [layer_index])
+
+
+func discard_f4_steamer(layer_index: int) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("discard_steamer", layer_index)
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func five_area_attention() -> Array[Dictionary]:
+	_ensure_production_service()
+	_ensure_pancake_holding_tray()
+	var soy_snapshot := Dictionary(_production_service.call("machine_snapshot", &"device.fresh_soy_milk_machine"))
+	return ATTENTION_SERVICE.build_attention(
+		Dictionary(_production_service.call("all_machine_snapshots")),
+		Array(soy_snapshot.get("output_rack", [])),
+		pancake_holding_tray_snapshot()
+	)
+
+
+func _collect_and_attach_product(order_id: StringName, item_index: int, preview: Dictionary, collect_method: String, arguments: Array) -> Dictionary:
+	if not bool(preview.get("success", false)):
+		return preview
+	var order_preview := preview_attach_formal_order_product(order_id, item_index, Dictionary(preview.get("product", {})))
+	if not bool(order_preview.get("success", false)):
+		return order_preview
+	var rollback := five_area_production_snapshot()
+	var collected: Dictionary = _production_service.callv(collect_method, arguments)
+	if not bool(collected.get("success", false)):
+		return collected
+	var product := Dictionary(collected.get("product", {}))
+	var attached := attach_formal_order_product(order_id, item_index, product)
+	if not bool(attached.get("success", false)):
+		_production_service.call("load_snapshot", rollback)
+		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
+	_persist_production_change()
+	return {"success": true, "product": product, "order_result": attached, "will_match": order_preview.get("will_match", false), "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
+
+
+func _persist_production_change() -> void:
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+
+
 func settle_formal_order(order_id: StringName) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
@@ -613,6 +787,33 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	settlement["reputation_delta"] = reputation_delta
 	settlement["tutorial_completion"] = tutorial_completion
 	settlement["tutorial_failure"] = tutorial_failure
+	_record_business_event({
+		"event_id": StringName("%s.sale" % settlement_id),
+		"kind": &"sale" if bool(settlement.get("order_success", false)) else &"order_failure",
+		"area_id": StringName(primary_item.get("area_id", &"")),
+		"source_id": order_id,
+		"quantity": maxi(items.size(), 1),
+		"coins_delta": base_coins,
+		"reputation_delta": reputation_delta,
+		"details": {
+			"terminal_state": settlement.get("terminal_state", &"completed"),
+			"grade": all_grades[0] if not all_grades.is_empty() else &"C",
+			"complexity": order.get("complexity", &"single"),
+		},
+	})
+	for item_index in range(mastery_results.size()):
+		var mastery_result := Dictionary(mastery_results[item_index])
+		var item := Dictionary(items[item_index]) if item_index < items.size() else {}
+		_record_business_event({
+			"event_id": StringName("%s.mastery.%d" % [settlement_id, item_index]),
+			"kind": &"mastery",
+			"area_id": StringName(item.get("area_id", &"")),
+			"source_id": order_id,
+			"quantity": 1,
+			"details": {"delta": int(mastery_result.get("delta", 0))},
+		})
+	_sync_business_services_to_save()
+	_touch_and_write()
 	order_changed.emit({})
 	order_settled.emit(settlement.duplicate(true))
 	return settlement
@@ -646,6 +847,18 @@ func _finalize_failed_formal_order(result: Dictionary) -> void:
 	_sync_progression_to_save()
 	_touch_and_write()
 	result["tutorial_failure"] = tutorial_failure
+	var terminal_state := StringName(result.get("terminal_state", result.get("reason", &"failed")))
+	_record_business_event({
+		"event_id": StringName("order.%s.%s" % [str(result.get("order_id", &"unknown")), str(terminal_state)]),
+		"kind": &"refusal" if terminal_state == &"refused" else &"order_failure",
+		"area_id": teaching_area_id if not teaching_area_id.is_empty() else _formal_order_area_id(order),
+		"source_id": StringName(result.get("order_id", &"")),
+		"quantity": 1,
+		"reputation_delta": reputation_delta,
+		"details": {"terminal_state": terminal_state},
+	})
+	_sync_business_services_to_save()
+	_touch_and_write()
 	progression_changed.emit(five_area_progression_snapshot())
 	order_changed.emit({})
 	order_settled.emit(result.duplicate(true))
@@ -704,7 +917,7 @@ func serve_pancake_tray_delivery(slot_index: int, order: Dictionary) -> Dictiona
 
 
 func advance_pancake_holding_tray(delta: float) -> void:
-	if not has_save():
+	if not has_save() or delta <= 0.0 or get_tree().paused or is_business_paused():
 		return
 	_ensure_pancake_holding_tray()
 	_pancake_holding_tray.call("advance_time", delta)
@@ -732,6 +945,7 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 	var inventory := inventory_snapshot()
 	var key := str(stock_id)
 	var capacity := maxi(int(definition.get("restock_capacity", 0)), 0)
+	capacity = maxi(capacity, int(_progression.get("stock_capacity")))
 	if capacity <= 0:
 		return {"success": false, "reason": &"restock_unavailable", "stock_id": stock_id}
 	var unit_seconds := maxf(float(definition.get("refill_seconds", 0.0)), 0.001)
@@ -739,6 +953,7 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 		"success": true,
 		"reason": &"",
 		"stock_id": stock_id,
+		"area_id": StringName(definition.get("area_id", &"")),
 		"unit_cost": maxi(int(definition.get("restock_unit_cost", 0)), 0),
 		"unit_seconds": unit_seconds,
 		"current_stock": maxi(int(inventory.get(key, 0)), 0),
@@ -793,6 +1008,17 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 	_sync_progression_to_save()
 	_touch_and_write()
 	if completed_units > 0:
+		_record_business_event({
+			"event_id": _next_ledger_event_id(&"restock"),
+			"kind": &"stock_cost",
+			"area_id": StringName(status.get("area_id", &"")),
+			"source_id": stock_id,
+			"quantity": completed_units,
+			"coins_delta": -charged_coins,
+			"details": {"unit_cost": unit_cost, "counts_cash_cost": true},
+		})
+		_sync_business_services_to_save()
+		_touch_and_write()
 		coins_changed.emit(int(_progression.get("coins")))
 		inventory_changed.emit(inventory_snapshot())
 		progression_changed.emit(five_area_progression_snapshot())
@@ -897,9 +1123,9 @@ func purchase_growth(growth_id: StringName) -> Dictionary:
 	return result
 
 
-func growth_recommendations(limit_per_slot: int = 3) -> Dictionary:
+func growth_recommendations(limit_total: int = 3) -> Dictionary:
 	_ensure_progression()
-	return Dictionary(_progression.call("growth_recommendations", limit_per_slot)).duplicate(true)
+	return Dictionary(_progression.call("growth_recommendations", limit_total)).duplicate(true)
 
 
 func growth_purchase_status(growth_id: StringName) -> Dictionary:
@@ -929,12 +1155,28 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 		_save_data["business_day_remaining_seconds"] = 0.0
 	_ensure_pancake_holding_tray()
 	var tray_waste: Array = _pancake_holding_tray.call("clear_for_day_end")
+	for waste_index in range(tray_waste.size()):
+		var waste := Dictionary(tray_waste[waste_index])
+		_record_business_event({
+			"event_id": _next_ledger_event_id(&"tray_day_end"),
+			"kind": &"waste",
+			"area_id": &"area.pancake",
+			"source_id": &"pancake_holding_tray",
+			"quantity": 1,
+			"details": {"reason": &"day_end", "attributed_cost": int(waste.get("material_cost", 0))},
+		})
 	_sync_pancake_holding_tray_to_save()
 	_sync_progression_to_save()
-	_touch_and_write()
 	var bill := today_bill()
 	bill["tray_waste"] = tray_waste
 	bill["success"] = true
+	_ensure_business_services()
+	var ledger_bill: Dictionary = _business_report_service.call("close_day")
+	for key in ledger_bill:
+		bill[key] = ledger_bill[key]
+	_save_data["last_bill"] = bill.duplicate(true)
+	_sync_business_services_to_save()
+	_touch_and_write()
 	return bill
 
 
@@ -950,6 +1192,7 @@ func begin_next_business_day() -> Dictionary:
 	_save_data["today_orders"] = []
 	_save_data["today_reputation_delta"] = 0
 	_save_data["today_cutoff"] = {}
+	_save_data["business_paused"] = false
 	_save_data["pancake_orders_issued_today"] = 0
 	_progression.call("advance_tutorial_for_new_business_day")
 	_replenish_daily_pancake_consumables()
@@ -957,9 +1200,14 @@ func begin_next_business_day() -> Dictionary:
 	_sync_progression_to_save()
 	_ensure_production_service()
 	_sync_production_to_save()
+	_ensure_business_services()
+	_business_report_service.call("begin_day", int(_progression.get("current_day")))
+	_daily_goal_service.call("begin_day", _daily_goal_context())
+	_sync_business_services_to_save()
 	_touch_and_write()
 	inventory_changed.emit(inventory_snapshot())
 	progression_changed.emit(five_area_progression_snapshot())
+	daily_goal_changed.emit(current_daily_goal())
 	return result
 
 
@@ -1035,7 +1283,31 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 	_save_data["today_orders"] = today_orders
 	_save_data["orders_completed"] = int(_save_data.get("orders_completed", 0)) + 1
 	_save_data["today_reputation_delta"] = int(_save_data.get("today_reputation_delta", 0)) + reputation_delta
+	var ledger_id := StringName("order.%s.sale" % (str(formal_order_id) if not formal_order_id.is_empty() else str(_save_data.get("orders_completed", 0))))
+	_record_business_event({
+		"event_id": ledger_id,
+		"kind": &"sale",
+		"area_id": area_id,
+		"source_id": formal_order_id,
+		"quantity": 1,
+		"coins_delta": payment_coins,
+		"reputation_delta": reputation_delta,
+		"details": {
+			"grade": StringName(settled_result.get("grade", &"C")),
+			"terminal_state": &"completed",
+			"complexity": &"single",
+		},
+	})
+	_record_business_event({
+		"event_id": StringName("%s.mastery" % ledger_id),
+		"kind": &"mastery",
+		"area_id": area_id,
+		"source_id": formal_order_id,
+		"quantity": 1,
+		"details": {"delta": int(mastery_result.get("delta", 0))},
+	})
 	_sync_progression_to_save()
+	_sync_business_services_to_save()
 	_touch_and_write()
 	coins_changed.emit(int(_progression.get("coins")))
 	progression_changed.emit(five_area_progression_snapshot())
@@ -1054,7 +1326,7 @@ func today_bill() -> Dictionary:
 		total_coins += int(entry.get("coins", 0))
 		total_cost += maxi(int(entry.get("cost", 0)), 0)
 		total_score += float(entry.get("score", 0.0))
-	return {
+	var bill := {
 		"day": int(_progression.get("current_day")),
 		"orders": orders,
 		"order_count": orders.size(),
@@ -1065,6 +1337,11 @@ func today_bill() -> Dictionary:
 		"reputation_delta": int(_save_data.get("today_reputation_delta", 0)),
 		"cutoff": Dictionary(_save_data.get("today_cutoff", {})).duplicate(true),
 	}
+	_ensure_business_services()
+	var ledger_bill: Dictionary = _business_report_service.call("build_bill")
+	for key in ledger_bill:
+		bill[key] = ledger_bill[key]
+	return bill
 
 
 func get_settings() -> Dictionary:
@@ -1112,6 +1389,9 @@ func _restore_progression() -> void:
 	_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new(Dictionary(_save_data.get("pancake_holding_tray", {})))
 	_order_service = FIVE_AREA_ORDER_SERVICE.new(Dictionary(_save_data.get("formal_orders", {})))
 	_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self, Dictionary(_save_data.get("production", {})))
+	_business_report_service = BUSINESS_REPORT_SERVICE.new(Dictionary(_save_data.get("today_ledger", {})))
+	_daily_goal_service = DAILY_GOAL_SERVICE.new(Dictionary(_save_data.get("daily_goal", {})))
+	_configure_service_connections()
 
 
 func _ensure_progression() -> void:
@@ -1135,6 +1415,91 @@ func _ensure_production_service() -> void:
 		_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self, Dictionary(_save_data.get("production", {})))
 	else:
 		_production_service.call("configure", _progression, self)
+	_configure_service_connections()
+
+
+func _ensure_business_services() -> void:
+	if _business_report_service == null:
+		_business_report_service = BUSINESS_REPORT_SERVICE.new(Dictionary(_save_data.get("today_ledger", {})))
+	if _daily_goal_service == null:
+		_daily_goal_service = DAILY_GOAL_SERVICE.new(Dictionary(_save_data.get("daily_goal", {})))
+
+
+func _configure_service_connections() -> void:
+	if _production_service != null and not _production_service.is_connected("waste_recorded", _on_production_waste_recorded):
+		_production_service.connect("waste_recorded", _on_production_waste_recorded)
+
+
+func _on_production_waste_recorded(entry: Dictionary) -> void:
+	_record_business_event({
+		"event_id": _next_ledger_event_id(&"production_waste"),
+		"kind": &"waste",
+		"area_id": StringName(entry.get("area_id", &"")),
+		"source_id": StringName(entry.get("device_id", entry.get("source_id", &""))),
+		"quantity": maxi(int(entry.get("quantity", 1)), 1),
+		"details": {
+			"reason": entry.get("reason", &"discarded"),
+			"attributed_cost": maxi(int(entry.get("material_cost", entry.get("attributed_cost", 0))), 0),
+		},
+	})
+	_sync_business_services_to_save()
+
+
+func _record_business_event(event: Dictionary) -> Dictionary:
+	_ensure_business_services()
+	var recorded: Dictionary = _business_report_service.call("record_event", event)
+	if not bool(recorded.get("changed", false)):
+		return recorded
+	var normalized := Dictionary(recorded.get("event", event))
+	var goal_result: Dictionary = _daily_goal_service.call("record_business_event", normalized)
+	if bool(goal_result.get("completed", false)):
+		_apply_daily_goal_reward(goal_result)
+	_sync_business_services_to_save()
+	business_ledger_changed.emit(Dictionary(_business_report_service.call("snapshot")).duplicate(true))
+	daily_goal_changed.emit(current_daily_goal())
+	return recorded
+
+
+func _apply_daily_goal_reward(request: Dictionary) -> void:
+	var reward_event_id := StringName(request.get("reward_event_id", &""))
+	if reward_event_id.is_empty():
+		return
+	var marked: Dictionary = _daily_goal_service.call("mark_rewarded", reward_event_id)
+	if not bool(marked.get("changed", false)):
+		return
+	_ensure_progression()
+	_progression.set("coins", int(_progression.get("coins")) + maxi(int(request.get("reward_coins", 0)), 0))
+	_progression.set("reputation", maxi(int(_progression.get("reputation")) + maxi(int(request.get("reward_reputation", 0)), 0), 0))
+	_sync_progression_to_save()
+	coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(five_area_progression_snapshot())
+
+
+func _daily_goal_context() -> Dictionary:
+	_ensure_progression()
+	var progression_snapshot := five_area_progression_snapshot()
+	var tutorial := Dictionary(progression_snapshot.get("tutorial", {}))
+	return {
+		"current_day": int(progression_snapshot.get("current_day", 1)),
+		"unlocked_area_ids": progression_snapshot.get("unlocked_area_ids", []),
+		"tutorial_completed_area_ids": tutorial.get("completed_area_ids", []),
+		"specialization": progression_snapshot.get("specialization", {}),
+		"order_rng_seed": int(_save_data.get("order_rng_seed", 1)),
+	}
+
+
+func _next_ledger_event_id(prefix: StringName) -> StringName:
+	var sequence := maxi(int(_save_data.get("ledger_event_sequence", 0)), 0) + 1
+	_save_data["ledger_event_sequence"] = sequence
+	return StringName("day.%d.%s.%d" % [int(_progression.get("current_day")) if _progression != null else 1, str(prefix), sequence])
+
+
+func _sync_business_services_to_save() -> void:
+	if not has_save():
+		return
+	_ensure_business_services()
+	_save_data["today_ledger"] = Dictionary(_business_report_service.call("snapshot")).duplicate(true)
+	_save_data["daily_goal"] = Dictionary(_daily_goal_service.call("snapshot")).duplicate(true)
 
 
 func _sync_progression_to_save() -> void:
@@ -1168,6 +1533,8 @@ func _ensure_save_shape() -> void:
 		_save_data["restock_progress"] = {}
 	if not _save_data.has("day_open"):
 		_save_data["day_open"] = true
+	if not _save_data.has("business_paused"):
+		_save_data["business_paused"] = false
 	if not _save_data.has("business_day_remaining_seconds"):
 		_save_data["business_day_remaining_seconds"] = BUSINESS_DAY_DURATION_SECONDS
 	if not _save_data.has("today_orders"):
@@ -1182,6 +1549,16 @@ func _ensure_save_shape() -> void:
 		_save_data["formal_orders"] = FIVE_AREA_ORDER_SERVICE.new().snapshot()
 	if not _save_data.has("production"):
 		_save_data["production"] = FIVE_AREA_PRODUCTION_SERVICE.new().snapshot()
+	if not _save_data.has("today_ledger"):
+		var ledger := BUSINESS_REPORT_SERVICE.new()
+		ledger.call("begin_day", int(Dictionary(_save_data.get("progression", {})).get("current_day", 1)))
+		_save_data["today_ledger"] = ledger.call("snapshot")
+	if not _save_data.has("daily_goal"):
+		_save_data["daily_goal"] = DAILY_GOAL_SERVICE.new().snapshot()
+	if not _save_data.has("last_bill"):
+		_save_data["last_bill"] = {}
+	if not _save_data.has("ledger_event_sequence"):
+		_save_data["ledger_event_sequence"] = 0
 	if not _save_data.has("pancake_order_cursor"):
 		_save_data["pancake_order_cursor"] = 0
 	if not _save_data.has("pancake_orders_issued_today"):

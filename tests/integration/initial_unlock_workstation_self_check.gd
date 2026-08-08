@@ -42,7 +42,7 @@ func _run() -> void:
 
 func _check_five_zone_layout(workstation: Node) -> void:
 	var background := workstation.get_node_or_null("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background != null and background.texture != null and background.texture.get_size() == Vector2(1920.0, 1080.0) and background.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v6.png"), "the 1920x1080 enhanced-divider tabletop background is the active workstation map")
+	_check(background != null and background.texture != null and background.texture.get_size() == Vector2(1920.0, 1080.0) and background.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v7.png"), "the 1920x1080 customer-style tabletop background preview is the active workstation map")
 	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout") == null and workstation.get_node_or_null("SafeArea/LegacyFiveZonePrototype") == null and workstation.get_node_or_null("SafeArea/LegacyMaterialDockPrototype") == null, "retired 12-slot, three-device, and prototype overlay nodes are removed from the formal scene")
 	var station_art := workstation.get_node_or_null("SafeArea/FiveAreaStationArtwork") as Control
 	var station_hits := workstation.get_node_or_null("SafeArea/FiveAreaStationClickLayers") as Control
@@ -92,6 +92,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 	var second_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish2") as TextureRect
 	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
 	var patience := workstation.get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
+	var patience_text := workstation.get_node_or_null("SafeArea/PatienceTextLabel") as Label
 	_check(coin != null and coin.visible and coin.texture != null and amount != null and not amount.text.is_empty(), "runtime order data fills the coin and amount in the card header")
 	_check(first_dish != null and first_dish.visible and first_dish.texture != null and second_dish != null and not second_dish.visible, "a current single-dish order fills only the first of two reserved dish wells")
 	var visible_ingredients := 0
@@ -100,7 +101,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 		if icon != null and icon.visible and icon.texture != null:
 			visible_ingredients += 1
 	_check(visible_ingredients > 0 and visible_ingredients <= 4, "runtime single-dish ingredients occupy only that dish's four color-grouped hint slots")
-	_check(heart != null and heart.visible and patience != null and patience.visible and is_equal_approx(float(workstation.p1_session.order.get("time_limit", 0.0)), 108.0), "the first-customer tutorial keeps the compact order card and uses the 1.5x formal patience countdown")
+	_check(heart != null and heart.visible and patience != null and not patience.visible and patience_text != null and patience_text.visible and patience_text.text == "教学单·不限时" and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the first-customer tutorial keeps the compact order card and explicitly disables its patience countdown")
 
 
 func _check_material_grid(workstation: Node) -> void:

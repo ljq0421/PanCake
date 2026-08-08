@@ -1,0 +1,134 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/fresh_soy_milk_station.tscn" id="2_soy"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/steamer_station.tscn" id="3_steamer"]
+[ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="4_controller"]
+
+[node name="Workstation" instance=ExtResource("1_base")]
+script = ExtResource("4_controller")
+
+[node name="FiveAreaInfrastructure" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Stations" type="Control" parent="FiveAreaInfrastructure"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -235.0
+offset_top = -155.0
+offset_right = 235.0
+offset_bottom = 155.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
+layout_mode = 1
+mouse_filter = 2
+
+[node name="PackagedDrinkStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
+layout_mode = 1
+mouse_filter = 2
+
+[node name="YoutiaoStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
+layout_mode = 1
+mouse_filter = 2
+
+[node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("2_soy")]
+visible = false
+layout_mode = 1
+
+[node name="SteamerStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("3_steamer")]
+visible = false
+layout_mode = 1
+
+[node name="OrderQueue" type="VBoxContainer" parent="FiveAreaInfrastructure"]
+layout_mode = 0
+offset_left = 1540.0
+offset_top = 140.0
+offset_right = 1892.0
+offset_bottom = 492.0
+mouse_filter = 2
+
+[node name="OrderCard01" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+visible = false
+custom_minimum_size = Vector2(352, 78)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard01"]
+layout_mode = 2
+mouse_filter = 2
+text = ""
+
+[node name="OrderCard02" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+visible = false
+custom_minimum_size = Vector2(352, 78)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard02"]
+layout_mode = 2
+mouse_filter = 2
+text = ""
+
+[node name="OrderCard03" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+visible = false
+custom_minimum_size = Vector2(352, 78)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard03"]
+layout_mode = 2
+mouse_filter = 2
+text = ""
+
+[node name="OrderCard04" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+visible = false
+custom_minimum_size = Vector2(352, 78)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard04"]
+layout_mode = 2
+mouse_filter = 2
+text = ""
+
+[node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure"]
+layout_mode = 0
+offset_left = 1540.0
+offset_top = 18.0
+offset_right = 1892.0
+offset_bottom = 128.0
+mouse_filter = 2
+
+[node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Attention03" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CloseButton" type="Button" parent="FiveAreaInfrastructure"]
+visible = false
+layout_mode = 0
+offset_left = 1190.0
+offset_top = 210.0
+offset_right = 1280.0
+offset_bottom = 262.0
+text = "关闭"

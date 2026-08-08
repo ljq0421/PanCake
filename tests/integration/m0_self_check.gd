@@ -103,7 +103,7 @@ func _check_scene_contract() -> void:
 	var foreground_lip := workstation.get_node("SafeArea/ForegroundLip") as TextureRect
 	var bottom_strip := workstation.get_node("SafeArea/BottomStrip") as Control
 	var step_action_button := workstation.get_node("SafeArea/P1ControlBar/StepActionButton") as Button
-	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v6.png", "background artwork uses the enhanced-divider, square-slot 18-slot workstation map")
+	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v7.png", "background artwork uses the customer-style, square-slot 18-slot workstation map")
 	_check(background_artwork.get_index() < pan_base.get_index(), "background artwork renders behind interactive content")
 	_check((left_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "left tool rack no longer draws a floating panel")
 	_check((ingredient_rack.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a <= 0.01, "right ingredient rack no longer draws a floating panel")

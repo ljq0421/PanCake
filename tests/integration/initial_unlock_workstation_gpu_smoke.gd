@@ -127,6 +127,14 @@ func _run() -> void:
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER and t_spreader.button_pressed, "placing egg automatically restores the T spreader and never reuses the press")
 	var stock_model: RefCounted = workstation.get("ingredient_stock_model")
 	_check(int(stock_model.call("current", &"egg")) == 1, "short real GUI drag consumes exactly one visible egg portion")
+	var flip_button := workstation.get_node("SafeArea/P1ControlBar/StepActionButton") as Button
+	_move_at(flip_button.get_global_rect().get_center())
+	await process_frame
+	var flip_hovered := root.gui_get_hovered_control()
+	await _click_control_settled(flip_button)
+	await process_frame
+	_check(flip_hovered == flip_button, "five-area passive station layer does not cover the real flip button")
+	_check(workstation.pancake_model.is_flipped and workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "real GPU pointer click completes the flip interaction")
 
 	_check(bool(egg.get_meta(&"refill_enabled", false)), "the real main-game egg tray supports direct hold refill")
 	_check(is_equal_approx(float(egg.get("hold_threshold_seconds")), 0.1), "the real main-game egg tray uses the 0.1-second hold threshold")

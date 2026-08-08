@@ -8,6 +8,11 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_check(CATALOG.validate_catalog().is_empty(), "catalog validation")
+	_check(CATALOG.GROWTH_DEFINITIONS.size() == 41, "catalog contains exactly 41 stable growth definitions")
+	for device_id in CATALOG.DEVICE_DEFINITIONS:
+		for tier in range(3):
+			_check(not CATALOG.device_tier(StringName(device_id), tier).is_empty(), "%s owns continuous tier %d" % [device_id, tier])
+	_check(CATALOG.product_definition(&"product.packaged_drink.soy_milk") != CATALOG.product_definition(&"product.fresh_soy_milk.yellow_bean") and CATALOG.product_definition(&"product.packaged_drink.soy_milk").get("area_id") != CATALOG.product_definition(&"product.fresh_soy_milk.yellow_bean").get("area_id"), "packaged soy drink and fresh soy milk remain isolated products")
 	_check(CATALOG.PHYSICAL_AREA_IDS == [&"area.fresh_soy_milk", &"area.youtiao", &"area.pancake", &"area.packaged_drink", &"area.steamer"], "physical area order")
 	_check(CATALOG.UNLOCK_AREA_IDS == [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"], "unlock area order")
 	var expected_slots := {

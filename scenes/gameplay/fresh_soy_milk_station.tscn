@@ -1,0 +1,89 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/fresh_soy_milk_station_view.gd" id="1"]
+
+[node name="FreshSoyMilkStation" type="PanelContainer"]
+custom_minimum_size = Vector2(430, 270)
+script = ExtResource("1")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="StateLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "现磨豆浆 · 未安装"
+
+[node name="Recipes" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="YellowBeanButton" type="Button" parent="Layout/Recipes"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "黄豆"
+
+[node name="BlackBeanButton" type="Button" parent="Layout/Recipes"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "黑豆"
+
+[node name="RedBeanButton" type="Button" parent="Layout/Recipes"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "红豆"
+
+[node name="MultigrainButton" type="Button" parent="Layout/Recipes"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "五谷"
+
+[node name="Actions" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+
+[node name="LoadButton" type="Button" parent="Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "装豆料"
+
+[node name="WaterButton" type="Button" parent="Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "加水"
+
+[node name="StartButton" type="Button" parent="Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "启动"
+
+[node name="CollectButton" type="Button" parent="Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "接杯"
+
+[node name="OutputRack" type="GridContainer" parent="Layout"]
+layout_mode = 2
+columns = 4
+
+[node name="OutputSlot01" type="Button" parent="Layout/OutputRack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "杯位1 · 空"
+
+[node name="OutputSlot02" type="Button" parent="Layout/OutputRack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "杯位2 · 空"
+
+[node name="OutputSlot03" type="Button" parent="Layout/OutputRack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "杯位3 · 空"
+
+[node name="OutputSlot04" type="Button" parent="Layout/OutputRack"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "杯位4 · 空"

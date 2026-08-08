@@ -74,14 +74,14 @@ func set_locked(locked: bool, reason_text: String) -> void:
 	_locked = locked
 	lock_overlay.visible = locked
 	lock_label.text = reason_text if not reason_text.is_empty() else "油条炸锅尚未解锁"
-	_refresh_interaction()
+	_refresh()
 
 
 func set_interaction_enabled(enabled: bool) -> void:
 	_interaction_enabled = enabled
 	if not enabled:
 		_restock_held = false
-	_refresh_interaction()
+	_refresh()
 
 
 func show_feedback(message: String) -> void:

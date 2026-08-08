@@ -43,9 +43,10 @@ func _ready() -> void:
 	_refresh()
 
 
-func _process(delta: float) -> void:
-	if is_visible_in_tree() and _session != null and _interaction_enabled and _session.has_method("advance_f3_production"):
-		_session.call("advance_f3_production", delta)
+func _process(_delta: float) -> void:
+	# Production time is advanced by the formal workstation so all regions keep
+	# running concurrently even when this overlay is closed.
+	pass
 
 
 func set_interaction_enabled(enabled: bool) -> void:
@@ -182,6 +183,8 @@ func _refresh() -> void:
 	var selected_item := Dictionary(items[_selected_item_index]) if _selected_item_index >= 0 and _selected_item_index < items.size() else {}
 	if order_id.is_empty():
 		order_summary_label.text = "当前订单：无"
+	elif bool(order.get("tutorial_no_countdown", false)) or not StringName(order.get("teaching_area_id", &"")).is_empty():
+		order_summary_label.text = "当前订单：%s · 教学单·不限时" % order_id
 	else:
 		var remaining := float(order.get("remaining_patience_seconds", 0.0))
 		var total := maxf(float(order.get("patience_seconds", 0.0)), 0.1)

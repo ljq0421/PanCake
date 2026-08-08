@@ -15,6 +15,31 @@ func _run() -> void:
 	session.call("begin_new_game")
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("coins", 100)
+	progression.set("reputation", 20)
+	progression.set("area_mastery", {&"area.pancake": 0})
+	progression.set("area_mastery_details", {
+		&"area.pancake": {"qualified": 0, "a_grade": 0},
+	})
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true})
+	var day_one_station = WORKSTATION_SCENE.instantiate()
+	root.add_child(day_one_station)
+	await process_frame
+	await process_frame
+	day_one_station.call("end_business_day")
+	var day_one_ticket_1 := day_one_station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket1") as Button
+	var day_one_ticket_2 := day_one_station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket2") as Button
+	var day_one_ticket_3 := day_one_station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket3") as Button
+	_check(day_one_station.get_node_or_null("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket4") == null, "day-end growth UI contains only three ticket nodes")
+	_check("宽幅摊饼器" in day_one_ticket_1.text and "辣椒酱" in day_one_ticket_2.text and "成品饮品柜" in day_one_ticket_3.text, "day-one UI previews the two D2 pancake goals and the D3 drink-area goal")
+	_check(day_one_ticket_1.disabled and day_one_ticket_2.disabled and day_one_ticket_3.disabled, "day-one preview does not allow early D2 or D3 purchases")
+	_check("1/2" in day_one_ticket_1.text and "1/2" in day_one_ticket_2.text and "1/3" in day_one_ticket_3.text, "day-one cards show their real purchase-day gaps instead of a remote-area lock")
+	_check("熟练度" in day_one_ticket_1.tooltip_text or "熟练度" in day_one_ticket_2.tooltip_text, "day-one tooltip keeps the full mastery requirement list")
+	day_one_station.queue_free()
+	await process_frame
+
+	session.call("begin_new_game")
+	progression = session.call("progression_service")
+	progression.set("coins", 100)
 	progression.set("current_day", 3)
 	var settlement: Dictionary = session.call("record_order_completed", {"id": "pancake-a", "title": "煎饼教学单"}, {"area_id": &"area.pancake", "score": 90.0}, 5)
 	_check(int(Dictionary(settlement.get("mastery", {})).get("mastery_gained", 0)) == 1 and int(progression.get("reputation")) == 4, "order result awards pancake mastery and reputation")
@@ -36,20 +61,20 @@ func _run() -> void:
 	var ticket_1 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket1") as Button
 	var ticket_2 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket2") as Button
 	var ticket_3 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket3") as Button
-	_check("安装位" in ticket_1.text and "内容位" in ticket_3.text, "growth UI exposes separate install and content purchase slots")
-	_check(is_equal_approx(ticket_1.size.x, ticket_2.size.x) and is_equal_approx(ticket_2.size.x, ticket_3.size.x), "the three install/content growth choices have equal widths")
+	_check("安装位" in ticket_1.text and "内容位" in ticket_2.text and "安装位" in ticket_3.text, "three-card growth UI exposes both independent purchase slots")
+	_check(is_equal_approx(ticket_1.size.x, ticket_2.size.x) and is_equal_approx(ticket_2.size.x, ticket_3.size.x), "the three total growth choices have equal widths")
 	_check(not "growth." in ticket_1.text and not "金币" in ticket_1.text, "growth tickets show localized names without exposing the purchase cost")
 	_check(station.global_status_label.text.contains("金币 105") and station.global_status_label.text.contains("营业日 3") and station.global_status_label.text.contains("声誉 20"), "workstation status strip renders the current coins, business day, and reputation")
-	_check(station.call("_growth_ticket_status_text", {"reason": &"day_requirement", "min_day": 4}).contains("3/4"), "day-gated growth status shows completed and required business days")
+	_check(station.call("_growth_ticket_status_text", {"reason": &"day_requirement", "current_day": 3, "min_day": 4}).contains("3/4"), "day-gated growth status shows completed and required business days")
 	var tutorial_help := str(station.call("_growth_ticket_status_text", {"reason": &"tutorial_requirement", "requires_tutorial_area_id": &"area.pancake"}))
 	_check(tutorial_help.contains("第 1 位顾客") and not tutorial_help.contains("70"), "tutorial-gated growth explains the first-customer tutorial without a score gate")
 	_check(bool(session.call("purchase_growth", &"growth.area.packaged_drink").get("success", false)), "install purchase accepted from settlement state")
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content purchase accepted alongside install state")
 	station.call("_refresh_growth_section")
 	_check("已购买" in ticket_1.text and "成品饮品柜" in ticket_1.text and ticket_1.disabled, "purchased installation slot keeps the purchased item instead of changing to another recommendation")
-	_check(ticket_2.visible and ticket_2.disabled and "该购买位已有预订" in ticket_2.text, "the second installation candidate remains visible with the compact occupied-slot status")
-	_check("已选择安装" in ticket_2.tooltip_text, "the occupied installation candidate keeps the full selected-item explanation in its tooltip")
-	_check("已购买" in ticket_3.text and "辣椒酱" in ticket_3.text and ticket_3.disabled, "purchased content slot keeps the purchased item instead of changing to another recommendation")
+	_check("已购买" in ticket_2.text and "辣椒酱" in ticket_2.text and ticket_2.disabled, "purchased content slot keeps the purchased item in the three-card list")
+	_check(ticket_3.visible and ticket_3.disabled and "该购买位已有预订" in ticket_3.text, "the remaining installation goal stays visible with the compact occupied-slot status")
+	_check("已选择安装" in ticket_3.tooltip_text, "the occupied installation candidate keeps the full selected-item explanation in its tooltip")
 	station.call("_open_unlock_progress")
 	var unlock_panel := station.get_node("SafeArea/UnlockProgressPanel") as PanelContainer
 	var unlock_label := station.get_node("SafeArea/UnlockProgressPanel/Margin/VBox/Scroll/UnlockProgressLabel") as Label

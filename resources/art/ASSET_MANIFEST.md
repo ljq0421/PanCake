@@ -2976,6 +2976,22 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `visual_check`: agent-inspected 1920x1080 GPU frames at `tmp/validation/initial_unlock_workstation_gpu_1920x1080.png` and `tmp/validation/workstation_hold_refill_gpu_1920x1080.png`; the black cook face, batter, egg, and fillings remain inside the same horizontal oval.
 - `human_review`: pending
 
+## workstation_18_single_row_1920x1080_v7
+
+- `status`: generated; imported; runtime-integrated; human review pending
+- `purpose`: customer-illustration-style preview integrated at the user's request, retaining the warm cel-shaded line language while leaving all gameplay code unchanged.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v7.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fda46-3ef2-7a01-90ce-da8c99cd02cf\exec-993122fe-bac3-4b99-aafe-ab30708a1e42.png`
+- `edit_target`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v6.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v7.md`
+- `generator`: Codex built-in `image_gen`, style transfer preview
+- `processing`: HighQualityBicubic deterministic resize from ImageGen's `1672x941` output to `1920x1080`, without crop or compositing.
+- `sha256`: `61681FDCD65E5FFCCE99CB2644E8795EEA26B97B6DA4825286FB8C678CFED1D2`
+- `visual_check`: agent inspection passed — the customer-style outline and cel-shading are visible while the continuous tabletop, one divider, and 18-well rail remain aligned in the 1920x1080 GPU frame.
+- `godot_import`: passed — Godot 4.7.1 imported the `1920x1080` PNG as a `Texture2D`.
+- `runtime_scene_check`: passed — v7 is referenced by `initial_unlock_workstation.tscn`; targeted headless checks and a D3D12 GPU smoke retry passed.
+- `human_review`: pending
+
 ## workstation_18_single_row_1920x1080_v6
 
 - `status`: generated; imported; runtime-integrated; human review pending

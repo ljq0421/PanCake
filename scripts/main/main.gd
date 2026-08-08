@@ -13,6 +13,9 @@ func _ready() -> void:
 	end_business_button.pressed.connect(_end_business_day)
 	main_menu_button.pressed.connect(_return_to_start_menu)
 	workstation.daily_bill_closed.connect(_return_to_start_menu)
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("set_business_paused"):
+		session.call("set_business_paused", false)
 	_log_info(&"bootstrap", "M0 main scene started with Mobile renderer")
 
 

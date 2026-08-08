@@ -37,9 +37,12 @@ func _run() -> void:
 	var ticket_2 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket2") as Button
 	var ticket_3 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket3") as Button
 	_check("安装位" in ticket_1.text and "内容位" in ticket_3.text, "growth UI exposes separate install and content purchase slots")
+	_check(is_equal_approx(ticket_1.size.x, ticket_2.size.x) and is_equal_approx(ticket_2.size.x, ticket_3.size.x), "the three install/content growth choices have equal widths")
 	_check(not "growth." in ticket_1.text and not "金币" in ticket_1.text, "growth tickets show localized names without exposing the purchase cost")
 	_check(station.global_status_label.text.contains("金币 105") and station.global_status_label.text.contains("营业日 3") and station.global_status_label.text.contains("声誉 20"), "workstation status strip renders the current coins, business day, and reputation")
 	_check(station.call("_growth_ticket_status_text", {"reason": &"day_requirement", "min_day": 4}).contains("3/4"), "day-gated growth status shows completed and required business days")
+	var tutorial_help := str(station.call("_growth_ticket_status_text", {"reason": &"tutorial_requirement", "requires_tutorial_area_id": &"area.pancake"}))
+	_check(tutorial_help.contains("第 1 位顾客") and not tutorial_help.contains("70"), "tutorial-gated growth explains the first-customer tutorial without a score gate")
 	_check(bool(session.call("purchase_growth", &"growth.area.packaged_drink").get("success", false)), "install purchase accepted from settlement state")
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content purchase accepted alongside install state")
 	station.call("_refresh_growth_section")
@@ -63,7 +66,9 @@ func _run() -> void:
 	var drink_lock := refreshed_station.get_node("SafeArea/FiveAreaStationArtwork/PackagedDrinkLock") as CanvasItem
 	var drink_placeholder := refreshed_station.get_node("SafeArea/FiveAreaStationArtwork/PackagedDrinkPlaceholder") as CanvasItem
 	var drink_click := refreshed_station.get_node("SafeArea/FiveAreaStationClickLayers/PackagedDrinkLockedClickLayer") as Button
+	var chili_button := refreshed_station.get_node("SafeArea/RightRack/ChiliSauceRefillButton") as Button
 	_check(not drink_lock.visible and drink_placeholder.visible and drink_click.disabled, "scene reload replaces the activated packaged-drink lock with the explicit UI art placeholder")
+	_check(chili_button.visible and chili_button.mouse_filter == Control.MOUSE_FILTER_STOP, "activated chili sauce appears as a usable sauce control")
 	refreshed_station.call("_open_unlock_progress")
 	var activated_unlock_label := refreshed_station.get_node("SafeArea/UnlockProgressPanel/Margin/VBox/Scroll/UnlockProgressLabel") as Label
 	_check(

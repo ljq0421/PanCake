@@ -192,7 +192,7 @@ func _rebuild_heatmap_texture() -> void:
 	var inverse_maximum_thickness := 1.0 / maxf(model.parameters.maximum_thickness, 0.001)
 	var inverse_maximum_sauce := 1.0 / maxf(model.parameters.sauce_maximum_concentration, 0.001)
 	var inverse_maximum_egg := 1.0 / maxf(model.parameters.egg_maximum_concentration, 0.001)
-	var egg_visible := model.yolk_broken and not model.is_flipped
+	var egg_visible := model.yolk_broken and model.egg_is_on_visible_side()
 	for target_index in pixel_count:
 		var source_index := _source_indices[target_index]
 		var coverage_byte := roundi(clampf(model.coverage[source_index], 0.0, 1.0) * 255.0)

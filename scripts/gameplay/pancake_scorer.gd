@@ -70,6 +70,8 @@ static func evaluate_order(
 	var thickness_squared_total := 0.0
 	var front_total := 0.0
 	var back_total := 0.0
+	var front_squared_total := 0.0
+	var back_squared_total := 0.0
 	var heat_squared_error := 0.0
 	var heat_target := _heat_target(order.get("heat_preference", &"golden"))
 	for index in model.cell_count:
@@ -81,6 +83,8 @@ static func evaluate_order(
 		thickness_squared_total += thickness * thickness
 		front_total += model.doneness[index]
 		back_total += model.back_doneness[index]
+		front_squared_total += model.doneness[index] * model.doneness[index]
+		back_squared_total += model.back_doneness[index] * model.back_doneness[index]
 		var front_error := model.doneness[index] - heat_target
 		var back_error := model.back_doneness[index] - heat_target
 		heat_squared_error += (front_error * front_error + back_error * back_error) * 0.5
@@ -101,11 +105,14 @@ static func evaluate_order(
 	var egg_result := model.calculate_egg_spread_summary()
 	var egg_score := float(egg_result.score)
 
+	var sauce_results := {}
+	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
+		sauce_results[sauce_type] = evaluate_sauce_type(model, sauce_type)
 	var required_sauces: Array = order.get("sauces", [])
 	var sauce_scores := PackedFloat32Array()
 	var missing_sauces := PackedStringArray()
 	for sauce_type in required_sauces:
-		var sauce_result := evaluate_sauce_type(model, sauce_type)
+		var sauce_result: Dictionary = Dictionary(sauce_results.get(StringName(sauce_type), {}))
 		sauce_scores.append(float(sauce_result.score))
 		if float(sauce_result.coverage_ratio) < 0.35:
 			missing_sauces.append(OrderService.sauce_display_name(sauce_type))
@@ -116,7 +123,7 @@ static func evaluate_order(
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
 		if required_sauces.has(sauce_type):
 			continue
-		var unexpected := evaluate_sauce_type(model, sauce_type)
+		var unexpected: Dictionary = Dictionary(sauce_results.get(sauce_type, {}))
 		if float(unexpected.coverage_ratio) > 0.08:
 			sauce_score = maxf(sauce_score - 24.0, 0.0)
 
@@ -194,8 +201,38 @@ static func evaluate_order(
 			applied_ingredient_ids.append(ingredient_type)
 	var applied_sauce_ids: Array[StringName] = []
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
-		if float(evaluate_sauce_type(model, sauce_type).get("coverage_ratio", 0.0)) > 0.08:
+		if float(Dictionary(sauce_results.get(sauce_type, {})).get("coverage_ratio", 0.0)) > 0.08:
 			applied_sauce_ids.append(sauce_type)
+	var serving_sauce_results := {}
+	for sauce_type in sauce_results:
+		var sauce_result: Dictionary = Dictionary(sauce_results[sauce_type])
+		serving_sauce_results[str(sauce_type)] = {
+			"score": float(sauce_result.get("score", 0.0)),
+			"coverage_ratio": float(sauce_result.get("coverage_ratio", 0.0)),
+		}
+	var serving_score_basis := {
+		"version": 1,
+		"intrinsic_dimensions": {
+			"integrity": integrity_score,
+			"thickness": thickness_score,
+			"egg": egg_score,
+			"fold": fold_score,
+		},
+		"heat_moments": {
+			"mean_front": mean_front,
+			"mean_back": mean_back,
+			"mean_front_squared": front_squared_total / divisor,
+			"mean_back_squared": back_squared_total / divisor,
+		},
+		"sauce_results": serving_sauce_results,
+		"ingredient_distribution_score": float(ingredient_distribution.score),
+		"ingredient_distribution_tags": Array(ingredient_distribution.tags).duplicate(),
+		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
+		"applied_ingredient_quantities": applied_ingredient_quantities.duplicate(true),
+		"applied_sauce_ids": applied_sauce_ids.duplicate(),
+		"repair_tags": Array(repair_tags).duplicate(),
+		"score_caps": score_caps.duplicate(true),
+	}
 	return {
 		"score": overall,
 		"dimensions": {
@@ -228,6 +265,138 @@ static func evaluate_order(
 		"applied_ingredient_quantities": applied_ingredient_quantities,
 		"applied_sauce_ids": applied_sauce_ids,
 		"score_caps": score_caps,
+		"serving_score_basis": serving_score_basis,
+	}
+
+
+static func evaluate_stored_product(
+	product: Dictionary,
+	order: Dictionary,
+	elapsed_seconds: float,
+	patience_ratio: float
+) -> Dictionary:
+	var basis: Dictionary = Dictionary(product.get("serving_score_basis", {}))
+	if basis.is_empty():
+		return {}
+	var intrinsic: Dictionary = Dictionary(basis.get("intrinsic_dimensions", {}))
+	var integrity_score := float(intrinsic.get("integrity", 0.0))
+	var thickness_score := float(intrinsic.get("thickness", 0.0))
+	var egg_score := float(intrinsic.get("egg", 0.0))
+	var fold_score := float(intrinsic.get("fold", 0.0))
+
+	var heat_target := _heat_target(StringName(order.get("heat_preference", &"golden")))
+	var heat_moments: Dictionary = Dictionary(basis.get("heat_moments", {}))
+	var mean_front := float(heat_moments.get("mean_front", heat_target))
+	var mean_back := float(heat_moments.get("mean_back", heat_target))
+	var mean_front_squared := float(heat_moments.get("mean_front_squared", mean_front * mean_front))
+	var mean_back_squared := float(heat_moments.get("mean_back_squared", mean_back * mean_back))
+	var heat_mse := maxf((
+		mean_front_squared - 2.0 * heat_target * mean_front + heat_target * heat_target
+		+ mean_back_squared - 2.0 * heat_target * mean_back + heat_target * heat_target
+	) * 0.5, 0.0)
+	var heat_score := 100.0 * clampf(1.0 - sqrt(heat_mse) / 0.62, 0.0, 1.0)
+
+	var sauce_results: Dictionary = Dictionary(basis.get("sauce_results", {}))
+	var required_sauces: Array = Array(order.get("sauces", []))
+	var sauce_score := 0.0
+	var sauce_score_count := 0
+	var missing_sauces := PackedStringArray()
+	for sauce_variant in required_sauces:
+		var sauce_type := StringName(sauce_variant)
+		var sauce_result: Dictionary = Dictionary(sauce_results.get(str(sauce_type), {}))
+		sauce_score += float(sauce_result.get("score", 0.0))
+		sauce_score_count += 1
+		if float(sauce_result.get("coverage_ratio", 0.0)) < 0.35:
+			missing_sauces.append(OrderService.sauce_display_name(sauce_type))
+	if sauce_score_count > 0:
+		sauce_score /= float(sauce_score_count)
+	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
+		if required_sauces.has(sauce_type):
+			continue
+		var unexpected: Dictionary = Dictionary(sauce_results.get(str(sauce_type), {}))
+		if float(unexpected.get("coverage_ratio", 0.0)) > 0.08:
+			sauce_score = maxf(sauce_score - 24.0, 0.0)
+
+	var applied_ingredients: Array = Array(basis.get("applied_ingredient_ids", []))
+	var required_ingredients: Array = Array(order.get("ingredients", []))
+	var missing_ingredients := PackedStringArray()
+	var unexpected_ingredients := PackedStringArray()
+	for ingredient_variant in required_ingredients:
+		var ingredient_type := StringName(ingredient_variant)
+		if not applied_ingredients.has(ingredient_type) and not applied_ingredients.has(str(ingredient_type)):
+			missing_ingredients.append(IngredientModel.display_name(ingredient_type))
+	for ingredient_variant in applied_ingredients:
+		var ingredient_type := StringName(ingredient_variant)
+		if not required_ingredients.has(ingredient_type) and not required_ingredients.has(str(ingredient_type)):
+			unexpected_ingredients.append(IngredientModel.display_name(ingredient_type))
+	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
+	var ingredient_score := clampf(float(basis.get("ingredient_distribution_score", 0.0)) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
+	var order_score := clampf(
+		100.0
+		- float(missing_ingredients.size()) * 22.0
+		- float(unexpected_ingredients.size()) * 14.0
+		- float(missing_sauces.size()) * 24.0,
+		0.0,
+		100.0
+	)
+	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
+	var time_score := 100.0 * clampf(1.0 - maxf(elapsed_seconds - time_limit * 0.55, 0.0) / (time_limit * 0.75), 0.0, 1.0)
+	var overall := (
+		integrity_score * 0.13
+		+ thickness_score * 0.12
+		+ heat_score * 0.15
+		+ egg_score * 0.08
+		+ sauce_score * 0.13
+		+ ingredient_score * 0.12
+		+ fold_score * 0.12
+		+ order_score * 0.11
+		+ time_score * 0.04
+	)
+	var tags := PackedStringArray()
+	if integrity_score >= 85.0:
+		tags.append("饼皮完整")
+	if thickness_score < 58.0:
+		tags.append("厚薄不均")
+	if heat_score < 58.0:
+		tags.append("两面火候有偏差")
+	if sauce_score >= 82.0:
+		tags.append("酱料均匀")
+	if not missing_ingredients.is_empty():
+		tags.append("缺少%s" % "、".join(missing_ingredients))
+	if not unexpected_ingredients.is_empty():
+		tags.append("多放%s" % "、".join(unexpected_ingredients))
+	for tag_variant in Array(basis.get("ingredient_distribution_tags", [])):
+		var tag := str(tag_variant)
+		if not tags.has(tag):
+			tags.append(tag)
+	for tag_variant in Array(basis.get("repair_tags", [])):
+		tags.append(str(tag_variant))
+	return {
+		"score": overall,
+		"dimensions": {
+			"integrity": integrity_score,
+			"thickness": thickness_score,
+			"heat": heat_score,
+			"egg": egg_score,
+			"sauce": sauce_score,
+			"ingredients": ingredient_score,
+			"fold": fold_score,
+			"order": order_score,
+			"time": time_score,
+		},
+		"metrics": {
+			"mean_front_doneness": mean_front,
+			"mean_back_doneness": mean_back,
+			"heat_target": heat_target,
+		},
+		"tags": tags,
+		"feedback": _feedback_for(overall, tags, patience_ratio),
+		"missing_ingredients": missing_ingredients,
+		"missing_sauces": missing_sauces,
+		"applied_ingredient_ids": applied_ingredients.duplicate(),
+		"applied_ingredient_quantities": Dictionary(basis.get("applied_ingredient_quantities", {})).duplicate(true),
+		"applied_sauce_ids": Array(basis.get("applied_sauce_ids", [])).duplicate(),
+		"score_caps": Dictionary(basis.get("score_caps", {})).duplicate(true),
 	}
 
 

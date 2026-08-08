@@ -5,7 +5,8 @@ signal changed(snapshot: Dictionary)
 
 const SLOT_COUNT := 2
 const AGING_SECONDS := 20.0
-const EXPIRED_SECONDS := 60.0
+const STALE_SECONDS := 60.0
+const EXPIRED_SECONDS := STALE_SECONDS
 
 var _slots: Array[Dictionary] = [{}, {}]
 
@@ -27,7 +28,7 @@ func load_snapshot(value: Dictionary) -> void:
 	for index in mini(source_slots.size(), SLOT_COUNT):
 		var candidate := Dictionary(source_slots[index]).duplicate(true)
 		if _is_valid_product(candidate):
-			candidate["age_seconds"] = clampf(float(candidate.get("age_seconds", 0.0)), 0.0, EXPIRED_SECONDS)
+			candidate["age_seconds"] = maxf(float(candidate.get("age_seconds", 0.0)), 0.0)
 			_slots[index] = candidate
 
 
@@ -62,34 +63,48 @@ func advance_time(delta: float) -> void:
 		if _slots[index].is_empty():
 			continue
 		var old_age := float(_slots[index].get("age_seconds", 0.0))
-		_slots[index]["age_seconds"] = minf(old_age + safe_delta, EXPIRED_SECONDS)
+		_slots[index]["age_seconds"] = old_age + safe_delta
 		changed_any = true
 	if changed_any:
 		_emit_changed()
 
 
-func preview_serve_matching(slot_index: int, order: Dictionary) -> Dictionary:
+func preview_serve(slot_index: int, order: Dictionary) -> Dictionary:
 	if slot_index < 0 or slot_index >= SLOT_COUNT or _slots[slot_index].is_empty():
 		return {"success": false, "reason": &"empty_slot"}
 	var product := _slots[slot_index]
-	if float(product.get("age_seconds", 0.0)) >= EXPIRED_SECONDS:
-		return {"success": false, "reason": &"product_expired"}
 	var mismatch_reasons := _mismatch_reasons(product, order)
-	if not mismatch_reasons.is_empty():
-		return {"success": false, "reason": &"product_mismatch", "mismatch_reasons": mismatch_reasons}
 	var penalty := freshness_penalty(float(product.get("age_seconds", 0.0)))
-	var final_score := maxf(float(product.get("score", 0.0)) - penalty, 0.0)
-	return {"success": true, "slot_index": slot_index, "product": _slot_presentation(product), "freshness_penalty": penalty, "final_score": final_score, "grade": grade_for_score(final_score)}
+	var order_penalty := legacy_order_penalty(mismatch_reasons)
+	var final_score := 0.0 if mismatch_reasons.has("product_id") else maxf(float(product.get("score", 0.0)) - order_penalty - penalty, 0.0)
+	return {
+		"success": true,
+		"slot_index": slot_index,
+		"product": _slot_presentation(product),
+		"mismatch_reasons": mismatch_reasons,
+		"freshness_penalty": penalty,
+		"legacy_order_penalty": order_penalty,
+		"final_score": final_score,
+		"grade": grade_for_score(final_score),
+	}
 
 
-func serve_matching(slot_index: int, order: Dictionary) -> Dictionary:
-	var preview := preview_serve_matching(slot_index, order)
+func serve(slot_index: int, order: Dictionary) -> Dictionary:
+	var preview := preview_serve(slot_index, order)
 	if not bool(preview.get("success", false)):
 		return preview
 	_slots[slot_index] = {}
 	_emit_changed()
 	preview["served_product"] = preview.get("product", {}).duplicate(true)
 	return preview
+
+
+func preview_serve_matching(slot_index: int, order: Dictionary) -> Dictionary:
+	return preview_serve(slot_index, order)
+
+
+func serve_matching(slot_index: int, order: Dictionary) -> Dictionary:
+	return serve(slot_index, order)
 
 
 func discard(slot_index: int, reason: StringName = &"discarded") -> Dictionary:
@@ -116,7 +131,18 @@ func clear_for_day_end() -> Array[Dictionary]:
 static func freshness_penalty(age_seconds: float) -> float:
 	if age_seconds <= AGING_SECONDS:
 		return 0.0
-	return clampf((age_seconds - AGING_SECONDS) / (EXPIRED_SECONDS - AGING_SECONDS) * 20.0, 0.0, 20.0)
+	return clampf((age_seconds - AGING_SECONDS) / (STALE_SECONDS - AGING_SECONDS) * 20.0, 0.0, 20.0)
+
+
+static func legacy_order_penalty(mismatch_reasons: PackedStringArray) -> float:
+	var penalty := 0.0
+	if mismatch_reasons.has("heat_preference"):
+		penalty += 15.0
+	if mismatch_reasons.has("ingredient_ids"):
+		penalty += 12.0
+	if mismatch_reasons.has("sauce_ids"):
+		penalty += 13.0
+	return penalty
 
 
 static func grade_for_score(score: float) -> StringName:
@@ -163,7 +189,7 @@ func _slot_presentation(slot: Dictionary) -> Dictionary:
 		return {"state": &"empty"}
 	var result := slot.duplicate(true)
 	var age := float(result.get("age_seconds", 0.0))
-	result["state"] = &"fresh" if age < AGING_SECONDS else (&"aging" if age < EXPIRED_SECONDS else &"expired")
+	result["state"] = &"fresh" if age < AGING_SECONDS else (&"aging" if age < STALE_SECONDS else &"stale")
 	result["freshness_penalty"] = freshness_penalty(age)
 	return result
 

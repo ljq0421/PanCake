@@ -879,15 +879,16 @@ locked / empty
 empty
   └─ store(product_snapshot) → fresh
 fresh
-  ├─ serve_matching_order → empty
-  ├─ discard → empty + waste event
-  └─ elapsed >= 20s → aging
+	├─ serve_active_order → empty
+	├─ discard → empty + waste event
+	└─ elapsed >= 20s → aging
 aging
-  ├─ serve_matching_order → empty（带新鲜度扣分）
-  ├─ discard → empty + waste event
-  └─ elapsed >= 60s → expired
-expired
-  └─ discard/auto_day_end_clear → empty + waste event
+	├─ serve_active_order → empty（带新鲜度扣分）
+	├─ discard → empty + waste event
+	└─ elapsed >= 60s → stale
+stale
+	├─ serve_active_order → empty（固定扣20分）
+	└─ discard/auto_day_end_clear → empty + waste event
 ```
 
 成品快照至少包含：
@@ -902,18 +903,19 @@ expired
     "sauce_ids": PackedStringArray(),
     "fold_snapshot": {},
     "dimension_scores": {},
+    "serving_score_basis": {},
     "base_score": 0.0,
     "stored_elapsed_seconds": 0.0,
 }
 ```
 
-匹配使用订单要求，不使用 `source_order_template_id` 直接放行。必须重新比对商品、必需小料、酱料和火候目标；最终得分为原始评分减去新鲜度扣分，不能重新随机评分。
+交付不使用 `source_order_template_id` 作为硬门槛。暂存煎饼可以交给任意当前活动订单，但必须依据成品快照重新计算该订单下的火候、酱料、配料、订单和等待时间分，再扣新鲜度分；差异只能影响评分和结算反馈，不能替玩家拒绝错单。递餐期间暂停鏊上在制煎饼，付款后为下一位顾客恢复原制作阶段。
 
 新鲜度 v0：
 
 - 0～20秒：扣0分；
 - 20～60秒：线性扣0～20分；
-- 60秒：过期，不可交付。
+- 60秒及以后：固定扣20分，标记为 `stale`，仍可交付。
 
 ## 10. 生产服务 API
 
@@ -987,7 +989,7 @@ func load_snapshot(snapshot: Dictionary) -> Dictionary
 
 这条规则防止批量生产变成无限成品库存，也保证高级设备保温、输出架和煎饼托盘仍有明确价值。
 
-普通设备产出的可交付成品即使商品或温度不匹配，也允许被玩家放入活动订单，错误在正式提交时结算；否则系统会替玩家消除错单。`preview_attach_product()` 必须返回 `will_match` 和 `mismatch_reasons`，但只有槽位已满、实例终态或订单非活动时才阻止附加。煎饼暂存托盘是例外：按照产品规则，它只允许把匹配快照交付给订单。
+包括煎饼暂存托盘在内的可交付成品，即使商品、配方或温度不匹配，也允许被玩家放入活动订单，错误在正式提交时结算；否则系统会替玩家消除错单。`preview_attach_product()` 必须返回 `will_match` 和 `mismatch_reasons`，但只有槽位已满、实例终态、订单非活动或已有递餐/付款事务时才阻止附加。
 
 ## 11. 订单生成与结算算法
 
@@ -1016,11 +1018,13 @@ func load_snapshot(snapshot: Dictionary) -> Dictionary
 ### 11.3 教学优先级
 
 1. 若已有 `active_tutorial_area_id`，且当天尚未生成教学单，尝试生成该区域教学单；
-2. 教学单固定为当天第2位顾客；若第2位已生成，则使用第3位；
+2. 教学单固定为当天第1位顾客；若当天队列已经生成，则在下一营业日第1位出现；
 3. 教学期间不生成三件套，也不组合其他未教学内容；
 4. 成功完成后标记教学完成，次日才从队列激活下一区域教学；
 5. 主动跳过或连续失败2次后结束教学，但不给熟练度；
 6. 同一天只处理一个区域教学。
+
+区域教学以完成整套制作与交付流程为通过条件，不设置 70 分或其他最低评分门槛；评分仍照常进入账单与熟练度统计。
 
 ### 11.4 区域权重
 
@@ -1606,7 +1610,7 @@ func end_business_day() -> Dictionary
 - 高级炸锅没有隐式自动升篮；
 - 豆浆输出架满时不释放机器；
 - 蒸笼四层无串扰；
-- 托盘只能交付匹配订单、两格上限、60秒过期和日结清空。
+- 托盘可向活动订单交付匹配或不匹配成品、两格上限、60秒后固定扣20分和日结清空。
 - 煎饼85/70/60等级边界保持不变，托盘新鲜度扣分后正确重算等级。
 
 ### 17.4 订单

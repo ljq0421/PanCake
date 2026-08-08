@@ -4,9 +4,9 @@ const SCENE_PATH := "res://scenes/gameplay/initial_unlock_workstation.tscn"
 const CATALOG := preload("res://scripts/data/workstation_expansion_catalog.gd")
 const CENTRAL_PAN_BAY := Rect2(640.0, 500.0, 620.0, 420.0)
 const STARTER_SLOT_RECTS := {
-	&"egg": Rect2(654.0, 925.0, 89.0, 120.0),
-	&"scallion": Rect2(759.0, 925.0, 89.0, 120.0),
-	&"baocui": Rect2(864.0, 925.0, 89.0, 120.0),
+	&"egg": Rect2(6.0, 0.0, 89.0, 120.0),
+	&"baocui": Rect2(111.0, 0.0, 89.0, 120.0),
+	&"scallion": Rect2(216.0, 0.0, 89.0, 120.0),
 }
 
 var _failures := PackedStringArray()
@@ -33,6 +33,7 @@ func _run() -> void:
 	_check_order_card_runtime_content(workstation)
 	_check_material_grid(workstation)
 	_check_opening_day_controls(workstation)
+	_check_player_feedback_controls(workstation, game_session)
 	_check_no_egg_waffle_data(workstation)
 	workstation.queue_free()
 	await process_frame
@@ -99,7 +100,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 		if icon != null and icon.visible and icon.texture != null:
 			visible_ingredients += 1
 	_check(visible_ingredients > 0 and visible_ingredients <= 4, "runtime single-dish ingredients occupy only that dish's four color-grouped hint slots")
-	_check(heart != null and heart.visible and patience != null and patience.visible and patience.value > 0.0 and patience.value <= patience.max_value, "runtime patience is rendered in the compact heart progress bar")
+	_check(heart != null and heart.visible and patience != null and not patience.visible and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the first-customer tutorial keeps the compact order card but correctly hides its patience countdown")
 
 
 func _check_material_grid(workstation: Node) -> void:
@@ -127,28 +128,98 @@ func _check_material_grid(workstation: Node) -> void:
 		var art := artwork.get_node_or_null("Slot%02d" % locked_index) as TextureRect
 		var hit := hit_areas.get_node_or_null("Slot%02dLockedButton" % locked_index) as Button
 		_check(art != null and art.texture != null and hit != null and not hit.disabled, "locked ingredient slot %02d has art and a click target" % locked_index)
+	for prompt_path in ["Slot04LockedButton/PromptLabel", "Slot10LockedButton/PromptLabel"]:
+		var prompt := hit_areas.get_node_or_null(prompt_path) as Label
+		_check(prompt != null and not prompt.visible and prompt.text.is_empty(), "locked future ingredients do not reserve a named text placeholder")
 
 
 func _check_opening_day_controls(workstation: Node) -> void:
 	var rack := workstation.get_node_or_null("SafeArea/IngredientRack") as Control
-	_check(_rect_matches(rack, Rect2(648.0, 925.0, 305.0, 120.0)), "the three starter controls occupy fixed Slots07-Slot09")
+	_check(_rect_matches(rack, Rect2(648.0, 925.0, 305.0, 120.0)), "the scene keeps one stable ingredient-control parent")
 	var controls := {
 		&"egg": workstation.get_node_or_null("SafeArea/IngredientRack/EggButton") as Control,
 		&"scallion": workstation.get_node_or_null("SafeArea/IngredientRack/ScallionButton") as Control,
 		&"baocui": workstation.get_node_or_null("SafeArea/IngredientRack/BaocuiButton") as Control,
 	}
-	var local_slot_positions := {
-		&"egg": Rect2(6.0, 0.0, 89.0, 120.0),
-		&"scallion": Rect2(216.0, 0.0, 89.0, 120.0),
-		&"baocui": Rect2(111.0, 0.0, 89.0, 120.0),
-	}
 	for ingredient_id in STARTER_SLOT_RECTS:
 		var control: Control = controls[ingredient_id]
-		_check(control != null and control.visible and _rect_matches(control, local_slot_positions[ingredient_id]), "%s occupies its opening-day material well" % ingredient_id)
+		_check(control != null and control.visible and _rect_matches(control, STARTER_SLOT_RECTS[ingredient_id]), "%s occupies its opening-day priority well" % ingredient_id)
+	_check(StringName(controls[&"egg"].get_meta(&"material_slot_id", &"")) == &"slot.07", "egg remains in its dedicated Slot07")
+	_check(StringName(controls[&"baocui"].get_meta(&"material_slot_id", &"")) == &"slot.08" and StringName(controls[&"scallion"].get_meta(&"material_slot_id", &"")) == &"slot.09", "baocui and scallion remain fixed in Slot08-Slot09")
 	var unlocked: Array = workstation.get_meta("unlocked_ingredient_ids", [])
 	_check(unlocked == [&"egg", &"baocui", &"scallion"], "only egg, baocui, and scallion are ingredient unlocks on day one")
 	var chili := workstation.get_node_or_null("SafeArea/RightRack/ChiliSauceRefillButton") as CanvasItem
 	_check(chili != null and not chili.visible, "chili sauce remains unavailable on day one")
+
+
+func _check_player_feedback_controls(workstation: Node, game_session: Node) -> void:
+	workstation.apply_progression_effects({
+		"owned_growth_ids": [&"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush"],
+		"device_tiers": {&"device.pancake_griddle": 2},
+	})
+	var spreader_button := workstation.get_node_or_null("SafeArea/LeftRack/ScraperButton") as Button
+	var sauce_button := workstation.get_node_or_null("SafeArea/LeftRack/SauceBrushButton") as Button
+	var press_button := workstation.get_node_or_null("SafeArea/LeftRack/PressSpreaderButton") as Button
+	var legacy_auto_button := workstation.get_node_or_null("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
+	_check(spreader_button != null and spreader_button.visible and (spreader_button.get_node("Label") as Label).text.contains("摊饼器"), "the T-shaped spreader remains available after buying the press")
+	_check(press_button != null and press_button.visible and not press_button.disabled and press_button.text == "压饼器", "the press has its own visible one-shot control")
+	_check(sauce_button != null and sauce_button.visible and not sauce_button.disabled and (sauce_button.get_node("Label") as Label).text == "自动酱刷", "the automatic brush upgrade replaces the existing sauce-brush control")
+	_check(legacy_auto_button != null and not legacy_auto_button.visible, "the duplicate automatic-brush control stays hidden")
+	_check((workstation.get_node("SafeArea/BottomStrip") as Control).visible, "the shared interaction feedback strip is visible during normal play")
+	if press_button != null:
+		press_button.emit_signal("pressed")
+	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "clicking a press tool outside its window gives a visible instruction")
+	workstation.call("_auto_pour_center")
+	var elapsed_before_press := float(workstation.p1_session.elapsed_seconds)
+	var press_result: Dictionary = workstation.call("use_press_spreader")
+	_check(bool(press_result.get("success", false)) and workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "pressing poured batter completes the pancake skin and enters the egg stage")
+	_check(bool(workstation.get("_spread_shape_locked")) and workstation.tool_controller.current_tool == ToolController.Tool.NONE, "successful press locks the finished skin without manual spreading")
+	workstation.pancake_model.crack_egg(Vector2(workstation.pancake_model.grid_size, workstation.pancake_model.grid_size) * 0.5)
+	workstation.call("_refresh_p1_ui")
+	if spreader_button != null:
+		spreader_button.emit_signal("pressed")
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER, "the T-shaped spreader remains selectable for the egg stage after pressing the batter")
+	_check(float(press_result.get("coverage_ratio", 0.0)) >= 0.79 and is_equal_approx(float(workstation.p1_session.elapsed_seconds), elapsed_before_press + 1.2), "pressing creates full standard coverage and keeps its time cost")
+	var repeat_result: Dictionary = workstation.call("use_press_spreader")
+	_check(not bool(repeat_result.get("success", false)) and StringName(repeat_result.get("reason", &"")) == &"already_used", "the press remains limited to once per pancake")
+	if sauce_button != null:
+		sauce_button.emit_signal("pressed")
+	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("翻面后"), "clicking the automatic sauce brush outside its window explains when it can be used")
+	_check((workstation.get_node("SafeArea/GlobalStatusLabel") as Label).text.contains("熟练度（煎饼）"), "the persistent top status explicitly shows pancake mastery")
+	var bill_size_before := (workstation.get_node("SafeArea/DailyBillPanel") as Control).size
+	workstation.call("_refresh_growth_section", "已扣费并预订：对应购买位将在明日激活。")
+	_check((workstation.get_node("SafeArea/DailyBillPanel") as Control).size == bill_size_before, "growth selection text does not stretch the daily bill panel")
+	var heat_slider := workstation.get_node("SafeArea/P1ControlBar/HeatSlider") as HSlider
+	_check(not heat_slider.visible and not heat_slider.editable and is_equal_approx(float(workstation.p1_session.heat_level), 0.50), "griddle heat is fixed at the current 50-percent default and is not adjustable")
+	if game_session != null:
+		var progression: RefCounted = game_session.call("progression_service")
+		progression.set("owned_growth_ids", {&"growth.capacity.pancake_holding_tray.two_slots": true})
+		workstation.call("_refresh_pancake_holding_tray")
+		var production_phase_before: int = int(workstation.p1_session.phase)
+		var pancake_mass_before: float = float(workstation.pancake_model.total_thickness())
+		var stored: Dictionary = Dictionary(game_session.call("store_pancake_product", {
+			"product_instance_id": &"product_instance.integration.tray_mismatch",
+			"product_id": &"product.pancake.custom",
+			"heat_preference": &"well_done",
+			"ingredient_ids": [],
+			"sauce_ids": [],
+			"fold_snapshot": {"package_result": &"paper_bag"},
+			"dimension_scores": {},
+			"score": 90.0,
+		}))
+		workstation.call("_refresh_pancake_holding_tray")
+		workstation.call("_serve_pancake_from_holding_tray", 0)
+		_check(bool(Dictionary(stored).get("success", false)) and workstation.p1_session.phase == P1Session.Phase.HANDOFF, "a mismatched tray pancake can start delivery while another pancake is in progress")
+		_check(is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "starting tray delivery does not mutate the pancake on the griddle")
+		workstation.p1_session.begin_payment()
+		workstation.p1_session.finish_payment()
+		workstation.call("_start_next_order")
+		_check(workstation.p1_session.phase == production_phase_before and is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "the next customer resumes the exact griddle phase and pancake mass after tray payment")
+	var tray_slot := workstation.get_node_or_null("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
+	_check(tray_slot != null and tray_slot.visible and not tray_slot.disabled, "empty holding slots remain clickable to explain how to store and deliver a pancake")
+	if tray_slot != null:
+		tray_slot.emit_signal("pressed")
+	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "clicking an empty holding slot gives a visible storage instruction")
 
 
 func _check_no_egg_waffle_data(workstation: Node) -> void:

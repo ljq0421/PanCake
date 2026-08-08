@@ -142,7 +142,7 @@ const PURCHASE_DEFINITIONS := {
 
 const PURCHASE_PRESENTATION := {
 	TOOL_SPREADER_WIDE: {"label": "宽头摊饼器", "category": "工具", "description": "手动摊面有效宽度 +65%；仍需连续绕圈摊开。"},
-	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "每张饼可完成一次标准摊平。"},
+	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "倒入面糊后，每张饼可点击一次形成完整饼皮并进入放鸡蛋步骤。"},
 	TOOL_SAUCE_BRUSH_AUTO: {"label": "自动酱刷", "category": "工具", "description": "按订单自动刷酱。"},
 	UPGRADE_SOY_BASIC: {"label": "现磨豆浆机", "category": "设备", "description": "解锁豆浆区。"},
 	UPGRADE_YOUTIAO_BASIC: {"label": "油条锅", "category": "设备", "description": "解锁油条区。"},

@@ -35,6 +35,8 @@ var result: Dictionary = {}
 var payment_ready := false
 var impatient_at_handoff := false
 var has_patience_countdown := true
+var tray_handoff_active := false
+var suspended_production_phase := -1
 
 
 func start(next_order: Dictionary) -> void:
@@ -47,6 +49,8 @@ func start(next_order: Dictionary) -> void:
 	result.clear()
 	payment_ready = false
 	impatient_at_handoff = false
+	tray_handoff_active = false
+	suspended_production_phase = -1
 	changed.emit()
 
 
@@ -176,13 +180,38 @@ func begin_handoff(score_result: Dictionary) -> Dictionary:
 
 
 func begin_handoff_from_tray(score_result: Dictionary) -> Dictionary:
-	if phase != Phase.SPREAD:
-		return {"success": false, "reason": "当前订单正在制作，不能直接交付托盘成品"}
+	if phase in [Phase.HANDOFF, Phase.PAYMENT, Phase.RESULT]:
+		return {"success": false, "reason": "当前顾客正在递餐或付款，不能重复交付暂存成品"}
+	if phase < Phase.SPREAD or phase > Phase.READY_TO_SERVE:
+		return {"success": false, "reason": "当前制作状态不能暂停交付暂存成品"}
+	suspended_production_phase = int(phase)
+	tray_handoff_active = true
 	result = score_result.duplicate(true)
 	impatient_at_handoff = is_impatient_now()
 	phase = Phase.HANDOFF
 	changed.emit()
 	return {"success": true}
+
+
+func has_suspended_tray_production() -> bool:
+	return tray_handoff_active and suspended_production_phase >= Phase.SPREAD and suspended_production_phase <= Phase.READY_TO_SERVE
+
+
+func resume_production_for_next_order(next_order: Dictionary) -> Dictionary:
+	if not has_suspended_tray_production():
+		return {"success": false, "reason": &"no_suspended_production"}
+	order = next_order.duplicate(true)
+	phase = suspended_production_phase
+	elapsed_seconds = 0.0
+	patience_seconds = float(order.get("time_limit", 72.0))
+	has_patience_countdown = not bool(order.get("tutorial_no_countdown", false))
+	result.clear()
+	payment_ready = false
+	impatient_at_handoff = false
+	tray_handoff_active = false
+	suspended_production_phase = -1
+	changed.emit()
+	return {"success": true, "phase": phase}
 
 
 func begin_payment() -> Dictionary:

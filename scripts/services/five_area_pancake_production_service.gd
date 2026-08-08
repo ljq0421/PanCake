@@ -81,6 +81,7 @@ func create_product_snapshot(score_result: Dictionary, order: Dictionary, fold_s
 		"fold_snapshot": fold_snapshot.duplicate(true),
 		"dimension_scores": Dictionary(score_result.get("dimensions", {})).duplicate(true),
 		"score": float(score_result.get("score", 0.0)),
+		"serving_score_basis": Dictionary(score_result.get("serving_score_basis", {})).duplicate(true),
 	}
 
 

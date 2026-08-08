@@ -57,6 +57,17 @@ func _test_beginner_heat_window() -> void:
 
 
 func _test_egg_spreading_and_score() -> void:
+	var post_flip_model := _uniform_pancake(64, 0.42)
+	post_flip_model.flip()
+	var post_flip_center := Vector2(32, 32)
+	_check(bool(post_flip_model.crack_egg(post_flip_center).get("success", false)) and post_flip_model.egg_is_on_visible_side(), "an egg can be cracked onto the visible side after flipping")
+	for step in 48:
+		var angle := TAU * float(step) / 48.0
+		post_flip_model.apply_egg_spreader_sample(post_flip_center + Vector2.from_angle(angle) * 8.0, Vector2.from_angle(angle), 70.0)
+	_check(post_flip_model.yolk_broken and post_flip_model.egg_is_on_visible_side(), "a post-flip egg can be spread on its visible side")
+	post_flip_model.flip()
+	_check(not post_flip_model.egg_is_on_visible_side(), "turning away from the egg side hides that egg layer")
+
 	var multi_egg_model := _uniform_pancake(128, 0.42)
 	_check(bool(multi_egg_model.crack_egg(Vector2(54, 64)).success), "the first egg can be cracked onto the pancake")
 	var first_egg_mass := multi_egg_model.total_egg_amount()
@@ -111,6 +122,12 @@ func _test_egg_spreading_and_score() -> void:
 	var poor_score := PancakeScorer.evaluate_order(poor_model, poor_ingredients, poor_fold, order, 48.0, 0.6)
 	_check(float(good_score.dimensions.egg) > float(poor_score.dimensions.egg), "egg coverage and uniformity produce an independent score dimension")
 	_check(float(good_score.score) > float(poor_score.score), "egg spreading quality changes the final customer score")
+	var stored_product := {"serving_score_basis": Dictionary(good_score.get("serving_score_basis", {})).duplicate(true)}
+	var same_order_score := PancakeScorer.evaluate_stored_product(stored_product, order, 48.0, 0.6)
+	_check(is_equal_approx(float(same_order_score.get("score", 0.0)), float(good_score.score)), "stored score basis reproduces the fresh-made score for the same order")
+	var different_order := OrderService.new().order_at(1)
+	var different_order_score := PancakeScorer.evaluate_stored_product(stored_product, different_order, 48.0, 0.6)
+	_check(float(different_order_score.get("score", 0.0)) < float(same_order_score.get("score", 0.0)), "stored pancake is rescored against the receiving customer's actual order")
 
 
 func _test_egg_spread_performance() -> void:
@@ -213,6 +230,35 @@ func _test_order_and_session_guards() -> void:
 	_check(bool(session.begin_handoff({"score": 80.0}).success) and session.phase == P1Session.Phase.HANDOFF and not session.payment_ready, "clicking the packaged product starts a guarded customer handoff")
 	_check(bool(session.begin_payment().success) and session.phase == P1Session.Phase.PAYMENT and not session.payment_ready, "customer acceptance advances to the payment phase")
 	_check(bool(session.finish_payment().success) and session.phase == P1Session.Phase.RESULT and session.payment_ready, "coin settlement reaches the completed result")
+	var tray_session := P1Session.new()
+	tray_session.start(first)
+	tray_session.confirm_spread(model)
+	tray_session.advance_time(12.0)
+	var tray_handoff := tray_session.begin_handoff_from_tray({"score": 74.0})
+	_check(bool(tray_handoff.get("success", false)) and tray_session.has_suspended_tray_production() and tray_session.phase == P1Session.Phase.HANDOFF, "tray delivery suspends an in-progress pancake from any production phase")
+	_check(not bool(tray_session.begin_handoff_from_tray({"score": 80.0}).get("success", false)), "a tray cannot be delivered twice during the same customer transaction")
+	tray_session.begin_payment()
+	tray_session.finish_payment()
+	var resumed := tray_session.resume_production_for_next_order(second)
+	_check(bool(resumed.get("success", false)) and tray_session.phase == P1Session.Phase.FIRST_SIDE and tray_session.order.id == second.id, "payment resumes the exact production phase for the next customer")
+	_check(is_zero_approx(tray_session.elapsed_seconds) and is_equal_approx(tray_session.patience_seconds, float(second.time_limit)), "the next customer's patience resets without resetting pancake production")
+	for production_phase in [
+		P1Session.Phase.SPREAD,
+		P1Session.Phase.FIRST_SIDE,
+		P1Session.Phase.SECOND_SIDE,
+		P1Session.Phase.SAUCE_AND_FILLINGS,
+		P1Session.Phase.FOLD,
+		P1Session.Phase.PACKAGE,
+		P1Session.Phase.READY_TO_SERVE,
+	]:
+		var phase_session := P1Session.new()
+		phase_session.start(first)
+		phase_session.phase = production_phase
+		var phase_handoff := phase_session.begin_handoff_from_tray({"score": 70.0})
+		phase_session.begin_payment()
+		phase_session.finish_payment()
+		var phase_resume := phase_session.resume_production_for_next_order(second)
+		_check(bool(phase_handoff.get("success", false)) and bool(phase_resume.get("success", false)) and phase_session.phase == production_phase, "tray handoff preserves production phase %s" % str(production_phase))
 
 
 func _test_toppings_skip_flip_and_begin_folding() -> void:

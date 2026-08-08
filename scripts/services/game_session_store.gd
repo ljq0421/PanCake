@@ -196,10 +196,10 @@ func next_filtered_pancake_order() -> Dictionary:
 	_ensure_progression()
 	var issued_today := maxi(int(_save_data.get("pancake_orders_issued_today", 0)), 0)
 	var tutorial: Dictionary = Dictionary(_progression.call("tutorial_snapshot"))
-	# A region/device tutorial is reserved for the second queue position.  The
-	# first customer remains a normal order and a single active tutorial cannot
-	# duplicate across the rest of the day.
-	if issued_today != 1:
+	# A region/device tutorial is reserved for the first queue position so the
+	# player receives the new-area guidance before any normal order that day.
+	# A single active tutorial still cannot duplicate across the rest of the day.
+	if issued_today != 0:
 		tutorial = {}
 	var generated: Dictionary = FIVE_AREA_PANCAKE_ORDER_GENERATOR.generate(
 		five_area_progression_snapshot(),
@@ -510,14 +510,14 @@ func store_pancake_product(product: Dictionary) -> Dictionary:
 
 func preview_pancake_tray_delivery(slot_index: int, order: Dictionary) -> Dictionary:
 	_ensure_pancake_holding_tray()
-	return Dictionary(_pancake_holding_tray.call("preview_serve_matching", slot_index, order)).duplicate(true)
+	return Dictionary(_pancake_holding_tray.call("preview_serve", slot_index, order)).duplicate(true)
 
 
 func serve_pancake_tray_delivery(slot_index: int, order: Dictionary) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_pancake_holding_tray()
-	var result: Dictionary = _pancake_holding_tray.call("serve_matching", slot_index, order)
+	var result: Dictionary = _pancake_holding_tray.call("serve", slot_index, order)
 	if bool(result.get("success", false)):
 		_sync_pancake_holding_tray_to_save()
 		_touch_and_write()
@@ -823,7 +823,9 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 		settled_result["grade"] = _grade_for_score(float(settled_result.get("score", 0.0)))
 	var mastery_result: Dictionary = _progression.call("record_area_result", area_id, settled_result)
 	var tutorial_completion := {}
-	if bool(order.get("tutorial_no_countdown", false)) and float(settled_result.get("score", 0.0)) >= 70.0:
+	# Tutorial completion is about finishing the guided interaction path.  Its
+	# score still enters mastery/billing, but it is not a pass/fail gate.
+	if bool(order.get("tutorial_no_countdown", false)):
 		tutorial_completion = _progression.call("complete_tutorial", StringName(order.get("tutorial_kind", &"")), StringName(order.get("tutorial_id", &"")))
 	var payment_coins := maxi(earned_coins, 0)
 	var material_cost := maxi(int(settled_result.get("material_cost", 0)), 0)

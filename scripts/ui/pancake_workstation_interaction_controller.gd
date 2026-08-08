@@ -2,6 +2,7 @@ class_name PancakeWorkstationInteractionController
 extends Node
 
 const RESTOCK_SERVICE := preload("res://scripts/services/five_area_restock_service.gd")
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
 const INGREDIENT_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -14,12 +15,14 @@ const INGREDIENT_STOCK_IDS := {
 	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 }
 
-const MATERIAL_SLOT_STOCK_IDS := {
-	&"Slot04": &"stock.pancake.meat_floss",
-	&"Slot05": &"stock.pancake.ham_sausage",
-	&"Slot06": &"stock.pancake.coriander",
-	&"Slot10": &"stock.pancake.pork_tenderloin",
-	&"Slot11": &"stock.pancake.preserved_mustard",
+const STOCK_INGREDIENT_IDS := {
+	&"stock.pancake.baocui": &"baocui",
+	&"stock.pancake.scallion": &"scallion",
+	&"stock.pancake.ham_sausage": &"ham_sausage",
+	&"stock.pancake.meat_floss": &"meat_floss",
+	&"stock.pancake.coriander": &"coriander",
+	&"stock.pancake.preserved_mustard": &"preserved_mustard",
+	&"stock.pancake.pork_tenderloin": &"pork_tenderloin",
 }
 
 var _restock: RefCounted
@@ -72,6 +75,7 @@ func _refresh_formal_state() -> void:
 		workstation.call("apply_progression_effects", Dictionary(session.call("five_area_progression_snapshot")))
 	_refresh_ingredient_trays()
 	_refresh_material_slot_locks()
+	_refresh_sauce_controls()
 	_sync_live_ingredient_stock()
 	_refresh_formal_five_area_state()
 	_refresh_refill_source_tooltips()
@@ -85,30 +89,62 @@ func _refresh_ingredient_trays() -> void:
 	if session.has_method("unlocked_ingredient_ids"):
 		unlocked.assign(session.call("unlocked_ingredient_ids"))
 	for slot in _all_direct_ingredient_slots():
-		var ingredient_id := StringName(str(slot.get("ingredient_type")))
-		var is_unlocked := unlocked.has(ingredient_id)
-		slot.visible = is_unlocked
-		slot.disabled = not is_unlocked
-		slot.mouse_filter = Control.MOUSE_FILTER_STOP if is_unlocked else Control.MOUSE_FILTER_IGNORE
+		slot.visible = false
+		slot.disabled = true
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.remove_meta(&"material_slot_id")
+	var fixed_slots := {
+		&"egg": &"slot.07",
+		&"baocui": &"slot.08",
+		&"scallion": &"slot.09",
+	}
+	for ingredient_id in fixed_slots:
+		var fixed_slot := _slot_for_any_ingredient(ingredient_id)
+		if fixed_slot != null and unlocked.has(ingredient_id):
+			_place_ingredient_in_material_slot(fixed_slot, fixed_slots[ingredient_id])
+	var occupied_index := 0
+	for stock_id in CATALOG.PANCAKE_ADD_ON_DISPLAY_ORDER:
+		var ingredient_id: StringName = STOCK_INGREDIENT_IDS.get(stock_id, &"")
+		if ingredient_id.is_empty() or not unlocked.has(ingredient_id):
+			continue
+		var slot := _slot_for_any_ingredient(ingredient_id)
+		if slot == null or occupied_index >= CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY.size():
+			continue
+		_place_ingredient_in_material_slot(slot, CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY[occupied_index])
+		occupied_index += 1
 
 
 func _refresh_material_slot_locks() -> void:
+	var occupied_slot_names: Dictionary = {}
+	for ingredient_slot in _all_direct_ingredient_slots():
+		if ingredient_slot.visible and ingredient_slot.has_meta(&"material_slot_id"):
+			occupied_slot_names[_scene_slot_name(StringName(ingredient_slot.get_meta(&"material_slot_id")))] = true
+	for slot_id in CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY:
+		var slot_name := _scene_slot_name(slot_id)
+		var occupied := bool(occupied_slot_names.get(slot_name, false))
+		var locked_art := get_node_or_null("../LockedIngredientArtwork/%s" % slot_name) as CanvasItem
+		if locked_art != null:
+			locked_art.visible = not occupied
+		var locked_button := get_node_or_null("../LockedIngredientInteractions/%sLockedButton" % slot_name) as Button
+		if locked_button != null:
+			locked_button.visible = not occupied
+			locked_button.disabled = occupied
+			locked_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if occupied else Control.MOUSE_FILTER_STOP
+			locked_button.tooltip_text = "新小料解锁后会按 Slot10 → Slot11 → Slot12 → Slot6 → Slot13 → Slot5 → Slot14 的顺序放入。"
+
+
+func _refresh_sauce_controls() -> void:
 	var session := _session()
 	if session == null:
 		return
 	var formal_snapshot: Dictionary = session.call("five_area_progression_snapshot")
-	var unlocked_stock_ids: Dictionary = {}
-	for stock_id in Array(formal_snapshot.get("unlocked_stock_ids", [])):
-		unlocked_stock_ids[StringName(stock_id)] = true
-	for slot_name in MATERIAL_SLOT_STOCK_IDS:
-		var unlocked := bool(unlocked_stock_ids.get(MATERIAL_SLOT_STOCK_IDS[slot_name], false))
-		var locked_art := get_node_or_null("../LockedIngredientArtwork/%s" % slot_name) as CanvasItem
-		if locked_art != null:
-			locked_art.visible = not unlocked
-		var locked_button := get_node_or_null("../LockedIngredientInteractions/%sLockedButton" % slot_name) as Button
-		if locked_button != null:
-			locked_button.disabled = unlocked
-			locked_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if unlocked else Control.MOUSE_FILTER_STOP
+	var unlocked_stock_ids := Array(formal_snapshot.get("unlocked_stock_ids", []))
+	var chili_unlocked := unlocked_stock_ids.has(&"stock.pancake.sauce.red_chili") or unlocked_stock_ids.has("stock.pancake.sauce.red_chili")
+	var chili_button := get_node_or_null("../RightRack/ChiliSauceRefillButton") as Button
+	if chili_button != null:
+		chili_button.visible = chili_unlocked
+		chili_button.disabled = not chili_unlocked
+		chili_button.mouse_filter = Control.MOUSE_FILTER_STOP if chili_unlocked else Control.MOUSE_FILTER_IGNORE
 
 
 func _sync_live_ingredient_stock() -> void:
@@ -310,8 +346,11 @@ func _on_locked_art_pressed(button: Button) -> void:
 		var pulse := create_tween()
 		pulse.tween_property(artwork, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	var condition := str(button.get_meta(&"unlock_condition", ""))
-	if not condition.is_empty():
-		_show_refill_message(&"", &"stock_locked")
+	if condition.is_empty():
+		condition = "此槽当前没有已解锁小料；新小料会按既定槽位优先序自动放入。"
+	var status_label := get_node_or_null("../BottomStrip/ToolStatusLabel") as Label
+	if status_label != null:
+		status_label.text = condition
 	button.release_focus()
 
 
@@ -337,6 +376,37 @@ func _slot_for_ingredient(ingredient_id: StringName) -> Button:
 		if StringName(str(slot.get("ingredient_type"))) == ingredient_id:
 			return slot
 	return null
+
+
+func _slot_for_any_ingredient(ingredient_id: StringName) -> Button:
+	for slot in _all_direct_ingredient_slots():
+		if StringName(str(slot.get("ingredient_type"))) == ingredient_id:
+			return slot
+	return null
+
+
+func _place_ingredient_in_material_slot(slot: Button, material_slot_id: StringName) -> void:
+	var target := get_node_or_null("../MaterialDock/%s" % _scene_slot_name(material_slot_id)) as Control
+	var rack := slot.get_parent() as Control
+	if target == null or rack == null:
+		return
+	# MaterialDock and IngredientRack are sibling scene layers. Use the authored
+	# offsets because MaterialDock's full-rect metadata layer acquires a runtime
+	# minimum-size translation from its off-screen children.
+	var target_rect: Rect2 = target.get_meta(&"worktop_rect", Rect2(
+		Vector2(target.offset_left, target.offset_top),
+		Vector2(target.offset_right - target.offset_left, target.offset_bottom - target.offset_top)
+	))
+	slot.position = target_rect.position - rack.position
+	slot.size = target_rect.size
+	slot.visible = true
+	slot.disabled = false
+	slot.mouse_filter = Control.MOUSE_FILTER_STOP
+	slot.set_meta(&"material_slot_id", material_slot_id)
+
+
+func _scene_slot_name(material_slot_id: StringName) -> StringName:
+	return StringName("Slot%02d" % int(str(material_slot_id).get_slice(".", 1)))
 
 
 func _stable_stock_id(ingredient_id: StringName) -> StringName:

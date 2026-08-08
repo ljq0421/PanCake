@@ -28,6 +28,7 @@ const FIELD_NAMES: Array[StringName] = [
 const SCRAPER_FAN_ANGLES: Array[float] = [-0.55, -0.28, 0.0, 0.0, 0.0, 0.28, 0.55]
 const SCRAPER_PUSH_FRACTIONS: Array[float] = [0.78, 0.88, 0.42, 0.70, 1.0, 0.88, 0.78]
 const SCRAPER_PUSH_WEIGHTS: Array[float] = [0.10, 0.13, 0.12, 0.17, 0.25, 0.13, 0.10]
+const STANDARD_PRESS_TARGET_COVERAGE := 0.80
 
 enum EggState {
 	NONE,
@@ -56,6 +57,10 @@ var egg_yolk := PackedFloat32Array()
 var egg_doneness := PackedFloat32Array()
 var egg_state: EggState = EggState.NONE
 var yolk_broken := false
+## Records which visible pancake side received the egg. This lets an egg added
+## after the pancake is flipped remain visible while preparing, then be hidden
+## with the other fillings when folding encloses it.
+var egg_surface_is_back := false
 var is_flipped := false
 ## Intermediate pancake griddle protection caps cooking at the current order's
 ## target.  The workstation owns the target selection; the model only enforces
@@ -120,6 +125,7 @@ func reset() -> void:
 	egg_doneness.fill(0.0)
 	egg_state = EggState.NONE
 	yolk_broken = false
+	egg_surface_is_back = false
 	is_flipped = false
 	_sauce_footprint_stamp.fill(-1)
 	_sauce_stroke_serial = 0
@@ -292,8 +298,6 @@ func advance_cooking(delta_seconds: float, heat_level: float = 0.65) -> int:
 
 
 func can_crack_egg(center: Vector2) -> Dictionary:
-	if is_flipped:
-		return {"success": false, "reason": "鸡蛋需要在翻面前打入饼面"}
 	if not is_inside_pan(center):
 		return {"success": false, "reason": "请把鸡蛋打在鏊面内"}
 	var cell := Vector2i(roundi(center.x), roundi(center.y))
@@ -344,6 +348,7 @@ func crack_egg(center: Vector2) -> Dictionary:
 				)
 	egg_state = EggState.CRACKED
 	yolk_broken = false
+	egg_surface_is_back = is_flipped
 	last_update_usec = Time.get_ticks_usec() - started
 	_commit_change(changed_cells)
 	return {"success": true, "changed_cells": changed_cells, "egg_amount": total_egg_amount()}
@@ -351,6 +356,10 @@ func crack_egg(center: Vector2) -> Dictionary:
 
 func has_egg() -> bool:
 	return egg_state != EggState.NONE and total_egg_amount() > 0.0
+
+
+func egg_is_on_visible_side() -> bool:
+	return has_egg() and egg_surface_is_back == is_flipped
 
 
 func total_egg_amount() -> float:
@@ -362,7 +371,7 @@ func total_egg_amount() -> float:
 
 func apply_egg_spreader_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, commit_change: bool = true, width_multiplier: float = 1.0) -> Dictionary:
 	var started := Time.get_ticks_usec()
-	if egg_state == EggState.NONE or is_flipped:
+	if egg_state == EggState.NONE or not egg_is_on_visible_side():
 		return {"changed_cells": 0, "moved_mass": 0.0, "yolk_broken": yolk_broken}
 	var safe_direction := direction.normalized()
 	if safe_direction.is_zero_approx():
@@ -693,20 +702,72 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 
 
 func apply_standard_press_spread() -> Dictionary:
-	var center := Vector2(grid_size - 1, grid_size - 1) * 0.5
-	var changed_cells := 0
-	var moved_mass := 0.0
-	var new_holes := 0
-	for ring_radius in [0.0, 5.0, 10.0, 15.0, 20.0, 25.0]:
-		var sample_count := 1 if ring_radius <= 0.0 else 16
-		for sample_index in sample_count:
-			var direction: Vector2 = Vector2.RIGHT.rotated(TAU * float(sample_index) / float(sample_count))
-			var sample: Vector2 = center + direction * float(ring_radius)
-			var result := apply_scraper_sample(sample, direction, 72.0, 1.35)
-			changed_cells += int(result.get("changed_cells", 0))
-			moved_mass += float(result.get("moved_mass", 0.0))
-			new_holes += int(result.get("new_holes", 0))
-	return {"changed_cells": changed_cells, "moved_mass": moved_mass, "new_holes": new_holes}
+	var started := Time.get_ticks_usec()
+	var total_mass := 0.0
+	var wetness_mass := 0.0
+	var front_doneness_mass := 0.0
+	var back_doneness_mass := 0.0
+	for index in cell_count:
+		var cell_mass := maxf(thickness[index], 0.0)
+		if cell_mass <= 0.0:
+			continue
+		total_mass += cell_mass
+		wetness_mass += wetness[index] * cell_mass
+		front_doneness_mass += doneness[index] * cell_mass
+		back_doneness_mass += back_doneness[index] * cell_mass
+	if total_mass <= 0.000001:
+		return {
+			"success": false,
+			"changed_cells": 0,
+			"coverage_ratio": 0.0,
+			"total_mass_before": 0.0,
+			"total_mass_after": 0.0,
+		}
+	var target_indices := PackedInt32Array()
+	var pan_cell_count := 0
+	var radius_scale := sqrt(STANDARD_PRESS_TARGET_COVERAGE)
+	for index in cell_count:
+		var cell_position := Vector2(index % grid_size, index / grid_size)
+		if is_inside_pan(cell_position):
+			pan_cell_count += 1
+		if is_inside_pan(cell_position, radius_scale):
+			target_indices.append(index)
+	if target_indices.is_empty():
+		return {
+			"success": false,
+			"changed_cells": 0,
+			"coverage_ratio": 0.0,
+			"total_mass_before": total_mass,
+			"total_mass_after": total_mass,
+		}
+	var target_thickness := total_mass / float(target_indices.size())
+	var mean_wetness := wetness_mass / total_mass
+	var mean_front_doneness := front_doneness_mass / total_mass
+	var mean_back_doneness := back_doneness_mass / total_mass
+	coverage.fill(0.0)
+	thickness.fill(0.0)
+	wetness.fill(0.0)
+	doneness.fill(0.0)
+	back_doneness.fill(0.0)
+	damage.fill(0.0)
+	scrape_stress.fill(0.0)
+	for index in target_indices:
+		coverage[index] = 1.0
+		thickness[index] = target_thickness
+		wetness[index] = mean_wetness
+		doneness[index] = mean_front_doneness
+		back_doneness[index] = mean_back_doneness
+	last_update_usec = Time.get_ticks_usec() - started
+	_commit_change(target_indices.size())
+	return {
+		"success": true,
+		"changed_cells": target_indices.size(),
+		"coverage_ratio": float(target_indices.size()) / maxf(float(pan_cell_count), 1.0),
+		"mean_thickness": target_thickness,
+		"total_mass_before": total_mass,
+		"total_mass_after": total_thickness(),
+		"new_holes": 0,
+	}
 
 
 func begin_sauce_stroke() -> int:
@@ -812,6 +873,7 @@ func snapshot() -> Dictionary:
 		"egg_doneness": egg_doneness.duplicate(),
 		"egg_state": egg_state,
 		"yolk_broken": yolk_broken,
+		"egg_surface_is_back": egg_surface_is_back,
 		"is_flipped": is_flipped,
 	}
 

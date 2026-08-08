@@ -42,7 +42,7 @@ func _run() -> void:
 		"griddle container uses the confirmed twenty-percent-smaller initial-unlock geometry"
 	)
 	_check(workstation.ingredient_layer != null and workstation.egg_button != null and workstation.scallion_button != null, "P1 ingredient rack and pancake layer are stable scene content")
-	_check(workstation.chili_sauce_refill_button != null and workstation.heat_slider != null, "P1 owns two-sauce selection and fire control")
+	_check(workstation.chili_sauce_refill_button != null and workstation.heat_slider != null and not workstation.heat_slider.visible and not workstation.heat_slider.editable and is_equal_approx(workstation.p1_session.heat_level, 0.50), "P1 owns two-sauce selection while griddle heat stays fixed at its default")
 	_check(
 		not workstation.sauce_refill_button.get_global_rect().intersects(workstation.chili_sauce_refill_button.get_global_rect()),
 		"sweet and chili bottle hit regions do not overlap"
@@ -223,24 +223,24 @@ func _run() -> void:
 		and workstation.payment_coin_model.pending_total == first_payment_coins
 		and workstation.payment_coin_model.pending_denominations == first_payment_denominations
 		and workstation._pending_payment_sprites.size() == first_payment_denominations.size()
-		and workstation.payment_collection_area.visible
+		and not workstation.payment_collection_area.visible
 		and workstation.order_summary_card.visible,
-		"settled denomination coins remain in the slot while the next customer starts automatically"
+		"settled denomination coins remain individually clickable while the next customer starts automatically"
 	)
-	var payment_slot_inner_rect := Rect2(workstation.payment_collection_area.position, workstation.payment_collection_area.size)
 	for coin in workstation._pending_payment_sprites:
-		_check(payment_slot_inner_rect.encloses(Rect2(coin.position, coin.size)), "each waiting denomination coin remains inside the interactive payment slot")
+		_check(coin.mouse_filter == Control.MOUSE_FILTER_STOP and coin.gui_input.is_connected(workstation._on_payment_coin_gui_input), "each visible denomination coin owns its exact click target")
 	_check(
-		workstation.payment_collection_area.pressed.is_connected(workstation._collect_payment)
-		and workstation.payment_collection_area.mouse_filter == Control.MOUSE_FILTER_STOP
-		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment)
-		and workstation.payment_collection_area.get_index() > workstation.scallion_restock_button.get_parent().get_index(),
-		"the top-layer payment button requires a click and cannot collect on mouse hover"
+		not workstation.payment_collection_area.pressed.is_connected(workstation._collect_payment)
+		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment),
+		"no broad payment-slot hit target or hover collection path remains"
 	)
 	if DisplayServer.get_name() == "headless":
-		workstation.payment_collection_area.pressed.emit()
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = true
+		workstation._pending_payment_sprites[0].gui_input.emit(click)
 	else:
-		await _click_control(workstation.payment_collection_area)
+		await _click_control(workstation._pending_payment_sprites[0])
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
 		and StringName(workstation.p1_session.order.get("id", &"")) == next_order_id
@@ -253,7 +253,7 @@ func _run() -> void:
 		and workstation.customer_portrait.texture.resource_path.ends_with("customer_02_neutral_cropped.tres")
 		and workstation.waiting_customer_portraits[0].texture.resource_path.ends_with("customer_03_neutral_cropped.tres")
 		and workstation.waiting_customer_portraits[1].texture.resource_path.ends_with("customer_01_neutral_cropped.tres"),
-		"clicking the payment slot collects every pending coin without changing the active customer"
+		"clicking a visible coin collects every pending coin without changing the active customer"
 	)
 	_check(workstation.customer_line_label.visible and workstation.phase_label.visible, "the next customer order stays actionable behind the optional previous-order summary")
 	workstation._set_customer_portrait_state(P1Session.REACTION_VERY_UNHAPPY)

@@ -630,6 +630,7 @@ metadata/display_name = "甜面酱刷"
 
 [node name="FoldSpatulaToolButton" type="Button" parent="Worktop" unique_id=977436987 groups=["main_page_pancake_tool"]]
 unique_name_in_owner = true
+visible = false
 z_index = 3
 layout_mode = 0
 offset_left = 1166.0

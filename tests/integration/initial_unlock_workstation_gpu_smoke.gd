@@ -36,6 +36,38 @@ func _run() -> void:
 	var controller := workstation.get_node("SafeArea/PancakeWorkstationInteractionController")
 	await process_frame
 	await process_frame
+	var feedback_progression: RefCounted = game_session.call("progression_service")
+	var feedback_owned_growth: Dictionary = Dictionary(feedback_progression.get("owned_growth_ids")).duplicate(true)
+	for growth_id in [&"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush", &"growth.capacity.pancake_holding_tray.two_slots"]:
+		feedback_owned_growth[growth_id] = true
+	feedback_progression.set("owned_growth_ids", feedback_owned_growth)
+	workstation.call("apply_progression_effects", game_session.call("five_area_progression_snapshot"))
+	workstation.call("_refresh_pancake_holding_tray")
+	var t_spreader := workstation.get_node("SafeArea/LeftRack/ScraperButton") as Button
+	var automatic_brush := workstation.get_node("SafeArea/LeftRack/SauceBrushButton") as Button
+	var press_spreader := workstation.get_node("SafeArea/LeftRack/PressSpreaderButton") as Button
+	var legacy_automatic_brush := workstation.get_node("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
+	var empty_holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
+	_check(t_spreader.visible and press_spreader.visible and automatic_brush.visible and not legacy_automatic_brush.visible, "the T spreader and the independent press are both player-visible after purchasing the press")
+	var press_center := press_spreader.get_global_rect().get_center()
+	_move_at(press_center)
+	await process_frame
+	var press_hovered := root.gui_get_hovered_control()
+	_press_at(press_center)
+	await process_frame
+	_release_at(press_center)
+	await process_frame
+	_check(press_hovered == press_spreader, "the independent press owns its visible click region; hovered=%s" % str(press_hovered.get_path() if press_hovered != null else "none"))
+	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "real independent-press click outside its window gives player-visible guidance")
+	_click_control(automatic_brush)
+	await process_frame
+	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "real automatic-brush click outside its window gives player-visible guidance")
+	_move_at(empty_holding_slot.get_global_rect().get_center())
+	await process_frame
+	_click_control(empty_holding_slot)
+	await process_frame
+	var empty_tray_status := (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text
+	_check(empty_tray_status.contains("暂存格为空") or empty_tray_status.contains("成品暂存用法"), "real empty holding-slot click explains how to store a pancake; status=%s" % empty_tray_status)
 	var locked_click_layers := workstation.get_node("SafeArea/FiveAreaStationClickLayers") as Control
 	for click_layer_name in [&"FreshSoyMilkLockedClickLayer", &"YoutiaoLockedClickLayer", &"PackagedDrinkLockedClickLayer", &"SteamerLockedClickLayer"]:
 		var click_layer := locked_click_layers.get_node(NodePath(str(click_layer_name))) as Button
@@ -49,7 +81,6 @@ func _run() -> void:
 	var save_error := initial_image.save_png(output_absolute)
 	_check(save_error == OK and initial_image.get_size() == Vector2i(1920, 1080), "captured the untouched opening-day workstation in a real 1920x1080 GPU frame")
 	var ladle := workstation.get_node("SafeArea/LeftRack/LadleButton") as Button
-	var scraper := workstation.get_node("SafeArea/LeftRack/ScraperButton") as Button
 	var egg := workstation.get_node("SafeArea/IngredientRack/EggButton") as Button
 	var baocui := workstation.get_node("SafeArea/IngredientRack/BaocuiButton") as Button
 	var surface := workstation.get_node("SafeArea/PanBase/PancakeSurface") as Control
@@ -64,8 +95,13 @@ func _run() -> void:
 	_click_at(surface.get_global_rect().get_center())
 	await process_frame
 	_check(bool(workstation.get("pour_used")), "real GUI click pours batter through the scaled surface")
-	_click_control(scraper)
+	await _click_control_settled(press_spreader)
 	await process_frame
+	_check(
+		workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE and bool(workstation.get("_spread_shape_locked")),
+		"one real independent-press click completes the pancake skin and enters the egg stage; visible=%s disabled=%s phase=%s status=%s" % [press_spreader.visible, press_spreader.disabled, workstation.p1_session.phase, (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text],
+	)
+	_check(float(workstation.pancake_model.calculate_summary().coverage_ratio) >= 0.79, "the real independent-press click creates complete standard coverage")
 	var edge_global := surface.global_position + Vector2(surface.size.x * 0.10, surface.size.y * 0.50)
 	var inner_global := surface.global_position + Vector2(surface.size.x * 0.22, surface.size.y * 0.50)
 	await _slow_drag(edge_global, inner_global, 18)
@@ -76,6 +112,7 @@ func _run() -> void:
 	await process_frame
 	var ingredient_model: RefCounted = workstation.get("ingredient_model")
 	_check(bool(ingredient_model.call("has_type", &"egg")), "real GUI drag places a direct ingredient on the scaled surface")
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER and t_spreader.button_pressed, "placing egg automatically restores the T spreader and never reuses the press")
 	var stock_model: RefCounted = workstation.get("ingredient_stock_model")
 	_check(int(stock_model.call("current", &"egg")) == 1, "short real GUI drag consumes exactly one visible egg portion")
 
@@ -129,7 +166,26 @@ func _run() -> void:
 	var refill_help := str(egg.get_meta(&"refill_help_text", ""))
 	_check(refill_help.contains("每份") and refill_help.contains("当前") and not refill_help.contains("%") and not refill_help.contains("进度") and egg.tooltip_text.is_empty(), "tray hover help uses the off-worktop instruction strip for price, time, and capacity without refill progress")
 	_check(_material_rail_has_eighteen_positions(workstation), "runtime material rail has exactly one fixed row of 18 wells")
-	_check(_opening_day_material_controls_align(workstation), "opening-day controls occupy Slots07-Slot09")
+	_check(_opening_day_material_controls_align(workstation), "opening-day ingredients stay fixed in Slots07-Slot09")
+	var add_on_progression: RefCounted = game_session.call("progression_service")
+	var add_on_unlocks: Dictionary = Dictionary(add_on_progression.get("unlocked_stock_ids")).duplicate(true)
+	add_on_unlocks[&"stock.pancake.ham_sausage"] = true
+	add_on_progression.set("unlocked_stock_ids", add_on_unlocks)
+	controller.call("_on_progression_changed", game_session.call("five_area_progression_snapshot"))
+	await process_frame
+	var ham := workstation.get_node("SafeArea/IngredientRack/HamButton") as Button
+	_check(ham.visible and StringName(ham.get_meta(&"material_slot_id", &"")) == &"slot.10", "the first later add-on compacts into Slot10 without moving Slots07-Slot09")
+	_check(bool(ham.get_meta(&"refill_enabled", false)) and is_equal_approx(float(ham.get("hold_threshold_seconds")), 0.1), "the unlocked ham tray supports the shared hold-to-restock gesture")
+	var coins_before_ham_refill := int(add_on_progression.get("coins"))
+	var ham_tray_center := ham.get_global_rect().get_center()
+	_press_at(ham_tray_center)
+	await process_frame
+	var ham_hold_started := await _wait_until(func() -> bool: return StringName(controller.get("_active_refill_stock_id")) == &"stock.pancake.ham_sausage", 0.50)
+	var ham_unit_completed := await _wait_until(func() -> bool: return int(stock_model.call("current", &"ham_sausage")) >= 1, 0.85)
+	_release_at(ham_tray_center)
+	await process_frame
+	_check(ham_hold_started and ham_unit_completed and int(add_on_progression.get("coins")) == coins_before_ham_refill - 2, "real stationary hold refills one ham portion and charges its exact price")
+	refill_help = str(egg.get_meta(&"refill_help_text", ""))
 	_move_at(egg_tray_center)
 	await create_timer(0.25).timeout
 	var instructions := workstation.get_node("SafeArea/BottomStrip/Instructions") as Label
@@ -158,9 +214,29 @@ func _run() -> void:
 	workstation.call("_refresh_pancake_holding_tray")
 	var holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
 	_check(bool(stored_for_route.get("success", false)) and holding_slot.visible and not holding_slot.disabled, "formal tray displays a stored pancake for the active formal order")
+	_move_at(holding_slot.get_global_rect().get_center())
+	await process_frame
 	_click_control(holding_slot)
 	await process_frame
-	_check(game_session.call("active_formal_order").is_empty() and Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", [])[0].is_empty(), "real tray click routes the product into and settles the active formal order")
+	var order_after_tray_click: Dictionary = game_session.call("active_formal_order")
+	var slots_after_tray_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	var tray_click_completed := order_after_tray_click.is_empty() and not slots_after_tray_click.is_empty() and Dictionary(slots_after_tray_click[0]).is_empty()
+	_check(tray_click_completed, "real tray click routes the product into and settles the active formal order; status=%s formal_id=%s phase=%s" % [str(workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel").text), str(workstation.get("_formal_order_id")), str(workstation.get("p1_session").get("phase"))])
+	workstation.get("payment_coin_model").call("add_payment", 3)
+	var payment_denominations: Array[int] = [2, 1]
+	workstation._spawn_payment_flight(payment_denominations)
+	workstation._pending_payment_sprites.append_array(workstation._payment_flight_sprites)
+	workstation._payment_flight_sprites.clear()
+	workstation._layout_pending_payment_sprites()
+	var pending_coins: Array[TextureRect] = workstation._pending_payment_sprites
+	var payment_strip := workstation.get_node("SafeArea/PaymentCollectionArea") as Button
+	var non_coin_point := payment_strip.get_global_rect().get_center()
+	_click_at(non_coin_point)
+	await process_frame
+	_check(int(workstation.payment_coin_model.pending_total) == 3 and pending_coins.size() == 2, "clicking empty space in the old payment strip does not collect coins")
+	_click_control(pending_coins[0] as Control)
+	await process_frame
+	_check(int(workstation.payment_coin_model.pending_total) == 0 and workstation._pending_payment_sprites.is_empty(), "clicking a visible coin collects the pending payment")
 	game.queue_free()
 	await process_frame
 	_finish(output_absolute, refill_output_absolute)
@@ -177,6 +253,15 @@ func _wait_until(condition: Callable, timeout_seconds: float) -> bool:
 
 func _click_control(control: Control) -> void:
 	_click_at(control.get_global_rect().get_center())
+
+
+func _click_control_settled(control: Control) -> void:
+	var position := control.get_global_rect().get_center()
+	_move_at(position)
+	await process_frame
+	_press_at(position)
+	await process_frame
+	_release_at(position)
 
 
 func _click_at(position: Vector2) -> void:
@@ -290,14 +375,15 @@ func _opening_day_material_controls_align(workstation: Node) -> bool:
 	var rack := workstation.get_node_or_null("SafeArea/IngredientRack") as Control
 	if rack == null or rack.position.distance_to(Vector2(648.0, 925.0)) > 1.0 or rack.size.distance_to(Vector2(305.0, 120.0)) > 1.0:
 		return false
-	var expected_positions := {
-		"EggButton": Vector2(6.0, 0.0),
-		"BaocuiButton": Vector2(111.0, 0.0),
-		"ScallionButton": Vector2(216.0, 0.0),
+	var expected_rects := {
+		"EggButton": Rect2(654.0, 925.0, 89.0, 120.0),
+		"BaocuiButton": Rect2(759.0, 925.0, 89.0, 120.0),
+		"ScallionButton": Rect2(864.0, 925.0, 89.0, 120.0),
 	}
-	for button_name in expected_positions:
+	for button_name in expected_rects:
 		var ingredient := workstation.get_node_or_null("SafeArea/IngredientRack/%s" % button_name) as Control
-		if ingredient == null or ingredient.position.distance_to(expected_positions[button_name]) > 1.0 or ingredient.size.distance_to(Vector2(89.0, 120.0)) > 1.0:
+		var expected: Rect2 = expected_rects[button_name]
+		if ingredient == null or ingredient.get_global_rect().position.distance_to(expected.position) > 1.0 or ingredient.get_global_rect().size.distance_to(expected.size) > 1.0:
 			return false
 	return true
 

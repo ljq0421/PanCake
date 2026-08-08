@@ -1,100 +1,100 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dlcwklpi14sa0"]
 
-[ext_resource type="Script" path="res://scripts/gameplay/workstation.gd" id="1_w0g34"]
-[ext_resource type="Resource" path="res://resources/data/pancake_simulation_parameters.tres" id="2_o4c2u"]
-[ext_resource type="Script" path="res://scripts/input/tool_controller.gd" id="3_itptj"]
-[ext_resource type="Script" path="res://scripts/ui/warning_tone_player.gd" id="4_mrono"]
-[ext_resource type="Script" path="res://scripts/ui/kitchen_audio_player.gd" id="5_qtafb"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/batter_drop.wav" id="6_hsg3o"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/spreader_scrape.wav" id="7_dq0w1"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/pancake_flip.wav" id="8_hv2ld"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/sauce_brush.wav" id="9_vlj4s"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/pancake_fold.wav" id="10_oa5o0"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/order_serve.wav" id="11_1wi16"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/cooking_sizzle.wav" id="12_wd07g"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080.png" id="13_nrgyx"]
+[ext_resource type="Script" uid="uid://dhcmfxbexd8qy" path="res://scripts/gameplay/workstation.gd" id="1_w0g34"]
+[ext_resource type="Resource" uid="uid://c8n37jd6t6h6m" path="res://resources/data/pancake_simulation_parameters.tres" id="2_o4c2u"]
+[ext_resource type="Script" uid="uid://b6h76nn424x1l" path="res://scripts/input/tool_controller.gd" id="3_itptj"]
+[ext_resource type="Script" uid="uid://cd7uj068vyls8" path="res://scripts/ui/warning_tone_player.gd" id="4_mrono"]
+[ext_resource type="Script" uid="uid://covch00ng1wle" path="res://scripts/ui/kitchen_audio_player.gd" id="5_qtafb"]
+[ext_resource type="AudioStream" uid="uid://di6lshcemt2sk" path="res://resources/audio/sfx/batter_drop.wav" id="6_hsg3o"]
+[ext_resource type="AudioStream" uid="uid://dxj3dlwkuykfc" path="res://resources/audio/sfx/spreader_scrape.wav" id="7_dq0w1"]
+[ext_resource type="AudioStream" uid="uid://dm6yapp0uwr30" path="res://resources/audio/sfx/pancake_flip.wav" id="8_hv2ld"]
+[ext_resource type="AudioStream" uid="uid://bdg2mcmfcbvxd" path="res://resources/audio/sfx/sauce_brush.wav" id="9_vlj4s"]
+[ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="10_oa5o0"]
+[ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="11_1wi16"]
+[ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="12_wd07g"]
+[ext_resource type="Texture2D" uid="uid://32qu2w6ehod4" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080.png" id="13_nrgyx"]
 [ext_resource type="Texture2D" path="res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres" id="14_2kg7p"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_multi_dish_v3.png" id="15_rdwwv"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_whole_v1.png" id="16_r8aep"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_pile_v1.png" id="17_wu41v"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="18_rugnw"]
-[ext_resource type="Texture2D" path="res://resources/art/payments/coin_1_v1.png" id="19_1yu0j"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/restock/egg_carton_v1.png" id="20_s333w"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/restock/baocui_tin_v1.png" id="21_git47"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/restock/ham_fresh_box_v1.png" id="22_nodi7"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/restock/scallion_enamel_jar_v1.png" id="23_c5a05"]
-[ext_resource type="Script" path="res://scripts/ui/ingredient_stock_slot.gd" id="24_ak4px"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_1_v1.png" id="25_i1y3k"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_2_v1.png" id="26_iypp0"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_3_v1.png" id="27_8jjje"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_4_v1.png" id="28_74f5m"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_5_v1.png" id="29_ka77d"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_6_v1.png" id="30_7aidc"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1.png" id="31_p1qa3"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1.png" id="32_43s81"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1.png" id="33_6fi63"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1.png" id="34_nx8qc"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1.png" id="35_gks3u"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1.png" id="36_3vfwa"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1.png" id="37_70u6f"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1.png" id="38_rw3yp"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1.png" id="39_d453g"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1.png" id="40_q1hxm"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1.png" id="41_6uuln"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1.png" id="42_1lsov"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1.png" id="43_4oop2"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1.png" id="44_f2a4c"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1.png" id="45_ltspb"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1.png" id="46_nal3a"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1.png" id="47_allpe"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1.png" id="48_c5q83"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1.png" id="49_dccxk"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1.png" id="50_yx7mh"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png" id="51_xexj7"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png" id="52_tdn6b"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="53_qabbp"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1.png" id="54_ikthl"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/folding_spatula_v1.png" id="55_e6uu1"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1.png" id="56_pel6i"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png" id="57_y1oaf"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png" id="58_i2kai"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3.png" id="59_yqulo"]
-[ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="60_er833"]
-[ext_resource type="Shader" path="res://resources/shaders/pancake_surface.gdshader" id="61_8ys8q"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_charred_texture_v1.png" id="62_uvj0o"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png" id="63_thb5n"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_cooked_texture_v1.png" id="64_e6t0c"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_edge_texture_v1.png" id="65_t5fdn"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/egg_spread_material_v1.png" id="66_8kkbd"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_raw_texture_v1.png" id="67_my0by"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png" id="68_idpgk"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v2.png" id="69_6io6o"]
-[ext_resource type="Script" path="res://scripts/ui/sauce_blob_overlay.gd" id="70_thlr5"]
-[ext_resource type="Script" path="res://scripts/ui/ingredient_layer.gd" id="71_w81qn"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png" id="72_w38vq"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_scattered_v1.png" id="73_6nllu"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1.png" id="74_oyinm"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1.png" id="75_dq8vg"]
-[ext_resource type="Script" path="res://scripts/ui/pancake_fold_overlay.gd" id="76_0ab4h"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_fold_back_texture_v1.png" id="77_m4dq8"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/paper_bag_package_v1.png" id="78_doktw"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png" id="79_rfcb8"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/serving_tray_package_v1.png" id="80_vy7hm"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/foreground/workstation_front_lip_v1.png" id="81_7f1r0"]
-[ext_resource type="Script" path="res://scripts/ui/pancake_workstation_interaction_controller.gd" id="82_h8vlp"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_integrity_v1.png" id="83_d0bmj"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_thickness_uniformity_v1.png" id="84_mfn25"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_heat_uniformity_v1.png" id="85_e6c8j"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_egg_spread_v1.png" id="86_gjpp4"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_sauce_coverage_v1.png" id="87_wbm8s"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_ingredient_distribution_v1.png" id="88_l5rmu"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_fold_stability_v1.png" id="89_yhfik"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_order_correctness_v1.png" id="90_nyusp"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_preparation_time_v1.png" id="91_vdkap"]
-[ext_resource type="Texture2D" path="res://resources/art/payments/payment_cash_small_v1.png" id="92_nnv6x"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png" id="93_i48ma"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png" id="94_3ju16"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png" id="95_tud4u"]
+[ext_resource type="Texture2D" uid="uid://ufrhlritjp3m" path="res://resources/art/ui/order/order_card_multi_dish_v3.png" id="15_rdwwv"]
+[ext_resource type="Texture2D" uid="uid://dfm5ihdvdkscq" path="res://resources/art/ingredients/egg/egg_whole_v1.png" id="16_r8aep"]
+[ext_resource type="Texture2D" uid="uid://edwa30tfcgk7" path="res://resources/art/ingredients/scallion/scallion_pile_v1.png" id="17_wu41v"]
+[ext_resource type="Texture2D" uid="uid://dx4i6yyldbyyr" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="18_rugnw"]
+[ext_resource type="Texture2D" uid="uid://bbqkjqdcle4xb" path="res://resources/art/payments/coin_1_v1.png" id="19_1yu0j"]
+[ext_resource type="Texture2D" uid="uid://cjjb4js2vdvv5" path="res://resources/art/workstation/restock/egg_carton_v1.png" id="20_s333w"]
+[ext_resource type="Texture2D" uid="uid://c6io1wl2pg3il" path="res://resources/art/workstation/restock/baocui_tin_v1.png" id="21_git47"]
+[ext_resource type="Texture2D" uid="uid://b4esmvc4v6rre" path="res://resources/art/workstation/restock/ham_fresh_box_v1.png" id="22_nodi7"]
+[ext_resource type="Texture2D" uid="uid://dpr1l7a1rkwjf" path="res://resources/art/workstation/restock/scallion_enamel_jar_v1.png" id="23_c5a05"]
+[ext_resource type="Script" uid="uid://rm3k4lwmrbcm" path="res://scripts/ui/ingredient_stock_slot.gd" id="24_ak4px"]
+[ext_resource type="Texture2D" uid="uid://cebl18j2e8ghk" path="res://resources/art/ingredients/egg/stock/egg_stock_1_v1.png" id="25_i1y3k"]
+[ext_resource type="Texture2D" uid="uid://bd78w0nwiiahp" path="res://resources/art/ingredients/egg/stock/egg_stock_2_v1.png" id="26_iypp0"]
+[ext_resource type="Texture2D" uid="uid://bpvworhiqaaxi" path="res://resources/art/ingredients/egg/stock/egg_stock_3_v1.png" id="27_8jjje"]
+[ext_resource type="Texture2D" uid="uid://c3woswwmcemrf" path="res://resources/art/ingredients/egg/stock/egg_stock_4_v1.png" id="28_74f5m"]
+[ext_resource type="Texture2D" uid="uid://b84u0da0ixk7w" path="res://resources/art/ingredients/egg/stock/egg_stock_5_v1.png" id="29_ka77d"]
+[ext_resource type="Texture2D" uid="uid://d1o87h1xuf3mf" path="res://resources/art/ingredients/egg/stock/egg_stock_6_v1.png" id="30_7aidc"]
+[ext_resource type="Texture2D" uid="uid://bbejymqf6tkax" path="res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1.png" id="31_p1qa3"]
+[ext_resource type="Texture2D" uid="uid://bidt8c58vx5ke" path="res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1.png" id="32_43s81"]
+[ext_resource type="Texture2D" uid="uid://djj67hbd0mfa0" path="res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1.png" id="33_6fi63"]
+[ext_resource type="Texture2D" uid="uid://c8timm88ghn2e" path="res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1.png" id="34_nx8qc"]
+[ext_resource type="Texture2D" uid="uid://doqmxncw34spy" path="res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1.png" id="35_gks3u"]
+[ext_resource type="Texture2D" uid="uid://ddjij100vj2gm" path="res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1.png" id="36_3vfwa"]
+[ext_resource type="Texture2D" uid="uid://7d17n2tr4780" path="res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1.png" id="37_70u6f"]
+[ext_resource type="Texture2D" uid="uid://c2ia6kkaq5av2" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1.png" id="38_rw3yp"]
+[ext_resource type="Texture2D" uid="uid://c6wxj643c7sfw" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1.png" id="39_d453g"]
+[ext_resource type="Texture2D" uid="uid://bl1s8vxajop8j" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1.png" id="40_q1hxm"]
+[ext_resource type="Texture2D" uid="uid://cmtkbpwmb30ql" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1.png" id="41_6uuln"]
+[ext_resource type="Texture2D" uid="uid://dsakm2bxwqgii" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1.png" id="42_1lsov"]
+[ext_resource type="Texture2D" uid="uid://dd121hv1wlxao" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1.png" id="43_4oop2"]
+[ext_resource type="Texture2D" uid="uid://dbv8nt8u780lw" path="res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1.png" id="44_f2a4c"]
+[ext_resource type="Texture2D" uid="uid://crfee0r7vcr1" path="res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1.png" id="45_ltspb"]
+[ext_resource type="Texture2D" uid="uid://ug5hxxl4tc07" path="res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1.png" id="46_nal3a"]
+[ext_resource type="Texture2D" uid="uid://ds0ifju4acgie" path="res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1.png" id="47_allpe"]
+[ext_resource type="Texture2D" uid="uid://bblo6dh1820b0" path="res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1.png" id="48_c5q83"]
+[ext_resource type="Texture2D" uid="uid://djhfk0wim35uv" path="res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1.png" id="49_dccxk"]
+[ext_resource type="Texture2D" uid="uid://bd51qulgtblle" path="res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1.png" id="50_yx7mh"]
+[ext_resource type="Texture2D" uid="uid://cagsmlcbsp18g" path="res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png" id="51_xexj7"]
+[ext_resource type="Texture2D" uid="uid://bnqn1bvnkx7sk" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png" id="52_tdn6b"]
+[ext_resource type="Texture2D" uid="uid://dvjiaqj2f06j4" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="53_qabbp"]
+[ext_resource type="Texture2D" uid="uid://bgmd66lqtwpyy" path="res://resources/art/workstation/tools/batter_spreader_v1.png" id="54_ikthl"]
+[ext_resource type="Texture2D" uid="uid://clsgrhfkrxdr3" path="res://resources/art/workstation/tools/folding_spatula_v1.png" id="55_e6uu1"]
+[ext_resource type="Texture2D" uid="uid://oxlc7li34e5b" path="res://resources/art/workstation/tools/sauce_brush_v1.png" id="56_pel6i"]
+[ext_resource type="Texture2D" uid="uid://8sc5ilqjs0sy" path="res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png" id="57_y1oaf"]
+[ext_resource type="Texture2D" uid="uid://5uquhqgv6r2x" path="res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png" id="58_i2kai"]
+[ext_resource type="Texture2D" uid="uid://is5ho4ym1jlv" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3.png" id="59_yqulo"]
+[ext_resource type="Script" uid="uid://ejyrs1yv7tqk" path="res://scripts/ui/pancake_heatmap.gd" id="60_er833"]
+[ext_resource type="Shader" uid="uid://dxw2humis6o8y" path="res://resources/shaders/pancake_surface.gdshader" id="61_8ys8q"]
+[ext_resource type="Texture2D" uid="uid://cxer4sp3unwrv" path="res://resources/art/workstation/textures/pancake_charred_texture_v1.png" id="62_uvj0o"]
+[ext_resource type="Texture2D" uid="uid://bm0i5pv1kpaqr" path="res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png" id="63_thb5n"]
+[ext_resource type="Texture2D" uid="uid://cgkq521evn83j" path="res://resources/art/workstation/textures/pancake_cooked_texture_v1.png" id="64_e6t0c"]
+[ext_resource type="Texture2D" uid="uid://ctrtd61vep7kk" path="res://resources/art/workstation/textures/pancake_edge_texture_v1.png" id="65_t5fdn"]
+[ext_resource type="Texture2D" uid="uid://c8ymtdr3ky2g0" path="res://resources/art/workstation/textures/egg_spread_material_v1.png" id="66_8kkbd"]
+[ext_resource type="Texture2D" uid="uid://dptgn01f4rsv5" path="res://resources/art/workstation/textures/pancake_raw_texture_v1.png" id="67_my0by"]
+[ext_resource type="Texture2D" uid="uid://d3x18b08u4lfi" path="res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png" id="68_idpgk"]
+[ext_resource type="Texture2D" uid="uid://dlg06t1rq7iij" path="res://resources/art/ingredients/egg/egg_cracked_raw_v2.png" id="69_6io6o"]
+[ext_resource type="Script" uid="uid://du814x8l5prqp" path="res://scripts/ui/sauce_blob_overlay.gd" id="70_thlr5"]
+[ext_resource type="Script" uid="uid://cqy730upaochi" path="res://scripts/ui/ingredient_layer.gd" id="71_w81qn"]
+[ext_resource type="Texture2D" uid="uid://dq1ujdqxjcefv" path="res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png" id="72_w38vq"]
+[ext_resource type="Texture2D" uid="uid://1qub0g6gytwd" path="res://resources/art/ingredients/scallion/scallion_scattered_v1.png" id="73_6nllu"]
+[ext_resource type="Texture2D" uid="uid://dthjvyec11xkj" path="res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1.png" id="74_oyinm"]
+[ext_resource type="Texture2D" uid="uid://bf1vmjt1jhrks" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1.png" id="75_dq8vg"]
+[ext_resource type="Script" uid="uid://bk23v43txjird" path="res://scripts/ui/pancake_fold_overlay.gd" id="76_0ab4h"]
+[ext_resource type="Texture2D" uid="uid://cblr0hd04ee83" path="res://resources/art/workstation/textures/pancake_fold_back_texture_v1.png" id="77_m4dq8"]
+[ext_resource type="Texture2D" uid="uid://163215esxa4g" path="res://resources/art/workstation/packaging/paper_bag_package_v1.png" id="78_doktw"]
+[ext_resource type="Texture2D" uid="uid://btioby60qqm5y" path="res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png" id="79_rfcb8"]
+[ext_resource type="Texture2D" uid="uid://b7fptxnat3m2i" path="res://resources/art/workstation/packaging/serving_tray_package_v1.png" id="80_vy7hm"]
+[ext_resource type="Texture2D" uid="uid://c6cp33o4ggko6" path="res://resources/art/workstation/foreground/workstation_front_lip_v1.png" id="81_7f1r0"]
+[ext_resource type="Script" uid="uid://brkdrednjifne" path="res://scripts/ui/pancake_workstation_interaction_controller.gd" id="82_h8vlp"]
+[ext_resource type="Texture2D" uid="uid://c6briwyn3qks3" path="res://resources/art/ui/quality/quality_integrity_v1.png" id="83_d0bmj"]
+[ext_resource type="Texture2D" uid="uid://fql6eccu2e4q" path="res://resources/art/ui/quality/quality_thickness_uniformity_v1.png" id="84_mfn25"]
+[ext_resource type="Texture2D" uid="uid://b7angeqscamgx" path="res://resources/art/ui/quality/quality_heat_uniformity_v1.png" id="85_e6c8j"]
+[ext_resource type="Texture2D" uid="uid://bmuoe7iqyl3v7" path="res://resources/art/ui/quality/quality_egg_spread_v1.png" id="86_gjpp4"]
+[ext_resource type="Texture2D" uid="uid://boptdcvnemn7i" path="res://resources/art/ui/quality/quality_sauce_coverage_v1.png" id="87_wbm8s"]
+[ext_resource type="Texture2D" uid="uid://cmrgmbtlbm5cj" path="res://resources/art/ui/quality/quality_ingredient_distribution_v1.png" id="88_l5rmu"]
+[ext_resource type="Texture2D" uid="uid://d7a1hirxy6ay" path="res://resources/art/ui/quality/quality_fold_stability_v1.png" id="89_yhfik"]
+[ext_resource type="Texture2D" uid="uid://diondlio60pee" path="res://resources/art/ui/quality/quality_order_correctness_v1.png" id="90_nyusp"]
+[ext_resource type="Texture2D" uid="uid://ci3aeoih3c7nc" path="res://resources/art/ui/quality/quality_preparation_time_v1.png" id="91_vdkap"]
+[ext_resource type="Texture2D" uid="uid://br3wulay8eu4v" path="res://resources/art/payments/payment_cash_small_v1.png" id="92_nnv6x"]
+[ext_resource type="Texture2D" uid="uid://dknlk2asldge6" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png" id="93_i48ma"]
+[ext_resource type="Texture2D" uid="uid://bhjgy30eq2k28" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png" id="94_3ju16"]
+[ext_resource type="Texture2D" uid="uid://brtdw4orj2viy" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png" id="95_tud4u"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_patience_bg"]
 bg_color = Color(0.075, 0.14, 0.15, 0.94)
@@ -229,6 +229,7 @@ shader_parameter/fold_left_line_ratio = 0.38
 shader_parameter/fold_right_line_ratio = 0.62
 shader_parameter/fold_left_progress = 0.0
 shader_parameter/fold_right_progress = 0.0
+shader_parameter/fillings_enclosed = 0.0
 shader_parameter/package_hidden = 0.0
 shader_parameter/view_mode = 0
 
@@ -415,10 +416,10 @@ offset_left = 34.0
 offset_top = 28.0
 offset_right = 700.0
 offset_bottom = 68.0
-theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
 theme_override_colors/font_outline_color = Color(0.13, 0.08, 0.04, 1)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
 text = "营业倒计时 02:00"
 vertical_alignment = 1
 
@@ -428,12 +429,12 @@ z_index = 150
 layout_mode = 0
 offset_left = 24.0
 offset_top = 16.0
-offset_right = 760.0
+offset_right = 1020.0
 offset_bottom = 58.0
-theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
 theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 24
 text = "金币 0  ·  营业日 1  ·  声誉 0"
 vertical_alignment = 1
 
@@ -469,10 +470,10 @@ offset_left = 360.0
 offset_top = 300.0
 offset_right = 820.0
 offset_bottom = 340.0
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.88, 0.64, 0.95)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 21
 text = "“来一份经典杂粮煎饼。”"
 horizontal_alignment = 2
 
@@ -501,10 +502,10 @@ offset_right = -26.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.22, 0.1, 0.04, 1)
 theme_override_colors/font_outline_color = Color(1, 0.93, 0.74, 0.85)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
 text = "经典杂粮煎饼
 配料：鸡蛋、薄脆、葱花
 酱料：甜面酱 · 火候：金黄"
@@ -566,10 +567,10 @@ offset_left = 132.0
 offset_top = 40.0
 offset_right = 194.0
 offset_bottom = 72.0
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.28, 0.13, 0.04, 1)
 theme_override_colors/font_outline_color = Color(1, 0.92, 0.68, 0.9)
 theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -757,8 +758,8 @@ offset_left = 24.0
 offset_top = 8.0
 offset_right = 138.0
 offset_bottom = 76.0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 17
 text = "排队中 · 2位"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -843,9 +844,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
 text = "补鸡蛋"
 horizontal_alignment = 1
 
@@ -888,9 +889,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
 text = "补薄脆"
 horizontal_alignment = 1
 
@@ -933,9 +934,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
 text = "补火腿"
 horizontal_alignment = 1
 
@@ -978,9 +979,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
 text = "补葱花"
 horizontal_alignment = 1
 
@@ -1036,10 +1037,10 @@ anchor_bottom = 1.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(1, 0.78, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
 text = "空"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1054,9 +1055,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
 text = "鸡蛋"
 horizontal_alignment = 1
 
@@ -1098,10 +1099,10 @@ anchor_bottom = 1.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(1, 0.78, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
 text = "空"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1116,9 +1117,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
 text = "薄脆"
 horizontal_alignment = 1
 
@@ -1140,6 +1141,8 @@ disabled = true
 script = ExtResource("24_ak4px")
 ingredient_type = &"ham_sausage"
 stock_textures = Array[Texture2D]([ExtResource("38_rw3yp"), ExtResource("39_d453g"), ExtResource("40_q1hxm"), ExtResource("41_6uuln"), ExtResource("42_1lsov"), ExtResource("43_4oop2")])
+hold_threshold_seconds = 0.1
+metadata/refill_enabled = true
 
 [node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/HamButton" unique_id=1624823033]
 layout_mode = 1
@@ -1166,10 +1169,10 @@ anchor_bottom = 1.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(1, 0.78, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
 text = "空"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1183,9 +1186,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
 text = "火腿肠"
 horizontal_alignment = 1
 
@@ -1227,10 +1230,10 @@ anchor_bottom = 1.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(1, 0.78, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
 text = "空"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1245,9 +1248,9 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
 text = "葱花"
 horizontal_alignment = 1
 
@@ -1267,6 +1270,8 @@ theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"meat_floss"
 stock_textures = Array[Texture2D]([ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7")])
+hold_threshold_seconds = 0.1
+metadata/refill_enabled = true
 
 [node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/MeatFlossButton" unique_id=1255772544]
 layout_mode = 1
@@ -1293,8 +1298,8 @@ anchor_bottom = 1.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(1, 0.78, 0.3, 1)
+theme_override_font_sizes/font_size = 28
 text = "空"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1308,8 +1313,8 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
+theme_override_font_sizes/font_size = 16
 text = "肉松"
 horizontal_alignment = 1
 
@@ -1329,6 +1334,8 @@ theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"pork_tenderloin"
 stock_textures = Array[Texture2D]([ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b")])
+hold_threshold_seconds = 0.1
+metadata/refill_enabled = true
 
 [node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/PorkTenderloinButton" unique_id=270714765]
 layout_mode = 1
@@ -1355,8 +1362,8 @@ anchor_bottom = 1.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_font_sizes/font_size = 28
 theme_override_colors/font_color = Color(1, 0.78, 0.3, 1)
+theme_override_font_sizes/font_size = 28
 text = "空"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1370,8 +1377,8 @@ anchor_bottom = 1.0
 offset_top = -28.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
+theme_override_font_sizes/font_size = 16
 text = "里脊肉"
 horizontal_alignment = 1
 
@@ -1385,6 +1392,7 @@ tooltip_text = "香菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
 ingredient_type = &"coriander"
+hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
 [node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/CorianderButton" unique_id=1400495192]
@@ -1418,6 +1426,7 @@ tooltip_text = "榨菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
 ingredient_type = &"preserved_mustard"
+hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
 [node name="Artwork" type="TextureRect" parent="SafeArea/IngredientRack/PreservedMustardButton" unique_id=2128602406]
@@ -1457,10 +1466,10 @@ layout_mode = 0
 offset_left = 90.0
 offset_right = 400.0
 offset_bottom = 42.0
-theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(0.22, 0.1, 0.04, 1)
 theme_override_colors/font_outline_color = Color(1, 0.72, 0.34, 0.78)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
 text = "桌面工具"
 horizontal_alignment = 1
 
@@ -1503,10 +1512,10 @@ anchor_bottom = 1.0
 offset_top = -30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.76, 0.42, 0.9)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 20
 text = "舀面糊"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1552,16 +1561,17 @@ anchor_bottom = 1.0
 offset_top = -30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.76, 0.42, 0.9)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
 text = "摊饼器"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="FoldButton" type="Button" parent="SafeArea/LeftRack" unique_id=708973777]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 578.0
 offset_top = 180.0
@@ -1603,10 +1613,10 @@ anchor_bottom = 1.0
 offset_top = -30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.76, 0.42, 0.9)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
 text = "折叠铲"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1618,8 +1628,8 @@ offset_left = 32.0
 offset_top = 430.0
 offset_right = 396.0
 offset_bottom = 610.0
-theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.72, 0.68, 0.6, 1)
+theme_override_font_sizes/font_size = 20
 text = "▱ 翻面铲（P1）
 
 ▥ 清洁区（后续）"
@@ -1669,20 +1679,21 @@ anchor_bottom = 1.0
 offset_top = -30.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.2, 0.1, 0.07, 1)
 theme_override_colors/font_outline_color = Color(1, 0.86, 0.62, 0.95)
 theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
 text = "酱刷"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PressSpreaderButton" type="Button" parent="SafeArea/LeftRack" unique_id=1355790928]
 visible = false
+z_index = 10
 layout_mode = 0
-offset_left = 430.0
-offset_right = 558.0
-offset_bottom = 76.0
+offset_top = -90.0
+offset_right = 128.0
+offset_bottom = -14.0
 tooltip_text = "每张饼可一键标准摊面一次"
 theme_override_styles/normal = SubResource("StyleBox_material_open")
 theme_override_styles/pressed = SubResource("StyleBox_tool_hover")
@@ -1742,10 +1753,10 @@ layout_mode = 0
 offset_left = 72.0
 offset_right = 408.0
 offset_bottom = 42.0
-theme_override_font_sizes/font_size = 25
 theme_override_colors/font_color = Color(0.22, 0.12, 0.08, 1)
 theme_override_colors/font_outline_color = Color(1, 0.86, 0.62, 0.9)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 25
 text = "桌面配料"
 horizontal_alignment = 1
 
@@ -1769,10 +1780,10 @@ anchor_bottom = 1.0
 offset_top = -32.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.2, 0.1, 0.07, 1)
 theme_override_colors/font_outline_color = Color(1, 0.86, 0.62, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 17
 text = "甜面酱"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1793,7 +1804,6 @@ theme_override_styles/disabled = SubResource("StyleBox_table_button")
 disabled = true
 
 [node name="Label" type="Label" parent="SafeArea/RightRack/ChiliSauceRefillButton" unique_id=1488982992]
-visible = false
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -1802,10 +1812,10 @@ anchor_bottom = 1.0
 offset_top = -32.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.2, 0.1, 0.07, 1)
 theme_override_colors/font_outline_color = Color(1, 0.86, 0.62, 0.95)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 17
 text = "辣椒酱"
 horizontal_alignment = 1
 
@@ -1817,10 +1827,10 @@ offset_left = -10.0
 offset_top = 500.0
 offset_right = 450.0
 offset_bottom = 540.0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.21, 0.1, 0.06, 1)
 theme_override_colors/font_outline_color = Color(1, 0.84, 0.58, 0.9)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 17
 text = "酱刷含量 0% · 酱料评分 --"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1834,10 +1844,10 @@ offset_left = -1190.0
 offset_top = 500.0
 offset_right = -730.0
 offset_bottom = 540.0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.16, 0.12, 0.1, 1)
 theme_override_colors/font_outline_color = Color(1, 0.86, 0.62, 0.9)
 theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 17
 text = "左：待折 · 右：待折"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -1850,8 +1860,8 @@ offset_left = 32.0
 offset_top = 548.0
 offset_right = 396.0
 offset_bottom = 640.0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.88, 0.84, 0.74, 1)
+theme_override_font_sizes/font_size = 17
 text = "○ 鸡蛋 · ▰ 薄脆 · ▱ 火腿肠（P1）"
 horizontal_alignment = 1
 
@@ -1977,40 +1987,6 @@ tooltip_text = "点击包装好的煎饼，递给顾客"
 mouse_default_cursor_shape = 2
 flat = true
 
-[node name="PancakeHoldingTray" type="Panel" parent="SafeArea" unique_id=1604478468]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 1180.0
-offset_top = 705.0
-offset_right = 1510.0
-offset_bottom = 860.0
-
-[node name="Title" type="Label" parent="SafeArea/PancakeHoldingTray" unique_id=1159797201]
-layout_mode = 0
-text = "煎饼成品暂存（两格）"
-horizontal_alignment = 1
-
-[node name="PancakeHoldingSlot01" type="Button" parent="SafeArea/PancakeHoldingTray" unique_id=1222767985]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 14.0
-offset_top = 52.0
-offset_right = 158.0
-offset_bottom = 136.0
-text = "暂存格 1
-空"
-
-[node name="PancakeHoldingSlot02" type="Button" parent="SafeArea/PancakeHoldingTray" unique_id=103243046]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 172.0
-offset_top = 52.0
-offset_right = 316.0
-offset_bottom = 136.0
-text = "暂存格 2
-空"
-
 [node name="StorePancakeButton" type="Button" parent="SafeArea" unique_id=2005150950]
 unique_name_in_owner = true
 visible = false
@@ -2060,10 +2036,10 @@ offset_left = 730.0
 offset_top = 420.0
 offset_right = 1250.0
 offset_bottom = 452.0
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.82, 0.46, 0.95)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 21
 text = "当前步骤：摊开面糊 · 已用时 0秒"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -2085,13 +2061,14 @@ offset_left = 18.0
 offset_top = 8.0
 offset_right = 160.0
 offset_bottom = 36.0
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1, 0.9, 0.67, 1)
+theme_override_font_sizes/font_size = 18
 text = "火力 50%"
 horizontal_alignment = 1
 
 [node name="HeatSlider" type="HSlider" parent="SafeArea/P1ControlBar" unique_id=322180612]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 28.0
 offset_top = 40.0
@@ -2103,6 +2080,7 @@ theme_override_styles/grabber_area_highlight = SubResource("StyleBox_slider_fill
 min_value = 20.0
 step = 5.0
 value = 50.0
+editable = false
 
 [node name="PackagingChoices" type="Control" parent="SafeArea/P1ControlBar" unique_id=619151013]
 unique_name_in_owner = true
@@ -2121,11 +2099,11 @@ offset_left = 8.0
 offset_top = 10.0
 offset_right = 150.0
 offset_bottom = 78.0
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
-theme_override_font_sizes/font_size = 16
 disabled = true
 text = "纸袋"
 
@@ -2136,11 +2114,11 @@ offset_left = 160.0
 offset_top = 10.0
 offset_right = 315.0
 offset_bottom = 78.0
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
-theme_override_font_sizes/font_size = 16
 disabled = true
 text = "加固纸套"
 
@@ -2151,11 +2129,11 @@ offset_left = 325.0
 offset_top = 10.0
 offset_right = 472.0
 offset_bottom = 78.0
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
-theme_override_font_sizes/font_size = 16
 disabled = true
 text = "托盘出餐"
 
@@ -2167,12 +2145,12 @@ offset_left = 174.0
 offset_top = 12.0
 offset_right = 464.0
 offset_bottom = 72.0
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 22
 text = "翻面"
 
 [node name="ServeButton" type="Button" parent="SafeArea/P1ControlBar" unique_id=1456094313]
@@ -2183,16 +2161,15 @@ offset_left = 174.0
 offset_top = 12.0
 offset_right = 464.0
 offset_bottom = 72.0
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 22
 text = "出餐并查看评价"
 
 [node name="BottomStrip" type="Panel" parent="SafeArea" unique_id=1839191007]
-visible = false
 z_index = 7
 layout_mode = 0
 offset_left = 100.0
@@ -2207,8 +2184,8 @@ offset_left = 18.0
 offset_top = 70.0
 offset_right = 582.0
 offset_bottom = 106.0
-theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(0.94, 0.89, 0.78, 1)
+theme_override_font_sizes/font_size = 12
 text = "左键拖动制作 · 右键取消工具 · R 重置"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -2218,22 +2195,23 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 18.0
 offset_top = 8.0
-offset_right = 286.0
+offset_right = 582.0
 offset_bottom = 38.0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.5, 0.94, 0.94, 1)
+theme_override_font_sizes/font_size = 17
 text = "当前工具：未拿工具"
 vertical_alignment = 1
 
 [node name="BusinessDayTimerLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1237086358]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 650.0
 offset_top = 2.0
 offset_right = 1010.0
 offset_bottom = 28.0
-theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 22
 text = "营业倒计时 02:00"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -2245,8 +2223,8 @@ offset_left = 18.0
 offset_top = 42.0
 offset_right = 582.0
 offset_bottom = 68.0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 
 [node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1208524388]
@@ -2256,8 +2234,8 @@ offset_left = 314.0
 offset_top = 8.0
 offset_right = 582.0
 offset_bottom = 38.0
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.76, 0.92, 0.76, 1)
+theme_override_font_sizes/font_size = 17
 text = "当前无破洞风险"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -2271,8 +2249,8 @@ offset_left = 118.0
 offset_top = 184.0
 offset_right = 682.0
 offset_bottom = 210.0
-theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(1, 0.91, 0.62, 1)
+theme_override_font_sizes/font_size = 14
 text = "把鼠标移入鏊面，可直接查看当前位置的面糊状态"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -2285,11 +2263,11 @@ offset_top = 926.0
 offset_right = 1788.0
 offset_bottom = 1008.0
 tooltip_text = "丢弃当前煎饼并重新制作；不会重置顾客耐心"
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_font_sizes/font_size = 16
 text = "🗑 垃圾桶
 重做本张"
 
@@ -2335,8 +2313,8 @@ theme_override_constants/separation = 14
 [node name="ResultTitleLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=77600356]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 36
 text = "顾客评价 · 0分"
 horizontal_alignment = 1
 
@@ -2344,8 +2322,8 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "评价结果"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -2376,8 +2354,8 @@ stretch_mode = 5
 [node name="IntegrityScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/IntegrityMetric" unique_id=1548129433]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "完整度  0"
 vertical_alignment = 1
 
@@ -2398,8 +2376,8 @@ stretch_mode = 5
 [node name="ThicknessScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/ThicknessMetric" unique_id=288908190]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "厚薄  0"
 vertical_alignment = 1
 
@@ -2420,8 +2398,8 @@ stretch_mode = 5
 [node name="HeatScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/HeatMetric" unique_id=252192898]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "火候  0"
 vertical_alignment = 1
 
@@ -2442,8 +2420,8 @@ stretch_mode = 5
 [node name="EggScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/EggMetric" unique_id=147677638]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "摊蛋  0"
 vertical_alignment = 1
 
@@ -2464,8 +2442,8 @@ stretch_mode = 5
 [node name="SauceScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/SauceMetric" unique_id=67827696]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "酱料  0"
 vertical_alignment = 1
 
@@ -2486,8 +2464,8 @@ stretch_mode = 5
 [node name="IngredientScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/IngredientMetric" unique_id=1546418761]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "配料  0"
 vertical_alignment = 1
 
@@ -2508,8 +2486,8 @@ stretch_mode = 5
 [node name="FoldScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/FoldMetric" unique_id=1250709293]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "折叠  0"
 vertical_alignment = 1
 
@@ -2530,8 +2508,8 @@ stretch_mode = 5
 [node name="OrderScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/OrderMetric" unique_id=537373991]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "订单  0"
 vertical_alignment = 1
 
@@ -2552,8 +2530,8 @@ stretch_mode = 5
 [node name="TimeScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/TimeMetric" unique_id=1299219887]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "时间  0"
 vertical_alignment = 1
 
@@ -2561,8 +2539,8 @@ vertical_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(0.84, 0.8, 0.68, 1)
+theme_override_font_sizes/font_size = 19
 text = "亮点与问题"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -2581,12 +2559,12 @@ stretch_mode = 5
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 24
 text = "关闭本单详情"
 
 [node name="OrderSummaryCard" type="PanelContainer" parent="SafeArea" unique_id=2124197355]
@@ -2613,16 +2591,16 @@ theme_override_constants/separation = 10
 [node name="SummaryScoreLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=2033801900]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 26
 text = "本单 0分 · +0金币"
 
 [node name="SummaryFeedbackLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=807562094]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 17
 text = "本单评价"
 autowrap_mode = 2
 
@@ -2635,24 +2613,24 @@ alignment = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 44)
 layout_mode = 2
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 18
 text = "查看本单"
 
 [node name="SummaryDismissButton" type="Button" parent="SafeArea/OrderSummaryCard/Margin/VBox/Actions" unique_id=99629323]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 44)
 layout_mode = 2
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 18
 text = "收起"
 
 [node name="FiveAreaStationArtwork" type="Control" parent="SafeArea" unique_id=772365749]
@@ -2720,8 +2698,8 @@ theme_override_styles/panel = SubResource("StyleBox_station_active")
 
 [node name="Label" type="Label" parent="SafeArea/FiveAreaStationArtwork/PackagedDrinkPlaceholder" unique_id=778377134]
 layout_mode = 2
-theme_override_font_sizes/font_size = 23
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_font_sizes/font_size = 23
 text = "成品饮品机
 （美术待补，UI占位）"
 horizontal_alignment = 1
@@ -2739,8 +2717,8 @@ theme_override_styles/panel = SubResource("StyleBox_station_active")
 
 [node name="Label" type="Label" parent="SafeArea/FiveAreaStationArtwork/SteamerPlaceholder" unique_id=712991632]
 layout_mode = 2
-theme_override_font_sizes/font_size = 23
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
+theme_override_font_sizes/font_size = 23
 text = "蒸品蒸箱
 （美术待补，UI占位）"
 horizontal_alignment = 1
@@ -2796,10 +2774,10 @@ offset_left = 4.0
 offset_top = 42.0
 offset_right = -4.0
 offset_bottom = 98.0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "现磨豆浆
 D10 · 口碑120 · 油条教学4"
 horizontal_alignment = 1
@@ -2825,10 +2803,10 @@ offset_left = 4.0
 offset_top = 42.0
 offset_right = -4.0
 offset_bottom = 98.0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "油条
 成品饮品教学4"
 horizontal_alignment = 1
@@ -2854,10 +2832,10 @@ offset_left = 4.0
 offset_top = 42.0
 offset_right = -4.0
 offset_bottom = 98.0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "成品饮品
 D3 · 口碑20 · 煎饼教学6"
 horizontal_alignment = 1
@@ -2883,10 +2861,10 @@ offset_left = 4.0
 offset_top = 42.0
 offset_right = -4.0
 offset_bottom = 98.0
-theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1, 0.95, 0.82, 1)
 theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "蒸品
 D14 · 口碑180 · 豆浆教学4"
 horizontal_alignment = 1
@@ -3106,6 +3084,22 @@ mouse_default_cursor_shape = 2
 flat = true
 metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot04")
 
+[node name="PromptLabel" type="Label" parent="SafeArea/LockedIngredientInteractions/Slot04LockedButton" unique_id=531498841]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Slot05LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1846101564]
 layout_mode = 0
 offset_left = 445.0
@@ -3138,6 +3132,22 @@ tooltip_text = "此小料槽尚未解锁"
 mouse_default_cursor_shape = 2
 flat = true
 metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot10")
+
+[node name="PromptLabel" type="Label" parent="SafeArea/LockedIngredientInteractions/Slot10LockedButton" unique_id=257183857]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Slot11LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=625899937]
 layout_mode = 0
@@ -3283,6 +3293,7 @@ offset_right = 534.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 5
+metadata/worktop_rect = Rect2(445, 925, 89, 120)
 
 [node name="Slot06" type="Control" parent="SafeArea/MaterialDock" unique_id=1245667871]
 anchors_preset = 0
@@ -3292,6 +3303,7 @@ offset_right = 639.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 6
+metadata/worktop_rect = Rect2(550, 925, 89, 120)
 
 [node name="Slot07" type="Control" parent="SafeArea/MaterialDock" unique_id=401489307]
 anchors_preset = 0
@@ -3301,6 +3313,7 @@ offset_right = 743.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 7
+metadata/worktop_rect = Rect2(654, 925, 89, 120)
 
 [node name="Slot08" type="Control" parent="SafeArea/MaterialDock" unique_id=422425779]
 anchors_preset = 0
@@ -3310,6 +3323,7 @@ offset_right = 848.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 8
+metadata/worktop_rect = Rect2(759, 925, 89, 120)
 
 [node name="Slot09" type="Control" parent="SafeArea/MaterialDock" unique_id=1152362661]
 anchors_preset = 0
@@ -3319,6 +3333,7 @@ offset_right = 953.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 9
+metadata/worktop_rect = Rect2(864, 925, 89, 120)
 
 [node name="Slot10" type="Control" parent="SafeArea/MaterialDock" unique_id=208628683]
 anchors_preset = 0
@@ -3328,6 +3343,7 @@ offset_right = 1057.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 10
+metadata/worktop_rect = Rect2(968, 925, 89, 120)
 
 [node name="Slot11" type="Control" parent="SafeArea/MaterialDock" unique_id=922078895]
 anchors_preset = 0
@@ -3337,6 +3353,7 @@ offset_right = 1162.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 11
+metadata/worktop_rect = Rect2(1073, 925, 89, 120)
 
 [node name="Slot12" type="Control" parent="SafeArea/MaterialDock" unique_id=1380210896]
 anchors_preset = 0
@@ -3346,6 +3363,7 @@ offset_right = 1266.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 12
+metadata/worktop_rect = Rect2(1177, 925, 89, 120)
 
 [node name="Slot13" type="Control" parent="SafeArea/MaterialDock" unique_id=1644027480]
 anchors_preset = 0
@@ -3355,6 +3373,7 @@ offset_right = 1371.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 13
+metadata/worktop_rect = Rect2(1282, 925, 89, 120)
 
 [node name="Slot14" type="Control" parent="SafeArea/MaterialDock" unique_id=1033216885]
 anchors_preset = 0
@@ -3364,6 +3383,7 @@ offset_right = 1475.0
 offset_bottom = 1045.0
 mouse_filter = 2
 metadata/slot_index = 14
+metadata/worktop_rect = Rect2(1386, 925, 89, 120)
 
 [node name="Slot15" type="Control" parent="SafeArea/MaterialDock" unique_id=990870241]
 anchors_preset = 0
@@ -3438,16 +3458,16 @@ theme_override_constants/separation = 10
 [node name="DailyBillTitleLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=900173229]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 38
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 38
 text = "今日账单"
 horizontal_alignment = 1
 
 [node name="DailyBillStatsLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=13719688]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 22
 text = "完成 0 单 · 收入 0 金币 · 平均 0分"
 horizontal_alignment = 1
 
@@ -3459,31 +3479,31 @@ columns = 4
 [node name="Index" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=70350445]
 custom_minimum_size = Vector2(100, 40)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 19
 text = "序号"
 horizontal_alignment = 1
 
 [node name="Order" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=1619966734]
 custom_minimum_size = Vector2(480, 40)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 19
 text = "订单"
 
 [node name="Score" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=69832394]
 custom_minimum_size = Vector2(140, 40)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 19
 text = "评分"
 horizontal_alignment = 1
 
 [node name="Income" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=2144907876]
 custom_minimum_size = Vector2(170, 40)
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 19
 text = "收入"
 horizontal_alignment = 2
 
@@ -3506,16 +3526,16 @@ layout_mode = 2
 [node name="GrowthHeadlineLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1187074350]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 26
 text = "为明天预订成长：安装位 + 内容位"
 horizontal_alignment = 1
 
 [node name="GrowthBalanceLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1533421848]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 18
 text = "现有 0 金币 · 声誉 0"
 horizontal_alignment = 1
 
@@ -3528,45 +3548,54 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
-theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
-theme_override_font_sizes/font_size = 18
 text = "成长票 1"
+clip_text = true
+autowrap_mode = 2
 
 [node name="GrowthTicket2" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=875673759]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
-theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
-theme_override_font_sizes/font_size = 18
 text = "成长票 2"
+clip_text = true
+autowrap_mode = 2
 
 [node name="GrowthTicket3" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=609619251]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
-theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
-theme_override_font_sizes/font_size = 18
 text = "成长票 3"
+clip_text = true
+autowrap_mode = 2
 
 [node name="GrowthActions" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=415184221]
 layout_mode = 2
@@ -3576,24 +3605,24 @@ theme_override_constants/separation = 14
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 22
 text = "返回开始页"
 
 [node name="UnlockProgressButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=1105679177]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(210, 58)
 layout_mode = 2
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 22
 text = "解锁进度"
 
 [node name="BeginNextDayButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=1006996714]
@@ -3601,12 +3630,12 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 22
 text = "不购买，直接开始下一天"
 
 [node name="UnlockProgressPanel" type="PanelContainer" parent="SafeArea" unique_id=746139281]
@@ -3634,15 +3663,15 @@ theme_override_constants/separation = 18
 
 [node name="Title" type="Label" parent="SafeArea/UnlockProgressPanel/Margin/VBox" unique_id=1597332040]
 layout_mode = 2
-theme_override_font_sizes/font_size = 34
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_font_sizes/font_size = 34
 text = "解锁进度"
 horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="SafeArea/UnlockProgressPanel/Margin/VBox" unique_id=102535066]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 18
 text = "仅“已解锁”项目已在本日生效；今日预订会单独列在底部。"
 horizontal_alignment = 1
 
@@ -3656,8 +3685,8 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+theme_override_font_sizes/font_size = 21
 text = "正在读取解锁进度……"
 autowrap_mode = 2
 
@@ -3665,10 +3694,51 @@ autowrap_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
+theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-theme_override_font_sizes/font_size = 22
 text = "返回成长选择"
+
+[node name="PancakeHoldingTray" type="Panel" parent="SafeArea" unique_id=1604478468]
+unique_name_in_owner = true
+visible = false
+z_index = 9
+layout_mode = 0
+offset_left = 500.0
+offset_top = 780.0
+offset_right = 830.0
+offset_bottom = 935.0
+
+[node name="Title" type="Label" parent="SafeArea/PancakeHoldingTray" unique_id=1159797201]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 7.0
+offset_right = 320.0
+offset_bottom = 43.0
+theme_override_font_sizes/font_size = 15
+text = "成品暂存 · 做完点暂存，下一单点格交付"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PancakeHoldingSlot01" type="Button" parent="SafeArea/PancakeHoldingTray" unique_id=1222767985]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 14.0
+offset_top = 52.0
+offset_right = 158.0
+offset_bottom = 136.0
+text = "暂存格 1
+空"
+
+[node name="PancakeHoldingSlot02" type="Button" parent="SafeArea/PancakeHoldingTray" unique_id=103243046]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 172.0
+offset_top = 52.0
+offset_right = 316.0
+offset_bottom = 136.0
+text = "暂存格 2
+空"

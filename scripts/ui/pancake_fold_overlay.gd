@@ -759,6 +759,10 @@ func _draw_package() -> void:
 
 func current_package_texture() -> Texture2D:
 	var package_result: StringName = fold_model.package_result if fold_model != null else FOLD_MODEL_SCRIPT.PACKAGE_NONE
+	return package_texture_for(package_result)
+
+
+func package_texture_for(package_result: StringName) -> Texture2D:
 	match package_result:
 		FOLD_MODEL_SCRIPT.PACKAGE_BAG:
 			return paper_bag_package_texture

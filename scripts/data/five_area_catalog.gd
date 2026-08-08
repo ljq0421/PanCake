@@ -61,23 +61,34 @@ const DEVICE_DEFINITIONS := {
 	&"device.steamer": {"area_id": &"area.steamer", "tiers": [{"tier": 1, "label": "基础蒸箱"}, {"tier": 2, "label": "双层蒸箱"}]},
 }
 
-## Slot 11 is the confirmed mustard add-on. Slots 12-15 remain reservations.
+## The three opening-day ingredients keep their authored Slot07-Slot09 wells.
+## Later unlocked add-ons are compacted into these wells in priority order.
 ## Sauce inventory is a countertop input and must never be assigned a material slot.
+const PANCAKE_ADD_ON_SLOT_PRIORITY: Array[StringName] = [
+	&"slot.10", &"slot.11", &"slot.12", &"slot.06", &"slot.13", &"slot.05", &"slot.14",
+]
+const PANCAKE_ADD_ON_DISPLAY_ORDER: Array[StringName] = [
+	&"stock.pancake.ham_sausage",
+	&"stock.pancake.meat_floss",
+	&"stock.pancake.coriander",
+	&"stock.pancake.preserved_mustard",
+	&"stock.pancake.pork_tenderloin",
+]
 const MATERIAL_SLOT_DEFINITIONS := {
 	&"slot.01": {"index": 1, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.yellow_bean"},
 	&"slot.02": {"index": 2, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.black_bean"},
 	&"slot.03": {"index": 3, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.plain_dough"},
-	&"slot.04": {"index": 4, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.meat_floss"},
-	&"slot.05": {"index": 5, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.ham_sausage"},
-	&"slot.06": {"index": 6, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.coriander"},
+	&"slot.04": {"index": 4, "area_id": &"area.pancake", "kind": &"reserved", "reservation_id": &"reservation.pancake.future_01"},
+	&"slot.05": {"index": 5, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
+	&"slot.06": {"index": 6, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
 	&"slot.07": {"index": 7, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.egg"},
 	&"slot.08": {"index": 8, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.baocui"},
 	&"slot.09": {"index": 9, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.scallion"},
-	&"slot.10": {"index": 10, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.pork_tenderloin"},
-	&"slot.11": {"index": 11, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.preserved_mustard"},
-	&"slot.12": {"index": 12, "area_id": &"area.pancake", "kind": &"reserved", "reservation_id": &"reservation.pancake.future_02"},
-	&"slot.13": {"index": 13, "area_id": &"area.pancake", "kind": &"reserved", "reservation_id": &"reservation.pancake.future_03"},
-	&"slot.14": {"index": 14, "area_id": &"area.pancake", "kind": &"reserved", "reservation_id": &"reservation.pancake.future_04"},
+	&"slot.10": {"index": 10, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
+	&"slot.11": {"index": 11, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
+	&"slot.12": {"index": 12, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
+	&"slot.13": {"index": 13, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
+	&"slot.14": {"index": 14, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
 	&"slot.15": {"index": 15, "area_id": &"area.pancake", "kind": &"reserved", "reservation_id": &"reservation.pancake.future_05"},
 	&"slot.16": {"index": 16, "area_id": &"area.packaged_drink", "kind": &"stock", "stock_id": &"stock.packaged_drink.milk"},
 	&"slot.17": {"index": 17, "area_id": &"area.steamer", "kind": &"stock", "stock_id": &"stock.steamer.vegetable_bun"},
@@ -91,11 +102,11 @@ const STOCK_DEFINITIONS := {
 	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.1666667, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.09"},
 	&"stock.pancake.sauce.sweet_flour": {"area_id": &"area.pancake", "category": &"sauce", "refill_seconds": 0.25, "material_slot_id": &"", "surface_input_id": &"ui.pancake.sweet_flour_sauce_brush"},
 	&"stock.pancake.sauce.red_chili": {"area_id": &"area.pancake", "category": &"sauce", "refill_seconds": 0.25, "material_slot_id": &"", "surface_input_id": &"ui.pancake.red_chili_sauce_brush"},
-	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.05"},
-	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.04"},
-	&"stock.pancake.pork_tenderloin": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &"slot.10"},
-	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.06"},
-	&"stock.pancake.preserved_mustard": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.11"},
+	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.pork_tenderloin": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.preserved_mustard": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.packaged_drink.milk": {"label": "纯牛奶", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.16"},
 	&"stock.packaged_drink.soy_milk": {"label": "成品豆奶", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.packaged_drink.walnut": {"label": "核桃乳", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &""},
@@ -293,8 +304,14 @@ static func validate_catalog() -> PackedStringArray:
 				errors.append("Unknown stock in material slot: %s" % slot_id)
 			elif STOCK_DEFINITIONS[stock_id].get("material_slot_id", &"") != slot_id:
 				errors.append("Stock to slot mismatch: %s" % stock_id)
+		elif slot.get("kind", &"") == &"dynamic_add_on":
+			if not PANCAKE_ADD_ON_SLOT_PRIORITY.has(slot_id):
+				errors.append("Unexpected dynamic pancake add-on slot: %s" % slot_id)
 		elif slot.get("kind", &"") != &"reserved":
 			errors.append("Unknown material slot kind: %s" % slot_id)
+	for stock_id in PANCAKE_ADD_ON_DISPLAY_ORDER:
+		if not STOCK_DEFINITIONS.has(stock_id) or STOCK_DEFINITIONS[stock_id].get("material_slot_id", &"") != &"":
+			errors.append("Pancake add-on must use dynamic slot priority: %s" % stock_id)
 	for stock_id in SAUCE_DEFINITIONS.keys():
 		if not STOCK_DEFINITIONS.has(stock_id) or STOCK_DEFINITIONS[stock_id].get("material_slot_id", &"") != &"":
 			errors.append("Sauce must not occupy a material slot: %s" % stock_id)

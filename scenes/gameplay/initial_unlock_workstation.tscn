@@ -425,10 +425,10 @@ expand_mode = 1
 [node name="BusinessDayTimerLabel" type="Label" parent="SafeArea" unique_id=2017166312]
 z_index = 20
 layout_mode = 0
-offset_left = 34.0
-offset_top = 28.0
-offset_right = 700.0
-offset_bottom = 68.0
+offset_left = 720.0
+offset_top = 86.0
+offset_right = 1200.0
+offset_bottom = 124.0
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
 theme_override_colors/font_outline_color = Color(0.13, 0.08, 0.04, 1)
 theme_override_constants/outline_size = 5
@@ -440,10 +440,10 @@ vertical_alignment = 1
 unique_name_in_owner = true
 z_index = 150
 layout_mode = 0
-offset_left = 24.0
-offset_top = 16.0
-offset_right = 1020.0
-offset_bottom = 58.0
+offset_left = 100.0
+offset_top = 136.0
+offset_right = 1820.0
+offset_bottom = 170.0
 theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
 theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
 theme_override_constants/outline_size = 4
@@ -465,6 +465,7 @@ stretch_mode = 5
 
 [node name="PatienceBar" type="ProgressBar" parent="SafeArea" unique_id=639153722]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 790.0
 offset_top = 18.0
@@ -478,6 +479,7 @@ show_percentage = false
 
 [node name="PatienceTextLabel" type="Label" parent="SafeArea"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 790.0
 offset_top = 18.0
@@ -495,10 +497,10 @@ vertical_alignment = 1
 [node name="CustomerLineLabel" type="Label" parent="SafeArea" unique_id=260785827]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 360.0
-offset_top = 300.0
-offset_right = 820.0
-offset_bottom = 340.0
+offset_left = 300.0
+offset_top = 420.0
+offset_right = 780.0
+offset_bottom = 460.0
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.88, 0.64, 0.95)
 theme_override_constants/outline_size = 5
@@ -763,18 +765,17 @@ mouse_filter = 2
 [node name="CustomerStrip" type="Panel" parent="SafeArea" unique_id=853873093]
 layout_mode = 0
 offset_left = 100.0
-offset_top = 48.0
+offset_top = 20.0
 offset_right = 1820.0
 offset_bottom = 132.0
 theme_override_styles/panel = SubResource("StyleBox_strip")
 
 [node name="Title" type="Label" parent="SafeArea/CustomerStrip" unique_id=1986397542]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_left = 520.0
+offset_top = 4.0
+offset_right = 1200.0
+offset_bottom = 54.0
 text = "PROJECT CAKE · 营业中"
 label_settings = SubResource("LabelSettings_title")
 horizontal_alignment = 1
@@ -1522,7 +1523,7 @@ offset_top = 630.0
 offset_right = 1304.0
 offset_bottom = 890.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBox_rack")
+theme_override_styles/panel = SubResource("StyleBox_clear")
 
 [node name="Heading" type="Label" parent="SafeArea/LeftRack" unique_id=391630440]
 visible = false
@@ -1809,7 +1810,7 @@ offset_top = 810.0
 offset_right = 749.0
 offset_bottom = 884.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBox_rack")
+theme_override_styles/panel = SubResource("StyleBox_clear")
 
 [node name="Heading" type="Label" parent="SafeArea/RightRack" unique_id=606069573]
 visible = false
@@ -1860,7 +1861,6 @@ offset_left = 700.0
 offset_right = 845.0
 offset_bottom = 74.0
 tooltip_text = "点击挤一小团辣椒酱到饼上；继续按住可增加用量"
-mouse_filter = 2
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
@@ -2055,11 +2055,13 @@ flat = true
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 1190.0
-offset_top = 875.0
-offset_right = 1500.0
-offset_bottom = 925.0
-text = "存入成品暂存托盘"
+offset_left = 1182.0
+offset_top = 800.0
+offset_right = 1304.0
+offset_bottom = 842.0
+tooltip_text = "将当前完成品存入空闲暂存格"
+text = "暂存成品"
+clip_text = true
 
 [node name="HandoffProductSprite" type="TextureRect" parent="SafeArea" unique_id=659131926]
 unique_name_in_owner = true
@@ -2095,36 +2097,37 @@ expand_mode = 1
 
 [node name="PhaseLabel" type="Label" parent="SafeArea" unique_id=1680901610]
 unique_name_in_owner = true
+z_index = 8
 layout_mode = 0
-offset_left = 730.0
-offset_top = 420.0
-offset_right = 1250.0
-offset_bottom = 452.0
+offset_left = 118.0
+offset_top = 284.0
+offset_right = 682.0
+offset_bottom = 310.0
 theme_override_colors/font_color = Color(0.18, 0.08, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.82, 0.46, 0.95)
 theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 21
 text = "当前步骤：摊开面糊 · 已用时 0秒"
-horizontal_alignment = 2
+horizontal_alignment = 0
 vertical_alignment = 1
 
 [node name="P1ControlBar" type="Panel" parent="SafeArea" unique_id=75327056]
 unique_name_in_owner = true
-z_index = 7
+z_index = 8
 layout_mode = 0
-offset_left = 730.0
-offset_top = 450.0
-offset_right = 1250.0
-offset_bottom = 492.0
+offset_left = 118.0
+offset_top = 312.0
+offset_right = 682.0
+offset_bottom = 358.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="HeatLabel" type="Label" parent="SafeArea/P1ControlBar" unique_id=1933823163]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 8.0
-offset_right = 160.0
-offset_bottom = 36.0
+offset_left = 10.0
+offset_top = 5.0
+offset_right = 154.0
+offset_bottom = 41.0
 theme_override_colors/font_color = Color(1, 0.9, 0.67, 1)
 theme_override_font_sizes/font_size = 18
 text = "火力 50%"
@@ -2160,9 +2163,9 @@ grow_vertical = 2
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 8.0
-offset_top = 10.0
-offset_right = 150.0
-offset_bottom = 78.0
+offset_top = 4.0
+offset_right = 170.0
+offset_bottom = 42.0
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
@@ -2174,10 +2177,10 @@ text = "纸袋"
 [node name="PaperSleeveButton" type="Button" parent="SafeArea/P1ControlBar/PackagingChoices" unique_id=1944832413]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 160.0
-offset_top = 10.0
-offset_right = 315.0
-offset_bottom = 78.0
+offset_left = 178.0
+offset_top = 4.0
+offset_right = 356.0
+offset_bottom = 42.0
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
@@ -2189,10 +2192,10 @@ text = "加固纸套"
 [node name="TrayButton" type="Button" parent="SafeArea/P1ControlBar/PackagingChoices" unique_id=1028202272]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 325.0
-offset_top = 10.0
-offset_right = 472.0
-offset_bottom = 78.0
+offset_left = 364.0
+offset_top = 4.0
+offset_right = 556.0
+offset_bottom = 42.0
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
@@ -2205,10 +2208,10 @@ text = "托盘出餐"
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 174.0
-offset_top = 12.0
-offset_right = 464.0
-offset_bottom = 72.0
+offset_left = 164.0
+offset_top = 4.0
+offset_right = 552.0
+offset_bottom = 42.0
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
@@ -2221,10 +2224,10 @@ text = "翻面"
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 174.0
-offset_top = 12.0
-offset_right = 464.0
-offset_bottom = 72.0
+offset_left = 164.0
+offset_top = 4.0
+offset_right = 552.0
+offset_bottom = 42.0
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
@@ -2237,22 +2240,24 @@ text = "出餐并查看评价"
 z_index = 7
 layout_mode = 0
 offset_left = 100.0
-offset_top = 145.0
+offset_top = 180.0
 offset_right = 700.0
-offset_bottom = 255.0
+offset_bottom = 390.0
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_strip")
 
 [node name="Instructions" type="Label" parent="SafeArea/BottomStrip" unique_id=1746798964]
 layout_mode = 0
 offset_left = 18.0
-offset_top = 70.0
+offset_top = 180.0
 offset_right = 582.0
-offset_bottom = 106.0
+offset_bottom = 206.0
 theme_override_colors/font_color = Color(0.94, 0.89, 0.78, 1)
 theme_override_font_sizes/font_size = 12
 text = "左键拖动制作 · 右键取消工具 · R 重置"
 horizontal_alignment = 1
 vertical_alignment = 1
+clip_text = true
 
 [node name="ToolStatusLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=399838625]
 unique_name_in_owner = true
@@ -2284,25 +2289,27 @@ vertical_alignment = 1
 visible = false
 layout_mode = 0
 offset_left = 18.0
-offset_top = 42.0
+offset_top = 72.0
 offset_right = 582.0
-offset_bottom = 68.0
+offset_bottom = 100.0
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
+clip_text = true
 
 [node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1208524388]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 314.0
-offset_top = 8.0
+offset_left = 18.0
+offset_top = 40.0
 offset_right = 582.0
-offset_bottom = 38.0
+offset_bottom = 68.0
 theme_override_colors/font_color = Color(0.76, 0.92, 0.76, 1)
 theme_override_font_sizes/font_size = 17
 text = "当前无破洞风险"
-horizontal_alignment = 2
+horizontal_alignment = 0
 vertical_alignment = 1
+clip_text = true
 
 [node name="SurfaceReadoutLabel" type="Label" parent="SafeArea" unique_id=1269066269]
 unique_name_in_owner = true
@@ -3765,12 +3772,14 @@ unique_name_in_owner = true
 visible = false
 z_index = 9
 layout_mode = 0
-offset_left = 500.0
-offset_top = 780.0
-offset_right = 830.0
-offset_bottom = 935.0
+offset_left = 1182.0
+offset_top = 846.0
+offset_right = 1304.0
+offset_bottom = 944.0
+mouse_filter = 2
 
 [node name="Title" type="Label" parent="SafeArea/PancakeHoldingTray" unique_id=1159797201]
+visible = false
 layout_mode = 0
 offset_left = 10.0
 offset_top = 7.0
@@ -3784,20 +3793,20 @@ vertical_alignment = 1
 [node name="PancakeHoldingSlot01" type="Button" parent="SafeArea/PancakeHoldingTray" unique_id=1222767985]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 14.0
-offset_top = 52.0
-offset_right = 158.0
-offset_bottom = 136.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 118.0
+offset_bottom = 48.0
 text = "暂存格 1
 空"
 
 [node name="PancakeHoldingSlot02" type="Button" parent="SafeArea/PancakeHoldingTray" unique_id=103243046]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 172.0
+offset_left = 4.0
 offset_top = 52.0
-offset_right = 316.0
-offset_bottom = 136.0
+offset_right = 118.0
+offset_bottom = 96.0
 text = "暂存格 2
 空"
 

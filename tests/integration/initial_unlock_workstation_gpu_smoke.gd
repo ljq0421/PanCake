@@ -2,6 +2,7 @@ extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
 const SCREENSHOT_PATH := "res://tmp/validation/initial_unlock_workstation_gpu_1920x1080.png"
+const SCREENSHOT_1280_PATH := "res://tmp/validation/initial_unlock_workstation_gpu_1280x720.png"
 const REFILL_SCREENSHOT_PATH := "res://tmp/validation/workstation_hold_refill_gpu_1920x1080.png"
 
 var _failures := PackedStringArray()
@@ -80,6 +81,17 @@ func _run() -> void:
 	var initial_image := root.get_texture().get_image()
 	var save_error := initial_image.save_png(output_absolute)
 	_check(save_error == OK and initial_image.get_size() == Vector2i(1920, 1080), "captured the untouched opening-day workstation in a real 1920x1080 GPU frame")
+	DisplayServer.window_set_size(Vector2i(1280, 720))
+	for _frame in 6:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	var output_1280_absolute := ProjectSettings.globalize_path(SCREENSHOT_1280_PATH)
+	var image_1280 := root.get_texture().get_image()
+	var save_1280_error := image_1280.save_png(output_1280_absolute)
+	_check(save_1280_error == OK and image_1280.get_size() == Vector2i(1280, 720), "captured the workstation layout in a real 1280x720 GPU frame")
+	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	for _frame in 6:
+		await process_frame
 	var discard := workstation.get_node("SafeArea/DiscardCurrentPancakeButton") as Button
 	var discard_rect := Rect2(1450.0, 902.0, 150.0, 52.0)
 	_check(discard != null and discard.get_global_rect().position.distance_to(discard_rect.position) <= 1.0 and discard.get_global_rect().size.distance_to(discard_rect.size) <= 1.0 and discard.get_global_rect().end.y <= 956.0, "discard-current-pancake is a real 150x52 control above, not over, the square material row")
@@ -419,6 +431,7 @@ func _finish(output_absolute: String, refill_output_absolute: String) -> void:
 	if _failures.is_empty():
 		print("INITIAL_UNLOCK_WORKSTATION_GPU_SMOKE_PASS")
 		print("INITIAL_SCREENSHOT=%s" % output_absolute)
+		print("INITIAL_SCREENSHOT_1280=%s" % ProjectSettings.globalize_path(SCREENSHOT_1280_PATH))
 		print("REFILL_SCREENSHOT=%s" % refill_output_absolute)
 		quit(0)
 		return

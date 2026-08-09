@@ -10,7 +10,10 @@ from PIL import Image
 
 
 def is_chroma_key(red: int, green: int, blue: int) -> bool:
-    return (red < 40 and green > 230 and blue < 40) or (red > 230 and green < 40 and blue > 230)
+    green_key = red < 40 and green > 230 and blue < 40
+    # Compressed ImageGen magenta keys can fade to muted purple at the edge.
+    magenta_key = red > 80 and blue > 40 and green + 30 < min(red, blue)
+    return green_key or magenta_key
 
 
 def main() -> None:

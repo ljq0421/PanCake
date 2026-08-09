@@ -152,45 +152,16 @@ func purchase(growth_id: StringName) -> Dictionary:
 
 func growth_recommendations(limit_total: int = 3) -> Dictionary:
 	var safe_limit := maxi(limit_total, 0)
-	var relevant: Array[Dictionary] = []
-	var next_area_id := _next_locked_area_id()
-	var catalog_ids: Array[StringName] = CATALOG.growth_ids()
-	for catalog_index in catalog_ids.size():
-		var growth_id := catalog_ids[catalog_index]
-		var definition := CATALOG.growth_definition(growth_id)
-		if not _is_recommendation_relevant(definition, next_area_id):
-			continue
+	var recommended: Array[Dictionary] = []
+	for route_index in CATALOG.FIXED_GROWTH_ROUTE.size():
+		if recommended.size() >= safe_limit:
+			break
+		var growth_id: StringName = CATALOG.FIXED_GROWTH_ROUTE[route_index]
 		var status := _evaluate_purchase(growth_id)
 		if bool(status.get("already_owned", false)):
 			continue
-		status["catalog_index"] = catalog_index
-		status["required_area_index"] = CATALOG.UNLOCK_AREA_IDS.find(StringName(definition.get("requires_area_id", &"")))
-		status["structural_block_count"] = _structural_block_count(status)
-		status["requirement_gap"] = _requirement_gap(status)
-		relevant.append(status)
-	relevant.sort_custom(_sort_recommendations)
-
-	var primary_install: Dictionary = {}
-	var primary_content: Dictionary = {}
-	var next_area_unlock: Dictionary = {}
-	for status in relevant:
-		var definition := CATALOG.growth_definition(StringName(status.get("growth_id", &"")))
-		var kind := StringName(definition.get("kind", &""))
-		if primary_install.is_empty() and status.get("purchase_slot", &"") == INSTALL_SLOT and kind != &"area_unlock":
-			primary_install = status
-		if primary_content.is_empty() and status.get("purchase_slot", &"") == CONTENT_SLOT:
-			primary_content = status
-		if next_area_unlock.is_empty() and kind == &"area_unlock" and StringName(definition.get("area_id", &"")) == next_area_id:
-			next_area_unlock = status
-
-	var recommended: Array[Dictionary] = []
-	_append_unique_recommendation(recommended, primary_install, safe_limit)
-	_append_unique_recommendation(recommended, primary_content, safe_limit)
-	_append_unique_recommendation(recommended, next_area_unlock, safe_limit)
-	for status in relevant:
-		_append_unique_recommendation(recommended, status, safe_limit)
-		if recommended.size() >= safe_limit:
-			break
+		status["route_index"] = route_index
+		recommended.append(status)
 
 	var install: Array[Dictionary] = []
 	var content: Array[Dictionary] = []
@@ -390,7 +361,8 @@ func load_snapshot(value: Dictionary) -> void:
 func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	var definition := CATALOG.growth_definition(growth_id)
 	if definition.is_empty():
-		return {"growth_id": growth_id, "can_purchase": false, "reason": &"unknown_growth", "missing_requirements": [{"reason": &"unknown_growth"}]}
+		push_error("Growth configuration is missing: %s" % growth_id)
+		return {"growth_id": growth_id, "can_purchase": false, "reason": &"unknown_growth", "missing_requirements": [{"reason": &"unknown_growth", "growth_id": growth_id}]}
 	var slot: StringName = definition.get("purchase_slot", &"")
 	var required_area: StringName = definition.get("requires_area_id", &"")
 	var min_day := int(definition.get("min_day", 1))
@@ -408,6 +380,7 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 		"required_area_id": required_area,
 		"target_area_id": StringName(definition.get("area_id", &"")),
 		"already_owned": false,
+		"pending_activation": false,
 		"can_purchase": false,
 		"reason": &"",
 		"missing_requirements": [],
@@ -418,6 +391,10 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 		return status
 	var missing_requirements: Array[Dictionary] = []
 	var pending := _pending_for(slot)
+	if pending == growth_id:
+		status["pending_activation"] = true
+		status["reason"] = &"pending_activation"
+		return status
 	if not pending.is_empty():
 		missing_requirements.append({"reason": &"purchase_slot_occupied", "pending_growth_id": pending})
 	if not required_area.is_empty() and not owns_area(required_area):
@@ -434,9 +411,13 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	if not tutorial_area_id.is_empty() and not tutorial_completed_area_ids.has(tutorial_area_id):
 		missing_requirements.append({"reason": &"tutorial_requirement", "required_tutorial_area_id": tutorial_area_id, "requires_tutorial_area_id": tutorial_area_id})
 	if bool(definition.get("requires_all_areas", false)):
+		var current_area_count := 0
+		for area_id in CATALOG.UNLOCK_AREA_IDS:
+			if owns_area(area_id):
+				current_area_count += 1
 		for area_id in CATALOG.UNLOCK_AREA_IDS:
 			if not owns_area(area_id):
-				missing_requirements.append({"reason": &"all_areas_requirement", "required_area_id": area_id})
+				missing_requirements.append({"reason": &"all_areas_requirement", "required_area_id": area_id, "current_area_count": current_area_count, "required_area_count": CATALOG.UNLOCK_AREA_IDS.size()})
 				break
 	var mastery_requirements: Dictionary = Dictionary(definition.get("requires_mastery", {}))
 	for mastery_area_variant in mastery_requirements:
@@ -524,94 +505,3 @@ func _load_id_array(source: Variant) -> Array[StringName]:
 		if not id.is_empty() and not result.has(id):
 			result.append(id)
 	return result
-
-
-func _next_locked_area_id() -> StringName:
-	for area_id in CATALOG.UNLOCK_AREA_IDS:
-		if not owns_area(area_id):
-			return area_id
-	return &""
-
-
-func _all_areas_owned() -> bool:
-	return _next_locked_area_id().is_empty()
-
-
-func _is_recommendation_relevant(definition: Dictionary, next_area_id: StringName) -> bool:
-	if definition.is_empty():
-		return false
-	var required_area_id := StringName(definition.get("requires_area_id", &""))
-	if required_area_id.is_empty() or not owns_area(required_area_id):
-		return false
-	var kind := StringName(definition.get("kind", &""))
-	if kind == &"area_unlock":
-		var target_area_id := StringName(definition.get("area_id", &""))
-		return not next_area_id.is_empty() and target_area_id == next_area_id and not owns_area(target_area_id)
-	if bool(definition.get("requires_all_areas", false)) and not _all_areas_owned():
-		return false
-	return true
-
-
-static func _append_unique_recommendation(target: Array[Dictionary], status: Dictionary, limit_total: int) -> void:
-	if status.is_empty() or target.size() >= limit_total:
-		return
-	var growth_id := StringName(status.get("growth_id", &""))
-	for existing in target:
-		if StringName(existing.get("growth_id", &"")) == growth_id:
-			return
-	target.append(status)
-
-
-static func _structural_block_count(status: Dictionary) -> int:
-	var count := 0
-	for requirement_variant in Array(status.get("missing_requirements", [])):
-		var requirement := Dictionary(requirement_variant)
-		if StringName(requirement.get("reason", &"")) in [&"area_locked", &"growth_requirement", &"all_areas_requirement"]:
-			count += 1
-	return count
-
-
-static func _requirement_gap(status: Dictionary) -> int:
-	var gap := 0
-	for requirement_variant in Array(status.get("missing_requirements", [])):
-		var requirement := Dictionary(requirement_variant)
-		match StringName(requirement.get("reason", &"")):
-			&"day_requirement":
-				gap += maxi(int(requirement.get("min_day", 1)) - int(requirement.get("current_day", 1)), 0)
-			&"reputation_requirement":
-				gap += maxi(int(requirement.get("min_reputation", 0)) - int(requirement.get("current_reputation", 0)), 0)
-			&"mastery_requirement":
-				gap += maxi(int(requirement.get("required_mastery", 0)) - int(requirement.get("current_mastery", 0)), 0)
-	return gap
-
-
-static func _sort_recommendations(left: Dictionary, right: Dictionary) -> bool:
-	var left_rank := 0 if bool(left.get("can_purchase", false)) else 1
-	var right_rank := 0 if bool(right.get("can_purchase", false)) else 1
-	if left_rank != right_rank:
-		return left_rank < right_rank
-	var left_structural := int(left.get("structural_block_count", 0))
-	var right_structural := int(right.get("structural_block_count", 0))
-	if left_structural != right_structural:
-		return left_structural < right_structural
-	var left_day := int(left.get("min_day", 1))
-	var right_day := int(right.get("min_day", 1))
-	if left_day != right_day:
-		return left_day < right_day
-	var left_gap := int(left.get("requirement_gap", 0))
-	var right_gap := int(right.get("requirement_gap", 0))
-	if left_gap != right_gap:
-		return left_gap < right_gap
-	var left_area := int(left.get("required_area_index", -1))
-	var right_area := int(right.get("required_area_index", -1))
-	if left_area != right_area:
-		return left_area < right_area
-	var left_price := int(left.get("price", 0))
-	var right_price := int(right.get("price", 0))
-	if left_price != right_price:
-		return left_price < right_price
-	var left_catalog := int(left.get("catalog_index", 0))
-	var right_catalog := int(right.get("catalog_index", 0))
-	if left_catalog != right_catalog:
-		return left_catalog < right_catalog
-	return str(left.get("growth_id", "")) < str(right.get("growth_id", ""))

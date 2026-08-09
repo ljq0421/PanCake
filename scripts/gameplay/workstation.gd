@@ -2356,29 +2356,24 @@ func _refresh_growth_section(message: String = "") -> void:
 	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
 	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 3)
 	var recommended: Array = Array(grouped_recommendations.get("recommended", []))
-	if not pending_install.is_empty():
-		_growth_recommendations.append({"growth_id": pending_install, "slot_title": "安装位", "purchased": true, "can_purchase": false})
-	if not pending_content.is_empty():
-		_growth_recommendations.append({"growth_id": pending_content, "slot_title": "内容位", "purchased": true, "can_purchase": false})
 	for recommendation_variant in recommended:
-		if _growth_recommendations.size() >= 3:
-			break
 		var recommendation: Dictionary = Dictionary(recommendation_variant).duplicate(true)
-		var growth_id := StringName(recommendation.get("growth_id", ""))
-		if growth_id == pending_install or growth_id == pending_content:
-			continue
 		var purchase_slot := StringName(recommendation.get("purchase_slot", &""))
 		recommendation["slot_title"] = "安装位" if purchase_slot == &"install" else "内容位"
-		var selected_growth_id := pending_install if purchase_slot == &"install" else pending_content
-		if not selected_growth_id.is_empty():
-			recommendation["selected_slot_label"] = "安装" if purchase_slot == &"install" else "内容"
-			recommendation["selected_growth_id"] = selected_growth_id
 		_growth_recommendations.append(recommendation)
 	while _growth_recommendations.size() < 3:
 		_growth_recommendations.append({"hidden": true})
-	var balance_text := "现有 %d 金币 · 声誉 %d · 安装位与内容位各可预订一项 · 已预订项目于下一营业日生效" % [
+	var route_range_text := "路线已完成"
+	var visible_route_indices: Array[int] = []
+	for recommendation in _growth_recommendations:
+		if not bool(recommendation.get("hidden", false)):
+			visible_route_indices.append(int(recommendation.get("route_index", 0)) + 1)
+	if not visible_route_indices.is_empty():
+		route_range_text = "固定路线第 %d-%d 项" % [visible_route_indices.front(), visible_route_indices.back()]
+	var balance_text := "现有 %d 金币 · 声誉 %d · %s · 安装位与内容位各可预订一项 · 已预订项目于下一营业日生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
+		route_range_text,
 	]
 	growth_balance_label.text = balance_text if message.is_empty() else "%s · %s" % [balance_text, message]
 	for index in growth_ticket_buttons.size():
@@ -2388,14 +2383,14 @@ func _refresh_growth_section(message: String = "") -> void:
 			continue
 		var recommendation := _growth_recommendations[index]
 		button.set_meta(&"growth_item_id", StringName(recommendation.get("growth_id", "")))
-		var status_text := _growth_ticket_status_text(recommendation)
+		var presentation := _growth_ticket_presentation(recommendation)
 		button.text = "[%s] %s\n%s" % [
 			str(recommendation.get("slot_title", "成长")),
-			("已购买：" if bool(recommendation.get("purchased", false)) else "") + _growth_ticket_display_name(StringName(recommendation.get("growth_id", ""))),
-			_growth_ticket_compact_status_text(recommendation),
+			("已预订：" if bool(recommendation.get("pending_activation", false)) else "") + _growth_ticket_display_name(StringName(recommendation.get("growth_id", ""))),
+			str(presentation.get("compact", "")),
 		]
-		button.tooltip_text = status_text
-		button.disabled = bool(recommendation.get("purchased", false)) or not bool(recommendation.get("can_purchase", false))
+		button.tooltip_text = str(presentation.get("tooltip", ""))
+		button.disabled = bool(presentation.get("disabled", true))
 	begin_next_day_button.disabled = false
 	begin_next_day_button.text = "确认预订并开始下一天" if not pending_install.is_empty() or not pending_content.is_empty() else "不购买，直接开始下一天"
 	if unlock_progress_panel.visible:
@@ -2430,61 +2425,85 @@ func _begin_next_business_day() -> void:
 
 
 func _growth_ticket_status_text(recommendation: Dictionary) -> String:
-	if bool(recommendation.get("purchased", false)):
-		return "已预订，将在明日生效"
-	var selected_growth_id := StringName(recommendation.get("selected_growth_id", ""))
-	if not selected_growth_id.is_empty():
-		return "已选择%s：%s，当前项不可选择" % [
-			str(recommendation.get("selected_slot_label", "该购买位")),
-			_growth_ticket_display_name(selected_growth_id),
-		]
+	return str(_growth_ticket_presentation(recommendation).get("tooltip", ""))
+
+
+func _growth_ticket_presentation(recommendation: Dictionary) -> Dictionary:
+	if bool(recommendation.get("pending_activation", false)) or bool(recommendation.get("purchased", false)):
+		return {"compact": "已预订，明日生效", "tooltip": "已预订，将在明日生效", "disabled": true}
 	if bool(recommendation.get("can_purchase", false)):
-		return "可预订，明日生效"
+		return {"compact": "可预订，明日生效", "tooltip": "可预订，明日生效", "disabled": false}
 	var missing_requirements: Array = Array(recommendation.get("missing_requirements", []))
+	var compact_text := ""
+	var tooltip_text := ""
 	if not missing_requirements.is_empty():
 		var explanations := PackedStringArray()
+		compact_text = _growth_requirement_text(Dictionary(missing_requirements.front()), true)
 		for requirement_variant in missing_requirements:
-			var explanation := _growth_requirement_text(Dictionary(requirement_variant))
+			var explanation := _growth_requirement_text(Dictionary(requirement_variant), false)
 			if not explanation.is_empty() and not explanations.has(explanation):
 				explanations.append(explanation)
 		if not explanations.is_empty():
-			return "；".join(explanations)
-	return _growth_requirement_text(recommendation)
+			tooltip_text = "；".join(explanations)
+	else:
+		compact_text = _growth_requirement_text(recommendation, true)
+		tooltip_text = _growth_requirement_text(recommendation, false)
+	if tooltip_text.is_empty():
+		tooltip_text = compact_text
+	return {"compact": compact_text, "tooltip": tooltip_text, "disabled": true}
 
 
-func _growth_requirement_text(requirement: Dictionary) -> String:
+func _growth_requirement_text(requirement: Dictionary, compact: bool = false) -> String:
 	match StringName(requirement.get("reason", &"")):
+		&"pending_activation":
+			return "已预订，明日生效"
 		&"purchase_slot_occupied":
-			return "该购买位已有明日预订"
+			var pending_name := _growth_ticket_display_name(StringName(requirement.get("pending_growth_id", &"")))
+			return "该购买位已预订：%s" % pending_name
 		&"area_locked":
-			return "前置区域未解锁：%s" % _tutorial_area_label(StringName(requirement.get("required_area_id", &"")))
+			return "需先解锁区域：%s" % _tutorial_area_label(StringName(requirement.get("required_area_id", &"")))
 		&"growth_requirement":
 			return "需先解锁：%s" % _growth_ticket_display_name(StringName(requirement.get("required_growth_id", &"")))
 		&"day_requirement":
 			var current_day := int(requirement.get("current_day", 1))
-			return "营业天数未达到 %d/%d" % [current_day, int(requirement.get("min_day", current_day))]
+			return "营业日 %d/%d" % [current_day, int(requirement.get("min_day", current_day))]
 		&"insufficient_coins":
-			return "金币不足 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]
+			return "金币 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]
 		&"reputation_requirement":
-			return "口碑未达到 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
+			return "声誉 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
 		&"tutorial_requirement":
+			if compact:
+				return "需完成%s教学" % _tutorial_area_label(StringName(requirement.get("requires_tutorial_area_id", requirement.get("required_tutorial_area_id", &""))))
 			return _tutorial_requirement_text(requirement)
 		&"mastery_requirement":
-			return "熟练度未达到 %d/%d" % [int(requirement.get("current_mastery", 0)), int(requirement.get("required_mastery", 0))]
+			return "%s %d/%d" % [
+				_growth_mastery_metric_label(StringName(requirement.get("mastery_area_id", &"")), StringName(requirement.get("mastery_metric", &"qualified"))),
+				int(requirement.get("current_mastery", 0)),
+				int(requirement.get("required_mastery", 0)),
+			]
 		&"all_areas_requirement":
-			return "需先解锁全部五个区域"
-	return "暂不满足条件"
+			return "区域 %d/%d" % [int(requirement.get("current_area_count", 0)), int(requirement.get("required_area_count", 5))]
+		&"unknown_growth":
+			push_error("Growth UI received an unknown growth configuration: %s" % str(requirement.get("growth_id", "")))
+			return "成长配置异常，无法预订"
+	push_error("Growth UI received an unsupported requirement reason: %s" % str(requirement.get("reason", "")))
+	return "成长配置异常，无法预订"
 
 
 func _growth_ticket_compact_status_text(recommendation: Dictionary) -> String:
-	if bool(recommendation.get("purchased", false)):
-		return "已预订，明日生效"
-	if not StringName(recommendation.get("selected_growth_id", "")).is_empty():
-		return "该购买位已有预订"
-	var missing_requirements: Array = Array(recommendation.get("missing_requirements", []))
-	if not missing_requirements.is_empty():
-		return _growth_requirement_text(Dictionary(missing_requirements.front()))
-	return _growth_requirement_text(recommendation)
+	return str(_growth_ticket_presentation(recommendation).get("compact", ""))
+
+
+func _growth_mastery_metric_label(area_id: StringName, metric: StringName) -> String:
+	var area_label := _tutorial_area_label(area_id)
+	match metric:
+		&"a_grade":
+			return "%s A级数" % area_label
+		&"correct_temperature":
+			return "%s正确温度单" % area_label
+		&"correct_streak_best":
+			return "%s最高连对" % area_label
+	return "%s合格数" % area_label
 
 
 func _tutorial_requirement_text(recommendation: Dictionary) -> String:
@@ -2662,9 +2681,9 @@ func _refresh_p1_ui() -> void:
 	if p1_session == null or p1_session.order.is_empty():
 		return
 	customer_line_label.text = "“%s”" % str(p1_session.order.customer_line)
-	patience_bar.visible = p1_session.has_patience_countdown
+	patience_bar.visible = false
 	order_patience_bar.visible = p1_session.has_patience_countdown
-	patience_text_label.visible = true
+	patience_text_label.visible = false
 	patience_text_label.text = "耐心 %d秒" % ceili(p1_session.patience_seconds) if p1_session.has_patience_countdown else "教学单·不限时"
 	tutorial_guide_label.visible = not p1_session.has_patience_countdown
 	if tutorial_guide_label.visible:

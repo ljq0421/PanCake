@@ -1,6 +1,7 @@
 extends SceneTree
 
 const SERVICE = preload("res://scripts/services/five_area_progression_service.gd")
+const CATALOG = preload("res://scripts/data/five_area_catalog.gd")
 var _failures: Array[String] = []
 
 func _initialize() -> void:
@@ -17,7 +18,14 @@ func _run() -> void:
 	})
 	var day_one_recommendations: Dictionary = day_one.growth_recommendations(3)
 	var day_one_items: Array = Array(day_one_recommendations.get("recommended", []))
+	_check(Array(day_one.growth_recommendations(0).get("recommended", [])).is_empty(), "zero recommendation limit returns an empty compatible result")
 	_check(_growth_ids(day_one_items) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "day-one settlement recommends the two D2 pancake goals and the D3 next-area goal")
+	var fixed_route := Array(CATALOG.FIXED_GROWTH_ROUTE)
+	var unique_route := {}
+	for growth_id_variant in fixed_route:
+		unique_route[StringName(growth_id_variant)] = true
+	_check(fixed_route.size() == CATALOG.GROWTH_DEFINITIONS.size() and unique_route.size() == fixed_route.size(), "fixed growth route covers every growth definition exactly once")
+	_check(fixed_route.slice(0, 3) == Array(_growth_ids(day_one_items)), "the first recommendation window follows the catalog route")
 	_check(day_one_items.size() == 3 and Array(day_one_recommendations.get("install", [])).size() == 2 and Array(day_one_recommendations.get("content", [])).size() == 1, "recommendation limit applies to the total across both purchase slots")
 	for item_variant in day_one_items:
 		var item := Dictionary(item_variant)
@@ -33,12 +41,17 @@ func _run() -> void:
 		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
 	})
 	var day_two_items: Array = Array(day_two.growth_recommendations(3).get("recommended", []))
+	_check(_growth_ids(day_two_items) == _growth_ids(day_one_items), "changing day, coins, reputation, and mastery does not reorder the fixed route")
 	_check(bool(Dictionary(day_two_items[0]).get("can_purchase", false)) and bool(Dictionary(day_two_items[1]).get("can_purchase", false)), "D2 permits the qualified spreader and chili purchases")
 	_check(StringName(Dictionary(day_two_items[2]).get("reason", &"")) == &"day_requirement", "the drink area remains locked until its D3 purchase day")
 	_check(bool(day_two.purchase(&"growth.tool.pancake.wide_spreader").get("success", false)) and bool(day_two.purchase(&"growth.add_on.pancake.red_chili").get("success", false)), "D2 accepts one installation and one content purchase")
+	var pending_items: Array = Array(day_two.growth_recommendations(3).get("recommended", []))
+	_check(_growth_ids(pending_items) == _growth_ids(day_two_items), "pending purchases remain in their route positions until next-day activation")
+	_check(bool(Dictionary(pending_items[0]).get("pending_activation", false)) and bool(Dictionary(pending_items[1]).get("pending_activation", false)), "pending route cards expose explicit activation state")
 	day_two.set_day_open(false)
 	var day_three_activation: Dictionary = day_two.begin_next_business_day()
 	_check(bool(day_three_activation.get("success", false)) and int(day_three_activation.get("current_day", 0)) == 3, "D2 purchases activate on D3")
+	_check(_growth_ids(Array(day_two.growth_recommendations(3).get("recommended", []))) == [&"growth.area.packaged_drink", &"growth.equipment.pancake.intermediate", &"growth.add_on.pancake.ham_sausage"], "activated growth leaves the queue and advances the fixed three-card window")
 
 	var day_three = SERVICE.new({
 		"coins": 100,
@@ -50,27 +63,15 @@ func _run() -> void:
 	})
 	_check(bool(day_three.purchase_status(&"growth.area.packaged_drink").get("can_purchase", false)), "drink area opens for purchase on D3 when reputation, tutorial, and mastery are ready")
 
-	var drink_stage = SERVICE.new({
-		"coins": 500,
-		"reputation": 60,
-		"current_day": 6,
-		"unlocked_area_ids": [&"area.pancake", &"area.packaged_drink"],
-		"owned_growth_ids": [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"],
-		"area_mastery_details": {&"area.pancake": {"qualified": 6}, &"area.packaged_drink": {"correct_temperature": 4}},
-		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.packaged_drink"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+	var rich_late_state = SERVICE.new({
+		"coins": 9999,
+		"reputation": 999,
+		"current_day": 30,
+		"unlocked_area_ids": [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"],
+		"area_mastery_details": {&"area.pancake": {"qualified": 99, "a_grade": 99}},
+		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
 	})
-	var drink_stage_ids := _growth_ids(Array(drink_stage.growth_recommendations(3).get("recommended", [])))
-	_check(drink_stage_ids.has(&"growth.area.youtiao") and not drink_stage_ids.has(&"growth.area.fresh_soy_milk") and not drink_stage_ids.has(&"growth.area.steamer"), "recommendations advance only to the immediate next area")
-	var youtiao_stage_ids := _path_stage_ids(
-		[&"area.pancake", &"area.packaged_drink", &"area.youtiao"],
-		[&"growth.area.packaged_drink", &"growth.area.youtiao"]
-	)
-	_check(youtiao_stage_ids.has(&"growth.area.fresh_soy_milk") and not youtiao_stage_ids.has(&"growth.area.steamer"), "youtiao stage advances to fresh soy milk without skipping to steamer")
-	var soy_stage_ids := _path_stage_ids(
-		[&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk"],
-		[&"growth.area.packaged_drink", &"growth.area.youtiao", &"growth.area.fresh_soy_milk"]
-	)
-	_check(soy_stage_ids.has(&"growth.area.steamer"), "fresh-soy-milk stage advances to the final steamer area")
+	_check(_growth_ids(Array(rich_late_state.growth_recommendations(3).get("recommended", []))) == _growth_ids(day_one_items), "purchase eligibility never substitutes or reprioritizes fixed-route cards")
 
 	var progression = SERVICE.new()
 	var tutorial: Dictionary = progression.tutorial_snapshot()
@@ -119,22 +120,3 @@ func _growth_ids(items: Array) -> Array[StringName]:
 	for item_variant in items:
 		result.append(StringName(Dictionary(item_variant).get("growth_id", &"")))
 	return result
-
-
-func _path_stage_ids(unlocked_areas: Array[StringName], owned_growths: Array[StringName]) -> Array[StringName]:
-	var completed_tutorials := unlocked_areas.duplicate()
-	var stage = SERVICE.new({
-		"coins": 1000,
-		"reputation": 999,
-		"current_day": 30,
-		"unlocked_area_ids": unlocked_areas,
-		"owned_growth_ids": owned_growths,
-		"area_mastery_details": {
-			&"area.pancake": {"qualified": 99, "a_grade": 99},
-			&"area.packaged_drink": {"correct_temperature": 99},
-			&"area.youtiao": {"qualified": 99, "a_grade": 99},
-			&"area.fresh_soy_milk": {"qualified": 99, "a_grade": 99},
-		},
-		"tutorial": {"completed_area_ids": completed_tutorials, "queue_area_ids": [], "active_kind": &"", "active_id": &""},
-	})
-	return _growth_ids(Array(stage.growth_recommendations(3).get("recommended", [])))

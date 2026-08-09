@@ -245,6 +245,51 @@ const GROWTH_DEFINITIONS := {
 	&"growth.recipe.steamer.meat_bun": {"label": "肉包", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 36, "requires_area_id": &"area.steamer", "requires_mastery": {&"area.steamer": {"qualified": 14}}, "unlock_recipe_ids": [&"recipe.steamer.meat_bun"], "unlock_product_ids": [&"product.steamer.meat_bun"], "unlock_stock_ids": [&"stock.steamer.meat_bun"]},
 	&"growth.equipment.steamer.advanced": {"label": "独立停汽四层蒸笼", "purchase_slot": &"install", "kind": &"device_tier", "price": 108, "requires_area_id": &"area.steamer", "requires_mastery": {&"area.steamer": {"qualified": 25, "a_grade": 8}}, "device_id": &"device.steamer", "target_tier": 2},
 }
+## Day-end growth follows this authored route exactly.  Purchase eligibility
+## changes the card state, never its position in the queue.
+const FIXED_GROWTH_ROUTE: Array[StringName] = [
+	&"growth.tool.pancake.wide_spreader",
+	&"growth.add_on.pancake.red_chili",
+	&"growth.area.packaged_drink",
+	&"growth.equipment.pancake.intermediate",
+	&"growth.add_on.pancake.ham_sausage",
+	&"growth.product.packaged_drink.soy_milk",
+	&"growth.equipment.packaged_drink.intermediate",
+	&"growth.add_on.pancake.meat_floss",
+	&"growth.area.youtiao",
+	&"growth.assist.youtiao.temperature_indicator",
+	&"growth.recipe.youtiao.oil_cake",
+	&"growth.capacity.stock.intermediate",
+	&"growth.equipment.youtiao.intermediate",
+	&"growth.add_on.pancake.coriander",
+	&"growth.area.fresh_soy_milk",
+	&"growth.recipe.fresh_soy_milk.black_bean",
+	&"growth.equipment.fresh_soy_milk.intermediate",
+	&"growth.capacity.pancake_holding_tray.two_slots",
+	&"growth.add_on.pancake.preserved_mustard",
+	&"growth.product.packaged_drink.walnut",
+	&"growth.area.steamer",
+	&"growth.recipe.steamer.vegetable_bun",
+	&"growth.equipment.steamer.intermediate",
+	&"growth.add_on.pancake.pork_tenderloin",
+	&"growth.recipe.youtiao.sugar_oil_cake",
+	&"growth.recipe.fresh_soy_milk.red_bean",
+	&"growth.product.packaged_drink.black_sesame",
+	&"growth.recipe.steamer.meat_bun",
+	&"growth.recipe.fresh_soy_milk.multigrain",
+	&"growth.automation.pancake.auto_sauce_brush",
+	&"growth.equipment.pancake.advanced",
+	&"growth.automation.pancake.press_once",
+	&"growth.capacity.stock.advanced",
+	&"growth.equipment.packaged_drink.advanced",
+	&"growth.automation.youtiao.auto_lift",
+	&"growth.equipment.youtiao.advanced",
+	&"growth.automation.youtiao.auto_load",
+	&"growth.automation.fresh_soy_milk.auto_water_start",
+	&"growth.equipment.fresh_soy_milk.advanced",
+	&"growth.automation.fresh_soy_milk.auto_cup_rack",
+	&"growth.equipment.steamer.advanced",
+]
 const MASTERY_DEFINITIONS := {
 	&"area.pancake": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 8, "a_grade": 2}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
 	&"area.packaged_drink": {"qualified_key": &"correct_temperature", "a_grade_key": &"correct_streak_best", "bronze": {"qualified": 6, "a_grade": 2}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
@@ -394,8 +439,20 @@ static func validate_catalog() -> PackedStringArray:
 				errors.append("Device is missing tier: %s/%d" % [device_id, required_tier])
 	if GROWTH_DEFINITIONS.size() != 41:
 		errors.append("Five-area growth catalog must contain exactly 41 definitions.")
+	if FIXED_GROWTH_ROUTE.size() != GROWTH_DEFINITIONS.size():
+		errors.append("Fixed growth route must cover every growth definition exactly once.")
+	var routed_growth_ids: Dictionary = {}
+	for route_index in FIXED_GROWTH_ROUTE.size():
+		var routed_growth_id := FIXED_GROWTH_ROUTE[route_index]
+		if not GROWTH_DEFINITIONS.has(routed_growth_id):
+			errors.append("Fixed growth route contains unknown item: %s" % routed_growth_id)
+		if routed_growth_ids.has(routed_growth_id):
+			errors.append("Fixed growth route contains duplicate item: %s" % routed_growth_id)
+		routed_growth_ids[routed_growth_id] = route_index
 	for growth_id in GROWTH_DEFINITIONS:
 		var growth: Dictionary = GROWTH_DEFINITIONS[growth_id]
+		if not routed_growth_ids.has(growth_id):
+			errors.append("Growth is missing from fixed route: %s" % growth_id)
 		if growth.get("purchase_slot", &"") != &"install" and growth.get("purchase_slot", &"") != &"content":
 			errors.append("Growth has invalid purchase slot: %s" % growth_id)
 		if not AREA_DEFINITIONS.has(growth.get("requires_area_id", &"")):
@@ -405,6 +462,8 @@ static func validate_catalog() -> PackedStringArray:
 		for required_growth_id in growth.get("requires_growth_ids", []):
 			if not GROWTH_DEFINITIONS.has(required_growth_id):
 				errors.append("Growth has unknown prerequisite: %s" % growth_id)
+			elif routed_growth_ids.has(growth_id) and routed_growth_ids.has(required_growth_id) and int(routed_growth_ids[required_growth_id]) >= int(routed_growth_ids[growth_id]):
+				errors.append("Growth prerequisite appears too late in fixed route: %s requires %s" % [growth_id, required_growth_id])
 		for product_id in growth.get("unlock_product_ids", []):
 			if not PRODUCT_DEFINITIONS.has(product_id):
 				errors.append("Growth unlocks unknown product: %s" % growth_id)

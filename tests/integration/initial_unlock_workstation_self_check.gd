@@ -30,6 +30,7 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	_check_five_zone_layout(workstation)
+	_check_hud_layout(workstation)
 	_check_order_card_runtime_content(workstation)
 	_check_material_grid(workstation)
 	_check_opening_day_controls(workstation)
@@ -85,6 +86,40 @@ func _check_five_zone_layout(workstation: Node) -> void:
 		_check(icon != null, "OrderIngredient%02d is a stable ingredient slot" % (icon_index + 1))
 
 
+func _check_hud_layout(workstation: Node) -> void:
+	var customer_strip := workstation.get_node("SafeArea/CustomerStrip") as Control
+	var title := workstation.get_node("SafeArea/CustomerStrip/Title") as Control
+	var timer := workstation.get_node("SafeArea/BusinessDayTimerLabel") as Control
+	var global_status := workstation.get_node("SafeArea/GlobalStatusLabel") as Control
+	var bottom_strip := workstation.get_node("SafeArea/BottomStrip") as Control
+	var phase_label := workstation.get_node("SafeArea/PhaseLabel") as Control
+	var p1_controls := workstation.get_node("SafeArea/P1ControlBar") as Control
+	var customer := workstation.get_node("SafeArea/CustomerPortrait") as Control
+	var customer_line := workstation.get_node("SafeArea/CustomerLineLabel") as Control
+	var order_card := workstation.get_node("SafeArea/OrderCard") as Control
+	var pan := workstation.get_node("SafeArea/PanBase") as Control
+	var left_rack := workstation.get_node("SafeArea/LeftRack") as Panel
+	var right_rack := workstation.get_node("SafeArea/RightRack") as Panel
+	var tray := workstation.get_node("SafeArea/PancakeHoldingTray") as Control
+	var store_button := workstation.get_node("SafeArea/StorePancakeButton") as Control
+	_check(_rect_matches(customer_strip, Rect2(100.0, 20.0, 1720.0, 112.0)) and not title.get_global_rect().intersects(timer.get_global_rect()), "customer-strip title and business timer occupy separate rows")
+	_check(not customer_strip.get_global_rect().intersects(global_status.get_global_rect()), "global status uses its own narrow row below the customer strip")
+	_check(not bottom_strip.get_global_rect().intersects(customer.get_global_rect()) and not bottom_strip.get_global_rect().intersects(order_card.get_global_rect()), "left feedback region does not cover the customer or order card")
+	_check(bottom_strip.get_global_rect().encloses(phase_label.get_global_rect()) and bottom_strip.get_global_rect().encloses(p1_controls.get_global_rect()), "phase and P1 controls stay inside the left feedback region")
+	_check(customer_line.get_global_rect().end.x <= customer.get_global_rect().position.x and not customer_line.get_global_rect().intersects(bottom_strip.get_global_rect()), "customer dialogue is constrained to the customer's left side")
+	_check(left_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and right_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and left_rack.get_theme_stylebox("panel") is StyleBoxEmpty and right_rack.get_theme_stylebox("panel") is StyleBoxEmpty, "rack parents are transparent input-ignoring layout nodes")
+	for tool_path in ["SafeArea/LeftRack/LadleButton", "SafeArea/LeftRack/ScraperButton", "SafeArea/LeftRack/SauceBrushButton", "SafeArea/RightRack/SauceRefillButton", "SafeArea/RightRack/ChiliSauceRefillButton"]:
+		var tool := workstation.get_node(tool_path) as Control
+		_check(not tool.get_global_rect().intersects(pan.get_global_rect()), "%s does not cover the griddle" % tool.name)
+	_check(_rect_matches(store_button, Rect2(1182.0, 800.0, 122.0, 42.0)) and _rect_matches(tray, Rect2(1182.0, 846.0, 122.0, 98.0)), "holding controls form a compact vertical region beside the griddle")
+	var tray_clear := not tray.get_global_rect().intersects(pan.get_global_rect())
+	for slot_index in 18:
+		tray_clear = tray_clear and not tray.get_global_rect().intersects((workstation.get_node("SafeArea/MaterialDock/Slot%02d" % (slot_index + 1)) as Control).get_global_rect())
+	for sauce_path in ["SafeArea/LeftRack/SauceBrushButton", "SafeArea/RightRack/SauceRefillButton", "SafeArea/RightRack/ChiliSauceRefillButton"]:
+		tray_clear = tray_clear and not tray.get_global_rect().intersects((workstation.get_node(sauce_path) as Control).get_global_rect())
+	_check(tray_clear, "holding tray does not cover the griddle, sauce, or material row")
+
+
 func _check_order_card_runtime_content(workstation: Node) -> void:
 	var coin := workstation.get_node_or_null("SafeArea/OrderCard/OrderCoinIcon") as TextureRect
 	var amount := workstation.get_node_or_null("SafeArea/OrderCard/OrderAmountLabel") as Label
@@ -92,6 +127,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 	var second_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish2") as TextureRect
 	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
 	var patience := workstation.get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
+	var legacy_patience := workstation.get_node_or_null("SafeArea/PatienceBar") as ProgressBar
 	var patience_text := workstation.get_node_or_null("SafeArea/PatienceTextLabel") as Label
 	_check(coin != null and coin.visible and coin.texture != null and amount != null and not amount.text.is_empty(), "runtime order data fills the coin and amount in the card header")
 	_check(first_dish != null and first_dish.visible and first_dish.texture != null and second_dish != null and not second_dish.visible, "a current single-dish order fills only the first of two reserved dish wells")
@@ -101,7 +137,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 		if icon != null and icon.visible and icon.texture != null:
 			visible_ingredients += 1
 	_check(visible_ingredients > 0 and visible_ingredients <= 4, "runtime single-dish ingredients occupy only that dish's four color-grouped hint slots")
-	_check(heart != null and heart.visible and patience != null and not patience.visible and patience_text != null and patience_text.visible and patience_text.text == "教学单·不限时" and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the first-customer tutorial keeps the compact order card and explicitly disables its patience countdown")
+	_check(heart != null and heart.visible and patience != null and not patience.visible and legacy_patience != null and not legacy_patience.visible and patience_text != null and not patience_text.visible and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the order card is the sole patience entry and the first tutorial disables its countdown")
 
 
 func _check_material_grid(workstation: Node) -> void:

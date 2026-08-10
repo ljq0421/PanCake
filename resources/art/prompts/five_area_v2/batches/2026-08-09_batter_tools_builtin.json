@@ -1,0 +1,45 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "workstation_sprite",
+  "shared_style": "rounded chibi Chinese breakfast-game tool prop, clean deep warm-brown outlines, warm cel-shaded highlights, simplified polished material rendering",
+  "shared_constraints": "one complete isolated workstation tool matching legacy silhouette and orientation; flat #ff00ff removable key source; transparent 512x512 final Sprite; no text, label, hand, person, food, pan, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 470x470 safe area centered on the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "batter_ladle_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/batter_ladle_v1.png",
+      "imagegen_output": "exec-ccbe7e0f-cd11-4c2b-a804-8e706969d59b.png",
+      "semantic_contract": "empty round silver batter ladle with long orange wooden handle, bowl upper-left and handle down-right",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "batter_ladle_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/batter_ladle_upgrade_v1.png",
+      "imagegen_output": "exec-f1e44afa-e858-492d-91cc-c33063709ef7.png",
+      "semantic_contract": "upgraded empty round silver batter ladle with gold connector, muted teal handle, and cream end cap",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "batter_spreader_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/batter_spreader_v1.png",
+      "imagegen_output": "exec-a5caf2fd-b552-4208-9d02-424866cde976.png",
+      "semantic_contract": "simple orange wooden T-shaped crepe batter spreader matching the legacy orientation",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "batter_spreader_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png",
+      "imagegen_output": "exec-4fc4cb9a-9ba6-43fa-9953-a2007234f340.png",
+      "semantic_contract": "upgraded T-shaped crepe batter spreader with brushed silver crossbar, gold connector, and muted teal handle",
+      "final_canvas": [512, 512]
+    }
+  ]
+}

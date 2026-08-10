@@ -149,11 +149,9 @@ func _refresh_sauce_controls() -> void:
 	var formal_snapshot: Dictionary = session.call("five_area_progression_snapshot")
 	var unlocked_stock_ids := Array(formal_snapshot.get("unlocked_stock_ids", []))
 	var chili_unlocked := unlocked_stock_ids.has(&"stock.pancake.sauce.red_chili") or unlocked_stock_ids.has("stock.pancake.sauce.red_chili")
-	var chili_button := get_node_or_null("../RightRack/ChiliSauceRefillButton") as Button
-	if chili_button != null:
-		chili_button.visible = chili_unlocked
-		chili_button.disabled = not chili_unlocked
-		chili_button.mouse_filter = Control.MOUSE_FILTER_STOP if chili_unlocked else Control.MOUSE_FILTER_IGNORE
+	var workstation := _workstation()
+	if workstation != null and workstation.has_method("set_sauce_unlocked"):
+		workstation.call("set_sauce_unlocked", &"red_chili", chili_unlocked)
 
 
 func _sync_live_ingredient_stock() -> void:

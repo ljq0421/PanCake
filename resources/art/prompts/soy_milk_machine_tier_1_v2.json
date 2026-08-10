@@ -1,0 +1,28 @@
+{
+  "asset_id": "soy_milk_machine_tier_1_v2",
+  "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v2.png",
+  "generated_at": "2026-08-09",
+  "generator": "OpenAI built-in imagegen",
+  "use_case": "stylized-concept",
+  "references": [
+    {
+      "path": "D:/Downloads/卡通豆浆机图片生成.png",
+      "role": "compact single-cup structure reference"
+    },
+    {
+      "path": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+      "role": "rounded dark-outline game style reference"
+    },
+    {
+      "path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1_five_area_v2.png",
+      "role": "equipment palette and rendering reference"
+    }
+  ],
+  "prompt": "Redraw a much simpler entry-level freshly-ground soy milk maker based on the compact single-cup countertop reference, adapted to ProjectCake's rounded chibi, dark-brown-outline, warm hand-painted equipment style. Use one cream body, restrained dark teal-green trim, small gold accents, one top lid, one nozzle, one cream cup, one drip tray, one rotary control, and one narrow water-level window. Keep the silhouette readable at small size. Exclude beans, spoon, steam, liquid splash, ingredients, props, text, logo, watermark, shadows, extra cups, extra tanks, and modular commercial-machine complexity. Generate on a perfectly flat #ff00ff chroma-key background.",
+  "postprocess": {
+    "source": "C:/Users/Administrator/.codex/generated_images/019fe488-5817-7993-ab82-90f766b8ce8b/exec-94345b94-11db-4f0f-85c2-fe35abdc375c.png",
+    "background_removal": "remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1",
+    "final_size": [1024, 512],
+    "mode": "RGBA"
+  }
+}

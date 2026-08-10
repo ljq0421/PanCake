@@ -1,60 +1,427 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=29 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/steamer_station_view.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ui/steamer_station_view.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_1_five_area_v2.png" id="2_closed1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_2_five_area_v2.png" id="3_closed2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_3_five_area_v2.png" id="4_closed3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_1_base_body_five_area_v3.png" id="5_base1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_2_base_body_five_area_v3.png" id="6_base2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_3_base_body_five_area_v3.png" id="7_base3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_1_basket_layer_five_area_v3.png" id="8_basket1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_2_basket_layer_five_area_v3.png" id="9_basket2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_3_basket_layer_five_area_v3.png" id="10_basket3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_1_lid_closed_five_area_v3.png" id="11_lidc1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_2_lid_closed_five_area_v3.png" id="12_lidc2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_3_lid_closed_five_area_v3.png" id="13_lidc3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_1_lid_open_five_area_v3.png" id="14_lido1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_2_lid_open_five_area_v3.png" id="15_lido2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/steamer_tier_3_lid_open_five_area_v3.png" id="16_lido3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/steamer/mantou_steaming_five_area_v2.png" id="17_load1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/steamer/vegetable_bun_steaming_five_area_v2.png" id="18_load2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/steamer/meat_bun_steaming_five_area_v2.png" id="19_load3"]
+[ext_resource type="Texture2D" path="res://resources/art/products/steamer/mantou_cooked_five_area_v2.png" id="20_cooked1"]
+[ext_resource type="Texture2D" path="res://resources/art/products/steamer/vegetable_bun_cooked_five_area_v2.png" id="21_cooked2"]
+[ext_resource type="Texture2D" path="res://resources/art/products/steamer/meat_bun_cooked_five_area_v2.png" id="22_cooked3"]
+[ext_resource type="Texture2D" path="res://resources/art/products/steamer/mantou_overcooked_five_area_v2.png" id="23_over1"]
+[ext_resource type="Texture2D" path="res://resources/art/products/steamer/vegetable_bun_overcooked_five_area_v2.png" id="24_over2"]
+[ext_resource type="Texture2D" path="res://resources/art/products/steamer/meat_bun_overcooked_five_area_v2.png" id="25_over3"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/steamer/steamer_steam_puff_five_area_v2.png" id="26_steam"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/steamer/steamer_burnt_smoke_puff_five_area_v2.png" id="27_smoke"]
+[ext_resource type="Script" path="res://scripts/ui/steamer_layer_indicator.gd" id="28_indicator"]
 
 [node name="SteamerStation" type="PanelContainer"]
 custom_minimum_size = Vector2(430, 250)
-script = ExtResource("1")
+script = ExtResource("1_script")
+closed_machine_textures = Array[Texture2D]([ExtResource("2_closed1"), ExtResource("3_closed2"), ExtResource("4_closed3")])
+base_textures = Array[Texture2D]([ExtResource("5_base1"), ExtResource("6_base2"), ExtResource("7_base3")])
+basket_textures = Array[Texture2D]([ExtResource("8_basket1"), ExtResource("9_basket2"), ExtResource("10_basket3")])
+closed_lid_textures = Array[Texture2D]([ExtResource("11_lidc1"), ExtResource("12_lidc2"), ExtResource("13_lidc3")])
+open_lid_textures = Array[Texture2D]([ExtResource("14_lido1"), ExtResource("15_lido2"), ExtResource("16_lido3")])
+loaded_food_textures = Array[Texture2D]([ExtResource("17_load1"), ExtResource("18_load2"), ExtResource("19_load3")])
+cooked_food_textures = Array[Texture2D]([ExtResource("20_cooked1"), ExtResource("21_cooked2"), ExtResource("22_cooked3")])
+overcooked_food_textures = Array[Texture2D]([ExtResource("23_over1"), ExtResource("24_over2"), ExtResource("25_over3")])
+steam_texture = ExtResource("26_steam")
+smoke_texture = ExtResource("27_smoke")
 
-[node name="Layout" type="VBoxContainer" parent="."]
+[node name="Layout" type="Control" parent="."]
 layout_mode = 2
 
 [node name="StateLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true
-layout_mode = 2
+layout_mode = 0
+offset_left = 10.0
+offset_top = 5.0
+offset_right = 246.0
+offset_bottom = 30.0
 text = "多层蒸笼 · 0层"
 
+[node name="BusyLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 300.0
+offset_top = 5.0
+offset_right = 420.0
+offset_bottom = 30.0
+text = "操作中…"
+horizontal_alignment = 2
+
 [node name="Recipes" type="HBoxContainer" parent="Layout"]
-layout_mode = 2
+layout_mode = 0
+offset_left = 8.0
+offset_top = 31.0
+offset_right = 422.0
+offset_bottom = 63.0
+theme_override_constants/separation = 6
 
 [node name="MantouButton" type="Button" parent="Layout/Recipes"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 toggle_mode = true
 text = "馒头"
 
 [node name="VegetableBunButton" type="Button" parent="Layout/Recipes"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 toggle_mode = true
 text = "菜包"
 
 [node name="MeatBunButton" type="Button" parent="Layout/Recipes"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 toggle_mode = true
 text = "肉包"
 
+[node name="MachineStage" type="Control" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 4.0
+offset_top = 67.0
+offset_right = 296.0
+offset_bottom = 237.0
+mouse_filter = 1
+clip_contents = true
+
+[node name="ClosedMachine" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 292.0
+offset_bottom = 170.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="BaseVisual" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 1
+
+[node name="LayerVisual01" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 10
+
+[node name="LayerVisual02" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 11
+
+[node name="LayerVisual03" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 12
+
+[node name="LayerVisual04" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 13
+
+[node name="ClosedLidVisual" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 20
+
+[node name="OpenLidVisual" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+expand_mode = 1
+stretch_mode = 0
+mouse_filter = 2
+z_index = 31
+
+[node name="LayerFood01" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 40
+
+[node name="LayerFood02" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 41
+
+[node name="LayerFood03" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 42
+
+[node name="LayerFood04" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 43
+
+[node name="LayerOvercookedFood01" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 44
+
+[node name="LayerOvercookedFood02" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 44
+
+[node name="LayerOvercookedFood03" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 44
+
+[node name="LayerOvercookedFood04" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 44
+
+[node name="LayerProgress01" type="Control" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+mouse_filter = 2
+z_index = 45
+script = ExtResource("28_indicator")
+
+[node name="LayerProgress02" type="Control" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+mouse_filter = 2
+z_index = 45
+script = ExtResource("28_indicator")
+
+[node name="LayerProgress03" type="Control" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+mouse_filter = 2
+z_index = 45
+script = ExtResource("28_indicator")
+
+[node name="LayerProgress04" type="Control" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+mouse_filter = 2
+z_index = 45
+script = ExtResource("28_indicator")
+
+[node name="LayerHit01" type="Button" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+flat = true
+focus_mode = 0
+z_index = 48
+
+[node name="LayerHit02" type="Button" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+flat = true
+focus_mode = 0
+z_index = 48
+
+[node name="LayerHit03" type="Button" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+flat = true
+focus_mode = 0
+z_index = 48
+
+[node name="LayerHit04" type="Button" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+flat = true
+focus_mode = 0
+z_index = 48
+
+[node name="ActionFood" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 60.0
+offset_bottom = 60.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 50
+
+[node name="ActionOvercookedFood" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 60.0
+offset_bottom = 60.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 51
+
+[node name="SteamPuff01" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 42.0
+offset_bottom = 42.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 60
+
+[node name="SteamPuff02" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 35.0
+offset_bottom = 35.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 60
+
+[node name="SteamPuff03" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 30.0
+offset_bottom = 30.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 60
+
+[node name="SmokePuff" type="TextureRect" parent="Layout/MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 50.0
+offset_bottom = 50.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+z_index = 61
+
 [node name="Layers" type="GridContainer" parent="Layout"]
-layout_mode = 2
-columns = 2
+layout_mode = 0
+offset_left = 302.0
+offset_top = 67.0
+offset_right = 422.0
+offset_bottom = 246.0
+columns = 1
+theme_override_constants/v_separation = 4
 
 [node name="Layer01" type="Button" parent="Layout/Layers"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 37)
 layout_mode = 2
-text = "第1层 · 未开放"
+theme_override_font_sizes/font_size = 14
+text = "第1层\n未开放"
 
 [node name="Layer02" type="Button" parent="Layout/Layers"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 37)
 layout_mode = 2
-text = "第2层 · 未开放"
+theme_override_font_sizes/font_size = 14
+text = "第2层\n未开放"
 
 [node name="Layer03" type="Button" parent="Layout/Layers"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 37)
 layout_mode = 2
-text = "第3层 · 未开放"
+theme_override_font_sizes/font_size = 14
+text = "第3层\n未开放"
 
 [node name="Layer04" type="Button" parent="Layout/Layers"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 37)
 layout_mode = 2
-text = "第4层 · 未开放"
+theme_override_font_sizes/font_size = 14
+text = "第4层\n未开放"

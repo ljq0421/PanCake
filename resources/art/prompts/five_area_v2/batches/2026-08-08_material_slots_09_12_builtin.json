@@ -1,0 +1,41 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family_reference": "res://resources/art/workstation/material_slots/individual/slot_05_locked_v1_five_area_v2.png",
+  "shared_style": "rounded chibi cooking-game prop, clean deep-brown outlines, warm cel-shaded highlights, cozy Chinese breakfast-stall art",
+  "shared_constraints": "one complete empty shallow wooden slot with golden corner braces and exactly one centered closed brass padlock; no visible slot number or invented unlock tier; transparent final Sprite; flat #ff00ff removable key source; no ingredients, text, labels, watermark, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "slot_09_locked_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_09_locked_v1.png",
+      "imagegen_output": "exec-3b38844f-5ad5-461e-8f99-251dd8f5ce31.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "slot_10_locked_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_10_locked_v1.png",
+      "imagegen_output": "exec-164179cd-a277-4521-82e7-9ec2c9b63d60.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "slot_11_locked_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_11_locked_v1.png",
+      "imagegen_output": "exec-d16b60b2-3a65-4ad1-8b5f-fc97448b96ad.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "slot_12_locked_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_12_locked_v1.png",
+      "imagegen_output": "exec-4650ef2a-1460-4dde-bbd7-c1b8edb9d82a.png",
+      "final_canvas": [512, 512]
+    }
+  ]
+}

@@ -120,6 +120,7 @@ func begin_new_game() -> Dictionary:
 		"progression": _progression.call("snapshot"),
 		"inventory": _new_inventory_snapshot(),
 		"restock_progress": {},
+		"pending_tray_payments": {},
 		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
 		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
 		"production": _production_service.call("snapshot"),
@@ -285,7 +286,7 @@ func ensure_active_playable_order() -> Dictionary:
 	var queue: Array = Array(_order_service.call("queue_snapshot"))
 	var needed := maxi(4 - queue.size(), 0)
 	if needed <= 0:
-		return {"success": true, "created": false, "order": active_formal_order(), "queue": queue}
+		return {"success": true, "created": false, "order": active_formal_order(), "active_orders": active_formal_orders(), "queue": queue}
 	var next_sequence := maxi(int(_save_data.get("order_sequence", 0)), 0) + 1
 	var generated_batch: Dictionary = FIVE_AREA_PLAYABLE_ORDER_GENERATOR.generate_queue_candidates(
 		five_area_progression_snapshot(),
@@ -298,7 +299,7 @@ func ensure_active_playable_order() -> Dictionary:
 	)
 	if not bool(generated_batch.get("success", false)):
 		if not queue.is_empty():
-			return {"success": true, "created": false, "order": active_formal_order(), "queue": queue, "needs_candidates": needed, "deferred_reason": generated_batch.get("reason", &"no_eligible_playable_order")}
+			return {"success": true, "created": false, "order": active_formal_order(), "active_orders": active_formal_orders(), "queue": queue, "needs_candidates": needed, "deferred_reason": generated_batch.get("reason", &"no_eligible_playable_order")}
 		return generated_batch
 	var candidates: Array = Array(generated_batch.get("candidates", []))
 	for candidate_index in range(candidates.size()):
@@ -317,6 +318,8 @@ func ensure_active_playable_order() -> Dictionary:
 		_sync_formal_orders_to_save()
 		_touch_and_write()
 		order_changed.emit({"active": Dictionary(result.get("order", {})).duplicate(true), "queue": Array(result.get("queue", [])).duplicate(true)})
+	result["order"] = active_formal_order()
+	result["active_orders"] = active_formal_orders()
 	return result
 
 
@@ -333,12 +336,19 @@ func advance_formal_order_patience(delta: float) -> Dictionary:
 		return {"success": true, "changed": false}
 	_ensure_order_service()
 	var result: Dictionary = _order_service.call("advance_patience", delta)
-	if bool(result.get("changed", false)) or bool(result.get("success", false)) and bool(result.get("expired", false)):
+	var expired_results: Array = Array(result.get("expired_results", []))
+	if bool(result.get("changed", false)) or not expired_results.is_empty():
 		_sync_formal_orders_to_save()
-	if StringName(result.get("terminal_state", &"")) == &"expired" and not bool(result.get("already_settled", false)):
-		_finalize_failed_formal_order(result)
-	else:
+	for expired_variant in expired_results:
+		var expired: Dictionary = Dictionary(expired_variant)
+		if not bool(expired.get("already_settled", false)):
+			_finalize_failed_formal_order(expired)
+	if expired_results.is_empty():
 		_save_data["formal_orders"] = formal_order_snapshot()
+	else:
+		var refill := ensure_active_playable_order()
+		result["refill"] = refill
+	result["active_orders"] = active_formal_orders()
 	return result
 
 
@@ -366,9 +376,9 @@ func skip_active_area_tutorial() -> Dictionary:
 	var tutorial_id := StringName(tutorial.get("active_id", &""))
 	if kind != &"area" or tutorial_id.is_empty():
 		return {"success": false, "reason": &"tutorial_not_active"}
-	var active := active_formal_order()
-	if not active.is_empty() and StringName(active.get("teaching_area_id", &"")) == tutorial_id:
-		var abandoned := abandon_active_formal_order(&"tutorial_skipped")
+	var active := _formal_order_for_tutorial(tutorial_id)
+	if not active.is_empty():
+		var abandoned := abandon_formal_order(StringName(active.get("order_id", &"")), &"tutorial_skipped")
 		if not bool(abandoned.get("success", false)):
 			return abandoned
 	var result: Dictionary = _progression.call("skip_tutorial", kind, tutorial_id)
@@ -403,6 +413,43 @@ func active_formal_order() -> Dictionary:
 	return Dictionary(_order_service.call("active_order")).duplicate(true)
 
 
+func active_formal_orders() -> Array[Dictionary]:
+	_ensure_order_service()
+	return Array(_order_service.call("active_orders")).duplicate(true)
+
+
+func formal_order(order_id: StringName) -> Dictionary:
+	_ensure_order_service()
+	return Dictionary(_order_service.call("order_by_id", order_id)).duplicate(true)
+
+
+func _formal_order_for_tutorial(tutorial_id: StringName) -> Dictionary:
+	for order in active_formal_orders():
+		if StringName(order.get("teaching_area_id", &"")) == tutorial_id:
+			return order
+	return {}
+
+
+func begin_formal_order_serving(order_id: StringName) -> Dictionary:
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("begin_serving", order_id)
+	if bool(result.get("success", false)):
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+		order_changed.emit({"active_orders": active_formal_orders()})
+	return result
+
+
+func cancel_formal_order_serving(order_id: StringName) -> Dictionary:
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("cancel_serving", order_id)
+	if bool(result.get("success", false)) and bool(result.get("changed", false)):
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+		order_changed.emit({"active_orders": active_formal_orders()})
+	return result
+
+
 func attach_formal_order_product(order_id: StringName, item_index: int, product: Dictionary) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
@@ -417,6 +464,291 @@ func attach_formal_order_product(order_id: StringName, item_index: int, product:
 func preview_attach_formal_order_product(order_id: StringName, item_index: int, product: Dictionary) -> Dictionary:
 	_ensure_order_service()
 	return Dictionary(_order_service.call("preview_attach_product", order_id, item_index, product)).duplicate(true)
+
+
+## Moves exactly one physical product into the requested customer-tray slot.
+## Product mismatches are intentionally reported but never used as blockers.
+func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_order_service()
+	_ensure_production_service()
+	_ensure_pancake_holding_tray()
+	var order := formal_order(order_id)
+	var items := Array(order.get("items", []))
+	if item_index < 0 or item_index >= items.size() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+		return {"success": false, "reason": &"order_not_active"}
+	var item := Dictionary(items[item_index])
+	var source_preview := _preview_product_source(source_ref, item)
+	if not bool(source_preview.get("success", false)):
+		return source_preview
+	var preview_product := Dictionary(source_preview.get("product", {})).duplicate(true)
+	var expected_source_product_id := StringName(source_ref.get("product_id", &""))
+	if not expected_source_product_id.is_empty() and StringName(preview_product.get("product_id", &"")) != expected_source_product_id:
+		return {"success": false, "reason": &"source_product_changed"}
+	if StringName(preview_product.get("status", &"")) in [&"reserved", &"consumed", &"wasted"]:
+		return {"success": false, "reason": &"product_terminal_state"}
+	var order_preview := Dictionary(_order_service.call("preview_attach_product", order_id, item_index, preview_product))
+	if not bool(order_preview.get("success", false)):
+		return order_preview
+	var rollback := _tray_transaction_snapshot()
+	var collected := _collect_product_source(source_ref, item)
+	if not bool(collected.get("success", false)):
+		return collected
+	var product := Dictionary(collected.get("product", {})).duplicate(true)
+	if product.is_empty():
+		_restore_tray_transaction(rollback)
+		return {"success": false, "reason": &"source_returned_no_product"}
+	if not expected_source_product_id.is_empty() and StringName(product.get("product_id", &"")) != expected_source_product_id:
+		_restore_tray_transaction(rollback)
+		return {"success": false, "reason": &"source_product_changed"}
+	product["reservation_origin"] = _normalized_product_source_ref(source_ref)
+	product["return_policy"] = &"return_stock" if StringName(source_ref.get("source_kind", &"")) == &"inventory" else &"waste_only"
+	var attached := Dictionary(_order_service.call("attach_product", order_id, item_index, product))
+	if not bool(attached.get("success", false)):
+		_restore_tray_transaction(rollback)
+		return {"success": false, "reason": &"stage_rollback", "attach_result": attached}
+	_order_service.call("mark_production_started", order_id, _product_source_instance_id(source_ref))
+	_persist_tray_transaction()
+	return {
+		"success": true,
+		"product": product,
+		"order_result": attached,
+		"will_match": bool(order_preview.get("will_match", false)),
+		"mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray()),
+	}
+
+
+func remove_staged_product(order_id: StringName, item_index: int, disposition: StringName) -> Dictionary:
+	if disposition not in [&"return_stock", &"waste"]:
+		return {"success": false, "reason": &"invalid_disposition"}
+	_ensure_order_service()
+	_ensure_production_service()
+	var order := formal_order(order_id)
+	var items := Array(order.get("items", []))
+	if item_index < 0 or item_index >= items.size() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+		return {"success": false, "reason": &"order_not_active"}
+	var products := Array(Dictionary(items[item_index]).get("attached_products", []))
+	if products.is_empty():
+		var legacy_product := Dictionary(Dictionary(items[item_index]).get("attached_product", {}))
+		if not legacy_product.is_empty():
+			products.append(legacy_product)
+	if products.is_empty():
+		return {"success": false, "reason": &"tray_slot_empty"}
+	var candidate := Dictionary(products.back())
+	if disposition == &"return_stock":
+		if StringName(candidate.get("return_policy", &"waste_only")) != &"return_stock" or StringName(candidate.get("area_id", &"")) != &"area.packaged_drink" or StringName(candidate.get("temperature_mode", &"")) != &"room_temperature":
+			return {"success": false, "reason": &"return_not_allowed"}
+		var return_status := _preview_staged_stock_return(candidate)
+		if not bool(return_status.get("success", false)):
+			return return_status
+	var rollback := _tray_transaction_snapshot()
+	var removed := Dictionary(_order_service.call("remove_attached_product", order_id, item_index))
+	if not bool(removed.get("success", false)):
+		return removed
+	var product := Dictionary(removed.get("product", {}))
+	var disposition_result: Dictionary
+	if disposition == &"return_stock":
+		disposition_result = _return_staged_drink_to_stock(product)
+	else:
+		disposition_result = Dictionary(_production_service.call("record_staged_waste", product, &"tray_correction"))
+	if not bool(disposition_result.get("success", false)):
+		_restore_tray_transaction(rollback)
+		return {"success": false, "reason": &"remove_rollback", "disposition_result": disposition_result}
+	_persist_tray_transaction()
+	return {"success": true, "product": product, "disposition": disposition, "disposition_result": disposition_result}
+
+
+func handoff_order_tray(order_id: StringName) -> Dictionary:
+	var order := formal_order(order_id)
+	if order.is_empty() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+		return {"success": false, "reason": &"order_not_active"}
+	var missing_items: Array[Dictionary] = []
+	for item_index in range(Array(order.get("items", [])).size()):
+		var item := Dictionary(Array(order.get("items", []))[item_index])
+		var placed := Array(item.get("prepared_product_instance_ids", [])).size()
+		var required := maxi(int(item.get("quantity", 1)), 1)
+		if placed < required:
+			missing_items.append({"item_index": item_index, "product_id": StringName(item.get("product_id", &"")), "missing_quantity": required - placed})
+	if not missing_items.is_empty():
+		return {"success": false, "reason": &"tray_incomplete", "missing_items": missing_items}
+	return settle_f3_order(order_id, false)
+
+
+func pending_tray_payment(settlement_id: StringName) -> Dictionary:
+	return Dictionary(Dictionary(_save_data.get("pending_tray_payments", {})).get(str(settlement_id), {})).duplicate(true)
+
+
+func pending_tray_payments() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for payment_value in Dictionary(_save_data.get("pending_tray_payments", {})).values():
+		var payment := Dictionary(payment_value).duplicate(true)
+		if payment.is_empty() or bool(payment.get("collected", false)):
+			continue
+		result.append(payment)
+	result.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return int(left.get("created_at_unix", 0)) < int(right.get("created_at_unix", 0))
+	)
+	return result
+
+
+func collect_tray_payment(settlement_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var payments := Dictionary(_save_data.get("pending_tray_payments", {})).duplicate(true)
+	var key := str(settlement_id)
+	var payment := Dictionary(payments.get(key, {})).duplicate(true)
+	if payment.is_empty():
+		return {"success": false, "reason": &"payment_not_found"}
+	if bool(payment.get("collected", false)):
+		return {"success": true, "already_collected": true, "amount": int(payment.get("amount", 0))}
+	var amount := maxi(int(payment.get("amount", 0)), 0)
+	_progression.set("coins", int(_progression.get("coins")) + amount)
+	payment["collected"] = true
+	payment["collected_at_unix"] = int(Time.get_unix_time_from_system())
+	payments[key] = payment
+	_save_data["pending_tray_payments"] = payments
+	_sync_progression_to_save()
+	_touch_and_write()
+	coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(five_area_progression_snapshot())
+	return {"success": true, "amount": amount, "payment": payment.duplicate(true)}
+
+
+func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> Dictionary:
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	var source_index := int(source_ref.get("source_index", -1))
+	var product_id := StringName(source_ref.get("product_id", &""))
+	match source_kind:
+		&"inventory":
+			var definition := CATALOG.product_definition(product_id)
+			if StringName(definition.get("area_id", &"")) != &"area.packaged_drink":
+				return {"success": false, "reason": &"invalid_inventory_product"}
+			var stock_id := StringName(definition.get("stock_id", &""))
+			if stock_id.is_empty() or int(inventory_snapshot().get(str(stock_id), 0)) <= 0:
+				return {"success": false, "reason": &"insufficient_stock", "stock_id": stock_id}
+			return {"success": true, "product": {"product_instance_id": &"preview.inventory", "area_id": &"area.packaged_drink", "product_id": product_id, "temperature_mode": &"room_temperature", "ingredient_ids": PackedStringArray(), "sauce_ids": PackedStringArray(), "status": &"available"}}
+		&"heater_slot":
+			return Dictionary(_production_service.call("preview_collect_drink", source_index))
+		&"youtiao_output":
+			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+		&"soy_output":
+			return Dictionary(_production_service.call("preview_collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("preview_collect_soy", 1))
+		&"steamer_layer":
+			return Dictionary(_production_service.call("preview_collect_steamer", source_index))
+		&"pancake_holding":
+			var tray_preview := Dictionary(_pancake_holding_tray.call("preview_serve", source_index, order_item))
+			if bool(tray_preview.get("success", false)):
+				tray_preview["product"] = Dictionary(tray_preview.get("product", {})).duplicate(true)
+			return tray_preview
+		&"pancake_ready":
+			var ready_product := Dictionary(source_ref.get("product", {})).duplicate(true)
+			return {"success": not ready_product.is_empty(), "reason": &"" if not ready_product.is_empty() else &"pancake_not_ready", "product": ready_product}
+		_:
+			return {"success": false, "reason": &"unsupported_product_source", "source_kind": source_kind}
+
+
+func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> Dictionary:
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	var source_index := int(source_ref.get("source_index", -1))
+	match source_kind:
+		&"inventory": return Dictionary(_production_service.call("create_room_temperature_drink", StringName(source_ref.get("product_id", &""))))
+		&"heater_slot": return Dictionary(_production_service.call("collect_drink", source_index))
+		&"youtiao_output": return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
+		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
+		&"steamer_layer": return Dictionary(_production_service.call("collect_steamer", source_index))
+		&"pancake_holding":
+			var served := Dictionary(_pancake_holding_tray.call("serve", source_index, order_item))
+			if bool(served.get("success", false)):
+				served["product"] = Dictionary(served.get("served_product", {})).duplicate(true)
+			return served
+		&"pancake_ready":
+			var product := Dictionary(source_ref.get("product", {})).duplicate(true)
+			var consumed_stock_ids: Array[StringName] = [&"stock.pancake.batter"]
+			for stock_value in Array(product.get("sauce_ids", [])):
+				var stock_id := StringName(stock_value)
+				if not stock_id.is_empty():
+					consumed_stock_ids.append(stock_id)
+			var consumed := consume_inventory_stock_ids(consumed_stock_ids)
+			if not bool(consumed.get("success", false)):
+				return consumed
+			return {"success": true, "product": product, "consumed_stock_ids": consumed_stock_ids}
+		_: return {"success": false, "reason": &"unsupported_product_source", "source_kind": source_kind}
+
+
+func _normalized_product_source_ref(source_ref: Dictionary) -> Dictionary:
+	return {
+		"source_kind": StringName(source_ref.get("source_kind", &"")),
+		"source_index": int(source_ref.get("source_index", -1)),
+		"product_id": StringName(source_ref.get("product_id", &"")),
+	}
+
+
+func _product_source_instance_id(source_ref: Dictionary) -> StringName:
+	return StringName("%s.%d" % [str(source_ref.get("source_kind", &"source")), int(source_ref.get("source_index", -1))])
+
+
+func _preview_staged_stock_return(product: Dictionary) -> Dictionary:
+	var definition := CATALOG.product_definition(StringName(product.get("product_id", &"")))
+	var stock_id := StringName(definition.get("stock_id", &""))
+	if stock_id.is_empty():
+		return {"success": false, "reason": &"return_stock_missing"}
+	var status := five_area_restock_status(stock_id)
+	if not bool(status.get("success", false)):
+		return status
+	if int(status.get("current_stock", 0)) >= int(status.get("capacity", 0)):
+		return {"success": false, "reason": &"stock_capacity_full", "stock_id": stock_id}
+	return {"success": true, "stock_id": stock_id}
+
+
+func _return_staged_drink_to_stock(product: Dictionary) -> Dictionary:
+	var preview := _preview_staged_stock_return(product)
+	if not bool(preview.get("success", false)):
+		return preview
+	var stock_id := StringName(preview.get("stock_id", &""))
+	var inventory := inventory_snapshot()
+	inventory[str(stock_id)] = int(inventory.get(str(stock_id), 0)) + 1
+	var saved := save_inventory(inventory)
+	if bool(saved.get("success", false)):
+		saved["stock_id"] = stock_id
+	return saved
+
+
+func _tray_transaction_snapshot() -> Dictionary:
+	_ensure_business_services()
+	return {
+		"inventory": inventory_snapshot(),
+		"production": five_area_production_snapshot(),
+		"orders": formal_order_snapshot(),
+		"pancake_holding_tray": pancake_holding_tray_snapshot(),
+		"business_report": Dictionary(_business_report_service.call("snapshot")).duplicate(true),
+	}
+
+
+func _restore_tray_transaction(rollback: Dictionary) -> void:
+	_order_service.call("load_snapshot", Dictionary(rollback.get("orders", {})))
+	_production_service.call("load_snapshot", Dictionary(rollback.get("production", {})))
+	_pancake_holding_tray.call("load_snapshot", Dictionary(rollback.get("pancake_holding_tray", {})))
+	_business_report_service.call("load_snapshot", Dictionary(rollback.get("business_report", {})))
+	_save_data["inventory"] = _normalize_inventory(Dictionary(rollback.get("inventory", {})))
+	_persist_tray_transaction()
+	inventory_changed.emit(inventory_snapshot())
+
+
+func _persist_tray_transaction() -> void:
+	_sync_formal_orders_to_save()
+	_sync_production_to_save()
+	_sync_pancake_holding_tray_to_save()
+	_sync_business_services_to_save()
+	_touch_and_write()
+	order_changed.emit({"active_orders": active_formal_orders()})
+	production_changed.emit(five_area_production_snapshot())
+
+
+func formal_order_delivery_item_index(order_id: StringName, product: Dictionary) -> int:
+	_ensure_order_service()
+	return int(_order_service.call("best_delivery_item_index", order_id, product))
 
 
 func mark_formal_order_production_started(order_id: StringName, source_instance_id: StringName) -> Dictionary:
@@ -467,63 +799,15 @@ func load_f3_drink(slot_index: int, product_id: StringName, order_id: StringName
 
 
 func deliver_room_temperature_drink(order_id: StringName, item_index: int, product_id: StringName) -> Dictionary:
-	if not has_save():
-		return {"success": false, "reason": &"no_active_save"}
-	var preview_product := {
-		"product_instance_id": &"preview.room_temperature_drink",
-		"area_id": &"area.packaged_drink",
-		"product_id": product_id,
-		"temperature_mode": &"room_temperature",
-		"ingredient_ids": PackedStringArray(),
-		"sauce_ids": PackedStringArray(),
-	}
-	var order_preview := preview_attach_formal_order_product(order_id, item_index, preview_product)
-	if not bool(order_preview.get("success", false)):
-		return order_preview
-	if not bool(order_preview.get("will_match", false)):
-		return {"success": false, "reason": &"order_item_mismatch", "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
-	_ensure_production_service()
-	var inventory_rollback := inventory_snapshot()
-	var production_rollback := five_area_production_snapshot()
-	var created: Dictionary = _production_service.call("create_room_temperature_drink", product_id)
-	if not bool(created.get("success", false)):
-		return created
-	var attached := attach_formal_order_product(order_id, item_index, Dictionary(created.get("product", {})))
-	if not bool(attached.get("success", false)):
-		_production_service.call("load_snapshot", production_rollback)
-		save_inventory(inventory_rollback)
-		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
-	_mark_f3_order_started(order_id, StringName("stock.%s" % product_id))
-	_sync_production_to_save()
-	_touch_and_write()
-	production_changed.emit(five_area_production_snapshot())
-	return {"success": true, "product": created.get("product", {}), "order_result": attached}
+	return stage_product_to_order({"source_kind": &"inventory", "source_index": -1, "product_id": product_id}, order_id, item_index)
 
 
 func deliver_heated_drink(slot_index: int, order_id: StringName, item_index: int) -> Dictionary:
-	if not has_save():
-		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
-	var production_preview: Dictionary = _production_service.call("preview_collect_drink", slot_index)
-	if not bool(production_preview.get("success", false)):
-		return production_preview
-	var order_preview := preview_attach_formal_order_product(order_id, item_index, Dictionary(production_preview.get("product", {})))
-	if not bool(order_preview.get("success", false)):
-		return order_preview
-	if not bool(order_preview.get("will_match", false)):
-		return {"success": false, "reason": &"order_item_mismatch", "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
-	var rollback := five_area_production_snapshot()
-	var collected: Dictionary = _production_service.call("collect_drink", slot_index)
-	if not bool(collected.get("success", false)):
-		return collected
-	var attached := attach_formal_order_product(order_id, item_index, Dictionary(collected.get("product", {})))
-	if not bool(attached.get("success", false)):
-		_production_service.call("load_snapshot", rollback)
-		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
-	_sync_production_to_save()
-	_touch_and_write()
-	production_changed.emit(five_area_production_snapshot())
-	return {"success": true, "product": collected.get("product", {}), "order_result": attached}
+	var preview: Dictionary = _production_service.call("preview_collect_drink", slot_index)
+	if not bool(preview.get("success", false)):
+		return preview
+	return stage_product_to_order({"source_kind": &"heater_slot", "source_index": slot_index, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
 func discard_f3_drink(slot_index: int) -> Dictionary:
@@ -549,6 +833,24 @@ func load_f3_youtiao(recipe_id: StringName, quantity: int, order_id: StringName 
 	return result
 
 
+func confirm_and_run_youtiao_auto_load(recipe_id: StringName, quantity: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var confirmed: Dictionary = _production_service.call("confirm_youtiao_job_profile", recipe_id, quantity)
+	if not bool(confirmed.get("success", false)):
+		return confirmed
+	var result: Dictionary = _production_service.call("run_confirmed_youtiao_auto_load")
+	result["job_profile"] = Dictionary(confirmed.get("job_profile", {})).duplicate(true)
+	# Confirmation is itself durable profile state. Persist it even when execution
+	# fails; load_batch already rolls the fryer back before returning any stock
+	# failure, so this path never deducts inventory on a failed load.
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return result
+
+
 func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("perform_action", &"device.youtiao_fryer", action_id)
@@ -560,27 +862,11 @@ func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
 
 
 func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
-	if not has_save():
-		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
 	var preview: Dictionary = _production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1)
 	if not bool(preview.get("success", false)):
 		return preview
-	var order_preview := preview_attach_formal_order_product(order_id, item_index, Dictionary(preview.get("product", {})))
-	if not bool(order_preview.get("success", false)):
-		return order_preview
-	var rollback := five_area_production_snapshot()
-	var collected: Dictionary = _production_service.call("collect_batch", &"device.youtiao_fryer", 1)
-	if not bool(collected.get("success", false)):
-		return collected
-	var attached := attach_formal_order_product(order_id, item_index, Dictionary(collected.get("product", {})))
-	if not bool(attached.get("success", false)):
-		_production_service.call("load_snapshot", rollback)
-		return {"success": false, "reason": &"delivery_rollback", "attach_result": attached}
-	_sync_production_to_save()
-	_touch_and_write()
-	production_changed.emit(five_area_production_snapshot())
-	return {"success": true, "product": collected.get("product", {}), "order_result": attached, "will_match": order_preview.get("will_match", false), "mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray())}
+	return stage_product_to_order({"source_kind": &"youtiao_output", "source_index": -1, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
 func discard_f3_youtiao() -> Dictionary:
@@ -614,17 +900,10 @@ func perform_f4_soy_action(action_id: StringName) -> Dictionary:
 
 func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
-	var preview: Dictionary
-	if output_slot_index >= 0:
-		var rack := Array(Dictionary(_production_service.call("machine_snapshot", &"device.fresh_soy_milk_machine")).get("output_rack", []))
-		if output_slot_index >= rack.size() or Dictionary(rack[output_slot_index]).is_empty():
-			return {"success": false, "reason": &"output_slot_empty"}
-		var cup := Dictionary(rack[output_slot_index])
-		var recipe := CATALOG.recipe_definition(StringName(cup.get("recipe_id", &"")))
-		preview = {"success": true, "product": {"product_instance_id": &"preview.soy_output", "area_id": &"area.fresh_soy_milk", "product_id": recipe.get("product_id", &""), "temperature_mode": &"room_temperature", "ingredient_ids": PackedStringArray(), "sauce_ids": PackedStringArray()}}
-	else:
-		preview = _production_service.call("preview_collect_soy", 1)
-	return _collect_and_attach_product(order_id, item_index, preview, "collect_soy_output" if output_slot_index >= 0 else "collect_soy", [output_slot_index] if output_slot_index >= 0 else [1])
+	var preview: Dictionary = _production_service.call("preview_collect_soy_output", output_slot_index) if output_slot_index >= 0 else _production_service.call("preview_collect_soy", 1)
+	if not bool(preview.get("success", false)):
+		return preview
+	return stage_product_to_order({"source_kind": &"soy_output", "source_index": output_slot_index, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
 func discard_f4_soy(output_slot_index: int = -1) -> Dictionary:
@@ -657,7 +936,9 @@ func perform_f4_steamer_action(layer_index: int, action_id: StringName) -> Dicti
 func deliver_f4_steamer(layer_index: int, order_id: StringName, item_index: int) -> Dictionary:
 	_ensure_production_service()
 	var preview: Dictionary = _production_service.call("preview_collect_steamer", layer_index)
-	return _collect_and_attach_product(order_id, item_index, preview, "collect_steamer", [layer_index])
+	if not bool(preview.get("success", false)):
+		return preview
+	return stage_product_to_order({"source_kind": &"steamer_layer", "source_index": layer_index, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
 func discard_f4_steamer(layer_index: int) -> Dictionary:
@@ -720,7 +1001,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
 	_ensure_progression()
-	var order := active_formal_order()
+	var order := formal_order(order_id)
 	if StringName(order.get("order_id", &"")) != order_id:
 		return {"success": false, "reason": &"order_not_active"}
 	var settlement: Dictionary = _order_service.call("settle_order", order_id, submit_incomplete)
@@ -750,8 +1031,17 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 		if bool(settlement.get("order_success", false)):
 			var product_definition := CATALOG.product_definition(StringName(item.get("product_id", &"")))
 			base_coins += maxi(int(product_definition.get("base_sell_price", 0)), 0) * maxi(int(item.get("quantity", 1)), 1)
+	# The playable-order generator owns an explicit whole-order quote, including
+	# pancake prices and multi-item multipliers. Ad-hoc and restored orders that
+	# have no explicit quote keep the catalog-price compatibility path above.
+	if bool(settlement.get("order_success", false)):
+		var order_metadata := Dictionary(order.get("metadata", {}))
+		var legacy_order := Dictionary(order_metadata.get("legacy_order", {}))
+		if order_metadata.has("base_coins"):
+			base_coins = maxi(int(order_metadata.get("base_coins", base_coins)), 0)
+		elif legacy_order.has("payment_coins"):
+			base_coins = maxi(int(legacy_order.get("payment_coins", base_coins)), 0)
 	var reputation_delta := _f3_reputation_delta(bool(settlement.get("order_success", false)), all_grades)
-	_progression.set("coins", int(_progression.get("coins")) + base_coins)
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
 	var teaching_area_id := StringName(order.get("teaching_area_id", Dictionary(order.get("metadata", {})).get("teaching_area_id", &"")))
 	var tutorial_completion := {}
@@ -784,6 +1074,16 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	progression_changed.emit(five_area_progression_snapshot())
 	settlement["mastery_results"] = mastery_results
 	settlement["earned_coins"] = base_coins
+	settlement["payment_pending"] = base_coins > 0
+	var pending_payments := Dictionary(_save_data.get("pending_tray_payments", {})).duplicate(true)
+	pending_payments[str(settlement_id)] = {
+		"settlement_id": settlement_id,
+		"order_id": order_id,
+		"amount": base_coins,
+		"collected": base_coins <= 0,
+		"created_at_unix": int(Time.get_unix_time_from_system()),
+	}
+	_save_data["pending_tray_payments"] = pending_payments
 	settlement["reputation_delta"] = reputation_delta
 	settlement["tutorial_completion"] = tutorial_completion
 	settlement["tutorial_failure"] = tutorial_failure
@@ -1133,11 +1433,89 @@ func growth_purchase_status(growth_id: StringName) -> Dictionary:
 	return Dictionary(_progression.call("purchase_status", growth_id)).duplicate(true)
 
 
+func growth_missing_requirements(growth_id: StringName) -> String:
+	var status := growth_purchase_status(growth_id)
+	var definition := CATALOG.growth_definition(growth_id)
+	var label := str(definition.get("label", growth_id))
+	if bool(status.get("already_owned", false)):
+		return "%s 已解锁" % label
+	if bool(status.get("pending_activation", false)):
+		return "%s 已预订，将在下一营业日生效" % label
+	var explanations := PackedStringArray()
+	for requirement_value in Array(status.get("missing_requirements", [])):
+		var explanation := _growth_requirement_status_text(Dictionary(requirement_value))
+		if not explanation.is_empty() and not explanations.has(explanation):
+			explanations.append(explanation)
+	if explanations.is_empty():
+		return "%s：购买条件已满足，请在日结成长购买中预订" % label
+	return "%s 缺少：%s" % [label, "；".join(explanations)]
+
+
+static func _growth_requirement_status_text(requirement: Dictionary) -> String:
+	match StringName(requirement.get("reason", &"")):
+		&"purchase_slot_occupied":
+			return "购买位已被 %s 占用" % str(CATALOG.growth_definition(StringName(requirement.get("pending_growth_id", &""))).get("label", requirement.get("pending_growth_id", &"")))
+		&"area_locked":
+			return "区域 %s" % _area_status_label(StringName(requirement.get("required_area_id", &"")))
+		&"growth_requirement":
+			return str(CATALOG.growth_definition(StringName(requirement.get("required_growth_id", &""))).get("label", requirement.get("required_growth_id", &"")))
+		&"day_requirement":
+			return "营业日 %d/%d" % [int(requirement.get("current_day", 1)), int(requirement.get("min_day", 1))]
+		&"reputation_requirement":
+			return "声誉 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
+		&"insufficient_coins":
+			return "金币 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]
+		&"tutorial_requirement":
+			return "%s教学完成" % _area_status_label(StringName(requirement.get("required_tutorial_area_id", requirement.get("requires_tutorial_area_id", &""))))
+		&"mastery_requirement":
+			return "%s%s %d/%d" % [
+				_area_status_label(StringName(requirement.get("mastery_area_id", &""))),
+				_mastery_metric_status_label(StringName(requirement.get("mastery_metric", &"qualified"))),
+				int(requirement.get("current_mastery", 0)),
+				int(requirement.get("required_mastery", 0)),
+			]
+		&"all_areas_requirement":
+			return "已解锁区域 %d/%d" % [int(requirement.get("current_area_count", 0)), int(requirement.get("required_area_count", 5))]
+		&"unknown_growth":
+			return "成长配置"
+	return str(requirement.get("reason", &"条件"))
+
+
+static func _area_status_label(area_id: StringName) -> String:
+	return {
+		&"area.pancake": "煎饼",
+		&"area.packaged_drink": "成品饮品",
+		&"area.youtiao": "油条",
+		&"area.fresh_soy_milk": "现磨豆浆",
+		&"area.steamer": "蒸笼",
+	}.get(area_id, str(area_id))
+
+
+static func _mastery_metric_status_label(metric: StringName) -> String:
+	return {
+		&"qualified": "合格数",
+		&"a_grade": "A级数",
+		&"correct_temperature": "正确温度单",
+		&"correct_streak_best": "最高连对",
+	}.get(metric, str(metric))
+
+
 func abandon_active_formal_order(reason: StringName = &"business_day_expired") -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
-	var result: Dictionary = _order_service.call("abandon_active_order", reason)
+	var result: Dictionary = _order_service.call("abandon_all_open_orders", reason) if reason == &"business_day_expired" else _order_service.call("abandon_active_order", reason)
+	if bool(result.get("success", false)):
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+	return result
+
+
+func abandon_formal_order(order_id: StringName, reason: StringName = &"refused") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_order_service()
+	var result: Dictionary = _order_service.call("abandon_order", order_id, reason)
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
@@ -1531,6 +1909,8 @@ func _ensure_save_shape() -> void:
 	_save_data["inventory"] = _normalize_inventory(Dictionary(_save_data.get("inventory", {})))
 	if not _save_data.has("restock_progress"):
 		_save_data["restock_progress"] = {}
+	if not _save_data.has("pending_tray_payments"):
+		_save_data["pending_tray_payments"] = {}
 	if not _save_data.has("day_open"):
 		_save_data["day_open"] = true
 	if not _save_data.has("business_paused"):

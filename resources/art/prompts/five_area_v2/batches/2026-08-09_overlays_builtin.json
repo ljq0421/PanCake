@@ -1,0 +1,38 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "wide_workstation_decor",
+  "shared_style": "rounded chibi cooking-game overlay, clean deep-brown outlines, warm cel-shaded rendering consistent with ProjectCake customer art",
+  "shared_constraints": "foreground decoration or weather effect only on a flat #ff00ff removable key source; preserve the unchanged workstation background; no people, food, workstation, room, wall, sky, title, text, labels, watermark, floor, cast shadow, or reflection; transparent 1024x576 final Sprite",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "resize complete 16:9 ImageGen canvas to the 1024x576 manifest canvas with LANCZOS"
+  },
+  "assets": [
+    {
+      "asset_id": "festival_spring_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/overlays/festival_spring_v1.png",
+      "imagegen_output": "exec-12212a86-5440-44d4-9700-49cbbad90d43.png",
+      "semantic_contract": "top red cord, exactly four lanterns and two side knots, open center and lower field",
+      "final_canvas": [1024, 576]
+    },
+    {
+      "asset_id": "lighting_string_lights_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/overlays/lighting_string_lights_v1.png",
+      "imagegen_output": "exec-7b89722f-2601-40a7-bf0c-7495542bd4cb.png",
+      "semantic_contract": "one shallow curved cable with exactly ten alternating warm bulbs across the top",
+      "final_canvas": [1024, 576]
+    },
+    {
+      "asset_id": "weather_rain_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/overlays/weather_rain_v1.png",
+      "imagegen_output": "exec-10410b99-9c2d-431e-9a30-4c6b51531c50.png",
+      "semantic_contract": "sparse consistently slanted pale-blue rain streaks with exactly five contained splash crowns",
+      "final_canvas": [1024, 576]
+    }
+  ]
+}

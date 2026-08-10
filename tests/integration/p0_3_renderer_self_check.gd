@@ -27,6 +27,8 @@ func _run() -> void:
 	var charred_texture := material.get_shader_parameter(&"charred_texture") as Texture2D
 	var edge_texture := material.get_shader_parameter(&"edge_texture") as Texture2D
 	var egg_surface_texture := material.get_shader_parameter(&"egg_surface_texture") as Texture2D
+	var sweet_sauce_material_texture := material.get_shader_parameter(&"sweet_sauce_texture") as Texture2D
+	var chili_sauce_material_texture := material.get_shader_parameter(&"chili_sauce_texture") as Texture2D
 	_check(raw_texture != null and raw_texture.resource_path == "res://resources/art/workstation/textures/pancake_raw_texture_v1.png", "shader uses the approved raw pancake texture candidate")
 	_check(cooked_texture != null and cooked_texture.resource_path == "res://resources/art/workstation/textures/pancake_cooked_texture_v1.png", "shader uses the approved cooked pancake texture candidate")
 	_check(charred_texture != null and charred_texture.resource_path == "res://resources/art/workstation/textures/pancake_charred_texture_v1.png", "shader uses the confirmed charred pancake texture candidate")
@@ -42,6 +44,7 @@ func _run() -> void:
 	model.doneness = _with_value(model.doneness, center_index, 0.80)
 	model.damage = _with_value(model.damage, center_index, 0.60)
 	model.sauce_concentration = _with_value(model.sauce_concentration, center_index, model.parameters.sauce_maximum_concentration * 0.40)
+	model.chili_sauce_concentration = _with_value(model.chili_sauce_concentration, center_index, model.parameters.sauce_maximum_concentration * 0.55)
 	model.egg_white = _with_value(model.egg_white, center_index, model.parameters.egg_maximum_concentration * 0.35)
 	model.egg_yolk = _with_value(model.egg_yolk, center_index, model.parameters.egg_maximum_concentration * 0.20)
 	model.egg_doneness = _with_value(model.egg_doneness, center_index, 0.45)
@@ -64,7 +67,17 @@ func _run() -> void:
 	var field_pixel := (diagnostics.field_image as Image).get_pixel(center.x, center.y)
 	var damage_pixel := (diagnostics.damage_image as Image).get_pixel(center.x, center.y)
 	var sauce_pixel := (diagnostics.sauce_image as Image).get_pixel(center.x, center.y)
+	var fold_sweet_pixel := (diagnostics.fold_sweet_sauce_image as Image).get_pixel(center.x, center.y)
+	var fold_chili_pixel := (diagnostics.fold_chili_sauce_image as Image).get_pixel(center.x, center.y)
 	var egg_pixel := (diagnostics.egg_image as Image).get_pixel(center.x, center.y)
+	var resized_sweet_material := sweet_sauce_material_texture.get_image()
+	var resized_chili_material := chili_sauce_material_texture.get_image()
+	resized_sweet_material.resize(model.parameters.render_texture_size, model.parameters.render_texture_size, Image.INTERPOLATE_BILINEAR)
+	resized_chili_material.resize(model.parameters.render_texture_size, model.parameters.render_texture_size, Image.INTERPOLATE_BILINEAR)
+	var expected_sweet_rgb := resized_sweet_material.get_pixel(center.x, center.y)
+	var expected_chili_rgb := resized_chili_material.get_pixel(center.x, center.y)
+	var expected_sweet_alpha := smoothstep(0.015, 0.32, 0.40) * 0.82
+	var expected_chili_alpha := smoothstep(0.015, 0.32, 0.55) * 0.80
 	_check(absf(field_pixel.r - 0.75) <= CHANNEL_TOLERANCE, "coverage maps to the field texture red channel")
 	_check(absf(field_pixel.g - 0.50) <= CHANNEL_TOLERANCE, "normalized thickness maps to the field texture green channel")
 	_check(absf(field_pixel.b - 0.25) <= CHANNEL_TOLERANCE, "wetness maps to the field texture blue channel")
@@ -73,6 +86,9 @@ func _run() -> void:
 	_check((diagnostics.damage_image as Image).get_format() == Image.FORMAT_R8, "damage upload uses a compact single-channel texture")
 	_check(absf(sauce_pixel.r - 0.40) <= CHANNEL_TOLERANCE, "sauce concentration maps to the R8 sauce texture")
 	_check((diagnostics.sauce_image as Image).get_format() == Image.FORMAT_R8, "sauce upload uses a compact single-channel texture")
+	_check(_rgb_matches(fold_sweet_pixel, expected_sweet_rgb) and absf(fold_sweet_pixel.a - expected_sweet_alpha) <= CHANNEL_TOLERANCE, "folded sweet sauce keeps the surface material RGB and shader opacity curve")
+	_check(_rgb_matches(fold_chili_pixel, expected_chili_rgb) and absf(fold_chili_pixel.a - expected_chili_alpha) <= CHANNEL_TOLERANCE, "folded chili sauce keeps the surface material RGB and shader opacity curve")
+	_check(material.shader.code.contains("stationary_sauce_visibility") and not material.shader.code.contains("sauce) * filling_visibility"), "stationary sauce remains unchanged until real fold geometry occludes it")
 	_check(absf(egg_pixel.r - 0.35) <= CHANNEL_TOLERANCE and absf(egg_pixel.g - 0.20) <= CHANNEL_TOLERANCE, "egg white and yolk map to independent texture channels")
 	_check(absf(egg_pixel.b - 0.45) <= CHANNEL_TOLERANCE, "egg doneness maps to the egg texture blue channel")
 
@@ -118,6 +134,10 @@ func _with_value(values: PackedFloat32Array, index: int, value: float) -> Packed
 	var result := values.duplicate()
 	result[index] = value
 	return result
+
+
+func _rgb_matches(actual: Color, expected: Color) -> bool:
+	return absf(actual.r - expected.r) <= CHANNEL_TOLERANCE and absf(actual.g - expected.g) <= CHANNEL_TOLERANCE and absf(actual.b - expected.b) <= CHANNEL_TOLERANCE
 
 
 func _check(condition: bool, description: String) -> void:

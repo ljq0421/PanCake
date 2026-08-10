@@ -1,0 +1,48 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept and background-only correction",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "item_icon",
+  "shared_style": "rounded chibi Chinese breakfast-game bao sprites, clean deep warm-brown outlines, warm cel-shaded highlights, polished readable steamed-dough materials",
+  "shared_constraints": "transparent 256x256 final Sprite; one centered wrapped bao; no text, labels, people, floor, cast shadow, contact shadow, reflection, scene background, plate, tray, basket, or steamer",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "raw_state_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-scrub=8",
+    "cooked_state_parameters": "auto-key border on ImageGen-corrected pure-blue source; hard tolerance=220; despill; low-alpha-scrub=8",
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 230x230 safe area centered on the 256x256 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "vegetable_bun_steaming_five_area_v2",
+      "dough_reference": "res://resources/art/ingredients/steamer/mantou_steaming_five_area_v2.png",
+      "imagegen_output": "exec-95acedb7-73ad-4ffe-bfba-5e5f71c2b755.png",
+      "semantic_contract": "one raw wrapped vegetable bao with eight broad radial pleats and one restrained dark-green filling glimpse at the center; no steam",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "vegetable_bun_cooked_five_area_v2",
+      "state_reference": "vegetable_bun_steaming_five_area_v2",
+      "initial_imagegen_output": "exec-3f858c11-fab4-4a40-9bd3-f0b447590d57.png",
+      "background_correction_imagegen_output": "exec-f7f2cc1c-f6ec-4412-8a11-21fb49d3844c.png",
+      "semantic_contract": "the same vegetable bao after cooking, plumper and brighter with the same green center and exactly two small steam wisps",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "meat_bun_steaming_five_area_v2",
+      "dough_reference": "res://resources/art/ingredients/steamer/mantou_steaming_five_area_v2.png",
+      "contrast_reference": "vegetable_bun_steaming_five_area_v2",
+      "imagegen_output": "exec-dc84ea9a-a6e9-410a-a212-c131a040c331.png",
+      "semantic_contract": "one raw wrapped meat bao with ten narrower curved spiral pleats and one restrained warm-brown minced-meat filling glimpse at the center; no steam and no green",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "meat_bun_cooked_five_area_v2",
+      "state_reference": "meat_bun_steaming_five_area_v2",
+      "initial_imagegen_output": "exec-5b0592f6-e57b-4d10-b5ed-2d02c2c892e5.png",
+      "background_correction_imagegen_output": "exec-0bca9551-6bc2-4fbd-960b-8efc0d4bd0ce.png",
+      "semantic_contract": "the same meat bao after cooking, plumper and brighter with the same warm-brown center and exactly two small steam wisps; no green",
+      "final_canvas": [256, 256]
+    }
+  ]
+}

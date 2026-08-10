@@ -30,7 +30,10 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	_check_five_zone_layout(workstation)
+	_check_egg_crack_staging(workstation)
 	_check_hud_layout(workstation)
+	_check_customer_and_summary_layout(workstation)
+	_check_ingredient_drag_visuals(workstation)
 	_check_order_card_runtime_content(workstation)
 	_check_material_grid(workstation)
 	_check_opening_day_controls(workstation)
@@ -51,6 +54,8 @@ func _check_five_zone_layout(workstation: Node) -> void:
 	for art_name in [&"FreshSoyMilkMachine", &"FreshSoyMilkLock", &"YoutiaoFryer", &"YoutiaoLock", &"PackagedDrinkLock", &"SteamerLock"]:
 		var art := workstation.get_node_or_null("SafeArea/FiveAreaStationArtwork/%s" % art_name) as TextureRect
 		_check(art != null and art.texture != null, "%s is a real workstation artwork layer" % art_name)
+	var youtiao_fryer := workstation.get_node_or_null("SafeArea/FiveAreaStationArtwork/YoutiaoFryer") as TextureRect
+	_check(youtiao_fryer != null and youtiao_fryer.texture != null and youtiao_fryer.texture.resource_path.ends_with("youtiao_fryer_tier_1_five_area_v3.png"), "the unlocked youtiao bay uses the approved simplified beginner fryer artwork")
 	var expected_locked_areas := {
 		&"FreshSoyMilkLockedClickLayer": &"area.fresh_soy_milk",
 		&"YoutiaoLockedClickLayer": &"area.youtiao",
@@ -69,8 +74,14 @@ func _check_five_zone_layout(workstation: Node) -> void:
 	var pancake_surface := workstation.get_node_or_null("SafeArea/PanBase/PancakeSurface") as Control
 	var sweet_flour_sauce_brush := workstation.get_node_or_null("SafeArea/LeftRack/SauceBrushButton") as Button
 	var griddle := workstation.get_node_or_null("SafeArea/PanBase/GriddleArtwork") as Sprite2D
+	var egg_crack_effect := workstation.get_node_or_null("SafeArea/PanBase/PancakeSurface/EggCrackEffect") as AnimatedSprite2D
 	_check(pan_base != null and pancake_surface != null and StringName(pancake_surface.get_meta(&"area_id", &"")) == &"area.pancake" and bool(pancake_surface.get_meta(&"station_click_layer", false)) and Rect2(pan_base.position, pan_base.size).intersects(CENTRAL_PAN_BAY) and _rect_matches(pan_base, Rect2(750.0, 562.0, 420.0, 382.0)) and _rect_matches(pancake_surface, Rect2(40.0, 40.0, 340.0, 340.0)) and griddle != null and griddle.texture != null and griddle.texture.resource_path.ends_with("griddle_base_angled_ellipse_v3.png") and griddle.scale == Vector2(0.41, 0.41), "the centered pancake surface is the fifth stable area click layer")
 	_check(sweet_flour_sauce_brush != null and StringName(sweet_flour_sauce_brush.get_meta(&"stock_id", &"")) == &"sweet_flour_sauce" and bool(sweet_flour_sauce_brush.get_meta(&"station_click_layer", false)), "SweetFlourSauceBrush is the established LeftRack sauce input and is not a material slot")
+	_check(egg_crack_effect != null and egg_crack_effect.sprite_frames != null and egg_crack_effect.sprite_frames.get_frame_count(&"crack") == 2 and not egg_crack_effect.sprite_frames.get_animation_loop(&"crack"), "egg crack effect owns two non-looping scene-bound frames")
+	if egg_crack_effect != null and egg_crack_effect.sprite_frames != null:
+		var crack_frame_one := egg_crack_effect.sprite_frames.get_frame_texture(&"crack", 0)
+		var crack_frame_two := egg_crack_effect.sprite_frames.get_frame_texture(&"crack", 1)
+		_check(crack_frame_one != null and crack_frame_one.resource_path.ends_with("egg_cracked_raw_v1_five_area_v2.png") and crack_frame_two != null and crack_frame_two.resource_path.ends_with("egg_cracked_raw_v2_five_area_v2.png"), "egg crack effect binds the two approved 256-by-256 artwork assets in order")
 	var customer := workstation.get_node_or_null("SafeArea/CustomerPortrait") as Control
 	var order_card := workstation.get_node_or_null("SafeArea/OrderCard") as Control
 	_check(_rect_matches(customer, Rect2(800.0, 222.0, 270.0, 406.0)), "customer remains close while ending above the countertop edge")
@@ -84,6 +95,25 @@ func _check_five_zone_layout(workstation: Node) -> void:
 	for icon_index in 8:
 		var icon := workstation.get_node_or_null("SafeArea/OrderCard/OrderIngredient%02d" % (icon_index + 1)) as TextureRect
 		_check(icon != null, "OrderIngredient%02d is a stable ingredient slot" % (icon_index + 1))
+
+
+func _check_egg_crack_staging(workstation: Node) -> void:
+	var pancake_surface := workstation.get_node("SafeArea/PanBase/PancakeSurface") as Control
+	var egg_crack_effect := pancake_surface.get_node("EggCrackEffect") as AnimatedSprite2D
+	var egg_crack_artwork := pancake_surface.get_node("EggCrackArtwork") as Sprite2D
+	var fixed_landing_position := pancake_surface.size * 0.5
+	var expected_stage_position := Vector2(fixed_landing_position.x, 0.0)
+	workstation.call("_play_egg_crack_effect", fixed_landing_position)
+	_check(egg_crack_effect.position.is_equal_approx(expected_stage_position), "egg crack effect uses the lowered fixed stage at the horizontal center of the griddle")
+	_check(egg_crack_artwork.position.is_equal_approx(fixed_landing_position), "raw egg landing artwork uses the fixed pancake center")
+	workstation.call("_stop_egg_crack_effect")
+	var parameters: RefCounted = workstation.get("parameters")
+	var pancake_top := pancake_surface.size.y * 0.5 - pancake_surface.size.x * float(parameters.get("pan_height_ratio")) * 0.5
+	var frame_texture := egg_crack_effect.sprite_frames.get_frame_texture(&"crack", 0)
+	var maximum_effect_top := expected_stage_position.y - frame_texture.get_height() * 0.55 * 1.10 * 0.5
+	var maximum_effect_bottom := expected_stage_position.y + frame_texture.get_height() * 0.55 * 1.10 * 0.5
+	_check(not pancake_surface.clip_contents and maximum_effect_top < 0.0 and maximum_effect_bottom > pancake_top, "lowered egg crack effect can extend above the control while reaching the pancake's upper edge at maximum rebound scale")
+	_check(not egg_crack_effect.visible and not egg_crack_artwork.visible, "stopping the staged crack effect clears both transient egg visuals")
 
 
 func _check_hud_layout(workstation: Node) -> void:
@@ -120,23 +150,78 @@ func _check_hud_layout(workstation: Node) -> void:
 	_check(tray_clear, "holding tray does not cover the griddle, sauce, or material row")
 
 
+func _check_customer_and_summary_layout(workstation: Node) -> void:
+	var customer_strip := workstation.get_node("SafeArea/CustomerStrip") as Control
+	var slots: Array[Button] = [
+		workstation.get_node("SafeArea/CustomerStrip/CustomerSlot1") as Button,
+		workstation.get_node("SafeArea/CustomerStrip/CustomerSlot2") as Button,
+		workstation.get_node("SafeArea/CustomerStrip/CustomerSlot3") as Button,
+	]
+	_check(slots.all(func(slot: Button) -> bool: return slot != null and customer_strip.get_global_rect().encloses(slot.get_global_rect()) and slot.get_node_or_null("Patience") is ProgressBar), "customer strip owns three clickable scene nodes with independent patience bars; strip=%s slots=%s" % [customer_strip.get_global_rect(), slots.map(func(slot: Button): return slot.get_global_rect())])
+	var summary := workstation.get_node("SafeArea/OrderSummaryCard") as Control
+	var status := workstation.get_node("SafeArea/GlobalStatusLabel") as Control
+	var bottom := workstation.get_node("SafeArea/BottomStrip") as Control
+	summary.visible = true
+	_check(_rect_matches(summary, Rect2(1090.0, 136.0, 730.0, 58.0)) and not summary.get_global_rect().intersects(status.get_global_rect()) and not summary.get_global_rect().intersects(bottom.get_global_rect()), "compact previous-order card occupies the right side of the global row without covering production feedback; summary=%s status=%s bottom=%s" % [summary.get_global_rect(), status.get_global_rect(), bottom.get_global_rect()])
+	workstation.set("_order_summary_visible", true)
+	workstation.set("_result_detail_open", false)
+	_check(not bool(workstation.call("_formal_order_time_paused")), "opening the compact previous-order summary does not pause customer patience")
+	workstation.set("_result_detail_open", true)
+	_check(not bool(workstation.call("_formal_order_time_paused")), "opening previous-order details does not pause customer patience")
+	workstation.set("_result_detail_open", false)
+	workstation.set("_order_summary_visible", false)
+	summary.visible = false
+
+
+func _check_ingredient_drag_visuals(workstation: Node) -> void:
+	var layer := workstation.get_node("SafeArea/PanBase/PancakeSurface/IngredientLayer") as IngredientLayer
+	var preview := workstation.get_node("SafeArea/IngredientDragPreview") as TextureRect
+	var result_panel := workstation.get_node("SafeArea/ResultPanel") as Control
+	for ingredient_type in IngredientModel.TYPES:
+		_check(layer.texture_for(ingredient_type) != null, "%s has a non-empty shared drag and pancake texture" % IngredientModel.display_name(ingredient_type))
+	_check(preview.z_index > (workstation.get_node("SafeArea/IngredientRack") as Control).z_index and preview.z_index < result_panel.z_index, "ingredient drag preview renders above the workstation controls and below modal details")
+	var before_stock: int = int(workstation.ingredient_stock_model.current(IngredientModel.CORIANDER))
+	workstation.set("_ingredient_drag_type", IngredientModel.CORIANDER)
+	preview.texture = layer.texture_for(IngredientModel.CORIANDER)
+	preview.visible = true
+	var motion := InputEventMouseMotion.new()
+	motion.position = Vector2(640.0, 420.0)
+	workstation.call("_input", motion)
+	_check(preview.visible and preview.global_position.distance_to(motion.position - preview.size * 0.5) <= 0.05, "recognized ingredient drag preview remains visible and follows the pointer")
+	var cancel := InputEventMouseButton.new()
+	cancel.button_index = MOUSE_BUTTON_RIGHT
+	cancel.pressed = true
+	workstation.call("_input", cancel)
+	_check(not preview.visible and preview.texture == null and workstation.ingredient_stock_model.current(IngredientModel.CORIANDER) == before_stock, "cancel immediately hides the drag preview without consuming stock")
+
+
 func _check_order_card_runtime_content(workstation: Node) -> void:
 	var coin := workstation.get_node_or_null("SafeArea/OrderCard/OrderCoinIcon") as TextureRect
 	var amount := workstation.get_node_or_null("SafeArea/OrderCard/OrderAmountLabel") as Label
 	var first_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish1") as TextureRect
 	var second_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish2") as TextureRect
+	var third_dish := workstation.get_node_or_null("SafeArea/OrderCard/OrderDish3") as TextureRect
+	var first_dish_target := workstation.get_node_or_null("SafeArea/OrderCard/OrderDishTarget1") as Button
+	var second_dish_target := workstation.get_node_or_null("SafeArea/OrderCard/OrderDishTarget2") as Button
+	var third_dish_target := workstation.get_node_or_null("SafeArea/OrderCard/OrderDishTarget3") as Button
 	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
 	var patience := workstation.get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
 	var legacy_patience := workstation.get_node_or_null("SafeArea/PatienceBar") as ProgressBar
+	_check(first_dish_target != null and second_dish_target != null and third_dish_target != null and first_dish_target.get_global_rect() == first_dish.get_global_rect() and second_dish_target.get_global_rect() == second_dish.get_global_rect() and third_dish_target.get_global_rect() == third_dish.get_global_rect(), "order card owns three scene-authored product hint wells")
+	_check(first_dish_target.disabled and second_dish_target.disabled and third_dish_target.disabled and first_dish_target.mouse_filter == Control.MOUSE_FILTER_IGNORE and second_dish_target.mouse_filter == Control.MOUSE_FILTER_IGNORE and third_dish_target.mouse_filter == Control.MOUSE_FILTER_IGNORE, "all order-card item wells are read-only and cannot deliver products")
+	workstation.call("_on_order_dish_pressed", 1)
+	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("空"), "clicking an empty order-card item gives a concrete reason")
+	workstation.call("_on_order_dish_pressed", 0)
+	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("仅用于查看"), "compatibility invocation explains that physical tray drag is the only delivery route")
 	var patience_text := workstation.get_node_or_null("SafeArea/PatienceTextLabel") as Label
 	_check(coin != null and coin.visible and coin.texture != null and amount != null and not amount.text.is_empty(), "runtime order data fills the coin and amount in the card header")
-	_check(first_dish != null and first_dish.visible and first_dish.texture != null and second_dish != null and not second_dish.visible, "a current single-dish order fills only the first of two reserved dish wells")
+	_check(first_dish != null and first_dish.visible and first_dish.texture != null and second_dish != null and not second_dish.visible and third_dish != null and not third_dish.visible, "a current single-dish order fills only the first of three reserved dish wells")
 	var visible_ingredients := 0
 	for icon_index in 8:
 		var icon := workstation.get_node_or_null("SafeArea/OrderCard/OrderIngredient%02d" % (icon_index + 1)) as TextureRect
 		if icon != null and icon.visible and icon.texture != null:
 			visible_ingredients += 1
-	_check(visible_ingredients > 0 and visible_ingredients <= 4, "runtime single-dish ingredients occupy only that dish's four color-grouped hint slots")
+	_check(visible_ingredients > 0 and visible_ingredients <= 3, "runtime single-dish ingredients stay within that dish's compact hint group")
 	_check(heart != null and heart.visible and patience != null and not patience.visible and legacy_patience != null and not legacy_patience.visible and patience_text != null and not patience_text.visible and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the order card is the sole patience entry and the first tutorial disables its countdown")
 
 
@@ -202,7 +287,7 @@ func _check_player_feedback_controls(workstation: Node, game_session: Node) -> v
 	var legacy_auto_button := workstation.get_node_or_null("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
 	_check(spreader_button != null and spreader_button.visible and (spreader_button.get_node("Label") as Label).text.contains("摊饼器"), "the T-shaped spreader remains available after buying the press")
 	_check(press_button != null and press_button.visible and not press_button.disabled and press_button.text == "压饼器", "the press has its own visible one-shot control")
-	_check(sauce_button != null and sauce_button.visible and not sauce_button.disabled and (sauce_button.get_node("Label") as Label).text == "自动酱刷", "the automatic brush upgrade replaces the existing sauce-brush control")
+	_check(sauce_button != null and not sauce_button.visible and sauce_button.disabled and sauce_button.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the automatic brush upgrade moves onto sauce-bottle release instead of replacing the hidden brush control")
 	_check(legacy_auto_button != null and not legacy_auto_button.visible, "the duplicate automatic-brush control stays hidden")
 	_check((workstation.get_node("SafeArea/BottomStrip") as Control).visible, "the shared interaction feedback strip is visible during normal play")
 	if press_button != null:
@@ -221,9 +306,7 @@ func _check_player_feedback_controls(workstation: Node, game_session: Node) -> v
 	_check(float(press_result.get("coverage_ratio", 0.0)) >= 0.79 and is_equal_approx(float(workstation.p1_session.elapsed_seconds), elapsed_before_press + 1.2), "pressing creates full standard coverage and keeps its time cost")
 	var repeat_result: Dictionary = workstation.call("use_press_spreader")
 	_check(not bool(repeat_result.get("success", false)) and StringName(repeat_result.get("reason", &"")) == &"already_used", "the press remains limited to once per pancake")
-	if sauce_button != null:
-		sauce_button.emit_signal("pressed")
-	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("翻面后"), "clicking the automatic sauce brush outside its window explains when it can be used")
+	_check(sauce_button != null and not sauce_button.visible and sauce_button.disabled and sauce_button.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the separate sauce-brush button is removed from the player interaction path")
 	_check((workstation.get_node("SafeArea/GlobalStatusLabel") as Label).text.contains("熟练度（煎饼）"), "the persistent top status explicitly shows pancake mastery")
 	var bill_size_before := (workstation.get_node("SafeArea/DailyBillPanel") as Control).size
 	workstation.call("_refresh_growth_section", "已扣费并预订：对应购买位将在明日激活。")
@@ -247,18 +330,13 @@ func _check_player_feedback_controls(workstation: Node, game_session: Node) -> v
 			"score": 90.0,
 		}))
 		workstation.call("_refresh_pancake_holding_tray")
-		workstation.call("_serve_pancake_from_holding_tray", 0)
-		_check(bool(Dictionary(stored).get("success", false)) and workstation.p1_session.phase == P1Session.Phase.HANDOFF, "a mismatched tray pancake can start delivery while another pancake is in progress")
-		_check(is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "starting tray delivery does not mutate the pancake on the griddle")
-		workstation.p1_session.begin_payment()
-		workstation.p1_session.finish_payment()
-		workstation.call("_finalize_completed_payment", workstation.p1_session.result.duplicate(true))
-		_check(workstation.p1_session.phase == production_phase_before and is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "the next customer resumes the exact griddle phase and pancake mass after tray payment")
-	var tray_slot := workstation.get_node_or_null("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
-	_check(tray_slot != null and tray_slot.visible and not tray_slot.disabled, "empty holding slots remain clickable to explain how to store and deliver a pancake")
-	if tray_slot != null:
-		tray_slot.emit_signal("pressed")
-	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "clicking an empty holding slot gives a visible storage instruction")
+		workstation.call("_on_customer_slot_pressed", 0)
+		_check(bool(Dictionary(stored).get("success", false)) and workstation.p1_session.phase == production_phase_before, "clicking the focused customer does not deliver the displayed tray pancake")
+		workstation.call("_on_order_dish_pressed", 0)
+		_check(workstation.p1_session.phase == production_phase_before and (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("实体成品"), "order-card compatibility call cannot start delivery while production continues")
+		_check(is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "read-only order card does not mutate the pancake on the griddle")
+	var tray_slot := workstation.get_node_or_null("SafeArea/PancakeHoldingTray/PancakeHoldingSlot02") as Button
+	_check(tray_slot != null and tray_slot.visible and tray_slot.disabled and tray_slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "empty holding slots remain visible but cannot become delivery controls")
 
 
 func _check_no_egg_waffle_data(workstation: Node) -> void:

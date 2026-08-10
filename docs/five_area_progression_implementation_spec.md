@@ -375,67 +375,67 @@ static func validate_catalog() -> PackedStringArray
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.tool.pancake.wide_spreader` | 安装 | 12 | D2，Q(pancake)4 | 摊面有效宽度×1.65；升级外观和指示圈同步放大 |
-| `growth.add_on.pancake.red_chili` | 内容 | 8 | D2，Q(pancake)5 | 解锁辣酱库存与订单 |
-| `growth.add_on.pancake.ham_sausage` | 内容 | 12 | D4，Q(pancake)8 | 解锁火腿肠 |
-| `growth.equipment.pancake.intermediate` | 安装 | 24 | D4，Q(pancake)8 | 扩大合格火候窗口 |
-| `growth.add_on.pancake.meat_floss` | 内容 | 18 | D6，Q(pancake)12 | 解锁肉松 |
-| `growth.capacity.pancake_holding_tray.two_slots` | 内容 | 32 | D8，Q(pancake)12，T(youtiao) | 开放两格托盘 |
-| `growth.add_on.pancake.coriander` | 内容 | 10 | D8，Q(pancake)16 | 解锁香菜 |
-| `growth.add_on.pancake.preserved_mustard` | 内容 | 12 | D9，Q(pancake)18 | 解锁榨菜 |
-| `growth.add_on.pancake.pork_tenderloin` | 内容 | 28 | D10，Q(pancake)20 | 解锁里脊肉 |
-| `growth.automation.pancake.auto_sauce_brush` | 安装 | 36 | D12，Q(pancake)20，A(pancake)5 | 开放自动酱刷 |
-| `growth.equipment.pancake.advanced` | 安装 | 48 | ALL，Q(pancake)30，A(pancake)10 | 快速回温 |
-| `growth.automation.pancake.press_once` | 安装 | 60 | ALL，A(pancake)20 | 每张饼一次标准摊面 |
-| `growth.capacity.stock.intermediate` | 内容 | 20 | D7，R80 | 库存上限提升到10 |
+| `growth.tool.pancake.wide_spreader` | 安装 | 12 | D2 | 摊面有效宽度×1.65；升级外观和指示圈同步放大 |
+| `growth.add_on.pancake.red_chili` | 内容 | 8 | R10 | 解锁辣酱库存与订单 |
+| `growth.add_on.pancake.ham_sausage` | 内容 | 12 | D4 | 解锁火腿肠 |
+| `growth.equipment.pancake.intermediate` | 安装 | 24 | A(pancake)2 | 扩大合格火候窗口 |
+| `growth.add_on.pancake.meat_floss` | 内容 | 18 | R45 | 解锁肉松 |
+| `growth.capacity.pancake_holding_tray.two_slots` | 内容 | 32 | D8，T(youtiao) | 开放两格托盘 |
+| `growth.add_on.pancake.coriander` | 内容 | 10 | D8 | 解锁香菜 |
+| `growth.add_on.pancake.preserved_mustard` | 内容 | 12 | R100 | 解锁榨菜 |
+| `growth.add_on.pancake.pork_tenderloin` | 内容 | 28 | D10 | 解锁里脊肉 |
+| `growth.automation.pancake.auto_sauce_brush` | 安装 | 36 | A(pancake)5 | 开放自动酱刷 |
+| `growth.equipment.pancake.advanced` | 安装 | 48 | ALL，A(pancake)10 | 快速回温 |
+| `growth.automation.pancake.press_once` | 安装 | 60 | ALL，A(pancake)20，需宽幅摊饼器/中级鏊子/自动酱刷 | 每张饼一次标准摊面 |
+| `growth.capacity.stock.intermediate` | 内容 | 20 | R80 | 库存上限提升到10 |
 | `growth.capacity.stock.advanced` | 内容 | 40 | ALL，R200，需中级容量 | 库存上限提升到14 |
 
 #### 成品饮品
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.area.packaged_drink` | 安装 | 30 | D3，R20，Q(pancake)6，T(pancake) | 解锁区域、基础设备和纯牛奶 |
-| `growth.product.packaged_drink.soy_milk` | 内容 | 12 | Q(drink)6 | 解锁成品豆奶 |
-| `growth.equipment.packaged_drink.intermediate` | 安装 | 24 | Q(drink)10 | 2位、1秒加热 |
-| `growth.product.packaged_drink.walnut` | 内容 | 18 | Q(drink)15 | 解锁核桃乳 |
-| `growth.product.packaged_drink.black_sesame` | 内容 | 24 | Q(drink)25 | 解锁黑芝麻乳 |
-| `growth.equipment.packaged_drink.advanced` | 安装 | 48 | ALL，Q(drink)30 | 4位、持续保温 |
+| `growth.area.packaged_drink` | 安装 | 30 | Q(pancake)6，T(pancake) | 解锁区域、基础设备和纯牛奶 |
+| `growth.product.packaged_drink.soy_milk` | 内容 | 12 | R30 | 解锁成品豆奶 |
+| `growth.equipment.packaged_drink.intermediate` | 安装 | 24 | Q(drink)6 | 2位、1秒加热 |
+| `growth.product.packaged_drink.walnut` | 内容 | 18 | D11 | 解锁核桃乳 |
+| `growth.product.packaged_drink.black_sesame` | 内容 | 24 | R160 | 解锁黑芝麻乳 |
+| `growth.equipment.packaged_drink.advanced` | 安装 | 48 | ALL，最高连续正确温度 8 | 4位、持续保温 |
 
 #### 油条
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.area.youtiao` | 安装 | 60 | D6，R60，Q(drink)4，T(drink) | 解锁区域、基础炸锅和原味油条 |
-| `growth.assist.youtiao.temperature_indicator` | 安装 | 16 | Q(youtiao)4 | 强化火候区间 |
-| `growth.recipe.youtiao.oil_cake` | 内容 | 18 | Q(youtiao)4 | 解锁油饼 |
+| `growth.area.youtiao` | 安装 | 60 | R60，T(drink) | 解锁区域、基础炸锅和原味油条 |
+| `growth.assist.youtiao.temperature_indicator` | 安装 | 16 | R70 | 强化火候区间 |
+| `growth.recipe.youtiao.oil_cake` | 内容 | 18 | D7 | 解锁油饼 |
 | `growth.equipment.youtiao.intermediate` | 安装 | 42 | Q(youtiao)6 | 加工12→9秒 |
-| `growth.recipe.youtiao.sugar_oil_cake` | 内容 | 24 | Q(youtiao)10 | 解锁糖油饼 |
-| `growth.automation.youtiao.auto_lift` | 安装 | 54 | ALL，Q(youtiao)15，A(youtiao)5 | 熟成自动升篮 |
-| `growth.equipment.youtiao.advanced` | 安装 | 72 | ALL，Q(youtiao)25，A(youtiao)8 | 容量2→4，不自动升篮 |
-| `growth.automation.youtiao.auto_load` | 安装 | 66 | ALL，Q(youtiao)25，A(youtiao)10 | 自动装载已确认批次 |
+| `growth.recipe.youtiao.sugar_oil_cake` | 内容 | 24 | R140 | 解锁糖油饼 |
+| `growth.automation.youtiao.auto_lift` | 安装 | 54 | ALL，A(youtiao)5 | 熟成自动升篮 |
+| `growth.equipment.youtiao.advanced` | 安装 | 72 | ALL，A(youtiao)8 | 容量2→4，不自动升篮 |
+| `growth.automation.youtiao.auto_load` | 安装 | 66 | ALL，A(youtiao)10，需自动升篮 | 自动装载已确认批次 |
 
 #### 现磨豆浆
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.area.fresh_soy_milk` | 安装 | 90 | D10，R120，Q(youtiao)4，T(youtiao) | 解锁区域、基础设备和黄豆豆浆 |
-| `growth.recipe.fresh_soy_milk.black_bean` | 内容 | 18 | Q(soy)4 | 解锁黑豆豆浆 |
+| `growth.area.fresh_soy_milk` | 安装 | 90 | D10，T(youtiao) | 解锁区域、基础设备和黄豆豆浆 |
+| `growth.recipe.fresh_soy_milk.black_bean` | 内容 | 18 | D10 | 解锁黑豆豆浆 |
 | `growth.equipment.fresh_soy_milk.intermediate` | 安装 | 54 | Q(soy)6 | 加工5→3秒 |
-| `growth.recipe.fresh_soy_milk.red_bean` | 内容 | 24 | Q(soy)10 | 解锁红豆豆浆 |
-| `growth.recipe.fresh_soy_milk.multigrain` | 内容 | 30 | Q(soy)18 | 解锁五谷豆浆 |
-| `growth.automation.fresh_soy_milk.auto_water_start` | 安装 | 60 | ALL，Q(soy)15，A(soy)5 | 自动加水并启动 |
-| `growth.equipment.fresh_soy_milk.advanced` | 安装 | 84 | ALL，Q(soy)25，A(soy)8 | 容量2→4并保温 |
-| `growth.automation.fresh_soy_milk.auto_cup_rack` | 安装 | 72 | ALL，Q(soy)25，A(soy)10 | 自动接杯到4格输出架 |
+| `growth.recipe.fresh_soy_milk.red_bean` | 内容 | 24 | R150 | 解锁红豆豆浆 |
+| `growth.recipe.fresh_soy_milk.multigrain` | 内容 | 30 | D16 | 解锁五谷豆浆 |
+| `growth.automation.fresh_soy_milk.auto_water_start` | 安装 | 60 | ALL，A(soy)5 | 自动加水并启动 |
+| `growth.equipment.fresh_soy_milk.advanced` | 安装 | 84 | ALL，A(soy)8 | 容量2→4并保温 |
+| `growth.automation.fresh_soy_milk.auto_cup_rack` | 安装 | 72 | ALL，A(soy)10，需自动加水启动 | 自动接杯到4格输出架 |
 
 #### 蒸笼
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.area.steamer` | 安装 | 120 | D14，R180，Q(soy)4，T(soy) | 解锁区域、基础蒸笼和馒头 |
-| `growth.recipe.steamer.vegetable_bun` | 内容 | 24 | Q(steamer)6 | 解锁菜包 |
+| `growth.area.steamer` | 安装 | 120 | Q(soy)4，T(soy) | 解锁区域、基础蒸笼和馒头 |
+| `growth.recipe.steamer.vegetable_bun` | 内容 | 24 | D15 | 解锁菜包 |
 | `growth.equipment.steamer.intermediate` | 安装 | 66 | Q(steamer)9 | 2层、时间×0.75 |
-| `growth.recipe.steamer.meat_bun` | 内容 | 36 | Q(steamer)14 | 解锁肉包 |
-| `growth.equipment.steamer.advanced` | 安装 | 108 | Q(steamer)25，A(steamer)8 | 4层、熟成层自动停汽 |
+| `growth.recipe.steamer.meat_bun` | 内容 | 36 | R200 | 解锁肉包 |
+| `growth.equipment.steamer.advanced` | 安装 | 108 | A(steamer)8 | 4层、熟成层自动停汽 |
 
 ### 5.5 目录校验规则
 
@@ -671,7 +671,31 @@ func begin_next_business_day() -> Dictionary
 }
 ```
 
-`limit_total` 限制总候选数；UI 只按 `recommended` 的顺序展示，其他三个数组保留为兼容分组字段。
+`limit_total` 限制总候选数；UI 只按 `recommended` 的顺序展示，其他三个数组保留为兼容分组字段。每个候选额外返回从零开始的 `route_index`、`pending_activation` 和 `coin_guarantee`。
+
+候选来自目录常量 `FIXED_GROWTH_ROUTE`，不得按价格、缺口、金币、口碑、熟练度或可购买性重新排序，也不得用后续可购买项替换当前项。遍历规则只有两条：
+
+1. 已激活/已拥有项跳过；
+2. 已预订但尚未激活项不跳过，继续占据原路线位置。
+
+日结关闭后以固定路线最靠前的三项作为唯一保底判定窗口。如果三项中没有任何一项已经可购买，也没有任何一项仅缺金币，且路线首项对应的安装位/内容位仍为空，则首项返回 `coin_guarantee = true`：保留目录原价，忽略营业日、口碑、区域、前置成长、教学、五区全开和熟练度门槛，只保留金币不足与购买位占用。该例外不得改变三张卡的 ID、顺序或数量；余额不足时显示“金币 x/y”，余额足够时允许预订并仍于下一营业日生效。首项已预订、对应购买位已占用或路线已完成时不生成额外保底项。`growth_recommendations()`、`purchase_status()` 和 `purchase()` 必须复用同一个有效购买状态。
+
+固定路线的 10 个三项批次为：
+
+1. 宽幅摊饼器、辣椒酱、成品饮品柜；
+2. 宽容火候鏊子、火腿肠、成品豆奶；
+3. 双位饮品加热器、肉松、油条炸锅；
+4. 油温提示、油饼、库存容量 10；
+5. 快速油条炸锅、香菜、现磨豆浆机；
+6. 黑豆豆浆、快速豆浆机、两格暂存托盘；
+7. 榨菜、核桃乳、多层蒸笼；
+8. 菜包、快速双层蒸笼、里脊肉；
+9. 糖油饼、红豆豆浆、黑芝麻乳；
+10. 肉包、五谷豆浆、自动酱刷。
+
+满台后依次为：高级鏊子、单次压饼、库存容量 14、高级饮品加热器、自动升篮、高级油条锅、自动投胚、自动加水、高级豆浆机、自动接杯、高级蒸笼。
+
+卡面、悬停和按钮禁用状态必须由同一个展示状态生成。普通可购买项三者统一为“可预订，明日生效”；金币保底项标记“安装位/内容位 · 金币保底”并始终显示金币 `x/y`。其他不可购买项的卡面取 `missing_requirements` 的第一项，悬停列出全部缺口。所有数值门槛使用实际进度 `x/y`；未知 ID 或未知原因显示“成长配置异常，无法预订”并记录错误，不允许回退为“暂不满足条件”。
 
 ### 8.2 购买事务
 
@@ -680,7 +704,7 @@ func begin_next_business_day() -> Dictionary
 1. 查询目录；
 2. 判断是否已拥有；
 3. 判断目标购买位是否为空；
-4. 使用同一个准入函数检查日数、口碑、教学、前置成长和熟练度；
+4. 使用同一个有效准入函数检查日数、口碑、教学、前置成长和熟练度；若目标是当前日结金币保底项，则由该函数过滤这些非金币条件；
 5. 检查金币；
 6. 一次性扣费并写入对应 pending 字段；
 7. 返回扣费、购买位和激活日；

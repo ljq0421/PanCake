@@ -77,7 +77,7 @@ text = "熟练度 · 正确温度 0 · 当前连对 0 · 最高连对 0"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.69, 0.77, 0.75, 1)
 theme_override_font_sizes/font_size = 15
-text = "常温：点击商品直接交付　·　加热：选商品后点击空位　·　冷却：只能报废"
+text = "旧生产页已退休；正式店面请拖动物理货道、加热位与顾客托盘"
 autowrap_mode = 2
 
 [node name="ProductShelf" type="GridContainer" parent="Margin/Content"]

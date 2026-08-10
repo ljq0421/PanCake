@@ -15,7 +15,7 @@ func _run() -> void:
 	_test_egg_spreading_and_score()
 	_test_egg_spread_performance()
 	_test_order_and_session_guards()
-	_test_toppings_skip_flip_and_begin_folding()
+	_test_unflipped_sauce_and_toppings_skip_flip()
 	_test_customer_reaction_persists_after_handoff()
 	_test_customer_queue_rotation()
 	_test_every_order_combination()
@@ -261,8 +261,27 @@ func _test_order_and_session_guards() -> void:
 		_check(bool(phase_handoff.get("success", false)) and bool(phase_resume.get("success", false)) and phase_session.phase == production_phase, "tray handoff preserves production phase %s" % str(production_phase))
 
 
-func _test_toppings_skip_flip_and_begin_folding() -> void:
+func _test_unflipped_sauce_and_toppings_skip_flip() -> void:
 	var order := OrderService.new().order_at(0)
+	var sauce_model := _uniform_pancake(48, 0.42)
+	var sauce_session := P1Session.new()
+	sauce_session.start(order)
+	sauce_session.confirm_spread(sauce_model)
+	var sauce_result := sauce_session.begin_sauce_and_fillings_without_flip()
+	var repeated_sauce_result := sauce_session.begin_sauce_and_fillings_without_flip()
+	_check(
+		bool(sauce_result.get("success", false))
+		and bool(sauce_result.get("without_flip", false))
+		and bool(repeated_sauce_result.get("success", false))
+		and bool(repeated_sauce_result.get("already_active", false))
+		and sauce_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		and not sauce_model.is_flipped,
+		"starting sauce before flipping enters an idempotent no-flip preparation stage"
+	)
+	var sauce_flip_result := sauce_session.request_flip(sauce_model, IngredientModel.new())
+	_check(not bool(sauce_flip_result.get("success", false)) and not sauce_model.is_flipped, "starting no-flip sauce permanently closes the flip path for this pancake")
+	_check(bool(sauce_session.begin_folding().get("success", false)) and sauce_session.phase == P1Session.Phase.FOLD, "no-flip sauce preparation still reaches guarded folding")
+
 	var model := _uniform_pancake(48, 0.42)
 	var ingredients := IngredientModel.new()
 	var session := P1Session.new()
@@ -270,13 +289,14 @@ func _test_toppings_skip_flip_and_begin_folding() -> void:
 	session.confirm_spread(model)
 	ingredients.place(IngredientModel.BAOCUI, Vector2(24, 24), 0.0, model)
 	_check(ingredients.has_toppings(), "non-egg ingredients are recognized as toppings")
-	var fold_result := session.begin_folding_after_topping(ingredients)
+	var preparation_result := session.begin_folding_after_topping(ingredients)
 	_check(
-		bool(fold_result.get("success", false))
-		and session.phase == P1Session.Phase.FOLD
+		bool(preparation_result.get("success", false))
+		and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
 		and not model.is_flipped,
-		"placing a topping before flipping skips the flip and enters folding"
+		"placing a topping before flipping skips the flip but keeps sauce and filling preparation open"
 	)
+	_check(bool(session.begin_folding().get("success", false)) and session.phase == P1Session.Phase.FOLD, "the first real fold action closes no-flip preparation")
 	var guarded_model := _uniform_pancake(48, 0.42)
 	var guarded_ingredients := IngredientModel.new()
 	var guarded_session := P1Session.new()
@@ -288,9 +308,9 @@ func _test_toppings_skip_flip_and_begin_folding() -> void:
 	_check(
 		not bool(flip_result.get("success", false))
 		and bool(flip_result.get("requires_folding", false))
-		and guarded_session.phase == P1Session.Phase.FOLD
+		and guarded_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
 		and not guarded_model.is_flipped,
-		"the flip action remains guarded if a topping was already placed"
+		"the guarded flip action keeps topping-first preparation open without flipping"
 	)
 
 
@@ -353,7 +373,7 @@ func _test_customer_queue_rotation() -> void:
 		and next_customer.order.id == &"chili_ham"
 		and waiting.size() == 2
 		and waiting[0].id == &"customer_03"
-		and waiting[1].id == &"customer_01",
+		and waiting[1].id == &"customer_04",
 		"completing an order advances the queue and replenishes its tail without a manual accept step"
 	)
 func _test_every_order_combination() -> void:

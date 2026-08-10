@@ -9,6 +9,52 @@ func _initialize() -> void:
 func _run() -> void:
 	_check(CATALOG.validate_catalog().is_empty(), "catalog validation")
 	_check(CATALOG.GROWTH_DEFINITIONS.size() == 41, "catalog contains exactly 41 stable growth definitions")
+	var expected_primary_gates := {
+		&"growth.tool.pancake.wide_spreader": "day:2",
+		&"growth.add_on.pancake.red_chili": "reputation:10",
+		&"growth.add_on.pancake.ham_sausage": "day:4",
+		&"growth.equipment.pancake.intermediate": "mastery:area.pancake:a_grade:2",
+		&"growth.add_on.pancake.meat_floss": "reputation:45",
+		&"growth.capacity.pancake_holding_tray.two_slots": "day:8",
+		&"growth.add_on.pancake.coriander": "day:8",
+		&"growth.add_on.pancake.preserved_mustard": "reputation:100",
+		&"growth.add_on.pancake.pork_tenderloin": "day:10",
+		&"growth.automation.pancake.auto_sauce_brush": "mastery:area.pancake:a_grade:5",
+		&"growth.equipment.pancake.advanced": "mastery:area.pancake:a_grade:10",
+		&"growth.automation.pancake.press_once": "mastery:area.pancake:a_grade:20",
+		&"growth.capacity.stock.intermediate": "reputation:80",
+		&"growth.capacity.stock.advanced": "reputation:200",
+		&"growth.area.packaged_drink": "mastery:area.pancake:qualified:6",
+		&"growth.product.packaged_drink.soy_milk": "reputation:30",
+		&"growth.equipment.packaged_drink.intermediate": "mastery:area.packaged_drink:correct_temperature:6",
+		&"growth.product.packaged_drink.walnut": "day:11",
+		&"growth.product.packaged_drink.black_sesame": "reputation:160",
+		&"growth.equipment.packaged_drink.advanced": "mastery:area.packaged_drink:correct_streak_best:8",
+		&"growth.area.youtiao": "reputation:60",
+		&"growth.assist.youtiao.temperature_indicator": "reputation:70",
+		&"growth.recipe.youtiao.oil_cake": "day:7",
+		&"growth.equipment.youtiao.intermediate": "mastery:area.youtiao:qualified:6",
+		&"growth.recipe.youtiao.sugar_oil_cake": "reputation:140",
+		&"growth.automation.youtiao.auto_lift": "mastery:area.youtiao:a_grade:5",
+		&"growth.equipment.youtiao.advanced": "mastery:area.youtiao:a_grade:8",
+		&"growth.automation.youtiao.auto_load": "mastery:area.youtiao:a_grade:10",
+		&"growth.area.fresh_soy_milk": "day:10",
+		&"growth.recipe.fresh_soy_milk.black_bean": "day:10",
+		&"growth.equipment.fresh_soy_milk.intermediate": "mastery:area.fresh_soy_milk:qualified:6",
+		&"growth.recipe.fresh_soy_milk.red_bean": "reputation:150",
+		&"growth.recipe.fresh_soy_milk.multigrain": "day:16",
+		&"growth.automation.fresh_soy_milk.auto_water_start": "mastery:area.fresh_soy_milk:a_grade:5",
+		&"growth.equipment.fresh_soy_milk.advanced": "mastery:area.fresh_soy_milk:a_grade:8",
+		&"growth.automation.fresh_soy_milk.auto_cup_rack": "mastery:area.fresh_soy_milk:a_grade:10",
+		&"growth.area.steamer": "mastery:area.fresh_soy_milk:qualified:4",
+		&"growth.recipe.steamer.vegetable_bun": "day:15",
+		&"growth.equipment.steamer.intermediate": "mastery:area.steamer:qualified:9",
+		&"growth.recipe.steamer.meat_bun": "reputation:200",
+		&"growth.equipment.steamer.advanced": "mastery:area.steamer:a_grade:8",
+	}
+	_check(expected_primary_gates.size() == 41, "growth gate baseline covers all 41 items")
+	for growth_id in expected_primary_gates:
+		_check(_primary_gate_signature(CATALOG.growth_definition(growth_id)) == expected_primary_gates[growth_id], "%s keeps its authored primary gate" % growth_id)
 	for device_id in CATALOG.DEVICE_DEFINITIONS:
 		for tier in range(3):
 			_check(not CATALOG.device_tier(StringName(device_id), tier).is_empty(), "%s owns continuous tier %d" % [device_id, tier])
@@ -47,3 +93,17 @@ func _run() -> void:
 func _check(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+
+func _primary_gate_signature(definition: Dictionary) -> String:
+	var gates: Array[String] = []
+	if definition.has("min_day"):
+		gates.append("day:%d" % int(definition.get("min_day", 0)))
+	if definition.has("min_reputation"):
+		gates.append("reputation:%d" % int(definition.get("min_reputation", 0)))
+	for area_id_variant in Dictionary(definition.get("requires_mastery", {})):
+		var area_id := StringName(area_id_variant)
+		for metric_variant in Dictionary(definition.get("requires_mastery", {})).get(area_id, {}):
+			var metric := StringName(metric_variant)
+			gates.append("mastery:%s:%s:%d" % [area_id, metric, int(Dictionary(definition.get("requires_mastery", {})).get(area_id, {}).get(metric, 0))])
+	return ",".join(gates)

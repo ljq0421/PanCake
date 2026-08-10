@@ -72,15 +72,14 @@ func create_product_snapshot(score_result: Dictionary, order: Dictionary, fold_s
 	return {
 		"product_instance_id": &"product_instance.pancake.%d" % _product_sequence,
 		"product_id": &"product.pancake.custom",
-		"source_order_template_id": StringName(order.get("id", &"")),
-		"heat_preference": StringName(order.get("heat_preference", &"")),
+		"heat_preference": _actual_heat_preference(score_result),
 		"ingredient_ids": ingredient_ids,
 		"sauce_ids": sauce_ids,
 		"cost_stock_ids": cost_stock_ids,
 		"material_cost": _material_cost(cost_stock_ids),
 		"fold_snapshot": fold_snapshot.duplicate(true),
-		"dimension_scores": Dictionary(score_result.get("dimensions", {})).duplicate(true),
-		"score": float(score_result.get("score", 0.0)),
+		"dimension_scores": _intrinsic_dimensions(score_result),
+		"score": _intrinsic_score(score_result),
 		"serving_score_basis": Dictionary(score_result.get("serving_score_basis", {})).duplicate(true),
 	}
 
@@ -97,11 +96,6 @@ func settle_completed_pancake(score_result: Dictionary, order: Dictionary = {}, 
 	var accounting: Dictionary = _session.call("consume_inventory_stock_ids", consumed)
 	if not bool(accounting.get("success", false)):
 		return accounting
-	if _session.has_method("active_formal_order") and _session.has_method("mark_formal_order_production_started"):
-		var active: Dictionary = _session.call("active_formal_order")
-		var items: Array = Array(active.get("items", []))
-		if not items.is_empty() and StringName(Dictionary(items[0]).get("area_id", &"")) == &"area.pancake":
-			_session.call("mark_formal_order_production_started", StringName(active.get("order_id", &"")), &"device.pancake_griddle")
 	var product := create_product_snapshot(score_result, order, fold_snapshot)
 	return {
 		"success": true,
@@ -113,6 +107,37 @@ func settle_completed_pancake(score_result: Dictionary, order: Dictionary = {}, 
 		"material_cost": int(product.get("material_cost", 0)),
 		"product": product,
 	}
+
+
+func _actual_heat_preference(score_result: Dictionary) -> StringName:
+	var basis := Dictionary(score_result.get("serving_score_basis", {}))
+	var moments := Dictionary(basis.get("heat_moments", {}))
+	if moments.is_empty():
+		return StringName(score_result.get("actual_heat_preference", &"golden"))
+	var mean_heat := (float(moments.get("mean_front", 0.64)) + float(moments.get("mean_back", 0.64))) * 0.5
+	if mean_heat < 0.56:
+		return &"light"
+	if mean_heat >= 0.70:
+		return &"well_done"
+	return &"golden"
+
+
+func _intrinsic_dimensions(score_result: Dictionary) -> Dictionary:
+	var basis := Dictionary(score_result.get("serving_score_basis", {}))
+	var intrinsic := Dictionary(basis.get("intrinsic_dimensions", {})).duplicate(true)
+	if intrinsic.is_empty():
+		intrinsic = Dictionary(score_result.get("dimensions", {})).duplicate(true)
+	return intrinsic
+
+
+func _intrinsic_score(score_result: Dictionary) -> float:
+	var dimensions := _intrinsic_dimensions(score_result)
+	if dimensions.is_empty():
+		return float(score_result.get("score", 0.0))
+	var total := 0.0
+	for value in dimensions.values():
+		total += float(value)
+	return total / maxf(float(dimensions.size()), 1.0)
 
 
 func _cost_stock_ids(ingredient_ids: PackedStringArray, sauce_ids: PackedStringArray) -> PackedStringArray:

@@ -111,8 +111,7 @@ func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictiona
 	var readiness := flip_readiness(model, ingredients)
 	if not bool(readiness.get("success", false)):
 		if bool(readiness.get("requires_folding", false)):
-			phase = Phase.FOLD
-			changed.emit()
+			begin_sauce_and_fillings_without_flip()
 		return readiness
 	model.flip(true)
 	phase = Phase.SAUCE_AND_FILLINGS
@@ -124,7 +123,7 @@ func flip_readiness(model: PancakeModel, ingredients: IngredientModel) -> Dictio
 	if phase != Phase.FIRST_SIDE:
 		return {"success": false, "reason": "当前还不能翻面"}
 	if ingredients != null and ingredients.has_toppings():
-		return {"success": false, "reason": "面饼上已有小料，不能翻面，请直接折叠", "requires_folding": true}
+		return {"success": false, "reason": "面饼上已有小料，不能翻面；可继续加酱和小料，之后抓住饼边折叠", "requires_folding": true}
 	var current_doneness := model.mean_side_doneness(false)
 	if current_doneness < RECOMMENDED_FLIP_DONENESS:
 		return {
@@ -147,24 +146,28 @@ func finish_cooking(model: PancakeModel) -> Dictionary:
 	return {"success": true}
 
 
+func begin_sauce_and_fillings_without_flip() -> Dictionary:
+	if phase == Phase.SAUCE_AND_FILLINGS:
+		return {"success": true, "without_flip": true, "already_active": true}
+	if phase != Phase.FIRST_SIDE:
+		return {"success": false, "reason": "摊饼完成后、开始折叠前才能选择未翻面备料"}
+	phase = Phase.SAUCE_AND_FILLINGS
+	changed.emit()
+	return {"success": true, "without_flip": true, "already_active": false}
+
+
 func begin_folding() -> Dictionary:
 	if phase != Phase.SAUCE_AND_FILLINGS and phase != Phase.FOLD:
-		return {"success": false, "reason": "完成翻面后才能折叠"}
+		return {"success": false, "reason": "请先完成翻面，或选择未翻面加酱/放料后再折叠"}
 	phase = Phase.FOLD
 	changed.emit()
 	return {"success": true}
 
 
 func begin_folding_after_topping(ingredients: IngredientModel) -> Dictionary:
-	if phase == Phase.FOLD:
-		return {"success": true}
-	if phase != Phase.FIRST_SIDE:
-		return {"success": false, "reason": "当前不能因小料直接进入折叠"}
 	if ingredients == null or not ingredients.has_toppings():
-		return {"success": false, "reason": "放置小料后才能跳过翻面"}
-	phase = Phase.FOLD
-	changed.emit()
-	return {"success": true}
+		return {"success": false, "reason": "放置小料后才能进入未翻面备料"}
+	return begin_sauce_and_fillings_without_flip()
 
 
 func mark_ready_for_package() -> Dictionary:

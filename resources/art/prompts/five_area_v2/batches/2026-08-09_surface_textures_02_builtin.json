@@ -1,0 +1,14 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "family": "shader_texture",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "constraints": "opaque 1024x1024 tileable texture; no objects, text, border, perspective, directional light, or transparency",
+  "postprocess": "center square ImageGen sample resized to 512x512 and mirrored into a 2x2 RGBA periodic tile; alpha fixed at 255; opposite edge pixels verified identical",
+  "assets": [
+    {"asset_id":"pancake_fold_back_texture_v1_five_area_v2","imagegen_output":"exec-aa881ef9-d35d-4541-a7fe-972a9dda98b7.png"},
+    {"asset_id":"pancake_raw_texture_v1_five_area_v2","imagegen_output":"exec-7bf05d6f-7233-4206-a4f6-c9b647e67bdd.png"},
+    {"asset_id":"red_chili_sauce_texture_v1_five_area_v2","imagegen_output":"exec-ea0fb26d-565c-4df3-abe5-05c891ac11ef.png"},
+    {"asset_id":"sweet_flour_sauce_texture_v1_five_area_v2","imagegen_output":"exec-f8dded18-023b-4cfe-823a-81031beb80cc.png"}
+  ]
+}

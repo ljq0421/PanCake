@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family_reference": "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3_five_area_v2.png",
+  "shared_style": "rounded cooking-game prop, clean deep-brown outline, restrained warm cel shading, subtle matte seasoned-iron texture",
+  "shared_constraints": "preserve each legacy griddle's exact silhouette and component count; transparent final Sprite; flat #ff00ff removable key source; no food, steam, text, labels, watermark, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into the 1024x1024 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "griddle_base_compact_v2_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/griddle/griddle_base_compact_v2.png",
+      "prompt_invariant": "near-top-down compact circular griddle with one dark iron plate, one narrow dark-steel inner rim, and one wider warm-brown outer ring; no handles or feet",
+      "imagegen_output": "exec-c00b11fe-d70b-434b-948f-b1a93f1c2635.png",
+      "final_canvas": [1024, 1024]
+    },
+    {
+      "asset_id": "griddle_base_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/griddle/griddle_base_v1.png",
+      "prompt_invariant": "plain low wide oval griddle with one dark iron plate, one thin gray rim, and one shallow dark sidewall; no handles, feet, controls, or gold upgrade parts",
+      "imagegen_output": "exec-8b856a9c-8bc9-4b26-a6d0-800470b6fc5b.png",
+      "final_canvas": [1024, 1024]
+    }
+  ]
+}

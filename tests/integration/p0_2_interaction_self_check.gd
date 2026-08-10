@@ -75,6 +75,7 @@ func _run() -> void:
 	_release_surface(surface, pan_center + Vector2(130, 0))
 	var straight_snapshot := workstation.pancake_model.snapshot()
 	_check(_max_difference(poured_snapshot.thickness, straight_snapshot.thickness) < 0.0001, "straight outward dragging does not replace the required circular spreading motion")
+	workstation.p1_session.phase = P1Session.Phase.SPREAD
 	workstation._spread_shape_locked = false
 	workstation._select_scraper()
 
@@ -88,6 +89,7 @@ func _run() -> void:
 	_release_surface(surface, surface.pointer_local_position)
 	var loose_curve_snapshot := workstation.pancake_model.snapshot()
 	_check(_max_difference(straight_snapshot.thickness, loose_curve_snapshot.thickness) > 0.0001, "a loose outward curve is accepted without requiring a near-perfect circle")
+	workstation.p1_session.phase = P1Session.Phase.SPREAD
 	workstation._spread_shape_locked = false
 	workstation._select_scraper()
 
@@ -103,7 +105,7 @@ func _run() -> void:
 	_release_surface(surface, surface.pointer_local_position)
 	var scraped_snapshot := workstation.pancake_model.snapshot()
 	_check(_max_difference(straight_snapshot.thickness, scraped_snapshot.thickness) > 0.0001, "center-outward circular motion changes the pancake thickness distribution")
-	_check(workstation.p1_session.phase == P1Session.Phase.SPREAD, "releasing the spreader freezes the current shape without advancing the phase")
+	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "releasing the spreader freezes the current shape and starts first-side cooking without requiring egg")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE and workstation.scraper_button.disabled, "the released batter spreader cannot continue shaping")
 	var frozen_snapshot := workstation.pancake_model.snapshot()
 	_press_surface(surface, pan_center)
@@ -111,13 +113,13 @@ func _run() -> void:
 	workstation._process(1.0 / 60.0)
 	_release_surface(surface, surface.pointer_local_position)
 	_check(_max_difference(frozen_snapshot.thickness, workstation.pancake_model.snapshot().thickness) < 0.0001, "surface dragging after release cannot alter the frozen pancake shape")
-	_check(not workstation.step_action_button.visible, "a real pancake does not expose an extra completion button")
+	_check(workstation.step_action_button.visible and not workstation.step_action_button.disabled, "spreader release exposes the existing flip action even when no egg was added")
 	_check(not workstation.scallion_button.disabled, "a small ingredient remains directly actionable after spreading")
 	var ingredient_press := InputEventMouseButton.new()
 	ingredient_press.button_index = MOUSE_BUTTON_LEFT
 	ingredient_press.pressed = true
 	workstation._on_ingredient_gui_input(ingredient_press, IngredientModel.SCALLION)
-	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "the next small-ingredient intent implicitly accepts any real pancake shape")
+	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "small ingredients remain available after spread release has already accepted the pancake shape")
 	var ingredient_drop := surface.get_global_transform_with_canvas() * pan_center
 	workstation._finish_ingredient_drag(ingredient_drop)
 	_check(workstation.ingredient_model.has_type(IngredientModel.SCALLION), "the triggering small-ingredient interaction continues instead of being swallowed")

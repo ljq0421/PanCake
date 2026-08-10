@@ -1,0 +1,53 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "workstation_reference": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_2_five_area_v2.png",
+  "wide_trim_reference": "res://resources/art/workstation/decor/tier_05_finish/tray_trim_customer_clips_v1_five_area_v2.png",
+  "shared_style": "rounded chibi game prop, clean dark-brown outlines, warm cel shading, simplified friendly geometry, deep teal and muted brass accents",
+  "shared_constraints": "preserve the exact legacy object semantics and visible component count; transparent final Sprite; flat #ff00ff removable key source; no text, labels, watermark, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into the manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "automatic_sauce_brush_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png",
+      "prompt_invariant": "same teal motor housing on a bolted base, gold crank linkage, square transparent sauce reservoir, and rectangular bristle brush head",
+      "imagegen_output": "exec-842a533b-62f0-4dae-a6dc-9c5f3235d017.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "single_press_spreader_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png",
+      "prompt_invariant": "same open manual press with teal square base, lower and hinged upper round plates, and long teal lever handle",
+      "imagegen_output": "exec-a0308740-7b0d-44e7-b7cc-7dfef9b383c2.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "ingredient_slot_locked_cover_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png",
+      "prompt_invariant": "one low rounded rectangular lid with inset teal panel, two small gold side latches, and one centered closed padlock",
+      "imagegen_output": "exec-c951d4e1-e2e9-40b8-8db8-5d43d9e37197.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "ingredient_tray_4x3_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/trays/ingredient_tray_4x3_v1.png",
+      "prompt_invariant": "exactly twelve empty recessed compartments arranged as four columns by three rows, with no covers or contents",
+      "imagegen_output": "exec-2246f519-c34a-475f-b8cb-3bd57b152dde.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "workstation_front_lip_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/foreground/workstation_front_lip_v1.png",
+      "prompt_invariant": "one continuous ultra-wide orange foreground fascia rail with a lighter top face and darker front face",
+      "imagegen_output": "exec-bc69bef9-5f10-4b58-a6ba-16532d35d612.png",
+      "final_canvas": [1024, 576]
+    }
+  ]
+}

@@ -44,18 +44,75 @@ const CUSTOMER_TEXTURES := {
 		&"accepting_bag": preload("res://resources/art/customers/customer_03/customer_03_accepting_bag_cropped.tres"),
 		&"paying_coins": preload("res://resources/art/customers/customer_03/customer_03_paying_coins_cropped.tres"),
 	},
+	&"customer_04": {
+		&"neutral": preload("res://resources/art/customers/customer_04/customer_04_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_04/customer_04_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_04/customer_04_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_04/customer_04_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_04/customer_04_paying_coins_cropped.tres"),
+	},
+	&"customer_05": {
+		&"neutral": preload("res://resources/art/customers/customer_05/customer_05_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_05/customer_05_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_05/customer_05_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_05/customer_05_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_05/customer_05_paying_coins_cropped.tres"),
+	},
+	&"customer_06": {
+		&"neutral": preload("res://resources/art/customers/customer_06/customer_06_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_06/customer_06_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_06/customer_06_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_06/customer_06_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_06/customer_06_paying_coins_cropped.tres"),
+	},
+	&"customer_07": {
+		&"neutral": preload("res://resources/art/customers/customer_07/customer_07_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_07/customer_07_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_07/customer_07_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_07/customer_07_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_07/customer_07_paying_coins_cropped.tres"),
+	},
+	&"customer_08": {
+		&"neutral": preload("res://resources/art/customers/customer_08/customer_08_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_08/customer_08_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_08/customer_08_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_08/customer_08_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_08/customer_08_paying_coins_cropped.tres"),
+	},
+	&"customer_09": {
+		&"neutral": preload("res://resources/art/customers/customer_09/customer_09_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_09/customer_09_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_09/customer_09_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_09/customer_09_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_09/customer_09_paying_coins_cropped.tres"),
+	},
+	&"customer_10": {
+		&"neutral": preload("res://resources/art/customers/customer_10/customer_10_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_10/customer_10_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_10/customer_10_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_10/customer_10_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_10/customer_10_paying_coins_cropped.tres"),
+	},
 }
 const ORDER_CARD_COIN_TEXTURE := preload("res://resources/art/ui/economy/currency_coin_v1.png")
 const ORDER_CARD_DISH_TEXTURE := preload("res://resources/art/workstation/textures/pancake_cooked_texture_v1.png")
 const ORDER_CARD_INGREDIENT_TEXTURES := {
 	IngredientModel.EGG: preload("res://resources/art/ingredients/egg/egg_whole_v1.png"),
+	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_whole_v1.png"),
 	IngredientModel.BAOCUI: preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
+	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
 	IngredientModel.HAM_SAUSAGE: preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
+	&"stock.pancake.ham_sausage": preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
 	IngredientModel.SCALLION: preload("res://resources/art/ingredients/scallion/scallion_scattered_v1.png"),
+	&"stock.pancake.scallion": preload("res://resources/art/ingredients/scallion/scallion_scattered_v1.png"),
 	IngredientModel.MEAT_FLOSS: preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
+	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
 	IngredientModel.PORK_TENDERLOIN: preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
+	&"stock.pancake.pork_tenderloin": preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
 }
-const ORDER_CARD_INGREDIENT_SLOT_GROUPS := [[0, 1, 4, 5], [2, 3, 6, 7]]
+const ORDER_CARD_HEAT_TEXTURE := preload("res://resources/art/ui/quality/quality_heat_uniformity_v1_five_area_v2.png")
+const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
+const ORDER_REQUIREMENT_HEATED := &"heated"
 const DEFAULT_ORDER_COINS := 3
 const PAYMENT_SLOT_COIN_SIZE := Vector2(48.0, 48.0)
 const PAYMENT_COIN_START_POSITION := Vector2(842.0, 312.0)
@@ -76,6 +133,8 @@ const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SPREADER_SPEED_SLOW := -1
 const SPREADER_SPEED_MEDIUM := 0
 const SPREADER_SPEED_FAST := 1
+const EGG_CRACK_EFFECT_BASE_SCALE := Vector2(0.55, 0.55)
+const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 
 @export var parameters: PancakeSimulationParameters
 
@@ -105,6 +164,7 @@ const SPREADER_SPEED_FAST := 1
 @onready var ingredient_layer: IngredientLayer = %IngredientLayer
 @onready var sauce_blob_overlay: Control = %SauceBlobOverlay
 @onready var egg_crack_artwork: Sprite2D = %EggCrackArtwork
+@onready var egg_crack_effect: AnimatedSprite2D = %EggCrackEffect
 @onready var ingredient_drag_preview: TextureRect = %IngredientDragPreview
 @onready var egg_button: Button = %EggButton
 @onready var baocui_button: Button = %BaocuiButton
@@ -120,12 +180,20 @@ const SPREADER_SPEED_FAST := 1
 @onready var scallion_restock_button: Button = %ScallionRestockButton
 @onready var customer_portrait: TextureRect = %CustomerPortrait
 @onready var queue_status_label: Label = %QueueStatusLabel
-@onready var waiting_customer_portraits: Array[TextureRect] = [%WaitingCustomer1, %WaitingCustomer2]
+@onready var customer_slot_buttons: Array[Button] = [%CustomerSlot1, %CustomerSlot2, %CustomerSlot3]
+@onready var customer_slot_patience_bars: Array[ProgressBar] = [
+	%CustomerSlot1.get_node("Patience"),
+	%CustomerSlot2.get_node("Patience"),
+	%CustomerSlot3.get_node("Patience"),
+]
 @onready var customer_line_label: Label = %CustomerLineLabel
 @onready var order_coin_icon: TextureRect = %OrderCoinIcon
 @onready var order_amount_label: Label = %OrderAmountLabel
-@onready var order_dish_icons: Array[TextureRect] = [%OrderDish1, %OrderDish2]
+@onready var order_dish_icons: Array[TextureRect] = [%OrderDish1, %OrderDish2, %OrderDish3]
+@onready var order_dish_buttons: Array[Button] = [%OrderDishTarget1, %OrderDishTarget2, %OrderDishTarget3]
 @onready var order_ingredient_icons: Array[TextureRect] = [%OrderIngredient01, %OrderIngredient02, %OrderIngredient03, %OrderIngredient04, %OrderIngredient05, %OrderIngredient06, %OrderIngredient07, %OrderIngredient08]
+@onready var order_ingredient_backgrounds: Array[Panel] = [%OrderIngredientBackground01, %OrderIngredientBackground02, %OrderIngredientBackground03, %OrderIngredientBackground04, %OrderIngredientBackground05, %OrderIngredientBackground06, %OrderIngredientBackground07, %OrderIngredientBackground08]
+@onready var order_heat_backgrounds: Array[Panel] = [%OrderHeatBackground01, %OrderHeatBackground02, %OrderHeatBackground03, %OrderHeatBackground04, %OrderHeatBackground05, %OrderHeatBackground06, %OrderHeatBackground07, %OrderHeatBackground08]
 @onready var order_heart_fill: Polygon2D = %OrderHeartFill
 @onready var order_patience_bar: ProgressBar = %OrderPatienceBar
 @onready var patience_bar: ProgressBar = %PatienceBar
@@ -183,9 +251,6 @@ const SPREADER_SPEED_FAST := 1
 @onready var unlock_progress_close_button: Button = %UnlockProgressCloseButton
 @onready var growth_ticket_buttons: Array[Button] = [%GrowthTicket1, %GrowthTicket2, %GrowthTicket3]
 @onready var station_interaction_controller: PancakeWorkstationInteractionController = %PancakeWorkstationInteractionController
-@onready var f3_station_overlay: Control = %F3StationOverlay
-@onready var f3_stations_workbench: Control = %F3StationsWorkbench
-@onready var f3_station_close_button: Button = %CloseButton
 @onready var refuse_active_order_button: Button = %RefuseActiveOrderButton
 @onready var skip_active_tutorial_button: Button = %SkipActiveTutorialButton
 
@@ -204,6 +269,7 @@ var _spreader_width_multiplier := 1.0
 var _wide_spreader_owned := false
 var _press_spreader_owned := false
 var _automatic_brush_owned := false
+var _chili_sauce_unlocked := false
 var _intermediate_griddle_owned := false
 var _press_spreader_used := false
 var _spreader_speed_band := SPREADER_SPEED_MEDIUM
@@ -226,6 +292,7 @@ var p1_session: P1Session
 var payment_coin_model: RefCounted
 var five_area_pancake_production: RefCounted
 var _formal_order_id: StringName = &""
+var _pending_delivery_item_index := -1
 var _refusal_confirmation_order_id: StringName = &""
 var _skip_confirmation_tutorial_id: StringName = &""
 var _handoff_product_from_tray: Dictionary = {}
@@ -238,6 +305,7 @@ var _audio_update_accumulator := 0.0
 var _result_detail_open := false
 var _order_summary_visible := false
 var _handoff_tween: Tween
+var _egg_crack_tween: Tween
 var _payment_tween: Tween
 var _payment_waiting_collection := false
 var _payment_animation_active := false
@@ -319,25 +387,30 @@ func _ready() -> void:
 	ingredient_layer.set_model(ingredient_model)
 	ingredient_layer.set_fold_model(fold_model)
 	fold_overlay.set_fold_model(fold_model)
+	fold_overlay.set_fold_sauce_textures(
+		pancake_surface.fold_sweet_sauce_texture(),
+		pancake_surface.fold_chili_sauce_texture(),
+	)
 	pancake_surface.pointer_started.connect(_on_pointer_started)
 	pancake_surface.pointer_ended.connect(_on_pointer_ended)
 	pancake_surface.cancel_requested.connect(_on_cancel_requested)
 	ladle_button.pressed.connect(_select_ladle)
 	scraper_button.pressed.connect(_on_spreader_tool_pressed)
 	press_spreader_button.pressed.connect(use_press_spreader)
-	sauce_brush_button.pressed.connect(_on_sauce_brush_tool_pressed)
 	sauce_refill_button.button_down.connect(_on_sauce_squeeze_started)
 	sauce_refill_button.button_up.connect(_on_sauce_squeeze_ended)
 	chili_sauce_refill_button.button_down.connect(_on_chili_sauce_squeeze_started)
 	chili_sauce_refill_button.button_up.connect(_on_sauce_squeeze_ended)
+	egg_crack_effect.animation_finished.connect(_on_egg_crack_animation_finished)
 	fold_button.pressed.connect(_select_fold)
 	paper_sleeve_button.pressed.connect(_use_paper_sleeve)
 	tray_button.pressed.connect(_use_tray)
 	bag_button.pressed.connect(_use_bag)
-	serve_product_button.pressed.connect(_serve_order)
 	store_pancake_button.pressed.connect(_store_current_pancake)
-	for tray_index in pancake_holding_slots.size():
-		pancake_holding_slots[tray_index].pressed.connect(_serve_pancake_from_holding_tray.bind(tray_index))
+	for slot_index in customer_slot_buttons.size():
+		customer_slot_buttons[slot_index].pressed.connect(_on_customer_slot_pressed.bind(slot_index))
+	for item_index in order_dish_buttons.size():
+		order_dish_buttons[item_index].pressed.connect(_on_order_dish_pressed.bind(item_index))
 	next_order_button.pressed.connect(_close_result_detail)
 	summary_view_button.pressed.connect(_open_result_detail)
 	summary_dismiss_button.pressed.connect(_dismiss_order_summary)
@@ -348,9 +421,6 @@ func _ready() -> void:
 	unlock_progress_button.pressed.connect(_open_unlock_progress)
 	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
 	station_interaction_controller.station_requested.connect(_open_f3_station)
-	f3_station_close_button.pressed.connect(_close_f3_station)
-	if f3_stations_workbench.has_signal("order_finished"):
-		f3_stations_workbench.connect("order_finished", _on_playable_order_finished)
 	refuse_active_order_button.pressed.connect(_on_refuse_active_order_pressed)
 	skip_active_tutorial_button.pressed.connect(_on_skip_active_tutorial_pressed)
 	for ticket_index in growth_ticket_buttons.size():
@@ -399,14 +469,12 @@ func _ready() -> void:
 
 
 func _open_f3_station(_area_id: StringName) -> void:
-	f3_station_overlay.visible = true
-	if f3_stations_workbench.has_method("refresh_from_session"):
-		f3_stations_workbench.call("refresh_from_session")
-	f3_station_close_button.grab_focus()
+	# Production areas are permanent shop-floor entities.  This compatibility
+	# route deliberately performs no navigation and opens no production page.
+	_refresh_global_status()
 
 
 func _close_f3_station() -> void:
-	f3_station_overlay.visible = false
 	_refresh_global_status()
 
 
@@ -416,6 +484,62 @@ func _uses_playable_formal_orders() -> bool:
 
 
 func _route_active_playable_order(restart_pancake: bool = true) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("ensure_active_playable_order"):
+		return
+	var ensured: Dictionary = game_session.call("ensure_active_playable_order")
+	if not bool(ensured.get("success", false)):
+		_formal_order_id = &""
+		_refresh_main_order_controls({})
+		return
+	var chosen := {}
+	for order_variant in Array(ensured.get("active_orders", [])):
+		var candidate := Dictionary(order_variant)
+		if StringName(candidate.get("order_id", &"")) == _formal_order_id:
+			chosen = candidate
+			break
+	if chosen.is_empty():
+		chosen = Dictionary(ensured.get("order", {}))
+	_focus_formal_order(chosen, restart_pancake)
+
+
+func _focus_formal_order(order: Dictionary, restart_pancake: bool = false) -> void:
+	if order.is_empty():
+		_formal_order_id = &""
+		_refresh_main_order_controls({})
+		_refresh_customer_queue()
+		return
+	_formal_order_id = StringName(order.get("order_id", &""))
+	_refresh_main_order_controls(order)
+	var items := Array(order.get("items", []))
+	if items.is_empty():
+		_refresh_customer_queue()
+		return
+	var area_id := StringName(Dictionary(items[0]).get("area_id", &""))
+	if area_id == &"area.pancake":
+		_close_f3_station()
+		var legacy := Dictionary(Dictionary(order.get("metadata", {})).get("legacy_order", {}))
+		if legacy.is_empty():
+			tool_status_label.text = "正式煎饼订单缺少制作模板"
+			return
+		customer_queue.call("restore_active_customer", legacy, StringName(order.get("customer_id", &"customer_01")))
+		if restart_pancake:
+			reset_pancake()
+			p1_session.start(legacy)
+		else:
+			p1_session.order = legacy.duplicate(true)
+			p1_session.mirror_formal_patience(
+				float(order.get("remaining_patience_seconds", order.get("patience_seconds", 0.0))),
+				bool(order.get("tutorial_no_countdown", false))
+			)
+		_refresh_p1_ui()
+	else:
+		_open_f3_station(area_id)
+		tool_status_label.text = "已切换查看该顾客订单"
+	_refresh_customer_queue()
+
+
+func _route_active_playable_order_legacy(restart_pancake: bool = true) -> void:
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null or not game_session.has_method("ensure_active_playable_order"):
 		return
@@ -465,11 +589,120 @@ func _on_playable_order_finished(result: Dictionary = {}) -> void:
 	_route_active_playable_order(true)
 
 
+func _on_formal_order_expired(result: Dictionary) -> void:
+	var expired_order_id := StringName(result.get("order_id", &""))
+	if expired_order_id == _formal_order_id:
+		_formal_order_id = &""
+	_pending_delivery_item_index = -1
+	tool_status_label.text = "顾客耐心耗尽，声誉 -2；店内已补入新顾客"
+	_route_active_playable_order(false)
+
+
+func _on_customer_slot_pressed(slot_index: int) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("active_formal_orders"):
+		return
+	var target := {}
+	for order_variant in Array(game_session.call("active_formal_orders")):
+		var order := Dictionary(order_variant)
+		if int(order.get("service_slot", -1)) == slot_index:
+			target = order
+			break
+	if target.is_empty():
+		return
+	_focus_formal_order(target, false)
+	_pending_delivery_item_index = -1
+
+
+func _on_order_dish_pressed(item_index: int) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or _formal_order_id.is_empty() or not game_session.has_method("formal_order"):
+		tool_status_label.text = "当前没有可查看的顾客订单"
+		return
+	var target_order: Dictionary = game_session.call("formal_order", _formal_order_id)
+	var items: Array = Array(target_order.get("items", []))
+	if item_index < 0 or item_index >= items.size():
+		tool_status_label.text = "该订单商品槽为空"
+		return
+	tool_status_label.text = "订单卡仅用于查看点单；请把实体成品拖入顾客递餐托盘"
+
+
+func _delivery_source_for_order_item(target_order: Dictionary, item_index: int) -> Dictionary:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return {}
+	var items: Array = Array(target_order.get("items", []))
+	if item_index < 0 or item_index >= items.size():
+		return {}
+	var direct_product := _current_ready_product_preview()
+	var tray_slots: Array = []
+	if game_session.has_method("pancake_holding_tray_snapshot"):
+		tray_slots = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	return _select_delivery_source_for_order_item(game_session, target_order, item_index, direct_product, tray_slots)
+
+
+func _select_delivery_source_for_order_item(game_session: Node, target_order: Dictionary, item_index: int, direct_product: Dictionary, tray_slots: Array) -> Dictionary:
+	var direct_available := not direct_product.is_empty()
+	var direct_matches := direct_available and _delivery_product_matches_order_item(game_session, target_order, item_index, direct_product)
+	if direct_matches:
+		return {"kind": &"direct", "will_match": true, "product": direct_product}
+	var matching_tray := _oldest_tray_delivery_candidate(game_session, target_order, item_index, tray_slots, true)
+	if not matching_tray.is_empty():
+		return matching_tray
+	if direct_available:
+		return {"kind": &"direct", "will_match": false, "product": direct_product}
+	return _oldest_tray_delivery_candidate(game_session, target_order, item_index, tray_slots, false)
+
+
+func _current_ready_product_preview() -> Dictionary:
+	if p1_session == null or p1_session.phase != P1Session.Phase.READY_TO_SERVE or five_area_pancake_production == null:
+		return {}
+	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(
+		pancake_model,
+		ingredient_model,
+		fold_model,
+		p1_session.order,
+		p1_session.elapsed_seconds,
+		p1_session.patience_ratio(),
+	)
+	return Dictionary(five_area_pancake_production.call(
+		"create_product_snapshot",
+		score_result,
+		p1_session.order,
+		{"package_result": fold_model.package_result},
+	)).duplicate(true)
+
+
+func _delivery_product_matches_order_item(game_session: Node, target_order: Dictionary, item_index: int, product: Dictionary) -> bool:
+	var order_id := StringName(target_order.get("order_id", &""))
+	if order_id.is_empty() or not game_session.has_method("preview_attach_formal_order_product"):
+		return false
+	var preview: Dictionary = game_session.call("preview_attach_formal_order_product", order_id, item_index, product)
+	return bool(preview.get("success", false)) and bool(preview.get("will_match", false))
+
+
+func _oldest_tray_delivery_candidate(game_session: Node, target_order: Dictionary, item_index: int, slots: Array, require_match: bool) -> Dictionary:
+	var best := {}
+	var best_age := -1.0
+	for slot_index in slots.size():
+		var product := Dictionary(slots[slot_index])
+		if StringName(product.get("product_instance_id", &"")).is_empty():
+			continue
+		var matches := _delivery_product_matches_order_item(game_session, target_order, item_index, product)
+		if matches != require_match:
+			continue
+		var age := maxf(float(product.get("age_seconds", 0.0)), 0.0)
+		if best.is_empty() or age > best_age:
+			best = {"kind": &"tray", "slot_index": slot_index, "will_match": matches, "product": product}
+			best_age = age
+	return best
+
+
 func _on_refuse_active_order_pressed() -> void:
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null:
 		return
-	var active: Dictionary = game_session.call("active_formal_order")
+	var active: Dictionary = game_session.call("formal_order", _formal_order_id) if not _formal_order_id.is_empty() else game_session.call("active_formal_order")
 	var order_id := StringName(active.get("order_id", &""))
 	if order_id.is_empty():
 		return
@@ -522,14 +755,23 @@ func _refresh_main_order_controls(order: Dictionary) -> void:
 func apply_progression_effects(snapshot: Dictionary) -> void:
 	var owned_items := Array(snapshot.get("owned_items", []))
 	var owned_growth_ids := Array(snapshot.get("owned_growth_ids", []))
+	var unlocked_stock_ids := Array(snapshot.get("unlocked_stock_ids", []))
 	_wide_spreader_owned = owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader")
 	_spreader_width_multiplier = FIVE_AREA_CATALOG.PANCAKE_WIDE_SPREADER_WIDTH_MULTIPLIER if _wide_spreader_owned else 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
+	_chili_sauce_unlocked = unlocked_stock_ids.has(&"stock.pancake.sauce.red_chili") or unlocked_stock_ids.has("stock.pancake.sauce.red_chili")
 	_intermediate_griddle_owned = int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 0)) >= 1
 	_refresh_spreader_upgrade_presentation()
 	_refresh_sauce_brush_upgrade_presentation()
 	_refresh_growth_tool_buttons()
+	_refresh_sauce_button_states()
+
+
+func set_sauce_unlocked(sauce_type: StringName, unlocked: bool) -> void:
+	if sauce_type == OrderService.SAUCE_CHILI:
+		_chili_sauce_unlocked = unlocked
+	_refresh_sauce_button_states()
 
 
 func _refresh_spreader_upgrade_presentation() -> void:
@@ -552,15 +794,10 @@ func _refresh_spreader_upgrade_presentation() -> void:
 func _refresh_sauce_brush_upgrade_presentation() -> void:
 	if sauce_brush_button == null:
 		return
-	var artwork := sauce_brush_button.get_node_or_null("Artwork") as TextureRect
-	if artwork != null:
-		artwork.texture = AUTOMATIC_SAUCE_BRUSH_TEXTURE if _automatic_brush_owned else BASIC_SAUCE_BRUSH_TEXTURE
-	var label := sauce_brush_button.get_node_or_null("Label") as Label
-	if label != null:
-		label.text = "自动酱刷" if _automatic_brush_owned else "酱刷"
-	sauce_brush_button.toggle_mode = not _automatic_brush_owned
-	sauce_brush_button.button_pressed = false
-	sauce_brush_button.tooltip_text = "自动酱刷：先挤订单所需酱料，再点击自动刷匀" if _automatic_brush_owned else "拿起或放下酱刷"
+	sauce_brush_button.visible = false
+	sauce_brush_button.disabled = true
+	sauce_brush_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refresh_sauce_selection_presentation()
 
 
 func _on_spreader_tool_pressed() -> void:
@@ -571,6 +808,10 @@ func _on_sauce_brush_tool_pressed() -> void:
 	if _automatic_brush_owned:
 		sauce_brush_button.button_pressed = false
 		use_automatic_sauce_brush()
+		return
+	if tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH:
+		tool_controller.clear_tool()
+		tool_status_label.text = "已放下酱刷；可继续加料或抓住饼皮边缘折叠"
 		return
 	_select_sauce_brush()
 
@@ -601,46 +842,42 @@ func use_press_spreader() -> Dictionary:
 	return result
 
 
-func use_automatic_sauce_brush() -> Dictionary:
+func use_automatic_sauce_brush(sauce_type: StringName = &"") -> Dictionary:
 	if not _automatic_brush_owned:
 		tool_status_label.text = "自动酱刷尚未安装；可在今日账单的安装位购买。"
 		return {"success": false, "reason": &"tool_not_owned"}
-	if p1_session == null or p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
-		tool_status_label.text = "翻面后才能使用自动酱刷"
-		return {"success": false, "reason": &"wrong_phase"}
-	var required_sauces: Array = p1_session.order.get("sauces", [])
-	for sauce_type_variant in required_sauces:
-		var sauce_type := StringName(sauce_type_variant)
-		var state: RefCounted = sauce_tool_states.get(sauce_type)
-		if state == null or float(state.get("load")) <= 0.0:
-			tool_status_label.text = "自动酱刷仍需先把%s挤到刷头" % OrderService.sauce_display_name(sauce_type)
-			return {"success": false, "reason": &"sauce_not_loaded", "sauce_type": sauce_type}
+	if sauce_type.is_empty():
+		sauce_type = current_sauce_type
+	var state: RefCounted = sauce_tool_states.get(sauce_type)
+	if state == null or float(state.get("load")) <= 0.0:
+		tool_status_label.text = "自动酱刷仍需先挤入%s" % OrderService.sauce_display_name(sauce_type)
+		return {"success": false, "reason": &"sauce_not_loaded", "sauce_type": sauce_type}
+	var phase_result := _enter_sauce_and_fillings_for_sauce_action()
+	if not bool(phase_result.get("success", false)):
+		tool_status_label.text = str(phase_result.get("reason", "当前不能使用自动酱刷"))
+		return {"success": false, "reason": &"wrong_phase", "sauce_type": sauce_type}
 	var total_changed := 0
 	var covered_cells := maxi(pancake_model.covered_cell_count(), 1)
-	for sauce_type_variant in required_sauces:
-		var sauce_type := StringName(sauce_type_variant)
-		var state: RefCounted = sauce_tool_states[sauce_type]
-		var load_per_cell := parameters.sauce_brush_capacity / float(covered_cells)
-		var remaining_cells := floori(float(state.get("load")) / maxf(load_per_cell, 0.000001))
-		var stroke_id := pancake_model.begin_sauce_stroke()
-		var changed_for_sauce := 0
-		var step := maxi(roundi(parameters.sauce_brush_radius * 1.35), 1)
-		for y in range(step / 2, pancake_model.grid_size, step):
-			for x in range(step / 2, pancake_model.grid_size, step):
-				if remaining_cells <= 0:
-					break
-				var result := pancake_model.apply_sauce_sample(Vector2(x, y), parameters.sauce_layer_concentration, parameters.sauce_brush_radius, stroke_id, remaining_cells, sauce_type)
-				var changed := int(result.get("newly_layered_cells", 0))
-				remaining_cells -= changed
-				changed_for_sauce += changed
+	var load_per_cell := parameters.sauce_brush_capacity / float(covered_cells)
+	var remaining_cells := floori(float(state.get("load")) / maxf(load_per_cell, 0.000001))
+	var stroke_id := pancake_model.begin_sauce_stroke()
+	var step := maxi(roundi(parameters.sauce_brush_radius * 1.35), 1)
+	for y in range(step / 2, pancake_model.grid_size, step):
+		for x in range(step / 2, pancake_model.grid_size, step):
 			if remaining_cells <= 0:
 				break
-		state.call("consume", float(changed_for_sauce) * load_per_cell)
-		total_changed += changed_for_sauce
-	p1_session.call("advance_time", 1.5 * float(required_sauces.size()))
+			var result := pancake_model.apply_sauce_sample(Vector2(x, y), parameters.sauce_layer_concentration, parameters.sauce_brush_radius, stroke_id, remaining_cells, sauce_type)
+			var changed := int(result.get("newly_layered_cells", 0))
+			remaining_cells -= changed
+			total_changed += changed
+		if remaining_cells <= 0:
+			break
+	state.call("consume", float(total_changed) * load_per_cell)
+	p1_session.call("advance_time", 1.5)
+	tool_controller.clear_tool()
 	_refresh_sauce_load_display()
-	tool_status_label.text = "自动酱刷已按订单完成刷酱 · 已消耗酱料与时间"
-	return {"success": total_changed > 0, "changed_cells": total_changed}
+	tool_status_label.text = "自动酱刷已刷匀%s并回到空手状态" % OrderService.sauce_display_name(sauce_type)
+	return {"success": total_changed > 0, "changed_cells": total_changed, "sauce_type": sauce_type}
 
 
 func _refresh_growth_tool_buttons() -> void:
@@ -658,10 +895,10 @@ func _refresh_growth_tool_buttons() -> void:
 	if _press_spreader_owned:
 		press_spreader_button.disabled = false
 		press_spreader_button.tooltip_text = "压饼器：点击一次形成标准饼皮；当前可用" if in_spread else "压饼器只用于已倒入面糊、尚未进入煎制的饼皮；点击可查看当前不能使用的原因。"
-	var in_sauce := p1_session != null and p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
-	if _automatic_brush_owned:
-		sauce_brush_button.disabled = false
-		sauce_brush_button.tooltip_text = "先把订单所需酱料挤到刷头，再点击完成标准刷酱；当前可用" if in_sauce else "自动酱刷：翻面后进入刷酱步骤才可使用。点击可查看当前不能使用的原因。"
+	sauce_brush_button.visible = false
+	sauce_brush_button.disabled = true
+	sauce_brush_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refresh_sauce_selection_presentation()
 
 
 func _process(delta: float) -> void:
@@ -674,9 +911,13 @@ func _process(delta: float) -> void:
 	var mirrors_formal_pancake_patience := false
 	if game_session != null and game_session.has_method("advance_formal_order_patience") and not formal_time_paused:
 		var patience_result: Dictionary = game_session.call("advance_formal_order_patience", delta)
-		if StringName(patience_result.get("terminal_state", &"")) == &"expired" and not bool(patience_result.get("already_settled", false)):
-			_on_playable_order_finished(patience_result)
-	if game_session != null and game_session.has_method("active_formal_order"):
+		for expired_variant in Array(patience_result.get("expired_results", [])):
+			var expired: Dictionary = Dictionary(expired_variant)
+			if not bool(expired.get("already_settled", false)):
+				_on_formal_order_expired(expired)
+	if game_session != null and game_session.has_method("formal_order") and not _formal_order_id.is_empty():
+		active_formal_order = game_session.call("formal_order", _formal_order_id)
+	elif game_session != null and game_session.has_method("active_formal_order"):
 		active_formal_order = game_session.call("active_formal_order")
 		var active_items: Array = Array(active_formal_order.get("items", []))
 		mirrors_formal_pancake_patience = p1_session != null and not active_items.is_empty() and StringName(Dictionary(active_items[0]).get("area_id", &"")) == &"area.pancake"
@@ -728,7 +969,7 @@ func _process(delta: float) -> void:
 func _formal_order_time_paused() -> bool:
 	var game_session := get_node_or_null("/root/GameSession")
 	var business_paused := game_session != null and game_session.has_method("is_business_paused") and bool(game_session.call("is_business_paused"))
-	return business_paused or get_tree().paused or daily_bill_panel.visible or unlock_progress_panel.visible or _result_detail_open or _order_summary_visible
+	return business_paused or get_tree().paused or daily_bill_panel.visible or unlock_progress_panel.visible
 
 
 func _advance_business_day_timer(delta: float) -> void:
@@ -779,6 +1020,8 @@ func _end_business_day_at_cutoff(cutoff_reason: StringName) -> void:
 	var queued_customers: int = customer_queue.call("queue_snapshot").size() if customer_queue != null else 0
 	var formal_order_abandoned := false
 	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("active_formal_orders"):
+		queued_customers = Array(game_session.call("active_formal_orders")).size()
 	if business_day_timer != null:
 		business_day_timer.set("remaining_seconds", 0.0)
 	if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
@@ -793,6 +1036,7 @@ func _end_business_day_at_cutoff(cutoff_reason: StringName) -> void:
 
 
 func reset_pancake() -> void:
+	_pending_delivery_item_index = -1
 	pancake_model.reset()
 	ingredient_model.reset()
 	pancake_visual.visible = true
@@ -831,7 +1075,7 @@ func reset_pancake() -> void:
 	fold_overlay.visible = true
 	_result_detail_open = false
 	ingredient_drag_preview.visible = false
-	egg_crack_artwork.visible = false
+	_stop_egg_crack_effect()
 	_ingredient_drag_type = &""
 	_log_info(&"simulation", "Pancake grid reset in %d us" % pancake_model.last_update_usec)
 
@@ -938,7 +1182,7 @@ func _process_egg_scraper(grid_position: Vector2, delta: float) -> void:
 	_last_process_grid_position = grid_position
 	pancake_surface.spreader_motion_valid = applied_sample
 	if applied_sample:
-		egg_crack_artwork.visible = false
+		_stop_egg_crack_effect()
 		var egg_summary := pancake_model.calculate_egg_spread_summary()
 		var set_hint := " · 已凝固，移动很慢" if pancake_model.egg_state == PancakeModel.EggState.SET else ""
 		tool_status_label.text = "正在摊蛋：覆盖 %d%% · 均匀 %d%%%s" % [
@@ -994,7 +1238,7 @@ func _on_pointer_started(local_position: Vector2) -> void:
 	if (
 		p1_session != null
 		and p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
-		and tool_controller.current_tool in [ToolController.Tool.NONE, ToolController.Tool.FOLD]
+		and tool_controller.current_tool in [ToolController.Tool.NONE, ToolController.Tool.SAUCE_BRUSH, ToolController.Tool.FOLD]
 		and _is_fold_grab_edge(grid_position)
 	):
 		p1_session.begin_folding()
@@ -1054,13 +1298,56 @@ func _on_pointer_ended(local_position: Vector2) -> void:
 	_sauce_sampler.reset()
 	if finished_spread_shape:
 		_spread_shape_locked = true
-		tool_controller.clear_tool()
-		tool_status_label.text = "面饼形状已固定；直接选择配料或下一项操作"
-		_refresh_p1_ui()
+		if _confirm_spread_for_next_action():
+			tool_status_label.text = "面饼形状已固定；可直接翻面，鸡蛋按订单需要添加"
+		else:
+			tool_controller.clear_tool()
+			tool_status_label.text = "当前没有可继续制作的面饼"
+			_refresh_p1_ui()
 	_update_sauce_status()
 
 
+func _play_egg_crack_effect(local_position: Vector2) -> void:
+	_stop_egg_crack_effect(false)
+	egg_crack_artwork.position = local_position
+	egg_crack_artwork.rotation = 0.0
+	egg_crack_artwork.visible = false
+	egg_crack_effect.position = Vector2(pancake_surface.size.x * 0.5, EGG_CRACK_EFFECT_STAGE_Y)
+	egg_crack_effect.frame = 0
+	egg_crack_effect.rotation = -0.10
+	egg_crack_effect.scale = EGG_CRACK_EFFECT_BASE_SCALE * 0.82
+	egg_crack_effect.visible = true
+	egg_crack_effect.play(&"crack")
+	_egg_crack_tween = create_tween()
+	_egg_crack_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "scale", EGG_CRACK_EFFECT_BASE_SCALE * 1.10, 0.16)
+	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "rotation", 0.055, 0.16)
+	_egg_crack_tween.tween_property(egg_crack_effect, "scale", EGG_CRACK_EFFECT_BASE_SCALE, 0.16)
+	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "rotation", 0.0, 0.16)
+
+
+func _on_egg_crack_animation_finished() -> void:
+	_stop_egg_crack_effect(false)
+	if pancake_model != null and pancake_model.egg_state == PancakeModel.EggState.CRACKED and pancake_model.egg_is_on_visible_side():
+		egg_crack_artwork.visible = true
+
+
+func _stop_egg_crack_effect(hide_landing: bool = true) -> void:
+	if _egg_crack_tween != null and _egg_crack_tween.is_valid():
+		_egg_crack_tween.kill()
+	_egg_crack_tween = null
+	if egg_crack_effect != null:
+		egg_crack_effect.stop()
+		egg_crack_effect.frame = 0
+		egg_crack_effect.visible = false
+		egg_crack_effect.rotation = 0.0
+		egg_crack_effect.scale = EGG_CRACK_EFFECT_BASE_SCALE
+	if hide_landing and egg_crack_artwork != null:
+		egg_crack_artwork.visible = false
+
+
 func _on_cancel_requested() -> void:
+	_cancel_ingredient_drag()
 	tool_controller.clear_tool()
 	fold_model.cancel_drag()
 	_scrape_sampler.reset()
@@ -1095,11 +1382,12 @@ func _select_sauce_brush() -> void:
 		return
 	if not _confirm_spread_for_next_action():
 		return
-	if p1_session == null or p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
-		tool_status_label.text = "翻面后即可刷酱"
-		return
 	if float(sauce_tool_state.load) <= 0.0:
 		tool_status_label.text = "先点击或按住甜面酱/辣椒酱，把酱挤到饼面"
+		return
+	var phase_result := _enter_sauce_and_fillings_for_sauce_action()
+	if not bool(phase_result.get("success", false)):
+		tool_status_label.text = str(phase_result.get("reason", "当前不能刷酱"))
 		return
 	tool_controller.select_tool(ToolController.Tool.SAUCE_BRUSH)
 
@@ -1121,17 +1409,20 @@ func _select_fold() -> void:
 		if not bool(phase_result.success):
 			tool_status_label.text = str(phase_result.reason)
 			return
-	egg_crack_artwork.visible = false
+	_stop_egg_crack_effect()
 	tool_controller.select_tool(ToolController.Tool.FOLD)
 
 
 func _on_sauce_squeeze_started() -> void:
-	_select_sauce_type(OrderService.SAUCE_SWEET)
-	_begin_sauce_squeeze()
+	_start_sauce_squeeze(OrderService.SAUCE_SWEET)
 
 
 func _on_chili_sauce_squeeze_started() -> void:
-	_select_sauce_type(OrderService.SAUCE_CHILI)
+	_start_sauce_squeeze(OrderService.SAUCE_CHILI)
+
+
+func _start_sauce_squeeze(sauce_type: StringName) -> void:
+	_select_sauce_type(sauce_type)
 	_begin_sauce_squeeze()
 
 
@@ -1143,16 +1434,10 @@ func _begin_sauce_squeeze() -> void:
 	if not _confirm_spread_for_next_action():
 		_squeezing_sauce = false
 		return
-	if p1_session != null and p1_session.phase == P1Session.Phase.SECOND_SIDE:
-		var cooking_result := p1_session.finish_cooking(pancake_model)
-		if not bool(cooking_result.success):
-			_squeezing_sauce = false
-			tool_status_label.text = "%s；达到火候后直接点击酱瓶即可刷酱" % str(cooking_result.reason)
-			return
-		_refresh_p1_ui()
-	if p1_session == null or p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
+	var phase_result := _enter_sauce_and_fillings_for_sauce_action()
+	if not bool(phase_result.get("success", false)):
 		_squeezing_sauce = false
-		tool_status_label.text = "翻面后再挤酱"
+		tool_status_label.text = str(phase_result.get("reason", "当前不能挤酱"))
 		return
 	_squeezing_sauce = true
 	sauce_tool_state.add(parameters.sauce_squeeze_initial_amount)
@@ -1164,21 +1449,25 @@ func _on_sauce_squeeze_ended() -> void:
 	if not _squeezing_sauce:
 		return
 	_squeezing_sauce = false
-	tool_status_label.text = "%s已挤到饼面：待刷量 %d%%；现在拿酱刷摊开" % [OrderService.sauce_display_name(current_sauce_type), roundi(sauce_tool_state.load_ratio() * 100.0)]
 	_refresh_sauce_load_display()
+	if _automatic_brush_owned:
+		use_automatic_sauce_brush(current_sauce_type)
+		return
+	_select_sauce_brush()
+	if tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH:
+		tool_status_label.text = "%s刷已拿起：在饼面拖动刷匀；右键可取消" % OrderService.sauce_display_name(current_sauce_type)
 
 
 func _on_tool_changed(tool: ToolController.Tool) -> void:
 	var preparation_locked := _folding_locks_preparation()
-	var sauce_phase_locked := p1_session == null or p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS
 	ladle_button.disabled = pour_used or preparation_locked
 	ladle_button.button_pressed = false
 	scraper_button.disabled = preparation_locked or not _scraper_can_act()
 	scraper_button.button_pressed = tool == ToolController.Tool.SCRAPER and not preparation_locked
-	sauce_brush_button.disabled = false if _automatic_brush_owned else (preparation_locked or sauce_phase_locked)
-	sauce_brush_button.button_pressed = tool == ToolController.Tool.SAUCE_BRUSH and not preparation_locked
-	sauce_refill_button.disabled = preparation_locked or sauce_phase_locked
-	chili_sauce_refill_button.disabled = preparation_locked or sauce_phase_locked
+	sauce_brush_button.visible = false
+	sauce_brush_button.disabled = true
+	sauce_brush_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refresh_sauce_button_states()
 	fold_button.disabled = fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE or fold_model.completed_fold_count() >= 2
 	fold_button.button_pressed = tool == ToolController.Tool.FOLD and not fold_button.disabled
 	fold_overlay.set_guides_visible(tool == ToolController.Tool.FOLD and not fold_button.disabled)
@@ -1195,6 +1484,7 @@ func _on_tool_changed(tool: ToolController.Tool) -> void:
 		ToolController.Tool.SAUCE_BRUSH:
 			pancake_surface.cursor_radius_pixels = parameters.sauce_brush_radius / float(parameters.grid_size) * pancake_surface.size.x
 			pancake_surface.cursor_is_t_spreader = false
+			tool_status_label.text = "当前工具：%s刷 · 饼面拖动刷匀 · 右键取消" % OrderService.sauce_display_name(current_sauce_type)
 		ToolController.Tool.FOLD:
 			pancake_surface.cursor_radius_pixels = 18.0
 			pancake_surface.cursor_is_t_spreader = false
@@ -1205,6 +1495,7 @@ func _on_tool_changed(tool: ToolController.Tool) -> void:
 		_spreader_angle_initialized = false
 		_spreader_speed_initialized = false
 	_update_spreader_artwork(0.0)
+	_refresh_sauce_selection_presentation()
 	pancake_surface.queue_redraw()
 	_refresh_fold_ui()
 
@@ -1338,6 +1629,10 @@ func _refresh_fold_ui() -> void:
 		right_visual_progress,
 		fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE
 	)
+	fold_overlay.set_fold_sauce_textures(
+		pancake_surface.fold_sweet_sauce_texture(),
+		pancake_surface.fold_chili_sauce_texture(),
+	)
 	sauce_blob_overlay.call("set_fold_progress", left_visual_progress, right_visual_progress)
 	var left: Dictionary = fold_model.get_region_result(FOLD_MODEL_SCRIPT.REGION_LEFT)
 	var right: Dictionary = fold_model.get_region_result(FOLD_MODEL_SCRIPT.REGION_RIGHT)
@@ -1354,12 +1649,12 @@ func _refresh_fold_ui() -> void:
 	paper_sleeve_button.disabled = not fold_model.can_use_sleeve()
 	tray_button.disabled = not fold_model.can_use_tray()
 	var preparation_locked := _folding_locks_preparation()
-	var sauce_phase_locked := p1_session == null or p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS
 	ladle_button.disabled = pour_used or preparation_locked
 	scraper_button.disabled = preparation_locked or not _scraper_can_act()
-	sauce_brush_button.disabled = false if _automatic_brush_owned else (preparation_locked or sauce_phase_locked)
-	sauce_refill_button.disabled = preparation_locked or sauce_phase_locked
-	chili_sauce_refill_button.disabled = preparation_locked or sauce_phase_locked
+	sauce_brush_button.visible = false
+	sauce_brush_button.disabled = true
+	sauce_brush_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refresh_sauce_button_states()
 	fold_button.disabled = fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE or fold_model.completed_fold_count() >= 2
 	bag_button.disabled = not fold_model.can_use_bag()
 	if fold_model.completed_fold_count() >= 2 and fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_NONE and p1_session.phase == P1Session.Phase.FOLD:
@@ -1369,6 +1664,20 @@ func _refresh_fold_ui() -> void:
 
 func _folding_locks_preparation() -> bool:
 	return fold_model != null and (fold_model.completed_fold_count() > 0 or fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE)
+
+
+func _enter_sauce_and_fillings_for_sauce_action() -> Dictionary:
+	if p1_session == null:
+		return {"success": false, "reason": "煎饼制作状态尚未就绪"}
+	if p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS:
+		return {"success": true, "without_flip": not pancake_model.is_flipped, "already_active": true}
+	if p1_session.phase != P1Session.Phase.FIRST_SIDE:
+		return {"success": false, "reason": "摊饼完成后、开始折叠前才能加酱"}
+	var result: Dictionary = p1_session.begin_sauce_and_fillings_without_flip()
+	if bool(result.get("success", false)):
+		tool_controller.clear_tool()
+		_refresh_p1_ui()
+	return result
 
 
 func _scraper_can_act() -> bool:
@@ -1477,6 +1786,25 @@ func _refresh_sauce_load_display() -> void:
 	var chili_ratio: float = chili_state.load_ratio() if chili_state != null else 0.0
 	sauce_blob_overlay.call("set_amounts", sweet_ratio, chili_ratio)
 	sauce_status_label.text = "%s · 饼面待刷 %d%% · 酱料评分 %s" % [OrderService.sauce_display_name(current_sauce_type), roundi(sauce_tool_state.load_ratio() * 100.0), score_text]
+	_refresh_sauce_selection_presentation()
+
+
+func _refresh_sauce_button_states() -> void:
+	if sauce_refill_button == null or chili_sauce_refill_button == null:
+		return
+	var preparation_locked := _folding_locks_preparation()
+	var sauce_phase_locked := p1_session == null or p1_session.phase not in [
+		P1Session.Phase.FIRST_SIDE,
+		P1Session.Phase.SAUCE_AND_FILLINGS,
+	]
+	_set_sauce_button_state(sauce_refill_button, true, preparation_locked or sauce_phase_locked)
+	_set_sauce_button_state(chili_sauce_refill_button, _chili_sauce_unlocked, preparation_locked or sauce_phase_locked)
+
+
+func _set_sauce_button_state(button: Button, unlocked: bool, interaction_locked: bool) -> void:
+	button.visible = unlocked
+	button.disabled = not unlocked or interaction_locked
+	button.mouse_filter = Control.MOUSE_FILTER_STOP if unlocked else Control.MOUSE_FILTER_IGNORE
 
 
 func _update_sauce_status() -> void:
@@ -1510,6 +1838,19 @@ func _select_sauce_type(sauce_type: StringName) -> void:
 	_update_sauce_status()
 
 
+func _refresh_sauce_selection_presentation() -> void:
+	if sauce_refill_button == null or chili_sauce_refill_button == null or pancake_surface == null:
+		return
+	var brushing := tool_controller != null and tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH
+	sauce_refill_button.set_pressed_no_signal(brushing and current_sauce_type == OrderService.SAUCE_SWEET)
+	chili_sauce_refill_button.set_pressed_no_signal(brushing and current_sauce_type == OrderService.SAUCE_CHILI)
+	var automatic_suffix := "；松开后自动刷匀并回到空手" if _automatic_brush_owned else "；松开后自动拿起对应酱刷"
+	sauce_refill_button.tooltip_text = "按住控制甜面酱用量%s" % automatic_suffix
+	chili_sauce_refill_button.tooltip_text = "按住控制辣椒酱用量%s" % automatic_suffix
+	pancake_surface.cursor_is_sauce_brush = brushing
+	pancake_surface.cursor_sauce_color = Color(0.34, 0.08, 0.035, 0.98) if current_sauce_type == OrderService.SAUCE_SWEET else Color(0.82, 0.055, 0.025, 0.98)
+
+
 func _on_heat_changed(value: float) -> void:
 	if p1_session == null:
 		return
@@ -1530,12 +1871,12 @@ func _advance_p1_step() -> void:
 			action_result = p1_session.request_flip(pancake_model, ingredient_model)
 			if bool(action_result.get("requires_folding", false)):
 				tool_controller.clear_tool()
-				tool_status_label.text = "小料已在饼面上，跳过翻面；请直接拖动饼皮左右边缘折叠"
+				tool_status_label.text = "小料已在饼面上，不再翻面；可继续刷酱、放料，完成后抓住饼皮边缘折叠"
 				_refresh_p1_ui()
 				return
 			if bool(action_result.success):
 				tool_controller.clear_tool()
-				egg_crack_artwork.visible = false
+				_stop_egg_crack_effect()
 				tool_status_label.text = (
 					"已提前翻面：本单火候分和订单评价会降低；现在可继续挤酱并放入小料"
 					if bool(action_result.get("early_flip", false))
@@ -1607,6 +1948,18 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_finish_ingredient_drag(event.position)
 		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		_cancel_ingredient_drag()
+		get_viewport().set_input_as_handled()
+
+
+func _cancel_ingredient_drag() -> void:
+	if _ingredient_drag_type.is_empty():
+		return
+	ingredient_drag_preview.visible = false
+	ingredient_drag_preview.texture = null
+	_ingredient_drag_type = &""
+	tool_status_label.text = "已取消放置小料；库存未消耗"
 
 
 func _finish_ingredient_drag(viewport_position: Vector2) -> void:
@@ -1623,14 +1976,19 @@ func _finish_ingredient_drag(viewport_position: Vector2) -> void:
 		_ingredient_drag_type = &""
 		return
 	var grid_position := PancakeSpace.local_to_grid_position(local_position, pancake_surface.size, pancake_model.grid_size)
+	var resolved_local_position := local_position
+	var resolved_grid_position := grid_position
+	if _ingredient_drag_type == IngredientModel.EGG:
+		resolved_local_position = pancake_surface.size * 0.5
+		resolved_grid_position = Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5
 	var rotation := (viewport_position - _ingredient_drag_start).angle()
 	var result := {"success": false, "reason": "配料未能放置"}
 	if _ingredient_drag_type == IngredientModel.EGG:
-		var egg_validation := pancake_model.can_crack_egg(grid_position)
+		var egg_validation := pancake_model.can_crack_egg(resolved_grid_position)
 		if bool(egg_validation.success):
-			result = ingredient_model.place(_ingredient_drag_type, grid_position, rotation, pancake_model)
+			result = ingredient_model.place(_ingredient_drag_type, resolved_grid_position, rotation, pancake_model)
 			if bool(result.success):
-				var crack_result := pancake_model.crack_egg(grid_position)
+				var crack_result := pancake_model.crack_egg(resolved_grid_position)
 				if not bool(crack_result.success):
 					result = crack_result
 		else:
@@ -1639,19 +1997,17 @@ func _finish_ingredient_drag(viewport_position: Vector2) -> void:
 		result = ingredient_model.place(_ingredient_drag_type, grid_position, rotation, pancake_model)
 	if bool(result.success):
 		if _ingredient_drag_type == IngredientModel.EGG:
-			egg_crack_artwork.position = local_position
-			egg_crack_artwork.rotation = 0.0
-			egg_crack_artwork.visible = true
+			_play_egg_crack_effect(resolved_local_position)
 			tool_controller.select_tool(ToolController.Tool.SCRAPER)
 			tool_status_label.text = "鸡蛋已打入；用 T 形摊面器连续画圈摊开蛋黄和蛋白"
 		else:
 			if p1_session.phase == P1Session.Phase.FIRST_SIDE:
-				var fold_transition := p1_session.begin_folding_after_topping(ingredient_model)
-				if bool(fold_transition.get("success", false)):
+				var preparation_transition := p1_session.begin_sauce_and_fillings_without_flip()
+				if bool(preparation_transition.get("success", false)):
 					tool_controller.clear_tool()
-					tool_status_label.text = "%s已放到饼面，跳过翻面；请直接拖动饼皮左右边缘折叠" % IngredientModel.display_name(_ingredient_drag_type)
+					tool_status_label.text = "%s已放到饼面，不再翻面；可继续刷酱、放料，完成后抓住饼皮边缘折叠" % IngredientModel.display_name(_ingredient_drag_type)
 				else:
-					tool_status_label.text = str(fold_transition.get("reason", "无法进入折叠阶段"))
+					tool_status_label.text = str(preparation_transition.get("reason", "无法进入未翻面备料阶段"))
 			else:
 				tool_status_label.text = "%s已放到饼面，可继续调整下一种配料" % IngredientModel.display_name(_ingredient_drag_type)
 	else:
@@ -1661,16 +2017,7 @@ func _finish_ingredient_drag(viewport_position: Vector2) -> void:
 
 
 func _ingredient_texture(ingredient_type: StringName) -> Texture2D:
-	match ingredient_type:
-		IngredientModel.EGG:
-			return ingredient_layer.egg_texture
-		IngredientModel.BAOCUI:
-			return ingredient_layer.baocui_texture
-		IngredientModel.HAM_SAUSAGE:
-			return ingredient_layer.ham_texture
-		IngredientModel.SCALLION:
-			return ingredient_layer.scallion_texture
-	return null
+	return ingredient_layer.texture_for(ingredient_type)
 
 
 func _saved_ingredient_stock() -> Dictionary:
@@ -1735,6 +2082,103 @@ func _refresh_ingredient_stock_ui() -> void:
 
 func _serve_order() -> void:
 	if p1_session.phase != P1Session.Phase.READY_TO_SERVE:
+		tool_status_label.text = "完成折叠和包装后，再选择订单商品图标交付"
+		return
+	tool_status_label.text = "成品已准备好；请把实体成品拖入顾客递餐托盘"
+
+
+func _deliver_direct_pancake_to_order(target_order: Dictionary, item_index: int) -> void:
+	if p1_session.phase != P1Session.Phase.READY_TO_SERVE:
+		_pending_delivery_item_index = -1
+		return
+	var game_session := get_node_or_null("/root/GameSession")
+	var order_id := StringName(target_order.get("order_id", &""))
+	if game_session == null or order_id.is_empty():
+		return
+	var items: Array = Array(target_order.get("items", []))
+	if item_index < 0 or item_index >= items.size():
+		tool_status_label.text = "该订单商品槽为空"
+		return
+	var serving: Dictionary = game_session.call("begin_formal_order_serving", order_id)
+	if not bool(serving.get("success", false)):
+		tool_status_label.text = "该顾客当前无法接餐"
+		return
+	if game_session.has_method("mark_formal_order_production_started"):
+		game_session.call("mark_formal_order_production_started", order_id, &"device.pancake_griddle")
+	_formal_order_id = order_id
+	var legacy := Dictionary(Dictionary(target_order.get("metadata", {})).get("legacy_order", {}))
+	if not legacy.is_empty():
+		p1_session.order = legacy.duplicate(true)
+	p1_session.mirror_formal_patience(
+		float(target_order.get("remaining_patience_seconds", target_order.get("patience_seconds", 0.0))),
+		bool(target_order.get("tutorial_no_countdown", false))
+	)
+	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(
+		pancake_model,
+		ingredient_model,
+		fold_model,
+		p1_session.order,
+		p1_session.elapsed_seconds,
+		p1_session.patience_ratio()
+	)
+	var preview_product: Dictionary = five_area_pancake_production.call(
+		"create_product_snapshot",
+		score_result,
+		p1_session.order,
+		{"package_result": fold_model.package_result},
+	)
+	var order_preview: Dictionary = game_session.call("preview_attach_formal_order_product", order_id, item_index, preview_product)
+	if not bool(order_preview.get("success", false)):
+		game_session.call("cancel_formal_order_serving", order_id)
+		tool_status_label.text = "当前订单商品槽不能接收成品：%s" % str(order_preview.get("reason", "unknown"))
+		return
+	var inventory_rollback: Dictionary = game_session.call("inventory_snapshot")
+	var production_result: Dictionary = five_area_pancake_production.call(
+		"settle_completed_pancake",
+		score_result,
+		p1_session.order,
+		{"package_result": fold_model.package_result},
+	)
+	if not bool(production_result.get("success", false)):
+		game_session.call("cancel_formal_order_serving", order_id)
+		tool_status_label.text = "煎饼库存结算失败：%s" % str(production_result.get("reason", "unknown"))
+		return
+	var product := Dictionary(production_result.get("product", {})).duplicate(true)
+	var attached: Dictionary = game_session.call("attach_formal_order_product", order_id, item_index, product)
+	if not bool(attached.get("success", false)):
+		game_session.call("save_inventory", inventory_rollback)
+		game_session.call("cancel_formal_order_serving", order_id)
+		tool_status_label.text = "正式订单接收成品失败：%s" % str(attached.get("reason", "unknown"))
+		return
+	_pending_delivery_item_index = -1
+	var refreshed_order: Dictionary = game_session.call("formal_order", order_id)
+	if not _formal_order_items_complete(refreshed_order):
+		game_session.call("cancel_formal_order_serving", order_id)
+		reset_pancake()
+		p1_session.mirror_formal_patience(
+			float(refreshed_order.get("remaining_patience_seconds", refreshed_order.get("patience_seconds", 0.0))),
+			bool(refreshed_order.get("tutorial_no_countdown", false)),
+		)
+		tool_status_label.text = "已交付第 %d 项；请继续制作，再点击剩余商品图标。" % (item_index + 1)
+		_refresh_customer_queue()
+		_refresh_p1_ui()
+		return
+	var settled_formal: Dictionary = game_session.call("settle_formal_order", order_id)
+	if not bool(settled_formal.get("success", false)):
+		tool_status_label.text = "正式订单结算失败：%s" % str(settled_formal.get("reason", "unknown"))
+		return
+	var handoff_result := p1_session.begin_handoff(score_result)
+	if not bool(handoff_result.get("success", false)):
+		tool_status_label.text = str(handoff_result.get("reason", "当前不能递餐"))
+		return
+	# The direct product is already consumed, attached, and formally settled.
+	# Reuse this marker so the payment callback does not create or attach it twice.
+	_handoff_product_from_tray = product
+	_begin_pancake_handoff_visual(score_result)
+
+
+func _serve_order_legacy() -> void:
+	if p1_session.phase != P1Session.Phase.READY_TO_SERVE:
 		tool_status_label.text = "完成折叠和包装后，点击鏊子上的成品出餐"
 		return
 	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(
@@ -1765,7 +2209,7 @@ func _begin_pancake_handoff_visual(score_result: Dictionary, package_result: Str
 	pancake_visual.visible = false
 	ingredient_layer.visible = false
 	sauce_blob_overlay.visible = false
-	egg_crack_artwork.visible = false
+	_stop_egg_crack_effect()
 	tool_status_label.text = "正在把餐递给顾客"
 	if _handoff_tween != null and _handoff_tween.is_valid():
 		_handoff_tween.kill()
@@ -1795,13 +2239,37 @@ func _store_current_pancake() -> void:
 	if not bool(stored.get("success", false)):
 		tool_status_label.text = "无法存入暂存托盘：%s" % str(stored.get("reason", "unknown"))
 		return
-	tool_status_label.text = "煎饼已存入成品暂存托盘；点击匹配格交付当前订单。"
+	tool_status_label.text = "煎饼已存入成品暂存托盘；需要交付时直接点击订单商品图标。"
 	p1_session.start(p1_session.order)
 	reset_pancake()
 	_refresh_pancake_holding_tray()
 
 
 func _serve_pancake_from_holding_tray(slot_index: int) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null:
+		return
+	var tray_slots: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	if slot_index < 0 or slot_index >= tray_slots.size() or Dictionary(tray_slots[slot_index]).is_empty():
+		tool_status_label.text = "暂存格为空；请先完成并暂存煎饼"
+		return
+	tool_status_label.text = "暂存格仅用于查看成品与新鲜度；交付请直接点击订单商品图标"
+
+
+func _deliver_tray_pancake_to_order(slot_index: int, target_order: Dictionary, item_index: int) -> void:
+	_formal_order_id = StringName(target_order.get("order_id", &""))
+	var legacy := Dictionary(Dictionary(target_order.get("metadata", {})).get("legacy_order", {}))
+	if not legacy.is_empty():
+		p1_session.order = legacy.duplicate(true)
+	p1_session.mirror_formal_patience(
+		float(target_order.get("remaining_patience_seconds", target_order.get("patience_seconds", 0.0))),
+		bool(target_order.get("tutorial_no_countdown", false))
+	)
+	_pending_delivery_item_index = item_index
+	_serve_pancake_from_holding_tray_legacy(slot_index, item_index)
+
+
+func _serve_pancake_from_holding_tray_legacy(slot_index: int, selected_item_index: int = -1) -> void:
 	if five_area_pancake_production == null or p1_session == null:
 		tool_status_label.text = "暂存托盘暂不可用：请先进入一局煎饼制作。"
 		return
@@ -1819,7 +2287,7 @@ func _serve_pancake_from_holding_tray(slot_index: int) -> void:
 	if p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]:
 		tool_status_label.text = "当前顾客正在递餐或付款，暂时不能重复交付。"
 		return
-	var formal_order: Dictionary = game_session.call("active_formal_order") if game_session.has_method("active_formal_order") else {}
+	var formal_order: Dictionary = game_session.call("formal_order", _formal_order_id) if game_session.has_method("formal_order") else {}
 	if formal_order.is_empty() or _formal_order_id.is_empty():
 		tool_status_label.text = "当前订单未进入正式订单服务。"
 		return
@@ -1827,25 +2295,50 @@ func _serve_pancake_from_holding_tray(slot_index: int) -> void:
 	if items.is_empty():
 		tool_status_label.text = "正式订单没有可交付条目。"
 		return
-	var formal_item: Dictionary = Dictionary(items[0])
+	var tray_product := Dictionary(tray_slots[slot_index]).duplicate(true)
+	var item_index := selected_item_index
+	if item_index < 0:
+		item_index = int(game_session.call("formal_order_delivery_item_index", _formal_order_id, tray_product)) if game_session.has_method("formal_order_delivery_item_index") else 0
+	if item_index < 0 or item_index >= items.size():
+		tool_status_label.text = "目标顾客没有尚未完成的品项"
+		return
+	var serving: Dictionary = game_session.call("begin_formal_order_serving", _formal_order_id)
+	if not bool(serving.get("success", false)):
+		tool_status_label.text = "该顾客当前无法接餐"
+		return
+	if game_session.has_method("mark_formal_order_production_started"):
+		game_session.call("mark_formal_order_production_started", _formal_order_id, &"pancake_holding_tray")
+	var formal_item: Dictionary = Dictionary(items[item_index])
 	var tray_preview: Dictionary = game_session.call("preview_pancake_tray_delivery", slot_index, formal_item)
 	if not bool(tray_preview.get("success", false)):
+		game_session.call("cancel_formal_order_serving", _formal_order_id)
 		tool_status_label.text = _pancake_tray_failure_text(tray_preview)
 		_refresh_pancake_holding_tray()
 		return
 	var order_service_ref: RefCounted = game_session.call("order_service")
-	var order_preview: Dictionary = order_service_ref.call("preview_attach_product", _formal_order_id, 0, tray_preview.get("product", {}))
+	var order_preview: Dictionary = order_service_ref.call("preview_attach_product", _formal_order_id, item_index, tray_preview.get("product", {}))
 	if not bool(order_preview.get("success", false)):
+		game_session.call("cancel_formal_order_serving", _formal_order_id)
 		tool_status_label.text = "当前订单暂时不能接收成品：%s" % str(order_preview.get("reason", "unknown"))
 		return
 	var delivered: Dictionary = game_session.call("serve_pancake_tray_delivery", slot_index, formal_item)
 	if not bool(delivered.get("success", false)):
+		game_session.call("cancel_formal_order_serving", _formal_order_id)
 		tool_status_label.text = _pancake_tray_failure_text(delivered)
 		_refresh_pancake_holding_tray()
 		return
-	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, 0, delivered.get("served_product", {}))
+	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, item_index, delivered.get("served_product", {}))
 	if not bool(attached.get("success", false)):
+		game_session.call("cancel_formal_order_serving", _formal_order_id)
 		tool_status_label.text = "正式订单接收成品失败：%s" % str(attached.get("reason", "unknown"))
+		return
+	_pending_delivery_item_index = -1
+	var refreshed_order: Dictionary = game_session.call("formal_order", _formal_order_id)
+	if not _formal_order_items_complete(refreshed_order):
+		game_session.call("cancel_formal_order_serving", _formal_order_id)
+		tool_status_label.text = "已交付 1 项，继续制作剩余品项；该顾客耐心已恢复倒计时。"
+		_refresh_pancake_holding_tray()
+		_refresh_customer_queue()
 		return
 	var settled_formal: Dictionary = game_session.call("settle_formal_order", _formal_order_id)
 	if not bool(settled_formal.get("success", false)):
@@ -1889,6 +2382,17 @@ func _serve_pancake_from_holding_tray(slot_index: int) -> void:
 	_begin_pancake_handoff_visual(result, StringName(stored_fold.get("package_result", &"")))
 
 
+func _formal_order_items_complete(order: Dictionary) -> bool:
+	var items: Array = Array(order.get("items", []))
+	if items.is_empty():
+		return false
+	for item_value in items:
+		var item := Dictionary(item_value)
+		if Array(item.get("prepared_product_instance_ids", [])).size() < int(item.get("quantity", 1)):
+			return false
+	return true
+
+
 func _on_pancake_holding_tray_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		tool_status_label.text = "成品暂存用法：煎饼完成包装后点“暂存成品”；有顾客订单时可随时交付，配方、火候和存放时间会影响评分。"
@@ -1926,8 +2430,9 @@ func _refresh_pancake_holding_tray() -> void:
 		var slot := Dictionary(slots[index]) if index < slots.size() else {}
 		var button := pancake_holding_slots[index]
 		button.text = "暂存格 %d\n%s" % [index + 1, "空" if slot.is_empty() else "%s · %s" % [str(slot.get("state", "fresh")), str(slot.get("product_id", "煎饼"))]]
-		button.disabled = false
-		button.tooltip_text = "空：完成并包装煎饼后，点击“暂存成品”放入这里。" if slot.is_empty() else "暂存成品：有活动顾客时可随时交付；配方、火候和存放时间会影响评分。"
+		button.disabled = true
+		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.tooltip_text = "空：完成并包装煎饼后，点击“暂存成品”放入这里。" if slot.is_empty() else "暂存成品与新鲜度展示；交付时把成品拖入顾客递餐托盘。"
 
 
 func _complete_handoff_animation() -> void:
@@ -1981,6 +2486,7 @@ func _complete_payment_animation() -> void:
 		if not _handoff_product_from_tray.is_empty():
 			result_for_session["area_id"] = &"area.pancake"
 			result_for_session["product_id"] = &"product.pancake.custom"
+			result_for_session["material_cost"] = int(_handoff_product_from_tray.get("material_cost", 0))
 			_handoff_product_from_tray.clear()
 		elif five_area_pancake_production != null:
 			var production_result: Dictionary = five_area_pancake_production.call("settle_completed_pancake", result_for_session, p1_session.order, {"package_result": fold_model.package_result})
@@ -2192,6 +2698,7 @@ func _restore_in_progress_after_tray_handoff() -> void:
 	pancake_surface.spreader_motion_valid = false
 	ingredient_drag_preview.visible = false
 	_ingredient_drag_type = &""
+	_stop_egg_crack_effect(false)
 	egg_crack_artwork.visible = pancake_model.egg_state == PancakeModel.EggState.CRACKED and pancake_model.egg_is_on_visible_side()
 
 
@@ -2237,7 +2744,13 @@ func _settle_formal_pancake_product(product: Dictionary) -> bool:
 	# pancake again; the order is already safely settled and gameplay can move on.
 	if _formal_pancake_order_is_settled():
 		return true
-	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, 0, product)
+	var item_index := _pending_delivery_item_index
+	if item_index < 0:
+		item_index = int(game_session.call("formal_order_delivery_item_index", _formal_order_id, product)) if game_session.has_method("formal_order_delivery_item_index") else 0
+	if item_index < 0:
+		tool_status_label.text = "目标顾客没有尚未完成的品项"
+		return false
+	var attached: Dictionary = game_session.call("attach_formal_order_product", _formal_order_id, item_index, product)
 	if not bool(attached.get("success", false)):
 		# An interrupted callback can leave the product attached while the final
 		# settlement has not yet run.  Let the idempotent settlement below finish it.
@@ -2248,6 +2761,7 @@ func _settle_formal_pancake_product(product: Dictionary) -> bool:
 	if not bool(settled.get("success", false)):
 		tool_status_label.text = "正式订单结算失败：%s" % str(settled.get("reason", "unknown"))
 		return false
+	_pending_delivery_item_index = -1
 	return true
 
 
@@ -2360,6 +2874,8 @@ func _refresh_growth_section(message: String = "") -> void:
 		var recommendation: Dictionary = Dictionary(recommendation_variant).duplicate(true)
 		var purchase_slot := StringName(recommendation.get("purchase_slot", &""))
 		recommendation["slot_title"] = "安装位" if purchase_slot == &"install" else "内容位"
+		if bool(recommendation.get("coin_guarantee", false)):
+			recommendation["slot_title"] = "%s · 金币保底" % str(recommendation["slot_title"])
 		_growth_recommendations.append(recommendation)
 	while _growth_recommendations.size() < 3:
 		_growth_recommendations.append({"hidden": true})
@@ -2431,6 +2947,20 @@ func _growth_ticket_status_text(recommendation: Dictionary) -> String:
 func _growth_ticket_presentation(recommendation: Dictionary) -> Dictionary:
 	if bool(recommendation.get("pending_activation", false)) or bool(recommendation.get("purchased", false)):
 		return {"compact": "已预订，明日生效", "tooltip": "已预订，将在明日生效", "disabled": true}
+	if bool(recommendation.get("coin_guarantee", false)):
+		var current_coins := int(recommendation.get("current_coins", 0))
+		var price := int(recommendation.get("price", 0))
+		if bool(recommendation.get("can_purchase", false)):
+			return {
+				"compact": "金币 %d/%d · 可预订，明日生效" % [current_coins, price],
+				"tooltip": "金币保底项：本次日结已用金币替代其他成长条件；支付 %d 金币，明日生效。" % price,
+				"disabled": false,
+			}
+		return {
+			"compact": "金币 %d/%d" % [current_coins, price],
+			"tooltip": "金币保底项：本次日结已用金币替代其他成长条件；当前金币 %d/%d，只差金币。" % [current_coins, price],
+			"disabled": true,
+		}
 	if bool(recommendation.get("can_purchase", false)):
 		return {"compact": "可预订，明日生效", "tooltip": "可预订，明日生效", "disabled": false}
 	var missing_requirements: Array = Array(recommendation.get("missing_requirements", []))
@@ -2632,7 +3162,7 @@ func _refresh_global_status() -> void:
 		global_status_label.text += "  ·  熟练度（饮品正确温度）%d" % int(drink_mastery.get("correct_temperature", 0))
 
 
-func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:
+func _raw_order_items_for_card(order: Dictionary) -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	var raw_items: Array = Array(order.get("items", order.get("products", [])))
 	for raw_item in raw_items:
@@ -2640,18 +3170,72 @@ func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:
 			items.append((raw_item as Dictionary).duplicate(true))
 	if items.is_empty():
 		items.append(order.duplicate(true))
+	return items
+
+
+func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:
+	var items := _raw_order_items_for_card(order)
 	if items.size() > 2:
 		items.resize(2)
 	return items
 
 
+func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
+	var requirements: Array[Dictionary] = []
+	var items := _raw_order_items_for_card(order)
+	# Ingredient hints always occupy the first row-major slots, independent of
+	# the order in which multi-area items were generated.
+	for item in items:
+		var area_id := StringName(item.get("area_id", &""))
+		if not area_id.is_empty() and area_id != &"area.pancake":
+			continue
+		var ingredient_ids: Array = Array(item.get("ingredients", item.get("ingredient_ids", [])))
+		for ingredient_id_value in ingredient_ids:
+			var ingredient_id := StringName(ingredient_id_value)
+			var ingredient_texture := ORDER_CARD_INGREDIENT_TEXTURES.get(ingredient_id) as Texture2D
+			if ingredient_texture == null:
+				continue
+			requirements.append({
+				"kind": ORDER_REQUIREMENT_INGREDIENT,
+				"texture": ingredient_texture,
+				"ingredient_id": ingredient_id,
+			})
+	# Heating is a preparation requirement, not another product icon. It follows
+	# all pancake ingredients and is omitted entirely for room-temperature drinks.
+	for item in items:
+		if StringName(item.get("area_id", &"")) != &"area.packaged_drink":
+			continue
+		if StringName(item.get("temperature_mode", &"room_temperature")) != &"heated":
+			continue
+		requirements.append({
+			"kind": ORDER_REQUIREMENT_HEATED,
+			"texture": ORDER_CARD_HEAT_TEXTURE,
+			"product_id": StringName(item.get("product_id", &"")),
+		})
+	if requirements.size() > order_ingredient_icons.size():
+		requirements.resize(order_ingredient_icons.size())
+	return requirements
+
+
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
-	for dish_icon in order_dish_icons:
+	for dish_index in order_dish_icons.size():
+		var dish_icon := order_dish_icons[dish_index]
 		dish_icon.texture = null
 		dish_icon.visible = false
-	for ingredient_icon in order_ingredient_icons:
+		dish_icon.modulate = Color.WHITE
+		var dish_button := order_dish_buttons[dish_index]
+		dish_button.visible = true
+		dish_button.disabled = true
+		dish_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dish_button.self_modulate = Color.WHITE
+		dish_button.tooltip_text = "只读点单提示"
+	for ingredient_index in order_ingredient_icons.size():
+		var ingredient_icon := order_ingredient_icons[ingredient_index]
 		ingredient_icon.texture = null
 		ingredient_icon.visible = false
+		ingredient_icon.tooltip_text = ""
+		order_ingredient_backgrounds[ingredient_index].visible = false
+		order_heat_backgrounds[ingredient_index].visible = false
 	var items := _order_items_for_card(order)
 	var coin_total := 0
 	for dish_index in items.size():
@@ -2660,16 +3244,28 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		var dish_icon := order_dish_icons[dish_index]
 		dish_icon.texture = ORDER_CARD_DISH_TEXTURE
 		dish_icon.visible = true
-		var ingredient_ids: Array = Array(item.get("ingredients", []))
-		var slot_indices: Array = ORDER_CARD_INGREDIENT_SLOT_GROUPS[dish_index]
-		for ingredient_index in mini(ingredient_ids.size(), slot_indices.size()):
-			var ingredient_id := StringName(ingredient_ids[ingredient_index])
-			var ingredient_texture := ORDER_CARD_INGREDIENT_TEXTURES.get(ingredient_id) as Texture2D
-			if ingredient_texture == null:
-				continue
-			var ingredient_icon := order_ingredient_icons[int(slot_indices[ingredient_index])]
-			ingredient_icon.texture = ingredient_texture
-			ingredient_icon.visible = true
+		var attached_count := Array(item.get("prepared_product_instance_ids", [])).size()
+		var required_count := int(item.get("quantity", 1))
+		var completed := attached_count >= required_count
+		dish_icon.modulate = Color(0.58, 0.58, 0.58, 0.72) if completed else Color.WHITE
+		var dish_button := order_dish_buttons[dish_index]
+		dish_button.disabled = true
+		dish_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dish_button.tooltip_text = "该订单商品已装盘" if completed else "只读点单提示；请把实体成品拖入顾客托盘"
+	var requirements := _order_requirements_for_card(order)
+	for requirement_index in requirements.size():
+		var requirement: Dictionary = requirements[requirement_index]
+		var requirement_kind := StringName(requirement.get("kind", ORDER_REQUIREMENT_INGREDIENT))
+		var ingredient_icon := order_ingredient_icons[requirement_index]
+		ingredient_icon.texture = requirement.get("texture") as Texture2D
+		ingredient_icon.visible = ingredient_icon.texture != null
+		ingredient_icon.tooltip_text = "需要加热" if requirement_kind == ORDER_REQUIREMENT_HEATED else ""
+		order_ingredient_backgrounds[requirement_index].visible = requirement_kind == ORDER_REQUIREMENT_INGREDIENT
+		order_heat_backgrounds[requirement_index].visible = requirement_kind == ORDER_REQUIREMENT_HEATED
+	if coin_total <= 0:
+		var metadata := Dictionary(order.get("metadata", {}))
+		var legacy_order := Dictionary(metadata.get("legacy_order", {}))
+		coin_total = int(order.get("base_coins", metadata.get("base_coins", legacy_order.get("payment_coins", 0))))
 	order_coin_icon.texture = ORDER_CARD_COIN_TEXTURE
 	order_coin_icon.visible = coin_total > 0
 	order_amount_label.text = str(coin_total)
@@ -2690,7 +3286,13 @@ func _refresh_p1_ui() -> void:
 		get_node("SafeArea/BottomStrip").visible = true
 		tutorial_guide_label.text = str(p1_session.order.get("tutorial_guide", "新手指引：本单不计倒计时。"))
 	patience_bar.value = p1_session.patience_ratio() * 100.0
-	_refresh_order_card_ui(p1_session.order, p1_session.patience_ratio())
+	var card_order := p1_session.order
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("formal_order") and not _formal_order_id.is_empty():
+		var formal_order: Dictionary = game_session.call("formal_order", _formal_order_id)
+		if not formal_order.is_empty():
+			card_order = formal_order
+	_refresh_order_card_ui(card_order, p1_session.patience_ratio())
 	phase_label.text = "当前步骤：%s · 已用时 %.0f秒" % [p1_session.phase_label(), p1_session.elapsed_seconds]
 	p1_session.heat_level = 0.50
 	heat_label.text = "火力固定 50%"
@@ -2734,9 +3336,11 @@ func _refresh_p1_ui() -> void:
 		elif not can_flip:
 			step_action_button.text = "翻面（尚未就绪）"
 			step_action_button.tooltip_text = str(flip_readiness.get("reason", "请先完成翻面准备"))
-	serve_product_button.visible = p1_session.phase == P1Session.Phase.READY_TO_SERVE
+	var ready_to_serve := p1_session.phase == P1Session.Phase.READY_TO_SERVE
+	serve_product_button.visible = false
+	serve_product_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	discard_current_pancake_button.visible = p1_session.phase not in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
-	store_pancake_button.visible = serve_product_button.visible and pancake_holding_tray.visible
+	store_pancake_button.visible = ready_to_serve and pancake_holding_tray.visible
 	var transaction_phase := p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
 	p1_control_bar.visible = not transaction_phase and not _result_detail_open
 	result_panel.visible = _result_detail_open
@@ -2750,21 +3354,23 @@ func _refresh_p1_ui() -> void:
 	elif p1_session.phase not in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT]:
 		_set_customer_portrait_state(P1Session.REACTION_NEUTRAL)
 	_refresh_customer_queue()
-	var spread_can_continue := p1_session.phase == P1Session.Phase.SPREAD and pancake_model.covered_cell_count() > 0
 	egg_button.disabled = false
 	scraper_button.disabled = _folding_locks_preparation() or not _scraper_can_act()
 	baocui_button.disabled = false
 	ham_button.disabled = not ham_button.visible
 	scallion_button.disabled = false
-	var sauce_phase_locked := p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS
-	var sauce_action_locked := sauce_phase_locked and not spread_can_continue
-	sauce_brush_button.disabled = false if _automatic_brush_owned else (sauce_action_locked or _folding_locks_preparation())
-	sauce_refill_button.disabled = sauce_action_locked or _folding_locks_preparation()
-	chili_sauce_refill_button.disabled = sauce_action_locked or _folding_locks_preparation()
+	sauce_brush_button.visible = false
+	sauce_brush_button.disabled = true
+	sauce_brush_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_refresh_sauce_button_states()
 
 
 func _current_customer_texture(state: StringName) -> Texture2D:
 	var customer_id := StringName(customer_queue.current_customer().get("id", &"customer_01"))
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("formal_order") and not _formal_order_id.is_empty():
+		var formal := Dictionary(game_session.call("formal_order", _formal_order_id))
+		customer_id = StringName(formal.get("customer_id", customer_id))
 	var customer_textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
 	return customer_textures.get(state, customer_textures[&"neutral"])
 
@@ -2793,15 +3399,43 @@ func _set_customer_portrait_state(state: StringName) -> void:
 
 
 func _refresh_customer_queue() -> void:
-	var waiting: Array = customer_queue.waiting_customers()
-	queue_status_label.text = "排队中 · %d位" % waiting.size()
-	for index in waiting_customer_portraits.size():
-		var portrait := waiting_customer_portraits[index]
-		portrait.visible = index < waiting.size()
-		if portrait.visible:
-			var customer_id := StringName(waiting[index].get("id", &"customer_01"))
-			var customer_textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
-			portrait.texture = customer_textures[&"neutral"]
+	var orders: Array = []
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("active_formal_orders"):
+		orders = Array(game_session.call("active_formal_orders"))
+	queue_status_label.text = "店内\n%d/3" % orders.size()
+	for slot_index in customer_slot_buttons.size():
+		var button := customer_slot_buttons[slot_index]
+		var bar := customer_slot_patience_bars[slot_index]
+		var order := {}
+		for order_variant in orders:
+			var candidate := Dictionary(order_variant)
+			if int(candidate.get("service_slot", -1)) == slot_index:
+				order = candidate
+				break
+		button.visible = not order.is_empty()
+		if order.is_empty():
+			continue
+		var customer_id := StringName(order.get("customer_id", CUSTOMER_QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS[slot_index]))
+		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
+		button.icon = textures[&"neutral"]
+		var metadata := Dictionary(order.get("metadata", {}))
+		var legacy := Dictionary(metadata.get("legacy_order", {}))
+		var title := str(legacy.get("title", "顾客%d" % (slot_index + 1)))
+		if title.length() > 7:
+			title = title.left(7)
+		button.text = title
+		button.tooltip_text = str(legacy.get("customer_line", title))
+		button.toggle_mode = true
+		button.set_pressed_no_signal(StringName(order.get("order_id", &"")) == _formal_order_id)
+		var patience_total := maxf(float(order.get("patience_seconds", 0.0)), 0.001)
+		var unlimited := bool(order.get("tutorial_no_countdown", false))
+		bar.value = 100.0 if unlimited else clampf(float(order.get("remaining_patience_seconds", 0.0)) / patience_total, 0.0, 1.0) * 100.0
+		bar.tooltip_text = "教学单·不限时" if unlimited else "耐心 %d 秒" % ceili(float(order.get("remaining_patience_seconds", 0.0)))
+
+
+func _refresh_customer_queue_legacy() -> void:
+	pass
 
 
 func _log_info(category: StringName, message: String) -> void:

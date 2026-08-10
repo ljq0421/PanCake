@@ -92,10 +92,9 @@
 [ext_resource type="Texture2D" uid="uid://diondlio60pee" path="res://resources/art/ui/quality/quality_order_correctness_v1.png" id="90_nyusp"]
 [ext_resource type="Texture2D" uid="uid://ci3aeoih3c7nc" path="res://resources/art/ui/quality/quality_preparation_time_v1.png" id="91_vdkap"]
 [ext_resource type="Texture2D" uid="uid://br3wulay8eu4v" path="res://resources/art/payments/payment_cash_small_v1.png" id="92_nnv6x"]
-[ext_resource type="Texture2D" uid="uid://dknlk2asldge6" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png" id="93_i48ma"]
+[ext_resource type="Texture2D" uid="uid://dbuayq6s8h454" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v2.png" id="93_i48ma"]
 [ext_resource type="Texture2D" uid="uid://bhjgy30eq2k28" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png" id="94_3ju16"]
-[ext_resource type="Texture2D" uid="uid://brtdw4orj2viy" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png" id="95_tud4u"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/f3_stations_workbench.tscn" id="96_f3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_five_area_v3.png" id="95_tud4u"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_1_five_area_v2.png" id="97_cor1"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_2_five_area_v2.png" id="98_cor2"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_3_five_area_v2.png" id="99_cor3"]
@@ -108,6 +107,10 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_4_five_area_v2.png" id="106_mus4"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_5_five_area_v2.png" id="107_mus5"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_6_five_area_v2.png" id="108_mus6"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png" id="109_cor_scattered"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png" id="110_mus_scattered"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v1_five_area_v2.png" id="111_egg_crack_1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v2_five_area_v2.png" id="112_egg_crack_2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_patience_bg"]
 bg_color = Color(0.075, 0.14, 0.15, 0.94)
@@ -215,6 +218,66 @@ corner_radius_bottom_left = 20
 
 [sub_resource type="StyleBoxEmpty" id="StyleBox_clear"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_dish_target_normal"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.73, 0.3, 0.14)
+corner_radius_top_left = 31
+corner_radius_top_right = 31
+corner_radius_bottom_right = 31
+corner_radius_bottom_left = 31
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_dish_target_hover"]
+bg_color = Color(1, 0.82, 0.38, 0.12)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.72, 0.2, 0.95)
+corner_radius_top_left = 31
+corner_radius_top_right = 31
+corner_radius_bottom_right = 31
+corner_radius_bottom_left = 31
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_dish_target_pressed"]
+bg_color = Color(1, 0.68, 0.16, 0.22)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.58, 0.12, 1)
+corner_radius_top_left = 31
+corner_radius_top_right = 31
+corner_radius_bottom_right = 31
+corner_radius_bottom_left = 31
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_requirement_normal"]
+bg_color = Color(1, 0.84, 0.5, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.43, 0.14, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_order_requirement_heated"]
+bg_color = Color(1, 0.55, 0.24, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.68, 0.16, 0.07, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
 [sub_resource type="StyleBoxFlat" id="StyleBox_pan"]
 bg_color = Color(0.09, 0.1, 0.11, 0)
 border_width_left = 12
@@ -245,6 +308,20 @@ shader_parameter/fold_right_progress = 0.0
 shader_parameter/fillings_enclosed = 0.0
 shader_parameter/package_hidden = 0.0
 shader_parameter/view_mode = 0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_egg_crack"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("111_egg_crack_1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("112_egg_crack_2")
+}],
+"loop": false,
+"name": &"crack",
+"speed": 6.25
+}]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_p1_card"]
 bg_color = Color(0.045, 0.09, 0.1, 0.96)
@@ -442,7 +519,7 @@ z_index = 150
 layout_mode = 0
 offset_left = 100.0
 offset_top = 136.0
-offset_right = 1820.0
+offset_right = 1080.0
 offset_bottom = 170.0
 theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
 theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
@@ -608,9 +685,9 @@ vertical_alignment = 1
 [node name="OrderDish1" type="TextureRect" parent="SafeArea/OrderCard" unique_id=1478850398]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 68.0
+offset_left = 36.0
 offset_top = 95.0
-offset_right = 130.0
+offset_right = 98.0
 offset_bottom = 157.0
 mouse_filter = 2
 expand_mode = 1
@@ -619,13 +696,245 @@ stretch_mode = 5
 [node name="OrderDish2" type="TextureRect" parent="SafeArea/OrderCard" unique_id=341345675]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 172.0
+offset_left = 119.0
 offset_top = 95.0
-offset_right = 234.0
+offset_right = 181.0
 offset_bottom = 157.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
+
+[node name="OrderDish3" type="TextureRect" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 202.0
+offset_top = 95.0
+offset_right = 264.0
+offset_bottom = 157.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderDishTarget1" type="Button" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 95.0
+offset_right = 98.0
+offset_bottom = 157.0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBox_order_dish_target_normal")
+theme_override_styles/hover = SubResource("StyleBox_order_dish_target_hover")
+theme_override_styles/pressed = SubResource("StyleBox_order_dish_target_pressed")
+theme_override_styles/focus = SubResource("StyleBox_order_dish_target_hover")
+tooltip_text = "只读点单提示；请把实体成品拖入顾客托盘"
+flat = true
+
+[node name="OrderDishTarget2" type="Button" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 119.0
+offset_top = 95.0
+offset_right = 181.0
+offset_bottom = 157.0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBox_order_dish_target_normal")
+theme_override_styles/hover = SubResource("StyleBox_order_dish_target_hover")
+theme_override_styles/pressed = SubResource("StyleBox_order_dish_target_pressed")
+theme_override_styles/focus = SubResource("StyleBox_order_dish_target_hover")
+tooltip_text = "只读点单提示；请把实体成品拖入顾客托盘"
+flat = true
+
+[node name="OrderDishTarget3" type="Button" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 202.0
+offset_top = 95.0
+offset_right = 264.0
+offset_bottom = 157.0
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBox_order_dish_target_normal")
+theme_override_styles/hover = SubResource("StyleBox_order_dish_target_hover")
+theme_override_styles/pressed = SubResource("StyleBox_order_dish_target_pressed")
+theme_override_styles/focus = SubResource("StyleBox_order_dish_target_hover")
+tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+flat = true
+
+[node name="OrderIngredientBackground01" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 52.0
+offset_top = 173.0
+offset_right = 96.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground02" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 101.0
+offset_top = 173.0
+offset_right = 145.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground03" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 155.0
+offset_top = 173.0
+offset_right = 199.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground04" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 204.0
+offset_top = 173.0
+offset_right = 248.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground05" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 52.0
+offset_top = 224.0
+offset_right = 96.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground06" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 101.0
+offset_top = 224.0
+offset_right = 145.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground07" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 155.0
+offset_top = 224.0
+offset_right = 199.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderIngredientBackground08" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 204.0
+offset_top = 224.0
+offset_right = 248.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_normal")
+
+[node name="OrderHeatBackground01" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 52.0
+offset_top = 173.0
+offset_right = 96.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground02" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 101.0
+offset_top = 173.0
+offset_right = 145.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground03" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 155.0
+offset_top = 173.0
+offset_right = 199.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground04" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 204.0
+offset_top = 173.0
+offset_right = 248.0
+offset_bottom = 213.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground05" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 52.0
+offset_top = 224.0
+offset_right = 96.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground06" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 101.0
+offset_top = 224.0
+offset_right = 145.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground07" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 155.0
+offset_top = 224.0
+offset_right = 199.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
+
+[node name="OrderHeatBackground08" type="Panel" parent="SafeArea/OrderCard"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 204.0
+offset_top = 224.0
+offset_right = 248.0
+offset_bottom = 264.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_order_requirement_heated")
 
 [node name="OrderIngredient01" type="TextureRect" parent="SafeArea/OrderCard" unique_id=2137992730]
 unique_name_in_owner = true
@@ -772,7 +1081,7 @@ theme_override_styles/panel = SubResource("StyleBox_strip")
 
 [node name="Title" type="Label" parent="SafeArea/CustomerStrip" unique_id=1986397542]
 layout_mode = 0
-offset_left = 520.0
+offset_left = 620.0
 offset_top = 4.0
 offset_right = 1200.0
 offset_bottom = 54.0
@@ -794,27 +1103,68 @@ text = "排队中 · 2位"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="WaitingCustomer1" type="TextureRect" parent="SafeArea/CustomerStrip" unique_id=1105357327]
+[node name="CustomerSlot1" type="Button" parent="SafeArea/CustomerStrip" unique_id=1105357327]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 146.0
+offset_left = 112.0
 offset_top = 5.0
-offset_right = 204.0
-offset_bottom = 79.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
+offset_right = 272.0
+offset_bottom = 87.0
+text = "顾客1"
+icon_max_width = 52
+expand_icon = true
+alignment = 0
 
-[node name="WaitingCustomer2" type="TextureRect" parent="SafeArea/CustomerStrip" unique_id=341621092]
+[node name="Patience" type="ProgressBar" parent="SafeArea/CustomerStrip/CustomerSlot1"]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 55.0
+offset_right = 152.0
+offset_bottom = 72.0
+value = 100.0
+show_percentage = false
+
+[node name="CustomerSlot2" type="Button" parent="SafeArea/CustomerStrip" unique_id=341621092]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 212.0
+offset_left = 280.0
 offset_top = 5.0
-offset_right = 270.0
-offset_bottom = 79.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
+offset_right = 440.0
+offset_bottom = 87.0
+text = "顾客2"
+icon_max_width = 52
+expand_icon = true
+alignment = 0
+
+[node name="Patience" type="ProgressBar" parent="SafeArea/CustomerStrip/CustomerSlot2"]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 55.0
+offset_right = 152.0
+offset_bottom = 72.0
+value = 100.0
+show_percentage = false
+
+[node name="CustomerSlot3" type="Button" parent="SafeArea/CustomerStrip"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 448.0
+offset_top = 5.0
+offset_right = 608.0
+offset_bottom = 87.0
+text = "顾客3"
+icon_max_width = 52
+expand_icon = true
+alignment = 0
+
+[node name="Patience" type="ProgressBar" parent="SafeArea/CustomerStrip/CustomerSlot3"]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 55.0
+offset_right = 152.0
+offset_bottom = 72.0
+value = 100.0
+show_percentage = false
 
 [node name="SkipActiveTutorialButton" type="Button" parent="SafeArea/CustomerStrip" unique_id=1198295306]
 unique_name_in_owner = true
@@ -1701,6 +2051,7 @@ text = "▱ 翻面铲（P1）
 
 [node name="SauceBrushButton" type="Button" parent="SafeArea/LeftRack" unique_id=1500408021]
 unique_name_in_owner = true
+visible = false
 layout_mode = 0
 offset_left = 578.0
 offset_top = 90.0
@@ -1712,6 +2063,8 @@ theme_override_styles/pressed = SubResource("StyleBox_tool_hover")
 theme_override_styles/hover = SubResource("StyleBox_tool_hover")
 theme_override_styles/disabled = SubResource("StyleBox_clear")
 toggle_mode = true
+disabled = true
+mouse_filter = 2
 metadata/area_id = &"area.pancake"
 metadata/stock_id = &"sweet_flour_sauce"
 metadata/station_click_layer = true
@@ -1805,7 +2158,7 @@ stretch_mode = 5
 [node name="RightRack" type="Panel" parent="SafeArea" unique_id=2132027107]
 z_index = 6
 layout_mode = 0
-offset_left = 604.0
+offset_left = 459.0
 offset_top = 810.0
 offset_right = 749.0
 offset_bottom = 884.0
@@ -1828,13 +2181,15 @@ horizontal_alignment = 1
 [node name="SauceRefillButton" type="Button" parent="SafeArea/RightRack" unique_id=1627450700]
 unique_name_in_owner = true
 layout_mode = 0
-offset_right = 145.0
+offset_left = 145.0
+offset_right = 290.0
 offset_bottom = 74.0
-tooltip_text = "点击挤一小团甜面酱到饼上；继续按住可增加用量"
+tooltip_text = "按住控制甜面酱用量；松开后自动拿起甜面酱刷"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
+toggle_mode = true
 
 [node name="Label" type="Label" parent="SafeArea/RightRack/SauceRefillButton" unique_id=647381523]
 layout_mode = 1
@@ -1857,14 +2212,14 @@ vertical_alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 700.0
-offset_right = 845.0
+offset_right = 145.0
 offset_bottom = 74.0
-tooltip_text = "点击挤一小团辣椒酱到饼上；继续按住可增加用量"
+tooltip_text = "按住控制辣椒酱用量；松开后自动拿起辣椒酱刷"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
 theme_override_styles/pressed = SubResource("StyleBox_table_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
+toggle_mode = true
 disabled = true
 
 [node name="Label" type="Label" parent="SafeArea/RightRack/ChiliSauceRefillButton" unique_id=1488982992]
@@ -1983,6 +2338,15 @@ position = Vector2(170, 170)
 scale = Vector2(0.112, 0.112)
 texture = ExtResource("69_6io6o")
 
+[node name="EggCrackEffect" type="AnimatedSprite2D" parent="SafeArea/PanBase/PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+texture_filter = 1
+position = Vector2(170, 0)
+scale = Vector2(0.55, 0.55)
+sprite_frames = SubResource("SpriteFrames_egg_crack")
+animation = &"crack"
+
 [node name="SauceBlobOverlay" type="Control" parent="SafeArea/PanBase/PancakeSurface" unique_id=686349028]
 unique_name_in_owner = true
 visible = false
@@ -2011,6 +2375,8 @@ ham_texture = ExtResource("72_w38vq")
 scallion_texture = ExtResource("73_6nllu")
 meat_floss_texture = ExtResource("74_oyinm")
 pork_tenderloin_texture = ExtResource("75_dq8vg")
+coriander_texture = ExtResource("109_cor_scattered")
+preserved_mustard_texture = ExtResource("110_mus_scattered")
 
 [node name="SpreaderArtwork" type="Sprite2D" parent="SafeArea/PanBase/PancakeSurface" unique_id=1089532895]
 unique_name_in_owner = true
@@ -2078,6 +2444,7 @@ stretch_mode = 5
 [node name="IngredientDragPreview" type="TextureRect" parent="SafeArea" unique_id=416253095]
 unique_name_in_owner = true
 visible = false
+z_index = 60
 layout_mode = 0
 offset_right = 140.0
 offset_bottom = 140.0
@@ -2361,7 +2728,7 @@ flat = true
 [node name="ResultPanel" type="PanelContainer" parent="SafeArea" unique_id=1387486091]
 unique_name_in_owner = true
 visible = false
-z_index = 20
+z_index = 80
 layout_mode = 0
 offset_left = 430.0
 offset_top = 170.0
@@ -2640,34 +3007,36 @@ text = "关闭本单详情"
 [node name="OrderSummaryCard" type="PanelContainer" parent="SafeArea" unique_id=2124197355]
 unique_name_in_owner = true
 visible = false
+z_index = 50
 layout_mode = 0
-offset_left = 110.0
-offset_top = 145.0
-offset_right = 525.0
-offset_bottom = 365.0
+offset_left = 1090.0
+offset_top = 136.0
+offset_right = 1820.0
+offset_bottom = 194.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="Margin" type="MarginContainer" parent="SafeArea/OrderSummaryCard" unique_id=574229501]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
 
-[node name="VBox" type="VBoxContainer" parent="SafeArea/OrderSummaryCard/Margin" unique_id=240584243]
+[node name="VBox" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin" unique_id=240584243]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="SummaryScoreLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=2033801900]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 18
 text = "本单 0分 · +0金币"
+vertical_alignment = 1
 
 [node name="SummaryFeedbackLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=807562094]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
 theme_override_font_sizes/font_size = 17
@@ -2675,27 +3044,28 @@ text = "本单评价"
 autowrap_mode = 2
 
 [node name="Actions" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=383970222]
+size_flags_horizontal = 3
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 alignment = 2
 
 [node name="SummaryViewButton" type="Button" parent="SafeArea/OrderSummaryCard/Margin/VBox/Actions" unique_id=1970363690]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 44)
+custom_minimum_size = Vector2(108, 30)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
 theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-text = "查看本单"
+text = "查看详情"
 
 [node name="SummaryDismissButton" type="Button" parent="SafeArea/OrderSummaryCard/Margin/VBox/Actions" unique_id=99629323]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(110, 44)
+custom_minimum_size = Vector2(72, 30)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
@@ -2858,7 +3228,7 @@ layout_mode = 0
 offset_left = 324.0
 offset_top = 536.0
 offset_right = 628.0
-offset_bottom = 900.0
+offset_bottom = 810.0
 tooltip_text = "油条机区域尚未解锁"
 mouse_default_cursor_shape = 2
 flat = true
@@ -3809,31 +4179,3 @@ offset_right = 118.0
 offset_bottom = 96.0
 text = "暂存格 2
 空"
-
-[node name="F3StationOverlay" type="Control" parent="." unique_id=301145272]
-unique_name_in_owner = true
-process_mode = 3
-visible = false
-z_index = 120
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="F3StationsWorkbench" parent="F3StationOverlay" unique_id=2003630976 instance=ExtResource("96_f3")]
-unique_name_in_owner = true
-layout_mode = 1
-offset_top = 62.0
-
-[node name="CloseButton" type="Button" parent="F3StationOverlay" unique_id=1280649538]
-unique_name_in_owner = true
-z_index = 5
-layout_mode = 0
-offset_left = 1740.0
-offset_top = 8.0
-offset_right = 1880.0
-offset_bottom = 58.0
-theme_override_font_sizes/font_size = 20
-text = "返回摊位"

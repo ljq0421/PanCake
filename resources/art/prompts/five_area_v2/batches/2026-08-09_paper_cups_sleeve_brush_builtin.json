@@ -1,0 +1,45 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "workstation_sprite",
+  "shared_style": "rounded chibi Chinese breakfast-game workstation props, clean deep warm-brown outlines, warm cel-shaded highlights, simplified polished materials",
+  "shared_constraints": "match legacy silhouette, orientation, component count, and upgrade construction; flat #ff00ff removable key source; transparent 512x512 final Sprite; no text, labels, people, food, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 470x470 safe area centered on the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "oil_absorbent_paper_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/oil_absorbent_paper_v1.png",
+      "imagegen_output": "exec-12fac428-cf4b-43bd-9eec-8c34e7172540.png",
+      "semantic_contract": "one plain warm-cream absorbent paper sheet with rounded corners and exactly one faint center guide line",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "payment_slot_tool_cups_initial_v5_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/payment_slot_tool_cups_initial_v5.png",
+      "imagegen_output": "exec-121f9826-6004-42a5-8150-2f4294433ed3.png",
+      "semantic_contract": "exactly three empty worn cream-and-silver tool cups mounted on one shared shallow rectangular base",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "reinforced_paper_sleeve_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/reinforced_paper_sleeve_upgrade_v1.png",
+      "imagegen_output": "exec-b078ee9a-7d91-4eb5-b627-6a36d6745a51.png",
+      "semantic_contract": "empty warm-cream folded paper sleeve with open top, visible gussets, exactly two teal reinforcement bands, and exactly two gold rivets",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "sauce_brush_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/sauce_brush_upgrade_v1.png",
+      "imagegen_output": "exec-7ea5c494-2b73-430e-a824-d80a5b43ec52.png",
+      "semantic_contract": "upgraded dry sauce brush with six mint-teal bristle strips, silver ferrule, one gold rivet, cream-and-teal handle, and one hanging hole",
+      "final_canvas": [512, 512]
+    }
+  ]
+}

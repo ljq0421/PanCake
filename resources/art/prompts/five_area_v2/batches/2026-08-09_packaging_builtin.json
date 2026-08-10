@@ -1,0 +1,38 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "workstation_sprite",
+  "shared_style": "rounded chibi Chinese breakfast-game packaging prop, clean deep warm-brown outlines, warm cel-shaded highlights, simplified handcrafted material texture",
+  "shared_constraints": "one complete centered package containing one folded jianbing; flat #ff00ff removable key source; transparent 512x512 final Sprite; no text, labels, logo, watermark, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 470x470 safe area centered on the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "paper_bag_package_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/packaging/paper_bag_package_v1.png",
+      "imagegen_output": "exec-03985231-d01d-4d93-ba7e-d4e90ebbd0ce.png",
+      "semantic_contract": "unbranded handleless kraft bag with visible right gusset and folded jianbing",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "reinforced_paper_sleeve_package_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png",
+      "imagegen_output": "exec-592cbf27-3c33-4f51-8f4d-36c85cb213e7.png",
+      "semantic_contract": "cream reinforced sleeve with exactly two teal bands, two brass rivets, and folded jianbing",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "serving_tray_package_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/packaging/serving_tray_package_v1.png",
+      "imagegen_output": "exec-d67b62dc-1f6d-4ad0-a98f-2947d7cb83ca.png",
+      "semantic_contract": "shallow dark metal tray with raised silver rim and one folded jianbing",
+      "final_canvas": [512, 512]
+    }
+  ]
+}

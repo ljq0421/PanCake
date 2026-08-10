@@ -1,0 +1,119 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "shared_style": "rounded chibi game art, thick clean deep-brown outline, warm cozy cel shading, polished Chinese breakfast-stall palette",
+  "background": "perfectly flat pure #ff00ff chroma-key background for local alpha extraction",
+  "shared_constraints": "single production-ready item sprite; transparent final; no personification, face, text, logo, watermark, cast shadow, contact shadow, floor, reflection, steam, or background scene; no #ff00ff in subject; crisp silhouette and generous margin",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "final_canvas": [256, 256]
+  },
+  "prompt_templates": {
+    "plain_soy_milk_master": "Use the customer portrait as the immutable style anchor and the legacy plain cup for subject and composition. Create exactly one tapered cream paper cup with a teal rim in a three-quarter top-down view, filled with pale warm soy milk. No lid, straw, garnish, beans, steam, text, symbols, shadow, or extra objects. Apply the shared style, background, and constraints.",
+    "soy_milk_variant": "Use the accepted v2 plain cup as the invariant master. Preserve the exact cup body, teal rim, view, outline, lighting, placement, scale, and margin. Change only the soy-milk surface to {liquid} and add {garnish}, matching the legacy recipe reference. Keep every other aspect unchanged. Apply the shared background and constraints.",
+    "plain_youtiao_master": "Use the customer portrait as the immutable style anchor, the accepted v2 plain dough for ingredient-family language, and the legacy plain product for identity and composition. Create exactly two intact finished golden-orange fried youtiao sticks, parallel diagonally with a small gap, characteristic twin lobes and central grooves, fully visible and countable. No cut end, filling, toppings, container, steam, text, shadow, or extra object. Apply the shared style, background, and constraints.",
+    "surface_youtiao_variant": "Use the accepted v2 plain fried-youtiao master as an invariant. Preserve its exact two intact golden-orange sticks, diagonal arrangement, twin-lobe form, outline, lighting, scale, and margin. Change only the surfaces by adding {surface}, matching the legacy recipe reference. Apply the shared background and constraints.",
+    "cut_youtiao_variant": "Use the accepted v2 plain fried-youtiao master as the exterior invariant. Preserve the saturated golden-orange fried exterior, two-stick arrangement, twin-lobe form, outline, lighting, scale, and margin. Add only the specified small cut face and {filling}; keep all remaining exterior surfaces golden-orange. Apply the shared background and constraints."
+  },
+  "assets": [
+    {
+      "asset_id": "plain_soy_milk_cup_v1_five_area_v2",
+      "template": "plain_soy_milk_master",
+      "legacy_reference": "res://resources/art/products/soy_milk/plain_soy_milk_cup_v1.png",
+      "imagegen_output": "exec-312d1d1c-9f58-4bdb-ac7d-367d8f4afa1b.png"
+    },
+    {
+      "asset_id": "black_bean_soy_milk_cup_v1_five_area_v2",
+      "template": "soy_milk_variant",
+      "liquid": "very pale soft lavender-gray",
+      "garnish": "exactly three small glossy black beans near the upper-right liquid area",
+      "legacy_reference": "res://resources/art/products/soy_milk/black_bean_soy_milk_cup_v1.png",
+      "imagegen_output": "exec-49d9a7bb-858b-4934-bbbb-96e058b240b9.png"
+    },
+    {
+      "asset_id": "five_grain_soy_milk_cup_v1_five_area_v2",
+      "template": "soy_milk_variant",
+      "liquid": "warm pale beige",
+      "garnish": "exactly five tiny readable mixed grains: golden, brown, red, dark brown, and pale oat",
+      "legacy_reference": "res://resources/art/products/soy_milk/five_grain_soy_milk_cup_v1.png",
+      "imagegen_output": "exec-f4b7aa6e-375b-4c96-8503-b7754084b95f.png"
+    },
+    {
+      "asset_id": "mung_bean_soy_milk_cup_v1_five_area_v2",
+      "template": "soy_milk_variant",
+      "liquid": "pale warm yellow-green",
+      "garnish": "exactly three small glossy olive-green mung beans near the upper-middle liquid area",
+      "legacy_reference": "res://resources/art/products/soy_milk/mung_bean_soy_milk_cup_v1.png",
+      "imagegen_output": "exec-d9fc7508-9a2c-4c85-bd1e-5455b7d3c316.png"
+    },
+    {
+      "asset_id": "peanut_soy_milk_cup_v1_five_area_v2",
+      "template": "soy_milk_variant",
+      "liquid": "warm pale peanut cream",
+      "garnish": "exactly three small split peanut kernels near the center",
+      "legacy_reference": "res://resources/art/products/soy_milk/peanut_soy_milk_cup_v1.png",
+      "imagegen_output": "exec-2a5141ae-8c6a-4bba-9fb6-40b7f4db7d80.png"
+    },
+    {
+      "asset_id": "red_bean_soy_milk_cup_v1_five_area_v2",
+      "template": "soy_milk_variant",
+      "liquid": "pale warm rosy pink",
+      "garnish": "exactly three small glossy red beans near the upper-middle liquid area",
+      "legacy_reference": "res://resources/art/products/soy_milk/red_bean_soy_milk_cup_v1.png",
+      "imagegen_output": "exec-930550a7-386b-4c75-84f5-e163c28963bc.png"
+    },
+    {
+      "asset_id": "plain_youtiao_v1_five_area_v2",
+      "template": "plain_youtiao_master",
+      "legacy_reference": "res://resources/art/products/youtiao/plain_youtiao_v1.png",
+      "ingredient_reference": "res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png",
+      "imagegen_output": "exec-84075a7a-bdf8-4fc4-9dc3-a73d1847e383.png"
+    },
+    {
+      "asset_id": "filled_youtiao_v1_five_area_v2",
+      "template": "cut_youtiao_variant",
+      "filling": "one dense warm tan-brown savory core at only the near cut end of the lower-right stick; upper-left stick remains intact",
+      "legacy_reference": "res://resources/art/products/youtiao/filled_youtiao_v1.png",
+      "imagegen_output": "exec-bbd3e7ea-a06b-4b59-a13e-de4c64b72d1c.png"
+    },
+    {
+      "asset_id": "glutinous_rice_youtiao_v1_five_area_v2",
+      "template": "cut_youtiao_variant",
+      "filling": "a compact white sticky glutinous-rice filling at only the small near cut face of each stick",
+      "legacy_reference": "res://resources/art/products/youtiao/glutinous_rice_youtiao_v1.png",
+      "imagegen_output": "exec-03d7f669-03d3-4667-92da-5e7e71439643.png"
+    },
+    {
+      "asset_id": "multigrain_youtiao_v1_five_area_v2",
+      "template": "surface_youtiao_variant",
+      "surface": "a restrained even scattering of baked-in multigrain flecks and seeds in tan, brown, and pale oat",
+      "legacy_reference": "res://resources/art/products/youtiao/multigrain_youtiao_v1.png",
+      "imagegen_output": "exec-1c3bd8b3-eb96-43e1-8122-83d68c464a6b.png"
+    },
+    {
+      "asset_id": "scallion_youtiao_v1_five_area_v2",
+      "template": "surface_youtiao_variant",
+      "surface": "a restrained even scattering of small bright-green chopped scallion rings and tiny square pieces",
+      "legacy_reference": "res://resources/art/products/youtiao/scallion_youtiao_v1.png",
+      "imagegen_output": "exec-573f16f6-ef84-48df-b029-11127b042597.png"
+    },
+    {
+      "asset_id": "sesame_youtiao_v1_five_area_v2",
+      "template": "surface_youtiao_variant",
+      "surface": "a restrained even scattering of small black and ivory sesame seeds",
+      "legacy_reference": "res://resources/art/products/youtiao/sesame_youtiao_v1.png",
+      "imagegen_output": "exec-04be2d6f-5f9e-4ec7-ab9c-602210962438.png"
+    }
+  ],
+  "discarded_outputs": [
+    {
+      "asset_id": "glutinous_rice_youtiao_v1_five_area_v2",
+      "imagegen_output": "exec-057dc2ff-8921-4c6f-a19a-8b98e216c49f.png",
+      "reason": "Raw-dough reference overrode the finished-product invariant and made the whole exterior pale; never landed as the formal target."
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "workstation_sprite",
+  "shared_style": "rounded chibi Chinese breakfast-game tool props, clean deep warm-brown outlines, warm cel-shaded highlights, simplified polished materials",
+  "shared_constraints": "match legacy count, silhouette, orientation, and normal-versus-upgrade construction; flat #ff00ff removable key source; transparent 512x512 final Sprite; no text, labels, people, food, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 470x470 safe area centered on the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "countertop_tool_cups_initial_v3_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v3.png",
+      "imagegen_output": "exec-e0eda028-9359-4d14-8ce0-a5b11fb4a018.png",
+      "semantic_contract": "exactly four separate short wide worn cream enamel tool cups in one horizontal row, all empty",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "countertop_tool_cups_initial_v4_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/countertop_tool_cups_initial_v4.png",
+      "imagegen_output": "exec-3440d76f-b739-4fd0-847f-bf3d53ab644c.png",
+      "semantic_contract": "exactly four separate tall narrow clean cream enamel tool cups in one horizontal row, all empty",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "folding_spatula_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/folding_spatula_v1.png",
+      "imagegen_output": "exec-c26f6ed9-ac4f-4659-a86c-aa37cc7966bf.png",
+      "semantic_contract": "ordinary folding spatula with plain unslotted silver blade, silver riveted neck, and orange wooden handle",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "folding_spatula_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/folding_spatula_upgrade_v1.png",
+      "imagegen_output": "exec-3a16a978-b1b6-4a40-8058-b78fbae0ce18.png",
+      "semantic_contract": "upgraded folding spatula with exactly two blade reinforcement grooves, gold neck, teal handle, cream inset, and cream end cap",
+      "final_canvas": [512, 512]
+    }
+  ]
+}

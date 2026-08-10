@@ -1,0 +1,178 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "shared_style": "rounded chibi cartoon game art, thick clean deep-brown outline, warm cel-shaded highlights, cozy polished Chinese breakfast-stall style",
+  "background": "perfectly flat pure #ff00ff chroma-key background for local alpha extraction",
+  "shared_constraints": "single production-ready game sprite; no personification, face, hands, label, logo, watermark, cast shadow, contact shadow, floor, reflection, steam, or background scene; no #ff00ff in the subject; crisp silhouette and generous padding",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "note": "The first purple coin_20 output was rejected because its hue overlapped the chroma key and made the subject partially transparent. The accepted cobalt-blue revision uses the shared despill pipeline."
+  },
+  "prompt_templates": {
+    "scallion_stock": "Create the scallion inventory state matching the legacy reference's exact visible cluster count and overlap arrangement: {cluster_count} compact scallion cluster(s). Each cluster is a small bundle of bright green scallion segments with pale cut ends. Keep every cluster individually readable, inside the workstation-slot-safe centered area, with ample transparent margin. Intended final canvas 384x384. Apply the shared style, background, and constraints; no text or numerals.",
+    "ordinary_sprite": "Create {subject}. Match the legacy reference only for subject identity and composition, while using the immutable customer portrait and accepted v2 ingredient sprite for the shared style. Composition: {layout}. Intended final canvas 256x256. Apply the shared background and constraints; no text or numerals.",
+    "payment_coin": "Create one centered circular game UI coin in {color}, with the exact readable Arabic denomination \"{denomination}\" exactly once. Preserve the deep outline, rounded chibi proportions, and warm cel-shaded highlights. No other symbols, text, objects, or shadow. Intended final canvas 256x256 on the shared chroma-key background.",
+    "cash_small": "Create exactly one blank pale-teal banknote on the left and exactly three plain gold coins on the right, all fully visible and individually countable. No text, numerals, currency marks, logos, extra objects, or shadow. Intended final canvas 256x256 on the shared chroma-key background."
+  },
+  "assets": [
+    {
+      "asset_id": "scallion_stock_1_v1_five_area_v2",
+      "template": "scallion_stock",
+      "cluster_count": 1,
+      "legacy_reference": "res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1.png",
+      "imagegen_output": "exec-2ac3d1cb-b5ca-455b-9674-9426658479b4.png"
+    },
+    {
+      "asset_id": "scallion_stock_2_v1_five_area_v2",
+      "template": "scallion_stock",
+      "cluster_count": 2,
+      "legacy_reference": "res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1.png",
+      "imagegen_output": "exec-ac024c03-a337-41c2-b23a-d0fbe431176b.png"
+    },
+    {
+      "asset_id": "scallion_stock_3_v1_five_area_v2",
+      "template": "scallion_stock",
+      "cluster_count": 2,
+      "legacy_reference": "res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1.png",
+      "imagegen_output": "exec-06ab06bf-039e-4e93-896e-ac2f62f3d6a3.png"
+    },
+    {
+      "asset_id": "scallion_stock_4_v1_five_area_v2",
+      "template": "scallion_stock",
+      "cluster_count": 4,
+      "legacy_reference": "res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1.png",
+      "imagegen_output": "exec-a3148156-2f98-44b9-94da-e6e9f2816caf.png"
+    },
+    {
+      "asset_id": "scallion_stock_5_v1_five_area_v2",
+      "template": "scallion_stock",
+      "cluster_count": 3,
+      "legacy_reference": "res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1.png",
+      "imagegen_output": "exec-3347df33-2de7-4aef-aa17-a3298f35b9d4.png"
+    },
+    {
+      "asset_id": "scallion_stock_6_v1_five_area_v2",
+      "template": "scallion_stock",
+      "cluster_count": 6,
+      "legacy_reference": "res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1.png",
+      "imagegen_output": "exec-f82253d8-f7b0-454c-939c-39154ca5c40a.png"
+    },
+    {
+      "asset_id": "yellow_soybean_portion_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "a small compact portion of plump yellow soybeans",
+      "layout": "one centered low mound, with individual beans clearly readable",
+      "legacy_reference": "res://resources/art/ingredients/soybean/yellow_soybean_portion_v1.png",
+      "imagegen_output": "exec-70e030b0-9d34-4d48-b649-e8adc3b4a02d.png"
+    },
+    {
+      "asset_id": "filled_youtiao_dough_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly two pale stuffed youtiao dough pieces with a subtle filled center cue",
+      "layout": "two parallel rounded dough strips, both fully visible",
+      "legacy_reference": "res://resources/art/ingredients/youtiao/filled_youtiao_dough_v1.png",
+      "imagegen_output": "exec-d3762c4d-fbcd-422b-941d-8df061ea9c22.png"
+    },
+    {
+      "asset_id": "glutinous_rice_youtiao_dough_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly two glossy white glutinous-rice youtiao dough pieces",
+      "layout": "two parallel rounded dough strips, both fully visible",
+      "legacy_reference": "res://resources/art/ingredients/youtiao/glutinous_rice_youtiao_dough_v1.png",
+      "imagegen_output": "exec-dd29d928-b72e-4df2-969e-a273193607b3.png"
+    },
+    {
+      "asset_id": "multigrain_youtiao_dough_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly two warm tan multigrain youtiao dough pieces with small grain flecks",
+      "layout": "two parallel rounded dough strips, both fully visible",
+      "legacy_reference": "res://resources/art/ingredients/youtiao/multigrain_youtiao_dough_v1.png",
+      "imagegen_output": "exec-1181ef32-d068-4bae-bef9-b73f11a7e6f4.png"
+    },
+    {
+      "asset_id": "plain_youtiao_dough_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly two plain pale-golden youtiao dough pieces",
+      "layout": "two parallel rounded dough strips, both fully visible",
+      "legacy_reference": "res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1.png",
+      "imagegen_output": "exec-17e756d1-8aa5-4f9a-8659-56e193c2b31f.png"
+    },
+    {
+      "asset_id": "scallion_youtiao_dough_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly two pale youtiao dough pieces with clearly visible chopped green scallion flecks",
+      "layout": "two parallel rounded dough strips, both fully visible",
+      "legacy_reference": "res://resources/art/ingredients/youtiao/scallion_youtiao_dough_v1.png",
+      "imagegen_output": "exec-e8615896-a241-41ce-865a-8172e057b861.png"
+    },
+    {
+      "asset_id": "sesame_youtiao_dough_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly two pale youtiao dough pieces with clearly visible black and white sesame seeds",
+      "layout": "two parallel rounded dough strips, both fully visible",
+      "legacy_reference": "res://resources/art/ingredients/youtiao/sesame_youtiao_dough_v1.png",
+      "imagegen_output": "exec-f0801097-30d3-4d92-800a-5c81e05c8fec.png"
+    },
+    {
+      "asset_id": "coin_1_v1_five_area_v2",
+      "template": "payment_coin",
+      "denomination": 1,
+      "color": "gold",
+      "legacy_reference": "res://resources/art/payments/coin_1_v1.png",
+      "imagegen_output": "exec-722d23cc-597a-4f6a-abf9-765d1d15dbf3.png"
+    },
+    {
+      "asset_id": "coin_2_v1_five_area_v2",
+      "template": "payment_coin",
+      "denomination": 2,
+      "color": "warm green",
+      "legacy_reference": "res://resources/art/payments/coin_2_v1.png",
+      "imagegen_output": "exec-f1f401c7-4061-4ec1-b5e6-b37ba7cf5a9a.png"
+    },
+    {
+      "asset_id": "coin_5_v1_five_area_v2",
+      "template": "payment_coin",
+      "denomination": 5,
+      "color": "golden yellow",
+      "legacy_reference": "res://resources/art/payments/coin_5_v1.png",
+      "imagegen_output": "exec-e692004f-9ddd-4484-94de-5804fc23c583.png"
+    },
+    {
+      "asset_id": "coin_10_v1_five_area_v2",
+      "template": "payment_coin",
+      "denomination": 10,
+      "color": "coral-red copper",
+      "legacy_reference": "res://resources/art/payments/coin_10_v1.png",
+      "imagegen_output": "exec-7630c344-d3ad-4fe0-b79e-02201f114024.png"
+    },
+    {
+      "asset_id": "coin_20_v1_five_area_v2",
+      "template": "payment_coin",
+      "denomination": 20,
+      "color": "saturated cobalt blue",
+      "legacy_reference": "res://resources/art/payments/coin_20_v1.png",
+      "imagegen_output": "exec-c9a0386e-e2ab-4321-a062-ccd79720b4e0.png"
+    },
+    {
+      "asset_id": "payment_cash_small_v1_five_area_v2",
+      "template": "cash_small",
+      "legacy_reference": "res://resources/art/payments/payment_cash_small_v1.png",
+      "imagegen_output": "exec-c495965e-f909-4b14-b087-693f71b19d3d.png"
+    }
+  ],
+  "discarded_outputs": [
+    {
+      "asset_id": "scallion_stock_3_v1_five_area_v2",
+      "reason": "Generated three clusters, but the legacy level-three source contains two; never landed as the formal target."
+    },
+    {
+      "asset_id": "coin_20_v1_five_area_v2",
+      "imagegen_output": "exec-610c966c-c19a-46a7-9eb4-8ec5ed20f74b.png",
+      "reason": "Purple subject was too close to the magenta key and became broadly semi-transparent during extraction; replaced before acceptance."
+    }
+  ]
+}

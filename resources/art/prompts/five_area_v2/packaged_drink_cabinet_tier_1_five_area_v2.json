@@ -1,0 +1,39 @@
+{
+  "asset_id": "packaged_drink_cabinet_tier_1_five_area_v2",
+  "target_path": "res://resources/art/workstation/expansion/machines/packaged_drink_cabinet_tier_1_five_area_v2.png",
+  "generation_mode": "builtin_imagegen_reference_generation",
+  "reference_images": [
+    {
+      "path": "D:/Downloads/成品饮品柜生成.png",
+      "role": "cabinet_structure_reference"
+    },
+    {
+      "path": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_2_five_area_v2.png",
+      "role": "project_equipment_style_reference"
+    },
+    {
+      "path": "res://resources/art/workstation/expansion/machines/steamer_tier_1_five_area_v2.png",
+      "role": "project_equipment_style_reference"
+    },
+    {
+      "path": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+      "role": "project_linework_and_palette_reference"
+    }
+  ],
+  "prompt": "Create one compact countertop glass-door finished-drink warming/display cabinet for the ProjectCake workstation. Use the supplied cabinet image only for the rounded rectangular cabinet, front glass door, shelves, handle, and arranged drinks; omit its room, wall, floor, ceiling light, watermark, and scene composition. Match the supplied ProjectCake equipment and character references: polished 2D hand-painted mobile-game sprite, rounded chibi proportions, crisp deep warm-brown outlines, cream enamel shell, honey-gold trim and controls, softly blue-tinted opaque illustrated glass, warm pastry-shop palette, soft painterly gradients, and restrained highlights. Show two shelves with four packaged-drink families using cream, pale blue, walnut brown, and black-sesame gray bottles or cartons as secondary interior details. No readable labels or mascot faces. Center the standalone object in a slight front three-quarter and gentle top view, with a compact near-square body suitable for a 290x262 workstation slot and generous horizontal padding for a 1024x512 canvas. Generate on a perfectly flat solid #00ff00 chroma-key background with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 in the subject. No text, logo, watermark, room, floor, wall, people, separate props, steam, cast shadow, contact shadow, photorealism, giant floor-standing refrigerator, vending-machine keypad, or open-lid food warmer.",
+  "canvas": [
+    1024,
+    512
+  ],
+  "alpha_mode": "rgba_cutout",
+  "postprocess": {
+    "background_removal": "remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1",
+    "fit_box": [
+      940,
+      480
+    ],
+    "resampling": "lanczos"
+  },
+  "output_sha256": "c13d9b9fb6ebe80cb515a3a779e3f553804cb34d8d6a721731cea9f259d5fe3a",
+  "status": "generated_not_runtime_integrated_pending_human_review"
+}

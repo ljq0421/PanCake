@@ -1,7 +1,6 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const PAYMENT_COIN_MODEL := preload("res://scripts/gameplay/payment_coin_model.gd")
 
 var _failures := PackedStringArray()
 
@@ -53,13 +52,17 @@ func _run() -> void:
 	_check(workstation.ingredient_layer != null and workstation.egg_button != null and workstation.scallion_button != null, "P1 ingredient rack and pancake layer are stable scene content")
 	_check(workstation.chili_sauce_refill_button != null and workstation.heat_slider != null and not workstation.heat_slider.visible and not workstation.heat_slider.editable and is_equal_approx(workstation.p1_session.heat_level, 0.50), "P1 owns two-sauce selection while griddle heat stays fixed at its default")
 	_check(
-		not workstation.sauce_refill_button.get_global_rect().intersects(workstation.chili_sauce_refill_button.get_global_rect()),
-		"sweet and chili bottle hit regions do not overlap"
+		not workstation.sauce_refill_button.get_global_rect().intersects(workstation.chili_sauce_refill_button.get_global_rect())
+		and is_equal_approx(workstation.chili_sauce_refill_button.get_global_rect().end.x, workstation.sauce_refill_button.get_global_rect().position.x)
+		and workstation.chili_sauce_refill_button.get_global_rect().size == Vector2(145.0, 74.0)
+		and workstation.sauce_refill_button.get_global_rect().size == Vector2(145.0, 74.0),
+		"chili and sweet bottles use adjacent non-overlapping 145-by-74 hit regions"
 	)
-	_check(workstation.pancake_surface.get_renderer_diagnostics().chili_sauce_texture != null, "P1 renderer uploads the independent chili-sauce field")
+	var initial_renderer_diagnostics: Dictionary = workstation.pancake_surface.get_renderer_diagnostics()
+	_check(initial_renderer_diagnostics.chili_sauce_texture != null and initial_renderer_diagnostics.fold_sweet_sauce_texture != null and initial_renderer_diagnostics.fold_chili_sauce_texture != null, "P1 renderer uploads independent sauce fields and fold alpha textures")
+	await _test_unflipped_sauce_paths(workstation)
 	var first_order_id := StringName(workstation.p1_session.order.get("id", &""))
 	var first_payment_coins := int(workstation.p1_session.order.get("payment_coins", 0))
-	var first_payment_denominations: Array[int] = PAYMENT_COIN_MODEL.decompose(first_payment_coins)
 	_check(
 		str(first_order_id).begins_with("order.pancake.")
 		and first_payment_coins > 0
@@ -86,20 +89,29 @@ func _run() -> void:
 	var surface_local_center := workstation.pancake_surface.size * 0.5
 	workstation._on_pointer_ended(surface_local_center)
 	workstation._refresh_p1_ui()
-	_check(workstation.p1_session.phase == P1Session.Phase.SPREAD and not workstation.step_action_button.visible, "spreader release freezes the shape without exposing a completion button")
+	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE and workstation.step_action_button.visible and not workstation.step_action_button.disabled, "spreader release freezes the shape and exposes the existing flip action without requiring egg")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE and workstation.scraper_button.disabled, "the released batter spreader cannot keep shaping")
 	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * surface_local_center
+	var egg_drop_local := surface_local_center + Vector2(-82.0, 0.0)
+	var egg_drop_global := workstation.pancake_surface.get_global_transform_with_canvas() * egg_drop_local
 	if DisplayServer.get_name() == "headless":
 		var ingredient_press := InputEventMouseButton.new()
 		ingredient_press.button_index = MOUSE_BUTTON_LEFT
 		ingredient_press.pressed = true
 		workstation._on_ingredient_gui_input(ingredient_press, IngredientModel.EGG)
-		workstation._finish_ingredient_drag(surface_center)
+		workstation._finish_ingredient_drag(egg_drop_global)
 	else:
-		await _drag_control_to(workstation.egg_button, surface_center)
-	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "the same egg interaction implicitly accepts the current pancake shape")
+		await _drag_control_to(workstation.egg_button, egg_drop_global)
+	_check(workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE, "egg remains an optional order ingredient after the pancake shape is accepted")
 	_check(workstation.ingredient_model.has_type(IngredientModel.EGG), "dragging from the ingredient rack onto the real pancake surface places business data")
-	_check(workstation.pancake_model.has_egg() and workstation.egg_crack_artwork.visible, "egg drop creates the liquid simulation and visible raw-egg landing state")
+	_check(workstation.pancake_model.has_egg() and workstation.egg_crack_effect.visible and not workstation.egg_crack_artwork.visible, "egg drop starts the non-looping two-frame crack effect before the raw-egg landing state")
+	var fixed_egg_grid_center := Vector2.ONE * float(workstation.pancake_model.grid_size - 1) * 0.5
+	var egg_placement: Dictionary = workstation.ingredient_model.placements.back()
+	var egg_placement_position: Vector2 = egg_placement.get("position", Vector2.ZERO)
+	_check(egg_placement_position.is_equal_approx(fixed_egg_grid_center) and _egg_field_centroid(workstation.pancake_model).distance_to(fixed_egg_grid_center) <= 1.0, "off-center egg drop resolves both ingredient data and liquid simulation to the fixed pancake center")
+	_check(workstation.egg_crack_effect.position.is_equal_approx(Vector2(workstation.pancake_surface.size.x * 0.5, 0.0)) and workstation.egg_crack_artwork.position.is_equal_approx(surface_local_center), "crack frames use the lowered center stage and raw egg uses the fixed pancake center")
+	await create_timer(0.36).timeout
+	_check(not workstation.egg_crack_effect.visible and workstation.egg_crack_artwork.visible, "egg crack effect finishes into the existing raw-egg landing artwork")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER, "egg drop automatically selects the existing T-shaped spreader")
 	workstation._refresh_p1_ui()
 	_check(
@@ -124,6 +136,7 @@ func _run() -> void:
 		"successful flip returns and hides the egg spreader"
 	)
 	_check(is_equal_approx(workstation.pancake_model.mean_side_doneness(true), workstation.pancake_model.mean_side_doneness(false)), "quick flip settles the second-side heat without waiting")
+	workstation.set_sauce_unlocked(OrderService.SAUCE_CHILI, true)
 	_check(not workstation.sauce_refill_button.disabled and not workstation.chili_sauce_refill_button.disabled, "both sauce bottles respond immediately after flipping")
 	if DisplayServer.get_name() == "headless":
 		workstation.chili_sauce_refill_button.button_down.emit()
@@ -134,6 +147,7 @@ func _run() -> void:
 	var chili_load := float(workstation.sauce_tool_state.load)
 	_check(workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "clicking a sauce bottle stays in the immediate post-flip sauce stage")
 	_check(workstation.current_sauce_type == OrderService.SAUCE_CHILI and chili_load > 0.0 and workstation.sauce_blob_overlay.visible, "holding the chili bottle creates a visible chili blob on the pancake")
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH and workstation.chili_sauce_refill_button.button_pressed and workstation.pancake_surface.cursor_is_sauce_brush, "releasing the chili bottle automatically equips the chili brush and brush cursor")
 	var doneness_before_sauce := workstation.pancake_model.mean_side_doneness(true)
 	workstation._process(15.0)
 	_check(is_equal_approx(workstation.pancake_model.mean_side_doneness(true), doneness_before_sauce), "sauce and filling time no longer burns the finished pancake")
@@ -145,12 +159,11 @@ func _run() -> void:
 		await _hold_control_with_process(workstation, workstation.sauce_refill_button, 0.5)
 	var sweet_load_before_brush := float(workstation.sauce_tool_state.load)
 	_check(sweet_load_before_brush > 0.0 and is_equal_approx(float(workstation.sauce_tool_states[OrderService.SAUCE_CHILI].load), chili_load), "sweet and chili squeeze amounts remain independent")
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH and workstation.sauce_refill_button.button_pressed and not workstation.sauce_brush_button.visible, "releasing the sweet bottle selects its brush without exposing a separate brush button")
 	if DisplayServer.get_name() == "headless":
-		workstation.sauce_brush_button.pressed.emit()
 		workstation._sauce_stroke_id = workstation.pancake_model.begin_sauce_stroke()
 		workstation._apply_sauce_brush_sample(Vector2(64, 64))
 	else:
-		await _click_control(workstation.sauce_brush_button)
 		_send_mouse_motion(surface_center, 0)
 		await process_frame
 		_send_mouse_button(surface_center, true)
@@ -161,6 +174,18 @@ func _run() -> void:
 		_send_mouse_button(surface_center + Vector2(36.0, 0.0), false)
 		await process_frame
 	_check(workstation.pancake_model.total_sauce() > 0.0 and float(workstation.sauce_tool_state.load) < sweet_load_before_brush, "the sauce brush consumes and spreads the squeezed sweet sauce")
+	var sweet_total_before_auto := workstation.pancake_model.total_sauce(OrderService.SAUCE_SWEET)
+	var chili_total_before_auto := workstation.pancake_model.total_sauce(OrderService.SAUCE_CHILI)
+	workstation.set("_automatic_brush_owned", true)
+	workstation._refresh_sauce_brush_upgrade_presentation()
+	var automatic_sauce_inventory: Dictionary = game_session.call("inventory_snapshot")
+	automatic_sauce_inventory["stock.pancake.sauce.red_chili"] = 4
+	game_session.call("save_inventory", automatic_sauce_inventory)
+	workstation._on_chili_sauce_squeeze_started()
+	workstation._process(0.2)
+	workstation._on_sauce_squeeze_ended()
+	_check(workstation.tool_controller.current_tool == ToolController.Tool.NONE and workstation.pancake_model.total_sauce(OrderService.SAUCE_CHILI) > chili_total_before_auto, "automatic-brush ownership makes chili bottle release brush immediately and return to empty hands")
+	_check(is_equal_approx(workstation.pancake_model.total_sauce(OrderService.SAUCE_SWEET), sweet_total_before_auto), "automatic brushing one bottle leaves the other sauce layer unchanged for two-sauce orders")
 	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(-70, -30))
 	await _place_ingredient_from_rack(workstation, workstation.scallion_button, IngredientModel.SCALLION, surface_center + Vector2(15, 65))
 	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(70, -35))
@@ -170,6 +195,9 @@ func _run() -> void:
 		and workstation.ingredient_model.count_type(IngredientModel.BAOCUI) == 2,
 		"opening-day filling controls allow repeated portions after the filling phase unlocks"
 	)
+	var left_baocui_position: Vector2 = Dictionary(workstation.ingredient_model.placements[1]).get("position", Vector2.ZERO)
+	var right_baocui_position: Vector2 = Dictionary(workstation.ingredient_model.placements[3]).get("position", Vector2.ZERO)
+	_check(left_baocui_position.x < fixed_egg_grid_center.x - 10.0 and right_baocui_position.x > fixed_egg_grid_center.x + 10.0, "non-egg fillings keep their player-selected off-center drop positions")
 	_check(not workstation.ham_button.visible and workstation.ham_button.disabled, "locked ham remains absent and non-interactive on the opening-day workstation")
 	workstation.ingredient_model.placements[1]["position"] = Vector2(28, 56)
 	workstation.ingredient_model.placements[2]["position"] = Vector2(100, 58)
@@ -180,8 +208,19 @@ func _run() -> void:
 	var fold_edge := Vector2(workstation.pancake_surface.size.x * 0.12, workstation.pancake_surface.size.y * 0.5)
 	workstation._on_pointer_started(fold_edge)
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.FOLD and workstation.fold_model.active_region != PancakeFoldModel.REGION_NONE, "an exposed pancake edge starts folding without an extra fold-tool click")
+	workstation.pancake_surface.force_texture_upload()
+	var sauce_fold_textures: Dictionary = workstation.pancake_surface.get_renderer_diagnostics()
+	var sweet_fold_image: Image = sauce_fold_textures.get("fold_sweet_sauce_image")
+	var chili_fold_image: Image = sauce_fold_textures.get("fold_chili_sauce_image")
+	_check(_maximum_alpha(sweet_fold_image) > 0.0 and _maximum_alpha(chili_fold_image) > 0.0, "sweet and chili folding textures carry transparent sauce coverage instead of opaque static color")
+	_check(sweet_fold_image.get_pixel(0, 0) != chili_fold_image.get_pixel(0, 0), "sweet and chili folding textures keep visibly distinct base colors")
+	workstation.fold_model.update_drag(Vector2(58, 64))
+	await process_frame
+	var moving_fold_diagnostics: Dictionary = workstation.fold_overlay.get_renderer_diagnostics()
+	_check(int(moving_fold_diagnostics.get("sauce_front_strip_count", 0)) > 0 and not workstation.sauce_blob_overlay.visible, "a partially folded moving interior face keeps brushed sauce on its UV mesh while hiding the static sauce blob")
 	workstation._on_cancel_requested()
 	_fold_both(workstation)
+	await process_frame
 	_check(
 		workstation.ingredient_layer.visual_alpha_for(IngredientModel.BAOCUI) <= 0.001
 		and workstation.ingredient_layer.visual_alpha_for(IngredientModel.SCALLION) <= 0.001,
@@ -193,6 +232,8 @@ func _run() -> void:
 		and is_equal_approx(float(surface_material.get_shader_parameter(&"fillings_enclosed")), 1.0),
 		"folding both sides encloses sauce blobs and the brushed sauce layer"
 	)
+	var enclosed_fold_diagnostics: Dictionary = workstation.fold_overlay.get_renderer_diagnostics()
+	_check(bool(enclosed_fold_diagnostics.get("sauce_hidden_enclosed", false)) and int(enclosed_fold_diagnostics.get("sauce_front_strip_count", -1)) == 0, "fully folded pancake hides both sauce textures inside the finished shape")
 	_check(workstation.p1_session.phase == P1Session.Phase.PACKAGE and not workstation.bag_button.disabled, "intact folds unlock normal packaging")
 	_check(
 		workstation.packaging_choices.visible
@@ -205,64 +246,44 @@ func _run() -> void:
 		workstation.fold_overlay.current_package_texture().resource_path.ends_with("paper_bag_package_v1.png"),
 		"paper-bag completion renders its dedicated finished-product artwork"
 	)
-	_check(workstation.serve_product_button.visible and not workstation.step_action_button.visible, "packaged product itself becomes the explicit customer-handoff target")
-	workstation.serve_product_button.pressed.emit()
-	_check(workstation.p1_session.phase == P1Session.Phase.HANDOFF and workstation.handoff_product_sprite.visible, "clicking the bag starts the visible handoff instead of opening evaluation")
-	_check(not workstation.pancake_visual.visible and not workstation.ingredient_layer.visible, "handoff clears the delivered pancake and fillings from the griddle")
-	_check(not workstation.result_panel.visible and not workstation.order_summary_card.visible, "handoff does not force an evaluation panel")
-	workstation._complete_handoff_animation()
-	_check(
-		workstation.p1_session.phase == P1Session.Phase.PAYMENT
-		and workstation.customer_portrait.texture.resource_path.ends_with("customer_01_accepting_bag_cropped.tres"),
-		"customer acceptance uses the dedicated bag-holding artwork"
-	)
-	workstation._show_customer_payment()
-	_check(
-		workstation._current_payment_amount == first_payment_coins
-		and workstation._payment_flight_sprites.size() == first_payment_denominations.size()
-		and workstation._current_payment_denominations == first_payment_denominations
-		and workstation.customer_portrait.texture.resource_path.ends_with("customer_01_paying_coins_cropped.tres"),
-		"customer payment uses the dedicated paying artwork and starts the order's denomination coin flights"
-	)
-	workstation._complete_payment_animation()
-	var next_order_id := StringName(workstation.p1_session.order.get("id", &""))
-	_check(
-		workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and str(next_order_id).begins_with("order.pancake.")
-		and workstation.payment_coin_model.pending_total == first_payment_coins
-		and workstation.payment_coin_model.pending_denominations == first_payment_denominations
-		and workstation._pending_payment_sprites.size() == first_payment_denominations.size()
-		and not workstation.payment_collection_area.visible
-		and workstation.order_summary_card.visible,
-		"settled denomination coins remain individually clickable while the next customer starts automatically"
-	)
-	for coin in workstation._pending_payment_sprites:
-		_check(coin.mouse_filter == Control.MOUSE_FILTER_STOP and coin.gui_input.is_connected(workstation._on_payment_coin_gui_input), "each visible denomination coin owns its exact click target")
+	_check(not workstation.serve_product_button.visible and not workstation.step_action_button.visible and workstation.order_dish_buttons[0].disabled and workstation.order_dish_buttons[0].mouse_filter == Control.MOUSE_FILTER_IGNORE, "the order item icon is read-only and physical tray delivery is the only handoff route")
+	workstation._on_customer_slot_pressed(0)
+	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE, "choosing the customer only focuses its order")
+	workstation._on_order_dish_pressed(0)
+	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE and not workstation.handoff_product_sprite.visible, "clicking the read-only order item cannot start delivery")
 	_check(
 		not workstation.payment_collection_area.pressed.is_connected(workstation._collect_payment)
 		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment),
 		"no broad payment-slot hit target or hover collection path remains"
 	)
-	var customer_before_collection := Dictionary(workstation.customer_queue.current_customer()).duplicate(true)
-	var waiting_before_collection := Array(workstation.customer_queue.waiting_customers()).duplicate(true)
-	var portrait_before_collection := workstation.customer_portrait.texture.resource_path
-	if DisplayServer.get_name() == "headless":
-		var click := InputEventMouseButton.new()
-		click.button_index = MOUSE_BUTTON_LEFT
-		click.pressed = true
-		workstation._pending_payment_sprites[0].gui_input.emit(click)
-	else:
-		await _click_control(workstation._pending_payment_sprites[0])
+	workstation.call("_refresh_pancake_drag_sources")
+	var ready_source_ref := Dictionary(workstation.pancake_ready_source.call("source_ref"))
+	_check(StringName(ready_source_ref.get("source_kind", &"")) == &"pancake_ready", "packaged pancake becomes a physical draggable source")
+	workstation.customer_handoff_tray.call("_on_product_source_dropped", ready_source_ref, 0)
+	var staged_order := Dictionary(game_session.call("formal_order", workstation.get("_formal_order_id")))
+	_check(Array(Dictionary(Array(staged_order.get("items", []))[0]).get("attached_products", [])).size() == 1, "physical pancake source attaches to the exact customer tray slot")
+	_check(workstation.pancake_model.covered_cell_count() == 0 and workstation.ingredient_model.placements.is_empty(), "moving the packaged pancake to the customer tray clears it from the griddle")
+	_check(not workstation.result_panel.visible and not workstation.order_summary_card.visible, "tray staging does not force an evaluation panel")
+	workstation.customer_handoff_tray.call("_on_tray_dropped", workstation.get("_formal_order_id"))
+	var tray_payments: Array = Array(game_session.call("pending_tray_payments"))
+	var tray_settlement: Dictionary = Dictionary(workstation.get("_pending_tray_settlement"))
+	var tray_payment_amount := int(Dictionary(tray_payments[0]).get("amount", 0)) if not tray_payments.is_empty() else 0
+	_check(workstation.tray_payment_button.visible, "whole-tray handoff creates a visible click-to-continue settlement")
+	_check(
+		tray_payments.is_empty()
+		and not bool(tray_settlement.get("order_success", true))
+		and Array(tray_settlement.get("mismatch_reasons", [])).has("sauce_ids"),
+		"a mismatched whole tray reaches customer feedback and the bill without creating a zero-value pending coin"
+	)
+	_check(StringName(workstation.get("_customer_visual_state")) == &"paying_coins", "whole-tray handoff switches the customer to the paying-coins state")
+	workstation.call("_collect_tray_payment")
+	var next_order_id := StringName(workstation.p1_session.order.get("id", &""))
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and StringName(workstation.p1_session.order.get("id", &"")) == next_order_id
-		and workstation.payment_coin_model.pending_total == 0
-		and workstation._pending_payment_sprites.is_empty()
-		and not workstation.payment_collection_area.visible
-		and workstation.customer_queue.current_customer() == customer_before_collection
-		and workstation.customer_queue.waiting_customers() == waiting_before_collection
-		and workstation.customer_portrait.texture.resource_path == portrait_before_collection,
-		"clicking a visible coin collects every pending coin without changing the active customer"
+		and str(next_order_id).begins_with("order.pancake.")
+		and Array(game_session.call("pending_tray_payments")).is_empty()
+		and not workstation.tray_payment_button.visible,
+		"clicking the visible customer payment collects it and starts the next customer"
 	)
 	_check(workstation.customer_line_label.visible and workstation.phase_label.visible, "the next customer order stays actionable behind the optional previous-order summary")
 	workstation._set_customer_portrait_state(P1Session.REACTION_VERY_UNHAPPY)
@@ -297,7 +318,7 @@ func _run() -> void:
 	_check(
 		workstation.daily_bill_panel.visible
 		and workstation.daily_bill_stats_label.text.contains("完成 1 单")
-		and workstation.daily_bill_stats_label.text.contains("收入 %d 金币" % first_payment_coins)
+		and workstation.daily_bill_stats_label.text.contains("收入 %d 金币" % tray_payment_amount)
 		and workstation.daily_bill_rows.get_child_count() == 4,
 		"ending business opens a read-only today bill with one aligned ledger row"
 	)
@@ -383,6 +404,86 @@ func _fill_product_base(model: PancakeModel) -> void:
 	model.changed.emit()
 
 
+func _prepare_first_side(workstation: Workstation) -> void:
+	workstation.reset_pancake()
+	_fill_product_base(workstation.pancake_model)
+	workstation.pour_used = true
+	workstation.set("_spread_shape_locked", true)
+	workstation.p1_session.confirm_spread(workstation.pancake_model)
+	workstation._refresh_p1_ui()
+
+
+func _test_unflipped_sauce_paths(workstation: Workstation) -> void:
+	_prepare_first_side(workstation)
+	workstation.set_sauce_unlocked(OrderService.SAUCE_CHILI, true)
+	_check(
+		not workstation.sauce_refill_button.disabled
+		and not workstation.chili_sauce_refill_button.disabled
+		and workstation.step_action_button.visible,
+		"both unlocked sauce bottles are available alongside flip after spreading"
+	)
+	workstation._on_sauce_squeeze_started()
+	workstation._process(0.18)
+	workstation._on_sauce_squeeze_ended()
+	_check(
+		workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		and not workstation.pancake_model.is_flipped
+		and not workstation.step_action_button.visible
+		and workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH,
+		"first manual sauce squeeze commits the no-flip path and equips the brush"
+	)
+	workstation._sauce_stroke_id = workstation.pancake_model.begin_sauce_stroke()
+	workstation._apply_sauce_brush_sample(Vector2(64, 64))
+	var sweet_total := workstation.pancake_model.total_sauce(OrderService.SAUCE_SWEET)
+	workstation.set("_automatic_brush_owned", true)
+	workstation._refresh_sauce_brush_upgrade_presentation()
+	workstation._on_chili_sauce_squeeze_started()
+	workstation._process(0.18)
+	workstation._on_sauce_squeeze_ended()
+	_check(
+		sweet_total > 0.0
+		and workstation.pancake_model.total_sauce(OrderService.SAUCE_CHILI) > 0.0
+		and not workstation.pancake_model.is_flipped,
+		"manual sweet sauce and automatic chili sauce share the same unflipped preparation path"
+	)
+	var fold_edge := Vector2(workstation.pancake_surface.size.x * 0.12, workstation.pancake_surface.size.y * 0.5)
+	workstation._on_pointer_started(fold_edge)
+	_check(workstation.p1_session.phase == P1Session.Phase.FOLD and workstation.fold_model.active_region != PancakeFoldModel.REGION_NONE, "grabbing the edge is the first action that closes no-flip preparation")
+	workstation._on_cancel_requested()
+
+	workstation.set("_automatic_brush_owned", false)
+	workstation._refresh_sauce_brush_upgrade_presentation()
+	_prepare_first_side(workstation)
+	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * (workstation.pancake_surface.size * 0.5)
+	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(-45.0, -20.0))
+	_check(
+		workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		and not workstation.pancake_model.is_flipped
+		and not workstation.sauce_refill_button.disabled,
+		"placing a topping first keeps the unflipped sauce and filling stage open"
+	)
+	workstation._on_sauce_squeeze_started()
+	workstation._process(0.12)
+	workstation._on_sauce_squeeze_ended()
+	_check(float(workstation.sauce_tool_states[OrderService.SAUCE_SWEET].get("load")) > 0.0, "sauce can still be added after a pre-flip topping")
+
+	workstation.reset_pancake()
+	workstation.set("_automatic_brush_owned", false)
+	workstation._refresh_sauce_brush_upgrade_presentation()
+
+
+func _egg_field_centroid(model: PancakeModel) -> Vector2:
+	var weighted_position := Vector2.ZERO
+	var total_weight := 0.0
+	for index in model.egg_white.size():
+		var weight := float(model.egg_white[index]) + float(model.egg_yolk[index])
+		if weight <= 0.0:
+			continue
+		weighted_position += Vector2(index % model.grid_size, floori(float(index) / float(model.grid_size))) * weight
+		total_weight += weight
+	return weighted_position / maxf(total_weight, 0.000001)
+
+
 func _fold_both(workstation: Workstation) -> void:
 	workstation.fold_model.begin_drag(Vector2(12, 64))
 	workstation.fold_model.release_drag(Vector2(70, 64))
@@ -401,6 +502,14 @@ func _spread_egg_with_workstation(workstation: Workstation) -> void:
 			var radial := Vector2(cos(angle), sin(angle) * workstation.parameters.pan_height_ratio)
 			workstation._process_scraper(center + radial * radius, 1.0 / 60.0)
 	workstation._on_pointer_ended(surface_center)
+
+
+func _maximum_alpha(image: Image) -> float:
+	var maximum := 0.0
+	for y in image.get_height():
+		for x in image.get_width():
+			maximum = maxf(maximum, image.get_pixel(x, y).a)
+	return maximum
 
 
 func _check(condition: bool, message: String) -> void:

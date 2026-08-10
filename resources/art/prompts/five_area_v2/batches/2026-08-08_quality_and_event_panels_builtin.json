@@ -1,0 +1,87 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "shared_style": "rounded Q-version game art, thick clean deep-brown outlines, warm cream/honey-gold/orange cel shading, muted teal accents, cozy polished Chinese breakfast-stall finish",
+  "shared_constraints": "no text, letters, numerals, logo, watermark, cast shadow, contact shadow, floor, reflection, or background scene; preserve the legacy symbol or panel-slot semantics exactly",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "default_parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "supplier_green_key_parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 180 --despill --edge-contract 1",
+    "low_alpha_scrub": 8,
+    "final_resize": "Pillow LANCZOS to the manifest canvas without stretching the source layout"
+  },
+  "assets": [
+    {
+      "asset_id": "quality_integrity_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/quality/quality_integrity_v1.png",
+      "family_reference": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "symbol": "one complete intact golden pancake disk with exactly three toasted dots",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-507e865e-e620-43f7-8c57-7db11274858e.png",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "quality_order_correctness_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/quality/quality_order_correctness_v1.png",
+      "family_reference": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "symbol": "one ticket and one pancake with matching green-red-green marker order",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-7898236e-01ef-48a5-a689-5a7ae1c57dc4.png",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "quality_preparation_time_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/quality/quality_preparation_time_v1.png",
+      "family_reference": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "symbol": "one kitchen clock face with two hands and four short tick marks",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-b5c85874-a529-4fb9-bd4c-44fb49dea238.png",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "quality_sauce_coverage_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/quality/quality_sauce_coverage_v1.png",
+      "family_reference": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "symbol": "one golden pancake with exactly three broad even red-brown sauce stripes",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-ab935b27-9af0-4543-b6f0-98fdac0a2b95.png",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "quality_thickness_uniformity_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/quality/quality_thickness_uniformity_v1.png",
+      "family_reference": "res://resources/art/ui/quality/quality_egg_spread_v1_five_area_v2.png",
+      "symbol": "one straight pancake side-profile strip above three equal measuring marks and a baseline",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-98df98f6-42f9-435d-9b0a-35c90fcc2afb.png",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "signature_recipe_panel_base_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/recipe/signature_recipe_panel_base_v1.png",
+      "family_reference": "res://resources/art/ui/day_summary/day_summary_panel_base_v1_five_area_v2.png",
+      "layout": "one large left circle; six right circles in a 3x2 grid; one lower-right seal; one top title capsule; one bottom footer capsule",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-71a4f86c-f998-4f42-aad3-a4a41a355069.png",
+      "final_canvas": [1024, 576]
+    },
+    {
+      "asset_id": "supplier_event_panel_base_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/ui/supplier_event/supplier_event_panel_base_v1.png",
+      "family_reference": "res://resources/art/ui/day_summary/day_summary_panel_base_v1_five_area_v2.png",
+      "layout": "one tall left portrait slot; one upper-right title; one middle-right message area; two lower-right choice areas",
+      "key_color": "#00ff00",
+      "imagegen_output": "exec-50cdcf9a-f86a-4571-bb97-534099aea536.png",
+      "final_canvas": [1024, 576]
+    }
+  ],
+  "discarded_outputs": [
+    {
+      "asset_id": "supplier_event_panel_base_v1_five_area_v2",
+      "imagegen_output": "exec-d49d0fa4-8088-49a9-ab5c-014614ce2bfc.png",
+      "reason": "The magenta background contained broad color drift. Chroma removal left visible yellow-purple edge contamination, so the source was rejected and regenerated on green."
+    }
+  ]
+}

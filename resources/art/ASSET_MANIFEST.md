@@ -2815,6 +2815,25 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 
 所有 7 张正式图均为 RGBA、四角 alpha 为 0、禁用的品红键色残留为 0。图中无文字、数字、emoji、logo 或水印。
 
+### 豆浆机简化重绘 v2 系列
+
+- `status`: generated-imported-runtime-partial-human-review-pending
+- `generated_on`: 2026-08-09 (Asia/Shanghai)
+- `generator`: Codex built-in `imagegen`；附件作为单杯紧凑结构参考，现有顾客与油条机作为游戏画风参考。
+- `prompt_records`: `res://resources/art/prompts/soy_milk_machine_tier_1_v2.json`、`soy_milk_machine_tier_2_v2.json`、`soy_milk_machine_tier_3_v2.json`。
+
+| 档位 | 正式文件 | 视觉规则 | alpha bbox | SHA-256 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| 初级 | `res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v2.png` | 单杯出浆界面，紧凑家用结构 | `(332,30)-(692,488)` | `08E2F860AFBCC6EC630D70438038E013E62A2ECE3E67CB6CBF37C4C11CDF0192` | 已生成、已导入、已接入 |
+| 中级 | `res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v2.png` | 容量不变；加固环、散热口、双状态灯表达提速 | `(329,30)-(695,481)` | `9553E6781D03231C36D3F1AC49B1D24CB868A28D8D37E1CE245C82B1BFE9125E` | 已生成、已导入、未接入 |
+| 高级 | `res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v2.png` | 严格 2×2 共四杯，一体保温托盘 | `(234,30)-(790,481)` | `BCA12C54145C7821D0D58A9362A1B74C967362A7B69119869A09CAB496188C78` | 已生成、已导入、未接入 |
+
+- `image_audit`: 三张均为 1024×512 RGBA、四角透明、强品红键色残留为 0；中级透明/半透明/不透明比例为 `0.727636/0.011671/0.260693`，高级为 `0.566505/0.014502/0.418993`。
+- `godot_import`: passed — Godot 4.7.1 已为三张 v2 素材生成 `.png.import`；`WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 40 textures`。
+- `gpu_slot_preview`: passed — 中级保持与初级接近的占位；高级加宽后仍完整位于现磨豆浆区域内，未覆盖油条、煎饼或底部原料槽。
+- `runtime_integration`: partial — `initial_unlock_workstation.tscn` 的 `FreshSoyMilkMachine` 已使用初级 v2；中级/高级图已生成，但当前运行时尚无按设备档位切换纹理的绑定，本次不擅自扩展业务逻辑。
+- `human_review`: pending — GPU 预览只证明实际渲染与占位，最终画风取舍由人工确认。
+
 ## 首批当时的拒绝稿与未完成项（已由继续批次补齐）
 
 - 豆浆机基础档第一稿为高塔比例，在目标设备位缩放后过窄，未采用；源图保留在 `tmp/imagegen/workstation_expansion_v1/sources/soy_milk_machine_tier_1_v1_chromakey.png`。
@@ -3069,3 +3088,81 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `godot_import`: passed — Godot 4.7.1 imported the 1920x1080 PNG as a `Texture2D`.
 - `runtime_scene_check`: passed — `initial_unlock_workstation.tscn` uses v2; headless layout and ingredient checks plus the real D3D12 GPU smoke test passed.
 - `human_review`: pending
+## soy_steamer_operations_v3
+
+- `status`: 30 generated; 30 Godot-imported; runtime-integrated; automated checks passed; GPU pointer/render checks passed; agent visual review passed; human review pending
+- `scope`: modular soy-milk-machine and four-layer steamer operation parts only; existing v2 complete-machine images remain unchanged for main-workbench and upgrade display
+- `prompt_record`: `res://resources/art/prompts/soy_steamer_operations_v3.md`
+- `contact_sheet`: `res://tmp/imagegen/soy_steamer_operations_v3/contact_sheet.png`
+- `equipment_parts`: 22 RGBA PNG files at `1024x512` (12 steamer, 9 soy machine, 1 independent four-cup automation rack)
+- `cups_and_effects`: 8 RGBA PNG files at `256x256` (5 cups, water pour, soy stream, spoiled vapor)
+- `processing`: generated against `#ff00ff`, removed with the imagegen chroma-key helper, normalized to fixed transparent canvases, and checked for residual keyed pixels
+- `alpha_check`: all files retain fully transparent canvas corners and non-empty centered alpha bounds
+- `runtime_contract`: no persisted lid state; snapshot remains the source of truth; open/close, ingredient/cup transfer, shake, glow, steam and alert feedback are cancellable presentation only
+- `automation_contract`: the four-position rack renders only when `automation.fresh_soy_milk.auto_cup_rack` is unlocked or the snapshot already contains rack cups; machine tier and automation ownership remain separate
+- `automated_checks`: `FRESH_SOY_MILK_STATION_VISUAL_SELF_CHECK_PASS`; `STEAMER_STATION_VISUAL_SELF_CHECK_PASS`; `WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 70 textures`; `FIVE_AREA_FORMAL_SCENE_SELF_CHECK_PASS`; `FIVE_AREA_F4_SERVICES_SELF_CHECK_PASS`
+- `gpu_checks`: D3D12 / NVIDIA GeForce RTX 5070; `FRESH_SOY_MILK_STATION_GPU_PREVIEW_PASS`; `STEAMER_STATION_GPU_PREVIEW_PASS`; `SOY_STEAMER_WORKBENCH_GPU_PREVIEW_PASS`
+- `operation_previews`: `res://tmp/validation/fresh_soy_milk_station/` at `430x270`; `res://tmp/validation/steamer_station/` at `430x250`
+- `workbench_previews`: `res://tmp/validation/soy_steamer_workbench/`; soy slot `288x288`, steamer slot `280x262`, all three tiers captured from the real formal scene
+- `agent_visual_review`: passed for unified perspective, readable open/closed states, four-layer separation, cup flavor distinction, no watermark, no visible chroma-key residue, and no clipped layer-status control
+- `human_review`: pending
+
+## youtiao_fryer_five_area_v3
+
+- `status`: 3 generated; 3 Godot-imported; tier 1 runtime-integrated; focused automated checks passed; D3D12 runtime preview passed; agent angle review passed; human review pending
+- `purpose`: replaces the visually complex industrial fryer with a compact single-well manual fryer family and corrects all three tiers to face the player straight on at the workstation
+- `tier_1`: `res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_five_area_v3.png`; two servings / 12 seconds; SHA-256 `4dd6b159bda81f7d31ad0b78bc63e5a9cddbc72ac1c849ffc5459bc79ed6b432`
+- `tier_2`: `res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_five_area_v3.png`; two servings / 9 seconds; SHA-256 `164dec7b37afd7b1bf00909b6c428858bf2a4b68d9b5ac79220e95c69d5b9ec9`
+- `tier_3`: `res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_five_area_v3.png`; one wide basket with four lanes / four servings / 9 seconds; SHA-256 `b06208cfa8d4ac659e9ca6448681a52a4ccc724c59225a299314fbbc1d9db1ca`
+- `format`: all three are `1024x512` RGBA with four transparent corners and zero detected residual magenta pixels
+- `camera_contract`: straight-on player-facing front panel with a gentle top-down basket view; no three-quarter yaw or diagonal side recession
+- `prompt_record`: `res://resources/art/prompts/youtiao_fryer_five_area_v3.md`
+- `audit_record`: `res://docs/youtiao_fryer_five_area_v3_audit.json`
+- `processing`: generated on flat `#ff00ff`; chroma key removed with soft matte, thresholds `12/220`, and despill; normalized to a centered `900x430` maximum alpha box on the fixed canvas
+- `runtime_scene_check`: tier 1 is referenced by `initial_unlock_workstation.tscn`; the existing node rectangle, click layer, unlock rules, production logic, and save shape are unchanged; tier 2 and tier 3 are not dynamically bound
+- `automated_checks`: `WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 73 textures`; `INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS`; `YOUTIAO_FRYER_SELF_CHECK_PASS`; `F3_STATION_SCENE_SELF_CHECK_PASS`
+- `gpu_check`: D3D12 / NVIDIA GeForce RTX 5070; `YOUTIAO_FRYER_GPU_PREVIEW_PASS`; screenshot `res://tmp/validation/youtiao_fryer_unlocked_gpu_1920x1080.png`
+- `comparison_sheet`: `res://tmp/validation/youtiao_fryer_v3_contact_sheet.png`
+- `full_regression_status`: not fully green because the existing dirty worktree fails an order-snapshot version assertion and packaged-drink pointer delivery before the F3 pointer test reaches youtiao; these failures are recorded separately in the audit and were not changed in this asset task
+- `human_review`: pending
+
+## packaged_drink_cabinet_empty_tier_1_five_area_v3
+
+- `status`: generated; Godot-imported; runtime-integrated; agent visual review passed; human review pending
+- `purpose`: 从既有静态满柜素材派生不烘焙库存的空柜壳，供正式同屏场景用四条运行时货道表达真实余量与纵深。
+- `final_file`: `res://resources/art/workstation/expansion/machines/packaged_drink_cabinet_empty_tier_1_five_area_v3.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fe4f3-28d9-72a2-b227-f7477bfb344c\exec-66cfc00a-1921-4267-baff-5559300cc336.png`
+- `edit_target`: `res://resources/art/workstation/expansion/machines/packaged_drink_cabinet_tier_1_five_area_v2.png`
+- `prompt_record`: `res://resources/art/prompts/packaged_drink_cabinet_empty_tier_1_five_area_v3.md`
+- `generator`: Codex built-in `image_gen`, precise-object edit; seed and model-version parameters were not exposed by the tool.
+- `rejected_attempt`: first result painted a checkerboard-like background and was not imported or referenced.
+- `processing`: accepted retry used flat `#00ff00`; `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`; Lanczos resize to fixed canvas.
+- `size`: `1024x512`, RGBA PNG.
+- `sha256`: `951EABF8F844655E735E2ED88D036B0B59C28B5C08C3251EAF93086B980703DE`
+- `runtime_scene`: `res://scenes/gameplay/direct_packaged_drink_station.tscn`; cabinet shell is input-ignoring, while four product sprites, depth sprites, counts, restock controls and heater slots remain independent scene-owned nodes.
+- `automated_checks`: `FIVE_AREA_FORMAL_SCENE_SELF_CHECK_PASS`; `CUSTOMER_HANDOFF_TRAY_TRANSACTION_SELF_CHECK_PASS`.
+- `gpu_checks`: D3D12 / NVIDIA GeForce RTX 5070; physical invalid release, lane-to-tray, tray-to-cabinet, incomplete rebound, lane-to-heater, heater-to-tray, whole-tray handoff and click-to-collect paths exercised at `1920x1080` and `1280x720`.
+- `agent_visual_review`: transparent empty cabinet and both runtime screenshots inspected; dark production overlays were replaced by light enamel/brass lock covers and the waste target was moved off the heater.
+- `human_review`: pending; no final-art claim is made.
+
+## youtiao_fryer_operations_v4
+
+- `status`: 13 generated; 13 Godot-imported; formal same-screen runtime-integrated; focused automated checks and isolated-user-data GPU pointer/render checks passed; human review pending
+- `scope`: 9 tier-specific body/basket layers, 2 independent automation attachments, and 2 reusable loop effects; the three existing dough/product pairs and existing burnt-smoke texture are reused
+- `prompt_record`: `res://resources/art/prompts/youtiao_fryer_operations_v4.md`
+- `audit_record`: `res://docs/youtiao_fryer_operations_v4_audit.json`
+- `tier_contact_sheet`: `res://tmp/validation/youtiao_fryer_operations_v4_tier_contact_sheet.png`
+- `equipment_format`: 11 files at `1024x512` RGBA; shared canvas registration; straight-on player-facing orientation
+- `effects_format`: 2 files at `256x256` RGBA; sizzle bubbles and oil drips are reused with code-driven phase/position loops
+- `processing`: generated against flat `#ff00ff`; chroma key removed with soft matte, thresholds `12/220`, and despill; normalized to fixed transparent canvases
+- `alpha_check`: all 13 files have four transparent corners, non-empty registered alpha bounds, and zero detected visible magenta pixels
+- `runtime_scene`: `res://scenes/gameplay/direct_youtiao_station.tscn` owns fixed body, four food-slot controls, low/high baskets, bubbles, drips, smoke, auto-lift and auto-load layers
+- `runtime_states`: idle, loaded, frying, ready-safe, overcooking, burnt, draining, ready-to-collect and unowned all converge from the production snapshot; raw-to-cooked crossfade, quality darkening, partial collection and final reset are presentation-only
+- `automation_contract`: `automation.youtiao.auto_lift` and `automation.youtiao.auto_load` reveal only their independent attachments; confirmed auto loading consumes real inventory through the existing atomic service and does not change cook/drain times
+- `interface_change`: `GameSession.confirm_and_run_youtiao_auto_load(recipe_id, quantity)` delegates the existing confirmed-profile and automatic-load services; no save-shape or production-model change
+- `temperature_assist`: `assist.youtiao.temperature_indicator` uses a code-drawn three-zone range bar and remains separate from the tier-2 physical gauge
+- `automated_checks`: `YOUTIAO_STATION_VISUAL_SELF_CHECK_PASS`; `YOUTIAO_AUTO_LOAD_SELF_CHECK_PASS`; `WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 86 textures`; `FIVE_AREA_FORMAL_SCENE_SELF_CHECK_PASS`; `INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS`; `F3_STATION_SCENE_SELF_CHECK_PASS`
+- `gpu_pointer_check`: D3D12 / NVIDIA GeForce RTX 5070; `YOUTIAO_DIRECT_POINTER_SMOKE_PASS`; manual dough drag, start, manual lift, two-second drain, product-to-tray drag, automatic batch controls and automatic lift all exercised against the formal scene with Godot user data isolated under `tmp/godot-userdata`
+- `gpu_previews`: `res://tmp/validation/youtiao_station_formal_1920x1080.png`; `res://tmp/validation/youtiao_station_formal_1280x720.png`; `res://tmp/validation/youtiao_station_tier1_flow_gpu_1920x1080.png`; `res://tmp/validation/youtiao_station_three_tiers_gpu_1280x720.png`
+- `v3_thumbnail_contract`: the three v3 full-machine images remain unchanged for thumbnail/upgrade display; v4 is used only by the formal direct operation station
+- `human_review`: pending; automated checks and agent inspection do not constitute final art acceptance

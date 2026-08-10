@@ -1,0 +1,42 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "invalid stock-state correction",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "inventory_state",
+  "final_canvas": [384, 384],
+  "shared_style": "rounded chibi Chinese breakfast-game ingredient sprites, clean deep warm-brown outlines, warm cel-shaded highlights, transparent slot-safe composition",
+  "shared_constraints": "preserve legacy ingredient identity, exact visible stock count, and count progression; no container, slot frame, text, people, cooked dish, cast shadow, contact shadow, floor, reflection, or background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "default_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-scrub=8",
+    "baocui_level_1_parameters": "auto-key border; hard tolerance=100; despill; low-alpha-scrub=8",
+    "placement": "preserve full ImageGen canvas composition and resize the full transparent canvas to 384x384 with LANCZOS",
+    "invalid_v2_backup": "tmp/imagegen/five_area_v2/stock_invalid_backup_20260809"
+  },
+  "assets": [
+    {"asset_id": "baocui_stock_1_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1.png", "imagegen_output": "exec-eac7d6fe-ad45-4fba-9f30-26add3820782.png", "count_contract": 1},
+    {"asset_id": "baocui_stock_2_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1.png", "imagegen_output": "exec-a7ede046-fe79-4a05-8e18-f6c225394454.png", "count_contract": 2},
+    {"asset_id": "baocui_stock_3_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1.png", "imagegen_output": "exec-811dafaa-5fa8-419c-a3fd-80ce7420c056.png", "count_contract": 3},
+    {"asset_id": "baocui_stock_4_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1.png", "imagegen_output": "exec-a04d71f3-b462-4d70-9638-10607915ac39.png", "count_contract": 4},
+    {"asset_id": "baocui_stock_5_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1.png", "imagegen_output": "exec-abeecd0c-9abe-41ff-aecc-22482171da12.png", "count_contract": 5},
+    {"asset_id": "baocui_stock_6_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1.png", "imagegen_output": "exec-22c71ff5-8e5e-4105-882a-09e707805faf.png", "count_contract": 6},
+    {"asset_id": "egg_stock_1_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/egg/stock/egg_stock_1_v1.png", "imagegen_output": "exec-b72b6e67-2aae-40ef-a5ca-df59d843e68a.png", "count_contract": 1},
+    {"asset_id": "egg_stock_2_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/egg/stock/egg_stock_2_v1.png", "imagegen_output": "exec-44e3604d-9b0b-4039-9625-eeec09bc4b6c.png", "count_contract": 2},
+    {"asset_id": "egg_stock_3_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/egg/stock/egg_stock_3_v1.png", "imagegen_output": "exec-458c1ef0-4aa5-4a81-abb1-a7ac55cbdcdd.png", "count_contract": 3},
+    {"asset_id": "egg_stock_4_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/egg/stock/egg_stock_4_v1.png", "imagegen_output": "exec-95dce041-0a27-4034-b33d-f1951ceb8dda.png", "count_contract": 4},
+    {"asset_id": "egg_stock_5_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/egg/stock/egg_stock_5_v1.png", "imagegen_output": "exec-4e9d9dc3-a108-4caa-aa7e-e46da72fa3c5.png", "count_contract": 5},
+    {"asset_id": "egg_stock_6_v1_five_area_v2", "legacy_reference": "res://resources/art/ingredients/egg/stock/egg_stock_6_v1.png", "imagegen_output": "exec-bad4439f-1cf3-4834-824d-83971d18d182.png", "count_contract": 6}
+  ],
+  "heated_drink_alpha_cleanup": {
+    "reason": "audit-only low-alpha key residue in steam top; bag and package artwork pixels were outside the changed coordinate range",
+    "guard": "only audit-key-colored pixels with alpha 1..12 and y<16 were cleared",
+    "backup": "tmp/imagegen/five_area_v2/drink_low_alpha_backup_20260809",
+    "changed_pixels": {
+      "milk_heated_five_area_v2": 1,
+      "soy_milk_heated_five_area_v2": 1,
+      "walnut_heated_five_area_v2": 1,
+      "black_sesame_heated_five_area_v2": 5
+    }
+  }
+}

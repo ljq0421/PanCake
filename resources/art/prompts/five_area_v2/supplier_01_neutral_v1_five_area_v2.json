@@ -1,0 +1,11 @@
+{
+  "asset_id": "supplier_01_neutral_v1_five_area_v2",
+  "target_path": "res://resources/art/suppliers/supplier_01/supplier_01_neutral_v1_five_area_v2.png",
+  "reference": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "prompt": "Use the attached ProjectCake customer portrait only as a style reference. Create a friendly supplier character portrait representing supplier 01 neutral v1. Match rounded chibi cartoon proportions, thick deep-brown outline, warm cel-shaded highlights, and polished cozy Chinese breakfast-stall game art. Do not make equipment or ingredients into people. Center it on a perfectly flat pure #ff00ff chroma-key background with generous margins; alpha will be extracted after generation. No text, numbers, labels, logos, watermark, cast shadow, floor, or reflection. Output composition: 512x768.",
+  "canvas": [
+    512,
+    768
+  ],
+  "alpha_mode": "rgba_cutout"
+}

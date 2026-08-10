@@ -1,0 +1,105 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "shared_style": "rounded chibi cartoon game art, thick clean deep-brown outline, warm cel-shaded highlights, cozy polished Chinese breakfast-stall style",
+  "background": "perfectly flat pure #ff00ff chroma-key background for local alpha extraction",
+  "shared_constraints": "non-human ingredient art; no personification, face, eyes, hands, text, number, label, logo, watermark, cast shadow, contact shadow, floor, reflection, steam, or background scene; no #ff00ff in the subject; uniform key background with no gradient, texture, lighting variation, or shadow; crisp silhouette and generous padding",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8
+  },
+  "prompt_templates": {
+    "ham_stock": "Create exactly {quantity} round sliced ham-sausage disc(s), all individually countable and visibly outlined, arranged as a compact centered inventory grouping that fits inside a workstation ingredient slot. Use the customer portrait only as the immutable style anchor, the accepted coriander stock at the same level only for slot scale and margins, and the legacy ham stock at the same level only for subject identity, overlap direction, and exact quantity. Intended final canvas 384x384. Apply the shared style, background, and constraints.",
+    "ordinary_sprite": "Create {subject}. Use the customer portrait only as the immutable style anchor, the accepted ham-sausage v2 sprite only for outline, cel shading, silhouette, and padding, and the legacy source only for subject identity and composition. Composition: {layout}. Intended final canvas 256x256. Apply the shared style, background, and constraints. Preserve any source prop explicitly named in subject; otherwise add no props or containers."
+  },
+  "assets": [
+    {
+      "asset_id": "ham_sausage_stock_1_v1_five_area_v2",
+      "template": "ham_stock",
+      "quantity": 1,
+      "legacy_reference": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1.png"
+    },
+    {
+      "asset_id": "ham_sausage_stock_2_v1_five_area_v2",
+      "template": "ham_stock",
+      "quantity": 2,
+      "legacy_reference": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1.png"
+    },
+    {
+      "asset_id": "ham_sausage_stock_3_v1_five_area_v2",
+      "template": "ham_stock",
+      "quantity": 3,
+      "legacy_reference": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1.png"
+    },
+    {
+      "asset_id": "ham_sausage_stock_4_v1_five_area_v2",
+      "template": "ham_stock",
+      "quantity": 4,
+      "legacy_reference": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1.png"
+    },
+    {
+      "asset_id": "ham_sausage_stock_5_v1_five_area_v2",
+      "template": "ham_stock",
+      "quantity": 5,
+      "legacy_reference": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1.png"
+    },
+    {
+      "asset_id": "ham_sausage_stock_6_v1_five_area_v2",
+      "template": "ham_stock",
+      "quantity": 6,
+      "legacy_reference": "res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1.png"
+    },
+    {
+      "asset_id": "meat_floss_pile_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "a compact fluffy mound of golden-orange pork floss composed of many soft shredded tufts",
+      "layout": "single centered low mound with fibrous shredded texture",
+      "legacy_reference": "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"
+    },
+    {
+      "asset_id": "meat_floss_scattered_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "multiple small separated tufts of golden-orange pork floss scattered as a topping",
+      "layout": "distinct tufts across a compact centered area with open gaps",
+      "legacy_reference": "res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1.png"
+    },
+    {
+      "asset_id": "peanut_portion_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "a small teal measuring scoop filled with shelled golden peanuts",
+      "layout": "single compact three-quarter-view scoop with clearly readable peanuts and preserved handle silhouette",
+      "legacy_reference": "res://resources/art/ingredients/nuts/peanut_portion_v1.png"
+    },
+    {
+      "asset_id": "pork_tenderloin_portion_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "one long boneless pork tenderloin portion with a warm reddish-orange marinated surface",
+      "layout": "single diagonal tenderloin strip, centered and fully visible",
+      "legacy_reference": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"
+    },
+    {
+      "asset_id": "pork_tenderloin_slices_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "exactly three long boneless pork tenderloin strips with warm reddish-orange marinated surfaces",
+      "layout": "three separate diagonal strips in a compact fan, all fully visible and individually countable",
+      "legacy_reference": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1.png"
+    },
+    {
+      "asset_id": "scallion_pile_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "a compact pile of chopped scallion rings in varied fresh greens with pale yellow-green cut faces",
+      "layout": "single centered mound of many overlapping hollow scallion rings",
+      "legacy_reference": "res://resources/art/ingredients/scallion/scallion_pile_v1.png"
+    },
+    {
+      "asset_id": "scallion_scattered_v1_five_area_v2",
+      "template": "ordinary_sprite",
+      "subject": "multiple chopped scallion rings scattered as a topping in varied fresh greens with pale yellow-green cut faces",
+      "layout": "distinct hollow scallion rings across a compact centered area with open gaps",
+      "legacy_reference": "res://resources/art/ingredients/scallion/scallion_scattered_v1.png"
+    }
+  ]
+}

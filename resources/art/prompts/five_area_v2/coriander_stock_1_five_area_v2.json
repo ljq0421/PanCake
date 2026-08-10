@@ -1,0 +1,11 @@
+{
+  "asset_id": "coriander_stock_1_five_area_v2",
+  "target_path": "res://resources/art/ingredients/coriander/stock/coriander_stock_1_five_area_v2.png",
+  "reference": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "prompt": "Use the attached ProjectCake customer portrait only as a style reference. Create a non-human cooking-game sprite representing coriander stock 1. Match rounded chibi cartoon proportions, thick deep-brown outline, warm cel-shaded highlights, and polished cozy Chinese breakfast-stall game art. Do not make equipment or ingredients into people. Center it on a perfectly flat pure #ff00ff chroma-key background with generous margins; alpha will be extracted after generation. No text, numbers, labels, logos, watermark, cast shadow, floor, or reflection. Output composition: 384x384.",
+  "canvas": [
+    384,
+    384
+  ],
+  "alpha_mode": "rgba_cutout"
+}

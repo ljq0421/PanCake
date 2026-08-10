@@ -1,0 +1,59 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family_reference": "res://resources/art/ui/day_summary/day_summary_panel_base_v1_five_area_v2.png",
+  "shared_style": "rounded Q-version game prop art, thick smooth deep-brown outlines, warm honey-gold and cream cel shading, muted teal structural accents",
+  "shared_constraints": "one 16:9 transparent workstation overlay per asset; preserve legacy object count and placement; no text, letters, numerals, logo, watermark, cast shadow, contact shadow, floor, reflection, glow, or background scene",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "final_canvas": [1024, 576]
+  },
+  "assets": [
+    {
+      "asset_id": "ingredient_rack_support_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/decor/tier_01_ingredient_rack/ingredient_rack_support_v1.png",
+      "layout": "two mirrored lower-side empty rack frames, each exactly 2 columns by 3 rows, with surrounding mount brackets",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-cec80348-180c-4e88-9ce4-ec3e0c655307.png"
+    },
+    {
+      "asset_id": "storage_label_rail_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/decor/tier_02_storage/storage_label_rail_v1.png",
+      "layout": "one upper-left wood rail with exactly three hooks and three blank hanging labels",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-ef99b17c-077f-4f41-9dc6-d43e606f5e30.png"
+    },
+    {
+      "asset_id": "blank_order_clipboard_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/decor/tier_03_order/blank_order_clipboard_v1.png",
+      "layout": "one small blank vertical order clipboard in the upper-right quadrant",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-033c9b46-f44e-4c32-aafe-28399bcaec57.png"
+    },
+    {
+      "asset_id": "awning_side_lamps_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/decor/tier_04_shelter/awning_side_lamps_v1.png",
+      "layout": "one upper striped scalloped awning with transparent side margins and exactly two mirrored side lamps",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-6e222e2a-2062-42d1-a946-c10fed67d582.png"
+    },
+    {
+      "asset_id": "tray_trim_customer_clips_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/decor/tier_05_finish/tray_trim_customer_clips_v1.png",
+      "layout": "one long lower-middle rounded tray trim and one centered group of exactly three blank clipped tickets",
+      "key_color": "#ff00ff",
+      "imagegen_output": "exec-f6242995-7314-4b6b-ad67-b4e04eca5aa9.png"
+    }
+  ],
+  "discarded_outputs": [
+    {
+      "asset_id": "awning_side_lamps_v1_five_area_v2",
+      "imagegen_output": "exec-2b07f872-fe21-4af6-9494-c9497f5b4c8f.png",
+      "reason": "The first awning touched both top corners, violating the rgba-cutout audit requirement that all four corners remain transparent."
+    }
+  ]
+}

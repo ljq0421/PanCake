@@ -1,0 +1,119 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept and ui-mockup",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "shared_style": "rounded Q-version game art, thick clean deep-brown outlines, warm cream/orange/teal cel shading, cozy polished Chinese breakfast-stall finish",
+  "background": "perfectly flat pure #ff00ff chroma-key background outside each subject or UI panel",
+  "shared_constraints": "no text, letters, numerals, logo, watermark, cast shadow, contact shadow, floor, reflection, steam, or background scene; no #ff00ff in the subject; crisp separated edges",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "aspect_handling": "center-crop without distortion to the manifest aspect ratio, then resize"
+  },
+  "prompt_templates": {
+    "supplier_portrait": "Preserve the legacy supplier's identity, age, low bun, neutral expression, brick-red jacket, ivory collared shirt, teal apron, front-facing waist-up pose, relaxed arms, and visible hands. Apply the customer portrait's rounded chibi proportions, deep outline, and warm cel shading. Keep clear space for a 2:3 center crop.",
+    "structured_panel": "Recreate the legacy UI geometry exactly with warm cream blank fields, orange-gold rim, deep-brown keylines, transparent outer corners, protected rounded corners, and uncluttered stretch-safe centers. Preserve every socket count and position. Do not add content or text.",
+    "economy_icon": "Create one compact economy icon matching the legacy symbol and count exactly, using rounded forms, deep-brown outlines, and warm cel shading on a transparent final background.",
+    "quality_icon": "Create one circular golden quality badge matching the legacy interior symbol and exact count, with a cream ring, golden field, deep-brown outline, warm cel shading, and no extra marks."
+  },
+  "assets": [
+    {
+      "asset_id": "supplier_01_neutral_v1_five_area_v2",
+      "template": "supplier_portrait",
+      "legacy_reference": "res://resources/art/suppliers/supplier_01/supplier_01_neutral_v1.png",
+      "secondary_style_anchor": "res://resources/art/customers/customer_02/customer_02_neutral_v1.png",
+      "imagegen_output": "exec-e6eae27d-f513-4a8b-9f16-4d90cef2d074.png",
+      "final_canvas": [512, 768]
+    },
+    {
+      "asset_id": "day_summary_panel_base_v1_five_area_v2",
+      "template": "structured_panel",
+      "layout": "blank title capsule; four circular sockets; two middle content fields; one bottom wide field; two teal dividers; four corner studs",
+      "legacy_reference": "res://resources/art/ui/day_summary/day_summary_panel_base_v1.png",
+      "imagegen_output": "exec-9c58b05f-88b4-4d54-bc30-30c710d79b83.png",
+      "final_canvas": [1024, 576]
+    },
+    {
+      "asset_id": "currency_coin_v1_five_area_v2",
+      "template": "economy_icon",
+      "symbol": "exactly three overlapping golden Chinese cash coins, each with one transparent square hole",
+      "legacy_reference": "res://resources/art/ui/economy/currency_coin_v1.png",
+      "imagegen_output": "exec-b979ce12-8436-419c-a6c6-83e534fd7900.png"
+    },
+    {
+      "asset_id": "reputation_v1_five_area_v2",
+      "template": "economy_icon",
+      "symbol": "one golden badge containing a white speech bubble and one coral heart",
+      "legacy_reference": "res://resources/art/ui/economy/reputation_v1.png",
+      "imagegen_output": "exec-82b15e77-91cc-4f91-914c-fc5c8ee7d12a.png"
+    },
+    {
+      "asset_id": "upgrade_v1_five_area_v2",
+      "template": "economy_icon",
+      "symbol": "one golden badge containing a teal wrench and one orange upward arrow",
+      "legacy_reference": "res://resources/art/ui/economy/upgrade_v1.png",
+      "imagegen_output": "exec-e83fac68-de38-4205-b3e1-a8919d921156.png"
+    },
+    {
+      "asset_id": "order_card_base_v1_five_area_v2",
+      "template": "structured_panel",
+      "layout": "exactly three top circles and two rows each containing one small square plus one wide field",
+      "legacy_reference": "res://resources/art/ui/order/order_card_base_v1.png",
+      "imagegen_output": "exec-8982f149-0aa0-4ec6-9bce-6ee6e174e7ba.png",
+      "final_canvas": [600, 740]
+    },
+    {
+      "asset_id": "order_card_multi_dish_v2_five_area_v2",
+      "template": "structured_panel",
+      "layout": "one title tab; two circles; eight slots in a 2x4 grid; one empty heart outline; one bottom status field",
+      "legacy_reference": "res://resources/art/ui/order/order_card_multi_dish_v2.png",
+      "imagegen_output": "exec-7dbf5fd8-ca20-4122-a969-deba587166b7.png",
+      "final_canvas": [600, 740]
+    },
+    {
+      "asset_id": "order_card_multi_dish_v3_five_area_v2",
+      "template": "structured_panel",
+      "layout": "same invariant layout as v2; only the lower-left heart has a smooth solid coral-red fill",
+      "legacy_reference": "res://resources/art/ui/order/order_card_multi_dish_v3.png",
+      "imagegen_output": "exec-25be8643-25ea-4f67-8799-d24b97cbd836.png",
+      "final_canvas": [600, 740]
+    },
+    {
+      "asset_id": "quality_egg_spread_v1_five_area_v2",
+      "template": "quality_icon",
+      "symbol": "one white fried-egg spread around one orange yolk with exactly three radial indicator strokes",
+      "legacy_reference": "res://resources/art/ui/quality/quality_egg_spread_v1.png",
+      "imagegen_output": "exec-45fb2994-626b-416b-978a-9c94e0215154.png"
+    },
+    {
+      "asset_id": "quality_fold_stability_v1_five_area_v2",
+      "template": "quality_icon",
+      "symbol": "one stable folded pancake formed by exactly three adjoining golden sections",
+      "legacy_reference": "res://resources/art/ui/quality/quality_fold_stability_v1.png",
+      "imagegen_output": "exec-d4be477e-82a2-4281-b2bf-cfd9f59117f0.png"
+    },
+    {
+      "asset_id": "quality_heat_uniformity_v1_five_area_v2",
+      "template": "quality_icon",
+      "symbol": "exactly three identical evenly spaced coral heat-wave strokes",
+      "legacy_reference": "res://resources/art/ui/quality/quality_heat_uniformity_v1.png",
+      "imagegen_output": "exec-9446fa0b-e21c-44ff-ac3d-f890558daffa.png"
+    },
+    {
+      "asset_id": "quality_ingredient_distribution_v1_five_area_v2",
+      "template": "quality_icon",
+      "symbol": "exactly three green scallion rings and exactly three coral solid markers distributed evenly",
+      "legacy_reference": "res://resources/art/ui/quality/quality_ingredient_distribution_v1.png",
+      "imagegen_output": "exec-6ba5bc4d-266a-4d3f-b2b2-0878ce3bbee5.png"
+    }
+  ],
+  "discarded_outputs": [
+    {
+      "asset_id": "order_card_multi_dish_v3_five_area_v2",
+      "imagegen_output": "exec-d205515a-4566-4472-b083-335ee68b57f0.png",
+      "reason": "The filled heart developed visible dark speckles after downscaling; rejected before final acceptance and replaced with a clean solid-fill revision."
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "asset_family": "youtiao_fryer_five_area_v3",
+  "generated_on": "2026-08-09",
+  "generator": "Codex built-in image_gen",
+  "status": {
+    "generated": "passed",
+    "godot_imported": "passed",
+    "runtime_integrated": "tier_1_only",
+    "agent_visual_review": "passed_after_front_angle_correction",
+    "human_visual_review": "pending"
+  },
+  "runtime_contract": {
+    "scene": "res://scenes/gameplay/initial_unlock_workstation.tscn",
+    "node": "YoutiaoFryer",
+    "texture": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_five_area_v3.png",
+    "unchanged": [
+      "node rectangle",
+      "click area",
+      "unlock logic",
+      "production logic",
+      "save format",
+      "device business interface"
+    ],
+    "tier_2_and_3_dynamic_switching": false
+  },
+  "visual_contract": {
+    "camera": "straight-on player-facing front panel with gentle top-down basket visibility",
+    "no_three_quarter_yaw": true,
+    "palette": "cream white, ink green, gold, deep brown outline",
+    "tier_1": "one well, one manual basket, one knob, two servings, 12 seconds",
+    "tier_2": "same one-well two-serving family, sturdier body, one small gauge, 9 seconds",
+    "tier_3": "one wide well and one manual basket divided by three separators into four lanes, four servings, 9 seconds",
+    "automatic_lift_is_separate_purchase": true
+  },
+  "processing": {
+    "chroma_key": "#ff00ff",
+    "remove_chroma_key": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "normalization": {
+      "canvas": [1024, 512],
+      "maximum_subject_box": [900, 430],
+      "center": [512, 256]
+    },
+    "prompt_record": "res://resources/art/prompts/youtiao_fryer_five_area_v3.md"
+  },
+  "assets": [
+    {
+      "tier": 1,
+      "source": "tmp/imagegen/youtiao_fryer_v3/sources/youtiao_fryer_tier_1_five_area_v3_front_key.png",
+      "source_sha256": "c856e018ec1f574644a9aad657b45a1cc78142ea9b2ef6cbf0c958ef8b19e4d7",
+      "final": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_five_area_v3.png",
+      "final_sha256": "4dd6b159bda81f7d31ad0b78bc63e5a9cddbc72ac1c849ffc5459bc79ed6b432",
+      "mode": "RGBA",
+      "size": [1024, 512],
+      "alpha_bounds": [291, 41, 733, 471],
+      "corner_alpha": [0, 0, 0, 0],
+      "opaque_pixels": 179911,
+      "partially_transparent_pixels": 4164,
+      "possible_magenta_pixels": 0,
+      "godot_import": "passed",
+      "runtime_integrated": true
+    },
+    {
+      "tier": 2,
+      "source": "tmp/imagegen/youtiao_fryer_v3/sources/youtiao_fryer_tier_2_five_area_v3_front_key.png",
+      "source_sha256": "0fc5144136a5af37b5eeb8c79e95d01e4110fa23b86c05350d8e0b38d864448a",
+      "final": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_five_area_v3.png",
+      "final_sha256": "164dec7b37afd7b1bf00909b6c428858bf2a4b68d9b5ac79220e95c69d5b9ec9",
+      "mode": "RGBA",
+      "size": [1024, 512],
+      "alpha_bounds": [307, 41, 717, 471],
+      "corner_alpha": [0, 0, 0, 0],
+      "opaque_pixels": 164798,
+      "partially_transparent_pixels": 4655,
+      "possible_magenta_pixels": 0,
+      "godot_import": "passed",
+      "runtime_integrated": false
+    },
+    {
+      "tier": 3,
+      "source": "tmp/imagegen/youtiao_fryer_v3/sources/youtiao_fryer_tier_3_five_area_v3_front_key.png",
+      "source_sha256": "0f3e53d91ce843b6e8e05a1fb66e8aede10811e72d75e76ef33adc2f1e3e8e9f",
+      "final": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_five_area_v3.png",
+      "final_sha256": "b06208cfa8d4ac659e9ca6448681a52a4ccc724c59225a299314fbbc1d9db1ca",
+      "mode": "RGBA",
+      "size": [1024, 512],
+      "alpha_bounds": [286, 41, 737, 471],
+      "corner_alpha": [0, 0, 0, 0],
+      "opaque_pixels": 181635,
+      "partially_transparent_pixels": 4611,
+      "possible_magenta_pixels": 0,
+      "godot_import": "passed",
+      "runtime_integrated": false
+    }
+  ],
+  "validation_artifacts": {
+    "comparison_sheet": "res://tmp/validation/youtiao_fryer_v3_contact_sheet.png",
+    "runtime_gpu_frame": "res://tmp/validation/youtiao_fryer_unlocked_gpu_1920x1080.png",
+    "gpu_renderer": "D3D12 / NVIDIA GeForce RTX 5070"
+  },
+  "checks": [
+    {
+      "name": "workstation_expansion_asset_self_check",
+      "result": "passed",
+      "evidence": "WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 73 textures"
+    },
+    {
+      "name": "initial_unlock_workstation_self_check",
+      "result": "passed",
+      "evidence": "INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS"
+    },
+    {
+      "name": "youtiao_fryer_self_check",
+      "result": "passed",
+      "evidence": "YOUTIAO_FRYER_SELF_CHECK_PASS"
+    },
+    {
+      "name": "f3_station_scene_self_check",
+      "result": "passed",
+      "evidence": "F3_STATION_SCENE_SELF_CHECK_PASS"
+    },
+    {
+      "name": "youtiao_fryer_gpu_preview",
+      "result": "passed",
+      "evidence": "YOUTIAO_FRYER_GPU_PREVIEW_PASS"
+    },
+    {
+      "name": "f3_station_pointer_smoke_post_angle_correction",
+      "result": "not_green_unrelated_before_youtiao",
+      "evidence": "failed in room-temperature packaged-drink delivery before the test reached the youtiao path"
+    }
+  ],
+  "known_unrelated_worktree_failures": [
+    "five_area_order_service_self_check expects formal snapshot version 5 while the existing modified service writes version 6",
+    "packaged_drink_workstation_pointer_smoke is blocked by existing handoff_tray_slot inferred-Variant warnings treated as errors",
+    "the latest full f3_station_pointer_smoke attempt failed in packaged-drink delivery before reaching youtiao"
+  ]
+}

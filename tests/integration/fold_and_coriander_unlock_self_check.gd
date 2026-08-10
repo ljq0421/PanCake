@@ -26,10 +26,20 @@ func _run() -> void:
 	station.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	station._refresh_p1_ui()
 	_check(not station.step_action_button.visible and station.step_action_button.text.is_empty(), "the redundant Start Folding step action is removed")
-	station.tool_controller.clear_tool()
+	station.sauce_tool_state.call("add", station.parameters.sauce_brush_capacity)
+	station._on_sauce_brush_tool_pressed()
+	_check(station.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH, "manual sauce brush can be picked up during sauce and fillings")
+	var fold_phase_before_center: int = station.p1_session.phase
+	var sauce_center: Vector2 = station.pancake_surface.size * 0.5
+	station._on_pointer_started(sauce_center)
+	station._on_pointer_ended(sauce_center)
+	_check(station.p1_session.phase == fold_phase_before_center and station.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH, "pressing the pancake center keeps the sauce brush selected for continuous brushing")
+	station._on_sauce_brush_tool_pressed()
+	_check(station.tool_controller.current_tool == ToolController.Tool.NONE, "pressing the selected manual sauce brush again really puts it down")
+	station._on_sauce_brush_tool_pressed()
 	var fold_edge := Vector2(station.pancake_surface.size.x * 0.12, station.pancake_surface.size.y * 0.5)
 	station._on_pointer_started(fold_edge)
-	_check(station.p1_session.phase == P1Session.Phase.FOLD and station.tool_controller.current_tool == ToolController.Tool.FOLD and station.fold_model.active_region != PancakeFoldModel.REGION_NONE, "pointer-down on an exposed edge enters and begins folding without selecting FoldButton")
+	_check(station.p1_session.phase == P1Session.Phase.FOLD and station.tool_controller.current_tool == ToolController.Tool.FOLD and station.fold_model.active_region != PancakeFoldModel.REGION_NONE, "pointer-down on an exposed edge overrides the held sauce brush and begins folding")
 	_check(not station.fold_button.visible and not station.egg_crack_artwork.visible, "folding uses the pancake edge directly and encloses the post-flip egg artwork without a folding spatula")
 	station._on_cancel_requested()
 	station.queue_free()

@@ -60,16 +60,51 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	var production_path := capture_directory.path_join("p1_production_latest.png")
-	if root.get_texture().get_image().save_png(production_path) != OK:
+	var production_image := root.get_texture().get_image()
+	if production_image.save_png(production_path) != OK:
 		_fail("Failed to save P1 production capture")
 		return
+	var exposed_surface_position := workstation.pancake_surface.get_global_transform_with_canvas() * Vector2(
+		workstation.pancake_surface.size.x * 0.84,
+		workstation.pancake_surface.size.y * 0.50,
+	)
+	var exposed_pixel := Vector2i(roundi(exposed_surface_position.x), roundi(exposed_surface_position.y))
+	exposed_pixel.x = clampi(exposed_pixel.x, 0, production_image.get_width() - 1)
+	exposed_pixel.y = clampi(exposed_pixel.y, 0, production_image.get_height() - 1)
+	var exposed_before_fold := production_image.get_pixelv(exposed_pixel)
 
 	workstation.p1_session.begin_folding()
 	workstation.fold_model.begin_drag(Vector2(12, 64))
+	workstation.fold_model.update_drag(Vector2(58, 64))
+	await process_frame
+	await process_frame
+	var fold_progress_path := capture_directory.path_join("p1_fold_in_progress_latest.png")
+	var fold_progress_image := root.get_texture().get_image()
+	if fold_progress_image.save_png(fold_progress_path) != OK:
+		_fail("Failed to save P1 in-progress fold capture")
+		return
+	var exposed_during_fold := fold_progress_image.get_pixelv(exposed_pixel)
+	if _maximum_rgb_channel_delta(exposed_before_fold, exposed_during_fold) > 0.045:
+		_fail("An uncovered sauce pixel changed color while the opposite flap was moving")
+		return
+	var moving_fold_diagnostics: Dictionary = workstation.fold_overlay.get_renderer_diagnostics()
+	if int(moving_fold_diagnostics.get("sauce_front_strip_count", 0)) <= 0:
+		_fail("Moving fold capture did not render sauce on its visible interior strips")
+		return
 	workstation.fold_model.release_drag(Vector2(70, 64))
+	await create_timer(0.78).timeout
+	var single_fold_path := capture_directory.path_join("p1_single_fold_latest.png")
+	var single_fold_image := root.get_texture().get_image()
+	if single_fold_image.save_png(single_fold_path) != OK:
+		_fail("Failed to save P1 single-fold capture")
+		return
+	var exposed_after_single_fold := single_fold_image.get_pixelv(exposed_pixel)
+	if _maximum_rgb_channel_delta(exposed_before_fold, exposed_after_single_fold) > 0.045:
+		_fail("An uncovered sauce pixel changed color after the opposite flap landed")
+		return
 	workstation.fold_model.begin_drag(Vector2(116, 64))
 	workstation.fold_model.release_drag(Vector2(58, 64))
-	await create_timer(0.32).timeout
+	await create_timer(0.78).timeout
 	var folded_path := capture_directory.path_join("p1_folded_latest.png")
 	if root.get_texture().get_image().save_png(folded_path) != OK:
 		_fail("Failed to save P1 folded-product capture")
@@ -123,7 +158,7 @@ func _run() -> void:
 		_fail("P1 rendered vertical slice missed 60 FPS target: p95 %.2f ms" % p95)
 		return
 	print("Mobile P1 vertical-slice smoke-check PASS (render p95 %.2f ms)" % p95)
-	print("Validation captures: %s, %s, %s, %s, %s, %s, %s, %s, %s" % [order_path, egg_spread_path, sauce_blob_path, production_path, folded_path, accepting_path, paying_path, result_path, daily_bill_path])
+	print("Validation captures: %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s" % [order_path, egg_spread_path, sauce_blob_path, production_path, fold_progress_path, single_fold_path, folded_path, accepting_path, paying_path, result_path, daily_bill_path])
 	main.queue_free()
 	await process_frame
 	await process_frame
@@ -191,6 +226,10 @@ func _fill_egg_spread_preview(workstation: Workstation) -> void:
 	workstation.ingredient_model.place(IngredientModel.EGG, center, 0.0, model)
 	workstation.tool_controller.select_tool(ToolController.Tool.SCRAPER)
 	workstation.pancake_surface.pointer_local_position = Vector2(430, 300)
+
+
+func _maximum_rgb_channel_delta(first: Color, second: Color) -> float:
+	return maxf(absf(first.r - second.r), maxf(absf(first.g - second.g), absf(first.b - second.b)))
 
 
 func _fail(message: String) -> void:

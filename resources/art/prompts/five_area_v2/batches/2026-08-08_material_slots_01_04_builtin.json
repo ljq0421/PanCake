@@ -1,0 +1,51 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "tray_reference": "res://resources/art/workstation/expansion/trays/ingredient_tray_4x3_v1_five_area_v2.png",
+  "shared_style": "rounded chibi cooking-game prop, clean deep-brown outlines, warm cel-shaded highlights, cozy Chinese breakfast-stall art",
+  "shared_constraints": "one complete standalone shallow wooden slot with golden corner braces; remove legacy neighboring-slot crop fragments; transparent final Sprite; flat #ff00ff removable key source; no text, labels, watermark, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "slot_01_egg_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_01_egg_v1.png",
+      "prompt_invariant": "exactly one whole uncracked light-brown egg lying horizontally in one complete shallow wooden slot",
+      "imagegen_output": "exec-7ce9ecbe-6707-4a8b-a854-36db871a1c1e.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "slot_02_baocui_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1.png",
+      "prompt_invariant": "exactly one whole round golden bubbled baocui cracker lying flat in one complete shallow wooden slot",
+      "imagegen_output": "exec-f7e8056d-445e-4bc2-985d-a18f436a2e07.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "slot_03_scallion_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1.png",
+      "prompt_invariant": "one tidy mound of chopped hollow green scallion rings in one complete shallow wooden slot",
+      "imagegen_output": "exec-dc3a4828-fc24-431e-bc93-28ba530c27f6.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "slot_04_sweet_flour_sauce_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/material_slots/individual/slot_04_sweet_flour_sauce_v1.png",
+      "prompt_invariant": "one dark-brown ceramic bowl of reddish-brown sweet flour sauce and one short basting brush fully contained inside one complete shallow wooden slot",
+      "imagegen_output": "exec-f424d41f-7602-4fe3-b03d-251f5d7b4e8e.png",
+      "discarded_outputs": [
+        {
+          "imagegen_output": "exec-05d4a37d-c43b-4ff5-a4f7-c2e4459129ac.png",
+          "reason": "brush handle crossed above the rear tray rim"
+        }
+      ],
+      "final_canvas": [512, 512]
+    }
+  ]
+}

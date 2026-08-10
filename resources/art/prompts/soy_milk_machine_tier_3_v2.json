@@ -1,0 +1,29 @@
+{
+  "asset_id": "soy_milk_machine_tier_3_v2",
+  "target_path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v2.png",
+  "generated_at": "2026-08-09",
+  "generator": "OpenAI built-in imagegen",
+  "use_case": "stylized-concept",
+  "references": [
+    {
+      "path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v2.png",
+      "role": "beginner-tier family anchor"
+    },
+    {
+      "path": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v2.png",
+      "role": "intermediate-tier family anchor"
+    },
+    {
+      "path": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1_five_area_v2.png",
+      "role": "supporting ProjectCake equipment style reference"
+    }
+  ],
+  "prompt": "Create the advanced four-cup warming soy milk maker in the same v2 family. Preserve the rounded cream body, dark-teal lid and trim, gold accents, deep warm-brown outline, cup design, viewpoint, and hand-painted rendering. Make the body moderately wider and integrate a warming tray containing exactly four identical real cups in an unmistakable 2-by-2 arrangement: two back and two front. Include one top lid, one central nozzle, one water-level window, one rotary control, and one small warm-hold indicator. Do not add any fifth cup, extra hopper, tank, rack, auto feeder, auto water-start module, robotic arm, conveyor, or auto cup dispenser. No props, beans, steam, liquid, text, logo, watermark, or shadow. Generate on a perfectly flat #ff00ff chroma-key background.",
+  "postprocess": {
+    "source": "C:/Users/Administrator/.codex/generated_images/019fe488-5817-7993-ab82-90f766b8ce8b/exec-c260d980-9e0f-4451-b734-bcfa49c1964d.png",
+    "background_removal": "remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill --edge-contract 1",
+    "normalization": "normalize_workstation_expansion_asset.py --width 1024 --height 512 --margin 0.06",
+    "final_size": [1024, 512],
+    "mode": "RGBA"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "date": "2026-08-08",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "machine_family_reference": "res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_2_five_area_v2.png",
+  "shared_style": "rounded Q-version game prop art, thick clean deep-brown outlines, warm cream and muted deep-teal bodies, honey-gold upgrade cues, restrained cel shading",
+  "shared_constraints": "transparent final Sprite, flat #ff00ff removable key source, no text, logo, watermark, floor, cast shadow, contact shadow, reflection, or scene background; preserve the legacy tier structure and exact component count",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "resampling": "Pillow LANCZOS"
+  },
+  "assets": [
+    {
+      "asset_id": "small_ingredient_box_tier_1_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_1_v1.png",
+      "tier_invariant": "empty square rounded cream-and-teal tub with no gold upgrade band",
+      "imagegen_output": "exec-229365d1-583a-47e7-8523-fe2b269e3310.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_2_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_2_v1.png",
+      "tier_invariant": "empty square rounded cream-and-teal tub with one honey-gold band below the rim",
+      "imagegen_output": "exec-8a9831a1-00b6-4e6d-8935-76fdc7466a8c.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "small_ingredient_box_tier_3_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/bins/small_ingredient_box_tier_3_v1.png",
+      "tier_invariant": "empty premium tub with layered honey-gold and muted-teal trim below the cream rim",
+      "imagegen_output": "exec-9e13e628-490d-4e0b-a2a9-670a8e654fbb.png",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_1_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1.png",
+      "tier_invariant": "soybean hopper, water tank, central dispenser, one knob, no gauges, exactly two cups",
+      "imagegen_output": "exec-ceabc437-16fe-40cd-9d75-ef1011ee5dbd.png",
+      "final_canvas": [1024, 512]
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_2_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v1.png",
+      "tier_invariant": "soybean hopper, water tank, studded dispenser, two gauges, one knob, exactly two cups",
+      "imagegen_output": "exec-3b63a726-9a92-4b96-8b6a-8880b2e52e59.png",
+      "final_canvas": [1024, 512]
+    },
+    {
+      "asset_id": "soy_milk_machine_tier_3_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_3_v1.png",
+      "tier_invariant": "premium gold-edged body, soybean hopper, water tank, two gauges, one knob, exactly four cups",
+      "imagegen_output": "exec-3d26ec22-cb57-40d3-b7b2-b8ee5794c3c1.png",
+      "final_canvas": [1024, 512]
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_1_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_v1.png",
+      "tier_invariant": "tongs, one knob, no gauge, two long oil wells, one empty wire basket",
+      "imagegen_output": "exec-8f6232a1-f650-432d-b42c-464e8d401509.png",
+      "final_canvas": [1024, 512]
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_2_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_v1.png",
+      "tier_invariant": "reinforced body, tongs, one knob, one gauge, two long oil wells, one empty wire basket",
+      "imagegen_output": "exec-6f2a9e00-4fd7-4342-a6fe-56398496deb0.png",
+      "final_canvas": [1024, 512]
+    },
+    {
+      "asset_id": "youtiao_fryer_tier_3_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_v1.png",
+      "tier_invariant": "premium reinforced body, tongs, one knob, one gauge, four narrow oil wells, one closed metal lid, no wire basket",
+      "imagegen_output": "exec-d14bbcab-0808-4e74-81a5-15187e450f30.png",
+      "final_canvas": [1024, 512]
+    }
+  ]
+}

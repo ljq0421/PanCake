@@ -17,6 +17,34 @@ func _run() -> void:
 
 	session.call("begin_new_game")
 	var progression: RefCounted = session.call("progression_service")
+	progression.set("coins", 5)
+	progression.set("reputation", 0)
+	progression.set("area_mastery", {&"area.pancake": 0})
+	progression.set("area_mastery_details", {&"area.pancake": {"qualified": 0, "a_grade": 0}})
+	progression.set("tutorial_completed_area_ids", {})
+	var guarantee_station = WORKSTATION_SCENE.instantiate()
+	root.add_child(guarantee_station)
+	await process_frame
+	await process_frame
+	guarantee_station.call("end_business_day")
+	var guarantee_tickets := _growth_tickets(guarantee_station)
+	_check(_ticket_ids(guarantee_tickets) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "coin guarantee keeps the first fixed-route three-card window")
+	_check(guarantee_tickets[0].disabled and "[安装位 · 金币保底]" in guarantee_tickets[0].text and "金币 5/12" in guarantee_tickets[0].text, "all-locked day end visibly marks the frontier and shows the real coin gap")
+	_check("金币保底项" in guarantee_tickets[0].tooltip_text and "只差金币" in guarantee_tickets[0].tooltip_text and "营业日" not in guarantee_tickets[0].tooltip_text, "guarantee tooltip replaces non-coin gates instead of mixing them with the coin requirement")
+	_check(not "金币保底" in guarantee_tickets[1].text and not "金币保底" in guarantee_tickets[2].text, "only one of the three day-end cards is the coin guarantee")
+	progression.set("coins", 20)
+	guarantee_station.call("_refresh_growth_section")
+	_check(not guarantee_tickets[0].disabled and "金币 20/12 · 可预订，明日生效" in guarantee_tickets[0].text and "支付 12 金币" in guarantee_tickets[0].tooltip_text, "sufficient balance makes the guaranteed card clickable with matching price copy")
+	guarantee_tickets[0].emit_signal("pressed")
+	await process_frame
+	var guaranteed_pending: Dictionary = session.call("five_area_progression_snapshot")
+	_check(str(guaranteed_pending.get("pending_install_purchase", "")) == "growth.tool.pancake.wide_spreader" and int(guaranteed_pending.get("coins", 0)) == 8, "clicking the guaranteed card charges its catalog price and reserves the install slot")
+	_check(guarantee_tickets[0].disabled and "已预订：宽幅摊饼器" in guarantee_tickets[0].text and "金币保底" not in guarantee_tickets[0].text, "purchased guarantee refreshes into the normal pending state")
+	guarantee_station.queue_free()
+	await process_frame
+
+	session.call("begin_new_game")
+	progression = session.call("progression_service")
 	progression.set("coins", 100)
 	progression.set("reputation", 20)
 	progression.set("area_mastery", {&"area.pancake": 0})
@@ -30,9 +58,10 @@ func _run() -> void:
 	var day_one_tickets := _growth_tickets(day_one_station)
 	_check(day_one_tickets.size() == 3 and day_one_station.get_node_or_null("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket4") == null, "day-end growth UI contains exactly three ticket nodes")
 	_check(_ticket_ids(day_one_tickets) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "day-one UI follows the first fixed-route batch")
-	_check(day_one_tickets.all(func(ticket: Button) -> bool: return ticket.disabled), "day-one preview blocks early purchases")
-	_check("营业日 1/2" in day_one_tickets[0].text and "营业日 1/2" in day_one_tickets[1].text and "营业日 1/3" in day_one_tickets[2].text, "card faces show concrete business-day progress")
-	_check("煎饼合格数 0/4" in day_one_tickets[0].tooltip_text and "金币 100/12" not in day_one_tickets[0].tooltip_text, "tooltip lists real unmet requirements and omits satisfied ones")
+	_check(day_one_tickets[0].disabled and not day_one_tickets[1].disabled and day_one_tickets[2].disabled, "day-one preview independently reflects day, reputation, and mastery gates")
+	_check("营业日 1/2" in day_one_tickets[0].text and "可预订，明日生效" in day_one_tickets[1].text and "煎饼合格数 0/6" in day_one_tickets[2].text, "first cards visibly mix business-day, reputation-ready, and qualified-count progress")
+	_check(not "金币保底" in day_one_tickets[0].text, "an existing purchasable content card prevents unnecessary coin guarantee activation")
+	_check("营业日 1/2" in day_one_tickets[0].tooltip_text and "煎饼合格数" not in day_one_tickets[0].tooltip_text and "金币 100/12" not in day_one_tickets[0].tooltip_text, "wide spreader tooltip lists only its real unmet D2 requirement")
 	_check("暂不满足条件" not in day_one_tickets[0].text and "暂不满足条件" not in day_one_tickets[0].tooltip_text, "growth UI no longer uses the ambiguous fallback")
 	day_one_station.queue_free()
 	await process_frame
@@ -84,7 +113,12 @@ func _run() -> void:
 	var drink_click := refreshed_station.get_node("SafeArea/FiveAreaStationClickLayers/PackagedDrinkLockedClickLayer") as Button
 	var chili_button := refreshed_station.get_node("SafeArea/RightRack/ChiliSauceRefillButton") as Button
 	_check(not drink_lock.visible and not drink_click.disabled, "activated packaged-drink area is available after scene reload")
-	_check(chili_button.visible and chili_button.mouse_filter == Control.MOUSE_FILTER_STOP, "activated chili sauce is a usable input control")
+	refreshed_station.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
+	refreshed_station.call("_refresh_p1_ui")
+	refreshed_station.get_node("SafeArea/PancakeWorkstationInteractionController").call("_refresh_sauce_controls")
+	var sweet_button := refreshed_station.get_node("SafeArea/RightRack/SauceRefillButton") as Button
+	_check(chili_button.visible and not chili_button.disabled and chili_button.mouse_filter == Control.MOUSE_FILTER_STOP, "activated chili sauce is a usable input control")
+	_check(is_equal_approx(chili_button.get_global_rect().end.x, sweet_button.get_global_rect().position.x) and not chili_button.get_global_rect().intersects(sweet_button.get_global_rect()), "activated chili sauce keeps a real adjacent hit region beside sweet sauce")
 	refreshed_station.queue_free()
 	_finish()
 

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "asset_family": "youtiao_fryer_operations_v4",
+  "generated_on": "2026-08-09",
+  "generator": "Codex built-in image_gen",
+  "status": {
+    "generated": "passed_13_assets",
+    "alpha_processed": "passed",
+    "godot_imported": "passed",
+    "runtime_integrated": "passed_direct_youtiao_station",
+    "automated_checks": "passed_focused",
+    "gpu_checks": "passed_d3d12_rtx5070",
+    "real_pointer_checks": "passed_isolated_user_data",
+    "agent_visual_review": "passed_candidate",
+    "human_visual_review": "pending"
+  },
+  "processing": {
+    "chroma_key": "#ff00ff",
+    "remove_chroma_key": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "registered_canvas": {"equipment": [1024, 512], "effects": [256, 256]},
+    "prompt_record": "res://resources/art/prompts/youtiao_fryer_operations_v4.md"
+  },
+  "visual_contract": {
+    "camera": "strictly player-facing with front panel parallel to image plane and shallow top-down well visibility",
+    "tier_1": "one well, one two-lane manual basket",
+    "tier_2": "one well, one two-lane reinforced basket, one small analog gauge",
+    "tier_3": "one wide well, one manual basket, exactly three dividers and four lanes",
+    "automation_separate_from_tiers": true,
+    "food_reused_not_generated": [
+      "plain_youtiao",
+      "oil_cake",
+      "sugar_oil_cake"
+    ]
+  },
+  "assets": [
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_five_area_v4.png","sha256":"897e1dd02b0e7889383617546f7274be92f6ece138c80de1d9d434cc2ceef82a","size":[1024,512],"mode":"RGBA","alpha_bounds":[291,41,733,471],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_lowered_five_area_v4.png","sha256":"ad69c713e2cd33ebb621f206391fd6b79558bbb730f6e6c4af97cb6211296a03","size":[1024,512],"mode":"RGBA","alpha_bounds":[392,66,632,291],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_raised_five_area_v4.png","sha256":"a86f11ef048fa04d1c7dfee81cedca76d41964375cd65fe75ada52f740248eb0","size":[1024,512],"mode":"RGBA","alpha_bounds":[400,10,623,270],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_body_five_area_v4.png","sha256":"7af8a422efee6d15f360eee43c544b138218b90dd8d6a9e91db95479a3fd8b7d","size":[1024,512],"mode":"RGBA","alpha_bounds":[271,41,753,471],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_basket_lowered_five_area_v4.png","sha256":"5781d406695be04c5b457fee927003f35083d3a79f9924921520be38c19b5fbc","size":[1024,512],"mode":"RGBA","alpha_bounds":[385,66,639,291],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_basket_raised_five_area_v4.png","sha256":"e9e99c99fcaa74922ca10ad5ed11964e18ba6e470c117c315268a8e523261406","size":[1024,512],"mode":"RGBA","alpha_bounds":[364,10,661,270],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_body_five_area_v4.png","sha256":"30c97a4618f0cf9b0e7dc1441b74bcc8a658e0444e4d9b2e6097edfd5e5792a9","size":[1024,512],"mode":"RGBA","alpha_bounds":[164,41,860,471],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_lowered_five_area_v4.png","sha256":"d1a5ff8403d0b1c0283ea668eaacc5ccddc579641d47c919c2d5899cb5a9888f","size":[1024,512],"mode":"RGBA","alpha_bounds":[297,79,727,277],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_raised_five_area_v4.png","sha256":"692c73f5b393c01ae32951c9f538ac3eec3b06d258843928ad1567dde131cc38","size":[1024,512],"mode":"RGBA","alpha_bounds":[355,10,669,270],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_auto_lift_arm_five_area_v4.png","sha256":"101ca46a89434f834153b77b80a5db783c771a6b75ededba2d4b4031845dd425","size":[1024,512],"mode":"RGBA","alpha_bounds":[489,30,811,330],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/workstation/expansion/machines/youtiao_auto_load_feeder_five_area_v4.png","sha256":"18686c0b2681e591720456af26016296a9a4d225d3538093b6d633e053998bc6","size":[1024,512],"mode":"RGBA","alpha_bounds":[258,35,441,335],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/effects/youtiao/youtiao_sizzle_bubbles_five_area_v4.png","sha256":"305dcbb43f676077c4d48ebada30756de3f55b141967643351650d79e1d9269a","size":[256,256],"mode":"RGBA","alpha_bounds":[18,78,238,179],"corner_alpha":[0,0,0,0],"magenta_pixels":0},
+    {"file":"res://resources/art/effects/youtiao/youtiao_oil_drips_five_area_v4.png","sha256":"34a6d930f6e626254f38acdd440332689e5a87a1e6d6849dbcb6349a86a31e8a","size":[256,256],"mode":"RGBA","alpha_bounds":[38,87,218,169],"corner_alpha":[0,0,0,0],"magenta_pixels":0}
+  ],
+  "runtime_contract": {
+    "scene": "res://scenes/gameplay/direct_youtiao_station.tscn",
+    "script": "res://scripts/ui/direct_youtiao_station.gd",
+    "fixed_layers": ["body","food_slots_1_to_4","lowered_basket","raised_basket","sizzle_bubbles","oil_drips","burnt_smoke","auto_lift_arm","auto_load_feeder"],
+    "states": ["idle","loaded","frying","ready_safe","overcooking","burnt","draining","ready_to_collect","unowned"],
+    "new_facade": "confirm_and_run_youtiao_auto_load(recipe_id, quantity)",
+    "save_shape_changed": false,
+    "business_times_or_capacity_changed": false,
+    "v3_thumbnail_assets_changed": false
+  },
+  "validation_artifacts": {
+    "tier_contact_sheet": "res://tmp/validation/youtiao_fryer_operations_v4_tier_contact_sheet.png",
+    "tier_1_layer_preview": "res://tmp/validation/youtiao_fryer_tier1_v4_layer_preview.png",
+    "runtime_1920x1080": "res://tmp/validation/youtiao_station_formal_1920x1080.png",
+    "runtime_1280x720": "res://tmp/validation/youtiao_station_formal_1280x720.png",
+    "tier_1_flow_gpu": "res://tmp/validation/youtiao_station_tier1_flow_gpu_1920x1080.png",
+    "three_tier_gpu": "res://tmp/validation/youtiao_station_three_tiers_gpu_1280x720.png"
+  },
+  "checks": [
+    {"name":"Godot 4.7.1 import and script parse","result":"passed"},
+    {"name":"youtiao_station_visual_self_check","result":"passed","evidence":"YOUTIAO_STATION_VISUAL_SELF_CHECK_PASS"},
+    {"name":"youtiao_auto_load_self_check","result":"passed","evidence":"YOUTIAO_AUTO_LOAD_SELF_CHECK_PASS"},
+    {"name":"workstation_expansion_asset_self_check","result":"passed","evidence":"WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 86 textures"},
+    {"name":"five_area_formal_scene_self_check","result":"passed","evidence":"FIVE_AREA_FORMAL_SCENE_SELF_CHECK_PASS"},
+    {"name":"initial_unlock_workstation_self_check","result":"passed","evidence":"INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS"},
+    {"name":"f3_station_scene_self_check","result":"passed","evidence":"F3_STATION_SCENE_SELF_CHECK_PASS"}
+    ,{"name":"youtiao_direct_pointer_smoke","result":"passed","evidence":"YOUTIAO_DIRECT_POINTER_SMOKE_PASS; manual dough drag, start, manual lift, two-second drain, output-to-tray drag, auto-load controls and auto-lift"}
+    ,{"name":"youtiao_station_operations_gpu_preview","result":"passed","evidence":"YOUTIAO_STATION_OPERATIONS_GPU_PREVIEW_PASS; D3D12 / NVIDIA GeForce RTX 5070"}
+  ],
+  "known_environment_notes": [
+    "Sandboxed headless runs cannot write the normal user save path, but in-memory production and inventory assertions pass.",
+    "Root certificate-store access warning is unrelated to local Godot gameplay validation."
+  ],
+  "known_unrelated_worktree_failures": [
+    "five_area_order_service_self_check expects formal snapshot version 5 while the existing modified service writes version 6",
+    "the full F3 pointer route is already blocked before youtiao by existing packaged-drink or handoff-tray baseline failures"
+  ]
+}

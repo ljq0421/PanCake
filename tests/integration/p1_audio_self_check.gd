@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
 
 const EXPECTED_STREAMS := {
 	&"pour": "res://resources/audio/sfx/batter_drop.wav",
@@ -90,8 +90,9 @@ func _run() -> void:
 	)
 	workstation._use_bag()
 	workstation._serve_order()
+	workstation.call("_on_tray_order_handed_off", {"settlement_id": &"audio.tray.handoff", "earned_coins": 3})
 	diagnostics = audio.call("get_diagnostics")
-	_check(int(diagnostics.cue_counts.get(&"serve", 0)) == 1, "valid order handoff triggers serve audio once")
+	_check(int(diagnostics.cue_counts.get(&"serve", 0)) == 1, "handing the complete physical tray to the customer triggers serve audio once")
 	_check(not bool(diagnostics.sizzle_requested), "cooking sizzle is stopped outside the cooking phases")
 
 	workstation.queue_free()

@@ -28,8 +28,8 @@ func set_fold_progress(next_left_progress: float, next_right_progress: float) ->
 
 func _refresh_visibility() -> void:
 	var has_blob := sweet_ratio > 0.001 or chili_ratio > 0.001
-	var fillings_enclosed := left_fold_progress >= 0.999 and right_fold_progress >= 0.999
-	visible = has_blob and not fillings_enclosed
+	var folding_started := left_fold_progress > 0.001 or right_fold_progress > 0.001
+	visible = has_blob and not folding_started
 
 
 func _draw() -> void:

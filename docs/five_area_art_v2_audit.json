@@ -1,10 +1,10 @@
 {
   "manifest": "D:\\Project\\ProjectCake\\project-cake\\docs\\five_area_art_v2_manifest.json",
   "totals": {
-    "planned": 146,
-    "present": 50,
-    "valid": 38,
-    "invalid": 12
+    "planned": 0,
+    "present": 196,
+    "valid": 196,
+    "invalid": 0
   },
   "entries": [
     {
@@ -126,8 +126,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -155,13 +155,13 @@
           0
         ]
       ],
-      "opaque_pixels": 25901,
+      "opaque_pixels": 21538,
       "possible_key_pixels": 0,
-      "sha256": "0da380f59f90bd283771905c1cbd75bf15c489d1b523d446b9e24db1a87b13a8",
+      "sha256": "5146ae6d56fda34c4795bb3435bd63ca7dd290d8aaeb28e5ac136814b425fd65",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "baocui_stock_2_v1_five_area_v2",
@@ -178,8 +178,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -207,13 +207,13 @@
           0
         ]
       ],
-      "opaque_pixels": 23211,
+      "opaque_pixels": 33879,
       "possible_key_pixels": 0,
-      "sha256": "6b084184fa58bc907f0cd5375cf8b1293846bf792409478b0452efb56aa16ca5",
+      "sha256": "4aba2fb3aa33a6b7989742919a46f0864fd4f64286fdb6ecba7528291ea73716",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "baocui_stock_3_v1_five_area_v2",
@@ -230,8 +230,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -259,13 +259,13 @@
           0
         ]
       ],
-      "opaque_pixels": 27549,
+      "opaque_pixels": 41130,
       "possible_key_pixels": 0,
-      "sha256": "1ee69ff1fad519591532b1cb2f255b26dbe30760e84b42f8a52b007b00c5180d",
+      "sha256": "1d3f5c76121fa0c0c1a731ca6c5764b65c8b21a2bc40dc8b9cd0fed3c16ad7c3",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "baocui_stock_4_v1_five_area_v2",
@@ -282,8 +282,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -311,13 +311,13 @@
           0
         ]
       ],
-      "opaque_pixels": 28808,
+      "opaque_pixels": 45117,
       "possible_key_pixels": 0,
-      "sha256": "16d7d01f487e4b6efef43be08e1db640f3b152226c397ea7971d2b2aec40e932",
+      "sha256": "4527b07919a662adc82f029cc3af7a7380b17245c8fa4bc7d65ee94fac1b8143",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "baocui_stock_5_v1_five_area_v2",
@@ -334,8 +334,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -363,13 +363,13 @@
           0
         ]
       ],
-      "opaque_pixels": 30211,
+      "opaque_pixels": 36928,
       "possible_key_pixels": 0,
-      "sha256": "f7914ead4509cbaaa95b9e6b03fc4ecf5dd6cc472721b9c89f638e447bd60be0",
+      "sha256": "bda4baae95820f4b63235390e3f1147544a12e53203890aa523a5e083742740a",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "baocui_stock_6_v1_five_area_v2",
@@ -386,8 +386,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -415,13 +415,13 @@
           0
         ]
       ],
-      "opaque_pixels": 36287,
+      "opaque_pixels": 43117,
       "possible_key_pixels": 0,
-      "sha256": "4fea75c0ceab9498c03a8f32b499198fe57670431dde466f631ce3aa78b19154",
+      "sha256": "cf9f964ca7a618fe1285c4b3e657b655e7be80da4ceb4d0548e46fef93ed3172",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "black_bean_portion_v1_five_area_v2",
@@ -750,8 +750,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -779,13 +779,13 @@
           0
         ]
       ],
-      "opaque_pixels": 28634,
+      "opaque_pixels": 15793,
       "possible_key_pixels": 0,
-      "sha256": "24037c028222da859d78614c8a7cc3bb6bda903d11f38e9c5cc2939022aedad8",
+      "sha256": "7e5b23e3d1ba679ba75f06ae4c5a7fbdf565abde880ad23ce00186125c7f3a3a",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "egg_stock_2_v1_five_area_v2",
@@ -802,8 +802,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -831,13 +831,13 @@
           0
         ]
       ],
-      "opaque_pixels": 27125,
+      "opaque_pixels": 24626,
       "possible_key_pixels": 0,
-      "sha256": "44a816010e58d5d40fdc0fbe4661557335efe2bc50e8fb24ce0b93c382d000bd",
+      "sha256": "0c93aee20840adba5ea75246d13a33ee9b049016547696dba72fd226c2b60181",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "egg_stock_3_v1_five_area_v2",
@@ -854,8 +854,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -883,13 +883,13 @@
           0
         ]
       ],
-      "opaque_pixels": 33976,
+      "opaque_pixels": 29642,
       "possible_key_pixels": 0,
-      "sha256": "8521a268c0326357ceebe44e6e6ceebce138b588a4492c5fe127c7dc2df09378",
+      "sha256": "0dc542f337e9d2c9369dd99fbd76451b7d6c3547a845e673159cbfdb6b03e356",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "egg_stock_4_v1_five_area_v2",
@@ -906,8 +906,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -935,13 +935,13 @@
           0
         ]
       ],
-      "opaque_pixels": 28844,
+      "opaque_pixels": 40568,
       "possible_key_pixels": 0,
-      "sha256": "41e2b47600fe77efd6eadb6dda94dd11ca4e702eed9c4821b0171c639f641412",
+      "sha256": "67e862892e9c1e3ebf8cc125e575ebd0b6f343b0c77307e2f15b87f6a664fb5c",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "egg_stock_5_v1_five_area_v2",
@@ -958,8 +958,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -987,13 +987,13 @@
           0
         ]
       ],
-      "opaque_pixels": 29993,
+      "opaque_pixels": 37745,
       "possible_key_pixels": 0,
-      "sha256": "887032f355846f7fa193467b6416d802fa856075f9fad6bb63b3631b1c111142",
+      "sha256": "1e7ef0b777b46345d933a32caf34ae1869650a577bc758b173f10ed0ad85dd9b",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "egg_stock_6_v1_five_area_v2",
@@ -1010,8 +1010,8 @@
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
       "dimensions": [
-        256,
-        256
+        384,
+        384
       ],
       "corner_rgba": [
         [
@@ -1039,13 +1039,13 @@
           0
         ]
       ],
-      "opaque_pixels": 34941,
+      "opaque_pixels": 60191,
       "possible_key_pixels": 0,
-      "sha256": "d6be90b4c5f870e959319c2eb884c1a8dc4660a5066751b685ca14f2c3ef0b6b",
+      "sha256": "4661c41dd9ffb95add4a1446fff1fc4f06d738c3e63903f5d1203960c6a3a6df",
       "godot_import_present": true,
-      "dimensions_ok": false,
+      "dimensions_ok": true,
       "alpha_ok": true,
-      "status": "invalid"
+      "status": "valid"
     },
     {
       "asset_id": "five_grain_mix_portion_v1_five_area_v2",
@@ -1212,12 +1212,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_1_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_stock_1_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "e29a77c95e76abdc96be3d6148e1dfe792001eae03828ad59347790bcafbfae9",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 45794,
+      "possible_key_pixels": 0,
+      "sha256": "728fbc888f287c9d57b14cdcf3a570924891faa6a8d8910362d2b13e621f4122",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ham_sausage_stock_2_v1_five_area_v2",
@@ -1228,12 +1264,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_2_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_stock_2_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "ff6d68f2e67dc1d7aa93eb6c98bdfdc4bc552e8c75c3a3531277aa814fb491b1",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 44708,
+      "possible_key_pixels": 0,
+      "sha256": "43dbbae6517464ede4cf514f0b50597f76839867a5a71c9cea2de60ebb7e7862",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ham_sausage_stock_3_v1_five_area_v2",
@@ -1244,12 +1316,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_3_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_stock_3_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "38e1882bd31988bf9f7ba6bf4afa3299be6f06565a640d48f636bc70113672b2",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 44313,
+      "possible_key_pixels": 0,
+      "sha256": "f2f3c57ac4ef2d3e8571fb55217c5a864cff0f649ddbed7ed82e49002a3fad6b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ham_sausage_stock_4_v1_five_area_v2",
@@ -1260,12 +1368,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_4_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_stock_4_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "0ab3a204dc9a3180997f2ff79812410c779156752311658b3bf28c7d1d9cf711",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34016,
+      "possible_key_pixels": 0,
+      "sha256": "a2ebfa654d540b2dd71def0ea669b4f0618b9ace3ceca974570279afa68e07b3",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ham_sausage_stock_5_v1_five_area_v2",
@@ -1276,12 +1420,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_5_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_stock_5_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "06960f0507a64fdb281cb53cabccb47656c09713e4a29e93f55049d19b6a128c",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 35472,
+      "possible_key_pixels": 0,
+      "sha256": "e9caf878edf4bc1071594c1831b4a10413b171c57c737e680968df95c0332048",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ham_sausage_stock_6_v1_five_area_v2",
@@ -1292,12 +1472,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/ham_sausage_stock_6_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/ham_sausage_stock_6_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "e884deac80c7c68c7de8a7f83ac171857ca8f89b6670e7a6b05c6518554bc88e",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 41102,
+      "possible_key_pixels": 0,
+      "sha256": "896f0bb5908d8f5dd9a58bb28bc38f0809172b73a0f4427064a144f296597913",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "meat_floss_pile_v1_five_area_v2",
@@ -1308,12 +1524,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/meat_floss_pile_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/meat_floss_pile_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "d3eeb49e3eebe13b06cc70f382cc0bdcba135663b0511da7e0552ce23fa3a099",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 20901,
+      "possible_key_pixels": 0,
+      "sha256": "22044f22095841a114115733330c7a40d58200754c93701dc77ef99e9612ad9e",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "meat_floss_scattered_v1_five_area_v2",
@@ -1324,12 +1576,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/meat_floss_scattered_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/meat_floss_scattered_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "edd01fa051cf4f79ccc38d7a4cca30af7a598e4db8c68fd527a40c69a4e18fe7",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 14703,
+      "possible_key_pixels": 0,
+      "sha256": "bbeb1c3ad3bf026179825d81d1664a4d89e6fd471a3cc0920f402d9ffa0a9445",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "peanut_portion_v1_five_area_v2",
@@ -1340,12 +1628,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/peanut_portion_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/peanut_portion_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "b485ef2cc6c1ef08d9c51cc0cb1e04a7e5fbe44625d06b27d1c080c2cae895b6",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 31047,
+      "possible_key_pixels": 0,
+      "sha256": "43db5f26c868149de64ea0122e50de7ccb2b79e33a51e220073203dcda2bfb17",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pork_tenderloin_portion_v1_five_area_v2",
@@ -1356,12 +1680,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/pork_tenderloin_portion_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/pork_tenderloin_portion_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "9034636c162da2161bcbe0cdc6bd90f51158c7ea69371a66edddecfc2acea4ba",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 16365,
+      "possible_key_pixels": 0,
+      "sha256": "2a7522cca0328e30c8edd0c99baedc0b3ab9bec5a7fde59fbed6db5d763ad187",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pork_tenderloin_slices_v1_five_area_v2",
@@ -1372,12 +1732,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/pork_tenderloin_slices_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/pork_tenderloin_slices_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "58328365457ce85c69482bde60055634c323394fcabc241fd87c64d68c441e47",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 24235,
+      "possible_key_pixels": 0,
+      "sha256": "e489e2c7749be54df5caf0d5a614b826cc001ca50819bccec9d58bdd407cb599",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_pile_v1_five_area_v2",
@@ -1388,12 +1784,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_pile_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_pile_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "0364e593b302790c6dabb089bc867d857e92139f1797ddfdeb0fafc60e115e14",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23750,
+      "possible_key_pixels": 0,
+      "sha256": "3975e6ebe460ebb38aae28faab97129f0ce16ad69742d212d90102214cf85c8a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_scattered_v1_five_area_v2",
@@ -1404,12 +1836,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_scattered_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_scattered_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "c483d7c5654a243d7406b26c893b89866511559fede97c8c59ec5ac704526ebe",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 16689,
+      "possible_key_pixels": 0,
+      "sha256": "15f7271cbe2b1f2ab5ae86500c0f5aec4a0111266e288d3435b51a3b34b45bab",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_stock_1_v1_five_area_v2",
@@ -1420,12 +1888,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_1_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_stock_1_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "19ed80b792ca93c67fbf79022972848fa7d68faff905f239cc8f5420ca458560",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22523,
+      "possible_key_pixels": 0,
+      "sha256": "3051908c5e84e2b0ecf3762ad31983acb8fb70f02e005e7339a42dbb61d0009f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_stock_2_v1_five_area_v2",
@@ -1436,12 +1940,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_2_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_stock_2_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "241eba1b8a0975a7009ec48abbc7a8f4335dc86a418dc2cdfe4e80c7d820576b",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 21794,
+      "possible_key_pixels": 0,
+      "sha256": "931f6cd321e21e720f5684c7178708e90ad0aaa842ed5aa0f6038f40e90cc70f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_stock_3_v1_five_area_v2",
@@ -1452,12 +1992,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_3_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_stock_3_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "40aafc9b4b7e6db4c763e95a106e33dca434345464569403893eb57dce4c9831",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 14165,
+      "possible_key_pixels": 0,
+      "sha256": "f9c9d2c61ff2d1d84aa1425eecef867e606becf7e8da79d6b184f3335c39151d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_stock_4_v1_five_area_v2",
@@ -1468,12 +2044,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_4_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_stock_4_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "dfd2d539f95297cde7bff3f58bc84ba44b97cd1495fa88533bc67d614aa0ceb8",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 35206,
+      "possible_key_pixels": 0,
+      "sha256": "86b5742cfcfa884e86abed7d29e7560ad5cc1ba4e7bdf5e5391e1f44c2341a4a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_stock_5_v1_five_area_v2",
@@ -1484,12 +2096,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_5_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_stock_5_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "ae95310a7659281acce0c0fc7cc462bc9626d961ddf42c54e7cf8d72c8eb07e7",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 16661,
+      "possible_key_pixels": 0,
+      "sha256": "495dcd3b71d66198853fe967cb292e927a3e2bcd530dcf183fe28c2037b47447",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_stock_6_v1_five_area_v2",
@@ -1500,12 +2148,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_stock_6_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_stock_6_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "25ab074facc1be252320b4270403066616148edddfac1bb84aeedf0060954796",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        384,
+        384
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33127,
+      "possible_key_pixels": 0,
+      "sha256": "f96ead5f20f71e8b545ba021b0a7a69d258db0d612d813e1b95d2de534eaf4ff",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "yellow_soybean_portion_v1_five_area_v2",
@@ -1516,12 +2200,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/yellow_soybean_portion_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/yellow_soybean_portion_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "f12bf49fb4d1305890c75d6f9de29e1afa0cc2a85ec1c898768489287c0530b1",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 26437,
+      "possible_key_pixels": 0,
+      "sha256": "033a53af7afe89df4eab06d62abd3d85ce8df539d89bd28111fe1d0ecf92213f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "filled_youtiao_dough_v1_five_area_v2",
@@ -1532,12 +2252,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/filled_youtiao_dough_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/filled_youtiao_dough_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "a226fae6010802f2d4a3cd3cea459c5bd81cb03970361352135345b7f9e72686",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22333,
+      "possible_key_pixels": 0,
+      "sha256": "2457d09e72f8aa4d681d66b172bd376702e709d0eb7ad241dad5abf246ef9728",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "glutinous_rice_youtiao_dough_v1_five_area_v2",
@@ -1548,12 +2304,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/glutinous_rice_youtiao_dough_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/glutinous_rice_youtiao_dough_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "174a06240713abd1d2ae12acd3556bcf2658b4a549ca73e7e540abe08d9ba81e",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 24034,
+      "possible_key_pixels": 0,
+      "sha256": "23e0872196c87e3646445b86663f129d4e56947018c71c98b4e417105d3e0023",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "multigrain_youtiao_dough_v1_five_area_v2",
@@ -1564,12 +2356,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/multigrain_youtiao_dough_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/multigrain_youtiao_dough_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "8d24e444ad2ad53715543333c04ed11420d5f956482cee9a560b9b8b2fffdaf5",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22811,
+      "possible_key_pixels": 0,
+      "sha256": "4fca81553574624b9f84f34ae4752e63380d87d8552a4bd2b37c662c752da694",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "plain_youtiao_dough_v1_five_area_v2",
@@ -1580,12 +2408,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/plain_youtiao_dough_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/plain_youtiao_dough_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "c4f2a1511535166869fa5867f00e4703253168b6134d5d392aef109084d11451",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 19417,
+      "possible_key_pixels": 0,
+      "sha256": "abe5d05eab298017e87994d3b4238cedb81befdb27173a5cfd2de226cdc1cb95",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_youtiao_dough_v1_five_area_v2",
@@ -1596,12 +2460,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_youtiao_dough_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_youtiao_dough_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "55c7d6ed999e6f93beec7c71f2bec10561e282411afbe743b77303503e33edd8",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 21806,
+      "possible_key_pixels": 0,
+      "sha256": "2e91e4e3165757950098e6a65ff557c2e2eff33793a99f86925132871bdc6f14",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sesame_youtiao_dough_v1_five_area_v2",
@@ -1612,12 +2512,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/sesame_youtiao_dough_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/sesame_youtiao_dough_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "2a9e00f27da27493214d37984fec42bff0ea9b680667f9190ee2395343ab54ed",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23572,
+      "possible_key_pixels": 0,
+      "sha256": "86772a42985d64fe5ed9c46754e206dd20e477d37e0cfe7a84bd83dca8eb09e0",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "coin_10_v1_five_area_v2",
@@ -1628,12 +2564,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/coin_10_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coin_10_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "ca4f8f40c5aafa419c9539c4adf7eba4ec82448b5095ff8a90507f50314c4821",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30361,
+      "possible_key_pixels": 0,
+      "sha256": "0d19d923d4398a08b3130363411e5e6eecfb300e722c4da91c32a2c17815e2e0",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "coin_1_v1_five_area_v2",
@@ -1644,12 +2616,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/coin_1_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coin_1_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "fdcb0e123f7bc76d339c5ac7503e73366ba91dd046140598ba8b0783b4ae059a",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30518,
+      "possible_key_pixels": 0,
+      "sha256": "ac564ebd0a131aaf180875634090e6e7f964125ff86c5686efa84efea4658471",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "coin_20_v1_five_area_v2",
@@ -1660,12 +2668,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/coin_20_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coin_20_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "358fca8cf4aace1fba5f70ea2a13cec82c77185f05bdfeb63bb344c5274650e4",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34187,
+      "possible_key_pixels": 0,
+      "sha256": "139af464aacb4ea7076675979b525e04442bdc20c91e3f08f0a469f8f14169d4",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "coin_2_v1_five_area_v2",
@@ -1676,12 +2720,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/coin_2_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coin_2_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "1d50fdaddcfa04f43bb2c50254e29e5cc9a0b88689c9c924582a3d7d9cf93c66",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 32393,
+      "possible_key_pixels": 0,
+      "sha256": "40e8bd8f1b9f59e11e8e8cd8d932c4978a3163bd81a89ef2b753a4709736dffe",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "coin_5_v1_five_area_v2",
@@ -1692,12 +2772,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/coin_5_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/coin_5_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "3a60716703d416aa653c9ae27d841cdc650b32d491c43ed51bcd9442d83b797d",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29408,
+      "possible_key_pixels": 0,
+      "sha256": "2e00e25a46056e9cbffa572ad0ba3379882caeb7788579a05d85f5843636ceb1",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "payment_cash_small_v1_five_area_v2",
@@ -1708,12 +2824,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/payment_cash_small_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/payment_cash_small_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "b922e71bc0f6e7da93c18443a1926bb0a15a2fb280adefa50435a593f13a60d0",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 10345,
+      "possible_key_pixels": 0,
+      "sha256": "2fbd6f48fe5bda9dfdf730c0f6518899302236c4831c7f96accd873b9501487d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "black_bean_soy_milk_cup_v1_five_area_v2",
@@ -1724,12 +2876,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/black_bean_soy_milk_cup_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/black_bean_soy_milk_cup_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "0dfeb59e4fb1653377513e0fd954919bb4b1abde6848c409548df10b39ed5c00",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29673,
+      "possible_key_pixels": 0,
+      "sha256": "c3fe7ead39a9b1b834145ed92521803269f7a789e4fd48e013183b6f89af1db6",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "five_grain_soy_milk_cup_v1_five_area_v2",
@@ -1740,12 +2928,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/five_grain_soy_milk_cup_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/five_grain_soy_milk_cup_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "78e3d33769966c62b7991940b930a0e1e1a9236ec069e33adfe00da54dedf6d8",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30954,
+      "possible_key_pixels": 0,
+      "sha256": "d494765fcc7d09c3e0d9c79cc82193a52543f9b32180847e83bd9d4cdec8b02b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "mung_bean_soy_milk_cup_v1_five_area_v2",
@@ -1756,12 +2980,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/mung_bean_soy_milk_cup_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/mung_bean_soy_milk_cup_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "e115c88b7c51aa499a635efdad3fad7a55a63ce8a187feb565e277315fe15bc3",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 25643,
+      "possible_key_pixels": 0,
+      "sha256": "c95a676ef6a26dc4e0449eef0e806d253d69042558437044ef69f5e65e038216",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "peanut_soy_milk_cup_v1_five_area_v2",
@@ -1772,12 +3032,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/peanut_soy_milk_cup_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/peanut_soy_milk_cup_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "dc61d8decccd90d44862a1bfd99f218544ca0a42f44c2ac52449f1e96388d355",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 24966,
+      "possible_key_pixels": 0,
+      "sha256": "e18773321df3d40e08dd6b80808eea898c425c13a8086c7480f90a52732e0824",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "plain_soy_milk_cup_v1_five_area_v2",
@@ -1788,12 +3084,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/plain_soy_milk_cup_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/plain_soy_milk_cup_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "7b7a7640084004a87a7d32b6e9cd955628cd3e52d82735aebbdace841ea4550b",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 25812,
+      "possible_key_pixels": 0,
+      "sha256": "da2fede69554c5da00e80e6f6b2444d77ce95e1e724c71a54b4c9a379e5f4cc3",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "red_bean_soy_milk_cup_v1_five_area_v2",
@@ -1804,12 +3136,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/red_bean_soy_milk_cup_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/red_bean_soy_milk_cup_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "acb26604911e1d2ba057229aa1cba74f5e34d12fbcb61fbfd8af2f9b65b75d77",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30110,
+      "possible_key_pixels": 0,
+      "sha256": "7c4bef22c31059ba1af33a4935ec1c3dc1632512440486d4faf599767e8b7cac",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "filled_youtiao_v1_five_area_v2",
@@ -1820,12 +3188,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/filled_youtiao_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/filled_youtiao_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "0cc2df8c31935a923c6b0e0242617c25866e63d6e885f86c81a31e0aa68cd4cb",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22989,
+      "possible_key_pixels": 0,
+      "sha256": "6d8a09c297e1b4d9cbfc3704c2d4acac086f1922d65465ec1317b03e14486e00",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "glutinous_rice_youtiao_v1_five_area_v2",
@@ -1836,12 +3240,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/glutinous_rice_youtiao_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/glutinous_rice_youtiao_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "afcf2800c1df24a5b49ac27044addf6a64a6db76cd874f666dd878ef2b4d1ef2",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22743,
+      "possible_key_pixels": 0,
+      "sha256": "f1ad0b51d77ab39f78db1f65e3504310dc9de1bc7264d51115daf781f9e5e0f4",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "multigrain_youtiao_v1_five_area_v2",
@@ -1852,12 +3292,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/multigrain_youtiao_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/multigrain_youtiao_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "8b8746f1ec2b2b358f8708c43612fc59dc9205f73af0d6a47f35ee63921e74ed",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 21086,
+      "possible_key_pixels": 0,
+      "sha256": "253823687f94b027390e1df3a4709f218711a98b1e59df2c5fce8d3c8f621f2b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "plain_youtiao_v1_five_area_v2",
@@ -1868,12 +3344,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/plain_youtiao_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/plain_youtiao_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "22088c1afca35d152aaaa8c803fe97ba1e2d7ac431af497a6b343ae82a6002e8",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 19254,
+      "possible_key_pixels": 0,
+      "sha256": "bf836d6f9d87430c114a9e4a0ddc0bbb02ac8eee68b25eb46c1d0b3307d2c971",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_youtiao_v1_five_area_v2",
@@ -1884,12 +3396,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/scallion_youtiao_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/scallion_youtiao_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "f5999f0f958012c4a98c38d1224d79991bbec1a02b145b18468240eb80ea09c2",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22300,
+      "possible_key_pixels": 0,
+      "sha256": "f3e89b6e35a97a89e718758f4a7a3a71dd6aa742b69f29375dc653602308123e",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sesame_youtiao_v1_five_area_v2",
@@ -1900,12 +3448,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/sesame_youtiao_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/sesame_youtiao_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "bc9a511fd885f1864007255acfb4d0fbb30f0f69a5f604289dd93812a9c76bc5",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 21038,
+      "possible_key_pixels": 0,
+      "sha256": "e95833d793b3122ec4295e848c5bf953751c1be40d9b3f66e6f24890ba615510",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "supplier_01_neutral_v1_five_area_v2",
@@ -1916,12 +3500,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/supplier_01_neutral_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/supplier_01_neutral_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "5d5c886978a56afac8373e281833033e5a9345aba79387ef577cd7f177e0a59f",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        768
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 205317,
+      "possible_key_pixels": 0,
+      "sha256": "cd5fe567eeffeb1039a4260d86ac306da26a31ea48644b08c3c22a37a359ead8",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "day_summary_panel_base_v1_five_area_v2",
@@ -1932,12 +3552,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/day_summary_panel_base_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/day_summary_panel_base_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "7e26c40c5ddd90dc096ea5cb0b92bfd8c7799446a6cfbe9c75a2700dc820d1f4",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 503433,
+      "possible_key_pixels": 0,
+      "sha256": "c52554f758243e6e1ba56145b7e4f9b25cfafc8af5a91c33de52fcf7c2cfe0bd",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "currency_coin_v1_five_area_v2",
@@ -1948,12 +3604,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/currency_coin_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/currency_coin_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "9d24680b8a34399ff9dede18aa6bc3ff9e14f9351b882e43fc0197b233091528",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 19699,
+      "possible_key_pixels": 0,
+      "sha256": "876c643dc5ef321440d3c886fdfea464f5e48013fe58c5931610f4c3e1a86ead",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "reputation_v1_five_area_v2",
@@ -1964,12 +3656,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/reputation_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/reputation_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "e5d0f7d9f6f2054e750a74c83c566b177b9c7bf169eb03cc364557f1456ca34d",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34942,
+      "possible_key_pixels": 0,
+      "sha256": "effd1917c16260041858aea7db18fcbc9ee3725b09fa5e29ec8adc77e37e7103",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "upgrade_v1_five_area_v2",
@@ -1980,12 +3708,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/upgrade_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/upgrade_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "210133bfe80d0cc17158ca5aeb51c056b24d940089cf2ca3194ea29bc02698f5",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33060,
+      "possible_key_pixels": 0,
+      "sha256": "c0c2419ec9a0493bd3c677143438f2bf1c269ba7b86a56bd3c40da790f5a23c2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "order_card_base_v1_five_area_v2",
@@ -1996,12 +3760,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/order_card_base_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/order_card_base_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "31ac8f3e68a857ec1102f123229fe449f9e66ce9ddc93a88d650c91b86cff274",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        600,
+        740
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 358286,
+      "possible_key_pixels": 0,
+      "sha256": "0635f897edf861e9a85f1c34215eb19dc1784d2d6a3bd40852ea651e5f67ca46",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "order_card_multi_dish_v2_five_area_v2",
@@ -2012,12 +3812,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/order_card_multi_dish_v2_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/order_card_multi_dish_v2_five_area_v2_key.png",
+      "imagegen_source_sha256": "aa60e382386e284ffd0d95ebf224afd34f95db930448f2250cd5114d163f9930",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        600,
+        740
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 325331,
+      "possible_key_pixels": 0,
+      "sha256": "b030264483c0cad735b9fba2416843015b047f118e49b676d9d366886cd2f392",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "order_card_multi_dish_v3_five_area_v2",
@@ -2028,12 +3864,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/order_card_multi_dish_v3_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/order_card_multi_dish_v3_five_area_v2_key.png",
+      "imagegen_source_sha256": "88a76a262dfba0a7bd4524a11482d1e90651a523d21669cae2b892965135d28b",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        600,
+        740
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 324927,
+      "possible_key_pixels": 0,
+      "sha256": "192bbd91dfacc4ebc67e4c021d5a82636707f0a3bed2bbff00414f5e7a1e3845",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_egg_spread_v1_five_area_v2",
@@ -2044,12 +3916,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/quality_egg_spread_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/quality_egg_spread_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "fbb1538056d6c7640735de2b9bfe3ff8e393ad98640fae19f86acdae8e315057",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33302,
+      "possible_key_pixels": 0,
+      "sha256": "afb917c08c4ef09b78bf767a557455e2de1868e17c2f5d177eebe06df33202cf",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_fold_stability_v1_five_area_v2",
@@ -2060,12 +3968,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/quality_fold_stability_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/quality_fold_stability_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "35afb6827b4551b1f59ef681419529d88fc310fd693b49406dd96cf5bce16c4d",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33989,
+      "possible_key_pixels": 0,
+      "sha256": "b6a3f3e02343c2021554c99428cbe569e7207591c8ca70559379bcf2f03bdf43",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_heat_uniformity_v1_five_area_v2",
@@ -2076,12 +4020,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/quality_heat_uniformity_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/quality_heat_uniformity_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "25caa18fc684e724639173d36aca1d4ce4c2d63fa810685d68bc54c5a80531b6",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28992,
+      "possible_key_pixels": 0,
+      "sha256": "365bc06ffdf42812b3d40c09cade8574bb9dc9e55a0f17cbb36527112c4638d3",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_ingredient_distribution_v1_five_area_v2",
@@ -2092,12 +4072,48 @@
       ],
       "alpha_mode": "rgba_cutout",
       "prompt_record": "resources/art/prompts/five_area_v2/quality_ingredient_distribution_v1_five_area_v2.json",
-      "imagegen_source": null,
-      "imagegen_source_sha256": null,
+      "imagegen_source": "tmp/imagegen/five_area_v2/sources/quality_ingredient_distribution_v1_five_area_v2_key.png",
+      "imagegen_source_sha256": "73fffcd400f13597d4ce6453bb0a09482b99aef06bac873288b6be1c69549a55",
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33381,
+      "possible_key_pixels": 0,
+      "sha256": "32ad69377e16192a62e9354b8cee1aa93b601594282e261b36c8094ea5fd9969",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_integrity_v1_five_area_v2",
@@ -2113,7 +4129,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 22767,
+      "possible_key_pixels": 0,
+      "sha256": "ad111546eb3d104282077f089e5798d42fb8f1905235ce143b87576cb51b8787",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_order_correctness_v1_five_area_v2",
@@ -2129,7 +4181,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 25157,
+      "possible_key_pixels": 0,
+      "sha256": "8fc606351808a2b063f30abe7774499de0a38d0c116b1d95031f754c05a1fc61",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_preparation_time_v1_five_area_v2",
@@ -2145,7 +4233,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23033,
+      "possible_key_pixels": 0,
+      "sha256": "1d80e5b866f57f707dac017d5c311e06ff82e38625eeef8587b5413c1c5951cf",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_sauce_coverage_v1_five_area_v2",
@@ -2161,7 +4285,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 29776,
+      "possible_key_pixels": 0,
+      "sha256": "d4f2a341f606f9249ef966dffde94028381663829566d571ac340aaee2e138b0",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "quality_thickness_uniformity_v1_five_area_v2",
@@ -2177,7 +4337,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23276,
+      "possible_key_pixels": 0,
+      "sha256": "2a45802b9369b8e2cd4fcbfaadde4928db8ff0a1043a38b4852091b630632021",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "signature_recipe_panel_base_v1_five_area_v2",
@@ -2193,7 +4389,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 408056,
+      "possible_key_pixels": 0,
+      "sha256": "670dda5f4e9ab21d6b323103a91f090f835657b9de3509771ee9cf264bea5000",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "supplier_event_panel_base_v1_five_area_v2",
@@ -2209,7 +4441,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 446027,
+      "possible_key_pixels": 0,
+      "sha256": "54ddb680ef6c4b49b56112080735ba824cf4d8dd124dd212c0386cdd9395467d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ingredient_rack_support_v1_five_area_v2",
@@ -2225,7 +4493,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30760,
+      "possible_key_pixels": 0,
+      "sha256": "14b315f89f4df9fba6101a5cfb39988f03155169e0552b6f4f9a7599c4707dec",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "storage_label_rail_v1_five_area_v2",
@@ -2241,7 +4545,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 57056,
+      "possible_key_pixels": 0,
+      "sha256": "a563fc5a1dc073b6a405414ecfdb0e18260ca4d99b899eb110099d9a1d38f538",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "blank_order_clipboard_v1_five_area_v2",
@@ -2257,7 +4597,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 31538,
+      "possible_key_pixels": 0,
+      "sha256": "a67db433b6e014757bd9d57e6950b604ffac6856113fc2c59da5502fe2f72437",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "awning_side_lamps_v1_five_area_v2",
@@ -2273,7 +4649,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 72710,
+      "possible_key_pixels": 0,
+      "sha256": "58611a5062a4824692371a722c9515260423ae5b15ae667bc656cf42866ab154",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "tray_trim_customer_clips_v1_five_area_v2",
@@ -2289,7 +4701,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 50011,
+      "possible_key_pixels": 0,
+      "sha256": "fddb1713630f2b7c58bfb2e7e2d5399edfbca1cfa0e50c5fba0811d3acedb050",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "small_ingredient_box_tier_1_v1_five_area_v2",
@@ -2305,7 +4753,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 143449,
+      "possible_key_pixels": 0,
+      "sha256": "78c675b61d490bb9b573952f75ddd4cdcade346d758fd26b13cefd830351ba4f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "small_ingredient_box_tier_2_v1_five_area_v2",
@@ -2321,7 +4805,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 141166,
+      "possible_key_pixels": 0,
+      "sha256": "e49b0e3881de6c96bd444990399b81c9af9831e9bc097995cb29eed24859c326",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "small_ingredient_box_tier_3_v1_five_area_v2",
@@ -2337,7 +4857,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 143395,
+      "possible_key_pixels": 0,
+      "sha256": "8748f6e3f5542f6e941a9eab4118dd52cbd2f63c1992b673bc6498c4d6c3ecf2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "soy_milk_machine_tier_1_v1_five_area_v2",
@@ -2353,7 +4909,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 212979,
+      "possible_key_pixels": 0,
+      "sha256": "e679a1be2303b31555c2ad5b3d864032938e1dd59bb934671b9019cd12a6e6c4",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "soy_milk_machine_tier_2_v1_five_area_v2",
@@ -2369,7 +4961,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 209619,
+      "possible_key_pixels": 0,
+      "sha256": "239e12031c0883dc894ccff202a4c93e4093c1b9831bb52594d2c1429539615a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "soy_milk_machine_tier_3_v1_five_area_v2",
@@ -2385,7 +5013,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 226886,
+      "possible_key_pixels": 0,
+      "sha256": "18ed222c9a3c248cc9fd5b2e3791c9f7d48712a61481ea462d9d6415e8eb2c0a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "youtiao_fryer_tier_1_v1_five_area_v2",
@@ -2401,7 +5065,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 274261,
+      "possible_key_pixels": 0,
+      "sha256": "c74138ce496bad31871bb735d50dfd50475d723c6d09a327a27a6b99ef9220ab",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "youtiao_fryer_tier_2_v1_five_area_v2",
@@ -2417,7 +5117,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 293324,
+      "possible_key_pixels": 0,
+      "sha256": "82ef79ffd1ec4afd90311848d4d9e20c1bafed4ac636b85af9cb64d562e2d61b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "youtiao_fryer_tier_3_v1_five_area_v2",
@@ -2433,7 +5169,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 307895,
+      "possible_key_pixels": 0,
+      "sha256": "2d5f32879cd5ac097a217527dc3ca2ac4a64fb2435a847cb0024b18ed2d7133f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "automatic_sauce_brush_v1_five_area_v2",
@@ -2449,7 +5221,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 105438,
+      "possible_key_pixels": 0,
+      "sha256": "0923904c3ef4b361d380783edabfbf39dae3c82b9f7d15f4b2cb68db9d7efb3e",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "single_press_spreader_v1_five_area_v2",
@@ -2465,7 +5273,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 100163,
+      "possible_key_pixels": 0,
+      "sha256": "88fcfb932e18c732eb8f60cb815f2908b24bb6fcbc2c84634ea55300bed67ac1",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ingredient_slot_locked_cover_v1_five_area_v2",
@@ -2481,7 +5325,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 103290,
+      "possible_key_pixels": 0,
+      "sha256": "4414a79d188430033d9ac7606d1b21cc9bed0ce60f00e81fc418934844123139",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ingredient_tray_4x3_v1_five_area_v2",
@@ -2497,7 +5377,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 95572,
+      "possible_key_pixels": 0,
+      "sha256": "8d38367a3997081dafbc85a85d2d30148812b45dabb17a181c4435746ec8e7ac",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "workstation_front_lip_v1_five_area_v2",
@@ -2513,7 +5429,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 71572,
+      "possible_key_pixels": 0,
+      "sha256": "85cb017aa1640a6bda0700f02a8dab531c37c428128671f38d49e1cf0ff329f7",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "griddle_base_angled_ellipse_v3_five_area_v2",
@@ -2581,7 +5533,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 645231,
+      "possible_key_pixels": 0,
+      "sha256": "fa59f18d2b1661c026635c28a98fafd0d428f660362877671cd5cbc5134a2376",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "griddle_base_v1_five_area_v2",
@@ -2597,7 +5585,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 441795,
+      "possible_key_pixels": 0,
+      "sha256": "22991541f04de9a007b86fc058619428159c66d97749d291f2e6db807ecc4cd8",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_01_egg_v1_five_area_v2",
@@ -2613,7 +5637,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 111692,
+      "possible_key_pixels": 0,
+      "sha256": "b5b307712a56f3879bbe26e8032e1ec7a44be0abf37a604e27f870d004a32744",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_02_baocui_v1_five_area_v2",
@@ -2629,7 +5689,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 110028,
+      "possible_key_pixels": 0,
+      "sha256": "545690f8eb623113a53129d2deba7aa8210d39b631e96132d9c51a09406aa704",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_03_scallion_v1_five_area_v2",
@@ -2645,7 +5741,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 111832,
+      "possible_key_pixels": 0,
+      "sha256": "84a0547439f47d409b18877d6fe313010fb1360b2009ac3b6873b2a57c144ace",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_04_sweet_flour_sauce_v1_five_area_v2",
@@ -2661,7 +5793,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 125398,
+      "possible_key_pixels": 0,
+      "sha256": "89f7e761a7325dda8679b5dc25a9638005fa4e2cd63910297fcbe0cbca719d21",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_05_locked_v1_five_area_v2",
@@ -2677,7 +5845,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 111074,
+      "possible_key_pixels": 0,
+      "sha256": "7e92e9c628299c064ddedc0c0461317c868c7414712d1ad66e641e2232fe0389",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_06_locked_v1_five_area_v2",
@@ -2693,7 +5897,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 109216,
+      "possible_key_pixels": 0,
+      "sha256": "758d909d3b53f4025ade8e2a25432cd5439180b7e0501c310c1cbc04879d62d2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_07_locked_v1_five_area_v2",
@@ -2709,7 +5949,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 113483,
+      "possible_key_pixels": 0,
+      "sha256": "6542ff603930a812cf7b01cab46a70d97c80848af81cc2da7b7974c96dbb5040",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_08_locked_v1_five_area_v2",
@@ -2725,7 +6001,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 113093,
+      "possible_key_pixels": 0,
+      "sha256": "06e09e592087511085170910a6a38030a79694724f0d78f824c89697cf57049a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_09_locked_v1_five_area_v2",
@@ -2741,7 +6053,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 109893,
+      "possible_key_pixels": 0,
+      "sha256": "86055d0bc79f5bec0cc59a326aa14210eb1efdc280b0353d66eef2efa33f13c4",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_10_locked_v1_five_area_v2",
@@ -2757,7 +6105,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 111247,
+      "possible_key_pixels": 0,
+      "sha256": "207dee98e19b6e31afd9314feaef61aca5fd4395cdae5fdd5e1bae4d470d4d7b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_11_locked_v1_five_area_v2",
@@ -2773,7 +6157,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 112970,
+      "possible_key_pixels": 0,
+      "sha256": "5f2666e65c05d1f8e5ab39c07f60d75b5658619298f2b4ee69e34fdc6aa35fb3",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "slot_12_locked_v1_five_area_v2",
@@ -2789,7 +6209,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 108868,
+      "possible_key_pixels": 0,
+      "sha256": "21d83f95c3fc00b2b51800c4180aca3a60578e016acff8ad84c9cc1e7405c9d2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "festival_spring_v1_five_area_v2",
@@ -2805,7 +6261,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 40232,
+      "possible_key_pixels": 0,
+      "sha256": "b2962dc5efa1e76287d4ef6b7ec7409ee87b7c4a6e29003ef2f359bda03b18b1",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "lighting_string_lights_v1_five_area_v2",
@@ -2821,7 +6313,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 27251,
+      "possible_key_pixels": 0,
+      "sha256": "6c26ccafad3f11f270a3fa4fac493ed62f22d7717100877eb4c68181330977df",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "weather_rain_v1_five_area_v2",
@@ -2837,7 +6365,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        576
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 14473,
+      "possible_key_pixels": 0,
+      "sha256": "46c4c7ca37b3f63bc7a98e1a2db4fb155504c3b204d2a89b8b8968433ff944e2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "paper_bag_package_v1_five_area_v2",
@@ -2853,7 +6417,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 159485,
+      "possible_key_pixels": 0,
+      "sha256": "6da83835e592bc07197a19e794216dfcf1b12f6080ac1095f316fffcfabc9177",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "reinforced_paper_sleeve_package_v1_five_area_v2",
@@ -2869,7 +6469,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 158413,
+      "possible_key_pixels": 0,
+      "sha256": "0d7ffcc54fd830739f1a942134fd882dfc008623b4644a99fdd79e8cdf65102c",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "serving_tray_package_v1_five_area_v2",
@@ -2885,7 +6521,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 140358,
+      "possible_key_pixels": 0,
+      "sha256": "a5b9b01046e7bf4d34fcf9c574ed0978aa1c26953aee03e43dce1910eef87412",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "baocui_tin_v1_five_area_v2",
@@ -2901,7 +6573,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 143886,
+      "possible_key_pixels": 0,
+      "sha256": "58824408c02807ad99be2d3957b999126bd1b3d0787ad56b6eebc5912a80d93f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "egg_carton_v1_five_area_v2",
@@ -2917,7 +6625,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 131349,
+      "possible_key_pixels": 0,
+      "sha256": "1e1246587dcba37d4a7d1fa51c0cacf046e1eafc198d5f799d33d3f1239787f2",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ham_fresh_box_v1_five_area_v2",
@@ -2933,7 +6677,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 163684,
+      "possible_key_pixels": 0,
+      "sha256": "945c7177f94c02f2fae2fc872a8919a4b045d3c0e08aff69009480f039d3901b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "scallion_enamel_jar_v1_five_area_v2",
@@ -2949,7 +6729,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 130871,
+      "possible_key_pixels": 0,
+      "sha256": "973256f963f897297b5c0f136e4b0c6d5d484c11d6ad92a3d400cadaac658ca0",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "egg_spread_material_v1_five_area_v2",
@@ -2965,7 +6781,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          251,
+          211,
+          78,
+          255
+        ],
+        [
+          251,
+          211,
+          78,
+          255
+        ],
+        [
+          251,
+          211,
+          78,
+          255
+        ],
+        [
+          251,
+          211,
+          78,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "9965ef73a30bed476cceebd95d520e3207a89ca61bd73aa9d0a580ee4e6afaba",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pancake_charred_texture_v1_five_area_v2",
@@ -2981,7 +6833,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          102,
+          60,
+          23,
+          255
+        ],
+        [
+          102,
+          60,
+          23,
+          255
+        ],
+        [
+          102,
+          60,
+          23,
+          255
+        ],
+        [
+          102,
+          60,
+          23,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "3a4d03501dde31ceb81e8006054afaa18503643078a44413d708cd6b12b681a7",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pancake_cooked_texture_v1_five_area_v2",
@@ -2997,7 +6885,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          247,
+          197,
+          67,
+          255
+        ],
+        [
+          247,
+          197,
+          67,
+          255
+        ],
+        [
+          247,
+          197,
+          67,
+          255
+        ],
+        [
+          247,
+          197,
+          67,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "188d0554e81aa5aef25315738ea5f6d175fa4e04dbbfce977d3a78ba11c02fff",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pancake_edge_texture_v1_five_area_v2",
@@ -3013,7 +6937,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          198,
+          194,
+          189,
+          255
+        ],
+        [
+          198,
+          194,
+          189,
+          255
+        ],
+        [
+          198,
+          194,
+          189,
+          255
+        ],
+        [
+          198,
+          194,
+          189,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "1602d1897507b814760710518cf149695914d7ff4ae8119e22e8aa3cf68b2c8c",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pancake_fold_back_texture_v1_five_area_v2",
@@ -3029,7 +6989,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          204,
+          136,
+          50,
+          255
+        ],
+        [
+          204,
+          136,
+          50,
+          255
+        ],
+        [
+          204,
+          136,
+          50,
+          255
+        ],
+        [
+          204,
+          136,
+          50,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "2c704cb40db8b5c61fa75ebd9dc5bd2f2a9bf9dfc237318123944873488a2634",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "pancake_raw_texture_v1_five_area_v2",
@@ -3045,7 +7041,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          235,
+          215,
+          175,
+          255
+        ],
+        [
+          235,
+          215,
+          175,
+          255
+        ],
+        [
+          235,
+          215,
+          175,
+          255
+        ],
+        [
+          235,
+          215,
+          175,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "3623fb6ec8fd5dbddff3d5dd2129b521794e5f14fefed5f2f2c980e0cbc4e71e",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "red_chili_sauce_texture_v1_five_area_v2",
@@ -3061,7 +7093,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          208,
+          48,
+          10,
+          255
+        ],
+        [
+          208,
+          48,
+          10,
+          255
+        ],
+        [
+          208,
+          48,
+          10,
+          255
+        ],
+        [
+          208,
+          48,
+          10,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "9f104e22e4783a7d111688588640a076ecd14ca7c73f053183255b9e5859e74f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sweet_flour_sauce_texture_v1_five_area_v2",
@@ -3077,7 +7145,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "corner_rgba": [
+        [
+          134,
+          39,
+          0,
+          255
+        ],
+        [
+          134,
+          39,
+          0,
+          255
+        ],
+        [
+          134,
+          39,
+          0,
+          255
+        ],
+        [
+          134,
+          39,
+          0,
+          255
+        ]
+      ],
+      "opaque_pixels": 1048576,
+      "possible_key_pixels": 0,
+      "sha256": "b14cf5964cac4a742425d419226852fa8079cc7778d661be54abba9d8fb16a36",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "batter_ladle_upgrade_v1_five_area_v2",
@@ -3093,7 +7197,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 63686,
+      "possible_key_pixels": 0,
+      "sha256": "9c77363d89dc69eaf1bf5f3b51598529b367f1b2ea4857b87fbd9ab382d8e862",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "batter_ladle_v1_five_area_v2",
@@ -3109,7 +7249,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 65786,
+      "possible_key_pixels": 0,
+      "sha256": "1eb1cd6efa686ee0cc66e435bab4739f41d70298885e2fd4c8749d861b05692d",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "batter_spreader_upgrade_v1_five_area_v2",
@@ -3125,7 +7301,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 52175,
+      "possible_key_pixels": 0,
+      "sha256": "77754ba0b512ecdd85ce8bb55caa9e8f20a43691c3f8dad710dd045827bab421",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "batter_spreader_v1_five_area_v2",
@@ -3141,7 +7353,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 56828,
+      "possible_key_pixels": 0,
+      "sha256": "a3a3978b05d9803693f193fec0f677c1402583fbd57852f8fb7b1f974935a456",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "countertop_tool_cups_initial_v3_five_area_v2",
@@ -3157,7 +7405,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 51828,
+      "possible_key_pixels": 0,
+      "sha256": "dd56c1d100edccab487dd6ae325f644746ae7a6314d5f5f51b67569c4ca22bb0",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "countertop_tool_cups_initial_v4_five_area_v2",
@@ -3173,7 +7457,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 80907,
+      "possible_key_pixels": 0,
+      "sha256": "a01556b746284f1c7b3565013d5ba52723081dc16488fa5cfe6f8eeefc475497",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "folding_spatula_upgrade_v1_five_area_v2",
@@ -3189,7 +7509,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 57556,
+      "possible_key_pixels": 0,
+      "sha256": "8164127cbefd37e79f0c26ae95c1c947723cea7d156c038d5a390cbfed75d916",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "folding_spatula_v1_five_area_v2",
@@ -3205,7 +7561,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 58597,
+      "possible_key_pixels": 0,
+      "sha256": "76609c029af53e94ff921e88344f54e0e89af1498da17bbc3f8d621c1361c005",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "heat_controller_upgrade_v1_five_area_v2",
@@ -3221,7 +7613,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 154342,
+      "possible_key_pixels": 0,
+      "sha256": "1eb842b24b1129e056b362c95a116f07e20e57bcb5850e3d4b97d6fc5de811bf",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ingredient_tongs_upgrade_v1_five_area_v2",
@@ -3237,7 +7665,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 58013,
+      "possible_key_pixels": 0,
+      "sha256": "4a5ebca10d7b0185be01f982054b2daccb41de8fa97e6937df325749b6204867",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "ingredient_tongs_v1_five_area_v2",
@@ -3253,7 +7717,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 49791,
+      "possible_key_pixels": 0,
+      "sha256": "4b7755d3f4e1e8c660183d04995007759be7eddfc569297749f817d2dc26c6d3",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "oil_absorbent_paper_upgrade_v1_five_area_v2",
@@ -3269,7 +7769,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 112827,
+      "possible_key_pixels": 0,
+      "sha256": "b656a3430eecdd80a8ea6e7d3451a5d24dc2d28b3cf3e732cf0d2e9464ea19ce",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "oil_absorbent_paper_v1_five_area_v2",
@@ -3285,7 +7821,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 103944,
+      "possible_key_pixels": 0,
+      "sha256": "b7c89818e019fb1e05347bfc30a8df95c2a1edcdc836a5bbb5dfcd31e48bec06",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "payment_slot_tool_cups_initial_v5_five_area_v2",
@@ -3301,7 +7873,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 86501,
+      "possible_key_pixels": 0,
+      "sha256": "1105b1b85cadb4faf4fce256b3c05c1d435c3943c6ccdcac3bc201760da5487e",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "reinforced_paper_sleeve_upgrade_v1_five_area_v2",
@@ -3317,7 +7925,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 146191,
+      "possible_key_pixels": 0,
+      "sha256": "4540a3301f778bd3dafe561c1d6372d70bf7d3b641148ab5a4a903b0e2d2e603",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sauce_brush_upgrade_v1_five_area_v2",
@@ -3333,7 +7977,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 66876,
+      "possible_key_pixels": 0,
+      "sha256": "292b6604cc252d7a64c0b544ead62f45336e07998d0aaedaca353d92cf851888",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sauce_brush_v1_five_area_v2",
@@ -3349,7 +8029,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 57643,
+      "possible_key_pixels": 0,
+      "sha256": "062f318e69da2a252a86287808d9b3ba8ef59f2e55754cab0f4f6226a1790310",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "wall_tool_rack_initial_v2_five_area_v2",
@@ -3365,7 +8081,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        512,
+        512
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 49921,
+      "possible_key_pixels": 0,
+      "sha256": "ab1a0630f0a2298d783c21f6fd7663237cc3e2fde357cd226cd55c5786f20240",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "packaged_drink_heater_tier_1_five_area_v2",
@@ -4607,10 +9359,10 @@
           0
         ]
       ],
-      "opaque_pixels": 20372,
+      "opaque_pixels": 29831,
       "possible_key_pixels": 0,
-      "sha256": "9cdb09388d271d16fb0ce315b701c8fad4fae6a1b6cde309a9dbd58dbef226c5",
-      "godot_import_present": false,
+      "sha256": "2b04b178986754f1771f48217fa030e595c08cb4ac283738ed2a693a446cdfa8",
+      "godot_import_present": true,
       "dimensions_ok": true,
       "alpha_ok": true,
       "status": "valid"
@@ -4662,7 +9414,7 @@
       "opaque_pixels": 26076,
       "possible_key_pixels": 0,
       "sha256": "9e772aff7514a3db1d77b3deb030aefd837319c12b8455f96f8f8a799a06a0f5",
-      "godot_import_present": false,
+      "godot_import_present": true,
       "dimensions_ok": true,
       "alpha_ok": true,
       "status": "valid"
@@ -4711,10 +9463,10 @@
           0
         ]
       ],
-      "opaque_pixels": 19650,
+      "opaque_pixels": 26288,
       "possible_key_pixels": 0,
-      "sha256": "609e2167cdd26aaed750b2600d1587f3f789ee7ef6f806fb2aa7343f93fed57e",
-      "godot_import_present": false,
+      "sha256": "0a08503c21297ea901e381daa3a6d51de04399b07bc596687d566c331579a9ba",
+      "godot_import_present": true,
       "dimensions_ok": true,
       "alpha_ok": true,
       "status": "valid"
@@ -4733,7 +9485,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23455,
+      "possible_key_pixels": 0,
+      "sha256": "c766374a083c7cbeb59a02a083c65b0029ca70e4f40054aaef1470c92dc86297",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "walnut_heated_five_area_v2",
@@ -4749,7 +9537,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 23702,
+      "possible_key_pixels": 0,
+      "sha256": "71db79cd5c99f96fee2ac10d5ca6dcf80e2bd1fafc2ff566b20b9daeff1f2546",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "black_sesame_package_five_area_v2",
@@ -4765,7 +9589,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 26041,
+      "possible_key_pixels": 0,
+      "sha256": "6159649cf359c664d1762f6f404a361827b94329541202c46db548e6e7e2a847",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "black_sesame_heated_five_area_v2",
@@ -4781,7 +9641,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 26258,
+      "possible_key_pixels": 0,
+      "sha256": "c3db5837c99f6342b44143c2d26a6be7e85308704abcead02610d86fa823e182",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "oil_cake_dough_five_area_v2",
@@ -4797,7 +9693,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 32824,
+      "possible_key_pixels": 0,
+      "sha256": "c9a778a5dc564df6c4dc801964535364b0a47106b04cb0e8709b6f627e6c3d80",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "oil_cake_five_area_v2",
@@ -4813,7 +9745,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 32900,
+      "possible_key_pixels": 0,
+      "sha256": "ea30aa9c6eb23b26bd151c5fee06421843f8de9053e53c81876da53ce18b32a8",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sugar_oil_cake_dough_five_area_v2",
@@ -4829,7 +9797,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 33606,
+      "possible_key_pixels": 0,
+      "sha256": "f56f35dc66c2302bf4fa6a491eed059378045d97e269aaaacb99ac12a5f9acb7",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "sugar_oil_cake_five_area_v2",
@@ -4845,7 +9849,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 34769,
+      "possible_key_pixels": 0,
+      "sha256": "3b65a5be8f54188eea27c5931973c33efb701fa774428df41ba1ed16244bebf6",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "mantou_steaming_five_area_v2",
@@ -4861,7 +9901,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 28885,
+      "possible_key_pixels": 0,
+      "sha256": "7c68afa46cbe50d407e2ab5b06f9b405cfddca18bfa946d4c2edec768c450e5a",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "mantou_cooked_five_area_v2",
@@ -4877,7 +9953,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 30432,
+      "possible_key_pixels": 0,
+      "sha256": "fbf32f6f127e8157eadf299b9dc2aa6eade88c1ed270d9bf13b0d9cc5f1301ee",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "vegetable_bun_steaming_five_area_v2",
@@ -4893,7 +10005,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 37375,
+      "possible_key_pixels": 0,
+      "sha256": "6fe0ca6d956b88e81e682157086a637bb9f74c984016246833d456a86231407f",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "vegetable_bun_cooked_five_area_v2",
@@ -4909,7 +10057,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 32386,
+      "possible_key_pixels": 0,
+      "sha256": "149580d38601105ec92199477ac75d52d1b30d008bb5369e5dfa39641f76e52b",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "meat_bun_steaming_five_area_v2",
@@ -4925,7 +10109,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 38989,
+      "possible_key_pixels": 0,
+      "sha256": "24e0553bbfec3d68f444443fb35cc77910057e420939de977c47850460541911",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     },
     {
       "asset_id": "meat_bun_cooked_five_area_v2",
@@ -4941,7 +10161,43 @@
       "imagegen_source_name_inferred": false,
       "dekey_parameters": "auto-key border; soft-matte; transparent-threshold=12; opaque-threshold=220; despill; low-alpha-key-scrub=8",
       "human_visual_review": "pending",
-      "status": "planned"
+      "dimensions": [
+        256,
+        256
+      ],
+      "corner_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "opaque_pixels": 31412,
+      "possible_key_pixels": 0,
+      "sha256": "40a280ce5d4151454da58d1f6e1fdfb90c2052850d6387b9fe37b3d23b647e3c",
+      "godot_import_present": true,
+      "dimensions_ok": true,
+      "alpha_ok": true,
+      "status": "valid"
     }
   ]
 }

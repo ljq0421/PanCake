@@ -123,11 +123,15 @@ void fragment() {
 		float egg_edge = clamp((egg_neighbor_amount - egg_fields.a) * 5.0, 0.0, 1.0);
 		egg_color = mix(egg_color, vec3(1.0, 0.96, 0.77), egg_edge * 0.32);
 		pancake_color = mix(pancake_color, egg_color, egg_visibility * egg_opacity);
-		float sauce_visibility = smoothstep(0.015, 0.32, sauce) * filling_visibility;
+		// The fold overlay is opaque and performs the actual landing occlusion.
+		// Fading sauce across the estimated landing span changes the color of
+		// stationary, still-exposed brush marks before the flap reaches them.
+		float stationary_sauce_visibility = 1.0 - clamp(fillings_enclosed, 0.0, 1.0);
+		float sauce_visibility = smoothstep(0.015, 0.32, sauce) * stationary_sauce_visibility;
 		vec3 sweet_color = texture(sweet_sauce_texture, detail_uv).rgb;
 		vec3 chili_color = texture(chili_sauce_texture, detail_uv).rgb;
 		pancake_color = mix(pancake_color, sweet_color, sauce_visibility * 0.82);
-		float chili_visibility = smoothstep(0.015, 0.32, chili_sauce) * filling_visibility;
+		float chili_visibility = smoothstep(0.015, 0.32, chili_sauce) * stationary_sauce_visibility;
 		pancake_color = mix(pancake_color, chili_color, chili_visibility * 0.80);
 
 		float alpha = smoothstep(0.02, 0.32, coverage) * pan_mask;

@@ -1,0 +1,542 @@
+[gd_scene load_steps=29 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/direct_youtiao_station.gd" id="1_root"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_five_area_v4.png" id="2_body1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_body_five_area_v4.png" id="3_body2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_body_five_area_v4.png" id="4_body3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_lowered_five_area_v4.png" id="5_low1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_basket_lowered_five_area_v4.png" id="6_low2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_lowered_five_area_v4.png" id="7_low3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_raised_five_area_v4.png" id="8_high1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_basket_raised_five_area_v4.png" id="9_high2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_raised_five_area_v4.png" id="10_high3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_auto_lift_arm_five_area_v4.png" id="11_lift"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_auto_load_feeder_five_area_v4.png" id="12_loader"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/youtiao/youtiao_sizzle_bubbles_five_area_v4.png" id="13_bubbles"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/youtiao/youtiao_oil_drips_five_area_v4.png" id="14_drips"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/steamer/steamer_burnt_smoke_puff_five_area_v2.png" id="15_smoke"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png" id="16_raw1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png" id="17_raw2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png" id="18_raw3"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png" id="19_cooked1"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/oil_cake_five_area_v2.png" id="20_cooked2"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png" id="21_cooked3"]
+[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="22_source"]
+[ext_resource type="Script" path="res://scripts/ui/restock_hold_button.gd" id="23_restock"]
+[ext_resource type="Script" path="res://scripts/ui/youtiao_temperature_range_bar.gd" id="24_temperature"]
+
+[sub_resource type="StyleBoxFlat" id="PartStyle"]
+bg_color = Color(0.98, 0.91, 0.74, 0.90)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.39, 0.12, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="WarningStyle"]
+bg_color = Color(0.86, 0.53, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.23, 0.07, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="LockStyle"]
+bg_color = Color(0.97, 0.92, 0.76, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.68, 0.43, 0.16, 0.92)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="AutoPanelStyle"]
+bg_color = Color(0.11, 0.35, 0.28, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.86, 0.65, 0.22, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="DirectYoutiaoStation" type="Control"]
+custom_minimum_size = Vector2(306, 340)
+offset_right = 306.0
+offset_bottom = 340.0
+mouse_filter = 0
+script = ExtResource("1_root")
+body_textures = Array[Texture2D]([ExtResource("2_body1"), ExtResource("3_body2"), ExtResource("4_body3")])
+lowered_basket_textures = Array[Texture2D]([ExtResource("5_low1"), ExtResource("6_low2"), ExtResource("7_low3")])
+raised_basket_textures = Array[Texture2D]([ExtResource("8_high1"), ExtResource("9_high2"), ExtResource("10_high3")])
+raw_food_textures = Array[Texture2D]([ExtResource("16_raw1"), ExtResource("17_raw2"), ExtResource("18_raw3")])
+cooked_food_textures = Array[Texture2D]([ExtResource("19_cooked1"), ExtResource("20_cooked2"), ExtResource("21_cooked3")])
+auto_lift_texture = ExtResource("11_lift")
+auto_load_texture = ExtResource("12_loader")
+sizzle_texture = ExtResource("13_bubbles")
+oil_drips_texture = ExtResource("14_drips")
+burnt_smoke_texture = ExtResource("15_smoke")
+
+[node name="StateLabel" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 1.0
+offset_right = 244.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(0.26, 0.13, 0.05, 1)
+theme_override_font_sizes/font_size = 16
+text = "油条炸锅 · 未安装"
+
+[node name="QuantityLabel" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 244.0
+offset_top = 1.0
+offset_right = 298.0
+offset_bottom = 25.0
+theme_override_colors/font_color = Color(0.26, 0.13, 0.05, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 2
+
+[node name="MachineStage" type="Control" parent="."]
+unique_name_in_owner = true
+offset_left = 12.0
+offset_top = 24.0
+offset_right = 294.0
+offset_bottom = 165.0
+mouse_filter = 2
+
+[node name="AutoLoadFeederVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_loader")
+expand_mode = 1
+stretch_mode = 0
+z_index = 0
+
+[node name="AutoLiftArmVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_lift")
+expand_mode = 1
+stretch_mode = 0
+z_index = 1
+
+[node name="BodyVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+z_index = 2
+
+[node name="FoodLayer" type="Control" parent="MachineStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 4
+
+[node name="FoodSlot01" type="Control" parent="MachineStage/FoodLayer"]
+unique_name_in_owner = true
+visible = false
+mouse_filter = 2
+[node name="RawFood01" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot01"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="CookedFood01" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot01"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FoodSlot02" type="Control" parent="MachineStage/FoodLayer"]
+unique_name_in_owner = true
+visible = false
+mouse_filter = 2
+[node name="RawFood02" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot02"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="CookedFood02" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot02"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FoodSlot03" type="Control" parent="MachineStage/FoodLayer"]
+unique_name_in_owner = true
+visible = false
+mouse_filter = 2
+[node name="RawFood03" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot03"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="CookedFood03" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot03"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FoodSlot04" type="Control" parent="MachineStage/FoodLayer"]
+unique_name_in_owner = true
+visible = false
+mouse_filter = 2
+[node name="RawFood04" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot04"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+[node name="CookedFood04" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot04"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LoweredBasketVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+z_index = 5
+
+[node name="SizzleLayer" type="Control" parent="MachineStage"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 6
+[node name="SizzleBubbles01" type="TextureRect" parent="MachineStage/SizzleLayer"]
+unique_name_in_owner = true
+offset_left = 74.0
+offset_top = 17.0
+offset_right = 174.0
+offset_bottom = 76.0
+mouse_filter = 2
+texture = ExtResource("13_bubbles")
+expand_mode = 1
+stretch_mode = 5
+[node name="SizzleBubbles02" type="TextureRect" parent="MachineStage/SizzleLayer"]
+unique_name_in_owner = true
+offset_left = 117.0
+offset_top = 26.0
+offset_right = 217.0
+offset_bottom = 85.0
+mouse_filter = 2
+texture = ExtResource("13_bubbles")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RaisedBasketVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 0
+z_index = 7
+
+[node name="OilDripsVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+visible = false
+offset_left = 89.0
+offset_top = 45.0
+offset_right = 193.0
+offset_bottom = 116.0
+mouse_filter = 2
+texture = ExtResource("14_drips")
+expand_mode = 1
+stretch_mode = 5
+z_index = 8
+
+[node name="BurntSmokeVisual" type="TextureRect" parent="MachineStage"]
+unique_name_in_owner = true
+visible = false
+offset_left = 100.0
+offset_top = -10.0
+offset_right = 182.0
+offset_bottom = 72.0
+mouse_filter = 2
+texture = ExtResource("15_smoke")
+expand_mode = 1
+stretch_mode = 5
+z_index = 9
+
+[node name="OutputSource" type="TextureButton" parent="MachineStage"]
+unique_name_in_owner = true
+visible = false
+offset_left = 67.0
+offset_top = 4.0
+offset_right = 217.0
+offset_bottom = 105.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+z_index = 20
+
+[node name="TemperatureRangeBar" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+offset_left = 12.0
+offset_top = 162.0
+offset_right = 294.0
+offset_bottom = 176.0
+mouse_filter = 2
+script = ExtResource("24_temperature")
+
+[node name="StartButton" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 54.0
+offset_top = 175.0
+offset_right = 132.0
+offset_bottom = 207.0
+theme_override_styles/normal = SubResource("PartStyle")
+text = "启动"
+
+[node name="LiftButton" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 174.0
+offset_top = 175.0
+offset_right = 252.0
+offset_bottom = 207.0
+theme_override_styles/normal = SubResource("WarningStyle")
+text = "升篮"
+
+[node name="Dough01" type="TextureButton" parent="."]
+unique_name_in_owner = true
+offset_left = 25.0
+offset_top = 209.0
+offset_right = 83.0
+offset_bottom = 259.0
+texture_normal = ExtResource("16_raw1")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+[node name="Dough02" type="TextureButton" parent="."]
+unique_name_in_owner = true
+offset_left = 124.0
+offset_top = 209.0
+offset_right = 182.0
+offset_bottom = 259.0
+texture_normal = ExtResource("17_raw2")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+[node name="Dough03" type="TextureButton" parent="."]
+unique_name_in_owner = true
+offset_left = 223.0
+offset_top = 209.0
+offset_right = 281.0
+offset_bottom = 259.0
+texture_normal = ExtResource("18_raw3")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+
+[node name="DoughCount01" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 25.0
+offset_top = 255.0
+offset_right = 83.0
+offset_bottom = 274.0
+horizontal_alignment = 1
+[node name="DoughCount02" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 124.0
+offset_top = 255.0
+offset_right = 182.0
+offset_bottom = 274.0
+horizontal_alignment = 1
+[node name="DoughCount03" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 223.0
+offset_top = 255.0
+offset_right = 281.0
+offset_bottom = 274.0
+horizontal_alignment = 1
+
+[node name="Restock01" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 25.0
+offset_top = 273.0
+offset_right = 83.0
+offset_bottom = 298.0
+text = "补"
+script = ExtResource("23_restock")
+[node name="Restock02" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 124.0
+offset_top = 273.0
+offset_right = 182.0
+offset_bottom = 298.0
+text = "补"
+script = ExtResource("23_restock")
+[node name="Restock03" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 223.0
+offset_top = 273.0
+offset_right = 281.0
+offset_bottom = 298.0
+text = "补"
+script = ExtResource("23_restock")
+
+[node name="AutoLoadPanel" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+offset_left = 7.0
+offset_top = 301.0
+offset_right = 299.0
+offset_bottom = 339.0
+theme_override_styles/panel = SubResource("AutoPanelStyle")
+
+[node name="AutoMinusButton" type="Button" parent="AutoLoadPanel"]
+unique_name_in_owner = true
+offset_left = 5.0
+offset_top = 4.0
+offset_right = 37.0
+offset_bottom = 34.0
+text = "−"
+[node name="AutoQuantityLabel" type="Label" parent="AutoLoadPanel"]
+unique_name_in_owner = true
+offset_left = 39.0
+offset_top = 6.0
+offset_right = 72.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(1, 0.91, 0.66, 1)
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="AutoPlusButton" type="Button" parent="AutoLoadPanel"]
+unique_name_in_owner = true
+offset_left = 74.0
+offset_top = 4.0
+offset_right = 106.0
+offset_bottom = 34.0
+text = "+"
+[node name="AutoConfirmButton" type="Button" parent="AutoLoadPanel"]
+unique_name_in_owner = true
+offset_left = 110.0
+offset_top = 4.0
+offset_right = 287.0
+offset_bottom = 34.0
+text = "确认并装载"
+
+[node name="LockCover" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_colors/font_hover_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_colors/font_pressed_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_colors/font_hover_pressed_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_colors/font_focus_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("LockStyle")
+theme_override_styles/hover = SubResource("LockStyle")
+theme_override_styles/pressed = SubResource("LockStyle")
+text = "油条炸锅\n尚未安装"

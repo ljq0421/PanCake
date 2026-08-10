@@ -1,0 +1,14 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "family": "shader_texture",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "constraints": "opaque 1024x1024 tileable texture; no text, objects, border, perspective, directional light, or transparency",
+  "postprocess": "center square sample resized to 512x512 and mirrored into a 2x2 periodic 1024x1024 tile; opposite edge pixels verified identical",
+  "assets": [
+    {"asset_id":"egg_spread_material_v1_five_area_v2","imagegen_output":"exec-a531bc04-b89f-4018-94cb-ce54c902f438.png"},
+    {"asset_id":"pancake_charred_texture_v1_five_area_v2","imagegen_output":"exec-234be6e2-8ccb-4d27-a61f-af9f4dde7c37.png"},
+    {"asset_id":"pancake_cooked_texture_v1_five_area_v2","imagegen_output":"exec-74f09cdd-c774-4fea-b26c-34e1b7000005.png"},
+    {"asset_id":"pancake_edge_texture_v1_five_area_v2","imagegen_output":"exec-e568997a-1765-48e0-8e71-896e9809512e.png"}
+  ]
+}

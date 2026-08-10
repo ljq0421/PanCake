@@ -54,11 +54,10 @@ func _run() -> void:
 	_check(bool(session.call("load_f3_drink", 0, &"product.packaged_drink.milk", mismatch_id).get("success", false)), "second drink can enter empty heater")
 	session.call("advance_f3_production", 2.0)
 	var mismatch: Dictionary = session.call("deliver_heated_drink", 0, mismatch_id, 0)
-	_check(mismatch.get("reason") == &"order_item_mismatch" and StringName(Dictionary(Array(Dictionary(session.call("f3_machine_snapshot", &"device.packaged_drink_heater")).get("slots", []))[0]).get("state", &"")) == &"ready_hot", "temperature mismatch is visible and does not remove heated drink")
-	session.call("advance_f3_production", 8.31)
-	_check(bool(session.call("discard_f3_drink", 0).get("success", false)), "cooled mismatch drink is explicitly discarded")
+	_check(bool(mismatch.get("success", false)) and not bool(mismatch.get("will_match", true)) and Array(mismatch.get("mismatch_reasons", [])).has("temperature_mode") and StringName(Dictionary(Array(Dictionary(session.call("f3_machine_snapshot", &"device.packaged_drink_heater")).get("slots", []))[0]).get("state", &"")) == &"empty", "temperature mismatch is visible on the tray and removes the physical heater output")
+	_check(bool(session.call("remove_staged_product", mismatch_id, 0, &"waste").get("success", false)), "heated mismatch is explicitly dragged from tray to waste")
 	var production: Dictionary = session.call("five_area_production_snapshot")
-	_check(Array(production.get("waste_events", [])).size() == 1, "discard records one drink waste event")
+	_check(Array(production.get("waste_events", [])).size() == 1, "tray discard records one heated-drink waste event")
 	_finish()
 
 

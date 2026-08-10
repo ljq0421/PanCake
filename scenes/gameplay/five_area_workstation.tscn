@@ -1,12 +1,53 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/fresh_soy_milk_station.tscn" id="2_soy"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/steamer_station.tscn" id="3_steamer"]
-[ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="4_controller"]
+[ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="2_controller"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_soy_station.tscn" id="3_soy"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_youtiao_station.tscn" id="4_youtiao"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_packaged_drink_station.tscn" id="5_drink"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_steamer_station.tscn" id="6_steamer"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/customer_handoff_tray.tscn" id="7_tray"]
+[ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="8_disposition"]
+[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="9_source"]
+
+[sub_resource type="StyleBoxFlat" id="WasteStyle"]
+bg_color = Color(0.72, 0.18, 0.1, 0.9)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.98, 0.68, 0.26, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.18, 0.08, 0.03, 0.35)
+shadow_size = 6
 
 [node name="Workstation" instance=ExtResource("1_base")]
-script = ExtResource("4_controller")
+script = ExtResource("2_controller")
+
+[node name="FiveAreaStationArtwork" parent="SafeArea"]
+visible = false
+
+[node name="FiveAreaStationClickLayers" parent="SafeArea"]
+visible = false
+mouse_filter = 2
+
+[node name="OrderDishTarget1" parent="SafeArea/OrderCard"]
+disabled = true
+mouse_filter = 2
+tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+
+[node name="OrderDishTarget2" parent="SafeArea/OrderCard"]
+disabled = true
+mouse_filter = 2
+tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+
+[node name="OrderDishTarget3" parent="SafeArea/OrderCard"]
+disabled = true
+mouse_filter = 2
+tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
 
 [node name="FiveAreaInfrastructure" type="Control" parent="."]
 layout_mode = 1
@@ -19,116 +60,156 @@ mouse_filter = 2
 
 [node name="Stations" type="Control" parent="FiveAreaInfrastructure"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -235.0
-offset_top = -155.0
-offset_right = 235.0
-offset_bottom = 155.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
-layout_mode = 1
-mouse_filter = 2
-
-[node name="PackagedDrinkStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
-layout_mode = 1
-mouse_filter = 2
-
-[node name="YoutiaoStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
-layout_mode = 1
-mouse_filter = 2
-
-[node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("2_soy")]
-visible = false
-layout_mode = 1
-
-[node name="SteamerStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("3_steamer")]
-visible = false
-layout_mode = 1
-
-[node name="OrderQueue" type="VBoxContainer" parent="FiveAreaInfrastructure"]
+[node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("3_soy")]
 layout_mode = 0
-offset_left = 1540.0
-offset_top = 140.0
-offset_right = 1892.0
-offset_bottom = 492.0
+offset_left = 8.0
+offset_top = 610.0
+offset_right = 314.0
+offset_bottom = 950.0
+
+[node name="YoutiaoStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("4_youtiao")]
+layout_mode = 0
+offset_left = 320.0
+offset_top = 610.0
+offset_right = 626.0
+offset_bottom = 950.0
+
+[node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
+layout_mode = 0
+offset_left = 650.0
+offset_top = 610.0
+offset_right = 1270.0
+offset_bottom = 950.0
 mouse_filter = 2
 
-[node name="OrderCard01" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+[node name="PackagedDrinkStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("5_drink")]
+layout_mode = 0
+offset_left = 1294.0
+offset_top = 570.0
+offset_right = 1600.0
+offset_bottom = 950.0
+
+[node name="SteamerStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("6_steamer")]
+layout_mode = 0
+offset_left = 1606.0
+offset_top = 610.0
+offset_right = 1912.0
+offset_bottom = 950.0
+
+[node name="CustomerHandoffTray" parent="FiveAreaInfrastructure" instance=ExtResource("7_tray")]
+layout_mode = 0
+offset_left = 705.0
+offset_top = 350.0
+offset_right = 1215.0
+offset_bottom = 570.0
+z_index = 6
+
+[node name="PancakeReadySource" type="TextureButton" parent="FiveAreaInfrastructure"]
+unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(352, 78)
-layout_mode = 2
-mouse_filter = 2
+layout_mode = 0
+offset_left = 850.0
+offset_top = 690.0
+offset_right = 1070.0
+offset_bottom = 870.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("9_source")
 
-[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard01"]
-layout_mode = 2
-mouse_filter = 2
-text = ""
-
-[node name="OrderCard02" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure"]
+unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(352, 78)
-layout_mode = 2
-mouse_filter = 2
+layout_mode = 0
+offset_left = 1165.0
+offset_top = 790.0
+offset_right = 1275.0
+offset_bottom = 858.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("9_source")
 
-[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard02"]
-layout_mode = 2
-mouse_filter = 2
-text = ""
-
-[node name="OrderCard03" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure"]
+unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(352, 78)
-layout_mode = 2
-mouse_filter = 2
+layout_mode = 0
+offset_left = 1165.0
+offset_top = 862.0
+offset_right = 1275.0
+offset_bottom = 930.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("9_source")
 
-[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard03"]
-layout_mode = 2
-mouse_filter = 2
-text = ""
-
-[node name="OrderCard04" type="PanelContainer" parent="FiveAreaInfrastructure/OrderQueue"]
+[node name="TrayPaymentButton" type="Button" parent="FiveAreaInfrastructure"]
+unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(352, 78)
-layout_mode = 2
-mouse_filter = 2
+layout_mode = 0
+z_index = 7
+offset_left = 825.0
+offset_top = 515.0
+offset_right = 1095.0
+offset_bottom = 595.0
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.31, 0.17, 0.04, 1)
+theme_override_colors/font_hover_color = Color(0.5, 0.24, 0.02, 1)
+theme_override_font_sizes/font_size = 24
+text = "金币 ×0\n点击收币"
 
-[node name="Summary" type="Label" parent="FiveAreaInfrastructure/OrderQueue/OrderCard04"]
+[node name="WasteArea" type="Control" parent="FiveAreaInfrastructure"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1188.0
+offset_top = 704.0
+offset_right = 1288.0
+offset_bottom = 784.0
+mouse_filter = 0
+script = ExtResource("8_disposition")
+disposition = "waste"
+
+[node name="Bin" type="PanelContainer" parent="FiveAreaInfrastructure/WasteArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("WasteStyle")
+
+[node name="Label" type="Label" parent="FiveAreaInfrastructure/WasteArea/Bin"]
 layout_mode = 2
 mouse_filter = 2
-text = ""
+theme_override_colors/font_color = Color(1, 0.94, 0.76, 1)
+theme_override_font_sizes/font_size = 20
+text = "废弃区\n加工品只能丢这里"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure"]
 layout_mode = 0
-offset_left = 1540.0
-offset_top = 18.0
-offset_right = 1892.0
-offset_bottom = 128.0
+offset_left = 1420.0
+offset_top = 145.0
+offset_right = 1890.0
+offset_bottom = 235.0
 mouse_filter = 2
+theme_override_constants/separation = 2
 
 [node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
 layout_mode = 2
 mouse_filter = 2
-
+horizontal_alignment = 2
 [node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
 layout_mode = 2
 mouse_filter = 2
-
+horizontal_alignment = 2
 [node name="Attention03" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
 layout_mode = 2
 mouse_filter = 2
-
-[node name="CloseButton" type="Button" parent="FiveAreaInfrastructure"]
-visible = false
-layout_mode = 0
-offset_left = 1190.0
-offset_top = 210.0
-offset_right = 1280.0
-offset_bottom = 262.0
-text = "关闭"
+horizontal_alignment = 2

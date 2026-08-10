@@ -329,6 +329,27 @@ func collect_soy_output(slot_index: int) -> Dictionary:
 	return committed
 
 
+func preview_collect_soy_output(slot_index: int) -> Dictionary:
+	var snapshot := machine_snapshot(SOY_DEVICE)
+	var rack := Array(snapshot.get("output_rack", []))
+	if slot_index < 0 or slot_index >= rack.size() or Dictionary(rack[slot_index]).is_empty():
+		return _failure(&"output_slot_empty", {"slot_index": slot_index})
+	var cup := Dictionary(rack[slot_index])
+	var recipe := CATALOG.recipe_definition(StringName(cup.get("recipe_id", &"")))
+	var product_id := StringName(recipe.get("product_id", &""))
+	if product_id.is_empty():
+		return _failure(&"invalid_output_product", {"slot_index": slot_index})
+	var product := _new_product(
+		product_id,
+		&"area.fresh_soy_milk",
+		&"room_temperature",
+		float(cup.get("quality", 0.0)),
+		StringName(cup.get("grade", &"waste")),
+		false,
+	)
+	return _success({"product": product, "slot_index": slot_index})
+
+
 func discard_soy() -> Dictionary:
 	var before := machine_snapshot(SOY_DEVICE)
 	var result: Dictionary = _soy.call("discard")
@@ -423,6 +444,24 @@ func discard_steamer(layer_index: int) -> Dictionary:
 
 func waste_events() -> Array[Dictionary]:
 	return _waste_events.duplicate(true)
+
+
+func record_staged_waste(product: Dictionary, reason: StringName = &"staged_product_discarded") -> Dictionary:
+	var product_id := StringName(product.get("product_id", &""))
+	if product_id.is_empty():
+		return _failure(&"invalid_product")
+	var definition := CATALOG.product_definition(product_id)
+	var stock_id := StringName(definition.get("stock_id", &""))
+	var attributed_cost := maxi(int(product.get("material_cost", _stock_cost(stock_id))), 0)
+	var entry := _record_waste(
+		StringName(product.get("area_id", definition.get("area_id", &""))),
+		&"customer_handoff_tray",
+		product_id,
+		reason,
+		1,
+		attributed_cost,
+	)
+	return _success({"waste": entry})
 
 
 func snapshot() -> Dictionary:

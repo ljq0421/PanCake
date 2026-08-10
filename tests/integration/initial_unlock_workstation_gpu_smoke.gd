@@ -4,6 +4,7 @@ const MAIN_SCENE := preload("res://scenes/main/main.tscn")
 const SCREENSHOT_PATH := "res://tmp/validation/initial_unlock_workstation_gpu_1920x1080.png"
 const SCREENSHOT_1280_PATH := "res://tmp/validation/initial_unlock_workstation_gpu_1280x720.png"
 const REFILL_SCREENSHOT_PATH := "res://tmp/validation/workstation_hold_refill_gpu_1920x1080.png"
+const EGG_CRACK_SCREENSHOT_PATH := "res://tmp/validation/egg_crack_above_griddle_gpu_1920x1080.png"
 
 var _failures := PackedStringArray()
 
@@ -39,9 +40,12 @@ func _run() -> void:
 	await process_frame
 	var feedback_progression: RefCounted = game_session.call("progression_service")
 	var feedback_owned_growth: Dictionary = Dictionary(feedback_progression.get("owned_growth_ids")).duplicate(true)
-	for growth_id in [&"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush", &"growth.capacity.pancake_holding_tray.two_slots"]:
+	for growth_id in [&"growth.automation.pancake.press_once", &"growth.capacity.pancake_holding_tray.two_slots", &"growth.add_on.pancake.red_chili"]:
 		feedback_owned_growth[growth_id] = true
 	feedback_progression.set("owned_growth_ids", feedback_owned_growth)
+	var feedback_unlocked_stock: Dictionary = Dictionary(feedback_progression.get("unlocked_stock_ids")).duplicate(true)
+	feedback_unlocked_stock[&"stock.pancake.sauce.red_chili"] = true
+	feedback_progression.set("unlocked_stock_ids", feedback_unlocked_stock)
 	workstation.call("apply_progression_effects", game_session.call("five_area_progression_snapshot"))
 	workstation.call("_refresh_pancake_holding_tray")
 	var t_spreader := workstation.get_node("SafeArea/LeftRack/ScraperButton") as Button
@@ -49,7 +53,7 @@ func _run() -> void:
 	var press_spreader := workstation.get_node("SafeArea/LeftRack/PressSpreaderButton") as Button
 	var legacy_automatic_brush := workstation.get_node("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
 	var empty_holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
-	_check(t_spreader.visible and press_spreader.visible and automatic_brush.visible and not legacy_automatic_brush.visible, "the T spreader and the independent press are both player-visible after purchasing the press")
+	_check(t_spreader.visible and press_spreader.visible and not automatic_brush.visible and automatic_brush.disabled and not legacy_automatic_brush.visible, "the T spreader and independent press remain visible while both standalone sauce-brush controls stay outside the player path")
 	var press_center := press_spreader.get_global_rect().get_center()
 	_move_at(press_center)
 	await process_frame
@@ -60,15 +64,60 @@ func _run() -> void:
 	await process_frame
 	_check(press_hovered == press_spreader, "the independent press owns its visible click region; hovered=%s" % str(press_hovered.get_path() if press_hovered != null else "none"))
 	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "real independent-press click outside its window gives player-visible guidance")
-	_click_control(automatic_brush)
+	var saved_order: Dictionary = workstation.p1_session.order.duplicate(true)
+	workstation.pancake_model.coverage.fill(1.0)
+	workstation.pancake_model.thickness.fill(0.5)
+	workstation.pancake_model.changed.emit()
+	workstation.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
+	workstation.call("_refresh_p1_ui")
+	controller.call("_refresh_sauce_controls")
+	var sweet_sauce_button := workstation.get_node("SafeArea/RightRack/SauceRefillButton") as Button
+	var chili_sauce_button := workstation.get_node("SafeArea/RightRack/ChiliSauceRefillButton") as Button
+	_check(chili_sauce_button.visible and not chili_sauce_button.disabled and chili_sauce_button.mouse_filter == Control.MOUSE_FILTER_STOP and is_equal_approx(chili_sauce_button.get_global_rect().end.x, sweet_sauce_button.get_global_rect().position.x), "unlocked chili owns an adjacent real hit region immediately left of sweet sauce")
+	var chili_center := chili_sauce_button.get_global_rect().get_center()
+	_move_at(chili_center)
 	await process_frame
-	_check(not (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.is_empty(), "real automatic-brush click outside its window gives player-visible guidance")
+	var chili_hovered := root.gui_get_hovered_control()
+	_press_at(chili_center)
+	await process_frame
+	_release_at(chili_center)
+	await process_frame
+	_check(
+		chili_hovered == chili_sauce_button
+		and workstation.current_sauce_type == &"red_chili"
+		and float(workstation.sauce_tool_states[&"red_chili"].load) > 0.0
+		and workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH
+		and workstation.pancake_surface.cursor_is_sauce_brush
+		and workstation.pancake_surface.cursor_sauce_color.is_equal_approx(Color(0.82, 0.055, 0.025, 0.98)),
+		"without the automatic brush, real chili pointer release loads and equips the red manual brush; hovered=%s sauce=%s tool=%s load=%s squeezing=%s" % [
+			str(chili_hovered.get_path() if chili_hovered != null else "none"),
+			str(workstation.pancake_model.total_sauce(&"red_chili")),
+			str(workstation.tool_controller.current_tool),
+			str(workstation.sauce_tool_states[&"red_chili"].load),
+			str(workstation.get("_squeezing_sauce")),
+		]
+	)
+	var sauce_surface_center: Vector2 = workstation.pancake_surface.get_global_rect().get_center()
+	await _slow_drag(sauce_surface_center - Vector2(35.0, 0.0), sauce_surface_center + Vector2(35.0, 0.0), 12)
+	await process_frame
+	_check(workstation.pancake_model.total_sauce(&"red_chili") > 0.0, "real pointer dragging the equipped red brush writes chili concentration into the pancake model")
+	feedback_owned_growth[&"growth.automation.pancake.auto_sauce_brush"] = true
+	feedback_progression.set("owned_growth_ids", feedback_owned_growth)
+	workstation.call("apply_progression_effects", game_session.call("five_area_progression_snapshot"))
+	var sweet_center := sweet_sauce_button.get_global_rect().get_center()
+	_move_at(sweet_center)
+	await process_frame
+	var sweet_hovered := root.gui_get_hovered_control()
+	_press_at(sweet_center)
+	await process_frame
+	_release_at(sweet_center)
+	await process_frame
+	_check(sweet_hovered == sweet_sauce_button and workstation.pancake_model.total_sauce(&"sweet_flour") > 0.0, "real sweet pointer release uses the same bottle-to-automatic-brush path")
+	workstation.p1_session.start(saved_order)
+	workstation.call("reset_pancake")
 	_move_at(empty_holding_slot.get_global_rect().get_center())
 	await process_frame
-	_click_control(empty_holding_slot)
-	await process_frame
-	var empty_tray_status := (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text
-	_check(empty_tray_status.contains("暂存格为空") or empty_tray_status.contains("成品暂存用法"), "real empty holding-slot click explains how to store a pancake; status=%s" % empty_tray_status)
+	_check(empty_holding_slot.disabled and empty_holding_slot.mouse_filter == Control.MOUSE_FILTER_IGNORE and root.gui_get_hovered_control() != empty_holding_slot, "holding slots are real-pointer display surfaces rather than delivery controls")
 	var locked_click_layers := workstation.get_node("SafeArea/FiveAreaStationClickLayers") as Control
 	for click_layer_name in [&"FreshSoyMilkLockedClickLayer", &"YoutiaoLockedClickLayer", &"PackagedDrinkLockedClickLayer", &"SteamerLockedClickLayer"]:
 		var click_layer := locked_click_layers.get_node(NodePath(str(click_layer_name))) as Button
@@ -116,9 +165,7 @@ func _run() -> void:
 	_check(not bool(surface.get("pointer_pressed")), "the interactive pancake surface rejects a local click outside the elliptical cooking face")
 	_click_control(ladle)
 	await process_frame
-	_click_at(surface.get_global_rect().get_center())
-	await process_frame
-	_check(bool(workstation.get("pour_used")), "real GUI click pours batter through the scaled surface")
+	_check(bool(workstation.get("pour_used")), "real GUI click on the ladle performs the established automatic center pour")
 	await _click_control_settled(press_spreader)
 	await process_frame
 	_check(
@@ -132,10 +179,23 @@ func _run() -> void:
 	await process_frame
 	var pointer_local: Vector2 = surface.get("pointer_local_position")
 	_check(pointer_local.distance_to(Vector2(surface.size.x * 0.22, surface.size.y * 0.50)) < 3.0, "GPU pointer path reaches the scaled griddle edge and maps into local space")
-	_drag(egg.get_global_rect().get_center(), surface.get_global_rect().get_center())
+	var off_center_egg_drop := surface.get_global_rect().get_center() + Vector2(72.0, 0.0)
+	_drag(egg.get_global_rect().get_center(), off_center_egg_drop)
 	await process_frame
 	var ingredient_model: RefCounted = workstation.get("ingredient_model")
 	_check(bool(ingredient_model.call("has_type", &"egg")), "real GUI drag places a direct ingredient on the scaled surface")
+	var egg_crack_effect := workstation.get_node("SafeArea/PanBase/PancakeSurface/EggCrackEffect") as AnimatedSprite2D
+	var egg_crack_artwork := workstation.get_node("SafeArea/PanBase/PancakeSurface/EggCrackArtwork") as Sprite2D
+	var gpu_egg_placement: Dictionary = workstation.ingredient_model.placements.back()
+	var gpu_egg_placement_position: Vector2 = gpu_egg_placement.get("position", Vector2.ZERO)
+	var gpu_egg_grid_center := Vector2.ONE * float(workstation.pancake_model.grid_size - 1) * 0.5
+	_check(gpu_egg_placement_position.is_equal_approx(gpu_egg_grid_center), "real off-center egg drop stores the egg ingredient at the fixed model center")
+	_check(egg_crack_effect.visible and egg_crack_effect.position.is_equal_approx(Vector2(surface.size.x * 0.5, 0.0)) and egg_crack_artwork.position.is_equal_approx(surface.size * 0.5), "real off-center egg drop displays the lowered crack frames and raw egg at the fixed pancake center")
+	await RenderingServer.frame_post_draw
+	var egg_crack_output_absolute := ProjectSettings.globalize_path(EGG_CRACK_SCREENSHOT_PATH)
+	var egg_crack_image := root.get_texture().get_image()
+	var egg_crack_save_error := egg_crack_image.save_png(egg_crack_output_absolute)
+	_check(egg_crack_save_error == OK and egg_crack_image.get_size() == Vector2i(1920, 1080), "captured the active above-griddle egg crack effect in a real GPU frame")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SCRAPER and t_spreader.button_pressed, "placing egg automatically restores the T spreader and never reuses the press")
 	var stock_model: RefCounted = workstation.get("ingredient_stock_model")
 	_check(int(stock_model.call("current", &"egg")) == 1, "short real GUI drag consumes exactly one visible egg portion")
@@ -232,6 +292,8 @@ func _run() -> void:
 	owned_growth[&"growth.capacity.pancake_holding_tray.two_slots"] = true
 	session_progression.set("owned_growth_ids", owned_growth)
 	var active_formal_order: Dictionary = game_session.call("active_formal_order")
+	var target_order_id := StringName(active_formal_order.get("order_id", &""))
+	var target_service_slot := int(active_formal_order.get("service_slot", 0))
 	var active_item: Dictionary = Dictionary(Array(active_formal_order.get("items", []))[0])
 	var tray_product := {
 		"product_instance_id": &"gpu.route.pancake.1",
@@ -245,15 +307,25 @@ func _run() -> void:
 	workstation.call("reset_pancake")
 	workstation.call("_refresh_pancake_holding_tray")
 	var holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
-	_check(bool(stored_for_route.get("success", false)) and holding_slot.visible and not holding_slot.disabled, "formal tray displays a stored pancake for the active formal order")
-	_move_at(holding_slot.get_global_rect().get_center())
+	_check(bool(stored_for_route.get("success", false)) and holding_slot.visible and holding_slot.disabled and holding_slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "formal tray displays a stored pancake without becoming a delivery button")
+	var customer_slot := workstation.get_node("SafeArea/CustomerStrip/CustomerSlot%d" % (target_service_slot + 1)) as Button
+	_move_at(customer_slot.get_global_rect().get_center())
 	await process_frame
-	_click_control(holding_slot)
+	_click_control(customer_slot)
 	await process_frame
-	var order_after_tray_click: Dictionary = game_session.call("active_formal_order")
+	var order_after_customer_click: Dictionary = game_session.call("formal_order", target_order_id)
+	var slots_after_customer_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	_check(StringName(order_after_customer_click.get("state", &"")) != &"settled" and not slots_after_customer_click.is_empty() and not Dictionary(slots_after_customer_click[0]).is_empty(), "real customer click only focuses the order and does not deliver the displayed tray product")
+	var order_dish_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
+	_check(order_dish_target.disabled and order_dish_target.mouse_filter == Control.MOUSE_FILTER_IGNORE, "order-card product art is a read-only hint rather than a delivery target")
+	_move_at(order_dish_target.get_global_rect().get_center())
+	await process_frame
+	_click_control(order_dish_target)
+	await process_frame
+	var order_after_tray_click: Dictionary = game_session.call("formal_order", target_order_id)
 	var slots_after_tray_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
-	var tray_click_completed := order_after_tray_click.is_empty() and not slots_after_tray_click.is_empty() and Dictionary(slots_after_tray_click[0]).is_empty()
-	_check(tray_click_completed, "real tray click routes the product into and settles the active formal order; status=%s formal_id=%s phase=%s" % [str(workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel").text), str(workstation.get("_formal_order_id")), str(workstation.get("p1_session").get("phase"))])
+	var tray_click_is_read_only := StringName(order_after_tray_click.get("state", &"")) != &"settled" and not slots_after_tray_click.is_empty() and not Dictionary(slots_after_tray_click[0]).is_empty()
+	_check(tray_click_is_read_only, "real order-icon click cannot route or consume a stored product; delivery requires physical drag to the customer tray")
 	workstation.get("payment_coin_model").call("add_payment", 3)
 	var payment_denominations: Array[int] = [2, 1]
 	workstation._spawn_payment_flight(payment_denominations)
@@ -271,7 +343,7 @@ func _run() -> void:
 	_check(int(workstation.payment_coin_model.pending_total) == 0 and workstation._pending_payment_sprites.is_empty(), "clicking a visible coin collects the pending payment")
 	game.queue_free()
 	await process_frame
-	_finish(output_absolute, refill_output_absolute)
+	_finish(output_absolute, refill_output_absolute, egg_crack_output_absolute)
 
 
 func _wait_until(condition: Callable, timeout_seconds: float) -> bool:
@@ -427,12 +499,13 @@ func _check(condition: bool, message: String) -> void:
 		_failures.append(message)
 
 
-func _finish(output_absolute: String, refill_output_absolute: String) -> void:
+func _finish(output_absolute: String, refill_output_absolute: String, egg_crack_output_absolute: String) -> void:
 	if _failures.is_empty():
 		print("INITIAL_UNLOCK_WORKSTATION_GPU_SMOKE_PASS")
 		print("INITIAL_SCREENSHOT=%s" % output_absolute)
 		print("INITIAL_SCREENSHOT_1280=%s" % ProjectSettings.globalize_path(SCREENSHOT_1280_PATH))
 		print("REFILL_SCREENSHOT=%s" % refill_output_absolute)
+		print("EGG_CRACK_SCREENSHOT=%s" % egg_crack_output_absolute)
 		quit(0)
 		return
 	for failure in _failures:

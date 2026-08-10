@@ -51,7 +51,9 @@ func _run() -> void:
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH, "sauce brush button selects the brush tool")
 	var load_before := float(workstation.sauce_tool_state.load)
 	var surface_center := surface.size * 0.5
-	var brush_half_width := surface.size.x * 0.32
+	# Start inside the center brushing zone; the outer edge is intentionally the
+	# direct fold gesture even while the sauce brush is held.
+	var brush_half_width := surface.size.x * 0.18
 	var brush_half_height := surface.size.y * 0.16
 	_brush_path(workstation, surface, [
 		surface_center + Vector2(-brush_half_width, -brush_half_height),

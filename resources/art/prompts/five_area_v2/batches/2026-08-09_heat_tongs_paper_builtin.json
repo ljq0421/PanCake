@@ -1,0 +1,45 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "workstation_sprite",
+  "shared_style": "rounded chibi Chinese breakfast-game workstation props, clean deep warm-brown outlines, warm cel-shaded highlights, simplified polished materials",
+  "shared_constraints": "match legacy silhouette, orientation, component count, and normal-versus-upgrade construction; flat #ff00ff removable key source; transparent 512x512 final Sprite; no text, labels, people, food, floor, cast shadow, contact shadow, reflection, or scene background",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 470x470 safe area centered on the 512x512 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "heat_controller_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/heat_controller_upgrade_v1.png",
+      "imagegen_output": "exec-3d949445-748e-494e-8b41-5e2d8b70cecc.png",
+      "semantic_contract": "teal rounded controller, cream plate, four gold screws, dark rotary dial with orange pointer, teal-to-red heat blocks, amber indicator, and one top cable",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "ingredient_tongs_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/ingredient_tongs_v1.png",
+      "imagegen_output": "exec-bc560a01-4367-4fd7-80af-c1be3d1968ee.png",
+      "semantic_contract": "ordinary open silver ingredient tongs with scalloped silver tips and exactly one orange wooden grip insert",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "ingredient_tongs_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/ingredient_tongs_upgrade_v1.png",
+      "imagegen_output": "exec-b31482ac-ed1d-46d3-abbd-8dee75cc975d.png",
+      "semantic_contract": "upgraded open silver tongs with one gold hinge, two teal grip inserts, and two cream scalloped tips",
+      "final_canvas": [512, 512]
+    },
+    {
+      "asset_id": "oil_absorbent_paper_upgrade_v1_five_area_v2",
+      "legacy_reference": "res://resources/art/workstation/tools/oil_absorbent_paper_upgrade_v1.png",
+      "imagegen_output": "exec-0560f708-3ce8-4bb3-9f24-7a0e916d4f18.png",
+      "semantic_contract": "warm-white embossed absorbent paper pad with teal reinforced border, one lower-right pull tab, and exactly two guide lines",
+      "final_canvas": [512, 512]
+    }
+  ]
+}

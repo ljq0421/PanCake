@@ -7,6 +7,13 @@ const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01",
 	&"customer_02",
 	&"customer_03",
+	&"customer_04",
+	&"customer_05",
+	&"customer_06",
+	&"customer_07",
+	&"customer_08",
+	&"customer_09",
+	&"customer_10",
 ]
 
 var _order_service: RefCounted

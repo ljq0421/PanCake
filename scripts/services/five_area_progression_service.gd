@@ -8,6 +8,7 @@ extends RefCounted
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const INSTALL_SLOT := &"install"
 const CONTENT_SLOT := &"content"
+const DAY_END_GROWTH_CARD_COUNT := 3
 
 var coins := 0
 var reputation := 0
@@ -131,11 +132,11 @@ func set_day_open(value: bool) -> void:
 
 
 func purchase_status(growth_id: StringName) -> Dictionary:
-	return _evaluate_purchase(growth_id)
+	return _effective_purchase_status(growth_id)
 
 
 func purchase(growth_id: StringName) -> Dictionary:
-	var evaluation := _evaluate_purchase(growth_id)
+	var evaluation := _effective_purchase_status(growth_id)
 	if not bool(evaluation.get("can_purchase", false)):
 		return {"success": false, "reason": evaluation.get("reason", &"purchase_unavailable"), "status": evaluation}
 	var slot: StringName = evaluation.get("purchase_slot", &"")
@@ -152,15 +153,13 @@ func purchase(growth_id: StringName) -> Dictionary:
 
 func growth_recommendations(limit_total: int = 3) -> Dictionary:
 	var safe_limit := maxi(limit_total, 0)
+	var raw_recommendations := _raw_growth_window(maxi(safe_limit, DAY_END_GROWTH_CARD_COUNT))
+	var coin_guarantee_growth_id := _day_end_coin_guarantee_growth_id(raw_recommendations)
 	var recommended: Array[Dictionary] = []
-	for route_index in CATALOG.FIXED_GROWTH_ROUTE.size():
-		if recommended.size() >= safe_limit:
-			break
-		var growth_id: StringName = CATALOG.FIXED_GROWTH_ROUTE[route_index]
-		var status := _evaluate_purchase(growth_id)
-		if bool(status.get("already_owned", false)):
-			continue
-		status["route_index"] = route_index
+	for index in mini(safe_limit, raw_recommendations.size()):
+		var status: Dictionary = raw_recommendations[index].duplicate(true)
+		if StringName(status.get("growth_id", &"")) == coin_guarantee_growth_id:
+			status = _apply_coin_guarantee(status)
 		recommended.append(status)
 
 	var install: Array[Dictionary] = []
@@ -179,6 +178,81 @@ func growth_recommendations(limit_total: int = 3) -> Dictionary:
 		"content": content,
 		"nearest_locked": nearest_locked,
 	}
+
+
+func _effective_purchase_status(growth_id: StringName) -> Dictionary:
+	var status := _evaluate_purchase(growth_id)
+	var coin_guarantee_growth_id := _day_end_coin_guarantee_growth_id(_raw_growth_window(DAY_END_GROWTH_CARD_COUNT))
+	if growth_id == coin_guarantee_growth_id:
+		return _apply_coin_guarantee(status)
+	return status
+
+
+func _raw_growth_window(limit_total: int) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var safe_limit := maxi(limit_total, 0)
+	for route_index in CATALOG.FIXED_GROWTH_ROUTE.size():
+		if result.size() >= safe_limit:
+			break
+		var growth_id: StringName = CATALOG.FIXED_GROWTH_ROUTE[route_index]
+		var status := _evaluate_purchase(growth_id)
+		if bool(status.get("already_owned", false)):
+			continue
+		status["route_index"] = route_index
+		result.append(status)
+	return result
+
+
+func _day_end_coin_guarantee_growth_id(raw_recommendations: Array[Dictionary]) -> StringName:
+	if day_open or raw_recommendations.is_empty():
+		return &""
+	var canonical_count := mini(DAY_END_GROWTH_CARD_COUNT, raw_recommendations.size())
+	for index in canonical_count:
+		if _status_has_coin_path(raw_recommendations[index]):
+			return &""
+	var frontier: Dictionary = raw_recommendations.front()
+	if bool(frontier.get("pending_activation", false)):
+		return &""
+	var purchase_slot := StringName(frontier.get("purchase_slot", &""))
+	if purchase_slot not in [INSTALL_SLOT, CONTENT_SLOT] or not _pending_for(purchase_slot).is_empty():
+		return &""
+	return StringName(frontier.get("growth_id", &""))
+
+
+func _status_has_coin_path(status: Dictionary) -> bool:
+	if bool(status.get("can_purchase", false)):
+		return true
+	var missing_requirements: Array = Array(status.get("missing_requirements", []))
+	if missing_requirements.is_empty():
+		return false
+	for requirement_variant in missing_requirements:
+		var requirement := Dictionary(requirement_variant)
+		if StringName(requirement.get("reason", &"")) != &"insufficient_coins":
+			return false
+	return true
+
+
+func _apply_coin_guarantee(status: Dictionary) -> Dictionary:
+	var effective := status.duplicate(true)
+	effective["coin_guarantee"] = true
+	var preserved_requirements: Array[Dictionary] = []
+	for requirement_variant in Array(status.get("missing_requirements", [])):
+		var requirement := Dictionary(requirement_variant).duplicate(true)
+		var reason := StringName(requirement.get("reason", &""))
+		if reason in [&"insufficient_coins", &"purchase_slot_occupied", &"unknown_growth"]:
+			preserved_requirements.append(requirement)
+	effective["missing_requirements"] = preserved_requirements
+	if preserved_requirements.is_empty():
+		effective["can_purchase"] = true
+		effective["reason"] = &""
+		return effective
+	effective["can_purchase"] = false
+	var primary_requirement: Dictionary = preserved_requirements.front()
+	effective["reason"] = primary_requirement.get("reason", &"purchase_unavailable")
+	for key in primary_requirement:
+		if key != "reason":
+			effective[key] = primary_requirement[key]
+	return effective
 
 
 func record_area_result(area_id: StringName, result: Dictionary) -> Dictionary:
@@ -381,7 +455,9 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 		"target_area_id": StringName(definition.get("area_id", &"")),
 		"already_owned": false,
 		"pending_activation": false,
+		"coin_guarantee": false,
 		"can_purchase": false,
+		"current_coins": coins,
 		"reason": &"",
 		"missing_requirements": [],
 	}

@@ -1,0 +1,46 @@
+{
+  "date": "2026-08-09",
+  "mode": "built-in ImageGen",
+  "use_case": "stylized-concept",
+  "style_anchor": "res://resources/art/customers/customer_01/customer_01_neutral_v1.png",
+  "family": "item_icon",
+  "shared_style": "rounded chibi Chinese breakfast-game food sprites, clean deep warm-brown outlines, warm cel-shaded highlights, polished readable materials",
+  "shared_constraints": "flat #ff00ff removable key source; transparent 256x256 final Sprite; one centered food item; no text, labels, people, floor, cast shadow, contact shadow, reflection, scene background, plate, tray, basket, or steamer",
+  "postprocess": {
+    "helper": "C:/Users/Administrator/.codex/skills/.system/imagegen/scripts/remove_chroma_key.py",
+    "parameters": "--auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill",
+    "low_alpha_scrub": 8,
+    "placement": "crop to nonzero alpha bounds, preserve aspect ratio, LANCZOS fit into a 230x230 safe area centered on the 256x256 manifest canvas"
+  },
+  "assets": [
+    {
+      "asset_id": "sugar_oil_cake_dough_five_area_v2",
+      "state_reference": "res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png",
+      "imagegen_output": "exec-c196d26e-20c1-40a0-bc2d-39ce74aadc6d.png",
+      "semantic_contract": "matching broad round raw oil-cake disk with exactly three center slits and one dark reddish-brown sugar-dough top layer surrounded by a pale plain-dough rim",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "sugar_oil_cake_five_area_v2",
+      "state_reference": "sugar_oil_cake_dough_five_area_v2",
+      "fried_style_reference": "res://resources/art/products/youtiao/oil_cake_five_area_v2.png",
+      "imagegen_output": "exec-752dd8e4-df52-4123-b3b4-d9b48db57d28.png",
+      "semantic_contract": "matching sugar oil cake after frying, with golden puffed rim, caramelized red-brown sugar top, and exactly three opened center slits",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "mantou_steaming_five_area_v2",
+      "style_reference": "res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png",
+      "imagegen_output": "exec-3a75fe9a-60a7-4890-a37d-598545c9414e.png",
+      "semantic_contract": "one plain mantou semi-finished blank in the placed-in-steamer state: compact pale matte pillow form, smooth top, tucked base, and one subtle lower-front shaping seam; no steam or steamer prop",
+      "final_canvas": [256, 256]
+    },
+    {
+      "asset_id": "mantou_cooked_five_area_v2",
+      "state_reference": "mantou_steaming_five_area_v2",
+      "imagegen_output": "exec-c0ed5b64-c1df-48cb-8d13-a3e13ebd6389.png",
+      "semantic_contract": "the same plain mantou after cooking, slightly plumper and brighter with exactly two small steam wisps; no steamer prop",
+      "final_canvas": [256, 256]
+    }
+  ]
+}

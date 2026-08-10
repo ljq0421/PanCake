@@ -31,6 +31,8 @@ var pointer_local_position := Vector2.ZERO
 var pointer_pressed := false
 var cursor_radius_pixels: float = 8.0
 var cursor_is_t_spreader := false
+var cursor_is_sauce_brush := false
+var cursor_sauce_color := Color(0.34, 0.08, 0.035, 0.98)
 var spreader_radial_angle := 0.0
 var spreader_motion_valid := false
 @export var draw_spreader_fallback := true
@@ -40,12 +42,19 @@ var _field_texture: ImageTexture
 var _damage_texture: ImageTexture
 var _sauce_texture: ImageTexture
 var _chili_sauce_texture: ImageTexture
+var _fold_sweet_sauce_texture: ImageTexture
+var _fold_chili_sauce_texture: ImageTexture
 var _egg_texture: ImageTexture
 var _last_field_image: Image
 var _last_damage_image: Image
 var _last_sauce_image: Image
 var _last_chili_sauce_image: Image
+var _last_fold_sweet_sauce_image: Image
+var _last_fold_chili_sauce_image: Image
 var _last_egg_image: Image
+var _sweet_sauce_material_image: Image
+var _chili_sauce_material_image: Image
+var _sauce_material_image_size := 0
 var _trace_points := PackedVector2Array()
 var _allocated_texture_size := 0
 var _upload_count := 0
@@ -56,7 +65,9 @@ var _source_indices := PackedInt32Array()
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	clip_contents = true
+	# The staged egg-crack sprite intentionally renders above this control.
+	# Pancake pixels remain bounded by PancakeVisual and its shader mask.
+	clip_contents = false
 	if pancake_visual.material != null:
 		pancake_visual.material = pancake_visual.material.duplicate()
 	_apply_view_mode()
@@ -122,13 +133,25 @@ func get_renderer_diagnostics() -> Dictionary:
 		"damage_texture": _damage_texture,
 		"sauce_texture": _sauce_texture,
 		"chili_sauce_texture": _chili_sauce_texture,
+		"fold_sweet_sauce_texture": _fold_sweet_sauce_texture,
+		"fold_chili_sauce_texture": _fold_chili_sauce_texture,
 		"egg_texture": _egg_texture,
 		"field_image": _last_field_image,
 		"damage_image": _last_damage_image,
 		"sauce_image": _last_sauce_image,
 		"chili_sauce_image": _last_chili_sauce_image,
+		"fold_sweet_sauce_image": _last_fold_sweet_sauce_image,
+		"fold_chili_sauce_image": _last_fold_chili_sauce_image,
 		"egg_image": _last_egg_image,
 	}
+
+
+func fold_sweet_sauce_texture() -> Texture2D:
+	return _fold_sweet_sauce_texture
+
+
+func fold_chili_sauce_texture() -> Texture2D:
+	return _fold_chili_sauce_texture
 
 
 func _on_model_changed() -> void:
@@ -178,16 +201,21 @@ func _rebuild_heatmap_texture() -> void:
 		return
 	var texture_size := clampi(render_texture_size, 32, 512)
 	_ensure_source_indices(texture_size)
+	_prepare_sauce_material_images(texture_size)
 	var pixel_count := texture_size * texture_size
 	var field_pixels := PackedByteArray()
 	var damage_pixels := PackedByteArray()
 	var sauce_pixels := PackedByteArray()
 	var chili_sauce_pixels := PackedByteArray()
+	var fold_sweet_sauce_pixels := PackedByteArray()
+	var fold_chili_sauce_pixels := PackedByteArray()
 	var egg_pixels := PackedByteArray()
 	field_pixels.resize(pixel_count * 4)
 	damage_pixels.resize(pixel_count)
 	sauce_pixels.resize(pixel_count)
 	chili_sauce_pixels.resize(pixel_count)
+	fold_sweet_sauce_pixels.resize(pixel_count * 4)
+	fold_chili_sauce_pixels.resize(pixel_count * 4)
 	egg_pixels.resize(pixel_count * 4)
 	var inverse_maximum_thickness := 1.0 / maxf(model.parameters.maximum_thickness, 0.001)
 	var inverse_maximum_sauce := 1.0 / maxf(model.parameters.sauce_maximum_concentration, 0.001)
@@ -201,8 +229,32 @@ func _rebuild_heatmap_texture() -> void:
 		var doneness_byte := roundi(clampf(model.visible_doneness_at(source_index), 0.0, 1.0) * 255.0)
 		field_pixels.encode_u32(target_index * 4, coverage_byte | (thickness_byte << 8) | (wetness_byte << 16) | (doneness_byte << 24))
 		damage_pixels[target_index] = roundi(clampf(model.damage[source_index], 0.0, 1.0) * 255.0)
-		sauce_pixels[target_index] = roundi(clampf(model.sauce_concentration[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
-		chili_sauce_pixels[target_index] = roundi(clampf(model.chili_sauce_concentration[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
+		var sweet_sauce_byte := roundi(clampf(model.sauce_concentration[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
+		var chili_sauce_byte := roundi(clampf(model.chili_sauce_concentration[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
+		sauce_pixels[target_index] = sweet_sauce_byte
+		chili_sauce_pixels[target_index] = chili_sauce_byte
+		# Match the appearance shader exactly. A linear concentration alpha makes
+		# folded sauce change strength as soon as it moves onto the curved mesh.
+		var sweet_strength := smoothstep(0.015, 0.32, float(sweet_sauce_byte) / 255.0) * 0.82
+		var chili_strength := smoothstep(0.015, 0.32, float(chili_sauce_byte) / 255.0) * 0.80
+		var sweet_alpha := roundi(clampf(sweet_strength, 0.0, 1.0) * 255.0)
+		var chili_alpha := roundi(clampf(chili_strength, 0.0, 1.0) * 255.0)
+		var target_x := target_index % texture_size
+		var target_y := floori(float(target_index) / float(texture_size))
+		var sweet_material_color := Color(0.36, 0.12, 0.045, 1.0)
+		var chili_material_color := Color(0.85, 0.13, 0.055, 1.0)
+		if _sweet_sauce_material_image != null:
+			sweet_material_color = _sweet_sauce_material_image.get_pixel(target_x, target_y)
+		if _chili_sauce_material_image != null:
+			chili_material_color = _chili_sauce_material_image.get_pixel(target_x, target_y)
+		var sweet_red := roundi(clampf(sweet_material_color.r, 0.0, 1.0) * 255.0)
+		var sweet_green := roundi(clampf(sweet_material_color.g, 0.0, 1.0) * 255.0)
+		var sweet_blue := roundi(clampf(sweet_material_color.b, 0.0, 1.0) * 255.0)
+		var chili_red := roundi(clampf(chili_material_color.r, 0.0, 1.0) * 255.0)
+		var chili_green := roundi(clampf(chili_material_color.g, 0.0, 1.0) * 255.0)
+		var chili_blue := roundi(clampf(chili_material_color.b, 0.0, 1.0) * 255.0)
+		fold_sweet_sauce_pixels.encode_u32(target_index * 4, sweet_red | (sweet_green << 8) | (sweet_blue << 16) | (sweet_alpha << 24))
+		fold_chili_sauce_pixels.encode_u32(target_index * 4, chili_red | (chili_green << 8) | (chili_blue << 16) | (chili_alpha << 24))
 		var egg_white_byte := 0
 		var egg_yolk_byte := 0
 		var egg_doneness_byte := 0
@@ -217,17 +269,23 @@ func _rebuild_heatmap_texture() -> void:
 	var damage_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, damage_pixels)
 	var sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, sauce_pixels)
 	var chili_sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, chili_sauce_pixels)
+	var fold_sweet_sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, fold_sweet_sauce_pixels)
+	var fold_chili_sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, fold_chili_sauce_pixels)
 	var egg_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, egg_pixels)
 	_last_field_image = field_image
 	_last_damage_image = damage_image
 	_last_sauce_image = sauce_image
 	_last_chili_sauce_image = chili_sauce_image
+	_last_fold_sweet_sauce_image = fold_sweet_sauce_image
+	_last_fold_chili_sauce_image = fold_chili_sauce_image
 	_last_egg_image = egg_image
-	if _field_texture == null or _damage_texture == null or _sauce_texture == null or _chili_sauce_texture == null or _egg_texture == null or _allocated_texture_size != texture_size:
+	if _field_texture == null or _damage_texture == null or _sauce_texture == null or _chili_sauce_texture == null or _fold_sweet_sauce_texture == null or _fold_chili_sauce_texture == null or _egg_texture == null or _allocated_texture_size != texture_size:
 		_field_texture = ImageTexture.create_from_image(field_image)
 		_damage_texture = ImageTexture.create_from_image(damage_image)
 		_sauce_texture = ImageTexture.create_from_image(sauce_image)
 		_chili_sauce_texture = ImageTexture.create_from_image(chili_sauce_image)
+		_fold_sweet_sauce_texture = ImageTexture.create_from_image(fold_sweet_sauce_image)
+		_fold_chili_sauce_texture = ImageTexture.create_from_image(fold_chili_sauce_image)
 		_egg_texture = ImageTexture.create_from_image(egg_image)
 		_allocated_texture_size = texture_size
 	else:
@@ -235,6 +293,8 @@ func _rebuild_heatmap_texture() -> void:
 		_damage_texture.update(damage_image)
 		_sauce_texture.update(sauce_image)
 		_chili_sauce_texture.update(chili_sauce_image)
+		_fold_sweet_sauce_texture.update(fold_sweet_sauce_image)
+		_fold_chili_sauce_texture.update(fold_chili_sauce_image)
 		_egg_texture.update(egg_image)
 	pancake_visual.texture = _field_texture
 	var shader_material := pancake_visual.material as ShaderMaterial
@@ -251,6 +311,30 @@ func _rebuild_heatmap_texture() -> void:
 	_upload_count += 1
 	_last_uploaded_revision = model.revision
 	queue_redraw()
+
+
+func _prepare_sauce_material_images(texture_size: int) -> void:
+	if _sauce_material_image_size == texture_size and _sweet_sauce_material_image != null and _chili_sauce_material_image != null:
+		return
+	var shader_material := pancake_visual.material as ShaderMaterial
+	if shader_material == null:
+		return
+	_sweet_sauce_material_image = _resized_texture_image(shader_material.get_shader_parameter(&"sweet_sauce_texture") as Texture2D, texture_size)
+	_chili_sauce_material_image = _resized_texture_image(shader_material.get_shader_parameter(&"chili_sauce_texture") as Texture2D, texture_size)
+	_sauce_material_image_size = texture_size
+
+
+func _resized_texture_image(texture: Texture2D, texture_size: int) -> Image:
+	if texture == null:
+		return null
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return null
+	if image.is_compressed():
+		image.decompress()
+	if image.get_width() != texture_size or image.get_height() != texture_size:
+		image.resize(texture_size, texture_size, Image.INTERPOLATE_BILINEAR)
+	return image
 
 
 func _ensure_source_indices(texture_size: int) -> void:
@@ -286,6 +370,8 @@ func _draw() -> void:
 		var local_position := PancakeSpace.grid_to_local(mouse_grid_cell, size, model.grid_size)
 		if cursor_is_t_spreader and draw_spreader_fallback:
 			_draw_t_spreader(local_position)
+		elif cursor_is_sauce_brush:
+			_draw_sauce_brush_cursor(local_position)
 		else:
 			draw_circle(local_position, cursor_radius_pixels, Color.WHITE, false, 2.0)
 	var center := size * 0.5
@@ -306,3 +392,13 @@ func _draw_t_spreader(position: Vector2) -> void:
 	draw_line(position - tangent * bar_half_length, position + tangent * bar_half_length, color, 8.0, true)
 	draw_line(position, position - radial * stem_length, color, 8.0, true)
 	draw_circle(position, 6.0, Color(0.16, 0.09, 0.05, 0.98))
+
+
+func _draw_sauce_brush_cursor(position: Vector2) -> void:
+	var brush_width := maxf(cursor_radius_pixels * 1.55, 14.0)
+	var bristle_depth := maxf(cursor_radius_pixels * 0.72, 8.0)
+	var bristle_rect := Rect2(position - Vector2(brush_width * 0.5, bristle_depth * 0.5), Vector2(brush_width, bristle_depth))
+	draw_rect(bristle_rect, cursor_sauce_color, true)
+	draw_rect(bristle_rect, Color(1.0, 0.88, 0.64, 0.95), false, 2.0)
+	draw_line(position - Vector2(0.0, bristle_depth * 0.5), position - Vector2(0.0, bristle_depth * 1.65), Color(0.88, 0.66, 0.34, 0.98), 5.0, true)
+	draw_circle(position, maxf(cursor_radius_pixels * 0.23, 3.0), cursor_sauce_color)

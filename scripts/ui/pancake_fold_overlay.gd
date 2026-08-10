@@ -34,6 +34,11 @@ var _animated_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
 var _animated_progress := 0.0
 var _settle_phase := 1.0
 var _fold_tween: Tween
+var _fold_sweet_sauce_texture: Texture2D
+var _fold_chili_sauce_texture: Texture2D
+var _last_sauce_front_strip_count := 0
+var _last_sauce_hidden_back_strip_count := 0
+var _last_sauce_hidden_enclosed := false
 
 
 func _ready() -> void:
@@ -59,6 +64,22 @@ func set_fold_model(value: RefCounted) -> void:
 func set_guides_visible(value: bool) -> void:
 	guides_visible = value
 	queue_redraw()
+
+
+func set_fold_sauce_textures(sweet_texture: Texture2D, chili_texture: Texture2D) -> void:
+	_fold_sweet_sauce_texture = sweet_texture
+	_fold_chili_sauce_texture = chili_texture
+	queue_redraw()
+
+
+func get_renderer_diagnostics() -> Dictionary:
+	return {
+		"fold_sweet_sauce_texture": _fold_sweet_sauce_texture,
+		"fold_chili_sauce_texture": _fold_chili_sauce_texture,
+		"sauce_front_strip_count": _last_sauce_front_strip_count,
+		"sauce_hidden_back_strip_count": _last_sauce_hidden_back_strip_count,
+		"sauce_hidden_enclosed": _last_sauce_hidden_enclosed,
+	}
 
 
 func _on_fold_changed() -> void:
@@ -139,6 +160,9 @@ func _set_package_reveal(value: float) -> void:
 
 
 func _draw() -> void:
+	_last_sauce_front_strip_count = 0
+	_last_sauce_hidden_back_strip_count = 0
+	_last_sauce_hidden_enclosed = false
 	if fold_model == null or fold_model.pancake_model == null:
 		return
 	if fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE:
@@ -332,7 +356,8 @@ func _draw_curved_flap(
 		var color1 := _fold_surface_color(tint, angle1)
 		var colors := PackedColorArray([color0, color1, color1, color0])
 		var midpoint_angle := _profile_angle(profile, (t0 + t1) * 0.5)
-		var texture := pancake_front_texture if cos(midpoint_angle) >= 0.0 else pancake_back_texture
+		var front_facing := cos(midpoint_angle) >= 0.0
+		var texture := pancake_front_texture if front_facing else pancake_back_texture
 		var clipped_surface := _clip_polygon_horizontal(folded_quad, uvs, colors, clip_min_x, clip_max_x)
 		var clipped_points: PackedVector2Array = clipped_surface.points
 		if clipped_points.size() < 3:
@@ -343,6 +368,24 @@ func _draw_curved_flap(
 			draw_colored_polygon(clipped_points, color0 * Color(0.93, 0.62, 0.23, 1.0))
 		else:
 			draw_polygon(clipped_points, clipped_colors, clipped_uvs, texture)
+		var sauce_textures_available: bool = _fold_sweet_sauce_texture != null or _fold_chili_sauce_texture != null
+		var enclosed: bool = fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT) and fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT)
+		var moving_interior_face: bool = (fold_model.active_region == region or _animated_region == region) and front_facing
+		if enclosed:
+			_last_sauce_hidden_enclosed = sauce_textures_available
+		elif moving_interior_face and sauce_textures_available:
+			# Sauce shares the same curved-strip lighting as the pancake beneath it.
+			# A flat white modulation makes it read as a new opaque cover layer.
+			var sauce_color0 := _fold_surface_color(Color.WHITE, angle0)
+			var sauce_color1 := _fold_surface_color(Color.WHITE, angle1)
+			var sauce_colors := PackedColorArray([sauce_color0, sauce_color1, sauce_color1, sauce_color0])
+			if _fold_sweet_sauce_texture != null:
+				draw_polygon(clipped_points, sauce_colors, clipped_uvs, _fold_sweet_sauce_texture)
+			if _fold_chili_sauce_texture != null:
+				draw_polygon(clipped_points, sauce_colors, clipped_uvs, _fold_chili_sauce_texture)
+			_last_sauce_front_strip_count += 1
+		elif sauce_textures_available:
+			_last_sauce_hidden_back_strip_count += 1
 
 
 func _clip_polygon_horizontal(

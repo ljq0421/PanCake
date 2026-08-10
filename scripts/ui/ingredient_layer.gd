@@ -9,6 +9,8 @@ const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd
 @export var scallion_texture: Texture2D
 @export var meat_floss_texture: Texture2D
 @export var pork_tenderloin_texture: Texture2D
+@export var coriander_texture: Texture2D
+@export var preserved_mustard_texture: Texture2D
 
 var model: IngredientModel
 var fold_model: RefCounted
@@ -51,7 +53,7 @@ func _rebuild_sprites() -> void:
 			continue
 		var sprite := Sprite2D.new()
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		sprite.texture = _texture_for(placement.type)
+		sprite.texture = texture_for(placement.type)
 		sprite.position = (placement.position as Vector2) / 127.0 * size
 		sprite.rotation = float(placement.rotation)
 		sprite.scale = Vector2.ONE * _scale_for(placement.type)
@@ -131,7 +133,7 @@ func visual_alpha_for(ingredient_type: StringName) -> float:
 	return 0.0
 
 
-func _texture_for(ingredient_type: StringName) -> Texture2D:
+func texture_for(ingredient_type: StringName) -> Texture2D:
 	match ingredient_type:
 		IngredientModel.EGG:
 			return egg_texture
@@ -145,6 +147,10 @@ func _texture_for(ingredient_type: StringName) -> Texture2D:
 			return meat_floss_texture
 		IngredientModel.PORK_TENDERLOIN:
 			return pork_tenderloin_texture
+		IngredientModel.CORIANDER:
+			return coriander_texture
+		IngredientModel.PRESERVED_MUSTARD:
+			return preserved_mustard_texture
 	return null
 
 
@@ -162,4 +168,8 @@ func _scale_for(ingredient_type: StringName) -> float:
 			return 0.16
 		IngredientModel.PORK_TENDERLOIN:
 			return 0.13
+		IngredientModel.CORIANDER:
+			return 0.11
+		IngredientModel.PRESERVED_MUSTARD:
+			return 0.12
 	return 0.12

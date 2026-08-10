@@ -62,17 +62,21 @@ func _run() -> void:
 	_check(CATALOG.PHYSICAL_AREA_IDS == [&"area.fresh_soy_milk", &"area.youtiao", &"area.pancake", &"area.packaged_drink", &"area.steamer"], "physical area order")
 	_check(CATALOG.UNLOCK_AREA_IDS == [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"], "unlock area order")
 	var expected_slots := {
-		1: &"stock.fresh_soy_milk.yellow_bean", 2: &"stock.fresh_soy_milk.black_bean", 3: &"stock.youtiao.plain_dough",
+		4: &"stock.youtiao.plain_dough", 5: &"stock.youtiao.oil_cake_dough", 6: &"stock.youtiao.sugar_oil_cake_dough",
 		7: &"stock.pancake.egg", 8: &"stock.pancake.baocui", 9: &"stock.pancake.scallion",
 		16: &"stock.packaged_drink.milk", 17: &"stock.steamer.vegetable_bun", 18: &"stock.steamer.mantou",
+	}
+	var expected_soy_split := {
+		1: [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.multigrain"],
+		2: [&"stock.fresh_soy_milk.black_bean", &""],
+		3: [&"stock.fresh_soy_milk.red_bean", &""],
 	}
 	for slot_index in range(1, 19):
 		var slot := CATALOG.material_slot_definition(StringName("slot.%02d" % slot_index))
 		if expected_slots.has(slot_index):
 			_check(slot.get("kind") == &"stock" and slot.get("stock_id") == expected_slots[slot_index], "slot %02d stock ownership" % slot_index)
-		elif slot_index in [4, 5, 6]:
-			var expected_product_ids := [&"product.youtiao.plain", &"product.youtiao.oil_cake", &"product.youtiao.sugar_oil_cake"]
-			_check(slot.get("kind") == &"prepared_product" and slot.get("product_id") == expected_product_ids[slot_index - 4] and int(slot.get("capacity", 0)) == 6, "slot %02d prepared fried-product ownership" % slot_index)
+		elif expected_soy_split.has(slot_index):
+			_check(slot.get("kind") == &"split_stock" and Array(slot.get("stock_ids", [])) == expected_soy_split[slot_index], "slot %02d owns authored full/split soy cells" % slot_index)
 		elif CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY.has(StringName("slot.%02d" % slot_index)):
 			_check(slot.get("kind") == &"dynamic_add_on", "slot %02d participates in dynamic pancake add-on priority" % slot_index)
 		else:
@@ -84,6 +88,10 @@ func _run() -> void:
 		_check(CATALOG.stock_definition(stock_id).get("material_slot_id") == &"", "%s has no permanent material slot" % stock_id)
 	for sauce_id in CATALOG.SAUCE_DEFINITIONS.keys():
 		_check(CATALOG.stock_definition(sauce_id).get("material_slot_id") == &"", "%s does not occupy a material slot" % sauce_id)
+	for stock_id in [&"stock.youtiao.plain_dough", &"stock.youtiao.oil_cake_dough", &"stock.youtiao.sugar_oil_cake_dough"]:
+		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the confirmed pancake-ingredient speed" % stock_id)
+	_check(is_equal_approx(float(CATALOG.stock_definition(&"stock.fresh_soy_milk.yellow_bean").get("refill_seconds", 0.0)), 1.50), "soy ingredients retain their separate 1.50-second restock balance")
+	_check(is_equal_approx(float(CATALOG.stock_definition(&"stock.steamer.mantou").get("refill_seconds", 0.0)), 1.50), "steamer ingredients retain their separate 1.50-second restock balance")
 	var copy := CATALOG.stock_definition(&"stock.pancake.egg")
 	copy["material_slot_id"] = &"slot.invalid"
 	_check(CATALOG.stock_definition(&"stock.pancake.egg").get("material_slot_id") == &"slot.07", "catalog queries return deep copies")

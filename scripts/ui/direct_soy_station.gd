@@ -18,9 +18,6 @@ const STOCK_IDS: Array[StringName] = [
 	&"stock.fresh_soy_milk.multigrain",
 ]
 
-@onready var ingredient_sources: Array[ProductDragSource] = [%Ingredient01, %Ingredient02, %Ingredient03, %Ingredient04]
-@onready var ingredient_counts: Array[Label] = [%Count01, %Count02, %Count03, %Count04]
-@onready var restock_buttons: Array[RestockHoldButton] = [%Restock01, %Restock02, %Restock03, %Restock04]
 @onready var water_button: Button = %WaterButton
 @onready var start_button: Button = %StartButton
 @onready var machine_output: ProductDragSource = %MachineOutput
@@ -34,8 +31,6 @@ var _refresh_elapsed := 0.0
 func _ready() -> void:
 	water_button.pressed.connect(_perform_action.bind(&"add_water"))
 	start_button.pressed.connect(_perform_action.bind(&"start"))
-	for button in restock_buttons:
-		button.restock_feedback.connect(_on_restock_feedback)
 	lock_cover.pressed.connect(_on_lock_cover_pressed)
 	refresh_from_session()
 
@@ -65,22 +60,11 @@ func refresh_from_session() -> void:
 		return
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_area := Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
-	var unlocked_recipes := PackedStringArray(Array(progression.get("unlocked_recipe_ids", [])))
-	var inventory := Dictionary(session.call("inventory_snapshot"))
 	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 	lock_cover.visible = not unlocked_area
-	for index in range(RECIPE_IDS.size()):
-		var recipe_id := RECIPE_IDS[index]
-		var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-		var count := int(inventory.get(str(STOCK_IDS[index]), 0))
-		var unlocked := unlocked_area and unlocked_recipes.has(str(recipe_id))
-		ingredient_sources[index].configure({"source_kind": &"soy_ingredient", "source_index": index, "product_id": product_id, "recipe_id": recipe_id}, ingredient_sources[index].texture_normal, unlocked and count > 0, "拖入豆浆机料口")
-		ingredient_sources[index].visible = unlocked
-		ingredient_counts[index].text = str(count) if unlocked else "锁"
-		restock_buttons[index].configure(STOCK_IDS[index], unlocked, "按住补充豆料")
 	var state := StringName(machine.get("state", &"unowned"))
 	water_button.disabled = state != &"loaded"
-	start_button.disabled = state not in [&"watered", &"loaded"]
+	start_button.disabled = state != &"water_added"
 	var recipe_id := StringName(machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
 	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state in [&"ready_safe", &"overcooking"], "成品已到出杯口；正式订单开放后点击订单商品交付")
@@ -102,11 +86,6 @@ func _perform_action(action_id: StringName) -> void:
 	refresh_from_session()
 
 
-func _on_restock_feedback(result: Dictionary) -> void:
-	if int(result.get("completed_units", 0)) > 0:
-		status_message.emit("豆料补货 +%d" % int(result.get("completed_units", 0)))
-
-
 func _on_lock_cover_pressed() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var message := "现磨豆浆区域未解锁"
@@ -119,7 +98,7 @@ static func _state_text(state: StringName) -> String:
 	return {
 		&"idle": "料口空",
 		&"loaded": "豆料已装入",
-		&"watered": "水已加入",
+		&"water_added": "水已加入",
 		&"grinding": "研磨中",
 		&"ready_safe": "豆浆可取",
 		&"overcooking": "即将变质",

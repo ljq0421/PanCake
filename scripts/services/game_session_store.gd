@@ -949,10 +949,35 @@ func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
 	if item_index < 0 or item_index >= items.size():
 		return {"success": false, "reason": &"order_item_missing"}
 	var product_id := StringName(Dictionary(items[item_index]).get("product_id", &""))
+	var output_ref := {"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}
+	var output_preview := preview_stage_product_to_order(output_ref, order_id, item_index)
+	if bool(output_preview.get("success", false)) and StringName(Dictionary(output_preview.get("product", {})).get("product_id", &"")) == product_id:
+		return stage_product_to_order(output_ref, order_id, item_index)
 	var slot_id := _prepared_slot_id_for_product(product_id)
 	if slot_id.is_empty():
 		return {"success": false, "reason": &"prepared_product_slot_missing", "product_id": product_id}
 	return stage_product_to_order({"source_kind": &"prepared_product_slot", "source_slot_id": slot_id, "source_index": -1, "product_id": product_id}, order_id, item_index)
+
+
+func preview_take_ready_youtiao_for_pancake() -> Dictionary:
+	_ensure_production_service()
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+	if not bool(preview.get("success", false)):
+		return preview
+	var product := Dictionary(preview.get("product", {}))
+	if StringName(product.get("product_id", &"")) != &"product.youtiao.plain":
+		return {"success": false, "reason": &"not_pancake_ingredient", "product_id": product.get("product_id", &"")}
+	return preview
+
+
+func take_ready_youtiao_for_pancake() -> Dictionary:
+	var preview := preview_take_ready_youtiao_for_pancake()
+	if not bool(preview.get("success", false)):
+		return preview
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
+	if bool(collected.get("success", false)):
+		_persist_production_change()
+	return collected
 
 
 func discard_f3_youtiao() -> Dictionary:
@@ -1994,7 +2019,13 @@ func _load_save() -> void:
 
 
 func _restore_progression() -> void:
-	_progression = PROGRESSION_SERVICE.new(Dictionary(_save_data.get("progression", {}))) if has_save() else PROGRESSION_SERVICE.new()
+	var stored_progression := Dictionary(_save_data.get("progression", {})).duplicate(true)
+	_progression = PROGRESSION_SERVICE.new(stored_progression) if has_save() else PROGRESSION_SERVICE.new()
+	if has_save():
+		var normalized_progression := Dictionary(_progression.call("snapshot")).duplicate(true)
+		if normalized_progression != stored_progression:
+			_save_data["progression"] = normalized_progression
+			_write_save()
 	_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new(Dictionary(_save_data.get("pancake_holding_tray", {})))
 	_order_service = FIVE_AREA_ORDER_SERVICE.new(Dictionary(_save_data.get("formal_orders", {})))
 	_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self, Dictionary(_save_data.get("production", {})))

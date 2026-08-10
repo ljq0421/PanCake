@@ -12,16 +12,21 @@ const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd"
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteArea
 @onready var pending_payment_button: Button = %PendingPaymentButton
-@onready var prepared_product_slots: Array[Node] = [%PreparedProductSlot04, %PreparedProductSlot05, %PreparedProductSlot06]
+@onready var soy_full_slots: Array[Node] = [%SoyFullYellow, %SoyFullBlack, %SoyFullRed]
+@onready var soy_split_slots: Array[Node] = [%SoySplitYellow, %SoySplitBlack, %SoySplitRed, %SoySplitMultigrain, %SoySplitReserved02, %SoySplitReserved03]
+@onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain, %YoutiaoDoughOilCake, %YoutiaoDoughSugar]
+@onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 
 var _ready_pancake_source_ref: Dictionary = {}
 var _pending_tray_settlement: Dictionary = {}
 var _refresh_elapsed := 0.0
 var _delivery_click_in_progress := false
+var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 
 
 func _ready() -> void:
 	super._ready()
+	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
 	for station in [fresh_soy_station, youtiao_station, packaged_drink_station, steamer_station]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
@@ -31,9 +36,12 @@ func _ready() -> void:
 		station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	waste_area.disposition_completed.connect(_on_disposition_completed)
 	pending_payment_button.pressed.connect(_collect_pending_payments)
-	for prepared_slot in prepared_product_slots:
-		Signal(prepared_slot, &"store_completed").connect(_on_prepared_product_store_completed)
-	Signal(prepared_product_slots[0], &"drag_requested").connect(_begin_ingredient_drag)
+	for material_slot in _all_material_slots():
+		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
+		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
+		material_slot.short_clicked.connect(_on_material_short_clicked)
+	youtiao_station.output_source.native_drag_enabled = false
+	youtiao_station.output_source.drag_started.connect(_on_youtiao_output_drag_started)
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
 		var order_signal := Signal(session, &"order_changed")
@@ -42,15 +50,31 @@ func _ready() -> void:
 		var production_signal := Signal(session, &"production_changed")
 		if not production_signal.is_connected(_on_production_shell_changed):
 			production_signal.connect(_on_production_shell_changed)
-		var prepared_signal := Signal(session, &"prepared_product_slots_changed")
-		if not prepared_signal.is_connected(_on_prepared_product_slots_changed):
-			prepared_signal.connect(_on_prepared_product_slots_changed)
 	_restore_pending_payment()
 	_refresh_formal_shell()
 	_refresh_pancake_drag_sources()
-	_refresh_prepared_product_slots()
+	_refresh_material_slots()
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
 	_set_packaged_drink_tutorial_status(active_order)
+
+
+func end_business_day(cutoff: Dictionary = {}) -> void:
+	super.end_business_day(cutoff)
+	if daily_bill_panel.visible:
+		_set_daily_bill_modal_input(true)
+
+
+func _close_daily_bill() -> void:
+	_set_daily_bill_modal_input(false)
+	super._close_daily_bill()
+
+
+func _set_daily_bill_modal_input(active: bool) -> void:
+	five_area_infrastructure.mouse_behavior_recursive = (
+		Control.MOUSE_BEHAVIOR_DISABLED
+		if active
+		else _five_area_mouse_behavior_before_daily_bill
+	)
 
 
 func _process(delta: float) -> void:
@@ -59,6 +83,8 @@ func _process(delta: float) -> void:
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
 		_refresh_pancake_drag_sources()
+		_refresh_material_slots()
+		_refresh_tutorial_guide()
 	serve_product_button.visible = false
 
 
@@ -116,32 +142,165 @@ func _on_production_shell_changed(_snapshot: Dictionary = {}) -> void:
 	_refresh_pancake_drag_sources()
 
 
-func _on_prepared_product_slots_changed(_snapshot: Dictionary = {}) -> void:
-	_refresh_prepared_product_slots()
+func _all_material_slots() -> Array[Node]:
+	var result: Array[Node] = []
+	result.append_array(soy_full_slots)
+	result.append_array(soy_split_slots)
+	result.append_array(youtiao_dough_slots)
+	return result
 
 
-func _refresh_prepared_product_slots() -> void:
+func _refresh_material_slots() -> void:
 	var session := get_node_or_null("/root/GameSession")
-	if session == null or not session.has_method("prepared_product_slot_status"):
+	if session == null:
 		return
-	for prepared_slot in prepared_product_slots:
-		var status := Dictionary(session.call("prepared_product_slot_status", StringName(prepared_slot.get("slot_id"))))
-		prepared_slot.call("configure_count", int(status.get("count", 0)), bool(status.get("success", false)))
+	var inventory := Dictionary(session.call("inventory_snapshot"))
+	var progression := Dictionary(session.call("five_area_progression_snapshot"))
+	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
+	var unlocked_recipes := Array(progression.get("unlocked_recipe_ids", []))
+	var multigrain_split := _id_in(unlocked_recipes, &"recipe.fresh_soy_milk.multigrain")
+	for slot in soy_full_slots:
+		slot.visible = not multigrain_split
+	for slot in soy_split_slots:
+		slot.visible = multigrain_split
+	for slot in _all_material_slots():
+		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
+		var unlocked: bool = _id_in(unlocked_areas, area_id) and (slot.recipe_id.is_empty() or _id_in(unlocked_recipes, slot.recipe_id))
+		var status := Dictionary(session.call("five_area_restock_status", slot.stock_id)) if not slot.stock_id.is_empty() else {}
+		slot.apply_state(int(inventory.get(str(slot.stock_id), 0)), unlocked, int(status.get("capacity", 6)))
 
 
-func _on_prepared_product_store_completed(result: Dictionary) -> void:
-	_refresh_prepared_product_slots()
-	youtiao_station.refresh_from_session()
-	if bool(result.get("success", false)):
-		tool_status_label.text = "炸物已放入 %s（%d/6）" % [str(result.get("slot_id", &"")), int(result.get("count", 0))]
+func _on_material_hold_requested(source_ref: Dictionary, slot: Node) -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var status := Dictionary(session.call("five_area_restock_status", StringName(source_ref.get("stock_id", &"")))) if session != null else {"success": false, "reason": &"no_game_session"}
+	var can_start := bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)) and int(status.get("coins", 0)) >= int(status.get("unit_cost", 0))
+	if can_start:
+		slot.accept_hold()
+		tool_status_label.text = "持续长按补货；拖拽已经取消，不会误扣费用"
 		return
-	var reason := StringName(result.get("reason", &"unknown"))
-	var messages := {
-		&"prepared_product_slot_full": "该炸物成品槽已满，成品仍留在炸篮",
-		&"prepared_product_slot_mismatch": "炸物与成品槽不匹配，成品仍留在炸篮",
-		&"recipe_locked": "对应炸物配方尚未解锁，成品仍留在炸篮",
-	}
-	tool_status_label.text = str(messages.get(reason, "入槽失败，成品仍留在炸篮：%s" % str(reason)))
+	slot.reject_hold()
+	tool_status_label.text = _restock_failure_text(StringName(status.get("reason", &"")), status)
+
+
+func _on_material_hold_advanced(source_ref: Dictionary, delta: float, slot: Node) -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		slot.reject_hold()
+		return
+	var result := Dictionary(session.call("advance_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")), delta))
+	if int(result.get("completed_units", 0)) > 0:
+		tool_status_label.text = "%s补货 +%d" % [slot.material_label, int(result.get("completed_units", 0))]
+	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):
+		slot.reject_hold()
+		tool_status_label.text = _restock_failure_text(StringName(result.get("reason", &"")), result)
+	_refresh_material_slots()
+
+
+func _on_material_short_clicked(source_ref: Dictionary) -> void:
+	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
+		youtiao_station.select_recipe(StringName(source_ref.get("recipe_id", &"")))
+
+
+func _on_youtiao_output_drag_started(source_ref: Dictionary) -> void:
+	if StringName(source_ref.get("product_id", &"")) != &"product.youtiao.plain":
+		tool_status_label.text = "油饼和糖油饼不能作为煎饼配料；请点击订单商品直接交付"
+		return
+	_begin_ingredient_drag(IngredientModel.YOUTIAO, youtiao_station.output_source.get_global_rect().get_center())
+
+
+func _ingredient_available_for_drag(ingredient_type: StringName) -> bool:
+	if ingredient_type == IngredientModel.YOUTIAO:
+		var session := get_node_or_null("/root/GameSession")
+		return session != null and session.has_method("preview_take_ready_youtiao_for_pancake") and bool(Dictionary(session.call("preview_take_ready_youtiao_for_pancake")).get("success", false))
+	return super._ingredient_available_for_drag(ingredient_type)
+
+
+func _consume_dragged_ingredient(ingredient_type: StringName) -> bool:
+	if ingredient_type == IngredientModel.YOUTIAO:
+		var session := get_node_or_null("/root/GameSession")
+		return session != null and session.has_method("take_ready_youtiao_for_pancake") and bool(Dictionary(session.call("take_ready_youtiao_for_pancake")).get("success", false))
+	return super._consume_dragged_ingredient(ingredient_type)
+
+
+static func _id_in(values: Array, expected: StringName) -> bool:
+	return values.has(expected) or values.has(str(expected))
+
+
+static func _restock_failure_text(reason: StringName, status: Dictionary) -> String:
+	match reason:
+		&"stock_locked": return "该材料尚未解锁"
+		&"capacity_reached": return "材料槽已满"
+		&"insufficient_coins": return "余额不足：每份需要 %d 金币" % int(status.get("unit_cost", 0))
+		_: return "暂时无法补货：%s" % str(reason)
+
+
+func _refresh_tutorial_guide() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		tutorial_guide_overlay.call("hide_guide")
+		return
+	var order := Dictionary(session.call("active_formal_order"))
+	var area_id := StringName(order.get("teaching_area_id", &""))
+	if area_id.is_empty() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+		tutorial_guide_overlay.call("hide_guide")
+		return
+	var guide := _tutorial_guide_for_area(session, area_id)
+	var target := guide.get("target") as Control
+	if target == null:
+		tutorial_guide_overlay.call("hide_guide")
+		return
+	tutorial_guide_overlay.call("show_guide", target, str(guide.get("message", "完成下一步")))
+
+
+func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
+	var inventory := Dictionary(session.call("inventory_snapshot"))
+	match area_id:
+		&"area.packaged_drink":
+			if int(inventory.get("stock.packaged_drink.milk", 0)) <= 0:
+				return {"target": packaged_drink_station.lanes[0], "message": "长按纯牛奶货道补货"}
+			return {"target": order_dish_buttons[0], "message": "点击订单中的纯牛奶完成交付"}
+		&"area.youtiao":
+			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+			match StringName(machine.get("state", &"idle")):
+				&"idle":
+					var message := "长按原味面胚补货" if int(inventory.get("stock.youtiao.plain_dough", 0)) <= 0 else "把原味面胚拖入炸篮"
+					return {"target": youtiao_dough_slots[0], "message": message}
+				&"loaded": return {"target": youtiao_station.start_button, "message": "点击启动，开始炸制"}
+				&"frying": return {"target": youtiao_station.state_label, "message": "等待炸制完成，留意设备状态"}
+				&"ready_safe", &"overcooking", &"burnt": return {"target": youtiao_station.lift_button, "message": "及时升篮；焦糊批次需丢弃"}
+				&"draining": return {"target": youtiao_station.state_label, "message": "等待沥油完成"}
+				&"ready_to_collect": return {"target": order_dish_buttons[0], "message": "成品留在炸篮，点击订单商品交付"}
+		&"area.fresh_soy_milk":
+			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+			match StringName(machine.get("state", &"idle")):
+				&"idle":
+					var message := "长按黄豆槽补货" if int(inventory.get("stock.fresh_soy_milk.yellow_bean", 0)) <= 0 else "把黄豆拖入豆浆机料口"
+					return {"target": soy_split_slots[0] if soy_split_slots[0].visible else soy_full_slots[0], "message": message}
+				&"loaded": return {"target": fresh_soy_station.water_button, "message": "点击加水"}
+				&"water_added": return {"target": fresh_soy_station.start_button, "message": "水已加入，点击启动研磨"}
+				&"grinding": return {"target": fresh_soy_station.state_label, "message": "等待研磨完成"}
+				&"ready_safe", &"overcooking", &"blocked": return {"target": order_dish_buttons[0], "message": "点击订单商品，从出杯口或接杯架交付"}
+		&"area.steamer":
+			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.steamer"))
+			var layers := Array(machine.get("layers", []))
+			var layer := Dictionary(layers[0]) if not layers.is_empty() else {"state": &"empty"}
+			match StringName(layer.get("state", &"empty")):
+				&"empty":
+					if int(inventory.get("stock.steamer.mantou", 0)) <= 0:
+						return {"target": steamer_station.restock_buttons[0], "message": "长按补充馒头半成品"}
+					return {"target": steamer_station.input_sources[0], "message": "把馒头拖入第一层蒸笼"}
+				&"loaded": return {"target": steamer_station.layer_starts[0], "message": "点击启动蒸制"}
+				&"steaming": return {"target": steamer_station.layer_labels[0], "message": "等待蒸制完成"}
+				&"ready_safe", &"overcooking": return {"target": order_dish_buttons[0], "message": "点击订单商品，从成品蒸层交付"}
+		&"area.pancake":
+			match p1_session.phase:
+				P1Session.Phase.SPREAD: return {"target": ladle_button, "message": "舀取面糊，在鏊面摊成完整饼皮"}
+				P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE: return {"target": step_action_button, "message": "观察火候并在合适时机翻面或确认"}
+				P1Session.Phase.SAUCE_AND_FILLINGS: return {"target": sauce_brush_button, "message": "刷酱并按订单加入配料"}
+				P1Session.Phase.FOLD: return {"target": fold_button, "message": "选择折叠工具并完成折叠"}
+				P1Session.Phase.PACKAGE: return {"target": paper_sleeve_button, "message": "选择可用包装完成打包"}
+				P1Session.Phase.READY_TO_SERVE: return {"target": order_dish_buttons[0], "message": "点击订单商品交付经典煎饼"}
+	return {}
 
 
 func _refresh_formal_shell() -> void:
@@ -320,6 +479,10 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 	sources.append_array(pancake_holding_sources)
 	sources.append_array(packaged_drink_station.heater_sources)
 	sources.append_array(packaged_drink_station.lanes)
+	sources.append(youtiao_station.output_source)
+	sources.append(fresh_soy_station.machine_output)
+	sources.append_array(fresh_soy_station.rack_outputs)
+	sources.append_array(steamer_station.layer_outputs)
 	var result: Array[Dictionary] = []
 	for source in sources:
 		if source == null or source.disabled or not source.visible:
@@ -348,7 +511,8 @@ func _on_clicked_product_consumed(source_ref: Dictionary) -> void:
 	_refresh_pancake_drag_sources()
 	packaged_drink_station.refresh_from_session()
 	youtiao_station.refresh_from_session()
-	_refresh_prepared_product_slots()
+	fresh_soy_station.refresh_from_session()
+	steamer_station.refresh_from_session()
 
 
 func _finish_clicked_order(result: Dictionary) -> void:

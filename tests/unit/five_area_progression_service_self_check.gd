@@ -33,7 +33,7 @@ func _run() -> void:
 	_check(not Array(Dictionary(day_one_items[0]).get("missing_requirements", [])).is_empty(), "locked recommendation retains its complete requirement list")
 	day_one.set_day_open(false)
 	var ready_day_end_items: Array = Array(day_one.growth_recommendations(3).get("recommended", []))
-	_check(not bool(Dictionary(ready_day_end_items[0]).get("coin_guarantee", false)) and StringName(Dictionary(ready_day_end_items[0]).get("reason", &"")) == &"day_requirement", "an existing purchasable card prevents the day-end coin guarantee from replacing the frontier gate")
+	_check(StringName(Dictionary(ready_day_end_items[0]).get("reason", &"")) == &"day_requirement", "closing the day never replaces the frontier's real day gate")
 
 	var locked_day_end = SERVICE.new({
 		"coins": 5,
@@ -44,23 +44,13 @@ func _run() -> void:
 		"area_mastery_details": {&"area.pancake": {"qualified": 0, "a_grade": 0}},
 	})
 	var locked_day_end_items: Array = Array(locked_day_end.growth_recommendations(3).get("recommended", []))
-	var guaranteed_frontier := Dictionary(locked_day_end_items[0])
-	_check(_growth_ids(locked_day_end_items) == _growth_ids(day_one_items), "coin guarantee keeps the fixed three-card IDs and route order")
-	_check(bool(guaranteed_frontier.get("coin_guarantee", false)) and not bool(guaranteed_frontier.get("can_purchase", true)) and StringName(guaranteed_frontier.get("reason", &"")) == &"insufficient_coins", "all-locked day end marks only the route frontier as the coin guarantee")
-	var guaranteed_requirements: Array = Array(guaranteed_frontier.get("missing_requirements", []))
-	_check(guaranteed_requirements.size() == 1 and StringName(Dictionary(guaranteed_requirements[0]).get("reason", &"")) == &"insufficient_coins" and int(Dictionary(guaranteed_requirements[0]).get("price", 0)) == 12, "coin guarantee removes non-coin gates and retains the catalog price")
-	_check(not bool(Dictionary(locked_day_end_items[1]).get("coin_guarantee", false)) and not bool(Dictionary(locked_day_end_items[2]).get("coin_guarantee", false)), "coin guarantee applies to exactly one card")
-	locked_day_end.set_day_open(true)
-	var open_day_status: Dictionary = locked_day_end.purchase_status(&"growth.tool.pancake.wide_spreader")
-	_check(not bool(open_day_status.get("coin_guarantee", false)) and StringName(open_day_status.get("reason", &"")) == &"day_requirement", "coin guarantee never changes purchase status during an open business day")
-	locked_day_end.set_day_open(false)
+	var locked_frontier := Dictionary(locked_day_end_items[0])
+	_check(_growth_ids(locked_day_end_items) == _growth_ids(day_one_items), "all-locked day end keeps the fixed three-card IDs and route order")
+	_check(not bool(locked_frontier.get("can_purchase", true)) and StringName(locked_frontier.get("reason", &"")) == &"day_requirement", "all-locked day end keeps the frontier's real primary requirement")
+	_check(_requirement_reasons(Array(locked_frontier.get("missing_requirements", []))) == [&"day_requirement", &"insufficient_coins"], "all-locked day end retains every real frontier requirement")
 	locked_day_end.coins = 20
-	var guarantee_purchase: Dictionary = locked_day_end.purchase(&"growth.tool.pancake.wide_spreader")
-	_check(bool(guarantee_purchase.get("success", false)) and int(guarantee_purchase.get("charged_coins", 0)) == 12 and locked_day_end.coins == 8 and locked_day_end.pending_install_purchase == &"growth.tool.pancake.wide_spreader", "guaranteed frontier purchase uses the same effective status, price, and install slot")
-	var pending_guarantee_status: Dictionary = locked_day_end.purchase_status(&"growth.tool.pancake.wide_spreader")
-	_check(bool(pending_guarantee_status.get("pending_activation", false)) and not bool(pending_guarantee_status.get("coin_guarantee", false)), "purchased guarantee becomes a normal pending card instead of generating another guarantee")
-	var guarantee_activation: Dictionary = locked_day_end.begin_next_business_day()
-	_check(bool(guarantee_activation.get("success", false)) and locked_day_end.owns_growth(&"growth.tool.pancake.wide_spreader"), "guaranteed purchase still activates on the next business day")
+	var blocked_frontier_purchase: Dictionary = locked_day_end.purchase(&"growth.tool.pancake.wide_spreader")
+	_check(not bool(blocked_frontier_purchase.get("success", true)) and StringName(blocked_frontier_purchase.get("reason", &"")) == &"day_requirement" and locked_day_end.coins == 20 and locked_day_end.pending_install_purchase.is_empty(), "direct purchase cannot bypass the frontier's real requirement")
 
 	var occupied_frontier = SERVICE.new({
 		"coins": 100,
@@ -70,14 +60,49 @@ func _run() -> void:
 		"pending_install_purchase": "growth.area.packaged_drink",
 	})
 	var occupied_frontier_status := Dictionary(Array(occupied_frontier.growth_recommendations(3).get("recommended", []))[0])
-	_check(not bool(occupied_frontier_status.get("coin_guarantee", false)) and StringName(occupied_frontier_status.get("reason", &"")) == &"purchase_slot_occupied", "occupied frontier purchase slot suppresses the guarantee without reordering cards")
+	_check(StringName(occupied_frontier_status.get("reason", &"")) == &"purchase_slot_occupied", "occupied frontier purchase slot remains the real primary requirement without reordering cards")
 	var completed_route = SERVICE.new({
 		"coins": 9999,
 		"current_day": 99,
 		"day_open": false,
 		"owned_growth_ids": Array(CATALOG.FIXED_GROWTH_ROUTE),
 	})
-	_check(Array(completed_route.growth_recommendations(3).get("recommended", [])).is_empty(), "completed route does not invent a repeatable coin guarantee")
+	_check(Array(completed_route.growth_recommendations(3).get("recommended", [])).is_empty(), "completed route does not invent a repeatable growth item")
+
+	var oil_cake_reservation = SERVICE.new({
+		"coins": 844,
+		"reputation": 1004,
+		"current_day": 12,
+		"day_open": false,
+		"unlocked_area_ids": [&"area.pancake", &"area.packaged_drink", &"area.youtiao"],
+		"owned_growth_ids": [
+			&"growth.tool.pancake.wide_spreader",
+			&"growth.add_on.pancake.red_chili",
+			&"growth.area.packaged_drink",
+			&"growth.equipment.pancake.intermediate",
+			&"growth.add_on.pancake.ham_sausage",
+			&"growth.product.packaged_drink.soy_milk",
+			&"growth.equipment.packaged_drink.intermediate",
+			&"growth.add_on.pancake.meat_floss",
+			&"growth.assist.youtiao.temperature_indicator",
+		],
+		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [&"area.packaged_drink"], "active_kind": &"area", "active_id": &"area.packaged_drink"},
+	})
+	var oil_cake_items_before: Array = Array(oil_cake_reservation.growth_recommendations(3).get("recommended", []))
+	_check(_growth_ids(oil_cake_items_before) == [&"growth.area.youtiao", &"growth.recipe.youtiao.oil_cake", &"growth.capacity.stock.intermediate"], "attachment state exposes the same fryer, oil-cake, and stock-capacity window")
+	var fryer_before := Dictionary(oil_cake_items_before[0])
+	_check(not bool(fryer_before.get("can_purchase", true)) and StringName(fryer_before.get("reason", &"")) == &"tutorial_requirement", "fryer is locked by the unfinished packaged-drink tutorial before reserving oil cake")
+	_check(bool(Dictionary(oil_cake_items_before[1]).get("can_purchase", false)) and bool(Dictionary(oil_cake_items_before[2]).get("can_purchase", false)), "oil cake and stock capacity are independently purchasable before reserving content")
+	var oil_cake_purchase: Dictionary = oil_cake_reservation.purchase(&"growth.recipe.youtiao.oil_cake")
+	_check(bool(oil_cake_purchase.get("success", false)) and oil_cake_reservation.coins == 826 and oil_cake_reservation.pending_content_purchase == &"growth.recipe.youtiao.oil_cake", "oil-cake reservation charges 18 coins and occupies only the content slot")
+	var oil_cake_items_after: Array = Array(oil_cake_reservation.growth_recommendations(3).get("recommended", []))
+	var fryer_after := Dictionary(oil_cake_items_after[0])
+	_check(_growth_ids(oil_cake_items_after) == _growth_ids(oil_cake_items_before), "oil-cake reservation keeps the fixed card IDs and route order")
+	_check(not bool(fryer_after.get("can_purchase", true)) and StringName(fryer_after.get("reason", &"")) == &"tutorial_requirement" and Array(fryer_after.get("missing_requirements", [])) == Array(fryer_before.get("missing_requirements", [])), "oil-cake reservation does not change the fryer's tutorial condition")
+	_check(bool(Dictionary(oil_cake_items_after[1]).get("pending_activation", false)), "reserved oil cake remains visible as pending activation")
+	_check(StringName(Dictionary(oil_cake_items_after[2]).get("reason", &"")) == &"purchase_slot_occupied", "other content growth reflects the occupied content slot")
+	var blocked_fryer_purchase: Dictionary = oil_cake_reservation.purchase(&"growth.area.youtiao")
+	_check(not bool(blocked_fryer_purchase.get("success", true)) and StringName(blocked_fryer_purchase.get("reason", &"")) == &"tutorial_requirement" and oil_cake_reservation.pending_install_purchase.is_empty(), "direct fryer purchase remains blocked after reserving oil cake")
 
 	var day_two = SERVICE.new({
 		"coins": 100,
@@ -120,6 +145,25 @@ func _run() -> void:
 	})
 	_check(_growth_ids(Array(rich_late_state.growth_recommendations(3).get("recommended", []))) == _growth_ids(day_one_items), "purchase eligibility never substitutes or reprioritizes fixed-route cards")
 
+	var damaged_starter_save = SERVICE.new({
+		"coins": 37,
+		"reputation": 4,
+		"current_day": 3,
+		"unlocked_area_ids": [&"area.youtiao"],
+		"device_tiers": {&"device.youtiao_fryer": 0},
+		"unlocked_recipe_ids": [&"recipe.youtiao.plain"],
+		"unlocked_product_ids": [&"product.youtiao.plain"],
+		"unlocked_stock_ids": [&"stock.youtiao.plain_dough"],
+	})
+	_check(damaged_starter_save.coins == 37 and damaged_starter_save.reputation == 4 and damaged_starter_save.current_day == 3, "starter repair preserves economy and business-day progress")
+	_check(damaged_starter_save.owns_area(&"area.pancake") and damaged_starter_save.device_tier(&"device.pancake_griddle") == 0, "starter repair restores the permanent pancake area and base griddle")
+	_check(damaged_starter_save.owns_recipe(&"recipe.pancake.base") and damaged_starter_save.owns_product(&"product.pancake.custom"), "starter repair restores the permanent pancake recipe and product")
+	for stock_id in [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]:
+		_check(damaged_starter_save.owns_stock(stock_id), "starter repair restores %s ownership" % stock_id)
+	_check(damaged_starter_save.owns_area(&"area.youtiao") and damaged_starter_save.owns_recipe(&"recipe.youtiao.plain") and damaged_starter_save.owns_stock(&"stock.youtiao.plain_dough"), "starter repair preserves later area, recipe, and stock unlocks")
+	var repaired_once := damaged_starter_save.snapshot()
+	_check(SERVICE.new(repaired_once).snapshot() == repaired_once, "starter repair is idempotent across repeated save loads")
+
 	var progression = SERVICE.new()
 	var tutorial: Dictionary = progression.tutorial_snapshot()
 	_check(tutorial.get("active_kind", &"") == &"area" and tutorial.get("active_id", &"") == &"area.pancake", "new progression begins with the pancake-area tutorial")
@@ -148,6 +192,16 @@ func _run() -> void:
 	})
 	var reconciled_tutorial: Dictionary = legacy_unfinished_drink.advance_tutorial_for_new_business_day()
 	_check(StringName(reconciled_tutorial.get("active_kind", &"")) == &"area" and StringName(reconciled_tutorial.get("active_id", &"")) == &"area.packaged_drink", "old unlocked saves recover the unfinished drink tutorial at the next day boundary")
+	var legacy_multi_area = SERVICE.new({
+		"unlocked_area_ids": [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"],
+		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.packaged_drink"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+	})
+	var recovered_multi := Dictionary(legacy_multi_area.advance_tutorial_for_new_business_day())
+	_check(StringName(recovered_multi.get("active_id", &"")) == &"area.youtiao" and Array(legacy_multi_area.tutorial_snapshot().get("queue_area_ids", [])).slice(0, 3) == [&"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"], "old saves recover every unfinished owned area tutorial in unlock order")
+	legacy_multi_area.complete_tutorial(&"area", &"area.youtiao")
+	var reloaded_multi = SERVICE.new(legacy_multi_area.snapshot())
+	reloaded_multi.advance_tutorial_for_new_business_day()
+	_check(Array(reloaded_multi.tutorial_snapshot().get("completed_area_ids", [])).has(&"area.youtiao") and StringName(reloaded_multi.tutorial_snapshot().get("active_id", &"")) == &"area.fresh_soy_milk", "completed area tutorial is never regenerated after save reload")
 	var rollback = SERVICE.new({"coins": 50, "current_day": 4, "day_open": false, "pending_install_purchase": "growth.missing", "pending_content_purchase": ""})
 	var rollback_before := rollback.snapshot()
 	_check(not rollback.begin_next_business_day().get("success") and rollback.snapshot() == rollback_before, "invalid pending activation rolls back atomically")
@@ -172,4 +226,11 @@ func _growth_ids(items: Array) -> Array[StringName]:
 	var result: Array[StringName] = []
 	for item_variant in items:
 		result.append(StringName(Dictionary(item_variant).get("growth_id", &"")))
+	return result
+
+
+func _requirement_reasons(requirements: Array) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for requirement_variant in requirements:
+		result.append(StringName(Dictionary(requirement_variant).get("reason", &"")))
 	return result

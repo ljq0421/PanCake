@@ -45,11 +45,17 @@ func _run() -> void:
 
 	_configure_youtiao(progression, [AUTO_LOAD, AUTO_LIFT])
 	_check(bool(Dictionary(session.call("perform_f3_youtiao_action", &"start")).get("success", false)), "the automatically loaded batch enters the unchanged frying model")
+	var early_take := Dictionary(session.call("take_ready_youtiao_for_pancake"))
+	_check(not bool(early_take.get("success", false)) and int(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("quantity", 0)) == 2, "failed direct pancake take does not consume a frying portion")
 	session.call("advance_f3_production", 12.0)
 	var lifted := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	_check(StringName(lifted.get("state", &"")) == &"draining", "owned auto-lift reuses the normal draining state at maturity")
 	session.call("advance_f3_production", 2.0)
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"ready_to_collect", "auto-lift still honors the existing two-second drain time")
+	var take_preview := Dictionary(session.call("preview_take_ready_youtiao_for_pancake"))
+	var taken := Dictionary(session.call("take_ready_youtiao_for_pancake"))
+	_check(bool(take_preview.get("success", false)) and bool(taken.get("success", false)) and StringName(Dictionary(taken.get("product", {})).get("product_id", &"")) == &"product.youtiao.plain", "ready plain youtiao is atomically taken from the fryer for pancake placement")
+	_check(int(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("quantity", 0)) == 1, "direct pancake take consumes exactly one fryer portion")
 
 	session.call("begin_new_game")
 	progression = session.call("progression_service")

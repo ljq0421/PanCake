@@ -10,6 +10,8 @@ signal hold_released(source_ref: Dictionary)
 @export var drag_threshold_pixels := 10.0
 @export var hold_enabled := false
 @export var hold_threshold_seconds := 0.1
+@export var native_drag_enabled := true
+@export var cancel_pending_on_mouse_exit := true
 
 var _source_ref: Dictionary = {}
 var _press_position := Vector2.ZERO
@@ -51,11 +53,11 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			begin_gesture(get_viewport().get_mouse_position())
+			begin_gesture(event.global_position)
 		else:
 			end_gesture()
 	elif event is InputEventMouseMotion and _pressed_for_drag:
-		update_gesture(get_viewport().get_mouse_position())
+		update_gesture(event.global_position)
 
 
 func begin_gesture(viewport_position: Vector2) -> void:
@@ -75,7 +77,7 @@ func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true
 	set_process(false)
 	if _drag_available:
 		drag_started.emit(_source_ref.duplicate(true))
-		if not perform_native_drag:
+		if not perform_native_drag or not native_drag_enabled:
 			return
 		var preview := TextureRect.new()
 		preview.texture = texture_normal
@@ -116,7 +118,7 @@ func end_gesture() -> void:
 	_reset_gesture()
 	if was_holding:
 		hold_released.emit(_source_ref.duplicate(true))
-	elif was_pending and not hold_enabled and _drag_available:
+	elif was_pending:
 		short_clicked.emit(_source_ref.duplicate(true))
 
 
@@ -128,7 +130,7 @@ func _on_mouse_exited() -> void:
 	# Leaving a hold-enabled drink lane cancels restocking as authored. Ordinary
 	# product sources, however, must remain pending long enough for the outgoing
 	# motion event to start their native drag.
-	if hold_enabled and (_pressed_for_drag or _holding):
+	if hold_enabled and (_holding or (_pressed_for_drag and cancel_pending_on_mouse_exit)):
 		end_gesture()
 
 

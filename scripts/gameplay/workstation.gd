@@ -1722,7 +1722,7 @@ func _auto_pour_center() -> void:
 			if StringName(availability.get("stock_id", &"")) == &"stock.pancake.batter":
 				tool_status_label.text = "面糊已经用完；请结束本日营业，下一营业日会补满基础面糊"
 			else:
-				tool_status_label.text = "当前无法制作煎饼：%s" % str(availability.get("reason", "unknown"))
+				tool_status_label.text = _pancake_availability_failure_text(availability)
 			return
 	var center := Vector2(pancake_model.grid_size - 1, pancake_model.grid_size - 1) * 0.5
 	pancake_model.add_batter(center, parameters.automatic_pour_amount, parameters.automatic_pour_radius)
@@ -1733,6 +1733,18 @@ func _auto_pour_center() -> void:
 	tool_status_label.text = "面糊已自动定量倒在鏊心；请直接画圈摊开"
 	kitchen_audio.call("play_cue", &"pour")
 	_refresh_p1_ui()
+
+
+static func _pancake_availability_failure_text(result: Dictionary) -> String:
+	match StringName(result.get("reason", &"unknown")):
+		&"recipe_locked":
+			return "煎饼基础配方未解锁，存档状态异常"
+		&"no_game_session":
+			return "存档服务尚未就绪，请返回开始页后重试"
+		&"insufficient_stock":
+			return "制作所需原料不足，请先补货"
+		_:
+			return "当前无法制作煎饼，请返回开始页后重试"
 
 
 func _update_cooking_audio(delta: float) -> void:
@@ -2972,20 +2984,6 @@ func _growth_ticket_status_text(recommendation: Dictionary) -> String:
 func _growth_ticket_presentation(recommendation: Dictionary) -> Dictionary:
 	if bool(recommendation.get("pending_activation", false)) or bool(recommendation.get("purchased", false)):
 		return {"compact": "已预订，明日生效", "tooltip": "已预订，将在明日生效", "disabled": true}
-	if bool(recommendation.get("coin_guarantee", false)):
-		var current_coins := int(recommendation.get("current_coins", 0))
-		var price := int(recommendation.get("price", 0))
-		if bool(recommendation.get("can_purchase", false)):
-			return {
-				"compact": "金币 %d/%d · 可预订，明日生效" % [current_coins, price],
-				"tooltip": "金币 %d/%d · 可预订，明日生效" % [current_coins, price],
-				"disabled": false,
-			}
-		return {
-			"compact": "金币 %d/%d" % [current_coins, price],
-			"tooltip": "金币 %d/%d" % [current_coins, price],
-			"disabled": true,
-		}
 	if bool(recommendation.get("can_purchase", false)):
 		return {"compact": "可预订，明日生效", "tooltip": "可预订，明日生效", "disabled": false}
 	var missing_requirements: Array = Array(recommendation.get("missing_requirements", []))

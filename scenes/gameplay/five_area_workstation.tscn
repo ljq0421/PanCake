@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="2_controller"]
@@ -8,10 +8,15 @@
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_steamer_station.tscn" id="6_steamer"]
 [ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="8_disposition"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="9_source"]
-[ext_resource type="Script" path="res://scripts/ui/prepared_product_slot.gd" id="10_prepared_slot"]
-[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png" id="11_plain_youtiao"]
-[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/oil_cake_five_area_v2.png" id="12_oil_cake"]
-[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png" id="13_sugar_oil_cake"]
+[ext_resource type="Script" path="res://scripts/ui/five_area_material_slot.gd" id="14_material_slot"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v1_five_area_v2.png" id="15_yellow_bean"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="16_black_bean"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="17_red_bean"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png" id="18_multigrain"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png" id="19_plain_dough"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png" id="20_oil_dough"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png" id="21_sugar_dough"]
+[ext_resource type="Script" path="res://scripts/ui/tutorial_guide_overlay.gd" id="22_tutorial_overlay"]
 
 [sub_resource type="StyleBoxFlat" id="WasteStyle"]
 bg_color = Color(0.72, 0.18, 0.1, 0.9)
@@ -26,6 +31,38 @@ corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 shadow_color = Color(0.18, 0.08, 0.03, 0.35)
 shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="TutorialHighlightStyle"]
+bg_color = Color(1, 0.78, 0.33, 0.08)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.96, 0.66, 0.18, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.43, 0.20, 0.05, 0.28)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="TutorialBubbleStyle"]
+bg_color = Color(1, 0.95, 0.82, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.86, 0.57, 0.17, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+shadow_color = Color(0.34, 0.16, 0.04, 0.30)
+shadow_size = 8
 
 [node name="Workstation" instance=ExtResource("1_base")]
 script = ExtResource("2_controller")
@@ -52,139 +89,237 @@ disabled = false
 mouse_filter = 0
 tooltip_text = "点击交付对应成品"
 
-[node name="PreparedProductSlot04" type="Button" parent="SafeArea"]
+[node name="Slot01" parent="SafeArea/LockedIngredientArtwork"]
+visible = false
+[node name="Slot02" parent="SafeArea/LockedIngredientArtwork"]
+visible = false
+[node name="Slot03" parent="SafeArea/LockedIngredientArtwork"]
+visible = false
+[node name="Slot04" parent="SafeArea/LockedIngredientArtwork"]
+visible = false
+[node name="Slot05" parent="SafeArea/LockedIngredientArtwork"]
+visible = false
+[node name="Slot06" parent="SafeArea/LockedIngredientArtwork"]
+visible = false
+
+[node name="Slot01LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+visible = false
+mouse_filter = 2
+[node name="Slot02LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+visible = false
+mouse_filter = 2
+[node name="Slot03LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+visible = false
+mouse_filter = 2
+[node name="Slot04LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+visible = false
+mouse_filter = 2
+[node name="Slot05LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+visible = false
+mouse_filter = 2
+[node name="Slot06LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+visible = false
+mouse_filter = 2
+
+[node name="SoyFullYellow" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true
-z_index = 30
-layout_mode = 0
+z_index = 31
+offset_left = 28.0
+offset_top = 956.0
+offset_right = 117.0
+offset_bottom = 1045.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.yellow_bean"
+recipe_id = &"recipe.fresh_soy_milk.yellow_bean"
+product_id = &"product.fresh_soy_milk.yellow_bean"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("15_yellow_bean")
+material_label = "黄豆"
+
+[node name="SoyFullBlack" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = 31
+offset_left = 132.0
+offset_top = 956.0
+offset_right = 221.0
+offset_bottom = 1045.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.black_bean"
+recipe_id = &"recipe.fresh_soy_milk.black_bean"
+product_id = &"product.fresh_soy_milk.black_bean"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("16_black_bean")
+material_label = "黑豆"
+
+[node name="SoyFullRed" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = 31
+offset_left = 237.0
+offset_top = 956.0
+offset_right = 326.0
+offset_bottom = 1045.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.red_bean"
+recipe_id = &"recipe.fresh_soy_milk.red_bean"
+product_id = &"product.fresh_soy_milk.red_bean"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("17_red_bean")
+material_label = "红豆"
+
+[node name="SoySplitYellow" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+z_index = 32
+offset_left = 28.0
+offset_top = 956.0
+offset_right = 117.0
+offset_bottom = 1000.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.yellow_bean"
+recipe_id = &"recipe.fresh_soy_milk.yellow_bean"
+product_id = &"product.fresh_soy_milk.yellow_bean"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("15_yellow_bean")
+material_label = "黄豆"
+
+[node name="SoySplitBlack" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+z_index = 32
+offset_left = 132.0
+offset_top = 956.0
+offset_right = 221.0
+offset_bottom = 1000.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.black_bean"
+recipe_id = &"recipe.fresh_soy_milk.black_bean"
+product_id = &"product.fresh_soy_milk.black_bean"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("16_black_bean")
+material_label = "黑豆"
+
+[node name="SoySplitRed" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+z_index = 32
+offset_left = 237.0
+offset_top = 956.0
+offset_right = 326.0
+offset_bottom = 1000.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.red_bean"
+recipe_id = &"recipe.fresh_soy_milk.red_bean"
+product_id = &"product.fresh_soy_milk.red_bean"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("17_red_bean")
+material_label = "红豆"
+
+[node name="SoySplitMultigrain" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+z_index = 32
+offset_left = 28.0
+offset_top = 1001.0
+offset_right = 117.0
+offset_bottom = 1045.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.fresh_soy_milk.multigrain"
+recipe_id = &"recipe.fresh_soy_milk.multigrain"
+product_id = &"product.fresh_soy_milk.multigrain"
+source_kind = &"soy_ingredient"
+material_texture = ExtResource("18_multigrain")
+material_label = "五谷"
+
+[node name="SoySplitReserved02" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+z_index = 32
+offset_left = 132.0
+offset_top = 1001.0
+offset_right = 221.0
+offset_bottom = 1045.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+reserved = true
+
+[node name="SoySplitReserved03" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+visible = false
+z_index = 32
+offset_left = 237.0
+offset_top = 1001.0
+offset_right = 326.0
+offset_bottom = 1045.0
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("14_material_slot")
+reserved = true
+
+[node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = 31
 offset_left = 341.0
 offset_top = 956.0
 offset_right = 430.0
 offset_bottom = 1045.0
-flat = true
-script = ExtResource("10_prepared_slot")
-slot_id = &"slot.04"
-product_id = &"product.youtiao.plain"
-ingredient_type = &"youtiao"
-product_texture = ExtResource("11_plain_youtiao")
-allow_pancake_drag = true
-
-[node name="Artwork" type="TextureRect" parent="SafeArea/PreparedProductSlot04"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 5.0
-offset_right = -7.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
+ignore_texture_size = true
 stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.youtiao.plain_dough"
+recipe_id = &"recipe.youtiao.plain"
+product_id = &"product.youtiao.plain"
+source_kind = &"youtiao_dough"
+material_texture = ExtResource("19_plain_dough")
+material_label = "原味面胚"
 
-[node name="CountLabel" type="Label" parent="SafeArea/PreparedProductSlot04"]
-layout_mode = 1
-anchors_preset = 12
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -22.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-
-[node name="PreparedProductSlot05" type="Button" parent="SafeArea"]
+[node name="YoutiaoDoughOilCake" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true
-z_index = 30
-layout_mode = 0
+z_index = 31
 offset_left = 445.0
 offset_top = 956.0
 offset_right = 534.0
 offset_bottom = 1045.0
-flat = true
-script = ExtResource("10_prepared_slot")
-slot_id = &"slot.05"
-product_id = &"product.youtiao.oil_cake"
-product_texture = ExtResource("12_oil_cake")
-
-[node name="Artwork" type="TextureRect" parent="SafeArea/PreparedProductSlot05"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 5.0
-offset_right = -7.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
+ignore_texture_size = true
 stretch_mode = 5
+script = ExtResource("14_material_slot")
+stock_id = &"stock.youtiao.oil_cake_dough"
+recipe_id = &"recipe.youtiao.oil_cake"
+product_id = &"product.youtiao.oil_cake"
+source_kind = &"youtiao_dough"
+material_texture = ExtResource("20_oil_dough")
+material_label = "油饼面胚"
 
-[node name="CountLabel" type="Label" parent="SafeArea/PreparedProductSlot05"]
-layout_mode = 1
-anchors_preset = 12
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -22.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
-
-[node name="PreparedProductSlot06" type="Button" parent="SafeArea"]
+[node name="YoutiaoDoughSugar" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true
-z_index = 30
-layout_mode = 0
+z_index = 31
 offset_left = 550.0
 offset_top = 956.0
 offset_right = 639.0
 offset_bottom = 1045.0
-flat = true
-script = ExtResource("10_prepared_slot")
-slot_id = &"slot.06"
-product_id = &"product.youtiao.sugar_oil_cake"
-product_texture = ExtResource("13_sugar_oil_cake")
-
-[node name="Artwork" type="TextureRect" parent="SafeArea/PreparedProductSlot06"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 5.0
-offset_right = -7.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
+ignore_texture_size = true
 stretch_mode = 5
-
-[node name="CountLabel" type="Label" parent="SafeArea/PreparedProductSlot06"]
-layout_mode = 1
-anchors_preset = 12
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -22.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 1
+script = ExtResource("14_material_slot")
+stock_id = &"stock.youtiao.sugar_oil_cake_dough"
+recipe_id = &"recipe.youtiao.sugar_oil_cake"
+product_id = &"product.youtiao.sugar_oil_cake"
+source_kind = &"youtiao_dough"
+material_texture = ExtResource("21_sugar_dough")
+material_label = "糖油饼面胚"
 
 [node name="FiveAreaInfrastructure" type="Control" parent="."]
 layout_mode = 1
@@ -342,3 +477,51 @@ horizontal_alignment = 2
 layout_mode = 2
 mouse_filter = 2
 horizontal_alignment = 2
+
+[node name="TutorialGuideOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+z_index = 80
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("22_tutorial_overlay")
+
+[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay"]
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 100.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("TutorialHighlightStyle")
+
+[node name="GuideArrow" type="Label" parent="TutorialGuideOverlay"]
+layout_mode = 0
+offset_right = 36.0
+offset_bottom = 42.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.96, 0.66, 0.18, 1)
+theme_override_colors/font_outline_color = Color(0.38, 0.17, 0.04, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 32
+text = "▼"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GuideBubble" type="PanelContainer" parent="TutorialGuideOverlay"]
+layout_mode = 0
+offset_right = 330.0
+offset_bottom = 68.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("TutorialBubbleStyle")
+
+[node name="GuideLabel" type="Label" parent="TutorialGuideOverlay/GuideBubble"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.38, 0.17, 0.06, 1)
+theme_override_font_sizes/font_size = 18
+text = "下一步"
+autowrap_mode = 2
+vertical_alignment = 1

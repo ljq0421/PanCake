@@ -97,12 +97,12 @@ const PANCAKE_ADD_ON_DISPLAY_ORDER: Array[StringName] = [
 	&"stock.pancake.pork_tenderloin",
 ]
 const MATERIAL_SLOT_DEFINITIONS := {
-	&"slot.01": {"index": 1, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.yellow_bean"},
-	&"slot.02": {"index": 2, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.black_bean"},
-	&"slot.03": {"index": 3, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.plain_dough"},
-	&"slot.04": {"index": 4, "area_id": &"area.youtiao", "kind": &"prepared_product", "product_id": &"product.youtiao.plain", "recipe_id": &"recipe.youtiao.plain", "capacity": 6},
-	&"slot.05": {"index": 5, "area_id": &"area.youtiao", "kind": &"prepared_product", "product_id": &"product.youtiao.oil_cake", "recipe_id": &"recipe.youtiao.oil_cake", "capacity": 6},
-	&"slot.06": {"index": 6, "area_id": &"area.youtiao", "kind": &"prepared_product", "product_id": &"product.youtiao.sugar_oil_cake", "recipe_id": &"recipe.youtiao.sugar_oil_cake", "capacity": 6},
+	&"slot.01": {"index": 1, "area_id": &"area.fresh_soy_milk", "kind": &"split_stock", "stock_ids": [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.multigrain"]},
+	&"slot.02": {"index": 2, "area_id": &"area.fresh_soy_milk", "kind": &"split_stock", "stock_ids": [&"stock.fresh_soy_milk.black_bean", &""]},
+	&"slot.03": {"index": 3, "area_id": &"area.fresh_soy_milk", "kind": &"split_stock", "stock_ids": [&"stock.fresh_soy_milk.red_bean", &""]},
+	&"slot.04": {"index": 4, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.plain_dough"},
+	&"slot.05": {"index": 5, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.oil_cake_dough"},
+	&"slot.06": {"index": 6, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.sugar_oil_cake_dough"},
 	&"slot.07": {"index": 7, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.egg"},
 	&"slot.08": {"index": 8, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.baocui"},
 	&"slot.09": {"index": 9, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.scallion"},
@@ -131,18 +131,18 @@ const STOCK_DEFINITIONS := {
 	&"stock.pancake.preserved_mustard": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 	# A stable order/simulation identifier for the processed plain youtiao.
 	# Capacity stays zero so it can never enter the paid ordinary-restock path.
-	&"stock.pancake.youtiao": {"label": "原味油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &"slot.04"},
+	&"stock.pancake.youtiao": {"label": "原味油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &""},
 	&"stock.packaged_drink.milk": {"label": "纯牛奶", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.16"},
 	&"stock.packaged_drink.soy_milk": {"label": "成品豆奶", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.packaged_drink.walnut": {"label": "核桃乳", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.packaged_drink.black_sesame": {"label": "黑芝麻乳", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.youtiao.plain_dough": {"label": "原味油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 1.50, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.03"},
-	&"stock.youtiao.oil_cake_dough": {"label": "油饼面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 1.50, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.youtiao.sugar_oil_cake_dough": {"label": "糖油饼面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 1.50, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.youtiao.plain_dough": {"label": "原味油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.04"},
+	&"stock.youtiao.oil_cake_dough": {"label": "油饼面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &"slot.05"},
+	&"stock.youtiao.sugar_oil_cake_dough": {"label": "糖油饼面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &"slot.06"},
 	&"stock.fresh_soy_milk.yellow_bean": {"label": "黄豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 1.50, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.01"},
 	&"stock.fresh_soy_milk.black_bean": {"label": "黑豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 1.50, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &"slot.02"},
-	&"stock.fresh_soy_milk.red_bean": {"label": "红豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 1.50, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.fresh_soy_milk.multigrain": {"label": "五谷豆料", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 1.50, "restock_unit_cost": 5, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.fresh_soy_milk.red_bean": {"label": "红豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 1.50, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &"slot.03"},
+	&"stock.fresh_soy_milk.multigrain": {"label": "五谷豆料", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 1.50, "restock_unit_cost": 5, "restock_capacity": 6, "material_slot_id": &"slot.01"},
 	&"stock.steamer.mantou": {"label": "馒头半成品", "area_id": &"area.steamer", "category": &"semi_product", "refill_seconds": 1.50, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.18"},
 	&"stock.steamer.vegetable_bun": {"label": "菜包半成品", "area_id": &"area.steamer", "category": &"semi_product", "refill_seconds": 1.50, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &"slot.17"},
 	&"stock.steamer.meat_bun": {"label": "肉包半成品", "area_id": &"area.steamer", "category": &"semi_product", "refill_seconds": 1.50, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &""},
@@ -403,14 +403,17 @@ static func validate_catalog() -> PackedStringArray:
 				errors.append("Unknown stock in material slot: %s" % slot_id)
 			elif STOCK_DEFINITIONS[stock_id].get("material_slot_id", &"") != slot_id:
 				errors.append("Stock to slot mismatch: %s" % stock_id)
+		elif slot.get("kind", &"") == &"split_stock":
+			var stock_ids := Array(slot.get("stock_ids", []))
+			if stock_ids.size() != 2:
+				errors.append("Split stock slot must author two cells: %s" % slot_id)
+			for stock_id_value in stock_ids:
+				var stock_id := StringName(stock_id_value)
+				if stock_id != &"" and (not STOCK_DEFINITIONS.has(stock_id) or STOCK_DEFINITIONS[stock_id].get("material_slot_id", &"") != slot_id):
+					errors.append("Split stock to slot mismatch: %s" % stock_id)
 		elif slot.get("kind", &"") == &"dynamic_add_on":
 			if not PANCAKE_ADD_ON_SLOT_PRIORITY.has(slot_id):
 				errors.append("Unexpected dynamic pancake add-on slot: %s" % slot_id)
-		elif slot.get("kind", &"") == &"prepared_product":
-			var product_id := StringName(slot.get("product_id", &""))
-			var recipe_id := StringName(slot.get("recipe_id", &""))
-			if slot_id not in [&"slot.04", &"slot.05", &"slot.06"] or not PRODUCT_DEFINITIONS.has(product_id) or not RECIPE_DEFINITIONS.has(recipe_id) or int(slot.get("capacity", 0)) != 6:
-				errors.append("Invalid prepared product slot: %s" % slot_id)
 		elif slot.get("kind", &"") != &"reserved":
 			errors.append("Unknown material slot kind: %s" % slot_id)
 	for stock_id in PANCAKE_ADD_ON_DISPLAY_ORDER:

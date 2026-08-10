@@ -1,13 +1,8 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v2.png" id="2_machine"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v1_five_area_v2.png" id="3_ing1"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="4_ing2"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="5_ing3"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png" id="6_ing4"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="7_source"]
-[ext_resource type="Script" path="res://scripts/ui/restock_hold_button.gd" id="8_restock"]
 
 [sub_resource type="StyleBoxFlat" id="PartStyle"]
 bg_color = Color(0.96, 0.92, 0.78, 0.94)
@@ -33,6 +28,10 @@ corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_machine_cropped"]
+atlas = ExtResource("2_machine")
+region = Rect2(332, 30, 360, 458)
+
 [node name="DirectSoyStation" type="Control"]
 custom_minimum_size = Vector2(306, 340)
 offset_right = 306.0
@@ -41,38 +40,38 @@ mouse_filter = 0
 script = ExtResource("1_root")
 
 [node name="Machine" type="TextureRect" parent="."]
-offset_left = 20.0
-offset_top = 5.0
-offset_right = 286.0
-offset_bottom = 205.0
+offset_left = 73.0
+offset_top = 8.0
+offset_right = 233.0
+offset_bottom = 208.0
 mouse_filter = 2
-texture = ExtResource("2_machine")
+texture = SubResource("AtlasTexture_machine_cropped")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="WaterButton" type="Button" parent="."]
 unique_name_in_owner = true
-offset_left = 42.0
-offset_top = 60.0
-offset_right = 112.0
-offset_bottom = 126.0
+offset_left = 12.0
+offset_top = 72.0
+offset_right = 80.0
+offset_bottom = 130.0
 theme_override_styles/normal = SubResource("PartStyle")
 text = "加水"
 [node name="StartButton" type="Button" parent="."]
 unique_name_in_owner = true
-offset_left = 194.0
-offset_top = 60.0
-offset_right = 264.0
-offset_bottom = 126.0
+offset_left = 226.0
+offset_top = 72.0
+offset_right = 294.0
+offset_bottom = 130.0
 theme_override_styles/normal = SubResource("PartStyle")
 text = "启动"
 
 [node name="MachineOutput" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 113.0
-offset_top = 124.0
-offset_right = 193.0
-offset_bottom = 204.0
+offset_left = 78.0
+offset_top = 110.0
+offset_right = 154.0
+offset_bottom = 184.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("7_source")
@@ -117,115 +116,13 @@ script = ExtResource("7_source")
 [node name="StateLabel" type="Label" parent="."]
 unique_name_in_owner = true
 offset_left = 28.0
-offset_top = 195.0
+offset_top = 268.0
 offset_right = 278.0
-offset_bottom = 225.0
+offset_bottom = 298.0
 theme_override_colors/font_color = Color(0.24, 0.13, 0.06, 1)
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 
-[node name="Ingredient01" type="TextureButton" parent="."]
-unique_name_in_owner = true
-offset_left = 14.0
-offset_top = 230.0
-offset_right = 78.0
-offset_bottom = 294.0
-texture_normal = ExtResource("3_ing1")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
-[node name="Ingredient02" type="TextureButton" parent="."]
-unique_name_in_owner = true
-offset_left = 85.0
-offset_top = 230.0
-offset_right = 149.0
-offset_bottom = 294.0
-texture_normal = ExtResource("4_ing2")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
-[node name="Ingredient03" type="TextureButton" parent="."]
-unique_name_in_owner = true
-offset_left = 156.0
-offset_top = 230.0
-offset_right = 220.0
-offset_bottom = 294.0
-texture_normal = ExtResource("5_ing3")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
-[node name="Ingredient04" type="TextureButton" parent="."]
-unique_name_in_owner = true
-offset_left = 227.0
-offset_top = 230.0
-offset_right = 291.0
-offset_bottom = 294.0
-texture_normal = ExtResource("6_ing4")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
-
-[node name="Count01" type="Label" parent="."]
-unique_name_in_owner = true
-offset_left = 14.0
-offset_top = 286.0
-offset_right = 78.0
-offset_bottom = 310.0
-horizontal_alignment = 1
-[node name="Count02" type="Label" parent="."]
-unique_name_in_owner = true
-offset_left = 85.0
-offset_top = 286.0
-offset_right = 149.0
-offset_bottom = 310.0
-horizontal_alignment = 1
-[node name="Count03" type="Label" parent="."]
-unique_name_in_owner = true
-offset_left = 156.0
-offset_top = 286.0
-offset_right = 220.0
-offset_bottom = 310.0
-horizontal_alignment = 1
-[node name="Count04" type="Label" parent="."]
-unique_name_in_owner = true
-offset_left = 227.0
-offset_top = 286.0
-offset_right = 291.0
-offset_bottom = 310.0
-horizontal_alignment = 1
-
-[node name="Restock01" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 14.0
-offset_top = 294.0
-offset_right = 80.0
-offset_bottom = 340.0
-text = "补"
-script = ExtResource("8_restock")
-[node name="Restock02" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 85.0
-offset_top = 294.0
-offset_right = 151.0
-offset_bottom = 340.0
-text = "补"
-script = ExtResource("8_restock")
-[node name="Restock03" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 156.0
-offset_top = 294.0
-offset_right = 222.0
-offset_bottom = 340.0
-text = "补"
-script = ExtResource("8_restock")
-[node name="Restock04" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 227.0
-offset_top = 294.0
-offset_right = 293.0
-offset_bottom = 340.0
-text = "补"
-script = ExtResource("8_restock")
 
 [node name="LockCover" type="Button" parent="."]
 unique_name_in_owner = true

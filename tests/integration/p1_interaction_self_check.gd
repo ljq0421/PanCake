@@ -31,6 +31,8 @@ func _run() -> void:
 	workstation._process(1.0)
 	_check(is_equal_approx(workstation.p1_session.elapsed_seconds, elapsed_before_business_pause), "a persisted business pause also freezes the local pancake session clock")
 	game_session.call("set_business_paused", false)
+	var locked_copy := Workstation._pancake_availability_failure_text({"reason": &"recipe_locked"})
+	_check(locked_copy == "煎饼基础配方未解锁，存档状态异常" and not locked_copy.contains("recipe_locked"), "pancake availability maps the internal recipe lock code to player-facing Chinese")
 	_check(workstation.customer_portrait != null and workstation.order_amount_label != null and workstation.patience_bar != null, "P1 customer, order and patience nodes are stable scene content")
 	var tutorial_patience_before := float(Dictionary(game_session.call("active_formal_order")).get("remaining_patience_seconds", 0.0))
 	workstation._process(1.0)

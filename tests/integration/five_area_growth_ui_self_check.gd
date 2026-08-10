@@ -22,28 +22,25 @@ func _run() -> void:
 	progression.set("area_mastery", {&"area.pancake": 0})
 	progression.set("area_mastery_details", {&"area.pancake": {"qualified": 0, "a_grade": 0}})
 	progression.set("tutorial_completed_area_ids", {})
-	var guarantee_station = WORKSTATION_SCENE.instantiate()
-	root.add_child(guarantee_station)
+	var locked_station = WORKSTATION_SCENE.instantiate()
+	root.add_child(locked_station)
 	await process_frame
 	await process_frame
-	guarantee_station.call("end_business_day")
-	var guarantee_tickets := _growth_tickets(guarantee_station)
-	var guarantee_ids_before := _ticket_ids(guarantee_tickets)
-	_check(guarantee_ids_before == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "internal coin path keeps the first fixed-route three-card window")
-	_check(guarantee_tickets[0].disabled and "[安装位]" in guarantee_tickets[0].text and "金币 5/12" in guarantee_tickets[0].text, "all-locked day end shows the ordinary slot title and real coin gap")
-	_check(guarantee_tickets[0].tooltip_text == "金币 5/12" and "营业日" not in guarantee_tickets[0].tooltip_text, "internal coin path hides its design rule and exposes only the real coin requirement")
-	for ticket in guarantee_tickets:
-		_check(not "金币保底" in ticket.text and not "金币保底" in ticket.tooltip_text, "day-end cards never expose the internal coin-guarantee term")
+	locked_station.call("end_business_day")
+	var locked_tickets := _growth_tickets(locked_station)
+	var locked_ids_before := _ticket_ids(locked_tickets)
+	_check(locked_ids_before == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "all-locked day end keeps the first fixed-route three-card window")
+	_check(locked_tickets[0].disabled and "[安装位]" in locked_tickets[0].text and "营业日 1/2" in locked_tickets[0].text, "all-locked day end shows the frontier's real primary requirement")
+	_check("营业日 1/2" in locked_tickets[0].tooltip_text and "金币 5/12" in locked_tickets[0].tooltip_text, "all-locked frontier tooltip preserves every real unmet requirement")
 	progression.set("coins", 20)
-	guarantee_station.call("_refresh_growth_section")
-	_check(not guarantee_tickets[0].disabled and "金币 20/12 · 可预订，明日生效" in guarantee_tickets[0].text and guarantee_tickets[0].tooltip_text == "金币 20/12 · 可预订，明日生效", "sufficient balance makes the internal coin path clickable with ordinary matching copy")
-	guarantee_tickets[0].emit_signal("pressed")
+	locked_station.call("_refresh_growth_section")
+	_check(locked_tickets[0].disabled and "营业日 1/2" in locked_tickets[0].text and "金币 20/12" not in locked_tickets[0].tooltip_text, "sufficient balance does not bypass the remaining day requirement")
+	locked_tickets[0].emit_signal("pressed")
 	await process_frame
-	var guaranteed_pending: Dictionary = session.call("five_area_progression_snapshot")
-	_check(str(guaranteed_pending.get("pending_install_purchase", "")) == "growth.tool.pancake.wide_spreader" and int(guaranteed_pending.get("coins", 0)) == 8, "clicking the guaranteed card charges its catalog price and reserves the install slot")
-	_check(_ticket_ids(guarantee_tickets) == guarantee_ids_before, "clicking one reservation does not replace or reorder the other fixed-route cards")
-	_check(guarantee_tickets[0].disabled and "已预订：宽幅摊饼器" in guarantee_tickets[0].text and "金币保底" not in guarantee_tickets[0].text, "purchased internal coin path refreshes into the normal pending state")
-	guarantee_station.queue_free()
+	var locked_snapshot: Dictionary = session.call("five_area_progression_snapshot")
+	_check(str(locked_snapshot.get("pending_install_purchase", "")).is_empty() and int(locked_snapshot.get("coins", 0)) == 20, "pressing a locked card cannot charge coins or reserve its slot")
+	_check(_ticket_ids(locked_tickets) == locked_ids_before and locked_tickets[0].disabled and "营业日 1/2" in locked_tickets[0].text, "rejected purchase keeps the fixed cards and real condition unchanged")
+	locked_station.queue_free()
 	await process_frame
 
 	session.call("begin_new_game")
@@ -63,10 +60,54 @@ func _run() -> void:
 	_check(_ticket_ids(day_one_tickets) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "day-one UI follows the first fixed-route batch")
 	_check(day_one_tickets[0].disabled and not day_one_tickets[1].disabled and day_one_tickets[2].disabled, "day-one preview independently reflects day, reputation, and mastery gates")
 	_check("营业日 1/2" in day_one_tickets[0].text and "可预订，明日生效" in day_one_tickets[1].text and "煎饼合格数 0/6" in day_one_tickets[2].text, "first cards visibly mix business-day, reputation-ready, and qualified-count progress")
-	_check(not "金币保底" in day_one_tickets[0].text, "an existing purchasable content card prevents unnecessary coin guarantee activation")
 	_check("营业日 1/2" in day_one_tickets[0].tooltip_text and "煎饼合格数" not in day_one_tickets[0].tooltip_text and "金币 100/12" not in day_one_tickets[0].tooltip_text, "wide spreader tooltip lists only its real unmet D2 requirement")
 	_check("暂不满足条件" not in day_one_tickets[0].text and "暂不满足条件" not in day_one_tickets[0].tooltip_text, "growth UI no longer uses the ambiguous fallback")
 	day_one_station.queue_free()
+	await process_frame
+
+	session.call("begin_new_game")
+	progression = session.call("progression_service")
+	progression.set("coins", 844)
+	progression.set("reputation", 1004)
+	progression.set("current_day", 12)
+	progression.set("unlocked_area_ids", {
+		&"area.pancake": true,
+		&"area.packaged_drink": true,
+		&"area.youtiao": true,
+	})
+	progression.set("owned_growth_ids", {
+		&"growth.tool.pancake.wide_spreader": true,
+		&"growth.add_on.pancake.red_chili": true,
+		&"growth.area.packaged_drink": true,
+		&"growth.equipment.pancake.intermediate": true,
+		&"growth.add_on.pancake.ham_sausage": true,
+		&"growth.product.packaged_drink.soy_milk": true,
+		&"growth.equipment.packaged_drink.intermediate": true,
+		&"growth.add_on.pancake.meat_floss": true,
+		&"growth.assist.youtiao.temperature_indicator": true,
+	})
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true})
+	progression.set("tutorial_queue_area_ids", [&"area.packaged_drink"])
+	progression.set("tutorial_active_kind", &"area")
+	progression.set("tutorial_active_id", &"area.packaged_drink")
+	var oil_cake_station = WORKSTATION_SCENE.instantiate()
+	root.add_child(oil_cake_station)
+	await process_frame
+	await process_frame
+	oil_cake_station.call("end_business_day")
+	var oil_cake_tickets := _growth_tickets(oil_cake_station)
+	_check(_ticket_ids(oil_cake_tickets) == [&"growth.area.youtiao", &"growth.recipe.youtiao.oil_cake", &"growth.capacity.stock.intermediate"], "attachment state renders the fryer, oil-cake, and stock-capacity cards in fixed order")
+	_check(oil_cake_tickets[0].disabled and "需完成成品饮品教学" in oil_cake_tickets[0].text and not oil_cake_tickets[1].disabled and not oil_cake_tickets[2].disabled, "attachment state shows the real independent conditions before reserving oil cake")
+	var fryer_text_before := oil_cake_tickets[0].text
+	var fryer_tooltip_before := oil_cake_tickets[0].tooltip_text
+	oil_cake_tickets[1].emit_signal("pressed")
+	await process_frame
+	var oil_cake_pending: Dictionary = session.call("five_area_progression_snapshot")
+	_check(int(oil_cake_pending.get("coins", 0)) == 826 and str(oil_cake_pending.get("pending_content_purchase", "")) == "growth.recipe.youtiao.oil_cake", "oil-cake UI reservation charges 18 coins and occupies only the content slot")
+	_check(oil_cake_tickets[0].disabled and oil_cake_tickets[0].text == fryer_text_before and oil_cake_tickets[0].tooltip_text == fryer_tooltip_before, "oil-cake reservation leaves the fryer's tutorial condition unchanged")
+	_check(oil_cake_tickets[1].disabled and "已预订：油饼" in oil_cake_tickets[1].text and "明日生效" in oil_cake_tickets[1].tooltip_text, "selected oil cake refreshes into the pending state")
+	_check(oil_cake_tickets[2].disabled and "该购买位已预订：油饼" in oil_cake_tickets[2].text and "该购买位已预订：油饼" in oil_cake_tickets[2].tooltip_text, "other content growth reflects the occupied content slot")
+	oil_cake_station.queue_free()
 	await process_frame
 
 	session.call("begin_new_game")

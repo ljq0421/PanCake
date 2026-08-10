@@ -1,5 +1,7 @@
 extends SceneTree
 
+const PANCAKE_PRODUCTION := preload("res://scripts/services/five_area_pancake_production_service.gd")
+
 var _failures: Array[String] = []
 
 func _initialize() -> void:
@@ -21,6 +23,41 @@ func _run() -> void:
 		_check(not FileAccess.file_exists(session.SAVE_PATH), "old development save is deleted rather than migrated")
 	else:
 		print("INFO: user:// is unavailable in this sandbox; disk deletion assertions skipped.")
+	if storage_available:
+		session.call("begin_new_game")
+		var damaged_save := Dictionary(session.get("_save_data")).duplicate(true)
+		var preserved_inventory := Dictionary(damaged_save.get("inventory", {})).duplicate(true)
+		preserved_inventory["stock.pancake.egg"] = 4
+		preserved_inventory["stock.youtiao.plain_dough"] = 2
+		damaged_save["inventory"] = preserved_inventory.duplicate(true)
+		damaged_save["progression"] = {
+			"coins": 37,
+			"reputation": 4,
+			"current_day": 3,
+			"day_open": false,
+			"unlocked_area_ids": [&"area.pancake", &"area.youtiao"],
+			"device_tiers": {&"device.youtiao_fryer": 0},
+			"unlocked_recipe_ids": [&"recipe.youtiao.plain"],
+			"unlocked_product_ids": [&"product.youtiao.plain"],
+			"unlocked_stock_ids": [&"stock.youtiao.plain_dough"],
+			"tutorial": {"completed_area_ids": [], "queue_area_ids": [&"area.pancake", &"area.youtiao"], "active_kind": &"area", "active_id": &"area.pancake"},
+		}
+		session.set("_save_data", damaged_save)
+		session.call("_write_save")
+		session.call("_load_save")
+		session.call("_restore_progression")
+		var repaired_progression: RefCounted = session.call("progression_service")
+		var repaired_inventory: Dictionary = session.call("inventory_snapshot")
+		var pancake_production: RefCounted = PANCAKE_PRODUCTION.new(session)
+		_check(bool(pancake_production.call("can_produce").get("success", false)), "valid v3 save with missing starter IDs can produce pancakes after load repair")
+		_check(repaired_progression.coins == 37 and repaired_progression.reputation == 4 and repaired_progression.current_day == 3 and repaired_progression.owns_recipe(&"recipe.youtiao.plain"), "load repair preserves progress and later unlocks")
+		_check(repaired_inventory == preserved_inventory, "load repair does not refill, consume, or otherwise change inventory quantities")
+		var repaired_file := FileAccess.open(session.SAVE_PATH, FileAccess.READ)
+		var persisted_repair: Variant = JSON.parse_string(repaired_file.get_as_text()) if repaired_file != null else null
+		if repaired_file != null:
+			repaired_file.close()
+		var persisted_progression := Dictionary(Dictionary(persisted_repair).get("progression", {})) if persisted_repair is Dictionary else {}
+		_check(Array(persisted_progression.get("unlocked_recipe_ids", [])).has("recipe.pancake.base") and Array(persisted_progression.get("unlocked_product_ids", [])).has("product.pancake.custom"), "load repair writes normalized starter IDs back to the same v3 save")
 	var new_game: Dictionary = session.call("begin_new_game")
 	_check(bool(new_game.get("success", false)) and session.call("has_save"), "new five-area save is created")
 	_check(session.SAVE_VERSION == 3 and session.SAVE_KIND == "five_area_v1", "save has the formal five-area identity")

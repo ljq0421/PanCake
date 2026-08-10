@@ -56,6 +56,20 @@ func _run() -> void:
 	_check(_area_id(teaching) == &"area.packaged_drink" and StringName(_item(teaching).get("temperature_mode", &"")) == &"room_temperature", "starter drink teaching is a room-temperature single item")
 	_check(Array(stocked_teaching.get("items", [])).size() == 1 and _item(stocked_teaching) == _item(teaching), "restocking does not replace or expand the authored drink teaching item")
 	_check(bool(Dictionary(teaching.get("metadata", {})).get("tutorial_no_countdown", false)) and is_equal_approx(float(Dictionary(teaching.get("metadata", {})).get("patience_seconds", 0.0)), 24.0), "drink teaching is explicitly unlimited instead of receiving a hidden countdown")
+	var teaching_products := {
+		&"area.pancake": &"product.pancake.custom",
+		&"area.packaged_drink": &"product.packaged_drink.milk",
+		&"area.youtiao": &"product.youtiao.plain",
+		&"area.fresh_soy_milk": &"product.fresh_soy_milk.yellow_bean",
+		&"area.steamer": &"product.steamer.mantou",
+	}
+	for teaching_area_id in teaching_products:
+		var area_progression := progression.duplicate(true)
+		area_progression["tutorial"] = {"completed_area_ids": [], "active_kind": &"area", "active_id": teaching_area_id}
+		var area_teaching := Dictionary(GENERATOR.generate(area_progression, empty_inventory, 9, 1, 3, 0))
+		_check(bool(area_teaching.get("success", false)) and Array(area_teaching.get("items", [])).size() == 1 and _area_id(area_teaching) == teaching_area_id and StringName(_item(area_teaching).get("product_id", &"")) == teaching_products[teaching_area_id], "%s zero-stock teaching remains a single authored product" % teaching_area_id)
+		var same_day := Dictionary(GENERATOR.generate(area_progression, empty_inventory, 9, 2, 3, 3))
+		_check(StringName(Dictionary(same_day.get("metadata", {})).get("teaching_area_id", &"")).is_empty(), "%s teaching cannot be generated twice on the same day" % teaching_area_id)
 
 	var service: RefCounted = ORDER_SERVICE.new()
 	var opened: Dictionary = service.call("ensure_queue", 1, teaching)

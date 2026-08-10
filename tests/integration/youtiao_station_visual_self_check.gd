@@ -69,6 +69,7 @@ func _check_tiers_and_recipes(station: Node) -> void:
 		station.apply_visual_snapshot(_snapshot(tier, &"loaded", RECIPE_IDS[0], capacity), _inventory())
 		_check(station.body_visual.texture == station.body_textures[tier], "tier %d selects its own modular body" % [tier + 1])
 		_check(station.lowered_basket_visual.texture == station.lowered_basket_textures[tier], "tier %d selects its own lowered basket" % [tier + 1])
+		_check(station.lowered_basket_front_visual.texture == station.lowered_basket_visual.texture and is_equal_approx(station.lowered_basket_front_clip.position.y, DirectYoutiaoStation._front_clip_top(tier, false)), "tier %d reuses the exact lowered basket pixels for its front occluder" % [tier + 1])
 		_check(_visible_food_count(station) == capacity, "tier %d renders its %d-serving physical capacity" % [tier + 1, capacity])
 	for recipe_index in range(RECIPE_IDS.size()):
 		station.apply_visual_snapshot(_snapshot(0, &"loaded", RECIPE_IDS[recipe_index], 1), _inventory())
@@ -79,7 +80,7 @@ func _check_tiers_and_recipes(station: Node) -> void:
 
 func _check_states(station: Node) -> void:
 	station.apply_visual_snapshot(_snapshot(0, &"idle"), _inventory())
-	_check(station.lowered_basket_visual.visible and not station.raised_basket_visual.visible and _visible_food_count(station) == 0, "idle shows an empty lowered basket")
+	_check(station.lowered_basket_visual.visible and station.lowered_basket_front_clip.visible and not station.raised_basket_visual.visible and not station.raised_basket_front_clip.visible and _visible_food_count(station) == 0, "idle shows an empty lowered basket with its matching front occluder")
 	station.apply_visual_snapshot(_snapshot(0, &"loaded", RECIPE_IDS[0], 2), _inventory())
 	_check(_visible_food_count(station) == 2 and station.raw_food_visuals[0].modulate.a > 0.99 and station.cooked_food_visuals[0].modulate.a < 0.01, "loaded shows two raw portions in the lowered basket")
 	station.apply_visual_snapshot(_snapshot(0, &"frying", RECIPE_IDS[0], 2, 6.0), _inventory())
@@ -91,7 +92,7 @@ func _check_states(station: Node) -> void:
 	station.apply_visual_snapshot(_snapshot(0, &"burnt", RECIPE_IDS[0], 2, 12.0, 15.0, 0.0), _inventory())
 	_check(station.burnt_smoke_visual.visible and station.lift_button.text == "丢弃" and not station.lift_button.disabled, "burnt adds reused smoke and an explicit discard recovery")
 	station.apply_visual_snapshot(_snapshot(0, &"draining", RECIPE_IDS[0], 2), _inventory())
-	_check(station.raised_basket_visual.visible and not station.lowered_basket_visual.visible and station.oil_drips_visual.visible, "draining raises food with the basket and loops oil drips")
+	_check(station.raised_basket_visual.visible and station.raised_basket_front_clip.visible and not station.lowered_basket_visual.visible and not station.lowered_basket_front_clip.visible and station.raised_basket_front_visual.texture == station.raised_basket_visual.texture and station.oil_drips_visual.visible, "draining raises food between the exact raised-basket base and front pixels while oil drips loop")
 	station.apply_visual_snapshot(_snapshot(0, &"ready_to_collect", RECIPE_IDS[0], 2), _inventory())
 	_check(station.raised_basket_visual.visible and station.output_source.visible and _visible_food_count(station) == 2, "ready-to-collect keeps the high basket and drag source")
 	station.apply_visual_snapshot(_snapshot(0, &"ready_to_collect", RECIPE_IDS[0], 1), _inventory())

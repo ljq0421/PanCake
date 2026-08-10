@@ -29,17 +29,19 @@ func _run() -> void:
 		return
 	session.call("begin_new_game")
 	var progression: RefCounted = session.call("progression_service")
-	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.packaged_drink": true, &"area.youtiao": true})
-	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.packaged_drink_heater": 0, &"device.youtiao_fryer": 0})
-	progression.set("unlocked_recipe_ids", {RECIPE: true})
-	progression.set("unlocked_product_ids", {&"product.youtiao.plain": true})
-	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
+	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.packaged_drink": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
+	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.packaged_drink_heater": 0, &"device.youtiao_fryer": 0, &"device.fresh_soy_milk_machine": 0})
+	progression.set("unlocked_recipe_ids", {RECIPE: true, &"recipe.fresh_soy_milk.yellow_bean": true, &"recipe.fresh_soy_milk.multigrain": true})
+	progression.set("unlocked_product_ids", {&"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true, &"product.fresh_soy_milk.multigrain": true})
+	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true, &"stock.fresh_soy_milk.multigrain": true})
 	progression.set("unlocked_automation_ids", {AUTO_LOAD: true})
 	session.call("_sync_progression_to_save")
 	session.set("_production_service", null)
 	session.call("_ensure_production_service")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	inventory["stock.youtiao.plain_dough"] = 5
+	inventory["stock.fresh_soy_milk.yellow_bean"] = 2
+	inventory["stock.fresh_soy_milk.multigrain"] = 2
 	session.call("save_inventory", inventory)
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
@@ -52,6 +54,18 @@ func _run() -> void:
 		await process_frame
 		_finish()
 		return
+	var soy_top := workstation.soy_split_slots[0] as Control
+	var soy_bottom := workstation.soy_split_slots[3] as Control
+	_check(soy_top.visible and soy_bottom.visible and soy_top.size.y < 50.0 and soy_bottom.size.y < 50.0, "multigrain unlock switches to six preauthored half-slot targets")
+	await _hover_control(soy_top)
+	_check(root.gui_get_hovered_control() == soy_top, "1920x1080 pointer resolves the upper soy half-slot")
+	await _hover_control(soy_bottom)
+	_check(root.gui_get_hovered_control() == soy_bottom, "1920x1080 pointer resolves the lower soy half-slot")
+	workstation.tutorial_guide_overlay.call("show_guide", soy_top, "把黄豆拖入豆浆机")
+	await process_frame
+	var guide_highlight_1920 := workstation.tutorial_guide_overlay.get_node("TargetHighlight") as Control
+	_check(guide_highlight_1920.get_global_rect().has_point(soy_top.get_global_rect().get_center()), "1920x1080 guide arrow layer aligns to the upper half-slot")
+	workstation.tutorial_guide_overlay.call("hide_guide")
 	workstation.set_process(false)
 	_clear_formal_orders(session)
 	var opened: Dictionary = session.call("open_formal_order", [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1, "temperature_mode": &"room_temperature"}])
@@ -63,11 +77,16 @@ func _run() -> void:
 	workstation.call("_focus_formal_order", focused_order, false)
 	await process_frame
 	_check(station.auto_load_panel.visible and station.auto_load_visual.visible, "owned auto-load hardware is visible in the formal station")
-	await _hover_control(station.dough_sources[0])
+	var plain_dough_source := workstation.youtiao_dough_slots[0] as Control
+	await _hover_control(plain_dough_source)
 	var dough_hovered := root.gui_get_hovered_control()
-	_check(dough_hovered == station.dough_sources[0], "the GPU pointer resolves the unlocked dough source; hovered=%s visible=%s disabled=%s" % [str(dough_hovered.get_path() if dough_hovered != null else "none"), station.dough_sources[0].is_visible_in_tree(), station.dough_sources[0].disabled])
+	_check(dough_hovered == plain_dough_source, "the GPU pointer resolves the bottom-dock dough source; hovered=%s visible=%s disabled=%s" % [str(dough_hovered.get_path() if dough_hovered != null else "none"), plain_dough_source.is_visible_in_tree(), plain_dough_source.disabled])
+	session.call("credit_coins", 2)
+	await _hold_control(plain_dough_source, 0.55)
+	var inventory_after_hold := Dictionary(session.call("inventory_snapshot"))
+	_check(int(inventory_after_hold.get("stock.youtiao.plain_dough", 0)) == 6 and int(session.call("five_area_progression_snapshot").get("coins", -1)) == 0, "real stationary pointer hold completes one 0.25-second youtiao restock unit after the shared hold threshold")
 
-	await _drag_control(station.dough_sources[0], station.machine_stage)
+	await _drag_control(plain_dough_source, station.machine_stage)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"loaded", "real pointer drag moves one dough portion into the physical basket")
 	await _click_control(station.start_button)
@@ -87,27 +106,19 @@ func _run() -> void:
 	await _hover_control(station.output_source)
 	_check(root.gui_get_hovered_control() == station.output_source, "the GPU pointer resolves the modular output hit area above the basket art")
 	_check(StringName(station.output_source.source_ref().get("product_id", &"")) == &"product.youtiao.plain", "the physical output source carries the current product identity")
-	var prepared_slot := workstation.get_node("SafeArea/PreparedProductSlot04") as Control
-	_check(prepared_slot != null and prepared_slot.is_visible_in_tree(), "Slot04 is visible as the fixed plain-youtiao prepared-product slot")
-	await _drag_control(station.output_source, prepared_slot)
-	await process_frame
-	var post_slot_state := StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &""))
-	var slot_status := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
-	_check(post_slot_state == &"idle" and int(slot_status.get("count", 0)) == 1, "real output drag atomically moves one drained youtiao into Slot04 and resets the fryer")
 	var order_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
 	_check(not order_target.disabled and order_target.mouse_filter == Control.MOUSE_FILTER_STOP, "the youtiao order product is an enabled pointer delivery target")
 	await _hover_control(order_target)
 	_check(root.gui_get_hovered_control() == order_target, "the GPU pointer resolves the order product target")
 	await _click_control(order_target)
 	await process_frame
-	var slot_after_delivery := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
-	_check(int(slot_after_delivery.get("count", 0)) == 0, "real order-card click takes the oldest matching product from Slot04")
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "real order-card click takes the drained youtiao directly from the fryer")
 	var order := Dictionary(session.call("formal_order", order_id))
 	var item := Dictionary(Array(order.get("items", []))[0]) if not Array(order.get("items", [])).is_empty() else {}
-	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 1 and StringName(order.get("state", &"")) == &"settled", "the order product click delivers and settles the slotted youtiao")
+	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 1 and StringName(order.get("state", &"")) == &"settled", "the order product click delivers and settles the fryer-held youtiao")
 	_check(StringName(workstation.get("_formal_order_id")) != order_id, "the next customer is routed before youtiao payment collection")
 
-	await _click_control(station.dough_sources[0])
+	await _click_control(plain_dough_source)
 	await _click_control(station.auto_plus_button)
 	await _click_control(station.auto_confirm_button)
 	await process_frame
@@ -126,6 +137,14 @@ func _run() -> void:
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	for _frame in 4:
 		await process_frame
+	await _hover_control(soy_top)
+	_check(root.gui_get_hovered_control() == soy_top, "1280x720 pointer resolves the upper soy half-slot")
+	await _hover_control(soy_bottom)
+	_check(root.gui_get_hovered_control() == soy_bottom, "1280x720 pointer resolves the lower soy half-slot")
+	workstation.tutorial_guide_overlay.call("show_guide", soy_bottom, "把五谷豆料拖入豆浆机")
+	await process_frame
+	var guide_highlight := workstation.tutorial_guide_overlay.get_node("TargetHighlight") as Control
+	_check(workstation.tutorial_guide_overlay.visible and guide_highlight.get_global_rect().has_point(soy_bottom.get_global_rect().get_center()), "1280x720 guide arrow layer remains aligned to the lower half-slot")
 	await _save_viewport(SCREENSHOT_1280, Vector2i(1280, 720))
 	var stage_rect_before_tiers := station.machine_stage.get_global_rect()
 	var start_rect_before_tiers := station.start_button.get_global_rect()
@@ -156,7 +175,7 @@ func _run() -> void:
 
 
 func _click_control(control: Control) -> void:
-	var position := control.get_global_rect().get_center()
+	var position := _pointer_position(control)
 	Input.warp_mouse(position)
 	var motion := InputEventMouseMotion.new()
 	motion.position = position
@@ -180,7 +199,7 @@ func _click_control(control: Control) -> void:
 
 
 func _hover_control(control: Control) -> void:
-	var position := control.get_global_rect().get_center()
+	var position := _pointer_position(control)
 	Input.warp_mouse(position)
 	var motion := InputEventMouseMotion.new()
 	motion.position = position
@@ -189,9 +208,33 @@ func _hover_control(control: Control) -> void:
 	await process_frame
 
 
+func _hold_control(control: Control, seconds: float) -> void:
+	var position := _pointer_position(control)
+	Input.warp_mouse(position)
+	var hover := InputEventMouseMotion.new()
+	hover.position = position
+	hover.global_position = position
+	Input.parse_input_event(hover)
+	await process_frame
+	var pressed := InputEventMouseButton.new()
+	pressed.button_index = MOUSE_BUTTON_LEFT
+	pressed.pressed = true
+	pressed.position = position
+	pressed.global_position = position
+	root.push_input(pressed)
+	await create_timer(seconds).timeout
+	var released := InputEventMouseButton.new()
+	released.button_index = MOUSE_BUTTON_LEFT
+	released.pressed = false
+	released.position = position
+	released.global_position = position
+	root.push_input(released)
+	await process_frame
+
+
 func _drag_control(source: Control, target: Control) -> void:
-	var from := source.get_global_rect().get_center()
-	var to := target.get_global_rect().get_center()
+	var from := _pointer_position(source)
+	var to := _pointer_position(target)
 	Input.warp_mouse(from)
 	var hover := InputEventMouseMotion.new()
 	hover.position = from
@@ -207,6 +250,7 @@ func _drag_control(source: Control, target: Control) -> void:
 	await process_frame
 	for ratio in [0.18, 0.42, 0.72, 1.0]:
 		var position := from.lerp(to, ratio)
+		Input.warp_mouse(position)
 		var motion := InputEventMouseMotion.new()
 		motion.position = position
 		motion.global_position = position
@@ -220,6 +264,12 @@ func _drag_control(source: Control, target: Control) -> void:
 	released.global_position = to
 	root.push_input(released)
 	await process_frame
+
+
+func _pointer_position(control: Control) -> Vector2:
+	# Control rectangles live in the authored 1920x1080 canvas. Pointer events
+	# use physical window coordinates after canvas_items stretch is applied.
+	return root.get_final_transform() * control.get_global_rect().get_center()
 
 
 func _save_viewport(path: String, expected_size: Vector2i) -> void:

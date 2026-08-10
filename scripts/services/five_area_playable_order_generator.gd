@@ -150,7 +150,7 @@ static func _combine_candidates(candidates: Array[Dictionary]) -> Dictionary:
 	}
 
 
-static func _teaching_candidate(area_id: StringName, progression: Dictionary, inventory: Dictionary) -> Dictionary:
+static func _teaching_candidate(area_id: StringName, progression: Dictionary, _inventory: Dictionary) -> Dictionary:
 	var candidate: Dictionary
 	if area_id == &"area.pancake":
 		candidate = _pancake_candidate(progression, Dictionary(progression.get("tutorial", {})), 0, 0, true)
@@ -161,23 +161,8 @@ static func _teaching_candidate(area_id: StringName, progression: Dictionary, in
 		candidate = _product_candidate(area_id, product_id, progression, 0, 0, true)
 	if not bool(candidate.get("success", false)):
 		return candidate
-	# The packaged-drink tutorial teaches the complete cabinet loop, including
-	# restocking. Its customer must therefore appear immediately after the area
-	# activates even when the newly unlocked milk lane is still empty.
-	if area_id == &"area.packaged_drink":
-		return candidate
-	var missing := PackedStringArray()
-	for stock_id_variant in Array(candidate.get("required_stock_ids", [])):
-		var stock_id := StringName(stock_id_variant)
-		if int(inventory.get(str(stock_id), inventory.get(stock_id, 0))) < 1:
-			missing.append(str(stock_id))
-	if not missing.is_empty():
-		return {
-			"success": false,
-			"reason": &"tutorial_restock_required",
-			"teaching_area_id": area_id,
-			"missing_stock_ids": missing,
-		}
+	# Every area tutorial includes its own zero-stock recovery step. Never defer
+	# the first teaching customer merely because the player must restock first.
 	return candidate
 
 

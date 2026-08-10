@@ -26,6 +26,10 @@ const STOCK_IDS: Array[StringName] = [&"stock.youtiao.plain_dough", &"stock.yout
 @onready var body_visual: TextureRect = %BodyVisual
 @onready var lowered_basket_visual: TextureRect = %LoweredBasketVisual
 @onready var raised_basket_visual: TextureRect = %RaisedBasketVisual
+@onready var lowered_basket_front_clip: Control = %LoweredBasketFrontClip
+@onready var lowered_basket_front_visual: TextureRect = %LoweredBasketFrontVisual
+@onready var raised_basket_front_clip: Control = %RaisedBasketFrontClip
+@onready var raised_basket_front_visual: TextureRect = %RaisedBasketFrontVisual
 @onready var auto_lift_visual: TextureRect = %AutoLiftArmVisual
 @onready var auto_load_visual: TextureRect = %AutoLoadFeederVisual
 @onready var food_slots: Array[Control] = [%FoodSlot01, %FoodSlot02, %FoodSlot03, %FoodSlot04]
@@ -36,9 +40,6 @@ const STOCK_IDS: Array[StringName] = [&"stock.youtiao.plain_dough", &"stock.yout
 @onready var oil_drips_visual: TextureRect = %OilDripsVisual
 @onready var burnt_smoke_visual: TextureRect = %BurntSmokeVisual
 @onready var temperature_range_bar: YoutiaoTemperatureRangeBar = %TemperatureRangeBar
-@onready var dough_sources: Array[ProductDragSource] = [%Dough01, %Dough02, %Dough03]
-@onready var dough_counts: Array[Label] = [%DoughCount01, %DoughCount02, %DoughCount03]
-@onready var restock_buttons: Array[RestockHoldButton] = [%Restock01, %Restock02, %Restock03]
 @onready var start_button: Button = %StartButton
 @onready var lift_button: Button = %LiftButton
 @onready var output_source: ProductDragSource = %OutputSource
@@ -53,6 +54,7 @@ const STOCK_IDS: Array[StringName] = [&"stock.youtiao.plain_dough", &"stock.yout
 
 var _machine: Dictionary = {}
 var _inventory: Dictionary = {}
+var _unlocked_recipe_ids: Array = []
 var _selected_recipe_id: StringName = RECIPE_IDS[0]
 var _selected_quantity := 1
 var _refresh_elapsed := 0.0
@@ -62,6 +64,7 @@ var _structural_signature := ""
 var _visual_tweens: Array[Tween] = []
 var _sizzle_rest_positions: Array[Vector2] = []
 var _drips_rest_position := Vector2.ZERO
+var _raised_basket_front_rest_position := Vector2(0.0, 44.0)
 
 
 func _ready() -> void:
@@ -70,10 +73,6 @@ func _ready() -> void:
 	auto_minus_button.pressed.connect(_change_auto_quantity.bind(-1))
 	auto_plus_button.pressed.connect(_change_auto_quantity.bind(1))
 	auto_confirm_button.pressed.connect(_confirm_auto_load)
-	for source in dough_sources:
-		source.short_clicked.connect(_on_dough_short_clicked)
-	for button in restock_buttons:
-		button.restock_feedback.connect(_on_restock_feedback)
 	lock_cover.pressed.connect(_on_lock_cover_pressed)
 	auto_lift_visual.texture = auto_lift_texture
 	auto_load_visual.texture = auto_load_texture
@@ -128,6 +127,7 @@ func refresh_from_session() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_area := _contains_id(Array(progression.get("unlocked_area_ids", [])), &"area.youtiao")
 	var unlocked_recipes := Array(progression.get("unlocked_recipe_ids", []))
+	_unlocked_recipe_ids = unlocked_recipes.duplicate()
 	_inventory = Dictionary(session.call("inventory_snapshot"))
 	var snapshot := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	snapshot["unlocked_recipe_ids"] = unlocked_recipes.duplicate()
@@ -135,15 +135,16 @@ func refresh_from_session() -> void:
 	snapshot["owned_assist_ids"] = Array(progression.get("owned_assist_ids", [])).duplicate()
 	lock_cover.visible = not unlocked_area
 	_apply_machine_snapshot(snapshot)
-	_refresh_recipe_sources(unlocked_area, unlocked_recipes)
+	_refresh_controls()
 
 
 func apply_visual_snapshot(snapshot: Dictionary, inventory: Dictionary = {}) -> void:
 	_session_refresh_enabled = false
 	_inventory = inventory.duplicate(true)
+	_unlocked_recipe_ids = Array(snapshot.get("unlocked_recipe_ids", RECIPE_IDS)).duplicate()
 	lock_cover.visible = not bool(snapshot.get("owned", false))
 	_apply_machine_snapshot(snapshot, true)
-	_refresh_recipe_sources(bool(snapshot.get("owned", false)), Array(snapshot.get("unlocked_recipe_ids", RECIPE_IDS)))
+	_refresh_controls()
 
 
 func resume_session_refresh() -> void:
@@ -173,12 +174,17 @@ func _render_machine() -> void:
 	body_visual.texture = _texture_at(body_textures, tier)
 	lowered_basket_visual.texture = _texture_at(lowered_basket_textures, tier)
 	raised_basket_visual.texture = _texture_at(raised_basket_textures, tier)
+	lowered_basket_front_visual.texture = lowered_basket_visual.texture
+	raised_basket_front_visual.texture = raised_basket_visual.texture
+	_layout_basket_front_clips(tier)
 	body_visual.modulate = Color.WHITE
 	lowered_basket_visual.modulate = Color.WHITE
 	raised_basket_visual.modulate = Color.WHITE
 	var basket_is_raised := state in [&"draining", &"ready_to_collect"]
 	lowered_basket_visual.visible = not basket_is_raised
 	raised_basket_visual.visible = basket_is_raised
+	lowered_basket_front_clip.visible = not basket_is_raised
+	raised_basket_front_clip.visible = basket_is_raised
 	auto_lift_visual.visible = _owns_automation(AUTO_LIFT)
 	auto_load_visual.visible = _owns_automation(AUTO_LOAD)
 	_layout_food(tier, state, basket_is_raised)
@@ -188,7 +194,7 @@ func _render_machine() -> void:
 	output_source.visible = state == &"ready_to_collect"
 	var recipe_id := StringName(_machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-	output_source.configure({"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state == &"ready_to_collect", "从高位炸篮逐份拖入匹配的 Slot04–Slot06")
+	output_source.configure({"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state == &"ready_to_collect", "成品留在炸篮；点击订单商品交付，原味油条也可拖入煎饼")
 	output_source.self_modulate = Color(1.0, 1.0, 1.0, 0.01)
 	temperature_range_bar.apply_snapshot(_machine, _owns_assist(TEMPERATURE_ASSIST))
 
@@ -222,6 +228,19 @@ func _layout_food(tier: int, state: StringName, basket_is_raised: bool) -> void:
 		cooked_visual.modulate = Color(cooked_color.r, cooked_color.g, cooked_color.b, cooked_alpha)
 
 
+func _layout_basket_front_clips(tier: int) -> void:
+	_layout_basket_front_clip(lowered_basket_front_clip, lowered_basket_front_visual, _front_clip_top(tier, false))
+	_layout_basket_front_clip(raised_basket_front_clip, raised_basket_front_visual, _front_clip_top(tier, true))
+	_raised_basket_front_rest_position = raised_basket_front_clip.position
+
+
+func _layout_basket_front_clip(clip: Control, visual: TextureRect, clip_top: float) -> void:
+	clip.position = Vector2(0.0, clip_top)
+	clip.size = Vector2(machine_stage.size.x, machine_stage.size.y - clip_top)
+	visual.position = Vector2(0.0, -clip_top)
+	visual.size = machine_stage.size
+
+
 func _refresh_controls() -> void:
 	if not is_node_ready():
 		return
@@ -238,22 +257,17 @@ func _refresh_controls() -> void:
 	auto_minus_button.disabled = _selected_quantity <= 1
 	auto_plus_button.disabled = max_quantity <= 0 or _selected_quantity >= max_quantity
 	auto_confirm_button.disabled = not _can_confirm_auto_load()
-	for index in range(dough_sources.size()):
-		var selected := RECIPE_IDS[index] == _selected_recipe_id
-		dough_sources[index].modulate = Color(1.15, 1.05, 0.72, 1.0) if selected and auto_load_panel.visible else Color.WHITE
 
 
-func _refresh_recipe_sources(unlocked_area: bool, unlocked_recipes: Array) -> void:
-	for index in range(RECIPE_IDS.size()):
-		var recipe_id := RECIPE_IDS[index]
-		var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-		var count := int(_inventory.get(str(STOCK_IDS[index]), 0))
-		var unlocked := unlocked_area and _contains_id(unlocked_recipes, recipe_id)
-		dough_sources[index].configure({"source_kind": &"youtiao_dough", "source_index": index, "product_id": product_id, "recipe_id": recipe_id}, _texture_at(raw_food_textures, index), unlocked and count > 0, "点击选择自动批次；拖入炸篮可逐份投料")
-		dough_sources[index].visible = unlocked
-		dough_counts[index].text = str(count) if unlocked else "锁"
-		restock_buttons[index].configure(STOCK_IDS[index], unlocked, "按住补充面胚")
+func select_recipe(recipe_id: StringName) -> bool:
+	if not RECIPE_IDS.has(recipe_id) or not _contains_id(_unlocked_recipe_ids, recipe_id):
+		status_message.emit("该面胚配方尚未解锁")
+		return false
+	_selected_recipe_id = recipe_id
+	_selected_quantity = clampi(_selected_quantity, 1, maxi(_max_auto_quantity(), 1))
 	_refresh_controls()
+	status_message.emit("自动投胚配方已选择：%s" % _recipe_label(recipe_id))
+	return true
 
 
 func _perform_action(action_id: StringName) -> void:
@@ -278,15 +292,6 @@ func _on_lift_or_discard_pressed() -> void:
 	var result: Dictionary = session.call("discard_f3_youtiao") if session != null else {"success": false, "reason": &"no_game_session"}
 	status_message.emit("焦糊批次已报废" if bool(result.get("success", false)) else "无法报废：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
-
-
-func _on_dough_short_clicked(source_ref: Dictionary) -> void:
-	var recipe_id := StringName(source_ref.get("recipe_id", &""))
-	if RECIPE_IDS.has(recipe_id):
-		_selected_recipe_id = recipe_id
-		_selected_quantity = clampi(_selected_quantity, 1, maxi(_max_auto_quantity(), 1))
-		_refresh_controls()
-		status_message.emit("自动批次已选择：%s" % _recipe_label(recipe_id))
 
 
 func _change_auto_quantity(delta: int) -> void:
@@ -364,9 +369,13 @@ func _animate_lift_feedback() -> void:
 		return
 	raised_basket_visual.position = Vector2(0.0, 20.0)
 	raised_basket_visual.modulate.a = 0.45
+	raised_basket_front_clip.position = _raised_basket_front_rest_position + Vector2(0.0, 20.0)
+	raised_basket_front_clip.modulate.a = 0.45
 	var tween := _new_visual_tween().set_parallel(true)
 	tween.tween_property(raised_basket_visual, "position", Vector2.ZERO, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(raised_basket_visual, "modulate:a", 1.0, 0.18)
+	tween.tween_property(raised_basket_front_clip, "position", _raised_basket_front_rest_position, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(raised_basket_front_clip, "modulate:a", 1.0, 0.18)
 
 
 func _update_looping_effects() -> void:
@@ -406,21 +415,17 @@ func _cancel_visual_feedback() -> void:
 			tween.kill()
 	_visual_tweens.clear()
 	if is_node_ready():
-		machine_stage.position = Vector2.ZERO
 		machine_stage.scale = Vector2.ONE
 		raised_basket_visual.position = Vector2.ZERO
 		raised_basket_visual.modulate = Color.WHITE
+		raised_basket_front_clip.position = _raised_basket_front_rest_position
+		raised_basket_front_clip.modulate = Color.WHITE
 
 
 func _new_visual_tween() -> Tween:
 	var tween := create_tween()
 	_visual_tweens.append(tween)
 	return tween
-
-
-func _on_restock_feedback(result: Dictionary) -> void:
-	if int(result.get("completed_units", 0)) > 0:
-		status_message.emit("面胚补货 +%d" % int(result.get("completed_units", 0)))
 
 
 func _on_lock_cover_pressed() -> void:
@@ -448,10 +453,17 @@ func _cooked_color(state: StringName) -> Color:
 
 
 static func _food_rects(tier: int, raised: bool) -> Array[Rect2]:
-	var y := 5.0 if raised else 23.0
 	if tier < 2:
-		return [Rect2(106, y, 38, 30), Rect2(143, y, 38, 30), Rect2(), Rect2()]
-	return [Rect2(78, y, 32, 29), Rect2(109, y, 32, 29), Rect2(140, y, 32, 29), Rect2(171, y, 32, 29)]
+		var y := 16.0 if raised else 38.0
+		return [Rect2(124, y, 38, 30), Rect2(153, y, 38, 30), Rect2(), Rect2()]
+	if raised:
+		return [Rect2(111, 5, 32, 29), Rect2(136, 5, 32, 29), Rect2(161, 5, 32, 29), Rect2(186, 5, 32, 29)]
+	return [Rect2(96, 40, 32, 29), Rect2(130, 40, 32, 29), Rect2(164, 40, 32, 29), Rect2(198, 40, 32, 29)]
+
+
+static func _front_clip_top(tier: int, raised: bool) -> float:
+	var clamped_tier := clampi(tier, 0, 2)
+	return [44.0, 45.0, 32.0][clamped_tier] if raised else [64.0, 64.0, 66.0][clamped_tier]
 
 
 static func _snapshot_signature(snapshot: Dictionary) -> String:

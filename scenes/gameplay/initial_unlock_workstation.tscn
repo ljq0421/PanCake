@@ -727,7 +727,7 @@ theme_override_styles/normal = SubResource("StyleBox_order_dish_target_normal")
 theme_override_styles/hover = SubResource("StyleBox_order_dish_target_hover")
 theme_override_styles/pressed = SubResource("StyleBox_order_dish_target_pressed")
 theme_override_styles/focus = SubResource("StyleBox_order_dish_target_hover")
-tooltip_text = "只读点单提示；请把实体成品拖入顾客托盘"
+tooltip_text = "点击订单商品图标交付成品"
 flat = true
 
 [node name="OrderDishTarget2" type="Button" parent="SafeArea/OrderCard"]
@@ -742,7 +742,7 @@ theme_override_styles/normal = SubResource("StyleBox_order_dish_target_normal")
 theme_override_styles/hover = SubResource("StyleBox_order_dish_target_hover")
 theme_override_styles/pressed = SubResource("StyleBox_order_dish_target_pressed")
 theme_override_styles/focus = SubResource("StyleBox_order_dish_target_hover")
-tooltip_text = "只读点单提示；请把实体成品拖入顾客托盘"
+tooltip_text = "点击订单商品图标交付成品"
 flat = true
 
 [node name="OrderDishTarget3" type="Button" parent="SafeArea/OrderCard"]
@@ -757,7 +757,7 @@ theme_override_styles/normal = SubResource("StyleBox_order_dish_target_normal")
 theme_override_styles/hover = SubResource("StyleBox_order_dish_target_hover")
 theme_override_styles/pressed = SubResource("StyleBox_order_dish_target_pressed")
 theme_override_styles/focus = SubResource("StyleBox_order_dish_target_hover")
-tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+tooltip_text = "点击订单商品图标交付成品"
 flat = true
 
 [node name="OrderIngredientBackground01" type="Panel" parent="SafeArea/OrderCard"]

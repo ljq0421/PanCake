@@ -14,6 +14,7 @@ const LEGACY_INGREDIENT_TO_STOCK := {
 	&"pork_tenderloin": &"stock.pancake.pork_tenderloin",
 	&"coriander": &"stock.pancake.coriander",
 	&"preserved_mustard": &"stock.pancake.preserved_mustard",
+	&"youtiao": &"stock.pancake.youtiao",
 }
 const LEGACY_SAUCE_TO_STOCK := {
 	&"sweet_flour": &"stock.pancake.sauce.sweet_flour",
@@ -152,7 +153,7 @@ func _ingredient_cost_stock_ids(score_result: Dictionary, fallback_ids: PackedSt
 	if quantities.is_empty():
 		return fallback_ids
 	var stock_ids := PackedStringArray()
-	for ingredient_type in IngredientModel.TYPES:
+	for ingredient_type in IngredientModel.ALL_TYPES:
 		var stock_id: StringName = LEGACY_INGREDIENT_TO_STOCK.get(ingredient_type, &"")
 		if stock_id.is_empty():
 			continue

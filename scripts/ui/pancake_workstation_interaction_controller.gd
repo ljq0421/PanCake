@@ -139,7 +139,7 @@ func _refresh_material_slot_locks() -> void:
 			locked_button.visible = not occupied
 			locked_button.disabled = occupied
 			locked_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if occupied else Control.MOUSE_FILTER_STOP
-			locked_button.tooltip_text = "新小料解锁后会按 Slot10 → Slot11 → Slot12 → Slot6 → Slot13 → Slot5 → Slot14 的顺序放入。"
+			locked_button.tooltip_text = "新小料解锁后会按 Slot10 → Slot11 → Slot12 → Slot13 → Slot14 的顺序放入。"
 
 
 func _refresh_sauce_controls() -> void:

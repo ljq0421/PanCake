@@ -223,7 +223,10 @@ func advance_patience(delta: float) -> Dictionary:
 			if StringName(order.get("state", &"")) == &"serving" or bool(order.get("tutorial_no_countdown", false)):
 				continue
 			var remaining := maxf(float(order.get("remaining_patience_seconds", order.get("patience_seconds", 0.0))) - delta, 0.0)
-			order["remaining_patience_seconds"] = snappedf(remaining, 0.1)
+			# Keep the authoritative timer at full precision. Presentation code may
+			# round whole seconds, but feeding a rounded value back into the next
+			# frame makes small deltas stall and produces visible bar jumps.
+			order["remaining_patience_seconds"] = remaining
 			_orders[order_id] = order
 			changed_order_ids.append(str(order_id))
 			if remaining <= 0.0:

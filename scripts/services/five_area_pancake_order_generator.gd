@@ -16,6 +16,7 @@ const STABLE_TO_LEGACY_INGREDIENT := {
 	&"stock.pancake.pork_tenderloin": &"pork_tenderloin",
 	&"stock.pancake.coriander": &"coriander",
 	&"stock.pancake.preserved_mustard": &"preserved_mustard",
+	&"stock.pancake.youtiao": &"youtiao",
 }
 const STABLE_TO_LEGACY_SAUCE := {
 	&"stock.pancake.sauce.sweet_flour": &"sweet_flour",
@@ -65,7 +66,12 @@ static func _eligible_template_ids(progression_snapshot: Dictionary) -> Array[St
 		var required := Array(template.get("ingredient_stock_ids", [])) + Array(template.get("sauce_stock_ids", []))
 		if Array(template.get("sauce_stock_ids", [])).size() > MAX_SAUCE_REQUIREMENTS:
 			continue
-		if _owns_all(progression_snapshot, required):
+		var ordinary_required: Array = []
+		for stock_id_variant in required:
+			var stock_id := StringName(stock_id_variant)
+			if StringName(CATALOG.stock_definition(stock_id).get("category", &"")) != &"prepared_add_on":
+				ordinary_required.append(stock_id)
+		if _owns_all(progression_snapshot, ordinary_required) and _owns_all_recipes(progression_snapshot, Array(template.get("requires_recipe_ids", []))):
 			ids.append(template_id)
 	ids.sort()
 	return ids
@@ -77,6 +83,16 @@ static func _owns_all(progression_snapshot: Dictionary, stock_ids: Array) -> boo
 		owned[StringName(stock_id)] = true
 	for stock_id_variant in stock_ids:
 		if not bool(owned.get(StringName(stock_id_variant), false)):
+			return false
+	return true
+
+
+static func _owns_all_recipes(progression_snapshot: Dictionary, recipe_ids: Array) -> bool:
+	var owned := {}
+	for recipe_id in Array(progression_snapshot.get("unlocked_recipe_ids", [])):
+		owned[StringName(recipe_id)] = true
+	for recipe_id_variant in recipe_ids:
+		if not bool(owned.get(StringName(recipe_id_variant), false)):
 			return false
 	return true
 

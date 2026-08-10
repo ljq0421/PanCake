@@ -212,7 +212,7 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 	workstation.call("_on_order_dish_pressed", 1)
 	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("空"), "clicking an empty order-card item gives a concrete reason")
 	workstation.call("_on_order_dish_pressed", 0)
-	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("仅用于查看"), "compatibility invocation explains that physical tray drag is the only delivery route")
+	_check((workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("五区域"), "legacy base scene points delivery to the live five-area order-card route")
 	var patience_text := workstation.get_node_or_null("SafeArea/PatienceTextLabel") as Label
 	_check(coin != null and coin.visible and coin.texture != null and amount != null and not amount.text.is_empty(), "runtime order data fills the coin and amount in the card header")
 	_check(first_dish != null and first_dish.visible and first_dish.texture != null and second_dish != null and not second_dish.visible and third_dish != null and not third_dish.visible, "a current single-dish order fills only the first of three reserved dish wells")
@@ -333,7 +333,7 @@ func _check_player_feedback_controls(workstation: Node, game_session: Node) -> v
 		workstation.call("_on_customer_slot_pressed", 0)
 		_check(bool(Dictionary(stored).get("success", false)) and workstation.p1_session.phase == production_phase_before, "clicking the focused customer does not deliver the displayed tray pancake")
 		workstation.call("_on_order_dish_pressed", 0)
-		_check(workstation.p1_session.phase == production_phase_before and (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("实体成品"), "order-card compatibility call cannot start delivery while production continues")
+		_check(workstation.p1_session.phase == production_phase_before and (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text.contains("五区域"), "legacy base-scene order card cannot start delivery while production continues")
 		_check(is_equal_approx(workstation.pancake_model.total_thickness(), pancake_mass_before), "read-only order card does not mutate the pancake on the griddle")
 	var tray_slot := workstation.get_node_or_null("SafeArea/PancakeHoldingTray/PancakeHoldingSlot02") as Button
 	_check(tray_slot != null and tray_slot.visible and tray_slot.disabled and tray_slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "empty holding slots remain visible but cannot become delivery controls")

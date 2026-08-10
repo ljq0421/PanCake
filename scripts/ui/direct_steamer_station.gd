@@ -63,7 +63,7 @@ func refresh_from_session() -> void:
 		var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
 		layer_targets[layer_index].visible = state != &"locked"
 		layer_starts[layer_index].visible = state == &"loaded"
-		layer_outputs[layer_index].configure({"source_kind": &"steamer_layer", "source_index": layer_index, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state in [&"ready_safe", &"overcooking"], "从该层拖到顾客托盘")
+		layer_outputs[layer_index].configure({"source_kind": &"steamer_layer", "source_index": layer_index, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state in [&"ready_safe", &"overcooking"], "该层成品已熟；正式订单开放后点击订单商品交付")
 		layer_outputs[layer_index].visible = state in [&"ready_safe", &"overcooking"]
 		layer_labels[layer_index].text = _layer_state_text(state)
 

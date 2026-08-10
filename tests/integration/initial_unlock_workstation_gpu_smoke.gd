@@ -317,15 +317,16 @@ func _run() -> void:
 	var slots_after_customer_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
 	_check(StringName(order_after_customer_click.get("state", &"")) != &"settled" and not slots_after_customer_click.is_empty() and not Dictionary(slots_after_customer_click[0]).is_empty(), "real customer click only focuses the order and does not deliver the displayed tray product")
 	var order_dish_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
-	_check(order_dish_target.disabled and order_dish_target.mouse_filter == Control.MOUSE_FILTER_IGNORE, "order-card product art is a read-only hint rather than a delivery target")
+	_check(not order_dish_target.disabled and order_dish_target.mouse_filter == Control.MOUSE_FILTER_STOP, "order-card product art is a real pointer delivery target")
 	_move_at(order_dish_target.get_global_rect().get_center())
 	await process_frame
 	_click_control(order_dish_target)
 	await process_frame
-	var order_after_tray_click: Dictionary = game_session.call("formal_order", target_order_id)
-	var slots_after_tray_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
-	var tray_click_is_read_only := StringName(order_after_tray_click.get("state", &"")) != &"settled" and not slots_after_tray_click.is_empty() and not Dictionary(slots_after_tray_click[0]).is_empty()
-	_check(tray_click_is_read_only, "real order-icon click cannot route or consume a stored product; delivery requires physical drag to the customer tray")
+	var order_after_delivery_click: Dictionary = game_session.call("formal_order", target_order_id)
+	var slots_after_delivery_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	var stored_product_consumed := slots_after_delivery_click.is_empty() or Dictionary(slots_after_delivery_click[0]).is_empty()
+	_check(StringName(order_after_delivery_click.get("state", &"")) == &"settled" and stored_product_consumed, "real order-icon click delivers and consumes the displayed holding-tray product")
+	_check(StringName(workstation.get("_formal_order_id")) != target_order_id, "real pointer delivery advances to the next customer before payment collection")
 	workstation.get("payment_coin_model").call("add_payment", 3)
 	var payment_denominations: Array[int] = [2, 1]
 	workstation._spawn_payment_flight(payment_denominations)

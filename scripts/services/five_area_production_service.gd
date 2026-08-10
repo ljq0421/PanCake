@@ -203,6 +203,7 @@ func preview_collect_batch(device_id: StringName, quantity: int = 1) -> Dictiona
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := _new_product(StringName(preview.get("product_id", &"")), &"area.youtiao", &"room_temperature", float(preview.get("quality", 0.0)), StringName(preview.get("grade", &"waste")), false)
+	product["material_cost"] = _youtiao_material_cost(StringName(product.get("product_id", &"")))
 	return _success({"product": product, "quantity": quantity})
 
 
@@ -217,6 +218,7 @@ func collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
 	var products: Array[Dictionary] = []
 	for _unit in range(quantity):
 		var product := _new_product(StringName(result.get("product_id", &"")), &"area.youtiao", &"room_temperature", float(result.get("quality", 0.0)), StringName(result.get("grade", &"waste")))
+		product["material_cost"] = _youtiao_material_cost(StringName(product.get("product_id", &"")))
 		products.append(product)
 		product_created.emit(product.duplicate(true))
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
@@ -581,6 +583,13 @@ func _record_waste(area_id: StringName, source_id: StringName, product_id: Strin
 
 static func _stock_cost(stock_id: StringName) -> int:
 	return maxi(int(CATALOG.stock_definition(stock_id).get("restock_unit_cost", 0)), 0)
+
+
+static func _youtiao_material_cost(product_id: StringName) -> int:
+	var product_definition := CATALOG.product_definition(product_id)
+	var recipe_definition := CATALOG.recipe_definition(StringName(product_definition.get("recipe_id", &"")))
+	var stock_ids: Array = Array(recipe_definition.get("stock_ids", []))
+	return _stock_cost(StringName(stock_ids[0])) if not stock_ids.is_empty() else 0
 
 
 static func _success(extra: Dictionary = {}) -> Dictionary:

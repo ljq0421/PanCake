@@ -91,9 +91,9 @@ func _assert_pancake_prefix(workstation: Node) -> void:
 			"pancake ingredient %d keeps catalog order in row-major slot %d" % [slot_index + 1, slot_index + 1],
 		)
 		_check(
-			_ingredient_background(workstation, slot_index).visible
+			not _ingredient_background(workstation, slot_index).visible
 			and not _heat_background(workstation, slot_index).visible,
-			"pancake ingredient slot %d uses the shared normal background" % (slot_index + 1),
+			"pancake ingredient slot %d uses only the authored order-card cell without a second background" % (slot_index + 1),
 		)
 
 

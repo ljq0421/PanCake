@@ -246,44 +246,33 @@ func _run() -> void:
 		workstation.fold_overlay.current_package_texture().resource_path.ends_with("paper_bag_package_v1.png"),
 		"paper-bag completion renders its dedicated finished-product artwork"
 	)
-	_check(not workstation.serve_product_button.visible and not workstation.step_action_button.visible and workstation.order_dish_buttons[0].disabled and workstation.order_dish_buttons[0].mouse_filter == Control.MOUSE_FILTER_IGNORE, "the order item icon is read-only and physical tray delivery is the only handoff route")
+	_check(not workstation.serve_product_button.visible and not workstation.step_action_button.visible and not workstation.order_dish_buttons[0].disabled and workstation.order_dish_buttons[0].mouse_filter == Control.MOUSE_FILTER_STOP, "the ready pancake is delivered through the clickable order item")
 	workstation._on_customer_slot_pressed(0)
 	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE, "choosing the customer only focuses its order")
+	var completed_order_id := StringName(workstation.get("_formal_order_id"))
 	workstation._on_order_dish_pressed(0)
-	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE and not workstation.handoff_product_sprite.visible, "clicking the read-only order item cannot start delivery")
+	var delivered_order := Dictionary(game_session.call("formal_order", completed_order_id))
+	var tray_settlement: Dictionary = Dictionary(workstation.get("_pending_tray_settlement"))
+	var tray_payment_amount := int(tray_settlement.get("earned_coins", 0))
+	_check(StringName(delivered_order.get("state", &"")) == &"settled" and Array(Dictionary(Array(delivered_order.get("items", []))[0]).get("attached_products", [])).size() == 1, "clicking the order item consumes and settles exactly one ready pancake")
+	_check(workstation.pancake_model.covered_cell_count() == 0 and workstation.ingredient_model.placements.is_empty(), "order-card delivery clears the delivered pancake from the griddle")
+	_check(StringName(workstation.get("_formal_order_id")) != completed_order_id and workstation.p1_session.phase == P1Session.Phase.SPREAD, "the next customer starts immediately without waiting for coin collection")
 	_check(
 		not workstation.payment_collection_area.pressed.is_connected(workstation._collect_payment)
 		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment),
 		"no broad payment-slot hit target or hover collection path remains"
 	)
-	workstation.call("_refresh_pancake_drag_sources")
-	var ready_source_ref := Dictionary(workstation.pancake_ready_source.call("source_ref"))
-	_check(StringName(ready_source_ref.get("source_kind", &"")) == &"pancake_ready", "packaged pancake becomes a physical draggable source")
-	workstation.customer_handoff_tray.call("_on_product_source_dropped", ready_source_ref, 0)
-	var staged_order := Dictionary(game_session.call("formal_order", workstation.get("_formal_order_id")))
-	_check(Array(Dictionary(Array(staged_order.get("items", []))[0]).get("attached_products", [])).size() == 1, "physical pancake source attaches to the exact customer tray slot")
-	_check(workstation.pancake_model.covered_cell_count() == 0 and workstation.ingredient_model.placements.is_empty(), "moving the packaged pancake to the customer tray clears it from the griddle")
-	_check(not workstation.result_panel.visible and not workstation.order_summary_card.visible, "tray staging does not force an evaluation panel")
-	workstation.customer_handoff_tray.call("_on_tray_dropped", workstation.get("_formal_order_id"))
-	var tray_payments: Array = Array(game_session.call("pending_tray_payments"))
-	var tray_settlement: Dictionary = Dictionary(workstation.get("_pending_tray_settlement"))
-	var tray_payment_amount := int(Dictionary(tray_payments[0]).get("amount", 0)) if not tray_payments.is_empty() else 0
-	_check(workstation.tray_payment_button.visible, "whole-tray handoff creates a visible click-to-continue settlement")
 	_check(
-		tray_payments.is_empty()
-		and not bool(tray_settlement.get("order_success", true))
+		not bool(tray_settlement.get("order_success", true))
 		and Array(tray_settlement.get("mismatch_reasons", [])).has("sauce_ids"),
-		"a mismatched whole tray reaches customer feedback and the bill without creating a zero-value pending coin"
+		"a mismatched direct delivery reaches customer feedback and the bill without blocking the queue"
 	)
-	_check(StringName(workstation.get("_customer_visual_state")) == &"paying_coins", "whole-tray handoff switches the customer to the paying-coins state")
-	workstation.call("_collect_tray_payment")
 	var next_order_id := StringName(workstation.p1_session.order.get("id", &""))
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
 		and str(next_order_id).begins_with("order.pancake.")
-		and Array(game_session.call("pending_tray_payments")).is_empty()
-		and not workstation.tray_payment_button.visible,
-		"clicking the visible customer payment collects it and starts the next customer"
+		and (workstation.pending_payment_button.visible == (tray_payment_amount > 0)),
+		"next customer is active while only positive payments remain available for click collection"
 	)
 	_check(workstation.customer_line_label.visible and workstation.phase_label.visible, "the next customer order stays actionable behind the optional previous-order summary")
 	workstation._set_customer_portrait_state(P1Session.REACTION_VERY_UNHAPPY)

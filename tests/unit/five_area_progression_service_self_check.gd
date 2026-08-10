@@ -142,6 +142,12 @@ func _run() -> void:
 	_check(progression.pending_install_purchase.is_empty() and progression.pending_content_purchase.is_empty(), "activation clears both pending slots")
 	var restored = SERVICE.new(progression.snapshot())
 	_check(restored.owns_area(&"area.packaged_drink") and restored.owns_stock(&"stock.pancake.sauce.red_chili"), "snapshot restores activation state")
+	var legacy_unfinished_drink = SERVICE.new({
+		"unlocked_area_ids": [&"area.pancake", &"area.packaged_drink"],
+		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+	})
+	var reconciled_tutorial: Dictionary = legacy_unfinished_drink.advance_tutorial_for_new_business_day()
+	_check(StringName(reconciled_tutorial.get("active_kind", &"")) == &"area" and StringName(reconciled_tutorial.get("active_id", &"")) == &"area.packaged_drink", "old unlocked saves recover the unfinished drink tutorial at the next day boundary")
 	var rollback = SERVICE.new({"coins": 50, "current_day": 4, "day_open": false, "pending_install_purchase": "growth.missing", "pending_content_purchase": ""})
 	var rollback_before := rollback.snapshot()
 	_check(not rollback.begin_next_business_day().get("success") and rollback.snapshot() == rollback_before, "invalid pending activation rolls back atomically")

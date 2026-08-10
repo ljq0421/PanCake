@@ -58,9 +58,16 @@ func _run() -> void:
 	progression.set("tutorial_completed_area_ids", {&"area.pancake": true})
 	_check(bool(session.call("purchase_growth", &"growth.area.packaged_drink").get("success", false)), "installation pending purchase saves immediately")
 	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.red_chili").get("success", false)), "content pending purchase saves immediately")
+	session.call("abandon_active_formal_order", &"business_day_expired")
 	session.call("end_business_day")
 	var next_day: Dictionary = session.call("begin_next_business_day")
 	_check(bool(next_day.get("success", false)), "next business day activates persisted pending purchases")
+	var drink_tutorial_opened: Dictionary = session.call("ensure_active_playable_order")
+	var drink_tutorial := Dictionary(drink_tutorial_opened.get("order", {}))
+	var drink_tutorial_items := Array(drink_tutorial.get("items", []))
+	var drink_tutorial_item := Dictionary(drink_tutorial_items[0]) if not drink_tutorial_items.is_empty() else {}
+	_check(bool(drink_tutorial_opened.get("success", false)) and StringName(drink_tutorial.get("teaching_area_id", &"")) == &"area.packaged_drink" and drink_tutorial_items.size() == 1 and StringName(drink_tutorial_item.get("product_id", &"")) == &"product.packaged_drink.milk", "activated cabinet immediately creates its single packaged-drink teaching customer")
+	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", -1)) == 0 and Array(session.call("active_formal_orders")).size() == 1, "drink teaching appears without granting free stock and exclusively occupies the store")
 	if storage_available:
 		session.call("_load_save")
 		session.call("_restore_progression")

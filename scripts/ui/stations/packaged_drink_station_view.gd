@@ -3,6 +3,7 @@ extends PanelContainer
 
 signal intent_requested(intent: Dictionary)
 
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PRODUCT_IDS: Array[StringName] = [
 	&"product.packaged_drink.milk",
 	&"product.packaged_drink.soy_milk",
@@ -142,9 +143,10 @@ func _refresh() -> void:
 		_product_buttons[index].text = "%s\n库存 %d%s" % [_product_label(product_id), int(inventory.get(str(stock_id), 0)), "" if unlocked else " · 未解锁"]
 		_product_buttons[index].disabled = _locked or not _interaction_enabled or not unlocked
 	var slots: Array = Array(machine.get("slots", []))
+	var duration_seconds := float(CATALOG.device_tier(&"device.packaged_drink_heater", tier).get("duration_seconds", 0.0))
 	for slot_index in range(_slot_buttons.size()):
 		var slot := Dictionary(slots[slot_index]) if slot_index < slots.size() else {"state": &"locked"}
-		_slot_buttons[slot_index].text = "加热位 %d\n%s" % [slot_index + 1, _slot_status_text(slot)]
+		_slot_buttons[slot_index].text = "加热位 %d\n%s" % [slot_index + 1, _slot_status_text(slot, duration_seconds)]
 	_refresh_interaction()
 
 
@@ -176,11 +178,11 @@ static func _product_label(product_id: StringName) -> String:
 	return "未知饮品"
 
 
-static func _slot_status_text(slot: Dictionary) -> String:
+static func _slot_status_text(slot: Dictionary, duration_seconds: float) -> String:
 	var product_name := _product_label(StringName(slot.get("product_id", &"")))
 	match StringName(slot.get("state", &"locked")):
 		&"empty": return "空位 · 点击装入"
-		&"heating": return "%s · 加热 %.1f秒" % [product_name, float(slot.get("elapsed_seconds", 0.0))]
+		&"heating": return "%s · 剩余 %.1f秒" % [product_name, maxf(duration_seconds - float(slot.get("elapsed_seconds", 0.0)), 0.0)]
 		&"ready_hot": return "%s · 热饮完成 · 点击交付" % product_name
 		&"cooled": return "%s · 已冷却 · 点击报废" % product_name
 	return "未开放"

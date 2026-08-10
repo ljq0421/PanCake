@@ -87,7 +87,7 @@ const DEVICE_DEFINITIONS := {
 ## Later unlocked add-ons are compacted into these wells in priority order.
 ## Sauce inventory is a countertop input and must never be assigned a material slot.
 const PANCAKE_ADD_ON_SLOT_PRIORITY: Array[StringName] = [
-	&"slot.10", &"slot.11", &"slot.12", &"slot.06", &"slot.13", &"slot.05", &"slot.14",
+	&"slot.10", &"slot.11", &"slot.12", &"slot.13", &"slot.14",
 ]
 const PANCAKE_ADD_ON_DISPLAY_ORDER: Array[StringName] = [
 	&"stock.pancake.ham_sausage",
@@ -100,9 +100,9 @@ const MATERIAL_SLOT_DEFINITIONS := {
 	&"slot.01": {"index": 1, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.yellow_bean"},
 	&"slot.02": {"index": 2, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.black_bean"},
 	&"slot.03": {"index": 3, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.plain_dough"},
-	&"slot.04": {"index": 4, "area_id": &"area.pancake", "kind": &"reserved", "reservation_id": &"reservation.pancake.future_01"},
-	&"slot.05": {"index": 5, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
-	&"slot.06": {"index": 6, "area_id": &"area.pancake", "kind": &"dynamic_add_on"},
+	&"slot.04": {"index": 4, "area_id": &"area.youtiao", "kind": &"prepared_product", "product_id": &"product.youtiao.plain", "recipe_id": &"recipe.youtiao.plain", "capacity": 6},
+	&"slot.05": {"index": 5, "area_id": &"area.youtiao", "kind": &"prepared_product", "product_id": &"product.youtiao.oil_cake", "recipe_id": &"recipe.youtiao.oil_cake", "capacity": 6},
+	&"slot.06": {"index": 6, "area_id": &"area.youtiao", "kind": &"prepared_product", "product_id": &"product.youtiao.sugar_oil_cake", "recipe_id": &"recipe.youtiao.sugar_oil_cake", "capacity": 6},
 	&"slot.07": {"index": 7, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.egg"},
 	&"slot.08": {"index": 8, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.baocui"},
 	&"slot.09": {"index": 9, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.scallion"},
@@ -129,6 +129,9 @@ const STOCK_DEFINITIONS := {
 	&"stock.pancake.pork_tenderloin": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.pancake.preserved_mustard": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
+	# A stable order/simulation identifier for the processed plain youtiao.
+	# Capacity stays zero so it can never enter the paid ordinary-restock path.
+	&"stock.pancake.youtiao": {"label": "原味油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &"slot.04"},
 	&"stock.packaged_drink.milk": {"label": "纯牛奶", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.16"},
 	&"stock.packaged_drink.soy_milk": {"label": "成品豆奶", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.packaged_drink.walnut": {"label": "核桃乳", "area_id": &"area.packaged_drink", "category": &"finished_drink", "refill_seconds": 0.50, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &""},
@@ -148,7 +151,7 @@ const STOCK_DEFINITIONS := {
 const ADD_ON_DEFINITIONS := {
 	&"stock.pancake.egg": {}, &"stock.pancake.baocui": {}, &"stock.pancake.scallion": {},
 	&"stock.pancake.ham_sausage": {}, &"stock.pancake.meat_floss": {}, &"stock.pancake.pork_tenderloin": {},
-	&"stock.pancake.coriander": {}, &"stock.pancake.preserved_mustard": {},
+	&"stock.pancake.coriander": {}, &"stock.pancake.preserved_mustard": {}, &"stock.pancake.youtiao": {},
 }
 const SAUCE_DEFINITIONS := {
 	&"stock.pancake.sauce.sweet_flour": {},
@@ -319,6 +322,7 @@ const PANCAKE_ORDER_TEMPLATES := {
 	&"order.pancake.tenderloin_double_sauce": {"title": "双酱里脊煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.pork_tenderloin", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"], "heat_preference": &"well_done", "time_limit": 88.0, "payment_coins": 36, "customer_line": "里脊配双酱，饼皮要结实一点。"},
 	&"order.pancake.coriander": {"title": "香菜薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.coriander"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 10, "customer_line": "薄脆和香菜都要，刷甜面酱。"},
 	&"order.pancake.preserved_mustard": {"title": "榨菜辣酱煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.preserved_mustard"], "sauce_stock_ids": [&"stock.pancake.sauce.red_chili"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 11, "customer_line": "加榨菜，刷辣酱。"},
+	&"order.pancake.youtiao_scallion": {"title": "油条葱香煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.youtiao", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "requires_recipe_ids": [&"recipe.youtiao.plain"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 12, "customer_line": "加一根原味油条、葱花和甜面酱。"},
 }
 
 static func area_definition(area_id: StringName) -> Dictionary:
@@ -402,6 +406,11 @@ static func validate_catalog() -> PackedStringArray:
 		elif slot.get("kind", &"") == &"dynamic_add_on":
 			if not PANCAKE_ADD_ON_SLOT_PRIORITY.has(slot_id):
 				errors.append("Unexpected dynamic pancake add-on slot: %s" % slot_id)
+		elif slot.get("kind", &"") == &"prepared_product":
+			var product_id := StringName(slot.get("product_id", &""))
+			var recipe_id := StringName(slot.get("recipe_id", &""))
+			if slot_id not in [&"slot.04", &"slot.05", &"slot.06"] or not PRODUCT_DEFINITIONS.has(product_id) or not RECIPE_DEFINITIONS.has(recipe_id) or int(slot.get("capacity", 0)) != 6:
+				errors.append("Invalid prepared product slot: %s" % slot_id)
 		elif slot.get("kind", &"") != &"reserved":
 			errors.append("Unknown material slot kind: %s" % slot_id)
 	for stock_id in PANCAKE_ADD_ON_DISPLAY_ORDER:

@@ -109,6 +109,8 @@ const ORDER_CARD_INGREDIENT_TEXTURES := {
 	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
 	IngredientModel.PORK_TENDERLOIN: preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
 	&"stock.pancake.pork_tenderloin": preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
+	IngredientModel.YOUTIAO: preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
+	&"stock.pancake.youtiao": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
 }
 const ORDER_CARD_HEAT_TEXTURE := preload("res://resources/art/ui/quality/quality_heat_uniformity_v1_five_area_v2.png")
 const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
@@ -624,7 +626,7 @@ func _on_order_dish_pressed(item_index: int) -> void:
 	if item_index < 0 or item_index >= items.size():
 		tool_status_label.text = "该订单商品槽为空"
 		return
-	tool_status_label.text = "订单卡仅用于查看点单；请把实体成品拖入顾客递餐托盘"
+	tool_status_label.text = "请在五区域正式店面点击订单商品图标交付成品"
 
 
 func _delivery_source_for_order_item(target_order: Dictionary, item_index: int) -> Dictionary:
@@ -915,6 +917,7 @@ func _process(delta: float) -> void:
 			var expired: Dictionary = Dictionary(expired_variant)
 			if not bool(expired.get("already_settled", false)):
 				_on_formal_order_expired(expired)
+	_refresh_formal_patience_ui(game_session)
 	if game_session != null and game_session.has_method("formal_order") and not _formal_order_id.is_empty():
 		active_formal_order = game_session.call("formal_order", _formal_order_id)
 	elif game_session != null and game_session.has_method("active_formal_order"):
@@ -987,12 +990,16 @@ func _advance_business_day_timer(delta: float) -> void:
 		if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
 			game_session.call("set_business_day_remaining_seconds", float(timer_state.get("remaining_seconds", 0.0)))
 	if bool(timer_state.get("expired_now", false)):
-		if p1_session != null and p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]:
-			# Let the current customer's handoff and payment finish.  Killing either
-			# tween here leaves P1Session in a transaction phase with no live callback.
+		if (p1_session != null and p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]) or _should_defer_business_day_expiration():
+			# Let the current customer transaction finish. Legacy scenes defer only
+			# during handoff/payment; formal shells may keep the focused order alive.
 			_business_day_expiration_pending = true
 			return
 		_end_business_day_for_timer()
+
+
+func _should_defer_business_day_expiration() -> bool:
+	return false
 
 
 func _end_business_day_for_timer() -> void:
@@ -1926,7 +1933,7 @@ func _connect_ingredient_slot(slot: Button, ingredient_type: StringName) -> void
 func _begin_ingredient_drag(ingredient_type: StringName, press_position: Vector2) -> void:
 	if not _confirm_spread_for_next_action():
 		return
-	if not ingredient_stock_model.has_stock(ingredient_type):
+	if not _ingredient_available_for_drag(ingredient_type):
 		tool_status_label.text = "%s托盘已经空了，请原地长按当前小料盘补货" % IngredientModel.display_name(ingredient_type)
 		return
 	if p1_session.phase != P1Session.Phase.FIRST_SIDE and p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
@@ -1965,7 +1972,7 @@ func _cancel_ingredient_drag() -> void:
 func _finish_ingredient_drag(viewport_position: Vector2) -> void:
 	ingredient_drag_preview.visible = false
 	var spent_ingredient := _ingredient_drag_type
-	if not ingredient_stock_model.consume(spent_ingredient):
+	if not _consume_dragged_ingredient(spent_ingredient):
 		tool_status_label.text = "%s托盘已经空了，无法继续放置" % IngredientModel.display_name(spent_ingredient)
 		_ingredient_drag_type = &""
 		_refresh_p1_ui()
@@ -2020,6 +2027,24 @@ func _ingredient_texture(ingredient_type: StringName) -> Texture2D:
 	return ingredient_layer.texture_for(ingredient_type)
 
 
+func _ingredient_available_for_drag(ingredient_type: StringName) -> bool:
+	if ingredient_type == IngredientModel.YOUTIAO:
+		var session := get_node_or_null("/root/GameSession")
+		if session == null or not session.has_method("prepared_product_slot_status"):
+			return false
+		return int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) > 0
+	return ingredient_stock_model.has_stock(ingredient_type)
+
+
+func _consume_dragged_ingredient(ingredient_type: StringName) -> bool:
+	if ingredient_type == IngredientModel.YOUTIAO:
+		var session := get_node_or_null("/root/GameSession")
+		if session == null or not session.has_method("take_prepared_product"):
+			return false
+		return bool(Dictionary(session.call("take_prepared_product", &"slot.04")).get("success", false))
+	return ingredient_stock_model.consume(ingredient_type)
+
+
 func _saved_ingredient_stock() -> Dictionary:
 	var session := get_node_or_null("/root/GameSession")
 	if session != null and session.has_method("pancake_legacy_inventory_snapshot"):
@@ -2069,6 +2094,8 @@ func _refresh_ingredient_stock_ui() -> void:
 		IngredientModel.SCALLION: scallion_restock_button,
 	}
 	for ingredient_type in IngredientModel.TYPES:
+		if not slots.has(ingredient_type):
+			continue
 		var current_stock: int = ingredient_stock_model.current(ingredient_type)
 		(slots[ingredient_type] as Button).call("set_stock_quantity", current_stock)
 		if not restock_buttons.has(ingredient_type):
@@ -2084,7 +2111,7 @@ func _serve_order() -> void:
 	if p1_session.phase != P1Session.Phase.READY_TO_SERVE:
 		tool_status_label.text = "完成折叠和包装后，再选择订单商品图标交付"
 		return
-	tool_status_label.text = "成品已准备好；请把实体成品拖入顾客递餐托盘"
+	tool_status_label.text = "成品已准备好；点击订单商品图标交付"
 
 
 func _deliver_direct_pancake_to_order(target_order: Dictionary, item_index: int) -> void:
@@ -2432,7 +2459,7 @@ func _refresh_pancake_holding_tray() -> void:
 		button.text = "暂存格 %d\n%s" % [index + 1, "空" if slot.is_empty() else "%s · %s" % [str(slot.get("state", "fresh")), str(slot.get("product_id", "煎饼"))]]
 		button.disabled = true
 		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.tooltip_text = "空：完成并包装煎饼后，点击“暂存成品”放入这里。" if slot.is_empty() else "暂存成品与新鲜度展示；交付时把成品拖入顾客递餐托盘。"
+		button.tooltip_text = "空：完成并包装煎饼后，点击“暂存成品”放入这里。" if slot.is_empty() else "暂存成品与新鲜度展示；交付时点击订单商品图标。"
 
 
 func _complete_handoff_animation() -> void:
@@ -2874,8 +2901,6 @@ func _refresh_growth_section(message: String = "") -> void:
 		var recommendation: Dictionary = Dictionary(recommendation_variant).duplicate(true)
 		var purchase_slot := StringName(recommendation.get("purchase_slot", &""))
 		recommendation["slot_title"] = "安装位" if purchase_slot == &"install" else "内容位"
-		if bool(recommendation.get("coin_guarantee", false)):
-			recommendation["slot_title"] = "%s · 金币保底" % str(recommendation["slot_title"])
 		_growth_recommendations.append(recommendation)
 	while _growth_recommendations.size() < 3:
 		_growth_recommendations.append({"hidden": true})
@@ -2953,12 +2978,12 @@ func _growth_ticket_presentation(recommendation: Dictionary) -> Dictionary:
 		if bool(recommendation.get("can_purchase", false)):
 			return {
 				"compact": "金币 %d/%d · 可预订，明日生效" % [current_coins, price],
-				"tooltip": "金币保底项：本次日结已用金币替代其他成长条件；支付 %d 金币，明日生效。" % price,
+				"tooltip": "金币 %d/%d · 可预订，明日生效" % [current_coins, price],
 				"disabled": false,
 			}
 		return {
 			"compact": "金币 %d/%d" % [current_coins, price],
-			"tooltip": "金币保底项：本次日结已用金币替代其他成长条件；当前金币 %d/%d，只差金币。" % [current_coins, price],
+			"tooltip": "金币 %d/%d" % [current_coins, price],
 			"disabled": true,
 		}
 	if bool(recommendation.get("can_purchase", false)):
@@ -3218,6 +3243,7 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 
 
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
+	var click_delivery := _order_card_uses_click_delivery()
 	for dish_index in order_dish_icons.size():
 		var dish_icon := order_dish_icons[dish_index]
 		dish_icon.texture = null
@@ -3225,8 +3251,9 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		dish_icon.modulate = Color.WHITE
 		var dish_button := order_dish_buttons[dish_index]
 		dish_button.visible = true
-		dish_button.disabled = true
-		dish_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if not click_delivery:
+			dish_button.disabled = true
+			dish_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		dish_button.self_modulate = Color.WHITE
 		dish_button.tooltip_text = "只读点单提示"
 	for ingredient_index in order_ingredient_icons.size():
@@ -3249,9 +3276,10 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		var completed := attached_count >= required_count
 		dish_icon.modulate = Color(0.58, 0.58, 0.58, 0.72) if completed else Color.WHITE
 		var dish_button := order_dish_buttons[dish_index]
-		dish_button.disabled = true
-		dish_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		dish_button.tooltip_text = "该订单商品已装盘" if completed else "只读点单提示；请把实体成品拖入顾客托盘"
+		if not click_delivery:
+			dish_button.disabled = true
+			dish_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dish_button.tooltip_text = "该订单商品已交付" if completed else "点击订单商品图标交付成品"
 	var requirements := _order_requirements_for_card(order)
 	for requirement_index in requirements.size():
 		var requirement: Dictionary = requirements[requirement_index]
@@ -3260,7 +3288,10 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		ingredient_icon.texture = requirement.get("texture") as Texture2D
 		ingredient_icon.visible = ingredient_icon.texture != null
 		ingredient_icon.tooltip_text = "需要加热" if requirement_kind == ORDER_REQUIREMENT_HEATED else ""
-		order_ingredient_backgrounds[requirement_index].visible = requirement_kind == ORDER_REQUIREMENT_INGREDIENT
+		# The v3 order-card artwork already owns the eight requirement cells.
+		# Ingredient overlays only render the icon; another panel would produce a
+		# visibly offset second box. Heating keeps its semantic state highlight.
+		order_ingredient_backgrounds[requirement_index].visible = false
 		order_heat_backgrounds[requirement_index].visible = requirement_kind == ORDER_REQUIREMENT_HEATED
 	if coin_total <= 0:
 		var metadata := Dictionary(order.get("metadata", {}))
@@ -3271,6 +3302,46 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	order_amount_label.text = str(coin_total)
 	order_patience_bar.value = clampf(patience_ratio, 0.0, 1.0) * 100.0
 	order_heart_fill.modulate = Color.WHITE if patience_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
+
+
+func _refresh_formal_patience_ui(game_session: Node) -> void:
+	if game_session == null or not game_session.has_method("active_formal_orders"):
+		return
+	# One snapshot drives both the order card and all three customer slots so a
+	# frame can never mix timer values from different service reads.
+	var orders: Array = Array(game_session.call("active_formal_orders"))
+	var focused_order: Dictionary = {}
+	for slot_index in customer_slot_patience_bars.size():
+		var slot_order: Dictionary = {}
+		for order_variant in orders:
+			var candidate := Dictionary(order_variant)
+			if int(candidate.get("service_slot", -1)) == slot_index:
+				slot_order = candidate
+				break
+		if slot_order.is_empty():
+			continue
+		var ratio := _formal_order_patience_ratio(slot_order)
+		var bar := customer_slot_patience_bars[slot_index]
+		bar.value = ratio * 100.0
+		var unlimited := bool(slot_order.get("tutorial_no_countdown", false))
+		bar.tooltip_text = "教学单·不限时" if unlimited else "耐心 %d 秒" % ceili(float(slot_order.get("remaining_patience_seconds", 0.0)))
+		if StringName(slot_order.get("order_id", &"")) == _formal_order_id:
+			focused_order = slot_order
+	if not focused_order.is_empty():
+		var focused_ratio := _formal_order_patience_ratio(focused_order)
+		order_patience_bar.value = focused_ratio * 100.0
+		order_heart_fill.modulate = Color.WHITE if focused_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
+
+
+static func _formal_order_patience_ratio(order: Dictionary) -> float:
+	if bool(order.get("tutorial_no_countdown", false)):
+		return 1.0
+	var total := maxf(float(order.get("patience_seconds", 0.0)), 0.001)
+	return clampf(float(order.get("remaining_patience_seconds", total)) / total, 0.0, 1.0)
+
+
+func _order_card_uses_click_delivery() -> bool:
+	return false
 
 
 func _refresh_p1_ui() -> void:

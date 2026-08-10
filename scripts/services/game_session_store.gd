@@ -9,6 +9,7 @@ signal order_changed(snapshot: Dictionary)
 signal order_settled(result: Dictionary)
 signal daily_goal_changed(snapshot: Dictionary)
 signal business_ledger_changed(snapshot: Dictionary)
+signal prepared_product_slots_changed(snapshot: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
@@ -25,6 +26,12 @@ const FIVE_AREA_PLAYABLE_ORDER_GENERATOR := preload("res://scripts/services/five
 const BUSINESS_REPORT_SERVICE := preload("res://scripts/services/business_report_service.gd")
 const DAILY_GOAL_SERVICE := preload("res://scripts/services/daily_goal_service.gd")
 const ATTENTION_SERVICE := preload("res://scripts/services/attention_service.gd")
+const PREPARED_PRODUCT_SLOT_CAPACITY := 6
+const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
+	&"slot.04": {"product_id": &"product.youtiao.plain", "recipe_id": &"recipe.youtiao.plain"},
+	&"slot.05": {"product_id": &"product.youtiao.oil_cake", "recipe_id": &"recipe.youtiao.oil_cake"},
+	&"slot.06": {"product_id": &"product.youtiao.sugar_oil_cake", "recipe_id": &"recipe.youtiao.sugar_oil_cake"},
+}
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
 	&"baocui": &"stock.pancake.baocui",
@@ -48,6 +55,7 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"pork_tenderloin": &"stock.pancake.pork_tenderloin",
 	&"coriander": &"stock.pancake.coriander",
 	&"preserved_mustard": &"stock.pancake.preserved_mustard",
+	&"youtiao": &"stock.pancake.youtiao",
 }
 const DAILY_PANCAKE_CONSUMABLE_STOCK := {
 	&"stock.pancake.batter": 6,
@@ -121,6 +129,7 @@ func begin_new_game() -> Dictionary:
 		"inventory": _new_inventory_snapshot(),
 		"restock_progress": {},
 		"pending_tray_payments": {},
+		"prepared_product_slots": _empty_prepared_product_slots(),
 		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
 		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
 		"production": _production_service.call("snapshot"),
@@ -140,6 +149,7 @@ func begin_new_game() -> Dictionary:
 	progression_changed.emit(five_area_progression_snapshot())
 	inventory_changed.emit(inventory_snapshot())
 	production_changed.emit(five_area_production_snapshot())
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
 	return {"success": true, "snapshot": _save_data.duplicate(true)}
 
 
@@ -466,9 +476,9 @@ func preview_attach_formal_order_product(order_id: StringName, item_index: int, 
 	return Dictionary(_order_service.call("preview_attach_product", order_id, item_index, product)).duplicate(true)
 
 
-## Moves exactly one physical product into the requested customer-tray slot.
-## Product mismatches are intentionally reported but never used as blockers.
-func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
+## Read-only validation for one available product against an order-card item.
+## Callers use this to prefer a matching source without consuming inventory.
+func preview_stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
@@ -491,6 +501,30 @@ func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_i
 	var order_preview := Dictionary(_order_service.call("preview_attach_product", order_id, item_index, preview_product))
 	if not bool(order_preview.get("success", false)):
 		return order_preview
+	return {
+		"success": true,
+		"product": preview_product,
+		"will_match": bool(order_preview.get("will_match", false)),
+		"mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray()),
+		"source_ref": _normalized_product_source_ref(source_ref),
+	}
+
+
+## Moves exactly one available product into the requested order-card item.
+## Product mismatches are intentionally reported but never used as blockers.
+func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
+	var source_preview := preview_stage_product_to_order(source_ref, order_id, item_index)
+	if not bool(source_preview.get("success", false)):
+		return source_preview
+	_ensure_order_service()
+	_ensure_production_service()
+	_ensure_pancake_holding_tray()
+	var order := formal_order(order_id)
+	var items := Array(order.get("items", []))
+	if item_index < 0 or item_index >= items.size():
+		return {"success": false, "reason": &"order_not_active"}
+	var item := Dictionary(items[item_index])
+	var expected_source_product_id := StringName(source_ref.get("product_id", &""))
 	var rollback := _tray_transaction_snapshot()
 	var collected := _collect_product_source(source_ref, item)
 	if not bool(collected.get("success", false)):
@@ -514,8 +548,8 @@ func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_i
 		"success": true,
 		"product": product,
 		"order_result": attached,
-		"will_match": bool(order_preview.get("will_match", false)),
-		"mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray()),
+		"will_match": bool(source_preview.get("will_match", false)),
+		"mismatch_reasons": source_preview.get("mismatch_reasons", PackedStringArray()),
 	}
 
 
@@ -559,7 +593,7 @@ func remove_staged_product(order_id: StringName, item_index: int, disposition: S
 	return {"success": true, "product": product, "disposition": disposition, "disposition_result": disposition_result}
 
 
-func handoff_order_tray(order_id: StringName) -> Dictionary:
+func complete_order_delivery(order_id: StringName) -> Dictionary:
 	var order := formal_order(order_id)
 	if order.is_empty() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
 		return {"success": false, "reason": &"order_not_active"}
@@ -573,6 +607,12 @@ func handoff_order_tray(order_id: StringName) -> Dictionary:
 	if not missing_items.is_empty():
 		return {"success": false, "reason": &"tray_incomplete", "missing_items": missing_items}
 	return settle_f3_order(order_id, false)
+
+
+## Compatibility shim for saves, fixtures, and older callers that still use
+## the retired physical customer-tray name.
+func handoff_order_tray(order_id: StringName) -> Dictionary:
+	return complete_order_delivery(order_id)
 
 
 func pending_tray_payment(settlement_id: StringName) -> Dictionary:
@@ -590,6 +630,39 @@ func pending_tray_payments() -> Array[Dictionary]:
 		return int(left.get("created_at_unix", 0)) < int(right.get("created_at_unix", 0))
 	)
 	return result
+
+
+func pending_order_payments() -> Array[Dictionary]:
+	return pending_tray_payments()
+
+
+func collect_all_pending_order_payments() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var payments := Dictionary(_save_data.get("pending_tray_payments", {})).duplicate(true)
+	var collected_ids := PackedStringArray()
+	var total_amount := 0
+	var collected_at := int(Time.get_unix_time_from_system())
+	for key_value in payments.keys():
+		var key := str(key_value)
+		var payment := Dictionary(payments.get(key, {})).duplicate(true)
+		if payment.is_empty() or bool(payment.get("collected", false)):
+			continue
+		total_amount += maxi(int(payment.get("amount", 0)), 0)
+		payment["collected"] = true
+		payment["collected_at_unix"] = collected_at
+		payments[key] = payment
+		collected_ids.append(StringName(payment.get("settlement_id", key)))
+	if collected_ids.is_empty():
+		return {"success": true, "already_collected": true, "amount": 0, "settlement_ids": collected_ids}
+	_progression.set("coins", int(_progression.get("coins")) + total_amount)
+	_save_data["pending_tray_payments"] = payments
+	_sync_progression_to_save()
+	_touch_and_write()
+	coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(five_area_progression_snapshot())
+	return {"success": true, "amount": total_amount, "settlement_ids": collected_ids}
 
 
 func collect_tray_payment(settlement_id: StringName) -> Dictionary:
@@ -633,6 +706,8 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 			return Dictionary(_production_service.call("preview_collect_drink", source_index))
 		&"youtiao_output":
 			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+		&"prepared_product_slot":
+			return preview_take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output":
 			return Dictionary(_production_service.call("preview_collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("preview_collect_soy", 1))
 		&"steamer_layer":
@@ -656,6 +731,7 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 		&"inventory": return Dictionary(_production_service.call("create_room_temperature_drink", StringName(source_ref.get("product_id", &""))))
 		&"heater_slot": return Dictionary(_production_service.call("collect_drink", source_index))
 		&"youtiao_output": return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
+		&"prepared_product_slot": return take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
 		&"steamer_layer": return Dictionary(_production_service.call("collect_steamer", source_index))
 		&"pancake_holding":
@@ -681,11 +757,14 @@ func _normalized_product_source_ref(source_ref: Dictionary) -> Dictionary:
 	return {
 		"source_kind": StringName(source_ref.get("source_kind", &"")),
 		"source_index": int(source_ref.get("source_index", -1)),
+		"source_slot_id": StringName(source_ref.get("source_slot_id", &"")),
 		"product_id": StringName(source_ref.get("product_id", &"")),
 	}
 
 
 func _product_source_instance_id(source_ref: Dictionary) -> StringName:
+	if StringName(source_ref.get("source_kind", &"")) == &"prepared_product_slot":
+		return StringName("prepared_product_slot.%s" % str(source_ref.get("source_slot_id", &"")))
 	return StringName("%s.%d" % [str(source_ref.get("source_kind", &"source")), int(source_ref.get("source_index", -1))])
 
 
@@ -722,6 +801,7 @@ func _tray_transaction_snapshot() -> Dictionary:
 		"production": five_area_production_snapshot(),
 		"orders": formal_order_snapshot(),
 		"pancake_holding_tray": pancake_holding_tray_snapshot(),
+		"prepared_product_slots": prepared_product_slots_snapshot(),
 		"business_report": Dictionary(_business_report_service.call("snapshot")).duplicate(true),
 	}
 
@@ -732,8 +812,10 @@ func _restore_tray_transaction(rollback: Dictionary) -> void:
 	_pancake_holding_tray.call("load_snapshot", Dictionary(rollback.get("pancake_holding_tray", {})))
 	_business_report_service.call("load_snapshot", Dictionary(rollback.get("business_report", {})))
 	_save_data["inventory"] = _normalize_inventory(Dictionary(rollback.get("inventory", {})))
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(Dictionary(rollback.get("prepared_product_slots", {})))
 	_persist_tray_transaction()
 	inventory_changed.emit(inventory_snapshot())
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
 
 
 func _persist_tray_transaction() -> void:
@@ -862,11 +944,15 @@ func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
 
 
 func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
-	_ensure_production_service()
-	var preview: Dictionary = _production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1)
-	if not bool(preview.get("success", false)):
-		return preview
-	return stage_product_to_order({"source_kind": &"youtiao_output", "source_index": -1, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
+	var order := formal_order(order_id)
+	var items := Array(order.get("items", []))
+	if item_index < 0 or item_index >= items.size():
+		return {"success": false, "reason": &"order_item_missing"}
+	var product_id := StringName(Dictionary(items[item_index]).get("product_id", &""))
+	var slot_id := _prepared_slot_id_for_product(product_id)
+	if slot_id.is_empty():
+		return {"success": false, "reason": &"prepared_product_slot_missing", "product_id": product_id}
+	return stage_product_to_order({"source_kind": &"prepared_product_slot", "source_slot_id": slot_id, "source_index": -1, "product_id": product_id}, order_id, item_index)
 
 
 func discard_f3_youtiao() -> Dictionary:
@@ -1229,6 +1315,132 @@ func five_area_progression_snapshot() -> Dictionary:
 	return Dictionary(_progression.call("snapshot")).duplicate(true)
 
 
+func prepared_product_slots_snapshot() -> Dictionary:
+	if not has_save():
+		return _empty_prepared_product_slots()
+	return _normalize_prepared_product_slots(Dictionary(_save_data.get("prepared_product_slots", {})))
+
+
+func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
+	var definition := Dictionary(PREPARED_PRODUCT_SLOT_DEFINITIONS.get(slot_id, {}))
+	if definition.is_empty():
+		return {"success": false, "reason": &"unknown_prepared_product_slot", "slot_id": slot_id}
+	_ensure_progression()
+	var recipe_id := StringName(definition.get("recipe_id", &""))
+	var unlocked := bool(_progression.call("owns_recipe", recipe_id))
+	var slots := prepared_product_slots_snapshot()
+	var products: Array = Array(slots.get(str(slot_id), []))
+	return {
+		"success": unlocked,
+		"reason": &"" if unlocked else &"recipe_locked",
+		"slot_id": slot_id,
+		"product_id": StringName(definition.get("product_id", &"")),
+		"recipe_id": recipe_id,
+		"capacity": PREPARED_PRODUCT_SLOT_CAPACITY,
+		"count": products.size(),
+		"products": products.duplicate(true),
+	}
+
+
+func preview_store_ready_youtiao(slot_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var status := prepared_product_slot_status(slot_id)
+	if not bool(status.get("success", false)):
+		return status
+	if int(status.get("count", 0)) >= int(status.get("capacity", PREPARED_PRODUCT_SLOT_CAPACITY)):
+		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+	if not bool(preview.get("success", false)):
+		return preview
+	var product := Dictionary(preview.get("product", {})).duplicate(true)
+	if StringName(product.get("product_id", &"")) != StringName(status.get("product_id", &"")):
+		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": product}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product}
+
+
+func store_ready_youtiao_in_prepared_slot(slot_id: StringName) -> Dictionary:
+	var preview := preview_store_ready_youtiao(slot_id)
+	if not bool(preview.get("success", false)):
+		return preview
+	var production_rollback := five_area_production_snapshot()
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
+	if not bool(collected.get("success", false)):
+		return collected
+	var product := Dictionary(collected.get("product", {})).duplicate(true)
+	var expected_product_id := StringName(Dictionary(preview.get("product", {})).get("product_id", &""))
+	if StringName(product.get("product_id", &"")) != expected_product_id:
+		_production_service.call("load_snapshot", production_rollback)
+		return {"success": false, "reason": &"prepared_product_changed"}
+	var stored := _append_prepared_product(slot_id, product)
+	if not bool(stored.get("success", false)):
+		_production_service.call("load_snapshot", production_rollback)
+		return stored
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "count": stored.get("count", 0)}
+
+
+func preview_take_prepared_product(slot_id: StringName) -> Dictionary:
+	var status := prepared_product_slot_status(slot_id)
+	if not bool(status.get("success", false)):
+		return status
+	var products: Array = Array(status.get("products", []))
+	if products.is_empty():
+		return {"success": false, "reason": &"prepared_product_slot_empty", "slot_id": slot_id}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": Dictionary(products[0]).duplicate(true)}
+
+
+func take_prepared_product(slot_id: StringName) -> Dictionary:
+	var preview := preview_take_prepared_product(slot_id)
+	if not bool(preview.get("success", false)):
+		return preview
+	var slots := prepared_product_slots_snapshot()
+	var products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
+	var product := Dictionary(products.pop_front()).duplicate(true)
+	slots[str(slot_id)] = products
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
+	_touch_and_write()
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "count": products.size()}
+
+
+func clear_prepared_product_slots(persist: bool = true) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save", "products": []}
+	var products: Array = []
+	var slots := prepared_product_slots_snapshot()
+	for slot_id in PREPARED_PRODUCT_SLOT_DEFINITIONS:
+		for product_variant in Array(slots.get(str(slot_id), [])):
+			var product := Dictionary(product_variant).duplicate(true)
+			product["source_slot_id"] = slot_id
+			products.append(product)
+	_save_data["prepared_product_slots"] = _empty_prepared_product_slots()
+	if persist:
+		_touch_and_write()
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	return {"success": true, "reason": &"", "products": products}
+
+
+func _append_prepared_product(slot_id: StringName, product: Dictionary) -> Dictionary:
+	var status := prepared_product_slot_status(slot_id)
+	if not bool(status.get("success", false)):
+		return status
+	if StringName(product.get("product_id", &"")) != StringName(status.get("product_id", &"")):
+		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
+	var slots := prepared_product_slots_snapshot()
+	var products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
+	if products.size() >= PREPARED_PRODUCT_SLOT_CAPACITY:
+		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
+	products.append(product.duplicate(true))
+	slots[str(slot_id)] = products
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
+	return {"success": true, "reason": &"", "slot_id": slot_id, "count": products.size()}
+
+
 func inventory_snapshot() -> Dictionary:
 	if not has_save():
 		return _new_inventory_snapshot()
@@ -1240,6 +1452,8 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 	var definition := CATALOG.stock_definition(stock_id)
 	if definition.is_empty():
 		return {"success": false, "reason": &"unknown_stock", "stock_id": stock_id}
+	if StringName(definition.get("category", &"")) == &"prepared_add_on":
+		return {"success": false, "reason": &"restock_unavailable", "stock_id": stock_id}
 	if not _progression.call("owns_stock", stock_id):
 		return {"success": false, "reason": &"stock_locked", "stock_id": stock_id}
 	var inventory := inventory_snapshot()
@@ -1544,9 +1758,26 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 			"details": {"reason": &"day_end", "attributed_cost": int(waste.get("material_cost", 0))},
 		})
 	_sync_pancake_holding_tray_to_save()
+	var prepared_clear := clear_prepared_product_slots(false)
+	var prepared_slot_waste: Array = Array(prepared_clear.get("products", []))
+	for product_variant in prepared_slot_waste:
+		var product := Dictionary(product_variant)
+		_record_business_event({
+			"event_id": _next_ledger_event_id(&"prepared_slot_day_end"),
+			"kind": &"waste",
+			"area_id": &"area.youtiao",
+			"source_id": StringName(product.get("source_slot_id", &"prepared_product_slot")),
+			"quantity": 1,
+			"details": {
+				"reason": &"day_end",
+				"product_id": StringName(product.get("product_id", &"")),
+				"attributed_cost": maxi(int(product.get("material_cost", 0)), 0),
+			},
+		})
 	_sync_progression_to_save()
 	var bill := today_bill()
 	bill["tray_waste"] = tray_waste
+	bill["prepared_product_slot_waste"] = prepared_slot_waste
 	bill["success"] = true
 	_ensure_business_services()
 	var ledger_bill: Dictionary = _business_report_service.call("close_day")
@@ -1907,6 +2138,7 @@ func _mark_f3_order_started(order_id: StringName, source_id: StringName) -> void
 
 func _ensure_save_shape() -> void:
 	_save_data["inventory"] = _normalize_inventory(Dictionary(_save_data.get("inventory", {})))
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(Dictionary(_save_data.get("prepared_product_slots", {})))
 	if not _save_data.has("restock_progress"):
 		_save_data["restock_progress"] = {}
 	if not _save_data.has("pending_tray_payments"):
@@ -1951,6 +2183,36 @@ func _ensure_save_shape() -> void:
 		_save_data["tutorial_order_generated_day"] = 0
 	if not _save_data.has(RECONCILED_FORMAL_ORDER_IDS_KEY):
 		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = []
+
+
+static func _empty_prepared_product_slots() -> Dictionary:
+	return {
+		"slot.04": [],
+		"slot.05": [],
+		"slot.06": [],
+	}
+
+
+static func _prepared_slot_id_for_product(product_id: StringName) -> StringName:
+	for slot_id in PREPARED_PRODUCT_SLOT_DEFINITIONS:
+		if StringName(Dictionary(PREPARED_PRODUCT_SLOT_DEFINITIONS[slot_id]).get("product_id", &"")) == product_id:
+			return StringName(slot_id)
+	return &""
+
+
+static func _normalize_prepared_product_slots(value: Dictionary) -> Dictionary:
+	var normalized := _empty_prepared_product_slots()
+	for slot_id in PREPARED_PRODUCT_SLOT_DEFINITIONS:
+		var products: Array = []
+		for product_variant in Array(value.get(str(slot_id), value.get(slot_id, []))):
+			var product := Dictionary(product_variant).duplicate(true)
+			if product.is_empty() or StringName(product.get("product_id", &"")) != StringName(Dictionary(PREPARED_PRODUCT_SLOT_DEFINITIONS[slot_id]).get("product_id", &"")):
+				continue
+			products.append(product)
+			if products.size() >= PREPARED_PRODUCT_SLOT_CAPACITY:
+				break
+		normalized[str(slot_id)] = products
+	return normalized
 
 
 func _reconcile_unrecorded_settled_orders() -> void:

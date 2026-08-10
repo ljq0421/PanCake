@@ -11,7 +11,9 @@ const MEAT_FLOSS: StringName = &"meat_floss"
 const PORK_TENDERLOIN: StringName = &"pork_tenderloin"
 const CORIANDER: StringName = &"coriander"
 const PRESERVED_MUSTARD: StringName = &"preserved_mustard"
+const YOUTIAO: StringName = &"youtiao"
 const TYPES: Array[StringName] = [EGG, BAOCUI, HAM_SAUSAGE, SCALLION, MEAT_FLOSS, PORK_TENDERLOIN, CORIANDER, PRESERVED_MUSTARD]
+const ALL_TYPES: Array[StringName] = [EGG, BAOCUI, HAM_SAUSAGE, SCALLION, MEAT_FLOSS, PORK_TENDERLOIN, CORIANDER, PRESERVED_MUSTARD, YOUTIAO]
 
 const DEFINITIONS := {
 	EGG: {"label": "鸡蛋", "structural_load": 0.16, "wetness": 0.30},
@@ -22,6 +24,7 @@ const DEFINITIONS := {
 	PORK_TENDERLOIN: {"label": "里脊肉", "structural_load": 0.55, "wetness": 0.08},
 	CORIANDER: {"label": "香菜", "structural_load": 0.03, "wetness": 0.02},
 	PRESERVED_MUSTARD: {"label": "榨菜", "structural_load": 0.10, "wetness": 0.03},
+	YOUTIAO: {"label": "原味油条", "structural_load": 0.55, "wetness": 0.02},
 }
 
 var placements: Array[Dictionary] = []
@@ -35,7 +38,7 @@ func reset() -> void:
 
 
 func place(ingredient_type: StringName, grid_position: Vector2, rotation: float, pancake_model: PancakeModel) -> Dictionary:
-	if not TYPES.has(ingredient_type):
+	if not ALL_TYPES.has(ingredient_type):
 		return {"success": false, "reason": "未知配料"}
 	if pancake_model == null:
 		return {"success": false, "reason": "面饼数据尚未准备"}
@@ -81,7 +84,7 @@ func has_toppings() -> bool:
 
 func quantities() -> Dictionary:
 	var result := {}
-	for ingredient_type in TYPES:
+	for ingredient_type in ALL_TYPES:
 		result[ingredient_type] = count_type(ingredient_type)
 	return result
 

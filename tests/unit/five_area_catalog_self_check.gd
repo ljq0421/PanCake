@@ -70,11 +70,15 @@ func _run() -> void:
 		var slot := CATALOG.material_slot_definition(StringName("slot.%02d" % slot_index))
 		if expected_slots.has(slot_index):
 			_check(slot.get("kind") == &"stock" and slot.get("stock_id") == expected_slots[slot_index], "slot %02d stock ownership" % slot_index)
+		elif slot_index in [4, 5, 6]:
+			var expected_product_ids := [&"product.youtiao.plain", &"product.youtiao.oil_cake", &"product.youtiao.sugar_oil_cake"]
+			_check(slot.get("kind") == &"prepared_product" and slot.get("product_id") == expected_product_ids[slot_index - 4] and int(slot.get("capacity", 0)) == 6, "slot %02d prepared fried-product ownership" % slot_index)
 		elif CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY.has(StringName("slot.%02d" % slot_index)):
 			_check(slot.get("kind") == &"dynamic_add_on", "slot %02d participates in dynamic pancake add-on priority" % slot_index)
 		else:
 			_check(slot.get("kind") == &"reserved", "slot %02d reserved ownership" % slot_index)
-	_check(CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY == [&"slot.10", &"slot.11", &"slot.12", &"slot.06", &"slot.13", &"slot.05", &"slot.14"], "pancake add-on slot priority")
+	_check(CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY == [&"slot.10", &"slot.11", &"slot.12", &"slot.13", &"slot.14"], "pancake add-on slot priority")
+	_check(CATALOG.stock_definition(&"stock.pancake.youtiao").get("category") == &"prepared_add_on" and int(CATALOG.stock_definition(&"stock.pancake.youtiao").get("restock_capacity", -1)) == 0, "pancake youtiao remains a non-restockable processed ingredient")
 	_check(CATALOG.PANCAKE_ADD_ON_DISPLAY_ORDER == [&"stock.pancake.ham_sausage", &"stock.pancake.meat_floss", &"stock.pancake.coriander", &"stock.pancake.preserved_mustard", &"stock.pancake.pork_tenderloin"], "only later pancake add-ons use dynamic slot order")
 	for stock_id in CATALOG.PANCAKE_ADD_ON_DISPLAY_ORDER:
 		_check(CATALOG.stock_definition(stock_id).get("material_slot_id") == &"", "%s has no permanent material slot" % stock_id)

@@ -22,14 +22,16 @@ func _run() -> void:
 	inventory["stock.youtiao.plain_dough"] = 1
 	session.call("save_inventory", inventory)
 
-	var blocked: Dictionary = session.call("ensure_active_playable_order")
-	_check(StringName(blocked.get("reason", &"")) == &"tutorial_restock_required" and session.call("active_formal_order").is_empty(), "drink teaching does not create a doomed zero-stock customer")
-	inventory["stock.packaged_drink.milk"] = 1
-	session.call("save_inventory", inventory)
 	var drink_opened: Dictionary = session.call("ensure_active_playable_order")
 	var drink_order := Dictionary(drink_opened.get("order", {}))
 	var drink_id := StringName(drink_order.get("order_id", &""))
-	_check(_area_id(drink_order) == &"area.packaged_drink" and StringName(drink_order.get("teaching_area_id", &"")) == &"area.packaged_drink", "restocking activates the protected drink teaching order")
+	var drink_item := Dictionary(Array(drink_order.get("items", []))[0]) if not Array(drink_order.get("items", [])).is_empty() else {}
+	_check(bool(drink_opened.get("success", false)) and _area_id(drink_order) == &"area.packaged_drink" and StringName(drink_order.get("teaching_area_id", &"")) == &"area.packaged_drink", "zero stock still opens the protected drink teaching customer")
+	_check(Array(drink_order.get("items", [])).size() == 1 and StringName(drink_item.get("product_id", &"")) == &"product.packaged_drink.milk" and StringName(drink_item.get("temperature_mode", &"")) == &"room_temperature", "drink teaching customer orders only one room-temperature packaged milk")
+	_check(Array(session.call("active_formal_orders")).size() == 1 and Array(session.call("waiting_formal_orders")).size() == 3, "drink teaching exclusively occupies the store while normal customers wait")
+	inventory["stock.packaged_drink.milk"] = 1
+	session.call("save_inventory", inventory)
+	_check(StringName(Dictionary(session.call("active_formal_order")).get("order_id", &"")) == drink_id, "restocking preserves the already visible drink teaching customer")
 	_check(bool(Dictionary(session.call("deliver_room_temperature_drink", drink_id, 0, &"product.packaged_drink.milk")).get("success", false)), "room-temperature drink is delivered through the formal teaching order")
 	var drink_settlement: Dictionary = session.call("settle_f3_order", drink_id)
 	_check(bool(drink_settlement.get("order_success", false)) and int(drink_settlement.get("earned_coins", 0)) == 3, "drink teaching settles with its catalog revenue")
@@ -49,7 +51,8 @@ func _run() -> void:
 	session.call("advance_f3_production", 12.0)
 	session.call("perform_f3_youtiao_action", &"lift")
 	session.call("advance_f3_production", 2.0)
-	_check(bool(Dictionary(session.call("deliver_f3_youtiao", youtiao_id, 0)).get("success", false)), "finished youtiao attaches to its generated formal order")
+	_check(bool(Dictionary(session.call("store_ready_youtiao_in_prepared_slot", &"slot.04")).get("success", false)), "finished youtiao first enters its fixed prepared-product slot")
+	_check(bool(Dictionary(session.call("deliver_f3_youtiao", youtiao_id, 0)).get("success", false)), "Slot04 youtiao attaches to its generated formal order")
 	var youtiao_settlement: Dictionary = session.call("settle_f3_order", youtiao_id)
 	_check(bool(youtiao_settlement.get("order_success", false)) and int(youtiao_settlement.get("earned_coins", 0)) == 6, "youtiao teaching settles with its catalog revenue")
 	_check(int(progression.call("mastery_value", &"area.youtiao")) == 1, "youtiao settlement advances qualified mastery")

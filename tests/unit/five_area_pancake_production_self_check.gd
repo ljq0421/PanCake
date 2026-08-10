@@ -20,12 +20,12 @@ func _run() -> void:
 	var after: Dictionary = session.call("inventory_snapshot")
 	_check(int(after.get("stock.pancake.batter", 0)) == int(before.get("stock.pancake.batter", 0)) - 1, "pancake completion consumes batter inventory")
 	_check(int(after.get("stock.pancake.sauce.sweet_flour", 0)) == int(before.get("stock.pancake.sauce.sweet_flour", 0)) - 1, "pancake completion consumes sweet flour sauce inventory without a material slot")
-	_check(int(result.get("material_cost", 0)) == 2, "pancake completion reports the applied ingredient material cost for billing")
+	_check(int(result.get("material_cost", 0)) == 4, "pancake completion reports batter, filling, and sauce material cost for billing")
 	var legacy: Dictionary = session.call("pancake_legacy_inventory_snapshot")
 	_check(int(legacy.get("egg", 0)) == int(after.get("stock.pancake.egg", 0)), "legacy pancake interaction inventory maps to stable stock IDs")
 	var product: Dictionary = result.get("product", {})
 	var coriander_product: Dictionary = service.call("create_product_snapshot", {"applied_ingredient_ids": [&"coriander"], "applied_sauce_ids": []}, {"id": &"order.pancake.coriander", "heat_preference": &"golden"})
-	_check(Array(coriander_product.get("ingredient_ids", [])).has("stock.pancake.coriander") and int(coriander_product.get("material_cost", 0)) == 1, "coriander maps to its stable product and material-cost records")
+	_check(Array(coriander_product.get("ingredient_ids", [])).has("stock.pancake.coriander") and int(coriander_product.get("material_cost", 0)) == 2, "coriander maps to its stable product and full material-cost records")
 	var double_egg_product: Dictionary = service.call("create_product_snapshot", {
 		"applied_ingredient_ids": [&"egg", &"baocui"],
 		"applied_ingredient_quantities": {&"egg": 2, &"baocui": 1},
@@ -33,13 +33,14 @@ func _run() -> void:
 	}, {"id": &"order.pancake.classic", "heat_preference": &"golden"})
 	_check(
 		Array(double_egg_product.get("ingredient_ids", [])).count("stock.pancake.egg") == 1
-		and int(double_egg_product.get("material_cost", 0)) == 3,
+		and int(double_egg_product.get("material_cost", 0)) == 4,
 		"extra portions increase material cost without changing the order's ingredient-type contract"
 	)
 	_check(session.call("store_pancake_product", product).get("reason") == &"tray_locked", "holding tray is not available before its content unlock")
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("coins", 40)
 	progression.set("current_day", 8)
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true, &"area.youtiao": true})
 	_check(bool(session.call("purchase_growth", &"growth.capacity.pancake_holding_tray.two_slots").get("success", false)), "tray capacity can be purchased through the content slot")
 	session.call("end_business_day")
 	_check(bool(session.call("begin_next_business_day").get("success", false)), "tray capacity activates on the following day")

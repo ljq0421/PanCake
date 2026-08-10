@@ -133,7 +133,7 @@ static func evaluate_order(
 	for ingredient_type in required_ingredients:
 		if not ingredients.has_type(ingredient_type):
 			missing_ingredients.append(IngredientModel.display_name(ingredient_type))
-	for ingredient_type in IngredientModel.TYPES:
+	for ingredient_type in IngredientModel.ALL_TYPES:
 		if ingredients.has_type(ingredient_type) and not required_ingredients.has(ingredient_type):
 			unexpected_ingredients.append(IngredientModel.display_name(ingredient_type))
 	var ingredient_distribution := ingredients.evaluate_distribution(model.grid_size)
@@ -196,7 +196,7 @@ static func evaluate_order(
 	var feedback := _feedback_for(overall, tags, patience_ratio)
 	var applied_ingredient_ids: Array[StringName] = []
 	var applied_ingredient_quantities := ingredients.quantities()
-	for ingredient_type in IngredientModel.TYPES:
+	for ingredient_type in IngredientModel.ALL_TYPES:
 		if ingredients.has_type(ingredient_type):
 			applied_ingredient_ids.append(ingredient_type)
 	var applied_sauce_ids: Array[StringName] = []

@@ -117,8 +117,20 @@ offset_top = 24.0
 offset_right = 294.0
 offset_bottom = 165.0
 mouse_filter = 2
+clip_contents = true
 
-[node name="AutoLoadFeederVisual" type="TextureRect" parent="MachineStage"]
+[node name="ArtRoot" type="Control" parent="MachineStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+pivot_offset = Vector2(141, 70.5)
+scale = Vector2(1.35, 1.35)
+
+[node name="AutoLoadFeederVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -133,7 +145,7 @@ expand_mode = 1
 stretch_mode = 0
 z_index = 0
 
-[node name="AutoLiftArmVisual" type="TextureRect" parent="MachineStage"]
+[node name="AutoLiftArmVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -148,7 +160,7 @@ expand_mode = 1
 stretch_mode = 0
 z_index = 1
 
-[node name="BodyVisual" type="TextureRect" parent="MachineStage"]
+[node name="BodyVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -161,7 +173,7 @@ expand_mode = 1
 stretch_mode = 0
 z_index = 2
 
-[node name="FoodLayer" type="Control" parent="MachineStage"]
+[node name="FoodLayer" type="Control" parent="MachineStage/ArtRoot"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -171,11 +183,11 @@ grow_vertical = 2
 mouse_filter = 2
 z_index = 4
 
-[node name="FoodSlot01" type="Control" parent="MachineStage/FoodLayer"]
+[node name="FoodSlot01" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
 visible = false
 mouse_filter = 2
-[node name="RawFood01" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot01"]
+[node name="RawFood01" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot01"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -186,7 +198,7 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-[node name="CookedFood01" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot01"]
+[node name="CookedFood01" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot01"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -198,11 +210,11 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FoodSlot02" type="Control" parent="MachineStage/FoodLayer"]
+[node name="FoodSlot02" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
 visible = false
 mouse_filter = 2
-[node name="RawFood02" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot02"]
+[node name="RawFood02" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot02"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -213,7 +225,7 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-[node name="CookedFood02" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot02"]
+[node name="CookedFood02" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot02"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -225,11 +237,11 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FoodSlot03" type="Control" parent="MachineStage/FoodLayer"]
+[node name="FoodSlot03" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
 visible = false
 mouse_filter = 2
-[node name="RawFood03" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot03"]
+[node name="RawFood03" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot03"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -240,7 +252,7 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-[node name="CookedFood03" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot03"]
+[node name="CookedFood03" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot03"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -252,11 +264,11 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FoodSlot04" type="Control" parent="MachineStage/FoodLayer"]
+[node name="FoodSlot04" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
 visible = false
 mouse_filter = 2
-[node name="RawFood04" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot04"]
+[node name="RawFood04" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot04"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -267,7 +279,7 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-[node name="CookedFood04" type="TextureRect" parent="MachineStage/FoodLayer/FoodSlot04"]
+[node name="CookedFood04" type="TextureRect" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot04"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -279,7 +291,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="LoweredBasketVisual" type="TextureRect" parent="MachineStage"]
+[node name="LoweredBasketVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -292,7 +304,7 @@ expand_mode = 1
 stretch_mode = 0
 z_index = 5
 
-[node name="SizzleLayer" type="Control" parent="MachineStage"]
+[node name="SizzleLayer" type="Control" parent="MachineStage/ArtRoot"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -302,7 +314,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 z_index = 6
-[node name="SizzleBubbles01" type="TextureRect" parent="MachineStage/SizzleLayer"]
+[node name="SizzleBubbles01" type="TextureRect" parent="MachineStage/ArtRoot/SizzleLayer"]
 unique_name_in_owner = true
 offset_left = 74.0
 offset_top = 17.0
@@ -312,7 +324,7 @@ mouse_filter = 2
 texture = ExtResource("13_bubbles")
 expand_mode = 1
 stretch_mode = 5
-[node name="SizzleBubbles02" type="TextureRect" parent="MachineStage/SizzleLayer"]
+[node name="SizzleBubbles02" type="TextureRect" parent="MachineStage/ArtRoot/SizzleLayer"]
 unique_name_in_owner = true
 offset_left = 117.0
 offset_top = 26.0
@@ -323,7 +335,7 @@ texture = ExtResource("13_bubbles")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="RaisedBasketVisual" type="TextureRect" parent="MachineStage"]
+[node name="RaisedBasketVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -337,7 +349,7 @@ expand_mode = 1
 stretch_mode = 0
 z_index = 7
 
-[node name="OilDripsVisual" type="TextureRect" parent="MachineStage"]
+[node name="OilDripsVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 visible = false
 offset_left = 89.0
@@ -350,7 +362,7 @@ expand_mode = 1
 stretch_mode = 5
 z_index = 8
 
-[node name="BurntSmokeVisual" type="TextureRect" parent="MachineStage"]
+[node name="BurntSmokeVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
 visible = false
 offset_left = 100.0

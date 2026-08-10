@@ -344,6 +344,7 @@ func _end_tutorial_without_mastery(kind: StringName, tutorial_id: StringName) ->
 
 
 func advance_tutorial_for_new_business_day() -> Dictionary:
+	_reconcile_packaged_drink_tutorial()
 	if not tutorial_active_id.is_empty():
 		return {"success": true, "active_kind": tutorial_active_kind, "active_id": tutorial_active_id}
 	if not tutorial_queue_area_ids.is_empty():
@@ -353,6 +354,19 @@ func advance_tutorial_for_new_business_day() -> Dictionary:
 		tutorial_active_kind = &"device"
 		tutorial_active_id = tutorial_queue_device_ids.front()
 	return {"success": true, "active_kind": tutorial_active_kind, "active_id": tutorial_active_id}
+
+
+func _reconcile_packaged_drink_tutorial() -> void:
+	# Older development saves can already own the cabinet without retaining the
+	# tutorial queue entry. Recreate only this unfinished area tutorial and let
+	# the normal queue ordering activate it at the next business-day boundary.
+	var area_id := &"area.packaged_drink"
+	if not owns_area(area_id) or tutorial_completed_area_ids.has(area_id):
+		return
+	if tutorial_active_kind == &"area" and tutorial_active_id == area_id:
+		return
+	if not tutorial_queue_area_ids.has(area_id):
+		tutorial_queue_area_ids.append(area_id)
 
 
 func begin_next_business_day() -> Dictionary:

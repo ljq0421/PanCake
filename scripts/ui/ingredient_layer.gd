@@ -2,6 +2,7 @@ class_name IngredientLayer
 extends Control
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
+const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png")
 
 @export var egg_texture: Texture2D
 @export var baocui_texture: Texture2D
@@ -151,6 +152,8 @@ func texture_for(ingredient_type: StringName) -> Texture2D:
 			return coriander_texture
 		IngredientModel.PRESERVED_MUSTARD:
 			return preserved_mustard_texture
+		IngredientModel.YOUTIAO:
+			return YOUTIAO_TEXTURE
 	return null
 
 
@@ -172,4 +175,8 @@ func _scale_for(ingredient_type: StringName) -> float:
 			return 0.11
 		IngredientModel.PRESERVED_MUSTARD:
 			return 0.12
+		IngredientModel.YOUTIAO:
+			# The source artwork is 768 px wide; at this scale it occupies about
+			# one fifth of the authored griddle width.
+			return 0.10
 	return 0.12

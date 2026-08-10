@@ -83,14 +83,14 @@ func refresh_from_session() -> void:
 	start_button.disabled = state not in [&"watered", &"loaded"]
 	var recipe_id := StringName(machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state in [&"ready_safe", &"overcooking"], "从出杯口拖到顾客托盘")
+	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state in [&"ready_safe", &"overcooking"], "成品已到出杯口；正式订单开放后点击订单商品交付")
 	machine_output.visible = state in [&"ready_safe", &"overcooking"]
 	var rack := Array(machine.get("output_rack", []))
 	for rack_index in range(rack_outputs.size()):
 		var cup := Dictionary(rack[rack_index]) if rack_index < rack.size() else {}
 		var rack_recipe_id := StringName(cup.get("recipe_id", &""))
 		var rack_product_id := StringName(CATALOG.recipe_definition(rack_recipe_id).get("product_id", &""))
-		rack_outputs[rack_index].configure({"source_kind": &"soy_output", "source_index": rack_index, "product_id": rack_product_id}, PRODUCT_VISUALS.texture_for(rack_product_id), not cup.is_empty(), "从接杯架拖到顾客托盘")
+		rack_outputs[rack_index].configure({"source_kind": &"soy_output", "source_index": rack_index, "product_id": rack_product_id}, PRODUCT_VISUALS.texture_for(rack_product_id), not cup.is_empty(), "接杯架成品；正式订单开放后点击订单商品交付")
 		rack_outputs[rack_index].visible = not cup.is_empty()
 	state_label.text = _state_text(state)
 

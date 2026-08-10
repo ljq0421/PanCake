@@ -29,6 +29,18 @@ func _run() -> void:
 		_check(Array(order.get("sauces", [])).size() <= 2, "formal pancake generator never asks for a third sauce")
 		found_double_sauce = found_double_sauce or Array(order.get("sauces", [])).size() == 2
 	_check(found_double_sauce, "confirmed double-sauce template remains eligible after its content unlocks")
+	var recipe_unlocked := fully_unlocked.duplicate(true)
+	recipe_unlocked["unlocked_recipe_ids"] = [&"recipe.pancake.base", &"recipe.youtiao.plain"]
+	var found_youtiao_order := false
+	for cursor in 20:
+		var candidate: Dictionary = GENERATOR.generate(recipe_unlocked, {}, cursor)
+		var order: Dictionary = candidate.get("order", {})
+		if StringName(order.get("id", &"")) != &"order.pancake.youtiao_scallion":
+			continue
+		found_youtiao_order = PackedStringArray(order.get("ingredients", PackedStringArray())) == PackedStringArray(["egg", "youtiao", "scallion"]) and PackedStringArray(order.get("sauces", PackedStringArray())) == PackedStringArray(["sweet_flour"]) and int(order.get("payment_coins", 0)) == 12 and is_equal_approx(float(order.get("time_limit", 0.0)), 72.0)
+	_check(found_youtiao_order, "plain-youtiao recipe unlock enables the egg+youtiao+scallion+sweet-sauce order")
+	var recipe_locked_youtiao := GENERATOR._eligible_template_ids(fully_unlocked)
+	_check(not recipe_locked_youtiao.has(&"order.pancake.youtiao_scallion"), "youtiao pancake order stays ineligible before the plain-youtiao recipe unlock")
 	_finish()
 
 

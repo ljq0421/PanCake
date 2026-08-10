@@ -161,6 +161,11 @@ static func _teaching_candidate(area_id: StringName, progression: Dictionary, in
 		candidate = _product_candidate(area_id, product_id, progression, 0, 0, true)
 	if not bool(candidate.get("success", false)):
 		return candidate
+	# The packaged-drink tutorial teaches the complete cabinet loop, including
+	# restocking. Its customer must therefore appear immediately after the area
+	# activates even when the newly unlocked milk lane is still empty.
+	if area_id == &"area.packaged_drink":
+		return candidate
 	var missing := PackedStringArray()
 	for stock_id_variant in Array(candidate.get("required_stock_ids", [])):
 		var stock_id := StringName(stock_id_variant)
@@ -289,13 +294,23 @@ static func _eligible_product_ids(area_id: StringName, progression: Dictionary) 
 
 static func _eligible_pancake_templates(progression: Dictionary) -> Array[StringName]:
 	var owned := _id_set(progression.get("unlocked_stock_ids", []))
+	var owned_recipes := _id_set(progression.get("unlocked_recipe_ids", []))
 	var ids: Array[StringName] = []
 	for template_key in CATALOG.PANCAKE_ORDER_TEMPLATES.keys():
 		var template_id := StringName(template_key)
 		var template := CATALOG.pancake_order_template(template_id)
 		var valid := true
+		for recipe_id_variant in Array(template.get("requires_recipe_ids", [])):
+			if not owned_recipes.has(StringName(recipe_id_variant)):
+				valid = false
+				break
+		if not valid:
+			continue
 		for stock_id_variant in Array(template.get("ingredient_stock_ids", [])) + Array(template.get("sauce_stock_ids", [])):
-			if not owned.has(StringName(stock_id_variant)):
+			var stock_id := StringName(stock_id_variant)
+			if StringName(CATALOG.stock_definition(stock_id).get("category", &"")) == &"prepared_add_on":
+				continue
+			if not owned.has(stock_id):
 				valid = false
 				break
 		if valid:

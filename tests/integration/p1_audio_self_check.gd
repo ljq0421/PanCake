@@ -90,9 +90,14 @@ func _run() -> void:
 	)
 	workstation._use_bag()
 	workstation._serve_order()
-	workstation.call("_on_tray_order_handed_off", {"settlement_id": &"audio.tray.handoff", "earned_coins": 3})
+	workstation.call("_finish_clicked_order", {
+		"settlement_id": &"audio.order_card.delivery",
+		"earned_coins": 3,
+		"order_success": true,
+		"reputation_delta": 1,
+	})
 	diagnostics = audio.call("get_diagnostics")
-	_check(int(diagnostics.cue_counts.get(&"serve", 0)) == 1, "handing the complete physical tray to the customer triggers serve audio once")
+	_check(int(diagnostics.cue_counts.get(&"serve", 0)) == 1, "completing delivery from the order card triggers serve audio once")
 	_check(not bool(diagnostics.sizzle_requested), "cooking sizzle is stopped outside the cooking phases")
 
 	workstation.queue_free()

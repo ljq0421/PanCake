@@ -49,6 +49,17 @@ func _run() -> void:
 	_check(active_patience.size() == 3 and Array(patience.call("waiting_orders")).size() == 1, "formal queue exposes three active customers and one hidden candidate")
 	_check(is_equal_approx(float(Dictionary(active_patience[0]).get("remaining_patience_seconds", 0.0)), 8.0) and is_equal_approx(float(Dictionary(active_patience[1]).get("remaining_patience_seconds", 0.0)), 22.0) and is_equal_approx(float(Dictionary(active_patience[2]).get("remaining_patience_seconds", 0.0)), 28.0), "all three active customer patience timers advance together")
 	_check(is_equal_approx(float(Dictionary(Array(patience.call("waiting_orders"))[0]).get("remaining_patience_seconds", 0.0)), 40.0), "hidden candidate remains frozen until activation")
+	for fps in [30, 60, 144]:
+		var frame_service: RefCounted = ORDERS.new()
+		frame_service.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom"}], {"patience_seconds": 10.0})
+		var previous := 10.0
+		var monotonic := true
+		for _frame in range(fps * 3):
+			frame_service.call("advance_patience", 1.0 / float(fps))
+			var current := float(Dictionary(frame_service.call("active_order")).get("remaining_patience_seconds", 0.0))
+			monotonic = monotonic and current < previous
+			previous = current
+		_check(monotonic and absf(previous - 7.0) < 0.0001, "%d FPS small-step patience remains monotonic and time-equivalent" % fps)
 	var serving_id := StringName(Dictionary(active_patience[1]).get("order_id", &""))
 	patience.call("begin_serving", serving_id)
 	patience.call("advance_patience", 3.0)

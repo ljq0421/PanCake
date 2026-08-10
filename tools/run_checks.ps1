@@ -21,7 +21,11 @@ $checks = @(
 	'res://tests/unit/five_area_f4_services_self_check.gd',
 	'res://tests/unit/five_area_business_systems_self_check.gd',
 	'res://tests/unit/packaged_drink_heater_self_check.gd',
+	'res://tests/unit/packaged_drink_lane_gesture_self_check.gd',
 	'res://tests/unit/youtiao_fryer_self_check.gd',
+	'res://tests/unit/prepared_product_slots_self_check.gd',
+	'res://tests/unit/youtiao_pancake_add_on_self_check.gd',
+	'res://tests/unit/five_area_pancake_production_self_check.gd',
 	'res://tests/unit/f3_progression_path_self_check.gd',
     'res://tests/unit/pancake_model_self_check.gd',
     'res://tests/unit/p0_2_simulation_self_check.gd',
@@ -59,6 +63,12 @@ foreach ($check in $checks) {
         Write-Host "Godot log: $logFile"
         exit $LASTEXITCODE
     }
+	$badLogLines = Select-String -Path $logFile -Pattern 'SCRIPT ERROR|Parse Error|FAIL:'
+	if ($badLogLines) {
+		$badLogLines | ForEach-Object { Write-Host $_.Line }
+		Write-Host "Godot log: $logFile"
+		exit 1
+	}
 }
 
 Write-Host 'All Project Cake checks passed.'

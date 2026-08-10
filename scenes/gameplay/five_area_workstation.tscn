@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="2_controller"]
@@ -6,9 +6,12 @@
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_youtiao_station.tscn" id="4_youtiao"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_packaged_drink_station.tscn" id="5_drink"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_steamer_station.tscn" id="6_steamer"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/customer_handoff_tray.tscn" id="7_tray"]
 [ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="8_disposition"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="9_source"]
+[ext_resource type="Script" path="res://scripts/ui/prepared_product_slot.gd" id="10_prepared_slot"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png" id="11_plain_youtiao"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/oil_cake_five_area_v2.png" id="12_oil_cake"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png" id="13_sugar_oil_cake"]
 
 [sub_resource type="StyleBoxFlat" id="WasteStyle"]
 bg_color = Color(0.72, 0.18, 0.1, 0.9)
@@ -35,19 +38,153 @@ visible = false
 mouse_filter = 2
 
 [node name="OrderDishTarget1" parent="SafeArea/OrderCard"]
-disabled = true
-mouse_filter = 2
-tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+disabled = false
+mouse_filter = 0
+tooltip_text = "点击交付对应成品"
 
 [node name="OrderDishTarget2" parent="SafeArea/OrderCard"]
-disabled = true
-mouse_filter = 2
-tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+disabled = false
+mouse_filter = 0
+tooltip_text = "点击交付对应成品"
 
 [node name="OrderDishTarget3" parent="SafeArea/OrderCard"]
-disabled = true
+disabled = false
+mouse_filter = 0
+tooltip_text = "点击交付对应成品"
+
+[node name="PreparedProductSlot04" type="Button" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = 30
+layout_mode = 0
+offset_left = 341.0
+offset_top = 956.0
+offset_right = 430.0
+offset_bottom = 1045.0
+flat = true
+script = ExtResource("10_prepared_slot")
+slot_id = &"slot.04"
+product_id = &"product.youtiao.plain"
+ingredient_type = &"youtiao"
+product_texture = ExtResource("11_plain_youtiao")
+allow_pancake_drag = true
+
+[node name="Artwork" type="TextureRect" parent="SafeArea/PreparedProductSlot04"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = -7.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-tooltip_text = "只读点单提示；请把实体成品拖到顾客托盘"
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="SafeArea/PreparedProductSlot04"]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -22.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+
+[node name="PreparedProductSlot05" type="Button" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = 30
+layout_mode = 0
+offset_left = 445.0
+offset_top = 956.0
+offset_right = 534.0
+offset_bottom = 1045.0
+flat = true
+script = ExtResource("10_prepared_slot")
+slot_id = &"slot.05"
+product_id = &"product.youtiao.oil_cake"
+product_texture = ExtResource("12_oil_cake")
+
+[node name="Artwork" type="TextureRect" parent="SafeArea/PreparedProductSlot05"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = -7.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="SafeArea/PreparedProductSlot05"]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -22.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+
+[node name="PreparedProductSlot06" type="Button" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = 30
+layout_mode = 0
+offset_left = 550.0
+offset_top = 956.0
+offset_right = 639.0
+offset_bottom = 1045.0
+flat = true
+script = ExtResource("10_prepared_slot")
+slot_id = &"slot.06"
+product_id = &"product.youtiao.sugar_oil_cake"
+product_texture = ExtResource("13_sugar_oil_cake")
+
+[node name="Artwork" type="TextureRect" parent="SafeArea/PreparedProductSlot06"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 5.0
+offset_right = -7.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="SafeArea/PreparedProductSlot06"]
+layout_mode = 1
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -22.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
 
 [node name="FiveAreaInfrastructure" type="Control" parent="."]
 layout_mode = 1
@@ -103,14 +240,6 @@ offset_top = 610.0
 offset_right = 1912.0
 offset_bottom = 950.0
 
-[node name="CustomerHandoffTray" parent="FiveAreaInfrastructure" instance=ExtResource("7_tray")]
-layout_mode = 0
-offset_left = 705.0
-offset_top = 350.0
-offset_right = 1215.0
-offset_bottom = 570.0
-z_index = 6
-
 [node name="PancakeReadySource" type="TextureButton" parent="FiveAreaInfrastructure"]
 unique_name_in_owner = true
 visible = false
@@ -147,7 +276,7 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("9_source")
 
-[node name="TrayPaymentButton" type="Button" parent="FiveAreaInfrastructure"]
+[node name="PendingPaymentButton" type="Button" parent="FiveAreaInfrastructure"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0

@@ -45,8 +45,8 @@ func _run() -> void:
 	var ticket_3 := station.get_node("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket3") as Button
 	_check(station.get_node_or_null("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket4") == null, "GPU day-end scene has exactly three growth cards")
 	_check("宽幅摊饼器" in ticket_1.text and "辣椒酱" in ticket_2.text and "成品饮品柜" in ticket_3.text, "GPU day-end scene renders the intended first-day growth path")
-	_check(not ticket_1.disabled and ticket_2.disabled and ticket_3.disabled, "GPU day-end scene exposes exactly one clickable coin guarantee")
-	_check("[安装位 · 金币保底]" in ticket_1.text and "金币 20/12" in ticket_1.text, "GPU guarantee card visibly identifies its slot and catalog price")
+	_check(not ticket_1.disabled and ticket_2.disabled and ticket_3.disabled, "GPU day-end scene exposes exactly one clickable internal coin path")
+	_check("[安装位]" in ticket_1.text and "金币 20/12" in ticket_1.text and "金币保底" not in ticket_1.text and "金币保底" not in ticket_1.tooltip_text, "GPU growth card identifies its ordinary slot and catalog price without exposing the design term")
 	var output_paths := PackedStringArray()
 	var daily_bill := station.get_node("SafeArea/DailyBillPanel") as Control
 	for capture_variant in SCREENSHOT_CAPTURES:

@@ -48,12 +48,13 @@ func _run() -> void:
 		"active_kind": &"area",
 		"active_id": &"area.packaged_drink",
 	}
-	var blocked: Dictionary = GENERATOR.generate(teaching_progression, empty_inventory, 9, 1, 3, 0)
-	_check(StringName(blocked.get("reason", &"")) == &"tutorial_restock_required" and Array(blocked.get("missing_stock_ids", [])).has("stock.packaged_drink.milk"), "drink teaching waits for one real unit of starter stock")
+	var teaching: Dictionary = GENERATOR.generate(teaching_progression, empty_inventory, 9, 1, 3, 0)
+	_check(bool(teaching.get("success", false)) and Array(teaching.get("required_stock_ids", [])).has("stock.packaged_drink.milk"), "drink teaching appears at zero stock while retaining its real milk requirement")
 	var stocked_inventory := _inventory(0)
 	stocked_inventory["stock.packaged_drink.milk"] = 1
-	var teaching: Dictionary = GENERATOR.generate(teaching_progression, stocked_inventory, 9, 1, 3, 0)
+	var stocked_teaching: Dictionary = GENERATOR.generate(teaching_progression, stocked_inventory, 9, 1, 3, 0)
 	_check(_area_id(teaching) == &"area.packaged_drink" and StringName(_item(teaching).get("temperature_mode", &"")) == &"room_temperature", "starter drink teaching is a room-temperature single item")
+	_check(Array(stocked_teaching.get("items", [])).size() == 1 and _item(stocked_teaching) == _item(teaching), "restocking does not replace or expand the authored drink teaching item")
 	_check(bool(Dictionary(teaching.get("metadata", {})).get("tutorial_no_countdown", false)) and is_equal_approx(float(Dictionary(teaching.get("metadata", {})).get("patience_seconds", 0.0)), 24.0), "drink teaching is explicitly unlimited instead of receiving a hidden countdown")
 
 	var service: RefCounted = ORDER_SERVICE.new()

@@ -31,7 +31,7 @@ const STOCK_IDS: Array[StringName] = [&"stock.youtiao.plain_dough", &"stock.yout
 @onready var food_slots: Array[Control] = [%FoodSlot01, %FoodSlot02, %FoodSlot03, %FoodSlot04]
 @onready var raw_food_visuals: Array[TextureRect] = [%RawFood01, %RawFood02, %RawFood03, %RawFood04]
 @onready var cooked_food_visuals: Array[TextureRect] = [%CookedFood01, %CookedFood02, %CookedFood03, %CookedFood04]
-@onready var sizzle_layer: Control = $MachineStage/SizzleLayer
+@onready var sizzle_layer: Control = $MachineStage/ArtRoot/SizzleLayer
 @onready var sizzle_visuals: Array[TextureRect] = [%SizzleBubbles01, %SizzleBubbles02]
 @onready var oil_drips_visual: TextureRect = %OilDripsVisual
 @onready var burnt_smoke_visual: TextureRect = %BurntSmokeVisual
@@ -95,6 +95,13 @@ func _process(delta: float) -> void:
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
 		refresh_from_session()
+
+
+func _has_point(point: Vector2) -> bool:
+	# The formal workstation places the pancake sauce rack over the lower part
+	# of this station's rectangular shell. Only the authored basket stage needs
+	# root-level drop input; child buttons keep their own exact hit regions.
+	return Rect2(machine_stage.position, machine_stage.size).has_point(point)
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
@@ -181,7 +188,7 @@ func _render_machine() -> void:
 	output_source.visible = state == &"ready_to_collect"
 	var recipe_id := StringName(_machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-	output_source.configure({"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state == &"ready_to_collect", "从高位炸篮逐份拖入顾客托盘")
+	output_source.configure({"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state == &"ready_to_collect", "从高位炸篮逐份拖入匹配的 Slot04–Slot06")
 	output_source.self_modulate = Color(1.0, 1.0, 1.0, 0.01)
 	temperature_range_bar.apply_snapshot(_machine, _owns_assist(TEMPERATURE_ASSIST))
 

@@ -28,18 +28,21 @@ func _run() -> void:
 	await process_frame
 	guarantee_station.call("end_business_day")
 	var guarantee_tickets := _growth_tickets(guarantee_station)
-	_check(_ticket_ids(guarantee_tickets) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "coin guarantee keeps the first fixed-route three-card window")
-	_check(guarantee_tickets[0].disabled and "[安装位 · 金币保底]" in guarantee_tickets[0].text and "金币 5/12" in guarantee_tickets[0].text, "all-locked day end visibly marks the frontier and shows the real coin gap")
-	_check("金币保底项" in guarantee_tickets[0].tooltip_text and "只差金币" in guarantee_tickets[0].tooltip_text and "营业日" not in guarantee_tickets[0].tooltip_text, "guarantee tooltip replaces non-coin gates instead of mixing them with the coin requirement")
-	_check(not "金币保底" in guarantee_tickets[1].text and not "金币保底" in guarantee_tickets[2].text, "only one of the three day-end cards is the coin guarantee")
+	var guarantee_ids_before := _ticket_ids(guarantee_tickets)
+	_check(guarantee_ids_before == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.area.packaged_drink"], "internal coin path keeps the first fixed-route three-card window")
+	_check(guarantee_tickets[0].disabled and "[安装位]" in guarantee_tickets[0].text and "金币 5/12" in guarantee_tickets[0].text, "all-locked day end shows the ordinary slot title and real coin gap")
+	_check(guarantee_tickets[0].tooltip_text == "金币 5/12" and "营业日" not in guarantee_tickets[0].tooltip_text, "internal coin path hides its design rule and exposes only the real coin requirement")
+	for ticket in guarantee_tickets:
+		_check(not "金币保底" in ticket.text and not "金币保底" in ticket.tooltip_text, "day-end cards never expose the internal coin-guarantee term")
 	progression.set("coins", 20)
 	guarantee_station.call("_refresh_growth_section")
-	_check(not guarantee_tickets[0].disabled and "金币 20/12 · 可预订，明日生效" in guarantee_tickets[0].text and "支付 12 金币" in guarantee_tickets[0].tooltip_text, "sufficient balance makes the guaranteed card clickable with matching price copy")
+	_check(not guarantee_tickets[0].disabled and "金币 20/12 · 可预订，明日生效" in guarantee_tickets[0].text and guarantee_tickets[0].tooltip_text == "金币 20/12 · 可预订，明日生效", "sufficient balance makes the internal coin path clickable with ordinary matching copy")
 	guarantee_tickets[0].emit_signal("pressed")
 	await process_frame
 	var guaranteed_pending: Dictionary = session.call("five_area_progression_snapshot")
 	_check(str(guaranteed_pending.get("pending_install_purchase", "")) == "growth.tool.pancake.wide_spreader" and int(guaranteed_pending.get("coins", 0)) == 8, "clicking the guaranteed card charges its catalog price and reserves the install slot")
-	_check(guarantee_tickets[0].disabled and "已预订：宽幅摊饼器" in guarantee_tickets[0].text and "金币保底" not in guarantee_tickets[0].text, "purchased guarantee refreshes into the normal pending state")
+	_check(_ticket_ids(guarantee_tickets) == guarantee_ids_before, "clicking one reservation does not replace or reorder the other fixed-route cards")
+	_check(guarantee_tickets[0].disabled and "已预订：宽幅摊饼器" in guarantee_tickets[0].text and "金币保底" not in guarantee_tickets[0].text, "purchased internal coin path refreshes into the normal pending state")
 	guarantee_station.queue_free()
 	await process_frame
 

@@ -66,16 +66,16 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	var coriander_button := refreshed_station.get_node("SafeArea/IngredientRack/CorianderButton") as Button
-	var slot_lock := refreshed_station.get_node("SafeArea/LockedIngredientArtwork/Slot06") as CanvasItem
-	var slot_interaction := refreshed_station.get_node("SafeArea/LockedIngredientInteractions/Slot06LockedButton") as Button
+	var slot_lock := refreshed_station.get_node("SafeArea/LockedIngredientArtwork/Slot13") as CanvasItem
+	var slot_interaction := refreshed_station.get_node("SafeArea/LockedIngredientInteractions/Slot13LockedButton") as Button
 	var ham_button := refreshed_station.get_node("SafeArea/IngredientRack/HamButton") as Button
 	var meat_floss_button := refreshed_station.get_node("SafeArea/IngredientRack/MeatFlossButton") as Button
 	var preserved_button := refreshed_station.get_node("SafeArea/IngredientRack/PreservedMustardButton") as Button
 	var tenderloin_button := refreshed_station.get_node("SafeArea/IngredientRack/PorkTenderloinButton") as Button
 	_check(coriander_button.visible and not coriander_button.disabled, "activated coriander appears in its direct ingredient tray")
-	_check(not slot_lock.visible and not slot_interaction.visible and slot_interaction.disabled, "the fourth unlocked later add-on occupies Slot06 and removes its lock")
+	_check(not slot_lock.visible and not slot_interaction.visible and slot_interaction.disabled, "the fourth unlocked later add-on occupies Slot13 and removes its lock")
 	_check(StringName(ham_button.get_meta(&"material_slot_id", &"")) == &"slot.10" and StringName(meat_floss_button.get_meta(&"material_slot_id", &"")) == &"slot.11", "later add-ons begin compacting at Slot10-Slot11")
-	_check(StringName(coriander_button.get_meta(&"material_slot_id", &"")) == &"slot.12" and StringName(preserved_button.get_meta(&"material_slot_id", &"")) == &"slot.06" and StringName(tenderloin_button.get_meta(&"material_slot_id", &"")) == &"slot.13", "later unlocked add-ons continue through the confirmed priority wells")
+	_check(StringName(coriander_button.get_meta(&"material_slot_id", &"")) == &"slot.12" and StringName(preserved_button.get_meta(&"material_slot_id", &"")) == &"slot.13" and StringName(tenderloin_button.get_meta(&"material_slot_id", &"")) == &"slot.14", "later unlocked add-ons continue through fixed Slot10-Slot14")
 	var coriander_empty_text := (coriander_button.get_node("EmptyLabel") as Label).text
 	_check(coriander_empty_text.contains("缺货") and not coriander_empty_text.contains("待解锁"), "activated coriander is shown as unlocked stock that now needs refilling")
 	var refill_sources := {

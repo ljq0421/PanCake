@@ -1,24 +1,11 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/direct_packaged_drink_station.gd" id="1_root"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/packaged_drink_cabinet_empty_tier_1_five_area_v3.png" id="2_cabinet"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/packaged_drink_display_rack_tier_1_five_area_v4.png" id="2_cabinet"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_1_five_area_v2.png" id="3_heater"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="4_source"]
-[ext_resource type="Script" path="res://scripts/ui/restock_hold_button.gd" id="5_restock"]
 [ext_resource type="Script" path="res://scripts/ui/heater_slot_drop_target.gd" id="6_heater_drop"]
 [ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="7_disposition"]
-
-[sub_resource type="StyleBoxFlat" id="RestockStyle"]
-bg_color = Color(0.75, 0.47, 0.15, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.82, 0.42, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="HeaterSlotStyle"]
 bg_color = Color(0.82, 0.91, 0.91, 0.7)
@@ -27,6 +14,42 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.69, 0.46, 0.19, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="HeaterHeatingStyle"]
+bg_color = Color(0.98, 0.82, 0.38, 0.86)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.92, 0.46, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="HeaterReadyStyle"]
+bg_color = Color(1, 0.57, 0.22, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.93, 0.44, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="HeaterCooledStyle"]
+bg_color = Color(0.68, 0.76, 0.82, 0.86)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.35, 0.47, 0.57, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -51,6 +74,10 @@ anchors_preset = 0
 offset_right = 306.0
 offset_bottom = 380.0
 script = ExtResource("1_root")
+heater_empty_style = SubResource("HeaterSlotStyle")
+heater_heating_style = SubResource("HeaterHeatingStyle")
+heater_ready_style = SubResource("HeaterReadyStyle")
+heater_cooled_style = SubResource("HeaterCooledStyle")
 
 [node name="Cabinet" type="TextureRect" parent="."]
 layout_mode = 0
@@ -81,187 +108,158 @@ mouse_filter = 2
 
 [node name="Depth01B" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 25.0
-offset_top = 53.0
-offset_right = 79.0
-offset_bottom = 111.0
+offset_left = 38.0
+offset_top = 31.0
+offset_right = 82.0
+offset_bottom = 75.0
 modulate = Color(0.72, 0.78, 0.82, 0.8)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth01A" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 21.0
-offset_top = 58.0
-offset_right = 79.0
-offset_bottom = 119.0
+offset_left = 33.0
+offset_top = 29.0
+offset_right = 80.0
+offset_bottom = 76.0
 modulate = Color(0.86, 0.9, 0.92, 0.9)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth02B" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 93.0
-offset_top = 53.0
-offset_right = 147.0
-offset_bottom = 111.0
+offset_left = 158.0
+offset_top = 31.0
+offset_right = 202.0
+offset_bottom = 75.0
 modulate = Color(0.72, 0.78, 0.82, 0.8)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth02A" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 89.0
-offset_top = 58.0
-offset_right = 147.0
-offset_bottom = 119.0
+offset_left = 153.0
+offset_top = 29.0
+offset_right = 200.0
+offset_bottom = 76.0
 modulate = Color(0.86, 0.9, 0.92, 0.9)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth03B" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 161.0
-offset_top = 53.0
-offset_right = 215.0
-offset_bottom = 111.0
+offset_left = 38.0
+offset_top = 93.0
+offset_right = 82.0
+offset_bottom = 137.0
 modulate = Color(0.72, 0.78, 0.82, 0.8)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth03A" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 157.0
-offset_top = 58.0
-offset_right = 215.0
-offset_bottom = 119.0
+offset_left = 33.0
+offset_top = 91.0
+offset_right = 80.0
+offset_bottom = 138.0
 modulate = Color(0.86, 0.9, 0.92, 0.9)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth04B" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 229.0
-offset_top = 53.0
-offset_right = 283.0
-offset_bottom = 111.0
+offset_left = 158.0
+offset_top = 93.0
+offset_right = 202.0
+offset_bottom = 137.0
 modulate = Color(0.72, 0.78, 0.82, 0.8)
 expand_mode = 1
 stretch_mode = 5
 [node name="Depth04A" type="TextureRect" parent="LaneDepths"]
 unique_name_in_owner = true
-offset_left = 225.0
-offset_top = 58.0
-offset_right = 283.0
-offset_bottom = 119.0
+offset_left = 153.0
+offset_top = 91.0
+offset_right = 200.0
+offset_bottom = 138.0
 modulate = Color(0.86, 0.9, 0.92, 0.9)
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Lane01" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 18.0
-offset_top = 62.0
-offset_right = 84.0
-offset_bottom = 128.0
+offset_left = 30.0
+offset_top = 25.0
+offset_right = 143.0
+offset_bottom = 79.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
+hold_enabled = true
+hold_threshold_seconds = 0.1
 [node name="Lane02" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 86.0
-offset_top = 62.0
-offset_right = 152.0
-offset_bottom = 128.0
+offset_left = 150.0
+offset_top = 25.0
+offset_right = 264.0
+offset_bottom = 79.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
+hold_enabled = true
+hold_threshold_seconds = 0.1
 [node name="Lane03" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 154.0
-offset_top = 62.0
-offset_right = 220.0
-offset_bottom = 128.0
+offset_left = 30.0
+offset_top = 87.0
+offset_right = 143.0
+offset_bottom = 141.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
+hold_enabled = true
+hold_threshold_seconds = 0.1
 [node name="Lane04" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 222.0
-offset_top = 62.0
-offset_right = 288.0
-offset_bottom = 128.0
+offset_left = 150.0
+offset_top = 87.0
+offset_right = 264.0
+offset_bottom = 141.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
+hold_enabled = true
+hold_threshold_seconds = 0.1
 
 [node name="Count01" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 18.0
-offset_top = 112.0
-offset_right = 84.0
-offset_bottom = 138.0
+offset_left = 30.0
+offset_top = 57.0
+offset_right = 143.0
+offset_bottom = 79.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.2, 0.12, 0.06, 1)
 horizontal_alignment = 1
 [node name="Count02" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 86.0
-offset_top = 112.0
-offset_right = 152.0
-offset_bottom = 138.0
+offset_left = 150.0
+offset_top = 57.0
+offset_right = 264.0
+offset_bottom = 79.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.2, 0.12, 0.06, 1)
 horizontal_alignment = 1
 [node name="Count03" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 154.0
-offset_top = 112.0
-offset_right = 220.0
-offset_bottom = 138.0
+offset_left = 30.0
+offset_top = 119.0
+offset_right = 143.0
+offset_bottom = 141.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.2, 0.12, 0.06, 1)
 horizontal_alignment = 1
 [node name="Count04" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 222.0
-offset_top = 112.0
-offset_right = 288.0
-offset_bottom = 138.0
+offset_left = 150.0
+offset_top = 119.0
+offset_right = 264.0
+offset_bottom = 141.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.2, 0.12, 0.06, 1)
 horizontal_alignment = 1
-
-[node name="Restock01" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 18.0
-offset_top = 128.0
-offset_right = 84.0
-offset_bottom = 194.0
-theme_override_styles/normal = SubResource("RestockStyle")
-text = "补"
-script = ExtResource("5_restock")
-[node name="Restock02" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 86.0
-offset_top = 128.0
-offset_right = 152.0
-offset_bottom = 194.0
-theme_override_styles/normal = SubResource("RestockStyle")
-text = "补"
-script = ExtResource("5_restock")
-[node name="Restock03" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 154.0
-offset_top = 128.0
-offset_right = 220.0
-offset_bottom = 194.0
-theme_override_styles/normal = SubResource("RestockStyle")
-text = "补"
-script = ExtResource("5_restock")
-[node name="Restock04" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 222.0
-offset_top = 128.0
-offset_right = 288.0
-offset_bottom = 194.0
-theme_override_styles/normal = SubResource("RestockStyle")
-text = "补"
-script = ExtResource("5_restock")
 
 [node name="HeaterArtwork" type="TextureRect" parent="."]
 offset_left = 22.0

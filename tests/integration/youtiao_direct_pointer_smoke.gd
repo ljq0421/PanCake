@@ -35,6 +35,9 @@ func _run() -> void:
 	progression.set("unlocked_product_ids", {&"product.youtiao.plain": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
 	progression.set("unlocked_automation_ids", {AUTO_LOAD: true})
+	session.call("_sync_progression_to_save")
+	session.set("_production_service", null)
+	session.call("_ensure_production_service")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	inventory["stock.youtiao.plain_dough"] = 5
 	session.call("save_inventory", inventory)
@@ -43,9 +46,8 @@ func _run() -> void:
 	for _frame in 8:
 		await process_frame
 	var station := workstation.get_node("FiveAreaInfrastructure/Stations/YoutiaoStation") as DirectYoutiaoStation
-	var tray := workstation.get_node("FiveAreaInfrastructure/CustomerHandoffTray") as CustomerHandoffTray
-	_check(station != null and tray != null, "the formal same-screen scene exposes the direct fryer and physical tray")
-	if station == null or tray == null:
+	_check(station != null and workstation.get_node_or_null("FiveAreaInfrastructure/CustomerHandoffTray") == null, "the formal same-screen scene exposes the direct fryer without a customer handoff tray")
+	if station == null:
 		workstation.queue_free()
 		await process_frame
 		_finish()
@@ -58,9 +60,12 @@ func _run() -> void:
 	session.call("begin_formal_order_serving", order_id)
 	var focused_order := Dictionary(session.call("formal_order", order_id))
 	_check(StringName(focused_order.get("state", &"")) in [&"active", &"serving"], "the pointer test focuses a currently active formal order")
-	tray.focus_order(focused_order)
+	workstation.call("_focus_formal_order", focused_order, false)
 	await process_frame
 	_check(station.auto_load_panel.visible and station.auto_load_visual.visible, "owned auto-load hardware is visible in the formal station")
+	await _hover_control(station.dough_sources[0])
+	var dough_hovered := root.gui_get_hovered_control()
+	_check(dough_hovered == station.dough_sources[0], "the GPU pointer resolves the unlocked dough source; hovered=%s visible=%s disabled=%s" % [str(dough_hovered.get_path() if dough_hovered != null else "none"), station.dough_sources[0].is_visible_in_tree(), station.dough_sources[0].disabled])
 
 	await _drag_control(station.dough_sources[0], station.machine_stage)
 	await process_frame
@@ -79,29 +84,28 @@ func _run() -> void:
 	await process_frame
 	var collectible := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	_check(StringName(collectible.get("state", &"")) == &"ready_to_collect" and station.output_source.visible and not station.output_source.disabled, "the drained output exposes an enabled physical drag source")
-	_check(not tray.focused_order_id().is_empty() and tray.slots[0].visible, "the matching physical tray slot is focused and visible")
 	await _hover_control(station.output_source)
 	_check(root.gui_get_hovered_control() == station.output_source, "the GPU pointer resolves the modular output hit area above the basket art")
-	await _hover_control(tray.slots[0])
-	_check(root.gui_get_hovered_control() == tray.slots[0], "the GPU pointer resolves the requested tray slot as the drop target")
-	var output_drag_events: Array[Dictionary] = []
-	var tray_drop_events: Array[Dictionary] = []
-	var tray_messages := PackedStringArray()
-	station.output_source.drag_started.connect(func(source_ref: Dictionary): output_drag_events.append(source_ref.duplicate(true)))
-	tray.slots[0].product_source_dropped.connect(func(source_ref: Dictionary, _item_index: int): tray_drop_events.append(source_ref.duplicate(true)))
-	tray.status_message.connect(func(message: String): tray_messages.append(message))
 	_check(StringName(station.output_source.source_ref().get("product_id", &"")) == &"product.youtiao.plain", "the physical output source carries the current product identity")
-	await _drag_control(station.output_source, tray.slots[0])
+	var prepared_slot := workstation.get_node("SafeArea/PreparedProductSlot04") as Control
+	_check(prepared_slot != null and prepared_slot.is_visible_in_tree(), "Slot04 is visible as the fixed plain-youtiao prepared-product slot")
+	await _drag_control(station.output_source, prepared_slot)
 	await process_frame
-	_check(output_drag_events.size() == 1, "the output source starts exactly one real GUI drag")
-	_check(tray_drop_events.size() == 1, "the requested tray slot receives exactly one product-source drop")
-	var post_drop_state := StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &""))
-	if post_drop_state != &"idle":
-		print("YOUTIAO_TRAY_DROP_STATUS=%s" % " | ".join(tray_messages))
-	_check(post_drop_state == &"idle", "real output drag removes the final portion and resets the low basket")
-	var order := Dictionary(session.call("active_formal_order"))
+	var post_slot_state := StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &""))
+	var slot_status := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
+	_check(post_slot_state == &"idle" and int(slot_status.get("count", 0)) == 1, "real output drag atomically moves one drained youtiao into Slot04 and resets the fryer")
+	var order_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
+	_check(not order_target.disabled and order_target.mouse_filter == Control.MOUSE_FILTER_STOP, "the youtiao order product is an enabled pointer delivery target")
+	await _hover_control(order_target)
+	_check(root.gui_get_hovered_control() == order_target, "the GPU pointer resolves the order product target")
+	await _click_control(order_target)
+	await process_frame
+	var slot_after_delivery := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
+	_check(int(slot_after_delivery.get("count", 0)) == 0, "real order-card click takes the oldest matching product from Slot04")
+	var order := Dictionary(session.call("formal_order", order_id))
 	var item := Dictionary(Array(order.get("items", []))[0]) if not Array(order.get("items", [])).is_empty() else {}
-	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 1, "the physical tray receives the drained youtiao")
+	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 1 and StringName(order.get("state", &"")) == &"settled", "the order product click delivers and settles the slotted youtiao")
+	_check(StringName(workstation.get("_formal_order_id")) != order_id, "the next customer is routed before youtiao payment collection")
 
 	await _click_control(station.dough_sources[0])
 	await _click_control(station.auto_plus_button)
@@ -123,6 +127,29 @@ func _run() -> void:
 	for _frame in 4:
 		await process_frame
 	await _save_viewport(SCREENSHOT_1280, Vector2i(1280, 720))
+	var stage_rect_before_tiers := station.machine_stage.get_global_rect()
+	var start_rect_before_tiers := station.start_button.get_global_rect()
+	var lift_rect_before_tiers := station.lift_button.get_global_rect()
+	for tier in range(3):
+		var tiers := Dictionary(progression.get("device_tiers")).duplicate(true)
+		tiers[&"device.youtiao_fryer"] = tier
+		progression.set("device_tiers", tiers)
+		station.refresh_from_session()
+		for _frame in 2:
+			await process_frame
+		var tier_snapshot := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+		_check(
+			int(tier_snapshot.get("tier", -1)) == tier
+			and station.body_visual.texture == station.body_textures[tier]
+			and station.raised_basket_visual.texture == station.raised_basket_textures[tier],
+			"fryer tier %d renders its matching enlarged body and raised-basket artwork" % tier
+		)
+		_check(
+			station.machine_stage.get_global_rect().is_equal_approx(stage_rect_before_tiers)
+			and station.start_button.get_global_rect().is_equal_approx(start_rect_before_tiers)
+			and station.lift_button.get_global_rect().is_equal_approx(lift_rect_before_tiers),
+			"fryer tier %d keeps the authored machine and action hit regions unchanged" % tier
+		)
 	workstation.queue_free()
 	await process_frame
 	_finish()
@@ -130,10 +157,11 @@ func _run() -> void:
 
 func _click_control(control: Control) -> void:
 	var position := control.get_global_rect().get_center()
+	Input.warp_mouse(position)
 	var motion := InputEventMouseMotion.new()
 	motion.position = position
 	motion.global_position = position
-	root.push_input(motion)
+	Input.parse_input_event(motion)
 	await process_frame
 	var pressed := InputEventMouseButton.new()
 	pressed.button_index = MOUSE_BUTTON_LEFT
@@ -153,20 +181,22 @@ func _click_control(control: Control) -> void:
 
 func _hover_control(control: Control) -> void:
 	var position := control.get_global_rect().get_center()
+	Input.warp_mouse(position)
 	var motion := InputEventMouseMotion.new()
 	motion.position = position
 	motion.global_position = position
-	root.push_input(motion)
+	Input.parse_input_event(motion)
 	await process_frame
 
 
 func _drag_control(source: Control, target: Control) -> void:
 	var from := source.get_global_rect().get_center()
 	var to := target.get_global_rect().get_center()
+	Input.warp_mouse(from)
 	var hover := InputEventMouseMotion.new()
 	hover.position = from
 	hover.global_position = from
-	root.push_input(hover)
+	Input.parse_input_event(hover)
 	await process_frame
 	var pressed := InputEventMouseButton.new()
 	pressed.button_index = MOUSE_BUTTON_LEFT
@@ -181,7 +211,7 @@ func _drag_control(source: Control, target: Control) -> void:
 		motion.position = position
 		motion.global_position = position
 		motion.relative = (to - from) * 0.24
-		root.push_input(motion)
+		Input.parse_input_event(motion)
 		await process_frame
 	var released := InputEventMouseButton.new()
 	released.button_index = MOUSE_BUTTON_LEFT

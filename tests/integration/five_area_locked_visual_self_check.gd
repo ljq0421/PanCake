@@ -7,6 +7,12 @@ const LOCKED_STATIONS := {
 	&"area.packaged_drink": "PackagedDrinkStation",
 	&"area.steamer": "SteamerStation",
 }
+const LOCK_CLICK_LAYERS := {
+	&"area.fresh_soy_milk": "FreshSoyMilkLockedClickLayer",
+	&"area.youtiao": "YoutiaoLockedClickLayer",
+	&"area.packaged_drink": "PackagedDrinkLockedClickLayer",
+	&"area.steamer": "SteamerLockedClickLayer",
+}
 
 var _failures: Array[String] = []
 
@@ -30,8 +36,10 @@ func _run() -> void:
 	for area_id in LOCKED_STATIONS:
 		var station := _station(workstation, LOCKED_STATIONS[area_id])
 		var lock_cover := station.get_node("LockCover") as Button
+		var lock_click_layer := workstation.get_node("SafeArea/FiveAreaStationClickLayers/%s" % LOCK_CLICK_LAYERS[area_id]) as Button
 		_check(lock_cover.visible, "%s starts behind its lock card in a new game" % area_id)
-		_check(lock_cover.mouse_filter == Control.MOUSE_FILTER_STOP, "%s lock card blocks interaction with concealed controls" % area_id)
+		_check(lock_cover.mouse_filter == Control.MOUSE_FILTER_IGNORE, "%s visual lock card delegates input instead of covering adjacent workstation controls" % area_id)
+		_check(lock_click_layer.visible and lock_click_layer.mouse_filter == Control.MOUSE_FILTER_STOP, "%s keeps a scoped authored lock interaction layer" % area_id)
 		_check(_rect_matches(lock_cover.get_global_rect(), station.get_global_rect()), "%s lock card fully covers the authored station footprint" % area_id)
 		for style_name in [&"normal", &"hover", &"pressed"]:
 			var style := lock_cover.get_theme_stylebox(style_name) as StyleBoxFlat

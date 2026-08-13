@@ -37,6 +37,42 @@ func reset() -> void:
 	changed.emit()
 
 
+func snapshot() -> Dictionary:
+	var serialized: Array[Dictionary] = []
+	for placement in placements:
+		var position := Vector2(placement.get("position", Vector2.ZERO))
+		serialized.append({
+			"type": StringName(placement.get("type", &"")),
+			"position": [position.x, position.y],
+			"rotation": float(placement.get("rotation", 0.0)),
+			"structural_load": float(placement.get("structural_load", 0.0)),
+			"wetness": float(placement.get("wetness", 0.0)),
+			"damaged": bool(placement.get("damaged", false)),
+		})
+	return {"version": 1, "revision": revision, "placements": serialized}
+
+
+func load_snapshot(value: Dictionary) -> Dictionary:
+	placements.clear()
+	for placement_value in Array(value.get("placements", [])):
+		var source := Dictionary(placement_value)
+		var ingredient_type := StringName(source.get("type", &""))
+		var position_values := Array(source.get("position", []))
+		if not ALL_TYPES.has(ingredient_type) or position_values.size() != 2:
+			return {"success": false, "reason": &"invalid_ingredient_snapshot"}
+		placements.append({
+			"type": ingredient_type,
+			"position": Vector2(float(position_values[0]), float(position_values[1])),
+			"rotation": float(source.get("rotation", 0.0)),
+			"structural_load": float(source.get("structural_load", DEFINITIONS[ingredient_type].get("structural_load", 0.0))),
+			"wetness": float(source.get("wetness", DEFINITIONS[ingredient_type].get("wetness", 0.0))),
+			"damaged": bool(source.get("damaged", false)),
+		})
+	revision = maxi(int(value.get("revision", placements.size())), 0)
+	changed.emit()
+	return {"success": true}
+
+
 func place(ingredient_type: StringName, grid_position: Vector2, rotation: float, pancake_model: PancakeModel) -> Dictionary:
 	if not ALL_TYPES.has(ingredient_type):
 		return {"success": false, "reason": "未知配料"}

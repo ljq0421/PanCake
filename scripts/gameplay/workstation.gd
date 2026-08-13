@@ -3682,8 +3682,10 @@ func _refresh_customer_queue() -> void:
 		var customer_id := StringName(order.get("customer_id", CUSTOMER_QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS[slot_index]))
 		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
 		button.icon = textures[&"neutral"]
-		button.text = "等候 %d" % (slot_index + 1)
-		button.tooltip_text = "等候期间不扣耐心"
+		var special_title_text := str(order.get("special_title", Dictionary(order.get("metadata", {})).get("special_title", "")))
+		button.text = special_title_text if not special_title_text.is_empty() else "等候 %d" % (slot_index + 1)
+		var special_rule_text := str(order.get("special_rule_text", Dictionary(order.get("metadata", {})).get("special_rule_text", "")))
+		button.tooltip_text = "%s；等候期间不扣耐心" % special_rule_text if not special_rule_text.is_empty() else "等候期间不扣耐心"
 		button.toggle_mode = false
 		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.set_pressed_no_signal(false)
@@ -3732,7 +3734,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		if requirements.size() > 8:
 			requirements.resize(8)
 		var metadata := Dictionary(order.get("metadata", {}))
-		var coin_total := int(order.get("base_coins", metadata.get("base_coins", 0)))
+		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
 		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
 		var ratio := _formal_order_patience_ratio(order)

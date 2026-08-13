@@ -875,7 +875,35 @@ func snapshot() -> Dictionary:
 		"yolk_broken": yolk_broken,
 		"egg_surface_is_back": egg_surface_is_back,
 		"is_flipped": is_flipped,
+		"cooking_doneness_cap": cooking_doneness_cap,
 	}
+
+
+func load_snapshot(value: Dictionary) -> Dictionary:
+	var snapshot_size := clampi(int(value.get("grid_size", grid_size)), 16, 512)
+	if snapshot_size != grid_size:
+		grid_size = snapshot_size
+		cell_count = grid_size * grid_size
+		_allocate_fields()
+	reset()
+	var field_names := [
+		"coverage", "thickness", "wetness", "doneness", "back_doneness",
+		"damage", "scrape_stress", "sauce_concentration",
+		"chili_sauce_concentration", "egg_white", "egg_yolk", "egg_doneness",
+	]
+	for field_name in field_names:
+		var source := PackedFloat32Array(value.get(field_name, PackedFloat32Array()))
+		if source.size() != cell_count:
+			return {"success": false, "reason": &"invalid_field_size", "field": field_name, "expected": cell_count, "actual": source.size()}
+		set(field_name, source.duplicate())
+	egg_state = clampi(int(value.get("egg_state", EggState.NONE)), EggState.NONE, EggState.SET)
+	yolk_broken = bool(value.get("yolk_broken", false))
+	egg_surface_is_back = bool(value.get("egg_surface_is_back", false))
+	is_flipped = bool(value.get("is_flipped", false))
+	cooking_doneness_cap = clampf(float(value.get("cooking_doneness_cap", 1.0)), 0.0, 1.0)
+	revision = maxi(int(value.get("revision", revision)), 0)
+	changed.emit()
+	return {"success": true}
 
 
 func calculate_summary() -> Dictionary:

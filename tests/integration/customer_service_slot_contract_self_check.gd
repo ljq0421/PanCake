@@ -28,6 +28,31 @@ func _run() -> void:
 	_check(slot.portrait.z_index < 0 and slot.portrait_button.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.focus_frame.z_index > slot.get_node("OrderPanel").z_index, "portrait and transparent portrait hit area render behind all order-card controls")
 	_check(slot.portrait_button.mouse_filter == Control.MOUSE_FILTER_STOP and slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "portrait and order card keep separate explicit click targets")
 	_check(slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "customer slot shell cannot cover unrelated foreground controls")
+	var special_order := {
+		"order_id": &"order.special.ui",
+		"customer_id": &"customer_special_glutton",
+		"special_customer_id": &"special.glutton",
+		"special_title": "超能吃大胃王",
+		"special_rule_text": "至少两类餐品 · 共3份 · 完成金币+20%",
+		"perfect_quote_coins": 18,
+		"patience_seconds": 150.0,
+		"remaining_patience_seconds": 150.0,
+		"items": [{"product_id": &"product.pancake.custom", "quantity": 3, "prepared_product_instance_ids": []}],
+	}
+	slot.bind_order(special_order, true, null, [null], [], 18)
+	_check(slot.special_title.visible and slot.special_title.text == "超能吃大胃王" and slot.special_rule.visible and slot.special_rule.text.find("共3份") >= 0, "special title and rule summary come from static order-card labels")
+	_check(slot.quantity_labels[0].visible and slot.quantity_labels[0].text == "0/3", "quantity progress begins at zero of three")
+	for delivered_count in [1, 2, 3]:
+		special_order["items"][0]["prepared_product_instance_ids"] = range(delivered_count)
+		slot.bind_order(special_order, true, null, [null], [], 18)
+		var expected := "✓" if delivered_count == 3 else "%d/3" % delivered_count
+		_check(slot.quantity_labels[0].text == expected, "quantity progress renders %s" % expected)
+	var requested: Array = []
+	slot.delivery_requested.connect(func(order_id: StringName, item_index: int): requested.append([order_id, item_index]))
+	special_order["items"][0]["prepared_product_instance_ids"] = []
+	slot.bind_order(special_order, true, null, [null], [], 18)
+	slot.item_buttons[0].pressed.emit()
+	_check(requested == [[&"order.special.ui", 0]], "special card preserves the exact order_id and item_index click route")
 	var session := root.get_node_or_null("GameSession")
 	_check(session != null, "GameSession is available for quote-to-settlement verification")
 	if session != null:

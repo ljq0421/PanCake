@@ -6,13 +6,16 @@ static func evaluate_sauce(model: PancakeModel) -> Dictionary:
 	return evaluate_sauce_type(model, &"sweet_flour")
 
 
-static func evaluate_sauce_type(model: PancakeModel, sauce_type: StringName) -> Dictionary:
+static func evaluate_sauce_type(model: PancakeModel, sauce_type: StringName, intensity_multiplier: float = 1.0) -> Dictionary:
 	var covered_cells := 0
 	var missing_cells := 0
 	var excessive_cells := 0
 	var sauce_total := 0.0
 	var squared_error_total := 0.0
-	var target := model.parameters.sauce_target_concentration
+	var normalized_multiplier := maxf(intensity_multiplier, 0.01)
+	var target := model.parameters.sauce_target_concentration * normalized_multiplier
+	var missing_threshold := model.parameters.sauce_missing_threshold * normalized_multiplier
+	var excess_threshold := model.parameters.sauce_excess_threshold * normalized_multiplier
 	var sauce_field := model.chili_sauce_concentration if sauce_type == &"red_chili" else model.sauce_concentration
 	for index in model.cell_count:
 		if model.coverage[index] <= 0.0:
@@ -22,9 +25,9 @@ static func evaluate_sauce_type(model: PancakeModel, sauce_type: StringName) -> 
 		sauce_total += concentration
 		var error := concentration - target
 		squared_error_total += error * error
-		if concentration < model.parameters.sauce_missing_threshold:
+		if concentration < missing_threshold:
 			missing_cells += 1
-		if concentration > model.parameters.sauce_excess_threshold:
+		if concentration > excess_threshold:
 			excessive_cells += 1
 	var divisor := maxf(float(covered_cells), 1.0)
 	var coverage_ratio := 1.0 - float(missing_cells) / divisor
@@ -52,6 +55,8 @@ static func evaluate_sauce_type(model: PancakeModel, sauce_type: StringName) -> 
 		"excessive_ratio": excessive_ratio,
 		"mean_concentration": mean_concentration,
 		"uniformity": uniformity,
+		"target_concentration": target,
+		"intensity_multiplier": normalized_multiplier,
 		"tags": tags,
 	}
 
@@ -105,9 +110,11 @@ static func evaluate_order(
 	var egg_result := model.calculate_egg_spread_summary()
 	var egg_score := float(egg_result.score)
 
+	var sauce_intensity_multiplier := maxf(float(order.get("sauce_intensity_multiplier", 1.0)), 0.01)
 	var sauce_results := {}
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
-		sauce_results[sauce_type] = evaluate_sauce_type(model, sauce_type)
+		var multiplier := sauce_intensity_multiplier if sauce_type == OrderService.SAUCE_CHILI else 1.0
+		sauce_results[sauce_type] = evaluate_sauce_type(model, sauce_type, multiplier)
 	var required_sauces: Array = order.get("sauces", [])
 	var sauce_scores := PackedFloat32Array()
 	var missing_sauces := PackedStringArray()
@@ -209,9 +216,24 @@ static func evaluate_order(
 		serving_sauce_results[str(sauce_type)] = {
 			"score": float(sauce_result.get("score", 0.0)),
 			"coverage_ratio": float(sauce_result.get("coverage_ratio", 0.0)),
+			"excessive_ratio": float(sauce_result.get("excessive_ratio", 0.0)),
+			"mean_concentration": float(sauce_result.get("mean_concentration", 0.0)),
+			"uniformity": float(sauce_result.get("uniformity", 0.0)),
+			"target_concentration": float(sauce_result.get("target_concentration", 0.0)),
+			"intensity_multiplier": float(sauce_result.get("intensity_multiplier", 1.0)),
 		}
+	var chili_standard := evaluate_sauce_type(model, OrderService.SAUCE_CHILI, 1.0)
+	var chili_special := evaluate_sauce_type(model, OrderService.SAUCE_CHILI, 1.35)
+	var sauce_profiles := {
+		str(OrderService.SAUCE_CHILI): {
+			"1.00": _serving_sauce_profile(chili_standard),
+			"1.35": _serving_sauce_profile(chili_special),
+		},
+	}
+	var selected_chili := chili_special if is_equal_approx(sauce_intensity_multiplier, 1.35) else Dictionary(sauce_results.get(OrderService.SAUCE_CHILI, {}))
+	var spice_target_met := _spice_profile_meets_target(selected_chili)
 	var serving_score_basis := {
-		"version": 1,
+		"version": 2,
 		"intrinsic_dimensions": {
 			"integrity": integrity_score,
 			"thickness": thickness_score,
@@ -225,6 +247,7 @@ static func evaluate_order(
 			"mean_back_squared": back_squared_total / divisor,
 		},
 		"sauce_results": serving_sauce_results,
+		"sauce_profiles": sauce_profiles,
 		"ingredient_distribution_score": float(ingredient_distribution.score),
 		"ingredient_distribution_tags": Array(ingredient_distribution.tags).duplicate(),
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
@@ -266,6 +289,13 @@ static func evaluate_order(
 		"applied_sauce_ids": applied_sauce_ids,
 		"score_caps": score_caps,
 		"serving_score_basis": serving_score_basis,
+		"special_evaluation": {
+			"sauce_intensity_multiplier": sauce_intensity_multiplier,
+			"spice_target_met": spice_target_met,
+			"chili_score": float(selected_chili.get("score", 0.0)),
+			"chili_coverage_ratio": float(selected_chili.get("coverage_ratio", 0.0)),
+			"chili_uniformity": float(selected_chili.get("uniformity", 0.0)),
+		},
 	}
 
 
@@ -297,6 +327,8 @@ static func evaluate_stored_product(
 	var heat_score := 100.0 * clampf(1.0 - sqrt(heat_mse) / 0.62, 0.0, 1.0)
 
 	var sauce_results: Dictionary = Dictionary(basis.get("sauce_results", {}))
+	var sauce_profiles: Dictionary = Dictionary(basis.get("sauce_profiles", {}))
+	var sauce_intensity_multiplier := maxf(float(order.get("sauce_intensity_multiplier", 1.0)), 0.01)
 	var required_sauces: Array = Array(order.get("sauces", []))
 	var sauce_score := 0.0
 	var sauce_score_count := 0
@@ -304,6 +336,12 @@ static func evaluate_stored_product(
 	for sauce_variant in required_sauces:
 		var sauce_type := StringName(sauce_variant)
 		var sauce_result: Dictionary = Dictionary(sauce_results.get(str(sauce_type), {}))
+		if sauce_type == OrderService.SAUCE_CHILI:
+			var chili_profiles := Dictionary(sauce_profiles.get(str(OrderService.SAUCE_CHILI), {}))
+			var profile_key := "1.35" if is_equal_approx(sauce_intensity_multiplier, 1.35) else "1.00"
+			var target_profile := Dictionary(chili_profiles.get(profile_key, {}))
+			if not target_profile.is_empty():
+				sauce_result = target_profile
 		sauce_score += float(sauce_result.get("score", 0.0))
 		sauce_score_count += 1
 		if float(sauce_result.get("coverage_ratio", 0.0)) < 0.35:
@@ -371,6 +409,11 @@ static func evaluate_stored_product(
 			tags.append(tag)
 	for tag_variant in Array(basis.get("repair_tags", [])):
 		tags.append(str(tag_variant))
+	var selected_chili_profile := Dictionary(sauce_results.get(str(OrderService.SAUCE_CHILI), {}))
+	var stored_chili_profiles := Dictionary(sauce_profiles.get(str(OrderService.SAUCE_CHILI), {}))
+	var stored_profile_key := "1.35" if is_equal_approx(sauce_intensity_multiplier, 1.35) else "1.00"
+	if stored_chili_profiles.has(stored_profile_key):
+		selected_chili_profile = Dictionary(stored_chili_profiles.get(stored_profile_key, {}))
 	return {
 		"score": overall,
 		"dimensions": {
@@ -397,7 +440,34 @@ static func evaluate_stored_product(
 		"applied_ingredient_quantities": Dictionary(basis.get("applied_ingredient_quantities", {})).duplicate(true),
 		"applied_sauce_ids": Array(basis.get("applied_sauce_ids", [])).duplicate(),
 		"score_caps": Dictionary(basis.get("score_caps", {})).duplicate(true),
+		"special_evaluation": {
+			"sauce_intensity_multiplier": sauce_intensity_multiplier,
+			"spice_target_met": _spice_profile_meets_target(selected_chili_profile),
+			"chili_score": float(selected_chili_profile.get("score", 0.0)),
+			"chili_coverage_ratio": float(selected_chili_profile.get("coverage_ratio", 0.0)),
+			"chili_uniformity": float(selected_chili_profile.get("uniformity", 0.0)),
+		},
 	}
+
+
+static func _serving_sauce_profile(source: Dictionary) -> Dictionary:
+	return {
+		"score": float(source.get("score", 0.0)),
+		"coverage_ratio": float(source.get("coverage_ratio", 0.0)),
+		"excessive_ratio": float(source.get("excessive_ratio", 0.0)),
+		"mean_concentration": float(source.get("mean_concentration", 0.0)),
+		"uniformity": float(source.get("uniformity", 0.0)),
+		"target_concentration": float(source.get("target_concentration", 0.0)),
+		"intensity_multiplier": float(source.get("intensity_multiplier", 1.0)),
+	}
+
+
+static func _spice_profile_meets_target(profile: Dictionary) -> bool:
+	return (
+		float(profile.get("score", 0.0)) >= 82.0
+		and float(profile.get("coverage_ratio", 0.0)) >= 0.75
+		and float(profile.get("uniformity", 0.0)) >= 0.65
+	)
 
 
 static func _heat_target(preference: StringName) -> float:

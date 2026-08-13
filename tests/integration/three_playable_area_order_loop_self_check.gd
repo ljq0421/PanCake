@@ -9,152 +9,99 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var session := root.get_node_or_null("GameSession")
-	_check(session != null, "GameSession is available for the playable order loop")
+	_check(session != null, "GameSession is available for the three-station order loop")
 	if session == null:
 		_finish()
 		return
 	session.call("begin_new_game")
 	var progression: RefCounted = session.call("progression_service")
 	_unlock_three_areas(progression)
-	_set_active_tutorial(progression, &"area.packaged_drink", [&"area.pancake"])
 	var inventory: Dictionary = session.call("inventory_snapshot")
-	inventory["stock.packaged_drink.milk"] = 0
-	inventory["stock.youtiao.plain_dough"] = 1
+	inventory["stock.fresh_soy_milk.yellow_bean"] = 2
+	inventory["stock.youtiao.plain_dough"] = 2
 	session.call("save_inventory", inventory)
 
-	var drink_opened: Dictionary = session.call("ensure_active_playable_order")
-	var drink_order := Dictionary(drink_opened.get("order", {}))
-	var drink_id := StringName(drink_order.get("order_id", &""))
-	var drink_item := Dictionary(Array(drink_order.get("items", []))[0]) if not Array(drink_order.get("items", [])).is_empty() else {}
-	_check(bool(drink_opened.get("success", false)) and _area_id(drink_order) == &"area.packaged_drink" and StringName(drink_order.get("teaching_area_id", &"")) == &"area.packaged_drink", "zero stock still opens the protected drink teaching customer")
-	_check(Array(drink_order.get("items", [])).size() == 1 and StringName(drink_item.get("product_id", &"")) == &"product.packaged_drink.milk" and StringName(drink_item.get("temperature_mode", &"")) == &"room_temperature", "drink teaching customer orders only one room-temperature packaged milk")
-	_check(Array(session.call("active_formal_orders")).size() == 1 and Array(session.call("waiting_formal_orders")).size() == 3, "drink teaching exclusively occupies the store while normal customers wait")
-	inventory["stock.packaged_drink.milk"] = 1
-	session.call("save_inventory", inventory)
-	_check(StringName(Dictionary(session.call("active_formal_order")).get("order_id", &"")) == drink_id, "restocking preserves the already visible drink teaching customer")
-	_check(bool(Dictionary(session.call("deliver_room_temperature_drink", drink_id, 0, &"product.packaged_drink.milk")).get("success", false)), "room-temperature drink is delivered through the formal teaching order")
-	var drink_settlement: Dictionary = session.call("settle_f3_order", drink_id)
-	_check(bool(drink_settlement.get("order_success", false)) and int(drink_settlement.get("earned_coins", 0)) == 3, "drink teaching settles with its catalog revenue")
-	_check(int(progression.call("mastery_value", &"area.packaged_drink")) == 1 and Array(Dictionary(progression.call("tutorial_snapshot")).get("completed_area_ids", [])).has("area.packaged_drink"), "drink settlement updates temperature mastery and completes teaching")
+	_set_active_tutorial(progression, &"area.fresh_soy_milk", [&"area.pancake", &"area.youtiao"])
+	var soy_opened: Dictionary = session.call("ensure_active_playable_order")
+	var soy_order := Dictionary(soy_opened.get("order", {}))
+	var soy_id := StringName(soy_order.get("order_id", &""))
+	var soy_items := Array(soy_order.get("items", []))
+	var soy_item := Dictionary(soy_items[0]) if not soy_items.is_empty() else {}
+	_check(bool(soy_opened.get("success", false)) and _area_id(soy_order) == &"area.fresh_soy_milk" and StringName(soy_order.get("teaching_area_id", &"")) == &"area.fresh_soy_milk", "soy teaching opens the protected third-station customer")
+	_check(soy_items.size() == 1 and StringName(soy_item.get("product_id", &"")) == &"product.fresh_soy_milk.yellow_bean" and bool(soy_order.get("tutorial_no_countdown", false)), "soy teaching requests one unlimited-time yellow-bean cup")
+	_check(Array(session.call("active_formal_orders")).size() == 1 and Array(session.call("waiting_formal_orders")).size() == 3, "new-area teaching exclusively occupies the store while normal customers wait")
+	_check(bool(Dictionary(session.call("load_f4_soy", &"recipe.fresh_soy_milk.yellow_bean", 1, soy_id)).get("success", false)), "soy teaching consumes one bean portion")
+	_check(bool(Dictionary(session.call("perform_f4_soy_action", &"add_water")).get("success", false)), "soy keeps a direct add-water action")
+	_check(bool(Dictionary(session.call("perform_f4_soy_action", &"start")).get("success", false)), "soy keeps a direct grind-start action")
+	session.call("advance_f3_production", 5.1)
+	_check(bool(Dictionary(session.call("perform_f4_soy_action", &"fill_cup")).get("success", false)), "base soy machine requires the manual cup action")
+	_check(bool(Dictionary(session.call("deliver_f4_soy", soy_id, 0)).get("success", false)), "fresh soy stages from its real output to the teaching order")
+	var soy_settlement: Dictionary = session.call("complete_order_delivery", soy_id)
+	_check(bool(soy_settlement.get("order_success", false)) and int(soy_settlement.get("earned_coins", 0)) == 7, "soy teaching settles at its catalog revenue")
+	_check(int(progression.call("mastery_value", &"area.fresh_soy_milk")) == 1 and Array(Dictionary(progression.call("tutorial_snapshot")).get("completed_area_ids", [])).has("area.fresh_soy_milk"), "soy settlement advances mastery and completes teaching")
 
 	session.call("abandon_active_formal_order", &"business_day_expired")
-	_set_active_device_tutorial(progression, &"device.packaged_drink_heater")
-	progression.set("current_day", int(progression.get("current_day")) + 1)
-	inventory = Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.packaged_drink.milk"] = 1
-	session.call("save_inventory", inventory)
-	var heater_opened: Dictionary = session.call("ensure_active_playable_order")
-	var heater_order := Dictionary(heater_opened.get("order", {}))
-	var heater_id := StringName(heater_order.get("order_id", &""))
-	var heater_item := Dictionary(Array(heater_order.get("items", []))[0]) if not Array(heater_order.get("items", [])).is_empty() else {}
-	_check(
-		bool(heater_opened.get("success", false))
-		and StringName(heater_order.get("tutorial_kind", &"")) == &"device"
-		and StringName(heater_order.get("tutorial_id", &"")) == &"device.packaged_drink_heater"
-		and StringName(heater_item.get("temperature_mode", &"")) == &"heated"
-		and Array(session.call("active_formal_orders")).size() == 1,
-		"base heater creates one exclusive unlimited heated-milk teaching customer"
-	)
-	_check(bool(Dictionary(session.call("load_f3_drink", 0, &"product.packaged_drink.milk", heater_id)).get("success", false)), "heater teaching loads one milk into the base heating slot")
-	session.call("advance_f3_production", 2.1)
-	_check(bool(Dictionary(session.call("deliver_heated_drink", 0, heater_id, 0)).get("success", false)), "completed hot milk attaches directly to the heater teaching order")
-	var heater_settlement: Dictionary = session.call("settle_f3_order", heater_id)
-	_check(
-		bool(heater_settlement.get("order_success", false))
-		and Array(Dictionary(progression.call("tutorial_snapshot")).get("completed_device_ids", [])).has("device.packaged_drink_heater"),
-		"heater teaching settlement completes the one-time device tutorial"
-	)
-
-	_set_active_tutorial(progression, &"area.youtiao", [&"area.pancake", &"area.packaged_drink"])
-	# Teaching priority is per day. Move to a new day without exercising the
-	# growth purchase surface so this integration remains about order routing.
-	session.call("abandon_active_formal_order", &"business_day_expired")
+	_set_active_tutorial(progression, &"area.youtiao", [&"area.pancake", &"area.fresh_soy_milk"])
 	progression.set("current_day", int(progression.get("current_day")) + 1)
 	var youtiao_opened: Dictionary = session.call("ensure_active_playable_order")
 	var youtiao_order := Dictionary(youtiao_opened.get("order", {}))
 	var youtiao_id := StringName(youtiao_order.get("order_id", &""))
-	_check(_area_id(youtiao_order) == &"area.youtiao" and bool(youtiao_order.get("tutorial_no_countdown", false)) and is_equal_approx(float(youtiao_order.get("patience_seconds", 0.0)), 36.0), "next-day youtiao teaching routes as an unlimited-time tutorial order")
-	_check(bool(Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1, youtiao_id)).get("success", false)), "starting the youtiao batch consumes its teaching stock")
+	_check(_area_id(youtiao_order) == &"area.youtiao" and bool(youtiao_order.get("tutorial_no_countdown", false)), "youtiao teaching routes as the protected second-station order")
+	_check(bool(Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1, youtiao_id)).get("success", false)), "youtiao teaching consumes one dough portion")
 	session.call("perform_f3_youtiao_action", &"start")
 	session.call("advance_f3_production", 12.0)
 	session.call("perform_f3_youtiao_action", &"lift")
 	session.call("advance_f3_production", 2.0)
-	_check(bool(Dictionary(session.call("deliver_f3_youtiao", youtiao_id, 0)).get("success", false)), "finished youtiao attaches directly from the raised basket to its generated formal order")
-	var youtiao_settlement: Dictionary = session.call("settle_f3_order", youtiao_id)
-	_check(bool(youtiao_settlement.get("order_success", false)) and int(youtiao_settlement.get("earned_coins", 0)) == 6, "youtiao teaching settles with its catalog revenue")
+	_check(bool(Dictionary(session.call("deliver_f3_youtiao", youtiao_id, 0)).get("success", false)), "finished youtiao stages from the raised basket to its teaching order")
+	var youtiao_settlement: Dictionary = session.call("complete_order_delivery", youtiao_id)
+	_check(bool(youtiao_settlement.get("order_success", false)) and int(youtiao_settlement.get("earned_coins", 0)) == 6, "youtiao teaching settles at its catalog revenue")
 	_check(int(progression.call("mastery_value", &"area.youtiao")) == 1, "youtiao settlement advances qualified mastery")
 
 	var next_order_result: Dictionary = session.call("ensure_active_playable_order")
 	var next_order := Dictionary(next_order_result.get("order", {}))
-	var next_item_count := Array(next_order.get("items", [])).size()
-	_check(bool(next_order_result.get("success", false)) and _is_supported(_area_id(next_order)) and next_item_count >= 1 and next_item_count <= 2, "settlement advances to another supported formal order with at most one companion item")
+	_check(bool(next_order_result.get("success", false)) and _is_supported(_area_id(next_order)) and Array(session.call("active_formal_orders")).size() == 3, "normal play restores a three-customer queue containing only supported stations")
 	var reputation_before_refusal := int(progression.get("reputation"))
 	var next_order_id := StringName(next_order.get("order_id", &""))
-	var refusal_preview: Dictionary = session.call("preview_formal_order_refusal", next_order_id)
 	var refused: Dictionary = session.call("refuse_formal_order", next_order_id)
-	_check(int(refusal_preview.get("reputation_delta", 0)) == -1 and StringName(refused.get("terminal_state", &"")) == &"refused", "an unstarted normal order can be previewed and formally refused")
-	_check(int(progression.get("reputation")) == reputation_before_refusal - 1, "formal refusal applies its reputation loss exactly once")
+	_check(StringName(refused.get("terminal_state", &"")) == &"refused" and int(progression.get("reputation")) == reputation_before_refusal - 1, "an unstarted normal order can still be refused exactly once")
 	var bill: Dictionary = session.call("today_bill")
-	_check(int(bill.get("order_count", 0)) == 4 and int(bill.get("total_coins", 0)) == 12, "both drink teachings, youtiao, and refusal enter the daily bill exactly once without refusal revenue")
-	_check_active_f3_restore(session)
+	_check(int(bill.get("order_count", 0)) == 3 and int(bill.get("total_coins", 0)) == 13, "soy, youtiao, and refusal enter the daily bill without refusal revenue")
+	_check_active_production_restore(session)
 	_check_deterministic_reload(session)
+	session.call("reset_incompatible_development_save")
 	_finish()
 
 
-func _check_active_f3_restore(session: Node) -> void:
-	# Direct restore fixtures own their queue. Clear the normal six-order queue
-	# left by the preceding live-loop assertions before opening a targeted order.
+func _check_active_production_restore(session: Node) -> void:
 	session.call("abandon_active_formal_order", &"business_day_expired")
 	var inventory: Dictionary = session.call("inventory_snapshot")
-	inventory["stock.packaged_drink.milk"] = 2
+	inventory["stock.fresh_soy_milk.yellow_bean"] = 2
 	inventory["stock.youtiao.plain_dough"] = 2
 	session.call("save_inventory", inventory)
-
-	var drink_opened: Dictionary = session.call("open_formal_order", [{
-		"area_id": &"area.packaged_drink",
-		"product_id": &"product.packaged_drink.milk",
-		"quantity": 1,
-		"temperature_mode": &"heated",
-	}], {"patience_seconds": 24.0})
-	var drink_id := StringName(Dictionary(drink_opened.get("order", {})).get("order_id", &""))
-	session.call("load_f3_drink", 0, &"product.packaged_drink.milk", drink_id)
+	var soy_opened: Dictionary = session.call("open_formal_order", [{"area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "quantity": 1, "temperature_mode": &"room_temperature"}], {"patience_seconds": 24.0})
+	var soy_id := StringName(Dictionary(soy_opened.get("order", {})).get("order_id", &""))
+	session.call("load_f4_soy", &"recipe.fresh_soy_milk.yellow_bean", 1, soy_id)
+	session.call("perform_f4_soy_action", &"add_water")
+	session.call("perform_f4_soy_action", &"start")
 	session.call("advance_f3_production", 0.75)
 	session.call("advance_formal_order_patience", 5.5)
 	session.call("_restore_progression")
-	var restored_drink: Dictionary = session.call("active_formal_order")
-	var restored_heater: Dictionary = session.call("f3_machine_snapshot", &"device.packaged_drink_heater")
-	var restored_slot := Dictionary(Array(restored_heater.get("slots", []))[0])
-	_check(
-		StringName(restored_drink.get("order_id", &"")) == drink_id
-		and is_equal_approx(float(restored_drink.get("remaining_patience_seconds", 0.0)), 18.5)
-		and StringName(restored_slot.get("state", &"")) == &"heating"
-		and is_equal_approx(float(restored_slot.get("elapsed_seconds", 0.0)), 0.75),
-		"active heated-drink order, patience, and heater state survive save restoration"
-	)
+	var restored_soy_order: Dictionary = session.call("active_formal_order")
+	var restored_soy: Dictionary = session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")
+	_check(StringName(restored_soy_order.get("order_id", &"")) == soy_id and is_equal_approx(float(restored_soy_order.get("remaining_patience_seconds", 0.0)), 18.5) and StringName(restored_soy.get("state", &"")) == &"grinding" and is_equal_approx(float(restored_soy.get("elapsed_seconds", 0.0)), 0.75), "active soy order, patience, and grinder state survive restoration")
 	session.call("abandon_active_formal_order", &"restore_check_complete")
-	session.call("discard_f3_drink", 0)
+	session.call("discard_f4_soy")
 
-	var youtiao_opened: Dictionary = session.call("open_formal_order", [{
-		"area_id": &"area.youtiao",
-		"product_id": &"product.youtiao.plain",
-		"quantity": 1,
-		"temperature_mode": &"room_temperature",
-	}], {"patience_seconds": 36.0})
+	var youtiao_opened: Dictionary = session.call("open_formal_order", [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1, "temperature_mode": &"room_temperature"}], {"patience_seconds": 36.0})
 	var youtiao_id := StringName(Dictionary(youtiao_opened.get("order", {})).get("order_id", &""))
 	session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1, youtiao_id)
 	session.call("perform_f3_youtiao_action", &"start")
 	session.call("advance_f3_production", 1.25)
 	session.call("advance_formal_order_patience", 4.0)
 	session.call("_restore_progression")
-	var restored_youtiao: Dictionary = session.call("active_formal_order")
+	var restored_youtiao_order: Dictionary = session.call("active_formal_order")
 	var restored_fryer: Dictionary = session.call("f3_machine_snapshot", &"device.youtiao_fryer")
-	_check(
-		StringName(restored_youtiao.get("order_id", &"")) == youtiao_id
-		and is_equal_approx(float(restored_youtiao.get("remaining_patience_seconds", 0.0)), 32.0)
-		and StringName(restored_fryer.get("state", &"")) == &"frying"
-		and is_equal_approx(float(restored_fryer.get("cooking_elapsed_seconds", 0.0)), 1.25),
-		"active youtiao order, patience, and fryer state survive save restoration"
-	)
+	_check(StringName(restored_youtiao_order.get("order_id", &"")) == youtiao_id and is_equal_approx(float(restored_youtiao_order.get("remaining_patience_seconds", 0.0)), 32.0) and StringName(restored_fryer.get("state", &"")) == &"frying" and is_equal_approx(float(restored_fryer.get("cooking_elapsed_seconds", 0.0)), 1.25), "active youtiao order, patience, and fryer state survive restoration")
 
 
 func _check_deterministic_reload(session: Node) -> void:
@@ -164,58 +111,36 @@ func _check_deterministic_reload(session: Node) -> void:
 	progression.set("tutorial_queue_area_ids", [])
 	progression.set("tutorial_active_kind", &"")
 	progression.set("tutorial_active_id", &"")
-	# This fixture edits the progression service directly, so persist that edit
-	# before taking the branch snapshot just as the public progression APIs do.
 	session.call("_sync_progression_to_save")
-	var first_opened: Dictionary = session.call("ensure_active_playable_order")
-	var first_order := Dictionary(first_opened.get("order", {}))
+	var first_order := Dictionary(Dictionary(session.call("ensure_active_playable_order")).get("order", {}))
 	session.call("advance_formal_order_patience", 7.0)
+	var expected_remaining := float(Dictionary(session.call("active_formal_order")).get("remaining_patience_seconds", 0.0))
 	var saved_branch := Dictionary(session.get("_save_data")).duplicate(true)
 	var first_id := StringName(first_order.get("order_id", &""))
 	session.call("refuse_formal_order", first_id)
 	var expected_next := Dictionary(Dictionary(session.call("ensure_active_playable_order")).get("order", {}))
-
 	session.set("_save_data", saved_branch.duplicate(true))
 	session.call("_restore_progression")
 	var restored_first: Dictionary = session.call("active_formal_order")
-	_check(
-		StringName(restored_first.get("order_id", &"")) == first_id
-		and is_equal_approx(float(restored_first.get("remaining_patience_seconds", 0.0)), 65.0),
-		"reload restores the existing active order instead of generating it again"
-	)
+	_check(StringName(restored_first.get("order_id", &"")) == first_id and is_equal_approx(float(restored_first.get("remaining_patience_seconds", 0.0)), expected_remaining), "reload restores the existing active order and its exact patience instead of regenerating it")
 	session.call("refuse_formal_order", first_id)
 	var actual_next := Dictionary(Dictionary(session.call("ensure_active_playable_order")).get("order", {}))
-	var expected_signature := _order_signature(expected_next)
-	var actual_signature := _order_signature(actual_next)
-	_check(
-		actual_signature == expected_signature,
-		"the order after reload matches the same saved seed and sequence branch"
-	)
+	_check(_order_signature(actual_next) == _order_signature(expected_next), "the order after reload follows the same saved seed and sequence branch")
 
 
 func _order_signature(order: Dictionary) -> Dictionary:
 	var item := Dictionary(Array(order.get("items", []))[0]) if not Array(order.get("items", [])).is_empty() else {}
 	var metadata := Dictionary(order.get("metadata", {}))
 	var legacy := Dictionary(metadata.get("legacy_order", {}))
-	return {
-		"area_id": StringName(item.get("area_id", &"")),
-		"product_id": StringName(item.get("product_id", &"")),
-		"temperature_mode": StringName(item.get("temperature_mode", &"")),
-		"pancake_template_id": StringName(item.get("pancake_template_id", legacy.get("id", &""))),
-		"generated_sequence": int(metadata.get("generated_sequence", -1)),
-	}
+	return {"area_id": StringName(item.get("area_id", &"")), "product_id": StringName(item.get("product_id", &"")), "temperature_mode": StringName(item.get("temperature_mode", &"")), "pancake_template_id": StringName(item.get("pancake_template_id", legacy.get("id", &""))), "generated_sequence": int(metadata.get("generated_sequence", -1))}
 
 
 func _unlock_three_areas(progression: RefCounted) -> void:
-	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.packaged_drink": true, &"area.youtiao": true})
-	progression.set("device_tiers", {&"device.pancake_griddle": 1, &"device.packaged_drink_heater": 0, &"device.youtiao_fryer": 0})
-	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.packaged_drink.milk": true, &"recipe.youtiao.plain": true})
-	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.packaged_drink.milk": true, &"product.youtiao.plain": true})
-	progression.set("unlocked_stock_ids", {
-		&"stock.pancake.batter": true, &"stock.pancake.egg": true, &"stock.pancake.baocui": true,
-		&"stock.pancake.scallion": true, &"stock.pancake.sauce.sweet_flour": true,
-		&"stock.packaged_drink.milk": true, &"stock.youtiao.plain_dough": true,
-	})
+	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
+	progression.set("device_tiers", {&"device.pancake_griddle": 2, &"device.youtiao_fryer": 0, &"device.fresh_soy_milk_machine": 0})
+	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.fresh_soy_milk.yellow_bean": true})
+	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true})
+	progression.set("unlocked_stock_ids", {&"stock.pancake.batter": true, &"stock.pancake.egg": true, &"stock.pancake.baocui": true, &"stock.pancake.scallion": true, &"stock.pancake.sauce.sweet_flour": true, &"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true})
 
 
 func _set_active_tutorial(progression: RefCounted, area_id: StringName, completed: Array) -> void:
@@ -228,20 +153,13 @@ func _set_active_tutorial(progression: RefCounted, area_id: StringName, complete
 	progression.set("tutorial_active_id", area_id)
 
 
-func _set_active_device_tutorial(progression: RefCounted, device_id: StringName) -> void:
-	progression.set("tutorial_completed_device_ids", {})
-	progression.set("tutorial_queue_device_ids", [device_id])
-	progression.set("tutorial_active_kind", &"device")
-	progression.set("tutorial_active_id", device_id)
-
-
 func _area_id(order: Dictionary) -> StringName:
 	var items: Array = Array(order.get("items", []))
 	return &"" if items.is_empty() else StringName(Dictionary(items[0]).get("area_id", &""))
 
 
 func _is_supported(area_id: StringName) -> bool:
-	return area_id in [&"area.pancake", &"area.packaged_drink", &"area.youtiao"]
+	return area_id in [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"]
 
 
 func _check(condition: bool, message: String) -> void:

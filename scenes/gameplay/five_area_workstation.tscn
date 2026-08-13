@@ -1,11 +1,10 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="2_controller"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_soy_station.tscn" id="3_soy"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_youtiao_station.tscn" id="4_youtiao"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_packaged_drink_station.tscn" id="5_drink"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_steamer_station.tscn" id="6_steamer"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/multi_griddle_station.tscn" id="7_multi_griddle"]
 [ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="8_disposition"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="9_source"]
 [ext_resource type="Script" path="res://scripts/ui/five_area_material_slot.gd" id="14_material_slot"]
@@ -328,9 +327,9 @@ reserved = true
 [node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true
 z_index = 31
-offset_left = 341.0
+offset_left = 1570.0
 offset_top = 956.0
-offset_right = 430.0
+offset_right = 1659.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
@@ -345,9 +344,9 @@ material_label = "原味面胚"
 [node name="YoutiaoDoughOilCake" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true
 z_index = 31
-offset_left = 445.0
+offset_left = 1675.0
 offset_top = 956.0
-offset_right = 534.0
+offset_right = 1764.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
@@ -362,9 +361,9 @@ material_label = "油饼面胚"
 [node name="YoutiaoDoughSugar" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true
 z_index = 31
-offset_left = 550.0
+offset_left = 1780.0
 offset_top = 956.0
-offset_right = 639.0
+offset_right = 1869.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
@@ -375,6 +374,30 @@ product_id = &"product.youtiao.sugar_oil_cake"
 source_kind = &"youtiao_dough"
 material_texture = ExtResource("21_sugar_dough")
 material_label = "糖油饼面胚"
+
+[node name="Slot04" parent="SafeArea/LockedIngredientArtwork"]
+offset_left = 1570.0
+offset_right = 1659.0
+
+[node name="Slot05" parent="SafeArea/LockedIngredientArtwork"]
+offset_left = 1675.0
+offset_right = 1764.0
+
+[node name="Slot06" parent="SafeArea/LockedIngredientArtwork"]
+offset_left = 1780.0
+offset_right = 1869.0
+
+[node name="Slot04LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+offset_left = 1570.0
+offset_right = 1659.0
+
+[node name="Slot05LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+offset_left = 1675.0
+offset_right = 1764.0
+
+[node name="Slot06LockedButton" parent="SafeArea/LockedIngredientInteractions"]
+offset_left = 1780.0
+offset_right = 1869.0
 
 [node name="FiveAreaInfrastructure" type="Control" parent="."]
 layout_mode = 1
@@ -398,37 +421,30 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 8.0
 offset_top = 610.0
-offset_right = 314.0
+offset_right = 360.0
 offset_bottom = 950.0
 
 [node name="YoutiaoStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("4_youtiao")]
 layout_mode = 0
-offset_left = 320.0
+offset_left = 1552.0
 offset_top = 610.0
-offset_right = 626.0
+offset_right = 1912.0
 offset_bottom = 950.0
 
 [node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
 layout_mode = 0
-offset_left = 650.0
+offset_left = 370.0
 offset_top = 610.0
-offset_right = 1270.0
+offset_right = 1540.0
 offset_bottom = 950.0
 mouse_filter = 2
 
-[node name="PackagedDrinkStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("5_drink")]
+[node name="MultiGriddleStation" parent="FiveAreaInfrastructure/Stations/PancakeStation" instance=ExtResource("7_multi_griddle")]
+unique_name_in_owner = true
+visible = false
 layout_mode = 0
-offset_left = 1294.0
-offset_top = 570.0
-offset_right = 1600.0
-offset_bottom = 950.0
-
-[node name="SteamerStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("6_steamer")]
-layout_mode = 0
-offset_left = 1606.0
-offset_top = 610.0
-offset_right = 1912.0
-offset_bottom = 950.0
+offset_right = 1170.0
+offset_bottom = 340.0
 
 [node name="PancakeReadySource" type="TextureButton" parent="FiveAreaInfrastructure"]
 unique_name_in_owner = true

@@ -58,6 +58,37 @@ func reset() -> void:
 	changed.emit()
 
 
+func snapshot() -> Dictionary:
+	return {
+		"version": 1,
+		"active_region": active_region,
+		"drag_progress": drag_progress,
+		"crossed_fold_line": crossed_fold_line,
+		"package_result": package_result,
+		"drag_start": [_drag_start.x, _drag_start.y],
+		"fold_results": _fold_results.duplicate(true),
+	}
+
+
+func load_snapshot(value: Dictionary) -> Dictionary:
+	active_region = StringName(value.get("active_region", REGION_NONE))
+	if active_region not in [REGION_NONE, REGION_LEFT, REGION_RIGHT]:
+		active_region = REGION_NONE
+	drag_progress = clampf(float(value.get("drag_progress", 0.0)), 0.0, 1.0)
+	crossed_fold_line = bool(value.get("crossed_fold_line", false))
+	package_result = StringName(value.get("package_result", PACKAGE_NONE))
+	if package_result not in [PACKAGE_NONE, PACKAGE_BAG, PACKAGE_SLEEVE, PACKAGE_TRAY]:
+		package_result = PACKAGE_NONE
+	var drag_values := Array(value.get("drag_start", []))
+	_drag_start = Vector2(float(drag_values[0]), float(drag_values[1])) if drag_values.size() == 2 else Vector2.ZERO
+	_fold_results = Dictionary(value.get("fold_results", {})).duplicate(true)
+	for region in [REGION_LEFT, REGION_RIGHT]:
+		if not _fold_results.has(region) and not _fold_results.has(str(region)):
+			_fold_results[region] = _empty_result()
+	changed.emit()
+	return {"success": true}
+
+
 func begin_drag(grid_position: Vector2) -> bool:
 	if pancake_model == null or package_result != PACKAGE_NONE:
 		return false

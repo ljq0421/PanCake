@@ -134,7 +134,12 @@ func _run() -> void:
 	var discard_patience := workstation.p1_session.patience_seconds
 	var discard_order_id: StringName = StringName(workstation.p1_session.order.get("id", &""))
 	workstation.discard_current_pancake_button.pressed.emit()
-	_check(workstation.discard_current_pancake_button.visible and workstation.discard_current_pancake_button.get_global_rect().position.x > 1400.0, "trash can is available in the page's lower-right corner")
+	var multi_station := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation")
+	var indexed_discards := multi_station != null and [&"Griddle01", &"Griddle02", &"Griddle03"].all(func(unit_name: StringName) -> bool:
+		var unit := multi_station.get_node_or_null(NodePath(str(unit_name)))
+		return unit != null and unit.get_node_or_null("DiscardAction") != null
+	)
+	_check(not workstation.discard_current_pancake_button.visible and indexed_discards, "formal runtime hides the legacy corner trash can and gives every authored griddle its own discard control")
 	_check(workstation.p1_session.phase == P1Session.Phase.SPREAD and workstation.p1_session.order.id == discard_order_id, "trash can restarts the same current order")
 	_check(is_equal_approx(workstation.p1_session.elapsed_seconds, discard_elapsed) and is_equal_approx(workstation.p1_session.patience_seconds, discard_patience), "trash can preserves customer waiting time")
 	_check(workstation.pancake_model.covered_cell_count() == 0 and not workstation.ingredient_model.has_type(IngredientModel.SCALLION), "trash can clears the discarded pancake data")

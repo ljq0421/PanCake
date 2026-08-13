@@ -2,12 +2,12 @@ class_name FiveAreaWorkstation
 extends "res://scripts/gameplay/workstation.gd"
 
 const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
 @onready var youtiao_station: DirectYoutiaoStation = $FiveAreaInfrastructure/Stations/YoutiaoStation
-@onready var packaged_drink_station: DirectPackagedDrinkStation = $FiveAreaInfrastructure/Stations/PackagedDrinkStation
-@onready var steamer_station: DirectSteamerStation = $FiveAreaInfrastructure/Stations/SteamerStation
+@onready var multi_griddle_station: Control = %MultiGriddleStation
 @onready var pancake_ready_source: ProductDragSource = %PancakeReadySource
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteArea
@@ -39,18 +39,24 @@ var _refresh_elapsed := 0.0
 var _delivery_click_in_progress := false
 var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
+var _multi_griddle_mode_active := false
 
 
 func _ready() -> void:
 	super._ready()
 	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
-	for station in [fresh_soy_station, youtiao_station, packaged_drink_station, steamer_station]:
+	for station in [fresh_soy_station, youtiao_station]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
 		# Full-station covers would otherwise steal pointer input from the pancake
 		# sauce rack and discard control where their authored rectangles overlap.
 		station.mouse_filter = Control.MOUSE_FILTER_STOP if station in [fresh_soy_station, youtiao_station] else Control.MOUSE_FILTER_IGNORE
 		station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	multi_griddle_station.status_message.connect(_show_station_status)
+	for service_slot in customer_service_slots:
+		var drop_callback := Callable(self, "_on_customer_service_product_dropped")
+		if service_slot.has_signal("product_dropped") and not service_slot.is_connected("product_dropped", drop_callback):
+			service_slot.connect("product_dropped", drop_callback)
 	waste_area.disposition_completed.connect(_on_disposition_completed)
 	pending_payment_button.pressed.connect(_collect_pending_payments)
 	for material_slot in _all_material_slots():
@@ -61,6 +67,7 @@ func _ready() -> void:
 		source.native_drag_enabled = true
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
+		multi_griddle_station.bind_session(session, Callable(self, "_compact_griddle_order"))
 		var order_signal := Signal(session, &"order_changed")
 		if not order_signal.is_connected(_on_formal_shell_changed):
 			order_signal.connect(_on_formal_shell_changed)
@@ -71,8 +78,8 @@ func _ready() -> void:
 	_refresh_formal_shell()
 	_refresh_pancake_drag_sources()
 	_refresh_material_slots()
+	_refresh_multi_griddle_mode()
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
-	_set_packaged_drink_tutorial_status(active_order)
 
 
 func end_business_day(cutoff: Dictionary = {}) -> void:
@@ -102,6 +109,7 @@ func _process(delta: float) -> void:
 		_refresh_pancake_drag_sources()
 		_refresh_material_slots()
 		_refresh_tutorial_guide()
+		_refresh_multi_griddle_mode()
 	serve_product_button.visible = false
 
 
@@ -130,28 +138,15 @@ func _focus_formal_order(order: Dictionary, restart_pancake: bool = false) -> vo
 	super._focus_formal_order(order, restart_pancake)
 	if not order.is_empty():
 		_refresh_order_card_ui(order, _formal_order_patience_ratio(order))
-		if not _set_packaged_drink_tutorial_status(order):
-			tool_status_label.text = "已查看当前顾客点单；点击订单商品图标交付对应成品"
+		var customer_line := str(order.get("customer_line", Dictionary(order.get("metadata", {})).get("customer_line", "")))
+		tool_status_label.text = "“%s”" % customer_line if not customer_line.is_empty() else "已查看当前顾客点单；把匹配成品拖到订单商品图标"
 
 
-func _set_packaged_drink_tutorial_status(order: Dictionary) -> bool:
-	if StringName(order.get("teaching_area_id", &"")) != &"area.packaged_drink":
-		return false
-	var tutorial_kind := StringName(order.get("tutorial_kind", Dictionary(order.get("metadata", {})).get("tutorial_kind", &"area")))
-	var tutorial_id := StringName(order.get("tutorial_id", Dictionary(order.get("metadata", {})).get("tutorial_id", &"area.packaged_drink")))
-	var session := get_node_or_null("/root/GameSession")
-	var milk_count := 0
-	if session != null and session.has_method("inventory_snapshot"):
-		milk_count = int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0))
-	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater":
-		tool_status_label.text = "加热教学：补货后把纯牛奶拖入加热位，完成后点击订单商品交付"
-	else:
-		tool_status_label.text = (
-			"饮品柜教学：先长按纯牛奶补货，再点击订单商品交付"
-			if milk_count <= 0
-			else "饮品柜教学：点击订单商品交付一份常温纯牛奶"
-		)
-	return true
+func _on_customer_service_delivery_requested(order_id: StringName, _item_index: int) -> void:
+	# Clicking an item only focuses its customer. Delivery is deliberately
+	# drag-only so a ready pancake is never silently bound to the focused order.
+	_on_customer_service_focus_requested(order_id)
+	tool_status_label.text = "请把成品拖到订单商品图标；点击不会自动交付"
 
 
 func _on_formal_shell_changed(_snapshot: Dictionary = {}) -> void:
@@ -299,7 +294,7 @@ func _refresh_tutorial_guide() -> void:
 	if tutorial_id.is_empty() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
 		tutorial_guide_overlay.call("hide_guide")
 		return
-	var guide := _tutorial_guide_for_heater(session) if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater" else _tutorial_guide_for_area(session, area_id)
+	var guide := _tutorial_guide_for_area(session, area_id) if tutorial_kind == &"area" else {}
 	var target := guide.get("target") as Control
 	if target == null:
 		tutorial_guide_overlay.call("hide_guide")
@@ -310,10 +305,6 @@ func _refresh_tutorial_guide() -> void:
 func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	match area_id:
-		&"area.packaged_drink":
-			if int(inventory.get("stock.packaged_drink.milk", 0)) <= 0:
-				return {"target": packaged_drink_station.lanes[0], "message": "长按纯牛奶货道补货"}
-			return {"target": order_dish_buttons[0], "message": "点击订单中的纯牛奶完成交付"}
 		&"area.youtiao":
 			var prepared_plain := Dictionary(session.call("prepared_product_slot_status", &"slot.04")) if session.has_method("prepared_product_slot_status") else {}
 			if int(prepared_plain.get("count", 0)) > 0:
@@ -343,19 +334,9 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"water_added": return {"target": fresh_soy_station.start_button, "message": "水已加入，点击启动研磨"}
 				&"grinding": return {"target": fresh_soy_station.state_label, "message": "等待研磨完成"}
 				&"ready_safe", &"overcooking", &"blocked": return {"target": order_dish_buttons[0], "message": "点击订单商品，从出杯口或接杯架交付"}
-		&"area.steamer":
-			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.steamer"))
-			var layers := Array(machine.get("layers", []))
-			var layer := Dictionary(layers[0]) if not layers.is_empty() else {"state": &"empty"}
-			match StringName(layer.get("state", &"empty")):
-				&"empty":
-					if int(inventory.get("stock.steamer.mantou", 0)) <= 0:
-						return {"target": steamer_station.restock_buttons[0], "message": "长按补充馒头半成品"}
-					return {"target": steamer_station.input_sources[0], "message": "把馒头拖入第一层蒸笼"}
-				&"loaded": return {"target": steamer_station.layer_starts[0], "message": "点击启动蒸制"}
-				&"steaming": return {"target": steamer_station.layer_labels[0], "message": "等待蒸制完成"}
-				&"ready_safe", &"overcooking": return {"target": order_dish_buttons[0], "message": "点击订单商品，从成品蒸层交付"}
 		&"area.pancake":
+			if _multi_griddle_mode_active:
+				return {"target": multi_griddle_station, "message": "选择空鏊接单；每张鏊子独立摊、翻、加料和出餐"}
 			match p1_session.phase:
 				P1Session.Phase.SPREAD: return {"target": ladle_button, "message": "舀取面糊，在鏊面摊成完整饼皮"}
 				P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE: return {"target": step_action_button, "message": "观察火候并在合适时机翻面或确认"}
@@ -364,22 +345,6 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				P1Session.Phase.PACKAGE: return {"target": paper_sleeve_button, "message": "选择可用包装完成打包"}
 				P1Session.Phase.READY_TO_SERVE: return {"target": order_dish_buttons[0], "message": "点击订单商品交付经典煎饼"}
 	return {}
-
-
-func _tutorial_guide_for_heater(session: Node) -> Dictionary:
-	var inventory := Dictionary(session.call("inventory_snapshot"))
-	if int(inventory.get("stock.packaged_drink.milk", 0)) <= 0:
-		return {"target": packaged_drink_station.lanes[0], "message": "长按纯牛奶货道补货"}
-	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.packaged_drink_heater"))
-	var slots := Array(machine.get("slots", []))
-	var slot := Dictionary(slots[0]) if not slots.is_empty() else {"state": &"locked"}
-	match StringName(slot.get("state", &"locked")):
-		&"empty": return {"target": packaged_drink_station.heater_targets[0], "message": "把纯牛奶拖入加热位"}
-		&"heating": return {"target": packaged_drink_station.heater_states[0], "message": "等待纯牛奶加热完成"}
-		&"ready_hot", &"cooled": return {"target": order_dish_buttons[0], "message": "点击订单中的热纯牛奶完成交付"}
-	return {"target": packaged_drink_station.heater_lock_cover, "message": "基础加热器尚未安装"}
-
-
 func _refresh_formal_shell() -> void:
 	if not is_node_ready():
 		return
@@ -392,6 +357,65 @@ func _refresh_formal_shell() -> void:
 			_refresh_order_card_ui(focused, _formal_order_patience_ratio(focused))
 	_refresh_pending_payment_button()
 	_refresh_attention_rail()
+
+
+func _compact_griddle_order() -> Dictionary:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or _formal_order_id.is_empty() or not session.has_method("formal_order"):
+		return {}
+	var order := Dictionary(session.call("formal_order", _formal_order_id))
+	if StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+		return {}
+	for item_value in Array(order.get("items", [])):
+		var item := Dictionary(item_value)
+		if StringName(item.get("area_id", &"")) != &"area.pancake":
+			continue
+		var attached_count := Array(item.get("attached_products", [])).size()
+		if attached_count >= maxi(int(item.get("quantity", 1)), 1):
+			continue
+		return {
+			"product_id": &"product.pancake.custom",
+			"heat_preference": StringName(item.get("heat_preference", &"golden")),
+			"ingredient_ids": PackedStringArray(Array(item.get("ingredient_ids", []))),
+			"sauce_ids": PackedStringArray(Array(item.get("sauce_ids", []))),
+		}
+	return {}
+
+
+func _refresh_multi_griddle_mode() -> void:
+	if not is_node_ready():
+		return
+	var session := get_node_or_null("/root/GameSession")
+	var griddle_count := 1
+	if session != null and session.has_method("progression_service"):
+		var progression: RefCounted = session.call("progression_service")
+		var tier := int(progression.call("device_tier", &"device.pancake_griddle"))
+		griddle_count = int(CATALOG.device_tier(&"device.pancake_griddle", tier).get("griddle_count", tier + 1))
+	_multi_griddle_mode_active = true
+	multi_griddle_station.visible = true
+	multi_griddle_station.process_mode = Node.PROCESS_MODE_INHERIT
+	multi_griddle_station.set_griddle_count(griddle_count)
+	for legacy_path in ["SafeArea/PanBase", "SafeArea/LeftRack", "SafeArea/RightRack", "SafeArea/P1ControlBar"]:
+		var legacy_control := get_node_or_null(legacy_path) as CanvasItem
+		if legacy_control != null:
+			legacy_control.visible = not _multi_griddle_mode_active
+	# Every compact griddle owns a dedicated discard action. The old global
+	# discard controls sat above the third griddle and intercepted its input.
+	waste_area.visible = false
+	pancake_ready_source.visible = false
+	var legacy_discard := get_node_or_null("SafeArea/DiscardCurrentPancakeButton") as CanvasItem
+	if legacy_discard != null:
+		legacy_discard.visible = false
+
+
+func _refresh_p1_ui() -> void:
+	super._refresh_p1_ui()
+	if not _multi_griddle_mode_active:
+		return
+	# The inherited single-griddle refresh normally re-enables its redo button.
+	# Compact griddles already expose one discard action per surface.
+	if discard_current_pancake_button != null:
+		discard_current_pancake_button.visible = false
 
 
 func _refresh_attention_rail() -> void:
@@ -414,6 +438,10 @@ func _refresh_attention_rail() -> void:
 
 func _refresh_pancake_drag_sources() -> void:
 	if p1_session == null or five_area_pancake_production == null:
+		return
+	if _multi_griddle_mode_active:
+		_ready_pancake_source_ref.clear()
+		pancake_ready_source.visible = false
 		return
 	var ready := p1_session.phase == P1Session.Phase.READY_TO_SERVE
 	if ready and _ready_pancake_source_ref.is_empty():
@@ -549,23 +577,18 @@ func _delivery_source_for_item(session: Node, order: Dictionary, item_index: int
 
 
 func _available_delivery_source_refs() -> Array[Dictionary]:
-	packaged_drink_station.refresh_from_session()
 	youtiao_station.refresh_from_session()
 	_refresh_pancake_drag_sources()
 	var result: Array[Dictionary] = []
 	# A completed pancake is business state, not presentation state.  Keep its
 	# full product snapshot available to click delivery even if the drag source
 	# has not completed a visibility/disabled refresh on this frame.
-	if p1_session != null and p1_session.phase == P1Session.Phase.READY_TO_SERVE and not _ready_pancake_source_ref.is_empty():
-		result.append(_ready_pancake_source_ref.duplicate(true))
+	result.append_array(multi_griddle_station.ready_source_refs())
 	var sources: Array[ProductDragSource] = []
 	sources.append_array(pancake_holding_sources)
-	sources.append_array(packaged_drink_station.heater_sources)
-	sources.append_array(packaged_drink_station.lanes)
 	sources.append_array(youtiao_station.output_sources)
 	sources.append(fresh_soy_station.machine_output)
 	sources.append_array(fresh_soy_station.rack_outputs)
-	sources.append_array(steamer_station.layer_outputs)
 	for source in sources:
 		if source == null or source.disabled or not source.visible:
 			continue
@@ -587,14 +610,34 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 
 
 func _on_clicked_product_consumed(source_ref: Dictionary) -> void:
-	if StringName(source_ref.get("source_kind", &"")) == &"pancake_ready":
-		_ready_pancake_source_ref.clear()
-		reset_pancake()
+	if StringName(source_ref.get("source_kind", &"")) == &"pancake_griddle_ready":
+		multi_griddle_station.consume_ready(int(source_ref.get("source_index", -1)))
 	_refresh_pancake_drag_sources()
-	packaged_drink_station.refresh_from_session()
 	youtiao_station.refresh_from_session()
 	fresh_soy_station.refresh_from_session()
-	steamer_station.refresh_from_session()
+
+
+func _on_customer_service_product_dropped(order_id: StringName, item_index: int, source_ref: Dictionary) -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		return
+	_on_customer_service_focus_requested(order_id)
+	var staged := Dictionary(session.call("stage_product_to_order", source_ref, order_id, item_index))
+	if not bool(staged.get("success", false)):
+		tool_status_label.text = "鎷栨斁浜や粯澶辫触锛屽師閺婃垚鍝佷繚鐣欙細%s" % str(staged.get("reason", &"unknown"))
+		_refresh_formal_shell()
+		return
+	_on_clicked_product_consumed(source_ref)
+	var refreshed := Dictionary(session.call("formal_order", order_id))
+	if not _formal_order_items_complete(refreshed):
+		tool_status_label.text = "宸叉嫋鏀句氦浠樼 %d 椤癸紱缁х画瀹屾垚鍏朵綑椁愬搧" % (item_index + 1)
+		_refresh_formal_shell()
+		return
+	var completed := Dictionary(session.call("complete_order_delivery", order_id))
+	if bool(completed.get("success", false)):
+		_finish_clicked_order(completed)
+	else:
+		tool_status_label.text = "璁㈠崟瀹屾垚澶辫触锛?s" % str(completed.get("reason", &"unknown"))
 
 
 func _finish_clicked_order(result: Dictionary) -> void:
@@ -663,7 +706,6 @@ func _on_disposition_completed(result: Dictionary) -> void:
 	if bool(result.get("success", false)):
 		tool_status_label.text = "餐品已计入浪费"
 		_refresh_pancake_drag_sources()
-		packaged_drink_station.refresh_from_session()
 		youtiao_station.refresh_from_session()
 	else:
 		tool_status_label.text = "餐品回到原处：%s" % str(result.get("reason", &"unknown"))
@@ -692,7 +734,6 @@ static func _tray_result_summary(settlement: Dictionary) -> Dictionary:
 static func _missing_delivery_source_text(area_id: StringName) -> String:
 	return {
 		&"area.pancake": "没有可交付的煎饼；请先完成包装或从成品暂存托盘取用",
-		&"area.packaged_drink": "没有可交付的成品饮品；热饮需要等待加热完成",
 		&"area.youtiao": "没有可交付的油条；请先完成炸制并升篮沥油",
 		&"area.fresh_soy_milk": "请先点击豆浆机的“接杯”，再交付当前这杯豆浆",
 	}.get(area_id, "该区域没有可交付的成品")
@@ -701,24 +742,18 @@ static func _missing_delivery_source_text(area_id: StringName) -> String:
 static func _area_label(area_id: StringName) -> String:
 	return {
 		&"area.pancake": "煎饼鏊台",
-		&"area.packaged_drink": "成品饮品柜",
 		&"area.youtiao": "油条炸锅",
 		&"area.fresh_soy_milk": "现磨豆浆机",
-		&"area.steamer": "蒸笼",
 	}.get(area_id, "该设备")
 
 
 static func _attention_label(status_key: StringName) -> String:
 	return {
-		&"packaged_drink_ready": "热饮可取",
-		&"packaged_drink_overcooking": "热饮即将过热",
 		&"youtiao_ready": "油条可升篮",
 		&"youtiao_overcooking": "油条即将过火",
 		&"fresh_soy_milk_ready": "豆浆可接杯",
 		&"fresh_soy_milk_overcooking": "豆浆即将变质",
 		&"fresh_soy_milk_blocked": "豆浆接杯架已满",
-		&"steamer_ready": "蒸品已熟",
-		&"steamer_overcooking": "蒸品即将过熟",
 		&"soy_output_spoil": "豆浆杯即将变质",
 		&"tray_stale": "煎饼暂存即将陈旧",
 	}.get(status_key, str(status_key))

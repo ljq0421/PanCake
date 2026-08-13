@@ -82,6 +82,7 @@ func create_product_snapshot(score_result: Dictionary, order: Dictionary, fold_s
 		"dimension_scores": _intrinsic_dimensions(score_result),
 		"score": _intrinsic_score(score_result),
 		"serving_score_basis": Dictionary(score_result.get("serving_score_basis", {})).duplicate(true),
+		"special_evaluation": Dictionary(score_result.get("special_evaluation", {})).duplicate(true),
 	}
 
 

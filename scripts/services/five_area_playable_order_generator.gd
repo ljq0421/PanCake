@@ -1,29 +1,24 @@
 class_name FiveAreaPlayableOrderGenerator
 extends RefCounted
 
-## Pure deterministic candidate generation for all five formal areas.
+## Pure deterministic candidate generation for the three formal shop areas.
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
+const SPECIALS := preload("res://scripts/data/special_customer_catalog.gd")
 
 const PLAYABLE_AREA_IDS: Array[StringName] = [
 	&"area.pancake",
-	&"area.packaged_drink",
 	&"area.youtiao",
 	&"area.fresh_soy_milk",
-	&"area.steamer",
 ]
 const BASE_PATIENCE_SECONDS := {
 	&"area.pancake": 72.0,
-	&"area.packaged_drink": 24.0,
 	&"area.youtiao": 36.0,
 	&"area.fresh_soy_milk": 32.0,
-	&"area.steamer": 44.0,
 }
 const TUTORIAL_PRODUCT_IDS := {
-	&"area.packaged_drink": &"product.packaged_drink.milk",
 	&"area.youtiao": &"product.youtiao.plain",
 	&"area.fresh_soy_milk": &"product.fresh_soy_milk.yellow_bean",
-	&"area.steamer": &"product.steamer.mantou",
 }
 
 
@@ -33,7 +28,8 @@ static func generate(
 	seed: int,
 	sequence: int,
 	current_day: int,
-	tutorial_generated_day: int
+	tutorial_generated_day: int,
+	special_context: Dictionary = {}
 ) -> Dictionary:
 	var tutorial := Dictionary(progression.get("tutorial", {}))
 	var tutorial_kind := StringName(tutorial.get("active_kind", &""))
@@ -45,13 +41,6 @@ static func generate(
 			return teaching
 		teaching["tutorial_generated_day"] = current_day
 		return teaching
-	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater" and tutorial_generated_day != current_day:
-		var heater_teaching := _heater_teaching_candidate(progression)
-		if not bool(heater_teaching.get("success", false)):
-			return heater_teaching
-		heater_teaching["tutorial_generated_day"] = current_day
-		return heater_teaching
-
 	var eligible_areas: Array[StringName] = []
 	var completed_tutorials := _id_set(tutorial.get("completed_area_ids", []))
 	var unlocked_areas := _id_set(progression.get("unlocked_area_ids", []))
@@ -62,24 +51,242 @@ static func generate(
 			eligible_areas.append(area_id)
 	if eligible_areas.is_empty():
 		return {"success": false, "reason": &"no_eligible_playable_order"}
+	if not special_context.is_empty():
+		return _candidate_with_optional_special(eligible_areas, progression, seed, sequence, current_day, special_context)
+	return _normal_candidate(eligible_areas, progression, seed, sequence)
 
-	var item_count := _complexity_item_count(progression, eligible_areas.size(), seed, sequence)
-	var remaining_areas := eligible_areas.duplicate()
-	var selected_candidates: Array[Dictionary] = []
-	for item_index in range(item_count):
-		var area_id := _weighted_area(remaining_areas, progression, seed + item_index * 7919, sequence)
-		remaining_areas.erase(area_id)
-		var candidate: Dictionary
-		if area_id == &"area.pancake":
-			candidate = _pancake_candidate(progression, {}, seed + item_index * 104729, sequence, false)
-		else:
-			var product_ids := _eligible_product_ids(area_id, progression)
-			var product_id := _weighted_product(product_ids, seed + item_index * 104729, sequence)
-			candidate = _product_candidate(area_id, product_id, progression, seed + item_index * 104729, sequence, false)
+
+static func _candidate_with_optional_special(
+	eligible_areas: Array[StringName],
+	progression: Dictionary,
+	seed: int,
+	sequence: int,
+	current_day: int,
+	special_context: Dictionary
+) -> Dictionary:
+	var source_state := Dictionary(special_context.get("special_state", special_context))
+	var state := SPECIALS.normalize_state(source_state, current_day)
+	var ordinary := _normal_candidate(eligible_areas, progression, seed, sequence)
+	ordinary["special_state"] = state.duplicate(true)
+	if bool(special_context.get("queue_has_special_customer", false)):
+		return ordinary
+	if int(state.get("generated_today", 0)) >= 3:
+		return ordinary
+	if sequence - int(state.get("last_generated_sequence", -1000)) < 3:
+		return ordinary
+	if _roll(seed, sequence, 151, 100) >= 20:
+		return ordinary
+	var eligible_specials := SPECIALS.eligible_ids(progression)
+	_filter_unconstructable_specials(eligible_specials, eligible_areas, progression)
+	if eligible_specials.is_empty():
+		return ordinary
+	var last_special_id := StringName(state.get("last_special_id", &""))
+	if eligible_specials.size() > 1:
+		eligible_specials.erase(last_special_id)
+	var special_id := eligible_specials[_roll(seed, sequence, 157, eligible_specials.size())]
+	var special := _special_candidate(special_id, eligible_areas, progression, seed, sequence)
+	if not bool(special.get("success", false)):
+		return ordinary
+	state["generated_today"] = int(state.get("generated_today", 0)) + 1
+	state["last_generated_sequence"] = sequence
+	state["last_special_id"] = special_id
+	special["special_state"] = state.duplicate(true)
+	return special
+
+
+static func _filter_unconstructable_specials(ids: Array[StringName], eligible_areas: Array[StringName], progression: Dictionary) -> void:
+	if eligible_areas.size() < 2:
+		ids.erase(SPECIALS.GLUTTON)
+	if eligible_areas.size() < 3:
+		ids.erase(SPECIALS.BLOGGER)
+	if _eligible_chili_only_templates(progression).is_empty():
+		ids.erase(SPECIALS.SPICY_FAN)
+	if not _eligible_pancake_templates(progression).has(&"order.pancake.classic"):
+		ids.erase(SPECIALS.STUDENT)
+
+
+static func _special_candidate(
+	special_id: StringName,
+	eligible_areas: Array[StringName],
+	progression: Dictionary,
+	seed: int,
+	sequence: int
+) -> Dictionary:
+	match special_id:
+		SPECIALS.STUDENT:
+			return _decorate_special(
+				_pancake_candidate(progression, {}, seed, sequence, false, &"order.pancake.classic"),
+				special_id,
+				90.0,
+				1.0,
+			)
+		SPECIALS.SPICY_FAN:
+			var templates := _eligible_chili_only_templates(progression)
+			if templates.is_empty():
+				return {"success": false, "reason": &"special_content_unavailable"}
+			var template_id := templates[_roll(seed, sequence, 163, templates.size())]
+			var spicy := _pancake_candidate(progression, {}, seed, sequence, false, template_id)
+			if not bool(spicy.get("success", false)):
+				return spicy
+			var spicy_items := Array(spicy.get("items", [])).duplicate(true)
+			for item_index in range(spicy_items.size()):
+				var item := Dictionary(spicy_items[item_index]).duplicate(true)
+				item["sauce_intensity_multiplier"] = 1.35
+				spicy_items[item_index] = item
+			spicy["items"] = spicy_items
+			var spicy_metadata := Dictionary(spicy.get("metadata", {})).duplicate(true)
+			var spicy_legacy := Dictionary(spicy_metadata.get("legacy_order", {})).duplicate(true)
+			spicy_legacy["sauce_intensity_multiplier"] = 1.35
+			spicy_metadata["legacy_order"] = spicy_legacy
+			spicy["metadata"] = spicy_metadata
+			return _decorate_special(spicy, special_id, 80.0, 1.35)
+		SPECIALS.GLUTTON:
+			var glutton_count := mini(3 if _roll(seed, sequence, 167, 100) < 40 else 2, eligible_areas.size())
+			var glutton := _distinct_area_combo(eligible_areas, progression, seed, sequence, glutton_count)
+			if not bool(glutton.get("success", false)):
+				return glutton
+			var glutton_items := Array(glutton.get("items", [])).duplicate(true)
+			if glutton_items.size() == 2:
+				var doubled := Dictionary(glutton_items[0]).duplicate(true)
+				doubled["quantity"] = 2
+				glutton_items[0] = doubled
+			glutton["items"] = glutton_items
+			glutton["raw_base_coins"] = _item_quote(glutton_items)
+			return _decorate_special(glutton, special_id, 150.0, 1.20)
+		SPECIALS.BLOGGER:
+			var blogger_count := 2 if _roll(seed, sequence, 173, 100) < 60 else 3
+			var blogger := _distinct_area_combo(eligible_areas, progression, seed, sequence, blogger_count)
+			if not bool(blogger.get("success", false)):
+				return blogger
+			blogger["raw_base_coins"] = _item_quote(Array(blogger.get("items", [])))
+			return _decorate_special(blogger, special_id, float(Dictionary(blogger.get("metadata", {})).get("patience_seconds", 72.0)), 1.50)
+	return {"success": false, "reason": &"unknown_special_customer"}
+
+
+static func _distinct_area_combo(
+	eligible_areas: Array[StringName],
+	progression: Dictionary,
+	seed: int,
+	sequence: int,
+	item_count: int
+) -> Dictionary:
+	var remaining := eligible_areas.duplicate()
+	var candidates: Array[Dictionary] = []
+	for item_index in range(mini(item_count, remaining.size())):
+		var selected_index: int = _roll(seed, sequence, 179 + item_index * 2, remaining.size())
+		var area_id: StringName = StringName(remaining[selected_index])
+		remaining.remove_at(selected_index)
+		var candidate: Dictionary = _candidate_for_area(area_id, progression, seed + item_index * 7919, sequence)
 		if not bool(candidate.get("success", false)):
 			return candidate
-		selected_candidates.append(candidate)
-	return _combine_candidates(selected_candidates)
+		candidates.append(candidate)
+	var result := _combine_candidates(candidates)
+	for candidate in candidates:
+		var legacy := Dictionary(Dictionary(candidate.get("metadata", {})).get("legacy_order", {}))
+		if not legacy.is_empty():
+			var metadata := Dictionary(result.get("metadata", {})).duplicate(true)
+			metadata["legacy_order"] = legacy.duplicate(true)
+			result["metadata"] = metadata
+			break
+	return result
+
+
+static func _decorate_special(candidate: Dictionary, special_id: StringName, patience_seconds: float, perfect_multiplier: float) -> Dictionary:
+	if not bool(candidate.get("success", false)):
+		return candidate
+	var result := candidate.duplicate(true)
+	var definition := SPECIALS.definition(special_id)
+	var metadata := Dictionary(result.get("metadata", {})).duplicate(true)
+	var base_coins := maxi(int(result.get("raw_base_coins", metadata.get("base_coins", 1))), 1)
+	var perfect_quote := maxi(roundi(float(base_coins) * perfect_multiplier), base_coins)
+	metadata["customer_id"] = StringName(definition.get("customer_id", &""))
+	metadata["special_customer_id"] = special_id
+	metadata["special_title"] = str(definition.get("title", ""))
+	metadata["special_rule_text"] = str(definition.get("rule_text", ""))
+	metadata["customer_line"] = str(definition.get("customer_line", ""))
+	var legacy_order := Dictionary(metadata.get("legacy_order", {})).duplicate(true)
+	if not legacy_order.is_empty():
+		legacy_order["customer_line"] = str(definition.get("customer_line", ""))
+		legacy_order["special_customer_id"] = special_id
+		legacy_order["special_title"] = str(definition.get("title", ""))
+		legacy_order["special_rule_text"] = str(definition.get("rule_text", ""))
+		legacy_order["perfect_quote_coins"] = perfect_quote
+		metadata["legacy_order"] = legacy_order
+	metadata["patience_seconds"] = patience_seconds
+	metadata["base_coins"] = base_coins
+	metadata["perfect_quote_coins"] = perfect_quote
+	result["metadata"] = metadata
+	result.erase("raw_base_coins")
+	return result
+
+
+static func _item_quote(items: Array) -> int:
+	var total := 0
+	for item_variant in items:
+		var item := Dictionary(item_variant)
+		var quantity := maxi(int(item.get("quantity", 1)), 1)
+		if StringName(item.get("product_id", &"")) == &"product.pancake.custom":
+			var template := CATALOG.pancake_order_template(StringName(item.get("pancake_template_id", &"")))
+			total += maxi(int(template.get("payment_coins", 1)), 1) * quantity
+		else:
+			total += maxi(int(CATALOG.product_definition(StringName(item.get("product_id", &""))).get("base_sell_price", 1)), 1) * quantity
+	return maxi(total, 1)
+
+
+static func _eligible_chili_only_templates(progression: Dictionary) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for template_id in _eligible_pancake_templates(progression):
+		var sauces := Array(CATALOG.pancake_order_template(template_id).get("sauce_stock_ids", []))
+		if sauces.size() == 1 and StringName(sauces[0]) == &"stock.pancake.sauce.red_chili":
+			result.append(template_id)
+	return result
+
+
+static func _normal_candidate(eligible_areas: Array[StringName], progression: Dictionary, seed: int, sequence: int) -> Dictionary:
+	var has_pancake := eligible_areas.has(&"area.pancake")
+	var has_youtiao := eligible_areas.has(&"area.youtiao")
+	var has_soy := eligible_areas.has(&"area.fresh_soy_milk")
+	if eligible_areas.size() == 1:
+		return _candidate_for_area(eligible_areas[0], progression, seed, sequence)
+	var candidates: Array[Dictionary] = []
+	if has_pancake and has_youtiao and not has_soy:
+		if _roll(seed, sequence, 17, 100) < 75:
+			candidates.append(_candidate_for_area(&"area.pancake", progression, seed, sequence))
+			if _roll(seed, sequence, 19, 100) < 30:
+				candidates.append(_candidate_for_area(&"area.youtiao", progression, seed + 7919, sequence))
+		else:
+			candidates.append(_candidate_for_area(&"area.youtiao", progression, seed, sequence))
+	elif has_pancake and has_youtiao and has_soy:
+		var main_roll := _roll(seed, sequence, 23, 100)
+		if main_roll < 70:
+			candidates.append(_candidate_for_area(&"area.pancake", progression, seed, sequence))
+			var side_roll := _roll(seed, sequence, 29, 100)
+			if side_roll >= 55 and side_roll < 90:
+				var side_area := &"area.youtiao" if _roll(seed, sequence, 31, 2) == 0 else &"area.fresh_soy_milk"
+				candidates.append(_candidate_for_area(side_area, progression, seed + 7919, sequence))
+			elif side_roll >= 90:
+				candidates.append(_candidate_for_area(&"area.youtiao", progression, seed + 7919, sequence))
+				candidates.append(_candidate_for_area(&"area.fresh_soy_milk", progression, seed + 15838, sequence))
+		elif main_roll < 85:
+			candidates.append(_candidate_for_area(&"area.youtiao", progression, seed, sequence))
+		else:
+			candidates.append(_candidate_for_area(&"area.fresh_soy_milk", progression, seed, sequence))
+	else:
+		var fallback_area := &"area.pancake" if has_pancake else eligible_areas[_roll(seed, sequence, 37, eligible_areas.size())]
+		candidates.append(_candidate_for_area(fallback_area, progression, seed, sequence))
+	for candidate in candidates:
+		if not bool(candidate.get("success", false)):
+			return candidate
+	return _combine_candidates(candidates)
+
+
+static func _candidate_for_area(area_id: StringName, progression: Dictionary, seed: int, sequence: int) -> Dictionary:
+	if area_id == &"area.pancake":
+		return _pancake_candidate(progression, {}, seed, sequence, false)
+	var product_ids := _eligible_product_ids(area_id, progression)
+	if product_ids.is_empty():
+		return {"success": false, "reason": &"no_eligible_playable_order", "area_id": area_id}
+	return _product_candidate(area_id, _weighted_product(product_ids, seed, sequence), progression, seed, sequence, false)
 
 
 static func generate_queue_candidates(
@@ -90,15 +297,21 @@ static func generate_queue_candidates(
 	count: int,
 	current_day: int,
 	tutorial_generated_day: int,
-	promotion_context: Dictionary = {}
+	promotion_context: Dictionary = {},
+	special_context: Dictionary = {}
 ) -> Dictionary:
 	var candidates: Array[Dictionary] = []
 	var generated_tutorial_day := tutorial_generated_day
+	var special_state := SPECIALS.normalize_state(Dictionary(special_context.get("special_state", special_context)), current_day)
+	var queue_has_special := bool(special_context.get("queue_has_special_customer", false))
 	var promotion_kind := StringName(promotion_context.get("kind", promotion_context.get("tutorial_kind", &"")))
 	var promotion_id := StringName(promotion_context.get("target_id", promotion_context.get("tutorial_id", &"")))
 	var promotion_source_growth_id := StringName(promotion_context.get("source_growth_id", &""))
 	var promotion_index := clampi(int(promotion_context.get("next_index", 0)), 0, 3)
 	var explicit_promotion := not promotion_id.is_empty()
+	var tutorial := Dictionary(progression.get("tutorial", {}))
+	var tutorial_context_present := not StringName(tutorial.get("active_id", &"")).is_empty()
+	var allow_specials := not explicit_promotion and not tutorial_context_present and not special_context.is_empty()
 	for offset in range(clampi(count, 0, 6)):
 		var sequence := first_sequence + offset
 		var generated: Dictionary
@@ -118,18 +331,30 @@ static func generate_queue_candidates(
 			)
 			promotion_index += 1
 		else:
-			generated = generate(progression, inventory, seed, sequence, current_day, generated_tutorial_day)
+			var per_order_special_context := {}
+			if allow_specials:
+				per_order_special_context = {
+					"special_state": special_state,
+					"queue_has_special_customer": queue_has_special,
+				}
+			generated = generate(progression, inventory, seed, sequence, current_day, generated_tutorial_day, per_order_special_context)
 		if not bool(generated.get("success", false)):
 			if not candidates.is_empty():
 				return {
 					"success": true,
 					"candidates": candidates,
 					"tutorial_generated_day": generated_tutorial_day,
+					"special_state": special_state,
 					"deferred_reason": generated.get("reason", &"no_eligible_playable_order"),
 				}
 			return generated
 		if int(generated.get("tutorial_generated_day", 0)) > 0:
 			generated_tutorial_day = int(generated.get("tutorial_generated_day", 0))
+		if generated.has("special_state"):
+			special_state = Dictionary(generated.get("special_state", {})).duplicate(true)
+		var generated_metadata := Dictionary(generated.get("metadata", {}))
+		if not StringName(generated_metadata.get("special_customer_id", &"")).is_empty():
+			queue_has_special = true
 		var metadata := Dictionary(generated.get("metadata", {}))
 		var generated_tutorial_id := StringName(metadata.get("tutorial_id", &""))
 		if not generated_tutorial_id.is_empty() and not explicit_promotion:
@@ -137,7 +362,7 @@ static func generate_queue_candidates(
 			promotion_id = generated_tutorial_id
 			promotion_index = 0
 		candidates.append(generated)
-	return {"success": true, "candidates": candidates, "tutorial_generated_day": generated_tutorial_day}
+	return {"success": true, "candidates": candidates, "tutorial_generated_day": generated_tutorial_day, "special_state": special_state}
 
 
 static func _post_tutorial_exposure_candidate(
@@ -196,22 +421,6 @@ static func _promotion_primary_candidate(
 		return _product_candidate(area_id, tutorial_id, progression, seed, sequence, false)
 	if tutorial_kind == &"pancake_stock":
 		return _pancake_candidate_for_stock(progression, tutorial_id, seed, sequence)
-	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater":
-		var heated := _product_candidate(
-			&"area.packaged_drink",
-			&"product.packaged_drink.milk",
-			progression,
-			seed,
-			sequence,
-			false,
-		)
-		var heated_items := Array(heated.get("items", [])).duplicate(true)
-		if not heated_items.is_empty():
-			var item := Dictionary(heated_items[0])
-			item["temperature_mode"] = &"heated"
-			heated_items[0] = item
-			heated["items"] = heated_items
-		return heated
 	if tutorial_kind != &"area" or not PLAYABLE_AREA_IDS.has(tutorial_id):
 		return {"success": false, "reason": &"promotion_content_unavailable", "tutorial_id": tutorial_id}
 	if tutorial_id == &"area.pancake":
@@ -227,8 +436,6 @@ static func _promotion_area_id(tutorial_kind: StringName, tutorial_id: StringNam
 		return StringName(CATALOG.product_definition(tutorial_id).get("area_id", &""))
 	if tutorial_kind == &"pancake_stock":
 		return &"area.pancake"
-	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater":
-		return &"area.packaged_drink"
 	return tutorial_id if tutorial_kind == &"area" else &""
 
 
@@ -236,7 +443,7 @@ static func _has_due_tutorial(progression: Dictionary) -> bool:
 	var tutorial := Dictionary(progression.get("tutorial", {}))
 	var kind := StringName(tutorial.get("active_kind", &""))
 	var tutorial_id := StringName(tutorial.get("active_id", &""))
-	return (kind == &"area" and PLAYABLE_AREA_IDS.has(tutorial_id)) or (kind == &"device" and tutorial_id == &"device.packaged_drink_heater")
+	return kind == &"area" and PLAYABLE_AREA_IDS.has(tutorial_id)
 
 
 static func _eligible_completed_areas(progression: Dictionary, excluded_area_id: StringName) -> Array[StringName]:
@@ -314,28 +521,6 @@ static func _teaching_candidate(area_id: StringName, progression: Dictionary, _i
 		return candidate
 	# Every area tutorial includes its own zero-stock recovery step. Never defer
 	# the first teaching customer merely because the player must restock first.
-	return candidate
-
-
-static func _heater_teaching_candidate(progression: Dictionary) -> Dictionary:
-	var product_id := &"product.packaged_drink.milk"
-	if not _eligible_product_ids(&"area.packaged_drink", progression).has(product_id):
-		return {"success": false, "reason": &"tutorial_content_unavailable", "tutorial_id": &"device.packaged_drink_heater"}
-	var candidate := _product_candidate(&"area.packaged_drink", product_id, progression, 0, 0, true)
-	if not bool(candidate.get("success", false)):
-		return candidate
-	var items: Array = Array(candidate.get("items", [])).duplicate(true)
-	if not items.is_empty():
-		var item := Dictionary(items[0])
-		item["temperature_mode"] = &"heated"
-		items[0] = item
-	candidate["items"] = items
-	var metadata := Dictionary(candidate.get("metadata", {})).duplicate(true)
-	metadata["teaching_area_id"] = &"area.packaged_drink"
-	metadata["tutorial_kind"] = &"device"
-	metadata["tutorial_id"] = &"device.packaged_drink_heater"
-	metadata["tutorial_no_countdown"] = true
-	candidate["metadata"] = metadata
 	return candidate
 
 
@@ -507,7 +692,7 @@ static func _weighted_area(area_ids: Array[StringName], progression: Dictionary,
 		var weight := 100
 		if area_id != &"area.pancake":
 			var details := Dictionary(mastery_by_area.get(area_id, mastery_by_area.get(str(area_id), {})))
-			var qualified := int(details.get("correct_temperature", 0)) if area_id == &"area.packaged_drink" else int(details.get("qualified", 0))
+			var qualified := int(details.get("qualified", 0))
 			weight = 15 if qualified < 3 else (25 if qualified < 8 else 35)
 		total += weight
 		weighted.append({"area_id": area_id, "limit": total})
@@ -534,8 +719,13 @@ static func _weighted_product(product_ids: Array[StringName], seed: int, sequenc
 static func _roll(seed: int, sequence: int, salt: int, upper_bound: int) -> int:
 	if upper_bound <= 1:
 		return 0
-	var value := int(seed) & 0x7fffffff
-	value = int((value * 1103515245 + 12345 + sequence * 2654435761 + salt * 1013904223) & 0x7fffffff)
+	# Avalanche every input before taking the modulus. A linear congruential
+	# expression made rolls with different salts strongly correlated, so a
+	# conditional side-order roll did not match its authored probability.
+	var value := (int(seed) & 0x7fffffff) ^ int(sequence * 0x045D9F3B) ^ int(salt * 0x27D4EB2D)
+	value = int(((value ^ (value >> 16)) * 0x045D9F3B) & 0x7fffffff)
+	value = int(((value ^ (value >> 16)) * 0x045D9F3B) & 0x7fffffff)
+	value = int((value ^ (value >> 16)) & 0x7fffffff)
 	return posmod(value, upper_bound)
 
 
@@ -544,3 +734,23 @@ static func _id_set(values: Variant) -> Dictionary:
 	for value in Array(values):
 		result[StringName(value)] = true
 	return result
+static func _heater_teaching_candidate(progression: Dictionary) -> Dictionary:
+	var product_id := &"product.packaged_drink.milk"
+	if not _eligible_product_ids(&"area.packaged_drink", progression).has(product_id):
+		return {"success": false, "reason": &"tutorial_content_unavailable", "tutorial_id": &"device.packaged_drink_heater"}
+	var candidate := _product_candidate(&"area.packaged_drink", product_id, progression, 0, 0, true)
+	if not bool(candidate.get("success", false)):
+		return candidate
+	var items: Array = Array(candidate.get("items", [])).duplicate(true)
+	if not items.is_empty():
+		var item := Dictionary(items[0])
+		item["temperature_mode"] = &"heated"
+		items[0] = item
+	candidate["items"] = items
+	var metadata := Dictionary(candidate.get("metadata", {})).duplicate(true)
+	metadata["teaching_area_id"] = &"area.packaged_drink"
+	metadata["tutorial_kind"] = &"device"
+	metadata["tutorial_id"] = &"device.packaged_drink_heater"
+	metadata["tutorial_no_countdown"] = true
+	candidate["metadata"] = metadata
+	return candidate

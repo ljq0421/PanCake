@@ -4,6 +4,8 @@ extends RefCounted
 signal queue_changed(snapshot: Array[Dictionary])
 signal order_settled(result: Dictionary)
 
+const SPECIALS := preload("res://scripts/data/special_customer_catalog.gd")
+
 ## Formal order state is UI-independent.  Stage 7 will replace only candidate
 ## generation/tutorial selection, not the persisted order transaction.
 
@@ -100,6 +102,10 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		complexity = &"double"
 	elif normalized_items.size() >= 3:
 		complexity = &"triple"
+	var requested_customer_id := StringName(metadata.get("customer_id", &""))
+	var customer_id := customer_id_for_sequence(_sequence)
+	if SPECIALS.is_special_id(StringName(metadata.get("special_customer_id", &""))) and not requested_customer_id.is_empty():
+		customer_id = requested_customer_id
 	var order: Dictionary = {
 		"order_id": order_id,
 		"sequence": _sequence,
@@ -107,7 +113,12 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		"state": initial_state,
 		"status": initial_state,
 		"service_slot": -1,
-		"customer_id": customer_id_for_sequence(_sequence),
+		"customer_id": customer_id,
+		"special_customer_id": StringName(metadata.get("special_customer_id", &"")),
+		"special_title": str(metadata.get("special_title", "")),
+		"special_rule_text": str(metadata.get("special_rule_text", "")),
+		"customer_line": str(metadata.get("customer_line", "")),
+		"perfect_quote_coins": maxi(int(metadata.get("perfect_quote_coins", metadata.get("base_coins", 1))), 0),
 		"items": normalized_items,
 		"patience_seconds": maxf(float(metadata.get("patience_seconds", 0.0)), 0.0),
 		"remaining_patience_seconds": maxf(float(metadata.get("patience_seconds", 0.0)), 0.0),
@@ -655,8 +666,13 @@ func _restore(source: Dictionary) -> void:
 		var restored_customer_id := StringName(order.get("customer_id", &""))
 		if source_version < 5:
 			order["customer_id"] = legacy_customer_id_for_sequence(int(order.get("sequence", 1)))
-		elif not CUSTOMER_IDS.has(restored_customer_id):
+		elif not CUSTOMER_IDS.has(restored_customer_id) and StringName(metadata.get("special_customer_id", &"")).is_empty():
 			order["customer_id"] = customer_id_for_sequence(int(order.get("sequence", 1)))
+		order["special_customer_id"] = StringName(order.get("special_customer_id", metadata.get("special_customer_id", &"")))
+		order["special_title"] = str(order.get("special_title", metadata.get("special_title", "")))
+		order["special_rule_text"] = str(order.get("special_rule_text", metadata.get("special_rule_text", "")))
+		order["customer_line"] = str(order.get("customer_line", metadata.get("customer_line", "")))
+		order["perfect_quote_coins"] = maxi(int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", 0)))), 0)
 		var legacy_teaching_area_id := StringName(order.get("teaching_area_id", metadata.get("teaching_area_id", &"")))
 		var tutorial_kind := StringName(order.get("tutorial_kind", metadata.get("tutorial_kind", &"")))
 		var tutorial_id := StringName(order.get("tutorial_id", metadata.get("tutorial_id", &"")))
@@ -817,7 +833,7 @@ func _activate_order_in_slot(order_id: StringName, slot: int) -> void:
 	order["status"] = &"active"
 	order["service_slot"] = slot
 	var customer_id := StringName(order.get("customer_id", &""))
-	if not CUSTOMER_IDS.has(customer_id):
+	if not CUSTOMER_IDS.has(customer_id) and StringName(order.get("special_customer_id", Dictionary(order.get("metadata", {})).get("special_customer_id", &""))).is_empty():
 		order["customer_id"] = customer_id_for_sequence(int(order.get("sequence", 1)))
 	_orders[order_id] = order
 	if not _active_order_ids.has(order_id):

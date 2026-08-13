@@ -86,8 +86,6 @@ func device_tier(device_id: StringName) -> int:
 
 func mastery_value(area_id: StringName) -> int:
 	var details := mastery_snapshot(area_id)
-	if area_id == &"area.packaged_drink":
-		return int(details.get("correct_temperature", 0))
 	return int(details.get("qualified", area_mastery.get(area_id, 0)))
 
 
@@ -97,12 +95,6 @@ func mastery_snapshot(area_id: StringName) -> Dictionary:
 		details["qualified"] = int(area_mastery.get(area_id, 0))
 	if not details.has("a_grade"):
 		details["a_grade"] = 0
-	if not details.has("correct_temperature"):
-		details["correct_temperature"] = int(area_mastery.get(area_id, 0)) if area_id == &"area.packaged_drink" else 0
-	if not details.has("correct_streak_current"):
-		details["correct_streak_current"] = 0
-	if not details.has("correct_streak_best"):
-		details["correct_streak_best"] = 0
 	return details
 
 
@@ -201,25 +193,13 @@ func record_area_result(area_id: StringName, result: Dictionary) -> Dictionary:
 		return {"success": true, "changed": false, "reason": &"already_recorded", "area_id": area_id, "mastery": mastery_value(area_id), "details": mastery_snapshot(area_id)}
 	var details := mastery_snapshot(area_id)
 	var grade := str(result.get("grade", ""))
-	var gained := 0
-	if area_id == &"area.packaged_drink":
-		var correct := bool(result.get("correct_temperature", false))
-		if correct:
-			gained = 1
-			details["correct_temperature"] = int(details.get("correct_temperature", 0)) + 1
-			details["correct_streak_current"] = int(details.get("correct_streak_current", 0)) + 1
-			details["correct_streak_best"] = maxi(int(details.get("correct_streak_best", 0)), int(details.get("correct_streak_current", 0)))
-		else:
-			details["correct_streak_current"] = 0
-		details["qualified"] = int(details.get("correct_temperature", 0))
-	else:
-		gained = 1 if grade == "A" or grade == "B" else 0
-		if gained > 0:
-			details["qualified"] = int(details.get("qualified", 0)) + 1
-		if grade == "A":
-			details["a_grade"] = int(details.get("a_grade", 0)) + 1
+	var gained := 1 if grade == "A" or grade == "B" else 0
+	if gained > 0:
+		details["qualified"] = int(details.get("qualified", 0)) + 1
+	if grade == "A":
+		details["a_grade"] = int(details.get("a_grade", 0)) + 1
 	area_mastery_details[area_id] = details
-	area_mastery[area_id] = int(details.get("correct_temperature", 0)) if area_id == &"area.packaged_drink" else int(details.get("qualified", 0))
+	area_mastery[area_id] = int(details.get("qualified", 0))
 	if not settlement_id.is_empty():
 		applied_mastery_settlement_ids[settlement_id] = true
 	return {"success": true, "changed": true, "area_id": area_id, "mastery_gained": gained, "mastery": mastery_value(area_id), "details": details.duplicate(true)}
@@ -300,7 +280,7 @@ func advance_tutorial_for_new_business_day() -> Dictionary:
 func _reconcile_owned_area_tutorials() -> void:
 	# Older saves can own an area without retaining its one-time tutorial queue
 	# entry. Recreate every unfinished owned area, never a completed one.
-	for area_id in [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"]:
+	for area_id in CATALOG.AREA_IDS:
 		if not owns_area(area_id) or tutorial_completed_area_ids.has(area_id):
 			continue
 		if tutorial_active_kind == &"area" and tutorial_active_id == area_id:
@@ -395,6 +375,119 @@ func load_snapshot(value: Dictionary) -> void:
 	tutorial_active_kind = StringName(tutorial.get("active_kind", &"area"))
 	tutorial_active_id = StringName(tutorial.get("active_id", &"area.pancake"))
 	tutorial_failure_count_by_id = Dictionary(tutorial.get("failure_count_by_id", {})).duplicate(true)
+	_normalize_three_area_state()
+
+
+func _normalize_three_area_state() -> void:
+	unlocked_area_ids = _active_area_set(unlocked_area_ids)
+	device_tiers = _active_definition_dictionary(device_tiers, &"device")
+	unlocked_recipe_ids = _active_definition_set(unlocked_recipe_ids, &"recipe")
+	unlocked_product_ids = _active_definition_set(unlocked_product_ids, &"product")
+	unlocked_stock_ids = _active_definition_set(unlocked_stock_ids, &"stock")
+	var active_growth := {}
+	for growth_id in owned_growth_ids:
+		if bool(owned_growth_ids[growth_id]) and CATALOG.FIXED_GROWTH_ROUTE.has(StringName(growth_id)):
+			active_growth[StringName(growth_id)] = true
+	owned_growth_ids = active_growth
+	area_mastery = _active_area_dictionary(area_mastery)
+	area_mastery_details = _active_area_dictionary(area_mastery_details)
+	tutorial_completed_area_ids = _active_area_set(tutorial_completed_area_ids)
+	tutorial_queue_area_ids = _active_area_array(tutorial_queue_area_ids)
+	tutorial_completed_device_ids = _active_device_set(tutorial_completed_device_ids)
+	tutorial_queue_device_ids = _active_device_array(tutorial_queue_device_ids)
+	if tutorial_active_kind == &"area" and not CATALOG.AREA_IDS.has(tutorial_active_id):
+		tutorial_active_kind = &""
+		tutorial_active_id = &""
+	elif tutorial_active_kind == &"device" and not _device_is_active(tutorial_active_id):
+		tutorial_active_kind = &""
+		tutorial_active_id = &""
+	if not pending_install_purchase.is_empty() and not CATALOG.FIXED_GROWTH_ROUTE.has(pending_install_purchase):
+		pending_install_purchase = &""
+	if not pending_content_purchase.is_empty() and not CATALOG.FIXED_GROWTH_ROUTE.has(pending_content_purchase):
+		pending_content_purchase = &""
+	unlocked_area_ids[&"area.pancake"] = true
+	device_tiers[&"device.pancake_griddle"] = clampi(int(device_tiers.get(&"device.pancake_griddle", 0)), 0, 2)
+	for starter_recipe in [&"recipe.pancake.base"]:
+		unlocked_recipe_ids[starter_recipe] = true
+	unlocked_product_ids[&"product.pancake.custom"] = true
+	for starter_stock in [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]:
+		unlocked_stock_ids[starter_stock] = true
+
+
+func _active_area_set(source: Dictionary) -> Dictionary:
+	var result := {}
+	for raw_id in source:
+		var id := StringName(raw_id)
+		if bool(source[raw_id]) and CATALOG.AREA_IDS.has(id):
+			result[id] = true
+	return result
+
+
+func _active_area_dictionary(source: Dictionary) -> Dictionary:
+	var result := {}
+	for raw_id in source:
+		var id := StringName(raw_id)
+		if CATALOG.AREA_IDS.has(id):
+			result[id] = source[raw_id]
+	return result
+
+
+func _active_area_array(source: Array[StringName]) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for id in source:
+		if CATALOG.AREA_IDS.has(id) and not result.has(id):
+			result.append(id)
+	return result
+
+
+func _active_definition_set(source: Dictionary, kind: StringName) -> Dictionary:
+	var result := {}
+	for raw_id in source:
+		var id := StringName(raw_id)
+		var definition := _definition_for_kind(kind, id)
+		if bool(source[raw_id]) and CATALOG.AREA_IDS.has(StringName(definition.get("area_id", &""))):
+			result[id] = true
+	return result
+
+
+func _active_definition_dictionary(source: Dictionary, kind: StringName) -> Dictionary:
+	var result := {}
+	for raw_id in source:
+		var id := StringName(raw_id)
+		var definition := _definition_for_kind(kind, id)
+		if CATALOG.AREA_IDS.has(StringName(definition.get("area_id", &""))):
+			result[id] = source[raw_id]
+	return result
+
+
+func _definition_for_kind(kind: StringName, id: StringName) -> Dictionary:
+	match kind:
+		&"device": return CATALOG.device_definition(id)
+		&"recipe": return CATALOG.recipe_definition(id)
+		&"product": return CATALOG.product_definition(id)
+		&"stock": return CATALOG.stock_definition(id)
+	return {}
+
+
+func _device_is_active(device_id: StringName) -> bool:
+	return CATALOG.AREA_IDS.has(StringName(CATALOG.device_definition(device_id).get("area_id", &"")))
+
+
+func _active_device_set(source: Dictionary) -> Dictionary:
+	var result := {}
+	for raw_id in source:
+		var id := StringName(raw_id)
+		if bool(source[raw_id]) and _device_is_active(id):
+			result[id] = true
+	return result
+
+
+func _active_device_array(source: Array[StringName]) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for id in source:
+		if _device_is_active(id) and not result.has(id):
+			result.append(id)
+	return result
 
 
 func _evaluate_purchase(growth_id: StringName) -> Dictionary:

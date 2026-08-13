@@ -54,6 +54,39 @@ func start(next_order: Dictionary) -> void:
 	changed.emit()
 
 
+func snapshot() -> Dictionary:
+	return {
+		"version": 1,
+		"order": order.duplicate(true),
+		"phase": int(phase),
+		"elapsed_seconds": elapsed_seconds,
+		"patience_seconds": patience_seconds,
+		"heat_level": heat_level,
+		"result": result.duplicate(true),
+		"payment_ready": payment_ready,
+		"impatient_at_handoff": impatient_at_handoff,
+		"has_patience_countdown": has_patience_countdown,
+		"tray_handoff_active": tray_handoff_active,
+		"suspended_production_phase": suspended_production_phase,
+	}
+
+
+func load_snapshot(value: Dictionary) -> Dictionary:
+	order = Dictionary(value.get("order", {})).duplicate(true)
+	phase = clampi(int(value.get("phase", Phase.SPREAD)), Phase.SPREAD, Phase.RESULT)
+	elapsed_seconds = maxf(float(value.get("elapsed_seconds", 0.0)), 0.0)
+	patience_seconds = maxf(float(value.get("patience_seconds", order.get("time_limit", 72.0))), 0.0)
+	heat_level = clampf(float(value.get("heat_level", 0.5)), 0.0, 1.25)
+	result = Dictionary(value.get("result", {})).duplicate(true)
+	payment_ready = bool(value.get("payment_ready", false))
+	impatient_at_handoff = bool(value.get("impatient_at_handoff", false))
+	has_patience_countdown = bool(value.get("has_patience_countdown", true))
+	tray_handoff_active = bool(value.get("tray_handoff_active", false))
+	suspended_production_phase = int(value.get("suspended_production_phase", -1))
+	changed.emit()
+	return {"success": true}
+
+
 func advance_time(delta: float) -> void:
 	_advance_time(delta, true)
 

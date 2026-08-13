@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
 [ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="2_controller"]
@@ -9,7 +9,7 @@
 [ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="8_disposition"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="9_source"]
 [ext_resource type="Script" path="res://scripts/ui/five_area_material_slot.gd" id="14_material_slot"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v1_five_area_v2.png" id="15_yellow_bean"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png" id="15_yellow_bean"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="16_black_bean"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="17_red_bean"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png" id="18_multigrain"]
@@ -17,6 +17,7 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png" id="20_oil_dough"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png" id="21_sugar_dough"]
 [ext_resource type="Script" path="res://scripts/ui/tutorial_guide_overlay.gd" id="22_tutorial_overlay"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/customer_service_slot.tscn" id="23_customer_service"]
 
 [sub_resource type="StyleBoxFlat" id="WasteStyle"]
 bg_color = Color(0.72, 0.18, 0.1, 0.9)
@@ -67,12 +68,60 @@ shadow_size = 8
 [node name="Workstation" instance=ExtResource("1_base")]
 script = ExtResource("2_controller")
 
+[node name="Backdrop" parent="."]
+z_index = -200
+
 [node name="FiveAreaStationArtwork" parent="SafeArea"]
 visible = false
+
+[node name="BackgroundArtwork" parent="SafeArea"]
+z_index = -100
 
 [node name="FiveAreaStationClickLayers" parent="SafeArea"]
 visible = false
 mouse_filter = 2
+
+[node name="CustomerPortrait" parent="SafeArea"]
+visible = false
+
+[node name="PatienceBar" parent="SafeArea"]
+visible = false
+
+[node name="PatienceTextLabel" parent="SafeArea"]
+visible = false
+
+[node name="CustomerLineLabel" parent="SafeArea"]
+visible = false
+
+[node name="OrderCard" parent="SafeArea"]
+visible = false
+
+[node name="Title" parent="SafeArea/CustomerStrip"]
+text = "等候队列 · 等候期间不扣耐心"
+
+[node name="ServiceCustomer1" parent="SafeArea" instance=ExtResource("23_customer_service")]
+unique_name_in_owner = true
+z_index = 0
+offset_left = 100.0
+offset_top = 150.0
+offset_right = 640.0
+offset_bottom = 640.0
+
+[node name="ServiceCustomer2" parent="SafeArea" instance=ExtResource("23_customer_service")]
+unique_name_in_owner = true
+z_index = 0
+offset_left = 690.0
+offset_top = 150.0
+offset_right = 1230.0
+offset_bottom = 640.0
+
+[node name="ServiceCustomer3" parent="SafeArea" instance=ExtResource("23_customer_service")]
+unique_name_in_owner = true
+z_index = 0
+offset_left = 1280.0
+offset_top = 150.0
+offset_right = 1820.0
+offset_bottom = 640.0
 
 [node name="OrderDishTarget1" parent="SafeArea/OrderCard"]
 disabled = false
@@ -102,6 +151,9 @@ visible = false
 [node name="Slot06" parent="SafeArea/LockedIngredientArtwork"]
 visible = false
 
+[node name="LockedIngredientArtwork" parent="SafeArea"]
+z_index = 33
+
 [node name="Slot01LockedButton" parent="SafeArea/LockedIngredientInteractions"]
 visible = false
 mouse_filter = 2
@@ -120,6 +172,9 @@ mouse_filter = 2
 [node name="Slot06LockedButton" parent="SafeArea/LockedIngredientInteractions"]
 visible = false
 mouse_filter = 2
+
+[node name="LockedIngredientInteractions" parent="SafeArea"]
+z_index = 34
 
 [node name="SoyFullYellow" type="TextureButton" parent="SafeArea"]
 unique_name_in_owner = true

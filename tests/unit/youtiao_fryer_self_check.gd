@@ -27,12 +27,42 @@ func _initialize() -> void:
 	_check(bool(first.get("success", false)) and int(first.get("remaining_quantity", 0)) == 1 and fryer.get("state") == &"ready_to_collect", "partial collection leaves extra product in fryer")
 	_check(bool(fryer.call("collect", 1).get("success", false)) and fryer.get("state") == &"idle", "last collection releases fryer")
 
+	var stable_slots: RefCounted = MODEL.new(0, true)
+	stable_slots.call("load_recipe", &"recipe.youtiao.plain", 2)
+	stable_slots.call("start")
+	stable_slots.call("advance_time", 12.0)
+	stable_slots.call("lift")
+	stable_slots.call("advance_time", 2.0)
+	var left_result := Dictionary(stable_slots.call("collect_slot", 0))
+	_check(bool(left_result.get("success", false)) and Array(stable_slots.call("snapshot").get("occupied_slot_indices", [])).hash() == [1].hash(), "collecting the left fryer slot keeps the right product in slot one")
+	var hole_restored: RefCounted = MODEL.new()
+	hole_restored.call("load_snapshot", stable_slots.call("snapshot"))
+	_check(Array(hole_restored.call("snapshot").get("occupied_slot_indices", [])).hash() == [1].hash(), "fryer snapshot preserves an empty left slot")
+	_check(bool(hole_restored.call("collect_slot", 1).get("success", false)) and hole_restored.get("state") == &"idle", "the product remaining in the right slot can be collected independently")
+	var legacy_slots: RefCounted = MODEL.new()
+	legacy_slots.call("load_snapshot", {"owned": true, "tier": 0, "state": &"loaded", "recipe_id": &"recipe.youtiao.plain", "quantity": 2})
+	_check(Array(legacy_slots.call("snapshot").get("occupied_slot_indices", [])).hash() == [0, 1].hash(), "legacy quantity-only snapshots rebuild slots from left to right")
+
 	var burnt: RefCounted = MODEL.new(2, true)
 	burnt.call("load_recipe", &"recipe.youtiao.sugar_oil_cake", 4)
 	burnt.call("start")
 	burnt.call("advance_time", 24.001)
 	_check(burnt.get("state") == &"burnt", "advanced fryer still burns without auto lift")
 	_check(bool(burnt.call("discard").get("success", false)) and burnt.get("state") == &"idle", "burnt batch discards as one batch")
+
+	for discard_state in [&"loaded", &"frying", &"ready_safe", &"overcooking", &"draining", &"ready_to_collect", &"burnt"]:
+		var discardable: RefCounted = MODEL.new()
+		discardable.call("load_snapshot", {
+			"owned": true,
+			"tier": 0,
+			"state": discard_state,
+			"recipe_id": &"recipe.youtiao.plain",
+			"quantity": 2,
+			"quality": 0.0 if discard_state == &"burnt" else 85.0,
+		})
+		var discarded := Dictionary(discardable.call("discard_slot", 0))
+		_check(bool(discarded.get("success", false)) and int(discarded.get("quantity", 0)) == 1 and StringName(discarded.get("discarded_state", &"")) == discard_state and Array(discardable.call("snapshot").get("occupied_slot_indices", [])).hash() == [1].hash(), "%s fryer supports one-slot waste without reflowing the other slot" % discard_state)
+		_check(bool(discardable.call("discard_slot", 1).get("success", false)) and discardable.get("state") == &"idle", "%s fryer returns idle after its final slot is discarded" % discard_state)
 
 	var automated: RefCounted = MODEL.new(0, true)
 	automated.call("load_recipe", &"recipe.youtiao.plain", 1)
@@ -59,4 +89,3 @@ func _finish() -> void:
 		return
 	printerr("YOUTIAO_FRYER_SELF_CHECK_FAIL\n" + "\n".join(_failures))
 	quit(1)
-

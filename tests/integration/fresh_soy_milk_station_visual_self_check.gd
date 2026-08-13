@@ -10,6 +10,7 @@ const RECIPE_IDS := [
 const AUTO_RACK := &"automation.fresh_soy_milk.auto_cup_rack"
 
 const GENERATED_ASSETS := [
+	["res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png", Vector2i(256, 256)],
 	["res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_body_v3.png", Vector2i(1024, 512)],
 	["res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_lid_closed_v3.png", Vector2i(1024, 512)],
 	["res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_lid_open_v3.png", Vector2i(1024, 512)],
@@ -53,6 +54,7 @@ func _run() -> void:
 
 
 func _check_assets(view: Node) -> void:
+	_check(view.ingredient_textures[0].resource_path.ends_with("yellow_soybean_portion_v2_five_area_v2.png"), "yellow-bean recipe binds the revised oval-soybean scoop")
 	_check(view.body_textures.size() == 3, "three soy machine bodies are wired")
 	_check(view.closed_lid_textures.size() == 3 and view.open_lid_textures.size() == 3, "three closed and open soy lids are wired")
 	_check(view.ingredient_textures.size() == 4 and view.cup_textures.size() == 5, "four ingredients and five reusable cups are wired")

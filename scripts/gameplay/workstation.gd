@@ -17,6 +17,9 @@ const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const BASIC_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png")
+const INTERMEDIATE_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png")
+const ADVANCED_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png")
 const BASIC_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_v1.png")
 const WIDE_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png")
 const PRESS_SPREADER_TEXTURE := preload("res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png")
@@ -93,8 +96,92 @@ const CUSTOMER_TEXTURES := {
 		&"accepting_bag": preload("res://resources/art/customers/customer_10/customer_10_accepting_bag_cropped.tres"),
 		&"paying_coins": preload("res://resources/art/customers/customer_10/customer_10_paying_coins_cropped.tres"),
 	},
+	&"customer_11": {
+		&"neutral": preload("res://resources/art/customers/customer_11/customer_11_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_11/customer_11_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_11/customer_11_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_11/customer_11_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_11/customer_11_paying_coins_cropped.tres"),
+	},
+	# Each customer keeps five state slots. customer_12's full state set is kept
+	# separate so animations never fall back to its neutral portrait.
+	&"customer_12": {
+		&"neutral": preload("res://resources/art/customers/customer_12/customer_12_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_12/customer_12_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_12/customer_12_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_12/customer_12_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_12/customer_12_paying_coins_cropped.tres"),
+	},
+	# Each customer keeps five state slots. customer_13's full state set is kept
+	# separate so animations never fall back to its neutral portrait.
+	&"customer_13": {
+		&"neutral": preload("res://resources/art/customers/customer_13/customer_13_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_13/customer_13_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_13/customer_13_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_13/customer_13_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_13/customer_13_paying_coins_cropped.tres"),
+	},
+	# customer_14's confirmed cartoon identity keeps independent state portraits
+	# so the service animation does not fall back to the neutral pose.
+	&"customer_14": {
+		&"neutral": preload("res://resources/art/customers/customer_14/customer_14_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_14/customer_14_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_14/customer_14_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_14/customer_14_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_14/customer_14_paying_coins_cropped.tres"),
+	},
+	# customer_15 uses five dedicated AtlasTexture resources after neutral review.
+	&"customer_15": {
+		&"neutral": preload("res://resources/art/customers/customer_15/customer_15_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_15/customer_15_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_15/customer_15_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_15/customer_15_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_15/customer_15_paying_coins_cropped.tres"),
+	},
+	# customer_16 exposes the confirmed neutral plus all four generated action states.
+	&"customer_16": {
+		&"neutral": preload("res://resources/art/customers/customer_16/customer_16_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_16/customer_16_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_16/customer_16_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_16/customer_16_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_16/customer_16_paying_coins_cropped.tres"),
+	},
+	# customer_17's approved identity has independent action-state portraits.
+	&"customer_17": {
+		&"neutral": preload("res://resources/art/customers/customer_17/customer_17_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_17/customer_17_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_17/customer_17_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_17/customer_17_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_17/customer_17_paying_coins_cropped.tres"),
+	},
+	# customer_18 exposes the complete state-key contract while the four action
+	# Atlas resources deliberately fall back to neutral until human approval.
+	&"customer_18": {
+		&"neutral": preload("res://resources/art/customers/customer_18/customer_18_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_18/customer_18_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_18/customer_18_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_18/customer_18_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_18/customer_18_paying_coins_cropped.tres"),
+	},
+	# customer_19 uses the human-approved neutral identity plus its four dedicated
+	# action-state portraits, so workstation reactions do not fall back to neutral.
+	&"customer_19": {
+		&"neutral": preload("res://resources/art/customers/customer_19/customer_19_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_19/customer_19_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_19/customer_19_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_19/customer_19_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_19/customer_19_paying_coins_cropped.tres"),
+	},
+	# customer_20 uses independent confirmed-neutral-locked action portraits.
+	&"customer_20": {
+		&"neutral": preload("res://resources/art/customers/customer_20/customer_20_neutral_cropped.tres"),
+		&"impatient": preload("res://resources/art/customers/customer_20/customer_20_impatient_cropped.tres"),
+		&"satisfied": preload("res://resources/art/customers/customer_20/customer_20_satisfied_cropped.tres"),
+		&"accepting_bag": preload("res://resources/art/customers/customer_20/customer_20_accepting_bag_cropped.tres"),
+		&"paying_coins": preload("res://resources/art/customers/customer_20/customer_20_paying_coins_cropped.tres"),
+	},
 }
-const ORDER_CARD_COIN_TEXTURE := preload("res://resources/art/ui/economy/currency_coin_v1.png")
+const ORDER_CARD_COIN_TEXTURE := preload("res://resources/art/ui/economy/currency_coin_v2_chinese_ui.png")
 const ORDER_CARD_DISH_TEXTURE := preload("res://resources/art/workstation/textures/pancake_cooked_texture_v1.png")
 const ORDER_CARD_INGREDIENT_TEXTURES := {
 	IngredientModel.EGG: preload("res://resources/art/ingredients/egg/egg_whole_v1.png"),
@@ -112,8 +199,18 @@ const ORDER_CARD_INGREDIENT_TEXTURES := {
 	IngredientModel.YOUTIAO: preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
 	&"stock.pancake.youtiao": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
 }
-const ORDER_CARD_HEAT_TEXTURE := preload("res://resources/art/ui/quality/quality_heat_uniformity_v1_five_area_v2.png")
+const ORDER_CARD_SAUCE_TEXTURES := {
+	&"stock.pancake.sauce.sweet_flour": preload("res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png"),
+	&"stock.pancake.sauce.red_chili": preload("res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png"),
+}
+const ORDER_CARD_SAUCE_NAMES := {
+	&"stock.pancake.sauce.sweet_flour": "甜面酱",
+	&"stock.pancake.sauce.red_chili": "辣椒酱",
+}
+const ORDER_CARD_HEAT_TEXTURE := preload("res://resources/art/ui/quality/quality_heat_requirement_v2_chinese_ui.png")
+const FIVE_AREA_PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
+const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
 const DEFAULT_ORDER_COINS := 3
 const PAYMENT_SLOT_COIN_SIZE := Vector2(48.0, 48.0)
@@ -125,11 +222,11 @@ const PAYMENT_SLOT_ROW_SPACING := 24.0
 const PAYMENT_SLOT_MAX_COLUMNS := 20
 const DAILY_BILL_FIXED_SIZE := Vector2(1260.0, 820.0)
 const PAYMENT_COIN_TEXTURES := {
-	1: preload("res://resources/art/payments/coin_1_v1.png"),
-	2: preload("res://resources/art/payments/coin_2_v1.png"),
-	5: preload("res://resources/art/payments/coin_5_v1.png"),
-	10: preload("res://resources/art/payments/coin_10_v1.png"),
-	20: preload("res://resources/art/payments/coin_20_v1.png"),
+	1: preload("res://resources/art/payments/coin_1_v2_chinese_ui.png"),
+	2: preload("res://resources/art/payments/coin_2_v2_chinese_ui.png"),
+	5: preload("res://resources/art/payments/coin_5_v2_chinese_ui.png"),
+	10: preload("res://resources/art/payments/coin_10_v2_chinese_ui.png"),
+	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
 }
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SPREADER_SPEED_SLOW := -1
@@ -188,6 +285,7 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 	%CustomerSlot2.get_node("Patience"),
 	%CustomerSlot3.get_node("Patience"),
 ]
+@onready var customer_service_slots: Array[Control] = _resolve_customer_service_slots()
 @onready var customer_line_label: Label = %CustomerLineLabel
 @onready var order_coin_icon: TextureRect = %OrderCoinIcon
 @onready var order_amount_label: Label = %OrderAmountLabel
@@ -273,6 +371,7 @@ var _press_spreader_owned := false
 var _automatic_brush_owned := false
 var _chili_sauce_unlocked := false
 var _intermediate_griddle_owned := false
+var _advanced_griddle_owned := false
 var _press_spreader_used := false
 var _spreader_speed_band := SPREADER_SPEED_MEDIUM
 var _spreader_smoothed_angle := 0.0
@@ -409,8 +508,13 @@ func _ready() -> void:
 	tray_button.pressed.connect(_use_tray)
 	bag_button.pressed.connect(_use_bag)
 	store_pancake_button.pressed.connect(_store_current_pancake)
-	for slot_index in customer_slot_buttons.size():
-		customer_slot_buttons[slot_index].pressed.connect(_on_customer_slot_pressed.bind(slot_index))
+	if customer_service_slots.is_empty():
+		for slot_index in customer_slot_buttons.size():
+			customer_slot_buttons[slot_index].pressed.connect(_on_customer_slot_pressed.bind(slot_index))
+	else:
+		for service_slot in customer_service_slots:
+			service_slot.connect("focus_requested", Callable(self, "_on_customer_service_focus_requested"))
+			service_slot.connect("delivery_requested", Callable(self, "_on_customer_service_delivery_requested"))
 	for item_index in order_dish_buttons.size():
 		order_dish_buttons[item_index].pressed.connect(_on_order_dish_pressed.bind(item_index))
 	next_order_button.pressed.connect(_close_result_detail)
@@ -616,6 +720,23 @@ func _on_customer_slot_pressed(slot_index: int) -> void:
 	_pending_delivery_item_index = -1
 
 
+func _on_customer_service_focus_requested(order_id: StringName) -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("formal_order"):
+		return
+	var order := Dictionary(game_session.call("formal_order", order_id))
+	if order.is_empty():
+		return
+	_focus_formal_order(order, false)
+	_pending_delivery_item_index = -1
+
+
+func _on_customer_service_delivery_requested(order_id: StringName, item_index: int) -> void:
+	_on_customer_service_focus_requested(order_id)
+	if _formal_order_id == order_id:
+		_on_order_dish_pressed(item_index)
+
+
 func _on_order_dish_pressed(item_index: int) -> void:
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null or _formal_order_id.is_empty() or not game_session.has_method("formal_order"):
@@ -763,7 +884,10 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
 	_chili_sauce_unlocked = unlocked_stock_ids.has(&"stock.pancake.sauce.red_chili") or unlocked_stock_ids.has("stock.pancake.sauce.red_chili")
-	_intermediate_griddle_owned = int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 0)) >= 1
+	var griddle_tier := int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 0))
+	_intermediate_griddle_owned = griddle_tier >= 1
+	_advanced_griddle_owned = griddle_tier >= 2
+	_refresh_griddle_upgrade_presentation()
 	_refresh_spreader_upgrade_presentation()
 	_refresh_sauce_brush_upgrade_presentation()
 	_refresh_growth_tool_buttons()
@@ -774,6 +898,12 @@ func set_sauce_unlocked(sauce_type: StringName, unlocked: bool) -> void:
 	if sauce_type == OrderService.SAUCE_CHILI:
 		_chili_sauce_unlocked = unlocked
 	_refresh_sauce_button_states()
+
+
+func _refresh_griddle_upgrade_presentation() -> void:
+	var griddle_artwork := get_node_or_null("SafeArea/PanBase/GriddleArtwork") as Sprite2D
+	if griddle_artwork != null:
+		griddle_artwork.texture = ADVANCED_GRIDDLE_TEXTURE if _advanced_griddle_owned else INTERMEDIATE_GRIDDLE_TEXTURE if _intermediate_griddle_owned else BASIC_GRIDDLE_TEXTURE
 
 
 func _refresh_spreader_upgrade_presentation() -> void:
@@ -990,7 +1120,12 @@ func _advance_business_day_timer(delta: float) -> void:
 		if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
 			game_session.call("set_business_day_remaining_seconds", float(timer_state.get("remaining_seconds", 0.0)))
 	if bool(timer_state.get("expired_now", false)):
-		if (p1_session != null and p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]) or _should_defer_business_day_expiration():
+		var legacy_transaction_grace := (
+			_allows_transaction_cutoff_grace()
+			and p1_session != null
+			and p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
+		)
+		if legacy_transaction_grace or _should_defer_business_day_expiration():
 			# Let the current customer transaction finish. Legacy scenes defer only
 			# during handoff/payment; formal shells may keep the focused order alive.
 			_business_day_expiration_pending = true
@@ -1002,12 +1137,20 @@ func _should_defer_business_day_expiration() -> bool:
 	return false
 
 
+func _allows_transaction_cutoff_grace() -> bool:
+	return true
+
+
 func _end_business_day_for_timer() -> void:
 	_end_business_day_at_cutoff(&"timer_expired")
 
 
 func end_business_day_early_for_testing() -> void:
 	_end_business_day_at_cutoff(&"test_early_end")
+
+
+func end_business_day_early() -> void:
+	_end_business_day_at_cutoff(&"manual_early_end")
 
 
 func can_end_business_day_early_for_testing() -> bool:
@@ -1025,20 +1168,16 @@ func _end_business_day_at_cutoff(cutoff_reason: StringName) -> void:
 		_payment_tween.kill()
 	business_day_closed_shield.visible = true
 	var queued_customers: int = customer_queue.call("queue_snapshot").size() if customer_queue != null else 0
-	var formal_order_abandoned := false
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null and game_session.has_method("active_formal_orders"):
-		queued_customers = Array(game_session.call("active_formal_orders")).size()
+		queued_customers = Array(game_session.call("active_formal_orders")).size() + Array(game_session.call("waiting_formal_orders")).size()
 	if business_day_timer != null:
 		business_day_timer.set("remaining_seconds", 0.0)
 	if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
 		game_session.call("set_business_day_remaining_seconds", 0.0)
-	if game_session != null and game_session.has_method("abandon_active_formal_order"):
-		formal_order_abandoned = bool(Dictionary(game_session.call("abandon_active_formal_order", cutoff_reason)).get("success", false))
 	end_business_day({
 		"reason": cutoff_reason,
 		"unserved_customer_count": queued_customers,
-		"formal_order_abandoned": formal_order_abandoned,
 	})
 
 
@@ -1680,11 +1819,9 @@ func _enter_sauce_and_fillings_for_sauce_action() -> Dictionary:
 		return {"success": true, "without_flip": not pancake_model.is_flipped, "already_active": true}
 	if p1_session.phase != P1Session.Phase.FIRST_SIDE:
 		return {"success": false, "reason": "摊饼完成后、开始折叠前才能加酱"}
-	var result: Dictionary = p1_session.begin_sauce_and_fillings_without_flip()
-	if bool(result.get("success", false)):
-		tool_controller.clear_tool()
-		_refresh_p1_ui()
-	return result
+	# Sauce does not commit the player to the no-flip preparation route. The
+	# first topping still does so through begin_sauce_and_fillings_without_flip().
+	return {"success": true, "without_flip": false, "already_active": true}
 
 
 func _scraper_can_act() -> bool:
@@ -2834,6 +2971,11 @@ func end_business_day(cutoff: Dictionary = {}) -> void:
 	_populate_daily_bill(bill)
 	result_panel.visible = false
 	order_summary_card.visible = false
+	# GUI input follows scene-tree order rather than CanvasItem z_index. Derived
+	# workstation controls are appended after this inherited panel, so keep the
+	# outside shield and then the modal panel as the final SafeArea siblings.
+	business_day_closed_shield.move_to_front()
+	daily_bill_panel.move_to_front()
 	daily_bill_panel.visible = true
 
 
@@ -2845,6 +2987,8 @@ func _populate_daily_bill(bill: Dictionary) -> void:
 		cutoff_summary = " · 打烊超时 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
 	elif StringName(cutoff.get("reason", &"")) == &"test_early_end":
 		cutoff_summary = " · 测试提前结束，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
+	elif StringName(cutoff.get("reason", &"")) == &"manual_early_end":
+		cutoff_summary = " · 提前打烊，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
 	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 成本 %d 金币 · 毛利 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
 		int(bill.get("order_count", 0)),
 		int(bill.get("total_coins", 0)),
@@ -2944,6 +3088,8 @@ func _refresh_growth_section(message: String = "") -> void:
 		]
 		button.tooltip_text = str(presentation.get("tooltip", ""))
 		button.disabled = bool(presentation.get("disabled", true))
+		button.mouse_filter = Control.MOUSE_FILTER_STOP
+		button.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN if button.disabled else Control.CURSOR_POINTING_HAND
 	begin_next_day_button.disabled = false
 	begin_next_day_button.text = "确认预订并开始下一天" if not pending_install.is_empty() or not pending_content.is_empty() else "不购买，直接开始下一天"
 	if unlock_progress_panel.visible:
@@ -3025,6 +3171,9 @@ func _growth_requirement_text(requirement: Dictionary, compact: bool = false) ->
 		&"reputation_requirement":
 			return "声誉 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
 		&"tutorial_requirement":
+			var required_device_id := StringName(requirement.get("requires_tutorial_device_id", requirement.get("required_tutorial_device_id", &"")))
+			if not required_device_id.is_empty():
+				return "需完成饮品加热教学" if compact else _tutorial_requirement_text(requirement)
 			if compact:
 				return "需完成%s教学" % _tutorial_area_label(StringName(requirement.get("requires_tutorial_area_id", requirement.get("required_tutorial_area_id", &""))))
 			return _tutorial_requirement_text(requirement)
@@ -3060,6 +3209,9 @@ func _growth_mastery_metric_label(area_id: StringName, metric: StringName) -> St
 
 
 func _tutorial_requirement_text(recommendation: Dictionary) -> String:
+	var required_device_id := StringName(recommendation.get("requires_tutorial_device_id", recommendation.get("required_tutorial_device_id", &"")))
+	if required_device_id == &"device.packaged_drink_heater":
+		return "先完成饮品加热教学：安装基础加热器后的第 1 位顾客会点一份加热纯牛奶，完成加热与交付即可。"
 	var required_area_id := StringName(recommendation.get("requires_tutorial_area_id", recommendation.get("required_tutorial_area_id", &"")))
 	var area_label := _tutorial_area_label(required_area_id)
 	if required_area_id == &"area.pancake":
@@ -3107,6 +3259,7 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 
 func _open_unlock_progress() -> void:
 	_refresh_unlock_progress()
+	unlock_progress_panel.move_to_front()
 	unlock_progress_panel.visible = true
 	unlock_progress_close_button.grab_focus()
 
@@ -3198,8 +3351,8 @@ func _raw_order_items_for_card(order: Dictionary) -> Array[Dictionary]:
 
 func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:
 	var items := _raw_order_items_for_card(order)
-	if items.size() > 2:
-		items.resize(2)
+	if items.size() > 3:
+		items.resize(3)
 	return items
 
 
@@ -3223,6 +3376,24 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 				"texture": ingredient_texture,
 				"ingredient_id": ingredient_id,
 			})
+	# Sauce requirements follow pancake toppings. They use the same stable stock
+	# IDs as scoring so one- and two-sauce orders remain visually unambiguous.
+	for item in items:
+		var area_id := StringName(item.get("area_id", &""))
+		if not area_id.is_empty() and area_id != &"area.pancake":
+			continue
+		var sauce_ids: Array = Array(item.get("sauce_ids", []))
+		for sauce_id_value in sauce_ids:
+			var sauce_id := StringName(sauce_id_value)
+			var sauce_texture := ORDER_CARD_SAUCE_TEXTURES.get(sauce_id) as Texture2D
+			if sauce_texture == null:
+				continue
+			requirements.append({
+				"kind": ORDER_REQUIREMENT_SAUCE,
+				"texture": sauce_texture,
+				"sauce_id": sauce_id,
+				"display_name": str(ORDER_CARD_SAUCE_NAMES.get(sauce_id, sauce_id)),
+			})
 	# Heating is a preparation requirement, not another product icon. It follows
 	# all pancake ingredients and is omitted entirely for room-temperature drinks.
 	for item in items:
@@ -3241,6 +3412,9 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 
 
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
+	var tutorial_unlimited := bool(order.get("tutorial_no_countdown", false))
+	order_patience_bar.visible = not tutorial_unlimited
+	order_heart_fill.visible = not tutorial_unlimited
 	var click_delivery := _order_card_uses_click_delivery()
 	for dish_index in order_dish_icons.size():
 		var dish_icon := order_dish_icons[dish_index]
@@ -3285,7 +3459,12 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		var ingredient_icon := order_ingredient_icons[requirement_index]
 		ingredient_icon.texture = requirement.get("texture") as Texture2D
 		ingredient_icon.visible = ingredient_icon.texture != null
-		ingredient_icon.tooltip_text = "需要加热" if requirement_kind == ORDER_REQUIREMENT_HEATED else ""
+		if requirement_kind == ORDER_REQUIREMENT_HEATED:
+			ingredient_icon.tooltip_text = "需要加热"
+		elif requirement_kind == ORDER_REQUIREMENT_SAUCE:
+			ingredient_icon.tooltip_text = str(requirement.get("display_name", "酱料"))
+		else:
+			ingredient_icon.tooltip_text = ""
 		# The v3 order-card artwork already owns the eight requirement cells.
 		# Ingredient overlays only render the icon; another panel would produce a
 		# visibly offset second box. Heating keeps its semantic state highlight.
@@ -3317,18 +3496,24 @@ func _refresh_formal_patience_ui(game_session: Node) -> void:
 				slot_order = candidate
 				break
 		if slot_order.is_empty():
+			customer_slot_patience_bars[slot_index].visible = false
 			continue
 		var ratio := _formal_order_patience_ratio(slot_order)
 		var bar := customer_slot_patience_bars[slot_index]
 		bar.value = ratio * 100.0
 		var unlimited := bool(slot_order.get("tutorial_no_countdown", false))
+		bar.visible = not unlimited
 		bar.tooltip_text = "教学单·不限时" if unlimited else "耐心 %d 秒" % ceili(float(slot_order.get("remaining_patience_seconds", 0.0)))
 		if StringName(slot_order.get("order_id", &"")) == _formal_order_id:
 			focused_order = slot_order
 	if not focused_order.is_empty():
 		var focused_ratio := _formal_order_patience_ratio(focused_order)
+		var focused_unlimited := bool(focused_order.get("tutorial_no_countdown", false))
+		order_patience_bar.visible = not focused_unlimited
+		order_heart_fill.visible = not focused_unlimited
 		order_patience_bar.value = focused_ratio * 100.0
 		order_heart_fill.modulate = Color.WHITE if focused_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
+	_refresh_customer_service_slots(orders)
 
 
 static func _formal_order_patience_ratio(order: Dictionary) -> float:
@@ -3348,6 +3533,7 @@ func _refresh_p1_ui() -> void:
 	customer_line_label.text = "“%s”" % str(p1_session.order.customer_line)
 	patience_bar.visible = false
 	order_patience_bar.visible = p1_session.has_patience_countdown
+	order_heart_fill.visible = p1_session.has_patience_countdown
 	patience_text_label.visible = false
 	patience_text_label.text = "耐心 %d秒" % ceili(p1_session.patience_seconds) if p1_session.has_patience_countdown else "教学单·不限时"
 	tutorial_guide_label.visible = not p1_session.has_patience_countdown
@@ -3375,7 +3561,7 @@ func _refresh_p1_ui() -> void:
 		P1Session.Phase.SECOND_SIDE:
 			step_action_button.text = "确认火候"
 		P1Session.Phase.SAUCE_AND_FILLINGS:
-			step_action_button.text = ""
+			step_action_button.text = "翻面" if not pancake_model.is_flipped else ""
 		P1Session.Phase.FOLD, P1Session.Phase.PACKAGE:
 			step_action_button.text = ""
 		P1Session.Phase.READY_TO_SERVE:
@@ -3389,10 +3575,15 @@ func _refresh_p1_ui() -> void:
 	packaging_choices.visible = packaging_phase
 	heat_label.visible = not packaging_phase
 	heat_slider.visible = false
+	var blocked_unflipped_topping := (
+		p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		and not pancake_model.is_flipped
+		and ingredient_model.has_toppings()
+	)
 	step_action_button.visible = p1_session.phase in [
 		P1Session.Phase.FIRST_SIDE,
 		P1Session.Phase.SECOND_SIDE,
-	]
+	] or blocked_unflipped_topping
 	step_action_button.disabled = false
 	step_action_button.tooltip_text = ""
 	if p1_session.phase == P1Session.Phase.FIRST_SIDE:
@@ -3405,6 +3596,10 @@ func _refresh_p1_ui() -> void:
 		elif not can_flip:
 			step_action_button.text = "翻面（尚未就绪）"
 			step_action_button.tooltip_text = str(flip_readiness.get("reason", "请先完成翻面准备"))
+	elif blocked_unflipped_topping:
+		step_action_button.disabled = true
+		step_action_button.text = "翻面（已放小料）"
+		step_action_button.tooltip_text = "面饼上已有小料，不能翻面；请继续加酱和小料后折叠"
 	var ready_to_serve := p1_session.phase == P1Session.Phase.READY_TO_SERVE
 	serve_product_button.visible = false
 	serve_product_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -3469,38 +3664,88 @@ func _set_customer_portrait_state(state: StringName) -> void:
 
 func _refresh_customer_queue() -> void:
 	var orders: Array = []
+	var waiting: Array = []
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null and game_session.has_method("active_formal_orders"):
 		orders = Array(game_session.call("active_formal_orders"))
-	queue_status_label.text = "店内\n%d/3" % orders.size()
+	if game_session != null and game_session.has_method("waiting_formal_orders"):
+		waiting = Array(game_session.call("waiting_formal_orders"))
+	queue_status_label.text = "排队\n%d/3" % mini(waiting.size(), 3)
 	for slot_index in customer_slot_buttons.size():
 		var button := customer_slot_buttons[slot_index]
 		var bar := customer_slot_patience_bars[slot_index]
-		var order := {}
-		for order_variant in orders:
-			var candidate := Dictionary(order_variant)
-			if int(candidate.get("service_slot", -1)) == slot_index:
-				order = candidate
-				break
+		var order := Dictionary(waiting[slot_index]) if slot_index < waiting.size() else {}
 		button.visible = not order.is_empty()
+		bar.visible = false
 		if order.is_empty():
 			continue
 		var customer_id := StringName(order.get("customer_id", CUSTOMER_QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS[slot_index]))
 		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
 		button.icon = textures[&"neutral"]
+		button.text = "等候 %d" % (slot_index + 1)
+		button.tooltip_text = "等候期间不扣耐心"
+		button.toggle_mode = false
+		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.set_pressed_no_signal(false)
+	_refresh_customer_service_slots(orders)
+
+
+func _resolve_customer_service_slots() -> Array[Control]:
+	var result: Array[Control] = []
+	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3"]:
+		var node := get_node_or_null("SafeArea/%s" % node_name) as Control
+		if node != null:
+			result.append(node)
+	return result
+
+
+func _refresh_customer_service_slots(orders: Array) -> void:
+	if customer_service_slots.is_empty():
+		return
+	var centered_tutorial: Dictionary = {}
+	if orders.size() == 1:
+		var only_order := Dictionary(orders[0])
+		if bool(only_order.get("tutorial_no_countdown", false)):
+			centered_tutorial = only_order
+	for service_slot_index in range(customer_service_slots.size()):
+		var order: Dictionary = {}
+		if not centered_tutorial.is_empty():
+			if service_slot_index == 1:
+				order = centered_tutorial
+		else:
+			for order_variant in orders:
+				var candidate := Dictionary(order_variant)
+				if int(candidate.get("service_slot", -1)) == service_slot_index:
+					order = candidate
+					break
+		if order.is_empty():
+			customer_service_slots[service_slot_index].call("bind_order", {}, false, null, [], [], 0)
+			continue
+		var item_textures: Array = []
+		var items := Array(order.get("items", []))
+		if items.size() > 3:
+			items.resize(3)
+		for item_variant in items:
+			var item := Dictionary(item_variant)
+			item_textures.append(FIVE_AREA_PRODUCT_VISUALS.texture_for(StringName(item.get("product_id", &"")), StringName(item.get("temperature_mode", &"room_temperature"))))
+		var requirements: Array = _order_requirements_for_card(order)
+		if requirements.size() > 8:
+			requirements.resize(8)
 		var metadata := Dictionary(order.get("metadata", {}))
-		var legacy := Dictionary(metadata.get("legacy_order", {}))
-		var title := str(legacy.get("title", "顾客%d" % (slot_index + 1)))
-		if title.length() > 7:
-			title = title.left(7)
-		button.text = title
-		button.tooltip_text = str(legacy.get("customer_line", title))
-		button.toggle_mode = true
-		button.set_pressed_no_signal(StringName(order.get("order_id", &"")) == _formal_order_id)
-		var patience_total := maxf(float(order.get("patience_seconds", 0.0)), 0.001)
-		var unlimited := bool(order.get("tutorial_no_countdown", false))
-		bar.value = 100.0 if unlimited else clampf(float(order.get("remaining_patience_seconds", 0.0)) / patience_total, 0.0, 1.0) * 100.0
-		bar.tooltip_text = "教学单·不限时" if unlimited else "耐心 %d 秒" % ceili(float(order.get("remaining_patience_seconds", 0.0)))
+		var coin_total := int(order.get("base_coins", metadata.get("base_coins", 0)))
+		var customer_id := StringName(order.get("customer_id", &"customer_01"))
+		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
+		var ratio := _formal_order_patience_ratio(order)
+		var reaction := &"impatient" if ratio <= P1Session.IMPATIENT_RATIO_THRESHOLD else &"neutral"
+		customer_service_slots[service_slot_index].call(
+			"bind_order",
+			order,
+			StringName(order.get("order_id", &"")) == _formal_order_id,
+			textures.get(reaction, textures[&"neutral"]) as Texture2D,
+			item_textures,
+			requirements,
+			coin_total,
+		)
 
 
 func _refresh_customer_queue_legacy() -> void:

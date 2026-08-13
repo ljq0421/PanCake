@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/ui/direct_packaged_drink_station.gd" id="1_root"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/packaged_drink_display_rack_tier_1_five_area_v4.png" id="2_cabinet"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_1_five_area_v2.png" id="3_heater"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_0_v1_chinese.png" id="3_heater"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="4_source"]
 [ext_resource type="Script" path="res://scripts/ui/heater_slot_drop_target.gd" id="6_heater_drop"]
 [ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="7_disposition"]
@@ -74,6 +74,7 @@ anchors_preset = 0
 offset_right = 306.0
 offset_bottom = 380.0
 script = ExtResource("1_root")
+
 heater_empty_style = SubResource("HeaterSlotStyle")
 heater_heating_style = SubResource("HeaterHeatingStyle")
 heater_ready_style = SubResource("HeaterReadyStyle")
@@ -181,10 +182,10 @@ stretch_mode = 5
 
 [node name="Lane01" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 30.0
-offset_top = 25.0
-offset_right = 143.0
-offset_bottom = 79.0
+offset_left = 24.0
+offset_top = 22.0
+offset_right = 145.0
+offset_bottom = 84.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
@@ -192,10 +193,10 @@ hold_enabled = true
 hold_threshold_seconds = 0.1
 [node name="Lane02" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 150.0
-offset_top = 25.0
-offset_right = 264.0
-offset_bottom = 79.0
+offset_left = 145.0
+offset_top = 22.0
+offset_right = 282.0
+offset_bottom = 84.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
@@ -203,10 +204,10 @@ hold_enabled = true
 hold_threshold_seconds = 0.1
 [node name="Lane03" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 30.0
-offset_top = 87.0
-offset_right = 143.0
-offset_bottom = 141.0
+offset_left = 24.0
+offset_top = 84.0
+offset_right = 145.0
+offset_bottom = 146.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
@@ -214,10 +215,10 @@ hold_enabled = true
 hold_threshold_seconds = 0.1
 [node name="Lane04" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 150.0
-offset_top = 87.0
-offset_right = 264.0
-offset_bottom = 141.0
+offset_left = 145.0
+offset_top = 84.0
+offset_right = 282.0
+offset_bottom = 146.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_source")
@@ -409,6 +410,21 @@ mouse_filter = 2
 theme_override_colors/font_color = Color(0.25, 0.14, 0.07, 1)
 text = "四条货道独立计数 · 拖拽取物"
 horizontal_alignment = 1
+
+[node name="HeaterLockCover" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 194.0
+offset_right = 288.0
+offset_bottom = 340.0
+theme_override_colors/font_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_colors/font_hover_color = Color(0.34, 0.18, 0.06, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("LockStyle")
+theme_override_styles/hover = SubResource("LockStyle")
+theme_override_styles/pressed = SubResource("LockStyle")
+text = "🔒 加热区待解锁"
 
 [node name="LockCover" type="Button" parent="."]
 unique_name_in_owner = true

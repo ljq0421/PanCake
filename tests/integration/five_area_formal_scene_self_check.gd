@@ -83,12 +83,12 @@ func _run() -> void:
 	var machine_stage := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/YoutiaoStation/MachineStage") as Control
 	_check(machine_stage != null and machine_stage.position.is_equal_approx(Vector2(-12.0, 52.0)) and machine_stage.size.is_equal_approx(Vector2(330.0, 176.0)), "youtiao machine stage uses the lowered enlarged authored rect")
 	_check(machine_stage != null and not machine_stage.clip_contents, "youtiao machine stage leaves the enlarged artwork unclipped")
-	var basic_lowered: Array[Rect2] = [Rect2(124, 38, 38, 30), Rect2(153, 38, 38, 30), Rect2(), Rect2()]
-	var basic_raised: Array[Rect2] = [Rect2(124, 16, 38, 30), Rect2(153, 16, 38, 30), Rect2(), Rect2()]
+	var basic_lowered: Array[Rect2] = [Rect2(116, 38, 38, 30), Rect2(158, 38, 38, 30), Rect2(), Rect2()]
+	var basic_raised: Array[Rect2] = [Rect2(116, 16, 38, 30), Rect2(158, 16, 38, 30), Rect2(), Rect2()]
 	var advanced_lowered: Array[Rect2] = [Rect2(96, 40, 32, 29), Rect2(130, 40, 32, 29), Rect2(164, 40, 32, 29), Rect2(198, 40, 32, 29)]
 	var advanced_raised: Array[Rect2] = [Rect2(111, 5, 32, 29), Rect2(136, 5, 32, 29), Rect2(161, 5, 32, 29), Rect2(186, 5, 32, 29)]
-	_check(DirectYoutiaoStation._food_rects(0, false) == basic_lowered and DirectYoutiaoStation._food_rects(1, false) == basic_lowered, "basic and intermediate lowered baskets keep both food slots inside the basket")
-	_check(DirectYoutiaoStation._food_rects(0, true) == basic_raised and DirectYoutiaoStation._food_rects(1, true) == basic_raised, "basic and intermediate raised baskets keep both food slots inside the basket")
+	_check(DirectYoutiaoStation._food_rects(0, false) == basic_lowered and DirectYoutiaoStation._food_rects(1, false) == basic_lowered, "basic and intermediate lowered baskets keep two non-overlapping food slots inside the basket")
+	_check(DirectYoutiaoStation._food_rects(0, true) == basic_raised and DirectYoutiaoStation._food_rects(1, true) == basic_raised, "basic and intermediate raised baskets keep two non-overlapping food slots inside the basket")
 	_check(DirectYoutiaoStation._food_rects(2, false) == advanced_lowered, "advanced lowered basket keeps all four food slots inside the basket")
 	_check(DirectYoutiaoStation._food_rects(2, true) == advanced_raised, "advanced raised basket keeps all four food slots inside the basket")
 	_check([DirectYoutiaoStation._front_clip_top(0, false), DirectYoutiaoStation._front_clip_top(1, false), DirectYoutiaoStation._front_clip_top(2, false)] == [64.0, 64.0, 66.0], "all lowered basket front-wall clip lines remain registered to their tier artwork")

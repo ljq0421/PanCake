@@ -31,6 +31,28 @@ func _run() -> void:
 	_check(bool(Dictionary(day_one_items[1]).get("can_purchase", false)), "reputation 20 satisfies the chili reputation gate on day one")
 	_check(bool(Dictionary(day_one_items[2]).get("can_purchase", false)), "six qualified pancakes and tutorial completion satisfy the drink-area gate on day one")
 	_check(not Array(Dictionary(day_one_items[0]).get("missing_requirements", [])).is_empty(), "locked recommendation retains its complete requirement list")
+	var tutorial_matrix = SERVICE.new({
+		"unlocked_area_ids": [&"area.pancake"],
+		"tutorial": {"completed_area_ids": [&"area.pancake"], "completed_device_ids": [], "queue_area_ids": [], "queue_device_ids": [], "active_kind": &"", "active_id": &""},
+	})
+	var expected_area_tutorials: Array[StringName] = []
+	var expected_device_tutorials: Array[StringName] = []
+	for growth_id_variant in CATALOG.GROWTH_DEFINITIONS:
+		var growth_id := StringName(growth_id_variant)
+		var definition := Dictionary(CATALOG.GROWTH_DEFINITIONS[growth_id])
+		var growth_kind := StringName(definition.get("kind", &""))
+		if growth_kind == &"area_unlock":
+			expected_area_tutorials.append(StringName(definition.get("area_id", &"")))
+		elif growth_kind == &"device_unlock":
+			expected_device_tutorials.append(StringName(definition.get("device_id", &"")))
+		tutorial_matrix._apply_growth(growth_id, definition)
+	var matrix_tutorial := Dictionary(tutorial_matrix.tutorial_snapshot())
+	_check(
+		Array(matrix_tutorial.get("queue_area_ids", [])) == expected_area_tutorials
+		and Array(matrix_tutorial.get("queue_device_ids", [])) == expected_device_tutorials,
+		"the complete growth matrix queues tutorials only for new areas and first-time device unlocks"
+	)
+	_check(expected_area_tutorials == [&"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"] and expected_device_tutorials == [&"device.packaged_drink_heater"], "content, recipes, tools, assists, capacity, automation, tray capacity, and device tiers add no tutorial entries")
 	day_one.set_day_open(false)
 	var ready_day_end_items: Array = Array(day_one.growth_recommendations(3).get("recommended", []))
 	_check(StringName(Dictionary(ready_day_end_items[0]).get("reason", &"")) == &"day_requirement", "closing the day never replaces the frontier's real day gate")
@@ -79,6 +101,7 @@ func _run() -> void:
 			&"growth.tool.pancake.wide_spreader",
 			&"growth.add_on.pancake.red_chili",
 			&"growth.area.packaged_drink",
+			&"growth.equipment.packaged_drink.basic",
 			&"growth.equipment.pancake.intermediate",
 			&"growth.add_on.pancake.ham_sausage",
 			&"growth.product.packaged_drink.soy_milk",
@@ -117,13 +140,15 @@ func _run() -> void:
 	_check(bool(Dictionary(day_two_items[0]).get("can_purchase", false)) and bool(Dictionary(day_two_items[1]).get("can_purchase", false)), "D2 permits the qualified spreader and chili purchases")
 	_check(bool(Dictionary(day_two_items[2]).get("can_purchase", false)), "the drink area uses qualified pancakes instead of a day gate")
 	_check(bool(day_two.purchase(&"growth.tool.pancake.wide_spreader").get("success", false)) and bool(day_two.purchase(&"growth.add_on.pancake.red_chili").get("success", false)), "D2 accepts one installation and one content purchase")
+	var wide_spreader_tutorial_before := day_two.tutorial_snapshot()
 	var pending_items: Array = Array(day_two.growth_recommendations(3).get("recommended", []))
 	_check(_growth_ids(pending_items) == _growth_ids(day_two_items), "pending purchases remain in their route positions until next-day activation")
 	_check(bool(Dictionary(pending_items[0]).get("pending_activation", false)) and bool(Dictionary(pending_items[1]).get("pending_activation", false)), "pending route cards expose explicit activation state")
 	day_two.set_day_open(false)
 	var day_three_activation: Dictionary = day_two.begin_next_business_day()
 	_check(bool(day_three_activation.get("success", false)) and int(day_three_activation.get("current_day", 0)) == 3, "D2 purchases activate on D3")
-	_check(_growth_ids(Array(day_two.growth_recommendations(3).get("recommended", []))) == [&"growth.area.packaged_drink", &"growth.equipment.pancake.intermediate", &"growth.add_on.pancake.ham_sausage"], "activated growth leaves the queue and advances the fixed three-card window")
+	_check(day_two.tutorial_snapshot() == wide_spreader_tutorial_before, "wide spreader activation adds no tutorial state, queue entry, or guide")
+	_check(_growth_ids(Array(day_two.growth_recommendations(3).get("recommended", []))) == [&"growth.area.packaged_drink", &"growth.equipment.packaged_drink.basic", &"growth.equipment.pancake.intermediate"], "activated growth leaves the queue and exposes the base heater immediately after the drink cabinet")
 
 	var day_three = SERVICE.new({
 		"coins": 100,

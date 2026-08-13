@@ -4,6 +4,7 @@ const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.
 const SCREENSHOT_CAPTURES := [
 	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/five_area_growth_ui_gpu_1920x1080.png"},
 	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/five_area_growth_ui_gpu_1280x720.png"},
+	{"size": Vector2i(1366, 768), "path": "res://tmp/validation/five_area_growth_ui_gpu_1366x768.png"},
 ]
 
 var _failures := PackedStringArray()
@@ -69,6 +70,16 @@ func _run() -> void:
 		var save_error := image.save_png(output_absolute)
 		_check(save_error == OK and image.get_size() == capture_size, "GPU day-end scene captures at %dx%d" % [capture_size.x, capture_size.y])
 		output_paths.append(output_absolute)
+		for ticket in [ticket_1, ticket_2, ticket_3]:
+			for ratio in [Vector2(0.02, 0.02), Vector2(0.5, 0.02), Vector2(0.98, 0.02), Vector2(0.02, 0.5), Vector2(0.5, 0.5), Vector2(0.98, 0.5), Vector2(0.02, 0.98), Vector2(0.5, 0.98), Vector2(0.98, 0.98)]:
+				var hovered := await _hover_control(ticket, ratio)
+				var hovered_path := str(hovered.get_path()) if hovered != null else "<none>"
+				_check(hovered == ticket, "growth card %s owns point %.2f,%.2f at %dx%d (hovered %s)" % [ticket.name, ratio.x, ratio.y, capture_size.x, capture_size.y, hovered_path])
+		var first_gap := Vector2(ticket_1.get_global_rect().end.x + (ticket_2.get_global_rect().position.x - ticket_1.get_global_rect().end.x) * 0.5, ticket_1.get_global_rect().get_center().y)
+		var second_gap := Vector2(ticket_2.get_global_rect().end.x + (ticket_3.get_global_rect().position.x - ticket_2.get_global_rect().end.x) * 0.5, ticket_2.get_global_rect().get_center().y)
+		for gap_position in [first_gap, second_gap]:
+			await _move_pointer(gap_position)
+			_check(root.gui_get_hovered_control() not in [ticket_1, ticket_2, ticket_3], "card gap does not hover a growth card at %dx%d" % [capture_size.x, capture_size.y])
 		await _click_control(unlock_progress_button, 0.25)
 		_check(unlock_progress_panel.visible, "unlock progress opens from the left side at %dx%d" % [capture_size.x, capture_size.y])
 		station.call("_close_unlock_progress")
@@ -95,11 +106,7 @@ func _run() -> void:
 func _click_control(control: Control, horizontal_ratio: float = 0.5) -> void:
 	var local_position := Vector2(control.size.x * horizontal_ratio, control.size.y * 0.5)
 	var position := control.get_global_transform_with_canvas() * local_position
-	var motion := InputEventMouseMotion.new()
-	motion.position = position
-	motion.global_position = position
-	root.push_input(motion, true)
-	await process_frame
+	await _move_pointer(position)
 	var pressed := InputEventMouseButton.new()
 	pressed.button_index = MOUSE_BUTTON_LEFT
 	pressed.pressed = true
@@ -113,6 +120,27 @@ func _click_control(control: Control, horizontal_ratio: float = 0.5) -> void:
 	released.position = position
 	released.global_position = position
 	root.push_input(released, true)
+	await process_frame
+
+
+func _hover_control(control: Control, local_ratio: Vector2) -> Control:
+	var local_position := Vector2(control.size.x * local_ratio.x, control.size.y * local_ratio.y)
+	await _move_pointer(control.get_global_transform_with_canvas() * local_position)
+	return root.gui_get_hovered_control()
+
+
+func _move_pointer(position: Vector2) -> void:
+	var logical_size := root.get_visible_rect().size
+	var window_size := Vector2(DisplayServer.window_get_size())
+	var window_position := position
+	if logical_size.x > 0.0 and logical_size.y > 0.0:
+		window_position *= window_size / logical_size
+	Input.warp_mouse(window_position)
+	await process_frame
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	motion.global_position = position
+	root.push_input(motion, true)
 	await process_frame
 
 

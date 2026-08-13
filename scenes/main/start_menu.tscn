@@ -1,7 +1,7 @@
 [gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/main/start_menu.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v2.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v3_chinese.png" id="2_background"]
 
 [sub_resource type="StyleBoxFlat" id="Style_menu_panel"]
 content_margin_left = 42.0

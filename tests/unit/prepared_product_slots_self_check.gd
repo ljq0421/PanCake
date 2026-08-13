@@ -20,6 +20,17 @@ func _run() -> void:
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.youtiao.oil_cake": true, &"recipe.youtiao.sugar_oil_cake": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.youtiao.oil_cake": true, &"product.youtiao.sugar_oil_cake": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
+	var fryer_inventory := Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.youtiao.plain_dough"] = 2
+	session.call("save_inventory", fryer_inventory)
+	var loaded_batch := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 2))
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 12.0)
+	session.call("perform_f3_youtiao_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var discarded_output := Dictionary(session.call("discard_product_source", {"source_kind": &"youtiao_output", "source_index": -1, "product_id": &"product.youtiao.plain", "discardable": true}))
+	var fryer_after_discard := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(bool(loaded_batch.get("success", false)) and bool(discarded_output.get("success", false)) and int(discarded_output.get("remaining_quantity", -1)) == 1 and int(fryer_after_discard.get("quantity", 0)) == 1 and StringName(fryer_after_discard.get("state", &"")) == &"ready_to_collect" and int(Dictionary(discarded_output.get("waste", {})).get("quantity", 0)) == 1, "drag-discarding the fryer output removes and records exactly one ready product")
 
 	var plain_a := _product(&"plain.a", &"product.youtiao.plain", 88.0, &"A", 2)
 	var plain_b := _product(&"plain.b", &"product.youtiao.plain", 72.0, &"B", 2)
@@ -35,6 +46,10 @@ func _run() -> void:
 	session.call("clear_prepared_product_slots")
 	var stored_product := plain_a.duplicate(true)
 	session.call("_append_prepared_product", &"slot.04", stored_product)
+	session.call("_append_prepared_product", &"slot.04", plain_b)
+	var discarded_one := Dictionary(session.call("discard_prepared_product", &"slot.04"))
+	_check(bool(discarded_one.get("success", false)) and int(discarded_one.get("count", -1)) == 1 and int(Dictionary(discarded_one.get("waste", {})).get("attributed_cost", 0)) == 2, "drag-discarding a prepared fryer slot removes one FIFO product and records its actual material cost")
+	stored_product = plain_b.duplicate(true)
 
 	var opened := Dictionary(session.call("open_formal_order", [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1}]))
 	var order_id := StringName(Dictionary(opened.get("order", {})).get("order_id", &""))

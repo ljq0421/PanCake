@@ -42,11 +42,13 @@ func _refresh_visual() -> void:
 		else "拖入匹配炸物" if _unlocked
 		else "对应炸物配方尚未解锁"
 	)
-	mouse_default_cursor_shape = Control.CURSOR_DRAG if allow_pancake_drag and _count > 0 else Control.CURSOR_POINTING_HAND
+	if _unlocked:
+		tooltip_text = "可拖到制作区使用，也可拖到废弃区逐份丢弃" if allow_pancake_drag else "可拖到废弃区逐份丢弃"
+	mouse_default_cursor_shape = Control.CURSOR_DRAG if _count > 0 else Control.CURSOR_POINTING_HAND
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not allow_pancake_drag or _count <= 0 or not _unlocked:
+	if _count <= 0 or not _unlocked:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
@@ -58,7 +60,23 @@ func _gui_input(event: InputEvent) -> void:
 		var current := get_viewport().get_mouse_position()
 		if current.distance_to(_press_position) > drag_threshold_pixels:
 			_press_pending = false
-			drag_requested.emit(ingredient_type, _press_position)
+			if allow_pancake_drag:
+				drag_requested.emit(ingredient_type, _press_position)
+			var preview := TextureRect.new()
+			preview.texture = product_texture
+			preview.custom_minimum_size = Vector2(64.0, 64.0)
+			preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			force_drag({
+				"kind": &"product_source",
+				"source_ref": {
+					"source_kind": &"prepared_product_slot",
+					"source_slot_id": slot_id,
+					"source_index": -1,
+					"product_id": product_id,
+					"discardable": true,
+				},
+			}, preview)
 			accept_event()
 
 
@@ -69,7 +87,12 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	if StringName(payload.get("kind", &"")) != &"product_source":
 		return false
 	var source_ref := Dictionary(payload.get("source_ref", {}))
-	return StringName(source_ref.get("source_kind", &"")) == &"youtiao_output"
+	return (
+		_unlocked
+		and _count < 6
+		and StringName(source_ref.get("source_kind", &"")) == &"youtiao_output"
+		and StringName(source_ref.get("product_id", &"")) == product_id
+	)
 
 
 func _drop_data(_at_position: Vector2, _data: Variant) -> void:

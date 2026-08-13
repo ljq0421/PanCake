@@ -45,7 +45,7 @@ func _run() -> void:
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"frying"}
 	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.youtiao_station.state_label, "frying wait points to the device state")
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"ready_to_collect"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.order_dish_buttons[0], "ready youtiao points to order click delivery")
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.youtiao_station.prepared_slots[0], "ready youtiao points to the matching prepared-product slot")
 
 	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"loaded"}
 	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.water_button, "loaded soy points to add water")

@@ -11,6 +11,23 @@ const PANCAKE_ITEM := {
 		&"stock.pancake.scallion",
 	],
 }
+const SINGLE_SAUCE_PANCAKE_ITEM := {
+	"area_id": &"area.pancake",
+	"product_id": &"product.pancake.custom",
+	"quantity": 1,
+	"ingredient_ids": [&"stock.pancake.egg"],
+	"sauce_ids": [&"stock.pancake.sauce.sweet_flour"],
+}
+const DOUBLE_SAUCE_PANCAKE_ITEM := {
+	"area_id": &"area.pancake",
+	"product_id": &"product.pancake.custom",
+	"quantity": 1,
+	"ingredient_ids": [&"stock.pancake.egg"],
+	"sauce_ids": [
+		&"stock.pancake.sauce.sweet_flour",
+		&"stock.pancake.sauce.red_chili",
+	],
+}
 const HEATED_SOY_ITEM := {
 	"area_id": &"area.packaged_drink",
 	"product_id": &"product.packaged_drink.soy_milk",
@@ -55,6 +72,18 @@ func _run() -> void:
 	for slot_index in range(3, 8):
 		_assert_empty_slot(workstation, slot_index, "classic pancake leaves later requirement slots empty")
 
+	workstation.call("_refresh_order_card_ui", {"items": [SINGLE_SAUCE_PANCAKE_ITEM]}, 1.0)
+	_assert_texture(workstation, 0, "egg_whole_v1.png", "single-sauce order keeps topping first")
+	_assert_texture(workstation, 1, "sweet_flour_sauce_texture_v1.png", "single-sauce order shows sweet flour sauce")
+	_check(_icon(workstation, 1).tooltip_text == "甜面酱", "sweet flour sauce requirement has a distinct name")
+
+	workstation.call("_refresh_order_card_ui", {"items": [HEATED_SOY_ITEM, DOUBLE_SAUCE_PANCAKE_ITEM]}, 1.0)
+	_assert_texture(workstation, 0, "egg_whole_v1.png", "double-sauce order keeps topping first")
+	_assert_texture(workstation, 1, "sweet_flour_sauce_texture_v1.png", "double-sauce order shows sweet flour sauce")
+	_assert_texture(workstation, 2, "red_chili_sauce_texture_v1.png", "double-sauce order shows chili sauce")
+	_check(_icon(workstation, 2).tooltip_text == "辣椒酱", "chili sauce requirement has a distinct name")
+	_assert_texture(workstation, 3, "quality_heat_requirement_v2_chinese_ui.png", "heating marker follows toppings and sauces")
+
 	# Reverse item order on purpose: pancake ingredients must still render first.
 	workstation.call("_refresh_order_card_ui", {"items": [HEATED_SOY_ITEM, PANCAKE_ITEM]}, 1.0)
 	_assert_pancake_prefix(workstation)
@@ -64,7 +93,7 @@ func _run() -> void:
 	_check(
 		heat_icon.visible
 		and heat_icon.texture != null
-		and heat_icon.texture.resource_path.ends_with("quality_heat_uniformity_v1_five_area_v2.png"),
+		and heat_icon.texture.resource_path.ends_with("quality_heat_requirement_v2_chinese_ui.png"),
 		"heated packaged drink appends the generic heat marker in row-major slot 4",
 	)
 	_check(heat_background.visible and not ingredient_background.visible, "heated requirement owns the distinct warm background in slot 4")
@@ -95,6 +124,11 @@ func _assert_pancake_prefix(workstation: Node) -> void:
 			and not _heat_background(workstation, slot_index).visible,
 			"pancake ingredient slot %d uses only the authored order-card cell without a second background" % (slot_index + 1),
 		)
+
+
+func _assert_texture(workstation: Node, slot_index: int, suffix: String, message: String) -> void:
+	var icon := _icon(workstation, slot_index)
+	_check(icon.visible and icon.texture != null and icon.texture.resource_path.ends_with(suffix), message)
 
 
 func _assert_empty_slot(workstation: Node, slot_index: int, message: String) -> void:

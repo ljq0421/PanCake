@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dlcwklpi14sa0"]
 
 [ext_resource type="Script" uid="uid://dhcmfxbexd8qy" path="res://scripts/gameplay/workstation.gd" id="1_w0g34"]
+[ext_resource type="Script" path="res://scripts/ui/modal_outside_input_shield.gd" id="100_modal_shield"]
 [ext_resource type="Resource" uid="uid://c8n37jd6t6h6m" path="res://resources/data/pancake_simulation_parameters.tres" id="2_o4c2u"]
 [ext_resource type="Script" uid="uid://b6h76nn424x1l" path="res://scripts/input/tool_controller.gd" id="3_itptj"]
 [ext_resource type="Script" uid="uid://cd7uj068vyls8" path="res://scripts/ui/warning_tone_player.gd" id="4_mrono"]
@@ -12,53 +13,53 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="10_oa5o0"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="11_1wi16"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="12_wd07g"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v7.png" id="13_nrgyx"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v8_chinese.png" id="13_nrgyx"]
 [ext_resource type="Texture2D" path="res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres" id="14_2kg7p"]
-[ext_resource type="Texture2D" uid="uid://ufrhlritjp3m" path="res://resources/art/ui/order/order_card_multi_dish_v3.png" id="15_rdwwv"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_multi_dish_v4_chinese_ui.png" id="15_rdwwv"]
 [ext_resource type="Texture2D" uid="uid://dfm5ihdvdkscq" path="res://resources/art/ingredients/egg/egg_whole_v1.png" id="16_r8aep"]
 [ext_resource type="Texture2D" uid="uid://edwa30tfcgk7" path="res://resources/art/ingredients/scallion/scallion_pile_v1.png" id="17_wu41v"]
 [ext_resource type="Texture2D" uid="uid://dx4i6yyldbyyr" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="18_rugnw"]
-[ext_resource type="Texture2D" uid="uid://bbqkjqdcle4xb" path="res://resources/art/payments/coin_1_v1.png" id="19_1yu0j"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="19_1yu0j"]
 [ext_resource type="Texture2D" uid="uid://cjjb4js2vdvv5" path="res://resources/art/workstation/restock/egg_carton_v1.png" id="20_s333w"]
 [ext_resource type="Texture2D" uid="uid://c6io1wl2pg3il" path="res://resources/art/workstation/restock/baocui_tin_v1.png" id="21_git47"]
 [ext_resource type="Texture2D" uid="uid://b4esmvc4v6rre" path="res://resources/art/workstation/restock/ham_fresh_box_v1.png" id="22_nodi7"]
 [ext_resource type="Texture2D" uid="uid://dpr1l7a1rkwjf" path="res://resources/art/workstation/restock/scallion_enamel_jar_v1.png" id="23_c5a05"]
 [ext_resource type="Script" uid="uid://rm3k4lwmrbcm" path="res://scripts/ui/ingredient_stock_slot.gd" id="24_ak4px"]
-[ext_resource type="Texture2D" uid="uid://cebl18j2e8ghk" path="res://resources/art/ingredients/egg/stock/egg_stock_1_v1.png" id="25_i1y3k"]
-[ext_resource type="Texture2D" uid="uid://bd78w0nwiiahp" path="res://resources/art/ingredients/egg/stock/egg_stock_2_v1.png" id="26_iypp0"]
-[ext_resource type="Texture2D" uid="uid://bpvworhiqaaxi" path="res://resources/art/ingredients/egg/stock/egg_stock_3_v1.png" id="27_8jjje"]
-[ext_resource type="Texture2D" uid="uid://c3woswwmcemrf" path="res://resources/art/ingredients/egg/stock/egg_stock_4_v1.png" id="28_74f5m"]
-[ext_resource type="Texture2D" uid="uid://b84u0da0ixk7w" path="res://resources/art/ingredients/egg/stock/egg_stock_5_v1.png" id="29_ka77d"]
-[ext_resource type="Texture2D" uid="uid://d1o87h1xuf3mf" path="res://resources/art/ingredients/egg/stock/egg_stock_6_v1.png" id="30_7aidc"]
-[ext_resource type="Texture2D" uid="uid://bbejymqf6tkax" path="res://resources/art/ingredients/baocui/stock/baocui_stock_1_v1.png" id="31_p1qa3"]
-[ext_resource type="Texture2D" uid="uid://bidt8c58vx5ke" path="res://resources/art/ingredients/baocui/stock/baocui_stock_2_v1.png" id="32_43s81"]
-[ext_resource type="Texture2D" uid="uid://djj67hbd0mfa0" path="res://resources/art/ingredients/baocui/stock/baocui_stock_3_v1.png" id="33_6fi63"]
-[ext_resource type="Texture2D" uid="uid://c8timm88ghn2e" path="res://resources/art/ingredients/baocui/stock/baocui_stock_4_v1.png" id="34_nx8qc"]
-[ext_resource type="Texture2D" uid="uid://doqmxncw34spy" path="res://resources/art/ingredients/baocui/stock/baocui_stock_5_v1.png" id="35_gks3u"]
-[ext_resource type="Texture2D" uid="uid://ddjij100vj2gm" path="res://resources/art/ingredients/baocui/stock/baocui_stock_6_v1.png" id="36_3vfwa"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_1_v2.png" id="25_i1y3k"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_2_v2.png" id="26_iypp0"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_3_v2.png" id="27_8jjje"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_4_v2.png" id="28_74f5m"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_5_v2.png" id="29_ka77d"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_6_v2.png" id="30_7aidc"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_1_v2.png" id="31_p1qa3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_2_v2.png" id="32_43s81"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_3_v2.png" id="33_6fi63"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_4_v2.png" id="34_nx8qc"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_5_v2.png" id="35_gks3u"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_6_v2.png" id="36_3vfwa"]
 [ext_resource type="Texture2D" uid="uid://7d17n2tr4780" path="res://resources/art/workstation/material_slots/individual/slot_02_baocui_v1.png" id="37_70u6f"]
-[ext_resource type="Texture2D" uid="uid://c2ia6kkaq5av2" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v1.png" id="38_rw3yp"]
-[ext_resource type="Texture2D" uid="uid://c6wxj643c7sfw" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v1.png" id="39_d453g"]
-[ext_resource type="Texture2D" uid="uid://bl1s8vxajop8j" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v1.png" id="40_q1hxm"]
-[ext_resource type="Texture2D" uid="uid://cmtkbpwmb30ql" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v1.png" id="41_6uuln"]
-[ext_resource type="Texture2D" uid="uid://dsakm2bxwqgii" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v1.png" id="42_1lsov"]
-[ext_resource type="Texture2D" uid="uid://dd121hv1wlxao" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v1.png" id="43_4oop2"]
-[ext_resource type="Texture2D" uid="uid://dbv8nt8u780lw" path="res://resources/art/ingredients/scallion/stock/scallion_stock_1_v1.png" id="44_f2a4c"]
-[ext_resource type="Texture2D" uid="uid://crfee0r7vcr1" path="res://resources/art/ingredients/scallion/stock/scallion_stock_2_v1.png" id="45_ltspb"]
-[ext_resource type="Texture2D" uid="uid://ug5hxxl4tc07" path="res://resources/art/ingredients/scallion/stock/scallion_stock_3_v1.png" id="46_nal3a"]
-[ext_resource type="Texture2D" uid="uid://ds0ifju4acgie" path="res://resources/art/ingredients/scallion/stock/scallion_stock_4_v1.png" id="47_allpe"]
-[ext_resource type="Texture2D" uid="uid://bblo6dh1820b0" path="res://resources/art/ingredients/scallion/stock/scallion_stock_5_v1.png" id="48_c5q83"]
-[ext_resource type="Texture2D" uid="uid://djhfk0wim35uv" path="res://resources/art/ingredients/scallion/stock/scallion_stock_6_v1.png" id="49_dccxk"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_1_v2.png" id="38_rw3yp"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_2_v2.png" id="39_d453g"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_3_v2.png" id="40_q1hxm"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_4_v2.png" id="41_6uuln"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_5_v2.png" id="42_1lsov"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_6_v2.png" id="43_4oop2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_1_v2.png" id="44_f2a4c"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_2_v2.png" id="45_ltspb"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_3_v2.png" id="46_nal3a"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_4_v2.png" id="47_allpe"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_5_v2.png" id="48_c5q83"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_6_v2.png" id="49_dccxk"]
 [ext_resource type="Texture2D" uid="uid://bd51qulgtblle" path="res://resources/art/workstation/material_slots/individual/slot_03_scallion_v1.png" id="50_yx7mh"]
-[ext_resource type="Texture2D" uid="uid://cagsmlcbsp18g" path="res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png" id="51_xexj7"]
-[ext_resource type="Texture2D" uid="uid://bnqn1bvnkx7sk" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png" id="52_tdn6b"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_1_v2.png" id="51_xexj7"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_1_v2.png" id="52_tdn6b"]
 [ext_resource type="Texture2D" uid="uid://dvjiaqj2f06j4" path="res://resources/art/workstation/tools/batter_ladle_v1.png" id="53_qabbp"]
 [ext_resource type="Texture2D" uid="uid://bgmd66lqtwpyy" path="res://resources/art/workstation/tools/batter_spreader_v1.png" id="54_ikthl"]
 [ext_resource type="Texture2D" uid="uid://clsgrhfkrxdr3" path="res://resources/art/workstation/tools/folding_spatula_v1.png" id="55_e6uu1"]
 [ext_resource type="Texture2D" uid="uid://oxlc7li34e5b" path="res://resources/art/workstation/tools/sauce_brush_v1.png" id="56_pel6i"]
 [ext_resource type="Texture2D" uid="uid://8sc5ilqjs0sy" path="res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png" id="57_y1oaf"]
 [ext_resource type="Texture2D" uid="uid://5uquhqgv6r2x" path="res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png" id="58_i2kai"]
-[ext_resource type="Texture2D" uid="uid://is5ho4ym1jlv" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3.png" id="59_yqulo"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png" id="59_yqulo"]
 [ext_resource type="Script" uid="uid://ejyrs1yv7tqk" path="res://scripts/ui/pancake_heatmap.gd" id="60_er833"]
 [ext_resource type="Shader" uid="uid://dxw2humis6o8y" path="res://resources/shaders/pancake_surface.gdshader" id="61_8ys8q"]
 [ext_resource type="Texture2D" uid="uid://cxer4sp3unwrv" path="res://resources/art/workstation/textures/pancake_charred_texture_v1.png" id="62_uvj0o"]
@@ -82,31 +83,105 @@
 [ext_resource type="Texture2D" uid="uid://b7fptxnat3m2i" path="res://resources/art/workstation/packaging/serving_tray_package_v1.png" id="80_vy7hm"]
 [ext_resource type="Texture2D" uid="uid://c6cp33o4ggko6" path="res://resources/art/workstation/foreground/workstation_front_lip_v1.png" id="81_7f1r0"]
 [ext_resource type="Script" uid="uid://brkdrednjifne" path="res://scripts/ui/pancake_workstation_interaction_controller.gd" id="82_h8vlp"]
-[ext_resource type="Texture2D" uid="uid://c6briwyn3qks3" path="res://resources/art/ui/quality/quality_integrity_v1.png" id="83_d0bmj"]
-[ext_resource type="Texture2D" uid="uid://fql6eccu2e4q" path="res://resources/art/ui/quality/quality_thickness_uniformity_v1.png" id="84_mfn25"]
-[ext_resource type="Texture2D" uid="uid://b7angeqscamgx" path="res://resources/art/ui/quality/quality_heat_uniformity_v1.png" id="85_e6c8j"]
-[ext_resource type="Texture2D" uid="uid://bmuoe7iqyl3v7" path="res://resources/art/ui/quality/quality_egg_spread_v1.png" id="86_gjpp4"]
-[ext_resource type="Texture2D" uid="uid://boptdcvnemn7i" path="res://resources/art/ui/quality/quality_sauce_coverage_v1.png" id="87_wbm8s"]
-[ext_resource type="Texture2D" uid="uid://cmrgmbtlbm5cj" path="res://resources/art/ui/quality/quality_ingredient_distribution_v1.png" id="88_l5rmu"]
-[ext_resource type="Texture2D" uid="uid://d7a1hirxy6ay" path="res://resources/art/ui/quality/quality_fold_stability_v1.png" id="89_yhfik"]
-[ext_resource type="Texture2D" uid="uid://diondlio60pee" path="res://resources/art/ui/quality/quality_order_correctness_v1.png" id="90_nyusp"]
-[ext_resource type="Texture2D" uid="uid://ci3aeoih3c7nc" path="res://resources/art/ui/quality/quality_preparation_time_v1.png" id="91_vdkap"]
-[ext_resource type="Texture2D" uid="uid://br3wulay8eu4v" path="res://resources/art/payments/payment_cash_small_v1.png" id="92_nnv6x"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png" id="83_d0bmj"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png" id="84_mfn25"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_heat_uniformity_v2_chinese_ui.png" id="85_e6c8j"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_egg_spread_v2_chinese_ui.png" id="86_gjpp4"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_sauce_coverage_v2_chinese_ui.png" id="87_wbm8s"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_ingredient_distribution_v2_chinese_ui.png" id="88_l5rmu"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_fold_stability_v2_chinese_ui.png" id="89_yhfik"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png" id="90_nyusp"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_preparation_time_v2_chinese_ui.png" id="91_vdkap"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/payment_cash_small_v2_chinese_ui.png" id="92_nnv6x"]
 [ext_resource type="Texture2D" uid="uid://dbuayq6s8h454" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v2.png" id="93_i48ma"]
-[ext_resource type="Texture2D" uid="uid://bhjgy30eq2k28" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v1.png" id="94_3ju16"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v2_chinese_ui.png" id="94_3ju16"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_five_area_v3.png" id="95_tud4u"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_1_five_area_v2.png" id="97_cor1"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_2_five_area_v2.png" id="98_cor2"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_3_five_area_v2.png" id="99_cor3"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_4_five_area_v2.png" id="100_cor4"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_5_five_area_v2.png" id="101_cor5"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_6_five_area_v2.png" id="102_cor6"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_1_five_area_v2.png" id="103_mus1"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_2_five_area_v2.png" id="104_mus2"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_3_five_area_v2.png" id="105_mus3"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_4_five_area_v2.png" id="106_mus4"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_5_five_area_v2.png" id="107_mus5"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_6_five_area_v2.png" id="108_mus6"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_1_v2.png" id="97_cor1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_2_v2.png" id="98_cor2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_3_v2.png" id="99_cor3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_4_v2.png" id="100_cor4"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_5_v2.png" id="101_cor5"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_6_v2.png" id="102_cor6"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_1_v2.png" id="103_mus1"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_2_v2.png" id="104_mus2"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_3_v2.png" id="105_mus3"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_4_v2.png" id="106_mus4"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_5_v2.png" id="107_mus5"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_6_v2.png" id="108_mus6"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_7_v2.png" id="stock_egg_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_8_v2.png" id="stock_egg_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_9_v2.png" id="stock_egg_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_10_v2.png" id="stock_egg_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_11_v2.png" id="stock_egg_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_12_v2.png" id="stock_egg_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_13_v2.png" id="stock_egg_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/stock/egg_stock_14_v2.png" id="stock_egg_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_7_v2.png" id="stock_baocui_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_8_v2.png" id="stock_baocui_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_9_v2.png" id="stock_baocui_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_10_v2.png" id="stock_baocui_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_11_v2.png" id="stock_baocui_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_12_v2.png" id="stock_baocui_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_13_v2.png" id="stock_baocui_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/stock/baocui_stock_14_v2.png" id="stock_baocui_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_7_v2.png" id="stock_ham_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_8_v2.png" id="stock_ham_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_9_v2.png" id="stock_ham_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_10_v2.png" id="stock_ham_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_11_v2.png" id="stock_ham_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_12_v2.png" id="stock_ham_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_13_v2.png" id="stock_ham_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/stock/ham_sausage_stock_14_v2.png" id="stock_ham_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_7_v2.png" id="stock_scallion_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_8_v2.png" id="stock_scallion_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_9_v2.png" id="stock_scallion_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_10_v2.png" id="stock_scallion_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_11_v2.png" id="stock_scallion_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_12_v2.png" id="stock_scallion_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_13_v2.png" id="stock_scallion_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/stock/scallion_stock_14_v2.png" id="stock_scallion_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_2_v2.png" id="stock_meat_02"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_3_v2.png" id="stock_meat_03"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_4_v2.png" id="stock_meat_04"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_5_v2.png" id="stock_meat_05"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_6_v2.png" id="stock_meat_06"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_7_v2.png" id="stock_meat_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_8_v2.png" id="stock_meat_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_9_v2.png" id="stock_meat_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_10_v2.png" id="stock_meat_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_11_v2.png" id="stock_meat_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_12_v2.png" id="stock_meat_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_13_v2.png" id="stock_meat_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/stock/meat_floss_stock_14_v2.png" id="stock_meat_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_2_v2.png" id="stock_pork_02"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_3_v2.png" id="stock_pork_03"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_4_v2.png" id="stock_pork_04"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_5_v2.png" id="stock_pork_05"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_6_v2.png" id="stock_pork_06"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_7_v2.png" id="stock_pork_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_8_v2.png" id="stock_pork_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_9_v2.png" id="stock_pork_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_10_v2.png" id="stock_pork_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_11_v2.png" id="stock_pork_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_12_v2.png" id="stock_pork_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_13_v2.png" id="stock_pork_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_14_v2.png" id="stock_pork_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_7_v2.png" id="stock_cor_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_8_v2.png" id="stock_cor_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_9_v2.png" id="stock_cor_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_10_v2.png" id="stock_cor_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_11_v2.png" id="stock_cor_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_12_v2.png" id="stock_cor_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_13_v2.png" id="stock_cor_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/stock/coriander_stock_14_v2.png" id="stock_cor_14"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_7_v2.png" id="stock_mus_07"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_8_v2.png" id="stock_mus_08"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_9_v2.png" id="stock_mus_09"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_10_v2.png" id="stock_mus_10"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_11_v2.png" id="stock_mus_11"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_12_v2.png" id="stock_mus_12"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_13_v2.png" id="stock_mus_13"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/stock/preserved_mustard_stock_14_v2.png" id="stock_mus_14"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png" id="109_cor_scattered"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png" id="110_mus_scattered"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v1_five_area_v2.png" id="111_egg_crack_1"]
@@ -1407,7 +1482,7 @@ theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"egg"
-stock_textures = Array[Texture2D]([ExtResource("25_i1y3k"), ExtResource("26_iypp0"), ExtResource("27_8jjje"), ExtResource("28_74f5m"), ExtResource("29_ka77d"), ExtResource("30_7aidc")])
+stock_textures = Array[Texture2D]([ExtResource("25_i1y3k"), ExtResource("26_iypp0"), ExtResource("27_8jjje"), ExtResource("28_74f5m"), ExtResource("29_ka77d"), ExtResource("30_7aidc"), ExtResource("stock_egg_07"), ExtResource("stock_egg_08"), ExtResource("stock_egg_09"), ExtResource("stock_egg_10"), ExtResource("stock_egg_11"), ExtResource("stock_egg_12"), ExtResource("stock_egg_13"), ExtResource("stock_egg_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1473,7 +1548,7 @@ theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"baocui"
-stock_textures = Array[Texture2D]([ExtResource("31_p1qa3"), ExtResource("32_43s81"), ExtResource("33_6fi63"), ExtResource("34_nx8qc"), ExtResource("35_gks3u"), ExtResource("36_3vfwa")])
+stock_textures = Array[Texture2D]([ExtResource("31_p1qa3"), ExtResource("32_43s81"), ExtResource("33_6fi63"), ExtResource("34_nx8qc"), ExtResource("35_gks3u"), ExtResource("36_3vfwa"), ExtResource("stock_baocui_07"), ExtResource("stock_baocui_08"), ExtResource("stock_baocui_09"), ExtResource("stock_baocui_10"), ExtResource("stock_baocui_11"), ExtResource("stock_baocui_12"), ExtResource("stock_baocui_13"), ExtResource("stock_baocui_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1539,7 +1614,7 @@ theme_override_styles/disabled = SubResource("StyleBox_table_button")
 disabled = true
 script = ExtResource("24_ak4px")
 ingredient_type = &"ham_sausage"
-stock_textures = Array[Texture2D]([ExtResource("38_rw3yp"), ExtResource("39_d453g"), ExtResource("40_q1hxm"), ExtResource("41_6uuln"), ExtResource("42_1lsov"), ExtResource("43_4oop2")])
+stock_textures = Array[Texture2D]([ExtResource("38_rw3yp"), ExtResource("39_d453g"), ExtResource("40_q1hxm"), ExtResource("41_6uuln"), ExtResource("42_1lsov"), ExtResource("43_4oop2"), ExtResource("stock_ham_07"), ExtResource("stock_ham_08"), ExtResource("stock_ham_09"), ExtResource("stock_ham_10"), ExtResource("stock_ham_11"), ExtResource("stock_ham_12"), ExtResource("stock_ham_13"), ExtResource("stock_ham_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1604,7 +1679,7 @@ theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"scallion"
-stock_textures = Array[Texture2D]([ExtResource("44_f2a4c"), ExtResource("45_ltspb"), ExtResource("46_nal3a"), ExtResource("47_allpe"), ExtResource("48_c5q83"), ExtResource("49_dccxk")])
+stock_textures = Array[Texture2D]([ExtResource("44_f2a4c"), ExtResource("45_ltspb"), ExtResource("46_nal3a"), ExtResource("47_allpe"), ExtResource("48_c5q83"), ExtResource("49_dccxk"), ExtResource("stock_scallion_07"), ExtResource("stock_scallion_08"), ExtResource("stock_scallion_09"), ExtResource("stock_scallion_10"), ExtResource("stock_scallion_11"), ExtResource("stock_scallion_12"), ExtResource("stock_scallion_13"), ExtResource("stock_scallion_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1668,7 +1743,7 @@ theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"meat_floss"
-stock_textures = Array[Texture2D]([ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7"), ExtResource("51_xexj7")])
+stock_textures = Array[Texture2D]([ExtResource("51_xexj7"), ExtResource("stock_meat_02"), ExtResource("stock_meat_03"), ExtResource("stock_meat_04"), ExtResource("stock_meat_05"), ExtResource("stock_meat_06"), ExtResource("stock_meat_07"), ExtResource("stock_meat_08"), ExtResource("stock_meat_09"), ExtResource("stock_meat_10"), ExtResource("stock_meat_11"), ExtResource("stock_meat_12"), ExtResource("stock_meat_13"), ExtResource("stock_meat_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1732,7 +1807,7 @@ theme_override_styles/hover = SubResource("StyleBox_table_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_table_button")
 script = ExtResource("24_ak4px")
 ingredient_type = &"pork_tenderloin"
-stock_textures = Array[Texture2D]([ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b"), ExtResource("52_tdn6b")])
+stock_textures = Array[Texture2D]([ExtResource("52_tdn6b"), ExtResource("stock_pork_02"), ExtResource("stock_pork_03"), ExtResource("stock_pork_04"), ExtResource("stock_pork_05"), ExtResource("stock_pork_06"), ExtResource("stock_pork_07"), ExtResource("stock_pork_08"), ExtResource("stock_pork_09"), ExtResource("stock_pork_10"), ExtResource("stock_pork_11"), ExtResource("stock_pork_12"), ExtResource("stock_pork_13"), ExtResource("stock_pork_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1791,7 +1866,7 @@ tooltip_text = "香菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
 ingredient_type = &"coriander"
-stock_textures = Array[Texture2D]([ExtResource("97_cor1"), ExtResource("98_cor2"), ExtResource("99_cor3"), ExtResource("100_cor4"), ExtResource("101_cor5"), ExtResource("102_cor6")])
+stock_textures = Array[Texture2D]([ExtResource("97_cor1"), ExtResource("98_cor2"), ExtResource("99_cor3"), ExtResource("100_cor4"), ExtResource("101_cor5"), ExtResource("102_cor6"), ExtResource("stock_cor_07"), ExtResource("stock_cor_08"), ExtResource("stock_cor_09"), ExtResource("stock_cor_10"), ExtResource("stock_cor_11"), ExtResource("stock_cor_12"), ExtResource("stock_cor_13"), ExtResource("stock_cor_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -1833,7 +1908,7 @@ tooltip_text = "榨菜"
 mouse_filter = 2
 script = ExtResource("24_ak4px")
 ingredient_type = &"preserved_mustard"
-stock_textures = Array[Texture2D]([ExtResource("103_mus1"), ExtResource("104_mus2"), ExtResource("105_mus3"), ExtResource("106_mus4"), ExtResource("107_mus5"), ExtResource("108_mus6")])
+stock_textures = Array[Texture2D]([ExtResource("103_mus1"), ExtResource("104_mus2"), ExtResource("105_mus3"), ExtResource("106_mus4"), ExtResource("107_mus5"), ExtResource("108_mus6"), ExtResource("stock_mus_07"), ExtResource("stock_mus_08"), ExtResource("stock_mus_09"), ExtResource("stock_mus_10"), ExtResource("stock_mus_11"), ExtResource("stock_mus_12"), ExtResource("stock_mus_13"), ExtResource("stock_mus_14")])
 hold_threshold_seconds = 0.1
 metadata/refill_enabled = true
 
@@ -2158,10 +2233,10 @@ stretch_mode = 5
 [node name="RightRack" type="Panel" parent="SafeArea" unique_id=2132027107]
 z_index = 6
 layout_mode = 0
-offset_left = 459.0
-offset_top = 810.0
-offset_right = 749.0
-offset_bottom = 884.0
+offset_left = 815.0
+offset_top = 870.0
+offset_right = 1105.0
+offset_bottom = 944.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_clear")
 
@@ -2181,8 +2256,7 @@ horizontal_alignment = 1
 [node name="SauceRefillButton" type="Button" parent="SafeArea/RightRack" unique_id=1627450700]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 145.0
-offset_right = 290.0
+offset_right = 145.0
 offset_bottom = 74.0
 tooltip_text = "按住控制甜面酱用量；松开后自动拿起甜面酱刷"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
@@ -2212,7 +2286,8 @@ vertical_alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_right = 145.0
+offset_left = 145.0
+offset_right = 290.0
 offset_bottom = 74.0
 tooltip_text = "按住控制辣椒酱用量；松开后自动拿起辣椒酱刷"
 theme_override_styles/normal = SubResource("StyleBox_table_button")
@@ -2291,6 +2366,7 @@ offset_left = 750.0
 offset_top = 562.0
 offset_right = 1170.0
 offset_bottom = 944.0
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_pan")
 
 [node name="GriddleArtwork" type="Sprite2D" parent="SafeArea/PanBase" unique_id=1156971624]
@@ -2314,6 +2390,7 @@ grow_vertical = 2
 mouse_default_cursor_shape = 1
 script = ExtResource("60_er833")
 draw_spreader_fallback = false
+input_exclusion_rect = Rect2(25, 268, 290, 72)
 metadata/area_id = &"area.pancake"
 metadata/station_click_layer = true
 
@@ -3869,12 +3946,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("100_modal_shield")
+excluded_control_path = NodePath("../DailyBillPanel")
 
 [node name="DailyBillPanel" type="PanelContainer" parent="SafeArea" unique_id=751590251]
 unique_name_in_owner = true
 process_mode = 3
 visible = false
 z_index = 100
+mouse_filter = 2
 layout_mode = 0
 offset_left = 330.0
 offset_top = 80.0
@@ -3882,8 +3963,13 @@ offset_right = 1590.0
 offset_bottom = 900.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
+[node name="InputSurface" type="Control" parent="SafeArea/DailyBillPanel"]
+layout_mode = 2
+mouse_filter = 0
+
 [node name="Margin" type="MarginContainer" parent="SafeArea/DailyBillPanel" unique_id=102208077]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 42
 theme_override_constants/margin_top = 30
 theme_override_constants/margin_right = 42
@@ -3891,6 +3977,7 @@ theme_override_constants/margin_bottom = 30
 
 [node name="VBox" type="VBoxContainer" parent="SafeArea/DailyBillPanel/Margin" unique_id=1840190028]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 10
 
 [node name="DailyBillTitleLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=900173229]
@@ -3911,6 +3998,7 @@ horizontal_alignment = 1
 
 [node name="HeaderGrid" type="GridContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1771604001]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/h_separation = 18
 columns = 4
 
@@ -3960,6 +4048,7 @@ columns = 4
 
 [node name="GrowthSeparator" type="HSeparator" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=2026370420]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="GrowthHeadlineLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1187074350]
 unique_name_in_owner = true
@@ -3979,6 +4068,7 @@ horizontal_alignment = 1
 
 [node name="GrowthTickets" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=219849549]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 14
 
 [node name="GrowthTicket1" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=2000033356]
@@ -3986,6 +4076,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 0
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
@@ -4003,6 +4094,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 0
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
@@ -4020,6 +4112,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 0
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
 theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
 theme_override_font_sizes/font_size = 18
@@ -4034,6 +4127,7 @@ clip_text = true
 
 [node name="GrowthActions" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=415184221]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 14
 
 [node name="DailyBillCloseButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=662155970]

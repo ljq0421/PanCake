@@ -6,6 +6,8 @@ const AUTO_LIFT := &"automation.youtiao.auto_lift"
 const AUTO_LOAD := &"automation.youtiao.auto_load"
 const SCREENSHOT_1920 := "res://tmp/validation/youtiao_station_formal_1920x1080.png"
 const SCREENSHOT_1280 := "res://tmp/validation/youtiao_station_formal_1280x720.png"
+const SOY_SPOILED_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_spoiled_gpu_1920x1080.png"
+const SOY_MANUAL_CUP_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_manual_cup_gpu_1920x1080.png"
 
 var failures := PackedStringArray()
 
@@ -89,6 +91,14 @@ func _run() -> void:
 	await _drag_control(plain_dough_source, station.machine_stage)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"loaded", "real pointer drag moves one dough portion into the physical basket")
+	await _click_control(station.discard_batch_button)
+	var discard_armed := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(StringName(discard_armed.get("state", &"")) == &"loaded" and station.discard_batch_button.text == "再次点击确认", "first real discard click arms the two-second batch confirmation without mutating the fryer")
+	await _click_control(station.discard_batch_button)
+	var discarded_batch := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(StringName(discarded_batch.get("state", &"")) == &"idle" and int(discarded_batch.get("quantity", 0)) == 0, "second real discard click clears the loaded batch")
+	await _drag_control(plain_dough_source, station.machine_stage)
+	await process_frame
 	await _click_control(station.start_button)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"frying", "real start-button click begins the unchanged frying model")
@@ -106,17 +116,67 @@ func _run() -> void:
 	await _hover_control(station.output_source)
 	_check(root.gui_get_hovered_control() == station.output_source, "the GPU pointer resolves the modular output hit area above the basket art")
 	_check(StringName(station.output_source.source_ref().get("product_id", &"")) == &"product.youtiao.plain", "the physical output source carries the current product identity")
-	var order_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
+	await _drag_control(station.output_source, workstation.waste_area)
+	await process_frame
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "dragging fryer output to waste discards exactly the ready portion")
+	await _produce_one_ready(session, station, plain_dough_source)
+	var prepared_plain := station.prepared_slots[0] as PreparedProductSlot
+	await _hover_control(prepared_plain)
+	_check(root.gui_get_hovered_control() == prepared_plain, "the GPU pointer resolves the plain-youtiao prepared compartment")
+	await _drag_control(station.output_source, prepared_plain)
+	await process_frame
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle" and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 1, "real output drag transfers the fryer product into its matching six-capacity compartment")
+	await _drag_control(prepared_plain, workstation.waste_area)
+	await process_frame
+	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", -1)) == 0, "dragging the prepared compartment to waste discards one portion without touching other stock")
+	await _produce_one_ready(session, station, plain_dough_source)
+	await _drag_control(station.output_source, prepared_plain)
+	await process_frame
+	var order_target := workstation.get_node("SafeArea/ServiceCustomer1/OrderPanel/ItemButton1") as Button
 	_check(not order_target.disabled and order_target.mouse_filter == Control.MOUSE_FILTER_STOP, "the youtiao order product is an enabled pointer delivery target")
 	await _hover_control(order_target)
 	_check(root.gui_get_hovered_control() == order_target, "the GPU pointer resolves the order product target")
 	await _click_control(order_target)
 	await process_frame
-	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "real order-card click takes the drained youtiao directly from the fryer")
+	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", -1)) == 0, "real order-card click takes the oldest matching youtiao from the prepared compartment")
 	var order := Dictionary(session.call("formal_order", order_id))
 	var item := Dictionary(Array(order.get("items", []))[0]) if not Array(order.get("items", [])).is_empty() else {}
 	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 1 and StringName(order.get("state", &"")) == &"settled", "the order product click delivers and settles the fryer-held youtiao")
 	_check(StringName(workstation.get("_formal_order_id")) != order_id, "the next customer is routed before youtiao payment collection")
+
+	var soy_station := workstation.fresh_soy_station as DirectSoyStation
+	await _drag_control(soy_top, soy_station)
+	await process_frame
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("state", &"")) == &"loaded", "real pointer drag drops one bean portion into the direct soy machine")
+	await _click_control(soy_station.water_button)
+	await _click_control(soy_station.start_button)
+	session.call("advance_f3_production", 5.0)
+	soy_station.refresh_from_session()
+	await process_frame
+	var soy_waiting_for_cup := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	_check(StringName(soy_waiting_for_cup.get("state", &"")) == &"ready_safe" and not bool(soy_waiting_for_cup.get("manual_cup_ready", false)) and soy_station.cup_button.visible and not soy_station.cup_button.disabled and not soy_station.machine_output.visible, "finished soy batch keeps an empty cup visible and blocks delivery until 接杯 is clicked")
+	await _click_control(soy_station.cup_button)
+	soy_station.refresh_from_session()
+	await process_frame
+	var soy_one_cup := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	_check(bool(soy_one_cup.get("manual_cup_ready", false)) and soy_station.cup_button.text == "已接杯" and soy_station.machine_output.visible and not soy_station.machine_output.disabled, "real 接杯 click exposes exactly one deliverable soy cup")
+	await _save_viewport(SOY_MANUAL_CUP_SCREENSHOT_1920, Vector2i(1920, 1080))
+	var production_service: RefCounted = session.get("_production_service")
+	_check(bool(Dictionary(production_service.call("collect_soy", 1)).get("success", false)), "GPU cup fixture consumes the prepared cup before starting its independent spoil case")
+	soy_station.refresh_from_session()
+	await _drag_control(soy_top, soy_station)
+	await _click_control(soy_station.water_button)
+	await _click_control(soy_station.start_button)
+	session.call("advance_f3_production", 5.0)
+	session.call("advance_f3_production", 16.0)
+	soy_station.refresh_from_session()
+	await process_frame
+	var spoiled_source := Dictionary(soy_station.machine_output.source_ref())
+	_check(bool(spoiled_source.get("discardable", false)) and soy_station.state_label.text == "豆浆已变质，请拖到垃圾桶丢弃", "spoiled soy batch exposes the exact drag-to-trash prompt")
+	await _save_viewport(SOY_SPOILED_SCREENSHOT_1920, Vector2i(1920, 1080))
+	await _drag_control(soy_station.machine_output, workstation.waste_area)
+	await process_frame
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("state", &"")) == &"idle", "real pointer drag discards the whole spoiled machine batch through the unified waste target")
 
 	await _click_control(plain_dough_source)
 	await _click_control(station.auto_plus_button)
@@ -195,6 +255,19 @@ func _click_control(control: Control) -> void:
 	released.position = position
 	released.global_position = position
 	root.push_input(released)
+	await process_frame
+
+
+func _produce_one_ready(session: Node, station: DirectYoutiaoStation, dough_source: Control) -> void:
+	await _drag_control(dough_source, station.machine_stage)
+	await process_frame
+	await _click_control(station.start_button)
+	session.call("advance_f3_production", 12.05)
+	station.refresh_from_session()
+	await process_frame
+	await _click_control(station.lift_button)
+	session.call("advance_f3_production", 2.05)
+	station.refresh_from_session()
 	await process_frame
 
 
@@ -304,6 +377,8 @@ func _finish() -> void:
 		print("YOUTIAO_DIRECT_POINTER_SMOKE_PASS")
 		print("YOUTIAO_FORMAL_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SCREENSHOT_1920))
 		print("YOUTIAO_FORMAL_SCREENSHOT_1280=%s" % ProjectSettings.globalize_path(SCREENSHOT_1280))
+		print("DIRECT_SOY_SPOILED_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_SPOILED_SCREENSHOT_1920))
+		print("DIRECT_SOY_MANUAL_CUP_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_MANUAL_CUP_SCREENSHOT_1920))
 		quit(0)
 		return
 	printerr("YOUTIAO_DIRECT_POINTER_SMOKE_FAIL\n" + "\n".join(failures))

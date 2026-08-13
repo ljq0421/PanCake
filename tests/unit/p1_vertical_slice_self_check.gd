@@ -376,6 +376,16 @@ func _test_customer_queue_rotation() -> void:
 		and waiting[1].id == &"customer_04",
 		"completing an order advances the queue and replenishes its tail without a manual accept step"
 	)
+	var single_queue: RefCounted = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(OrderService.new(), 1)
+	var rotated_ids := PackedStringArray()
+	for index in 20:
+		rotated_ids.append(str(Dictionary(single_queue.call("current_customer")).get("id", &"")))
+		single_queue.call("advance_queue")
+	_check(
+		rotated_ids == PackedStringArray(["customer_01", "customer_02", "customer_03", "customer_04", "customer_05", "customer_06", "customer_07", "customer_08", "customer_09", "customer_10", "customer_11", "customer_12", "customer_13", "customer_14", "customer_15", "customer_16", "customer_17", "customer_18", "customer_19", "customer_20"])
+		and StringName(Dictionary(single_queue.call("current_customer")).get("id", &"")) == &"customer_01",
+		"customer queue rotates through all twenty included identities before wrapping"
+	)
 func _test_every_order_combination() -> void:
 	var service := OrderService.new()
 	for order_index in OrderService.ORDERS.size():

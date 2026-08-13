@@ -3,6 +3,7 @@ extends TextureButton
 
 signal short_clicked(source_ref: Dictionary)
 signal drag_started(source_ref: Dictionary)
+signal drag_ended(source_ref: Dictionary, successful: bool)
 signal hold_requested(source_ref: Dictionary)
 signal hold_advanced(source_ref: Dictionary, delta: float)
 signal hold_released(source_ref: Dictionary)
@@ -19,11 +20,21 @@ var _pressed_for_drag := false
 var _drag_available := false
 var _holding := false
 var _hold_elapsed := 0.0
+var _native_drag_in_progress := false
 
 
 func _ready() -> void:
 	mouse_exited.connect(_on_mouse_exited)
 	set_process(false)
+
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_DRAG_END or not _native_drag_in_progress:
+		return
+	_native_drag_in_progress = false
+	var viewport := get_viewport()
+	var successful := viewport != null and viewport.gui_is_drag_successful()
+	drag_ended.emit(_source_ref.duplicate(true), successful)
 
 
 func configure(source_ref: Dictionary, product_texture: Texture2D, available: bool, hint: String = "") -> void:
@@ -71,14 +82,23 @@ func begin_gesture(viewport_position: Vector2) -> void:
 
 
 func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true) -> void:
-	if not _pressed_for_drag or _holding or viewport_position.distance_to(_press_position) <= drag_threshold_pixels:
+	if not _pressed_for_drag or viewport_position.distance_to(_press_position) <= drag_threshold_pixels:
 		return
+	# Movement is the stronger intent.  A player may pause longer than the hold
+	# threshold before beginning a drag, so an accepted hold must not permanently
+	# trap an available product in restock mode.
+	if _holding:
+		if not _drag_available:
+			return
+		_holding = false
+		hold_released.emit(_source_ref.duplicate(true))
 	_pressed_for_drag = false
 	set_process(false)
 	if _drag_available:
 		drag_started.emit(_source_ref.duplicate(true))
 		if not perform_native_drag or not native_drag_enabled:
 			return
+		_native_drag_in_progress = true
 		var preview := TextureRect.new()
 		preview.texture = texture_normal
 		preview.custom_minimum_size = Vector2(72.0, 72.0)

@@ -62,9 +62,17 @@ func _run() -> void:
 		if sprite != null and StringName(sprite.get_meta(&"ingredient_type", &"")) == IngredientModel.YOUTIAO:
 			youtiao_sprite = sprite
 			break
+	var youtiao_image := Image.load_from_file(ProjectSettings.globalize_path("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"))
+	var baocui_image := Image.load_from_file(ProjectSettings.globalize_path("res://resources/art/ingredients/baocui/baocui_broken_v1.png"))
+	var youtiao_visible_width := float(youtiao_image.get_used_rect().size.x) * youtiao_sprite.scale.x if youtiao_sprite != null else 0.0
+	var baocui_visible_width := float(baocui_image.get_used_rect().size.x) * 0.16
 	_check(
-		youtiao_sprite != null and youtiao_sprite.texture != null and youtiao_sprite.scale.is_equal_approx(Vector2(0.10, 0.10)),
-		"pancake rendering reuses the plain-youtiao artwork at the compact griddle scale"
+		youtiao_sprite != null
+		and youtiao_sprite.texture != null
+		and youtiao_sprite.scale.is_equal_approx(Vector2(0.78, 0.78))
+		and baocui_visible_width > 0.0
+		and absf(youtiao_visible_width / baocui_visible_width - 1.0) <= 0.10,
+		"pancake rendering enlarges plain youtiao to within ten percent of baocui's visible width"
 	)
 	layer.queue_free()
 	_finish()

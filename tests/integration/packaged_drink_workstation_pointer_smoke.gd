@@ -37,14 +37,23 @@ func _run() -> void:
 	var tutorial_workstation := tutorial_game.get_node("Workstation")
 	var tutorial_order := Dictionary(tutorial_opened.get("order", {}))
 	_check(bool(tutorial_opened.get("success", false)) and Array(tutorial_order.get("items", [])).size() == 1 and Array(session.call("active_formal_orders")).size() == 1, "zero-stock drink tutorial appears as the store's only active customer")
-	_check(tutorial_workstation.tool_status_label.text == "饮品教学：先长按纯牛奶补货，再点击订单商品交付", "zero-stock drink tutorial gives the exact player-facing restock instruction")
+	_check(tutorial_workstation.tool_status_label.text == "饮品柜教学：先长按纯牛奶补货，再点击订单商品交付", "zero-stock cabinet tutorial gives the exact player-facing restock instruction")
+	var tutorial_drink_station := tutorial_workstation.get_node("FiveAreaInfrastructure/Stations/PackagedDrinkStation")
+	var tutorial_lane := tutorial_drink_station.get_node("Lane01") as Control
+	var tutorial_heater_lock := tutorial_drink_station.get_node("HeaterLockCover") as Button
+	_move_at(tutorial_lane.get_global_rect().get_center())
+	await process_frame
+	_check(root.gui_get_hovered_control() == tutorial_lane, "cabinet-only unlock leaves the room-temperature milk lane on the real pointer path")
+	_move_at(tutorial_heater_lock.get_global_rect().get_center())
+	await process_frame
+	_check(tutorial_heater_lock.visible and root.gui_get_hovered_control() == tutorial_heater_lock, "the independently locked heater owns its opaque real-pointer lock layer")
 	tutorial_game.queue_free()
 	await process_frame
 
 	session.call("begin_new_game")
 	_unlock_packaged_drink(session)
 	var inventory := Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.packaged_drink.milk"] = 4
+	inventory["stock.packaged_drink.milk"] = 7
 	session.call("save_inventory", inventory)
 	var opened: Dictionary = session.call("open_formal_order", [
 		{
@@ -59,10 +68,20 @@ func _run() -> void:
 			"quantity": 1,
 			"temperature_mode": &"heated",
 		},
-	], {"base_coins": 8, "source": &"five_area_pointer_smoke", "tutorial_no_countdown": true})
+	], {"base_coins": 8, "source": &"five_area_pointer_smoke", "patience_seconds": 120.0})
 	var order := Dictionary(opened.get("order", {}))
 	var order_id := StringName(order.get("order_id", &""))
 	_check(bool(opened.get("success", false)) and not order_id.is_empty(), "a deterministic two-item physical order opens before the shop scene")
+	for index in 5:
+		var queued := Dictionary(session.call("open_formal_order", [
+			{
+				"area_id": &"area.packaged_drink",
+				"product_id": &"product.packaged_drink.milk",
+				"quantity": 1,
+				"temperature_mode": &"room_temperature",
+			}
+		], {"base_coins": 3, "source": &"five_area_pointer_smoke_queue", "patience_seconds": 120.0 + index}))
+		_check(bool(queued.get("success", false)), "normal pointer fixture queues customer %d" % (index + 2))
 
 	var game := MAIN_SCENE.instantiate()
 	root.add_child(game)
@@ -74,9 +93,14 @@ func _run() -> void:
 	var heater_slot := drink_station.get_node("HeaterSlot01") as Control
 	var heater_source := drink_station.get_node("HeaterSlot01/HeaterSource01") as TextureButton
 	var heater_state := drink_station.get_node("HeaterSlot01/HeaterState01") as Label
-	var first_order_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
-	var second_order_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget2") as Button
+	var first_order_target := workstation.get_node("SafeArea/ServiceCustomer1/OrderPanel/ItemButton1") as Button
+	var second_order_target := workstation.get_node("SafeArea/ServiceCustomer1/OrderPanel/ItemButton2") as Button
 	var payment_button := workstation.get_node("FiveAreaInfrastructure/PendingPaymentButton") as Button
+	var customer_buttons: Array[Button] = [
+		workstation.get_node("SafeArea/ServiceCustomer1/PortraitButton") as Button,
+		workstation.get_node("SafeArea/ServiceCustomer2/PortraitButton") as Button,
+		workstation.get_node("SafeArea/ServiceCustomer3/PortraitButton") as Button,
+	]
 
 	_check(workstation.get_node_or_null("F3StationOverlay") == null, "formal runtime contains no production overlay")
 	_check(workstation.find_child("CloseButton", true, false) == null, "formal runtime contains no production close button")
@@ -85,16 +109,51 @@ func _run() -> void:
 	_check(drink_station.get_node_or_null("Restock01") == null and drink_station.get_node_or_null("Restock02") == null and drink_station.get_node_or_null("Restock03") == null and drink_station.get_node_or_null("Restock04") == null, "the display rack contains no separate restock buttons")
 	_check(not first_order_target.disabled and not second_order_target.disabled, "both incomplete order-card products expose real pointer targets")
 	_check(StringName(workstation.get("_formal_order_id")) == order_id, "the deterministic drink customer is already the focused current order")
+	var active_orders: Array = Array(session.call("active_formal_orders"))
+	_check(active_orders.size() == 3 and Array(session.call("waiting_formal_orders")).size() == 3, "normal GPU fixture shows three active customers and three waiting candidates")
+	for slot_index in [2, 1, 0]:
+		var customer_button := customer_buttons[slot_index]
+		_move_at(customer_button.get_global_rect().get_center())
+		await process_frame
+		_check(root.gui_get_hovered_control() == customer_button, "customer slot %d owns its real pointer target" % (slot_index + 1))
+		await _click_control(customer_button)
+		var expected_id := _order_id_in_service_slot(active_orders, slot_index)
+		_check(StringName(workstation.get("_formal_order_id")) == expected_id, "real click binds customer slot %d to its exact order_id" % (slot_index + 1))
+
+	var sweet_sauce := workstation.get_node("SafeArea/RightRack/SauceRefillButton") as Button
+	var chili_sauce := workstation.get_node("SafeArea/RightRack/ChiliSauceRefillButton") as Button
+	workstation.pancake_model.coverage.fill(0.4)
+	workstation.p1_session.phase = P1Session.Phase.FIRST_SIDE
+	workstation.call("_refresh_p1_ui")
+	var pancake_surface := workstation.get_node("SafeArea/PanBase/PancakeSurface") as Control
+	_move_at(pancake_surface.get_global_rect().get_center())
+	await process_frame
+	_check(root.gui_get_hovered_control() == pancake_surface, "griddle center outside the sauce strip remains on the pancake real-pointer path")
+	for sauce_case in [{"button": sweet_sauce, "id": &"sweet_flour"}, {"button": chili_sauce, "id": &"red_chili"}]:
+		var sauce_button := sauce_case["button"] as Button
+		workstation.sauce_tool_state.load = 0.0
+		_move_at(sauce_button.get_global_rect().get_center())
+		await process_frame
+		var sauce_hovered := root.gui_get_hovered_control()
+		_check(root.gui_get_hovered_control() == sauce_button, "%s bottle owns only its authored sauce-strip pointer rectangle; hovered=%s visible=%s disabled=%s filter=%s rect=%s" % [sauce_case["id"], str(sauce_hovered.get_path() if sauce_hovered != null else "none"), sauce_button.is_visible_in_tree(), sauce_button.disabled, sauce_button.mouse_filter, sauce_button.get_global_rect()])
+		_press_at(sauce_button.get_global_rect().get_center())
+		await _wait_seconds(0.25)
+		_release_at(sauce_button.get_global_rect().get_center())
+		await process_frame
+		_check(workstation.current_sauce_type == sauce_case["id"] and float(workstation.sauce_tool_state.load) > 0.0, "real long press independently loads %s sauce without consuming a topping slot" % sauce_case["id"])
+	workstation.call("reset_pancake")
+	await _click_control(customer_buttons[0])
 
 	_move_at(first_order_target.get_global_rect().get_center())
 	await process_frame
 	var first_target_hovered := root.gui_get_hovered_control()
 	_check(first_target_hovered == first_order_target, "room-temperature order icon owns the real pointer before delivery; hovered=%s visible=%s filter=%s rect=%s" % [str(first_target_hovered.get_path() if first_target_hovered != null else "none"), first_order_target.is_visible_in_tree(), first_order_target.mouse_filter, first_order_target.get_global_rect()])
+	var stock_before_room_delivery := int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0))
 	await _click_control(first_order_target)
 	for _frame in 4:
 		await process_frame
 	var staged_room_order := Dictionary(session.call("formal_order", order_id))
-	_check(_attached_count(staged_room_order, 0) == 1 and int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0)) == 3, "real order-card click moves one room-temperature package from its lane into exact item 1")
+	_check(_attached_count(staged_room_order, 0) == 1 and int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0)) == stock_before_room_delivery - 1, "real order-card click moves one room-temperature package from its lane into exact item 1")
 	_check(first_order_target.disabled and not second_order_target.disabled and not payment_button.visible, "first completed item disables while incomplete order waits for item 2 without paying early")
 	var stock_before_invalid := int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0))
 	await _slow_drag(lane.get_global_rect().get_center(), Vector2(70.0, 300.0), 18)
@@ -105,7 +164,7 @@ func _run() -> void:
 	await _slow_drag(lane.get_global_rect().get_center(), heater_slot.get_global_rect().get_center(), 22)
 	for _frame in 3:
 		await process_frame
-	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0)) == 2, "real pointer drag consumes one package only after the heater accepts it")
+	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0)) == stock_before_invalid - 1, "real pointer drag consumes one package only after the heater accepts it")
 	var countdown_visible := await _wait_until(func() -> bool: return heater_state.text.ends_with("秒") and heater_state.text != "0.0秒", 1.0)
 	var countdown_before := heater_state.text
 	_check(countdown_visible and heater_slot.get_theme_stylebox("panel") == drink_station.get("heater_heating_style"), "heating slot shows a remaining-seconds countdown with its authored heating style")
@@ -115,13 +174,17 @@ func _run() -> void:
 	# Use the longest supported starter duration so this remains valid if a
 	# restored save normalizes the device back to its tier-0 two-second heater.
 	session.call("advance_f3_production", 2.2)
-	var heater_ui_ready := await _wait_until(func() -> bool: return heater_source.is_visible_in_tree() and not heater_source.disabled and heater_state.text == "已加热", 1.0)
-	_check(heater_ui_ready and heater_slot.get_theme_stylebox("panel") == drink_station.get("heater_ready_style") and heater_source.texture_normal != null, "completed drink shows the heated art, explicit label, and warm ready style")
+	var heater_ui_ready := await _wait_until(func() -> bool: return heater_source.is_visible_in_tree() and not heater_source.disabled and heater_state.text.begins_with("热 ") and heater_state.text.ends_with("秒"), 1.0)
+	_check(heater_ui_ready and heater_slot.get_theme_stylebox("panel") == drink_station.get("heater_ready_style") and heater_source.texture_normal != null, "completed drink shows the heated art, visible hot countdown, and warm ready style")
 
 	await _capture(SCREENSHOT_1920, Vector2i(1920, 1080), "captured the five-area entity shop with room-temperature delivery and heated output ready at 1920x1080")
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	for _frame in 8:
 		await process_frame
+	_move_at(_screen_point(customer_buttons[1]))
+	await process_frame
+	_check(root.gui_get_hovered_control() == customer_buttons[1], "customer pointer target remains reachable after resizing to 1280x720")
+	await _click_control_at_screen_size(customer_buttons[0])
 	await _capture(SCREENSHOT_1280, Vector2i(1280, 720), "captured the same five-area entity shop at 1280x720")
 	DisplayServer.window_set_size(Vector2i(1920, 1080))
 	for _frame in 8:
@@ -185,11 +248,19 @@ func _unlock_packaged_drink(session: Node, tutorial_completed: bool = true) -> v
 	progression.set("unlocked_recipe_ids", recipes)
 	var stocks := Dictionary(progression.get("unlocked_stock_ids"))
 	stocks[&"stock.packaged_drink.milk"] = true
+	if tutorial_completed:
+		stocks[&"stock.pancake.sauce.red_chili"] = true
 	progression.set("unlocked_stock_ids", stocks)
-	var tiers := Dictionary(progression.get("device_tiers"))
-	tiers[&"device.packaged_drink_heater"] = 1
-	progression.set("device_tiers", tiers)
+	if tutorial_completed:
+		var owned_growth := Dictionary(progression.get("owned_growth_ids"))
+		owned_growth[&"growth.add_on.pancake.red_chili"] = true
+		progression.set("owned_growth_ids", owned_growth)
+	if tutorial_completed:
+		var tiers := Dictionary(progression.get("device_tiers"))
+		tiers[&"device.packaged_drink_heater"] = 1
+		progression.set("device_tiers", tiers)
 	progression.set("tutorial_completed_area_ids", {&"area.pancake": true, &"area.packaged_drink": true} if tutorial_completed else {&"area.pancake": true})
+	progression.set("tutorial_completed_device_ids", {&"device.packaged_drink_heater": true} if tutorial_completed else {})
 	progression.set("tutorial_queue_area_ids", [] if tutorial_completed else [&"area.packaged_drink"])
 	progression.set("tutorial_active_kind", &"" if tutorial_completed else &"area")
 	progression.set("tutorial_active_id", &"" if tutorial_completed else &"area.packaged_drink")
@@ -215,6 +286,14 @@ func _attached_temperature(order: Dictionary, item_index: int) -> StringName:
 	return StringName(Dictionary(products.back()).get("temperature_mode", &""))
 
 
+func _order_id_in_service_slot(orders: Array, service_slot: int) -> StringName:
+	for order_value in orders:
+		var order := Dictionary(order_value)
+		if int(order.get("service_slot", -1)) == service_slot:
+			return StringName(order.get("order_id", &""))
+	return &""
+
+
 func _slow_drag(from: Vector2, to: Vector2, steps: int) -> void:
 	_move_at(from)
 	await process_frame
@@ -236,6 +315,20 @@ func _click_control(control: Control) -> void:
 	await process_frame
 	_release_at(point)
 	await process_frame
+
+
+func _click_control_at_screen_size(control: Control) -> void:
+	var point := _screen_point(control)
+	_move_at(point)
+	await process_frame
+	_press_at(point)
+	await process_frame
+	_release_at(point)
+	await process_frame
+
+
+func _screen_point(control: Control) -> Vector2:
+	return root.get_screen_transform() * control.get_global_rect().get_center()
 
 
 func _move_at(point: Vector2, relative: Vector2 = Vector2.ZERO) -> void:

@@ -1,6 +1,36 @@
 class_name PancakeHeatmap
 extends Control
 
+
+func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+	if not data is Dictionary:
+		return false
+	var payload := Dictionary(data)
+	if StringName(payload.get("kind", &"")) != &"product_source":
+		return false
+	var source_ref := Dictionary(payload.get("source_ref", {}))
+	return (
+		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
+		and StringName(source_ref.get("source_kind", &"")) in [&"youtiao_output", &"prepared_product_slot"]
+	)
+
+
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	var workstation := _find_workstation()
+	if workstation == null:
+		return
+	var global_drop_position := get_global_transform_with_canvas() * at_position
+	workstation.call("place_youtiao_source_on_pancake", Dictionary(Dictionary(data).get("source_ref", {})), global_drop_position)
+
+
+func _find_workstation() -> Node:
+	var candidate: Node = self
+	while candidate != null:
+		if candidate.has_method("place_youtiao_source_on_pancake"):
+			return candidate
+		candidate = candidate.get_parent()
+	return null
+
 signal pointer_started(local_position: Vector2)
 signal pointer_ended(local_position: Vector2)
 signal cancel_requested
@@ -21,6 +51,7 @@ const VIEW_MODES := {
 @export_range(1.0, 60.0, 1.0) var heatmap_update_hz: float = 12.0
 @export_range(32, 512, 1) var render_texture_size: int = 128
 @export var draw_pointer_trace := false
+@export var input_exclusion_rect := Rect2()
 
 @onready var pancake_visual: TextureRect = %PancakeVisual
 
@@ -60,6 +91,12 @@ var _allocated_texture_size := 0
 var _upload_count := 0
 var _last_uploaded_revision := -1
 var _source_indices := PackedInt32Array()
+
+
+func _has_point(point: Vector2) -> bool:
+	if not Rect2(Vector2.ZERO, size).has_point(point):
+		return false
+	return not input_exclusion_rect.has_area() or not input_exclusion_rect.has_point(point)
 
 
 func _ready() -> void:

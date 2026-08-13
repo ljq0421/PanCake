@@ -20,6 +20,7 @@ var tier := 0
 var state: StringName = STATE_UNOWNED
 var recipe_id: StringName = &""
 var quantity := 0
+var occupied_slot_indices: Array[int] = []
 var cooking_elapsed_seconds := 0.0
 var completed_elapsed_seconds := 0.0
 var draining_elapsed_seconds := 0.0
@@ -60,9 +61,16 @@ func load_recipe(next_recipe_id: StringName, next_quantity: int) -> Dictionary:
 	if quantity + next_quantity > capacity():
 		return _failure(&"capacity_exceeded", {"capacity": capacity(), "loaded_quantity": quantity})
 	recipe_id = next_recipe_id
-	quantity += next_quantity
+	for slot_index in range(capacity()):
+		if occupied_slot_indices.has(slot_index):
+			continue
+		occupied_slot_indices.append(slot_index)
+		if occupied_slot_indices.size() >= quantity + next_quantity:
+			break
+	occupied_slot_indices.sort()
+	quantity = occupied_slot_indices.size()
 	state = STATE_LOADED
-	return _success({"recipe_id": recipe_id, "loaded_quantity": quantity, "remaining_capacity": capacity() - quantity})
+	return _success({"recipe_id": recipe_id, "loaded_quantity": quantity, "remaining_capacity": capacity() - quantity, "occupied_slot_indices": occupied_slot_indices.duplicate()})
 
 
 func start() -> Dictionary:
@@ -151,24 +159,76 @@ func preview_collect(collect_quantity: int = 1) -> Dictionary:
 	})
 
 
+func preview_collect_slot(slot_index: int) -> Dictionary:
+	if not occupied_slot_indices.has(slot_index):
+		return _failure(&"output_slot_empty", {"source_index": slot_index})
+	var result := preview_collect(1)
+	if bool(result.get("success", false)):
+		result["source_index"] = slot_index
+	return result
+
+
 func collect(collect_quantity: int = 1) -> Dictionary:
 	var preview := preview_collect(collect_quantity)
 	if not bool(preview.get("success", false)):
 		return preview
-	quantity -= collect_quantity
+	for slot_index in occupied_slot_indices.duplicate().slice(0, collect_quantity):
+		occupied_slot_indices.erase(slot_index)
+	quantity = occupied_slot_indices.size()
 	preview["remaining_quantity"] = quantity
+	preview["occupied_slot_indices"] = occupied_slot_indices.duplicate()
 	if quantity <= 0:
 		_reset_idle()
 	return preview
 
 
+func collect_slot(slot_index: int) -> Dictionary:
+	var result := preview_collect_slot(slot_index)
+	if not bool(result.get("success", false)):
+		return result
+	occupied_slot_indices.erase(slot_index)
+	quantity = occupied_slot_indices.size()
+	result["remaining_quantity"] = quantity
+	result["occupied_slot_indices"] = occupied_slot_indices.duplicate()
+	if quantity <= 0:
+		_reset_idle()
+	return result
+
+
 func discard() -> Dictionary:
-	if state != STATE_BURNT:
+	if state in [STATE_UNOWNED, STATE_IDLE] or quantity <= 0:
 		return _failure(&"discard_not_available")
+	var discarded_state := state
 	var discarded_recipe := recipe_id
 	var discarded_quantity := quantity
 	_reset_idle()
-	return _success({"recipe_id": discarded_recipe, "quantity": discarded_quantity, "waste_reason": &"burnt_batch"})
+	return _success({
+		"recipe_id": discarded_recipe,
+		"quantity": discarded_quantity,
+		"discarded_state": discarded_state,
+		"waste_reason": &"burnt_batch" if discarded_state == STATE_BURNT else &"youtiao_batch_discarded",
+	})
+
+
+func discard_slot(slot_index: int) -> Dictionary:
+	if state in [STATE_UNOWNED, STATE_IDLE] or not occupied_slot_indices.has(slot_index):
+		return _failure(&"discard_not_available", {"source_index": slot_index})
+	var discarded_state := state
+	var discarded_recipe := recipe_id
+	occupied_slot_indices.erase(slot_index)
+	quantity = occupied_slot_indices.size()
+	var result := _success({
+		"recipe_id": discarded_recipe,
+		"quantity": 1,
+		"source_index": slot_index,
+		"remaining_quantity": quantity,
+		"occupied_slot_indices": occupied_slot_indices.duplicate(),
+		"discarded_state": discarded_state,
+		"waste_reason": &"burnt_batch" if discarded_state == STATE_BURNT else &"youtiao_slot_discarded",
+	})
+	if quantity <= 0:
+		_reset_idle()
+	return result
 
 
 func snapshot() -> Dictionary:
@@ -180,6 +240,7 @@ func snapshot() -> Dictionary:
 		"state": state,
 		"recipe_id": recipe_id,
 		"quantity": quantity,
+		"occupied_slot_indices": occupied_slot_indices.duplicate(),
 		"cooking_elapsed_seconds": cooking_elapsed_seconds,
 		"completed_elapsed_seconds": completed_elapsed_seconds,
 		"draining_elapsed_seconds": draining_elapsed_seconds,
@@ -201,7 +262,18 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		restored_state = STATE_IDLE
 	state = restored_state
 	recipe_id = StringName(value.get("recipe_id", &""))
-	quantity = clampi(int(value.get("quantity", 0)), 0, capacity())
+	var restored_quantity := clampi(int(value.get("quantity", 0)), 0, capacity())
+	occupied_slot_indices.clear()
+	if value.has("occupied_slot_indices"):
+		for slot_value in Array(value.get("occupied_slot_indices", [])):
+			var slot_index := int(slot_value)
+			if slot_index >= 0 and slot_index < capacity() and not occupied_slot_indices.has(slot_index):
+				occupied_slot_indices.append(slot_index)
+	else:
+		for slot_index in range(restored_quantity):
+			occupied_slot_indices.append(slot_index)
+	occupied_slot_indices.sort()
+	quantity = occupied_slot_indices.size()
 	cooking_elapsed_seconds = maxf(float(value.get("cooking_elapsed_seconds", 0.0)), 0.0)
 	completed_elapsed_seconds = maxf(float(value.get("completed_elapsed_seconds", 0.0)), 0.0)
 	draining_elapsed_seconds = maxf(float(value.get("draining_elapsed_seconds", 0.0)), 0.0)
@@ -223,6 +295,7 @@ func _reset_idle() -> void:
 func _reset_values() -> void:
 	recipe_id = &""
 	quantity = 0
+	occupied_slot_indices.clear()
 	cooking_elapsed_seconds = 0.0
 	completed_elapsed_seconds = 0.0
 	draining_elapsed_seconds = 0.0

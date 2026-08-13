@@ -55,10 +55,10 @@ func _run() -> void:
 	_check(workstation.chili_sauce_refill_button != null and workstation.heat_slider != null and not workstation.heat_slider.visible and not workstation.heat_slider.editable and is_equal_approx(workstation.p1_session.heat_level, 0.50), "P1 owns two-sauce selection while griddle heat stays fixed at its default")
 	_check(
 		not workstation.sauce_refill_button.get_global_rect().intersects(workstation.chili_sauce_refill_button.get_global_rect())
-		and is_equal_approx(workstation.chili_sauce_refill_button.get_global_rect().end.x, workstation.sauce_refill_button.get_global_rect().position.x)
+		and is_equal_approx(workstation.sauce_refill_button.get_global_rect().end.x, workstation.chili_sauce_refill_button.get_global_rect().position.x)
 		and workstation.chili_sauce_refill_button.get_global_rect().size == Vector2(145.0, 74.0)
 		and workstation.sauce_refill_button.get_global_rect().size == Vector2(145.0, 74.0),
-		"chili and sweet bottles use adjacent non-overlapping 145-by-74 hit regions"
+		"sweet and chili bottles use adjacent non-overlapping left-to-right 145-by-74 hit regions"
 	)
 	var initial_renderer_diagnostics: Dictionary = workstation.pancake_surface.get_renderer_diagnostics()
 	_check(initial_renderer_diagnostics.chili_sauce_texture != null and initial_renderer_diagnostics.fold_sweet_sauce_texture != null and initial_renderer_diagnostics.fold_chili_sauce_texture != null, "P1 renderer uploads independent sauce fields and fold alpha textures")
@@ -252,7 +252,10 @@ func _run() -> void:
 	workstation._on_customer_slot_pressed(0)
 	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE, "choosing the customer only focuses its order")
 	var completed_order_id := StringName(workstation.get("_formal_order_id"))
-	workstation._on_order_dish_pressed(0)
+	if DisplayServer.get_name() == "headless":
+		workstation._on_order_dish_pressed(0)
+	else:
+		await _click_control(workstation.order_dish_buttons[0])
 	var delivered_order := Dictionary(game_session.call("formal_order", completed_order_id))
 	var tray_settlement: Dictionary = Dictionary(workstation.get("_pending_tray_settlement"))
 	var tray_payment_amount := int(tray_settlement.get("earned_coins", 0))
@@ -417,11 +420,12 @@ func _test_unflipped_sauce_paths(workstation: Workstation) -> void:
 	workstation._process(0.18)
 	workstation._on_sauce_squeeze_ended()
 	_check(
-		workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE
 		and not workstation.pancake_model.is_flipped
-		and not workstation.step_action_button.visible
+		and workstation.step_action_button.visible
+		and not workstation.step_action_button.disabled
 		and workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH,
-		"first manual sauce squeeze commits the no-flip path and equips the brush"
+		"first manual sauce squeeze keeps flip available and equips the brush"
 	)
 	workstation._sauce_stroke_id = workstation.pancake_model.begin_sauce_stroke()
 	workstation._apply_sauce_brush_sample(Vector2(64, 64))
@@ -434,12 +438,21 @@ func _test_unflipped_sauce_paths(workstation: Workstation) -> void:
 	_check(
 		sweet_total > 0.0
 		and workstation.pancake_model.total_sauce(OrderService.SAUCE_CHILI) > 0.0
-		and not workstation.pancake_model.is_flipped,
-		"manual sweet sauce and automatic chili sauce share the same unflipped preparation path"
+		and workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE
+		and workstation.step_action_button.visible
+		and not workstation.step_action_button.disabled,
+		"manual sweet sauce and automatic chili sauce both preserve the available flip action"
+	)
+	workstation._advance_p1_step()
+	_check(
+		workstation.pancake_model.is_flipped
+		and workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		and not workstation.step_action_button.visible,
+		"sauce-covered pancake can still flip, after which the flip button disappears"
 	)
 	var fold_edge := Vector2(workstation.pancake_surface.size.x * 0.12, workstation.pancake_surface.size.y * 0.5)
 	workstation._on_pointer_started(fold_edge)
-	_check(workstation.p1_session.phase == P1Session.Phase.FOLD and workstation.fold_model.active_region != PancakeFoldModel.REGION_NONE, "grabbing the edge is the first action that closes no-flip preparation")
+	_check(workstation.p1_session.phase == P1Session.Phase.FOLD and workstation.fold_model.active_region != PancakeFoldModel.REGION_NONE, "grabbing the edge starts folding after the sauce-covered flip")
 	workstation._on_cancel_requested()
 
 	workstation.set("_automatic_brush_owned", false)
@@ -450,8 +463,11 @@ func _test_unflipped_sauce_paths(workstation: Workstation) -> void:
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
 		and not workstation.pancake_model.is_flipped
-		and not workstation.sauce_refill_button.disabled,
-		"placing a topping first keeps the unflipped sauce and filling stage open"
+		and not workstation.sauce_refill_button.disabled
+		and workstation.step_action_button.visible
+		and workstation.step_action_button.disabled
+		and workstation.step_action_button.tooltip_text.contains("小料"),
+		"placing a topping first keeps sauce available while leaving a visible disabled flip explanation"
 	)
 	workstation._on_sauce_squeeze_started()
 	workstation._process(0.12)

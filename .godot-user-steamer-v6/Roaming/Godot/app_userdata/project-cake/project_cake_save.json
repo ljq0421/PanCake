@@ -1,0 +1,325 @@
+{
+	"business_day_remaining_seconds": 120.0,
+	"business_paused": false,
+	"daily_goal": {
+		"goal": {},
+		"version": 1
+	},
+	"day_open": true,
+	"formal_orders": {
+		"active_order_id": "",
+		"active_order_ids": [],
+		"orders": {},
+		"queue_order_ids": [],
+		"sequence": 0,
+		"settled_order_ids": [],
+		"terminal_results": {},
+		"version": 7
+	},
+	"inventory": {
+		"stock.fresh_soy_milk.black_bean": 0,
+		"stock.fresh_soy_milk.multigrain": 0,
+		"stock.fresh_soy_milk.red_bean": 0,
+		"stock.fresh_soy_milk.yellow_bean": 0,
+		"stock.packaged_drink.black_sesame": 0,
+		"stock.packaged_drink.milk": 0,
+		"stock.packaged_drink.soy_milk": 0,
+		"stock.packaged_drink.walnut": 0,
+		"stock.pancake.baocui": 6,
+		"stock.pancake.batter": 6,
+		"stock.pancake.coriander": 0,
+		"stock.pancake.egg": 6,
+		"stock.pancake.ham_sausage": 0,
+		"stock.pancake.meat_floss": 0,
+		"stock.pancake.pork_tenderloin": 0,
+		"stock.pancake.preserved_mustard": 0,
+		"stock.pancake.sauce.red_chili": 0,
+		"stock.pancake.sauce.sweet_flour": 6,
+		"stock.pancake.scallion": 6,
+		"stock.pancake.youtiao": 0,
+		"stock.steamer.mantou": 2,
+		"stock.steamer.meat_bun": 0,
+		"stock.steamer.vegetable_bun": 0,
+		"stock.youtiao.oil_cake_dough": 0,
+		"stock.youtiao.plain_dough": 0,
+		"stock.youtiao.sugar_oil_cake_dough": 0
+	},
+	"last_bill": {},
+	"last_played_at_unix": 1786532175,
+	"ledger_event_sequence": 2,
+	"order_rng_seed": 1786532172,
+	"order_sequence": 0,
+	"orders_completed": 0,
+	"packaged_drink_split_migration_pending": false,
+	"packaged_drink_split_migration_version": 1,
+	"packaged_drink_suspended_heater_tier": -1,
+	"pancake_holding_tray": {
+		"slot_count": 2,
+		"slots": [
+			{},
+			{}
+		]
+	},
+	"pancake_order_cursor": 0,
+	"pancake_orders_issued_today": 0,
+	"pending_order_promotions": [],
+	"pending_tray_payments": {},
+	"prepared_product_slots": {
+		"slot.04": [],
+		"slot.05": [],
+		"slot.06": []
+	},
+	"production": {
+		"fresh_soy_milk_machine": {
+			"capacity": 0,
+			"completed_elapsed_seconds": 0.0,
+			"device_id": "device.fresh_soy_milk_machine",
+			"elapsed_seconds": 0.0,
+			"infinite_hold": false,
+			"manual_cup_ready": false,
+			"output_rack": [
+				{},
+				{},
+				{},
+				{}
+			],
+			"owned": false,
+			"quality": 100.0,
+			"quantity": 0,
+			"recipe_id": "",
+			"seconds_to_loss": 0.0,
+			"seconds_to_ready": 0.0,
+			"state": "unowned",
+			"tier": 0
+		},
+		"packaged_drink_heater": {
+			"capacity": 0,
+			"device_id": "device.packaged_drink_heater",
+			"owned": false,
+			"slots": [
+				{
+					"elapsed_seconds": 0.0,
+					"hot_elapsed_seconds": 0.0,
+					"hot_remaining_seconds": 0.0,
+					"infinite_hold": false,
+					"product_id": "",
+					"state": "locked"
+				},
+				{
+					"elapsed_seconds": 0.0,
+					"hot_elapsed_seconds": 0.0,
+					"hot_remaining_seconds": 0.0,
+					"infinite_hold": false,
+					"product_id": "",
+					"state": "locked"
+				},
+				{
+					"elapsed_seconds": 0.0,
+					"hot_elapsed_seconds": 0.0,
+					"hot_remaining_seconds": 0.0,
+					"infinite_hold": false,
+					"product_id": "",
+					"state": "locked"
+				},
+				{
+					"elapsed_seconds": 0.0,
+					"hot_elapsed_seconds": 0.0,
+					"hot_remaining_seconds": 0.0,
+					"infinite_hold": false,
+					"product_id": "",
+					"state": "locked"
+				}
+			],
+			"tier": 0
+		},
+		"product_sequence": 0,
+		"steamer": {
+			"device_id": "device.steamer",
+			"layer_capacity": 2,
+			"layers": [
+				{
+					"completed_elapsed_seconds": 0.0,
+					"duration_seconds": 0.0,
+					"elapsed_seconds": 0.0,
+					"infinite_hold": false,
+					"layer_index": 0,
+					"quality": 100.0,
+					"quantity": 0,
+					"recipe_id": "",
+					"seconds_to_loss": 0.0,
+					"seconds_to_ready": 0.0,
+					"state": "empty"
+				},
+				{
+					"completed_elapsed_seconds": 0.0,
+					"duration_seconds": 0.0,
+					"elapsed_seconds": 0.0,
+					"infinite_hold": false,
+					"layer_index": 1,
+					"quality": 100.0,
+					"quantity": 0,
+					"recipe_id": "",
+					"seconds_to_loss": 0.0,
+					"seconds_to_ready": 0.0,
+					"state": "empty"
+				},
+				{
+					"completed_elapsed_seconds": 0.0,
+					"duration_seconds": 0.0,
+					"elapsed_seconds": 0.0,
+					"infinite_hold": false,
+					"layer_index": 2,
+					"quality": 100.0,
+					"quantity": 0,
+					"recipe_id": "",
+					"seconds_to_loss": 0.0,
+					"seconds_to_ready": 0.0,
+					"state": "locked"
+				},
+				{
+					"completed_elapsed_seconds": 0.0,
+					"duration_seconds": 0.0,
+					"elapsed_seconds": 0.0,
+					"infinite_hold": false,
+					"layer_index": 3,
+					"quality": 100.0,
+					"quantity": 0,
+					"recipe_id": "",
+					"seconds_to_loss": 0.0,
+					"seconds_to_ready": 0.0,
+					"state": "locked"
+				}
+			],
+			"owned": true,
+			"tier": 1
+		},
+		"version": 2,
+		"waste_events": [
+			{
+				"area_id": "area.steamer",
+				"attributed_cost": 2,
+				"event_id": "waste.000001",
+				"product_id": "product.steamer.mantou",
+				"quantity": 1,
+				"reason": "steamer_discarded",
+				"source_id": "device.steamer.layer.0"
+			},
+			{
+				"area_id": "area.steamer",
+				"attributed_cost": 2,
+				"event_id": "waste.000002",
+				"product_id": "product.steamer.mantou",
+				"quantity": 1,
+				"reason": "steamer_discarded",
+				"source_id": "device.steamer.layer.0"
+			}
+		],
+		"youtiao_fryer": {
+			"capacity": 0,
+			"completed_elapsed_seconds": 0.0,
+			"cooking_elapsed_seconds": 0.0,
+			"device_id": "device.youtiao_fryer",
+			"draining_elapsed_seconds": 0.0,
+			"occupied_slot_indices": [],
+			"owned": false,
+			"quality": 100.0,
+			"quantity": 0,
+			"recipe_id": "",
+			"state": "unowned",
+			"tier": 0
+		},
+		"youtiao_job_profile": {}
+	},
+	"progression": {
+		"applied_mastery_settlement_ids": [],
+		"area_mastery": {},
+		"area_mastery_details": {},
+		"coins": 0,
+		"current_day": 1,
+		"day_open": true,
+		"device_tiers": {
+			"device.pancake_griddle": 0,
+			"device.steamer": 1
+		},
+		"owned_assist_ids": [],
+		"owned_growth_ids": [],
+		"pending_content_purchase": "",
+		"pending_install_purchase": "",
+		"reputation": 0,
+		"specialization": {
+			"area.fresh_soy_milk": "unrated",
+			"area.packaged_drink": "unrated",
+			"area.pancake": "unrated",
+			"area.steamer": "unrated",
+			"area.youtiao": "unrated"
+		},
+		"stock_capacity": 6,
+		"tutorial": {
+			"active_id": "area.pancake",
+			"active_kind": "area",
+			"completed_area_ids": [],
+			"completed_device_ids": [],
+			"failure_count_by_id": {},
+			"queue_area_ids": [
+				"area.pancake"
+			],
+			"queue_device_ids": []
+		},
+		"unlocked_area_ids": [
+			"area.pancake",
+			"area.steamer"
+		],
+		"unlocked_automation_ids": [],
+		"unlocked_product_ids": [
+			"product.steamer.mantou"
+		],
+		"unlocked_recipe_ids": [
+			"recipe.steamer.mantou"
+		],
+		"unlocked_stock_ids": [
+			"stock.steamer.mantou"
+		]
+	},
+	"reconciled_formal_order_ids": [],
+	"restock_progress": {},
+	"save_kind": "five_area_v1",
+	"started_at_unix": 1786532172,
+	"today_cutoff": {},
+	"today_ledger": {
+		"closed": false,
+		"day": 1,
+		"events": [
+			{
+				"area_id": "area.steamer",
+				"coins_delta": 0,
+				"details": {
+					"attributed_cost": 2,
+					"reason": "steamer_discarded"
+				},
+				"event_id": "day.1.production_waste.1",
+				"kind": "waste",
+				"quantity": 1,
+				"reputation_delta": 0,
+				"source_id": "device.steamer.layer.0"
+			},
+			{
+				"area_id": "area.steamer",
+				"coins_delta": 0,
+				"details": {
+					"attributed_cost": 2,
+					"reason": "steamer_discarded"
+				},
+				"event_id": "day.1.production_waste.2",
+				"kind": "waste",
+				"quantity": 1,
+				"reputation_delta": 0,
+				"source_id": "device.steamer.layer.0"
+			}
+		],
+		"version": 1
+	},
+	"today_orders": [],
+	"today_reputation_delta": 0,
+	"tutorial_order_generated_day": 0,
+	"version": 3
+}

@@ -112,7 +112,7 @@ FiveAreaWorkstationController
 | 顺序 | 区域 ID | 设备 ID | 显示名 |
 |---:|---|---|---|
 | 1 | `area.pancake` | `device.pancake_griddle` | 煎饼台 |
-| 2 | `area.packaged_drink` | `device.packaged_drink_heater` | 成品饮品柜 |
+| 2 | `area.packaged_drink` | 独立设备见下文 | 成品饮品柜（仅常温库存） |
 | 3 | `area.youtiao` | `device.youtiao_fryer` | 油条炸锅 |
 | 4 | `area.fresh_soy_milk` | `device.fresh_soy_milk_machine` | 现磨豆浆机 |
 | 5 | `area.steamer` | `device.steamer` | 多层蒸笼 |
@@ -394,12 +394,17 @@ static func validate_catalog() -> PackedStringArray
 
 | 成长 ID | 位 | 价格 | 门槛 | 效果 |
 |---|---|---:|---|---|
-| `growth.area.packaged_drink` | 安装 | 30 | Q(pancake)6，T(pancake) | 解锁区域、基础设备和纯牛奶 |
+| `growth.area.packaged_drink` | 安装 | 30 | Q(pancake)6，T(pancake) | 仅解锁饮品柜、纯牛奶库存和常温教学单 |
+| `growth.equipment.packaged_drink.basic` | 安装 | 12 | T(drink) | 次日安装一位基础加热器并触发一次热饮教学 |
 | `growth.product.packaged_drink.soy_milk` | 内容 | 12 | R30 | 解锁成品豆奶 |
-| `growth.equipment.packaged_drink.intermediate` | 安装 | 24 | Q(drink)6 | 2位、1秒加热 |
+| `growth.equipment.packaged_drink.intermediate` | 安装 | 24 | 已购买基础加热器，Q(drink)6 | 2位、1秒加热 |
 | `growth.product.packaged_drink.walnut` | 内容 | 18 | D11 | 解锁核桃乳 |
 | `growth.product.packaged_drink.black_sesame` | 内容 | 24 | R160 | 解锁黑芝麻乳 |
 | `growth.equipment.packaged_drink.advanced` | 安装 | 48 | ALL，最高连续正确温度 8 | 4位、持续保温 |
+
+饮品柜与加热器使用独立所有权：`owns_area("area.packaged_drink")` 只允许常温成品饮品；`owns_device("device.packaged_drink_heater")` 才允许操作加热位。常温教学完成后才会生成普通常温饮品订单；基础加热器次日生效后生成一张独占、无限时的加热纯牛奶教学单，完成前普通订单不得生成 `heated`。油条区域要求该设备教学已完成。
+
+兼容旧档时不提升顶层存档版本。若旧档在营业中，迁移延迟到日结；届时将加热位饮品无损退回库存（可暂时超容量），暂存既有加热器等级并重新锁定设备。玩家重新购买基础加热器后恢复已付费的双位或四位等级，但仍只触发一次新的热饮教学。
 
 #### 油条
 

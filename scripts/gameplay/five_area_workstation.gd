@@ -16,11 +16,28 @@ const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd"
 @onready var soy_split_slots: Array[Node] = [%SoySplitYellow, %SoySplitBlack, %SoySplitRed, %SoySplitMultigrain, %SoySplitReserved02, %SoySplitReserved03]
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain, %YoutiaoDoughOilCake, %YoutiaoDoughSugar]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
+@onready var fixed_material_lock_artworks: Array[Control] = [
+	$SafeArea/LockedIngredientArtwork/Slot01,
+	$SafeArea/LockedIngredientArtwork/Slot02,
+	$SafeArea/LockedIngredientArtwork/Slot03,
+	$SafeArea/LockedIngredientArtwork/Slot04,
+	$SafeArea/LockedIngredientArtwork/Slot05,
+	$SafeArea/LockedIngredientArtwork/Slot06,
+]
+@onready var fixed_material_lock_buttons: Array[BaseButton] = [
+	$SafeArea/LockedIngredientInteractions/Slot01LockedButton,
+	$SafeArea/LockedIngredientInteractions/Slot02LockedButton,
+	$SafeArea/LockedIngredientInteractions/Slot03LockedButton,
+	$SafeArea/LockedIngredientInteractions/Slot04LockedButton,
+	$SafeArea/LockedIngredientInteractions/Slot05LockedButton,
+	$SafeArea/LockedIngredientInteractions/Slot06LockedButton,
+]
 
 var _ready_pancake_source_ref: Dictionary = {}
 var _pending_tray_settlement: Dictionary = {}
 var _refresh_elapsed := 0.0
 var _delivery_click_in_progress := false
+var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 
 
@@ -40,8 +57,8 @@ func _ready() -> void:
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
 		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
 		material_slot.short_clicked.connect(_on_material_short_clicked)
-	youtiao_station.output_source.native_drag_enabled = false
-	youtiao_station.output_source.drag_started.connect(_on_youtiao_output_drag_started)
+	for source in youtiao_station.output_sources:
+		source.native_drag_enabled = true
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
 		var order_signal := Signal(session, &"order_changed")
@@ -89,11 +106,14 @@ func _process(delta: float) -> void:
 
 
 func _should_defer_business_day_expiration() -> bool:
-	var session := get_node_or_null("/root/GameSession")
-	if session == null or _formal_order_id.is_empty():
-		return false
-	var order := Dictionary(session.call("formal_order", _formal_order_id))
-	return StringName(order.get("state", &"")) in [&"active", &"serving"]
+	return false
+
+
+func _allows_transaction_cutoff_grace() -> bool:
+	# The five-area shop closes on the exact expiry frame. Any delivery that was
+	# synchronously completed before timer processing is already in the ledger;
+	# every still-open order is expired below.
+	return false
 
 
 func _open_f3_station(area_id: StringName) -> void:
@@ -117,15 +137,20 @@ func _focus_formal_order(order: Dictionary, restart_pancake: bool = false) -> vo
 func _set_packaged_drink_tutorial_status(order: Dictionary) -> bool:
 	if StringName(order.get("teaching_area_id", &"")) != &"area.packaged_drink":
 		return false
+	var tutorial_kind := StringName(order.get("tutorial_kind", Dictionary(order.get("metadata", {})).get("tutorial_kind", &"area")))
+	var tutorial_id := StringName(order.get("tutorial_id", Dictionary(order.get("metadata", {})).get("tutorial_id", &"area.packaged_drink")))
 	var session := get_node_or_null("/root/GameSession")
 	var milk_count := 0
 	if session != null and session.has_method("inventory_snapshot"):
 		milk_count = int(Dictionary(session.call("inventory_snapshot")).get("stock.packaged_drink.milk", 0))
-	tool_status_label.text = (
-		"饮品教学：先长按纯牛奶补货，再点击订单商品交付"
-		if milk_count <= 0
-		else "饮品教学：点击订单商品交付一份常温纯牛奶"
-	)
+	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater":
+		tool_status_label.text = "加热教学：补货后把纯牛奶拖入加热位，完成后点击订单商品交付"
+	else:
+		tool_status_label.text = (
+			"饮品柜教学：先长按纯牛奶补货，再点击订单商品交付"
+			if milk_count <= 0
+			else "饮品柜教学：点击订单商品交付一份常温纯牛奶"
+		)
 	return true
 
 
@@ -168,6 +193,14 @@ func _refresh_material_slots() -> void:
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and (slot.recipe_id.is_empty() or _id_in(unlocked_recipes, slot.recipe_id))
 		var status := Dictionary(session.call("five_area_restock_status", slot.stock_id)) if not slot.stock_id.is_empty() else {}
 		slot.apply_state(int(inventory.get(str(slot.stock_id), 0)), unlocked, int(status.get("capacity", 6)))
+	var fixed_slots: Array[Node] = [soy_full_slots[0], soy_full_slots[1], soy_full_slots[2], youtiao_dough_slots[0], youtiao_dough_slots[1], youtiao_dough_slots[2]]
+	for index in fixed_slots.size():
+		var slot := fixed_slots[index]
+		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
+		var unlocked: bool = _id_in(unlocked_areas, area_id) and _id_in(unlocked_recipes, slot.recipe_id)
+		fixed_material_lock_artworks[index].visible = not unlocked
+		fixed_material_lock_buttons[index].visible = not unlocked
+		fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_STOP if not unlocked else Control.MOUSE_FILTER_IGNORE
 
 
 func _on_material_hold_requested(source_ref: Dictionary, slot: Node) -> void:
@@ -208,17 +241,36 @@ func _on_youtiao_output_drag_started(source_ref: Dictionary) -> void:
 	_begin_ingredient_drag(IngredientModel.YOUTIAO, youtiao_station.output_source.get_global_rect().get_center())
 
 
+func place_youtiao_source_on_pancake(source_ref: Dictionary, viewport_position: Vector2) -> void:
+	if StringName(source_ref.get("product_id", &"")) != &"product.youtiao.plain":
+		tool_status_label.text = "只有原味油条可以加入煎饼"
+		return
+	_pending_youtiao_ingredient_source_ref = source_ref.duplicate(true)
+	_begin_ingredient_drag(IngredientModel.YOUTIAO, viewport_position)
+	if _ingredient_drag_type == IngredientModel.YOUTIAO:
+		_finish_ingredient_drag(viewport_position)
+	_pending_youtiao_ingredient_source_ref.clear()
+
+
 func _ingredient_available_for_drag(ingredient_type: StringName) -> bool:
 	if ingredient_type == IngredientModel.YOUTIAO:
 		var session := get_node_or_null("/root/GameSession")
-		return session != null and session.has_method("preview_take_ready_youtiao_for_pancake") and bool(Dictionary(session.call("preview_take_ready_youtiao_for_pancake")).get("success", false))
+		if session == null:
+			return false
+		if StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot":
+			return bool(Dictionary(session.call("preview_take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")))).get("success", false))
+		return session.has_method("preview_take_ready_youtiao_for_pancake") and bool(Dictionary(session.call("preview_take_ready_youtiao_for_pancake")).get("success", false))
 	return super._ingredient_available_for_drag(ingredient_type)
 
 
 func _consume_dragged_ingredient(ingredient_type: StringName) -> bool:
 	if ingredient_type == IngredientModel.YOUTIAO:
 		var session := get_node_or_null("/root/GameSession")
-		return session != null and session.has_method("take_ready_youtiao_for_pancake") and bool(Dictionary(session.call("take_ready_youtiao_for_pancake")).get("success", false))
+		if session == null:
+			return false
+		if StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot":
+			return bool(Dictionary(session.call("take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")))).get("success", false))
+		return session.has_method("take_ready_youtiao_for_pancake") and bool(Dictionary(session.call("take_ready_youtiao_for_pancake")).get("success", false))
 	return super._consume_dragged_ingredient(ingredient_type)
 
 
@@ -241,10 +293,13 @@ func _refresh_tutorial_guide() -> void:
 		return
 	var order := Dictionary(session.call("active_formal_order"))
 	var area_id := StringName(order.get("teaching_area_id", &""))
-	if area_id.is_empty() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+	var metadata := Dictionary(order.get("metadata", {}))
+	var tutorial_kind := StringName(order.get("tutorial_kind", metadata.get("tutorial_kind", &"area" if not area_id.is_empty() else &"")))
+	var tutorial_id := StringName(order.get("tutorial_id", metadata.get("tutorial_id", area_id)))
+	if tutorial_id.is_empty() or StringName(order.get("state", &"")) not in [&"active", &"serving"]:
 		tutorial_guide_overlay.call("hide_guide")
 		return
-	var guide := _tutorial_guide_for_area(session, area_id)
+	var guide := _tutorial_guide_for_heater(session) if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater" else _tutorial_guide_for_area(session, area_id)
 	var target := guide.get("target") as Control
 	if target == null:
 		tutorial_guide_overlay.call("hide_guide")
@@ -260,16 +315,24 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				return {"target": packaged_drink_station.lanes[0], "message": "长按纯牛奶货道补货"}
 			return {"target": order_dish_buttons[0], "message": "点击订单中的纯牛奶完成交付"}
 		&"area.youtiao":
+			var prepared_plain := Dictionary(session.call("prepared_product_slot_status", &"slot.04")) if session.has_method("prepared_product_slot_status") else {}
+			if int(prepared_plain.get("count", 0)) > 0:
+				return {"target": order_dish_buttons[0], "message": "点击订单中的原味油条，从暂存盘交付"}
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 			match StringName(machine.get("state", &"idle")):
 				&"idle":
-					var message := "长按原味面胚补货" if int(inventory.get("stock.youtiao.plain_dough", 0)) <= 0 else "把原味面胚拖入炸篮"
+					var message := "长按原味面胚补货；基础炸篮共2格" if int(inventory.get("stock.youtiao.plain_dough", 0)) <= 0 else "把原味面胚拖入炸篮；基础炸篮共2格"
 					return {"target": youtiao_dough_slots[0], "message": message}
-				&"loaded": return {"target": youtiao_station.start_button, "message": "点击启动，开始炸制"}
+				&"loaded":
+					var quantity := int(machine.get("quantity", 0))
+					var capacity := int(machine.get("capacity", 2))
+					var message := "已装%d/%d，点击启动" % [quantity, capacity] if quantity >= capacity else "已装%d/%d，可再放一份或直接启动" % [quantity, capacity]
+					return {"target": youtiao_station.start_button, "message": message}
 				&"frying": return {"target": youtiao_station.state_label, "message": "等待炸制完成，留意设备状态"}
-				&"ready_safe", &"overcooking", &"burnt": return {"target": youtiao_station.lift_button, "message": "及时升篮；焦糊批次需丢弃"}
+				&"ready_safe", &"overcooking": return {"target": youtiao_station.lift_button, "message": "及时升篮"}
+				&"burnt": return {"target": youtiao_station.output_sources[0], "message": "把焦糊内容逐份拖到废弃区"}
 				&"draining": return {"target": youtiao_station.state_label, "message": "等待沥油完成"}
-				&"ready_to_collect": return {"target": order_dish_buttons[0], "message": "成品留在炸篮，点击订单商品交付"}
+				&"ready_to_collect": return {"target": youtiao_station.prepared_slots[0], "message": "把炸篮中的原味油条拖入暂存盘"}
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
@@ -301,6 +364,20 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				P1Session.Phase.PACKAGE: return {"target": paper_sleeve_button, "message": "选择可用包装完成打包"}
 				P1Session.Phase.READY_TO_SERVE: return {"target": order_dish_buttons[0], "message": "点击订单商品交付经典煎饼"}
 	return {}
+
+
+func _tutorial_guide_for_heater(session: Node) -> Dictionary:
+	var inventory := Dictionary(session.call("inventory_snapshot"))
+	if int(inventory.get("stock.packaged_drink.milk", 0)) <= 0:
+		return {"target": packaged_drink_station.lanes[0], "message": "长按纯牛奶货道补货"}
+	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.packaged_drink_heater"))
+	var slots := Array(machine.get("slots", []))
+	var slot := Dictionary(slots[0]) if not slots.is_empty() else {"state": &"locked"}
+	match StringName(slot.get("state", &"locked")):
+		&"empty": return {"target": packaged_drink_station.heater_targets[0], "message": "把纯牛奶拖入加热位"}
+		&"heating": return {"target": packaged_drink_station.heater_states[0], "message": "等待纯牛奶加热完成"}
+		&"ready_hot", &"cooled": return {"target": order_dish_buttons[0], "message": "点击订单中的热纯牛奶完成交付"}
+	return {"target": packaged_drink_station.heater_lock_cover, "message": "基础加热器尚未安装"}
 
 
 func _refresh_formal_shell() -> void:
@@ -475,15 +552,20 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 	packaged_drink_station.refresh_from_session()
 	youtiao_station.refresh_from_session()
 	_refresh_pancake_drag_sources()
-	var sources: Array[ProductDragSource] = [pancake_ready_source]
+	var result: Array[Dictionary] = []
+	# A completed pancake is business state, not presentation state.  Keep its
+	# full product snapshot available to click delivery even if the drag source
+	# has not completed a visibility/disabled refresh on this frame.
+	if p1_session != null and p1_session.phase == P1Session.Phase.READY_TO_SERVE and not _ready_pancake_source_ref.is_empty():
+		result.append(_ready_pancake_source_ref.duplicate(true))
+	var sources: Array[ProductDragSource] = []
 	sources.append_array(pancake_holding_sources)
 	sources.append_array(packaged_drink_station.heater_sources)
 	sources.append_array(packaged_drink_station.lanes)
-	sources.append(youtiao_station.output_source)
+	sources.append_array(youtiao_station.output_sources)
 	sources.append(fresh_soy_station.machine_output)
 	sources.append_array(fresh_soy_station.rack_outputs)
 	sources.append_array(steamer_station.layer_outputs)
-	var result: Array[Dictionary] = []
 	for source in sources:
 		if source == null or source.disabled or not source.visible:
 			continue
@@ -612,6 +694,7 @@ static func _missing_delivery_source_text(area_id: StringName) -> String:
 		&"area.pancake": "没有可交付的煎饼；请先完成包装或从成品暂存托盘取用",
 		&"area.packaged_drink": "没有可交付的成品饮品；热饮需要等待加热完成",
 		&"area.youtiao": "没有可交付的油条；请先完成炸制并升篮沥油",
+		&"area.fresh_soy_milk": "请先点击豆浆机的“接杯”，再交付当前这杯豆浆",
 	}.get(area_id, "该区域没有可交付的成品")
 
 

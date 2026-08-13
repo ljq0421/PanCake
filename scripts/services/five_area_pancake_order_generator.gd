@@ -37,6 +37,12 @@ static func generate(progression_snapshot: Dictionary, tutorial: Dictionary, cur
 	return {"success": true, "order": order, "next_cursor": cursor + 1}
 
 
+static func generate_for_template(progression_snapshot: Dictionary, template_id: StringName) -> Dictionary:
+	if not _eligible_template_ids(progression_snapshot).has(template_id):
+		return {"success": false, "reason": &"pancake_template_not_eligible", "template_id": template_id}
+	return {"success": true, "order": _legacy_order(template_id), "next_cursor": 0}
+
+
 static func _tutorial_order(progression_snapshot: Dictionary, tutorial: Dictionary) -> Dictionary:
 	var active_kind := StringName(tutorial.get("active_kind", &""))
 	var active_id := StringName(tutorial.get("active_id", &""))

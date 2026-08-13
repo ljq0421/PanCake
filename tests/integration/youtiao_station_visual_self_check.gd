@@ -6,6 +6,9 @@ const AUTO_LIFT := &"automation.youtiao.auto_lift"
 const AUTO_LOAD := &"automation.youtiao.auto_load"
 const TEMP_ASSIST := &"assist.youtiao.temperature_indicator"
 const GENERATED_ASSETS := [
+	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_v2_chinese.png", Vector2i(1024, 512)],
+	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_lowered_v2_chinese.png", Vector2i(1024, 512)],
+	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_raised_v2_chinese.png", Vector2i(1024, 512)],
 	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_five_area_v4.png", Vector2i(1024, 512)],
 	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_lowered_five_area_v4.png", Vector2i(1024, 512)],
 	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_raised_five_area_v4.png", Vector2i(1024, 512)],
@@ -47,6 +50,8 @@ func _run() -> void:
 
 func _check_assets(station: Node) -> void:
 	_check(station.body_textures.size() == 3 and station.lowered_basket_textures.size() == 3 and station.raised_basket_textures.size() == 3, "three tiers each wire a body, lowered basket, and raised basket")
+	_check(station.body_textures[1] != station.body_textures[0] and station.lowered_basket_textures[1] != station.lowered_basket_textures[0] and station.raised_basket_textures[1] != station.raised_basket_textures[0], "intermediate fryer owns dedicated body, lowered-basket, and raised-basket art")
+	_check(station.body_textures[1].resource_path.ends_with("youtiao_fryer_tier_1_body_v2_chinese.png") and station.lowered_basket_textures[1].resource_path.ends_with("youtiao_fryer_tier_1_lowered_v2_chinese.png") and station.raised_basket_textures[1].resource_path.ends_with("youtiao_fryer_tier_1_raised_v2_chinese.png"), "intermediate fryer binds the new Chinese-style three-state set")
 	_check(station.raw_food_textures.size() == 3 and station.cooked_food_textures.size() == 3, "the three formal recipes reuse paired raw and cooked textures")
 	_check(station.auto_lift_texture != null and station.auto_load_texture != null and station.sizzle_texture != null and station.oil_drips_texture != null, "automation attachments and loop effects are scene-bound")
 	for entry in GENERATED_ASSETS:
@@ -90,13 +95,16 @@ func _check_states(station: Node) -> void:
 	station.apply_visual_snapshot(_snapshot(0, &"overcooking", RECIPE_IDS[0], 2, 12.0, 8.0, 72.0), _inventory())
 	_check(station.cooked_food_visuals[0].modulate.g < 0.8, "overcooking darkens the product according to quality")
 	station.apply_visual_snapshot(_snapshot(0, &"burnt", RECIPE_IDS[0], 2, 12.0, 15.0, 0.0), _inventory())
-	_check(station.burnt_smoke_visual.visible and station.lift_button.text == "丢弃" and not station.lift_button.disabled, "burnt adds reused smoke and an explicit discard recovery")
+	_check(station.burnt_smoke_visual.visible and station.lift_button.disabled and not station.output_sources[0].disabled and not station.output_sources[1].disabled, "burnt content remains visible and exposes one waste drag source per occupied slot")
+	_check(station.get_node_or_null("DiscardBatchButton") == null, "youtiao station no longer exposes a whole-batch discard button")
 	station.apply_visual_snapshot(_snapshot(0, &"draining", RECIPE_IDS[0], 2), _inventory())
 	_check(station.raised_basket_visual.visible and station.raised_basket_front_clip.visible and not station.lowered_basket_visual.visible and not station.lowered_basket_front_clip.visible and station.raised_basket_front_visual.texture == station.raised_basket_visual.texture and station.oil_drips_visual.visible, "draining raises food between the exact raised-basket base and front pixels while oil drips loop")
 	station.apply_visual_snapshot(_snapshot(0, &"ready_to_collect", RECIPE_IDS[0], 2), _inventory())
-	_check(station.raised_basket_visual.visible and station.output_source.visible and _visible_food_count(station) == 2, "ready-to-collect keeps the high basket and drag source")
-	station.apply_visual_snapshot(_snapshot(0, &"ready_to_collect", RECIPE_IDS[0], 1), _inventory())
-	_check(_visible_food_count(station) == 1, "a partial collection snapshot hides exactly one food slot")
+	_check(station.raised_basket_visual.visible and not station.output_sources[0].disabled and not station.output_sources[1].disabled and _visible_food_count(station) == 2, "ready-to-collect keeps the high basket and independent slot drag sources")
+	var hole_snapshot := _snapshot(0, &"ready_to_collect", RECIPE_IDS[0], 1)
+	hole_snapshot["occupied_slot_indices"] = [1]
+	station.apply_visual_snapshot(hole_snapshot, _inventory())
+	_check(not station.food_slots[0].visible and station.food_slots[1].visible, "a partial collection snapshot keeps the right slot in place")
 	station.apply_visual_snapshot(_snapshot(0, &"idle"), _inventory())
 	_check(_visible_food_count(station) == 0 and station.lowered_basket_visual.visible, "the final collection snapshot restores the empty low basket")
 

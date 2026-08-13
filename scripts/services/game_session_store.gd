@@ -15,6 +15,7 @@ const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
 const SAVE_VERSION := 3
 const SAVE_KIND := "five_area_v1"
+const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
@@ -27,6 +28,11 @@ const BUSINESS_REPORT_SERVICE := preload("res://scripts/services/business_report
 const DAILY_GOAL_SERVICE := preload("res://scripts/services/daily_goal_service.gd")
 const ATTENTION_SERVICE := preload("res://scripts/services/attention_service.gd")
 const PREPARED_PRODUCT_SLOT_CAPACITY := 6
+const PACKAGED_DRINK_SPLIT_MIGRATION_VERSION := 1
+const PACKAGED_DRINK_SPLIT_MIGRATION_KEY := "packaged_drink_split_migration_version"
+const PACKAGED_DRINK_SPLIT_PENDING_KEY := "packaged_drink_split_migration_pending"
+const PACKAGED_DRINK_SUSPENDED_TIER_KEY := "packaged_drink_suspended_heater_tier"
+const PACKAGED_DRINK_HEATER_MODEL := preload("res://scripts/gameplay/packaged_drink_heater_model.gd")
 const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.04": {"product_id": &"product.youtiao.plain", "recipe_id": &"recipe.youtiao.plain"},
 	&"slot.05": {"product_id": &"product.youtiao.oil_cake", "recipe_id": &"recipe.youtiao.oil_cake"},
@@ -143,6 +149,10 @@ func begin_new_game() -> Dictionary:
 		"order_rng_seed": now,
 		"order_sequence": 0,
 		"tutorial_order_generated_day": 0,
+		ORDER_PROMOTIONS_KEY: [],
+		PACKAGED_DRINK_SPLIT_MIGRATION_KEY: PACKAGED_DRINK_SPLIT_MIGRATION_VERSION,
+		PACKAGED_DRINK_SPLIT_PENDING_KEY: false,
+		PACKAGED_DRINK_SUSPENDED_TIER_KEY: -1,
 	}
 	_configure_service_connections()
 	_write_save()
@@ -294,10 +304,41 @@ func ensure_active_playable_order() -> Dictionary:
 	if not bool(_progression.get("day_open")):
 		return {"success": false, "reason": &"business_day_closed"}
 	var queue: Array = Array(_order_service.call("queue_snapshot"))
-	var needed := maxi(4 - queue.size(), 0)
+	var tutorial := Dictionary(_progression.call("tutorial_snapshot"))
+	var tutorial_kind := StringName(tutorial.get("active_kind", &""))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	var current_day := int(_progression.get("current_day"))
+	var tutorial_generated_today := int(_save_data.get("tutorial_order_generated_day", 0)) == current_day
+	var queue_is_generated_ordinary := not queue.is_empty()
+	for queued_order_variant in queue:
+		var queued_order := Dictionary(queued_order_variant)
+		var queued_identity := _tutorial_identity_for_order(queued_order)
+		var queued_metadata := Dictionary(queued_order.get("metadata", {}))
+		if not StringName(queued_identity.get("tutorial_id", &"")).is_empty() or not queued_metadata.has("generated_sequence"):
+			queue_is_generated_ordinary = false
+			break
+	# Older and early-end saves can carry a full ordinary queue across the day
+	# boundary.  A newly active tutorial owns the storefront, so discard that
+	# stale queue before the size check can return it as the new day's first order.
+	if (
+		not tutorial_id.is_empty()
+		and not tutorial_generated_today
+		and _formal_order_for_tutorial(tutorial_kind, tutorial_id).is_empty()
+		and queue_is_generated_ordinary
+	):
+		_order_service.call("abandon_all_open_orders", &"tutorial_day_priority")
+		_sync_formal_orders_to_save()
+		_touch_and_write()
+		queue.clear()
+	var tutorial_owns_storefront := (not tutorial_id.is_empty() and not tutorial_generated_today) or _queue_contains_tutorial(queue)
+	var queue_target := 4 if tutorial_owns_storefront else FIVE_AREA_ORDER_SERVICE.MAX_OPEN_ORDERS
+	var needed := maxi(queue_target - queue.size(), 0)
 	if needed <= 0:
 		return {"success": true, "created": false, "order": active_formal_order(), "active_orders": active_formal_orders(), "queue": queue}
 	var next_sequence := maxi(int(_save_data.get("order_sequence", 0)), 0) + 1
+	var promotion_context := _active_order_promotion_context()
+	if promotion_context.is_empty():
+		promotion_context = _tutorial_promotion_context(queue, tutorial_kind, tutorial_id, tutorial_generated_today)
 	var generated_batch: Dictionary = FIVE_AREA_PLAYABLE_ORDER_GENERATOR.generate_queue_candidates(
 		five_area_progression_snapshot(),
 		inventory_snapshot(),
@@ -305,7 +346,8 @@ func ensure_active_playable_order() -> Dictionary:
 		next_sequence,
 		needed,
 		int(_progression.get("current_day")),
-		int(_save_data.get("tutorial_order_generated_day", 0))
+		int(_save_data.get("tutorial_order_generated_day", 0)),
+		promotion_context,
 	)
 	if not bool(generated_batch.get("success", false)):
 		if not queue.is_empty():
@@ -318,10 +360,13 @@ func ensure_active_playable_order() -> Dictionary:
 		metadata["generated_sequence"] = next_sequence + candidate_index
 		candidate["metadata"] = metadata
 		candidates[candidate_index] = candidate
-	var result: Dictionary = _order_service.call("ensure_queue", 4, candidates)
+	var result: Dictionary = _order_service.call("ensure_queue", queue_target, candidates)
 	if not bool(result.get("success", false)):
 		return result
 	if bool(result.get("created", false)):
+		if not promotion_context.is_empty():
+			_enqueue_generated_tutorial_promotions(candidates)
+		_consume_generated_order_promotions(candidates)
 		_save_data["order_sequence"] = next_sequence + candidates.size() - 1
 		if int(generated_batch.get("tutorial_generated_day", 0)) > 0:
 			_save_data["tutorial_order_generated_day"] = int(generated_batch.get("tutorial_generated_day", 0))
@@ -331,6 +376,136 @@ func ensure_active_playable_order() -> Dictionary:
 	result["order"] = active_formal_order()
 	result["active_orders"] = active_formal_orders()
 	return result
+
+
+func _queue_contains_tutorial(queue: Array) -> bool:
+	for order_variant in queue:
+		if not StringName(_tutorial_identity_for_order(Dictionary(order_variant)).get("tutorial_id", &"")).is_empty():
+			return true
+	return false
+
+
+func _active_order_promotion_context() -> Dictionary:
+	var promotions := Array(_save_data.get(ORDER_PROMOTIONS_KEY, []))
+	for promotion_variant in promotions:
+		var promotion := Dictionary(promotion_variant)
+		var remaining := clampi(int(promotion.get("remaining_orders", 0)), 0, 3)
+		if remaining <= 0:
+			continue
+		return {
+			"kind": StringName(promotion.get("kind", &"")),
+			"target_id": StringName(promotion.get("target_id", &"")),
+			"source_growth_id": StringName(promotion.get("source_growth_id", &"")),
+			"next_index": 3 - remaining,
+		}
+	return {}
+
+
+func _enqueue_generated_tutorial_promotions(candidates: Array) -> void:
+	for candidate_variant in candidates:
+		var metadata := Dictionary(Dictionary(candidate_variant).get("metadata", {}))
+		var tutorial_id := StringName(metadata.get("tutorial_id", &""))
+		if tutorial_id.is_empty():
+			continue
+		_enqueue_order_promotion({
+			"kind": StringName(metadata.get("tutorial_kind", &"area")),
+			"target_id": tutorial_id,
+			"source_growth_id": StringName("tutorial:%s" % tutorial_id),
+			"remaining_orders": 3,
+		})
+
+
+func _consume_generated_order_promotions(candidates: Array) -> void:
+	var counts := {}
+	for candidate_variant in candidates:
+		var metadata := Dictionary(Dictionary(candidate_variant).get("metadata", {}))
+		var source_growth_id := StringName(metadata.get("promotion_source_growth_id", &""))
+		if source_growth_id.is_empty():
+			continue
+		counts[source_growth_id] = int(counts.get(source_growth_id, 0)) + 1
+	var promotions := Array(_save_data.get(ORDER_PROMOTIONS_KEY, [])).duplicate(true)
+	for index in range(promotions.size()):
+		var promotion := Dictionary(promotions[index]).duplicate(true)
+		var source_growth_id := StringName(promotion.get("source_growth_id", &""))
+		promotion["remaining_orders"] = maxi(int(promotion.get("remaining_orders", 0)) - int(counts.get(source_growth_id, 0)), 0)
+		promotions[index] = promotion
+	while not promotions.is_empty() and int(Dictionary(promotions[0]).get("remaining_orders", 0)) <= 0:
+		promotions.pop_front()
+	_save_data[ORDER_PROMOTIONS_KEY] = promotions
+
+
+func _enqueue_order_promotion(promotion: Dictionary) -> void:
+	var source_growth_id := StringName(promotion.get("source_growth_id", &""))
+	var promotions := Array(_save_data.get(ORDER_PROMOTIONS_KEY, [])).duplicate(true)
+	for existing_variant in promotions:
+		if StringName(Dictionary(existing_variant).get("source_growth_id", &"")) == source_growth_id:
+			return
+	promotions.append(promotion.duplicate(true))
+	_save_data[ORDER_PROMOTIONS_KEY] = promotions
+
+
+func _enqueue_growth_order_promotions(activated_growth_ids: Array) -> void:
+	for growth_id_variant in activated_growth_ids:
+		var growth_id := StringName(growth_id_variant)
+		# Area/device teaching owns its own three-order follow-up window. Keeping
+		# it out of the content queue prevents the tutorial product from jumping
+		# ahead of an independently unlocked recipe or topping on the same day.
+		if str(growth_id).begins_with("growth.area.") or str(growth_id).begins_with("growth.equipment."):
+			continue
+		var definition := CATALOG.growth_definition(growth_id)
+		var product_ids := Array(definition.get("unlock_product_ids", []))
+		if not product_ids.is_empty():
+			_enqueue_order_promotion({"kind": &"product", "target_id": StringName(product_ids[0]), "source_growth_id": growth_id, "remaining_orders": 3})
+			continue
+		for recipe_id_variant in Array(definition.get("unlock_recipe_ids", [])):
+			var product_id := StringName(CATALOG.recipe_definition(StringName(recipe_id_variant)).get("product_id", &""))
+			if not product_id.is_empty():
+				_enqueue_order_promotion({"kind": &"product", "target_id": product_id, "source_growth_id": growth_id, "remaining_orders": 3})
+				break
+		if not Array(definition.get("unlock_recipe_ids", [])).is_empty():
+			continue
+		for stock_id_variant in Array(definition.get("unlock_stock_ids", [])):
+			var stock_id := StringName(stock_id_variant)
+			var category := StringName(CATALOG.stock_definition(stock_id).get("category", &""))
+			if category == &"add_on" or category == &"sauce":
+				_enqueue_order_promotion({"kind": &"pancake_stock", "target_id": stock_id, "source_growth_id": growth_id, "remaining_orders": 3})
+				break
+
+
+func _tutorial_promotion_context(
+	queue: Array,
+	tutorial_kind: StringName,
+	tutorial_id: StringName,
+	tutorial_generated_today: bool
+) -> Dictionary:
+	if tutorial_id.is_empty() or not tutorial_generated_today:
+		return {}
+	var tutorial_present := false
+	var generated_indices := {}
+	for order_variant in queue:
+		var order := Dictionary(order_variant)
+		var identity := _tutorial_identity_for_order(order)
+		if (
+			StringName(identity.get("kind", &"")) == tutorial_kind
+			and StringName(identity.get("tutorial_id", &"")) == tutorial_id
+		):
+			tutorial_present = true
+		var metadata := Dictionary(order.get("metadata", {}))
+		if (
+			StringName(metadata.get("promotion_tutorial_kind", &"")) == tutorial_kind
+			and StringName(metadata.get("promotion_tutorial_id", &"")) == tutorial_id
+		):
+			generated_indices[int(metadata.get("promotion_index", 0))] = true
+	if not tutorial_present:
+		return {}
+	var next_index := 0
+	while next_index < 3 and generated_indices.has(next_index + 1):
+		next_index += 1
+	return {
+		"tutorial_kind": tutorial_kind,
+		"tutorial_id": tutorial_id,
+		"next_index": next_index,
+	}
 
 
 func waiting_formal_orders() -> Array[Dictionary]:
@@ -384,9 +559,9 @@ func skip_active_area_tutorial() -> Dictionary:
 	var tutorial := Dictionary(_progression.call("tutorial_snapshot"))
 	var kind := StringName(tutorial.get("active_kind", &""))
 	var tutorial_id := StringName(tutorial.get("active_id", &""))
-	if kind != &"area" or tutorial_id.is_empty():
+	if kind not in [&"area", &"device"] or tutorial_id.is_empty():
 		return {"success": false, "reason": &"tutorial_not_active"}
-	var active := _formal_order_for_tutorial(tutorial_id)
+	var active := _formal_order_for_tutorial(kind, tutorial_id)
 	if not active.is_empty():
 		var abandoned := abandon_formal_order(StringName(active.get("order_id", &"")), &"tutorial_skipped")
 		if not bool(abandoned.get("success", false)):
@@ -433,11 +608,23 @@ func formal_order(order_id: StringName) -> Dictionary:
 	return Dictionary(_order_service.call("order_by_id", order_id)).duplicate(true)
 
 
-func _formal_order_for_tutorial(tutorial_id: StringName) -> Dictionary:
+func _formal_order_for_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
 	for order in active_formal_orders():
-		if StringName(order.get("teaching_area_id", &"")) == tutorial_id:
+		var identity := _tutorial_identity_for_order(order)
+		if StringName(identity.get("kind", &"")) == kind and StringName(identity.get("tutorial_id", &"")) == tutorial_id:
 			return order
 	return {}
+
+
+func _tutorial_identity_for_order(order: Dictionary) -> Dictionary:
+	var metadata := Dictionary(order.get("metadata", {}))
+	var kind := StringName(order.get("tutorial_kind", metadata.get("tutorial_kind", &"")))
+	var tutorial_id := StringName(order.get("tutorial_id", metadata.get("tutorial_id", &"")))
+	var legacy_area_id := StringName(order.get("teaching_area_id", metadata.get("teaching_area_id", &"")))
+	if tutorial_id.is_empty() and not legacy_area_id.is_empty():
+		kind = &"area"
+		tutorial_id = legacy_area_id
+	return {"kind": kind, "tutorial_id": tutorial_id, "teaching_area_id": legacy_area_id}
 
 
 func begin_formal_order_serving(order_id: StringName) -> Dictionary:
@@ -705,7 +892,7 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 		&"heater_slot":
 			return Dictionary(_production_service.call("preview_collect_drink", source_index))
 		&"youtiao_output":
-			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
 		&"prepared_product_slot":
 			return preview_take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output":
@@ -730,7 +917,7 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 	match source_kind:
 		&"inventory": return Dictionary(_production_service.call("create_room_temperature_drink", StringName(source_ref.get("product_id", &""))))
 		&"heater_slot": return Dictionary(_production_service.call("collect_drink", source_index))
-		&"youtiao_output": return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
+		&"youtiao_output": return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
 		&"prepared_product_slot": return take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
 		&"steamer_layer": return Dictionary(_production_service.call("collect_steamer", source_index))
@@ -900,6 +1087,61 @@ func discard_f3_drink(slot_index: int) -> Dictionary:
 		_touch_and_write()
 		production_changed.emit(five_area_production_snapshot())
 	return result
+
+
+func reheat_f3_drink(slot_index: int) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("reheat_drink", slot_index)
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func discard_product_source(source_ref: Dictionary) -> Dictionary:
+	if not bool(source_ref.get("discardable", false)):
+		return {"success": false, "reason": &"source_not_discardable"}
+	match StringName(source_ref.get("source_kind", &"")):
+		&"heater_slot":
+			return discard_f3_drink(int(source_ref.get("source_index", -1)))
+		&"soy_output":
+			return discard_f4_soy(int(source_ref.get("source_index", -1)))
+		&"youtiao_output":
+			return discard_ready_youtiao(int(source_ref.get("source_index", -1)))
+		&"steamer_layer":
+			return discard_f4_steamer(int(source_ref.get("source_index", -1)))
+		&"prepared_product_slot":
+			return discard_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
+	return {"success": false, "reason": &"unsupported_product_source"}
+
+
+func discard_ready_youtiao(source_index: int = -1) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("discard_ready_youtiao", source_index)
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func discard_prepared_product(slot_id: StringName) -> Dictionary:
+	var preview := preview_take_prepared_product(slot_id)
+	if not bool(preview.get("success", false)):
+		return preview
+	var slots := prepared_product_slots_snapshot()
+	var products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
+	var product := Dictionary(products.pop_front()).duplicate(true)
+	_ensure_production_service()
+	var waste := Dictionary(_production_service.call("record_staged_waste", product, &"prepared_youtiao_discarded"))
+	if not bool(waste.get("success", false)):
+		return waste
+	slots[str(slot_id)] = products
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "count": products.size(), "waste": waste.get("waste", {})}
 
 
 func load_f3_youtiao(recipe_id: StringName, quantity: int, order_id: StringName = &"") -> Dictionary:
@@ -1154,13 +1396,15 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 			base_coins = maxi(int(legacy_order.get("payment_coins", base_coins)), 0)
 	var reputation_delta := _f3_reputation_delta(bool(settlement.get("order_success", false)), all_grades)
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
-	var teaching_area_id := StringName(order.get("teaching_area_id", Dictionary(order.get("metadata", {})).get("teaching_area_id", &"")))
+	var tutorial_identity := _tutorial_identity_for_order(order)
+	var tutorial_kind := StringName(tutorial_identity.get("kind", &""))
+	var tutorial_id := StringName(tutorial_identity.get("tutorial_id", &""))
 	var tutorial_completion := {}
 	var tutorial_failure := {}
-	if bool(settlement.get("order_success", false)) and not teaching_area_id.is_empty():
-		tutorial_completion = _progression.call("complete_tutorial", &"area", teaching_area_id)
-	elif not bool(settlement.get("order_success", false)) and not teaching_area_id.is_empty():
-		tutorial_failure = _progression.call("record_tutorial_failure", &"area", teaching_area_id)
+	if bool(settlement.get("order_success", false)) and not tutorial_id.is_empty():
+		tutorial_completion = _progression.call("complete_tutorial", tutorial_kind, tutorial_id)
+	elif not bool(settlement.get("order_success", false)) and not tutorial_id.is_empty():
+		tutorial_failure = _progression.call("record_tutorial_failure", tutorial_kind, tutorial_id)
 	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
 	var primary_item: Dictionary = Dictionary(items[0]) if not items.is_empty() else {}
 	today_orders.append({
@@ -1235,10 +1479,13 @@ func _finalize_failed_formal_order(result: Dictionary) -> void:
 	var reputation_delta := int(result.get("reputation_delta", -2))
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
 	var order := Dictionary(result.get("order", {}))
-	var teaching_area_id := StringName(result.get("teaching_area_id", order.get("teaching_area_id", &"")))
+	var tutorial_identity := _tutorial_identity_for_order(order)
+	var tutorial_kind := StringName(result.get("tutorial_kind", tutorial_identity.get("kind", &"")))
+	var tutorial_id := StringName(result.get("tutorial_id", tutorial_identity.get("tutorial_id", &"")))
+	var teaching_area_id := StringName(tutorial_identity.get("teaching_area_id", &""))
 	var tutorial_failure := {}
-	if not teaching_area_id.is_empty():
-		tutorial_failure = _progression.call("record_tutorial_failure", &"area", teaching_area_id)
+	if not tutorial_id.is_empty():
+		tutorial_failure = _progression.call("record_tutorial_failure", tutorial_kind, tutorial_id)
 	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
 	today_orders.append({
 		"order_id": str(result.get("order_id", &"")),
@@ -1743,7 +1990,8 @@ func abandon_active_formal_order(reason: StringName = &"business_day_expired") -
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
-	var result: Dictionary = _order_service.call("abandon_all_open_orders", reason) if reason == &"business_day_expired" else _order_service.call("abandon_active_order", reason)
+	var is_hard_cutoff := reason in [&"business_day_expired", &"timer_expired"]
+	var result: Dictionary = _order_service.call("abandon_all_open_orders", reason) if is_hard_cutoff else _order_service.call("abandon_active_order", reason)
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
@@ -1765,11 +2013,38 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
+	_ensure_order_service()
+	var day_was_open := bool(_progression.get("day_open"))
+	var normalized_cutoff := cutoff.duplicate(true)
+	var cutoff_reason := StringName(normalized_cutoff.get("reason", &"manual_early_end"))
+	if cutoff_reason.is_empty():
+		cutoff_reason = &"manual_early_end"
+	var open_order_count := Array(_order_service.call("queue_snapshot")).size()
+	var abandoned := {"success": true}
+	if open_order_count > 0:
+		abandoned = Dictionary(_order_service.call("abandon_all_open_orders", cutoff_reason))
+	_sync_formal_orders_to_save()
+	if not day_was_open:
+		# Repeated/direct calls still enforce an empty queue, but must not rewrite
+		# the original cutoff reason or close the report and production state twice.
+		_touch_and_write()
+		var already_closed_bill := today_bill()
+		already_closed_bill["success"] = true
+		return already_closed_bill
+	normalized_cutoff["reason"] = cutoff_reason
+	normalized_cutoff["unserved_customer_count"] = open_order_count
+	normalized_cutoff["formal_order_abandoned"] = open_order_count > 0 and bool(abandoned.get("success", false))
 	_save_data["day_open"] = false
 	_progression.call("set_day_open", false)
-	_save_data["today_cutoff"] = cutoff.duplicate(true)
-	if StringName(cutoff.get("reason", &"")) == &"timer_expired":
-		_save_data["business_day_remaining_seconds"] = 0.0
+	if bool(_save_data.get(PACKAGED_DRINK_SPLIT_PENDING_KEY, false)):
+		_sync_progression_to_save()
+		_sync_production_to_save()
+		_apply_packaged_drink_split_migration_to_save()
+		_progression = PROGRESSION_SERVICE.new(Dictionary(_save_data.get("progression", {})))
+		_production_service = FIVE_AREA_PRODUCTION_SERVICE.new(self, Dictionary(_save_data.get("production", {})))
+		_configure_service_connections()
+	_save_data["today_cutoff"] = normalized_cutoff
+	_save_data["business_day_remaining_seconds"] = 0.0
 	_ensure_pancake_holding_tray()
 	var tray_waste: Array = _pancake_holding_tray.call("clear_for_day_end")
 	for waste_index in range(tray_waste.size()):
@@ -1821,6 +2096,14 @@ func begin_next_business_day() -> Dictionary:
 	var result: Dictionary = _progression.call("begin_next_business_day")
 	if not bool(result.get("success", false)):
 		return result
+	if Array(result.get("activated_growth_ids", [])).has(&"growth.equipment.packaged_drink.basic") or Array(result.get("activated_growth_ids", [])).has("growth.equipment.packaged_drink.basic"):
+		var suspended_tier := int(_save_data.get(PACKAGED_DRINK_SUSPENDED_TIER_KEY, -1))
+		if suspended_tier >= 0:
+			var restored_tiers := Dictionary(_progression.get("device_tiers")).duplicate(true)
+			restored_tiers[&"device.packaged_drink_heater"] = maxi(suspended_tier, 0)
+			_progression.set("device_tiers", restored_tiers)
+			_save_data[PACKAGED_DRINK_SUSPENDED_TIER_KEY] = -1
+			result["restored_packaged_drink_heater_tier"] = suspended_tier
 	_save_data["day_open"] = true
 	_save_data["business_day_remaining_seconds"] = BUSINESS_DAY_DURATION_SECONDS
 	_save_data["today_orders"] = []
@@ -1831,6 +2114,7 @@ func begin_next_business_day() -> Dictionary:
 	_progression.call("advance_tutorial_for_new_business_day")
 	_replenish_daily_pancake_consumables()
 	result["restock_required_ids"] = _provision_activated_stock(Array(result.get("activated_growth_ids", [])))
+	_enqueue_growth_order_promotions(Array(result.get("activated_growth_ids", [])))
 	_sync_progression_to_save()
 	_ensure_production_service()
 	_sync_production_to_save()
@@ -2212,8 +2496,76 @@ func _ensure_save_shape() -> void:
 		_save_data["order_sequence"] = maxi(int(Dictionary(_save_data.get("formal_orders", {})).get("sequence", 0)), 0)
 	if not _save_data.has("tutorial_order_generated_day"):
 		_save_data["tutorial_order_generated_day"] = 0
+	if not _save_data.has(ORDER_PROMOTIONS_KEY):
+		_save_data[ORDER_PROMOTIONS_KEY] = []
 	if not _save_data.has(RECONCILED_FORMAL_ORDER_IDS_KEY):
 		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = []
+	_prepare_packaged_drink_split_migration()
+
+
+func _prepare_packaged_drink_split_migration() -> void:
+	if int(_save_data.get(PACKAGED_DRINK_SPLIT_MIGRATION_KEY, 0)) >= PACKAGED_DRINK_SPLIT_MIGRATION_VERSION:
+		return
+	var progression := Dictionary(_save_data.get("progression", {}))
+	var unlocked_areas := PackedStringArray(Array(progression.get("unlocked_area_ids", [])))
+	var device_tiers := Dictionary(progression.get("device_tiers", {}))
+	var owned_growth_ids := PackedStringArray(Array(progression.get("owned_growth_ids", [])))
+	var owns_packaged_drink := unlocked_areas.has("area.packaged_drink")
+	var owns_legacy_heater := device_tiers.has("device.packaged_drink_heater") or device_tiers.has(&"device.packaged_drink_heater")
+	var already_split := owned_growth_ids.has("growth.equipment.packaged_drink.basic")
+	if not owns_packaged_drink or not owns_legacy_heater or already_split:
+		_save_data[PACKAGED_DRINK_SPLIT_MIGRATION_KEY] = PACKAGED_DRINK_SPLIT_MIGRATION_VERSION
+		_save_data[PACKAGED_DRINK_SPLIT_PENDING_KEY] = false
+		if not _save_data.has(PACKAGED_DRINK_SUSPENDED_TIER_KEY):
+			_save_data[PACKAGED_DRINK_SUSPENDED_TIER_KEY] = -1
+		return
+	if bool(_save_data.get("day_open", true)):
+		_save_data[PACKAGED_DRINK_SPLIT_PENDING_KEY] = true
+		_save_data[PACKAGED_DRINK_SUSPENDED_TIER_KEY] = -1
+		return
+	_apply_packaged_drink_split_migration_to_save()
+
+
+func _apply_packaged_drink_split_migration_to_save() -> void:
+	var progression := Dictionary(_save_data.get("progression", {})).duplicate(true)
+	var device_tiers := Dictionary(progression.get("device_tiers", {})).duplicate(true)
+	var suspended_tier := int(device_tiers.get("device.packaged_drink_heater", device_tiers.get(&"device.packaged_drink_heater", 0)))
+	device_tiers.erase("device.packaged_drink_heater")
+	device_tiers.erase(&"device.packaged_drink_heater")
+	progression["device_tiers"] = device_tiers
+	var tutorial := Dictionary(progression.get("tutorial", {})).duplicate(true)
+	var completed_devices := PackedStringArray(Array(tutorial.get("completed_device_ids", [])))
+	if completed_devices.has("device.packaged_drink_heater"):
+		completed_devices.remove_at(completed_devices.find("device.packaged_drink_heater"))
+	tutorial["completed_device_ids"] = completed_devices
+	var queued_devices := PackedStringArray(Array(tutorial.get("queue_device_ids", [])))
+	if queued_devices.has("device.packaged_drink_heater"):
+		queued_devices.remove_at(queued_devices.find("device.packaged_drink_heater"))
+	tutorial["queue_device_ids"] = queued_devices
+	if StringName(tutorial.get("active_kind", &"")) == &"device" and StringName(tutorial.get("active_id", &"")) == &"device.packaged_drink_heater":
+		tutorial["active_kind"] = &""
+		tutorial["active_id"] = &""
+	progression["tutorial"] = tutorial
+	_save_data["progression"] = progression
+
+	var inventory := Dictionary(_save_data.get("inventory", {})).duplicate(true)
+	var production := Dictionary(_save_data.get("production", {})).duplicate(true)
+	var heater := Dictionary(production.get("packaged_drink_heater", {}))
+	for slot_value in Array(heater.get("slots", [])):
+		var slot := Dictionary(slot_value)
+		if StringName(slot.get("state", &"locked")) in [&"locked", &"empty"]:
+			continue
+		var product := CATALOG.product_definition(StringName(slot.get("product_id", &"")))
+		var stock_id := StringName(product.get("stock_id", &""))
+		if not stock_id.is_empty():
+			var key := str(stock_id)
+			inventory[key] = maxi(int(inventory.get(key, 0)), 0) + 1
+	production["packaged_drink_heater"] = PACKAGED_DRINK_HEATER_MODEL.new().snapshot()
+	_save_data["inventory"] = inventory
+	_save_data["production"] = production
+	_save_data[PACKAGED_DRINK_SUSPENDED_TIER_KEY] = maxi(suspended_tier, 0)
+	_save_data[PACKAGED_DRINK_SPLIT_PENDING_KEY] = false
+	_save_data[PACKAGED_DRINK_SPLIT_MIGRATION_KEY] = PACKAGED_DRINK_SPLIT_MIGRATION_VERSION
 
 
 static func _empty_prepared_product_slots() -> Dictionary:

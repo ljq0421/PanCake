@@ -37,6 +37,34 @@ func _run() -> void:
 	_check(bool(drink_settlement.get("order_success", false)) and int(drink_settlement.get("earned_coins", 0)) == 3, "drink teaching settles with its catalog revenue")
 	_check(int(progression.call("mastery_value", &"area.packaged_drink")) == 1 and Array(Dictionary(progression.call("tutorial_snapshot")).get("completed_area_ids", [])).has("area.packaged_drink"), "drink settlement updates temperature mastery and completes teaching")
 
+	session.call("abandon_active_formal_order", &"business_day_expired")
+	_set_active_device_tutorial(progression, &"device.packaged_drink_heater")
+	progression.set("current_day", int(progression.get("current_day")) + 1)
+	inventory = Dictionary(session.call("inventory_snapshot"))
+	inventory["stock.packaged_drink.milk"] = 1
+	session.call("save_inventory", inventory)
+	var heater_opened: Dictionary = session.call("ensure_active_playable_order")
+	var heater_order := Dictionary(heater_opened.get("order", {}))
+	var heater_id := StringName(heater_order.get("order_id", &""))
+	var heater_item := Dictionary(Array(heater_order.get("items", []))[0]) if not Array(heater_order.get("items", [])).is_empty() else {}
+	_check(
+		bool(heater_opened.get("success", false))
+		and StringName(heater_order.get("tutorial_kind", &"")) == &"device"
+		and StringName(heater_order.get("tutorial_id", &"")) == &"device.packaged_drink_heater"
+		and StringName(heater_item.get("temperature_mode", &"")) == &"heated"
+		and Array(session.call("active_formal_orders")).size() == 1,
+		"base heater creates one exclusive unlimited heated-milk teaching customer"
+	)
+	_check(bool(Dictionary(session.call("load_f3_drink", 0, &"product.packaged_drink.milk", heater_id)).get("success", false)), "heater teaching loads one milk into the base heating slot")
+	session.call("advance_f3_production", 2.1)
+	_check(bool(Dictionary(session.call("deliver_heated_drink", 0, heater_id, 0)).get("success", false)), "completed hot milk attaches directly to the heater teaching order")
+	var heater_settlement: Dictionary = session.call("settle_f3_order", heater_id)
+	_check(
+		bool(heater_settlement.get("order_success", false))
+		and Array(Dictionary(progression.call("tutorial_snapshot")).get("completed_device_ids", [])).has("device.packaged_drink_heater"),
+		"heater teaching settlement completes the one-time device tutorial"
+	)
+
 	_set_active_tutorial(progression, &"area.youtiao", [&"area.pancake", &"area.packaged_drink"])
 	# Teaching priority is per day. Move to a new day without exercising the
 	# growth purchase surface so this integration remains about order routing.
@@ -58,7 +86,8 @@ func _run() -> void:
 
 	var next_order_result: Dictionary = session.call("ensure_active_playable_order")
 	var next_order := Dictionary(next_order_result.get("order", {}))
-	_check(bool(next_order_result.get("success", false)) and _is_supported(_area_id(next_order)) and Array(next_order.get("items", [])).size() == 1, "settlement advances to another supported single-item formal order")
+	var next_item_count := Array(next_order.get("items", [])).size()
+	_check(bool(next_order_result.get("success", false)) and _is_supported(_area_id(next_order)) and next_item_count >= 1 and next_item_count <= 2, "settlement advances to another supported formal order with at most one companion item")
 	var reputation_before_refusal := int(progression.get("reputation"))
 	var next_order_id := StringName(next_order.get("order_id", &""))
 	var refusal_preview: Dictionary = session.call("preview_formal_order_refusal", next_order_id)
@@ -66,14 +95,14 @@ func _run() -> void:
 	_check(int(refusal_preview.get("reputation_delta", 0)) == -1 and StringName(refused.get("terminal_state", &"")) == &"refused", "an unstarted normal order can be previewed and formally refused")
 	_check(int(progression.get("reputation")) == reputation_before_refusal - 1, "formal refusal applies its reputation loss exactly once")
 	var bill: Dictionary = session.call("today_bill")
-	_check(int(bill.get("order_count", 0)) == 3 and int(bill.get("total_coins", 0)) == 9, "successful and refused orders enter the daily bill exactly once without refusal revenue")
+	_check(int(bill.get("order_count", 0)) == 4 and int(bill.get("total_coins", 0)) == 12, "both drink teachings, youtiao, and refusal enter the daily bill exactly once without refusal revenue")
 	_check_active_f3_restore(session)
 	_check_deterministic_reload(session)
 	_finish()
 
 
 func _check_active_f3_restore(session: Node) -> void:
-	# Direct restore fixtures own their queue. Clear the normal four-card queue
+	# Direct restore fixtures own their queue. Clear the normal six-order queue
 	# left by the preceding live-loop assertions before opening a targeted order.
 	session.call("abandon_active_formal_order", &"business_day_expired")
 	var inventory: Dictionary = session.call("inventory_snapshot")
@@ -197,6 +226,13 @@ func _set_active_tutorial(progression: RefCounted, area_id: StringName, complete
 	progression.set("tutorial_queue_area_ids", [area_id])
 	progression.set("tutorial_active_kind", &"area")
 	progression.set("tutorial_active_id", area_id)
+
+
+func _set_active_device_tutorial(progression: RefCounted, device_id: StringName) -> void:
+	progression.set("tutorial_completed_device_ids", {})
+	progression.set("tutorial_queue_device_ids", [device_id])
+	progression.set("tutorial_active_kind", &"device")
+	progression.set("tutorial_active_id", device_id)
 
 
 func _area_id(order: Dictionary) -> StringName:

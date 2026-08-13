@@ -37,8 +37,8 @@ func _resume_game() -> void:
 
 
 func _end_business_day() -> void:
-	pause_panel.visible = false
-	workstation.end_business_day()
+	_set_paused(false)
+	workstation.end_business_day_early()
 
 
 func _return_to_start_menu() -> void:

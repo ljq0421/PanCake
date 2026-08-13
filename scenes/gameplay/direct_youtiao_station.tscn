@@ -1,15 +1,15 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/direct_youtiao_station.gd" id="1_root"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_five_area_v4.png" id="2_body1"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_body_five_area_v4.png" id="3_body2"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_body_five_area_v4.png" id="4_body3"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_lowered_five_area_v4.png" id="5_low1"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_basket_lowered_five_area_v4.png" id="6_low2"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_lowered_five_area_v4.png" id="7_low3"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_basket_raised_five_area_v4.png" id="8_high1"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_basket_raised_five_area_v4.png" id="9_high2"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_raised_five_area_v4.png" id="10_high3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_0_body_v1_chinese.png" id="2_body1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_v2_chinese.png" id="3_body2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_body_v1_chinese.png" id="4_body3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_0_lowered_v1_chinese.png" id="5_low1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_lowered_v2_chinese.png" id="6_low2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_lowered_v1_chinese.png" id="7_low3"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_0_raised_v1_chinese.png" id="8_high1"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_raised_v2_chinese.png" id="9_high2"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_raised_v1_chinese.png" id="10_high3"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_auto_lift_arm_five_area_v4.png" id="11_lift"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_auto_load_feeder_five_area_v4.png" id="12_loader"]
 [ext_resource type="Texture2D" path="res://resources/art/effects/youtiao/youtiao_sizzle_bubbles_five_area_v4.png" id="13_bubbles"]
@@ -23,6 +23,10 @@
 [ext_resource type="Texture2D" path="res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png" id="21_cooked3"]
 [ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="22_source"]
 [ext_resource type="Script" path="res://scripts/ui/youtiao_temperature_range_bar.gd" id="24_temperature"]
+[ext_resource type="Script" path="res://scripts/ui/prepared_product_slot.gd" id="25_prepared_slot"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png" id="26_plain_product"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/oil_cake_five_area_v2.png" id="27_oil_cake_product"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png" id="28_sugar_oil_cake_product"]
 
 [sub_resource type="StyleBoxFlat" id="PartStyle"]
 bg_color = Color(0.98, 0.91, 0.74, 0.90)
@@ -78,6 +82,7 @@ offset_right = 306.0
 offset_bottom = 340.0
 mouse_filter = 0
 script = ExtResource("1_root")
+
 body_textures = Array[Texture2D]([ExtResource("2_body1"), ExtResource("3_body2"), ExtResource("4_body3")])
 lowered_basket_textures = Array[Texture2D]([ExtResource("5_low1"), ExtResource("6_low2"), ExtResource("7_low3")])
 raised_basket_textures = Array[Texture2D]([ExtResource("8_high1"), ExtResource("9_high2"), ExtResource("10_high3")])
@@ -207,6 +212,18 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
+[node name="OutputSlot01" type="TextureButton" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot01"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+z_index = 20
 
 [node name="FoodSlot02" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
@@ -234,6 +251,18 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
+[node name="OutputSlot02" type="TextureButton" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot02"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+z_index = 20
 
 [node name="FoodSlot03" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
@@ -261,6 +290,18 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
+[node name="OutputSlot03" type="TextureButton" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot03"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+z_index = 20
 
 [node name="FoodSlot04" type="Control" parent="MachineStage/ArtRoot/FoodLayer"]
 unique_name_in_owner = true
@@ -288,6 +329,18 @@ grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
+[node name="OutputSlot04" type="TextureButton" parent="MachineStage/ArtRoot/FoodLayer/FoodSlot04"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("22_source")
+z_index = 20
 
 [node name="LoweredBasketVisual" type="TextureRect" parent="MachineStage/ArtRoot"]
 unique_name_in_owner = true
@@ -410,54 +463,149 @@ expand_mode = 1
 stretch_mode = 5
 z_index = 12
 
-[node name="OutputSource" type="TextureButton" parent="MachineStage"]
-unique_name_in_owner = true
-visible = false
-offset_left = 67.0
-offset_top = 4.0
-offset_right = 263.0
-offset_bottom = 132.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("22_source")
-z_index = 20
-
 [node name="TemperatureRangeBar" type="Control" parent="."]
 unique_name_in_owner = true
 visible = false
 offset_left = 0.0
-offset_top = 232.0
+offset_top = 224.0
 offset_right = 306.0
-offset_bottom = 246.0
+offset_bottom = 236.0
 mouse_filter = 2
 script = ExtResource("24_temperature")
 
 [node name="StartButton" type="Button" parent="."]
 unique_name_in_owner = true
-offset_left = 54.0
-offset_top = 250.0
-offset_right = 132.0
-offset_bottom = 286.0
+offset_left = 18.0
+offset_top = 238.0
+offset_right = 145.0
+offset_bottom = 270.0
 theme_override_styles/normal = SubResource("PartStyle")
 text = "启动"
 
 [node name="LiftButton" type="Button" parent="."]
 unique_name_in_owner = true
-offset_left = 174.0
-offset_top = 250.0
-offset_right = 252.0
-offset_bottom = 286.0
+offset_left = 161.0
+offset_top = 238.0
+offset_right = 288.0
+offset_bottom = 270.0
 theme_override_styles/normal = SubResource("WarningStyle")
 text = "升篮"
 
+[node name="PreparedTray" type="Panel" parent="."]
+offset_left = 4.0
+offset_top = 274.0
+offset_right = 302.0
+offset_bottom = 313.0
+theme_override_styles/panel = SubResource("PartStyle")
+
+[node name="PreparedPlain" type="Button" parent="PreparedTray"]
+unique_name_in_owner = true
+offset_left = 3.0
+offset_top = 2.0
+offset_right = 99.0
+offset_bottom = 37.0
+theme_override_styles/normal = SubResource("PartStyle")
+script = ExtResource("25_prepared_slot")
+slot_id = &"slot.04"
+product_id = &"product.youtiao.plain"
+ingredient_type = &"youtiao"
+product_texture = ExtResource("26_plain_product")
+allow_pancake_drag = true
+
+[node name="Artwork" type="TextureRect" parent="PreparedTray/PreparedPlain"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 48.0
+offset_bottom = 33.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="PreparedTray/PreparedPlain"]
+layout_mode = 0
+offset_left = 49.0
+offset_top = 6.0
+offset_right = 93.0
+offset_bottom = 30.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 13
+text = "0/6"
+horizontal_alignment = 1
+
+[node name="PreparedOilCake" type="Button" parent="PreparedTray"]
+unique_name_in_owner = true
+offset_left = 101.0
+offset_top = 2.0
+offset_right = 197.0
+offset_bottom = 37.0
+theme_override_styles/normal = SubResource("PartStyle")
+script = ExtResource("25_prepared_slot")
+slot_id = &"slot.05"
+product_id = &"product.youtiao.oil_cake"
+product_texture = ExtResource("27_oil_cake_product")
+
+[node name="Artwork" type="TextureRect" parent="PreparedTray/PreparedOilCake"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 48.0
+offset_bottom = 33.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="PreparedTray/PreparedOilCake"]
+layout_mode = 0
+offset_left = 49.0
+offset_top = 6.0
+offset_right = 93.0
+offset_bottom = 30.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 13
+text = "0/6"
+horizontal_alignment = 1
+
+[node name="PreparedSugarOilCake" type="Button" parent="PreparedTray"]
+unique_name_in_owner = true
+offset_left = 199.0
+offset_top = 2.0
+offset_right = 295.0
+offset_bottom = 37.0
+theme_override_styles/normal = SubResource("PartStyle")
+script = ExtResource("25_prepared_slot")
+slot_id = &"slot.06"
+product_id = &"product.youtiao.sugar_oil_cake"
+product_texture = ExtResource("28_sugar_oil_cake_product")
+
+[node name="Artwork" type="TextureRect" parent="PreparedTray/PreparedSugarOilCake"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 48.0
+offset_bottom = 33.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CountLabel" type="Label" parent="PreparedTray/PreparedSugarOilCake"]
+layout_mode = 0
+offset_left = 49.0
+offset_top = 6.0
+offset_right = 93.0
+offset_bottom = 30.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 13
+text = "0/6"
+horizontal_alignment = 1
 
 [node name="AutoLoadPanel" type="Panel" parent="."]
 unique_name_in_owner = true
 visible = false
 offset_left = 7.0
-offset_top = 301.0
+offset_top = 314.0
 offset_right = 299.0
-offset_bottom = 339.0
+offset_bottom = 340.0
 theme_override_styles/panel = SubResource("AutoPanelStyle")
 
 [node name="AutoMinusButton" type="Button" parent="AutoLoadPanel"]

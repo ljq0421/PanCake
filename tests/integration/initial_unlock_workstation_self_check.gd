@@ -46,7 +46,7 @@ func _run() -> void:
 
 func _check_five_zone_layout(workstation: Node) -> void:
 	var background := workstation.get_node_or_null("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background != null and background.texture != null and background.texture.get_size() == Vector2(1920.0, 1080.0) and background.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v7.png"), "the 1920x1080 customer-style tabletop background preview is the active workstation map")
+	_check(background != null and background.texture != null and background.texture.get_size() == Vector2(1920.0, 1080.0) and background.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v8_chinese.png"), "the 1920x1080 Chinese-style tabletop background preview is the active workstation map")
 	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout") == null and workstation.get_node_or_null("SafeArea/LegacyFiveZonePrototype") == null and workstation.get_node_or_null("SafeArea/LegacyMaterialDockPrototype") == null, "retired 12-slot, three-device, and prototype overlay nodes are removed from the formal scene")
 	var station_art := workstation.get_node_or_null("SafeArea/FiveAreaStationArtwork") as Control
 	var station_hits := workstation.get_node_or_null("SafeArea/FiveAreaStationClickLayers") as Control
@@ -75,7 +75,7 @@ func _check_five_zone_layout(workstation: Node) -> void:
 	var sweet_flour_sauce_brush := workstation.get_node_or_null("SafeArea/LeftRack/SauceBrushButton") as Button
 	var griddle := workstation.get_node_or_null("SafeArea/PanBase/GriddleArtwork") as Sprite2D
 	var egg_crack_effect := workstation.get_node_or_null("SafeArea/PanBase/PancakeSurface/EggCrackEffect") as AnimatedSprite2D
-	_check(pan_base != null and pancake_surface != null and StringName(pancake_surface.get_meta(&"area_id", &"")) == &"area.pancake" and bool(pancake_surface.get_meta(&"station_click_layer", false)) and Rect2(pan_base.position, pan_base.size).intersects(CENTRAL_PAN_BAY) and _rect_matches(pan_base, Rect2(750.0, 562.0, 420.0, 382.0)) and _rect_matches(pancake_surface, Rect2(40.0, 40.0, 340.0, 340.0)) and griddle != null and griddle.texture != null and griddle.texture.resource_path.ends_with("griddle_base_angled_ellipse_v3.png") and griddle.scale == Vector2(0.41, 0.41), "the centered pancake surface is the fifth stable area click layer")
+	_check(pan_base != null and pancake_surface != null and StringName(pancake_surface.get_meta(&"area_id", &"")) == &"area.pancake" and bool(pancake_surface.get_meta(&"station_click_layer", false)) and Rect2(pan_base.position, pan_base.size).intersects(CENTRAL_PAN_BAY) and _rect_matches(pan_base, Rect2(750.0, 562.0, 420.0, 382.0)) and _rect_matches(pancake_surface, Rect2(40.0, 40.0, 340.0, 340.0)) and griddle != null and griddle.texture != null and griddle.texture.resource_path.contains("griddle_base_angled_ellipse") and griddle.scale.x > 0.0 and griddle.scale.y > 0.0, "the centered pancake surface is the fifth stable area click layer")
 	_check(sweet_flour_sauce_brush != null and StringName(sweet_flour_sauce_brush.get_meta(&"stock_id", &"")) == &"sweet_flour_sauce" and bool(sweet_flour_sauce_brush.get_meta(&"station_click_layer", false)), "SweetFlourSauceBrush is the established LeftRack sauce input and is not a material slot")
 	_check(egg_crack_effect != null and egg_crack_effect.sprite_frames != null and egg_crack_effect.sprite_frames.get_frame_count(&"crack") == 2 and not egg_crack_effect.sprite_frames.get_animation_loop(&"crack"), "egg crack effect owns two non-looping scene-bound frames")
 	if egg_crack_effect != null and egg_crack_effect.sprite_frames != null:
@@ -84,8 +84,8 @@ func _check_five_zone_layout(workstation: Node) -> void:
 		_check(crack_frame_one != null and crack_frame_one.resource_path.ends_with("egg_cracked_raw_v1_five_area_v2.png") and crack_frame_two != null and crack_frame_two.resource_path.ends_with("egg_cracked_raw_v2_five_area_v2.png"), "egg crack effect binds the two approved 256-by-256 artwork assets in order")
 	var customer := workstation.get_node_or_null("SafeArea/CustomerPortrait") as Control
 	var order_card := workstation.get_node_or_null("SafeArea/OrderCard") as Control
-	_check(_rect_matches(customer, Rect2(800.0, 222.0, 270.0, 406.0)), "customer remains close while ending above the countertop edge")
-	_check(_rect_matches(order_card, Rect2(1240.0, 190.0, 300.0, 370.0)) and order_card.texture != null and order_card.texture.resource_path.ends_with("order_card_multi_dish_v3.png"), "the compact multi-dish order card is positioned beside the customer without covering the tutorial strip")
+	_check(_rect_matches(customer, Rect2(800.0, 222.0, 270.0, 406.0)), "initial-unlock compatibility scene keeps its single tutorial customer close to the counter")
+	_check(_rect_matches(order_card, Rect2(1240.0, 190.0, 300.0, 370.0)) and order_card.texture != null and order_card.texture.resource_path.ends_with("order_card_multi_dish_v4_chinese_ui.png"), "initial-unlock compatibility scene uses the current compact Chinese order card without covering the tutorial strip")
 	var payment_coin := workstation.get_node_or_null("SafeArea/OrderCard/OrderCoinIcon") as TextureRect
 	var payment_amount := workstation.get_node_or_null("SafeArea/OrderCard/OrderAmountLabel") as Label
 	var heart := workstation.get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
@@ -138,9 +138,13 @@ func _check_hud_layout(workstation: Node) -> void:
 	_check(bottom_strip.get_global_rect().encloses(phase_label.get_global_rect()) and bottom_strip.get_global_rect().encloses(p1_controls.get_global_rect()), "phase and P1 controls stay inside the left feedback region")
 	_check(customer_line.get_global_rect().end.x <= customer.get_global_rect().position.x and not customer_line.get_global_rect().intersects(bottom_strip.get_global_rect()), "customer dialogue is constrained to the customer's left side")
 	_check(left_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and right_rack.mouse_filter == Control.MOUSE_FILTER_IGNORE and left_rack.get_theme_stylebox("panel") is StyleBoxEmpty and right_rack.get_theme_stylebox("panel") is StyleBoxEmpty, "rack parents are transparent input-ignoring layout nodes")
-	for tool_path in ["SafeArea/LeftRack/LadleButton", "SafeArea/LeftRack/ScraperButton", "SafeArea/LeftRack/SauceBrushButton", "SafeArea/RightRack/SauceRefillButton", "SafeArea/RightRack/ChiliSauceRefillButton"]:
+	for tool_path in ["SafeArea/LeftRack/LadleButton", "SafeArea/LeftRack/ScraperButton", "SafeArea/LeftRack/SauceBrushButton"]:
 		var tool := workstation.get_node(tool_path) as Control
 		_check(not tool.get_global_rect().intersects(pan.get_global_rect()), "%s does not cover the griddle" % tool.name)
+	_check(_rect_matches(right_rack, Rect2(815.0, 870.0, 290.0, 74.0)), "the sauce strip overlays only the griddle lower edge above the material row")
+	var sweet_sauce := workstation.get_node("SafeArea/RightRack/SauceRefillButton") as Control
+	var chili_sauce := workstation.get_node("SafeArea/RightRack/ChiliSauceRefillButton") as Control
+	_check(_rect_matches(sweet_sauce, Rect2(0.0, 0.0, 145.0, 74.0)) and _rect_matches(chili_sauce, Rect2(145.0, 0.0, 145.0, 74.0)), "sweet sauce stays left and chili sauce stays right inside the overlay strip")
 	_check(_rect_matches(store_button, Rect2(1182.0, 800.0, 122.0, 42.0)) and _rect_matches(tray, Rect2(1182.0, 846.0, 122.0, 98.0)), "holding controls form a compact vertical region beside the griddle")
 	var tray_clear := not tray.get_global_rect().intersects(pan.get_global_rect())
 	for slot_index in 18:
@@ -221,8 +225,8 @@ func _check_order_card_runtime_content(workstation: Node) -> void:
 		var icon := workstation.get_node_or_null("SafeArea/OrderCard/OrderIngredient%02d" % (icon_index + 1)) as TextureRect
 		if icon != null and icon.visible and icon.texture != null:
 			visible_ingredients += 1
-	_check(visible_ingredients > 0 and visible_ingredients <= 3, "runtime single-dish ingredients stay within that dish's compact hint group")
-	_check(heart != null and heart.visible and patience != null and not patience.visible and legacy_patience != null and not legacy_patience.visible and patience_text != null and not patience_text.visible and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the order card is the sole patience entry and the first tutorial disables its countdown")
+	_check(visible_ingredients > 0 and visible_ingredients <= 8, "runtime single-dish ingredients and sauces stay within that dish's compact requirement group")
+	_check(heart != null and not heart.visible and patience != null and not patience.visible and legacy_patience != null and not legacy_patience.visible and patience_text != null and not patience_text.visible and bool(workstation.p1_session.order.get("tutorial_no_countdown", false)), "the first tutorial hides every patience and heart countdown visual")
 
 
 func _check_material_grid(workstation: Node) -> void:

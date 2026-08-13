@@ -133,6 +133,13 @@ func collect_drink(slot_index: int) -> Dictionary:
 	return _success({"slot_index": slot_index, "product": product})
 
 
+func reheat_drink(slot_index: int) -> Dictionary:
+	var result: Dictionary = _drink.call("reheat", slot_index)
+	if bool(result.get("success", false)):
+		machine_changed.emit(DRINK_DEVICE, machine_snapshot(DRINK_DEVICE))
+	return result
+
+
 func discard_drink(slot_index: int) -> Dictionary:
 	var result: Dictionary = _drink.call("discard", slot_index)
 	if not bool(result.get("success", false)):
@@ -194,25 +201,25 @@ func perform_action(device_id: StringName, action_id: StringName) -> Dictionary:
 	return result
 
 
-func preview_collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
+func preview_collect_batch(device_id: StringName, quantity: int = 1, source_index: int = -1) -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return preview_collect_soy(quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
-	var preview: Dictionary = _youtiao.call("preview_collect", quantity)
+	var preview: Dictionary = _youtiao.call("preview_collect_slot", source_index) if source_index >= 0 else _youtiao.call("preview_collect", quantity)
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := _new_product(StringName(preview.get("product_id", &"")), &"area.youtiao", &"room_temperature", float(preview.get("quality", 0.0)), StringName(preview.get("grade", &"waste")), false)
 	product["material_cost"] = _youtiao_material_cost(StringName(product.get("product_id", &"")))
-	return _success({"product": product, "quantity": quantity})
+	return _success({"product": product, "quantity": quantity, "source_index": source_index})
 
 
-func collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
+func collect_batch(device_id: StringName, quantity: int = 1, source_index: int = -1) -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return collect_soy(quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
-	var result: Dictionary = _youtiao.call("collect", quantity)
+	var result: Dictionary = _youtiao.call("collect_slot", source_index) if source_index >= 0 else _youtiao.call("collect", quantity)
 	if not bool(result.get("success", false)):
 		return result
 	var products: Array[Dictionary] = []
@@ -222,7 +229,7 @@ func collect_batch(device_id: StringName, quantity: int = 1) -> Dictionary:
 		products.append(product)
 		product_created.emit(product.duplicate(true))
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
-	return _success({"products": products, "product": products[0] if not products.is_empty() else {}, "remaining_quantity": result.get("remaining_quantity", 0)})
+	return _success({"products": products, "product": products[0] if not products.is_empty() else {}, "remaining_quantity": result.get("remaining_quantity", 0), "source_index": source_index, "occupied_slot_indices": result.get("occupied_slot_indices", [])})
 
 
 func discard_batch(device_id: StringName) -> Dictionary:
@@ -241,10 +248,26 @@ func discard_batch(device_id: StringName) -> Dictionary:
 	var unit_cost := 0
 	for stock_id_variant in Array(recipe.get("stock_ids", [])):
 		unit_cost += _stock_cost(StringName(stock_id_variant))
-	var entry := _record_waste(&"area.youtiao", YOUTIAO_DEVICE, product_id, &"burnt_batch", quantity, unit_cost * quantity)
+	var entry := _record_waste(&"area.youtiao", YOUTIAO_DEVICE, product_id, StringName(result.get("waste_reason", &"youtiao_batch_discarded")), quantity, unit_cost * quantity)
 	entry["quality_before_discard"] = float(before.get("quality", 0.0))
+	entry["machine_state_before_discard"] = StringName(before.get("state", &""))
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
 	return _success({"waste": entry})
+
+
+func discard_ready_youtiao(source_index: int = -1) -> Dictionary:
+	var before := machine_snapshot(YOUTIAO_DEVICE)
+	var result: Dictionary = _youtiao.call("discard_slot", source_index) if source_index >= 0 else _youtiao.call("collect", 1)
+	if not bool(result.get("success", false)):
+		return result
+	var recipe_id := StringName(result.get("recipe_id", before.get("recipe_id", &"")))
+	var product_id := StringName(result.get("product_id", CATALOG.recipe_definition(recipe_id).get("product_id", &"")))
+	var reason := StringName(result.get("waste_reason", &"youtiao_output_discarded"))
+	var entry := _record_waste(&"area.youtiao", StringName("output.youtiao.slot.%d" % source_index) if source_index >= 0 else &"output.youtiao", product_id, reason, 1, _youtiao_material_cost(product_id))
+	entry["quality_before_discard"] = float(before.get("quality", 0.0))
+	entry["machine_state_before_discard"] = StringName(before.get("state", &""))
+	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
+	return _success({"waste": entry, "remaining_quantity": int(result.get("remaining_quantity", 0)), "source_index": source_index, "occupied_slot_indices": result.get("occupied_slot_indices", [])})
 
 
 func confirm_youtiao_job_profile(recipe_id: StringName, quantity: int) -> Dictionary:
@@ -300,6 +323,8 @@ func perform_soy_action(action_id: StringName) -> Dictionary:
 			result = _soy.call("add_water")
 		&"start":
 			result = _soy.call("start")
+		&"fill_cup":
+			result = _soy.call("fill_manual_cup")
 		_:
 			return _failure(&"unsupported_action", {"action_id": action_id})
 	if bool(result.get("success", false)):
@@ -496,14 +521,21 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		return youtiao_result
 	if not bool(soy_result.get("success", false)):
 		return soy_result
-	return steamer_result
+	if not bool(steamer_result.get("success", false)):
+		return steamer_result
+	# Progression ownership is authoritative even when an older production
+	# snapshot still says that a split-out device was installed.
+	_sync_ownership()
+	return {"success": true}
 
 
 func _sync_ownership() -> void:
 	if _progression == null:
 		return
-	if bool(_progression.call("owns_area", &"area.packaged_drink")):
+	if _progression.has_method("owns_device") and bool(_progression.call("owns_device", DRINK_DEVICE)):
 		_drink.call("configure_owned", int(_progression.call("device_tier", DRINK_DEVICE)))
+	else:
+		_drink.call("configure_locked")
 	if bool(_progression.call("owns_area", &"area.youtiao")):
 		_youtiao.call("configure_owned", int(_progression.call("device_tier", YOUTIAO_DEVICE)))
 	if bool(_progression.call("owns_area", &"area.fresh_soy_milk")):

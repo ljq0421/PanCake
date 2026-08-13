@@ -37,6 +37,13 @@ func _run() -> void:
 	lane.update_gesture(Vector2(10.01, 0.0), false)
 	_check(_drag_started == 1 and not lane.is_hold_active(), "stocked drink moves over 10px before 0.1 seconds and starts drag")
 
+	lane.begin_gesture(Vector2.ZERO)
+	lane.advance_gesture(0.1)
+	lane.advance_gesture(0.2)
+	_check(_hold_started == 2 and lane.is_hold_active(), "stationary stocked drink still enters the accepted long-hold refill path")
+	lane.update_gesture(Vector2(18.0, 0.0), false)
+	_check(_drag_started == 2 and not lane.is_hold_active(), "slow drag movement supersedes an already accepted refill hold")
+
 	var session := root.get_node_or_null("GameSession")
 	_check(session != null, "GameSession exists")
 	if session != null:

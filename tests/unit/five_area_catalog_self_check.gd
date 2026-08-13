@@ -8,7 +8,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_check(CATALOG.validate_catalog().is_empty(), "catalog validation")
-	_check(CATALOG.GROWTH_DEFINITIONS.size() == 41, "catalog contains exactly 41 stable growth definitions")
+	_check(CATALOG.GROWTH_DEFINITIONS.size() == 42, "catalog contains exactly 42 stable growth definitions")
 	var expected_primary_gates := {
 		&"growth.tool.pancake.wide_spreader": "day:2",
 		&"growth.add_on.pancake.red_chili": "reputation:10",
@@ -25,6 +25,7 @@ func _run() -> void:
 		&"growth.capacity.stock.intermediate": "reputation:80",
 		&"growth.capacity.stock.advanced": "reputation:200",
 		&"growth.area.packaged_drink": "mastery:area.pancake:qualified:6",
+		&"growth.equipment.packaged_drink.basic": "",
 		&"growth.product.packaged_drink.soy_milk": "reputation:30",
 		&"growth.equipment.packaged_drink.intermediate": "mastery:area.packaged_drink:correct_temperature:6",
 		&"growth.product.packaged_drink.walnut": "day:11",
@@ -52,7 +53,7 @@ func _run() -> void:
 		&"growth.recipe.steamer.meat_bun": "reputation:200",
 		&"growth.equipment.steamer.advanced": "mastery:area.steamer:a_grade:8",
 	}
-	_check(expected_primary_gates.size() == 41, "growth gate baseline covers all 41 items")
+	_check(expected_primary_gates.size() == 42, "growth gate baseline covers all 42 items")
 	for growth_id in expected_primary_gates:
 		_check(_primary_gate_signature(CATALOG.growth_definition(growth_id)) == expected_primary_gates[growth_id], "%s keeps its authored primary gate" % growth_id)
 	for device_id in CATALOG.DEVICE_DEFINITIONS:
@@ -90,8 +91,10 @@ func _run() -> void:
 		_check(CATALOG.stock_definition(sauce_id).get("material_slot_id") == &"", "%s does not occupy a material slot" % sauce_id)
 	for stock_id in [&"stock.youtiao.plain_dough", &"stock.youtiao.oil_cake_dough", &"stock.youtiao.sugar_oil_cake_dough"]:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the confirmed pancake-ingredient speed" % stock_id)
-	_check(is_equal_approx(float(CATALOG.stock_definition(&"stock.fresh_soy_milk.yellow_bean").get("refill_seconds", 0.0)), 1.50), "soy ingredients retain their separate 1.50-second restock balance")
-	_check(is_equal_approx(float(CATALOG.stock_definition(&"stock.steamer.mantou").get("refill_seconds", 0.0)), 1.50), "steamer ingredients retain their separate 1.50-second restock balance")
+	for stock_id in [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean", &"stock.fresh_soy_milk.multigrain"]:
+		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the pancake-ingredient speed" % stock_id)
+	for stock_id in [&"stock.steamer.mantou", &"stock.steamer.vegetable_bun", &"stock.steamer.meat_bun"]:
+		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at one item per 0.25 seconds" % stock_id)
 	var copy := CATALOG.stock_definition(&"stock.pancake.egg")
 	copy["material_slot_id"] = &"slot.invalid"
 	_check(CATALOG.stock_definition(&"stock.pancake.egg").get("material_slot_id") == &"slot.07", "catalog queries return deep copies")

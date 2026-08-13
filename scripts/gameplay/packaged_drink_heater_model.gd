@@ -33,6 +33,13 @@ func configure_owned(next_tier: int) -> Dictionary:
 	return _success({"tier": tier, "capacity": capacity()})
 
 
+func configure_locked() -> Dictionary:
+	owned = false
+	tier = 0
+	_reset_slots()
+	return _success()
+
+
 func capacity() -> int:
 	if not owned:
 		return 0
@@ -114,6 +121,20 @@ func collect(slot_index: int) -> Dictionary:
 	return preview
 
 
+func reheat(slot_index: int) -> Dictionary:
+	var validation := _validate_active_slot(slot_index)
+	if not bool(validation.get("success", false)):
+		return validation
+	var slot := _slots[slot_index]
+	if slot.get("state", STATE_EMPTY) != STATE_COOLED:
+		return _failure(&"reheat_not_available", {"slot_index": slot_index})
+	var product_id := StringName(slot.get("product_id", &""))
+	slot = _empty_slot(STATE_HEATING)
+	slot["product_id"] = product_id
+	_slots[slot_index] = slot
+	return _success({"slot_index": slot_index, "product_id": product_id, "state": STATE_HEATING})
+
+
 func discard(slot_index: int) -> Dictionary:
 	var validation := _validate_active_slot(slot_index)
 	if not bool(validation.get("success", false)):
@@ -129,17 +150,32 @@ func discard(slot_index: int) -> Dictionary:
 func slot_snapshot(slot_index: int) -> Dictionary:
 	if slot_index < 0 or slot_index >= MAX_SLOTS:
 		return {}
-	return _slots[slot_index].duplicate(true)
+	return _snapshot_slot(_slots[slot_index])
 
 
 func snapshot() -> Dictionary:
+	var visible_slots: Array[Dictionary] = []
+	for slot in _slots:
+		visible_slots.append(_snapshot_slot(slot))
 	return {
 		"device_id": DEVICE_ID,
 		"owned": owned,
 		"tier": tier,
 		"capacity": capacity(),
-		"slots": _slots.duplicate(true),
+		"slots": visible_slots,
 	}
+
+
+func _snapshot_slot(source: Dictionary) -> Dictionary:
+	var result := source.duplicate(true)
+	var definition := CATALOG.device_tier(DEVICE_ID, tier) if owned else {}
+	var infinite_hold := bool(definition.get("infinite_hold", false))
+	var hot_window := float(definition.get("hot_window_seconds", 0.0))
+	result["infinite_hold"] = infinite_hold
+	result["hot_remaining_seconds"] = 0.0
+	if StringName(result.get("state", STATE_LOCKED)) == STATE_READY_HOT:
+		result["hot_remaining_seconds"] = 0.0 if infinite_hold else maxf(hot_window - float(result.get("hot_elapsed_seconds", 0.0)), 0.0)
+	return result
 
 
 func load_snapshot(value: Dictionary) -> Dictionary:
@@ -187,7 +223,7 @@ func _refresh_slot_locks() -> void:
 		if slot_index < capacity():
 			if _slots[slot_index].get("state", STATE_LOCKED) == STATE_LOCKED:
 				_slots[slot_index] = _empty_slot(STATE_EMPTY)
-		elif _slots[slot_index].get("state", STATE_LOCKED) == STATE_EMPTY:
+		elif _slots[slot_index].get("state", STATE_LOCKED) != STATE_LOCKED:
 			_slots[slot_index] = _empty_slot(STATE_LOCKED)
 
 

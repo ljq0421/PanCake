@@ -76,8 +76,12 @@ func _run() -> void:
 	inventory = Dictionary(session.call("inventory_snapshot"))
 	inventory["stock.packaged_drink.milk"] = 1
 	session.call("save_inventory", inventory)
-	var routed_order_id := StringName(workstation.get("_formal_order_id"))
-	_check(bool(session.call("abandon_formal_order", routed_order_id, &"test_fixture_replaced").get("success", false)), "payment fixture releases the automatically routed customer after verifying immediate next-customer routing")
+	var released_auto_orders := 0
+	for queued_order_value in Array(session.call("active_formal_orders")) + Array(session.call("waiting_formal_orders")):
+		var queued_order_id := StringName(Dictionary(queued_order_value).get("order_id", &""))
+		if not queued_order_id.is_empty() and bool(session.call("abandon_formal_order", queued_order_id, &"test_fixture_replaced").get("success", false)):
+			released_auto_orders += 1
+	_check(released_auto_orders > 0 and Array(session.call("active_formal_orders")).is_empty() and Array(session.call("waiting_formal_orders")).is_empty(), "payment fixture releases the six-order automatic queue after verifying immediate next-customer routing")
 	var second_opened := Dictionary(session.call("open_formal_order", [item.duplicate(true)], {"source": &"payment_accumulation_test", "tutorial_no_countdown": true}))
 	var second_order := Dictionary(second_opened.get("order", {}))
 	var second_order_id := StringName(second_order.get("order_id", &""))
@@ -119,11 +123,11 @@ func _run() -> void:
 	workstation.call("_focus_formal_order", cutoff_order, false)
 	workstation.business_day_timer.set("remaining_seconds", 0.05)
 	workstation.call("_process", 0.10)
-	_check(bool(workstation.get("_business_day_expiration_pending")) and not bool(workstation.get("_business_day_closed")), "business cutoff waits for the currently focused five-area order")
+	_check(not bool(workstation.get("_business_day_expiration_pending")) and bool(workstation.get("_business_day_closed")) and workstation.daily_bill_panel.visible, "business cutoff closes the five-area shop and opens the bill on the expiry frame")
 	workstation.call("_on_order_dish_pressed", 0)
 	var cutoff_settled := Dictionary(session.call("formal_order", cutoff_order_id))
-	_check(StringName(cutoff_settled.get("state", &"")) == &"settled" and bool(workstation.get("_business_day_closed")), "the current order settles before cutoff opens the daily bill")
-	_check(Array(session.call("active_formal_orders")).is_empty() and not Array(session.call("pending_order_payments")).is_empty(), "cutoff creates no next customer and preserves the completed order payment")
+	_check(StringName(cutoff_settled.get("state", &"")) == &"abandoned", "an order still open when expiry is processed cannot be delivered during overtime")
+	_check(Array(session.call("active_formal_orders")).is_empty() and Array(session.call("waiting_formal_orders")).is_empty() and Array(session.call("pending_order_payments")).is_empty(), "cutoff creates no next customer and no payment for an unfinished order")
 
 	workstation.queue_free()
 	_finish()

@@ -24,6 +24,7 @@ var quantity := 0
 var elapsed_seconds := 0.0
 var completed_elapsed_seconds := 0.0
 var quality := 100.0
+var manual_cup_ready := false
 var _output_rack: Array[Dictionary] = [{}, {}, {}, {}]
 
 
@@ -90,17 +91,23 @@ func advance_time(delta: float, auto_cup_rack: bool = false) -> void:
 		if state == STATE_BLOCKED:
 			return
 	var tier_definition := _tier_definition()
+	var remaining := step
 	if state == STATE_GRINDING:
-		elapsed_seconds += step
-		if elapsed_seconds >= float(tier_definition.get("duration_seconds", 5.0)):
+		var duration := float(tier_definition.get("duration_seconds", 5.0))
+		var applied := minf(remaining, maxf(duration - elapsed_seconds, 0.0))
+		elapsed_seconds += applied
+		remaining -= applied
+		if elapsed_seconds + 0.000001 >= duration:
+			elapsed_seconds = duration
 			state = STATE_READY_SAFE
 			completed_elapsed_seconds = 0.0
+			manual_cup_ready = false
 			if auto_cup_rack:
 				_move_completed_batch_to_rack()
-	elif state == STATE_READY_SAFE or state == STATE_OVERCOOKING:
+	if remaining > 0.0 and state in [STATE_READY_SAFE, STATE_OVERCOOKING]:
 		if bool(tier_definition.get("infinite_hold", false)):
 			return
-		completed_elapsed_seconds += step
+		completed_elapsed_seconds += remaining
 		var safe_seconds := float(tier_definition.get("safe_seconds", 5.0))
 		var decay_seconds := maxf(float(tier_definition.get("decay_seconds", 10.0)), 0.001)
 		if completed_elapsed_seconds > safe_seconds:
@@ -116,7 +123,9 @@ func advance_time(delta: float, auto_cup_rack: bool = false) -> void:
 func preview_collect(quantity_to_collect: int = 1) -> Dictionary:
 	if state not in [STATE_READY_SAFE, STATE_OVERCOOKING]:
 		return _failure(&"collect_not_available")
-	if quantity_to_collect <= 0 or quantity_to_collect > quantity:
+	if not manual_cup_ready:
+		return _failure(&"cup_required")
+	if quantity_to_collect != 1 or quantity_to_collect > quantity:
 		return _failure(&"invalid_quantity")
 	return _success(_product_payload(quantity_to_collect, quality))
 
@@ -126,10 +135,20 @@ func collect(quantity_to_collect: int = 1) -> Dictionary:
 	if not bool(result.get("success", false)):
 		return result
 	quantity -= quantity_to_collect
+	manual_cup_ready = false
 	result["remaining_quantity"] = quantity
 	if quantity <= 0:
 		_reset_idle()
 	return result
+
+
+func fill_manual_cup() -> Dictionary:
+	if state not in [STATE_READY_SAFE, STATE_OVERCOOKING]:
+		return _failure(&"cup_not_available")
+	if manual_cup_ready:
+		return _failure(&"cup_already_filled")
+	manual_cup_ready = true
+	return _success({"recipe_id": recipe_id, "remaining_quantity": quantity})
 
 
 func collect_output(slot_index: int) -> Dictionary:
@@ -180,7 +199,10 @@ func snapshot() -> Dictionary:
 		"elapsed_seconds": elapsed_seconds,
 		"completed_elapsed_seconds": completed_elapsed_seconds,
 		"quality": quality,
+		"manual_cup_ready": manual_cup_ready,
+		"seconds_to_ready": maxf(float(_tier_definition().get("duration_seconds", 5.0)) - elapsed_seconds, 0.0) if state == STATE_GRINDING else 0.0,
 		"seconds_to_loss": _seconds_to_loss(),
+		"infinite_hold": bool(_tier_definition().get("infinite_hold", false)),
 		"output_rack": output_rack_snapshot(),
 	}
 
@@ -205,6 +227,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	elapsed_seconds = maxf(float(value.get("elapsed_seconds", 0.0)), 0.0)
 	completed_elapsed_seconds = maxf(float(value.get("completed_elapsed_seconds", 0.0)), 0.0)
 	quality = clampf(float(value.get("quality", 100.0)), 0.0, 100.0)
+	manual_cup_ready = bool(value.get("manual_cup_ready", restored_state in [STATE_READY_SAFE, STATE_OVERCOOKING, STATE_SPOILED]))
 	var restored_rack := Array(value.get("output_rack", []))
 	for index in range(mini(restored_rack.size(), OUTPUT_CAPACITY)):
 		_output_rack[index] = Dictionary(restored_rack[index]).duplicate(true)
@@ -253,7 +276,7 @@ func _seconds_to_loss() -> float:
 	if state not in [STATE_READY_SAFE, STATE_OVERCOOKING]:
 		return 0.0
 	if bool(_tier_definition().get("infinite_hold", false)):
-		return 999999.0
+		return 0.0
 	return maxf(float(_tier_definition().get("safe_seconds", 5.0)) + float(_tier_definition().get("decay_seconds", 10.0)) - completed_elapsed_seconds, 0.0)
 
 
@@ -272,6 +295,7 @@ func _reset_values() -> void:
 	elapsed_seconds = 0.0
 	completed_elapsed_seconds = 0.0
 	quality = 100.0
+	manual_cup_ready = false
 
 
 static func _grade_for_quality(value: float) -> StringName:

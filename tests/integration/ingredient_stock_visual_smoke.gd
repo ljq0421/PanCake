@@ -21,7 +21,13 @@ func _run() -> void:
 	_fill_product_base(workstation.pancake_model)
 	workstation.ingredient_model.place(
 		IngredientModel.BAOCUI,
-		Vector2(workstation.pancake_model.grid_size - 1, workstation.pancake_model.grid_size - 1) * 0.5,
+		Vector2(43.0, 64.0),
+		0.0,
+		workstation.pancake_model
+	)
+	workstation.ingredient_model.place(
+		IngredientModel.YOUTIAO,
+		Vector2(85.0, 64.0),
 		0.0,
 		workstation.pancake_model
 	)
@@ -29,14 +35,22 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	var capture_directory := ProjectSettings.globalize_path("res://tmp/validation")
+	var stock_slots: Array[IngredientStockSlot] = [workstation.egg_button as IngredientStockSlot, workstation.baocui_button as IngredientStockSlot, workstation.ham_button as IngredientStockSlot, workstation.scallion_button as IngredientStockSlot, workstation.meat_floss_button as IngredientStockSlot, workstation.pork_tenderloin_button as IngredientStockSlot, workstation.coriander_button as IngredientStockSlot, workstation.preserved_mustard_button as IngredientStockSlot]
+	for stock_slot: IngredientStockSlot in stock_slots:
+		stock_slot.visible = true
+	var capture_directory := ProjectSettings.globalize_path("res://tmp/validation/ingredient_stock_quantities_v2")
 	DirAccess.make_dir_recursive_absolute(capture_directory)
-	var capture_path := capture_directory.path_join("ingredient_stock_visual_latest.png")
-	if root.get_texture().get_image().save_png(capture_path) != OK:
-		push_error("Failed to save ingredient stock visual capture")
-		quit(1)
-		return
-	print("INGREDIENT_STOCK_VISUAL_SMOKE_PASS: %s" % capture_path)
+	for quantity in [6, 10, 14]:
+		for stock_slot: IngredientStockSlot in stock_slots:
+			stock_slot.set_stock_quantity(quantity)
+		await RenderingServer.frame_post_draw
+		var capture_path := capture_directory.path_join("ingredient_stock_%d_gpu_1920x1080.png" % quantity)
+		if root.get_texture().get_image().save_png(capture_path) != OK:
+			push_error("Failed to save ingredient stock visual capture for quantity %d" % quantity)
+			quit(1)
+			return
+		print("INGREDIENT_STOCK_GPU_SCREENSHOT_%d=%s" % [quantity, capture_path])
+	print("INGREDIENT_STOCK_VISUAL_SMOKE_PASS")
 	quit(0)
 
 

@@ -17,25 +17,75 @@ const STOCK_IDS: Array[StringName] = [
 	&"stock.fresh_soy_milk.red_bean",
 	&"stock.fresh_soy_milk.multigrain",
 ]
+const MACHINE_TIER_0_TEXTURE := preload("res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_0_v2_chinese.png")
+const MACHINE_TIER_1_TEXTURE := preload("res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1_chinese.png")
+const MACHINE_TIER_2_TEXTURE := preload("res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_2_v1_chinese.png")
+const MACHINE_ATLAS_REGION := Rect2(332, 30, 360, 458)
+const INGREDIENT_TEXTURES: Array[Texture2D] = [
+	preload("res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png"),
+	preload("res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png"),
+	preload("res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png"),
+	preload("res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png"),
+]
+const CUP_TEXTURES: Array[Texture2D] = [
+	preload("res://resources/art/products/soy_milk/soy_milk_cup_yellow_bean_v3.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_cup_black_bean_v3.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_cup_red_bean_v3.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_cup_multigrain_v3.png"),
+]
+const EMPTY_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_cup_empty_v3.png")
 
 @onready var water_button: Button = %WaterButton
 @onready var start_button: Button = %StartButton
+@onready var cup_button: Button = %CupButton
+@onready var machine_art: TextureRect = $Machine
 @onready var machine_output: ProductDragSource = %MachineOutput
 @onready var rack_outputs: Array[ProductDragSource] = [%RackOutput01, %RackOutput02, %RackOutput03, %RackOutput04]
 @onready var state_label: Label = %StateLabel
+@onready var visual_rig: Control = %VisualRig
+@onready var closed_lid_visual: TextureRect = %ClosedLidVisual
+@onready var open_lid_visual: TextureRect = %OpenLidVisual
+@onready var ingredient_visual: TextureRect = %IngredientVisual
+@onready var water_effect: TextureRect = %WaterEffect
+@onready var stream_effect: TextureRect = %StreamEffect
+@onready var machine_cup_visual: TextureRect = %MachineCupVisual
+@onready var steam_effect: TextureRect = %SteamEffect
+@onready var spoiled_vapor: TextureRect = %SpoiledVapor
+@onready var rack_spoiled_vapor: TextureRect = %RackSpoiledVapor
 @onready var lock_cover: Button = %LockCover
 
 var _refresh_elapsed := 0.0
+var _machine_art_by_tier: Dictionary = {}
+var _last_state: StringName = &"unowned"
+var _last_rack_count := 0
+var _visual_time := 0.0
+var _machine_rest_position := Vector2.ZERO
 
 
 func _ready() -> void:
+	_machine_art_by_tier = {
+		0: _atlas_crop(MACHINE_TIER_0_TEXTURE),
+		1: _atlas_crop(MACHINE_TIER_1_TEXTURE),
+		2: _atlas_crop(MACHINE_TIER_2_TEXTURE),
+	}
 	water_button.pressed.connect(_perform_action.bind(&"add_water"))
 	start_button.pressed.connect(_perform_action.bind(&"start"))
+	cup_button.pressed.connect(_perform_action.bind(&"fill_cup"))
 	lock_cover.pressed.connect(_on_lock_cover_pressed)
+	_machine_rest_position = machine_art.position
 	refresh_from_session()
 
 
 func _process(delta: float) -> void:
+	_visual_time += maxf(delta, 0.0)
+	var grinding := _last_state == &"grinding"
+	machine_art.position = _machine_rest_position + Vector2(sin(_visual_time * 32.0) * 1.8, 0.0) if grinding else _machine_rest_position
+	if steam_effect.visible:
+		steam_effect.position.y = 76.0 + sin(_visual_time * 2.8) * 3.0
+	if spoiled_vapor.visible:
+		spoiled_vapor.position.y = 68.0 + sin(_visual_time * 2.1) * 3.0
+	if rack_spoiled_vapor.visible:
+		rack_spoiled_vapor.position.y = 106.0 + sin(_visual_time * 2.4) * 2.0
 	_refresh_elapsed += delta
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
@@ -51,6 +101,8 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result: Dictionary = session.call("load_f4_soy", StringName(source_ref.get("recipe_id", &"")), 1) if session != null else {"success": false, "reason": &"no_game_session"}
 	status_message.emit("豆料已倒入料口" if bool(result.get("success", false)) else "豆料回到原位：%s" % str(result.get("reason", &"unknown")))
+	if bool(result.get("success", false)):
+		_animate_ingredient_load(StringName(source_ref.get("recipe_id", &"")))
 	refresh_from_session()
 
 
@@ -61,29 +113,130 @@ func refresh_from_session() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_area := Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
 	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	_refresh_machine_artwork(int(machine.get("tier", 0)))
 	lock_cover.visible = not unlocked_area
 	var state := StringName(machine.get("state", &"unowned"))
 	water_button.disabled = state != &"loaded"
 	start_button.disabled = state != &"water_added"
+	var auto_cup_owned := _contains_id(Array(progression.get("unlocked_automation_ids", [])), &"automation.fresh_soy_milk.auto_cup_rack")
+	var manual_cup_ready := bool(machine.get("manual_cup_ready", false))
+	cup_button.visible = unlocked_area and not auto_cup_owned
+	cup_button.disabled = state not in [&"ready_safe", &"overcooking"] or manual_cup_ready
+	cup_button.text = "已接杯" if manual_cup_ready else "接杯"
 	var recipe_id := StringName(machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state in [&"ready_safe", &"overcooking"], "成品已到出杯口；正式订单开放后点击订单商品交付")
-	machine_output.visible = state in [&"ready_safe", &"overcooking"]
+	var machine_spoiled := state == &"spoiled"
+	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id, "discardable": machine_spoiled}, PRODUCT_VISUALS.texture_for(product_id), manual_cup_ready or machine_spoiled, "豆浆已变质，请拖到垃圾桶丢弃" if machine_spoiled else "成品杯已接好，可交付订单")
+	machine_output.visible = manual_cup_ready or machine_spoiled
 	var rack := Array(machine.get("output_rack", []))
+	var spoiled_rack_present := false
+	var rack_count := 0
 	for rack_index in range(rack_outputs.size()):
 		var cup := Dictionary(rack[rack_index]) if rack_index < rack.size() else {}
+		var cup_spoiled := StringName(cup.get("state", &"")) == &"spoiled"
+		spoiled_rack_present = spoiled_rack_present or cup_spoiled
+		if not cup.is_empty():
+			rack_count += 1
 		var rack_recipe_id := StringName(cup.get("recipe_id", &""))
 		var rack_product_id := StringName(CATALOG.recipe_definition(rack_recipe_id).get("product_id", &""))
-		rack_outputs[rack_index].configure({"source_kind": &"soy_output", "source_index": rack_index, "product_id": rack_product_id}, PRODUCT_VISUALS.texture_for(rack_product_id), not cup.is_empty(), "接杯架成品；正式订单开放后点击订单商品交付")
+		rack_outputs[rack_index].configure({"source_kind": &"soy_output", "source_index": rack_index, "product_id": rack_product_id, "discardable": cup_spoiled}, PRODUCT_VISUALS.texture_for(rack_product_id), not cup.is_empty(), "豆浆已变质，请拖到垃圾桶丢弃" if cup_spoiled else "接杯架成品；正式订单开放后点击订单商品交付")
 		rack_outputs[rack_index].visible = not cup.is_empty()
-	state_label.text = _state_text(state)
+	_refresh_visual_layers(state, recipe_id, machine_spoiled, spoiled_rack_present, manual_cup_ready, unlocked_area)
+	if _last_state == &"grinding" and state in [&"ready_safe", &"overcooking", &"blocked"]:
+		_animate_dispense()
+	if rack_count > _last_rack_count:
+		_animate_rack_transfer()
+	_last_state = state
+	_last_rack_count = rack_count
+	state_label.text = "豆浆已变质，请拖到废弃区" if machine_spoiled or spoiled_rack_present else _timed_state_text(state, machine)
+
+
+func _refresh_machine_artwork(machine_tier: int) -> void:
+	machine_art.texture = _machine_art_by_tier.get(machine_tier, _machine_art_by_tier[0]) as AtlasTexture
+
+
+static func _atlas_crop(source: Texture2D) -> AtlasTexture:
+	var cropped := AtlasTexture.new()
+	cropped.atlas = source
+	cropped.region = MACHINE_ATLAS_REGION
+	return cropped
 
 
 func _perform_action(action_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result: Dictionary = session.call("perform_f4_soy_action", action_id) if session != null else {"success": false, "reason": &"no_game_session"}
-	status_message.emit("已加水" if action_id == &"add_water" and bool(result.get("success", false)) else "豆浆机已启动" if bool(result.get("success", false)) else "设备没有动作：%s" % str(result.get("reason", &"unknown")))
+	status_message.emit("已接好一杯豆浆" if action_id == &"fill_cup" and bool(result.get("success", false)) else "已加水" if action_id == &"add_water" and bool(result.get("success", false)) else "豆浆机已启动" if bool(result.get("success", false)) else "设备没有动作：%s" % str(result.get("reason", &"unknown")))
+	if bool(result.get("success", false)):
+		_animate_water_and_close() if action_id == &"add_water" else _animate_start()
 	refresh_from_session()
+
+
+func _refresh_visual_layers(state: StringName, recipe_id: StringName, machine_spoiled: bool, rack_spoiled: bool, manual_cup_ready: bool, unlocked_area: bool) -> void:
+	var recipe_index := maxi(RECIPE_IDS.find(recipe_id), 0)
+	closed_lid_visual.visible = state != &"loaded"
+	open_lid_visual.visible = state == &"loaded"
+	machine_cup_visual.texture = CUP_TEXTURES[recipe_index] if manual_cup_ready or machine_spoiled else EMPTY_CUP_TEXTURE
+	machine_cup_visual.visible = unlocked_area
+	steam_effect.visible = state in [&"ready_safe", &"overcooking", &"blocked"]
+	spoiled_vapor.visible = machine_spoiled
+	rack_spoiled_vapor.visible = rack_spoiled
+
+
+static func _contains_id(values: Array, expected: StringName) -> bool:
+	return values.has(expected) or values.has(str(expected))
+
+
+func _animate_ingredient_load(recipe_id: StringName) -> void:
+	var recipe_index := maxi(RECIPE_IDS.find(recipe_id), 0)
+	ingredient_visual.texture = INGREDIENT_TEXTURES[recipe_index]
+	ingredient_visual.position = Vector2(128.0, 4.0)
+	ingredient_visual.modulate = Color.WHITE
+	ingredient_visual.visible = true
+	open_lid_visual.visible = true
+	closed_lid_visual.visible = false
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(ingredient_visual, "position", Vector2(128.0, 70.0), 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(ingredient_visual, "modulate:a", 0.0, 0.28)
+	tween.chain().tween_callback(func(): ingredient_visual.visible = false)
+
+
+func _animate_water_and_close() -> void:
+	water_effect.position = Vector2(44.0, 30.0)
+	water_effect.modulate.a = 0.0
+	water_effect.visible = true
+	var tween := create_tween()
+	tween.tween_property(water_effect, "modulate:a", 1.0, 0.08)
+	tween.tween_interval(0.18)
+	tween.tween_property(water_effect, "modulate:a", 0.0, 0.10)
+	tween.tween_callback(func(): water_effect.visible = false)
+
+
+func _animate_start() -> void:
+	visual_rig.pivot_offset = visual_rig.size * 0.5
+	var tween := create_tween()
+	tween.tween_property(visual_rig, "scale", Vector2(1.025, 0.975), 0.08)
+	tween.tween_property(visual_rig, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _animate_dispense() -> void:
+	stream_effect.position = Vector2(143.0, 92.0)
+	stream_effect.modulate.a = 0.0
+	stream_effect.visible = true
+	machine_cup_visual.scale = Vector2(0.7, 0.7)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(stream_effect, "modulate:a", 1.0, 0.10)
+	tween.tween_property(machine_cup_visual, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_interval(0.16)
+	tween.chain().tween_property(stream_effect, "modulate:a", 0.0, 0.10)
+	tween.chain().tween_callback(func(): stream_effect.visible = false)
+
+
+func _animate_rack_transfer() -> void:
+	for source in rack_outputs:
+		if source.visible:
+			source.pivot_offset = source.size * 0.5
+			source.scale = Vector2(0.72, 0.72)
+			create_tween().tween_property(source, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _on_lock_cover_pressed() -> void:
@@ -105,3 +258,18 @@ static func _state_text(state: StringName) -> String:
 		&"blocked": "接杯架已满",
 		&"spoiled": "豆浆已变质",
 	}.get(state, "未安装")
+
+
+static func _timed_state_text(state: StringName, machine: Dictionary) -> String:
+	if state == &"grinding":
+		return "制作中 · %d秒" % _display_seconds(float(machine.get("seconds_to_ready", 0.0)))
+	if state in [&"ready_safe", &"overcooking"]:
+		if bool(machine.get("infinite_hold", false)):
+			return "保温中"
+		var seconds := _display_seconds(float(machine.get("seconds_to_loss", 0.0)))
+		return "可取 · %d秒后变质" % seconds if state == &"ready_safe" else "变质中 · 剩余%d秒" % seconds
+	return _state_text(state)
+
+
+static func _display_seconds(value: float) -> int:
+	return maxi(int(ceil(maxf(value, 0.0))), 0)

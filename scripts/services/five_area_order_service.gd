@@ -11,7 +11,7 @@ signal order_settled(result: Dictionary)
 ## formal contract nevertheless owns the upper bound so a malformed order can
 ## never introduce a third sauce when more sauce content is added later.
 const MAX_SAUCE_REQUIREMENTS_PER_ITEM := 2
-const MAX_OPEN_ORDERS := 4
+const MAX_OPEN_ORDERS := 6
 const MAX_ACTIVE_CUSTOMERS := 3
 const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01",
@@ -24,7 +24,18 @@ const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_08",
 	&"customer_09",
 	&"customer_10",
+	&"customer_11",
+	&"customer_12",
+	&"customer_13",
+	&"customer_14",
+	&"customer_15",
+	&"customer_16",
+	&"customer_17",
+	&"customer_18",
+	&"customer_19",
+	&"customer_20",
 ]
+const LEGACY_CUSTOMER_COUNT_BEFORE_POOL_EXPANSION := 10
 
 var _orders: Dictionary = {}
 var _active_order_ids: Array[StringName] = []
@@ -101,6 +112,8 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		"patience_seconds": maxf(float(metadata.get("patience_seconds", 0.0)), 0.0),
 		"remaining_patience_seconds": maxf(float(metadata.get("patience_seconds", 0.0)), 0.0),
 		"teaching_area_id": StringName(metadata.get("teaching_area_id", &"")),
+		"tutorial_kind": StringName(metadata.get("tutorial_kind", &"")),
+		"tutorial_id": StringName(metadata.get("tutorial_id", &"")),
 		"tutorial_no_countdown": tutorial_no_countdown,
 		"base_coins": maxi(int(metadata.get("base_coins", 1)), 1),
 		"reward_multiplier": float(metadata.get("reward_multiplier", 1.0)),
@@ -150,7 +163,7 @@ func waiting_orders() -> Array[Dictionary]:
 
 
 func ensure_queue(target_size: int = 4, generated_candidates: Variant = {}) -> Dictionary:
-	var requested_size := clampi(target_size, 1, 4)
+	var requested_size := clampi(target_size, 1, MAX_OPEN_ORDERS)
 	var candidates: Array = Array(generated_candidates) if generated_candidates is Array else ([generated_candidates] if generated_candidates is Dictionary and not Dictionary(generated_candidates).is_empty() else [])
 	var created_orders: Array[Dictionary] = []
 	for raw_candidate in candidates:
@@ -196,7 +209,7 @@ func activate_order(order_id: StringName) -> Dictionary:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 6,
+		"version": 7,
 		"sequence": _sequence,
 		"active_order_id": str(_active_order_ids.front()) if not _active_order_ids.is_empty() else "",
 		"active_order_ids": PackedStringArray(_active_order_ids.map(func(value): return str(value))),
@@ -431,8 +444,10 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 	_orders[order_id] = order
 	var result := {"success": true, "settlement_id": settlement_id, "order_id": order_id, "order_success": success, "mismatch_reasons": all_reasons, "item_results": item_results, "terminal_state": &"completed" if success else &"failed"}
 	_terminal_results[order_id] = result.duplicate(true)
+	var departing_customer_id := StringName(order.get("customer_id", &""))
+	var departing_tutorial := bool(order.get("tutorial_no_countdown", false))
 	_remove_from_queue(order_id)
-	_fill_active_slots()
+	_fill_active_slots(departing_customer_id if departing_tutorial else &"")
 	queue_changed.emit(queue_snapshot())
 	order_settled.emit(result.duplicate(true))
 	return result
@@ -556,6 +571,8 @@ func _finish_failure(order_id: StringName, terminal_state: StringName, reason: S
 		"reason": reason,
 		"reputation_delta": reputation_delta,
 		"teaching_area_id": StringName(order.get("teaching_area_id", &"")),
+		"tutorial_kind": StringName(order.get("tutorial_kind", &"")),
+		"tutorial_id": StringName(order.get("tutorial_id", &"")),
 		"production_started": bool(order.get("production_started", false)),
 		"order": order.duplicate(true),
 	}
@@ -636,9 +653,20 @@ func _restore(source: Dictionary) -> void:
 		var order := Dictionary(source["orders"][raw_order_id]).duplicate(true)
 		var metadata := Dictionary(order.get("metadata", {}))
 		var restored_customer_id := StringName(order.get("customer_id", &""))
-		if source_version < 5 or not CUSTOMER_IDS.has(restored_customer_id):
+		if source_version < 5:
+			order["customer_id"] = legacy_customer_id_for_sequence(int(order.get("sequence", 1)))
+		elif not CUSTOMER_IDS.has(restored_customer_id):
 			order["customer_id"] = customer_id_for_sequence(int(order.get("sequence", 1)))
-		var tutorial_no_countdown := bool(order.get("tutorial_no_countdown", false)) or not StringName(order.get("teaching_area_id", &"")).is_empty() or _metadata_has_no_countdown(metadata)
+		var legacy_teaching_area_id := StringName(order.get("teaching_area_id", metadata.get("teaching_area_id", &"")))
+		var tutorial_kind := StringName(order.get("tutorial_kind", metadata.get("tutorial_kind", &"")))
+		var tutorial_id := StringName(order.get("tutorial_id", metadata.get("tutorial_id", &"")))
+		if tutorial_id.is_empty() and not legacy_teaching_area_id.is_empty():
+			tutorial_kind = &"area"
+			tutorial_id = legacy_teaching_area_id
+		order["teaching_area_id"] = legacy_teaching_area_id
+		order["tutorial_kind"] = tutorial_kind
+		order["tutorial_id"] = tutorial_id
+		var tutorial_no_countdown := bool(order.get("tutorial_no_countdown", false)) or not tutorial_id.is_empty() or _metadata_has_no_countdown(metadata)
 		order["tutorial_no_countdown"] = tutorial_no_countdown
 		if tutorial_no_countdown:
 			order["remaining_patience_seconds"] = maxf(float(order.get("patience_seconds", order.get("remaining_patience_seconds", 0.0))), 0.0)
@@ -730,6 +758,7 @@ func _metadata_has_no_countdown(metadata: Dictionary) -> bool:
 	return (
 		bool(metadata.get("tutorial_no_countdown", false))
 		or not StringName(metadata.get("teaching_area_id", &"")).is_empty()
+		or not StringName(metadata.get("tutorial_id", &"")).is_empty()
 		or bool(Dictionary(metadata.get("legacy_order", {})).get("tutorial_no_countdown", false))
 	)
 
@@ -743,9 +772,25 @@ func _activate_next_waiting() -> void:
 	_fill_active_slots()
 
 
-func _fill_active_slots() -> void:
+func _fill_active_slots(avoid_first_customer_id: StringName = &"") -> void:
 	if _active_ids_include_tutorial(_active_order_ids):
 		return
+	# A tutorial owns the whole storefront.  When it leaves, activate a waiting
+	# normal customer with a visibly different identity into service slot zero
+	# before filling the remaining slots in queue order.  Existing persisted
+	# customer IDs are preserved; only activation order changes.
+	if _active_order_ids.is_empty() and not avoid_first_customer_id.is_empty():
+		for order_id in _queue_order_ids:
+			if not _orders.has(order_id):
+				continue
+			var candidate := Dictionary(_orders[order_id])
+			if (
+				StringName(candidate.get("state", &"")) == &"waiting"
+				and not bool(candidate.get("tutorial_no_countdown", false))
+				and StringName(candidate.get("customer_id", &"")) != avoid_first_customer_id
+			):
+				_activate_order_in_slot(order_id, _first_free_service_slot())
+				break
 	for order_id in _queue_order_ids:
 		if _active_order_ids.size() >= MAX_ACTIVE_CUSTOMERS:
 			return
@@ -804,6 +849,11 @@ func _is_active_order(order_id: StringName) -> bool:
 static func customer_id_for_sequence(sequence: int) -> StringName:
 	var normalized_sequence := maxi(sequence, 1)
 	return CUSTOMER_IDS[(normalized_sequence - 1) % CUSTOMER_IDS.size()]
+
+
+static func legacy_customer_id_for_sequence(sequence: int) -> StringName:
+	var normalized_sequence := maxi(sequence, 1)
+	return CUSTOMER_IDS[(normalized_sequence - 1) % LEGACY_CUSTOMER_COUNT_BEFORE_POOL_EXPANSION]
 
 
 func _active_ids_include_tutorial(order_ids: Array[StringName]) -> bool:

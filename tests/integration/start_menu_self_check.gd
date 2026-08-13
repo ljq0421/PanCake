@@ -28,7 +28,7 @@ func _run() -> void:
 	var new_game_button := menu.get_node("Content/Layout/MenuPanel/Menu/NewGameButton") as Button
 	var settings_button := menu.get_node("Content/Layout/MenuPanel/Menu/SettingsButton") as Button
 	var quit_button := menu.get_node("Content/Layout/MenuPanel/Menu/QuitButton") as Button
-	_check(background.texture != null and background.texture.resource_path == "res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v2.png", "start menu uses the current morning mobile-cart background")
+	_check(background.texture != null and background.texture.resource_path == "res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v3_chinese.png", "start menu uses the Chinese-style morning mobile-cart background")
 	_check(background.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED, "background covers wider and taller aspect ratios")
 	_check(continue_button.text == "继续游戏" and new_game_button.text == "新游戏", "primary start actions are present")
 	_check(settings_button.text == "设置" and quit_button.text == "退出游戏", "settings and desktop quit actions are present")

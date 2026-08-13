@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://resources/art/customers/customer_17/customer_17_neutral_v1_keyclean.png" id="1_customer"]
+
+[resource]
+atlas = ExtResource("1_customer")
+region = Rect2(516, 39, 505, 985)
+filter_clip = true

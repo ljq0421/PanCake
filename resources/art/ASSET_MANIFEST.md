@@ -772,6 +772,45 @@
 - `godot_import`: passed — Godot 4.7.1 明确重新导入最终 PNG，生成 `.png.import` sidecar 和 310,102-byte、保留 alpha 通道的 `CompressedTexture2D` 缓存；headless 导入退出码为 0。系统根证书读取和用户级 editor settings 写入告警与纹理结果分开记录。
 - `human_review`: accepted for identity lock — 用户在查看中性稿后要求继续，已据此从最终中性绿幕源独立制作不耐烦与满意状态。
 
+## customer_10_neutral_v4_chinese
+
+- `status`: accepted; neutral GPU preview complete
+- `scope`: Chinese-style redraw of customer_10 neutral only. This task modified no customer_01/customer_02 asset, modified no customer_03 through customer_09 asset, and created no customer_11 asset.
+- `final_file`: `res://resources/art/customers/customer_10/customer_10_neutral_v4_chinese.png`
+- `runtime_atlas`: `res://resources/art/customers/customer_10/customer_10_neutral_cropped.tres`
+- `source_file`: `tmp/imagegen/customer_10_chinese_v4/customer_10_neutral_v4_chinese_key_ff00ff.png`
+- `prompt_file`: `res://resources/art/prompts/customer_10_neutral_v4_chinese.md`
+- `generator`: Codex built-in `image_gen` through the imagegen skill; one style-transfer generation plus one identity-preserving scale/position correction
+- `generated_on`: 2026-08-11 (Asia/Shanghai)
+- `size`: 1536 x 1024 px
+- `pixel_format`: RGBA
+- `visible_bounds`: `(507,82)-(1018,960)`, exactly matching the legacy 511 x 878 Atlas region and bottom-center anchor near `(762,959)`
+- `identity_clothing_lock`: sturdy broad man aged about 40-50, warm medium olive skin, bald crown with narrow side/back stubble, separated mustache and rounded goatee, muted deep-burgundy short-sleeve camp-collar shirt, warm cream undershirt, warm khaki lower garment
+- `sha256`: `01D5CB8F9B528802EC0A1BF3F86752ED92B6784DB5FF398CDCA7E97621D7CD56`
+- `processing`: border-connected high-magenta background was normalized to exact `#FF00FF`; `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`; deterministic final framing to the unchanged legacy Atlas region; five pure-key resampling pixels at alpha 1/255 were cleared
+- `alpha_check`: passed; source corners are exact `#FF00FF`, final corners are transparent, final alpha bounds are `(507,82)-(1018,960)`, zero nontransparent magenta-like pixels remain, and 0 of 220,508 identified burgundy clothing pixels were made fully transparent during key removal
+- `godot_import`: passed with Godot 4.7.1; 1,030-byte `.png.import` sidecar and 451,896-byte `CompressedTexture2D` cache; final headless reimport exit code 0 with unique log `tmp/validation/customer_10_neutral_v4/godot-headless-reimport-20260811-105257659.log`
+- `runtime_integration`: passed; `workstation.gd` resolves customer_10 neutral through `customer_10_neutral_cropped.tres`, and that AtlasTexture now resolves this v4 PNG while retaining `Rect2(507,82,511,878)`
+- `gpu_validation`: passed in the real main/workstation scene with Godot 4.7.1, Windows display server, D3D12 Forward Mobile, and NVIDIA GeForce RTX 5070; final log `tmp/validation/customer_10_neutral_v4/godot-gpu-workstation-final-20260811-105319098.log`; screenshot `tmp/validation/customer_10_neutral_v4_chinese_gpu_1920x1080.png` (SHA-256 `BD8719AD74DA45087A9B8C4DFE6CB4AEDA50076D6A376CDC5268B621AAB9E253`)
+- `human_review`: accepted on 2026-08-11. The user's explicit `确认` makes this neutral v4 the sole identity, clothing, age, skin-tone, base-palette, and Chinese-style authority for customer_10's later states.
+
+## customer_10_states_v4_colorlocked
+
+- `status`: generated, imported, runtime-integrated, and real-GPU validated; four-state human review pending
+- `scope`: customer_10 only — `impatient`, `satisfied`, `accepting_bag`, and `paying_coins`. This task modified no customer_01/customer_02 asset, modified no customer_03 through customer_09 asset, and created no customer_11 asset. A separately-created untracked customer_11 file present in the shared dirty workspace was not touched.
+- `prompt_file`: `res://resources/art/prompts/customer_10_states_v4_colorlocked.md`
+- `identity_and_palette_authority`: the user-confirmed `res://resources/art/customers/customer_10/customer_10_neutral_v4_chinese.png` only
+- `impatient`: `res://resources/art/customers/customer_10/customer_10_impatient_v4_colorlocked.png`; SHA-256 `BE3B2371C4C53961379FBC012A87B72BAC71198B872B4305B6E312E7D19D0F66`; Atlas `Rect2(507,83,511,876)` unchanged
+- `satisfied`: `res://resources/art/customers/customer_10/customer_10_satisfied_v4_colorlocked.png`; SHA-256 `CED010BFE125B06E5DA0D1D95A17B29EF0FE3685C07709B18FC1C49E0DA8D9B4`; Atlas `Rect2(507,83,511,876)` unchanged
+- `accepting_bag`: `res://resources/art/customers/customer_10/customer_10_accepting_bag_v4_colorlocked.png`; SHA-256 `071C3AB4A3F75C9FF10F1B3704FB106C776CCD0A3812D8C7A900DCD4C86616A1`; Atlas `Rect2(529,88,469,799)` unchanged; exactly one bag, two hands, and no coins
+- `paying_coins`: `res://resources/art/customers/customer_10/customer_10_paying_coins_v4_colorlocked.png`; SHA-256 `95F17ABA22EB0A70A77A7D28DD6CD43B1DEF8F43117A39CFA4FE7C2B0F6B0FFA`; Atlas `Rect2(447,87,590,845)` unchanged; exactly one bag and three separated coins
+- `processing`: border-connected magenta normalized to exact `#FF00FF`; imagegen skill helper `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`; deterministic framing to each unchanged Atlas region; deterministic HSV normalization limited to classified burgundy-shirt and lower-khaki pixels against the confirmed neutral v4 medians
+- `alpha_and_palette_check`: passed for all four; exact 1536 x 1024 canvas and expected alpha bounds, transparent corners, zero nontransparent magenta-like pixels, zero identified burgundy pixels lost to keying, and maximum clothing-palette median delta below 0.0012
+- `godot_import`: passed with Godot 4.7.1 and unique headless log `tmp/validation/customer_10_states_v4_colorlocked_gpu/godot-headless-import-20260811-113037211.log`; sidecar/cache bytes: impatient 1,048/445,230, satisfied 1,048/438,086, accepting_bag 1,059/369,674, paying_coins 1,056/453,600
+- `runtime_integration`: passed; the four existing customer_10 AtlasTexture resources now resolve the v4 PNGs while retaining their old regions
+- `gpu_validation`: passed in the real `main.tscn` workstation path with Godot 4.7.1, Windows display server, D3D12 Forward Mobile, and NVIDIA GeForce RTX 5070; all five customer_10 states loaded their intended v4 texture and legacy region and saved 1920 x 1080 frames; log `tmp/validation/customer_10_states_v4_colorlocked_gpu/godot-gpu-states-20260811-113105165.log`; marker `CUSTOMER_10_STATES_GPU_PREVIEW_PASS`
+- `human_review`: pending for the four new states. Automated alpha/palette checks, Godot import, runtime integration, and real-GPU screenshots are not human visual acceptance.
+
 ## customer_10_impatient_v1
 
 - `status`: review
@@ -2995,6 +3034,23 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `visual_check`: agent-inspected 1920x1080 GPU frames at `tmp/validation/initial_unlock_workstation_gpu_1920x1080.png` and `tmp/validation/workstation_hold_refill_gpu_1920x1080.png`; the black cook face, batter, egg, and fillings remain inside the same horizontal oval.
 - `human_review`: pending
 
+## workstation_18_single_row_1920x1080_v8_chinese
+
+- `status`: generated; imported; runtime-integrated; automated checks passed; GPU render check passed; agent visual review passed; human review pending
+- `purpose`: restyles the formal 18-slot main workstation to match the Chinese watercolor-and-gongbi-inspired start-menu background while preserving the established five-area interaction map and empty runtime overlay zones.
+- `final_file`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v8_chinese.png`
+- `source_file`: `C:\Users\Administrator\.codex\generated_images\019fee07-089e-7062-b281-2734a14cc81f\exec-24a788ef-731c-433e-9dee-084c213fcc33.png`
+- `edit_target`: `res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v7.png`
+- `style_reference`: `res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v3_chinese.png`
+- `prompt_file`: `res://resources/art/prompts/workstation_18_single_row_1920x1080_v8_chinese.md`
+- `generator`: Codex built-in `image_gen`, style transfer
+- `processing`: HighQualityBicubic deterministic resize from ImageGen's `1672x941` output to `1920x1080`, without crop or compositing.
+- `sha256`: `6551CFB68FB4428ED33733EE1E400CBF94262DA3355F8441061E9DC22A16A2A8`
+- `visual_check`: agent inspection passed - the street opening, timber bays, five-panel valance, shelves, full-width empty tabletop, single divider, and 18-well rail remain readable and aligned; no runtime equipment, food, characters, labels, or UI were baked into the background.
+- `godot_import`: passed - Godot 4.7.1 imported the opaque `1920x1080` PNG as a `Texture2D`.
+- `runtime_scene_check`: passed - v8 is referenced by `initial_unlock_workstation.tscn`; `INGREDIENT_STOCK_INTERACTION_SELF_CHECK_PASS`, `INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS`, `M0 integration self-check PASS`, and the D3D12 visual smoke passed.
+- `human_review`: pending
+
 ## workstation_18_single_row_1920x1080_v7
 
 - `status`: generated; imported; runtime-integrated; human review pending
@@ -3166,3 +3222,322 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `gpu_previews`: `res://tmp/validation/youtiao_station_formal_1920x1080.png`; `res://tmp/validation/youtiao_station_formal_1280x720.png`; `res://tmp/validation/youtiao_station_tier1_flow_gpu_1920x1080.png`; `res://tmp/validation/youtiao_station_three_tiers_gpu_1280x720.png`
 - `v3_thumbnail_contract`: the three v3 full-machine images remain unchanged for thumbnail/upgrade display; v4 is used only by the formal direct operation station
 - `human_review`: pending; automated checks and agent inspection do not constitute final art acceptance
+
+## customer_04_neutral_v4_chinese
+
+- `status`: generated; Godot-imported; runtime-integrated; non-headless GPU workstation preview passed; human review pending
+- `scope`: `customer_04` neutral only; all old PNGs and the four existing action-state Atlas resources remain unchanged
+- `identity_contract`: preserves the legacy middle-aged warm-brown-skinned man, short dense dark curls, navy polo with ochre collar/sleeve trim, brick-brown lower garment, neutral expression and complete frontal half-body pose
+- `final_file`: `res://resources/art/customers/customer_04/customer_04_neutral_v4_chinese.png`
+- `source_file`: original generated `res://tmp/imagegen/customer_04_chinese_neutral_v4/customer_04_neutral_v4_chinese_key.png`; exact-key processing source `res://tmp/imagegen/customer_04_chinese_neutral_v4/customer_04_neutral_v4_chinese_key_exact_ff00ff.png`
+- `prompt_record`: `res://resources/art/prompts/customer_04_neutral_v4_chinese.md`
+- `generator`: Codex built-in `image_gen`, identity-preserving edit; `customer_04_neutral_v1.png` is the identity/composition authority, approved customer_02 v4 plus the Chinese main-menu/workstation art are style references only
+- `processing`: ImageGen's requested `#FF00FF` background varied around `#FA04F1`; the original source is preserved and only its border-connected magenta background was deterministically normalized to exact `#FF00FF`; `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill` confirmed key `#ff00ff`; four residual magenta edge pixels at alpha 1 were cleared; the result was deterministically normalized to the legacy canvas/crop
+- `canvas_contract`: RGBA `1535x1024`; alpha bounds and Atlas region are both exactly `Rect2(508, 81, 505, 895)`; old runtime crop and anchor are unchanged
+- `alpha_check`: four corners transparent; non-empty alpha; no remaining magenta-like nontransparent pixels; central brick-brown garment ROI has 9900/9900 opaque pixels
+- `sha256`: `878444f64eb0880ab02c4eb3fff3bc0ce37d39624fe0caba11e096adbbfe6bf4`
+- `godot_import`: passed with Godot `4.7.1.stable`; generated `.png.import` resolves to a `CompressedTexture2D`
+- `runtime_scene_check`: `workstation.gd` still preloads `customer_04_neutral_cropped.tres`; that Atlas now resolves v4 while retaining the legacy region
+- `gpu_check`: D3D12 / NVIDIA GeForce RTX 5070; `CUSTOMER_04_NEUTRAL_GPU_PREVIEW_PASS`; real `1920x1080` workstation screenshot at `res://tmp/validation/customer_04_neutral_v4_chinese_gpu_1920x1080.png`
+- `human_review`: pending; no impatient/satisfied/accepting_bag/paying_coins redraw has been started
+
+## customer_05_neutral_v4_chinese
+
+- `status`: generated; Godot-imported; runtime-integrated; GPU-verified; human-confirmed
+- `scope`: customer_05 neutral only; customer_01/customer_02 and concurrent customer_03/customer_04 work were not regenerated or edited; this customer_05 task did not create or edit customer_11
+- `identity_contract`: young adult Chinese woman; warm light-medium skin; narrow oval face; straight dark chin-length blunt bob; short blunt bangs; both ears exposed; muted dusty-plum shallow square-neck blouse; warm cream lower garment
+- `style_contract`: Chinese warm rice-paper language, fine ink-brown lines, watercolor granulation/dry brush, restrained coordinated mineral colors; transparent runtime background
+- `final_file`: `res://resources/art/customers/customer_05/customer_05_neutral_v4_chinese.png`
+- `cropped_resource`: `res://resources/art/customers/customer_05/customer_05_neutral_cropped.tres`
+- `prompt_record`: `res://resources/art/prompts/customer_05_neutral_v4_chinese.md`
+- `source_file`: `res://tmp/imagegen/customer_05_chinese_v4/customer_05_neutral_v4_chinese_key_raw.png`
+- `generator`: Codex built-in `image_gen` through the imagegen skill
+- `generated_on`: 2026-08-11 (Asia/Shanghai)
+- `processing`: bright-magenta border key; default soft matte `12/220` rejected because it removed warm skin and dusty-plum interior pixels; accepted helper pass used border auto-key, hard tolerance `60`, and despill, followed by deterministic alpha-bound normalization and edge-only key-spill cleanup
+- `canvas`: `1535x1024`, RGBA PNG
+- `alpha_bbox`: `(536,86)-(987,977)`; exactly matches the old neutral Atlas crop `Rect2(536,86,451,891)`
+- `alpha_check`: four transparent corners; 1,272,048 transparent, 10,610 partial and 289,182 opaque pixels; zero visible key-like magenta pixels at alpha >= 16
+- `red_plum_safety_check`: 176,336 opaque red-family pixels retained; representative blouse pixel RGBA `(184,91,89,255)` remains fully opaque
+- `sha256`: `10BE97B4A0C250D6694D02DEB06E953AAD95393730EF71ACDD599C7E1B994D07`
+- `godot_import`: passed with Godot 4.7.1; `.png.import` resolves to a 411,932-byte `CompressedTexture2D`; headless import used unique writable log `res://tmp/validation/customer_05_import_019feea2.log`
+- `runtime_integration`: `workstation.gd` resolves `customer_05 -> neutral -> customer_05_neutral_cropped.tres`; only the Atlas source PNG changed and the region/anchor stayed unchanged
+- `gpu_check`: passed in real `main.tscn` / `Workstation` at `1920x1080`; D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; marker `CUSTOMER_05_NEUTRAL_GPU_PREVIEW_PASS`
+- `gpu_screenshot`: `res://tmp/validation/customer_05_neutral_v4_chinese_gpu_1920x1080.png`
+- `agent_visual_review`: passed for complete half-body framing, neutral identity/outfit continuity, warm Chinese watercolor integration, and absence of visible magenta holes/halo in the real workstation screenshot
+- `human_review`: confirmed by the user on 2026-08-11; this confirmation authorized the four neutral-locked action states below
+
+## customer_05_states_v4_chinese
+
+- `status`: 4 generated; 4 Godot-imported; 4 runtime-integrated; non-headless GPU workstation previews passed; human review pending
+- `scope`: customer_05 impatient, satisfied, accepting_bag and paying_coins only; the confirmed neutral is unchanged and is the sole identity/outfit/color authority
+- `prompt_record`: `res://resources/art/prompts/customer_05_states_v4_chinese.md`
+- `generator`: Codex built-in `image_gen` through the imagegen skill; one selected generation per state, with two additional sad/worried impatient attempts rejected before import
+- `processing`: border-connected bright-magenta key removal using hard tolerance `60` plus despill; deterministic edge-only key cleanup; clothing hue/saturation/value normalized to the confirmed neutral palette; old canvas, alpha bounds, crop and anchor restored exactly
+- `canvas`: all four are `1535x1024` RGBA PNGs with four transparent corners and zero visible magenta-like pixels at alpha >= 16
+- `impatient`: `res://resources/art/customers/customer_05/customer_05_impatient_v4_chinese.png`; `Rect2(536,87,451,890)`; SHA-256 `4152118C63E7A25D28FC911D2C9C905563CB63CC1124ED24CE04A3C59D2F6E11`
+- `satisfied`: `res://resources/art/customers/customer_05/customer_05_satisfied_v4_chinese.png`; `Rect2(535,85,452,892)`; SHA-256 `9A28CAEE4B240FA13D2E98F6C0A5A5567CCA0375132DC46932F2B915EFF3237E`
+- `accepting_bag`: `res://resources/art/customers/customer_05/customer_05_accepting_bag_v4_chinese.png`; `Rect2(534,75,461,901)`; SHA-256 `D5BC094675A40CCE0AFAC48CA0FAAFDE4F43F86021992C5D635A7F1369C240AD`; one centered takeaway bag held with both hands
+- `paying_coins`: `res://resources/art/customers/customer_05/customer_05_paying_coins_v4_chinese.png`; `Rect2(440,63,627,914)`; SHA-256 `8E4A7AE438F2FE995C8A0A0854578CF29A3C4F1A1BF9015F6EA5C0928FD8DC5F`; one takeaway bag and exactly three separated coins
+- `godot_import`: passed with Godot 4.7.1; all four `.png.import` files resolve to non-empty `CompressedTexture2D` files; headless import used unique log `res://tmp/validation/customer_05_states_import_019feea2.log`
+- `runtime_integration`: the four existing `customer_05_*_cropped.tres` resources point to the v4 PNGs while retaining their original regions; `workstation.gd` state routing is unchanged
+- `gpu_check`: D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; marker `CUSTOMER_05_STATES_GPU_PREVIEW_PASS`; each runtime Atlas path, source PNG and legacy region was asserted in the real `main.tscn` / `Workstation`
+- `gpu_screenshots`: `res://tmp/validation/customer_05_states_v4_gpu/customer_05_impatient_v4_chinese_1920x1080.png`; `customer_05_satisfied_v4_chinese_1920x1080.png`; `customer_05_accepting_bag_v4_chinese_1920x1080.png`; `customer_05_paying_coins_v4_chinese_1920x1080.png`
+- `agent_visual_review`: passed for identity, clothing palette, state/action legibility, transparent edges, runtime scale and prop counts; impatient is a mild frown rather than hostile rage
+- `human_review`: pending; GPU validation and agent inspection do not constitute user acceptance
+
+## customer_09_neutral_v4_chinese
+
+- `status`: generated; Godot-imported; runtime-integrated; GPU-verified; human-confirmed
+- `scope`: customer_09 neutral only; customer_01/customer_02 and concurrent customer_03-customer_08 work were not regenerated or edited; no customer_11 was created
+- `identity_contract`: adult woman, approximately 30-40 years old; deep warm brown skin; softly heart-shaped adult face; broad nose; blue-black off-center-parted hair with one long side braid; coral-orange mandarin-collar diagonal-wrap blouse; deep indigo lower garment
+- `style_contract`: Chinese warm rice-paper language, fine ink-brown lines, translucent watercolor and restrained dry brush, coordinated mineral colors; transparent runtime background
+- `final_file`: `res://resources/art/customers/customer_09/customer_09_neutral_v4_chinese.png`
+- `cropped_resource`: `res://resources/art/customers/customer_09/customer_09_neutral_cropped.tres`
+- `prompt_record`: `res://resources/art/prompts/customer_09_neutral_v4_chinese.md`
+- `source_file`: `res://tmp/imagegen/customer_09_neutral_v4/customer_09_neutral_v4_chinese_chromakey.png`
+- `generator`: Codex built-in `image_gen` through the imagegen skill
+- `generated_on`: 2026-08-11 (Asia/Shanghai)
+- `processing`: bright-magenta border key with `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`; deterministic alpha-bound normalization; one alpha-1 key residue removed without altering subject-colored pixels
+- `canvas`: `1536x1024`, RGBA PNG
+- `alpha_bbox`: `(540,75)-(979,959)`; exactly matches the old neutral Atlas crop `Rect2(540,75,439,884)`
+- `alpha_check`: four transparent corners; zero nontransparent canvas-edge pixels; zero magenta-like residual pixels; 12,172 partial-alpha antialias pixels; transparent ratio `0.817898`
+- `red_clothing_safety_check`: warm coral/cinnabar blouse remains opaque and visually intact; no hot-pink/magenta hue was retained in the subject
+- `sha256`: `EBA5BC7744E7873CF20557E0AC3BC0FFD2CC04098F7C0D921E929399BD39F448`
+- `godot_import`: passed with Godot 4.7.1; `.png.import` resolves to a 428,228-byte `CompressedTexture2D`; headless import used unique writable log `res://tmp/validation/customer_09_import_20260811_114856_518.log` (root-certificate/editor-settings warnings were non-fatal and the process exited 0)
+- `runtime_integration`: `workstation.gd` resolves `customer_09 -> neutral -> customer_09_neutral_cropped.tres`; the Atlas now points to v4 while its region/anchor remains unchanged
+- `gpu_check`: passed in real `main.tscn` / `Workstation` at `1920x1080`; D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; marker `CUSTOMER_09_NEUTRAL_GPU_PREVIEW_PASS`; log `res://tmp/validation/customer_09_gpu_20260811_115626_347.log`
+- `gpu_screenshot`: `res://tmp/validation/customer_09_neutral_v4_chinese_gpu_1920x1080.png`
+- `gpu_screenshot_sha256`: `E0D85CA848C3D2E1AFAC6492205685F47BCF3316B9EE8E53EC739972789C20BF`
+- `agent_visual_review`: passed for complete half-body framing, neutral identity/outfit continuity, warm Chinese watercolor integration, and absence of visible magenta holes or halo in the real workstation screenshot
+- `human_review`: confirmed by the user on 2026-08-11; this confirmation authorizes the four neutral-locked action states
+
+## customer_09_states_v4_chinese
+
+- `status`: 4 generated; 4 Godot-imported; 4 runtime-integrated; non-headless GPU workstation previews passed; human review pending
+- `scope`: customer_09 impatient, satisfied, accepting_bag, and paying_coins only; the confirmed neutral is unchanged and is the sole identity/outfit/color authority
+- `prompt_record`: `res://resources/art/prompts/customer_09_states_v4_chinese.md`
+- `normalization_tool`: `res://tools/normalize_customer_09_states.py`; deterministic legacy geometry restore plus blouse/lower-garment palette normalization only
+- `generator`: Codex built-in `image_gen` through the imagegen skill; two overly angry impatient attempts were rejected and retained in `res://tmp/imagegen/customer_09_states_v4/`
+- `processing`: border-connected bright-magenta key removal with soft matte `12/220` and despill; deterministic legacy canvas/alpha-bound normalization; neutral v4 HSV palette lock on opaque coral blouse and indigo lower garment pixels; six alpha-1 key remnants cleared without altering colored subject pixels
+- `alpha_check`: all four have transparent corners, zero nontransparent canvas-edge pixels, zero magenta-like nontransparent pixels, complete alpha bounds equal to the legacy Atlas regions, and preserved antialiased edges
+- `impatient`: `res://resources/art/customers/customer_09/customer_09_impatient_v4_chinese.png`; `1536x1024`; `Rect2(541,76,438,883)`; SHA-256 `5C822D64D0FAA977F0D8DD947E0AB3D3115BC669CC691BAD35DF9563EAAAFDD3`; mild waiting expression, not anger
+- `satisfied`: `res://resources/art/customers/customer_09/customer_09_satisfied_v4_chinese.png`; `1536x1024`; `Rect2(541,76,438,883)`; SHA-256 `CB27119018EFB2367FE5B4DACE0CED5FF4B122BF9F39D44CD2AADFAA75877A9F`; closed-eye restrained pleased smile
+- `accepting_bag`: `res://resources/art/customers/customer_09/customer_09_accepting_bag_v4_chinese.png`; `1536x1024`; `Rect2(528,60,457,947)`; SHA-256 `0BC91B4B4295625AED141CE2769CA7F5C20EB495DF37A35633C9BE0F0F92C79A`; exactly one upright bag and two gripping hands
+- `paying_coins`: `res://resources/art/customers/customer_09/customer_09_paying_coins_v4_chinese.png`; `1530x1028`; `Rect2(450,67,640,910)`; SHA-256 `27595C7704DFD2E97845F3D68280D71216252DFAD3F14A0A74CFF19106E244E2`; exactly one bag and three separated coins
+- `godot_import`: passed with Godot 4.7.1; all four `.png.import` files resolve to non-empty `CompressedTexture2D` caches (454,022; 392,828; 420,312; 498,512 bytes); headless import used unique log `res://tmp/validation/customer_09_states_import_20260811_174315_335.log` and exited 0 despite non-fatal certificate/editor-cache warnings
+- `runtime_integration`: the four existing `customer_09_*_cropped.tres` Atlas resources now point to v4 Chinese PNGs while retaining the old regions and anchors; `workstation.gd` state routing is unchanged
+- `gpu_check`: D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; `CUSTOMER_09_STATES_GPU_PREVIEW_PASS`; each runtime Atlas path, source PNG, and old region was asserted in the real `main.tscn` / `Workstation`
+- `gpu_screenshots`: `res://tmp/validation/customer_09_states_v4_gpu/customer_09_impatient_v4_chinese_1920x1080.png`; `customer_09_satisfied_v4_chinese_1920x1080.png`; `customer_09_accepting_bag_v4_chinese_1920x1080.png`; `customer_09_paying_coins_v4_chinese_1920x1080.png`
+- `agent_visual_review`: passed for identity, locked clothing palette, state legibility, transparent edges, actual-workstation scale, exactly one bag in accepting/paying, and exactly three coins in paying
+- `human_review`: pending; GPU validation and agent inspection do not constitute user acceptance
+
+## customer_04 action states v4 colorlocked
+
+- `status`: 4 generated; Godot-imported; runtime-integrated; non-headless GPU workstation preview passed; human review pending
+- `scope`: only `customer_04` impatient, satisfied, accepting_bag and paying_coins. `customer_04_neutral_v4_chinese.png` is the confirmed sole identity/outfit/palette authority; customer_01/customer_02/customer_03 were not edited by this task.
+- `files`: `customer_04_impatient_v4_colorlocked.png` SHA-256 `0a02b782fa3546dacee5fc3136cc65a9db5910acc8d190a77242e7e17930863a`; `customer_04_satisfied_v4_colorlocked.png` SHA-256 `b25322549552ac31b83b98c253643efd9c7a320257eb9445418b0b51ee2c677c`; `customer_04_accepting_bag_v4_colorlocked.png` SHA-256 `8eab5908983c8b60412042acf75a328dd031776a7f9cd72f5bfe92d0ebe7976f`; `customer_04_paying_coins_v4_colorlocked.png` SHA-256 `d2548983951f2555eb81ee25b696f4ea7223b2e4e9db5978178e564bfaa60780`
+- `prompt_record`: `res://resources/art/prompts/customer_04_states_v4_colorlocked.md`; first impatient key source is retained as rejected because it read as angry, while the accepted retry has restrained waiting impatience.
+- `processing`: one built-in ImageGen identity-preserving edit per state; generated border-connected near-magenta was normalized to exact `#FF00FF`, then keyed with `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`; `tools/normalize_customer_04_state.py` preserves each legacy Atlas registration and normalizes only navy shirt plus lower brick-trouser pixels to neutral's palette.
+- `alpha_and_crop`: all four PNGs are RGBA `1535x1024`, transparent at all corners, have zero detected visible magenta pixels, and retain the pre-existing Atlas regions: impatient/satisfied `Rect2(508,81,504,895)`, accepting_bag `Rect2(506,79,511,898)`, paying_coins `Rect2(422,61,675,927)`.
+- `runtime_integration`: the four existing `customer_04_*_cropped.tres` resources now point to their v4 PNGs; `workstation.gd` continues to preload the same resource paths and state names.
+- `godot_import`: passed under Godot 4.7.1 with unique headless log `res://tmp/validation/customer_04_states_import_019feea2.log`.
+- `gpu_check`: D3D12 12_0 / NVIDIA GeForce RTX 5070; `CUSTOMER_04_STATES_GPU_PREVIEW_PASS`; each state loaded in the real `main.tscn` / `Workstation`, resolved its expected v4 Atlas PNG, retained its legacy crop/anchor, and captured a 1920x1080 frame.
+- `gpu_screenshots`: `res://tmp/validation/customer_04_states_v4_colorlocked_gpu/`.
+- `agent_visual_review`: passed; impatient is intentionally restrained rather than angry, accepting_bag has two hands plus one bag, and paying_coins has one bag plus exactly three coins.
+- `human_review`: pending; GPU/runtime evidence does not replace player-facing art acceptance.
+
+## customer_16_neutral_v2
+
+- `status`: neutral generated, safe-keyed, Godot-imported, runtime-integrated, automated rotation-verified, non-headless GPU-verified and human-confirmed
+- `scope`: customer_16 neutral only; customer_01 through customer_15 assets were not modified by this task; this confirmed neutral is the sole identity, outfit and palette authority for the four action states
+- `identity_contract`: 19-year-old Chinese male technical-college student studying electrical equipment maintenance; quietly curious and slightly shy; short black hair, muted sage-green jacket, clay-red shirt, deep indigo trousers; empty hands and no occupational props or uniform
+- `style_contract`: more rounded and graphic than confirmed customer_14 while remaining moderate 2D game illustration; not chibi or anime; warm rice-paper texture, ink-brown contours, two-to-three-step low-saturation mineral colors, simplified face, cheek patches, clothing and fingers
+- `final_file`: `res://resources/art/customers/customer_16/customer_16_neutral_v2_keyclean.png`
+- `runtime_atlas`: `res://resources/art/customers/customer_16/customer_16_neutral_cropped.tres`; `Rect2(508,18,520,1006)`
+- `prompt_record`: `res://resources/art/prompts/customer_16_neutral_v2.md`
+- `source_file`: `res://tmp/imagegen/customer_16_chinese_neutral/customer_16_neutral_v2_chroma.png`; rejected v1 is retained beside it
+- `generator`: Codex built-in image generation through the imagegen skill; v2 is an identity-preserving simplification of v1 using customer_14 only as a cartoon-style threshold reference
+- `processing`: generator background drifted slightly from requested `#FF00FF`; the unmodified source and first safe-key result are retained; a separate background-only normalization source has exact `#FF00FF` corners and was keyed with installed `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`
+- `canvas_and_alpha`: 1536x1024 RGBA; bounds `(508,18)-(1028,1024)`; 4 transparent corners; 1,200,519 transparent, 3,778 partial and 368,567 opaque pixels; zero visible magenta-like pixels; central clay-red shirt pixel remains fully opaque
+- `sha256`: `D18C076882B5F86892247EDB9AE914A078A7D4237D0F153D1B4BBACBA9EAACD8`
+- `godot_import`: passed with Godot 4.7.1; 1,033-byte `.png.import` sidecar and 438,266-byte `CompressedTexture2D` cache
+- `runtime_and_rotation`: `workstation.gd` resolves all five customer_16 state keys; both customer pools include customer_16; `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS` and `P1 vertical-slice self-check PASS`; old snapshots keep the ten-customer modulo and current snapshots preserve customer_16
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 Forward Mobile on NVIDIA GeForce RTX 5070; `CUSTOMER_16_NEUTRAL_GPU_PREVIEW_PASS`; selected clear 1920x1080 screenshot `res://tmp/validation/customer_16_neutral_v2_chinese_gpu_clear_1920x1080.png` (SHA-256 `E94EB7B8235219F902EEB11D5999D51D1BEA202724DF9EB97A8344EEE129B124`); the earlier service-card-obstructed capture is retained and not used for art review
+- `human_review`: confirmed by the user on 2026-08-12; this confirmation authorized the four neutral-locked action states below
+
+## customer_16_states_v1
+
+- `status`: 4 generated; 4 Godot-imported; 4 runtime-integrated; automated rotation/save checks and non-headless GPU workstation previews passed; human review pending
+- `scope`: customer_16 impatient, satisfied, accepting_bag and paying_coins only; the confirmed neutral remains unchanged and is the sole identity/outfit/palette authority; customer_01 through customer_15 assets were not modified by this task
+- `prompt_record`: `res://resources/art/prompts/customer_16_states_v1.md`
+- `generator`: Codex built-in image generation through the imagegen skill; one selected generation per state, with the first worried/sad impatient attempt rejected and retained under `res://tmp/imagegen/customer_16_chinese_states/`
+- `processing`: each original chroma source and default safe auto-key output is retained; border-connected background pixels were separately normalized to exact `#FF00FF`, then keyed with `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`
+- `alpha_check`: all four finals are 1536x1024 RGBA with four transparent corners, complete nonempty alpha bounds, zero visible magenta-like pixels at alpha >= 16, and fully opaque central clay-red shirt pixels
+- `impatient`: `res://resources/art/customers/customer_16/customer_16_impatient_v2.png`; `Rect2(507,19,512,1005)`; SHA-256 `A4C106BB9A0CC96D89EDED93878889E783B61117D4B090126F03FEFECF717259`; restrained side-glance impatience rather than worry or anger
+- `satisfied`: `res://resources/art/customers/customer_16/customer_16_satisfied_v1.png`; `Rect2(506,20,521,1004)`; SHA-256 `623A3E805A24AF95ADC65C7F96D3C9B23643BE5CDD034259ABEDF5121124ADF6`; quiet closed-mouth satisfaction
+- `accepting_bag`: `res://resources/art/customers/customer_16/customer_16_accepting_bag_v1.png`; `Rect2(502,19,531,1005)`; SHA-256 `BFA3EAF6E89A3D8CB81F37076D92AC3D2E0D52553D089626A241966144A73770`; exactly one plain bag held with both hands
+- `paying_coins`: `res://resources/art/customers/customer_16/customer_16_paying_coins_v1.png`; `Rect2(410,20,642,1004)`; SHA-256 `5B41207852FF190BC1BFE73BB4A72DD82B58B219BC0456F1520DD275720BC4FB`; exactly one plain bag and exactly three separated visible coins
+- `godot_import`: passed with Godot 4.7.1; all four `.png.import` files resolve to non-empty `CompressedTexture2D` caches (377,414; 376,204; 387,248; 430,038 bytes)
+- `runtime_integration`: the four `customer_16_*_cropped.tres` Atlas resources point to the selected action PNGs and exact regions above; `workstation.gd` routes the established five state keys
+- `automated_checks`: `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS`; `P1 vertical-slice self-check PASS`; current pools contain 16 identities, current snapshots preserve customer_16, and legacy snapshots keep the ten-customer modulo
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; marker `CUSTOMER_16_STATES_GPU_PREVIEW_PASS`; all five runtime Atlas paths, source PNGs and regions were asserted in the real workstation scene
+- `gpu_screenshots`: `res://tmp/validation/customer_16_states_v1_gpu/customer_16_neutral_v1_1920x1080.png`; `customer_16_impatient_v1_1920x1080.png`; `customer_16_satisfied_v1_1920x1080.png`; `customer_16_accepting_bag_v1_1920x1080.png`; `customer_16_paying_coins_v1_1920x1080.png`
+- `agent_visual_review`: passed for identity/outfit continuity, moderate cartoon treatment, state legibility, transparent edges, one bag in accepting, and one bag plus exactly three separated coins in paying
+- `human_review`: pending; GPU validation and agent inspection do not constitute final user acceptance
+
+## customer_18_neutral_v1
+
+- `status`: neutral generated, safe-keyed, Godot-imported, runtime-integrated, automated rotation/save-verified, non-headless GPU-verified, and human-confirmed
+- `scope`: customer_18 neutral only; no customer_01-10 art was modified; customer_15, customer_16, customer_17, customer_19 and later identities were not generated, edited, mapped, tested, or status-changed by this task
+- `identity_contract`: 44-year-old Chinese man who teaches guitar at a neighborhood community arts center; warm, observant and unhurried; salt-and-pepper side-parted hair, rounded brown glasses, rust cardigan, smoky-teal T-shirt, slate trousers, empty hands and no occupational prop or uniform
+- `style_contract`: visibly more rounded and graphic than confirmed customer_14 while remaining moderate 2D game illustration; not chibi or anime; warm rice-paper texture, ink-brown contours, two-to-three-step low-saturation mineral colors, simplified face, cheeks, clothing and fingers
+- `final_file`: `res://resources/art/customers/customer_18/customer_18_neutral_v1_keyclean.png`; SHA-256 `FE72BC5F84D977A8DA3405B55DA73F5985C2370B96F607F82D5875831DEC57F4`
+- `runtime_atlas`: `customer_18_neutral_cropped.tres`; `Rect2(473,24,583,1000)`
+- `prompt_record`: `res://resources/art/prompts/customer_18_neutral_v1.md`
+- `source_file`: `res://tmp/imagegen/customer_18_chinese_neutral/customer_18_neutral_v1_chroma.png`; SHA-256 `36D03EC4A16497BDBBD80A02ED09E6500C9D36AD60718032E1A80E4E94E1D696`; all alternative and failed key-removal outputs are retained beside it
+- `processing`: default soft matte and tolerance-120 candidates damaged the subject and were rejected; the selected path normalized only generated magenta-like pixels to exact `#FF00FF`, then used the installed `remove_chroma_key.py --key-color '#FF00FF' --tolerance 0 --despill`
+- `canvas_and_alpha`: 1536x1024 RGBA; bounds `(473,24)-(1056,1024)`; four transparent corners; 1,168,905 transparent and 403,959 opaque pixels; zero visible magenta-like pixels under the documented processing predicate
+- `godot_import`: passed with Godot 4.7.1; 1,033-byte `.png.import` sidecar resolves to a non-empty 510,710-byte `CompressedTexture2D` cache
+- `runtime_and_rotation`: `workstation.gd` resolves all five customer_18 state keys; both pools contain customer_18; `CUSTOMER_18_PORTRAIT_CONTRACT_SELF_CHECK_PASS`, `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS`, and `P1 vertical-slice self-check PASS`; current snapshots preserve customer_18 while pre-expansion snapshots retain the original ten-customer modulo
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; `CUSTOMER_18_NEUTRAL_GPU_PREVIEW_PASS`; selected 1920x1080 screenshot `res://tmp/validation/customer_18_neutral_v1_chinese_gpu_clear_1920x1080.png` (SHA-256 `233BD1AE57ABB12964FE08C8ECD3C7E8D79575E963A9DE76418D28A8FB7B5452`)
+- `agent_visual_review`: passed for complete framing, intact face/glasses/clothing, stable bottom anchor, readable actual-workstation scale, and clean transparent edges
+- `human_review`: confirmed by the user on 2026-08-12; this confirmation authorizes the four neutral-locked action states below
+
+## customer_18_states_v1
+
+- `status`: 4 generated, safe-keyed, Godot-imported, runtime-integrated, automated rotation/save-verified, non-headless GPU-verified and human-confirmed
+- `scope`: customer_18 impatient, satisfied, accepting_bag and paying_coins only; the confirmed neutral remains the sole identity/outfit/palette authority; customer_15, customer_16, customer_17, customer_19 and later identities were not modified by this task
+- `prompt_record`: `res://resources/art/prompts/customer_18_states_v1.md`
+- `generator`: Codex built-in imagegen through the imagegen skill; one selected identity-preserving generation per state, with the confirmed neutral as the sole input reference
+- `processing`: original chroma sources and exact-`#FF00FF` audit sources are retained in `res://tmp/imagegen/customer_18_chinese_states/`; selected finals use the documented exact-key, tolerance-zero despill path
+- `alpha_check`: all four finals are 1536x1024 RGBA, four transparent corners, nonempty complete bounds and zero visible magenta-like pixels under the documented processing predicate
+- `impatient`: `res://resources/art/customers/customer_18/customer_18_impatient_v1.png`; `Rect2(492,25,546,999)`; SHA-256 `4B889189570821E1B73985474F384AE4B4C40C0BFEF3365B39C072035DBC572B`; mild sideways waiting impatience, not anger or worry
+- `satisfied`: `res://resources/art/customers/customer_18/customer_18_satisfied_v1.png`; `Rect2(493,25,542,999)`; SHA-256 `2C23C22429466DD8DE6F50EFB0163815744E5D985DB4E83DFE368BE9673B92EC`; quiet closed-mouth satisfaction
+- `accepting_bag`: `res://resources/art/customers/customer_18/customer_18_accepting_bag_v1.png`; `Rect2(487,28,563,996)`; SHA-256 `CCDB8FFB8F535FA4F9259C10B77CE1042642607E826D4D822B37454CEFE65144`; exactly one plain bag held with both hands
+- `paying_coins`: `res://resources/art/customers/customer_18/customer_18_paying_coins_v1.png`; `Rect2(416,26,677,998)`; SHA-256 `5795DD4CEC230B870DED28583EF1067BDCA8A67CECD175D78EF5374205F69884`; exactly one plain bag plus three separated visible coins
+- `godot_import`: passed with Godot 4.7.1; all four `.png.import` sidecars resolve to non-empty `CompressedTexture2D` caches (impatient 469,606; satisfied 486,276; accepting_bag 484,716; paying_coins 493,676 bytes)
+- `runtime_integration`: the four `customer_18_*_cropped.tres` Atlas resources point to their selected action PNGs and exact regions above; `workstation.gd` routes all five established state keys
+- `automated_checks`: `CUSTOMER_18_PORTRAIT_CONTRACT_SELF_CHECK_PASS`, `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS`, and `P1 vertical-slice self-check PASS`; customer_18 remains in both pools, current snapshots preserve it, and pre-expansion snapshots retain the ten-customer modulo. Concurrent work expanded the shared current pool to 20 identities; that change is outside this task and was not edited here.
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; marker `CUSTOMER_18_STATES_GPU_PREVIEW_PASS`; all five runtime Atlas paths, selected source PNGs and exact crop regions were asserted in the real workstation scene
+- `gpu_screenshots`: `res://tmp/validation/customer_18_states_v1_gpu/customer_18_neutral_v1_1920x1080.png`; `customer_18_impatient_v1_1920x1080.png`; `customer_18_satisfied_v1_1920x1080.png`; `customer_18_accepting_bag_v1_1920x1080.png`; `customer_18_paying_coins_v1_1920x1080.png`; contact sheet `customer_18_states_v1_gpu_contact_sheet.png`
+- `agent_visual_review`: passed for identity/outfit continuity, readable actual-workstation scale, clean transparency edges, restrained impatience, one bag in accepting_bag, and one bag plus exactly three separated coins in paying_coins
+- `human_review`: confirmed by the user on 2026-08-12 as `确认 customer_18 全套`. This is final visual acceptance for the customer_18 five-state set only; it does not imply approval, status, or work for any other customer.
+
+## customer_19_neutral_v1
+
+- `status`: neutral generated, safe-keyed, Godot-imported, runtime-integrated, automated rotation/save-compatibility verified, non-headless GPU-verified, and human-confirmed on 2026-08-12; the four neutral-locked action states are recorded separately below
+- `scope`: customer_19 neutral only; customer_15 through customer_18 resources, mappings, tests and status were not generated, replaced or assumed by this task
+- `identity_contract`: original 43-year-old Chinese male hospital rehabilitation therapist stopping for breakfast before an early shift; steady, kind and quietly playful; short black hair with slight gray at the temples, dusty-aubergine overshirt, oatmeal Henley shirt, olive-gray trousers and empty hands; no medical uniform or props
+- `style_contract`: visibly a little more cartoon-like and graphic than confirmed customer_14 while remaining moderate 2D game illustration; not chibi or anime; warm rice-paper texture, ink-brown contours, two-to-three-step low-saturation mineral colors, rounded graphic face, simplified features, cheek patches, clothing and fingers
+- `final_file`: `res://resources/art/customers/customer_19/customer_19_neutral_v1_keyclean.png`; SHA-256 `1793BC9CE8B4F3D8A5DB7DC6B233DB27C0229F8D413A915CD07129313BBC17AE`
+- `runtime_atlas`: `res://resources/art/customers/customer_19/customer_19_neutral_cropped.tres`; `Rect2(486,28,565,996)`
+- `prompt_record`: `res://resources/art/prompts/customer_19_neutral_v1.md`
+- `source_file`: `res://tmp/imagegen/customer_19_chinese_neutral/customer_19_neutral_v1_chroma.png`; failed soft-matte and intermediate hard-key candidates are retained beside it
+- `generator`: Codex built-in image generation through the imagegen skill; confirmed customer_14 was supplied only as a style threshold and its identity, clothing and colors were prohibited from being copied
+- `processing`: the default soft matte damaged the face and shirt and was rejected; a hard tolerance-60 candidate retained 17 visible magenta edge pixels; the selected output uses installed `remove_chroma_key.py --auto-key border --tolerance 60 --edge-contract 1 --despill`
+- `canvas_and_alpha`: 1536x1024 RGBA; bounds `(486,28)-(1051,1024)`; four transparent corners; 1,185,289 transparent, 0 partial and 387,575 opaque pixels; zero visible magenta-like pixels at alpha >= 16; complete hair, hands and bottom anchor retained
+- `godot_import`: passed with Godot 4.7.1; 1,033-byte `.png.import` sidecar resolves to a non-empty 466,182-byte `CompressedTexture2D` cache
+- `runtime_and_rotation`: `workstation.gd` resolves the neutral state and, after the user confirmation, the four dedicated action states recorded below; customer_19 is appended after the already-present IDs in both pools; current snapshots preserve customer_19 and old snapshots keep the original ten-customer modulo
+- `automated_checks`: `CUSTOMER_19_NEUTRAL_CONTRACT_SELF_CHECK_PASS`; `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS`; `P1 vertical-slice self-check PASS`
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; `CUSTOMER_19_NEUTRAL_GPU_PREVIEW_PASS`; 1920x1080 screenshot `res://tmp/validation/customer_19_neutral_v1_chinese_gpu_clear_1920x1080.png` (SHA-256 `C23F4B240FECAEDF13593A9CFADA7056B81E51AB1D2C393FC283F774EAFB338E`)
+- `agent_visual_review`: passed for complete framing, intact face/clothing, readable actual-workstation scale, stable bottom anchor and clean transparent edges
+- `human_review`: user-confirmed neutral on 2026-08-12; that confirmation authorized generation of impatient, satisfied, accepting_bag and paying_coins only
+
+## customer_19_states_v1
+
+- `status`: impatient, satisfied, accepting_bag and paying_coins generated, safe-keyed, Godot-imported, runtime-integrated, automated mapping/save-compatibility verified, non-headless GPU-verified, and human-confirmed as the customer_19 full set on 2026-08-12
+- `scope`: customer_19 action states only. The confirmed neutral remains the sole identity/outfit/palette authority. customer_15 through customer_18 and customer_20 resources, mappings, tests and status were not generated, changed, assumed or overwritten by this task; customer_01 through customer_10 art was not modified.
+- `prompt_record`: `res://resources/art/prompts/customer_19_states_v1.md`
+- `generator`: Codex built-in imagegen through the imagegen skill; one identity-locked generation per state, using the confirmed customer_19 neutral as the sole identity/outfit reference.
+- `processing`: selected originals and every soft-key candidate are retained in `res://tmp/imagegen/customer_19_chinese_states/`; finals use `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`.
+- `alpha_check`: each final is 1536x1024 RGBA with four transparent corners, full half-body framing and zero visible magenta-like pixels at alpha >= 16. Bounds: impatient `(486,28)-(1051,1024)`; satisfied `(487,28)-(1050,1024)`; accepting_bag `(487,28)-(1054,1024)`; paying_coins `(428,28)-(1050,1024)`.
+- `impatient`: `res://resources/art/customers/customer_19/customer_19_impatient_v1.png`; `Rect2(486,28,565,996)`; SHA-256 `E15E70DD2E92348C40E21F9CD85BFD101810C95FBC9CE9D71BEA7F6214790D5D`; restrained waiting side-glance, empty hands.
+- `satisfied`: `res://resources/art/customers/customer_19/customer_19_satisfied_v1.png`; `Rect2(487,28,563,996)`; SHA-256 `85A50AB5A4020306500A7480839330D13CAC983E0744160C0CEEE0A207BC67A1`; small closed-mouth satisfied smile.
+- `accepting_bag`: `res://resources/art/customers/customer_19/customer_19_accepting_bag_v1.png`; `Rect2(487,28,567,996)`; SHA-256 `A16271E35CC931656F1F02F9F5395300826B7472F1BD4942C9FFA56E6D4DF429`; exactly one unmarked kraft bag held by both hands.
+- `paying_coins`: `res://resources/art/customers/customer_19/customer_19_paying_coins_v1.png`; `Rect2(428,28,622,996)`; SHA-256 `5DC72A020E0FB717D24BFAD9644CA954F43549B5A8E506DC87C4EEAFBE171C93`; exactly one unmarked kraft bag plus three separated coins on an open palm.
+- `godot_import`: passed with Godot 4.7.1; the four `.png.import` sidecars resolve to non-empty `CompressedTexture2D` caches (impatient 490,620; satisfied 441,494; accepting_bag 427,928; paying_coins 436,470 bytes).
+- `runtime_integration`: the four `customer_19_*_cropped.tres` Atlas resources point to the selected PNGs and exact regions above; `scripts/gameplay/workstation.gd` routes all five established state keys. Customer pools were not edited after customer_19 was first appended for neutral, and the pre-expansion ten-customer modulo remains asserted.
+- `automated_checks`: `CUSTOMER_19_NEUTRAL_CONTRACT_SELF_CHECK_PASS`; all five state keys and source PNGs are asserted; current rotation resolves customer_19 and `legacy_customer_id_for_sequence(11)` remains customer_01.
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070. `CUSTOMER_19_STATES_GPU_PREVIEW_PASS` and five `CUSTOMER_19_SINGLE_STATE_GPU_PREVIEW_PASS` markers assert every state in the real workstation scene resolves its designated AtlasTexture/source PNG/region. A separate live `TextureRect` Atlas preview produced five clear 1920x1080 D3D12 frames listed below.
+- `gpu_screenshots`: `res://tmp/validation/customer_19_states_v1_gpu_atlas/customer_19_neutral_atlas_1920x1080.png`; `customer_19_impatient_atlas_1920x1080.png`; `customer_19_satisfied_atlas_1920x1080.png`; `customer_19_accepting_bag_atlas_1920x1080.png`; `customer_19_paying_coins_atlas_1920x1080.png`. Earlier direct root-frame workstation captures, including malformed strip outputs, remain retained and are excluded from visual acceptance evidence.
+- `agent_visual_review`: passed on the selected final art and clear D3D12 Atlas frames for identity/outfit continuity, complete hair/elbows/hands/below-waist framing, clean transparency, restrained impatience, one bag in accepting_bag, and one bag plus three separated coins in paying_coins.
+- `human_review`: confirmed by the user on 2026-08-12 as `确认 customer_19 全套`. This is final visual acceptance for the customer_19 five-state set only; it does not imply approval, status, or work for any other customer.
+
+## customer_20_neutral_v1
+
+- `status`: neutral generated, safe-keyed, Godot-imported, runtime-integrated, automated rotation/save-compatibility verified and non-headless GPU-verified; user-confirmed on 2026-08-12, after which only the four neutral-locked action states recorded separately below were generated
+- `scope`: customer_20 neutral only; no customer_01-10 art was modified; customer_15 through customer_19 resources, mappings, tests and status were not generated, replaced or assumed by this task
+- `identity_contract`: original 67-year-old Chinese woman retired from teaching middle-school physics, stopping for breakfast during an ordinary morning errand; calm, observant and gently self-possessed; short softly curled salt-and-pepper black hair, muted teal cardigan, dusty clay-rose top, dark olive-charcoal trousers and empty hands; no uniform, props or stereotypes
+- `style_contract`: slightly more cartoon-like and graphic than confirmed customer_14 while remaining moderate 2D game illustration; not chibi or anime; warm rice-paper/watercolor-paper texture, ink-brown contours, two-to-three-step low-saturation mineral colors, rounded graphic face, simplified almond eyes, cheek patches, clothing and fingers
+- `final_file`: `res://resources/art/customers/customer_20/customer_20_neutral_v1_keyclean.png`; SHA-256 `21D2245D68C596F7CB7AAAB9EA28A670FB54FDE1FBAD4F2389CB34C7F45C5DA5`
+- `runtime_atlas`: `res://resources/art/customers/customer_20/customer_20_neutral_cropped.tres`; `Rect2(503,38,526,986)`
+- `prompt_record`: `res://resources/art/prompts/customer_20_neutral_v1.md`
+- `source_file`: `res://tmp/imagegen/customer_20_chinese_neutral/customer_20_neutral_v1_chroma.png`; all rejected and intermediate key-removal candidates plus deterministic cleanup scripts are retained beside it
+- `generator`: Codex built-in image generation through the imagegen skill; customer_14 was supplied only as a cartoon-style threshold reference and its identity, clothing, colors, age and proportions were prohibited from being copied
+- `processing`: default soft-matte, soft-80, hard-100 and hard-120 candidates visibly damaged the face or clothing and were rejected; selected base used installed `remove_chroma_key.py --key-color '#FF00FF' --tolerance 60 --edge-contract 2 --despill`, then transparent RGB was zeroed and saturated magenta pixels near the transparent silhouette edge were cleared by retained deterministic scripts
+- `canvas_and_alpha`: 1536x1024 RGBA; bounds `(503,38)-(1029,1024)`; four transparent corners and transparent top/left/right edges; 1,197,009 transparent, 0 partial and 375,855 opaque pixels; face, shirt, cardigan and both hand sample points remain fully opaque; intended 340-pixel bottom anchor span retained
+- `godot_import`: passed with Godot 4.7.1; 1,032-byte `.png.import` sidecar resolves to a non-empty 478,882-byte `CompressedTexture2D` cache
+- `runtime_and_rotation`: `workstation.gd` now routes the five established customer_20 states using dedicated AtlasTexture resources; customer_20 remains appended after the already-present IDs in both pools; current snapshots preserve customer_20 and old snapshots keep the original ten-customer modulo
+- `automated_checks`: `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS`; `P1 vertical-slice self-check PASS`; current twenty-identity rotation wraps to customer_01 and customer_20 save restore passes
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; `CUSTOMER_20_NEUTRAL_GPU_PREVIEW_PASS`; selected clear 1920x1080 screenshot `res://tmp/validation/customer_20_neutral_v1_gpu_clear_1920x1080.png` (SHA-256 `58EA6E488DC35376EF57E1FCEA4DA5A93629B0B71042866DAFA0782CEB3D9D90`); the first service-card-obstructed capture is retained and not used for art review
+- `agent_visual_review`: passed for complete framing, intact face/clothing/hands, stable bottom anchor, readable actual-workstation scale and no obvious bright-magenta halo in the selected clear screenshot
+- `human_review`: neutral was explicitly confirmed by the user on 2026-08-12. That acceptance did not imply full-set approval; full-set review remains recorded separately below.
+
+## customer_20_states_v1
+
+- `status`: the neutral-confirmed `impatient`, `satisfied`, `accepting_bag`, and `paying_coins` states are generated, safe-keyed, Godot-imported, runtime-integrated, automatically checked, non-headless GPU-verified, and human-confirmed as the customer_20 full set on 2026-08-12
+- `scope`: customer_20 action states only; customer_01 through customer_10 art and customer_15 through customer_19 resources, mappings, tests and status were not modified, assumed or overwritten
+- `prompt_record`: `res://resources/art/prompts/customer_20_states_v1.md`
+- `generator`: Codex built-in image generation through the imagegen skill; the confirmed customer_20 neutral was the sole identity/outfit/palette reference for each action state
+- `processing`: all raw chroma and safe-key candidates, including the rejected two-coin paying candidate, are retained in `res://tmp/imagegen/customer_20_chinese_states_v1/`; selected finals use documented tolerance-60 edge-contract-2 safe keying and retained deterministic transparent-edge cleanup
+- `impatient`: `res://resources/art/customers/customer_20/customer_20_impatient_v1_keyclean.png`; `Rect2(536,43,457,981)`; SHA-256 `6FE014560F12C20089689D0C075F60DAC42E4CAF03D9D773171214D7B248D003`; restrained waiting side glance with empty hands
+- `satisfied`: `res://resources/art/customers/customer_20/customer_20_satisfied_v1_keyclean.png`; `Rect2(506,40,520,984)`; SHA-256 `CB36207C1118EE732D07985120B3A2D7CCA39BB744F7D64A9EF6EC7E93AAEF1E`; quiet small satisfied smile
+- `accepting_bag`: `res://resources/art/customers/customer_20/customer_20_accepting_bag_v1_keyclean.png`; `Rect2(491,38,553,986)`; SHA-256 `03BD3B77CB91BAA27FF824FB65BDBB3B78AFC131ED5BF5AFBE8A86C161E4805B`; exactly one unmarked kraft bag held by both hands
+- `paying_coins`: `res://resources/art/customers/customer_20/customer_20_paying_coins_v2_keyclean.png`; `Rect2(439,41,599,983)`; SHA-256 `E4F571A8C0BAF690839F438FB8B8834458365178DF113F1F82CD785E94FBD15E`; exactly one bag and three separated coins on an open palm; the retained v1 candidate with two coins was rejected and is not runtime-integrated
+- `godot_import`: passed with Godot 4.7.1; all four action `.png.import` sidecars resolve to non-empty `CompressedTexture2D` caches
+- `runtime_integration`: `customer_20_*_cropped.tres` Atlas resources point to the selected PNGs and documented regions; `scripts/gameplay/workstation.gd` routes all five established state keys
+- `automated_checks`: `FIVE_AREA_ORDER_SERVICE_SELF_CHECK_PASS` and `P1 vertical-slice self-check PASS`; rotation includes all twenty identities, customer_20 current-save restore passes, and pre-expansion saves retain the ten-customer modulo
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; `CUSTOMER_20_STATES_GPU_PREVIEW_PASS`; real-workstation assertions covered each Atlas, PNG and crop region before five 1920x1080 captures
+- `gpu_screenshots`: `res://tmp/validation/customer_20_states_v1_gpu/customer_20_neutral_1920x1080.png`; `customer_20_impatient_1920x1080.png`; `customer_20_satisfied_1920x1080.png`; `customer_20_accepting_bag_1920x1080.png`; `customer_20_paying_coins_1920x1080.png`
+- `agent_visual_review`: passed for consistent character identity, complete framing, clean transparency, readable actual-workstation scale, restrained impatience, one bag, and three separated coins
+- `human_review`: confirmed by the user on 2026-08-12 as `确认 customer_20 全套`. This is final visual acceptance for the customer_20 five-state set only; it does not imply approval, status, or work for any other customer.
+
+## 2026-08-12 youtiao fryer, soybean, and stock quantities
+
+- `prompt_record`: `res://resources/art/prompts/2026-08-12_youtiao_inventory_fix.md`
+- `generator`: Codex built-in image generation via the imagegen skill for the three intermediate fryer states and revised yellow soybean; deterministic Pillow composition for stock quantities
+- `processing`: flat magenta key, installed `remove_chroma_key.py --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`, then `tools/normalize_sprite_to_reference.py`
+- `runtime_fryer_assets`: `youtiao_fryer_tier_1_body_v2_chinese.png`, `youtiao_fryer_tier_1_lowered_v2_chinese.png`, `youtiao_fryer_tier_1_raised_v2_chinese.png`; each 1024 x 512 RGBA with transparent corners and dedicated intermediate-tier pixels
+- `runtime_soybean_asset`: `res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png`; 256 x 256 RGBA, original scoop registration retained, round contents replaced by oval soybeans with hilum marks
+- `runtime_stock_assets`: eight ingredient directories, each containing quantity states 1 through 14 named `*_stock_<quantity>_v2.png`; 112 total 512 x 512 RGBA files
+- `stock_scope`: egg remains a base ingredient; baocui, ham sausage, scallion, meat floss, pork tenderloin, coriander, and preserved mustard remain add-ons; no catalog or save-schema classification changed
+- `automated_checks`: focused progression, session promotion, youtiao pancake, youtiao station, ingredient stock interaction, fresh soy visual, and deterministic asset checks
+- `human_review`: pending for final in-game youtiao footprint, intermediate fryer upgrade feel, soybean consistency, and stock readability at quantities 6, 10, and 14
+
+## 2026-08-12 steamer whole-machine v5 Chinese set
+
+- `status`: six whole-machine assets generated, normalized, Godot-imported and runtime-integrated; automated contract and GPU/real-pointer checks passed; human review is recorded separately
+- `scope`: the main-game `direct_steamer_station` only; existing v4 art was retained; steamer production rules, tier mapping, services and save data were not changed
+- `prompt_record`: `res://resources/art/prompts/steamer_v5_chinese.md`
+- `runtime_assets`: `steamer_tier_{1,2,3}_{closed,open}_five_area_v5_chinese.png` under `res://resources/art/workstation/expansion/machines/`; all six are 1024x512 RGBA with transparent corners
+- `processing`: chroma-key cleanup followed by deterministic pair normalization through `res://tools/build_steamer_v5_assets.py`; each tier's open/closed images share one crop and registration
+- `audit_outputs`: `res://tmp/validation/steamer_v5_asset_audit.json` and `res://tmp/validation/steamer_v5_contact_sheet.png`
+- `automated_checks`: `DIRECT_STEAMER_STATION_CONTRACT_SELF_CHECK_PASS`, `PRODUCT_DRAG_SOURCE_DRAG_END_SELF_CHECK_PASS`, and the complete `res://tools/run_checks.ps1` suite passed on Godot 4.7.1
+- `gpu_check`: Godot 4.7.1 non-headless Windows/D3D12 12_0 Forward Mobile on NVIDIA GeForce RTX 5070; `DIRECT_STEAMER_STATION_POINTER_GPU_SMOKE_PASS`; verified real ingredient loading, unchanged start-button behavior, mature/spoiled output-to-waste drags, unobstructed pointer targets and reliable lid closure in the formal five-area workstation
+- `gpu_screenshots`: twelve tier/open-state captures at 1920x1080 and 1280x720 plus the live tier-2 ingredient-drag frame under `res://tmp/validation/direct_steamer_v5/`
+- `runtime_scale`: whole-machine visual footprint enlarged from 250x217 to 306x271 while keeping the bottom registration fixed; growth is upward inside the authored station so the three ingredient sources and restock row remain clear
+- `agent_visual_review`: passed for correct 1/2/4 basket counts, readable open/closed lid states, transparent edges and coherent actual-workstation placement; tier 2 is identifiable and its closed seams read consistently at both resolutions
+- `human_review`: pending for tier 2 layer count/seams, lid readability, perspective, scale and three-tier upgrade progression
+
+## 2026-08-12 steamer whole-machine v6 Chinese set
+
+- `status`: six restyled whole-machine assets generated, keyed, normalized, Godot-imported and runtime-integrated; focused contract and formal-workstation GPU/real-pointer checks passed; human review pending
+- `replaces_at_runtime`: v5 only; v4 and v5 remain retained and unmodified as historical assets
+- `prompt_record`: `res://resources/art/prompts/steamer_v6_chinese.md`
+- `style_authority`: current Chinese morning-cart start page plus soy, youtiao and packaged-drink workstation machines; cream enamel, celadon trim, brass controls, muted bamboo, thin brown linework and paper texture
+- `runtime_assets`: `steamer_tier_{1,2,3}_{closed,open}_five_area_v6_chinese.png`; six 1024x1536 RGBA files with transparent corners and zero residual magenta pixels
+- `runtime_geometry`: all three tiers render at the same 300-pixel physical width and fixed bottom registration; 1/2/4-layer tiers grow upward rather than shrinking into one fixed-height rectangle
+- `audit_outputs`: `res://tmp/validation/steamer_v6_asset_audit.json` and `res://tmp/validation/steamer_v6_contact_sheet.png`
+- `gpu_check`: formal five-area workstation, D3D12/RTX 5070, real ingredient drag, start button, mature/spoiled output-to-waste paths and both 1920x1080/1280x720 captures; machine art remains mouse-transparent
+- `gpu_screenshots`: `res://tmp/validation/direct_steamer_v6/`
+- `human_review`: pending for final palette/style fit, same-width tier progression, four-layer height and open-lid readability

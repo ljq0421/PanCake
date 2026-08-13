@@ -104,7 +104,7 @@ func _check_scene_contract() -> void:
 	var foreground_lip := workstation.get_node("SafeArea/ForegroundLip") as TextureRect
 	var bottom_strip := workstation.get_node("SafeArea/BottomStrip") as Control
 	var step_action_button := workstation.get_node("SafeArea/P1ControlBar/StepActionButton") as Button
-	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v7.png", "background artwork uses the customer-style, square-slot 18-slot workstation map")
+	_check(background_artwork.texture.resource_path == "res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v8_chinese.png", "background artwork uses the Chinese-style, square-slot 18-slot workstation map")
 	_check(background_artwork.get_index() < pan_base.get_index(), "background artwork renders behind interactive content")
 	var left_panel_style := left_rack.get_theme_stylebox("panel")
 	var ingredient_panel_style := ingredient_rack.get_theme_stylebox("panel")
@@ -122,18 +122,18 @@ func _check_scene_contract() -> void:
 	_check(spreader_button_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1.png", "spreader selection uses the approved tabletop artwork")
 	_check(fold_tool_artwork.texture.resource_path == "res://resources/art/workstation/tools/folding_spatula_v1.png", "fold selection uses the approved tabletop spatula artwork")
 	_check(
-		right_rack.position == Vector2(459, 810)
+		right_rack.position == Vector2(815, 870)
 		and right_rack.size == Vector2(290, 74)
-		and chili_sauce_refill_button.position == Vector2.ZERO
-		and sauce_refill_button.position == Vector2(145, 0)
+		and sauce_refill_button.position == Vector2.ZERO
+		and chili_sauce_refill_button.position == Vector2(145, 0)
 		and chili_sauce_refill_button.size == Vector2(145, 74)
 		and sauce_refill_button.size == Vector2(145, 74)
-		and chili_sauce_refill_button.get_global_rect().end.x == sauce_refill_button.get_global_rect().position.x,
-		"chili and sweet sauce own adjacent 145-by-74 hit regions"
+		and sauce_refill_button.get_global_rect().end.x == chili_sauce_refill_button.get_global_rect().position.x,
+		"sweet and chili sauce own adjacent left-to-right 145-by-74 hit regions"
 	)
-	_check(not right_rack.get_global_rect().intersects(pan_base.get_global_rect()) and not right_rack.get_global_rect().intersects(ingredient_rack.get_global_rect()), "the combined sauce area stays outside the griddle and ingredient row")
+	_check(right_rack.get_global_rect().intersects(pan_base.get_global_rect()) and not right_rack.get_global_rect().intersects(ingredient_rack.get_global_rect()), "the combined sauce area overlays only the griddle lower edge above the ingredient row")
 	_check(not right_rack.get_global_rect().intersects(youtiao_locked_click_layer.get_global_rect()), "the locked youtiao hit layer leaves the sauce area reachable")
-	_check(griddle_artwork.texture.resource_path == "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v3.png", "griddle artwork uses the approved angled ellipse asset")
+	_check(griddle_artwork.texture.resource_path == "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png", "griddle artwork uses the approved Chinese angled ellipse asset")
 	_check(griddle_artwork.get_index() < surface.get_index(), "griddle artwork renders behind the pancake interaction surface")
 	_check(
 		griddle_artwork.scale == Vector2(0.41, 0.41),

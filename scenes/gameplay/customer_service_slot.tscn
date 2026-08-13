@@ -1,0 +1,369 @@
+[gd_scene format=3 uid="uid://bcgkauxm4opdi"]
+
+[ext_resource type="Script" uid="uid://bx27p8vbu7lxg" path="res://scripts/ui/customer_service_slot.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://01c6ab302kc5" path="res://resources/art/ui/order/order_card_multi_dish_v4_chinese_ui.png" id="2_order_card"]
+
+[sub_resource type="StyleBoxFlat" id="FocusStyle"]
+bg_color = Color(1, 0.78, 0.24, 0.08)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(1, 0.68, 0.12, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="TransparentStyle"]
+bg_color = Color(0, 0, 0, 0)
+
+[node name="CustomerServiceSlot" type="Control" unique_id=894083715]
+custom_minimum_size = Vector2(540, 490)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 540.0
+offset_bottom = 490.0
+mouse_filter = 2
+script = ExtResource("1_script")
+
+
+[node name="FocusFrame" type="Panel" parent="." unique_id=2100456032]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 538.0
+offset_bottom = 478.0
+mouse_filter = 2
+z_index = 40
+theme_override_styles/panel = SubResource("FocusStyle")
+
+[node name="Portrait" type="TextureRect" parent="." unique_id=175191323]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 194.0
+offset_right = 174.0
+offset_bottom = 486.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+z_index = -20
+
+[node name="PortraitButton" type="Button" parent="." unique_id=124302953]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 175.0
+offset_right = 174.0
+offset_bottom = 483.0
+tooltip_text = "点击切换当前制作目标"
+flat = true
+z_index = -19
+
+[node name="OrderPanel" type="Control" parent="." unique_id=1300932323]
+anchors_preset = 0
+offset_left = 155.0
+offset_top = 54.0
+offset_right = 455.0
+offset_bottom = 424.0
+mouse_filter = 2
+z_index = 30
+
+[node name="CardBackground" type="TextureRect" parent="OrderPanel" unique_id=1319771723]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_order_card")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CardFocusButton" type="Button" parent="OrderPanel" unique_id=482252945]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "点击订单卡切换当前制作目标"
+flat = true
+
+[node name="OrderTitle" type="Label" parent="OrderPanel" unique_id=307952483]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 16.0
+offset_top = 40.0
+offset_right = 284.0
+offset_bottom = 72.0
+theme_override_colors/font_color = Color(0.28, 0.12, 0.04, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="ItemButton1" type="Button" parent="OrderPanel" unique_id=438054590]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 95.0
+offset_right = 98.0
+offset_bottom = 157.0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="ItemIcon1" type="TextureRect" parent="OrderPanel/ItemButton1" unique_id=1669439767]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ItemButton2" type="Button" parent="OrderPanel" unique_id=249512831]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 119.0
+offset_top = 95.0
+offset_right = 181.0
+offset_bottom = 157.0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="ItemIcon2" type="TextureRect" parent="OrderPanel/ItemButton2" unique_id=953765645]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ItemButton3" type="Button" parent="OrderPanel" unique_id=2003008972]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 202.0
+offset_top = 95.0
+offset_right = 264.0
+offset_bottom = 157.0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="ItemIcon3" type="TextureRect" parent="OrderPanel/ItemButton3" unique_id=1518845551]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement1" type="Panel" parent="OrderPanel" unique_id=1561222828]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 52.0
+offset_top = 173.0
+offset_right = 96.0
+offset_bottom = 213.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon1" type="TextureRect" parent="OrderPanel/Requirement1" unique_id=995116168]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement2" type="Panel" parent="OrderPanel" unique_id=1046256676]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 101.0
+offset_top = 173.0
+offset_right = 145.0
+offset_bottom = 213.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon2" type="TextureRect" parent="OrderPanel/Requirement2" unique_id=1048000811]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement3" type="Panel" parent="OrderPanel" unique_id=1903029987]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 155.0
+offset_top = 173.0
+offset_right = 199.0
+offset_bottom = 213.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon3" type="TextureRect" parent="OrderPanel/Requirement3" unique_id=443992175]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement4" type="Panel" parent="OrderPanel" unique_id=1285447003]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 204.0
+offset_top = 173.0
+offset_right = 248.0
+offset_bottom = 213.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon4" type="TextureRect" parent="OrderPanel/Requirement4" unique_id=1605647781]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement5" type="Panel" parent="OrderPanel" unique_id=231476865]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 52.0
+offset_top = 224.0
+offset_right = 96.0
+offset_bottom = 264.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon5" type="TextureRect" parent="OrderPanel/Requirement5" unique_id=458720093]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement6" type="Panel" parent="OrderPanel" unique_id=1271298497]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 101.0
+offset_top = 224.0
+offset_right = 145.0
+offset_bottom = 264.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon6" type="TextureRect" parent="OrderPanel/Requirement6" unique_id=1212615713]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement7" type="Panel" parent="OrderPanel" unique_id=609510531]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 155.0
+offset_top = 224.0
+offset_right = 199.0
+offset_bottom = 264.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon7" type="TextureRect" parent="OrderPanel/Requirement7" unique_id=249199944]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Requirement8" type="Panel" parent="OrderPanel" unique_id=1509896163]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 204.0
+offset_top = 224.0
+offset_right = 248.0
+offset_bottom = 264.0
+theme_override_styles/panel = SubResource("TransparentStyle")
+
+[node name="RequirementIcon8" type="TextureRect" parent="OrderPanel/Requirement8" unique_id=329431414]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinLabel" type="Label" parent="OrderPanel" unique_id=1997241226]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 306.0
+offset_right = 82.0
+offset_bottom = 342.0
+theme_override_colors/font_color = Color(0.56, 0.24, 0.04, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="PatienceLabel" type="Label" parent="OrderPanel" unique_id=702930717]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 84.0
+offset_top = 304.0
+offset_right = 270.0
+offset_bottom = 336.0
+horizontal_alignment = 2
+
+[node name="PatienceBar" type="ProgressBar" parent="OrderPanel" unique_id=984888558]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 84.0
+offset_top = 288.0
+offset_right = 240.0
+offset_bottom = 301.0
+show_percentage = false

@@ -78,16 +78,23 @@ func advance_time(delta: float) -> void:
 	for layer_index in range(layer_capacity()):
 		var layer := _layers[layer_index]
 		var state := StringName(layer.get("state", &""))
+		var remaining := step
 		if state == STATE_STEAMING:
-			layer["elapsed_seconds"] = float(layer.get("elapsed_seconds", 0.0)) + step
-			if float(layer["elapsed_seconds"]) >= float(layer.get("duration_seconds", 10.0)):
+			var duration := float(layer.get("duration_seconds", 10.0))
+			var elapsed := float(layer.get("elapsed_seconds", 0.0))
+			var applied := minf(remaining, maxf(duration - elapsed, 0.0))
+			layer["elapsed_seconds"] = elapsed + applied
+			remaining -= applied
+			if float(layer["elapsed_seconds"]) + 0.000001 >= duration:
+				layer["elapsed_seconds"] = duration
 				layer["state"] = STATE_READY_SAFE
 				layer["completed_elapsed_seconds"] = 0.0
-		elif state == STATE_READY_SAFE or state == STATE_OVERCOOKING:
+				state = STATE_READY_SAFE
+		if remaining > 0.0 and state in [STATE_READY_SAFE, STATE_OVERCOOKING]:
 			if bool(tier_definition.get("infinite_hold", false)):
 				_layers[layer_index] = layer
 				continue
-			layer["completed_elapsed_seconds"] = float(layer.get("completed_elapsed_seconds", 0.0)) + step
+			layer["completed_elapsed_seconds"] = float(layer.get("completed_elapsed_seconds", 0.0)) + remaining
 			var safe_seconds := float(tier_definition.get("safe_seconds", 5.0))
 			var decay_seconds := maxf(float(tier_definition.get("decay_seconds", 10.0)), 0.001)
 			if float(layer["completed_elapsed_seconds"]) > safe_seconds:
@@ -135,9 +142,11 @@ func layer_snapshot(layer_index: int) -> Dictionary:
 		return {}
 	var layer := _layers[layer_index].duplicate(true)
 	var state := StringName(layer.get("state", &""))
+	layer["seconds_to_ready"] = maxf(float(layer.get("duration_seconds", 0.0)) - float(layer.get("elapsed_seconds", 0.0)), 0.0) if state == STATE_STEAMING else 0.0
+	layer["infinite_hold"] = bool(_tier_definition().get("infinite_hold", false))
 	if state in [STATE_READY_SAFE, STATE_OVERCOOKING]:
 		if bool(_tier_definition().get("infinite_hold", false)):
-			layer["seconds_to_loss"] = 999999.0
+			layer["seconds_to_loss"] = 0.0
 		else:
 			layer["seconds_to_loss"] = maxf(float(_tier_definition().get("safe_seconds", 5.0)) + float(_tier_definition().get("decay_seconds", 10.0)) - float(layer.get("completed_elapsed_seconds", 0.0)), 0.0)
 	else:

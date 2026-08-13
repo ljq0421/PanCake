@@ -36,13 +36,21 @@ static func generate(
 	tutorial_generated_day: int
 ) -> Dictionary:
 	var tutorial := Dictionary(progression.get("tutorial", {}))
-	var tutorial_area_id := StringName(tutorial.get("active_id", &"")) if StringName(tutorial.get("active_kind", &"")) == &"area" else &""
+	var tutorial_kind := StringName(tutorial.get("active_kind", &""))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	var tutorial_area_id := tutorial_id if tutorial_kind == &"area" else &""
 	if PLAYABLE_AREA_IDS.has(tutorial_area_id) and tutorial_generated_day != current_day:
 		var teaching := _teaching_candidate(tutorial_area_id, progression, inventory)
 		if not bool(teaching.get("success", false)):
 			return teaching
 		teaching["tutorial_generated_day"] = current_day
 		return teaching
+	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater" and tutorial_generated_day != current_day:
+		var heater_teaching := _heater_teaching_candidate(progression)
+		if not bool(heater_teaching.get("success", false)):
+			return heater_teaching
+		heater_teaching["tutorial_generated_day"] = current_day
+		return heater_teaching
 
 	var eligible_areas: Array[StringName] = []
 	var completed_tutorials := _id_set(tutorial.get("completed_area_ids", []))
@@ -81,12 +89,36 @@ static func generate_queue_candidates(
 	first_sequence: int,
 	count: int,
 	current_day: int,
-	tutorial_generated_day: int
+	tutorial_generated_day: int,
+	promotion_context: Dictionary = {}
 ) -> Dictionary:
 	var candidates: Array[Dictionary] = []
 	var generated_tutorial_day := tutorial_generated_day
-	for offset in range(clampi(count, 0, 4)):
-		var generated := generate(progression, inventory, seed, first_sequence + offset, current_day, generated_tutorial_day)
+	var promotion_kind := StringName(promotion_context.get("kind", promotion_context.get("tutorial_kind", &"")))
+	var promotion_id := StringName(promotion_context.get("target_id", promotion_context.get("tutorial_id", &"")))
+	var promotion_source_growth_id := StringName(promotion_context.get("source_growth_id", &""))
+	var promotion_index := clampi(int(promotion_context.get("next_index", 0)), 0, 3)
+	var explicit_promotion := not promotion_id.is_empty()
+	for offset in range(clampi(count, 0, 6)):
+		var sequence := first_sequence + offset
+		var generated: Dictionary
+		# A newly active tutorial always owns the first storefront position. An
+		# already queued content promotion resumes immediately behind it.
+		if offset == 0 and tutorial_generated_day != current_day and _has_due_tutorial(progression):
+			generated = generate(progression, inventory, seed, sequence, current_day, generated_tutorial_day)
+		elif not promotion_id.is_empty() and promotion_index < 3:
+			generated = _post_tutorial_exposure_candidate(
+				progression,
+				seed,
+				sequence,
+				promotion_kind,
+				promotion_id,
+				promotion_index + 1,
+				promotion_source_growth_id,
+			)
+			promotion_index += 1
+		else:
+			generated = generate(progression, inventory, seed, sequence, current_day, generated_tutorial_day)
 		if not bool(generated.get("success", false)):
 			if not candidates.is_empty():
 				return {
@@ -98,8 +130,125 @@ static func generate_queue_candidates(
 			return generated
 		if int(generated.get("tutorial_generated_day", 0)) > 0:
 			generated_tutorial_day = int(generated.get("tutorial_generated_day", 0))
+		var metadata := Dictionary(generated.get("metadata", {}))
+		var generated_tutorial_id := StringName(metadata.get("tutorial_id", &""))
+		if not generated_tutorial_id.is_empty() and not explicit_promotion:
+			promotion_kind = StringName(metadata.get("tutorial_kind", &"area"))
+			promotion_id = generated_tutorial_id
+			promotion_index = 0
 		candidates.append(generated)
 	return {"success": true, "candidates": candidates, "tutorial_generated_day": generated_tutorial_day}
+
+
+static func _post_tutorial_exposure_candidate(
+	progression: Dictionary,
+	seed: int,
+	sequence: int,
+	tutorial_kind: StringName,
+	tutorial_id: StringName,
+	exposure_index: int,
+	source_growth_id: StringName = &""
+) -> Dictionary:
+	var primary := _promotion_primary_candidate(progression, seed, sequence, tutorial_kind, tutorial_id)
+	if not bool(primary.get("success", false)):
+		return primary
+	var candidates: Array[Dictionary] = [primary]
+	var promotion_area_id := _promotion_area_id(tutorial_kind, tutorial_id)
+	# Keep the ordinary 72/20/8 complexity roll, but clamp the promotion window
+	# to one old companion so the newly unlocked output remains the focus.
+	if _roll(seed, sequence, 113, 100) >= 72:
+		var old_areas := _eligible_completed_areas(progression, promotion_area_id)
+		if not old_areas.is_empty():
+			var old_area_id := _weighted_area(old_areas, progression, seed + 7919, sequence)
+			var companion: Dictionary
+			if old_area_id == &"area.pancake":
+				companion = _pancake_candidate(progression, {}, seed + 104729, sequence, false)
+			else:
+				var product_ids := _eligible_product_ids(old_area_id, progression)
+				var product_id := _weighted_product(product_ids, seed + 104729, sequence)
+				companion = _product_candidate(old_area_id, product_id, progression, seed + 104729, sequence, false)
+			if bool(companion.get("success", false)):
+				candidates.append(companion)
+	var result := _combine_candidates(candidates)
+	var metadata := Dictionary(result.get("metadata", {})).duplicate(true)
+	metadata["promotion_tutorial_kind"] = tutorial_kind
+	metadata["promotion_tutorial_id"] = tutorial_id
+	metadata["promotion_kind"] = tutorial_kind
+	metadata["promotion_target_id"] = tutorial_id
+	metadata["promotion_source_growth_id"] = source_growth_id
+	metadata["promotion_index"] = clampi(exposure_index, 1, 3)
+	result["metadata"] = metadata
+	return result
+
+
+static func _promotion_primary_candidate(
+	progression: Dictionary,
+	seed: int,
+	sequence: int,
+	tutorial_kind: StringName,
+	tutorial_id: StringName
+) -> Dictionary:
+	if tutorial_kind == &"product":
+		var definition := CATALOG.product_definition(tutorial_id)
+		var area_id := StringName(definition.get("area_id", &""))
+		if definition.is_empty() or area_id.is_empty():
+			return {"success": false, "reason": &"promotion_content_unavailable", "tutorial_id": tutorial_id}
+		return _product_candidate(area_id, tutorial_id, progression, seed, sequence, false)
+	if tutorial_kind == &"pancake_stock":
+		return _pancake_candidate_for_stock(progression, tutorial_id, seed, sequence)
+	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater":
+		var heated := _product_candidate(
+			&"area.packaged_drink",
+			&"product.packaged_drink.milk",
+			progression,
+			seed,
+			sequence,
+			false,
+		)
+		var heated_items := Array(heated.get("items", [])).duplicate(true)
+		if not heated_items.is_empty():
+			var item := Dictionary(heated_items[0])
+			item["temperature_mode"] = &"heated"
+			heated_items[0] = item
+			heated["items"] = heated_items
+		return heated
+	if tutorial_kind != &"area" or not PLAYABLE_AREA_IDS.has(tutorial_id):
+		return {"success": false, "reason": &"promotion_content_unavailable", "tutorial_id": tutorial_id}
+	if tutorial_id == &"area.pancake":
+		return _pancake_candidate(progression, {}, seed, sequence, false)
+	var product_id: StringName = TUTORIAL_PRODUCT_IDS.get(tutorial_id, &"")
+	if product_id.is_empty():
+		return {"success": false, "reason": &"promotion_content_unavailable", "tutorial_id": tutorial_id}
+	return _product_candidate(tutorial_id, product_id, progression, seed, sequence, false)
+
+
+static func _promotion_area_id(tutorial_kind: StringName, tutorial_id: StringName) -> StringName:
+	if tutorial_kind == &"product":
+		return StringName(CATALOG.product_definition(tutorial_id).get("area_id", &""))
+	if tutorial_kind == &"pancake_stock":
+		return &"area.pancake"
+	if tutorial_kind == &"device" and tutorial_id == &"device.packaged_drink_heater":
+		return &"area.packaged_drink"
+	return tutorial_id if tutorial_kind == &"area" else &""
+
+
+static func _has_due_tutorial(progression: Dictionary) -> bool:
+	var tutorial := Dictionary(progression.get("tutorial", {}))
+	var kind := StringName(tutorial.get("active_kind", &""))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	return (kind == &"area" and PLAYABLE_AREA_IDS.has(tutorial_id)) or (kind == &"device" and tutorial_id == &"device.packaged_drink_heater")
+
+
+static func _eligible_completed_areas(progression: Dictionary, excluded_area_id: StringName) -> Array[StringName]:
+	var result: Array[StringName] = []
+	var completed := _id_set(Dictionary(progression.get("tutorial", {})).get("completed_area_ids", []))
+	var unlocked := _id_set(progression.get("unlocked_area_ids", []))
+	for area_id in PLAYABLE_AREA_IDS:
+		if area_id == excluded_area_id or not completed.has(area_id) or not unlocked.has(area_id):
+			continue
+		if not _eligible_product_ids(area_id, progression).is_empty():
+			result.append(area_id)
+	return result
 
 
 static func _complexity_item_count(progression: Dictionary, eligible_count: int, seed: int, sequence: int) -> int:
@@ -142,6 +291,8 @@ static func _combine_candidates(candidates: Array[Dictionary]) -> Dictionary:
 		"items": items,
 		"metadata": {
 			"teaching_area_id": &"",
+			"tutorial_kind": &"",
+			"tutorial_id": &"",
 			"patience_seconds": snappedf(patience, 0.1),
 			"base_coins": maxi(roundi(float(base_coins) * multiplier), 1),
 			"reward_multiplier": multiplier,
@@ -166,10 +317,34 @@ static func _teaching_candidate(area_id: StringName, progression: Dictionary, _i
 	return candidate
 
 
-static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, seed: int, sequence: int, teaching: bool) -> Dictionary:
+static func _heater_teaching_candidate(progression: Dictionary) -> Dictionary:
+	var product_id := &"product.packaged_drink.milk"
+	if not _eligible_product_ids(&"area.packaged_drink", progression).has(product_id):
+		return {"success": false, "reason": &"tutorial_content_unavailable", "tutorial_id": &"device.packaged_drink_heater"}
+	var candidate := _product_candidate(&"area.packaged_drink", product_id, progression, 0, 0, true)
+	if not bool(candidate.get("success", false)):
+		return candidate
+	var items: Array = Array(candidate.get("items", [])).duplicate(true)
+	if not items.is_empty():
+		var item := Dictionary(items[0])
+		item["temperature_mode"] = &"heated"
+		items[0] = item
+	candidate["items"] = items
+	var metadata := Dictionary(candidate.get("metadata", {})).duplicate(true)
+	metadata["teaching_area_id"] = &"area.packaged_drink"
+	metadata["tutorial_kind"] = &"device"
+	metadata["tutorial_id"] = &"device.packaged_drink_heater"
+	metadata["tutorial_no_countdown"] = true
+	candidate["metadata"] = metadata
+	return candidate
+
+
+static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, seed: int, sequence: int, teaching: bool, required_template_id: StringName = &"") -> Dictionary:
 	var generated: Dictionary
 	if teaching:
 		generated = PANCAKE_GENERATOR.generate(progression, tutorial, 0)
+	elif not required_template_id.is_empty():
+		generated = PANCAKE_GENERATOR.generate_for_template(progression, required_template_id)
 	else:
 		var eligible := _eligible_pancake_templates(progression)
 		if eligible.is_empty():
@@ -211,6 +386,20 @@ static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, se
 	}
 
 
+static func _pancake_candidate_for_stock(progression: Dictionary, stock_id: StringName, seed: int, sequence: int) -> Dictionary:
+	var eligible := _eligible_pancake_templates(progression)
+	var matching: Array[StringName] = []
+	for template_id in eligible:
+		var template := CATALOG.pancake_order_template(template_id)
+		var required := Array(template.get("ingredient_stock_ids", [])) + Array(template.get("sauce_stock_ids", []))
+		if required.has(stock_id) or required.has(str(stock_id)):
+			matching.append(template_id)
+	if matching.is_empty():
+		return {"success": false, "reason": &"promotion_content_unavailable", "stock_id": stock_id}
+	var selected := matching[_roll(seed, sequence, 31, matching.size())]
+	return _pancake_candidate(progression, {}, seed, sequence, false, selected)
+
+
 static func _product_candidate(area_id: StringName, product_id: StringName, progression: Dictionary, seed: int, sequence: int, teaching: bool) -> Dictionary:
 	var product := CATALOG.product_definition(product_id)
 	var recipe := CATALOG.recipe_definition(StringName(product.get("recipe_id", &"")))
@@ -219,7 +408,10 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 	var temperature_mode := &"room_temperature"
 	if area_id == &"area.packaged_drink" and not teaching and bool(product.get("can_heat", false)):
 		var tutorial := Dictionary(progression.get("tutorial", {}))
-		if _id_set(tutorial.get("completed_area_ids", [])).has(area_id) and _roll(seed, sequence, 79, 100) < 35:
+		var completed_devices := _id_set(tutorial.get("completed_device_ids", []))
+		var device_tiers := Dictionary(progression.get("device_tiers", {}))
+		var heater_owned := device_tiers.has(&"device.packaged_drink_heater") or device_tiers.has("device.packaged_drink_heater")
+		if heater_owned and completed_devices.has(&"device.packaged_drink_heater") and _roll(seed, sequence, 79, 100) < 35:
 			temperature_mode = &"heated"
 	var patience := float(BASE_PATIENCE_SECONDS.get(area_id, 24.0))
 	return {
@@ -247,14 +439,17 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 
 static func _eligible_product_ids(area_id: StringName, progression: Dictionary) -> Array[StringName]:
 	if area_id == &"area.pancake":
-		return [&"product.pancake.custom"] if not _eligible_pancake_templates(progression).is_empty() else []
+		var pancake_product_ids: Array[StringName] = []
+		if not _eligible_pancake_templates(progression).is_empty():
+			pancake_product_ids.append(&"product.pancake.custom")
+		return pancake_product_ids
 	var unlocked_products := _id_set(progression.get("unlocked_product_ids", []))
 	var unlocked_recipes := _id_set(progression.get("unlocked_recipe_ids", []))
 	var unlocked_stocks := _id_set(progression.get("unlocked_stock_ids", []))
 	var device_tiers := Dictionary(progression.get("device_tiers", {}))
 	var area_definition := CATALOG.area_definition(area_id)
 	var device_id := StringName(area_definition.get("device_id", &""))
-	if device_id.is_empty() or not (device_tiers.has(device_id) or device_tiers.has(str(device_id))):
+	if area_id != &"area.packaged_drink" and (device_id.is_empty() or not (device_tiers.has(device_id) or device_tiers.has(str(device_id)))):
 		return []
 	var ids: Array[StringName] = []
 	for product_key in CATALOG.PRODUCT_DEFINITIONS.keys():

@@ -176,7 +176,7 @@ func _scale_for(ingredient_type: StringName) -> float:
 		IngredientModel.PRESERVED_MUSTARD:
 			return 0.12
 		IngredientModel.YOUTIAO:
-			# The source artwork is 768 px wide; at this scale it occupies about
-			# one fifth of the authored griddle width.
-			return 0.10
+			# The five-area source is 256 px wide. Match the visible footprint of
+			# the broken baocui sheet instead of retaining the legacy 768 px scale.
+			return 0.78
 	return 0.12

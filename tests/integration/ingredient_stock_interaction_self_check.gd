@@ -21,11 +21,21 @@ func _run() -> void:
 	workstation.set_process(false)
 
 	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 6, "new game starts the egg tray at the sixth image state")
-	_check(workstation.egg_button.stock_textures.size() == 6, "egg tray owns six scene-backed stock textures")
-	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v1.png"), "full tray renders the sixth stock image without a number")
+	var stock_slots: Array[IngredientStockSlot] = [workstation.egg_button as IngredientStockSlot, workstation.baocui_button as IngredientStockSlot, workstation.ham_button as IngredientStockSlot, workstation.scallion_button as IngredientStockSlot, workstation.meat_floss_button as IngredientStockSlot, workstation.pork_tenderloin_button as IngredientStockSlot, workstation.coriander_button as IngredientStockSlot, workstation.preserved_mustard_button as IngredientStockSlot]
+	for stock_slot: IngredientStockSlot in stock_slots:
+		_check(stock_slot.stock_textures.size() == 14, "%s owns fourteen scene-backed stock textures" % stock_slot.name)
+		var quantity_hashes := {}
+		for quantity in [6, 10, 14]:
+			stock_slot.set_stock_quantity(quantity)
+			var texture := stock_slot.artwork.texture as Texture2D
+			quantity_hashes[texture.resource_path] = true
+			_check(texture != null and texture.resource_path.ends_with("_%d_v2.png" % quantity), "%s renders its dedicated quantity-%d artwork" % [stock_slot.name, quantity])
+		_check(quantity_hashes.size() == 3, "%s does not reuse the sixth texture for quantities ten or fourteen" % stock_slot.name)
+	workstation._refresh_ingredient_stock_ui()
+	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v2.png"), "full tray renders the sixth stock image without a number")
 	_check(workstation.egg_restock_button != null and workstation.baocui_restock_button != null and workstation.ham_restock_button != null and workstation.scallion_restock_button != null, "four matching physical restock controls are stable scene content")
 	var background_artwork := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
-	_check(background_artwork.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v7.png"), "initial workstation uses the customer-style, square-slot 18-slot backplate")
+	_check(background_artwork.texture.resource_path.ends_with("workstation_18_single_row_1920x1080_v8_chinese.png"), "initial workstation uses the Chinese-style, square-slot 18-slot backplate")
 	_check(workstation.ingredient_layer.baocui_texture.resource_path.ends_with("baocui_broken_v1.png"), "placed baocui uses the visibly broken sheet artwork")
 	_check(_ingredient_rack_has_no_digits(workstation), "ingredient rack uses pictures and words instead of numeric stock labels")
 
@@ -43,7 +53,7 @@ func _run() -> void:
 	workstation._finish_ingredient_drag(Vector2(-400.0, -400.0))
 	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 5, "failed off-griddle placement still consumes one egg")
 	_check(not workstation.ingredient_model.has_type(IngredientModel.EGG), "failed placement does not create pancake ingredient data")
-	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_5_v1.png"), "failed placement immediately switches to the fifth stock image")
+	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_5_v2.png"), "failed placement immediately switches to the fifth stock image")
 
 	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * (workstation.pancake_surface.size * 0.5)
 	workstation._on_ingredient_gui_input(press, IngredientModel.EGG)
@@ -69,7 +79,7 @@ func _run() -> void:
 	var unit_seconds := float(refill.call("status", egg_stock).unit_seconds)
 	refill.call("advance_hold", egg_stock, unit_seconds * 6.0)
 	_check(workstation.ingredient_stock_model.current(IngredientModel.EGG) == 6, "the formal hold-refill service restores six visible portions one unit at a time")
-	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v1.png"), "restock restores the sixth image state")
+	_check(workstation.egg_button.artwork.texture.resource_path.ends_with("egg_stock_6_v2.png"), "restock restores the sixth image state")
 	_check(workstation.egg_restock_button.disabled, "the hidden legacy restock control remains disabled at full stock")
 
 	if game_session != null:

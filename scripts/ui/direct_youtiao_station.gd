@@ -4,7 +4,6 @@ extends Control
 signal status_message(message: String)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const AUTO_LIFT := &"automation.youtiao.auto_lift"
 const AUTO_LOAD := &"automation.youtiao.auto_load"
 const TEMPERATURE_ASSIST := &"assist.youtiao.temperature_indicator"
@@ -42,7 +41,9 @@ const STOCK_IDS: Array[StringName] = [&"stock.youtiao.plain_dough", &"stock.yout
 @onready var temperature_range_bar: YoutiaoTemperatureRangeBar = %TemperatureRangeBar
 @onready var start_button: Button = %StartButton
 @onready var lift_button: Button = %LiftButton
-@onready var output_source: ProductDragSource = %OutputSource
+@onready var output_sources: Array[ProductDragSource] = [%OutputSlot01, %OutputSlot02, %OutputSlot03, %OutputSlot04]
+# Compatibility for old tests and non-UI callers that only need a representative source.
+@onready var output_source: ProductDragSource = %OutputSlot01
 @onready var state_label: Label = %StateLabel
 @onready var quantity_label: Label = %QuantityLabel
 @onready var auto_load_panel: Panel = %AutoLoadPanel
@@ -50,6 +51,7 @@ const STOCK_IDS: Array[StringName] = [&"stock.youtiao.plain_dough", &"stock.yout
 @onready var auto_plus_button: Button = %AutoPlusButton
 @onready var auto_quantity_label: Label = %AutoQuantityLabel
 @onready var auto_confirm_button: Button = %AutoConfirmButton
+@onready var prepared_slots: Array[PreparedProductSlot] = [%PreparedPlain, %PreparedOilCake, %PreparedSugarOilCake]
 @onready var lock_cover: Button = %LockCover
 
 var _machine: Dictionary = {}
@@ -69,11 +71,13 @@ var _raised_basket_front_rest_position := Vector2(0.0, 44.0)
 
 func _ready() -> void:
 	start_button.pressed.connect(_perform_action.bind(&"start"))
-	lift_button.pressed.connect(_on_lift_or_discard_pressed)
+	lift_button.pressed.connect(_perform_action.bind(&"lift"))
 	auto_minus_button.pressed.connect(_change_auto_quantity.bind(-1))
 	auto_plus_button.pressed.connect(_change_auto_quantity.bind(1))
 	auto_confirm_button.pressed.connect(_confirm_auto_load)
 	lock_cover.pressed.connect(_on_lock_cover_pressed)
+	for slot in prepared_slots:
+		slot.store_completed.connect(_on_prepared_store_completed)
 	auto_lift_visual.texture = auto_lift_texture
 	auto_load_visual.texture = auto_load_texture
 	for visual in sizzle_visuals:
@@ -110,12 +114,12 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	var session := get_node_or_null("/root/GameSession")
-	var before_quantity := int(_machine.get("quantity", 0))
+	var before_slots := _occupied_slots()
 	var result: Dictionary = session.call("load_f3_youtiao", StringName(source_ref.get("recipe_id", &"")), 1) if session != null else {"success": false, "reason": &"no_game_session"}
 	refresh_from_session()
 	if bool(result.get("success", false)):
 		status_message.emit("面胚已放入炸篮")
-		_animate_loaded_slot(before_quantity, at_position - machine_stage.position)
+		_animate_newly_loaded_slots(before_slots, at_position - machine_stage.position)
 	else:
 		status_message.emit("面胚回到原位：%s" % str(result.get("reason", &"unknown")))
 
@@ -135,6 +139,7 @@ func refresh_from_session() -> void:
 	snapshot["owned_assist_ids"] = Array(progression.get("owned_assist_ids", [])).duplicate()
 	lock_cover.visible = not unlocked_area
 	_apply_machine_snapshot(snapshot)
+	_refresh_prepared_slots(session)
 	_refresh_controls()
 
 
@@ -149,6 +154,17 @@ func apply_visual_snapshot(snapshot: Dictionary, inventory: Dictionary = {}) -> 
 
 func resume_session_refresh() -> void:
 	_session_refresh_enabled = true
+	refresh_from_session()
+
+
+func _refresh_prepared_slots(session: Node) -> void:
+	for slot in prepared_slots:
+		var status := Dictionary(session.call("prepared_product_slot_status", slot.slot_id))
+		slot.configure_count(int(status.get("count", 0)), StringName(status.get("reason", &"")) != &"recipe_locked")
+
+
+func _on_prepared_store_completed(result: Dictionary) -> void:
+	status_message.emit("炸物已放入匹配暂存格" if bool(result.get("success", false)) else "未能放入暂存格，炸锅成品已保留：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
 
 
@@ -191,11 +207,17 @@ func _render_machine() -> void:
 	sizzle_layer.visible = state == &"frying"
 	oil_drips_visual.visible = state == &"draining"
 	burnt_smoke_visual.visible = state == &"burnt"
-	output_source.visible = state == &"ready_to_collect"
 	var recipe_id := StringName(_machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
-	output_source.configure({"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), state == &"ready_to_collect", "成品留在炸篮；点击订单商品交付，原味油条也可拖入煎饼")
-	output_source.self_modulate = Color(1.0, 1.0, 1.0, 0.01)
+	var occupied_slots := _occupied_slots()
+	var recipe_index := maxi(RECIPE_IDS.find(recipe_id), 0)
+	var drag_texture := _texture_at(cooked_food_textures, recipe_index) if state not in [&"loaded", &"frying"] else _texture_at(raw_food_textures, recipe_index)
+	for slot_index in range(output_sources.size()):
+		var source := output_sources[slot_index]
+		var occupied := occupied_slots.has(slot_index)
+		var hint := "可交付、暂存，或逐份拖到废弃区" if state == &"ready_to_collect" else "当前内容只能逐份拖到废弃区"
+		source.configure({"source_kind": &"youtiao_output", "source_index": slot_index, "product_id": product_id, "discardable": true}, drag_texture, occupied, hint)
+		source.self_modulate = Color(1.0, 1.0, 1.0, 0.01)
 	temperature_range_bar.apply_snapshot(_machine, _owns_assist(TEMPERATURE_ASSIST))
 
 
@@ -204,13 +226,13 @@ func _layout_food(tier: int, state: StringName, basket_is_raised: bool) -> void:
 	var recipe_index := RECIPE_IDS.find(recipe_id)
 	if recipe_index < 0:
 		recipe_index = 0
-	var quantity := clampi(int(_machine.get("quantity", 0)), 0, 4)
+	var occupied_slots := _occupied_slots()
 	var rects := _food_rects(tier, basket_is_raised)
 	var cooking_ratio := _cooking_ratio(tier, state)
 	var cooked_color := _cooked_color(state)
 	for index in range(food_slots.size()):
 		var slot := food_slots[index]
-		slot.visible = index < quantity and state not in [&"idle", &"unowned"]
+		slot.visible = occupied_slots.has(index) and state not in [&"idle", &"unowned"]
 		if not slot.visible:
 			continue
 		slot.position = rects[index].position
@@ -247,8 +269,8 @@ func _refresh_controls() -> void:
 	var state := StringName(_machine.get("state", &"unowned"))
 	var owned := bool(_machine.get("owned", false)) and not lock_cover.visible
 	start_button.disabled = not owned or state != &"loaded"
-	lift_button.text = "丢弃" if state == &"burnt" else "升篮"
-	lift_button.disabled = not owned or state not in [&"ready_safe", &"overcooking", &"burnt"]
+	lift_button.text = "升篮"
+	lift_button.disabled = not owned or state not in [&"ready_safe", &"overcooking"]
 	state_label.text = "油条炸锅 · %s" % _state_text(state)
 	quantity_label.text = "×%d" % int(_machine.get("quantity", 0)) if int(_machine.get("quantity", 0)) > 0 else ""
 	auto_load_panel.visible = owned and _owns_automation(AUTO_LOAD)
@@ -278,20 +300,10 @@ func _perform_action(action_id: StringName) -> void:
 		status_message.emit("炸篮已启动" if action_id == &"start" else "炸篮已升起，正在沥油")
 		if action_id == &"start":
 			_animate_start_feedback()
+		elif action_id == &"lift":
+			_animate_lift_feedback()
 	else:
 		status_message.emit("设备没有动作：%s" % str(result.get("reason", &"unknown")))
-
-
-func _on_lift_or_discard_pressed() -> void:
-	if StringName(_machine.get("state", &"")) != &"burnt":
-		_perform_action(&"lift")
-		if StringName(_machine.get("state", &"")) == &"draining":
-			_animate_lift_feedback()
-		return
-	var session := get_node_or_null("/root/GameSession")
-	var result: Dictionary = session.call("discard_f3_youtiao") if session != null else {"success": false, "reason": &"no_game_session"}
-	status_message.emit("焦糊批次已报废" if bool(result.get("success", false)) else "无法报废：%s" % str(result.get("reason", &"unknown")))
-	refresh_from_session()
 
 
 func _change_auto_quantity(delta: int) -> void:
@@ -303,15 +315,15 @@ func _confirm_auto_load() -> void:
 	if not _can_confirm_auto_load():
 		return
 	var session := get_node_or_null("/root/GameSession")
-	var before_quantity := int(_machine.get("quantity", 0))
+	var before_slots := _occupied_slots()
 	var result: Dictionary = session.call("confirm_and_run_youtiao_auto_load", _selected_recipe_id, _selected_quantity) if session != null else {"success": false, "reason": &"no_game_session"}
 	refresh_from_session()
 	if not bool(result.get("success", false)):
 		status_message.emit("自动装载未执行，库存未扣除：%s" % str(result.get("reason", &"unknown")))
 		return
-	var after_quantity := int(_machine.get("quantity", 0))
-	status_message.emit("自动投胚器已装载 %d 份" % maxi(after_quantity - before_quantity, 0))
-	_animate_auto_loaded_slots(before_quantity, after_quantity)
+	var after_slots := _occupied_slots()
+	status_message.emit("自动投胚器已装载 %d 份" % maxi(after_slots.size() - before_slots.size(), 0))
+	_animate_newly_loaded_slots(before_slots, Vector2(66.0, 22.0))
 
 
 func _can_confirm_auto_load() -> bool:
@@ -352,9 +364,10 @@ func _animate_loaded_slot(slot_index: int, start_position: Vector2) -> void:
 	tween.tween_property(slot, "modulate:a", 1.0, 0.16)
 
 
-func _animate_auto_loaded_slots(from_index: int, to_index: int) -> void:
-	for index in range(from_index, mini(to_index, food_slots.size())):
-		_animate_loaded_slot(index, Vector2(66.0, 22.0) + Vector2(index * 3.0, 0.0))
+func _animate_newly_loaded_slots(before_slots: Array[int], start_position: Vector2) -> void:
+	for index in _occupied_slots():
+		if not before_slots.has(index):
+			_animate_loaded_slot(index, start_position + Vector2(index * 3.0, 0.0))
 
 
 func _animate_start_feedback() -> void:
@@ -455,7 +468,7 @@ func _cooked_color(state: StringName) -> Color:
 static func _food_rects(tier: int, raised: bool) -> Array[Rect2]:
 	if tier < 2:
 		var y := 16.0 if raised else 38.0
-		return [Rect2(124, y, 38, 30), Rect2(153, y, 38, 30), Rect2(), Rect2()]
+		return [Rect2(116, y, 38, 30), Rect2(158, y, 38, 30), Rect2(), Rect2()]
 	if raised:
 		return [Rect2(111, 5, 32, 29), Rect2(136, 5, 32, 29), Rect2(161, 5, 32, 29), Rect2(186, 5, 32, 29)]
 	return [Rect2(96, 40, 32, 29), Rect2(130, 40, 32, 29), Rect2(164, 40, 32, 29), Rect2(198, 40, 32, 29)]
@@ -467,14 +480,26 @@ static func _front_clip_top(tier: int, raised: bool) -> float:
 
 
 static func _snapshot_signature(snapshot: Dictionary) -> String:
-	return "%s|%d|%s|%d|%s|%s" % [
+	return "%s|%d|%s|%d|%s|%s|%s" % [
 		str(snapshot.get("state", &"unowned")),
 		int(snapshot.get("tier", 0)),
 		str(snapshot.get("recipe_id", &"")),
 		int(snapshot.get("quantity", 0)),
+		str(Array(snapshot.get("occupied_slot_indices", []))),
 		str(Array(snapshot.get("unlocked_automation_ids", []))),
 		str(Array(snapshot.get("owned_assist_ids", []))),
 	]
+
+
+func _occupied_slots() -> Array[int]:
+	var result: Array[int] = []
+	if _machine.has("occupied_slot_indices"):
+		for value in Array(_machine.get("occupied_slot_indices", [])):
+			result.append(int(value))
+	else:
+		for slot_index in range(clampi(int(_machine.get("quantity", 0)), 0, food_slots.size())):
+			result.append(slot_index)
+	return result
 
 
 func _owns_automation(automation_id: StringName) -> bool:

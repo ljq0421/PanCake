@@ -11,6 +11,9 @@ const PRODUCT_IDS: Array[StringName] = [
 	&"product.packaged_drink.walnut",
 	&"product.packaged_drink.black_sesame",
 ]
+const HEATER_TIER_0_TEXTURE := preload("res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_0_v1_chinese.png")
+const HEATER_TIER_1_TEXTURE := preload("res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_1_v1_chinese.png")
+const HEATER_TIER_2_TEXTURE := preload("res://resources/art/workstation/expansion/machines/packaged_drink_heater_tier_2_v3_chinese.png")
 
 @export var heater_empty_style: StyleBox
 @export var heater_heating_style: StyleBox
@@ -26,6 +29,8 @@ const PRODUCT_IDS: Array[StringName] = [
 @onready var heater_states: Array[Label] = [%HeaterState01, %HeaterState02, %HeaterState03, %HeaterState04]
 @onready var state_label: Label = %StateLabel
 @onready var lock_cover: Button = %LockCover
+@onready var heater_lock_cover: Button = %HeaterLockCover
+@onready var heater_artwork: TextureRect = $HeaterArtwork
 
 var _refresh_elapsed := 0.0
 
@@ -34,10 +39,13 @@ func _ready() -> void:
 	for index in range(lanes.size()):
 		lanes[index].hold_enabled = true
 		lanes[index].hold_threshold_seconds = 0.1
+		lanes[index].cancel_pending_on_mouse_exit = false
 		lanes[index].hold_requested.connect(_on_lane_hold_requested)
 		lanes[index].hold_advanced.connect(_on_lane_hold_advanced)
 		heater_targets[index].load_completed.connect(_on_heater_load_completed)
+		heater_sources[index].short_clicked.connect(_on_heater_source_clicked)
 	lock_cover.pressed.connect(_on_lock_cover_pressed)
+	heater_lock_cover.pressed.connect(_on_heater_lock_cover_pressed)
 	refresh_from_session()
 
 
@@ -56,6 +64,10 @@ func refresh_from_session() -> void:
 	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
 	var area_unlocked := unlocked_areas.has("area.packaged_drink")
 	lock_cover.visible = not area_unlocked
+	var device_tiers := Dictionary(progression.get("device_tiers", {}))
+	var heater_owned := device_tiers.has(&"device.packaged_drink_heater") or device_tiers.has("device.packaged_drink_heater")
+	heater_lock_cover.visible = area_unlocked and not heater_owned
+	heater_artwork.visible = area_unlocked and heater_owned
 	var unlocked_products := PackedStringArray(Array(progression.get("unlocked_product_ids", [])))
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	for index in range(PRODUCT_IDS.size()):
@@ -76,17 +88,24 @@ func refresh_from_session() -> void:
 		lane_counts[index].text = str(count) if unlocked else "锁"
 	var machine := Dictionary(Dictionary(session.call("five_area_production_snapshot")).get("packaged_drink_heater", {}))
 	var slots := Array(machine.get("slots", []))
-	var tier_definition := CATALOG.device_tier(&"device.packaged_drink_heater", int(machine.get("tier", 0)))
+	var heater_tier := int(machine.get("tier", 0))
+	_refresh_heater_artwork(heater_tier)
+	var tier_definition := CATALOG.device_tier(&"device.packaged_drink_heater", heater_tier)
 	var duration_seconds := float(tier_definition.get("duration_seconds", 0.0))
 	for slot_index in range(heater_sources.size()):
 		var slot := Dictionary(slots[slot_index]) if slot_index < slots.size() else {"state": &"locked"}
 		var state := StringName(slot.get("state", &"locked"))
 		var product_id := StringName(slot.get("product_id", &""))
 		var ready := state in [&"ready_hot", &"cooled"]
-		heater_targets[slot_index].visible = state != &"locked"
+		heater_targets[slot_index].visible = heater_owned and state != &"locked"
 		var state_text := _heater_state_text(slot, duration_seconds)
 		var state_tooltip := _heater_state_tooltip(slot, duration_seconds)
-		heater_sources[slot_index].configure({"source_kind": &"heater_slot", "source_index": slot_index, "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id, &"heated"), ready, state_tooltip)
+		heater_sources[slot_index].configure({
+			"source_kind": &"heater_slot",
+			"source_index": slot_index,
+			"product_id": product_id,
+			"discardable": state == &"cooled",
+		}, PRODUCT_VISUALS.texture_for(product_id, &"heated"), ready, state_tooltip)
 		heater_sources[slot_index].visible = state != &"empty" and state != &"locked"
 		heater_states[slot_index].text = state_text
 		heater_states[slot_index].tooltip_text = state_tooltip
@@ -95,7 +114,17 @@ func refresh_from_session() -> void:
 		var slot_style := _heater_style_for_state(state)
 		if slot_style != null:
 			heater_targets[slot_index].add_theme_stylebox_override("panel", slot_style)
-	state_label.text = "长按货道补货 · 移动超过 10px 拖拽"
+	state_label.text = "长按货道补货 · 常温饮品可直接交付" if not heater_owned else "长按货道补货 · 拖到加热位制作热饮"
+
+
+func _refresh_heater_artwork(heater_tier: int) -> void:
+	match heater_tier:
+		0:
+			heater_artwork.texture = HEATER_TIER_0_TEXTURE
+		1:
+			heater_artwork.texture = HEATER_TIER_1_TEXTURE
+		_:
+			heater_artwork.texture = HEATER_TIER_2_TEXTURE
 
 
 func _on_lane_hold_requested(source_ref: Dictionary) -> void:
@@ -160,6 +189,18 @@ func _on_heater_load_completed(result: Dictionary) -> void:
 	refresh_from_session()
 
 
+func _on_heater_source_clicked(source_ref: Dictionary) -> void:
+	if not bool(source_ref.get("discardable", false)):
+		return
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or not session.has_method("reheat_f3_drink"):
+		status_message.emit("无法重新加热：游戏会话不可用")
+		return
+	var result := Dictionary(session.call("reheat_f3_drink", int(source_ref.get("source_index", -1))))
+	status_message.emit("饮品已重新开始加热" if bool(result.get("success", false)) else "无法重新加热：%s" % str(result.get("reason", &"unknown")))
+	refresh_from_session()
+
+
 func _on_lock_cover_pressed() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var text := "成品饮品区域尚未解锁"
@@ -168,11 +209,19 @@ func _on_lock_cover_pressed() -> void:
 	status_message.emit(text)
 
 
+func _on_heater_lock_cover_pressed() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var text := "饮品加热区尚未解锁"
+	if session != null and session.has_method("growth_missing_requirements"):
+		text = str(session.call("growth_missing_requirements", &"growth.equipment.packaged_drink.basic"))
+	status_message.emit(text)
+
+
 static func _heater_state_text(slot: Dictionary, duration_seconds: float) -> String:
 	match StringName(slot.get("state", &"locked")):
 		&"empty": return "空"
 		&"heating": return "%.1f秒" % maxf(duration_seconds - float(slot.get("elapsed_seconds", 0.0)), 0.0)
-		&"ready_hot": return "已加热"
+		&"ready_hot": return "恒温" if bool(slot.get("infinite_hold", false)) else "热 %.1f秒" % maxf(float(slot.get("hot_remaining_seconds", 0.0)), 0.0)
 		&"cooled": return "已冷却"
 	return "锁"
 
@@ -181,8 +230,8 @@ static func _heater_state_tooltip(slot: Dictionary, duration_seconds: float) -> 
 	match StringName(slot.get("state", &"locked")):
 		&"empty": return "空加热位：把需要加热的饮品拖到这里"
 		&"heating": return "正在加热，剩余 %.1f 秒" % maxf(duration_seconds - float(slot.get("elapsed_seconds", 0.0)), 0.0)
-		&"ready_hot": return "已加热：点击订单商品交付"
-		&"cooled": return "已冷却：拖到废弃区处理"
+		&"ready_hot": return "已加热并恒温：点击订单商品交付" if bool(slot.get("infinite_hold", false)) else "已加热：剩余 %.1f 秒，点击订单商品交付" % maxf(float(slot.get("hot_remaining_seconds", 0.0)), 0.0)
+		&"cooled": return "已冷却：点击重新加热，或拖到废弃区处理"
 	return "该加热位尚未开放"
 
 

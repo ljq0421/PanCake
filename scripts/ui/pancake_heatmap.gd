@@ -69,6 +69,8 @@ const VIEW_MODES := {
 @export_range(32, 512, 1) var render_texture_size: int = 128
 @export var draw_pointer_trace := false
 @export var input_exclusion_rect := Rect2()
+@export var draw_pan_outline := true
+@export var elliptical_hit_test := false
 
 @onready var pancake_visual: TextureRect = %PancakeVisual
 
@@ -84,6 +86,7 @@ var cursor_sauce_color := Color(0.34, 0.08, 0.035, 0.98)
 var spreader_radial_angle := 0.0
 var spreader_motion_valid := false
 @export var draw_spreader_fallback := true
+@export var draw_sauce_brush_fallback := true
 var _dirty := true
 var _elapsed := 0.0
 var _field_texture: ImageTexture
@@ -113,7 +116,11 @@ var _source_indices := PackedInt32Array()
 func _has_point(point: Vector2) -> bool:
 	if not Rect2(Vector2.ZERO, size).has_point(point):
 		return false
-	return not input_exclusion_rect.has_area() or not input_exclusion_rect.has_point(point)
+	if input_exclusion_rect.has_area() and input_exclusion_rect.has_point(point):
+		return false
+	if elliptical_hit_test and model != null:
+		return PancakeSpace.is_inside_pan(point, size, model.parameters.pan_height_ratio)
+	return true
 
 
 func _ready() -> void:
@@ -424,17 +431,18 @@ func _draw() -> void:
 		var local_position := PancakeSpace.grid_to_local(mouse_grid_cell, size, model.grid_size)
 		if cursor_is_t_spreader and draw_spreader_fallback:
 			_draw_t_spreader(local_position)
-		elif cursor_is_sauce_brush:
+		elif cursor_is_sauce_brush and draw_sauce_brush_fallback:
 			_draw_sauce_brush_cursor(local_position)
 		else:
 			draw_circle(local_position, cursor_radius_pixels, Color.WHITE, false, 2.0)
-	var center := size * 0.5
-	var radii := Vector2(size.x * 0.5 - 2.0, size.y * 0.5 * model.parameters.pan_height_ratio - 2.0)
-	var outline := PackedVector2Array()
-	for step in 65:
-		var angle := TAU * float(step) / 64.0
-		outline.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
-	draw_polyline(outline, Color(0.16, 0.11, 0.08, 0.95), 8.0, true)
+	if draw_pan_outline:
+		var center := size * 0.5
+		var radii := Vector2(size.x * 0.5 - 2.0, size.y * 0.5 * model.parameters.pan_height_ratio - 2.0)
+		var outline := PackedVector2Array()
+		for step in 65:
+			var angle := TAU * float(step) / 64.0
+			outline.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
+		draw_polyline(outline, Color(0.16, 0.11, 0.08, 0.95), 8.0, true)
 
 
 func _draw_t_spreader(position: Vector2) -> void:

@@ -8,10 +8,15 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png")
 const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
 const LOCK_TEXTURE := preload("res://resources/art/workstation/material_slots/individual/slot_05_locked_v1_five_area_v2.png")
+const WORKTOP_SLOT_NAMES := [
+	&"WorktopSlot04", &"WorktopSlot05", &"WorktopSlot06", &"WorktopSlot07",
+	&"WorktopSlot08", &"WorktopSlot09", &"WorktopSlot10", &"WorktopSlot11",
+	&"WorktopSlot12", &"WorktopSlot13", &"WorktopSlot14", &"WorktopSlot15",
+]
 const SLOT_DEFINITIONS := [
 	{"name": "BatterSlot", "label": "面糊桶", "stock_id": &"stock.pancake.batter", "source_kind": &"pancake_shared_batter", "texture": preload("res://resources/art/workstation/tools/batter_ladle_v1_five_area_v2.png"), "native_drag": false},
 	{ "name": "EggSlot", "label": "鸡蛋", "stock_id": &"stock.pancake.egg", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png")},
-	{ "name": "BaocuiSlot", "label": "薄脆", "stock_id": &"stock.pancake.baocui", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/baocui/baocui_intact_v1_five_area_v2.png")},
+	{ "name": "BaocuiSlot", "label": "薄脆", "stock_id": &"stock.pancake.baocui", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/baocui/baocui_intact_v1.png")},
 	{ "name": "ScallionSlot", "label": "葱花", "stock_id": &"stock.pancake.scallion", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/scallion/scallion_pile_v1_five_area_v2.png")},
 	{ "name": "HamSlot", "label": "火腿", "stock_id": &"stock.pancake.ham_sausage", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/ham_sausage/ham_sausage_whole_v1_five_area_v2.png")},
 	{ "name": "FlossSlot", "label": "肉松", "stock_id": &"stock.pancake.meat_floss", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1_five_area_v2.png")},
@@ -78,28 +83,16 @@ func _process(delta: float) -> void:
 
 
 func _build_tray() -> void:
-	var background := Panel.new()
-	background.name = "Background"
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.18, 0.095, 0.035, 0.98)
-	style.border_color = Color(0.93, 0.63, 0.25, 1.0)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(14)
-	background.add_theme_stylebox_override("panel", style)
-	add_child(background)
+	var worktop_slots: Array[Control] = []
+	for slot_name in WORKTOP_SLOT_NAMES:
+		var host := get_node_or_null(NodePath(str(slot_name))) as Control
+		assert(host != null, "Missing authored pancake worktop slot %s" % slot_name)
+		worktop_slots.append(host)
 
-	var row := HBoxContainer.new()
-	row.name = "PhysicalToolRow"
-	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 7)
-	row.add_theme_constant_override("separation", 4)
-	add_child(row)
-
-	_add_stock_slot(row, SLOT_DEFINITIONS[0])
+	_add_stock_slot(worktop_slots[0], SLOT_DEFINITIONS[0])
 	_spreader_button = TextureButton.new()
 	_spreader_button.name = "SpreaderButton"
-	_spreader_button.custom_minimum_size = Vector2(88.0, 96.0)
+	_spreader_button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_spreader_button.ignore_texture_size = true
 	_spreader_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	_spreader_button.texture_normal = SPREADER_NORMAL
@@ -109,15 +102,15 @@ func _build_tray() -> void:
 		status_message.emit("已拿起摊饼器；在目标鏊面按住画圈")
 	)
 	_add_caption(_spreader_button, "摊饼器")
-	row.add_child(_spreader_button)
+	worktop_slots[1].add_child(_spreader_button)
 	for index in range(1, SLOT_DEFINITIONS.size()):
-		_add_stock_slot(row, SLOT_DEFINITIONS[index])
+		_add_stock_slot(worktop_slots[index + 1], SLOT_DEFINITIONS[index])
 
 
-func _add_stock_slot(row: HBoxContainer, definition: Dictionary) -> void:
+func _add_stock_slot(host: Control, definition: Dictionary) -> void:
 	var slot := FiveAreaMaterialSlot.new()
 	slot.name = str(definition.get("name", "MaterialSlot"))
-	slot.custom_minimum_size = Vector2(88.0, 96.0)
+	slot.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	slot.ignore_texture_size = true
 	slot.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	slot.stock_id = StringName(definition.get("stock_id", &""))
@@ -138,7 +131,7 @@ func _add_stock_slot(row: HBoxContainer, definition: Dictionary) -> void:
 	lock_visual.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	lock_visual.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	slot.add_child(lock_visual)
-	row.add_child(slot)
+	host.add_child(slot)
 	_stock_slots.append(slot)
 	_slot_by_stock[str(slot.stock_id)] = slot
 

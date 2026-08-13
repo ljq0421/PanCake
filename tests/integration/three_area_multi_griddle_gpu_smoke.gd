@@ -44,7 +44,14 @@ func _run() -> void:
 	station.call("_refresh_multi_griddle_mode")
 	var multi: Control = station.get_node("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation")
 	multi.call("set_griddle_count", 3)
+	_check(multi.get_node_or_null("Background") == null, "multi-griddle station renders without the redundant outer brown frame")
 	var units: Array = multi.get("units")
+	var legacy_controls_stayed_hidden := true
+	for _refresh_index in 12:
+		station.call("_refresh_p1_ui")
+		await process_frame
+		legacy_controls_stayed_hidden = legacy_controls_stayed_hidden and not (station.get_node("SafeArea/P1ControlBar") as Control).visible and not (station.get_node("SafeArea/PhaseLabel") as Control).visible
+	_check(legacy_controls_stayed_hidden, "repeated P1 refreshes never flash the legacy heat or phase controls in multi-griddle mode")
 	var order := {
 		"product_id": &"product.pancake.custom",
 		"heat_preference": &"golden",
@@ -56,11 +63,57 @@ func _run() -> void:
 	_prepare_surface(units[1], order, 3, 2.7, 1.8)
 	_prepare_surface(units[2], order, 4, 2.9, 2.5)
 	var unit_two: Node = units[2]
-	multi.call("_on_shared_tool_selected", &"stock.pancake.sauce.sweet_flour")
-	unit_two.call("_on_surface_pointer_started", unit_two.pancake_surface.size * 0.5)
-	unit_two.call("_on_surface_pointer_ended", unit_two.pancake_surface.size * 0.5)
-	multi.call("drop_on_unit", 2, {"source_kind": &"pancake_shared_ingredient", "stock_id": &"stock.pancake.baocui"}, unit_two.pancake_surface.size * 0.5 + Vector2(8.0, 0.0))
+	var baocui_slot := multi.get_node("SharedToolTray/WorktopSlot07/BaocuiSlot") as FiveAreaMaterialSlot
+	var baocui_source := baocui_slot.source_ref()
+	var baocui_center := baocui_slot.get_global_rect().get_center()
+	var baocui_drop_center := (unit_two.pancake_surface as Control).get_global_rect().get_center() + Vector2(8.0, 0.0)
+	_move_at(baocui_center)
+	_press_at(baocui_center)
+	await process_frame
+	_move_at(baocui_drop_center, MOUSE_BUTTON_MASK_LEFT)
+	await process_frame
+	_check(root.gui_is_dragging() and root.gui_get_drag_data() is Dictionary, "real pointer drag starts from physical worktop slot 07")
+	var drag_payload := Dictionary(root.gui_get_drag_data())
+	_check(StringName(Dictionary(drag_payload.get("source_ref", {})).get("stock_id", &"")) == &"stock.pancake.baocui", "physical slot 07 drag carries the baocui stock identity")
+	_check(unit_two.pancake_surface._can_drop_data(unit_two.pancake_surface.size * 0.5 + Vector2(8.0, 0.0), drag_payload), "real baocui drag is accepted by the target griddle hit layer")
+	unit_two.pancake_surface._drop_data(unit_two.pancake_surface.size * 0.5 + Vector2(8.0, 0.0), drag_payload)
+	_release_at(baocui_drop_center)
+	await process_frame
+	_check(unit_two.applied_ingredient_ids.has("stock.pancake.baocui"), "real pointer drag places baocui on the selected griddle")
 	units[2].call("_refresh_ui")
+	multi.call("_on_shared_tool_selected", &"stock.pancake.sauce.sweet_flour")
+	var brush_center := (unit_two.pancake_surface as Control).get_global_rect().get_center()
+	_move_at(brush_center)
+	_press_at(brush_center)
+	await process_frame
+	_check(unit_two.sauce_brush_artwork.visible and (root.gui_get_hovered_control() == unit_two.pancake_surface), "real pointer press on the compact surface shows the authored sauce brush on the true hit layer; visible=%s hovered=%s action=%s selected=%s" % [unit_two.sauce_brush_artwork.visible, str(root.gui_get_hovered_control().get_path() if root.gui_get_hovered_control() != null else "none"), str(unit_two.get("_surface_action")), str(multi.get("_selected_tool"))])
+	_release_at(brush_center)
+	await process_frame
+	_check(not unit_two.sauce_brush_artwork.visible, "real sauce brush hides on pointer release")
+	var fold_button := unit_two.fold_action as Button
+	var fold_center := fold_button.get_global_rect().get_center()
+	_move_at(fold_center)
+	_press_at(fold_center)
+	_release_at(fold_center)
+	await process_frame
+	_check(unit_two.fold_steps == 1, "real pointer click folds the enlarged griddle once")
+	_move_at(fold_center)
+	_press_at(fold_center)
+	_release_at(fold_center)
+	await process_frame
+	_check(unit_two.fold_steps == 2, "real pointer click completes the second fold and packaging step")
+	var spread_unit: Node = units[0]
+	spread_unit.call("reset_unit")
+	spread_unit.call("begin_order", order)
+	multi.call("_on_shared_tool_selected", &"tool.pancake.spreader")
+	var spread_center := (spread_unit.pancake_surface as Control).get_global_rect().get_center()
+	_move_at(spread_center)
+	_press_at(spread_center)
+	await process_frame
+	var spread_target := spread_center + Vector2(22.0, 0.0)
+	_move_at(spread_target, MOUSE_BUTTON_MASK_LEFT)
+	await process_frame
+	_check(spread_unit.spreader_artwork.visible and spread_unit.spreader_artwork.position.distance_to(spread_unit.pancake_surface.pointer_local_position) < 1.0, "real pointer drag shows the authored spreader at the compact-pan contact point")
 	for _frame in 4:
 		await process_frame
 
@@ -80,14 +133,29 @@ func _run() -> void:
 	var old_material_dock := station.get_node("SafeArea/MaterialDock") as Control
 	_check(not old_material_dock.visible and old_material_dock.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "legacy material-slot and transparent lock layers are hidden and input-disabled")
 	var tray := multi.get_node("SharedToolTray") as Control
-	var tray_row := tray.get_node("PhysicalToolRow") as HBoxContainer
-	_check(tray.visible and tray_row.get_child_count() == 12, "shared physical tray exposes batter, spreader, eight toppings, and two sauces")
-	_check(tray.get_global_rect().position.x >= 350.0 and tray.get_global_rect().end.x <= 1550.0 and tray.get_global_rect().position.y >= 940.0, "shared tray occupies the pancake-only bottom worktop band")
+	_check(tray.visible and tray.get_node_or_null("Background") == null and tray.get_node_or_null("PhysicalToolRow") == null, "pancake tools render directly in the authored worktop without a dark second tray")
+	_check(tray.get_global_rect().position.x == 341.0 and tray.get_global_rect().end.x == 1580.0 and tray.get_global_rect().position.y == 956.0, "pancake tools occupy exact physical worktop slots 04 through 15")
 	_check(not tray.get_global_rect().intersects(soy.get_global_rect()) and not tray.get_global_rect().intersects(youtiao.get_global_rect()), "shared tray does not enter soy or youtiao hit regions")
+	var previous_slot_rect := Rect2()
+	for slot_offset in 12:
+		var host := tray.get_node("WorktopSlot%02d" % (slot_offset + 4)) as Control
+		_check(host.get_global_rect().size == Vector2(89.0, 89.0), "worktop slot %02d keeps the physical 89x89 visible and hit region" % (slot_offset + 4))
+		if slot_offset > 0:
+			_check(not previous_slot_rect.intersects(host.get_global_rect()), "worktop slots %02d and %02d do not overlap input" % [slot_offset + 3, slot_offset + 4])
+		previous_slot_rect = host.get_global_rect()
+	baocui_slot = tray.get_node("WorktopSlot07/BaocuiSlot") as FiveAreaMaterialSlot
+	_check(baocui_slot.material_texture.resource_path == "res://resources/art/ingredients/baocui/baocui_intact_v1.png", "physical worktop slot 07 displays real baocui artwork")
+	var youtiao_slots: Array[Node] = station.get("youtiao_dough_slots")
+	_check(youtiao_slots[0].get_global_rect().position.x == 1595.0 and youtiao_slots[2].get_global_rect().end.x == 1893.0, "youtiao dough aligns to worktop slots 16 through 18")
 	_check(units[0].position.x == 390.0 and units[1].position.x == 0.0 and units[2].position.x == 780.0, "logical griddles render center, left, right without slot reordering")
 	for index in 3:
 		var unit := units[index] as Control
 		_check(unit.visible and multi.get_global_rect().encloses(unit.get_global_rect()), "griddle %d remains fully inside the pancake operation region" % (index + 1))
+		var surface := unit.get_node("PancakeSurface") as PancakeHeatmap
+		var material := (surface.get_node("PancakeVisual") as TextureRect).material as ShaderMaterial
+		_check(unit.get_node_or_null("Frame") == null and unit.griddle_art.size.is_equal_approx(Vector2(405.6, 213.2)), "griddle %d uses the 1.3x ellipse without a rectangular frame" % (index + 1))
+		_check(surface.size.is_equal_approx(Vector2(278.2, 278.2)) and not surface.draw_pan_outline and surface.elliptical_hit_test, "griddle %d uses the enlarged aligned outline-free elliptical surface" % (index + 1))
+		_check(material != null and material.shader.resource_path == "res://resources/shaders/pancake_surface.gdshader", "griddle %d uses the production pancake shader instead of raw field pixels" % (index + 1))
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/PackagedDrinkStation") == null, "packaged-drink region is absent")
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/SteamerStation") == null, "steamer region is absent")
 
@@ -104,6 +172,7 @@ func _run() -> void:
 		var save_error := image.save_png(output_absolute)
 		_check(save_error == OK and image.get_size() == requested_size, "captured a real %dx%d GPU frame" % [requested_size.x, requested_size.y])
 		captured_paths.append(output_absolute)
+	_release_at(spread_target)
 	game.queue_free()
 	await process_frame
 	_finish(",".join(captured_paths))
@@ -126,6 +195,32 @@ func _prepare_surface(unit: Node, order: Dictionary, state: int, first_seconds: 
 	unit.state = state
 	unit.pancake_model.changed.emit()
 	unit.call("_refresh_ui")
+
+
+func _move_at(position: Vector2, button_mask: int = 0) -> void:
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	motion.global_position = position
+	motion.button_mask = button_mask
+	root.push_input(motion)
+
+
+func _press_at(position: Vector2) -> void:
+	var pressed := InputEventMouseButton.new()
+	pressed.button_index = MOUSE_BUTTON_LEFT
+	pressed.pressed = true
+	pressed.position = position
+	pressed.global_position = position
+	root.push_input(pressed)
+
+
+func _release_at(position: Vector2) -> void:
+	var released := InputEventMouseButton.new()
+	released.button_index = MOUSE_BUTTON_LEFT
+	released.pressed = false
+	released.position = position
+	released.global_position = position
+	root.push_input(released)
 
 
 func _check(condition: bool, message: String) -> void:

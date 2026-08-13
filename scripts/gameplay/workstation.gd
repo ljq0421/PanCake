@@ -1108,6 +1108,11 @@ func _formal_order_time_paused() -> bool:
 func _advance_business_day_timer(delta: float) -> void:
 	if business_day_timer == null or _business_day_closed:
 		return
+	if _active_formal_order_is_tutorial():
+		if business_day_timer_label != null:
+			business_day_timer_label.text = "教学中"
+			business_day_timer_label.add_theme_color_override("font_color", Color(1, 0.82, 0.34, 1))
+		return
 	var timer_state: Dictionary = business_day_timer.call("advance", delta)
 	var remaining := maxi(int(timer_state.get("remaining_whole_seconds", 0)), 0)
 	var warning_active := bool(timer_state.get("warning_active", false))
@@ -1131,6 +1136,14 @@ func _advance_business_day_timer(delta: float) -> void:
 			_business_day_expiration_pending = true
 			return
 		_end_business_day_for_timer()
+
+
+func _active_formal_order_is_tutorial() -> bool:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("active_formal_order"):
+		var active_order := Dictionary(game_session.call("active_formal_order"))
+		return not active_order.is_empty() and bool(active_order.get("tutorial_no_countdown", false))
+	return p1_session != null and not p1_session.order.is_empty() and bool(p1_session.order.get("tutorial_no_countdown", false))
 
 
 func _should_defer_business_day_expiration() -> bool:

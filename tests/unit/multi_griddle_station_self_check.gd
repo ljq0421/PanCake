@@ -5,12 +5,13 @@ const STATION_SCENE := preload("res://scenes/gameplay/multi_griddle_station.tscn
 class FakeProgression:
 	extends RefCounted
 	var stock_capacity := 6
+	var wide_spreader := false
 
 	func owns_stock(_stock_id: StringName) -> bool:
 		return true
 
-	func owns_growth(_growth_id: StringName) -> bool:
-		return false
+	func owns_growth(growth_id: StringName) -> bool:
+		return growth_id == &"growth.tool.pancake.wide_spreader" and wide_spreader
 
 
 class FakeSession:
@@ -73,6 +74,7 @@ func _run() -> void:
 	var station := STATION_SCENE.instantiate()
 	root.add_child(station)
 	await process_frame
+	_check(station.get_node_or_null("Background") == null, "multi-griddle station has no redundant outer background frame")
 	station.bind_session(session, Callable(self, "_order"))
 	station.set_griddle_count(1)
 	_check(is_equal_approx(station.units[0].position.x, 390.0), "logical slot 0 is displayed as the center main griddle")
@@ -83,9 +85,48 @@ func _run() -> void:
 	_check(int(session.inventory["stock.pancake.batter"]) == locked_batter_before, "clicking a locked griddle does not consume batter")
 	station.set_griddle_count(3)
 	_check(station.griddle_count() == 3, "advanced station exposes three griddles")
+	var visual_unit: Node = station.units[0]
+	var visual_surface: Control = visual_unit.pancake_surface
+	var visual_material := visual_unit.pancake_visual.material as ShaderMaterial
+	_check(visual_unit.get_node_or_null("Frame") == null, "compact griddle renders without a rectangular panel frame")
+	_check(visual_unit.griddle_art.position.is_equal_approx(Vector2(-22.8, 11.4)) and visual_unit.griddle_art.size.is_equal_approx(Vector2(405.6, 213.2)), "griddle artwork is exactly 1.3x the former 312x164 display while preserving its center")
+	_check(visual_surface.position.is_equal_approx(Vector2(40.9, -24.1)) and visual_surface.size.is_equal_approx(Vector2(278.2, 278.2)), "compact pancake surface is exactly 1.3x the former 214x214 coordinate space while preserving its center")
+	_check(not visual_surface.draw_pan_outline and visual_surface.elliptical_hit_test and not visual_surface.draw_spreader_fallback and not visual_surface.draw_sauce_brush_fallback, "compact surface disables legacy drawn tools and uses elliptical hit testing without the brown outline")
+	_check(visual_material != null and visual_material.shader.resource_path == "res://resources/shaders/pancake_surface.gdshader", "compact pancake visual uses the production material shader")
+	_check(not visual_surface._has_point(Vector2.ZERO) and visual_surface._has_point(visual_surface.size * 0.5), "compact surface rejects rectangular corner input while accepting the real pan center")
+	_check(visual_unit.spreader_artwork.get_index() > visual_unit.ingredient_layer.get_index() and visual_unit.sauce_brush_artwork.get_index() > visual_unit.ingredient_layer.get_index(), "real compact tools render above batter and ingredients")
+	var worktop: Control = station.shared_tool_tray
+	_check(worktop.get_node_or_null("Background") == null and worktop.get_node_or_null("PhysicalToolRow") == null, "pancake materials use transparent authored worktop slots without a second tray row")
+	var expected_stock_ids := PackedStringArray([
+		"stock.pancake.batter", "", "stock.pancake.egg", "stock.pancake.baocui",
+		"stock.pancake.scallion", "stock.pancake.ham_sausage", "stock.pancake.meat_floss", "stock.pancake.coriander",
+		"stock.pancake.preserved_mustard", "stock.pancake.pork_tenderloin", "stock.pancake.sauce.sweet_flour", "stock.pancake.sauce.red_chili",
+	])
+	for slot_offset in 12:
+		var slot_name := "WorktopSlot%02d" % (slot_offset + 4)
+		var host := worktop.get_node(slot_name) as Control
+		_check(host.size == Vector2(89.0, 89.0) and host.get_child_count() == 1, "%s is one exact physical 89x89 worktop slot" % slot_name)
+		if slot_offset == 1:
+			_check(host.get_child(0).name == "SpreaderButton", "worktop slot 05 owns the spreader")
+		else:
+			_check(str((host.get_child(0) as FiveAreaMaterialSlot).stock_id) == expected_stock_ids[slot_offset], "%s owns the intended pancake stock" % slot_name)
+	var baocui_slot := worktop.get_node("WorktopSlot07/BaocuiSlot") as FiveAreaMaterialSlot
+	_check(baocui_slot.material_texture.resource_path == "res://resources/art/ingredients/baocui/baocui_intact_v1.png", "the worktop baocui slot uses the real crispy-cracker artwork instead of the bun image")
+	_check(visual_unit.ingredient_layer.baocui_texture.resource_path == "res://resources/art/ingredients/baocui/baocui_broken_v1.png", "the pancake topping layer uses the real broken baocui artwork")
 	for unit_index in 3:
 		station.call("_on_main_action", unit_index)
 	_check(int(session.inventory["stock.pancake.batter"]) == 0, "starting three griddles immediately consumes three portions of batter")
+	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
+	visual_unit.call("_on_surface_pointer_started", visual_surface.size * 0.5)
+	_check(visual_unit.spreader_artwork.visible and visual_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png", "basic real spreader artwork appears at the compact pan contact point")
+	visual_unit.call("_on_surface_pointer_ended", visual_surface.size * 0.5)
+	_check(not visual_unit.spreader_artwork.visible, "spreader artwork hides when the surface stroke ends")
+	session.progression.wide_spreader = true
+	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
+	visual_unit.call("_on_surface_pointer_started", visual_surface.size * 0.5)
+	_check(visual_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png", "wide-spreader ownership selects the matching real artwork")
+	visual_unit.call("_on_surface_pointer_ended", visual_surface.size * 0.5)
+	session.progression.wide_spreader = false
 	for unit_index in 3:
 		var unit: Node = station.units[unit_index]
 		unit.pancake_model.add_batter(Vector2(31.5, 31.5), 1.2, 27.0)
@@ -123,7 +164,9 @@ func _run() -> void:
 	_check(bool(Dictionary(station.drop_on_unit(2, youtiao_source, unit_two.pancake_surface.size * 0.5 + Vector2(8.0, 0.0))).get("success", false)) and session.youtiao_count == 0, "plain youtiao output is consumed only after a valid target drop")
 	station.call("_on_shared_tool_selected", &"stock.pancake.sauce.red_chili")
 	unit_two.call("_on_surface_pointer_started", unit_two.pancake_surface.size * 0.5)
+	_check(unit_two.sauce_brush_artwork.visible and unit_two.sauce_brush_artwork.texture.resource_path == "res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png", "real sauce-brush artwork appears for compact pan brushing")
 	unit_two.call("_on_surface_pointer_ended", unit_two.pancake_surface.size * 0.5)
+	_check(not unit_two.sauce_brush_artwork.visible, "sauce-brush artwork hides when brushing ends")
 	_check(unit_two.applied_sauce_ids.has("stock.pancake.sauce.red_chili"), "selected chili brush paints the chosen griddle instead of auto-filling the order")
 	station.call("_on_sauce_action", 0)
 	station.call("_on_ingredient_action", 0)

@@ -13,6 +13,11 @@ const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_mode
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const READY_DRAG_TEXTURE := preload("res://resources/art/workstation/packaging/paper_bag_package_v1.png")
+const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png")
+const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
+const SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png")
+const SPREADER_ART_ROTATION_OFFSET := 1.124
+const SAUCE_BRUSH_ART_ROTATION_OFFSET := 1.02
 const SURFACE_ACTION_NONE: StringName = &""
 const SURFACE_ACTION_SPREAD_BATTER: StringName = &"spread_batter"
 const SURFACE_ACTION_SPREAD_EGG: StringName = &"spread_egg"
@@ -20,12 +25,14 @@ const SURFACE_ACTION_BRUSH_SAUCE: StringName = &"brush_sauce"
 
 enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 
-@onready var frame: Panel = %Frame
 @onready var title_label: Label = %TitleLabel
 @onready var state_label: Label = %StateLabel
+@onready var griddle_art: TextureRect = %GriddleArt
 @onready var pancake_surface: PancakeHeatmap = %PancakeSurface
 @onready var pancake_visual: TextureRect = %PancakeVisual
 @onready var ingredient_layer: IngredientLayer = %IngredientLayer
+@onready var spreader_artwork: Sprite2D = %SpreaderArtwork
+@onready var sauce_brush_artwork: Sprite2D = %SauceBrushArtwork
 @onready var package_visual: TextureRect = %PackageVisual
 @onready var main_action: Button = %MainAction
 @onready var sauce_action: Button = %SauceAction
@@ -56,6 +63,7 @@ var _surface_stock_id: StringName = &""
 var _surface_changed := false
 var _surface_width_multiplier := 1.0
 var _sauce_stroke_id := -1
+var _last_tool_direction := Vector2(0.45, 0.89).normalized()
 
 
 func _ready() -> void:
@@ -76,6 +84,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var step := maxf(delta, 0.0)
 	if pancake_surface.pointer_pressed:
+		_update_surface_tool_artwork(pancake_surface.pointer_local_position)
 		match _surface_action:
 			SURFACE_ACTION_SPREAD_BATTER:
 				_process_manual_spread(step)
@@ -330,6 +339,9 @@ func _on_surface_pointer_started(local_position: Vector2) -> void:
 	_surface_stock_id = StringName(action_result.get("stock_id", &""))
 	_surface_width_multiplier = maxf(float(action_result.get("width_multiplier", 1.0)), 1.0)
 	_surface_changed = false
+	var radial := local_position - pancake_surface.size * 0.5
+	if radial.length_squared() > 0.0001:
+		_last_tool_direction = radial.normalized()
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
 	if _surface_action == SURFACE_ACTION_SPREAD_BATTER and pancake_model.covered_cell_count() <= 0:
 		_surface_changed = pancake_model.add_batter(grid_position, 1.35, 8.0) > 0
@@ -339,6 +351,7 @@ func _on_surface_pointer_started(local_position: Vector2) -> void:
 	_spread_previous_grid = grid_position
 	_spread_has_previous = true
 	_refresh_surface_cursor()
+	_update_surface_tool_artwork(local_position)
 
 
 func _on_surface_pointer_ended(_local_position: Vector2) -> void:
@@ -365,6 +378,8 @@ func _process_manual_spread(delta: float) -> void:
 		_spread_has_previous = true
 	var movement: Vector2 = current - _spread_previous_grid
 	var direction: Vector2 = movement.normalized() if movement.length_squared() > 0.0001 else Vector2.RIGHT
+	if movement.length_squared() > 0.0001:
+		_last_tool_direction = direction
 	var speed: float = movement.length() / maxf(delta, 0.001)
 	var result := Dictionary(pancake_model.apply_scraper_sample(current, direction, speed, _surface_width_multiplier))
 	_surface_changed = bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0 or _surface_changed
@@ -378,6 +393,8 @@ func _process_egg_spread(delta: float) -> void:
 		_spread_has_previous = true
 	var movement := current - _spread_previous_grid
 	var direction: Vector2 = movement.normalized() if movement.length_squared() > 0.0001 else Vector2.RIGHT
+	if movement.length_squared() > 0.0001:
+		_last_tool_direction = direction
 	var speed: float = movement.length() / maxf(delta, 0.001)
 	var result := Dictionary(pancake_model.apply_egg_spreader_sample(current, direction, speed, true, _surface_width_multiplier))
 	_surface_changed = bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0 or _surface_changed
@@ -386,7 +403,13 @@ func _process_egg_spread(delta: float) -> void:
 
 func _process_sauce_brush() -> void:
 	var current := Vector2(PancakeSpace.local_to_grid(pancake_surface.pointer_local_position, pancake_surface.size, pancake_model.grid_size))
+	if _spread_has_previous:
+		var movement := current - _spread_previous_grid
+		if movement.length_squared() > 0.0001:
+			_last_tool_direction = movement.normalized()
 	_surface_changed = _apply_sauce_sample(current) or _surface_changed
+	_spread_previous_grid = current
+	_spread_has_previous = true
 
 
 func _apply_sauce_sample(grid_position: Vector2) -> bool:
@@ -497,6 +520,7 @@ func _reset_surface_action() -> void:
 	_sauce_stroke_id = -1
 	_spread_has_previous = false
 	_refresh_surface_cursor()
+	_refresh_tool_artwork_visibility()
 
 
 func _refresh_surface_cursor() -> void:
@@ -507,6 +531,31 @@ func _refresh_surface_cursor() -> void:
 	pancake_surface.cursor_radius_pixels = 16.0 * _surface_width_multiplier
 	pancake_surface.cursor_sauce_color = Color(0.82, 0.10, 0.04, 0.98) if _surface_stock_id == &"stock.pancake.sauce.red_chili" else Color(0.34, 0.08, 0.035, 0.98)
 	pancake_surface.queue_redraw()
+
+
+func _update_surface_tool_artwork(local_position: Vector2) -> void:
+	if not is_node_ready():
+		return
+	var inside_pan := PancakeSpace.is_inside_pan(local_position, pancake_surface.size, pancake_model.parameters.pan_height_ratio)
+	var spreading := _surface_action in [SURFACE_ACTION_SPREAD_BATTER, SURFACE_ACTION_SPREAD_EGG]
+	var brushing := _surface_action == SURFACE_ACTION_BRUSH_SAUCE
+	spreader_artwork.visible = spreading and inside_pan
+	sauce_brush_artwork.visible = brushing and inside_pan
+	if spreader_artwork.visible:
+		spreader_artwork.texture = SPREADER_WIDE if _surface_width_multiplier > 1.0 else SPREADER_NORMAL
+		spreader_artwork.position = local_position
+		spreader_artwork.rotation = _last_tool_direction.angle() + SPREADER_ART_ROTATION_OFFSET
+	if sauce_brush_artwork.visible:
+		sauce_brush_artwork.texture = SAUCE_BRUSH_TEXTURE
+		sauce_brush_artwork.position = local_position
+		sauce_brush_artwork.rotation = _last_tool_direction.angle() + SAUCE_BRUSH_ART_ROTATION_OFFSET
+
+
+func _refresh_tool_artwork_visibility() -> void:
+	if not is_node_ready():
+		return
+	spreader_artwork.visible = false
+	sauce_brush_artwork.visible = false
 
 
 func _fold_region(region: StringName) -> void:
@@ -523,7 +572,7 @@ func _refresh_ui() -> void:
 	if not is_node_ready():
 		return
 	title_label.text = _display_name
-	frame.modulate = Color(0.55, 0.50, 0.44, 0.78) if upgrade_locked else Color.WHITE
+	griddle_art.modulate = Color(0.55, 0.50, 0.44, 0.78) if upgrade_locked else Color.WHITE
 	if upgrade_locked:
 		state_label.text = "升级鏊台后解锁"
 		pancake_surface.visible = false
@@ -563,6 +612,7 @@ func _refresh_ui() -> void:
 			state_label.text = "成品待自由交付"
 			main_action.text = "拖到匹配订单"
 	main_action.disabled = state in [State.BATTER, State.GARNISH, State.FOLDING, State.READY]
+	main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE if main_action.disabled else Control.MOUSE_FILTER_STOP
 	sauce_action.visible = false
 	ingredient_action.visible = false
 	fold_action.visible = state in [State.GARNISH, State.FOLDING]

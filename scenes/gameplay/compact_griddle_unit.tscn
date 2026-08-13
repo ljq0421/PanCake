@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png" id="2_griddle"]
@@ -7,27 +7,22 @@
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="5_heatmap"]
 [ext_resource type="Script" path="res://scripts/ui/ingredient_layer.gd" id="6_ingredient_layer"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v2_five_area_v2.png" id="7_egg"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1_five_area_v2.png" id="8_baocui"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="8_baocui"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1_five_area_v2.png" id="9_ham"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png" id="10_scallion"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1_five_area_v2.png" id="11_floss"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1_five_area_v2.png" id="12_tenderloin"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png" id="13_coriander"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png" id="14_mustard"]
-
-[sub_resource type="StyleBoxFlat" id="FrameStyle"]
-bg_color = Color(0.16, 0.09, 0.045, 0.97)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.84, 0.49, 0.16, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-shadow_color = Color(0.05, 0.02, 0.01, 0.55)
-shadow_size = 8
+[ext_resource type="Shader" path="res://resources/shaders/pancake_surface.gdshader" id="15_pancake_shader"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_cooked_texture_v1.png" id="16_cooked"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_charred_texture_v1.png" id="17_charred"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_edge_texture_v1.png" id="18_edge"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/egg_spread_material_v1.png" id="19_egg_surface"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png" id="20_sweet_sauce"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png" id="21_chili_sauce"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png" id="22_spreader"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png" id="24_sauce_brush"]
 
 [sub_resource type="StyleBoxFlat" id="ActionStyle"]
 bg_color = Color(0.88, 0.47, 0.13, 0.94)
@@ -48,6 +43,20 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="ShaderMaterial" id="PancakeMaterial"]
+shader = ExtResource("15_pancake_shader")
+shader_parameter/raw_texture = ExtResource("3_pancake")
+shader_parameter/cooked_texture = ExtResource("16_cooked")
+shader_parameter/charred_texture = ExtResource("17_charred")
+shader_parameter/edge_texture = ExtResource("18_edge")
+shader_parameter/egg_surface_texture = ExtResource("19_egg_surface")
+shader_parameter/sweet_sauce_texture = ExtResource("20_sweet_sauce")
+shader_parameter/chili_sauce_texture = ExtResource("21_chili_sauce")
+shader_parameter/field_texel_size = Vector2(0.0104167, 0.0104167)
+shader_parameter/pan_height_ratio = 0.694
+shader_parameter/fold_left_line_ratio = 0.38
+shader_parameter/fold_right_line_ratio = 0.62
+
 [node name="CompactGriddleUnit" type="Control"]
 custom_minimum_size = Vector2(360, 292)
 layout_mode = 3
@@ -57,17 +66,6 @@ offset_bottom = 292.0
 mouse_filter = 1
 script = ExtResource("1_script")
 
-[node name="Frame" type="Panel" parent="."]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("FrameStyle")
-
 [node name="TitleLabel" type="Label" parent="."]
 unique_name_in_owner = true
 offset_left = 16.0
@@ -75,6 +73,8 @@ offset_top = 8.0
 offset_right = 108.0
 offset_bottom = 34.0
 theme_override_colors/font_color = Color(1, 0.84, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.055, 0.02, 0.96)
+theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 20
 text = "鏊子 1"
 
@@ -85,16 +85,18 @@ offset_top = 10.0
 offset_right = 344.0
 offset_bottom = 34.0
 theme_override_colors/font_color = Color(1, 0.94, 0.82, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.055, 0.02, 0.96)
+theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 16
 text = "空闲 · 等待接单"
 horizontal_alignment = 2
 
 [node name="GriddleArt" type="TextureRect" parent="."]
 unique_name_in_owner = true
-offset_left = 24.0
-offset_top = 36.0
-offset_right = 336.0
-offset_bottom = 200.0
+offset_left = -22.8
+offset_top = 11.4
+offset_right = 382.8
+offset_bottom = 224.6
 mouse_filter = 2
 texture = ExtResource("2_griddle")
 expand_mode = 1
@@ -103,18 +105,24 @@ stretch_mode = 6
 [node name="PancakeSurface" type="Control" parent="."]
 unique_name_in_owner = true
 visible = false
-offset_left = 92.0
-offset_top = 65.0
-offset_right = 268.0
-offset_bottom = 166.0
+offset_left = 40.9
+offset_top = -24.1
+offset_right = 319.1
+offset_bottom = 254.1
 mouse_filter = 0
 script = ExtResource("5_heatmap")
 heatmap_update_hz = 15.0
 render_texture_size = 96
 draw_pointer_trace = true
+draw_pan_outline = false
+elliptical_hit_test = true
+draw_spreader_fallback = false
+draw_sauce_brush_fallback = false
 
 [node name="PancakeVisual" type="TextureRect" parent="PancakeSurface"]
 unique_name_in_owner = true
+show_behind_parent = true
+material = SubResource("PancakeMaterial")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -145,6 +153,27 @@ pork_tenderloin_texture = ExtResource("12_tenderloin")
 coriander_texture = ExtResource("13_coriander")
 preserved_mustard_texture = ExtResource("14_mustard")
 
+[node name="SpreaderArtwork" type="Sprite2D" parent="PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+z_index = 4
+texture_filter = 1
+position = Vector2(139.1, 139.1)
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("22_spreader")
+offset = Vector2(15, 90)
+
+[node name="SauceBrushArtwork" type="Sprite2D" parent="PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+z_index = 5
+texture_filter = 1
+position = Vector2(139.1, 139.1)
+rotation = -0.6
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("24_sauce_brush")
+offset = Vector2(0, 96)
+
 [node name="PackageVisual" type="TextureRect" parent="."]
 unique_name_in_owner = true
 visible = false
@@ -160,9 +189,9 @@ stretch_mode = 5
 [node name="MainAction" type="Button" parent="."]
 unique_name_in_owner = true
 offset_left = 68.0
-offset_top = 166.0
+offset_top = 226.0
 offset_right = 292.0
-offset_bottom = 206.0
+offset_bottom = 250.0
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("ActionStyle")
@@ -173,9 +202,9 @@ text = "添面糊"
 [node name="HeatBar" type="ProgressBar" parent="."]
 unique_name_in_owner = true
 offset_left = 28.0
-offset_top = 210.0
+offset_top = 212.0
 offset_right = 332.0
-offset_bottom = 222.0
+offset_bottom = 224.0
 mouse_filter = 2
 show_percentage = false
 
@@ -183,9 +212,9 @@ show_percentage = false
 unique_name_in_owner = true
 visible = false
 offset_left = 18.0
-offset_top = 230.0
+offset_top = 252.0
 offset_right = 126.0
-offset_bottom = 268.0
+offset_bottom = 290.0
 theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("SecondaryStyle")
 text = "挤下一种酱"
@@ -194,9 +223,9 @@ text = "挤下一种酱"
 unique_name_in_owner = true
 visible = false
 offset_left = 130.0
-offset_top = 230.0
+offset_top = 252.0
 offset_right = 242.0
-offset_bottom = 268.0
+offset_bottom = 290.0
 theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("SecondaryStyle")
 text = "放下一种料"
@@ -205,9 +234,9 @@ text = "放下一种料"
 unique_name_in_owner = true
 visible = false
 offset_left = 246.0
-offset_top = 230.0
+offset_top = 252.0
 offset_right = 342.0
-offset_bottom = 268.0
+offset_bottom = 290.0
 theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("ActionStyle")
 text = "折叠"

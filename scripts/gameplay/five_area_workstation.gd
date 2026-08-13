@@ -395,11 +395,7 @@ func _refresh_multi_griddle_mode() -> void:
 	multi_griddle_station.visible = true
 	multi_griddle_station.process_mode = Node.PROCESS_MODE_INHERIT
 	multi_griddle_station.set_griddle_count(griddle_count)
-	for legacy_path in ["SafeArea/PanBase", "SafeArea/LeftRack", "SafeArea/RightRack", "SafeArea/IngredientRack", "SafeArea/MaterialDock", "SafeArea/P1ControlBar"]:
-		var legacy_control := get_node_or_null(legacy_path) as Control
-		if legacy_control != null:
-			legacy_control.visible = not _multi_griddle_mode_active
-			legacy_control.mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_DISABLED
+	_apply_multi_griddle_legacy_visibility()
 	# Every compact griddle owns a dedicated discard action. The old global
 	# discard controls sat above the third griddle and intercepted its input.
 	waste_area.visible = false
@@ -409,10 +405,41 @@ func _refresh_multi_griddle_mode() -> void:
 		legacy_discard.visible = false
 
 
+func _apply_multi_griddle_legacy_visibility() -> void:
+	if not _multi_griddle_mode_active:
+		return
+	for legacy_path in ["SafeArea/PanBase", "SafeArea/LeftRack", "SafeArea/RightRack", "SafeArea/IngredientRack", "SafeArea/MaterialDock", "SafeArea/P1ControlBar", "SafeArea/PhaseLabel"]:
+		var legacy_control := get_node_or_null(legacy_path) as Control
+		if legacy_control != null:
+			legacy_control.visible = false
+			legacy_control.mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_DISABLED
+	_hide_unused_worktop_locks()
+
+
+func _hide_unused_worktop_locks() -> void:
+	var retained_lock_names := {
+		&"Slot01": true, &"Slot02": true, &"Slot03": true,
+		&"Slot04": true, &"Slot05": true, &"Slot06": true,
+	}
+	var old_artwork := get_node_or_null("SafeArea/LockedIngredientArtwork")
+	if old_artwork != null:
+		for child in old_artwork.get_children():
+			if child is CanvasItem and not retained_lock_names.has(StringName(child.name)):
+				child.visible = false
+	var old_interactions := get_node_or_null("SafeArea/LockedIngredientInteractions")
+	if old_interactions != null:
+		for child in old_interactions.get_children():
+			var slot_name := str(child.name).trim_suffix("LockedButton")
+			if child is Control and not retained_lock_names.has(StringName(slot_name)):
+				child.visible = false
+				child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
 func _refresh_p1_ui() -> void:
 	super._refresh_p1_ui()
 	if not _multi_griddle_mode_active:
 		return
+	_apply_multi_griddle_legacy_visibility()
 	# The inherited single-griddle refresh normally re-enables its redo button.
 	# Compact griddles already expose one discard action per surface.
 	if discard_current_pancake_button != null:

@@ -26,6 +26,8 @@ func _run() -> void:
 	var product: Dictionary = result.get("product", {})
 	var coriander_product: Dictionary = service.call("create_product_snapshot", {"applied_ingredient_ids": [&"coriander"], "applied_sauce_ids": []}, {"id": &"order.pancake.coriander", "heat_preference": &"golden"})
 	_check(Array(coriander_product.get("ingredient_ids", [])).has("stock.pancake.coriander") and int(coriander_product.get("material_cost", 0)) == 2, "coriander maps to its stable product and full material-cost records")
+	var multi_product: Dictionary = service.call("create_product_snapshot", {"applied_ingredient_ids": [], "applied_sauce_ids": []}, {}, {}, &"product_instance.pancake_griddle.2.17")
+	_check(StringName(multi_product.get("product_instance_id", &"")) == &"product_instance.pancake_griddle.2.17", "snapshot API accepts a stable multi-griddle product ID without changing legacy calls")
 	var double_egg_product: Dictionary = service.call("create_product_snapshot", {
 		"applied_ingredient_ids": [&"egg", &"baocui"],
 		"applied_ingredient_quantities": {&"egg": 2, &"baocui": 1},

@@ -395,10 +395,11 @@ func _refresh_multi_griddle_mode() -> void:
 	multi_griddle_station.visible = true
 	multi_griddle_station.process_mode = Node.PROCESS_MODE_INHERIT
 	multi_griddle_station.set_griddle_count(griddle_count)
-	for legacy_path in ["SafeArea/PanBase", "SafeArea/LeftRack", "SafeArea/RightRack", "SafeArea/P1ControlBar"]:
-		var legacy_control := get_node_or_null(legacy_path) as CanvasItem
+	for legacy_path in ["SafeArea/PanBase", "SafeArea/LeftRack", "SafeArea/RightRack", "SafeArea/IngredientRack", "SafeArea/MaterialDock", "SafeArea/P1ControlBar"]:
+		var legacy_control := get_node_or_null(legacy_path) as Control
 		if legacy_control != null:
 			legacy_control.visible = not _multi_griddle_mode_active
+			legacy_control.mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_DISABLED
 	# Every compact griddle owns a dedicated discard action. The old global
 	# discard controls sat above the third griddle and intercepted its input.
 	waste_area.visible = false

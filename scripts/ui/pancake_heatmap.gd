@@ -2,13 +2,16 @@ class_name PancakeHeatmap
 extends Control
 
 
-func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	if not data is Dictionary:
 		return false
 	var payload := Dictionary(data)
 	if StringName(payload.get("kind", &"")) != &"product_source":
 		return false
 	var source_ref := Dictionary(payload.get("source_ref", {}))
+	var target := _find_surface_drop_target()
+	if target != null:
+		return bool(target.call("can_accept_pancake_surface_drop", source_ref, at_position))
 	return (
 		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
 		and StringName(source_ref.get("source_kind", &"")) in [&"youtiao_output", &"prepared_product_slot"]
@@ -16,11 +19,25 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
+	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
+	var target := _find_surface_drop_target()
+	if target != null:
+		target.call("accept_pancake_surface_drop", source_ref, at_position)
+		return
 	var workstation := _find_workstation()
 	if workstation == null:
 		return
 	var global_drop_position := get_global_transform_with_canvas() * at_position
-	workstation.call("place_youtiao_source_on_pancake", Dictionary(Dictionary(data).get("source_ref", {})), global_drop_position)
+	workstation.call("place_youtiao_source_on_pancake", source_ref, global_drop_position)
+
+
+func _find_surface_drop_target() -> Node:
+	var candidate: Node = self
+	while candidate != null:
+		if candidate.has_method("can_accept_pancake_surface_drop") and candidate.has_method("accept_pancake_surface_drop"):
+			return candidate
+		candidate = candidate.get_parent()
+	return null
 
 
 func _find_workstation() -> Node:

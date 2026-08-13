@@ -444,7 +444,7 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 0
 offset_right = 1170.0
-offset_bottom = 340.0
+offset_bottom = 444.0
 
 [node name="PancakeReadySource" type="TextureButton" parent="FiveAreaInfrastructure"]
 unique_name_in_owner = true

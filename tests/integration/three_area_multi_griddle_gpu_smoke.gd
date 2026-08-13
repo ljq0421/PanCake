@@ -1,7 +1,11 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const SCREENSHOT_PATH := "res://tmp/validation/three_area_multi_griddle_gpu_1920x1080.png"
+const SCREENSHOT_SPECS := [
+	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/three_area_multi_griddle_gpu_1920x1080.png"},
+	{"size": Vector2i(1366, 768), "path": "res://tmp/validation/three_area_multi_griddle_gpu_1366x768.png"},
+	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/three_area_multi_griddle_gpu_1280x720.png"},
+]
 
 var failures := PackedStringArray()
 
@@ -51,8 +55,11 @@ func _run() -> void:
 	_prepare_surface(units[0], order, 2, 2.2, 0.0)
 	_prepare_surface(units[1], order, 3, 2.7, 1.8)
 	_prepare_surface(units[2], order, 4, 2.9, 2.5)
-	units[2].call("apply_sauce", &"stock.pancake.sauce.sweet_flour")
-	units[2].call("apply_ingredient", &"stock.pancake.egg")
+	var unit_two: Node = units[2]
+	multi.call("_on_shared_tool_selected", &"stock.pancake.sauce.sweet_flour")
+	unit_two.call("_on_surface_pointer_started", unit_two.pancake_surface.size * 0.5)
+	unit_two.call("_on_surface_pointer_ended", unit_two.pancake_surface.size * 0.5)
+	multi.call("drop_on_unit", 2, {"source_kind": &"pancake_shared_ingredient", "stock_id": &"stock.pancake.baocui"}, unit_two.pancake_surface.size * 0.5 + Vector2(8.0, 0.0))
 	units[2].call("_refresh_ui")
 	for _frame in 4:
 		await process_frame
@@ -68,21 +75,38 @@ func _run() -> void:
 	_check(soy.get_global_rect().end.x < pancake.get_global_rect().position.x and pancake.get_global_rect().end.x < youtiao.get_global_rect().position.x, "the visual order is soy, pancake, youtiao")
 	_check(not (station.get_node("FiveAreaInfrastructure/WasteArea") as Control).visible, "legacy global waste target does not cover a compact griddle")
 	_check(not (station.get_node("SafeArea/DiscardCurrentPancakeButton") as Control).visible, "legacy single-griddle redo button does not cover the third griddle")
+	var old_rack := station.get_node("SafeArea/IngredientRack") as Control
+	_check(not old_rack.visible and old_rack.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "legacy single-griddle topping drag layer is hidden and input-disabled")
+	var old_material_dock := station.get_node("SafeArea/MaterialDock") as Control
+	_check(not old_material_dock.visible and old_material_dock.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "legacy material-slot and transparent lock layers are hidden and input-disabled")
+	var tray := multi.get_node("SharedToolTray") as Control
+	var tray_row := tray.get_node("PhysicalToolRow") as HBoxContainer
+	_check(tray.visible and tray_row.get_child_count() == 12, "shared physical tray exposes batter, spreader, eight toppings, and two sauces")
+	_check(tray.get_global_rect().position.x >= 350.0 and tray.get_global_rect().end.x <= 1550.0 and tray.get_global_rect().position.y >= 940.0, "shared tray occupies the pancake-only bottom worktop band")
+	_check(not tray.get_global_rect().intersects(soy.get_global_rect()) and not tray.get_global_rect().intersects(youtiao.get_global_rect()), "shared tray does not enter soy or youtiao hit regions")
+	_check(units[0].position.x == 390.0 and units[1].position.x == 0.0 and units[2].position.x == 780.0, "logical griddles render center, left, right without slot reordering")
 	for index in 3:
 		var unit := units[index] as Control
 		_check(unit.visible and multi.get_global_rect().encloses(unit.get_global_rect()), "griddle %d remains fully inside the pancake operation region" % (index + 1))
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/PackagedDrinkStation") == null, "packaged-drink region is absent")
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/SteamerStation") == null, "steamer region is absent")
 
-	await RenderingServer.frame_post_draw
-	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)
-	DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
-	var image := root.get_texture().get_image()
-	var save_error := image.save_png(output_absolute)
-	_check(save_error == OK and image.get_size() == Vector2i(1920, 1080), "captured a real 1920x1080 GPU frame")
+	var captured_paths := PackedStringArray()
+	for screenshot_spec in SCREENSHOT_SPECS:
+		var requested_size: Vector2i = screenshot_spec["size"]
+		DisplayServer.window_set_size(requested_size)
+		for _frame in 4:
+			await process_frame
+		await RenderingServer.frame_post_draw
+		var output_absolute := ProjectSettings.globalize_path(str(screenshot_spec["path"]))
+		DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
+		var image := root.get_texture().get_image()
+		var save_error := image.save_png(output_absolute)
+		_check(save_error == OK and image.get_size() == requested_size, "captured a real %dx%d GPU frame" % [requested_size.x, requested_size.y])
+		captured_paths.append(output_absolute)
 	game.queue_free()
 	await process_frame
-	_finish(output_absolute)
+	_finish(",".join(captured_paths))
 
 
 func _prepare_surface(unit: Node, order: Dictionary, state: int, first_seconds: float, second_seconds: float) -> void:

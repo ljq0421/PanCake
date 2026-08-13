@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/multi_griddle_station.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/compact_griddle_unit.tscn" id="2_unit"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/shared_pancake_tool_tray.tscn" id="3_tray"]
 
 [sub_resource type="StyleBoxFlat" id="StationStyle"]
 bg_color = Color(0.10, 0.055, 0.025, 0.96)
@@ -25,11 +26,11 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [node name="MultiGriddleStation" type="Control"]
-custom_minimum_size = Vector2(1170, 340)
+custom_minimum_size = Vector2(1170, 444)
 layout_mode = 3
 anchors_preset = 0
 offset_right = 1170.0
-offset_bottom = 340.0
+offset_bottom = 444.0
 mouse_filter = 1
 script = ExtResource("1_script")
 
@@ -65,15 +66,15 @@ horizontal_alignment = 2
 
 [node name="Griddle01" parent="." instance=ExtResource("2_unit")]
 unique_name_in_owner = true
+offset_left = 390.0
 offset_top = 36.0
-offset_right = 360.0
+offset_right = 750.0
 offset_bottom = 328.0
 
 [node name="Griddle02" parent="." instance=ExtResource("2_unit")]
 unique_name_in_owner = true
-offset_left = 390.0
 offset_top = 36.0
-offset_right = 750.0
+offset_right = 360.0
 offset_bottom = 328.0
 
 [node name="Griddle03" parent="." instance=ExtResource("2_unit")]
@@ -82,3 +83,9 @@ offset_left = 780.0
 offset_top = 36.0
 offset_right = 1140.0
 offset_bottom = 328.0
+
+[node name="SharedToolTray" parent="." instance=ExtResource("3_tray")]
+unique_name_in_owner = true
+offset_top = 334.0
+offset_right = 1170.0
+offset_bottom = 444.0

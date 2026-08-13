@@ -56,8 +56,16 @@ func formal_order_from_legacy(order: Dictionary) -> Dictionary:
 	return {"order_id": StringName(order.get("id", &"")), "product_id": &"product.pancake.custom", "heat_preference": StringName(order.get("heat_preference", &"")), "ingredient_ids": ingredient_ids, "sauce_ids": sauce_ids}
 
 
-func create_product_snapshot(score_result: Dictionary, order: Dictionary, fold_snapshot: Dictionary = {}) -> Dictionary:
+func create_product_snapshot(
+	score_result: Dictionary,
+	order: Dictionary,
+	fold_snapshot: Dictionary = {},
+	product_instance_id_override: StringName = &""
+) -> Dictionary:
 	_product_sequence += 1
+	var product_instance_id := product_instance_id_override
+	if product_instance_id.is_empty():
+		product_instance_id = StringName("product_instance.pancake.%d" % _product_sequence)
 	var ingredient_ids := PackedStringArray()
 	for ingredient_id in Array(score_result.get("applied_ingredient_ids", [])):
 		var stock_id: StringName = LEGACY_INGREDIENT_TO_STOCK.get(StringName(ingredient_id), &"")
@@ -71,7 +79,7 @@ func create_product_snapshot(score_result: Dictionary, order: Dictionary, fold_s
 	var ingredient_cost_stock_ids := _ingredient_cost_stock_ids(score_result, ingredient_ids)
 	var cost_stock_ids := _cost_stock_ids(ingredient_cost_stock_ids, sauce_ids)
 	return {
-		"product_instance_id": &"product_instance.pancake.%d" % _product_sequence,
+		"product_instance_id": product_instance_id,
 		"product_id": &"product.pancake.custom",
 		"heat_preference": _actual_heat_preference(score_result),
 		"ingredient_ids": ingredient_ids,

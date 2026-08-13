@@ -2,14 +2,31 @@ extends SceneTree
 
 const STATION_SCENE := preload("res://scenes/gameplay/multi_griddle_station.tscn")
 
+class FakeProgression:
+	extends RefCounted
+	var stock_capacity := 6
+
+	func owns_stock(_stock_id: StringName) -> bool:
+		return true
+
+	func owns_growth(_growth_id: StringName) -> bool:
+		return false
+
+
 class FakeSession:
 	extends Node
+	var progression := FakeProgression.new()
+	var youtiao_count := 1
 	var inventory := {
 		"stock.pancake.batter": 3,
 		"stock.pancake.egg": 3,
 		"stock.pancake.baocui": 3,
 		"stock.pancake.sauce.sweet_flour": 3,
+		"stock.pancake.sauce.red_chili": 3,
 	}
+
+	func progression_service() -> RefCounted:
+		return progression
 
 	func inventory_snapshot() -> Dictionary:
 		return inventory.duplicate(true)
@@ -26,6 +43,15 @@ class FakeSession:
 
 	func take_prepared_product(_slot_id: StringName) -> Dictionary:
 		return {"success": false, "reason": &"empty"}
+
+	func preview_take_ready_youtiao_for_pancake() -> Dictionary:
+		return {"success": youtiao_count > 0, "reason": &"" if youtiao_count > 0 else &"empty"}
+
+	func take_ready_youtiao_for_pancake() -> Dictionary:
+		if youtiao_count <= 0:
+			return {"success": false, "reason": &"empty"}
+		youtiao_count -= 1
+		return {"success": true}
 
 
 var failures := PackedStringArray()
@@ -48,6 +74,13 @@ func _run() -> void:
 	root.add_child(station)
 	await process_frame
 	station.bind_session(session, Callable(self, "_order"))
+	station.set_griddle_count(1)
+	_check(is_equal_approx(station.units[0].position.x, 390.0), "logical slot 0 is displayed as the center main griddle")
+	_check(is_equal_approx(station.units[1].position.x, 0.0), "logical slot 1 is displayed as the left griddle")
+	_check(is_equal_approx(station.units[2].position.x, 780.0), "logical slot 2 is displayed as the right griddle")
+	var locked_batter_before := int(session.inventory["stock.pancake.batter"])
+	station.call("_on_main_action", 1)
+	_check(int(session.inventory["stock.pancake.batter"]) == locked_batter_before, "clicking a locked griddle does not consume batter")
 	station.set_griddle_count(3)
 	_check(station.griddle_count() == 3, "advanced station exposes three griddles")
 	for unit_index in 3:
@@ -60,10 +93,38 @@ func _run() -> void:
 		unit.state = 2
 		unit.first_side_seconds = 2.5
 		unit.pancake_model.advance_cooking(2.5, unit.p1_session.heat_level)
+	var unit_one: Node = station.units[1]
+	var egg_source := {"source_kind": &"pancake_shared_ingredient", "stock_id": &"stock.pancake.egg"}
+	var baocui_source := {"source_kind": &"pancake_shared_ingredient", "stock_id": &"stock.pancake.baocui"}
+	var center_local: Vector2 = unit_one.pancake_surface.size * 0.5
+	var baocui_before_invalid := int(session.inventory["stock.pancake.baocui"])
+	_check(not station.can_drop_on_unit(1, baocui_source, center_local), "garnish cannot be dropped during the first-side stage")
+	_check(int(session.inventory["stock.pancake.baocui"]) == baocui_before_invalid, "wrong-stage drop does not consume stock")
+	var egg_drop := Dictionary(station.drop_on_unit(1, egg_source, center_local))
+	_check(bool(egg_drop.get("success", false)) and unit_one.ingredient_model.has_type(IngredientModel.EGG), "egg drop changes only the actual target griddle")
+	var egg_after_first_drop := int(session.inventory["stock.pancake.egg"])
+	_check(not bool(Dictionary(station.drop_on_unit(1, egg_source, center_local)).get("success", false)), "duplicate ingredient drop is rejected")
+	_check(int(session.inventory["stock.pancake.egg"]) == egg_after_first_drop, "duplicate ingredient rejection does not consume stock")
+	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
+	unit_one.call("_on_surface_pointer_started", center_local)
+	unit_one.pancake_surface.pointer_local_position = center_local + Vector2(22.0, 0.0)
+	unit_one.call("_process_egg_spread", 0.1)
+	unit_one.call("_on_surface_pointer_ended", center_local + Vector2(22.0, 0.0))
+	_check(unit_one.pancake_model.calculate_egg_spread_summary().get("coverage_ratio", 0.0) > 0.0, "shared spreader routes egg spreading to the selected griddle")
+	for unit_index in 3:
+		var unit: Node = station.units[unit_index]
 		station.call("_on_main_action", unit_index)
 		unit.second_side_seconds = 2.6
 		unit.pancake_model.advance_cooking(2.6, unit.p1_session.heat_level)
 		station.call("_on_main_action", unit_index)
+	var unit_two: Node = station.units[2]
+	var youtiao_source := {"source_kind": &"youtiao_output", "product_id": &"product.youtiao.plain"}
+	_check(bool(Dictionary(station.drop_on_unit(2, baocui_source, unit_two.pancake_surface.size * 0.5)).get("success", false)), "shared garnish tray routes a topping to its actual drop target")
+	_check(bool(Dictionary(station.drop_on_unit(2, youtiao_source, unit_two.pancake_surface.size * 0.5 + Vector2(8.0, 0.0))).get("success", false)) and session.youtiao_count == 0, "plain youtiao output is consumed only after a valid target drop")
+	station.call("_on_shared_tool_selected", &"stock.pancake.sauce.red_chili")
+	unit_two.call("_on_surface_pointer_started", unit_two.pancake_surface.size * 0.5)
+	unit_two.call("_on_surface_pointer_ended", unit_two.pancake_surface.size * 0.5)
+	_check(unit_two.applied_sauce_ids.has("stock.pancake.sauce.red_chili"), "selected chili brush paints the chosen griddle instead of auto-filling the order")
 	station.call("_on_sauce_action", 0)
 	station.call("_on_ingredient_action", 0)
 	station.call("_on_ingredient_action", 0)
@@ -72,15 +133,24 @@ func _run() -> void:
 	var ready_refs: Array = station.ready_source_refs()
 	_check(ready_refs.size() == 1, "one independently completed griddle exposes one delivery source")
 	var product := Dictionary(Dictionary(ready_refs[0]).get("product", {})) if not ready_refs.is_empty() else {}
+	var wrong_product := Dictionary(station.call("_build_product", unit_two))
 	var completed_summary: Dictionary = station.units[0].pancake_model.calculate_summary()
 	var completed_heat := (float(completed_summary.get("mean_doneness", 0.0)) + float(completed_summary.get("mean_back_doneness", 0.0))) * 0.5
 	var expected_heat: StringName = &"light" if completed_heat < 0.34 else (&"golden" if completed_heat < 0.62 else &"well_done")
 	_check(StringName(product.get("heat_preference", &"")) == expected_heat, "ready product preserves the heat calculated from both cooked surfaces")
 	_check(PackedStringArray(product.get("ingredient_ids", [])) == target_order.ingredient_ids, "product carries exactly the manually added ingredients")
 	_check(PackedStringArray(product.get("sauce_ids", [])) == target_order.sauce_ids, "product carries exactly the manually added sauce")
-	_check(int(session.inventory["stock.pancake.egg"]) == 2 and int(session.inventory["stock.pancake.baocui"]) == 2, "ingredient actions consume physical stock immediately")
+	_check(float(wrong_product.get("score", 100.0)) < float(product.get("score", 0.0)), "wrong sauce, missing egg, and extra youtiao reduce the real scorer result")
+	_check(int(session.inventory["stock.pancake.egg"]) == 1 and int(session.inventory["stock.pancake.baocui"]) == 1, "valid physical and shortcut placements each consume stock exactly once")
 	var persisted: Dictionary = station.snapshot()
-	_check(int(persisted.get("product_sequence", 0)) == 1 and Array(persisted.get("slots", [])).size() == 3, "three-griddle snapshot preserves the ready product sequence and all independent surfaces")
+	_check(int(persisted.get("product_sequence", 0)) == 2 and Array(persisted.get("slots", [])).size() == 3, "three-griddle snapshot preserves the product sequence and all independent surfaces")
+	var restored := STATION_SCENE.instantiate()
+	root.add_child(restored)
+	await process_frame
+	restored.bind_session(session, Callable(self, "_order"))
+	_check(bool(Dictionary(restored.load_snapshot(persisted)).get("success", false)), "v1 three-slot snapshot restores without migration")
+	_check(restored.units[0].unit_index == 0 and restored.units[0].position.x == 390.0 and restored.units[1].unit_index == 1 and restored.units[1].position.x == 0.0, "restored v1 slots keep source indices while using center-left-right display mapping")
+	restored.queue_free()
 	_check(station.consume_ready(0), "delivered griddle can be consumed by source index")
 	_check(station.ready_source_refs().is_empty(), "consumed griddle returns to an empty work surface")
 	station.queue_free()

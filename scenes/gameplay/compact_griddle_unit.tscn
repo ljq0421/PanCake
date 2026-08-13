@@ -1,10 +1,19 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png" id="2_griddle"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_raw_texture_v1.png" id="3_pancake"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/paper_bag_package_v1.png" id="4_bag"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="5_heatmap"]
+[ext_resource type="Script" path="res://scripts/ui/ingredient_layer.gd" id="6_ingredient_layer"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v2_five_area_v2.png" id="7_egg"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1_five_area_v2.png" id="8_baocui"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1_five_area_v2.png" id="9_ham"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png" id="10_scallion"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/meat_floss_scattered_v1_five_area_v2.png" id="11_floss"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1_five_area_v2.png" id="12_tenderloin"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png" id="13_coriander"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png" id="14_mustard"]
 
 [sub_resource type="StyleBoxFlat" id="FrameStyle"]
 bg_color = Color(0.16, 0.09, 0.045, 0.97)
@@ -116,6 +125,25 @@ mouse_filter = 2
 texture = ExtResource("3_pancake")
 expand_mode = 1
 stretch_mode = 6
+
+[node name="IngredientLayer" type="Control" parent="PancakeSurface"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_ingredient_layer")
+egg_texture = ExtResource("7_egg")
+baocui_texture = ExtResource("8_baocui")
+ham_texture = ExtResource("9_ham")
+scallion_texture = ExtResource("10_scallion")
+meat_floss_texture = ExtResource("11_floss")
+pork_tenderloin_texture = ExtResource("12_tenderloin")
+coriander_texture = ExtResource("13_coriander")
+preserved_mustard_texture = ExtResource("14_mustard")
 
 [node name="PackageVisual" type="TextureRect" parent="."]
 unique_name_in_owner = true

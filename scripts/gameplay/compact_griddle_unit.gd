@@ -13,6 +13,10 @@ const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_mode
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const READY_DRAG_TEXTURE := preload("res://resources/art/workstation/packaging/paper_bag_package_v1.png")
+const SURFACE_ACTION_NONE: StringName = &""
+const SURFACE_ACTION_SPREAD_BATTER: StringName = &"spread_batter"
+const SURFACE_ACTION_SPREAD_EGG: StringName = &"spread_egg"
+const SURFACE_ACTION_BRUSH_SAUCE: StringName = &"brush_sauce"
 
 enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 
@@ -21,6 +25,7 @@ enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 @onready var state_label: Label = %StateLabel
 @onready var pancake_surface: PancakeHeatmap = %PancakeSurface
 @onready var pancake_visual: TextureRect = %PancakeVisual
+@onready var ingredient_layer: IngredientLayer = %IngredientLayer
 @onready var package_visual: TextureRect = %PackageVisual
 @onready var main_action: Button = %MainAction
 @onready var sauce_action: Button = %SauceAction
@@ -45,6 +50,12 @@ var fold_model: PancakeFoldModel = FOLD_MODEL_SCRIPT.new(pancake_model, ingredie
 var p1_session: P1Session = P1_SESSION_SCRIPT.new()
 var _spread_previous_grid := Vector2.ZERO
 var _spread_has_previous := false
+var _display_name := "主鏊"
+var _surface_action: StringName = SURFACE_ACTION_NONE
+var _surface_stock_id: StringName = &""
+var _surface_changed := false
+var _surface_width_multiplier := 1.0
+var _sauce_stroke_id := -1
 
 
 func _ready() -> void:
@@ -54,17 +65,25 @@ func _ready() -> void:
 	fold_action.pressed.connect(func() -> void: fold_action_requested.emit(unit_index))
 	discard_action.pressed.connect(func() -> void: discard_requested.emit(unit_index))
 	pancake_surface.set_model(pancake_model)
+	ingredient_layer.set_model(ingredient_model)
+	ingredient_layer.set_fold_model(fold_model)
 	pancake_surface.pointer_started.connect(_on_surface_pointer_started)
 	pancake_surface.pointer_ended.connect(_on_surface_pointer_ended)
-	pancake_surface.cancel_requested.connect(func() -> void: _spread_has_previous = false)
+	pancake_surface.cancel_requested.connect(_cancel_surface_action)
 	_refresh_ui()
 
 
 func _process(delta: float) -> void:
 	var step := maxf(delta, 0.0)
-	if state == State.BATTER and pancake_surface.pointer_pressed:
-		_process_manual_spread(step)
-	elif state == State.FIRST_SIDE:
+	if pancake_surface.pointer_pressed:
+		match _surface_action:
+			SURFACE_ACTION_SPREAD_BATTER:
+				_process_manual_spread(step)
+			SURFACE_ACTION_SPREAD_EGG:
+				_process_egg_spread(step)
+			SURFACE_ACTION_BRUSH_SAUCE:
+				_process_sauce_brush()
+	if state == State.FIRST_SIDE:
 		first_side_seconds += step
 		pancake_model.advance_cooking(step, p1_session.heat_level)
 		p1_session.advance_elapsed_time(step)
@@ -76,10 +95,11 @@ func _process(delta: float) -> void:
 		_refresh_heat_visual()
 
 
-func configure(index: int) -> void:
+func configure(index: int, display_name: String = "") -> void:
 	unit_index = index
+	_display_name = display_name if not display_name.is_empty() else "鏊子 %d" % (unit_index + 1)
 	if is_node_ready():
-		title_label.text = "鏊子 %d" % (unit_index + 1)
+		title_label.text = _display_name
 
 
 func set_upgrade_locked(value: bool) -> void:
@@ -172,8 +192,6 @@ func garnish_complete() -> bool:
 
 func advance_fold() -> Dictionary:
 	if state == State.GARNISH:
-		if not garnish_complete():
-			return {"success": false, "ready": false, "message": "酱料或小料还没有按订单补齐"}
 		p1_session.begin_folding()
 		_fold_region(PancakeFoldModel.REGION_LEFT)
 		state = State.FOLDING
@@ -274,6 +292,8 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	ready_product = Dictionary(value.get("ready_product", {})).duplicate(true)
 	if is_node_ready():
 		pancake_surface.set_model(pancake_model)
+		ingredient_layer.set_model(ingredient_model)
+		ingredient_layer.set_fold_model(fold_model)
 		_refresh_ui()
 	return {"success": true}
 
@@ -292,6 +312,7 @@ func reset_unit() -> void:
 	fold_model.reset()
 	p1_session.start({})
 	_spread_has_previous = false
+	_reset_surface_action()
 	if is_node_ready():
 		_refresh_ui()
 
@@ -299,29 +320,42 @@ func reset_unit() -> void:
 func _on_surface_pointer_started(local_position: Vector2) -> void:
 	if upgrade_locked:
 		return
-	if state == State.IDLE:
-		main_action_requested.emit(unit_index)
-	if state != State.BATTER:
+	var station := get_parent()
+	if station == null or not station.has_method("begin_surface_action"):
 		return
+	var action_result := Dictionary(station.call("begin_surface_action", unit_index, local_position))
+	if not bool(action_result.get("success", false)):
+		return
+	_surface_action = StringName(action_result.get("action", &""))
+	_surface_stock_id = StringName(action_result.get("stock_id", &""))
+	_surface_width_multiplier = maxf(float(action_result.get("width_multiplier", 1.0)), 1.0)
+	_surface_changed = false
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
-	if pancake_model.covered_cell_count() <= 0:
-		pancake_model.add_batter(grid_position, 1.35, 8.0)
+	if _surface_action == SURFACE_ACTION_SPREAD_BATTER and pancake_model.covered_cell_count() <= 0:
+		_surface_changed = pancake_model.add_batter(grid_position, 1.35, 8.0) > 0
+	elif _surface_action == SURFACE_ACTION_BRUSH_SAUCE:
+		_sauce_stroke_id = pancake_model.begin_sauce_stroke()
+		_surface_changed = _apply_sauce_sample(grid_position) or _surface_changed
 	_spread_previous_grid = grid_position
 	_spread_has_previous = true
+	_refresh_surface_cursor()
 
 
 func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 	_spread_has_previous = false
-	if state != State.BATTER:
-		return
-	var summary := pancake_model.calculate_summary()
-	if float(summary.get("coverage_ratio", 0.0)) < 0.48:
-		state_label.text = "继续画圈 · 当前覆盖%d%%" % roundi(float(summary.get("coverage_ratio", 0.0)) * 100.0)
-		return
-	var confirmed := p1_session.confirm_spread(pancake_model)
-	if bool(confirmed.get("success", false)):
-		state = State.FIRST_SIDE
-		_refresh_ui()
+	if _surface_action == SURFACE_ACTION_SPREAD_BATTER and state == State.BATTER:
+		var summary := pancake_model.calculate_summary()
+		if float(summary.get("coverage_ratio", 0.0)) < 0.48:
+			state_label.text = "继续画圈 · 当前覆盖%d%%" % roundi(float(summary.get("coverage_ratio", 0.0)) * 100.0)
+		else:
+			var confirmed := p1_session.confirm_spread(pancake_model)
+			if bool(confirmed.get("success", false)):
+				state = State.FIRST_SIDE
+				_refresh_ui()
+	var station := get_parent()
+	if station != null and station.has_method("complete_surface_action"):
+		station.call("complete_surface_action", unit_index, _surface_action, _surface_changed)
+	_reset_surface_action()
 
 
 func _process_manual_spread(delta: float) -> void:
@@ -332,8 +366,147 @@ func _process_manual_spread(delta: float) -> void:
 	var movement: Vector2 = current - _spread_previous_grid
 	var direction: Vector2 = movement.normalized() if movement.length_squared() > 0.0001 else Vector2.RIGHT
 	var speed: float = movement.length() / maxf(delta, 0.001)
-	pancake_model.apply_scraper_sample(current, direction, speed, 1.0)
+	var result := Dictionary(pancake_model.apply_scraper_sample(current, direction, speed, _surface_width_multiplier))
+	_surface_changed = bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0 or _surface_changed
 	_spread_previous_grid = current
+
+
+func _process_egg_spread(delta: float) -> void:
+	var current := Vector2(PancakeSpace.local_to_grid(pancake_surface.pointer_local_position, pancake_surface.size, pancake_model.grid_size))
+	if not _spread_has_previous:
+		_spread_previous_grid = current
+		_spread_has_previous = true
+	var movement := current - _spread_previous_grid
+	var direction: Vector2 = movement.normalized() if movement.length_squared() > 0.0001 else Vector2.RIGHT
+	var speed: float = movement.length() / maxf(delta, 0.001)
+	var result := Dictionary(pancake_model.apply_egg_spreader_sample(current, direction, speed, true, _surface_width_multiplier))
+	_surface_changed = bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0 or _surface_changed
+	_spread_previous_grid = current
+
+
+func _process_sauce_brush() -> void:
+	var current := Vector2(PancakeSpace.local_to_grid(pancake_surface.pointer_local_position, pancake_surface.size, pancake_model.grid_size))
+	_surface_changed = _apply_sauce_sample(current) or _surface_changed
+
+
+func _apply_sauce_sample(grid_position: Vector2) -> bool:
+	if _sauce_stroke_id < 0 or _surface_stock_id.is_empty():
+		return false
+	var sauce_type: StringName = &"red_chili" if _surface_stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var result := Dictionary(pancake_model.apply_sauce_sample(grid_position, 0.18, 3.8, _sauce_stroke_id, 2147483647, sauce_type))
+	var changed := bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0
+	if changed and not applied_sauce_ids.has(str(_surface_stock_id)):
+		applied_sauce_ids.append(str(_surface_stock_id))
+	return changed
+
+
+func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -> Dictionary:
+	if upgrade_locked:
+		return {"success": false, "reason": &"griddle_locked"}
+	var stock_id := _stock_id_from_source(source_ref)
+	var ingredient_type := _ingredient_type_for_stock(stock_id)
+	if ingredient_type.is_empty():
+		return {"success": false, "reason": &"not_pancake_ingredient"}
+	if ingredient_model.has_type(ingredient_type):
+		return {"success": false, "reason": &"duplicate_ingredient", "stock_id": stock_id}
+	if ingredient_type == IngredientModel.EGG and state != State.FIRST_SIDE:
+		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
+	if ingredient_type != IngredientModel.EGG and state != State.GARNISH:
+		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
+	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
+	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
+	var cell_index := pancake_model.index_of(cell)
+	if cell_index < 0 or not pancake_model.is_inside_pan(grid_position):
+		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
+	if pancake_model.coverage[cell_index] <= 0.0 or pancake_model.damage[cell_index] >= pancake_model.parameters.hole_damage_threshold:
+		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
+	if ingredient_type == IngredientModel.EGG:
+		var crack_preview := Dictionary(pancake_model.can_crack_egg(grid_position))
+		if not bool(crack_preview.get("success", false)):
+			return crack_preview.merged({"stock_id": stock_id, "grid_position": grid_position}, true)
+	return {"success": true, "stock_id": stock_id, "ingredient_type": ingredient_type, "grid_position": grid_position}
+
+
+func place_validated_ingredient(validation: Dictionary) -> Dictionary:
+	if not bool(validation.get("success", false)):
+		return validation
+	var stock_id := StringName(validation.get("stock_id", &""))
+	var ingredient_type := StringName(validation.get("ingredient_type", &""))
+	var grid_position := Vector2(validation.get("grid_position", Vector2.ZERO))
+	var placed := Dictionary(ingredient_model.place(ingredient_type, grid_position, float(applied_ingredient_ids.size()) * 0.35, pancake_model))
+	if not bool(placed.get("success", false)):
+		return placed
+	if ingredient_type == IngredientModel.EGG:
+		var cracked := Dictionary(pancake_model.crack_egg(grid_position))
+		if not bool(cracked.get("success", false)):
+			return cracked
+	applied_ingredient_ids.append(str(stock_id))
+	_refresh_ui()
+	return {"success": true, "stock_id": stock_id, "ingredient_type": ingredient_type}
+
+
+func can_apply_sauce_at(local_position: Vector2) -> bool:
+	if state != State.GARNISH:
+		return false
+	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
+	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
+	var cell_index := pancake_model.index_of(cell)
+	return (
+		cell_index >= 0
+		and pancake_model.is_inside_pan(grid_position)
+		and pancake_model.coverage[cell_index] > 0.0
+		and pancake_model.damage[cell_index] < pancake_model.parameters.hole_damage_threshold
+	)
+
+
+func cancel_held_tool() -> void:
+	_reset_surface_action()
+
+
+func can_accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2) -> bool:
+	var station := get_parent()
+	return station != null and station.has_method("can_drop_on_unit") and bool(station.call("can_drop_on_unit", unit_index, source_ref, local_position))
+
+
+func accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2) -> void:
+	var station := get_parent()
+	if station != null and station.has_method("drop_on_unit"):
+		station.call("drop_on_unit", unit_index, source_ref, local_position)
+
+
+func _stock_id_from_source(source_ref: Dictionary) -> StringName:
+	if StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain":
+		return &"stock.pancake.youtiao"
+	return StringName(source_ref.get("stock_id", &""))
+
+
+func _cancel_surface_action() -> void:
+	var station := get_parent()
+	if _surface_action.is_empty() and station != null and station.has_method("clear_held_tool"):
+		station.call("clear_held_tool")
+	elif station != null and station.has_method("complete_surface_action"):
+		station.call("complete_surface_action", unit_index, _surface_action, _surface_changed)
+	_reset_surface_action()
+
+
+func _reset_surface_action() -> void:
+	_surface_action = SURFACE_ACTION_NONE
+	_surface_stock_id = &""
+	_surface_changed = false
+	_surface_width_multiplier = 1.0
+	_sauce_stroke_id = -1
+	_spread_has_previous = false
+	_refresh_surface_cursor()
+
+
+func _refresh_surface_cursor() -> void:
+	if not is_node_ready():
+		return
+	pancake_surface.cursor_is_t_spreader = _surface_action in [SURFACE_ACTION_SPREAD_BATTER, SURFACE_ACTION_SPREAD_EGG]
+	pancake_surface.cursor_is_sauce_brush = _surface_action == SURFACE_ACTION_BRUSH_SAUCE
+	pancake_surface.cursor_radius_pixels = 16.0 * _surface_width_multiplier
+	pancake_surface.cursor_sauce_color = Color(0.82, 0.10, 0.04, 0.98) if _surface_stock_id == &"stock.pancake.sauce.red_chili" else Color(0.34, 0.08, 0.035, 0.98)
+	pancake_surface.queue_redraw()
 
 
 func _fold_region(region: StringName) -> void:
@@ -349,7 +522,7 @@ func _fold_region(region: StringName) -> void:
 func _refresh_ui() -> void:
 	if not is_node_ready():
 		return
-	title_label.text = "鏊子 %d" % (unit_index + 1)
+	title_label.text = _display_name
 	frame.modulate = Color(0.55, 0.50, 0.44, 0.78) if upgrade_locked else Color.WHITE
 	if upgrade_locked:
 		state_label.text = "升级鏊台后解锁"
@@ -369,7 +542,7 @@ func _refresh_ui() -> void:
 	discard_action.visible = active
 	match state:
 		State.IDLE:
-			state_label.text = "空闲 · 点鏊面接单"
+			state_label.text = "空闲 · 点击添面糊"
 			main_action.text = "添面糊"
 		State.BATTER:
 			state_label.text = "按住鏊面画圈摊开"
@@ -390,8 +563,8 @@ func _refresh_ui() -> void:
 			state_label.text = "成品待自由交付"
 			main_action.text = "拖到匹配订单"
 	main_action.disabled = state in [State.BATTER, State.GARNISH, State.FOLDING, State.READY]
-	sauce_action.visible = state == State.GARNISH
-	ingredient_action.visible = state == State.GARNISH
+	sauce_action.visible = false
+	ingredient_action.visible = false
 	fold_action.visible = state in [State.GARNISH, State.FOLDING]
 	sauce_action.text = "加酱 ✓" if next_sauce_id().is_empty() else "挤下一种酱"
 	ingredient_action.text = "小料 ✓" if next_ingredient_id().is_empty() else "放下一种料"

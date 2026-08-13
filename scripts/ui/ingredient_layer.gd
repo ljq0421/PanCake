@@ -55,7 +55,10 @@ func _rebuild_sprites() -> void:
 		var sprite := Sprite2D.new()
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		sprite.texture = texture_for(placement.type)
-		sprite.position = (placement.position as Vector2) / 127.0 * size
+		var grid_maximum := 127.0
+		if fold_model != null and fold_model.pancake_model != null:
+			grid_maximum = maxf(float(fold_model.pancake_model.grid_size - 1), 1.0)
+		sprite.position = (placement.position as Vector2) / grid_maximum * size
 		sprite.rotation = float(placement.rotation)
 		sprite.scale = Vector2.ONE * _scale_for(placement.type)
 		sprite.modulate = Color(0.90, 0.90, 0.90, 1.0) if bool(placement.damaged) else Color.WHITE

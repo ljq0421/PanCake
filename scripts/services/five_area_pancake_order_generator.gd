@@ -50,9 +50,7 @@ static func _tutorial_order(progression_snapshot: Dictionary, tutorial: Dictiona
 		return {}
 	# This generator only owns pancake training.  Other area generators will
 	# consume their own queued tutorial IDs when those areas are implemented.
-	if active_kind == &"area" and active_id != &"area.pancake":
-		return {}
-	if active_kind == &"device" and active_id != &"device.pancake_griddle":
+	if active_kind != &"area" or active_id != &"area.pancake":
 		return {}
 	if not _owns_all(progression_snapshot, [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]):
 		return {}
@@ -60,7 +58,7 @@ static func _tutorial_order(progression_snapshot: Dictionary, tutorial: Dictiona
 	order["tutorial_no_countdown"] = true
 	order["tutorial_kind"] = active_kind
 	order["tutorial_id"] = active_id
-	order["tutorial_guide"] = "新手指引：按顺序完成这张基础煎饼；教学单不计倒计时。" if active_kind == &"area" else "新手指引：试用新鏊子完成基础煎饼；教学单不计倒计时。"
+	order["tutorial_guide"] = "新手指引：按顺序完成这张基础煎饼；教学单不计倒计时。"
 	return order
 
 

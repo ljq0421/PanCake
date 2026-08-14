@@ -12,6 +12,7 @@ const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_you
 @export var pork_tenderloin_texture: Texture2D
 @export var coriander_texture: Texture2D
 @export var preserved_mustard_texture: Texture2D
+@export_range(0.01, 2.0, 0.01) var scallion_scale := 0.11
 
 var model: IngredientModel
 var fold_model: RefCounted
@@ -169,7 +170,7 @@ func _scale_for(ingredient_type: StringName) -> float:
 		IngredientModel.HAM_SAUSAGE:
 			return 0.13
 		IngredientModel.SCALLION:
-			return 0.11
+			return scallion_scale
 		IngredientModel.MEAT_FLOSS:
 			return 0.16
 		IngredientModel.PORK_TENDERLOIN:

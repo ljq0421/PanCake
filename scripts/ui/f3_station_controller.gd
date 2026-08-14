@@ -87,6 +87,10 @@ func _on_station_intent(intent: Dictionary, source: StringName) -> void:
 			result = _session.call("load_f3_youtiao", StringName(intent.get("recipe_id", &"")), int(intent.get("quantity", 1)), StringName(intent.get("order_id", &"")))
 		&"youtiao_action":
 			result = _session.call("perform_f3_youtiao_action", StringName(intent.get("action_id", &"")))
+		&"set_youtiao_auto_lift":
+			result = _session.call("set_youtiao_auto_lift_enabled", bool(intent.get("enabled", true)))
+		&"store_youtiao_batch":
+			result = _session.call("store_ready_youtiao_batch", StringName(intent.get("slot_id", &"slot.04")))
 		&"deliver_youtiao":
 			result = _session.call("deliver_f3_youtiao", StringName(intent.get("order_id", &"")), int(intent.get("item_index", -1)))
 		&"discard_youtiao":
@@ -224,7 +228,9 @@ func _refresh() -> void:
 	var youtiao_snapshot := common.duplicate(true)
 	youtiao_snapshot["machine"] = _session.call("f3_machine_snapshot", &"device.youtiao_fryer")
 	youtiao_snapshot["unlocked_recipe_ids"] = progression.get("unlocked_recipe_ids", [])
+	youtiao_snapshot["unlocked_automation_ids"] = progression.get("unlocked_automation_ids", [])
 	youtiao_snapshot["owned_assist_ids"] = progression.get("owned_assist_ids", [])
+	youtiao_snapshot["prepared_slot"] = _session.call("prepared_product_slot_status", &"slot.04")
 	youtiao_station.apply_snapshot(youtiao_snapshot)
 	var youtiao_owned := Array(progression.get("unlocked_area_ids", [])).has("area.youtiao")
 	youtiao_station.set_locked(not youtiao_owned, "油条炸锅尚未解锁；先完成饮品教学与正确温度订单。")
@@ -253,9 +259,7 @@ static func _item_label(item: Dictionary) -> String:
 		&"product.packaged_drink.soy_milk": label = "成品豆奶"
 		&"product.packaged_drink.walnut": label = "核桃乳"
 		&"product.packaged_drink.black_sesame": label = "黑芝麻乳"
-		&"product.youtiao.plain": label = "原味油条"
-		&"product.youtiao.oil_cake": label = "油饼"
-		&"product.youtiao.sugar_oil_cake": label = "糖油饼"
+		&"product.youtiao.plain": label = "油条"
 	var temperature := StringName(item.get("temperature_mode", &"room_temperature"))
 	return "%s · %s" % [label, "加热" if temperature == &"heated" else "常温"]
 

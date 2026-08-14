@@ -17,7 +17,19 @@ func _run() -> void:
 	var starter_tutorial := starter.tutorial_snapshot()
 	_check(StringName(starter_tutorial.get("active_id", &"")) == &"area.pancake", "pancake is the first tutorial")
 	var route_ids := PackedStringArray(CATALOG.growth_ids())
-	_check(route_ids.size() == 26, "growth route exposes only twenty-six three-area upgrades")
+	_check(route_ids.size() == 29, "growth route exposes twenty-nine three-area upgrades")
+	_check(route_ids.slice(10) == PackedStringArray([
+		"growth.area.fresh_soy_milk", "growth.equipment.fresh_soy_milk.intermediate", "growth.assist.fresh_soy_milk.water_guide", "growth.recipe.fresh_soy_milk.black_bean",
+		"growth.capacity.pancake_holding_tray.two_slots", "growth.add_on.pancake.preserved_mustard", "growth.add_on.pancake.pork_tenderloin",
+		"growth.recipe.fresh_soy_milk.red_bean", "growth.recipe.fresh_soy_milk.multigrain", "growth.equipment.pancake.advanced", "growth.capacity.stock.advanced",
+		"growth.automation.youtiao.auto_lift", "growth.equipment.youtiao.advanced", "growth.equipment.fresh_soy_milk.advanced", "growth.automation.fresh_soy_milk.auto_yellow_restock",
+		"growth.automation.fresh_soy_milk.auto_cup_rack", "growth.automation.fresh_soy_milk.auto_production", "growth.quality.fresh_soy_milk.max", "growth.pricing.fresh_soy_milk.premium",
+	]), "growth route keeps the first ten entries and follows the approved soy sequence")
+	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake"), "retired fryer recipes are absent from growth")
+	_check(int(CATALOG.growth_definition(&"growth.assist.fresh_soy_milk.water_guide").get("price", 0)) == 24, "water guide costs 24")
+	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_production").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 15, "auto production requires fifteen A-grade soy orders")
+	_check(int(Dictionary(CATALOG.growth_definition(&"growth.quality.fresh_soy_milk.max").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 18, "quality MAX requires eighteen A-grade soy orders")
+	_check(int(Dictionary(CATALOG.growth_definition(&"growth.pricing.fresh_soy_milk.premium").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 20, "soy premium requires twenty A-grade soy orders")
 	for retired_growth in [&"growth.area.packaged_drink", &"growth.area.steamer", &"growth.equipment.packaged_drink.advanced"]:
 		_check(not route_ids.has(str(retired_growth)), "%s is absent from active growth" % retired_growth)
 	var early := SERVICE.new({
@@ -30,6 +42,20 @@ func _run() -> void:
 	})
 	var early_cards: Array = Array(early.growth_recommendations(4).get("recommended", []))
 	_check(_growth_ids(early_cards) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.add_on.pancake.ham_sausage", &"growth.area.youtiao"], "early route leads from pancake improvements into youtiao")
+	var wide_only := SERVICE.new({
+		"coins": 200,
+		"reputation": 30,
+		"current_day": 4,
+		"unlocked_area_ids": [&"area.pancake"],
+		"area_mastery_details": {&"area.pancake": {"qualified": 6, "a_grade": 4}},
+		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+	})
+	_check(bool(wide_only.purchase(&"growth.tool.pancake.wide_spreader").get("success", false)), "wide spreader can be reserved through the normal growth route")
+	wide_only.set_day_open(false)
+	wide_only.begin_next_business_day()
+	wide_only.advance_tutorial_for_new_business_day()
+	var wide_tutorial := wide_only.tutorial_snapshot()
+	_check(wide_only.owns_growth(&"growth.tool.pancake.wide_spreader") and StringName(wide_tutorial.get("active_id", &"")).is_empty() and PackedStringArray(wide_tutorial.get("queue_area_ids", [])).is_empty() and PackedStringArray(wide_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(wide_tutorial.get("queue_device_ids", [])).is_empty(), "wide spreader activation never creates a tutorial and legacy device tutorial fields remain empty")
 	var youtiao_purchase := Dictionary(early.purchase(&"growth.area.youtiao"))
 	_check(bool(youtiao_purchase.get("success", false)) and early.pending_install_purchase == &"growth.area.youtiao", "qualified pancake play can reserve youtiao unlock")
 	early.set_day_open(false)
@@ -81,14 +107,15 @@ func _run() -> void:
 		"device_tiers": {&"device.pancake_griddle": 9, &"device.packaged_drink_heater": 2, &"device.youtiao_fryer": 1, &"device.fresh_soy_milk_machine": 1, &"device.steamer": 2},
 		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.packaged_drink.milk", &"stock.steamer.mantou", &"stock.youtiao.plain_dough"],
 		"owned_growth_ids": [&"growth.area.packaged_drink", &"growth.area.youtiao", &"growth.area.steamer"],
-		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.packaged_drink"], "queue_area_ids": [&"area.steamer"], "active_kind": &"area", "active_id": &"area.steamer"},
+		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.packaged_drink"], "completed_device_ids": [&"device.pancake_spreader"], "queue_area_ids": [&"area.steamer"], "queue_device_ids": [&"device.pancake_spreader"], "active_kind": &"device", "active_id": &"device.pancake_spreader"},
 	})
 	var legacy_snapshot := legacy.snapshot()
 	_check(PackedStringArray(legacy_snapshot.get("unlocked_area_ids", [])) == PackedStringArray(["area.pancake", "area.youtiao", "area.fresh_soy_milk"]), "legacy save strips retired areas while preserving active ones")
 	_check(not legacy.owns_device(&"device.packaged_drink_heater") and not legacy.owns_device(&"device.steamer"), "legacy save strips retired devices")
 	_check(not legacy.owns_stock(&"stock.packaged_drink.milk") and not legacy.owns_stock(&"stock.steamer.mantou"), "legacy save strips retired stock")
 	_check(legacy.device_tier(&"device.pancake_griddle") == 2, "legacy griddle tier clamps to the three-griddle maximum")
-	_check(StringName(legacy.tutorial_snapshot().get("active_id", &"")) == &"", "retired active tutorial is cleared")
+	var normalized_tutorial := legacy.tutorial_snapshot()
+	_check(StringName(normalized_tutorial.get("active_id", &"")) == &"" and PackedStringArray(normalized_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(normalized_tutorial.get("queue_device_ids", [])).is_empty(), "legacy device tutorial activity is cleared while compatibility fields remain empty")
 	_check(legacy.coins == 77, "legacy normalization preserves economy")
 	_finish()
 

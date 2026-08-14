@@ -5,7 +5,7 @@ extends RefCounted
 ## counts and pending purchases; this catalog intentionally contains no save/UI
 ## state.
 
-const BALANCE_VERSION := 4
+const BALANCE_VERSION := 6
 const PANCAKE_WIDE_SPREADER_WIDTH_MULTIPLIER := 1.65
 
 const AREA_IDS: Array[StringName] = [
@@ -44,16 +44,16 @@ const DEVICE_DEFINITIONS := {
 	&"device.youtiao_fryer": {
 		"area_id": &"area.youtiao",
 		"tiers": [
-			{"tier": 0, "label": "基础油条炸锅", "capacity": 2, "duration_seconds": 12.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
-			{"tier": 1, "label": "快速油条炸锅", "capacity": 2, "duration_seconds": 9.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
-			{"tier": 2, "label": "四份油条炸锅", "capacity": 4, "duration_seconds": 9.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
+			{"tier": 0, "label": "四格油条炸锅", "capacity": 4, "duration_seconds": 10.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
+			{"tier": 1, "label": "六格快速炸锅", "capacity": 6, "duration_seconds": 8.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
+			{"tier": 2, "label": "八格高效炸锅", "capacity": 8, "duration_seconds": 6.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
 		],
 	},
 	&"device.fresh_soy_milk_machine": {
 		"area_id": &"area.fresh_soy_milk",
 		"tiers": [
 			{"tier": 0, "label": "基础豆浆机", "capacity": 2, "duration_seconds": 5.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "output_capacity": 0, "infinite_hold": false},
-			{"tier": 1, "label": "快速豆浆机", "capacity": 2, "duration_seconds": 3.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "output_capacity": 0, "infinite_hold": false},
+			{"tier": 1, "label": "快速豆浆机", "capacity": 2, "duration_seconds": 4.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "output_capacity": 0, "infinite_hold": false},
 			{"tier": 2, "label": "四杯保温豆浆机", "capacity": 4, "duration_seconds": 3.0, "safe_seconds": 0.0, "decay_seconds": 0.0, "output_capacity": 4, "infinite_hold": true},
 		],
 	},
@@ -73,12 +73,10 @@ const PANCAKE_ADD_ON_DISPLAY_ORDER: Array[StringName] = [
 	&"stock.pancake.pork_tenderloin",
 ]
 const MATERIAL_SLOT_DEFINITIONS := {
-	&"slot.01": {"index": 1, "area_id": &"area.fresh_soy_milk", "kind": &"split_stock", "stock_ids": [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.multigrain"]},
-	&"slot.02": {"index": 2, "area_id": &"area.fresh_soy_milk", "kind": &"split_stock", "stock_ids": [&"stock.fresh_soy_milk.black_bean", &""]},
-	&"slot.03": {"index": 3, "area_id": &"area.fresh_soy_milk", "kind": &"split_stock", "stock_ids": [&"stock.fresh_soy_milk.red_bean", &""]},
+	&"slot.01": {"index": 1, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.yellow_bean"},
+	&"slot.02": {"index": 2, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.black_bean"},
+	&"slot.03": {"index": 3, "area_id": &"area.fresh_soy_milk", "kind": &"stock", "stock_id": &"stock.fresh_soy_milk.red_bean"},
 	&"slot.04": {"index": 4, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.plain_dough"},
-	&"slot.05": {"index": 5, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.oil_cake_dough"},
-	&"slot.06": {"index": 6, "area_id": &"area.youtiao", "kind": &"stock", "stock_id": &"stock.youtiao.sugar_oil_cake_dough"},
 	&"slot.07": {"index": 7, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.egg"},
 	&"slot.08": {"index": 8, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.baocui"},
 	&"slot.09": {"index": 9, "area_id": &"area.pancake", "kind": &"stock", "stock_id": &"stock.pancake.scallion"},
@@ -104,14 +102,11 @@ const STOCK_DEFINITIONS := {
 	&"stock.pancake.preserved_mustard": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 	# A stable order/simulation identifier for the processed plain youtiao.
 	# Capacity stays zero so it can never enter the paid ordinary-restock path.
-	&"stock.pancake.youtiao": {"label": "原味油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &""},
-	&"stock.youtiao.plain_dough": {"label": "原味油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.04"},
-	&"stock.youtiao.oil_cake_dough": {"label": "油饼面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &"slot.05"},
-	&"stock.youtiao.sugar_oil_cake_dough": {"label": "糖油饼面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &"slot.06"},
+	&"stock.pancake.youtiao": {"label": "油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &""},
+	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 8, "material_slot_id": &"slot.04"},
 	&"stock.fresh_soy_milk.yellow_bean": {"label": "黄豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &"slot.01"},
 	&"stock.fresh_soy_milk.black_bean": {"label": "黑豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 0.25, "restock_unit_cost": 3, "restock_capacity": 6, "material_slot_id": &"slot.02"},
 	&"stock.fresh_soy_milk.red_bean": {"label": "红豆", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 0.25, "restock_unit_cost": 4, "restock_capacity": 6, "material_slot_id": &"slot.03"},
-	&"stock.fresh_soy_milk.multigrain": {"label": "五谷豆料", "area_id": &"area.fresh_soy_milk", "category": &"bean", "refill_seconds": 0.25, "restock_unit_cost": 5, "restock_capacity": 6, "material_slot_id": &"slot.01"},
 }
 
 const ADD_ON_DEFINITIONS := {
@@ -126,29 +121,28 @@ const SAUCE_DEFINITIONS := {
 
 const RECIPE_DEFINITIONS := {
 	&"recipe.pancake.base": {"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]},
-	&"recipe.youtiao.plain": {"label": "原味油条", "area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "stock_ids": [&"stock.youtiao.plain_dough"]},
-	&"recipe.youtiao.oil_cake": {"label": "油饼", "area_id": &"area.youtiao", "product_id": &"product.youtiao.oil_cake", "stock_ids": [&"stock.youtiao.oil_cake_dough"]},
-	&"recipe.youtiao.sugar_oil_cake": {"label": "糖油饼", "area_id": &"area.youtiao", "product_id": &"product.youtiao.sugar_oil_cake", "stock_ids": [&"stock.youtiao.sugar_oil_cake_dough"]},
+	&"recipe.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "stock_ids": [&"stock.youtiao.plain_dough"]},
 	&"recipe.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "stock_ids": [&"stock.fresh_soy_milk.yellow_bean"]},
 	&"recipe.fresh_soy_milk.black_bean": {"label": "黑豆豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.black_bean", "stock_ids": [&"stock.fresh_soy_milk.black_bean"]},
 	&"recipe.fresh_soy_milk.red_bean": {"label": "红豆豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.red_bean", "stock_ids": [&"stock.fresh_soy_milk.red_bean"]},
-	&"recipe.fresh_soy_milk.multigrain": {"label": "五谷豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.multigrain", "stock_ids": [&"stock.fresh_soy_milk.multigrain"]},
+	# 五谷不再拥有独立库存；ingredient_ids 在订单与成品上记录实际的 2～3 种豆料。
+	&"recipe.fresh_soy_milk.multigrain": {"label": "五谷豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.multigrain", "stock_ids": []},
 }
 
 const PRODUCT_DEFINITIONS := {
 	&"product.pancake.custom": {"area_id": &"area.pancake", "recipe_id": &"recipe.pancake.base"},
-	&"product.youtiao.plain": {"label": "原味油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.plain", "base_sell_price": 6, "order_weight": 100},
-	&"product.youtiao.oil_cake": {"label": "油饼", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.oil_cake", "base_sell_price": 8, "order_weight": 70},
-	&"product.youtiao.sugar_oil_cake": {"label": "糖油饼", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.sugar_oil_cake", "base_sell_price": 11, "order_weight": 40},
-	&"product.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "base_sell_price": 7, "order_weight": 100},
-	&"product.fresh_soy_milk.black_bean": {"label": "黑豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.black_bean", "base_sell_price": 9, "order_weight": 70},
-	&"product.fresh_soy_milk.red_bean": {"label": "红豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.red_bean", "base_sell_price": 11, "order_weight": 70},
-	&"product.fresh_soy_milk.multigrain": {"label": "五谷豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.multigrain", "base_sell_price": 14, "order_weight": 40},
+	&"product.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.plain", "base_sell_price": 6, "order_weight": 100},
+	&"product.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "base_sell_price": 7, "order_weight": 60},
+	&"product.fresh_soy_milk.black_bean": {"label": "黑豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.black_bean", "base_sell_price": 9, "order_weight": 20},
+	&"product.fresh_soy_milk.red_bean": {"label": "红豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.red_bean", "base_sell_price": 11, "order_weight": 15},
+	&"product.fresh_soy_milk.multigrain": {"label": "五谷豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.multigrain", "base_sell_price": 14, "order_weight": 5},
 }
 
 const AUTOMATION_DEFINITIONS := {
 	&"automation.youtiao.auto_lift": {"area_id": &"area.youtiao"},
 	&"automation.fresh_soy_milk.auto_cup_rack": {"area_id": &"area.fresh_soy_milk"},
+	&"automation.fresh_soy_milk.auto_yellow_restock": {"area_id": &"area.fresh_soy_milk"},
+	&"automation.fresh_soy_milk.auto_production": {"area_id": &"area.fresh_soy_milk"},
 }
 const RESTOCK_DEFINITIONS := {"stock_definition_is_source": true}
 ## Purchase channels are intentionally independent: one installation and one
@@ -168,18 +162,21 @@ const GROWTH_DEFINITIONS := {
 	&"growth.capacity.stock.advanced": {"label": "库存容量14", "purchase_slot": &"content", "kind": &"stock_capacity", "price": 40, "min_reputation": 200, "requires_area_id": &"area.pancake", "requires_all_areas": true, "requires_growth_ids": [&"growth.capacity.stock.intermediate"], "target_capacity": 14},
 	&"growth.area.youtiao": {"label": "油条炸锅", "purchase_slot": &"install", "kind": &"area_unlock", "price": 30, "min_reputation": 20, "requires_area_id": &"area.pancake", "requires_tutorial_area_id": &"area.pancake", "requires_mastery": {&"area.pancake": {"qualified": 6}}, "area_id": &"area.youtiao", "device_id": &"device.youtiao_fryer", "target_tier": 0, "unlock_recipe_ids": [&"recipe.youtiao.plain"], "unlock_product_ids": [&"product.youtiao.plain"], "unlock_stock_ids": [&"stock.youtiao.plain_dough"]},
 	&"growth.assist.youtiao.temperature_indicator": {"label": "油温区间提示", "purchase_slot": &"install", "kind": &"assist", "price": 16, "min_reputation": 70, "requires_area_id": &"area.youtiao", "assist_id": &"assist.youtiao.temperature_indicator"},
-	&"growth.recipe.youtiao.oil_cake": {"label": "油饼", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 18, "min_day": 7, "requires_area_id": &"area.youtiao", "unlock_recipe_ids": [&"recipe.youtiao.oil_cake"], "unlock_product_ids": [&"product.youtiao.oil_cake"], "unlock_stock_ids": [&"stock.youtiao.oil_cake_dough"]},
-	&"growth.equipment.youtiao.intermediate": {"label": "快速油条炸锅", "purchase_slot": &"install", "kind": &"device_tier", "price": 42, "requires_area_id": &"area.youtiao", "requires_mastery": {&"area.youtiao": {"qualified": 6}}, "device_id": &"device.youtiao_fryer", "target_tier": 1},
-	&"growth.recipe.youtiao.sugar_oil_cake": {"label": "糖油饼", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 24, "min_reputation": 140, "requires_area_id": &"area.youtiao", "unlock_recipe_ids": [&"recipe.youtiao.sugar_oil_cake"], "unlock_product_ids": [&"product.youtiao.sugar_oil_cake"], "unlock_stock_ids": [&"stock.youtiao.sugar_oil_cake_dough"]},
+	&"growth.equipment.youtiao.intermediate": {"label": "六格快速炸锅", "purchase_slot": &"install", "kind": &"device_tier", "price": 42, "requires_area_id": &"area.youtiao", "requires_mastery": {&"area.youtiao": {"qualified": 6}}, "device_id": &"device.youtiao_fryer", "target_tier": 1},
 	&"growth.automation.youtiao.auto_lift": {"label": "熟成自动升篮", "purchase_slot": &"install", "kind": &"automation", "price": 54, "requires_area_id": &"area.youtiao", "requires_all_areas": true, "requires_mastery": {&"area.youtiao": {"a_grade": 5}}, "automation_id": &"automation.youtiao.auto_lift"},
-	&"growth.equipment.youtiao.advanced": {"label": "四份油条炸锅", "purchase_slot": &"install", "kind": &"device_tier", "price": 72, "requires_area_id": &"area.youtiao", "requires_all_areas": true, "requires_mastery": {&"area.youtiao": {"a_grade": 8}}, "device_id": &"device.youtiao_fryer", "target_tier": 2},
+	&"growth.equipment.youtiao.advanced": {"label": "八格高效炸锅", "purchase_slot": &"install", "kind": &"device_tier", "price": 72, "requires_area_id": &"area.youtiao", "requires_all_areas": true, "requires_mastery": {&"area.youtiao": {"a_grade": 8}}, "device_id": &"device.youtiao_fryer", "target_tier": 2},
 	&"growth.area.fresh_soy_milk": {"label": "现磨豆浆机", "purchase_slot": &"install", "kind": &"area_unlock", "price": 60, "min_day": 7, "min_reputation": 60, "requires_area_id": &"area.youtiao", "requires_tutorial_area_id": &"area.youtiao", "requires_mastery": {&"area.youtiao": {"qualified": 4}}, "area_id": &"area.fresh_soy_milk", "device_id": &"device.fresh_soy_milk_machine", "target_tier": 0, "unlock_recipe_ids": [&"recipe.fresh_soy_milk.yellow_bean"], "unlock_product_ids": [&"product.fresh_soy_milk.yellow_bean"], "unlock_stock_ids": [&"stock.fresh_soy_milk.yellow_bean"]},
 	&"growth.recipe.fresh_soy_milk.black_bean": {"label": "黑豆豆浆", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 18, "min_day": 10, "requires_area_id": &"area.fresh_soy_milk", "unlock_recipe_ids": [&"recipe.fresh_soy_milk.black_bean"], "unlock_product_ids": [&"product.fresh_soy_milk.black_bean"], "unlock_stock_ids": [&"stock.fresh_soy_milk.black_bean"]},
 	&"growth.equipment.fresh_soy_milk.intermediate": {"label": "快速豆浆机", "purchase_slot": &"install", "kind": &"device_tier", "price": 54, "requires_area_id": &"area.fresh_soy_milk", "requires_mastery": {&"area.fresh_soy_milk": {"qualified": 6}}, "device_id": &"device.fresh_soy_milk_machine", "target_tier": 1},
 	&"growth.recipe.fresh_soy_milk.red_bean": {"label": "红豆豆浆", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 24, "min_reputation": 150, "requires_area_id": &"area.fresh_soy_milk", "unlock_recipe_ids": [&"recipe.fresh_soy_milk.red_bean"], "unlock_product_ids": [&"product.fresh_soy_milk.red_bean"], "unlock_stock_ids": [&"stock.fresh_soy_milk.red_bean"]},
-	&"growth.recipe.fresh_soy_milk.multigrain": {"label": "五谷豆浆", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 30, "min_day": 16, "requires_area_id": &"area.fresh_soy_milk", "unlock_recipe_ids": [&"recipe.fresh_soy_milk.multigrain"], "unlock_product_ids": [&"product.fresh_soy_milk.multigrain"], "unlock_stock_ids": [&"stock.fresh_soy_milk.multigrain"]},
+	&"growth.recipe.fresh_soy_milk.multigrain": {"label": "五谷组合配方", "purchase_slot": &"content", "kind": &"recipe_unlock", "price": 30, "min_day": 16, "requires_area_id": &"area.fresh_soy_milk", "unlock_recipe_ids": [&"recipe.fresh_soy_milk.multigrain"], "unlock_product_ids": [&"product.fresh_soy_milk.multigrain"]},
 	&"growth.equipment.fresh_soy_milk.advanced": {"label": "四杯保温豆浆机", "purchase_slot": &"install", "kind": &"device_tier", "price": 84, "requires_area_id": &"area.fresh_soy_milk", "requires_all_areas": true, "requires_mastery": {&"area.fresh_soy_milk": {"a_grade": 8}}, "device_id": &"device.fresh_soy_milk_machine", "target_tier": 2},
 	&"growth.automation.fresh_soy_milk.auto_cup_rack": {"label": "自动接杯架", "purchase_slot": &"install", "kind": &"automation", "price": 72, "requires_area_id": &"area.fresh_soy_milk", "requires_all_areas": true, "requires_mastery": {&"area.fresh_soy_milk": {"a_grade": 10}}, "automation_id": &"automation.fresh_soy_milk.auto_cup_rack"},
+	&"growth.assist.fresh_soy_milk.water_guide": {"label": "水量辅助", "purchase_slot": &"install", "kind": &"assist", "price": 24, "requires_area_id": &"area.fresh_soy_milk", "requires_mastery": {&"area.fresh_soy_milk": {"qualified": 6}}, "assist_id": &"assist.fresh_soy_milk.water_guide"},
+	&"growth.automation.fresh_soy_milk.auto_yellow_restock": {"label": "黄豆自动补货", "purchase_slot": &"install", "kind": &"automation", "price": 60, "requires_area_id": &"area.fresh_soy_milk", "requires_mastery": {&"area.fresh_soy_milk": {"qualified": 20}}, "automation_id": &"automation.fresh_soy_milk.auto_yellow_restock"},
+	&"growth.automation.fresh_soy_milk.auto_production": {"label": "豆浆自动生产", "purchase_slot": &"install", "kind": &"automation", "price": 120, "requires_area_id": &"area.fresh_soy_milk", "requires_mastery": {&"area.fresh_soy_milk": {"a_grade": 15}}, "automation_id": &"automation.fresh_soy_milk.auto_production"},
+	&"growth.quality.fresh_soy_milk.max": {"label": "豆浆品质 MAX", "purchase_slot": &"content", "kind": &"quality_upgrade", "price": 96, "requires_area_id": &"area.fresh_soy_milk", "requires_mastery": {&"area.fresh_soy_milk": {"a_grade": 18}}},
+	&"growth.pricing.fresh_soy_milk.premium": {"label": "豆浆溢价", "purchase_slot": &"content", "kind": &"pricing_upgrade", "price": 120, "requires_area_id": &"area.fresh_soy_milk", "requires_mastery": {&"area.fresh_soy_milk": {"a_grade": 20}}},
 }
 ## Day-end growth follows this authored route exactly.  Purchase eligibility
 ## changes the card state, never its position in the queue.
@@ -191,17 +188,16 @@ const FIXED_GROWTH_ROUTE: Array[StringName] = [
 	&"growth.equipment.pancake.intermediate",
 	&"growth.add_on.pancake.meat_floss",
 	&"growth.assist.youtiao.temperature_indicator",
-	&"growth.recipe.youtiao.oil_cake",
 	&"growth.capacity.stock.intermediate",
 	&"growth.equipment.youtiao.intermediate",
 	&"growth.add_on.pancake.coriander",
 	&"growth.area.fresh_soy_milk",
-	&"growth.recipe.fresh_soy_milk.black_bean",
 	&"growth.equipment.fresh_soy_milk.intermediate",
+	&"growth.assist.fresh_soy_milk.water_guide",
+	&"growth.recipe.fresh_soy_milk.black_bean",
 	&"growth.capacity.pancake_holding_tray.two_slots",
 	&"growth.add_on.pancake.preserved_mustard",
 	&"growth.add_on.pancake.pork_tenderloin",
-	&"growth.recipe.youtiao.sugar_oil_cake",
 	&"growth.recipe.fresh_soy_milk.red_bean",
 	&"growth.recipe.fresh_soy_milk.multigrain",
 	&"growth.equipment.pancake.advanced",
@@ -209,7 +205,11 @@ const FIXED_GROWTH_ROUTE: Array[StringName] = [
 	&"growth.automation.youtiao.auto_lift",
 	&"growth.equipment.youtiao.advanced",
 	&"growth.equipment.fresh_soy_milk.advanced",
+	&"growth.automation.fresh_soy_milk.auto_yellow_restock",
 	&"growth.automation.fresh_soy_milk.auto_cup_rack",
+	&"growth.automation.fresh_soy_milk.auto_production",
+	&"growth.quality.fresh_soy_milk.max",
+	&"growth.pricing.fresh_soy_milk.premium",
 ]
 const MASTERY_DEFINITIONS := {
 	&"area.pancake": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 8, "a_grade": 2}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
@@ -241,7 +241,7 @@ const PANCAKE_ORDER_TEMPLATES := {
 	&"order.pancake.tenderloin_double_sauce": {"title": "双酱里脊煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.pork_tenderloin", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"], "heat_preference": &"well_done", "time_limit": 88.0, "payment_coins": 36, "customer_line": "里脊配双酱，饼皮要结实一点。"},
 	&"order.pancake.coriander": {"title": "香菜薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.coriander"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 10, "customer_line": "薄脆和香菜都要，刷甜面酱。"},
 	&"order.pancake.preserved_mustard": {"title": "榨菜辣酱煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.preserved_mustard"], "sauce_stock_ids": [&"stock.pancake.sauce.red_chili"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 11, "customer_line": "加榨菜，刷辣酱。"},
-	&"order.pancake.youtiao_scallion": {"title": "油条葱香煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.youtiao", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "requires_recipe_ids": [&"recipe.youtiao.plain"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 12, "customer_line": "加一根原味油条、葱花和甜面酱。"},
+	&"order.pancake.youtiao_scallion": {"title": "油条葱香煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.youtiao", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "requires_recipe_ids": [&"recipe.youtiao.plain"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 12, "customer_line": "加一根油条、葱花和甜面酱。"},
 }
 
 static func area_definition(area_id: StringName) -> Dictionary:
@@ -310,6 +310,8 @@ static func validate_catalog() -> PackedStringArray:
 	for slot_index in range(1, 16):
 		var slot_id := StringName("slot.%02d" % slot_index)
 		if not MATERIAL_SLOT_DEFINITIONS.has(slot_id):
+			if slot_index in [5, 6]:
+				continue
 			errors.append("Missing material slot: %s" % slot_id)
 			continue
 		var slot: Dictionary = MATERIAL_SLOT_DEFINITIONS[slot_id]

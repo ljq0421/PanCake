@@ -32,7 +32,7 @@ func _run() -> void:
 	root.add_child(workstation)
 	await process_frame
 	await process_frame
-	var fixed_slot_names := ["SoyFullYellow", "SoyFullBlack", "SoyFullRed", "YoutiaoDoughPlain", "YoutiaoDoughOilCake", "YoutiaoDoughSugar"]
+	var fixed_slot_names := ["SoyFullYellow", "SoyFullBlack", "SoyFullRed", "YoutiaoDoughPlain"]
 	for index in fixed_slot_names.size():
 		var slot_number := index + 1
 		var source := workstation.get_node("SafeArea/%s" % fixed_slot_names[index]) as TextureButton

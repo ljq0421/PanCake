@@ -3,7 +3,7 @@ extends SceneTree
 const STATION_SCENE := preload("res://scenes/gameplay/direct_youtiao_station.tscn")
 const FLOW_SCREENSHOT := "res://tmp/validation/youtiao_station_tier1_flow_gpu_1920x1080.png"
 const TIER_SCREENSHOT := "res://tmp/validation/youtiao_station_three_tiers_gpu_1280x720.png"
-const RECIPE_IDS: Array[StringName] = [&"recipe.youtiao.plain", &"recipe.youtiao.oil_cake", &"recipe.youtiao.sugar_oil_cake"]
+const RECIPE_ID := &"recipe.youtiao.plain"
 
 var failures := PackedStringArray()
 
@@ -29,9 +29,9 @@ func _run() -> void:
 		flow_canvas.add_child(station)
 		await process_frame
 		var state := states[index]
-		var cooking := 6.0 if state == &"frying" else 12.0 if state in [&"ready_safe", &"overcooking", &"burnt", &"draining", &"ready_to_collect"] else 0.0
+		var cooking := 5.0 if state == &"frying" else 10.0 if state in [&"ready_safe", &"overcooking", &"burnt", &"draining", &"ready_to_collect"] else 0.0
 		var quality := 72.0 if state == &"overcooking" else 0.0 if state == &"burnt" else 100.0
-		station.apply_visual_snapshot(_snapshot(0, state, &"recipe.youtiao.plain", 0 if state == &"idle" else 2, cooking, quality), _inventory())
+		station.apply_visual_snapshot(_snapshot(0, state, RECIPE_ID, 0 if state == &"idle" else 4, cooking, quality), _inventory())
 	await _save_viewport(FLOW_SCREENSHOT, Vector2i(1920, 1080))
 	flow_canvas.queue_free()
 	await process_frame
@@ -48,7 +48,9 @@ func _run() -> void:
 		station.position = Vector2(330 + tier * 477, 330)
 		tier_canvas.add_child(station)
 		await process_frame
-		station.apply_visual_snapshot(_snapshot(tier, &"ready_to_collect", RECIPE_IDS[tier], [2, 2, 4][tier], 12.0, 100.0), _inventory())
+		var tier_capacity: int = int([4, 6, 8][tier])
+		station.apply_visual_snapshot(_snapshot(tier, &"ready_to_collect", RECIPE_ID, tier_capacity, [10.0, 8.0, 6.0][tier], 100.0), _inventory())
+		station.prepared_slots[0].configure_count(tier_capacity, true, tier_capacity)
 	await _save_viewport(TIER_SCREENSHOT, Vector2i(1280, 720))
 	tier_canvas.queue_free()
 	await process_frame
@@ -70,7 +72,7 @@ func _snapshot(tier: int, state: StringName, recipe_id: StringName, quantity: in
 	return {
 		"owned": true,
 		"tier": tier,
-		"capacity": [2, 2, 4][tier],
+		"capacity": [4, 6, 8][tier],
 		"state": state,
 		"recipe_id": recipe_id,
 		"quantity": quantity,
@@ -78,7 +80,7 @@ func _snapshot(tier: int, state: StringName, recipe_id: StringName, quantity: in
 		"completed_elapsed_seconds": 8.0 if state == &"overcooking" else 15.0 if state == &"burnt" else 0.0,
 		"draining_elapsed_seconds": 1.0 if state == &"draining" else 2.0 if state == &"ready_to_collect" else 0.0,
 		"quality": quality,
-		"unlocked_recipe_ids": RECIPE_IDS,
+		"unlocked_recipe_ids": [RECIPE_ID],
 		"unlocked_automation_ids": [],
 		"owned_assist_ids": [],
 	}
@@ -86,9 +88,7 @@ func _snapshot(tier: int, state: StringName, recipe_id: StringName, quantity: in
 
 static func _inventory() -> Dictionary:
 	return {
-		"stock.youtiao.plain_dough": 4,
-		"stock.youtiao.oil_cake_dough": 4,
-		"stock.youtiao.sugar_oil_cake_dough": 4,
+		"stock.youtiao.plain_dough": 8,
 	}
 
 

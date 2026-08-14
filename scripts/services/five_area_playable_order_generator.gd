@@ -552,6 +552,7 @@ static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, se
 			"area_id": &"area.pancake",
 			"product_id": &"product.pancake.custom",
 			"quantity": 1,
+			"base_price_coins": maxi(int(legacy.get("payment_coins", 1)), 1),
 			"temperature_mode": &"room_temperature",
 			"pancake_template_id": template_id,
 			"ingredient_ids": Array(template.get("ingredient_stock_ids", [])),
@@ -599,15 +600,27 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 		if heater_owned and completed_devices.has(&"device.packaged_drink_heater") and _roll(seed, sequence, 79, 100) < 35:
 			temperature_mode = &"heated"
 	var patience := float(BASE_PATIENCE_SECONDS.get(area_id, 24.0))
+	var quantity := 1
+	if area_id == &"area.youtiao" and not teaching:
+		var quantity_roll := _roll(seed, sequence, 127, 100)
+		quantity = 1 if quantity_roll < 50 else (2 if quantity_roll < 85 else 3)
+	var ingredient_ids := PackedStringArray()
+	var required_stock_ids := Array(recipe.get("stock_ids", []))
+	if product_id == &"product.fresh_soy_milk.multigrain":
+		ingredient_ids = _soy_multigrain_ingredients(progression, seed, sequence)
+		required_stock_ids = Array(ingredient_ids)
+		if ingredient_ids.size() < 2:
+			return {"success": false, "reason": &"multigrain_ingredients_unavailable"}
 	return {
 		"success": true,
 		"items": [{
 			"area_id": area_id,
 			"product_id": product_id,
-			"quantity": 1,
+			"quantity": quantity,
+			"base_price_coins": maxi(int(product.get("base_sell_price", 1)), 1),
 			"temperature_mode": temperature_mode,
 			"pancake_template_id": &"",
-			"ingredient_ids": PackedStringArray(),
+			"ingredient_ids": ingredient_ids,
 			"sauce_ids": PackedStringArray(),
 		}],
 		"metadata": {
@@ -616,9 +629,9 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 			"tutorial_id": area_id if teaching else &"",
 			"tutorial_no_countdown": teaching,
 			"patience_seconds": patience,
-			"base_coins": maxi(int(product.get("base_sell_price", 1)), 1),
+			"base_coins": maxi(int(product.get("base_sell_price", 1)), 1) * quantity,
 		},
-		"required_stock_ids": Array(recipe.get("stock_ids", [])),
+		"required_stock_ids": required_stock_ids,
 	}
 
 
@@ -655,6 +668,27 @@ static func _eligible_product_ids(area_id: StringName, progression: Dictionary) 
 			ids.append(product_id)
 	ids.sort()
 	return ids
+
+
+static func _soy_multigrain_ingredients(progression: Dictionary, seed: int, sequence: int) -> PackedStringArray:
+	var unlocked := _id_set(progression.get("unlocked_stock_ids", []))
+	var beans: Array[StringName] = []
+	for stock_id in [
+		&"stock.fresh_soy_milk.yellow_bean",
+		&"stock.fresh_soy_milk.black_bean",
+		&"stock.fresh_soy_milk.red_bean",
+	]:
+		if unlocked.has(stock_id):
+			beans.append(stock_id)
+	var combinations: Array[PackedStringArray] = []
+	for left in range(beans.size()):
+		for right in range(left + 1, beans.size()):
+			combinations.append(PackedStringArray([str(beans[left]), str(beans[right])]))
+	if beans.size() >= 3:
+		combinations.append(PackedStringArray([str(beans[0]), str(beans[1]), str(beans[2])]))
+	if combinations.is_empty():
+		return PackedStringArray()
+	return combinations[_roll(seed, sequence, 113, combinations.size())]
 
 
 static func _eligible_pancake_templates(progression: Dictionary) -> Array[StringName]:

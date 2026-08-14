@@ -57,7 +57,7 @@ func _run() -> void:
 	var main: Control = MAIN_SCENE.instantiate()
 	root.add_child(main)
 	await process_frame
-	var quick_end_button := main.get_node("DebugOverlay/Root/DebugPanel/Labels/QuickEndBusinessDayButton") as Button
+	var quick_end_button := main.get_node("DebugOverlay").get_node("%QuickEndBusinessDayButton") as Button
 	quick_end_button.emit_signal("pressed")
 	await process_frame
 	var early_end_bill: Dictionary = game_session.call("today_bill")

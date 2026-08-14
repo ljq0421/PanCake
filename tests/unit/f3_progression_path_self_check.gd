@@ -38,7 +38,7 @@ func _initialize() -> void:
 	var advanced: RefCounted = SERVICE.new({"coins": 500, "current_day": 30, "reputation": 300, "owned_growth_ids": ["growth.automation.youtiao.auto_lift"], "unlocked_area_ids": ["area.pancake", "area.packaged_drink", "area.youtiao", "area.fresh_soy_milk", "area.steamer"], "area_mastery_details": {"area.packaged_drink": {"correct_temperature": 30, "correct_streak_best": 8}, "area.youtiao": {"qualified": 25, "a_grade": 10}}, "tutorial": {"completed_area_ids": ["area.pancake", "area.packaged_drink", "area.youtiao"], "queue_area_ids": [], "active_kind": "", "active_id": ""}})
 	_check(bool(advanced.call("purchase_status", &"growth.equipment.packaged_drink.advanced").get("can_purchase", false)), "advanced drink heater requires all areas and a best correct streak of eight")
 	_check(bool(advanced.call("purchase_status", &"growth.equipment.youtiao.advanced").get("can_purchase", false)), "advanced fryer opens at eight A-grade youtiao with all areas")
-	_check(bool(advanced.call("purchase_status", &"growth.automation.youtiao.auto_load").get("can_purchase", false)), "youtiao auto load opens at ten A grades after auto lift with all areas")
+	_check(advanced.call("purchase_status", &"growth.automation.youtiao.auto_load").get("reason") == &"unknown_growth", "retired youtiao auto load is absent")
 	_finish()
 
 

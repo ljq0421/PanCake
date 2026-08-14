@@ -171,11 +171,6 @@ def missing_entries() -> list[AssetEntry]:
             missing_entry(f"products/packaged_drink/{drink}_package{VERSION_SUFFIX}.png", "item_icon", [256, 256]),
             missing_entry(f"products/packaged_drink/{drink}_heated{VERSION_SUFFIX}.png", "item_icon", [256, 256]),
         ])
-    for product in ("oil_cake", "sugar_oil_cake"):
-        entries.extend([
-            missing_entry(f"ingredients/youtiao/{product}_dough{VERSION_SUFFIX}.png", "item_icon", [256, 256]),
-            missing_entry(f"products/youtiao/{product}{VERSION_SUFFIX}.png", "item_icon", [256, 256]),
-        ])
     for product in ("mantou", "vegetable_bun", "meat_bun"):
         entries.extend([
             missing_entry(f"ingredients/steamer/{product}_steaming{VERSION_SUFFIX}.png", "item_icon", [256, 256]),

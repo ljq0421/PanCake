@@ -15,6 +15,7 @@ signal store_completed(result: Dictionary)
 @onready var count_label: Label = $CountLabel
 
 var _count := 0
+var _capacity := 4
 var _unlocked := false
 var _press_pending := false
 var _press_position := Vector2.ZERO
@@ -25,8 +26,9 @@ func _ready() -> void:
 	_refresh_visual()
 
 
-func configure_count(count: int, unlocked: bool) -> void:
-	_count = clampi(count, 0, 6)
+func configure_count(count: int, unlocked: bool, capacity: int = 4) -> void:
+	_capacity = maxi(capacity, 0)
+	_count = clampi(count, 0, _capacity)
 	_unlocked = unlocked
 	_refresh_visual()
 
@@ -36,9 +38,9 @@ func _refresh_visual() -> void:
 		return
 	artwork.visible = true
 	artwork.modulate = Color.WHITE if _count > 0 else Color(1.0, 1.0, 1.0, 0.28)
-	count_label.text = "%d/6" % _count if _unlocked else "未解锁"
+	count_label.text = "%d/%d" % [_count, _capacity] if _unlocked else "未解锁"
 	tooltip_text = (
-		"拖入匹配炸物；拖出原味油条可加入煎饼" if allow_pancake_drag and _unlocked
+		"整锅拖入收纳；拖出油条可加入煎饼" if allow_pancake_drag and _unlocked
 		else "拖入匹配炸物" if _unlocked
 		else "对应炸物配方尚未解锁"
 	)
@@ -89,16 +91,16 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	var source_ref := Dictionary(payload.get("source_ref", {}))
 	return (
 		_unlocked
-		and _count < 6
-		and StringName(source_ref.get("source_kind", &"")) == &"youtiao_output"
+		and _count < _capacity
+		and StringName(source_ref.get("source_kind", &"")) == &"youtiao_batch"
 		and StringName(source_ref.get("product_id", &"")) == product_id
 	)
 
 
 func _drop_data(_at_position: Vector2, _data: Variant) -> void:
 	var session := get_node_or_null("/root/GameSession")
-	if session == null or not session.has_method("store_ready_youtiao_in_prepared_slot"):
+	if session == null or not session.has_method("store_ready_youtiao_batch"):
 		store_completed.emit({"success": false, "reason": &"no_game_session"})
 		return
-	var result: Dictionary = session.call("store_ready_youtiao_in_prepared_slot", slot_id)
+	var result: Dictionary = session.call("store_ready_youtiao_batch", slot_id)
 	store_completed.emit(result)

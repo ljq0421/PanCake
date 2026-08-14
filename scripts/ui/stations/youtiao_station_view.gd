@@ -5,13 +5,9 @@ signal intent_requested(intent: Dictionary)
 
 const RECIPE_IDS: Array[StringName] = [
 	&"recipe.youtiao.plain",
-	&"recipe.youtiao.oil_cake",
-	&"recipe.youtiao.sugar_oil_cake",
 ]
 const RECIPE_STOCK_IDS := {
 	&"recipe.youtiao.plain": &"stock.youtiao.plain_dough",
-	&"recipe.youtiao.oil_cake": &"stock.youtiao.oil_cake_dough",
-	&"recipe.youtiao.sugar_oil_cake": &"stock.youtiao.sugar_oil_cake_dough",
 }
 
 @onready var tier_label: Label = %TierLabel
@@ -25,6 +21,7 @@ const RECIPE_STOCK_IDS := {
 @onready var load_button: Button = %LoadButton
 @onready var start_button: Button = %StartButton
 @onready var lift_button: Button = %LiftButton
+@onready var auto_lift_toggle: CheckButton = %AutoLiftToggle
 @onready var collect_button: Button = %CollectButton
 @onready var discard_button: Button = %DiscardButton
 @onready var restock_button: Button = %RestockButton
@@ -41,7 +38,7 @@ var _restock_held := false
 
 
 func _ready() -> void:
-	_recipe_buttons = [%PlainButton, %OilCakeButton, %SugarOilCakeButton]
+	_recipe_buttons = [%PlainButton]
 	for index in range(_recipe_buttons.size()):
 		_recipe_buttons[index].pressed.connect(_select_recipe.bind(RECIPE_IDS[index]))
 	%QuantityMinusButton.pressed.connect(_change_quantity.bind(-1))
@@ -49,6 +46,7 @@ func _ready() -> void:
 	load_button.pressed.connect(_emit_load)
 	start_button.pressed.connect(_emit_action.bind(&"start"))
 	lift_button.pressed.connect(_emit_action.bind(&"lift"))
+	auto_lift_toggle.toggled.connect(func(enabled: bool): intent_requested.emit({"type": &"set_youtiao_auto_lift", "enabled": enabled}))
 	collect_button.pressed.connect(_emit_collect)
 	discard_button.pressed.connect(func(): intent_requested.emit({"type": &"discard_youtiao"}))
 	restock_button.button_down.connect(_set_restock_held.bind(true))
@@ -112,8 +110,11 @@ func _emit_action(action_id: StringName) -> void:
 
 
 func _emit_collect() -> void:
+	if StringName(Dictionary(_snapshot.get("machine", {})).get("state", &"")) == &"ready_to_collect":
+		intent_requested.emit({"type": &"store_youtiao_batch", "slot_id": &"slot.04"})
+		return
 	if _order_id.is_empty() or _item_index < 0:
-		feedback_label.text = "选择当前订单中的油条项后再取出。"
+		feedback_label.text = "选择当前订单中的油条项后再逐根装配。"
 		return
 	intent_requested.emit({"type": &"deliver_youtiao", "order_id": _order_id, "item_index": _item_index})
 
@@ -125,12 +126,18 @@ func _refresh() -> void:
 	var inventory := Dictionary(_snapshot.get("inventory", {}))
 	var unlocked_recipes := PackedStringArray(Array(_snapshot.get("unlocked_recipe_ids", [])))
 	var tier := clampi(int(machine.get("tier", 0)), 0, 2)
-	tier_label.text = ["基础 · 2份 / 12秒", "中级 · 2份 / 9秒", "高级 · 4份 / 9秒"][tier]
+	tier_label.text = ["基础 · 4份 / 10秒", "中级 · 6份 / 8秒", "高级 · 8份 / 6秒"][tier]
 	var item := Dictionary(_snapshot.get("order_item", {}))
 	order_label.text = "当前订单项：未选择" if item.is_empty() else "当前订单项：%s" % _product_label(StringName(item.get("product_id", &"")))
 	var state := StringName(machine.get("state", &"unowned"))
+	var prepared_count := int(Dictionary(_snapshot.get("prepared_slot", {})).get("count", 0))
 	state_label.text = "炸锅状态：%s" % _state_text(state)
-	quality_label.text = "当前品质：%d · %s" % [roundi(float(machine.get("quality", 100.0))), _warning_text(machine)]
+	quality_label.text = "当前品质：%d · 成品区 %d/%d · %s" % [roundi(float(machine.get("quality", 100.0))), prepared_count, int(Dictionary(_snapshot.get("prepared_slot", {})).get("capacity", 4)), _warning_text(machine)]
+	var automation_ids := Array(_snapshot.get("unlocked_automation_ids", []))
+	var owns_auto_lift := automation_ids.has("automation.youtiao.auto_lift") or automation_ids.has(&"automation.youtiao.auto_lift")
+	auto_lift_toggle.visible = owns_auto_lift
+	auto_lift_toggle.set_pressed_no_signal(owns_auto_lift and bool(machine.get("auto_lift_enabled", false)))
+	auto_lift_toggle.text = "自动升篮：开" if auto_lift_toggle.button_pressed else "自动升篮：关"
 	quantity_label.text = "装入数量：%d" % _quantity
 	for index in range(_recipe_buttons.size()):
 		var recipe_id := RECIPE_IDS[index]
@@ -146,10 +153,12 @@ func _refresh_interaction() -> void:
 		return
 	var disabled := _locked or not _interaction_enabled
 	var state := StringName(Dictionary(_snapshot.get("machine", {})).get("state", &"unowned"))
+	var prepared_count := int(Dictionary(_snapshot.get("prepared_slot", {})).get("count", 0))
 	load_button.disabled = disabled or _selected_recipe_id.is_empty() or state not in [&"idle", &"loaded"]
 	start_button.disabled = disabled or state != &"loaded"
 	lift_button.disabled = disabled or state not in [&"ready_safe", &"overcooking"]
-	collect_button.disabled = disabled or state != &"ready_to_collect"
+	collect_button.text = "整锅收纳" if state == &"ready_to_collect" else "逐根装配订单"
+	collect_button.disabled = disabled or (state != &"ready_to_collect" and (prepared_count <= 0 or _order_id.is_empty() or _item_index < 0))
 	discard_button.disabled = disabled or state != &"burnt"
 	restock_button.disabled = disabled or _selected_recipe_id.is_empty()
 	%QuantityMinusButton.disabled = disabled or _quantity <= 1
@@ -162,9 +171,7 @@ func _set_restock_held(value: bool) -> void:
 
 static func _recipe_label(recipe_id: StringName) -> String:
 	match recipe_id:
-		&"recipe.youtiao.plain": return "原味油条"
-		&"recipe.youtiao.oil_cake": return "油饼"
-		&"recipe.youtiao.sugar_oil_cake": return "糖油饼"
+		&"recipe.youtiao.plain": return "油条"
 	return "未知面胚"
 
 
@@ -192,7 +199,7 @@ static func _warning_text(machine: Dictionary) -> String:
 		&"burnt": return "不可交付"
 		&"frying":
 			var tier := int(machine.get("tier", 0))
-			var duration: float = float([12.0, 9.0, 9.0][clampi(tier, 0, 2)])
+			var duration: float = float([10.0, 8.0, 6.0][clampi(tier, 0, 2)])
 			if duration - float(machine.get("cooking_elapsed_seconds", 0.0)) <= 3.0:
 				return "黄色预警：即将熟成"
 	return "状态正常"

@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png" id="2_griddle"]
@@ -22,7 +22,10 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png" id="20_sweet_sauce"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png" id="21_chili_sauce"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png" id="22_spreader"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v1_five_area_v2.png" id="23_egg_crack_1"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png" id="24_sauce_brush"]
+[ext_resource type="Script" path="res://scripts/ui/pancake_fold_overlay.gd" id="25_fold_overlay"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_intact_raw_v1_five_area_v2.png" id="26_egg_intact"]
 
 [sub_resource type="StyleBoxFlat" id="ActionStyle"]
 bg_color = Color(0.88, 0.47, 0.13, 0.94)
@@ -56,6 +59,20 @@ shader_parameter/field_texel_size = Vector2(0.0104167, 0.0104167)
 shader_parameter/pan_height_ratio = 0.694
 shader_parameter/fold_left_line_ratio = 0.38
 shader_parameter/fold_right_line_ratio = 0.62
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_egg_crack"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("23_egg_crack_1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_egg")
+}],
+"loop": false,
+"name": &"crack",
+"speed": 6.25
+}]
 
 [node name="CompactGriddleUnit" type="Control"]
 custom_minimum_size = Vector2(360, 292)
@@ -113,9 +130,10 @@ mouse_filter = 0
 script = ExtResource("5_heatmap")
 heatmap_update_hz = 30.0
 render_texture_size = 128
-draw_pointer_trace = true
+draw_pointer_trace = false
 draw_pan_outline = false
 elliptical_hit_test = true
+show_unbroken_egg_from_model = false
 draw_spreader_fallback = false
 draw_sauce_brush_fallback = false
 
@@ -152,6 +170,41 @@ meat_floss_texture = ExtResource("11_floss")
 pork_tenderloin_texture = ExtResource("12_tenderloin")
 coriander_texture = ExtResource("13_coriander")
 preserved_mustard_texture = ExtResource("14_mustard")
+scallion_scale = 0.18
+
+[node name="PancakeFoldOverlay" type="Control" parent="PancakeSurface"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("25_fold_overlay")
+pancake_front_texture = ExtResource("16_cooked")
+pancake_back_texture = ExtResource("3_pancake")
+pancake_edge_texture = ExtResource("18_edge")
+paper_bag_package_texture = ExtResource("4_bag")
+
+[node name="EggCrackEffect" type="AnimatedSprite2D" parent="PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+z_index = 6
+texture_filter = 1
+position = Vector2(139.1, 0)
+scale = Vector2(0.45, 0.45)
+sprite_frames = SubResource("SpriteFrames_egg_crack")
+animation = &"crack"
+
+[node name="EggIntactVisual" type="Sprite2D" parent="PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+z_index = 3
+texture_filter = 1
+position = Vector2(139.1, 139.1)
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("26_egg_intact")
 
 [node name="SpreaderArtwork" type="Sprite2D" parent="PancakeSurface"]
 unique_name_in_owner = true
@@ -207,48 +260,3 @@ offset_right = 332.0
 offset_bottom = 224.0
 mouse_filter = 2
 show_percentage = false
-
-[node name="SauceAction" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-offset_left = 18.0
-offset_top = 252.0
-offset_right = 126.0
-offset_bottom = 290.0
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("SecondaryStyle")
-text = "挤下一种酱"
-
-[node name="IngredientAction" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-offset_left = 130.0
-offset_top = 252.0
-offset_right = 242.0
-offset_bottom = 290.0
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("SecondaryStyle")
-text = "放下一种料"
-
-[node name="FoldAction" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-offset_left = 246.0
-offset_top = 252.0
-offset_right = 342.0
-offset_bottom = 290.0
-theme_override_font_sizes/font_size = 14
-theme_override_styles/normal = SubResource("ActionStyle")
-text = "折叠"
-
-[node name="DiscardAction" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-offset_left = 287.0
-offset_top = 6.0
-offset_right = 346.0
-offset_bottom = 34.0
-theme_override_colors/font_color = Color(1, 0.67, 0.55, 1)
-theme_override_font_sizes/font_size = 13
-text = "丢弃"
-flat = true

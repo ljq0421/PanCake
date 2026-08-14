@@ -24,7 +24,7 @@ const DEFINITIONS := {
 	PORK_TENDERLOIN: {"label": "里脊肉", "structural_load": 0.55, "wetness": 0.08},
 	CORIANDER: {"label": "香菜", "structural_load": 0.03, "wetness": 0.02},
 	PRESERVED_MUSTARD: {"label": "榨菜", "structural_load": 0.10, "wetness": 0.03},
-	YOUTIAO: {"label": "原味油条", "structural_load": 0.55, "wetness": 0.02},
+	YOUTIAO: {"label": "油条", "structural_load": 0.55, "wetness": 0.02},
 }
 
 var placements: Array[Dictionary] = []

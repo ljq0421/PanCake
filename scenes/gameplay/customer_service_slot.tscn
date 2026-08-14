@@ -4,18 +4,6 @@
 [ext_resource type="Texture2D" uid="uid://01c6ab302kc5" path="res://resources/art/ui/order/order_card_multi_dish_v4_chinese_ui.png" id="2_order_card"]
 [ext_resource type="Script" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
 
-[sub_resource type="StyleBoxFlat" id="FocusStyle"]
-bg_color = Color(1, 0.78, 0.24, 0.08)
-border_width_left = 5
-border_width_top = 5
-border_width_right = 5
-border_width_bottom = 5
-border_color = Color(1, 0.68, 0.12, 1)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-
 [sub_resource type="StyleBoxFlat" id="TransparentStyle"]
 bg_color = Color(0, 0, 0, 0)
 
@@ -28,18 +16,6 @@ offset_bottom = 490.0
 mouse_filter = 2
 script = ExtResource("1_script")
 
-
-[node name="FocusFrame" type="Panel" parent="." unique_id=2100456032]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 2.0
-offset_top = 2.0
-offset_right = 538.0
-offset_bottom = 478.0
-mouse_filter = 2
-z_index = 40
-theme_override_styles/panel = SubResource("FocusStyle")
 
 [node name="Portrait" type="TextureRect" parent="." unique_id=175191323]
 unique_name_in_owner = true

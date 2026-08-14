@@ -30,6 +30,7 @@ func _run() -> void:
 	_check(seen.has(&"area.pancake") and seen.has(&"area.youtiao") and seen.has(&"area.fresh_soy_milk"), "deterministic sampling reaches all three active areas")
 	_check(not seen.has(&"area.packaged_drink") and not seen.has(&"area.steamer") and supported_only, "sampling never emits retired areas")
 	_check(combo_seen, "full three-area shop can generate combo orders")
+	_check_youtiao_quantities(inventory)
 	_check_youtiao_stage_ratios(inventory)
 	_check_three_area_ratios(inventory)
 	var pancake_only := _fully_playable_progression()
@@ -42,11 +43,16 @@ func _run() -> void:
 	var youtiao_tutorial := _fully_playable_progression()
 	youtiao_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake"], "active_kind": &"area", "active_id": &"area.youtiao"}
 	var youtiao_teaching := Dictionary(GENERATOR.generate(youtiao_tutorial, {}, 3, 1, 5, 0))
-	_check(_single_area(youtiao_teaching) == &"area.youtiao" and bool(Dictionary(youtiao_teaching.get("metadata", {})).get("tutorial_no_countdown", false)), "youtiao unlock creates one unlimited teaching order even at zero stock")
+	_check(_single_area(youtiao_teaching) == &"area.youtiao" and int(Dictionary(Array(youtiao_teaching.get("items", []))[0]).get("quantity", 0)) == 1 and bool(Dictionary(youtiao_teaching.get("metadata", {})).get("tutorial_no_countdown", false)), "youtiao unlock creates one single-item unlimited teaching order even at zero stock")
 	var soy_tutorial := _fully_playable_progression()
 	soy_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao"], "active_kind": &"area", "active_id": &"area.fresh_soy_milk"}
 	var soy_teaching := Dictionary(GENERATOR.generate(soy_tutorial, {}, 3, 1, 8, 0))
 	_check(_single_area(soy_teaching) == &"area.fresh_soy_milk" and bool(Dictionary(soy_teaching.get("metadata", {})).get("tutorial_no_countdown", false)), "soy unlock creates one unlimited teaching order even at zero stock")
+	var wide_spreader_growth := _fully_playable_progression()
+	wide_spreader_growth["owned_growth_ids"] = PackedStringArray(["growth.tool.pancake.wide_spreader"])
+	wide_spreader_growth["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "completed_device_ids": [], "queue_area_ids": [], "queue_device_ids": [], "active_kind": &"", "active_id": &""}
+	var promoted_wide_spreader_order := Dictionary(GENERATOR.generate(wide_spreader_growth, inventory, 3, 1, 9, 0))
+	_check(bool(promoted_wide_spreader_order.get("success", false)) and not bool(Dictionary(promoted_wide_spreader_order.get("metadata", {})).get("tutorial_no_countdown", false)), "wide spreader ownership produces only an ordinary timed content order, never a teaching order")
 	var retired_tutorial := _fully_playable_progression()
 	retired_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "active_kind": &"area", "active_id": &"area.steamer"}
 	var fallback := Dictionary(GENERATOR.generate(retired_tutorial, {}, 9, 2, 9, 0))
@@ -72,6 +78,25 @@ func _check_youtiao_stage_ratios(inventory: Dictionary) -> void:
 	_check(absf(float(pancake_main) / sample_count - 0.75) <= 0.03, "youtiao stage keeps 75% pancake-main orders")
 	_check(absf(float(youtiao_single) / sample_count - 0.25) <= 0.03, "youtiao stage keeps 25% youtiao single orders")
 	_check(absf(float(pancake_with_youtiao) / maxf(float(pancake_main), 1.0) - 0.30) <= 0.04, "30% of pancake-main orders add youtiao")
+
+
+func _check_youtiao_quantities(inventory: Dictionary) -> void:
+	var progression := _fully_playable_progression()
+	progression["unlocked_area_ids"] = [&"area.youtiao"]
+	var tutorial := Dictionary(progression.get("tutorial", {})).duplicate(true)
+	tutorial["completed_area_ids"] = [&"area.youtiao"]
+	progression["tutorial"] = tutorial
+	var counts := {1: 0, 2: 0, 3: 0}
+	var sample_count := 5000
+	for sequence in range(1, sample_count + 1):
+		var generated := Dictionary(GENERATOR.generate(progression, inventory, 41773, sequence, 8, 0))
+		var item := Dictionary(Array(generated.get("items", []))[0])
+		var quantity := int(item.get("quantity", 0))
+		counts[quantity] = int(counts.get(quantity, 0)) + 1
+		_check(StringName(item.get("product_id", &"")) == &"product.youtiao.plain" and quantity in [1, 2, 3], "ordinary fryer orders contain only one to three oil strips")
+	_check(absf(float(counts[1]) / sample_count - 0.50) <= 0.03, "one-strip orders use the authored 50% weight")
+	_check(absf(float(counts[2]) / sample_count - 0.35) <= 0.03, "two-strip orders use the authored 35% weight")
+	_check(absf(float(counts[3]) / sample_count - 0.15) <= 0.03, "three-strip orders use the authored 15% weight")
 
 
 func _check_three_area_ratios(inventory: Dictionary) -> void:
@@ -107,9 +132,9 @@ func _fully_playable_progression() -> Dictionary:
 	return {
 		"unlocked_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"],
 		"device_tiers": {&"device.pancake_griddle": 2, &"device.youtiao_fryer": 2, &"device.fresh_soy_milk_machine": 2},
-		"unlocked_recipe_ids": [&"recipe.pancake.base", &"recipe.youtiao.plain", &"recipe.youtiao.oil_cake", &"recipe.youtiao.sugar_oil_cake", &"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.black_bean", &"recipe.fresh_soy_milk.red_bean", &"recipe.fresh_soy_milk.multigrain"],
-		"unlocked_product_ids": [&"product.pancake.custom", &"product.youtiao.plain", &"product.youtiao.oil_cake", &"product.youtiao.sugar_oil_cake", &"product.fresh_soy_milk.yellow_bean", &"product.fresh_soy_milk.black_bean", &"product.fresh_soy_milk.red_bean", &"product.fresh_soy_milk.multigrain"],
-		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour", &"stock.youtiao.plain_dough", &"stock.youtiao.oil_cake_dough", &"stock.youtiao.sugar_oil_cake_dough", &"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean", &"stock.fresh_soy_milk.multigrain"],
+		"unlocked_recipe_ids": [&"recipe.pancake.base", &"recipe.youtiao.plain", &"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.black_bean", &"recipe.fresh_soy_milk.red_bean", &"recipe.fresh_soy_milk.multigrain"],
+		"unlocked_product_ids": [&"product.pancake.custom", &"product.youtiao.plain", &"product.fresh_soy_milk.yellow_bean", &"product.fresh_soy_milk.black_bean", &"product.fresh_soy_milk.red_bean", &"product.fresh_soy_milk.multigrain"],
+		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour", &"stock.youtiao.plain_dough", &"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean"],
 		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "active_kind": &"", "active_id": &""},
 	}
 

@@ -17,13 +17,13 @@ func _run() -> void:
 	var legacy_file := FileAccess.open(session.SAVE_PATH, FileAccess.WRITE)
 	if legacy_file != null:
 		legacy_file.store_string(JSON.stringify({
-			"version": 3,
-			"save_kind": "five_area_v1",
+			"version": 4,
+			"save_kind": "breakfast_stall_v1",
 			"progression": {"coins": 999, "unlocked_area_ids": ["area.pancake", "area.packaged_drink", "area.steamer"]},
 		}))
 		legacy_file.close()
 		session.call("_load_save")
-		_check(not FileAccess.file_exists(session.SAVE_PATH), "old five-area development save is removed instead of ambiguously migrated")
+		_check(not FileAccess.file_exists(session.SAVE_PATH), "v4 development save is removed instead of migrating retired multigrain stock or batches")
 	else:
 		print("INFO: user:// unavailable; disk incompatibility assertion skipped")
 	var new_game := Dictionary(session.call("begin_new_game"))
@@ -33,8 +33,8 @@ func _run() -> void:
 	save_without_special_state.erase("special_customer_state")
 	session.set("_save_data", save_without_special_state)
 	session.call("_ensure_save_shape")
-	_check(Dictionary(session.get("_save_data")).has("special_customer_state") and int(Dictionary(session.get("_save_data")).get("version", 0)) == 4, "old version-four save receives a default special state without a version bump")
-	_check(session.SAVE_VERSION == 4 and session.SAVE_KIND == "breakfast_stall_v1", "save identity marks the three-area breakfast-stall model")
+	_check(Dictionary(session.get("_save_data")).has("special_customer_state") and int(Dictionary(session.get("_save_data")).get("version", 0)) == session.SAVE_VERSION, "current save shape restores optional special state without changing identity")
+	_check(session.SAVE_VERSION >= 5 and session.SAVE_KIND == "breakfast_stall_v1", "save identity marks the current three-area breakfast-stall model")
 	var progression: RefCounted = session.call("progression_service")
 	_check(bool(progression.call("owns_area", &"area.pancake")) and not bool(progression.call("owns_area", &"area.youtiao")) and not bool(progression.call("owns_area", &"area.fresh_soy_milk")), "new save opens only pancake area")
 	var inventory := Dictionary(session.call("inventory_snapshot"))

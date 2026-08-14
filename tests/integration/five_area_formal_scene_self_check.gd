@@ -53,7 +53,7 @@ func _run() -> void:
 		"SafeArea/DiscardCurrentPancakeButton",
 	]:
 		_check(workstation.get_node_or_null(removed_path) == null, "%s is physically absent instead of hidden" % removed_path)
-	for slot_index in range(7, 19):
+	for slot_index in range(5, 19):
 		_check(workstation.get_node_or_null("SafeArea/LockedIngredientArtwork/Slot%02d" % slot_index) == null, "retired lock artwork slot %02d is absent" % slot_index)
 		_check(workstation.get_node_or_null("SafeArea/LockedIngredientInteractions/Slot%02dLockedButton" % slot_index) == null, "retired lock interaction slot %02d is absent" % slot_index)
 	var pending_payment := workstation.get_node_or_null("FiveAreaInfrastructure/PendingPaymentButton") as Button
@@ -61,11 +61,13 @@ func _run() -> void:
 	_check(soy != null and soy.has_signal("status_message") and soy.has_method("refresh_from_session"), "soy machine remains directly operable")
 	_check(youtiao != null and youtiao.has_signal("status_message") and youtiao.has_method("refresh_from_session"), "youtiao fryer remains directly operable")
 	_check(soy != null and soy.get_node_or_null("RackOutput01") != null and soy.get_node_or_null("RackOutput04") != null, "soy station prebuilds four output-rack positions")
-	for slot_name in [&"YoutiaoDoughPlain", &"YoutiaoDoughOilCake", &"YoutiaoDoughSugar"]:
-		var material_slot := workstation.get_node_or_null("SafeArea/%s" % slot_name) as Control
-		_check(material_slot != null and material_slot.size == Vector2(89.0, 89.0), "%s remains a direct dough source" % slot_name)
+	var youtiao_material_slot := workstation.get_node_or_null("SafeArea/YoutiaoDoughPlain") as Control
+	_check(youtiao_material_slot != null and youtiao_material_slot.size == Vector2(298.0, 89.0), "one wide oil-strip dough source replaces the former three-product row")
+	_check(workstation.get_node_or_null("SafeArea/YoutiaoDoughOilCake") == null and workstation.get_node_or_null("SafeArea/YoutiaoDoughSugar") == null, "retired fryer dough sources are physically absent")
+	for slot_name in [&"SoyFullYellow", &"SoyFullBlack", &"SoyFullRed"]:
+		_check(workstation.get_node_or_null("SafeArea/%s" % slot_name) != null, "%s remains a full-size fixed bean source" % slot_name)
 	for slot_name in [&"SoySplitYellow", &"SoySplitBlack", &"SoySplitRed", &"SoySplitMultigrain", &"SoySplitReserved02", &"SoySplitReserved03"]:
-		_check(workstation.get_node_or_null("SafeArea/%s" % slot_name) != null, "%s stays authored in the scene" % slot_name)
+		_check(workstation.get_node_or_null("SafeArea/%s" % slot_name) == null, "%s retired split source is physically absent" % slot_name)
 	var tutorial_overlay := workstation.get_node_or_null("TutorialGuideOverlay") as Control
 	_check(tutorial_overlay != null and tutorial_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE, "tutorial overlay remains nonblocking")
 	workstation.queue_free()

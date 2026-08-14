@@ -57,7 +57,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.72, 0.4, 1)
 theme_override_font_sizes/font_size = 18
-text = "基础 · 2份 / 12秒"
+text = "基础 · 4份 / 10秒"
 
 [node name="OrderLabel" type="Label" parent="Margin/Content"]
 unique_name_in_owner = true
@@ -69,28 +69,14 @@ text = "当前订单项：未选择"
 [node name="RecipeShelf" type="GridContainer" parent="Margin/Content"]
 layout_mode = 2
 theme_override_constants/h_separation = 10
-columns = 3
+columns = 1
 
 [node name="PlainButton" type="Button" parent="Margin/Content/RecipeShelf"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(205, 72)
+custom_minimum_size = Vector2(640, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "原味油条\n面胚 0"
-
-[node name="OilCakeButton" type="Button" parent="Margin/Content/RecipeShelf"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(205, 72)
-layout_mode = 2
-theme_override_font_sizes/font_size = 17
-text = "油饼\n未解锁"
-
-[node name="SugarOilCakeButton" type="Button" parent="Margin/Content/RecipeShelf"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(205, 72)
-layout_mode = 2
-theme_override_font_sizes/font_size = 17
-text = "糖油饼\n未解锁"
+text = "油条\n面胚 0"
 
 [node name="LoadRow" type="HBoxContainer" parent="Margin/Content"]
 layout_mode = 2
@@ -154,7 +140,7 @@ autowrap_mode = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.7, 0.61, 1)
 theme_override_font_sizes/font_size = 15
-text = "未满容量也可启动；熟成后手动升篮，离油 2 秒再取出；高级只扩容，不会自动升篮。"
+text = "未满容量也可启动；成熟后手动或自动升篮，沥油 2 秒后整锅收纳。"
 autowrap_mode = 2
 
 [node name="ActionRow" type="GridContainer" parent="Margin/Content"]
@@ -177,12 +163,20 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "手动升篮"
 
+[node name="AutoLiftToggle" type="CheckButton" parent="Margin/Content/ActionRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(155, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "自动升篮：开"
+
 [node name="CollectButton" type="Button" parent="Margin/Content/ActionRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(155, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "取出 1 份交付"
+text = "整锅收纳"
 
 [node name="DiscardButton" type="Button" parent="Margin/Content/ActionRow"]
 unique_name_in_owner = true
@@ -220,4 +214,3 @@ text = "油条炸锅尚未解锁"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
-

@@ -5,16 +5,27 @@ var _failures: Array[String] = []
 
 
 func _initialize() -> void:
+	for tier_case in [
+		{"tier": 0, "capacity": 4, "duration": 10.0},
+		{"tier": 1, "capacity": 6, "duration": 8.0},
+		{"tier": 2, "capacity": 8, "duration": 6.0},
+	]:
+		var tier_fryer: RefCounted = MODEL.new(int(tier_case["tier"]), true)
+		_check(int(tier_fryer.call("capacity")) == int(tier_case["capacity"]), "tier %d exposes the authored capacity" % int(tier_case["tier"]))
+		tier_fryer.call("load_recipe", &"recipe.youtiao.plain", int(tier_case["capacity"]))
+		var started := Dictionary(tier_fryer.call("start"))
+		_check(is_equal_approx(float(started.get("duration_seconds", 0.0)), float(tier_case["duration"])), "tier %d exposes the authored cook time" % int(tier_case["tier"]))
+
 	var fryer: RefCounted = MODEL.new()
 	_check(fryer.call("load_recipe", &"recipe.youtiao.plain", 1).get("reason") == &"equipment_not_owned", "locked fryer rejects loading")
 	fryer.call("configure_owned", 0)
-	_check(int(fryer.call("capacity")) == 2, "basic fryer capacity is two")
+	_check(int(fryer.call("capacity")) == 4, "basic fryer capacity is four")
 	_check(bool(fryer.call("load_recipe", &"recipe.youtiao.plain", 1).get("success", false)), "partial batch is allowed")
-	_check(fryer.call("load_recipe", &"recipe.youtiao.oil_cake", 1).get("reason") == &"mixed_recipe", "one batch cannot mix recipes")
-	_check(bool(fryer.call("load_recipe", &"recipe.youtiao.plain", 1).get("success", false)), "matching recipe fills remaining capacity")
+	_check(fryer.call("load_recipe", &"recipe.youtiao.oil_cake", 1).get("reason") == &"invalid_recipe", "removed recipes are rejected")
+	_check(bool(fryer.call("load_recipe", &"recipe.youtiao.plain", 3).get("success", false)), "matching recipe fills remaining capacity")
 	_check(fryer.call("load_recipe", &"recipe.youtiao.plain", 1).get("reason") == &"capacity_exceeded", "capacity is enforced")
 	_check(bool(fryer.call("start").get("success", false)), "loaded fryer starts")
-	fryer.call("advance_time", 12.0)
+	fryer.call("advance_time", 10.0)
 	_check(fryer.get("state") == &"ready_safe", "batch enters safe window at completion")
 	fryer.call("advance_time", 5.0)
 	_check(fryer.get("state") == &"ready_safe" and is_equal_approx(float(fryer.get("quality")), 100.0), "full five second safe window does not decay")
@@ -24,13 +35,13 @@ func _initialize() -> void:
 	fryer.call("advance_time", 2.0)
 	_check(fryer.get("state") == &"ready_to_collect", "two second draining makes products collectible")
 	var first: Dictionary = fryer.call("collect", 1)
-	_check(bool(first.get("success", false)) and int(first.get("remaining_quantity", 0)) == 1 and fryer.get("state") == &"ready_to_collect", "partial collection leaves extra product in fryer")
-	_check(bool(fryer.call("collect", 1).get("success", false)) and fryer.get("state") == &"idle", "last collection releases fryer")
+	_check(bool(first.get("success", false)) and int(first.get("remaining_quantity", 0)) == 3 and fryer.get("state") == &"ready_to_collect", "partial collection leaves extra product in fryer")
+	_check(bool(fryer.call("collect", 3).get("success", false)) and fryer.get("state") == &"idle", "last collection releases fryer")
 
 	var stable_slots: RefCounted = MODEL.new(0, true)
 	stable_slots.call("load_recipe", &"recipe.youtiao.plain", 2)
 	stable_slots.call("start")
-	stable_slots.call("advance_time", 12.0)
+	stable_slots.call("advance_time", 10.0)
 	stable_slots.call("lift")
 	stable_slots.call("advance_time", 2.0)
 	var left_result := Dictionary(stable_slots.call("collect_slot", 0))
@@ -44,9 +55,9 @@ func _initialize() -> void:
 	_check(Array(legacy_slots.call("snapshot").get("occupied_slot_indices", [])).hash() == [0, 1].hash(), "legacy quantity-only snapshots rebuild slots from left to right")
 
 	var burnt: RefCounted = MODEL.new(2, true)
-	burnt.call("load_recipe", &"recipe.youtiao.sugar_oil_cake", 4)
+	burnt.call("load_recipe", &"recipe.youtiao.plain", 8)
 	burnt.call("start")
-	burnt.call("advance_time", 24.001)
+	burnt.call("advance_time", 21.001)
 	_check(burnt.get("state") == &"burnt", "advanced fryer still burns without auto lift")
 	_check(bool(burnt.call("discard").get("success", false)) and burnt.get("state") == &"idle", "burnt batch discards as one batch")
 
@@ -67,7 +78,7 @@ func _initialize() -> void:
 	var automated: RefCounted = MODEL.new(0, true)
 	automated.call("load_recipe", &"recipe.youtiao.plain", 1)
 	automated.call("start")
-	automated.call("advance_time", 12.0, true)
+	automated.call("advance_time", 10.0, true)
 	_check(automated.get("state") == &"draining", "auto lift replaces only the lift action")
 	automated.call("advance_time", 2.0, true)
 	_check(automated.get("state") == &"ready_to_collect", "auto lifted product still requires normal draining")

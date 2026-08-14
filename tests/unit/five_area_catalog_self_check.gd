@@ -10,7 +10,7 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 26, "three-area growth route contains 26 active upgrades")
+	_check(CATALOG.growth_ids().size() == 29, "three-area growth route contains 29 active upgrades after retiring two fryer recipes")
 	for growth_id in CATALOG.growth_ids():
 		var definition := CATALOG.growth_definition(growth_id)
 		_check(CATALOG.AREA_IDS.has(StringName(definition.get("requires_area_id", &""))), "%s belongs to an active area" % growth_id)
@@ -25,25 +25,24 @@ func _run() -> void:
 	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 0).get("griddle_count", 0)) == 1, "basic pancake station has one griddle")
 	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 1).get("griddle_count", 0)) == 2, "intermediate pancake station has two griddles")
 	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 2).get("griddle_count", 0)) == 3, "advanced pancake station has three griddles")
+	for youtiao_tier in [{"tier": 0, "capacity": 4, "duration": 10.0}, {"tier": 1, "capacity": 6, "duration": 8.0}, {"tier": 2, "capacity": 8, "duration": 6.0}]:
+		var definition := CATALOG.device_tier(&"device.youtiao_fryer", int(youtiao_tier["tier"]))
+		_check(int(definition.get("capacity", 0)) == int(youtiao_tier["capacity"]) and is_equal_approx(float(definition.get("duration_seconds", 0.0)), float(youtiao_tier["duration"])), "youtiao tier %d uses its 4/6/8 and 10/8/6 contract" % int(youtiao_tier["tier"]))
 	_check(CATALOG.PHYSICAL_AREA_IDS == [&"area.fresh_soy_milk", &"area.pancake", &"area.youtiao"], "physical area order")
 	_check(CATALOG.UNLOCK_AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "unlock area order")
 	for stock_id in CATALOG.stock_ids():
 		_check(CATALOG.AREA_IDS.has(StringName(CATALOG.stock_definition(stock_id).get("area_id", &""))), "%s belongs to an active area" % stock_id)
 	var expected_slots := {
-		4: &"stock.youtiao.plain_dough", 5: &"stock.youtiao.oil_cake_dough", 6: &"stock.youtiao.sugar_oil_cake_dough",
+		1: &"stock.fresh_soy_milk.yellow_bean", 2: &"stock.fresh_soy_milk.black_bean", 3: &"stock.fresh_soy_milk.red_bean",
+		4: &"stock.youtiao.plain_dough",
 		7: &"stock.pancake.egg", 8: &"stock.pancake.baocui", 9: &"stock.pancake.scallion",
-	}
-	var expected_soy_split := {
-		1: [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.multigrain"],
-		2: [&"stock.fresh_soy_milk.black_bean", &""],
-		3: [&"stock.fresh_soy_milk.red_bean", &""],
 	}
 	for slot_index in range(1, 16):
 		var slot := CATALOG.material_slot_definition(StringName("slot.%02d" % slot_index))
 		if expected_slots.has(slot_index):
 			_check(slot.get("kind") == &"stock" and slot.get("stock_id") == expected_slots[slot_index], "slot %02d stock ownership" % slot_index)
-		elif expected_soy_split.has(slot_index):
-			_check(slot.get("kind") == &"split_stock" and Array(slot.get("stock_ids", [])) == expected_soy_split[slot_index], "slot %02d owns authored full/split soy cells" % slot_index)
+		elif slot_index in [5, 6]:
+			_check(slot.is_empty(), "retired youtiao slot %02d has no active definition" % slot_index)
 		elif CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY.has(StringName("slot.%02d" % slot_index)):
 			_check(slot.get("kind") == &"dynamic_add_on", "slot %02d participates in dynamic pancake add-on priority" % slot_index)
 		else:
@@ -55,10 +54,13 @@ func _run() -> void:
 		_check(CATALOG.stock_definition(stock_id).get("material_slot_id") == &"", "%s has no permanent material slot" % stock_id)
 	for sauce_id in CATALOG.SAUCE_DEFINITIONS.keys():
 		_check(CATALOG.stock_definition(sauce_id).get("material_slot_id") == &"", "%s does not occupy a material slot" % sauce_id)
-	for stock_id in [&"stock.youtiao.plain_dough", &"stock.youtiao.oil_cake_dough", &"stock.youtiao.sugar_oil_cake_dough"]:
+	for stock_id in [&"stock.youtiao.plain_dough"]:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the confirmed pancake-ingredient speed" % stock_id)
-	for stock_id in [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean", &"stock.fresh_soy_milk.multigrain"]:
+	_check(CATALOG.recipe_definition(&"recipe.youtiao.oil_cake").is_empty() and CATALOG.recipe_definition(&"recipe.youtiao.sugar_oil_cake").is_empty(), "retired fryer recipes are absent")
+	_check(CATALOG.product_definition(&"product.youtiao.oil_cake").is_empty() and CATALOG.product_definition(&"product.youtiao.sugar_oil_cake").is_empty(), "retired fryer products are absent")
+	for stock_id in [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean"]:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the pancake-ingredient speed" % stock_id)
+	_check(CATALOG.stock_definition(&"stock.fresh_soy_milk.multigrain").is_empty() and Array(CATALOG.recipe_definition(&"recipe.fresh_soy_milk.multigrain").get("stock_ids", [])).is_empty(), "multigrain remains a product recipe without an independent stock")
 	var copy := CATALOG.stock_definition(&"stock.pancake.egg")
 	copy["material_slot_id"] = &"slot.invalid"
 	_check(CATALOG.stock_definition(&"stock.pancake.egg").get("material_slot_id") == &"slot.07", "catalog queries return deep copies")

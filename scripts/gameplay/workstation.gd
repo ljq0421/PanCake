@@ -343,6 +343,7 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 @onready var daily_bill_stats_label: Label = %DailyBillStatsLabel
 @onready var daily_bill_rows: GridContainer = %DailyBillRows
 @onready var daily_bill_close_button: Button = %DailyBillCloseButton
+@onready var debug_fulfill_growth_button: Button = %DebugFulfillGrowthButton
 @onready var growth_balance_label: Label = %GrowthBalanceLabel
 @onready var begin_next_day_button: Button = %BeginNextDayButton
 @onready var unlock_progress_button: Button = %UnlockProgressButton
@@ -556,6 +557,7 @@ func _ready() -> void:
 	payment_coin_layer.z_index = 40
 	payment_collection_area.visible = false
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
+	_configure_debug_growth_button()
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
 	unlock_progress_button.pressed.connect(_open_unlock_progress)
 	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
@@ -617,6 +619,7 @@ func _ready_formal_shop_shell(game_session: Node, formal_active: Dictionary) -> 
 	payment_coin_layer.z_index = 40
 	payment_collection_area.visible = false
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
+	_configure_debug_growth_button()
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
 	unlock_progress_button.pressed.connect(_open_unlock_progress)
 	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
@@ -3180,6 +3183,49 @@ func _refresh_growth_section(message: String = "") -> void:
 	daily_bill_panel.size = DAILY_BILL_FIXED_SIZE
 
 
+func _configure_debug_growth_button() -> void:
+	if debug_fulfill_growth_button == null:
+		return
+	debug_fulfill_growth_button.visible = OS.is_debug_build()
+	if OS.is_debug_build() and not debug_fulfill_growth_button.pressed.is_connected(_on_debug_fulfill_growth_pressed):
+		debug_fulfill_growth_button.pressed.connect(_on_debug_fulfill_growth_pressed)
+
+
+func _on_debug_fulfill_growth_pressed() -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session == null or not game_session.has_method("debug_fulfill_next_growth_requirements"):
+		_refresh_growth_section("调试进度服务不可用。")
+		return
+	var result: Dictionary = game_session.call("debug_fulfill_next_growth_requirements")
+	if bool(result.get("success", false)):
+		var growth_id := StringName(result.get("growth_id", &""))
+		var message := "固定成长路线已完成。" if growth_id.is_empty() else "已补齐“%s”的条件；请使用正式成长卡购买。" % _growth_ticket_display_name(growth_id)
+		refresh_progression_ui_after_debug(message)
+	else:
+		refresh_progression_ui_after_debug(_debug_growth_failure_text(StringName(result.get("reason", &"unknown"))))
+
+
+func refresh_progression_ui_after_debug(message: String = "") -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("five_area_progression_snapshot"):
+		apply_progression_effects(Dictionary(game_session.call("five_area_progression_snapshot")))
+	_refresh_global_status()
+	if daily_bill_panel != null and daily_bill_panel.visible:
+		_refresh_growth_section(message)
+		if unlock_progress_panel.visible:
+			_refresh_unlock_progress()
+
+
+func _debug_growth_failure_text(reason: StringName) -> String:
+	match reason:
+		&"pending_purchase_exists": return "已有预订项，请先开始下一营业日完成激活。"
+		&"business_day_open": return "只能在营业总结中补齐成长条件。"
+		&"route_complete": return "固定成长路线已完成。"
+		&"debug_tools_unavailable": return "快捷测试仅在 Debug 构建可用。"
+		&"no_active_save": return "当前没有可修改的存档。"
+	return "未能补齐条件：%s" % str(reason)
+
+
 func _on_growth_ticket_pressed(ticket_index: int) -> void:
 	if ticket_index < 0 or ticket_index >= _growth_recommendations.size():
 		return
@@ -3331,7 +3377,6 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		&"growth.area.packaged_drink": "成品饮品档口",
 		&"growth.product.packaged_drink.soy_milk": "豆奶饮品",
 		&"growth.area.youtiao": "油条档口",
-		&"growth.recipe.youtiao.oil_cake": "油饼配方",
 		&"growth.area.fresh_soy_milk": "现磨豆浆档口",
 		&"growth.recipe.fresh_soy_milk.black_bean": "黑豆豆浆配方",
 		&"growth.area.steamer": "蒸品档口",
@@ -3815,7 +3860,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 					order = candidate
 					break
 		if order.is_empty():
-			customer_service_slots[service_slot_index].call("bind_order", {}, false, null, [], [], 0)
+			customer_service_slots[service_slot_index].call("bind_order", {}, null, [], [], 0)
 			continue
 		var item_textures: Array = []
 		var items := Array(order.get("items", []))
@@ -3836,7 +3881,6 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		customer_service_slots[service_slot_index].call(
 			"bind_order",
 			order,
-			StringName(order.get("order_id", &"")) == _formal_order_id,
 			textures.get(reaction, textures[&"neutral"]) as Texture2D,
 			item_textures,
 			requirements,

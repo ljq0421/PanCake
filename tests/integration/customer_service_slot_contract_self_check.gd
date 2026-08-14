@@ -22,10 +22,10 @@ func _run() -> void:
 		"items": [{"product_id": &"product.packaged_drink.milk", "quantity": 1, "prepared_product_instance_ids": []}],
 		"metadata": {"legacy_order": {"title": "this must not replace the quote"}},
 	}
-	slot.bind_order(order, true, null, [null], [], 17)
+	slot.bind_order(order, null, [null], [], 17)
 	_check(slot.order_title.text == "完美完成可得 ×17 金币", "order card top displays the exact perfect-completion quote")
 	_check(not slot.coin_label.visible, "order card removes the duplicate lower coin amount")
-	_check(slot.portrait.z_index < 0 and slot.portrait_button.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.focus_frame.z_index > slot.get_node("OrderPanel").z_index, "portrait and transparent portrait hit area render behind all order-card controls")
+	_check(slot.portrait.z_index < 0 and slot.portrait_button.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("FocusFrame") == null, "portrait and transparent portrait hit area render behind all order-card controls without a customer focus frame")
 	_check(slot.portrait_button.mouse_filter == Control.MOUSE_FILTER_STOP and slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "portrait and order card keep separate explicit click targets")
 	_check(slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "customer slot shell cannot cover unrelated foreground controls")
 	var special_order := {
@@ -39,18 +39,18 @@ func _run() -> void:
 		"remaining_patience_seconds": 150.0,
 		"items": [{"product_id": &"product.pancake.custom", "quantity": 3, "prepared_product_instance_ids": []}],
 	}
-	slot.bind_order(special_order, true, null, [null], [], 18)
+	slot.bind_order(special_order, null, [null], [], 18)
 	_check(slot.special_title.visible and slot.special_title.text == "超能吃大胃王" and slot.special_rule.visible and slot.special_rule.text.find("共3份") >= 0, "special title and rule summary come from static order-card labels")
 	_check(slot.quantity_labels[0].visible and slot.quantity_labels[0].text == "0/3", "quantity progress begins at zero of three")
 	for delivered_count in [1, 2, 3]:
 		special_order["items"][0]["prepared_product_instance_ids"] = range(delivered_count)
-		slot.bind_order(special_order, true, null, [null], [], 18)
+		slot.bind_order(special_order, null, [null], [], 18)
 		var expected := "✓" if delivered_count == 3 else "%d/3" % delivered_count
 		_check(slot.quantity_labels[0].text == expected, "quantity progress renders %s" % expected)
 	var requested: Array = []
 	slot.delivery_requested.connect(func(order_id: StringName, item_index: int): requested.append([order_id, item_index]))
 	special_order["items"][0]["prepared_product_instance_ids"] = []
-	slot.bind_order(special_order, true, null, [null], [], 18)
+	slot.bind_order(special_order, null, [null], [], 18)
 	slot.item_buttons[0].pressed.emit()
 	_check(requested == [[&"order.special.ui", 0]], "special card preserves the exact order_id and item_index click route")
 	var session := root.get_node_or_null("GameSession")

@@ -11,26 +11,22 @@ func _initialize() -> void:
 		&"stock.fresh_soy_milk.yellow_bean",
 		&"stock.fresh_soy_milk.black_bean",
 		&"stock.fresh_soy_milk.red_bean",
-		&"stock.fresh_soy_milk.multigrain",
 	]:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s refills in 0.25 seconds" % stock_id)
 
 	var manual: RefCounted = MODEL.new(0, true)
 	_make_batch(manual, 2)
 	manual.call("advance_time", 5.0, false)
-	_check(manual.call("preview_collect", 1).get("reason") == &"cup_required" and not bool(Dictionary(manual.call("snapshot")).get("manual_cup_ready", true)), "completed soy cannot be delivered before the player fills a cup")
-	_check(bool(manual.call("fill_manual_cup").get("success", false)) and bool(Dictionary(manual.call("snapshot")).get("manual_cup_ready", false)), "manual cup action prepares exactly one cup")
 	var first_manual := Dictionary(manual.call("collect", 1))
-	_check(bool(first_manual.get("success", false)) and int(first_manual.get("remaining_quantity", 0)) == 1 and manual.call("preview_collect", 1).get("reason") == &"cup_required", "a multi-cup batch requires another cup after each collected serving")
-	manual.call("fill_manual_cup")
-	_check(bool(manual.call("collect", 1).get("success", false)) and StringName(Dictionary(manual.call("snapshot")).get("state", &"")) == &"idle", "the final manually filled cup releases the machine")
+	_check(bool(first_manual.get("success", false)) and int(first_manual.get("remaining_quantity", 0)) == 1 and bool(manual.call("preview_collect", 1).get("success", false)), "automatic outlet exposes the next cup in a multi-cup batch")
+	_check(bool(manual.call("collect", 1).get("success", false)) and StringName(Dictionary(manual.call("snapshot")).get("state", &"")) == &"idle", "the final automatic cup releases the machine")
 
 	var migrated: RefCounted = MODEL.new()
 	migrated.call("load_snapshot", {
 		"owned": true, "tier": 0, "state": &"ready_safe",
 		"recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "quantity": 1,
 	})
-	_check(bool(Dictionary(migrated.call("snapshot")).get("manual_cup_ready", false)) and bool(migrated.call("collect", 1).get("success", false)), "old completed-soy snapshot migrates as an already prepared product cup")
+	_check(bool(migrated.call("collect", 1).get("success", false)), "directly constructed completed snapshot restores as an automatic product cup")
 
 	var machine: RefCounted = MODEL.new(0, true)
 	_make_batch(machine, 2)

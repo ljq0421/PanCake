@@ -3212,13 +3212,13 @@ Use case: identity-preserve. Asset type: ProjectCake customer action Sprite2D, c
 - `effects_format`: 2 files at `256x256` RGBA; sizzle bubbles and oil drips are reused with code-driven phase/position loops
 - `processing`: generated against flat `#ff00ff`; chroma key removed with soft matte, thresholds `12/220`, and despill; normalized to fixed transparent canvases
 - `alpha_check`: all 13 files have four transparent corners, non-empty registered alpha bounds, and zero detected visible magenta pixels
-- `runtime_scene`: `res://scenes/gameplay/direct_youtiao_station.tscn` owns fixed body, four food-slot controls, low/high baskets, bubbles, drips, smoke, auto-lift and auto-load layers
-- `runtime_states`: idle, loaded, frying, ready-safe, overcooking, burnt, draining, ready-to-collect and unowned all converge from the production snapshot; raw-to-cooked crossfade, quality darkening, partial collection and final reset are presentation-only
-- `automation_contract`: `automation.youtiao.auto_lift` and `automation.youtiao.auto_load` reveal only their independent attachments; confirmed auto loading consumes real inventory through the existing atomic service and does not change cook/drain times
-- `interface_change`: `GameSession.confirm_and_run_youtiao_auto_load(recipe_id, quantity)` delegates the existing confirmed-profile and automatic-load services; no save-shape or production-model change
+- `runtime_scene`: `res://scenes/gameplay/direct_youtiao_station.tscn` owns one oil-strip recipe, eight fixed food-slot controls, low/high baskets, bubbles, drips, smoke, and the auto-lift layer
+- `runtime_states`: idle, loaded, frying, ready-safe, overcooking, burnt, draining, ready-to-collect and unowned all converge from the production snapshot; raw-to-cooked crossfade, quality darkening, whole-batch storage and final reset are presentation-only
+- `automation_contract`: `automation.youtiao.auto_lift` is the fryer area's only automation and replaces only the manual lift action
+- `interface_change`: `GameSession.store_ready_youtiao_batch(slot_id)` atomically moves the full drained batch into the tier-matched 4/6/8 prepared tray
 - `temperature_assist`: `assist.youtiao.temperature_indicator` uses a code-drawn three-zone range bar and remains separate from the tier-2 physical gauge
-- `automated_checks`: `YOUTIAO_STATION_VISUAL_SELF_CHECK_PASS`; `YOUTIAO_AUTO_LOAD_SELF_CHECK_PASS`; `WORKSTATION EXPANSION ASSET SELF-CHECK PASS: 86 textures`; `FIVE_AREA_FORMAL_SCENE_SELF_CHECK_PASS`; `INITIAL_UNLOCK_WORKSTATION_SELF_CHECK_PASS`; `F3_STATION_SCENE_SELF_CHECK_PASS`
-- `gpu_pointer_check`: D3D12 / NVIDIA GeForce RTX 5070; `YOUTIAO_DIRECT_POINTER_SMOKE_PASS`; manual dough drag, start, manual lift, two-second drain, product-to-tray drag, automatic batch controls and automatic lift all exercised against the formal scene with Godot user data isolated under `tmp/godot-userdata`
+- `automated_checks`: `YOUTIAO_STATION_VISUAL_SELF_CHECK_PASS`; `YOUTIAO_FRYER_SELF_CHECK_PASS`; `PREPARED_PRODUCT_SLOTS_SELF_CHECK_PASS`; `FIVE_AREA_FORMAL_SCENE_SELF_CHECK_PASS`
+- `gpu_pointer_check`: the formal smoke covers manual dough drag, start, manual lift, two-second drain, whole-batch tray storage, per-unit delivery, waste, and automatic lift
 - `gpu_previews`: `res://tmp/validation/youtiao_station_formal_1920x1080.png`; `res://tmp/validation/youtiao_station_formal_1280x720.png`; `res://tmp/validation/youtiao_station_tier1_flow_gpu_1920x1080.png`; `res://tmp/validation/youtiao_station_three_tiers_gpu_1280x720.png`
 - `v3_thumbnail_contract`: the three v3 full-machine images remain unchanged for thumbnail/upgrade display; v4 is used only by the formal direct operation station
 - `human_review`: pending; automated checks and agent inspection do not constitute final art acceptance

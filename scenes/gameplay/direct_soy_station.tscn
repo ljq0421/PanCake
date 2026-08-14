@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_0_v2_chinese.png" id="2_machine"]
@@ -13,7 +13,6 @@
 [ext_resource type="Texture2D" path="res://resources/art/effects/soy_milk/soy_milk_spoiled_vapor_v3.png" id="15_spoiled"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="16_black_ingredient"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="17_red_ingredient"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png" id="18_multigrain_ingredient"]
 [ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_black_bean_v3.png" id="19_black_cup"]
 [ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_red_bean_v3.png" id="20_red_cup"]
 [ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_multigrain_v3.png" id="21_multigrain_cup"]
@@ -193,14 +192,14 @@ offset_bottom = 130.0
 theme_override_styles/normal = SubResource("PartStyle")
 text = "启动"
 
-[node name="CupButton" type="Button" parent="."]
+[node name="ClearHopperButton" type="Button" parent="."]
 unique_name_in_owner = true
 offset_left = 12.0
 offset_top = 136.0
-offset_right = 76.0
+offset_right = 80.0
 offset_bottom = 174.0
 theme_override_styles/normal = SubResource("PartStyle")
-text = "接杯"
+text = "清仓"
 
 [node name="MachineOutput" type="TextureButton" parent="."]
 unique_name_in_owner = true
@@ -214,50 +213,136 @@ script = ExtResource("7_source")
 
 [node name="RackOutput01" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 232.0
-offset_top = 120.0
-offset_right = 300.0
-offset_bottom = 188.0
+offset_left = 90.0
+offset_top = 190.0
+offset_right = 142.0
+offset_bottom = 242.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("7_source")
 [node name="RackOutput02" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 232.0
-offset_top = 188.0
-offset_right = 300.0
-offset_bottom = 256.0
+offset_left = 144.0
+offset_top = 190.0
+offset_right = 196.0
+offset_bottom = 242.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("7_source")
 [node name="RackOutput03" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 164.0
-offset_top = 188.0
-offset_right = 232.0
-offset_bottom = 256.0
+offset_left = 198.0
+offset_top = 190.0
+offset_right = 250.0
+offset_bottom = 242.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("7_source")
 [node name="RackOutput04" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 96.0
-offset_top = 188.0
-offset_right = 164.0
-offset_bottom = 256.0
+offset_left = 252.0
+offset_top = 190.0
+offset_right = 304.0
+offset_bottom = 242.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("7_source")
 
 [node name="StateLabel" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 28.0
-offset_top = 268.0
-offset_right = 278.0
-offset_bottom = 298.0
+offset_left = 8.0
+offset_top = 286.0
+offset_right = 298.0
+offset_bottom = 306.0
 theme_override_colors/font_color = Color(0.24, 0.13, 0.06, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
+
+[node name="HopperSummary" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 246.0
+offset_right = 298.0
+offset_bottom = 266.0
+theme_override_colors/font_color = Color(0.24, 0.13, 0.06, 1)
+theme_override_font_sizes/font_size = 14
+text = "料仓：空"
+
+[node name="AutomationStatus" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 266.0
+offset_right = 298.0
+offset_bottom = 286.0
+theme_override_colors/font_color = Color(0.34, 0.24, 0.1, 1)
+theme_override_font_sizes/font_size = 13
+text = "自动化：关"
+
+[node name="WaterMeter" type="ProgressBar" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 308.0
+offset_right = 298.0
+offset_bottom = 322.0
+max_value = 100.0
+show_percentage = false
+modulate = Color(1, 1, 1, 0.58)
+
+[node name="WaterGuideZones" type="Control" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 308.0
+offset_right = 298.0
+offset_bottom = 322.0
+mouse_filter = 2
+show_behind_parent = true
+
+[node name="RedLow" type="ColorRect" parent="WaterGuideZones"]
+offset_right = 72.5
+offset_bottom = 14.0
+color = Color(0.78, 0.22, 0.18, 0.9)
+
+[node name="YellowLow" type="ColorRect" parent="WaterGuideZones"]
+offset_left = 72.5
+offset_right = 130.5
+offset_bottom = 14.0
+color = Color(0.95, 0.72, 0.2, 0.9)
+
+[node name="Green" type="ColorRect" parent="WaterGuideZones"]
+offset_left = 130.5
+offset_right = 174.0
+offset_bottom = 14.0
+color = Color(0.24, 0.72, 0.32, 0.95)
+
+[node name="YellowHigh" type="ColorRect" parent="WaterGuideZones"]
+offset_left = 174.0
+offset_right = 232.0
+offset_bottom = 14.0
+color = Color(0.95, 0.72, 0.2, 0.9)
+
+[node name="RedHigh" type="ColorRect" parent="WaterGuideZones"]
+offset_left = 232.0
+offset_right = 290.0
+offset_bottom = 14.0
+color = Color(0.78, 0.22, 0.18, 0.9)
+
+[node name="WaterMarker" type="ColorRect" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 306.0
+offset_right = 11.0
+offset_bottom = 324.0
+mouse_filter = 2
+color = Color(0.12, 0.08, 0.04, 1)
+
+[node name="ProductionProgress" type="ProgressBar" parent="."]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 324.0
+offset_right = 298.0
+offset_bottom = 338.0
+max_value = 100.0
+show_percentage = false
 
 
 [node name="LockCover" type="Button" parent="."]

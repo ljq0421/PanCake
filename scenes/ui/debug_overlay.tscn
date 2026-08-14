@@ -3,12 +3,12 @@
 [ext_resource type="Script" path="res://scripts/ui/debug_overlay.gd" id="1_overlay"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_debug"]
-bg_color = Color(0.035, 0.045, 0.06, 0.90)
+bg_color = Color(0.035, 0.045, 0.06, 0.94)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.28, 0.88, 0.88, 0.80)
+border_color = Color(0.28, 0.88, 0.88, 0.8)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -35,54 +35,269 @@ mouse_filter = 2
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 742.0
-offset_bottom = 300.0
-mouse_filter = 2
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 900.0
+offset_bottom = 1048.0
+mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBox_debug")
 
-[node name="Labels" type="VBoxContainer" parent="Root/DebugPanel"]
+[node name="Scroll" type="ScrollContainer" parent="Root/DebugPanel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+horizontal_scroll_mode = 0
 
-[node name="Header" type="Label" parent="Root/DebugPanel/Labels"]
+[node name="Labels" type="VBoxContainer" parent="Root/DebugPanel/Scroll"]
+custom_minimum_size = Vector2(820, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Header" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.38, 1, 0.94, 1)
 theme_override_font_sizes/font_size = 20
-text = "M0 DEBUG OVERLAY"
+text = "PROJECT CAKE · F3 DEBUG"
 
-[node name="PerformanceLabel" type="Label" parent="Root/DebugPanel/Labels"]
+[node name="PerformanceLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "FPS"
 
-[node name="ModelLabel" type="Label" parent="Root/DebugPanel/Labels"]
+[node name="ModelLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Model"
 
-[node name="CursorLabel" type="Label" parent="Root/DebugPanel/Labels"]
+[node name="CursorLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Cursor"
 
-[node name="ModeLabel" type="Label" parent="Root/DebugPanel/Labels"]
+[node name="ModeLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Heatmap"
 
-[node name="LegendLabel" type="Label" parent="Root/DebugPanel/Labels"]
+[node name="LegendLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.78, 0.82, 1)
 text = "浅黄=薄 · 金黄=适中 · 橙褐=厚 · 暗红=破洞"
 
-[node name="QuickEndBusinessDayButton" type="Button" parent="Root/DebugPanel/Labels"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+[node name="ProgressSeparator" type="HSeparator" parent="Root/DebugPanel/Scroll/Labels"]
 layout_mode = 2
-mouse_filter = 0
+
+[node name="ProgressHeader" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.44, 1)
+theme_override_font_sizes/font_size = 19
+text = "当前进度（修改会直接写入当前存档）"
+
+[node name="ProgressionLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 16
+text = "正在读取进度……"
+
+[node name="ResourceActions" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AddCoinsButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/ResourceActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+text = "金币 +1000"
+
+[node name="AddReputationButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/ResourceActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+text = "声誉 +20"
+
+[node name="QuickEndBusinessDayButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/ResourceActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.88, 0.68, 1)
-theme_override_font_sizes/font_size = 18
 text = "测试：提前结束当前营业日"
+
+[node name="MasteryHeader" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+theme_override_font_sizes/font_size = 18
+text = "熟练度快捷增加（A级结果同时计入合格数）"
+
+[node name="PancakeMasteryRow" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Root/DebugPanel/Scroll/Labels/PancakeMasteryRow"]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+text = "煎饼"
+vertical_alignment = 1
+
+[node name="PancakeQualifiedButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeMasteryRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 40)
+layout_mode = 2
+text = "+5 合格结果"
+
+[node name="PancakeAGradeButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeMasteryRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 40)
+layout_mode = 2
+text = "+5 A级结果"
+
+[node name="YoutiaoMasteryRow" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Root/DebugPanel/Scroll/Labels/YoutiaoMasteryRow"]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+text = "油条"
+vertical_alignment = 1
+
+[node name="YoutiaoQualifiedButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/YoutiaoMasteryRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 40)
+layout_mode = 2
+text = "+5 合格结果"
+
+[node name="YoutiaoAGradeButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/YoutiaoMasteryRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 40)
+layout_mode = 2
+text = "+5 A级结果"
+
+[node name="SoyMasteryRow" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Root/DebugPanel/Scroll/Labels/SoyMasteryRow"]
+custom_minimum_size = Vector2(180, 40)
+layout_mode = 2
+text = "现磨豆浆"
+vertical_alignment = 1
+
+[node name="SoyQualifiedButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/SoyMasteryRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 40)
+layout_mode = 2
+text = "+5 合格结果"
+
+[node name="SoyAGradeButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/SoyMasteryRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 40)
+layout_mode = 2
+text = "+5 A级结果"
+
+[node name="TierSeparator" type="HSeparator" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+
+[node name="TierHeader" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.44, 1)
+theme_override_font_sizes/font_size = 18
+text = "区域设备检查点（仅营业总结可用，只向前推进）"
+
+[node name="TierHint" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.78, 0.82, 1)
+text = "测试较低等级请从新游戏开始，按 T0 → T1 → T2 顺序进行。"
+
+[node name="PancakeTierRow" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Root/DebugPanel/Scroll/Labels/PancakeTierRow"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+text = "煎饼鏊台"
+vertical_alignment = 1
+
+[node name="PancakeTier0Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T0"
+
+[node name="PancakeTier1Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T1"
+
+[node name="PancakeTier2Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T2"
+
+[node name="YoutiaoTierRow" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Root/DebugPanel/Scroll/Labels/YoutiaoTierRow"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+text = "油条炸锅"
+vertical_alignment = 1
+
+[node name="YoutiaoTier0Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/YoutiaoTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T0"
+
+[node name="YoutiaoTier1Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/YoutiaoTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T1"
+
+[node name="YoutiaoTier2Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/YoutiaoTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T2"
+
+[node name="SoyTierRow" type="HBoxContainer" parent="Root/DebugPanel/Scroll/Labels"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="Root/DebugPanel/Scroll/Labels/SoyTierRow"]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+text = "现磨豆浆机"
+vertical_alignment = 1
+
+[node name="SoyTier0Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/SoyTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T0"
+
+[node name="SoyTier1Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/SoyTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T1"
+
+[node name="SoyTier2Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/SoyTierRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 42)
+layout_mode = 2
+text = "T2"
+
+[node name="FeedbackLabel" type="Label" parent="Root/DebugPanel/Scroll/Labels"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 1, 0.72, 1)
+theme_override_font_sizes/font_size = 16
+text = "先结束营业，再使用等级检查点；所有修改会直接写入当前存档。"
+autowrap_mode = 2

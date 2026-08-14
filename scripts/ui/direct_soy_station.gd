@@ -15,7 +15,6 @@ const STOCK_IDS: Array[StringName] = [
 	&"stock.fresh_soy_milk.yellow_bean",
 	&"stock.fresh_soy_milk.black_bean",
 	&"stock.fresh_soy_milk.red_bean",
-	&"stock.fresh_soy_milk.multigrain",
 ]
 const MACHINE_TIER_0_TEXTURE := preload("res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_0_v2_chinese.png")
 const MACHINE_TIER_1_TEXTURE := preload("res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_v1_chinese.png")
@@ -25,7 +24,6 @@ const INGREDIENT_TEXTURES: Array[Texture2D] = [
 	preload("res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png"),
 	preload("res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png"),
 	preload("res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png"),
-	preload("res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png"),
 ]
 const CUP_TEXTURES: Array[Texture2D] = [
 	preload("res://resources/art/products/soy_milk/soy_milk_cup_yellow_bean_v3.png"),
@@ -37,11 +35,17 @@ const EMPTY_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_mi
 
 @onready var water_button: Button = %WaterButton
 @onready var start_button: Button = %StartButton
-@onready var cup_button: Button = %CupButton
+@onready var clear_hopper_button: Button = %ClearHopperButton
 @onready var machine_art: TextureRect = $Machine
 @onready var machine_output: ProductDragSource = %MachineOutput
 @onready var rack_outputs: Array[ProductDragSource] = [%RackOutput01, %RackOutput02, %RackOutput03, %RackOutput04]
 @onready var state_label: Label = %StateLabel
+@onready var hopper_summary: Label = %HopperSummary
+@onready var water_meter: ProgressBar = %WaterMeter
+@onready var water_marker: ColorRect = %WaterMarker
+@onready var water_guide_zones: Control = %WaterGuideZones
+@onready var production_progress: ProgressBar = %ProductionProgress
+@onready var automation_status: Label = %AutomationStatus
 @onready var visual_rig: Control = %VisualRig
 @onready var closed_lid_visual: TextureRect = %ClosedLidVisual
 @onready var open_lid_visual: TextureRect = %OpenLidVisual
@@ -68,9 +72,9 @@ func _ready() -> void:
 		1: _atlas_crop(MACHINE_TIER_1_TEXTURE),
 		2: _atlas_crop(MACHINE_TIER_2_TEXTURE),
 	}
-	water_button.pressed.connect(_perform_action.bind(&"add_water"))
+	water_button.pressed.connect(_toggle_water)
 	start_button.pressed.connect(_perform_action.bind(&"start"))
-	cup_button.pressed.connect(_perform_action.bind(&"fill_cup"))
+	clear_hopper_button.pressed.connect(_perform_action.bind(&"clear_hopper"))
 	lock_cover.pressed.connect(_on_lock_cover_pressed)
 	_machine_rest_position = machine_art.position
 	refresh_from_session()
@@ -99,10 +103,10 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	var session := get_node_or_null("/root/GameSession")
-	var result: Dictionary = session.call("load_f4_soy", StringName(source_ref.get("recipe_id", &"")), 1) if session != null else {"success": false, "reason": &"no_game_session"}
+	var result: Dictionary = session.call("add_f4_soy_ingredient", StringName(source_ref.get("stock_id", &""))) if session != null else {"success": false, "reason": &"no_game_session"}
 	status_message.emit("豆料已倒入料口" if bool(result.get("success", false)) else "豆料回到原位：%s" % str(result.get("reason", &"unknown")))
 	if bool(result.get("success", false)):
-		_animate_ingredient_load(StringName(source_ref.get("recipe_id", &"")))
+		_animate_ingredient_load(StringName(source_ref.get("stock_id", &"")))
 	refresh_from_session()
 
 
@@ -116,18 +120,19 @@ func refresh_from_session() -> void:
 	_refresh_machine_artwork(int(machine.get("tier", 0)))
 	lock_cover.visible = not unlocked_area
 	var state := StringName(machine.get("state", &"unowned"))
+	var water_filling := bool(machine.get("water_filling", false))
 	water_button.disabled = state != &"loaded"
+	water_button.text = "停水" if water_filling else "注水"
 	start_button.disabled = state != &"water_added"
 	var auto_cup_owned := _contains_id(Array(progression.get("unlocked_automation_ids", [])), &"automation.fresh_soy_milk.auto_cup_rack")
-	var manual_cup_ready := bool(machine.get("manual_cup_ready", false))
-	cup_button.visible = unlocked_area and not auto_cup_owned
-	cup_button.disabled = state not in [&"ready_safe", &"overcooking"] or manual_cup_ready
-	cup_button.text = "已接杯" if manual_cup_ready else "接杯"
+	clear_hopper_button.visible = unlocked_area
+	clear_hopper_button.disabled = state != &"loaded" or water_filling
 	var recipe_id := StringName(machine.get("recipe_id", &""))
 	var product_id := StringName(CATALOG.recipe_definition(recipe_id).get("product_id", &""))
 	var machine_spoiled := state == &"spoiled"
-	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id, "discardable": machine_spoiled}, PRODUCT_VISUALS.texture_for(product_id), manual_cup_ready or machine_spoiled, "豆浆已变质，请拖到垃圾桶丢弃" if machine_spoiled else "成品杯已接好，可交付订单")
-	machine_output.visible = manual_cup_ready or machine_spoiled
+	var machine_cup_ready := state in [&"ready_safe", &"overcooking"]
+	machine_output.configure({"source_kind": &"soy_output", "source_index": -1, "product_id": product_id, "discardable": machine_spoiled}, PRODUCT_VISUALS.texture_for(product_id), machine_cup_ready or machine_spoiled, "豆浆已变质，请拖到垃圾桶丢弃" if machine_spoiled else "成品杯可直接拖拽交付")
+	machine_output.visible = machine_cup_ready or machine_spoiled
 	var rack := Array(machine.get("output_rack", []))
 	var spoiled_rack_present := false
 	var rack_count := 0
@@ -141,7 +146,7 @@ func refresh_from_session() -> void:
 		var rack_product_id := StringName(CATALOG.recipe_definition(rack_recipe_id).get("product_id", &""))
 		rack_outputs[rack_index].configure({"source_kind": &"soy_output", "source_index": rack_index, "product_id": rack_product_id, "discardable": cup_spoiled}, PRODUCT_VISUALS.texture_for(rack_product_id), not cup.is_empty(), "豆浆已变质，请拖到垃圾桶丢弃" if cup_spoiled else "接杯架成品；正式订单开放后点击订单商品交付")
 		rack_outputs[rack_index].visible = not cup.is_empty()
-	_refresh_visual_layers(state, recipe_id, machine_spoiled, spoiled_rack_present, manual_cup_ready, unlocked_area)
+	_refresh_visual_layers(state, recipe_id, machine_spoiled, spoiled_rack_present, machine_cup_ready, unlocked_area)
 	if _last_state == &"grinding" and state in [&"ready_safe", &"overcooking", &"blocked"]:
 		_animate_dispense()
 	if rack_count > _last_rack_count:
@@ -149,6 +154,7 @@ func refresh_from_session() -> void:
 	_last_state = state
 	_last_rack_count = rack_count
 	state_label.text = "豆浆已变质，请拖到废弃区" if machine_spoiled or spoiled_rack_present else _timed_state_text(state, machine)
+	_refresh_operation_summary(machine, progression)
 
 
 func _refresh_machine_artwork(machine_tier: int) -> void:
@@ -165,9 +171,22 @@ static func _atlas_crop(source: Texture2D) -> AtlasTexture:
 func _perform_action(action_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result: Dictionary = session.call("perform_f4_soy_action", action_id) if session != null else {"success": false, "reason": &"no_game_session"}
-	status_message.emit("已接好一杯豆浆" if action_id == &"fill_cup" and bool(result.get("success", false)) else "已加水" if action_id == &"add_water" and bool(result.get("success", false)) else "豆浆机已启动" if bool(result.get("success", false)) else "设备没有动作：%s" % str(result.get("reason", &"unknown")))
+	status_message.emit("料仓已清空并计入废弃" if action_id == &"clear_hopper" and bool(result.get("success", false)) else "豆浆机已启动" if action_id == &"start" and bool(result.get("success", false)) else "设备没有动作：%s" % str(result.get("reason", &"unknown")))
 	if bool(result.get("success", false)):
-		_animate_water_and_close() if action_id == &"add_water" else _animate_start()
+		_animate_start() if action_id == &"start" else _animate_water_and_close()
+	refresh_from_session()
+
+
+func _toggle_water() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")) if session != null else {}
+	var action := &"stop_water" if bool(machine.get("water_filling", false)) else &"start_water"
+	var result: Dictionary = session.call("perform_f4_soy_action", action) if session != null else {"success": false, "reason": &"no_game_session"}
+	if bool(result.get("success", false)):
+		status_message.emit("水量 %.0f · %s级" % [float(result.get("water_value", 0.0)), str(result.get("grade", "注水中"))])
+		_animate_water_and_close()
+	else:
+		status_message.emit("注水没有动作：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
 
 
@@ -186,8 +205,8 @@ static func _contains_id(values: Array, expected: StringName) -> bool:
 	return values.has(expected) or values.has(str(expected))
 
 
-func _animate_ingredient_load(recipe_id: StringName) -> void:
-	var recipe_index := maxi(RECIPE_IDS.find(recipe_id), 0)
+func _animate_ingredient_load(stock_id: StringName) -> void:
+	var recipe_index := maxi(STOCK_IDS.find(stock_id), 0)
 	ingredient_visual.texture = INGREDIENT_TEXTURES[recipe_index]
 	ingredient_visual.position = Vector2(128.0, 4.0)
 	ingredient_visual.modulate = Color.WHITE
@@ -261,6 +280,8 @@ static func _state_text(state: StringName) -> String:
 
 
 static func _timed_state_text(state: StringName, machine: Dictionary) -> String:
+	if state == &"loaded" and bool(machine.get("water_filling", false)):
+		return "注水中 · %.0f" % float(machine.get("water_value", 0.0))
 	if state == &"grinding":
 		return "制作中 · %d秒" % _display_seconds(float(machine.get("seconds_to_ready", 0.0)))
 	if state in [&"ready_safe", &"overcooking"]:
@@ -269,6 +290,33 @@ static func _timed_state_text(state: StringName, machine: Dictionary) -> String:
 		var seconds := _display_seconds(float(machine.get("seconds_to_loss", 0.0)))
 		return "可取 · %d秒后变质" % seconds if state == &"ready_safe" else "变质中 · 剩余%d秒" % seconds
 	return _state_text(state)
+
+
+func _refresh_operation_summary(machine: Dictionary, progression: Dictionary) -> void:
+	var counts := Dictionary(machine.get("ingredient_counts", {}))
+	var parts := PackedStringArray()
+	for stock_id in STOCK_IDS:
+		var count := int(counts.get(stock_id, counts.get(str(stock_id), 0)))
+		if count > 0:
+			parts.append("%s×%d" % [str(CATALOG.stock_definition(stock_id).get("label", "豆料")), count])
+	hopper_summary.text = "料仓：空" if parts.is_empty() else "料仓：%s" % " + ".join(parts)
+	water_meter.value = float(machine.get("water_value", 0.0))
+	water_marker.position.x = 8.0 + clampf(float(machine.get("water_value", 0.0)), 0.0, 100.0) * 2.87
+	water_meter.tooltip_text = "绿区45–60 / 黄区25–44、61–80 / 其余红区"
+	water_guide_zones.modulate.a = 1.0 if bool(machine.get("water_guide_enabled", false)) else 0.38
+	var duration := float(machine.get("duration_seconds", 0.0))
+	production_progress.value = 0.0 if duration <= 0.0 else clampf(float(machine.get("elapsed_seconds", 0.0)) / duration * 100.0, 0.0, 100.0)
+	var automation_ids := Array(progression.get("unlocked_automation_ids", []))
+	var status := PackedStringArray()
+	if _contains_id(automation_ids, &"automation.fresh_soy_milk.auto_yellow_restock"):
+		status.append("补货")
+	if _contains_id(automation_ids, &"automation.fresh_soy_milk.auto_cup_rack"):
+		status.append("接杯")
+	if _contains_id(automation_ids, &"automation.fresh_soy_milk.auto_production"):
+		status.append("生产")
+	if _contains_id(Array(progression.get("owned_growth_ids", [])), &"growth.quality.fresh_soy_milk.max"):
+		status.append("品质MAX")
+	automation_status.text = "自动化：关" if status.is_empty() else "自动化：%s" % " / ".join(status)
 
 
 static func _display_seconds(value: float) -> int:

@@ -5,7 +5,6 @@ signal focus_requested(order_id: StringName)
 signal delivery_requested(order_id: StringName, item_index: int)
 signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictionary)
 
-@onready var focus_frame: Panel = %FocusFrame
 @onready var portrait: TextureRect = %Portrait
 @onready var portrait_button: Button = %PortraitButton
 @onready var card_focus_button: Button = %CardFocusButton
@@ -33,13 +32,12 @@ func _ready() -> void:
 			item_buttons[item_index].connect("product_source_dropped", _on_product_source_dropped)
 
 
-func bind_order(order: Dictionary, focused: bool, customer_texture: Texture2D, item_textures: Array, requirements: Array, perfect_quote: int) -> void:
+func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: Array, requirements: Array, perfect_quote: int) -> void:
 	_order_id = StringName(order.get("order_id", &""))
 	visible = not _order_id.is_empty()
 	if not visible:
 		return
 	portrait.texture = customer_texture
-	focus_frame.visible = focused
 	var special_customer_id := StringName(order.get("special_customer_id", Dictionary(order.get("metadata", {})).get("special_customer_id", &"")))
 	var title_text := str(order.get("special_title", Dictionary(order.get("metadata", {})).get("special_title", "")))
 	var rule_text := str(order.get("special_rule_text", Dictionary(order.get("metadata", {})).get("special_rule_text", "")))
@@ -81,6 +79,13 @@ func bind_order(order: Dictionary, focused: bool, customer_texture: Texture2D, i
 	patience_bar.visible = not unlimited
 	patience_bar.value = ratio * 100.0
 	patience_label.text = "教学单 · 不限时" if unlimited else "耐心 %d 秒" % ceili(remaining)
+
+
+func delivery_target(order_id: StringName, item_index: int) -> Control:
+	if _order_id != order_id or item_index < 0 or item_index >= item_buttons.size():
+		return null
+	var target := item_buttons[item_index]
+	return target if target.visible and not target.disabled else null
 
 
 func _request_focus() -> void:

@@ -9,6 +9,8 @@ const SCREENSHOT_SPECS := [
 const INITIAL_BATTER_SCREENSHOT := "res://tmp/validation/three_area_initial_batter_1920x1080.png"
 const SPREADING_SCREENSHOT := "res://tmp/validation/three_area_spreading_1920x1080.png"
 const FORMED_SCREENSHOT := "res://tmp/validation/three_area_formed_1920x1080.png"
+const EGG_CRACK_SCREENSHOT := "res://tmp/validation/three_area_egg_crack_1920x1080.png"
+const EGG_LANDED_SCREENSHOT := "res://tmp/validation/three_area_egg_landed_1920x1080.png"
 
 var failures := PackedStringArray()
 
@@ -63,6 +65,32 @@ func _run() -> void:
 	_prepare_surface(units[0], order, 2, 2.2, 0.0)
 	_prepare_surface(units[1], order, 3, 2.7, 1.8)
 	_prepare_surface(units[2], order, 4, 2.9, 2.5)
+	var egg_unit: Node = units[0]
+	var egg_slot := multi.get_node("SharedToolTray/WorktopSlot06/EggSlot") as FiveAreaMaterialSlot
+	var egg_source := egg_slot.source_ref()
+	var egg_slot_center := egg_slot.get_global_rect().get_center()
+	var egg_drop_center := (egg_unit.pancake_surface as Control).get_global_rect().get_center() + Vector2(24.0, 0.0)
+	_move_at(egg_slot_center)
+	_press_at(egg_slot_center)
+	await process_frame
+	_move_at(egg_drop_center, MOUSE_BUTTON_MASK_LEFT)
+	await process_frame
+	var egg_drag_payload := Dictionary(root.gui_get_drag_data())
+	_check(StringName(Dictionary(egg_drag_payload.get("source_ref", {})).get("stock_id", &"")) == &"stock.pancake.egg", "real pointer drag starts from the physical egg slot")
+	egg_unit.pancake_surface._drop_data(egg_unit.pancake_surface.size * 0.5 + Vector2(24.0, 0.0), egg_drag_payload)
+	_release_at(egg_drop_center)
+	await process_frame
+	var egg_drop_local: Vector2 = egg_unit.pancake_surface.size * 0.5 + Vector2(24.0, 0.0)
+	_check(egg_unit.egg_crack_effect.visible and absf(egg_unit.egg_crack_effect.position.x - egg_drop_local.x) <= 0.1 and egg_unit.egg_crack_effect.position.y < egg_drop_local.y and not egg_unit.egg_intact_visual.visible, "real egg drop falls directly above the actual target before revealing the intact egg")
+	_check(StringName(multi.get("_selected_tool")) == &"tool.pancake.spreader" and (multi.shared_tool_tray.get_node("WorktopSlot05/SpreaderButton") as TextureButton).button_pressed, "real egg drop automatically restores the highlighted shared spreader")
+	_check(not units[1].egg_crack_effect.visible and not units[2].egg_crack_effect.visible, "real egg crack animation does not leak to neighboring griddles")
+	var egg_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), EGG_CRACK_SCREENSHOT))
+	_check(bool(egg_capture.get("success", false)), "captured the active compact-griddle egg crack effect in a real GPU frame")
+	await create_timer(0.40).timeout
+	_check(not egg_unit.egg_crack_effect.visible and egg_unit.get_node_or_null("PancakeSurface/EggCrackArtwork") == null and egg_unit.egg_intact_visual.visible and egg_unit.egg_intact_visual.position.distance_to(egg_drop_local) <= 0.1 and egg_unit.pancake_model.has_egg(), "real crack animation removes the shell and leaves the intact egg at the player's drop point")
+	var egg_landed_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), EGG_LANDED_SCREENSHOT))
+	_check(bool(egg_landed_capture.get("success", false)), "captured the shell-free intact egg after the crack effect exits")
+	multi.call("clear_held_tool")
 	var unit_two: Node = units[2]
 	var baocui_slot := multi.get_node("SharedToolTray/WorktopSlot07/BaocuiSlot") as FiveAreaMaterialSlot
 	var baocui_source := baocui_slot.source_ref()
@@ -81,6 +109,25 @@ func _run() -> void:
 	_release_at(baocui_drop_center)
 	await process_frame
 	_check(unit_two.applied_ingredient_ids.has("stock.pancake.baocui"), "real pointer drag places baocui on the selected griddle")
+	var scallion_slot := multi.get_node("SharedToolTray/WorktopSlot08/ScallionSlot") as FiveAreaMaterialSlot
+	var scallion_center := scallion_slot.get_global_rect().get_center()
+	var scallion_drop_center := (unit_two.pancake_surface as Control).get_global_rect().get_center() + Vector2(-20.0, 0.0)
+	_move_at(scallion_center)
+	_press_at(scallion_center)
+	await process_frame
+	_move_at(scallion_drop_center, MOUSE_BUTTON_MASK_LEFT)
+	await process_frame
+	var scallion_payload := Dictionary(root.gui_get_drag_data())
+	unit_two.pancake_surface._drop_data(unit_two.pancake_surface.size * 0.5 + Vector2(-20.0, 0.0), scallion_payload)
+	_release_at(scallion_drop_center)
+	await process_frame
+	var scallion_sprite: Sprite2D
+	for child in unit_two.ingredient_layer.get_children():
+		var sprite := child as Sprite2D
+		if sprite != null and StringName(sprite.get_meta(&"ingredient_type", &"")) == IngredientModel.SCALLION:
+			scallion_sprite = sprite
+			break
+	_check(scallion_sprite != null and scallion_sprite.scale.is_equal_approx(Vector2(0.18, 0.18)), "real scallion drop renders at the compact scene's enlarged scale")
 	units[2].call("_refresh_ui")
 	multi.call("_on_shared_tool_selected", &"stock.pancake.sauce.sweet_flour")
 	var brush_center := (unit_two.pancake_surface as Control).get_global_rect().get_center()
@@ -91,18 +138,32 @@ func _run() -> void:
 	_release_at(brush_center)
 	await process_frame
 	_check(not unit_two.sauce_brush_artwork.visible, "real sauce brush hides on pointer release")
-	var fold_button := unit_two.fold_action as Button
-	var fold_center := fold_button.get_global_rect().get_center()
-	_move_at(fold_center)
-	_press_at(fold_center)
-	_release_at(fold_center)
+	_check(unit_two.get_node_or_null("FoldAction") == null and unit_two.get_node_or_null("DiscardAction") == null and not unit_two.main_action.visible, "compact griddle exposes no confirm, fold, or discard button after flipping")
+	var fold_surface_rect: Rect2 = (unit_two.pancake_surface as Control).get_global_rect()
+	var fold_left_start := fold_surface_rect.position + Vector2(24.0, fold_surface_rect.size.y * 0.5)
+	var fold_left_end := fold_surface_rect.position + Vector2(224.0, fold_surface_rect.size.y * 0.5)
+	_move_at(fold_left_start)
+	_press_at(fold_left_start)
+	_move_at(fold_left_end, MOUSE_BUTTON_MASK_LEFT)
 	await process_frame
-	_check(unit_two.fold_steps == 1, "real pointer click folds the enlarged griddle once")
-	_move_at(fold_center)
-	_press_at(fold_center)
-	_release_at(fold_center)
+	_release_at(fold_left_end)
 	await process_frame
-	_check(unit_two.fold_steps == 2, "real pointer click completes the second fold and packaging step")
+	_check(unit_two.fold_steps == 1 and unit_two.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT), "real pointer drag folds the enlarged griddle's left side")
+	var fold_right_start := fold_surface_rect.position + Vector2(fold_surface_rect.size.x - 24.0, fold_surface_rect.size.y * 0.5)
+	var fold_right_end := fold_surface_rect.position + Vector2(54.0, fold_surface_rect.size.y * 0.5)
+	_move_at(fold_right_start)
+	_press_at(fold_right_start)
+	_move_at(fold_right_end, MOUSE_BUTTON_MASK_LEFT)
+	await process_frame
+	_release_at(fold_right_end)
+	await process_frame
+	_check(unit_two.fold_steps == 2 and unit_two.state == CompactGriddleUnit.State.READY, "real pointer drag completes the second fold and automatic packaging")
+	var untouched_state_zero: int = units[0].state
+	var untouched_state_one: int = units[1].state
+	_press_and_release_r()
+	await process_frame
+	_check(unit_two.state == CompactGriddleUnit.State.IDLE, "real R key input clears the most recently operated griddle")
+	_check(units[0].state == untouched_state_zero and units[1].state == untouched_state_one, "real R key input leaves both other griddles unchanged")
 	var spread_unit: Node = units[0]
 	spread_unit.call("reset_unit")
 	spread_unit.call("begin_order", order)
@@ -123,17 +184,19 @@ func _run() -> void:
 	_move_at(spread_target, MOUSE_BUTTON_MASK_LEFT)
 	await process_frame
 	_check(spread_unit.spreader_artwork.visible and spread_unit.spreader_artwork.position.distance_to(spread_unit.pancake_surface.pointer_local_position) < 1.0, "real pointer drag shows the authored spreader at the compact-pan contact point")
-	_check(spread_unit.pancake_model.covered_cell_count() > initial_coverage, "real pointer drag expands the initial batter deposit")
+	_check(spread_unit.pancake_model.covered_cell_count() == initial_coverage and not spread_unit.pancake_surface.spreader_motion_valid, "real straight outward drag does not count as the required circular spreading gesture")
 	# Continue the same real held-pointer stroke as an outward spiral. This both
 	# exercises long segmented moves and produces the actual in-progress visual
 	# players see, rather than a synthetic filled field.
-	for spread_step in 30:
-		var progress := float(spread_step + 1) / 30.0
+	for spread_step in 120:
+		var progress := float(spread_step + 1) / 120.0
 		var angle := progress * TAU * 3.2
 		var radius := lerpf(20.0, 104.0, progress)
 		var spiral_point := spread_center + Vector2(cos(angle) * radius, sin(angle) * radius * 0.70)
 		_move_at(spiral_point, MOUSE_BUTTON_MASK_LEFT)
 		await process_frame
+		await process_frame
+	_check(spread_unit.pancake_model.covered_cell_count() > initial_coverage, "one real continuous outward circle expands the initial batter deposit")
 	var spread_release_point := spread_center + Vector2(cos(TAU * 3.2) * 104.0, sin(TAU * 3.2) * 104.0 * 0.70)
 	var spreading_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), SPREADING_SCREENSHOT))
 	_check(bool(spreading_capture.get("success", false)), "captured the visibly expanding batter frame")
@@ -166,7 +229,7 @@ func _run() -> void:
 	baocui_slot = tray.get_node("WorktopSlot07/BaocuiSlot") as FiveAreaMaterialSlot
 	_check(baocui_slot.material_texture.resource_path == "res://resources/art/ingredients/baocui/baocui_intact_v1.png", "physical worktop slot 07 displays real baocui artwork")
 	var youtiao_slots: Array[Node] = station.get("youtiao_dough_slots")
-	_check(youtiao_slots[0].get_global_rect().position.x == 1595.0 and youtiao_slots[2].get_global_rect().end.x == 1893.0, "youtiao dough aligns to worktop slots 16 through 18")
+	_check(youtiao_slots.size() >= 3 and youtiao_slots[0].get_global_rect().position.x == 1595.0 and youtiao_slots[2].get_global_rect().end.x == 1893.0, "youtiao dough aligns to worktop slots 16 through 18")
 	_check(units[0].position.x == 405.0 and units[1].position.x == 96.0 and units[2].position.x == 714.0, "logical griddles render as touching left, center, right artwork without slot reordering")
 	var left_surface_rect: Rect2 = units[1].pancake_surface.get_global_rect()
 	var center_surface_rect: Rect2 = units[0].pancake_surface.get_global_rect()
@@ -178,7 +241,8 @@ func _run() -> void:
 		var surface := unit.get_node("PancakeSurface") as PancakeHeatmap
 		var material := (surface.get_node("PancakeVisual") as TextureRect).material as ShaderMaterial
 		_check(unit.get_node_or_null("Frame") == null and unit.griddle_art.size.is_equal_approx(Vector2(405.6, 213.2)), "griddle %d uses the 1.3x ellipse without a rectangular frame" % (index + 1))
-		_check(surface.size.is_equal_approx(Vector2(278.2, 278.2)) and not surface.draw_pan_outline and surface.elliptical_hit_test, "griddle %d uses the enlarged aligned outline-free elliptical surface" % (index + 1))
+		_check(unit.get_node_or_null("SauceAction") == null and unit.get_node_or_null("IngredientAction") == null and unit.get_node_or_null("FoldAction") == null and unit.get_node_or_null("DiscardAction") == null, "griddle %d has only the batter/flip action button" % (index + 1))
+		_check(surface.size.is_equal_approx(Vector2(278.2, 278.2)) and not surface.draw_pointer_trace and not surface.draw_pan_outline and surface.elliptical_hit_test, "griddle %d uses the enlarged aligned trace-free elliptical surface" % (index + 1))
 		_check(material != null and material.shader.resource_path == "res://resources/shaders/pancake_surface.gdshader", "griddle %d uses the production pancake shader instead of raw field pixels" % (index + 1))
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/PackagedDrinkStation") == null, "packaged-drink region is absent")
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/SteamerStation") == null, "steamer region is absent")
@@ -244,6 +308,19 @@ func _release_at(position: Vector2) -> void:
 	released.pressed = false
 	released.position = position
 	released.global_position = position
+	root.push_input(released)
+
+
+func _press_and_release_r() -> void:
+	var pressed := InputEventKey.new()
+	pressed.physical_keycode = KEY_R
+	pressed.keycode = KEY_R
+	pressed.pressed = true
+	root.push_input(pressed)
+	var released := InputEventKey.new()
+	released.physical_keycode = KEY_R
+	released.keycode = KEY_R
+	released.pressed = false
 	root.push_input(released)
 
 

@@ -14,7 +14,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		return bool(target.call("can_accept_pancake_surface_drop", source_ref, at_position))
 	return (
 		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
-		and StringName(source_ref.get("source_kind", &"")) in [&"youtiao_output", &"prepared_product_slot"]
+		and StringName(source_ref.get("source_kind", &"")) == &"prepared_product_slot"
 	)
 
 
@@ -71,6 +71,7 @@ const VIEW_MODES := {
 @export var input_exclusion_rect := Rect2()
 @export var draw_pan_outline := true
 @export var elliptical_hit_test := false
+@export var show_unbroken_egg_from_model := false
 
 @onready var pancake_visual: TextureRect = %PancakeVisual
 
@@ -281,7 +282,7 @@ func _rebuild_heatmap_texture() -> void:
 	var inverse_maximum_thickness := 1.0 / maxf(model.parameters.maximum_thickness, 0.001)
 	var inverse_maximum_sauce := 1.0 / maxf(model.parameters.sauce_maximum_concentration, 0.001)
 	var inverse_maximum_egg := 1.0 / maxf(model.parameters.egg_maximum_concentration, 0.001)
-	var egg_visible := model.yolk_broken and model.egg_is_on_visible_side()
+	var egg_visible := (model.yolk_broken or show_unbroken_egg_from_model) and model.egg_is_on_visible_side()
 	for target_index in pixel_count:
 		var source_index := _source_indices[target_index]
 		var coverage_byte := roundi(clampf(model.coverage[source_index], 0.0, 1.0) * 255.0)

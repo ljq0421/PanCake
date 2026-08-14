@@ -13,8 +13,6 @@ const RECIPE_SOY_YELLOW: StringName = &"soy_milk.yellow_bean"
 const RECIPE_SOY_RED: StringName = &"soy_milk.red_bean"
 const RECIPE_SOY_BLACK: StringName = &"soy_milk.black_bean"
 const RECIPE_YOUTIAO_PLAIN: StringName = &"youtiao.plain"
-const RECIPE_YOUTIAO_SESAME: StringName = &"youtiao.sesame"
-const RECIPE_YOUTIAO_SCALLION: StringName = &"youtiao.scallion"
 
 const ACTION_ADD_WATER: StringName = &"add_water"
 const ACTION_DRAIN_OIL: StringName = &"drain_oil"
@@ -42,13 +40,9 @@ const UPGRADE_YOUTIAO_ADVANCED: StringName = &"equipment.youtiao.advanced"
 
 const AUTO_SOY_LOAD: StringName = &"automation.soy_milk.auto_load"
 const AUTO_SOY_EXTRACT: StringName = &"automation.soy_milk.auto_extract"
-const AUTO_YOUTIAO_LOAD: StringName = &"automation.youtiao.auto_load"
-const AUTO_YOUTIAO_EXTRACT: StringName = &"automation.youtiao.auto_extract"
 
 const UNLOCK_RECIPE_SOY_RED: StringName = &"recipe_unlock.soy_milk.red_bean"
 const UNLOCK_RECIPE_SOY_BLACK: StringName = &"recipe_unlock.soy_milk.black_bean"
-const UNLOCK_RECIPE_YOUTIAO_SESAME: StringName = &"recipe_unlock.youtiao.sesame"
-const UNLOCK_RECIPE_YOUTIAO_SCALLION: StringName = &"recipe_unlock.youtiao.scallion"
 
 const STOCK_EGG: StringName = &"egg"
 const STOCK_BAOCUI: StringName = &"baocui"
@@ -60,8 +54,6 @@ const STOCK_SOY_YELLOW: StringName = &"raw.soy.yellow_bean"
 const STOCK_SOY_RED: StringName = &"raw.soy.red_bean"
 const STOCK_SOY_BLACK: StringName = &"raw.soy.black_bean"
 const STOCK_YOUTIAO_PLAIN: StringName = &"raw.youtiao.plain_dough"
-const STOCK_YOUTIAO_SESAME: StringName = &"raw.youtiao.sesame_dough"
-const STOCK_YOUTIAO_SCALLION: StringName = &"raw.youtiao.scallion_dough"
 
 const QUALITY_INITIAL := 100.0
 const QUALITY_SAFE_SECONDS := 5.0
@@ -81,9 +73,9 @@ const DEVICE_DEFINITIONS := {
 	DEVICE_YOUTIAO: {
 		"label": "油条锅",
 		"tiers": [
-			{"capacity": 2, "duration_seconds": 12.0, "purchase_price": 60, "infinite_hold": false},
-			{"capacity": 2, "duration_seconds": 9.0, "purchase_price": 48, "infinite_hold": false},
-			{"capacity": 4, "duration_seconds": 9.0, "purchase_price": 84, "infinite_hold": true},
+			{"capacity": 4, "duration_seconds": 10.0, "purchase_price": 60, "infinite_hold": false},
+			{"capacity": 6, "duration_seconds": 8.0, "purchase_price": 48, "infinite_hold": false},
+			{"capacity": 8, "duration_seconds": 6.0, "purchase_price": 84, "infinite_hold": true},
 		],
 		"required_before_start": [],
 		"required_before_collect": [ACTION_DRAIN_OIL],
@@ -94,9 +86,7 @@ const RECIPE_DEFINITIONS := {
 	RECIPE_SOY_YELLOW: {"kind": &"main", "device_id": DEVICE_SOY_MILK, "label": "黄豆豆浆", "stock_id": STOCK_SOY_YELLOW, "unlock_item": &""},
 	RECIPE_SOY_RED: {"kind": &"main", "device_id": DEVICE_SOY_MILK, "label": "红豆豆浆", "stock_id": STOCK_SOY_RED, "unlock_item": UNLOCK_RECIPE_SOY_RED},
 	RECIPE_SOY_BLACK: {"kind": &"main", "device_id": DEVICE_SOY_MILK, "label": "黑豆豆浆", "stock_id": STOCK_SOY_BLACK, "unlock_item": UNLOCK_RECIPE_SOY_BLACK},
-	RECIPE_YOUTIAO_PLAIN: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "原味油条", "stock_id": STOCK_YOUTIAO_PLAIN, "unlock_item": &""},
-	RECIPE_YOUTIAO_SESAME: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "芝麻油条", "stock_id": STOCK_YOUTIAO_SESAME, "unlock_item": UNLOCK_RECIPE_YOUTIAO_SESAME},
-	RECIPE_YOUTIAO_SCALLION: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "葱香油条", "stock_id": STOCK_YOUTIAO_SCALLION, "unlock_item": UNLOCK_RECIPE_YOUTIAO_SCALLION},
+	RECIPE_YOUTIAO_PLAIN: {"kind": &"main", "device_id": DEVICE_YOUTIAO, "label": "油条", "stock_id": STOCK_YOUTIAO_PLAIN, "unlock_item": &""},
 }
 
 const ITEM_EFFECTS := {
@@ -110,8 +100,6 @@ const ITEM_EFFECTS := {
 	INGREDIENT_BOX_ADVANCED: {"capacity": 14},
 	AUTO_SOY_LOAD: {"action": &"auto_load", "device_id": DEVICE_SOY_MILK, "consumes_input": true},
 	AUTO_SOY_EXTRACT: {"action": &"auto_extract", "device_id": DEVICE_SOY_MILK},
-	AUTO_YOUTIAO_LOAD: {"action": &"auto_load", "device_id": DEVICE_YOUTIAO, "consumes_input": true},
-	AUTO_YOUTIAO_EXTRACT: {"action": &"auto_extract", "device_id": DEVICE_YOUTIAO},
 }
 
 const PURCHASE_DEFINITIONS := {
@@ -132,12 +120,8 @@ const PURCHASE_DEFINITIONS := {
 	UPGRADE_YOUTIAO_ADVANCED: {"kind": &"equipment", "price": 84, "device_id": DEVICE_YOUTIAO, "target_tier": TIER_ADVANCED, "min_day": 14, "min_reputation": 220},
 	AUTO_SOY_LOAD: {"kind": &"owned_item", "price": 60, "requires_equipment": DEVICE_SOY_MILK},
 	AUTO_SOY_EXTRACT: {"kind": &"owned_item", "price": 72, "requires_equipment": DEVICE_SOY_MILK},
-	AUTO_YOUTIAO_LOAD: {"kind": &"owned_item", "price": 72, "requires_equipment": DEVICE_YOUTIAO},
-	AUTO_YOUTIAO_EXTRACT: {"kind": &"owned_item", "price": 86, "requires_equipment": DEVICE_YOUTIAO},
 	UNLOCK_RECIPE_SOY_RED: {"kind": &"owned_item", "price": 16, "requires_equipment": DEVICE_SOY_MILK},
 	UNLOCK_RECIPE_SOY_BLACK: {"kind": &"owned_item", "price": 24, "requires_equipment": DEVICE_SOY_MILK},
-	UNLOCK_RECIPE_YOUTIAO_SESAME: {"kind": &"owned_item", "price": 18, "requires_equipment": DEVICE_YOUTIAO},
-	UNLOCK_RECIPE_YOUTIAO_SCALLION: {"kind": &"owned_item", "price": 24, "requires_equipment": DEVICE_YOUTIAO},
 }
 
 const PURCHASE_PRESENTATION := {
@@ -158,9 +142,7 @@ const REFILL_DEFINITIONS := {
 	STOCK_SOY_YELLOW: {"unit_cost": 1, "unit_seconds": 1.25},
 	STOCK_SOY_RED: {"unit_cost": 2, "unit_seconds": 1.45},
 	STOCK_SOY_BLACK: {"unit_cost": 2, "unit_seconds": 1.55},
-	STOCK_YOUTIAO_PLAIN: {"unit_cost": 2, "unit_seconds": 1.50},
-	STOCK_YOUTIAO_SESAME: {"unit_cost": 2, "unit_seconds": 1.65},
-	STOCK_YOUTIAO_SCALLION: {"unit_cost": 2, "unit_seconds": 1.70},
+	STOCK_YOUTIAO_PLAIN: {"unit_cost": 2, "unit_seconds": 0.25},
 }
 
 static func device_tier(device_id: StringName, tier: int) -> Dictionary:

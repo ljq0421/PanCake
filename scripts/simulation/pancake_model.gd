@@ -358,6 +358,20 @@ func has_egg() -> bool:
 	return egg_state != EggState.NONE and total_egg_amount() > 0.0
 
 
+func egg_visual_center() -> Vector2:
+	var weighted_position := Vector2.ZERO
+	var total_weight := 0.0
+	for index in cell_count:
+		var weight := egg_white[index] + egg_yolk[index]
+		if weight <= 0.0:
+			continue
+		weighted_position += Vector2(index % grid_size, index / grid_size) * weight
+		total_weight += weight
+	if total_weight <= 0.0:
+		return Vector2.ONE * float(grid_size - 1) * 0.5
+	return weighted_position / total_weight
+
+
 func egg_is_on_visible_side() -> bool:
 	return has_egg() and egg_surface_is_back == is_flipped
 
@@ -595,7 +609,7 @@ func mean_side_doneness(back_side: bool) -> float:
 	return total / maxf(float(count), 1.0)
 
 
-func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, width_multiplier: float = 1.0, sample_strength: float = 1.0) -> Dictionary:
+func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, width_multiplier: float = 1.0, sample_strength: float = 1.0, transfer_wetness_with_mass: bool = false) -> Dictionary:
 	var started := Time.get_ticks_usec()
 	var safe_direction := direction.normalized()
 	if safe_direction.is_zero_approx():
@@ -610,6 +624,7 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 	var speed_factor := clampf(1.12 - maxf(speed_cells_per_second, 0.0) / 220.0, 0.32, 1.0)
 	var safe_sample_strength := clampf(sample_strength, 0.01, 1.0)
 	var deltas: Dictionary = {}
+	var wetness_mass_deltas: Dictionary = {}
 	var moved_mass := 0.0
 	var source_indices := PackedInt32Array()
 	var source_total := 0.0
@@ -631,7 +646,10 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 		var mean_wetness := source_wetness_total / float(source_indices.size())
 		var flatten_strength := parameters.scraper_flatten_strength * (0.15 + mean_wetness * 0.85) * speed_factor * safe_sample_strength
 		for source_index in source_indices:
-			deltas[source_index] = (source_mean - thickness[source_index]) * flatten_strength
+			var flatten_delta := (source_mean - thickness[source_index]) * flatten_strength
+			deltas[source_index] = flatten_delta
+			if transfer_wetness_with_mass:
+				wetness_mass_deltas[source_index] = flatten_delta * wetness[source_index]
 	for y in range(min_y, max_y + 1):
 		for x in range(min_x, max_x + 1):
 			var source_position := Vector2(x, y)
@@ -656,6 +674,8 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 			if parameters.scraper_push_distance <= 0.0:
 				continue
 			deltas[source_index] = float(deltas.get(source_index, 0.0)) - moved
+			if transfer_wetness_with_mass:
+				wetness_mass_deltas[source_index] = float(wetness_mass_deltas.get(source_index, 0.0)) - moved * wetness[source_index]
 			for band_index in SCRAPER_FAN_ANGLES.size():
 				var distance_scale := parameters.scraper_push_distance * SCRAPER_PUSH_FRACTIONS[band_index]
 				var fan_direction := safe_direction.rotated(SCRAPER_FAN_ANGLES[band_index])
@@ -666,12 +686,18 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 					continue
 				var target_index := index_of(target_position)
 				deltas[target_index] = float(deltas.get(target_index, 0.0)) + portion
+				if transfer_wetness_with_mass:
+					wetness_mass_deltas[target_index] = float(wetness_mass_deltas.get(target_index, 0.0)) + portion * wetness[source_index]
 			moved_mass += moved
 	var affected_indices: Array = deltas.keys()
 	affected_indices.sort()
 	for index_variant in affected_indices:
 		var index: int = index_variant
+		var wetness_mass := wetness[index] * thickness[index]
 		thickness[index] = clampf(thickness[index] + float(deltas[index]), 0.0, parameters.maximum_thickness)
+		if transfer_wetness_with_mass:
+			wetness_mass += float(wetness_mass_deltas.get(index, 0.0))
+			wetness[index] = clampf(wetness_mass / maxf(thickness[index], 0.000001), 0.0, 1.0) if thickness[index] > 0.0 else 0.0
 	var new_holes := 0
 	var peak_damage := 0.0
 	for index_variant in affected_indices:

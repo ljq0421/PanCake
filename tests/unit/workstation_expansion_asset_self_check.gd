@@ -23,7 +23,6 @@ const EXPECTED := {
 	"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_lowered_five_area_v4.png": Vector2i(1024, 512),
 	"res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_3_basket_raised_five_area_v4.png": Vector2i(1024, 512),
 	"res://resources/art/workstation/expansion/machines/youtiao_auto_lift_arm_five_area_v4.png": Vector2i(1024, 512),
-	"res://resources/art/workstation/expansion/machines/youtiao_auto_load_feeder_five_area_v4.png": Vector2i(1024, 512),
 	"res://resources/art/effects/youtiao/youtiao_sizzle_bubbles_five_area_v4.png": Vector2i(256, 256),
 	"res://resources/art/effects/youtiao/youtiao_oil_drips_five_area_v4.png": Vector2i(256, 256),
 	"res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png": Vector2i(1024, 1024),

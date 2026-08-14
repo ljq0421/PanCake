@@ -36,6 +36,7 @@ func _run() -> void:
 	var center := workstation.get_node("SafeArea/ServiceCustomer2") as Control
 	var right := workstation.get_node("SafeArea/ServiceCustomer3") as Control
 	var portrait_button := center.get_node("PortraitButton") as Button
+	var portrait := center.get_node("Portrait") as TextureRect
 	var item_button := center.get_node("OrderPanel/ItemButton1") as Button
 	var card_background := center.get_node("OrderPanel/CardBackground") as TextureRect
 	_check(
@@ -51,14 +52,16 @@ func _run() -> void:
 		and card_background.texture.resource_path.ends_with("order_card_multi_dish_v4_chinese_ui.png"),
 		"the centered tutorial uses the approved v4 Chinese order-card texture",
 	)
-	await _move_at(portrait_button.get_global_rect().get_center())
+	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "the tutorial customer and order card have no frame or selection tint")
+	await _move_at(_screen_point(portrait_button))
 	_check(root.gui_get_hovered_control() == portrait_button, "the lowered center portrait owns its real pointer target")
 	await _click_control(portrait_button)
 	_check(
 		StringName(workstation.get("_formal_order_id")) == StringName(tutorial.get("order_id", &"")),
 		"clicking the centered portrait focuses its unchanged tutorial order_id",
 	)
-	await _move_at(item_button.get_global_rect().get_center())
+	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "clicking a customer changes the delivery target without adding visual highlighting")
+	await _move_at(_screen_point(item_button))
 	_check(root.gui_get_hovered_control() == item_button and not item_button.disabled, "the centered v4 order item owns its real pointer target")
 	await _capture(SCREENSHOT_1920, Vector2i(1920, 1080))
 	DisplayServer.window_set_size(Vector2i(1280, 720))
@@ -81,7 +84,7 @@ func _move_at(position: Vector2) -> void:
 
 
 func _click_control(control: Control) -> void:
-	var position := control.get_global_rect().get_center()
+	var position := _screen_point(control)
 	await _move_at(position)
 	var pressed := InputEventMouseButton.new()
 	pressed.button_index = MOUSE_BUTTON_LEFT

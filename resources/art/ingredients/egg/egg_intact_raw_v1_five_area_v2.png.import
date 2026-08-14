@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://qqjtwfnegka"
-path="res://.godot/imported/oil_cake_dough_five_area_v2.png-f086d71c956678bb7c9ab9298564266c.ctex"
+uid="uid://b8vwr37f8wq77"
+path="res://.godot/imported/egg_intact_raw_v1_five_area_v2.png-4a9cbff5f507d8946b00a9fbe3a18add.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png"
-dest_files=["res://.godot/imported/oil_cake_dough_five_area_v2.png-f086d71c956678bb7c9ab9298564266c.ctex"]
+source_file="res://resources/art/ingredients/egg/egg_intact_raw_v1_five_area_v2.png"
+dest_files=["res://.godot/imported/egg_intact_raw_v1_five_area_v2.png-4a9cbff5f507d8946b00a9fbe3a18add.ctex"]
 
 [params]
 

@@ -13,11 +13,13 @@ $checks = @(
 	'res://tests/unit/five_area_restock_self_check.gd',
 	'res://tests/unit/five_area_catalog_self_check.gd',
 	'res://tests/unit/five_area_progression_service_self_check.gd',
+	'res://tests/unit/debug_progression_tools_self_check.gd',
 	'res://tests/unit/five_area_game_session_store_self_check.gd',
 	'res://tests/unit/five_area_order_service_self_check.gd',
 	'res://tests/unit/five_area_playable_order_self_check.gd',
 	'res://tests/unit/special_customer_order_self_check.gd',
 	'res://tests/unit/five_area_f4_services_self_check.gd',
+	'res://tests/unit/fresh_soy_milk_v5_self_check.gd',
 	'res://tests/unit/multi_griddle_station_self_check.gd',
 	'res://tests/unit/five_area_business_systems_self_check.gd',
 	'res://tests/unit/fresh_soy_milk_spoil_discard_self_check.gd',
@@ -38,9 +40,11 @@ $checks = @(
 	'res://tests/integration/completed_payment_recovery_self_check.gd',
 	'res://tests/integration/five_area_formal_scene_self_check.gd',
 	'res://tests/integration/direct_soy_water_contract_self_check.gd',
+	'res://tests/integration/fresh_soy_milk_automation_self_check.gd',
 	'res://tests/integration/five_area_growth_ui_self_check.gd',
 	'res://tests/integration/result_panel_layout_self_check.gd',
-	'res://tests/integration/customer_service_slot_contract_self_check.gd'
+	'res://tests/integration/customer_service_slot_contract_self_check.gd',
+	'res://tests/integration/customer_order_card_click_delivery_self_check.gd'
 )
 
 foreach ($check in $checks) {

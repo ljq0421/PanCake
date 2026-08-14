@@ -3,11 +3,11 @@ extends SceneTree
 const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
 const RECIPE := &"recipe.youtiao.plain"
 const AUTO_LIFT := &"automation.youtiao.auto_lift"
-const AUTO_LOAD := &"automation.youtiao.auto_load"
 const SCREENSHOT_1920 := "res://tmp/validation/youtiao_station_formal_1920x1080.png"
 const SCREENSHOT_1280 := "res://tmp/validation/youtiao_station_formal_1280x720.png"
+const SOY_SCREENSHOT_1366 := "res://tmp/validation/direct_soy_station_gpu_1366x768.png"
 const SOY_SPOILED_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_spoiled_gpu_1920x1080.png"
-const SOY_MANUAL_CUP_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_manual_cup_gpu_1920x1080.png"
+const SOY_AUTO_CUP_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_auto_cup_gpu_1920x1080.png"
 
 var failures := PackedStringArray()
 
@@ -33,17 +33,16 @@ func _run() -> void:
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.packaged_drink": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
 	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.packaged_drink_heater": 0, &"device.youtiao_fryer": 0, &"device.fresh_soy_milk_machine": 0})
-	progression.set("unlocked_recipe_ids", {RECIPE: true, &"recipe.fresh_soy_milk.yellow_bean": true, &"recipe.fresh_soy_milk.multigrain": true})
+	progression.set("unlocked_recipe_ids", {RECIPE: true, &"recipe.fresh_soy_milk.yellow_bean": true, &"recipe.fresh_soy_milk.black_bean": true, &"recipe.fresh_soy_milk.red_bean": true, &"recipe.fresh_soy_milk.multigrain": true})
 	progression.set("unlocked_product_ids", {&"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true, &"product.fresh_soy_milk.multigrain": true})
-	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true, &"stock.fresh_soy_milk.multigrain": true})
-	progression.set("unlocked_automation_ids", {AUTO_LOAD: true})
+	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true, &"stock.fresh_soy_milk.black_bean": true, &"stock.fresh_soy_milk.red_bean": true})
+	progression.set("unlocked_automation_ids", {})
 	session.call("_sync_progression_to_save")
 	session.set("_production_service", null)
 	session.call("_ensure_production_service")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	inventory["stock.youtiao.plain_dough"] = 5
 	inventory["stock.fresh_soy_milk.yellow_bean"] = 2
-	inventory["stock.fresh_soy_milk.multigrain"] = 2
 	session.call("save_inventory", inventory)
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
@@ -56,21 +55,25 @@ func _run() -> void:
 		await process_frame
 		_finish()
 		return
-	var soy_top := workstation.soy_split_slots[0] as Control
-	var soy_bottom := workstation.soy_split_slots[3] as Control
-	_check(soy_top.visible and soy_bottom.visible and soy_top.size.y < 50.0 and soy_bottom.size.y < 50.0, "multigrain unlock switches to six preauthored half-slot targets")
+	var soy_top := workstation.soy_full_slots[0] as Control
+	var soy_bottom := workstation.soy_full_slots[2] as Control
+	_check(soy_top.visible and soy_bottom.visible and soy_top.size.y == 89.0 and soy_bottom.size.y == 89.0, "multigrain unlock keeps three full-size bean targets")
 	await _hover_control(soy_top)
-	_check(root.gui_get_hovered_control() == soy_top, "1920x1080 pointer resolves the upper soy half-slot")
+	_check(root.gui_get_hovered_control() == soy_top, "1920x1080 pointer resolves the yellow-bean slot")
 	await _hover_control(soy_bottom)
-	_check(root.gui_get_hovered_control() == soy_bottom, "1920x1080 pointer resolves the lower soy half-slot")
+	if root.gui_get_hovered_control() != soy_bottom:
+		for _frame in 2:
+			await process_frame
+		await _hover_control(soy_bottom)
+	_check(root.gui_get_hovered_control() == soy_bottom, "1920x1080 pointer resolves the red-bean slot")
 	workstation.tutorial_guide_overlay.call("show_guide", soy_top, "把黄豆拖入豆浆机")
 	await process_frame
 	var guide_highlight_1920 := workstation.tutorial_guide_overlay.get_node("TargetHighlight") as Control
-	_check(guide_highlight_1920.get_global_rect().has_point(soy_top.get_global_rect().get_center()), "1920x1080 guide arrow layer aligns to the upper half-slot")
+	_check(guide_highlight_1920.get_global_rect().has_point(soy_top.get_global_rect().get_center()), "1920x1080 guide arrow layer aligns to the bean slot")
 	workstation.tutorial_guide_overlay.call("hide_guide")
 	workstation.set_process(false)
 	_clear_formal_orders(session)
-	var opened: Dictionary = session.call("open_formal_order", [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1, "temperature_mode": &"room_temperature"}])
+	var opened: Dictionary = session.call("open_formal_order", [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 3, "temperature_mode": &"room_temperature"}])
 	_check(bool(opened.get("success", false)), "a formal youtiao order opens")
 	var order_id := StringName(Dictionary(opened.get("order", {})).get("order_id", &""))
 	session.call("begin_formal_order_serving", order_id)
@@ -78,7 +81,7 @@ func _run() -> void:
 	_check(StringName(focused_order.get("state", &"")) in [&"active", &"serving"], "the pointer test focuses a currently active formal order")
 	workstation.call("_focus_formal_order", focused_order, false)
 	await process_frame
-	_check(station.auto_load_panel.visible and station.auto_load_visual.visible, "owned auto-load hardware is visible in the formal station")
+	_check(station.get_node_or_null("AutoLoadPanel") == null and station.get_node_or_null("MachineStage/ArtRoot/AutoLoadFeederVisual") == null, "retired auto-load controls and hardware are physically absent")
 	var plain_dough_source := workstation.youtiao_dough_slots[0] as Control
 	await _hover_control(plain_dough_source)
 	var dough_hovered := root.gui_get_hovered_control()
@@ -91,18 +94,10 @@ func _run() -> void:
 	await _drag_control(plain_dough_source, station.machine_stage)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"loaded", "real pointer drag moves one dough portion into the physical basket")
-	await _click_control(station.discard_batch_button)
-	var discard_armed := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
-	_check(StringName(discard_armed.get("state", &"")) == &"loaded" and station.discard_batch_button.text == "再次点击确认", "first real discard click arms the two-second batch confirmation without mutating the fryer")
-	await _click_control(station.discard_batch_button)
-	var discarded_batch := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
-	_check(StringName(discarded_batch.get("state", &"")) == &"idle" and int(discarded_batch.get("quantity", 0)) == 0, "second real discard click clears the loaded batch")
-	await _drag_control(plain_dough_source, station.machine_stage)
-	await process_frame
 	await _click_control(station.start_button)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"frying", "real start-button click begins the unchanged frying model")
-	session.call("advance_f3_production", 12.05)
+	session.call("advance_f3_production", 10.05)
 	station.refresh_from_session()
 	await process_frame
 	await _click_control(station.lift_button)
@@ -118,30 +113,30 @@ func _run() -> void:
 	_check(StringName(station.output_source.source_ref().get("product_id", &"")) == &"product.youtiao.plain", "the physical output source carries the current product identity")
 	await _drag_control(station.output_source, workstation.waste_area)
 	await process_frame
-	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "dragging fryer output to waste discards exactly the ready portion")
-	await _produce_one_ready(session, station, plain_dough_source)
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "dragging fryer output to waste discards the whole ready batch")
+	await _produce_ready_quantity(session, station, plain_dough_source, 4)
 	var prepared_plain := station.prepared_slots[0] as PreparedProductSlot
 	await _hover_control(prepared_plain)
-	_check(root.gui_get_hovered_control() == prepared_plain, "the GPU pointer resolves the plain-youtiao prepared compartment")
+	_check(root.gui_get_hovered_control() == prepared_plain, "the GPU pointer resolves the oil-strip prepared compartment")
 	await _drag_control(station.output_source, prepared_plain)
 	await process_frame
-	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle" and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 1, "real output drag transfers the fryer product into its matching six-capacity compartment")
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle" and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 4, "one real output drag transfers the whole four-strip batch into the matching compartment")
 	await _drag_control(prepared_plain, workstation.waste_area)
 	await process_frame
-	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", -1)) == 0, "dragging the prepared compartment to waste discards one portion without touching other stock")
-	await _produce_one_ready(session, station, plain_dough_source)
-	await _drag_control(station.output_source, prepared_plain)
-	await process_frame
+	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", -1)) == 3, "dragging the prepared compartment to waste discards one portion without touching the other three")
 	var order_target := workstation.get_node("SafeArea/ServiceCustomer1/OrderPanel/ItemButton1") as Button
+	var delivery_guide := Dictionary(workstation.call("_tutorial_guide_for_area", session, &"area.youtiao"))
+	_check(delivery_guide.get("target") == order_target, "the stored-youtiao guide resolves the real customer-card target without a legacy OrderCard array")
 	_check(not order_target.disabled and order_target.mouse_filter == Control.MOUSE_FILTER_STOP, "the youtiao order product is an enabled pointer delivery target")
 	await _hover_control(order_target)
 	_check(root.gui_get_hovered_control() == order_target, "the GPU pointer resolves the order product target")
-	await _click_control(order_target)
-	await process_frame
-	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", -1)) == 0, "real order-card click takes the oldest matching youtiao from the prepared compartment")
+	for _unit in 3:
+		await _drag_control(prepared_plain, order_target)
+		await process_frame
+	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", -1)) == 0, "three real drags stage the oldest matching oil strips from the prepared compartment one at a time")
 	var order := Dictionary(session.call("formal_order", order_id))
 	var item := Dictionary(Array(order.get("items", []))[0]) if not Array(order.get("items", [])).is_empty() else {}
-	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 1 and StringName(order.get("state", &"")) == &"settled", "the order product click delivers and settles the fryer-held youtiao")
+	_check(Array(item.get("prepared_product_instance_ids", [])).size() == 3 and StringName(order.get("state", &"")) == &"settled", "the order progress reaches 3/3 and settles")
 	_check(StringName(workstation.get("_formal_order_id")) != order_id, "the next customer is routed before youtiao payment collection")
 
 	var soy_station := workstation.fresh_soy_station as DirectSoyStation
@@ -149,22 +144,21 @@ func _run() -> void:
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("state", &"")) == &"loaded", "real pointer drag drops one bean portion into the direct soy machine")
 	await _click_control(soy_station.water_button)
+	session.call("advance_f3_production", 1.0)
+	await _click_control(soy_station.water_button)
 	await _click_control(soy_station.start_button)
 	session.call("advance_f3_production", 5.0)
 	soy_station.refresh_from_session()
 	await process_frame
 	var soy_waiting_for_cup := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
-	_check(StringName(soy_waiting_for_cup.get("state", &"")) == &"ready_safe" and not bool(soy_waiting_for_cup.get("manual_cup_ready", false)) and soy_station.cup_button.visible and not soy_station.cup_button.disabled and not soy_station.machine_output.visible, "finished soy batch keeps an empty cup visible and blocks delivery until 接杯 is clicked")
-	await _click_control(soy_station.cup_button)
-	soy_station.refresh_from_session()
-	await process_frame
-	var soy_one_cup := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
-	_check(bool(soy_one_cup.get("manual_cup_ready", false)) and soy_station.cup_button.text == "已接杯" and soy_station.machine_output.visible and not soy_station.machine_output.disabled, "real 接杯 click exposes exactly one deliverable soy cup")
-	await _save_viewport(SOY_MANUAL_CUP_SCREENSHOT_1920, Vector2i(1920, 1080))
+	_check(StringName(soy_waiting_for_cup.get("state", &"")) == &"ready_safe" and soy_station.machine_output.visible and not soy_station.machine_output.disabled, "finished soy batch automatically exposes a deliverable cup")
+	await _save_viewport(SOY_AUTO_CUP_SCREENSHOT_1920, Vector2i(1920, 1080))
 	var production_service: RefCounted = session.get("_production_service")
 	_check(bool(Dictionary(production_service.call("collect_soy", 1)).get("success", false)), "GPU cup fixture consumes the prepared cup before starting its independent spoil case")
 	soy_station.refresh_from_session()
 	await _drag_control(soy_top, soy_station)
+	await _click_control(soy_station.water_button)
+	session.call("advance_f3_production", 1.0)
 	await _click_control(soy_station.water_button)
 	await _click_control(soy_station.start_button)
 	session.call("advance_f3_production", 5.0)
@@ -172,39 +166,53 @@ func _run() -> void:
 	soy_station.refresh_from_session()
 	await process_frame
 	var spoiled_source := Dictionary(soy_station.machine_output.source_ref())
-	_check(bool(spoiled_source.get("discardable", false)) and soy_station.state_label.text == "豆浆已变质，请拖到垃圾桶丢弃", "spoiled soy batch exposes the exact drag-to-trash prompt")
+	_check(bool(spoiled_source.get("discardable", false)) and soy_station.state_label.text == "豆浆已变质，请拖到废弃区", "spoiled soy batch exposes the current drag-to-waste prompt")
 	await _save_viewport(SOY_SPOILED_SCREENSHOT_1920, Vector2i(1920, 1080))
 	await _drag_control(soy_station.machine_output, workstation.waste_area)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("state", &"")) == &"idle", "real pointer drag discards the whole spoiled machine batch through the unified waste target")
 
-	await _click_control(plain_dough_source)
-	await _click_control(station.auto_plus_button)
-	await _click_control(station.auto_confirm_button)
-	await process_frame
-	var auto_loaded := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
-	_check(StringName(auto_loaded.get("state", &"")) == &"loaded" and int(auto_loaded.get("quantity", 0)) == 2, "real recipe, plus, and confirm clicks run one two-serving automatic load")
-	progression.set("unlocked_automation_ids", {AUTO_LOAD: true, AUTO_LIFT: true})
+	progression.set("unlocked_automation_ids", {AUTO_LIFT: true})
 	station.refresh_from_session()
+	await process_frame
+	_check(station.auto_lift_toggle.visible and station.auto_lift_toggle.button_pressed, "the purchased auto-lift exposes an enabled real-pointer toggle")
+	await _click_control(station.auto_lift_toggle)
+	await process_frame
+	_check(not bool(session.call("youtiao_auto_lift_enabled")), "a real toggle click disables auto-lift")
+	await _drag_control(plain_dough_source, station.machine_stage)
 	await _click_control(station.start_button)
-	session.call("advance_f3_production", 12.05)
+	session.call("advance_f3_production", 10.05)
 	station.refresh_from_session()
 	for _frame in 3:
 		await process_frame
-	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"draining", "the purchased auto-lift reaches the same draining state without a manual click")
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"ready_safe", "disabled auto-lift preserves the manual lift window")
+	await _click_control(station.auto_lift_toggle)
+	session.call("advance_f3_production", 0.01)
+	station.refresh_from_session()
+	for _frame in 3:
+		await process_frame
+	_check(bool(session.call("youtiao_auto_lift_enabled")) and StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"draining", "re-enabled auto-lift reaches draining without a manual lift click")
 	_check(station.auto_lift_visual.visible and station.raised_basket_visual.visible and station.oil_drips_visual.visible, "the auto-lift attachment, high basket, and drips agree with the business state")
 	await _save_viewport(SCREENSHOT_1920, Vector2i(1920, 1080))
+	DisplayServer.window_set_size(Vector2i(1366, 768))
+	for _frame in 4:
+		await process_frame
+	await _hover_control(soy_top)
+	_check(root.gui_get_hovered_control() == soy_top, "1366x768 pointer resolves the yellow-bean slot")
+	await _hover_control(soy_bottom)
+	_check(root.gui_get_hovered_control() == soy_bottom, "1366x768 pointer resolves the red-bean slot")
+	await _save_viewport(SOY_SCREENSHOT_1366, Vector2i(1366, 768))
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	for _frame in 4:
 		await process_frame
 	await _hover_control(soy_top)
-	_check(root.gui_get_hovered_control() == soy_top, "1280x720 pointer resolves the upper soy half-slot")
+	_check(root.gui_get_hovered_control() == soy_top, "1280x720 pointer resolves the yellow-bean slot")
 	await _hover_control(soy_bottom)
-	_check(root.gui_get_hovered_control() == soy_bottom, "1280x720 pointer resolves the lower soy half-slot")
-	workstation.tutorial_guide_overlay.call("show_guide", soy_bottom, "把五谷豆料拖入豆浆机")
+	_check(root.gui_get_hovered_control() == soy_bottom, "1280x720 pointer resolves the red-bean slot")
+	workstation.tutorial_guide_overlay.call("show_guide", soy_bottom, "把红豆拖入豆浆机")
 	await process_frame
 	var guide_highlight := workstation.tutorial_guide_overlay.get_node("TargetHighlight") as Control
-	_check(workstation.tutorial_guide_overlay.visible and guide_highlight.get_global_rect().has_point(soy_bottom.get_global_rect().get_center()), "1280x720 guide arrow layer remains aligned to the lower half-slot")
+	_check(workstation.tutorial_guide_overlay.visible and guide_highlight.get_global_rect().has_point(soy_bottom.get_global_rect().get_center()), "1280x720 guide arrow layer remains aligned to the red-bean slot")
 	await _save_viewport(SCREENSHOT_1280, Vector2i(1280, 720))
 	var stage_rect_before_tiers := station.machine_stage.get_global_rect()
 	var start_rect_before_tiers := station.start_button.get_global_rect()
@@ -258,11 +266,12 @@ func _click_control(control: Control) -> void:
 	await process_frame
 
 
-func _produce_one_ready(session: Node, station: DirectYoutiaoStation, dough_source: Control) -> void:
-	await _drag_control(dough_source, station.machine_stage)
+func _produce_ready_quantity(session: Node, station: DirectYoutiaoStation, dough_source: Control, quantity: int) -> void:
+	for _unit in quantity:
+		await _drag_control(dough_source, station.machine_stage)
 	await process_frame
 	await _click_control(station.start_button)
-	session.call("advance_f3_production", 12.05)
+	session.call("advance_f3_production", 10.05)
 	station.refresh_from_session()
 	await process_frame
 	await _click_control(station.lift_button)
@@ -377,8 +386,9 @@ func _finish() -> void:
 		print("YOUTIAO_DIRECT_POINTER_SMOKE_PASS")
 		print("YOUTIAO_FORMAL_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SCREENSHOT_1920))
 		print("YOUTIAO_FORMAL_SCREENSHOT_1280=%s" % ProjectSettings.globalize_path(SCREENSHOT_1280))
+		print("DIRECT_SOY_SCREENSHOT_1366=%s" % ProjectSettings.globalize_path(SOY_SCREENSHOT_1366))
 		print("DIRECT_SOY_SPOILED_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_SPOILED_SCREENSHOT_1920))
-		print("DIRECT_SOY_MANUAL_CUP_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_MANUAL_CUP_SCREENSHOT_1920))
+		print("DIRECT_SOY_AUTO_CUP_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_AUTO_CUP_SCREENSHOT_1920))
 		quit(0)
 		return
 	printerr("YOUTIAO_DIRECT_POINTER_SMOKE_FAIL\n" + "\n".join(failures))

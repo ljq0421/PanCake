@@ -36,6 +36,13 @@ func _run() -> void:
 	], "opening route focuses on pancake handling and add-ons before another area")
 	_check(starter_tickets[0].disabled and not starter_tickets[1].disabled and starter_tickets[2].disabled, "each opening growth card reflects its own day and reputation gates")
 	_check(_all_active_text(starter_tickets), "opening growth cards contain no retired drink or steamer copy")
+	var debug_fulfill_button := starter_station.get_node("%DebugFulfillGrowthButton") as Button
+	_check(debug_fulfill_button.visible == OS.is_debug_build(), "daily bill exposes requirement fill only in debug builds")
+	debug_fulfill_button.emit_signal("pressed")
+	await process_frame
+	var fulfilled_snapshot := Dictionary(session.call("five_area_progression_snapshot"))
+	_check(not starter_tickets[0].disabled, "debug requirement fill immediately refreshes and enables the first growth card")
+	_check(not Array(fulfilled_snapshot.get("owned_growth_ids", [])).has("growth.tool.pancake.wide_spreader") and StringName(fulfilled_snapshot.get("pending_install_purchase", &"")).is_empty(), "daily-bill debug fill does not buy or reserve the growth item")
 	starter_tickets[1].emit_signal("pressed")
 	await process_frame
 	var pending: Dictionary = session.call("five_area_progression_snapshot")
@@ -57,7 +64,9 @@ func _run() -> void:
 	})
 	var route: Array[StringName] = CATALOG.growth_ids()
 	var owned := {}
-	for index in range(11):
+	var soy_area_index := route.find(&"growth.area.fresh_soy_milk")
+	_check(soy_area_index >= 0, "growth route contains the stable soy area unlock")
+	for index in range(maxi(soy_area_index, 0)):
 		owned[route[index]] = true
 	progression.set("owned_growth_ids", owned)
 	var soy_station := WORKSTATION_SCENE.instantiate()
@@ -68,9 +77,9 @@ func _run() -> void:
 	var soy_tickets := _growth_tickets(soy_station)
 	_check(_ticket_ids(soy_tickets) == [
 		&"growth.area.fresh_soy_milk",
-		&"growth.recipe.fresh_soy_milk.black_bean",
 		&"growth.equipment.fresh_soy_milk.intermediate",
-	], "mid-route window unlocks soy first, then its ingredient and machine upgrade")
+		&"growth.assist.fresh_soy_milk.water_guide",
+	], "mid-route window unlocks soy first, then power and water guidance")
 	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled and soy_tickets[2].disabled, "soy content and machine upgrades wait until the soy area is actually installed")
 	_check(_all_active_text(soy_tickets), "soy growth window contains only active three-area content")
 	soy_station.queue_free()

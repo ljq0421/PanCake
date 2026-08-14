@@ -31,10 +31,7 @@ func _ready() -> void:
 		var unit: Node = units[index]
 		unit.configure(index, display_names[index])
 		unit.main_action_requested.connect(_on_main_action)
-		unit.sauce_action_requested.connect(_on_sauce_action)
-		unit.ingredient_action_requested.connect(_on_ingredient_action)
-		unit.fold_action_requested.connect(_on_fold_action)
-		unit.discard_requested.connect(_on_discard)
+		unit.status_message_requested.connect(status_message.emit)
 	shared_tool_tray.tool_selected.connect(_on_shared_tool_selected)
 	shared_tool_tray.status_message.connect(status_message.emit)
 	_apply_count_layout()
@@ -105,6 +102,18 @@ func reset_all() -> void:
 	_sync_snapshot_to_session()
 
 
+func reset_active() -> Dictionary:
+	var unit := _unit(_active_index)
+	if unit == null or unit.state == UNIT_SCRIPT.State.IDLE:
+		status_message.emit("最近操作的鏊子是空的，无需重做")
+		return {"success": false, "reason": &"active_griddle_empty", "source_index": _active_index}
+	clear_held_tool()
+	unit.reset_unit()
+	_sync_snapshot_to_session()
+	status_message.emit("鏊子%d已清空；原料不返还，请重新添面糊" % (_active_index + 1))
+	return {"success": true, "source_index": _active_index}
+
+
 func snapshot() -> Dictionary:
 	var slots: Array[Dictionary] = []
 	for unit in units:
@@ -148,71 +157,13 @@ func _on_main_action(unit_index: int) -> void:
 			return
 		order.erase("formal_order_id")
 		unit.begin_order(order)
+		_set_selected_tool(&"tool.pancake.spreader")
 		_sync_snapshot_to_session()
-		status_message.emit("鏊子%d开始制作：按住鏊面画圈摊开" % (unit_index + 1))
+		status_message.emit("鏊子%d开始制作：摊饼器已自动拿起，按住鏊面画圈摊开" % (unit_index + 1))
 		return
 	var result: Dictionary = Dictionary(unit.advance_main())
 	_sync_snapshot_to_session()
 	status_message.emit(str(result.get("message", "继续操作鏊子")))
-
-
-func _on_sauce_action(unit_index: int) -> void:
-	var unit: Node = _unit(unit_index)
-	if unit == null or unit.state != UNIT_SCRIPT.State.GARNISH:
-		return
-	_active_index = unit_index
-	var stock_id: StringName = unit.next_sauce_id()
-	if stock_id.is_empty():
-		status_message.emit("鏊子%d的酱料已按订单配齐" % (unit_index + 1))
-		return
-	var consumed := _consume_inventory_stock(stock_id)
-	if not bool(consumed.get("success", false)):
-		status_message.emit("%s不足，先补货再挤酱" % _stock_label(stock_id))
-		return
-	unit.apply_sauce(stock_id)
-	_sync_snapshot_to_session()
-	status_message.emit("鏊子%d加入%s" % [unit_index + 1, _stock_label(stock_id)])
-
-
-func _on_ingredient_action(unit_index: int) -> void:
-	var unit: Node = _unit(unit_index)
-	if unit == null or unit.state != UNIT_SCRIPT.State.GARNISH:
-		return
-	_active_index = unit_index
-	var stock_id: StringName = unit.next_ingredient_id()
-	if stock_id.is_empty():
-		status_message.emit("鏊子%d的小料已按订单配齐" % (unit_index + 1))
-		return
-	var consumed: Dictionary = _consume_ingredient(stock_id)
-	if not bool(consumed.get("success", false)):
-		status_message.emit("%s不足，先补货或制作油条" % _stock_label(stock_id))
-		return
-	unit.apply_ingredient(stock_id)
-	_sync_snapshot_to_session()
-	status_message.emit("鏊子%d放入%s" % [unit_index + 1, _stock_label(stock_id)])
-
-
-func _on_fold_action(unit_index: int) -> void:
-	var unit: Node = _unit(unit_index)
-	if unit == null:
-		return
-	_active_index = unit_index
-	var result: Dictionary = Dictionary(unit.advance_fold())
-	if bool(result.get("ready", false)):
-		unit.mark_ready(_build_product(unit))
-	_sync_snapshot_to_session()
-	status_message.emit(str(result.get("message", "继续完成折叠")))
-
-
-func _on_discard(unit_index: int) -> void:
-	var unit: Node = _unit(unit_index)
-	if unit == null or unit.state == UNIT_SCRIPT.State.IDLE:
-		return
-	_active_index = unit_index
-	clear_held_tool()
-	unit.reset_unit()
-	_sync_snapshot_to_session()
-	status_message.emit("鏊子%d上的半成品已丢弃；已放入的小料不返还" % (unit_index + 1))
 
 
 func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionary:
@@ -220,6 +171,15 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 	if unit == null:
 		return {"success": false, "reason": &"griddle_locked"}
 	_active_index = unit_index
+	if unit.state in [UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH, UNIT_SCRIPT.State.FOLDING]:
+		var fold_result := Dictionary(unit.begin_manual_fold(local_position))
+		if bool(fold_result.get("success", false)):
+			_selected_tool = &""
+			shared_tool_tray.set_selected_tool(&"")
+			for other_unit in units:
+				if other_unit != unit:
+					other_unit.cancel_held_tool()
+			return fold_result
 	if _selected_tool == &"tool.pancake.spreader":
 		if unit.state == UNIT_SCRIPT.State.BATTER:
 			return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_SPREAD_BATTER, "width_multiplier": _spreader_width_multiplier()}
@@ -228,7 +188,7 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		status_message.emit("摊饼器当前只能摊面糊，或在第一面摊开已放入的鸡蛋")
 		return {"success": false, "reason": &"wrong_stage"}
 	if _selected_tool in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
-		if unit.state != UNIT_SCRIPT.State.GARNISH:
+		if unit.state not in [UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH]:
 			status_message.emit("酱刷只能在确认火候后的加料阶段使用")
 			return {"success": false, "reason": &"wrong_stage"}
 		if unit.applied_sauce_ids.has(str(_selected_tool)):
@@ -241,17 +201,22 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		if not bool(consumed.get("success", false)):
 			status_message.emit("%s库存不足" % _stock_label(_selected_tool))
 			return consumed
+		unit.confirm_second_side_for_followup()
 		shared_tool_tray.refresh_from_session()
 		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _selected_tool}
 	status_message.emit("先从共享料台拿起摊饼器或酱刷")
 	return {"success": false, "reason": &"tool_not_selected"}
 
 
-func complete_surface_action(_unit_index: int, action: StringName, changed: bool) -> void:
+func complete_surface_action(unit_index: int, action: StringName, changed: bool) -> void:
 	if action.is_empty():
 		return
 	if action == UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE:
 		status_message.emit("酱料已完成一次连续刷涂" if changed else "酱刷没有接触到有效饼面")
+	elif action == UNIT_SCRIPT.SURFACE_ACTION_FOLD:
+		var unit := _unit(unit_index)
+		if changed and unit != null and unit.fold_model.completed_fold_count() >= 2 and unit.state == UNIT_SCRIPT.State.FOLDING:
+			unit.mark_ready(_build_product(unit))
 	clear_held_tool()
 	_sync_snapshot_to_session()
 
@@ -276,8 +241,6 @@ func can_drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: V
 		return false
 	if source_kind == &"prepared_product_slot":
 		return _session != null and _session.has_method("preview_take_prepared_product") and bool(Dictionary(_session.call("preview_take_prepared_product", StringName(source_ref.get("source_slot_id", &"")))).get("success", false))
-	if source_kind == &"youtiao_output":
-		return _session != null and _session.has_method("preview_take_ready_youtiao_for_pancake") and bool(Dictionary(_session.call("preview_take_ready_youtiao_for_pancake")).get("success", false))
 	return false
 
 
@@ -292,19 +255,26 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	if source_kind == &"prepared_product_slot":
 		consumed = Dictionary(_session.call("take_prepared_product", StringName(source_ref.get("source_slot_id", &""))))
-	elif source_kind == &"youtiao_output":
-		consumed = Dictionary(_session.call("take_ready_youtiao_for_pancake"))
 	else:
 		consumed = _consume_inventory_stock(StringName(validation.get("stock_id", &"")))
 	if not bool(consumed.get("success", false)):
 		return consumed
+	if StringName(validation.get("ingredient_type", &"")) != IngredientModel.EGG:
+		unit.confirm_second_side_for_followup()
 	var placed := Dictionary(unit.place_validated_ingredient(validation))
 	if not bool(placed.get("success", false)):
 		return placed
 	_active_index = unit_index
 	shared_tool_tray.refresh_from_session()
+	if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG:
+		_set_selected_tool(&"tool.pancake.spreader")
 	_sync_snapshot_to_session()
-	status_message.emit("%s已放到%s" % [_stock_label(StringName(validation.get("stock_id", &""))), unit.title_label.text])
+	var placed_label := _stock_label(StringName(validation.get("stock_id", &"")))
+	status_message.emit(
+		"%s已放到%s；摊饼器已自动拿起" % [placed_label, unit.title_label.text]
+		if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG
+		else "%s已放到%s" % [placed_label, unit.title_label.text]
+	)
 	return placed
 
 
@@ -317,6 +287,10 @@ func clear_held_tool() -> void:
 
 
 func _on_shared_tool_selected(tool_id: StringName) -> void:
+	_set_selected_tool(tool_id)
+
+
+func _set_selected_tool(tool_id: StringName) -> void:
 	_selected_tool = tool_id
 	shared_tool_tray.set_selected_tool(tool_id)
 

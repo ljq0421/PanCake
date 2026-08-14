@@ -13,7 +13,7 @@ signal prepared_product_slots_changed(snapshot: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
-const SAVE_VERSION := 4
+const SAVE_VERSION := 6
 const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
@@ -30,11 +30,13 @@ const SPECIAL_CUSTOMER_SETTLEMENT := preload("res://scripts/services/special_cus
 const BUSINESS_REPORT_SERVICE := preload("res://scripts/services/business_report_service.gd")
 const DAILY_GOAL_SERVICE := preload("res://scripts/services/daily_goal_service.gd")
 const ATTENTION_SERVICE := preload("res://scripts/services/attention_service.gd")
-const PREPARED_PRODUCT_SLOT_CAPACITY := 6
 const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.04": {"product_id": &"product.youtiao.plain", "recipe_id": &"recipe.youtiao.plain"},
-	&"slot.05": {"product_id": &"product.youtiao.oil_cake", "recipe_id": &"recipe.youtiao.oil_cake"},
-	&"slot.06": {"product_id": &"product.youtiao.sugar_oil_cake", "recipe_id": &"recipe.youtiao.sugar_oil_cake"},
+}
+const DEBUG_TIER_GROWTH_IDS := {
+	&"area.pancake": [&"", &"growth.equipment.pancake.intermediate", &"growth.equipment.pancake.advanced"],
+	&"area.youtiao": [&"growth.area.youtiao", &"growth.equipment.youtiao.intermediate", &"growth.equipment.youtiao.advanced"],
+	&"area.fresh_soy_milk": [&"growth.area.fresh_soy_milk", &"growth.equipment.fresh_soy_milk.intermediate", &"growth.equipment.fresh_soy_milk.advanced"],
 }
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -879,8 +881,6 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	var source_index := int(source_ref.get("source_index", -1))
 	match source_kind:
-		&"youtiao_output":
-			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
 		&"prepared_product_slot":
 			return preview_take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output":
@@ -903,7 +903,6 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	var source_index := int(source_ref.get("source_index", -1))
 	match source_kind:
-		&"youtiao_output": return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
 		&"prepared_product_slot": return take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
 		&"pancake_holding":
@@ -1030,6 +1029,23 @@ func f3_machine_snapshot(device_id: StringName) -> Dictionary:
 	return Dictionary(_production_service.call("machine_snapshot", device_id)).duplicate(true)
 
 
+func youtiao_auto_lift_enabled() -> bool:
+	_ensure_production_service()
+	return bool(_production_service.call("youtiao_auto_lift_enabled"))
+
+
+func set_youtiao_auto_lift_enabled(enabled: bool) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result := Dictionary(_production_service.call("set_youtiao_auto_lift_enabled", enabled))
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
 func advance_f3_production(delta: float) -> void:
 	if not has_save() or delta <= 0.0 or get_tree().paused or is_business_paused():
 		return
@@ -1037,9 +1053,117 @@ func advance_f3_production(delta: float) -> void:
 	if not bool(_progression.get("day_open")):
 		return
 	_ensure_production_service()
+	if bool(_progression.call("owns_automation", &"automation.fresh_soy_milk.auto_yellow_restock")):
+		advance_five_area_restock_hold(&"stock.fresh_soy_milk.yellow_bean", delta)
+	_try_auto_produce_soy()
 	_production_service.call("advance_time", delta)
 	_sync_production_to_save()
 	production_changed.emit(five_area_production_snapshot())
+
+
+func _try_auto_produce_soy() -> Dictionary:
+	if not bool(_progression.call("owns_automation", &"automation.fresh_soy_milk.auto_production")):
+		return {"success": false, "reason": &"automation_unowned"}
+	var machine := Dictionary(_production_service.call("machine_snapshot", &"device.fresh_soy_milk_machine"))
+	if StringName(machine.get("state", &"")) != &"idle":
+		return {"success": false, "reason": &"machine_busy"}
+	var capacity := maxi(int(machine.get("capacity", 0)), 0)
+	if capacity <= 0:
+		return {"success": false, "reason": &"device_unowned"}
+	var demand := _next_uncovered_soy_demand(machine, capacity)
+	if demand.is_empty():
+		return {"success": false, "reason": &"no_uncovered_soy_demand"}
+	var batch_quantity := int(demand.get("quantity", 0))
+	var ingredient_ids := PackedStringArray(demand.get("ingredient_ids", PackedStringArray()))
+	if batch_quantity <= 0 or ingredient_ids.is_empty():
+		return {"success": false, "reason": &"invalid_auto_batch"}
+	if bool(_progression.call("owns_automation", &"automation.fresh_soy_milk.auto_cup_rack")):
+		var empty_slots := 0
+		for cup_value in Array(machine.get("output_rack", [])):
+			if Dictionary(cup_value).is_empty():
+				empty_slots += 1
+		if empty_slots < batch_quantity:
+			return {"success": false, "reason": &"output_rack_full"}
+	var inventory := inventory_snapshot()
+	for stock_id_text in ingredient_ids:
+		if int(inventory.get(str(stock_id_text), 0)) < batch_quantity:
+			return {"success": false, "reason": &"insufficient_stock", "stock_id": StringName(stock_id_text)}
+	for _cup in range(batch_quantity):
+		for stock_id_text in ingredient_ids:
+			var added: Dictionary = _production_service.call("add_soy_ingredient", StringName(stock_id_text))
+			if not bool(added.get("success", false)):
+				return added
+	var watered: Dictionary = _production_service.call("perform_soy_action", &"add_water")
+	if not bool(watered.get("success", false)):
+		return watered
+	var started: Dictionary = _production_service.call("perform_soy_action", &"start")
+	if not bool(started.get("success", false)):
+		return started
+	_persist_production_change()
+	return {"success": true, "reason": &"", "product_id": demand.get("product_id", &""), "ingredient_ids": ingredient_ids, "quantity": batch_quantity}
+
+
+func _next_uncovered_soy_demand(machine: Dictionary, capacity: int) -> Dictionary:
+	var coverage: Dictionary = {}
+	for cup_value in Array(machine.get("output_rack", [])):
+		var cup := Dictionary(cup_value)
+		if cup.is_empty() or StringName(cup.get("state", &"")) == &"spoiled":
+			continue
+		var cup_recipe := CATALOG.recipe_definition(StringName(cup.get("recipe_id", &"")))
+		var cup_product := StringName(cup_recipe.get("product_id", &""))
+		var cup_signature := _soy_demand_signature(cup_product, cup.get("ingredient_ids", PackedStringArray()))
+		coverage[cup_signature] = int(coverage.get(cup_signature, 0)) + 1
+	var orders := active_formal_orders()
+	orders.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		return float(left.get("remaining_patience_seconds", INF)) < float(right.get("remaining_patience_seconds", INF))
+	)
+	var selected_signature := ""
+	var selected_product: StringName = &""
+	var selected_ingredients := PackedStringArray()
+	var selected_quantity := 0
+	for order in orders:
+		for item_value in Array(order.get("items", [])):
+			var item := Dictionary(item_value)
+			if StringName(item.get("area_id", &"")) != &"area.fresh_soy_milk":
+				continue
+			var required := maxi(int(item.get("quantity", 1)) - int(item.get("attached_quantity", 0)), 0)
+			if required <= 0:
+				continue
+			var product_id := StringName(item.get("product_id", &""))
+			var ingredient_ids := _soy_item_ingredients(item)
+			var signature := _soy_demand_signature(product_id, ingredient_ids)
+			var covered := mini(required, int(coverage.get(signature, 0)))
+			coverage[signature] = int(coverage.get(signature, 0)) - covered
+			var uncovered := required - covered
+			if uncovered <= 0:
+				continue
+			if selected_signature.is_empty():
+				selected_signature = signature
+				selected_product = product_id
+				selected_ingredients = ingredient_ids
+			if signature == selected_signature:
+				selected_quantity = mini(selected_quantity + uncovered, capacity)
+				if selected_quantity >= capacity:
+					return {"product_id": selected_product, "ingredient_ids": selected_ingredients, "quantity": selected_quantity}
+	return {} if selected_signature.is_empty() else {"product_id": selected_product, "ingredient_ids": selected_ingredients, "quantity": selected_quantity}
+
+
+func _soy_item_ingredients(item: Dictionary) -> PackedStringArray:
+	var product_id := StringName(item.get("product_id", &""))
+	if product_id == &"product.fresh_soy_milk.multigrain":
+		var dynamic_ids := PackedStringArray(item.get("ingredient_ids", PackedStringArray()))
+		dynamic_ids.sort()
+		return dynamic_ids
+	var product := CATALOG.product_definition(product_id)
+	var recipe := CATALOG.recipe_definition(StringName(product.get("recipe_id", &"")))
+	var stocks := Array(recipe.get("stock_ids", []))
+	return PackedStringArray([str(stocks[0])]) if not stocks.is_empty() else PackedStringArray()
+
+
+static func _soy_demand_signature(product_id: StringName, ingredient_values: Variant) -> String:
+	var ingredients := PackedStringArray(ingredient_values)
+	ingredients.sort()
+	return "%s|%s" % [product_id, ",".join(ingredients)]
 
 
 func discard_product_source(source_ref: Dictionary) -> Dictionary:
@@ -1048,19 +1172,11 @@ func discard_product_source(source_ref: Dictionary) -> Dictionary:
 	match StringName(source_ref.get("source_kind", &"")):
 		&"soy_output":
 			return discard_f4_soy(int(source_ref.get("source_index", -1)))
-		&"youtiao_output":
-			return discard_ready_youtiao(int(source_ref.get("source_index", -1)))
+		&"youtiao_batch":
+			return discard_f3_youtiao()
 		&"prepared_product_slot":
 			return discard_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 	return {"success": false, "reason": &"unsupported_product_source"}
-
-
-func discard_ready_youtiao(source_index: int = -1) -> Dictionary:
-	_ensure_production_service()
-	var result: Dictionary = _production_service.call("discard_ready_youtiao", source_index)
-	if bool(result.get("success", false)):
-		_persist_production_change()
-	return result
 
 
 func discard_prepared_product(slot_id: StringName) -> Dictionary:
@@ -1096,24 +1212,6 @@ func load_f3_youtiao(recipe_id: StringName, quantity: int, order_id: StringName 
 	return result
 
 
-func confirm_and_run_youtiao_auto_load(recipe_id: StringName, quantity: int) -> Dictionary:
-	if not has_save():
-		return {"success": false, "reason": &"no_active_save"}
-	_ensure_production_service()
-	var confirmed: Dictionary = _production_service.call("confirm_youtiao_job_profile", recipe_id, quantity)
-	if not bool(confirmed.get("success", false)):
-		return confirmed
-	var result: Dictionary = _production_service.call("run_confirmed_youtiao_auto_load")
-	result["job_profile"] = Dictionary(confirmed.get("job_profile", {})).duplicate(true)
-	# Confirmation is itself durable profile state. Persist it even when execution
-	# fails; load_batch already rolls the fryer back before returning any stock
-	# failure, so this path never deducts inventory on a failed load.
-	_sync_production_to_save()
-	_touch_and_write()
-	production_changed.emit(five_area_production_snapshot())
-	return result
-
-
 func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("perform_action", &"device.youtiao_fryer", action_id)
@@ -1130,10 +1228,6 @@ func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
 	if item_index < 0 or item_index >= items.size():
 		return {"success": false, "reason": &"order_item_missing"}
 	var product_id := StringName(Dictionary(items[item_index]).get("product_id", &""))
-	var output_ref := {"source_kind": &"youtiao_output", "source_index": -1, "product_id": product_id}
-	var output_preview := preview_stage_product_to_order(output_ref, order_id, item_index)
-	if bool(output_preview.get("success", false)) and StringName(Dictionary(output_preview.get("product", {})).get("product_id", &"")) == product_id:
-		return stage_product_to_order(output_ref, order_id, item_index)
 	var slot_id := _prepared_slot_id_for_product(product_id)
 	if slot_id.is_empty():
 		return {"success": false, "reason": &"prepared_product_slot_missing", "product_id": product_id}
@@ -1141,8 +1235,7 @@ func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
 
 
 func preview_take_ready_youtiao_for_pancake() -> Dictionary:
-	_ensure_production_service()
-	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+	var preview := preview_take_prepared_product(&"slot.04")
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := Dictionary(preview.get("product", {}))
@@ -1155,10 +1248,7 @@ func take_ready_youtiao_for_pancake() -> Dictionary:
 	var preview := preview_take_ready_youtiao_for_pancake()
 	if not bool(preview.get("success", false)):
 		return preview
-	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
-	if bool(collected.get("success", false)):
-		_persist_production_change()
-	return collected
+	return take_prepared_product(&"slot.04")
 
 
 func discard_f3_youtiao() -> Dictionary:
@@ -1177,7 +1267,16 @@ func load_f4_soy(recipe_id: StringName, quantity: int, order_id: StringName = &"
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("load_soy_batch", recipe_id, quantity)
 	if bool(result.get("success", false)):
-		_mark_f3_order_started(order_id, &"device.fresh_soy_milk_machine")
+		_persist_production_change()
+	return result
+
+
+func add_f4_soy_ingredient(stock_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("add_soy_ingredient", stock_id)
+	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result
 
@@ -1303,6 +1402,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 			base_coins = maxi(int(order_metadata.get("base_coins", base_coins)), 0)
 		elif legacy_order.has("payment_coins"):
 			base_coins = maxi(int(legacy_order.get("payment_coins", base_coins)), 0)
+		base_coins = _quality_adjusted_formal_quote(order, item_results, base_coins)
 	var normal_reputation_delta := _f3_reputation_delta(bool(settlement.get("order_success", false)), all_grades)
 	var special_economics := SPECIAL_CUSTOMER_SETTLEMENT.calculate(
 		order,
@@ -1552,58 +1652,86 @@ func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
 	var unlocked := bool(_progression.call("owns_recipe", recipe_id))
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), []))
+	var capacity := _prepared_product_slot_capacity()
 	return {
 		"success": unlocked,
 		"reason": &"" if unlocked else &"recipe_locked",
 		"slot_id": slot_id,
 		"product_id": StringName(definition.get("product_id", &"")),
 		"recipe_id": recipe_id,
-		"capacity": PREPARED_PRODUCT_SLOT_CAPACITY,
+		"capacity": capacity,
 		"count": products.size(),
 		"products": products.duplicate(true),
 	}
 
 
-func preview_store_ready_youtiao(slot_id: StringName) -> Dictionary:
+func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
 	var status := prepared_product_slot_status(slot_id)
 	if not bool(status.get("success", false)):
 		return status
-	if int(status.get("count", 0)) >= int(status.get("capacity", PREPARED_PRODUCT_SLOT_CAPACITY)):
-		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
-	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1))
+	var machine := Dictionary(_production_service.call("machine_snapshot", &"device.youtiao_fryer"))
+	var quantity := maxi(int(machine.get("quantity", 0)), 0)
+	if quantity <= 0:
+		return {"success": false, "reason": &"product_not_ready", "slot_id": slot_id}
+	var available_capacity := maxi(int(status.get("capacity", 0)) - int(status.get("count", 0)), 0)
+	if quantity > available_capacity:
+		return {
+			"success": false,
+			"reason": &"prepared_product_slot_full",
+			"slot_id": slot_id,
+			"required_capacity": quantity,
+			"available_capacity": available_capacity,
+			"missing_capacity": quantity - available_capacity,
+		}
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", quantity))
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := Dictionary(preview.get("product", {})).duplicate(true)
 	if StringName(product.get("product_id", &"")) != StringName(status.get("product_id", &"")):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": product}
-	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "quantity": quantity}
 
 
-func store_ready_youtiao_in_prepared_slot(slot_id: StringName) -> Dictionary:
-	var preview := preview_store_ready_youtiao(slot_id)
+func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
+	var preview := preview_store_ready_youtiao_batch(slot_id)
 	if not bool(preview.get("success", false)):
 		return preview
 	var production_rollback := five_area_production_snapshot()
-	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1))
+	var slots_rollback := prepared_product_slots_snapshot()
+	var quantity := int(preview.get("quantity", 0))
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", quantity))
 	if not bool(collected.get("success", false)):
 		return collected
-	var product := Dictionary(collected.get("product", {})).duplicate(true)
 	var expected_product_id := StringName(Dictionary(preview.get("product", {})).get("product_id", &""))
-	if StringName(product.get("product_id", &"")) != expected_product_id:
+	var products: Array = Array(collected.get("products", [])).duplicate(true)
+	if products.size() != quantity:
 		_production_service.call("load_snapshot", production_rollback)
 		return {"success": false, "reason": &"prepared_product_changed"}
-	var stored := _append_prepared_product(slot_id, product)
-	if not bool(stored.get("success", false)):
-		_production_service.call("load_snapshot", production_rollback)
-		return stored
+	for product_value in products:
+		if StringName(Dictionary(product_value).get("product_id", &"")) != expected_product_id:
+			_production_service.call("load_snapshot", production_rollback)
+			return {"success": false, "reason": &"prepared_product_changed"}
+	var slots := slots_rollback.duplicate(true)
+	var stored_products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
+	stored_products.append_array(products)
+	slots[str(slot_id)] = stored_products
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
 	_sync_production_to_save()
 	_touch_and_write()
 	production_changed.emit(five_area_production_snapshot())
 	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
-	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "count": stored.get("count", 0)}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size()}
+
+
+func preview_store_ready_youtiao(slot_id: StringName) -> Dictionary:
+	return preview_store_ready_youtiao_batch(slot_id)
+
+
+func store_ready_youtiao_in_prepared_slot(slot_id: StringName) -> Dictionary:
+	return store_ready_youtiao_batch(slot_id)
 
 
 func preview_take_prepared_product(slot_id: StringName) -> Dictionary:
@@ -1655,7 +1783,7 @@ func _append_prepared_product(slot_id: StringName, product: Dictionary) -> Dicti
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
-	if products.size() >= PREPARED_PRODUCT_SLOT_CAPACITY:
+	if products.size() >= int(status.get("capacity", 0)):
 		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
 	products.append(product.duplicate(true))
 	slots[str(slot_id)] = products
@@ -1867,6 +1995,334 @@ func growth_recommendations(limit_total: int = 3) -> Dictionary:
 func growth_purchase_status(growth_id: StringName) -> Dictionary:
 	_ensure_progression()
 	return Dictionary(_progression.call("purchase_status", growth_id)).duplicate(true)
+
+
+func debug_grant_progression(
+	coins_delta: int = 0,
+	reputation_delta: int = 0,
+	area_id: StringName = &"",
+	qualified_delta: int = 0,
+	a_grade_delta: int = 0
+) -> Dictionary:
+	var unavailable := _debug_tools_unavailable_result()
+	if not unavailable.is_empty():
+		return unavailable
+	_ensure_progression()
+	var before := five_area_progression_snapshot()
+	if coins_delta < 0 or reputation_delta < 0 or qualified_delta < 0 or a_grade_delta < 0:
+		return _debug_result(false, &"negative_debug_delta", before)
+	if not area_id.is_empty() and not CATALOG.AREA_IDS.has(area_id):
+		return _debug_result(false, &"unknown_area", before, {"area_id": area_id})
+	if area_id.is_empty() and (qualified_delta > 0 or a_grade_delta > 0):
+		return _debug_result(false, &"mastery_area_required", before)
+	if not area_id.is_empty() and not bool(_progression.call("owns_area", area_id)):
+		return _debug_result(false, &"area_locked", before, {"area_id": area_id})
+
+	_progression.set("coins", int(_progression.get("coins")) + coins_delta)
+	_progression.set("reputation", int(_progression.get("reputation")) + reputation_delta)
+	if not area_id.is_empty() and (qualified_delta > 0 or a_grade_delta > 0):
+		var details_by_area := Dictionary(_progression.get("area_mastery_details")).duplicate(true)
+		var mastery_by_area := Dictionary(_progression.get("area_mastery")).duplicate(true)
+		var details: Dictionary = Dictionary(_progression.call("mastery_snapshot", area_id)).duplicate(true)
+		details["qualified"] = int(details.get("qualified", 0)) + qualified_delta + a_grade_delta
+		details["a_grade"] = int(details.get("a_grade", 0)) + a_grade_delta
+		details["qualified"] = maxi(int(details.get("qualified", 0)), int(details.get("a_grade", 0)))
+		details_by_area[area_id] = details
+		mastery_by_area[area_id] = int(details.get("qualified", 0))
+		_progression.set("area_mastery_details", details_by_area)
+		_progression.set("area_mastery", mastery_by_area)
+	_debug_persist_progression(false)
+	return _debug_result(true, &"", before, {
+		"changed": coins_delta > 0 or reputation_delta > 0 or qualified_delta > 0 or a_grade_delta > 0,
+		"area_id": area_id,
+	})
+
+
+func debug_fulfill_next_growth_requirements() -> Dictionary:
+	var unavailable := _debug_tools_unavailable_result()
+	if not unavailable.is_empty():
+		return unavailable
+	_ensure_progression()
+	var before := five_area_progression_snapshot()
+	if bool(_progression.get("day_open")):
+		return _debug_result(false, &"business_day_open", before)
+	if not StringName(before.get("pending_install_purchase", &"")).is_empty() or not StringName(before.get("pending_content_purchase", &"")).is_empty():
+		return _debug_result(false, &"pending_purchase_exists", before)
+	var target_growth_id := _debug_next_unowned_growth_id(_progression)
+	if target_growth_id.is_empty():
+		return _debug_result(true, &"route_complete", before, {"changed": false})
+	var preview: RefCounted = PROGRESSION_SERVICE.new(before)
+	preview.call("set_day_open", false)
+	var activated_growth_ids: Array[StringName] = []
+	var prepared := _debug_prepare_growth_on(preview, target_growth_id, activated_growth_ids)
+	if not bool(prepared.get("success", false)):
+		return _debug_result(false, StringName(prepared.get("reason", &"requirements_unavailable")), before, {
+			"growth_id": target_growth_id,
+			"details": prepared,
+		})
+	var purchase_status: Dictionary = preview.call("purchase_status", target_growth_id)
+	if not bool(purchase_status.get("can_purchase", false)):
+		return _debug_result(false, StringName(purchase_status.get("reason", &"requirements_unavailable")), before, {
+			"growth_id": target_growth_id,
+			"details": purchase_status,
+		})
+	_progression.call("load_snapshot", preview.call("snapshot"))
+	_progression.call("set_day_open", false)
+	_debug_persist_progression(false)
+	return _debug_result(true, &"", before, {
+		"changed": before != five_area_progression_snapshot(),
+		"growth_id": target_growth_id,
+		"affected_growth_ids": [target_growth_id],
+	})
+
+
+func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dictionary:
+	var unavailable := _debug_tools_unavailable_result()
+	if not unavailable.is_empty():
+		return unavailable
+	_ensure_progression()
+	var before := five_area_progression_snapshot()
+	if bool(_progression.get("day_open")):
+		return _debug_result(false, &"business_day_open", before, {"area_id": area_id, "target_tier": target_tier})
+	if not DEBUG_TIER_GROWTH_IDS.has(area_id) or target_tier < 0 or target_tier > 2:
+		return _debug_result(false, &"unknown_device_tier", before, {"area_id": area_id, "target_tier": target_tier})
+	if not StringName(before.get("pending_install_purchase", &"")).is_empty() or not StringName(before.get("pending_content_purchase", &"")).is_empty():
+		return _debug_result(false, &"pending_purchase_exists", before, {"area_id": area_id, "target_tier": target_tier})
+	var area_definition := CATALOG.area_definition(area_id)
+	var device_id := StringName(area_definition.get("device_id", &""))
+	var area_owned := bool(_progression.call("owns_area", area_id))
+	var current_tier := int(_progression.call("device_tier", device_id)) if area_owned else -1
+	if target_tier < current_tier:
+		return _debug_result(false, &"downgrade_not_allowed", before, {
+			"area_id": area_id,
+			"current_tier": current_tier,
+			"target_tier": target_tier,
+		})
+	if target_tier == current_tier:
+		return _debug_result(true, &"already_reached", before, {
+			"changed": false,
+			"area_id": area_id,
+			"current_tier": current_tier,
+			"target_tier": target_tier,
+		})
+
+	var target_growth_id := StringName(Array(DEBUG_TIER_GROWTH_IDS[area_id])[target_tier])
+	if target_growth_id.is_empty():
+		return _debug_result(true, &"already_reached", before, {
+			"changed": false,
+			"area_id": area_id,
+			"current_tier": current_tier,
+			"target_tier": target_tier,
+		})
+	var target_route_index := CATALOG.FIXED_GROWTH_ROUTE.find(target_growth_id)
+	if target_route_index < 0:
+		return _debug_result(false, &"target_not_in_growth_route", before, {"growth_id": target_growth_id})
+
+	var preview: RefCounted = PROGRESSION_SERVICE.new(before)
+	preview.call("set_day_open", false)
+	var purchased_growth_ids: Array[StringName] = []
+	var activated_growth_ids: Array[StringName] = []
+	for route_index in range(target_route_index + 1):
+		var growth_id: StringName = CATALOG.FIXED_GROWTH_ROUTE[route_index]
+		if bool(preview.call("owns_growth", growth_id)):
+			continue
+		var attempts := 0
+		while not bool(preview.call("owns_growth", growth_id)):
+			attempts += 1
+			if attempts > CATALOG.FIXED_GROWTH_ROUTE.size() + 4:
+				return _debug_result(false, &"debug_progression_stalled", before, {"growth_id": growth_id})
+			var status: Dictionary = preview.call("purchase_status", growth_id)
+			if bool(status.get("pending_activation", false)) or StringName(status.get("reason", &"")) == &"purchase_slot_occupied":
+				var advanced := _debug_advance_preview_day(preview, activated_growth_ids)
+				if not bool(advanced.get("success", false)):
+					return _debug_result(false, StringName(advanced.get("reason", &"debug_day_advance_failed")), before, {"growth_id": growth_id})
+				continue
+			var prepared := _debug_prepare_growth_on(preview, growth_id, activated_growth_ids)
+			if not bool(prepared.get("success", false)):
+				return _debug_result(false, StringName(prepared.get("reason", &"requirements_unavailable")), before, {
+					"growth_id": growth_id,
+					"details": prepared,
+				})
+			status = preview.call("purchase_status", growth_id)
+			if not bool(status.get("can_purchase", false)):
+				return _debug_result(false, StringName(status.get("reason", &"purchase_unavailable")), before, {
+					"growth_id": growth_id,
+					"details": status,
+				})
+			var purchase: Dictionary = preview.call("purchase", growth_id)
+			if not bool(purchase.get("success", false)):
+				return _debug_result(false, StringName(purchase.get("reason", &"purchase_failed")), before, {"growth_id": growth_id})
+			purchased_growth_ids.append(growth_id)
+			break
+
+	while not StringName(Dictionary(preview.call("snapshot")).get("pending_install_purchase", &"")).is_empty() or not StringName(Dictionary(preview.call("snapshot")).get("pending_content_purchase", &"")).is_empty():
+		var advanced := _debug_advance_preview_day(preview, activated_growth_ids)
+		if not bool(advanced.get("success", false)):
+			return _debug_result(false, StringName(advanced.get("reason", &"debug_day_advance_failed")), before, {"growth_id": target_growth_id})
+
+	if not bool(preview.call("owns_area", area_id)) or int(preview.call("device_tier", device_id)) < target_tier:
+		return _debug_result(false, &"target_tier_not_reached", before, {"growth_id": target_growth_id})
+	preview.call("set_day_open", false)
+	_progression.call("load_snapshot", preview.call("snapshot"))
+	_progression.call("set_day_open", false)
+	_save_data["day_open"] = false
+	_provision_activated_stock(activated_growth_ids)
+	_enqueue_growth_order_promotions(activated_growth_ids)
+	_debug_fill_owned_stock_to_capacity()
+	_debug_persist_progression(true)
+	return _debug_result(true, &"", before, {
+		"changed": true,
+		"area_id": area_id,
+		"target_tier": target_tier,
+		"growth_id": target_growth_id,
+		"purchased_growth_ids": purchased_growth_ids,
+		"affected_growth_ids": activated_growth_ids,
+	})
+
+
+func _debug_tools_unavailable_result() -> Dictionary:
+	if not OS.is_debug_build():
+		return _debug_result(false, &"debug_tools_unavailable", {})
+	if not has_save():
+		return _debug_result(false, &"no_active_save", {})
+	return {}
+
+
+func _debug_result(success: bool, reason: StringName, before: Dictionary, extra: Dictionary = {}) -> Dictionary:
+	var result := {
+		"success": success,
+		"reason": reason,
+		"before": before.duplicate(true),
+		"after": five_area_progression_snapshot() if has_save() else before.duplicate(true),
+		"changed": false,
+		"affected_growth_ids": [],
+	}
+	for key in extra:
+		result[key] = extra[key]
+	return result
+
+
+func _debug_persist_progression(emit_inventory: bool) -> void:
+	_save_data["day_open"] = bool(_progression.get("day_open"))
+	_sync_progression_to_save()
+	_touch_and_write()
+	coins_changed.emit(int(_progression.get("coins")))
+	progression_changed.emit(five_area_progression_snapshot())
+	if emit_inventory:
+		inventory_changed.emit(inventory_snapshot())
+
+
+func _debug_next_unowned_growth_id(progression: RefCounted) -> StringName:
+	for growth_id in CATALOG.FIXED_GROWTH_ROUTE:
+		if not bool(progression.call("owns_growth", growth_id)):
+			return growth_id
+	return &""
+
+
+func _debug_prepare_growth_on(progression: RefCounted, growth_id: StringName, activated_growth_ids: Array[StringName]) -> Dictionary:
+	var definition := CATALOG.growth_definition(growth_id)
+	if definition.is_empty():
+		return {"success": false, "reason": &"unknown_growth", "growth_id": growth_id}
+	var min_day := maxi(int(definition.get("min_day", 1)), 1)
+	while int(progression.get("current_day")) < min_day:
+		var advanced := _debug_advance_preview_day(progression, activated_growth_ids)
+		if not bool(advanced.get("success", false)):
+			return advanced
+
+	var required_area := StringName(definition.get("requires_area_id", &""))
+	if not required_area.is_empty() and not bool(progression.call("owns_area", required_area)):
+		return {"success": false, "reason": &"area_locked", "required_area_id": required_area}
+	for required_growth_variant in Array(definition.get("requires_growth_ids", [])):
+		var required_growth_id := StringName(required_growth_variant)
+		if not bool(progression.call("owns_growth", required_growth_id)):
+			return {"success": false, "reason": &"growth_requirement", "required_growth_id": required_growth_id}
+	if bool(definition.get("requires_all_areas", false)):
+		for area_id in CATALOG.UNLOCK_AREA_IDS:
+			if not bool(progression.call("owns_area", area_id)):
+				return {"success": false, "reason": &"all_areas_requirement", "required_area_id": area_id}
+
+	var tutorial_area_id := StringName(definition.get("requires_tutorial_area_id", &""))
+	if not tutorial_area_id.is_empty():
+		_debug_complete_tutorial_on(progression, &"area", tutorial_area_id)
+	var tutorial_device_id := StringName(definition.get("requires_tutorial_device_id", &""))
+	if not tutorial_device_id.is_empty():
+		_debug_complete_tutorial_on(progression, &"device", tutorial_device_id)
+
+	var mastery_requirements := Dictionary(definition.get("requires_mastery", {}))
+	for mastery_area_variant in mastery_requirements:
+		var mastery_area_id := StringName(mastery_area_variant)
+		if not bool(progression.call("owns_area", mastery_area_id)):
+			return {"success": false, "reason": &"area_locked", "required_area_id": mastery_area_id}
+		_debug_complete_tutorial_on(progression, &"area", mastery_area_id)
+		var details_by_area := Dictionary(progression.get("area_mastery_details")).duplicate(true)
+		var mastery_by_area := Dictionary(progression.get("area_mastery")).duplicate(true)
+		var details: Dictionary = Dictionary(progression.call("mastery_snapshot", mastery_area_id)).duplicate(true)
+		var required_values := Dictionary(mastery_requirements[mastery_area_variant])
+		for metric_variant in required_values:
+			var metric := str(metric_variant)
+			details[metric] = maxi(int(details.get(metric, 0)), int(required_values[metric_variant]))
+		details["qualified"] = maxi(int(details.get("qualified", 0)), int(details.get("a_grade", 0)))
+		details_by_area[mastery_area_id] = details
+		mastery_by_area[mastery_area_id] = int(details.get("qualified", 0))
+		progression.set("area_mastery_details", details_by_area)
+		progression.set("area_mastery", mastery_by_area)
+
+	progression.set("reputation", maxi(int(progression.get("reputation")), int(definition.get("min_reputation", 0))))
+	progression.set("coins", maxi(int(progression.get("coins")), int(definition.get("price", 0))))
+	return {"success": true, "growth_id": growth_id}
+
+
+func _debug_advance_preview_day(progression: RefCounted, activated_growth_ids: Array[StringName]) -> Dictionary:
+	progression.call("set_day_open", false)
+	var result: Dictionary = progression.call("begin_next_business_day")
+	if not bool(result.get("success", false)):
+		return result
+	for growth_id_variant in Array(result.get("activated_growth_ids", [])):
+		var growth_id := StringName(growth_id_variant)
+		if not activated_growth_ids.has(growth_id):
+			activated_growth_ids.append(growth_id)
+	progression.call("advance_tutorial_for_new_business_day")
+	progression.call("set_day_open", false)
+	return result
+
+
+func _debug_complete_tutorial_on(progression: RefCounted, kind: StringName, tutorial_id: StringName) -> void:
+	if tutorial_id.is_empty():
+		return
+	var snapshot: Dictionary = progression.call("snapshot")
+	var tutorial := Dictionary(snapshot.get("tutorial", {})).duplicate(true)
+	var completed_key := "completed_area_ids" if kind == &"area" else "completed_device_ids"
+	var queue_key := "queue_area_ids" if kind == &"area" else "queue_device_ids"
+	var completed := Array(tutorial.get(completed_key, [])).duplicate()
+	if not completed.has(tutorial_id) and not completed.has(str(tutorial_id)):
+		completed.append(tutorial_id)
+	var queue := Array(tutorial.get(queue_key, [])).duplicate()
+	queue.erase(tutorial_id)
+	queue.erase(str(tutorial_id))
+	tutorial[completed_key] = completed
+	tutorial[queue_key] = queue
+	if StringName(tutorial.get("active_kind", &"")) == kind and StringName(tutorial.get("active_id", &"")) == tutorial_id:
+		tutorial["active_kind"] = &""
+		tutorial["active_id"] = &""
+	var failures := Dictionary(tutorial.get("failure_count_by_id", {})).duplicate(true)
+	failures.erase(tutorial_id)
+	failures.erase(str(tutorial_id))
+	tutorial["failure_count_by_id"] = failures
+	snapshot["tutorial"] = tutorial
+	progression.call("load_snapshot", snapshot)
+
+
+func _debug_fill_owned_stock_to_capacity() -> void:
+	var inventory := inventory_snapshot()
+	var stock_capacity := maxi(int(_progression.get("stock_capacity")), 0)
+	for stock_id in CATALOG.stock_ids():
+		if not bool(_progression.call("owns_stock", stock_id)):
+			continue
+		var definition := CATALOG.stock_definition(stock_id)
+		var capacity := maxi(int(definition.get("restock_capacity", 0)), stock_capacity)
+		if capacity > 0:
+			inventory[str(stock_id)] = capacity
+	_save_data["inventory"] = _normalize_inventory(inventory)
 
 
 func growth_missing_requirements(growth_id: StringName) -> String:
@@ -2447,8 +2903,6 @@ func _ensure_save_shape() -> void:
 static func _empty_prepared_product_slots() -> Dictionary:
 	return {
 		"slot.04": [],
-		"slot.05": [],
-		"slot.06": [],
 	}
 
 
@@ -2459,8 +2913,9 @@ static func _prepared_slot_id_for_product(product_id: StringName) -> StringName:
 	return &""
 
 
-static func _normalize_prepared_product_slots(value: Dictionary) -> Dictionary:
+func _normalize_prepared_product_slots(value: Dictionary) -> Dictionary:
 	var normalized := _empty_prepared_product_slots()
+	var capacity := _prepared_product_slot_capacity()
 	for slot_id in PREPARED_PRODUCT_SLOT_DEFINITIONS:
 		var products: Array = []
 		for product_variant in Array(value.get(str(slot_id), value.get(slot_id, []))):
@@ -2468,10 +2923,16 @@ static func _normalize_prepared_product_slots(value: Dictionary) -> Dictionary:
 			if product.is_empty() or StringName(product.get("product_id", &"")) != StringName(Dictionary(PREPARED_PRODUCT_SLOT_DEFINITIONS[slot_id]).get("product_id", &"")):
 				continue
 			products.append(product)
-			if products.size() >= PREPARED_PRODUCT_SLOT_CAPACITY:
+			if products.size() >= capacity:
 				break
 		normalized[str(slot_id)] = products
 	return normalized
+
+
+func _prepared_product_slot_capacity() -> int:
+	_ensure_progression()
+	var tier := int(_progression.call("device_tier", &"device.youtiao_fryer"))
+	return maxi(int(CATALOG.device_tier(&"device.youtiao_fryer", tier).get("capacity", 4)), 0)
 
 
 func _reconcile_unrecorded_settled_orders() -> void:
@@ -2614,6 +3075,39 @@ func _reputation_delta_for_result(result: Dictionary) -> int:
 	if grade == "B":
 		return 2
 	return 0
+
+
+func _quality_adjusted_formal_quote(order: Dictionary, item_results: Array, quoted_coins: int) -> int:
+	var items := Array(order.get("items", []))
+	var raw_total := 0.0
+	var adjusted_total := 0.0
+	var premium := bool(_progression.call("owns_growth", &"growth.pricing.fresh_soy_milk.premium"))
+	for item_index in range(items.size()):
+		var item := Dictionary(items[item_index])
+		var catalog_price := int(CATALOG.product_definition(StringName(item.get("product_id", &""))).get("base_sell_price", 0))
+		var unit_price := float(item.get("base_price_coins", catalog_price))
+		var item_quantity := maxi(int(item.get("quantity", 1)), 1)
+		var raw_item := unit_price * float(item_quantity)
+		raw_total += raw_item
+		if StringName(item.get("area_id", &"")) != &"area.fresh_soy_milk":
+			adjusted_total += raw_item
+			continue
+		var result := Dictionary(item_results[item_index]) if item_index < item_results.size() else {}
+		var products := Array(result.get("products", []))
+		if products.is_empty() and not Dictionary(result.get("product", {})).is_empty():
+			products.append(Dictionary(result.get("product", {})))
+		var soy_adjusted := 0.0
+		for product_value in products:
+			soy_adjusted += unit_price * float(Dictionary(product_value).get("quality_multiplier", 1.0))
+		if products.size() < item_quantity:
+			soy_adjusted += unit_price * float(item_quantity - products.size())
+		if premium:
+			soy_adjusted *= 1.3
+		adjusted_total += soy_adjusted
+	if raw_total <= 0.0:
+		return maxi(quoted_coins, 0)
+	var combo_multiplier := float(quoted_coins) / raw_total
+	return maxi(roundi(adjusted_total * combo_multiplier), 0)
 
 
 func _f3_reputation_delta(order_success: bool, grades: PackedStringArray) -> int:

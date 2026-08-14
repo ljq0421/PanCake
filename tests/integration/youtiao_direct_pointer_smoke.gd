@@ -5,6 +5,7 @@ const RECIPE := &"recipe.youtiao.plain"
 const AUTO_LIFT := &"automation.youtiao.auto_lift"
 const SCREENSHOT_1920 := "res://tmp/validation/youtiao_station_formal_1920x1080.png"
 const SCREENSHOT_1280 := "res://tmp/validation/youtiao_station_formal_1280x720.png"
+const TWO_UNIT_SCREENSHOT_1920 := "res://tmp/validation/youtiao_two_units_gpu_1920x1080.png"
 const SOY_SCREENSHOT_1366 := "res://tmp/validation/direct_soy_station_gpu_1366x768.png"
 const SOY_SPOILED_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_spoiled_gpu_1920x1080.png"
 const SOY_AUTO_CUP_SCREENSHOT_1920 := "res://tmp/validation/direct_soy_auto_cup_gpu_1920x1080.png"
@@ -41,7 +42,7 @@ func _run() -> void:
 	session.set("_production_service", null)
 	session.call("_ensure_production_service")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.youtiao.plain_dough"] = 5
+	inventory["stock.youtiao.plain_dough"] = 7
 	inventory["stock.fresh_soy_milk.yellow_bean"] = 2
 	session.call("save_inventory", inventory)
 	var workstation := WORKSTATION_SCENE.instantiate()
@@ -89,7 +90,7 @@ func _run() -> void:
 	session.call("credit_coins", 2)
 	await _hold_control(plain_dough_source, 0.55)
 	var inventory_after_hold := Dictionary(session.call("inventory_snapshot"))
-	_check(int(inventory_after_hold.get("stock.youtiao.plain_dough", 0)) == 6 and int(session.call("five_area_progression_snapshot").get("coins", -1)) == 0, "real stationary pointer hold completes one 0.25-second youtiao restock unit after the shared hold threshold")
+	_check(int(inventory_after_hold.get("stock.youtiao.plain_dough", 0)) == 8 and int(session.call("five_area_progression_snapshot").get("coins", -1)) == 0, "real stationary pointer hold completes one 0.25-second youtiao restock unit after the shared hold threshold")
 
 	await _drag_control(plain_dough_source, station.machine_stage)
 	await process_frame
@@ -114,8 +115,25 @@ func _run() -> void:
 	await _drag_control(station.output_source, workstation.waste_area)
 	await process_frame
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "dragging fryer output to waste discards the whole ready batch")
-	await _produce_ready_quantity(session, station, plain_dough_source, 4)
+	await _produce_ready_quantity(session, station, plain_dough_source, 2)
 	var prepared_plain := station.prepared_slots[0] as PreparedProductSlot
+	var two_unit_snapshot := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		StringName(two_unit_snapshot.get("state", &"")) == &"ready_to_collect"
+		and int(two_unit_snapshot.get("quantity", 0)) == 2
+		and Array(two_unit_snapshot.get("occupied_slot_indices", [])).hash() == [0, 1].hash()
+		and station.food_slots.filter(func(slot: Control): return slot.visible).size() == 2,
+		"two real dough drags render exactly two ready single-unit sprites"
+	)
+	await _save_viewport(TWO_UNIT_SCREENSHOT_1920, Vector2i(1920, 1080))
+	await _drag_control(station.output_source, prepared_plain)
+	await process_frame
+	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle" and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 2, "one real output drag stores exactly the two visible products")
+	session.call("clear_prepared_product_slots")
+	station.refresh_from_session()
+	await process_frame
+
+	await _produce_ready_quantity(session, station, plain_dough_source, 4)
 	await _hover_control(prepared_plain)
 	_check(root.gui_get_hovered_control() == prepared_plain, "the GPU pointer resolves the oil-strip prepared compartment")
 	await _drag_control(station.output_source, prepared_plain)
@@ -386,6 +404,7 @@ func _finish() -> void:
 		print("YOUTIAO_DIRECT_POINTER_SMOKE_PASS")
 		print("YOUTIAO_FORMAL_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SCREENSHOT_1920))
 		print("YOUTIAO_FORMAL_SCREENSHOT_1280=%s" % ProjectSettings.globalize_path(SCREENSHOT_1280))
+		print("YOUTIAO_TWO_UNIT_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(TWO_UNIT_SCREENSHOT_1920))
 		print("DIRECT_SOY_SCREENSHOT_1366=%s" % ProjectSettings.globalize_path(SOY_SCREENSHOT_1366))
 		print("DIRECT_SOY_SPOILED_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_SPOILED_SCREENSHOT_1920))
 		print("DIRECT_SOY_AUTO_CUP_SCREENSHOT_1920=%s" % ProjectSettings.globalize_path(SOY_AUTO_CUP_SCREENSHOT_1920))

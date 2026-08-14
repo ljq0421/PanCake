@@ -62,7 +62,7 @@ func _run() -> void:
 		if sprite != null and StringName(sprite.get_meta(&"ingredient_type", &"")) == IngredientModel.YOUTIAO:
 			youtiao_sprite = sprite
 			break
-	var youtiao_image := Image.load_from_file(ProjectSettings.globalize_path("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"))
+	var youtiao_image := Image.load_from_file(ProjectSettings.globalize_path("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png"))
 	var baocui_image := Image.load_from_file(ProjectSettings.globalize_path("res://resources/art/ingredients/baocui/baocui_broken_v1.png"))
 	var youtiao_visible_width := float(youtiao_image.get_used_rect().size.x) * youtiao_sprite.scale.x if youtiao_sprite != null else 0.0
 	var baocui_visible_width := float(baocui_image.get_used_rect().size.x) * 0.16

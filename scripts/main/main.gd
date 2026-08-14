@@ -16,6 +16,8 @@ func _ready() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	if session != null and session.has_method("set_business_paused"):
 		session.call("set_business_paused", false)
+	if session != null and session.has_method("commit_scene_binding_save_batch"):
+		session.call("commit_scene_binding_save_batch")
 	_log_info(&"bootstrap", "M0 main scene started with Mobile renderer")
 
 

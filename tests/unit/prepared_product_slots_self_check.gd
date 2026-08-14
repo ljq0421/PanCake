@@ -40,6 +40,24 @@ func _run() -> void:
 	_check(bool(enabled_auto.get("success", false)) and StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"draining", "re-enabled auto-lift immediately replaces only the lift action")
 	session.call("advance_f3_production", 2.0)
 	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
+	var loaded_two := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 2))
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 10.0)
+	session.call("advance_f3_production", 2.0)
+	var fryer_before_two_store := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	var stored_two := Dictionary(session.call("store_ready_youtiao_batch", &"slot.04"))
+	var fryer_after_two_store := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		bool(loaded_two.get("success", false))
+		and int(loaded_two.get("loaded_quantity", 0)) == 2
+		and Array(fryer_before_two_store.get("occupied_slot_indices", [])).hash() == [0, 1].hash()
+		and bool(stored_two.get("success", false))
+		and int(stored_two.get("stored_quantity", 0)) == 2
+		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 2
+		and StringName(fryer_after_two_store.get("state", &"")) == &"idle",
+		"two dough portions occupy two fryer slots and store exactly two products"
+	)
+	session.call("clear_prepared_product_slots")
 	var loaded_batch := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 4))
 	session.call("perform_f3_youtiao_action", &"start")
 	session.call("advance_f3_production", 10.0)

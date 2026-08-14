@@ -7,7 +7,7 @@ const PRODUCT_TEXTURES := {
 	&"product.packaged_drink.soy_milk": preload("res://resources/art/products/packaged_drink/soy_milk_package_five_area_v2.png"),
 	&"product.packaged_drink.walnut": preload("res://resources/art/products/packaged_drink/walnut_package_five_area_v2.png"),
 	&"product.packaged_drink.black_sesame": preload("res://resources/art/products/packaged_drink/black_sesame_package_five_area_v2.png"),
-	&"product.youtiao.plain": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
+	&"product.youtiao.plain": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png"),
 	&"product.fresh_soy_milk.yellow_bean": preload("res://resources/art/products/soy_milk/soy_milk_cup_yellow_bean_v3.png"),
 	&"product.fresh_soy_milk.black_bean": preload("res://resources/art/products/soy_milk/soy_milk_cup_black_bean_v3.png"),
 	&"product.fresh_soy_milk.red_bean": preload("res://resources/art/products/soy_milk/soy_milk_cup_red_bean_v3.png"),

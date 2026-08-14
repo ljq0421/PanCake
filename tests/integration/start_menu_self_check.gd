@@ -1,7 +1,6 @@
 extends SceneTree
 
 const START_MENU_SCENE := preload("res://scenes/main/start_menu.tscn")
-const GAME_SCENE := preload("res://scenes/main/main.tscn")
 
 var _failures := PackedStringArray()
 
@@ -28,11 +27,14 @@ func _run() -> void:
 	var new_game_button := menu.get_node("Content/Layout/MenuPanel/Menu/NewGameButton") as Button
 	var settings_button := menu.get_node("Content/Layout/MenuPanel/Menu/SettingsButton") as Button
 	var quit_button := menu.get_node("Content/Layout/MenuPanel/Menu/QuitButton") as Button
+	var loading_overlay := menu.get_node("LoadingOverlay") as Control
+	var loading_progress := menu.get_node("LoadingOverlay/Center/Dialog/Rows/LoadingProgress") as ProgressBar
 	_check(background.texture != null and background.texture.resource_path == "res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v3_chinese.png", "start menu uses the Chinese-style morning mobile-cart background")
 	_check(background.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED, "background covers wider and taller aspect ratios")
 	_check(continue_button.text == "继续游戏" and new_game_button.text == "新游戏", "primary start actions are present")
 	_check(settings_button.text == "设置" and quit_button.text == "退出游戏", "settings and desktop quit actions are present")
 	_check(continue_button.disabled == not session.has_save(), "continue availability mirrors persistent session state")
+	_check(not loading_overlay.visible and is_zero_approx(loading_progress.value), "threaded loading overlay starts hidden and empty")
 
 	session.begin_new_game()
 	menu.call("_refresh_save_state")
@@ -62,14 +64,33 @@ func _run() -> void:
 	menu.call("_close_new_game_confirmation")
 	_check(not (menu.get_node("NewGameOverlay") as Control).visible, "new-game confirmation can be cancelled")
 
-	menu.queue_free()
-	await process_frame
-	await process_frame
+	menu.call("_begin_game_load", false, "res://missing/threaded_game_scene.tscn")
+	_check(loading_overlay.visible and continue_button.disabled and new_game_button.disabled, "loading overlay appears immediately and blocks duplicate menu actions")
+	menu.call("_begin_game_load", true)
+	_check(not bool(menu.get("_pending_new_game")), "a second click cannot replace the in-flight transition mode")
+	for _frame in 4:
+		await process_frame
+	_check(not loading_overlay.visible and not continue_button.disabled, "threaded load failure restores the start menu actions")
+	_check("失败" in menu.get_node("Content/Layout/MenuPanel/Menu/SessionStatus/StatusLayout/ResumeLabel").text, "threaded load failure exposes a retry message")
+	_check(bool(session.call("has_save")) and bool(session.call("is_business_paused")), "failed loading leaves the existing paused save untouched")
 
-	var gameplay := GAME_SCENE.instantiate()
-	root.add_child(gameplay)
+	current_scene = menu
+	var continue_write_count := int(session.get("_save_write_count"))
+	continue_button.emit_signal("pressed")
+	_check(loading_overlay.visible and continue_button.disabled, "continue enters visible loading state before scene work starts")
 	await process_frame
-	await process_frame
+	_check(loading_overlay.visible, "loading feedback survives through the first rendered frame")
+	for _frame in 600:
+		if current_scene != menu:
+			break
+		await process_frame
+	var gameplay := current_scene as Control
+	_check(gameplay != null and gameplay.name == "Main", "threaded continue load switches to the gameplay scene")
+	if gameplay == null:
+		_finish()
+		return
+	var continue_write_delta := int(session.get("_save_write_count")) - continue_write_count
+	_check(continue_write_delta == 1, "continue persists exactly once after gameplay binding (actual %d)" % continue_write_delta)
 	_check(not session.call("is_business_paused"), "gameplay scene resumes business only after workstation binding completes")
 	gameplay.call("_set_paused", true)
 	var pause_panel := gameplay.get_node("PausePanel") as Control
@@ -87,6 +108,29 @@ func _run() -> void:
 	gameplay.queue_free()
 	await process_frame
 	await process_frame
+	current_scene = null
+
+	var new_menu := START_MENU_SCENE.instantiate()
+	root.add_child(new_menu)
+	current_scene = new_menu
+	await process_frame
+	new_menu.call("_request_new_game")
+	_check((new_menu.get_node("NewGameOverlay") as Control).visible, "existing save still requires confirmation before threaded new-game loading")
+	var new_game_write_count := int(session.get("_save_write_count"))
+	new_menu.call("_start_new_game")
+	_check((new_menu.get_node("LoadingOverlay") as Control).visible, "confirmed new game uses the same visible loading flow")
+	for _frame in 600:
+		if current_scene != new_menu:
+			break
+		await process_frame
+	var new_gameplay := current_scene as Control
+	_check(new_gameplay != null and int(Dictionary(session.get("_save_data")).get("orders_completed", -1)) == 0, "new-game state resets only after threaded scene loading succeeds")
+	var new_game_write_delta := int(session.get("_save_write_count")) - new_game_write_count
+	_check(new_game_write_delta == 1, "new game persists exactly once after threaded loading (actual %d)" % new_game_write_delta)
+	if new_gameplay != null:
+		new_gameplay.queue_free()
+		await process_frame
+	current_scene = null
 
 	session.save_settings(
 		float(previous_settings.master_volume),

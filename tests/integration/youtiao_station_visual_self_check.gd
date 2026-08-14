@@ -4,6 +4,10 @@ const STATION_SCENE := preload("res://scenes/gameplay/direct_youtiao_station.tsc
 const RECIPE_ID := &"recipe.youtiao.plain"
 const AUTO_LIFT := &"automation.youtiao.auto_lift"
 const TEMP_ASSIST := &"assist.youtiao.temperature_indicator"
+const SINGLE_UNIT_ASSETS := [
+	"res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v3.png",
+	"res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
+]
 const GENERATED_ASSETS := [
 	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_v2_chinese.png", Vector2i(1024, 512)],
 	["res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_lowered_v2_chinese.png", Vector2i(1024, 512)],
@@ -51,7 +55,16 @@ func _check_assets(station: Node) -> void:
 	_check(station.body_textures[1] != station.body_textures[0] and station.lowered_basket_textures[1] != station.lowered_basket_textures[0] and station.raised_basket_textures[1] != station.raised_basket_textures[0], "intermediate fryer owns dedicated body, lowered-basket, and raised-basket art")
 	_check(station.body_textures[1].resource_path.ends_with("youtiao_fryer_tier_1_body_v2_chinese.png") and station.lowered_basket_textures[1].resource_path.ends_with("youtiao_fryer_tier_1_lowered_v2_chinese.png") and station.raised_basket_textures[1].resource_path.ends_with("youtiao_fryer_tier_1_raised_v2_chinese.png"), "intermediate fryer binds the new Chinese-style three-state set")
 	_check(station.raw_food_textures.size() == 1 and station.cooked_food_textures.size() == 1, "the formal fryer binds only the oil-strip raw and cooked textures")
+	_check(station.raw_food_textures[0].resource_path.ends_with("plain_youtiao_dough_v1_five_area_v3.png") and station.cooked_food_textures[0].resource_path.ends_with("plain_youtiao_v1_five_area_v3.png"), "the formal fryer binds the single-unit raw and cooked sprites")
 	_check(station.auto_lift_texture != null and station.sizzle_texture != null and station.oil_drips_texture != null, "auto-lift and loop effects are scene-bound")
+	for path in SINGLE_UNIT_ASSETS:
+		var image := Image.load_from_file(ProjectSettings.globalize_path(path))
+		_check(not image.is_empty() and image.get_size() == Vector2i(256, 256) and image.get_format() in [Image.FORMAT_RGBA8, Image.FORMAT_RGBAF, Image.FORMAT_RGBAH], "%s is a 256px RGBA sprite" % path)
+		if image.is_empty():
+			continue
+		for corner in [Vector2i.ZERO, Vector2i(image.get_width() - 1, 0), Vector2i(0, image.get_height() - 1), image.get_size() - Vector2i.ONE]:
+			_check(image.get_pixelv(corner).a <= 0.02, "%s has a transparent canvas corner" % path)
+		_check(_large_alpha_component_count(image) == 1, "%s contains exactly one large connected food object" % path)
 	for entry in GENERATED_ASSETS:
 		var path := String(entry[0])
 		var expected_size := Vector2i(entry[1])
@@ -147,6 +160,42 @@ static func _inventory() -> Dictionary:
 
 static func _visible_food_count(station: Node) -> int:
 	return station.food_slots.filter(func(slot: Control): return slot.visible).size()
+
+
+static func _large_alpha_component_count(image: Image, alpha_threshold: float = 0.1, minimum_pixels: int = 64) -> int:
+	var image_size := image.get_size()
+	var visited := PackedByteArray()
+	visited.resize(image_size.x * image_size.y)
+	var large_components := 0
+	var neighbors: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
+	for y in range(image_size.y):
+		for x in range(image_size.x):
+			var pixel_index := y * image_size.x + x
+			if visited[pixel_index] != 0:
+				continue
+			visited[pixel_index] = 1
+			if image.get_pixel(x, y).a <= alpha_threshold:
+				continue
+			var queue: Array[Vector2i] = [Vector2i(x, y)]
+			var queue_index := 0
+			var component_pixels := 0
+			while queue_index < queue.size():
+				var point := queue[queue_index]
+				queue_index += 1
+				component_pixels += 1
+				for offset in neighbors:
+					var neighbor: Vector2i = point + offset
+					if neighbor.x < 0 or neighbor.y < 0 or neighbor.x >= image_size.x or neighbor.y >= image_size.y:
+						continue
+					var neighbor_index: int = neighbor.y * image_size.x + neighbor.x
+					if visited[neighbor_index] != 0:
+						continue
+					visited[neighbor_index] = 1
+					if image.get_pixelv(neighbor).a > alpha_threshold:
+						queue.append(neighbor)
+			if component_pixels >= minimum_pixels:
+				large_components += 1
+	return large_components
 
 
 func _check_food_layout(station: Node, tier: int, raised: bool) -> void:

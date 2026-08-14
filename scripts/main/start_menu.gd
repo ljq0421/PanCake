@@ -18,8 +18,16 @@ const GAME_SCENE := "res://scenes/main/main.tscn"
 @onready var new_game_overlay: Control = %NewGameOverlay
 @onready var new_game_cancel_button: Button = %NewGameCancelButton
 @onready var new_game_confirm_button: Button = %NewGameConfirmButton
+@onready var loading_overlay: Control = %LoadingOverlay
+@onready var loading_status_label: Label = %LoadingStatusLabel
+@onready var loading_progress: ProgressBar = %LoadingProgress
+@onready var loading_detail_label: Label = %LoadingDetailLabel
 
 var _session: Node
+var _loading := false
+var _load_request_started := false
+var _pending_new_game := false
+var _loading_path := GAME_SCENE
 
 
 func _ready() -> void:
@@ -46,6 +54,9 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed(&"ui_cancel"):
 		return
+	if _loading:
+		get_viewport().set_input_as_handled()
+		return
 	if settings_overlay.visible:
 		_close_settings()
 	elif new_game_overlay.visible:
@@ -68,10 +79,10 @@ func _focus_primary_action() -> void:
 
 
 func _continue_game() -> void:
-	if bool(_session.call("continue_game")):
-		_open_game_scene()
-	else:
+	if not bool(_session.call("has_save")):
 		_refresh_save_state()
+		return
+	_begin_game_load(false)
 
 
 func _request_new_game() -> void:
@@ -83,14 +94,97 @@ func _request_new_game() -> void:
 
 
 func _start_new_game() -> void:
-	_session.call("begin_new_game")
-	_open_game_scene()
+	_begin_game_load(true)
 
 
-func _open_game_scene() -> void:
-	var error := get_tree().change_scene_to_file(GAME_SCENE)
+func _begin_game_load(start_new_game: bool, path_override: String = "") -> void:
+	if _loading:
+		return
+	_loading = true
+	_load_request_started = false
+	_pending_new_game = start_new_game
+	_loading_path = path_override if not path_override.is_empty() else GAME_SCENE
+	new_game_overlay.visible = false
+	loading_status_label.text = "正在准备摊位…"
+	loading_detail_label.text = "整理设备与顾客档案"
+	loading_progress.value = 0.0
+	loading_overlay.visible = true
+	_set_menu_actions_disabled(true)
+	call_deferred("_request_game_scene_after_frame")
+
+
+func _request_game_scene_after_frame() -> void:
+	await get_tree().process_frame
+	if not _loading:
+		return
+	if not ResourceLoader.exists(_loading_path, "PackedScene"):
+		_fail_game_load("摊位准备失败，请重试。")
+		return
+	var error := ResourceLoader.load_threaded_request(_loading_path, "PackedScene", true)
 	if error != OK:
+		_fail_game_load("摊位准备失败，请重试。")
+		return
+	_load_request_started = true
+
+
+func _process(_delta: float) -> void:
+	if not _loading or not _load_request_started:
+		return
+	var progress: Array = []
+	var status := ResourceLoader.load_threaded_get_status(_loading_path, progress)
+	if not progress.is_empty():
+		var percent := clampf(float(progress[0]), 0.0, 1.0)
+		loading_progress.value = percent * 100.0
+		loading_detail_label.text = "已完成 %d%%" % roundi(percent * 100.0)
+	if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		return
+	if status != ResourceLoader.THREAD_LOAD_LOADED:
+		_fail_game_load("摊位准备失败，请重试。")
+		return
+	var packed_scene := ResourceLoader.load_threaded_get(_loading_path) as PackedScene
+	if packed_scene == null:
+		_fail_game_load("摊位准备失败，请重试。")
+		return
+	_load_request_started = false
+	if not bool(_session.call("begin_scene_binding_save_batch")):
+		_fail_game_load("摊位状态正忙，请重试。")
+		return
+	if _pending_new_game:
+		var result := Dictionary(_session.call("begin_new_game"))
+		if not bool(result.get("success", false)):
+			_fail_game_load("新游戏初始化失败，请重试。")
+			return
+	elif not bool(_session.call("has_save")):
+		_fail_game_load("没有可继续的营业记录。")
+		return
+	loading_progress.value = 100.0
+	loading_detail_label.text = "准备完成"
+	var error := get_tree().change_scene_to_packed(packed_scene)
+	if error != OK:
+		_fail_game_load("无法进入摊位，请重试。")
 		push_error("Could not open gameplay scene: %s" % error_string(error))
+
+
+func _fail_game_load(message: String) -> void:
+	if _session != null and _session.has_method("rollback_scene_binding_save_batch"):
+		_session.call("rollback_scene_binding_save_batch")
+	_loading = false
+	_load_request_started = false
+	_pending_new_game = false
+	loading_overlay.visible = false
+	_set_menu_actions_disabled(false)
+	_refresh_save_state()
+	resume_label.text = message
+	call_deferred("_focus_primary_action")
+
+
+func _set_menu_actions_disabled(disabled: bool) -> void:
+	continue_button.disabled = disabled or not bool(_session.call("has_save"))
+	new_game_button.disabled = disabled
+	settings_button.disabled = disabled
+	quit_button.disabled = disabled
+	new_game_cancel_button.disabled = disabled
+	new_game_confirm_button.disabled = disabled
 
 
 func _open_settings() -> void:

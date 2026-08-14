@@ -14,6 +14,7 @@ $checks = @(
 	'res://tests/unit/five_area_catalog_self_check.gd',
 	'res://tests/unit/five_area_progression_service_self_check.gd',
 	'res://tests/unit/debug_progression_tools_self_check.gd',
+	'res://tests/unit/customer_portrait_catalog_self_check.gd',
 	'res://tests/unit/five_area_game_session_store_self_check.gd',
 	'res://tests/unit/five_area_order_service_self_check.gd',
 	'res://tests/unit/five_area_playable_order_self_check.gd',
@@ -55,7 +56,7 @@ foreach ($check in $checks) {
         Write-Host "Godot log: $logFile"
         exit $LASTEXITCODE
     }
-	$badLogLines = Select-String -Path $logFile -Pattern 'SCRIPT ERROR|Parse Error|FAIL:'
+	$badLogLines = Select-String -Path $logFile -Pattern 'SCRIPT ERROR|Parse Error|Failed loading resource|Cannot open file|Parameter "t" is null|RID allocations|FAIL:'
 	if ($badLogLines) {
 		$badLogLines | ForEach-Object { Write-Host $_.Line }
 		Write-Host "Godot log: $logFile"

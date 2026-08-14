@@ -84,6 +84,10 @@ var _production_service: RefCounted
 var _business_report_service: RefCounted
 var _daily_goal_service: RefCounted
 var _incompatible_development_save_removed := false
+var _save_write_count := 0
+var _scene_binding_save_batch_active := false
+var _scene_binding_save_pending := false
+var _scene_binding_save_snapshot: Dictionary = {}
 
 
 func _ready() -> void:
@@ -168,6 +172,39 @@ func continue_game() -> bool:
 	_save_data["business_paused"] = true
 	_write_save()
 	return true
+
+
+func begin_scene_binding_save_batch() -> bool:
+	if _scene_binding_save_batch_active:
+		return false
+	_scene_binding_save_batch_active = true
+	_scene_binding_save_pending = false
+	_scene_binding_save_snapshot = _save_data.duplicate(true)
+	return true
+
+
+func commit_scene_binding_save_batch() -> void:
+	if not _scene_binding_save_batch_active:
+		return
+	var should_write := _scene_binding_save_pending
+	_scene_binding_save_active_reset()
+	if should_write:
+		_write_save()
+
+
+func rollback_scene_binding_save_batch() -> void:
+	if not _scene_binding_save_batch_active:
+		return
+	_save_data = _scene_binding_save_snapshot.duplicate(true)
+	_scene_binding_save_pending = false
+	_restore_progression()
+	_scene_binding_save_active_reset()
+
+
+func _scene_binding_save_active_reset() -> void:
+	_scene_binding_save_batch_active = false
+	_scene_binding_save_pending = false
+	_scene_binding_save_snapshot.clear()
 
 
 func business_day_remaining_seconds() -> float:
@@ -3035,11 +3072,15 @@ func _touch_and_write() -> void:
 
 
 func _write_save() -> void:
+	if _scene_binding_save_batch_active:
+		_scene_binding_save_pending = true
+		return
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
 		push_warning("Could not write ProjectCake save data")
 		return
-	file.store_string(JSON.stringify(_save_data, "\t"))
+	file.store_string(JSON.stringify(_save_data))
+	_save_write_count += 1
 
 
 func _load_settings() -> void:

@@ -628,3 +628,67 @@ theme_override_styles/hover = SubResource("Style_button_primary_hover")
 theme_override_styles/pressed = SubResource("Style_button_primary_hover")
 theme_override_styles/focus = SubResource("Style_focus")
 text = "确认新游戏"
+
+[node name="LoadingOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+process_mode = 3
+z_index = 1000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="LoadingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.04, 0.045, 0.88)
+
+[node name="Center" type="CenterContainer" parent="LoadingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dialog" type="PanelContainer" parent="LoadingOverlay/Center"]
+custom_minimum_size = Vector2(620, 0)
+layout_mode = 2
+mouse_filter = 0
+theme_override_styles/panel = SubResource("Style_dialog")
+
+[node name="Rows" type="VBoxContainer" parent="LoadingOverlay/Center/Dialog"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="LoadingStatusLabel" type="Label" parent="LoadingOverlay/Center/Dialog/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.46, 1)
+theme_override_font_sizes/font_size = 34
+text = "正在准备摊位…"
+horizontal_alignment = 1
+
+[node name="LoadingProgress" type="ProgressBar" parent="LoadingOverlay/Center/Dialog/Rows"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+show_percentage = false
+
+[node name="LoadingDetailLabel" type="Label" parent="LoadingOverlay/Center/Dialog/Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.80, 0.72, 0.62, 1)
+theme_override_font_sizes/font_size = 17
+text = "整理设备与顾客档案"
+horizontal_alignment = 1

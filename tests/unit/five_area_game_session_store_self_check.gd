@@ -29,6 +29,12 @@ func _run() -> void:
 	var new_game := Dictionary(session.call("begin_new_game"))
 	_check(bool(new_game.get("success", false)) and bool(session.call("has_save")), "new breakfast-stall save is created")
 	_check(Dictionary(new_game.get("snapshot", {})).has("special_customer_state"), "new save includes optional deterministic special-customer state")
+	var compact_file := FileAccess.open(session.SAVE_PATH, FileAccess.READ)
+	if compact_file != null:
+		var compact_text := compact_file.get_as_text()
+		compact_file.close()
+		_check("\n" not in compact_text and "\t" not in compact_text, "save JSON is written without pretty-print whitespace")
+		_check(JSON.parse_string(compact_text) is Dictionary, "compact save JSON remains readable without a migration")
 	var save_without_special_state := Dictionary(session.get("_save_data")).duplicate(true)
 	save_without_special_state.erase("special_customer_state")
 	session.set("_save_data", save_without_special_state)

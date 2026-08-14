@@ -2,7 +2,7 @@ class_name IngredientLayer
 extends Control
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
-const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png")
+const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png")
 
 @export var egg_texture: Texture2D
 @export var baocui_texture: Texture2D

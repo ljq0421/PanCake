@@ -18,196 +18,38 @@ const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const BASIC_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png")
-const INTERMEDIATE_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png")
-const ADVANCED_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png")
+const INTERMEDIATE_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png"
+const ADVANCED_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png"
 const BASIC_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_v1.png")
-const WIDE_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png")
-const PRESS_SPREADER_TEXTURE := preload("res://resources/art/workstation/expansion/tools/single_press_spreader_v1.png")
-const BASIC_SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1.png")
-const AUTOMATIC_SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/expansion/tools/automatic_sauce_brush_v1.png")
-const CUSTOMER_TEXTURES := {
-	&"customer_01": {
-		&"neutral": preload("res://resources/art/customers/customer_01/customer_01_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_01/customer_01_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_01/customer_01_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_01/customer_01_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_01/customer_01_paying_coins_cropped.tres"),
-	},
-	&"customer_02": {
-		&"neutral": preload("res://resources/art/customers/customer_02/customer_02_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_02/customer_02_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_02/customer_02_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_02/customer_02_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_02/customer_02_paying_coins_cropped.tres"),
-	},
-	&"customer_03": {
-		&"neutral": preload("res://resources/art/customers/customer_03/customer_03_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_03/customer_03_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_03/customer_03_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_03/customer_03_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_03/customer_03_paying_coins_cropped.tres"),
-	},
-	&"customer_04": {
-		&"neutral": preload("res://resources/art/customers/customer_04/customer_04_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_04/customer_04_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_04/customer_04_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_04/customer_04_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_04/customer_04_paying_coins_cropped.tres"),
-	},
-	&"customer_05": {
-		&"neutral": preload("res://resources/art/customers/customer_05/customer_05_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_05/customer_05_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_05/customer_05_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_05/customer_05_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_05/customer_05_paying_coins_cropped.tres"),
-	},
-	&"customer_06": {
-		&"neutral": preload("res://resources/art/customers/customer_06/customer_06_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_06/customer_06_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_06/customer_06_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_06/customer_06_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_06/customer_06_paying_coins_cropped.tres"),
-	},
-	&"customer_07": {
-		&"neutral": preload("res://resources/art/customers/customer_07/customer_07_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_07/customer_07_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_07/customer_07_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_07/customer_07_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_07/customer_07_paying_coins_cropped.tres"),
-	},
-	&"customer_08": {
-		&"neutral": preload("res://resources/art/customers/customer_08/customer_08_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_08/customer_08_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_08/customer_08_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_08/customer_08_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_08/customer_08_paying_coins_cropped.tres"),
-	},
-	&"customer_09": {
-		&"neutral": preload("res://resources/art/customers/customer_09/customer_09_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_09/customer_09_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_09/customer_09_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_09/customer_09_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_09/customer_09_paying_coins_cropped.tres"),
-	},
-	&"customer_10": {
-		&"neutral": preload("res://resources/art/customers/customer_10/customer_10_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_10/customer_10_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_10/customer_10_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_10/customer_10_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_10/customer_10_paying_coins_cropped.tres"),
-	},
-	&"customer_11": {
-		&"neutral": preload("res://resources/art/customers/customer_11/customer_11_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_11/customer_11_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_11/customer_11_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_11/customer_11_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_11/customer_11_paying_coins_cropped.tres"),
-	},
-	# Each customer keeps five state slots. customer_12's full state set is kept
-	# separate so animations never fall back to its neutral portrait.
-	&"customer_12": {
-		&"neutral": preload("res://resources/art/customers/customer_12/customer_12_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_12/customer_12_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_12/customer_12_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_12/customer_12_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_12/customer_12_paying_coins_cropped.tres"),
-	},
-	# Each customer keeps five state slots. customer_13's full state set is kept
-	# separate so animations never fall back to its neutral portrait.
-	&"customer_13": {
-		&"neutral": preload("res://resources/art/customers/customer_13/customer_13_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_13/customer_13_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_13/customer_13_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_13/customer_13_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_13/customer_13_paying_coins_cropped.tres"),
-	},
-	# customer_14's confirmed cartoon identity keeps independent state portraits
-	# so the service animation does not fall back to the neutral pose.
-	&"customer_14": {
-		&"neutral": preload("res://resources/art/customers/customer_14/customer_14_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_14/customer_14_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_14/customer_14_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_14/customer_14_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_14/customer_14_paying_coins_cropped.tres"),
-	},
-	# customer_15 uses five dedicated AtlasTexture resources after neutral review.
-	&"customer_15": {
-		&"neutral": preload("res://resources/art/customers/customer_15/customer_15_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_15/customer_15_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_15/customer_15_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_15/customer_15_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_15/customer_15_paying_coins_cropped.tres"),
-	},
-	# customer_16 exposes the confirmed neutral plus all four generated action states.
-	&"customer_16": {
-		&"neutral": preload("res://resources/art/customers/customer_16/customer_16_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_16/customer_16_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_16/customer_16_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_16/customer_16_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_16/customer_16_paying_coins_cropped.tres"),
-	},
-	# customer_17's approved identity has independent action-state portraits.
-	&"customer_17": {
-		&"neutral": preload("res://resources/art/customers/customer_17/customer_17_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_17/customer_17_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_17/customer_17_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_17/customer_17_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_17/customer_17_paying_coins_cropped.tres"),
-	},
-	# customer_18 exposes the complete state-key contract while the four action
-	# Atlas resources deliberately fall back to neutral until human approval.
-	&"customer_18": {
-		&"neutral": preload("res://resources/art/customers/customer_18/customer_18_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_18/customer_18_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_18/customer_18_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_18/customer_18_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_18/customer_18_paying_coins_cropped.tres"),
-	},
-	# customer_19 uses the human-approved neutral identity plus its four dedicated
-	# action-state portraits, so workstation reactions do not fall back to neutral.
-	&"customer_19": {
-		&"neutral": preload("res://resources/art/customers/customer_19/customer_19_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_19/customer_19_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_19/customer_19_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_19/customer_19_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_19/customer_19_paying_coins_cropped.tres"),
-	},
-	# customer_20 uses independent confirmed-neutral-locked action portraits.
-	&"customer_20": {
-		&"neutral": preload("res://resources/art/customers/customer_20/customer_20_neutral_cropped.tres"),
-		&"impatient": preload("res://resources/art/customers/customer_20/customer_20_impatient_cropped.tres"),
-		&"satisfied": preload("res://resources/art/customers/customer_20/customer_20_satisfied_cropped.tres"),
-		&"accepting_bag": preload("res://resources/art/customers/customer_20/customer_20_accepting_bag_cropped.tres"),
-		&"paying_coins": preload("res://resources/art/customers/customer_20/customer_20_paying_coins_cropped.tres"),
-	},
+const WIDE_SPREADER_TEXTURE_PATH := "res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png"
+const CUSTOMER_PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
+const ORDER_CARD_COIN_TEXTURE_PATH := "res://resources/art/ui/economy/currency_coin_v2_chinese_ui.png"
+const ORDER_CARD_DISH_TEXTURE_PATH := "res://resources/art/workstation/textures/pancake_cooked_texture_v1.png"
+const ORDER_CARD_INGREDIENT_TEXTURE_PATHS := {
+	IngredientModel.EGG: "res://resources/art/ingredients/egg/egg_whole_v1.png",
+	&"stock.pancake.egg": "res://resources/art/ingredients/egg/egg_whole_v1.png",
+	IngredientModel.BAOCUI: "res://resources/art/ingredients/baocui/baocui_broken_v1.png",
+	&"stock.pancake.baocui": "res://resources/art/ingredients/baocui/baocui_broken_v1.png",
+	IngredientModel.HAM_SAUSAGE: "res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png",
+	&"stock.pancake.ham_sausage": "res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png",
+	IngredientModel.SCALLION: "res://resources/art/ingredients/scallion/scallion_scattered_v1.png",
+	&"stock.pancake.scallion": "res://resources/art/ingredients/scallion/scallion_scattered_v1.png",
+	IngredientModel.MEAT_FLOSS: "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png",
+	&"stock.pancake.meat_floss": "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png",
+	IngredientModel.PORK_TENDERLOIN: "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png",
+	&"stock.pancake.pork_tenderloin": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png",
+	IngredientModel.YOUTIAO: "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
+	&"stock.pancake.youtiao": "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
 }
-const ORDER_CARD_COIN_TEXTURE := preload("res://resources/art/ui/economy/currency_coin_v2_chinese_ui.png")
-const ORDER_CARD_DISH_TEXTURE := preload("res://resources/art/workstation/textures/pancake_cooked_texture_v1.png")
-const ORDER_CARD_INGREDIENT_TEXTURES := {
-	IngredientModel.EGG: preload("res://resources/art/ingredients/egg/egg_whole_v1.png"),
-	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_whole_v1.png"),
-	IngredientModel.BAOCUI: preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
-	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
-	IngredientModel.HAM_SAUSAGE: preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
-	&"stock.pancake.ham_sausage": preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
-	IngredientModel.SCALLION: preload("res://resources/art/ingredients/scallion/scallion_scattered_v1.png"),
-	&"stock.pancake.scallion": preload("res://resources/art/ingredients/scallion/scallion_scattered_v1.png"),
-	IngredientModel.MEAT_FLOSS: preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
-	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
-	IngredientModel.PORK_TENDERLOIN: preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
-	&"stock.pancake.pork_tenderloin": preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png"),
-	IngredientModel.YOUTIAO: preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
-	&"stock.pancake.youtiao": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png"),
-}
-const ORDER_CARD_SAUCE_TEXTURES := {
-	&"stock.pancake.sauce.sweet_flour": preload("res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png"),
-	&"stock.pancake.sauce.red_chili": preload("res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png"),
+const ORDER_CARD_SAUCE_TEXTURE_PATHS := {
+	&"stock.pancake.sauce.sweet_flour": "res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png",
+	&"stock.pancake.sauce.red_chili": "res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png",
 }
 const ORDER_CARD_SAUCE_NAMES := {
 	&"stock.pancake.sauce.sweet_flour": "甜面酱",
 	&"stock.pancake.sauce.red_chili": "辣椒酱",
 }
-const ORDER_CARD_HEAT_TEXTURE := preload("res://resources/art/ui/quality/quality_heat_requirement_v2_chinese_ui.png")
+const ORDER_CARD_HEAT_TEXTURE_PATH := "res://resources/art/ui/quality/quality_heat_requirement_v2_chinese_ui.png"
 const FIVE_AREA_PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
 const ORDER_REQUIREMENT_SAUCE := &"sauce"
@@ -418,6 +260,8 @@ var _payment_flight_sprites: Array[TextureRect] = []
 var _pending_payment_sprites: Array[TextureRect] = []
 var _customer_reaction_tween: Tween
 var _customer_visual_state: StringName = &""
+var _customer_portraits: RefCounted = CUSTOMER_PORTRAIT_CATALOG_SCRIPT.new()
+var _customer_reaction_prewarm_started := false
 var business_day_timer: RefCounted
 var _business_day_closed := false
 var _business_day_expiration_pending := false
@@ -966,11 +810,16 @@ func set_sauce_unlocked(sauce_type: StringName, unlocked: bool) -> void:
 func _refresh_griddle_upgrade_presentation() -> void:
 	var griddle_artwork := get_node_or_null("SafeArea/PanBase/GriddleArtwork") as Sprite2D
 	if griddle_artwork != null:
-		griddle_artwork.texture = ADVANCED_GRIDDLE_TEXTURE if _advanced_griddle_owned else INTERMEDIATE_GRIDDLE_TEXTURE if _intermediate_griddle_owned else BASIC_GRIDDLE_TEXTURE
+		var griddle_texture: Texture2D = BASIC_GRIDDLE_TEXTURE
+		if _advanced_griddle_owned:
+			griddle_texture = load(ADVANCED_GRIDDLE_TEXTURE_PATH) as Texture2D
+		elif _intermediate_griddle_owned:
+			griddle_texture = load(INTERMEDIATE_GRIDDLE_TEXTURE_PATH) as Texture2D
+		griddle_artwork.texture = griddle_texture
 
 
 func _refresh_spreader_upgrade_presentation() -> void:
-	var texture := WIDE_SPREADER_TEXTURE if _wide_spreader_owned else BASIC_SPREADER_TEXTURE
+	var texture: Texture2D = load(WIDE_SPREADER_TEXTURE_PATH) as Texture2D if _wide_spreader_owned else BASIC_SPREADER_TEXTURE
 	if spreader_artwork != null:
 		spreader_artwork.texture = texture
 	if scraper_button == null:
@@ -1097,6 +946,13 @@ func _refresh_growth_tool_buttons() -> void:
 
 
 func _process(delta: float) -> void:
+	if not _customer_reaction_prewarm_started:
+		_customer_reaction_prewarm_started = true
+		_customer_portraits.call("enable_reaction_prewarm")
+	if bool(_customer_portraits.call("poll")):
+		_refresh_customer_queue()
+		if not _customer_visual_state.is_empty():
+			_set_customer_portrait_state(_customer_visual_state)
 	_advance_business_day_timer(delta)
 	if _business_day_closed:
 		return
@@ -1163,6 +1019,11 @@ func _process(delta: float) -> void:
 			_process_sauce_brush(grid_position)
 		ToolController.Tool.FOLD:
 			fold_model.update_drag(grid_position)
+
+
+func _exit_tree() -> void:
+	if _customer_portraits != null:
+		_customer_portraits.call("finish_pending")
 
 
 func _formal_order_time_paused() -> bool:
@@ -3496,7 +3357,8 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 		var ingredient_ids: Array = Array(item.get("ingredients", item.get("ingredient_ids", [])))
 		for ingredient_id_value in ingredient_ids:
 			var ingredient_id := StringName(ingredient_id_value)
-			var ingredient_texture := ORDER_CARD_INGREDIENT_TEXTURES.get(ingredient_id) as Texture2D
+			var ingredient_texture_path := str(ORDER_CARD_INGREDIENT_TEXTURE_PATHS.get(ingredient_id, ""))
+			var ingredient_texture: Texture2D = load(ingredient_texture_path) as Texture2D if not ingredient_texture_path.is_empty() else null
 			if ingredient_texture == null:
 				continue
 			requirements.append({
@@ -3513,7 +3375,8 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 		var sauce_ids: Array = Array(item.get("sauce_ids", []))
 		for sauce_id_value in sauce_ids:
 			var sauce_id := StringName(sauce_id_value)
-			var sauce_texture := ORDER_CARD_SAUCE_TEXTURES.get(sauce_id) as Texture2D
+			var sauce_texture_path := str(ORDER_CARD_SAUCE_TEXTURE_PATHS.get(sauce_id, ""))
+			var sauce_texture: Texture2D = load(sauce_texture_path) as Texture2D if not sauce_texture_path.is_empty() else null
 			if sauce_texture == null:
 				continue
 			requirements.append({
@@ -3531,7 +3394,7 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 			continue
 		requirements.append({
 			"kind": ORDER_REQUIREMENT_HEATED,
-			"texture": ORDER_CARD_HEAT_TEXTURE,
+			"texture": load(ORDER_CARD_HEAT_TEXTURE_PATH) as Texture2D,
 			"product_id": StringName(item.get("product_id", &"")),
 		})
 	var requirement_capacity := order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8
@@ -3572,7 +3435,7 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		var item: Dictionary = items[dish_index]
 		coin_total += int(item.get("payment_coins", 0))
 		var dish_icon := order_dish_icons[dish_index]
-		dish_icon.texture = ORDER_CARD_DISH_TEXTURE
+		dish_icon.texture = load(ORDER_CARD_DISH_TEXTURE_PATH) as Texture2D
 		dish_icon.visible = true
 		var attached_count := Array(item.get("prepared_product_instance_ids", [])).size()
 		var required_count := int(item.get("quantity", 1))
@@ -3605,7 +3468,7 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		var metadata := Dictionary(order.get("metadata", {}))
 		var legacy_order := Dictionary(metadata.get("legacy_order", {}))
 		coin_total = int(order.get("base_coins", metadata.get("base_coins", legacy_order.get("payment_coins", 0))))
-	order_coin_icon.texture = ORDER_CARD_COIN_TEXTURE
+	order_coin_icon.texture = load(ORDER_CARD_COIN_TEXTURE_PATH) as Texture2D
 	order_coin_icon.visible = coin_total > 0
 	order_amount_label.text = str(coin_total)
 	order_patience_bar.value = clampf(patience_ratio, 0.0, 1.0) * 100.0
@@ -3774,8 +3637,7 @@ func _current_customer_texture(state: StringName) -> Texture2D:
 	if game_session != null and game_session.has_method("formal_order") and not _formal_order_id.is_empty():
 		var formal := Dictionary(game_session.call("formal_order", _formal_order_id))
 		customer_id = StringName(formal.get("customer_id", customer_id))
-	var customer_textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
-	return customer_textures.get(state, customer_textures[&"neutral"])
+	return _customer_portraits.call("texture_for", customer_id, state) as Texture2D
 
 
 func _set_customer_portrait_state(state: StringName) -> void:
@@ -3809,6 +3671,11 @@ func _refresh_customer_queue() -> void:
 		orders = Array(game_session.call("active_formal_orders"))
 	if game_session != null and game_session.has_method("waiting_formal_orders"):
 		waiting = Array(game_session.call("waiting_formal_orders"))
+	var visible_customer_ids: Array[StringName] = []
+	for visible_order_variant in orders + waiting:
+		var visible_order := Dictionary(visible_order_variant)
+		visible_customer_ids.append(StringName(visible_order.get("customer_id", &"customer_01")))
+	_customer_portraits.call("set_visible_customers", visible_customer_ids)
 	queue_status_label.text = "排队\n%d/3" % mini(waiting.size(), 3)
 	for slot_index in customer_slot_buttons.size():
 		var button := customer_slot_buttons[slot_index]
@@ -3819,8 +3686,7 @@ func _refresh_customer_queue() -> void:
 		if order.is_empty():
 			continue
 		var customer_id := StringName(order.get("customer_id", CUSTOMER_QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS[slot_index]))
-		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
-		button.icon = textures[&"neutral"]
+		button.icon = _customer_portraits.call("texture_for", customer_id, &"neutral") as Texture2D
 		var special_title_text := str(order.get("special_title", Dictionary(order.get("metadata", {})).get("special_title", "")))
 		button.text = special_title_text if not special_title_text.is_empty() else "等候 %d" % (slot_index + 1)
 		var special_rule_text := str(order.get("special_rule_text", Dictionary(order.get("metadata", {})).get("special_rule_text", "")))
@@ -3875,13 +3741,12 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		var metadata := Dictionary(order.get("metadata", {}))
 		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
-		var textures: Dictionary = CUSTOMER_TEXTURES.get(customer_id, CUSTOMER_TEXTURES[&"customer_01"])
 		var ratio := _formal_order_patience_ratio(order)
 		var reaction := &"impatient" if ratio <= P1Session.IMPATIENT_RATIO_THRESHOLD else &"neutral"
 		customer_service_slots[service_slot_index].call(
 			"bind_order",
 			order,
-			textures.get(reaction, textures[&"neutral"]) as Texture2D,
+			_customer_portraits.call("texture_for", customer_id, reaction) as Texture2D,
 			item_textures,
 			requirements,
 			coin_total,

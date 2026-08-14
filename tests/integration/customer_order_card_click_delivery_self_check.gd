@@ -28,7 +28,10 @@ func _run() -> void:
 		"sauce_ids": PackedStringArray(),
 	}
 	var first_opened := Dictionary(session.call("open_formal_order", [item.duplicate(true)], {"source": &"click_delivery_first", "patience_seconds": 120.0}))
-	var second_opened := Dictionary(session.call("open_formal_order", [item.duplicate(true)], {"source": &"click_delivery_second", "patience_seconds": 120.0}))
+	var different_item := item.duplicate(true)
+	different_item["heat_preference"] = &"well_done"
+	different_item["ingredient_ids"] = PackedStringArray(["stock.pancake.egg"])
+	var second_opened := Dictionary(session.call("open_formal_order", [different_item], {"source": &"click_delivery_second", "patience_seconds": 120.0}))
 	var first_order := Dictionary(first_opened.get("order", {}))
 	var second_order := Dictionary(second_opened.get("order", {}))
 	var first_order_id := StringName(first_order.get("order_id", &""))
@@ -76,6 +79,12 @@ func _run() -> void:
 	if first_button != null:
 		first_button.pressed.emit()
 	_check(StringName(Dictionary(session.call("formal_order", first_order_id)).get("state", &"")) == &"settled", "the remaining customer is delivered by one item-icon click without dragging")
+	var settled_first := Dictionary(session.call("formal_order", first_order_id))
+	var settled_second := Dictionary(session.call("formal_order", second_order_id))
+	var first_product := Dictionary(Array(Dictionary(Array(settled_first.get("items", []))[0]).get("attached_products", []))[0])
+	var second_product := Dictionary(Array(Dictionary(Array(settled_second.get("items", []))[0]).get("attached_products", []))[0])
+	_check(float(first_product.get("score", 0.0)) > float(second_product.get("score", 100.0)), "identical unbound pancakes are scored against the customer that actually receives them")
+	_check(StringName(first_product.get("grade", &"")) == &"A" and StringName(second_product.get("grade", &"")) != &"A", "delivery-time order differences flow into the final pancake grade")
 
 	workstation.queue_free()
 	_finish()
@@ -93,6 +102,20 @@ func _prepare_ready_pancake(workstation: Node, item: Dictionary) -> void:
 		"sauce_ids": PackedStringArray(Array(item.get("sauce_ids", []))),
 		"score": 100.0,
 		"feedback": "test ready pancake",
+		"serving_score_basis": {
+			"version": 2,
+			"intrinsic_dimensions": {"integrity": 100.0, "thickness": 100.0, "egg": 100.0, "fold": 100.0},
+			"heat_moments": {"mean_front": 0.64, "mean_back": 0.64, "mean_front_squared": 0.4096, "mean_back_squared": 0.4096},
+			"sauce_results": {},
+			"sauce_profiles": {},
+			"ingredient_distribution_score": 100.0,
+			"ingredient_distribution_tags": [],
+			"applied_ingredient_ids": [],
+			"applied_ingredient_quantities": {},
+			"applied_sauce_ids": [],
+			"repair_tags": [],
+			"score_caps": {},
+		},
 		"status": &"available",
 	})
 	workstation.multi_griddle_station.call("_sync_snapshot_to_session")

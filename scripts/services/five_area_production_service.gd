@@ -414,6 +414,105 @@ func record_staged_waste(product: Dictionary, reason: StringName = &"staged_prod
 	return _success({"waste": entry})
 
 
+func clear_for_day_end() -> Dictionary:
+	var cleared_waste: Array[Dictionary] = []
+	var griddle_slots := Array(_pancake_griddles.get("slots", []))
+	for slot_index in range(griddle_slots.size()):
+		var slot := Dictionary(griddle_slots[slot_index])
+		if int(slot.get("state", 0)) <= 0:
+			continue
+		var ready_product := Dictionary(slot.get("ready_product", {}))
+		var attributed_cost := maxi(int(ready_product.get("material_cost", 0)), 0)
+		if ready_product.is_empty():
+			attributed_cost = _stock_cost(&"stock.pancake.batter")
+			for stock_value in PackedStringArray(slot.get("applied_ingredient_ids", PackedStringArray())):
+				attributed_cost += _stock_cost(StringName(stock_value))
+			for stock_value in PackedStringArray(slot.get("applied_sauce_ids", PackedStringArray())):
+				attributed_cost += _stock_cost(StringName(stock_value))
+		cleared_waste.append(_record_waste(
+			&"area.pancake",
+			StringName("pancake_griddle.%d" % (slot_index + 1)),
+			StringName(ready_product.get("product_id", &"product.pancake.custom")),
+			&"day_end_unsold_product" if not ready_product.is_empty() else &"day_end_work_in_progress",
+			1,
+			attributed_cost,
+		))
+	_pancake_griddles = {
+		"version": 1,
+		"griddle_count": clampi(int(_pancake_griddles.get("griddle_count", 1)), 1, 3),
+		"active_index": 0,
+		"product_sequence": maxi(int(_pancake_griddles.get("product_sequence", 0)), 0),
+		"slots": [],
+	}
+
+	var youtiao_snapshot := machine_snapshot(YOUTIAO_DEVICE)
+	var youtiao_quantity := maxi(int(youtiao_snapshot.get("quantity", 0)), 0)
+	if youtiao_quantity > 0:
+		var youtiao_recipe := CATALOG.recipe_definition(StringName(youtiao_snapshot.get("recipe_id", &"")))
+		var youtiao_unit_cost := 0
+		for stock_value in Array(youtiao_recipe.get("stock_ids", [])):
+			youtiao_unit_cost += _stock_cost(StringName(stock_value))
+		cleared_waste.append(_record_waste(
+			&"area.youtiao",
+			YOUTIAO_DEVICE,
+			StringName(youtiao_recipe.get("product_id", &"")),
+			&"day_end_unsold_product" if StringName(youtiao_snapshot.get("state", &"")) in [&"ready_safe", &"draining", &"ready_to_collect"] else &"day_end_work_in_progress",
+			youtiao_quantity,
+			youtiao_unit_cost * youtiao_quantity,
+		))
+	_youtiao.call("load_snapshot", {
+		"owned": bool(youtiao_snapshot.get("owned", false)),
+		"tier": int(youtiao_snapshot.get("tier", 0)),
+		"state": &"idle",
+	})
+
+	var soy_snapshot := machine_snapshot(SOY_DEVICE)
+	var soy_counts := Dictionary(soy_snapshot.get("ingredient_counts", {}))
+	var soy_quantity := maxi(int(soy_snapshot.get("quantity", 0)), 0)
+	if soy_quantity > 0 or not soy_counts.is_empty():
+		var soy_cost := 0
+		for stock_value in soy_counts:
+			soy_cost += _stock_cost(StringName(stock_value)) * maxi(int(soy_counts[stock_value]), 0)
+		cleared_waste.append(_record_waste(
+			&"area.fresh_soy_milk",
+			SOY_DEVICE,
+			StringName(CATALOG.recipe_definition(StringName(soy_snapshot.get("recipe_id", &""))).get("product_id", &"")),
+			&"day_end_unsold_product" if StringName(soy_snapshot.get("state", &"")) in [&"ready_safe", &"overcooking", &"blocked", &"spoiled"] else &"day_end_work_in_progress",
+			maxi(soy_quantity, 1),
+			soy_cost,
+		))
+	for rack_index in range(Array(soy_snapshot.get("output_rack", [])).size()):
+		var cup := Dictionary(Array(soy_snapshot.get("output_rack", []))[rack_index])
+		if cup.is_empty():
+			continue
+		var cup_cost := 0
+		var cup_ingredient_ids := PackedStringArray(cup.get("ingredient_ids", PackedStringArray()))
+		if cup_ingredient_ids.is_empty():
+			for stock_value in Array(CATALOG.recipe_definition(StringName(cup.get("recipe_id", &""))).get("stock_ids", [])):
+				cup_cost += _stock_cost(StringName(stock_value))
+		else:
+			for stock_value in cup_ingredient_ids:
+				cup_cost += _stock_cost(StringName(stock_value))
+		cleared_waste.append(_record_waste(
+			&"area.fresh_soy_milk",
+			StringName("fresh_soy_output.%d" % rack_index),
+			StringName(CATALOG.recipe_definition(StringName(cup.get("recipe_id", &""))).get("product_id", &"")),
+			&"day_end_unsold_product",
+			1,
+			cup_cost,
+		))
+	_soy.call("load_snapshot", {
+		"owned": bool(soy_snapshot.get("owned", false)),
+		"tier": int(soy_snapshot.get("tier", 0)),
+		"state": &"idle",
+		"output_rack": [{}, {}, {}, {}],
+	})
+	_sync_ownership()
+	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
+	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return _success({"waste": cleared_waste})
+
+
 func snapshot() -> Dictionary:
 	return {
 		"version": 6,

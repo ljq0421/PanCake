@@ -23,6 +23,7 @@ $checks = @(
 	'res://tests/unit/fresh_soy_milk_v5_self_check.gd',
 	'res://tests/unit/multi_griddle_station_self_check.gd',
 	'res://tests/unit/five_area_business_systems_self_check.gd',
+	'res://tests/unit/day_end_clearance_self_check.gd',
 	'res://tests/unit/fresh_soy_milk_spoil_discard_self_check.gd',
 	'res://tests/unit/product_drag_source_drag_end_self_check.gd',
 	'res://tests/unit/five_area_material_slot_self_check.gd',

@@ -2936,10 +2936,11 @@ func _populate_daily_bill(bill: Dictionary) -> void:
 		cutoff_summary = " · 测试提前结束，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
 	elif StringName(cutoff.get("reason", &"")) == &"manual_early_end":
 		cutoff_summary = " · 提前打烊，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
-	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 成本 %d 金币 · 毛利 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
+	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 成本 %d 金币（含报废 %d） · 毛利 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
 		int(bill.get("order_count", 0)),
 		int(bill.get("total_coins", 0)),
 		int(bill.get("total_cost", 0)),
+		int(bill.get("waste_cost", 0)),
 		int(bill.get("total_profit", 0)),
 		roundi(float(bill.get("average_score", 0.0))),
 		int(bill.get("reputation_delta", 0)),

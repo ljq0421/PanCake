@@ -91,6 +91,13 @@ func _run() -> void:
 	var egg_landed_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), EGG_LANDED_SCREENSHOT))
 	_check(bool(egg_landed_capture.get("success", false)), "captured the shell-free intact egg after the crack effect exits")
 	multi.call("clear_held_tool")
+	_move_at(egg_drop_center)
+	_press_at(egg_drop_center)
+	await process_frame
+	_check(StringName(multi.get("_selected_tool")) == &"tool.pancake.spreader" and StringName(egg_unit.get("_surface_action")) == CompactGriddleUnit.SURFACE_ACTION_SPREAD_EGG and egg_unit.spreader_artwork.visible, "real pointer press on an egg-stage griddle contextually equips the spreader without a tray click")
+	_release_at(egg_drop_center)
+	await process_frame
+	_check(StringName(multi.get("_selected_tool")).is_empty() and not egg_unit.spreader_artwork.visible, "releasing the contextual egg spreader returns the shared tool")
 	var unit_two: Node = units[2]
 	var baocui_slot := multi.get_node("SharedToolTray/WorktopSlot07/BaocuiSlot") as FiveAreaMaterialSlot
 	var baocui_source := baocui_slot.source_ref()
@@ -175,11 +182,11 @@ func _run() -> void:
 	var initial_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), INITIAL_BATTER_SCREENSHOT))
 	_check(bool(initial_capture.get("success", false)), "captured the initial centered batter frame")
 	captured_paths.append(str(initial_capture.get("path", "")))
-	multi.call("_on_shared_tool_selected", &"tool.pancake.spreader")
 	var spread_center := (spread_unit.pancake_surface as Control).get_global_rect().get_center()
 	_move_at(spread_center)
 	_press_at(spread_center)
 	await process_frame
+	_check(StringName(multi.get("_selected_tool")) == &"tool.pancake.spreader" and (multi.shared_tool_tray.get_node("WorktopSlot05/SpreaderButton") as TextureButton).button_pressed and StringName(spread_unit.get("_surface_action")) == CompactGriddleUnit.SURFACE_ACTION_SPREAD_BATTER, "real pointer press on a batter-stage griddle contextually equips and highlights the spreader without a tray click")
 	var spread_target := spread_center + Vector2(22.0, 0.0)
 	_move_at(spread_target, MOUSE_BUTTON_MASK_LEFT)
 	await process_frame

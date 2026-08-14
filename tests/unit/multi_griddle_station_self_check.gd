@@ -74,7 +74,7 @@ func _run() -> void:
 	root.add_child(station)
 	await process_frame
 	_check(station.get_node_or_null("Background") == null, "multi-griddle station has no redundant outer background frame")
-	station.bind_session(session, Callable(self, "_order"))
+	station.bind_session(session)
 	station.set_griddle_count(1)
 	_check(is_equal_approx(station.units[0].position.x, 405.0), "logical slot 0 is displayed as the center main griddle")
 	_check(is_equal_approx(station.units[1].position.x, 96.0), "logical slot 1 is displayed as the left griddle")
@@ -120,6 +120,7 @@ func _run() -> void:
 	for unit_index in 3:
 		station.call("_on_main_action", unit_index)
 	_check(int(session.inventory["stock.pancake.batter"]) == 0, "starting three griddles immediately consumes three portions of batter")
+	_check(Array(station.units[0].order.get("ingredient_ids", [])).is_empty() and Array(station.units[0].order.get("sauce_ids", [])).is_empty(), "starting a griddle without customers uses an order-independent production context")
 	var spreader_button := station.shared_tool_tray.get_node("WorktopSlot05/SpreaderButton") as TextureButton
 	_check(StringName(station.get("_selected_tool")) == &"tool.pancake.spreader" and spreader_button.button_pressed, "adding batter automatically holds and highlights the shared spreader")
 	for unit_index in 3:
@@ -165,9 +166,11 @@ func _run() -> void:
 	bounded_sweep_unit.queue_free()
 	var spread_before: int = visual_unit.pancake_model.covered_cell_count()
 	var straight_core_before := _mean_thickness_in_radius(visual_unit.pancake_model, 6.0)
+	station.call("clear_held_tool")
 	visual_unit.call("_on_surface_pointer_started", visual_surface.size * 0.5)
 	_check(visual_unit.pancake_model.covered_cell_count() == spread_before, "the first spreader press does not add a duplicate batter portion")
-	_check(visual_unit.spreader_artwork.visible and visual_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png", "basic real spreader artwork appears at the compact pan contact point")
+	_check(StringName(station.get("_selected_tool")) == &"tool.pancake.spreader" and spreader_button.button_pressed and StringName(visual_unit.get("_surface_action")) == CompactGriddleUnit.SURFACE_ACTION_SPREAD_BATTER, "pressing a batter-stage griddle contextually equips and highlights the shared spreader")
+	_check(visual_unit.spreader_artwork.visible and visual_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png", "contextually equipped basic spreader artwork appears at the compact pan contact point")
 	var spread_target := visual_surface.size * 0.5 + Vector2(86.0, 0.0)
 	visual_surface.pointer_local_position = spread_target
 	visual_unit.call("_update_surface_tool_artwork", spread_target, 0.05)
@@ -175,19 +178,18 @@ func _run() -> void:
 	_check(visual_unit.pancake_model.covered_cell_count() == spread_before and is_equal_approx(_mean_thickness_in_radius(visual_unit.pancake_model, 6.0), straight_core_before) and not visual_surface.spreader_motion_valid, "a straight outward drag changes neither coverage nor center thickness")
 	visual_unit.call("_on_surface_pointer_ended", spread_target)
 	_check(visual_unit.state == CompactGriddleUnit.State.FIRST_SIDE and not visual_unit.spreader_artwork.visible and StringName(station.get("_selected_tool")).is_empty(), "releasing the first stroke fixes the pancake shape, hides the tool, and clears the shared selection")
-	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
 	visual_unit.call("_on_surface_pointer_started", visual_surface.size * 0.5)
-	_check(StringName(visual_unit.get("_surface_action")).is_empty() and not visual_unit.spreader_artwork.visible, "a fixed first-side pancake cannot be selected for a second spreading pass")
+	_check(StringName(station.get("_selected_tool")).is_empty() and StringName(visual_unit.get("_surface_action")).is_empty() and not visual_unit.spreader_artwork.visible, "a first-side pancake without egg does not contextually equip the spreader")
 	station.call("clear_held_tool")
 
 	var circular_unit: Node = station.units[2]
 	var circular_surface: Control = circular_unit.pancake_surface
 	var circular_before: int = circular_unit.pancake_model.covered_cell_count()
-	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
 	var circular_center := circular_surface.size * 0.5
 	var circular_start := circular_center + Vector2(20.0, 0.0)
 	var core_thickness_by_turn := PackedFloat32Array([_mean_thickness_in_radius(circular_unit.pancake_model, 6.0)])
 	circular_unit.call("_on_surface_pointer_started", circular_start)
+	_check(StringName(station.get("_selected_tool")) == &"tool.pancake.spreader" and StringName(circular_unit.get("_surface_action")) == CompactGriddleUnit.SURFACE_ACTION_SPREAD_BATTER, "switching to another batter-stage griddle equips the spreader again without a tray click")
 	var circular_point := circular_start
 	for spread_step in 60:
 		var progress := float(spread_step + 1) / 60.0
@@ -215,11 +217,10 @@ func _run() -> void:
 	_check(circular_unit.state == CompactGriddleUnit.State.FIRST_SIDE, "the accepted circular stroke enters first-side cooking on release")
 
 	session.progression.wide_spreader = true
-	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
 	var wide_unit: Node = station.units[1]
 	var wide_surface: Control = wide_unit.pancake_surface
 	wide_unit.call("_on_surface_pointer_started", wide_surface.size * 0.5 + Vector2(20.0, 0.0))
-	_check(wide_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png", "wide-spreader ownership selects the matching real artwork on an unfixed griddle")
+	_check(StringName(station.get("_selected_tool")) == &"tool.pancake.spreader" and wide_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png", "contextual equip preserves the wide-spreader upgrade artwork on another griddle")
 	wide_unit.call("_on_surface_pointer_ended", wide_surface.size * 0.5 + Vector2(20.0, 0.0))
 	session.progression.wide_spreader = false
 	for unit_index in 3:
@@ -262,7 +263,9 @@ func _run() -> void:
 	var restored_expected_local: Vector2 = (restored_model_egg_center + Vector2(0.5, 0.5)) / float(restored_egg_unit.pancake_model.grid_size) * restored_egg_unit.pancake_surface.size
 	_check(restored_egg_unit.egg_intact_visual.position.distance_to(restored_expected_local) <= 0.01, "snapshot restore derives the intact egg position from the saved model's egg center")
 	restored_egg_unit.queue_free()
+	station.call("clear_held_tool")
 	unit_one.call("_on_surface_pointer_started", center_local)
+	_check(StringName(station.get("_selected_tool")) == &"tool.pancake.spreader" and spreader_button.button_pressed and StringName(unit_one.get("_surface_action")) == CompactGriddleUnit.SURFACE_ACTION_SPREAD_EGG, "pressing a first-side griddle with egg contextually equips the spreader without a tray click")
 	unit_one.pancake_surface.pointer_local_position = center_local + Vector2(22.0, 0.0)
 	unit_one.call("_update_surface_tool_artwork", center_local + Vector2(22.0, 0.0), 0.1)
 	unit_one.call("_process_egg_spread", 0.1)
@@ -270,6 +273,9 @@ func _run() -> void:
 	unit_one.pancake_surface.force_texture_upload()
 	_check(unit_one.pancake_model.calculate_egg_spread_summary().get("coverage_ratio", 0.0) > 0.0, "shared spreader routes egg spreading to the selected griddle")
 	_check(not unit_one.egg_crack_effect.visible and not unit_one.egg_intact_visual.visible and _visible_egg_pixels(Dictionary(unit_one.pancake_surface.get_renderer_diagnostics()).get("egg_image")) > 0, "the first effective spread replaces the intact egg with model-driven egg liquid")
+	unit_zero.call("_on_surface_pointer_started", unit_zero_center)
+	_check(StringName(station.get("_selected_tool")) == &"tool.pancake.spreader" and StringName(unit_zero.get("_surface_action")) == CompactGriddleUnit.SURFACE_ACTION_SPREAD_EGG, "switching to another egg-stage griddle contextually equips the spreader again")
+	unit_zero.call("_on_surface_pointer_ended", unit_zero_center)
 	var unit_two: Node = station.units[2]
 	_check(not unit_two.pancake_model.has_egg(), "the third griddle intentionally has no egg before the free flip check")
 	for unit_index in 3:
@@ -344,14 +350,15 @@ func _run() -> void:
 	_check(StringName(product.get("heat_preference", &"")) == expected_heat, "ready product preserves the heat calculated from both cooked surfaces")
 	_check(PackedStringArray(product.get("ingredient_ids", [])) == target_order.ingredient_ids, "product carries exactly the manually added ingredients")
 	_check(PackedStringArray(product.get("sauce_ids", [])) == target_order.sauce_ids, "product carries exactly the manually added sauce")
-	_check(float(wrong_product.get("score", 100.0)) < float(product.get("score", 0.0)), "wrong sauce, missing egg, and extra youtiao reduce the real scorer result")
+	_check(not Dictionary(product.get("serving_score_basis", {})).is_empty() and Dictionary(product.get("dimension_scores", {})).size() == 4, "ready product stores intrinsic craft dimensions and defers order scoring until delivery")
+	_check(not Dictionary(wrong_product.get("serving_score_basis", {})).is_empty(), "every independently produced pancake retains delivery scoring evidence")
 	_check(int(session.inventory["stock.pancake.egg"]) == 1 and int(session.inventory["stock.pancake.baocui"]) == 1, "valid physical and shortcut placements each consume stock exactly once")
 	var persisted: Dictionary = station.snapshot()
 	_check(int(persisted.get("product_sequence", 0)) == 3 and Array(persisted.get("slots", [])).size() == 3, "three-griddle snapshot preserves the product sequence and all independent surfaces")
 	var restored := STATION_SCENE.instantiate()
 	root.add_child(restored)
 	await process_frame
-	restored.bind_session(session, Callable(self, "_order"))
+	restored.bind_session(session)
 	_check(bool(Dictionary(restored.load_snapshot(persisted)).get("success", false)), "v1 three-slot snapshot restores without migration")
 	_check(restored.units[0].unit_index == 0 and restored.units[0].position.x == 405.0 and restored.units[1].unit_index == 1 and restored.units[1].position.x == 96.0, "restored v1 slots keep source indices while using center-left-right display mapping")
 	var restored_unit_zero_state: int = restored.units[0].state

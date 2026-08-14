@@ -21,6 +21,7 @@ const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_HOLDING_TRAY_MODEL := preload("res://scripts/gameplay/pancake_holding_tray_model.gd")
+const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const FIVE_AREA_ORDER_SERVICE := preload("res://scripts/services/five_area_order_service.gd")
 const FIVE_AREA_PRODUCTION_SERVICE := preload("res://scripts/services/five_area_production_service.gd")
 const FIVE_AREA_PANCAKE_ORDER_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
@@ -772,6 +773,7 @@ func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_i
 	if not expected_source_product_id.is_empty() and StringName(product.get("product_id", &"")) != expected_source_product_id:
 		_restore_tray_transaction(rollback)
 		return {"success": false, "reason": &"source_product_changed"}
+	product = _score_pancake_for_delivery(product, order, item)
 	product["reservation_origin"] = _normalized_product_source_ref(source_ref)
 	product["return_policy"] = &"waste_only"
 	var attached := Dictionary(_order_service.call("attach_product", order_id, item_index, product))
@@ -787,6 +789,57 @@ func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_i
 		"will_match": bool(source_preview.get("will_match", false)),
 		"mismatch_reasons": source_preview.get("mismatch_reasons", PackedStringArray()),
 	}
+
+
+func _score_pancake_for_delivery(product: Dictionary, order: Dictionary, item: Dictionary) -> Dictionary:
+	if StringName(product.get("product_id", &"")) != &"product.pancake.custom":
+		return product
+	if Dictionary(product.get("serving_score_basis", {})).is_empty():
+		return product
+	var configured_patience := float(order.get("patience_seconds", 0.0))
+	var patience_seconds := configured_patience if configured_patience > 0.0 else 72.0
+	var tutorial_no_countdown := bool(order.get("tutorial_no_countdown", false))
+	var remaining_patience := patience_seconds
+	if configured_patience > 0.0:
+		remaining_patience = clampf(float(order.get("remaining_patience_seconds", patience_seconds)), 0.0, patience_seconds)
+	var elapsed_seconds := 0.0 if tutorial_no_countdown else maxf(patience_seconds - remaining_patience, 0.0)
+	var patience_ratio := 1.0 if tutorial_no_countdown else remaining_patience / patience_seconds
+	var scoring_order := {
+		"heat_preference": StringName(item.get("heat_preference", &"golden")),
+		"ingredients": _legacy_pancake_ids(item.get("ingredient_ids", []), LEGACY_PANCAKE_STOCK_IDS),
+		"sauces": _legacy_pancake_ids(item.get("sauce_ids", []), LEGACY_PANCAKE_SAUCE_STOCK_IDS),
+		"time_limit": patience_seconds,
+		"sauce_intensity_multiplier": float(item.get("sauce_intensity_multiplier", 1.0)),
+	}
+	var result := Dictionary(PANCAKE_SCORER.evaluate_stored_product(
+		product,
+		scoring_order,
+		elapsed_seconds,
+		patience_ratio,
+	))
+	if result.is_empty():
+		return product
+	var scored_product := product.duplicate(true)
+	var final_score := float(result.get("score", product.get("score", 0.0)))
+	scored_product["score"] = final_score
+	scored_product["grade"] = _grade_for_score(final_score)
+	scored_product["dimension_scores"] = Dictionary(result.get("dimensions", {})).duplicate(true)
+	scored_product["feedback"] = str(result.get("feedback", product.get("feedback", "")))
+	scored_product["tags"] = Array(result.get("tags", [])).duplicate()
+	scored_product["special_evaluation"] = Dictionary(result.get("special_evaluation", product.get("special_evaluation", {}))).duplicate(true)
+	return scored_product
+
+
+static func _legacy_pancake_ids(stock_values: Variant, legacy_to_stock: Dictionary) -> PackedStringArray:
+	var result := PackedStringArray()
+	for stock_value in Array(stock_values):
+		var stock_id := StringName(stock_value)
+		for legacy_value in legacy_to_stock.keys():
+			var legacy_id := StringName(legacy_value)
+			if stock_id == StringName(legacy_to_stock[legacy_value]) or stock_id == legacy_id:
+				result.append(str(legacy_id))
+				break
+	return result
 
 
 func remove_staged_product(order_id: StringName, item_index: int, disposition: StringName) -> Dictionary:
@@ -2136,8 +2189,11 @@ func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dict
 			"target_tier": target_tier,
 		})
 	if target_tier == current_tier:
+		var stock_changed := _debug_fill_owned_stock_to_capacity()
+		if stock_changed:
+			_debug_persist_progression(true)
 		return _debug_result(true, &"already_reached", before, {
-			"changed": false,
+			"changed": stock_changed,
 			"area_id": area_id,
 			"current_tier": current_tier,
 			"target_tier": target_tier,
@@ -2349,8 +2405,9 @@ func _debug_complete_tutorial_on(progression: RefCounted, kind: StringName, tuto
 	progression.call("load_snapshot", snapshot)
 
 
-func _debug_fill_owned_stock_to_capacity() -> void:
+func _debug_fill_owned_stock_to_capacity() -> bool:
 	var inventory := inventory_snapshot()
+	var before := inventory.duplicate(true)
 	var stock_capacity := maxi(int(_progression.get("stock_capacity")), 0)
 	for stock_id in CATALOG.stock_ids():
 		if not bool(_progression.call("owns_stock", stock_id)):
@@ -2360,6 +2417,7 @@ func _debug_fill_owned_stock_to_capacity() -> void:
 		if capacity > 0:
 			inventory[str(stock_id)] = capacity
 	_save_data["inventory"] = _normalize_inventory(inventory)
+	return before != _save_data["inventory"]
 
 
 func growth_missing_requirements(growth_id: StringName) -> String:
@@ -2461,6 +2519,9 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	if cutoff_reason.is_empty():
 		cutoff_reason = &"manual_early_end"
 	var open_order_count := Array(_order_service.call("queue_snapshot")).size()
+	var abandoned_product_waste: Array[Dictionary] = []
+	if day_was_open:
+		abandoned_product_waste = _open_order_attached_products()
 	var abandoned := {"success": true}
 	if open_order_count > 0:
 		abandoned = Dictionary(_order_service.call("abandon_all_open_orders", cutoff_reason))
@@ -2479,6 +2540,24 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	_progression.call("set_day_open", false)
 	_save_data["today_cutoff"] = normalized_cutoff
 	_save_data["business_day_remaining_seconds"] = 0.0
+	for product_variant in abandoned_product_waste:
+		var product := Dictionary(product_variant)
+		_record_business_event({
+			"event_id": _next_ledger_event_id(&"abandoned_product_day_end"),
+			"kind": &"waste",
+			"area_id": StringName(product.get("area_id", &"")),
+			"source_id": &"unsettled_customer_order",
+			"quantity": 1,
+			"details": {
+				"reason": &"day_end_unsold_product",
+				"product_id": StringName(product.get("product_id", &"")),
+				"attributed_cost": maxi(int(product.get("material_cost", 0)), 0),
+			},
+		})
+	_ensure_production_service()
+	var production_clear := Dictionary(_production_service.call("clear_for_day_end"))
+	var production_waste: Array = Array(production_clear.get("waste", []))
+	_sync_production_to_save()
 	_ensure_pancake_holding_tray()
 	var tray_waste: Array = _pancake_holding_tray.call("clear_for_day_end")
 	for waste_index in range(tray_waste.size()):
@@ -2508,10 +2587,14 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 				"attributed_cost": maxi(int(product.get("material_cost", 0)), 0),
 			},
 		})
+	var inventory_waste := _clear_inventory_for_day_end()
 	_sync_progression_to_save()
 	var bill := today_bill()
 	bill["tray_waste"] = tray_waste
 	bill["prepared_product_slot_waste"] = prepared_slot_waste
+	bill["abandoned_product_waste"] = abandoned_product_waste
+	bill["production_waste"] = production_waste
+	bill["inventory_waste"] = inventory_waste
 	bill["success"] = true
 	_ensure_business_services()
 	var ledger_bill: Dictionary = _business_report_service.call("close_day")
@@ -2521,6 +2604,60 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	_sync_business_services_to_save()
 	_touch_and_write()
 	return bill
+
+
+func _open_order_attached_products() -> Array[Dictionary]:
+	var products: Array[Dictionary] = []
+	var order_snapshot := formal_order_snapshot()
+	var orders := Dictionary(order_snapshot.get("orders", {}))
+	for order_value in orders.values():
+		var order := Dictionary(order_value)
+		if StringName(order.get("state", &"")) not in [&"active", &"serving", &"waiting"]:
+			continue
+		for item_value in Array(order.get("items", [])):
+			var item := Dictionary(item_value)
+			for product_value in Array(item.get("attached_products", [])):
+				var product := Dictionary(product_value).duplicate(true)
+				if not product.is_empty():
+					products.append(product)
+	return products
+
+
+func _clear_inventory_for_day_end() -> Array[Dictionary]:
+	var inventory := inventory_snapshot()
+	var waste_rows: Array[Dictionary] = []
+	for stock_id in CATALOG.stock_ids():
+		var key := str(stock_id)
+		var quantity := maxi(int(inventory.get(key, 0)), 0)
+		if quantity <= 0:
+			continue
+		var definition := CATALOG.stock_definition(stock_id)
+		var unit_cost := maxi(int(definition.get("restock_unit_cost", 0)), 0)
+		var row := {
+			"stock_id": stock_id,
+			"quantity": quantity,
+			"unit_cost": unit_cost,
+			"attributed_cost": unit_cost * quantity,
+		}
+		waste_rows.append(row)
+		_record_business_event({
+			"event_id": _next_ledger_event_id(&"inventory_day_end"),
+			"kind": &"waste",
+			"area_id": StringName(definition.get("area_id", &"")),
+			"source_id": stock_id,
+			"quantity": quantity,
+			"details": {
+				"reason": &"day_end_remaining_stock",
+				"stock_id": stock_id,
+				"unit_cost": unit_cost,
+				"attributed_cost": unit_cost * quantity,
+			},
+		})
+		inventory[key] = 0
+	_save_data["inventory"] = _normalize_inventory(inventory)
+	_save_data["restock_progress"] = {}
+	inventory_changed.emit(inventory_snapshot())
+	return waste_rows
 
 
 func begin_next_business_day() -> Dictionary:
@@ -2689,6 +2826,9 @@ func today_bill() -> Dictionary:
 	var ledger_bill: Dictionary = _business_report_service.call("build_bill")
 	for key in ledger_bill:
 		bill[key] = ledger_bill[key]
+	bill["sold_material_cost"] = total_cost
+	bill["total_cost"] = total_cost + maxi(int(bill.get("waste_cost", 0)), 0)
+	bill["total_profit"] = total_coins - int(bill["total_cost"])
 	return bill
 
 

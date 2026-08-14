@@ -70,7 +70,7 @@ func _initialize() -> void:
 	var stub := StubSession.new()
 	root.add_child(stub)
 	var production: RefCounted = PRODUCTION.new(stub)
-	_check(bool(production.call("load_soy_batch", &"recipe.fresh_soy_milk.yellow_bean", 2).get("success", false)) and int(stub.inventory["stock.fresh_soy_milk.yellow_bean"]) == 4, "soy production consumes inventory atomically")
+	_check(bool(production.call("load_soy_batch", &"recipe.fresh_soy_milk.yellow_bean", 2).get("success", false)) and int(stub.inventory["stock.fresh_soy_milk.yellow_bean"]) == 4, "soy production starts without any customer-order provider and consumes inventory atomically")
 	production.call("perform_soy_action", &"add_water")
 	production.call("perform_soy_action", &"start")
 	production.call("advance_time", 4.0)

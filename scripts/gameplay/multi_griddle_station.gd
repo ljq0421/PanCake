@@ -12,7 +12,6 @@ const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 @onready var shared_tool_tray: Control = %SharedToolTray
 
 var _session: Node
-var _order_provider := Callable()
 var _active_count := 1
 var _active_index := 0
 var _product_sequence := 0
@@ -37,9 +36,8 @@ func _ready() -> void:
 	_apply_count_layout()
 
 
-func bind_session(session: Node, order_provider: Callable) -> void:
+func bind_session(session: Node) -> void:
 	_session = session
-	_order_provider = order_provider
 	shared_tool_tray.bind_session(session)
 	if is_node_ready() and _session != null and _session.has_method("five_area_pancake_griddles_snapshot"):
 		load_snapshot(Dictionary(_session.call("five_area_pancake_griddles_snapshot")))
@@ -147,16 +145,11 @@ func _on_main_action(unit_index: int) -> void:
 		return
 	_active_index = unit_index
 	if unit.state == UNIT_SCRIPT.State.IDLE:
-		var order: Dictionary = Dictionary(_order_provider.call()) if _order_provider.is_valid() else {}
-		if order.is_empty():
-			status_message.emit("先选择一位含煎饼商品的顾客，再给空鏊子添面")
-			return
 		var consumed := _consume_inventory_stock(&"stock.pancake.batter")
 		if not bool(consumed.get("success", false)):
 			status_message.emit("面糊不足：先补货再给空鏊子添面")
 			return
-		order.erase("formal_order_id")
-		unit.begin_order(order)
+		unit.begin_order(_unbound_production_context())
 		_set_selected_tool(&"tool.pancake.spreader")
 		_sync_snapshot_to_session()
 		status_message.emit("鏊子%d开始制作：摊饼器已自动拿起，按住鏊面画圈摊开" % (unit_index + 1))
@@ -180,11 +173,15 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 				if other_unit != unit:
 					other_unit.cancel_held_tool()
 			return fold_result
+	var contextual_spreader_action := _contextual_spreader_action(unit)
+	if not contextual_spreader_action.is_empty():
+		_set_selected_tool(&"tool.pancake.spreader")
+		return {
+			"success": true,
+			"action": contextual_spreader_action,
+			"width_multiplier": _spreader_width_multiplier(),
+		}
 	if _selected_tool == &"tool.pancake.spreader":
-		if unit.state == UNIT_SCRIPT.State.BATTER:
-			return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_SPREAD_BATTER, "width_multiplier": _spreader_width_multiplier()}
-		if unit.state == UNIT_SCRIPT.State.FIRST_SIDE and unit.pancake_model.has_egg():
-			return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_SPREAD_EGG, "width_multiplier": _spreader_width_multiplier()}
 		status_message.emit("摊饼器当前只能摊面糊，或在第一面摊开已放入的鸡蛋")
 		return {"success": false, "reason": &"wrong_stage"}
 	if _selected_tool in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
@@ -206,6 +203,14 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _selected_tool}
 	status_message.emit("先从共享料台拿起摊饼器或酱刷")
 	return {"success": false, "reason": &"tool_not_selected"}
+
+
+func _contextual_spreader_action(unit: Node) -> StringName:
+	if unit.state == UNIT_SCRIPT.State.BATTER:
+		return UNIT_SCRIPT.SURFACE_ACTION_SPREAD_BATTER
+	if unit.state == UNIT_SCRIPT.State.FIRST_SIDE and unit.pancake_model.has_egg():
+		return UNIT_SCRIPT.SURFACE_ACTION_SPREAD_EGG
+	return &""
 
 
 func complete_surface_action(unit_index: int, action: StringName, changed: bool) -> void:
@@ -343,6 +348,15 @@ func _build_product(unit: Node) -> Dictionary:
 		float(unit.p1_session.elapsed_seconds),
 		float(unit.p1_session.patience_ratio()),
 	)
+	var serving_score_basis := Dictionary(score_result.get("serving_score_basis", {})).duplicate(true)
+	var intrinsic_dimensions := Dictionary(serving_score_basis.get("intrinsic_dimensions", {})).duplicate(true)
+	if intrinsic_dimensions.is_empty():
+		intrinsic_dimensions = Dictionary(score_result.get("dimensions", {})).duplicate(true)
+	var intrinsic_score := 0.0
+	for value in intrinsic_dimensions.values():
+		intrinsic_score += float(value)
+	if not intrinsic_dimensions.is_empty():
+		intrinsic_score /= float(intrinsic_dimensions.size())
 	var summary := Dictionary(unit.pancake_model.calculate_summary())
 	var mean_heat := (float(summary.get("mean_doneness", 0.0)) + float(summary.get("mean_back_doneness", 0.0))) * 0.5
 	var actual_heat: StringName = &"light" if mean_heat < 0.34 else (&"golden" if mean_heat < 0.62 else &"well_done")
@@ -363,12 +377,27 @@ func _build_product(unit: Node) -> Dictionary:
 		"cost_stock_ids": cost_stock_ids,
 		"material_cost": material_cost,
 		"fold_snapshot": Dictionary(unit.fold_model.snapshot()).duplicate(true),
-		"dimension_scores": Dictionary(score_result.get("dimensions", {})).duplicate(true),
-		"score": float(score_result.get("score", 0.0)),
-		"feedback": str(score_result.get("feedback", "")),
-		"tags": Array(score_result.get("tags", [])).duplicate(),
-		"serving_score_basis": Dictionary(score_result.get("serving_score_basis", {})).duplicate(true),
+		"dimension_scores": intrinsic_dimensions,
+		"score": intrinsic_score,
+		"feedback": "成品将在交付时按顾客订单评价",
+		"tags": Array(serving_score_basis.get("repair_tags", [])).duplicate(),
+		"serving_score_basis": serving_score_basis,
+		"special_evaluation": Dictionary(score_result.get("special_evaluation", {})).duplicate(true),
 		"status": &"available",
+	}
+
+
+static func _unbound_production_context() -> Dictionary:
+	return {
+		"id": &"production.pancake.unbound",
+		"product_id": &"product.pancake.custom",
+		"heat_preference": &"golden",
+		"ingredients": PackedStringArray(),
+		"sauces": PackedStringArray(),
+		"ingredient_ids": PackedStringArray(),
+		"sauce_ids": PackedStringArray(),
+		"time_limit": 72.0,
+		"tutorial_no_countdown": true,
 	}
 
 

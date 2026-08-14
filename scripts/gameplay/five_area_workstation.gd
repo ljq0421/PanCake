@@ -63,7 +63,7 @@ func _ready() -> void:
 		source.native_drag_enabled = true
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
-		multi_griddle_station.bind_session(session, Callable(self, "_compact_griddle_order"))
+		multi_griddle_station.bind_session(session)
 		var order_signal := Signal(session, &"order_changed")
 		if not order_signal.is_connected(_on_formal_shell_changed):
 			order_signal.connect(_on_formal_shell_changed)
@@ -335,7 +335,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"ready_safe", &"overcooking", &"blocked": return {"target": _tutorial_delivery_target(session, area_id), "message": "点击订单商品，从出杯口或接杯架交付"}
 		&"area.pancake":
 			if _multi_griddle_mode_active:
-				return {"target": multi_griddle_station, "message": "选择空鏊接单；每张鏊子独立摊、翻、加料和出餐"}
+				return {"target": multi_griddle_station, "message": "选择空鏊添加面糊；每张鏊子独立摊、翻、加料和出餐"}
 			match p1_session.phase:
 				P1Session.Phase.SPREAD: return {"target": ladle_button, "message": "舀取面糊，在鏊面摊成完整饼皮"}
 				P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE: return {"target": step_action_button, "message": "观察火候并在合适时机翻面或确认"}
@@ -382,29 +382,6 @@ func _refresh_formal_shell() -> void:
 			_refresh_order_card_ui(focused, _formal_order_patience_ratio(focused))
 	_refresh_pending_payment_button()
 	_refresh_attention_rail()
-
-
-func _compact_griddle_order() -> Dictionary:
-	var session := get_node_or_null("/root/GameSession")
-	if session == null or _formal_order_id.is_empty() or not session.has_method("formal_order"):
-		return {}
-	var order := Dictionary(session.call("formal_order", _formal_order_id))
-	if StringName(order.get("state", &"")) not in [&"active", &"serving"]:
-		return {}
-	for item_value in Array(order.get("items", [])):
-		var item := Dictionary(item_value)
-		if StringName(item.get("area_id", &"")) != &"area.pancake":
-			continue
-		var attached_count := Array(item.get("attached_products", [])).size()
-		if attached_count >= maxi(int(item.get("quantity", 1)), 1):
-			continue
-		return {
-			"product_id": &"product.pancake.custom",
-			"heat_preference": StringName(item.get("heat_preference", &"golden")),
-			"ingredient_ids": PackedStringArray(Array(item.get("ingredient_ids", []))),
-			"sauce_ids": PackedStringArray(Array(item.get("sauce_ids", []))),
-		}
-	return {}
 
 
 func _refresh_multi_griddle_mode() -> void:

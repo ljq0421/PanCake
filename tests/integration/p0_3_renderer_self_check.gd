@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/compact_griddle_unit.tscn")
 const CHANNEL_TOLERANCE := 1.5 / 255.0
 
 var _failures := PackedStringArray()
@@ -11,7 +11,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var workstation := WORKSTATION_SCENE.instantiate() as Workstation
+	var workstation := WORKSTATION_SCENE.instantiate() as CompactGriddleUnit
 	root.add_child(workstation)
 	await process_frame
 	workstation.set_process(false)
@@ -59,23 +59,25 @@ func _run() -> void:
 	var damage_texture := diagnostics.damage_texture as ImageTexture
 	var sauce_texture := diagnostics.sauce_texture as ImageTexture
 	var egg_texture := diagnostics.egg_texture as ImageTexture
+	var texture_size := int(diagnostics.texture_size)
+	var render_center := Vector2i(texture_size / 2, texture_size / 2)
 	_check(field_texture != null and damage_texture != null and sauce_texture != null and egg_texture != null, "renderer owns reusable pancake, damage, sauce and egg data textures")
-	_check(field_texture.get_width() == model.parameters.render_texture_size, "field texture uses configured render size")
-	_check(damage_texture.get_width() == model.parameters.render_texture_size, "damage texture uses configured render size")
-	_check(sauce_texture.get_width() == model.parameters.render_texture_size, "sauce texture uses configured render size")
-	_check(egg_texture.get_width() == model.parameters.render_texture_size, "egg texture uses configured render size")
-	var field_pixel := (diagnostics.field_image as Image).get_pixel(center.x, center.y)
-	var damage_pixel := (diagnostics.damage_image as Image).get_pixel(center.x, center.y)
-	var sauce_pixel := (diagnostics.sauce_image as Image).get_pixel(center.x, center.y)
-	var fold_sweet_pixel := (diagnostics.fold_sweet_sauce_image as Image).get_pixel(center.x, center.y)
-	var fold_chili_pixel := (diagnostics.fold_chili_sauce_image as Image).get_pixel(center.x, center.y)
-	var egg_pixel := (diagnostics.egg_image as Image).get_pixel(center.x, center.y)
+	_check(field_texture.get_width() == texture_size, "field texture uses configured render size")
+	_check(damage_texture.get_width() == texture_size, "damage texture uses configured render size")
+	_check(sauce_texture.get_width() == texture_size, "sauce texture uses configured render size")
+	_check(egg_texture.get_width() == texture_size, "egg texture uses configured render size")
+	var field_pixel := (diagnostics.field_image as Image).get_pixelv(render_center)
+	var damage_pixel := (diagnostics.damage_image as Image).get_pixelv(render_center)
+	var sauce_pixel := (diagnostics.sauce_image as Image).get_pixelv(render_center)
+	var fold_sweet_pixel := (diagnostics.fold_sweet_sauce_image as Image).get_pixelv(render_center)
+	var fold_chili_pixel := (diagnostics.fold_chili_sauce_image as Image).get_pixelv(render_center)
+	var egg_pixel := (diagnostics.egg_image as Image).get_pixelv(render_center)
 	var resized_sweet_material := sweet_sauce_material_texture.get_image()
 	var resized_chili_material := chili_sauce_material_texture.get_image()
-	resized_sweet_material.resize(model.parameters.render_texture_size, model.parameters.render_texture_size, Image.INTERPOLATE_BILINEAR)
-	resized_chili_material.resize(model.parameters.render_texture_size, model.parameters.render_texture_size, Image.INTERPOLATE_BILINEAR)
-	var expected_sweet_rgb := resized_sweet_material.get_pixel(center.x, center.y)
-	var expected_chili_rgb := resized_chili_material.get_pixel(center.x, center.y)
+	resized_sweet_material.resize(texture_size, texture_size, Image.INTERPOLATE_BILINEAR)
+	resized_chili_material.resize(texture_size, texture_size, Image.INTERPOLATE_BILINEAR)
+	var expected_sweet_rgb := resized_sweet_material.get_pixelv(render_center)
+	var expected_chili_rgb := resized_chili_material.get_pixelv(render_center)
 	var expected_sweet_alpha := smoothstep(0.015, 0.32, 0.40) * 0.82
 	var expected_chili_alpha := smoothstep(0.015, 0.32, 0.55) * 0.80
 	_check(absf(field_pixel.r - 0.75) <= CHANNEL_TOLERANCE, "coverage maps to the field texture red channel")

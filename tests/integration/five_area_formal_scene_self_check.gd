@@ -10,6 +10,8 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var formal_source := FileAccess.get_file_as_string("res://scenes/gameplay/five_area_workstation.tscn")
+	_check(not formal_source.contains("initial_unlock_workstation.tscn") and formal_source.contains("[node name=\"Workstation\" type=\"Control\""), "formal three-area scene owns a standalone Workstation root instead of inheriting the retired workstation")
 	var workstation := SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
@@ -35,9 +37,25 @@ func _run() -> void:
 		_check(unit != null and unit.has_method("begin_order") and unit.has_method("advance_main"), "%s is preauthored as an independent griddle" % unit_name)
 	_check(workstation.get_node_or_null("FiveAreaInfrastructure/CustomerHandoffTray") == null, "retired handoff tray remains absent")
 	_check(workstation.get_node_or_null("F3StationOverlay") == null, "production overlay remains absent")
-	_check(workstation.get_node_or_null("FiveAreaInfrastructure/WasteArea") != null, "shop keeps a visible waste target")
-	var holding_tray := workstation.get_node_or_null("SafeArea/PancakeHoldingTray")
-	_check(holding_tray != null and holding_tray.get_child_count() >= 3, "pancake holding tray remains available")
+	_check(workstation.get_node_or_null("FiveAreaInfrastructure/WasteArea") == null, "retired global waste target is absent; each griddle owns discard")
+	for removed_path in [
+		"ToolController",
+		"SafeArea/OrderCard",
+		"SafeArea/PanBase",
+		"SafeArea/IngredientRack",
+		"SafeArea/LeftRack",
+		"SafeArea/RightRack",
+		"SafeArea/MaterialDock",
+		"SafeArea/PancakeHoldingTray",
+		"SafeArea/FiveAreaStationArtwork",
+		"SafeArea/FiveAreaStationClickLayers",
+		"SafeArea/P1ControlBar",
+		"SafeArea/DiscardCurrentPancakeButton",
+	]:
+		_check(workstation.get_node_or_null(removed_path) == null, "%s is physically absent instead of hidden" % removed_path)
+	for slot_index in range(7, 19):
+		_check(workstation.get_node_or_null("SafeArea/LockedIngredientArtwork/Slot%02d" % slot_index) == null, "retired lock artwork slot %02d is absent" % slot_index)
+		_check(workstation.get_node_or_null("SafeArea/LockedIngredientInteractions/Slot%02dLockedButton" % slot_index) == null, "retired lock interaction slot %02d is absent" % slot_index)
 	var pending_payment := workstation.get_node_or_null("FiveAreaInfrastructure/PendingPaymentButton") as Button
 	_check(pending_payment != null, "shop owns a pending-payment control")
 	_check(soy != null and soy.has_signal("status_message") and soy.has_method("refresh_from_session"), "soy machine remains directly operable")

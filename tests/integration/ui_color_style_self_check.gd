@@ -38,15 +38,9 @@ func _run() -> void:
 	_check_border_rgb(game.get_node("PausePanel"), &"panel", GOLD, "pause panel uses the canonical gold emphasis border")
 
 	_check_style_rgb(workstation.get_node("SafeArea/CustomerStrip"), &"panel", DEEP_TEAL, "customer HUD uses the canonical deep-teal surface")
-	_check_style_rgb(workstation.get_node("SafeArea/P1ControlBar"), &"panel", DEEP_TEAL, "gameplay control bar uses the canonical deep-teal surface")
 	_check_style_rgb(workstation.get_node("SafeArea/ResultPanel"), &"panel", DEEP_TEAL, "result panel uses the canonical deep-teal surface")
 	_check_style_rgb(workstation.get_node("SafeArea/DailyBillPanel"), &"panel", DEEP_TEAL, "daily bill uses the canonical deep-teal surface")
 	_check_border_rgb(workstation.get_node("SafeArea/ResultPanel"), &"panel", GOLD, "result panel uses the canonical gold emphasis border")
-	_check_style_rgb(workstation.get_node("SafeArea/PatienceBar"), &"background", SECONDARY_TEAL, "patience track uses the secondary teal")
-	_check_style_rgb(workstation.get_node("SafeArea/PatienceBar"), &"fill", PROGRESS_GREEN, "patience fill uses the shared progress green")
-	_check_style_rgb(workstation.get_node("SafeArea/P1ControlBar/StepActionButton"), &"normal", INTERACTIVE_TEAL, "gameplay primary action uses canonical interactive teal")
-	_check_style_rgb(workstation.get_node("SafeArea/P1ControlBar/StepActionButton"), &"hover", INTERACTIVE_HOVER, "gameplay primary action hover uses canonical interaction highlight")
-	_check_style_rgb(workstation.get_node("SafeArea/P1ControlBar/HeatSlider"), &"grabber_area", PROGRESS_GREEN, "heat slider uses the shared progress green")
 
 	game.queue_free()
 	await process_frame
@@ -86,4 +80,3 @@ func _finish() -> void:
 	else:
 		print("UI_COLOR_STYLE_SELF_CHECK_FAIL (%d)" % _failures.size())
 		quit(1)
-

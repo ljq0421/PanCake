@@ -1,6 +1,7 @@
 extends SceneTree
 
 const STATION_SCENE := preload("res://scenes/gameplay/multi_griddle_station.tscn")
+const COMPACT_GRIDDLE_SCENE := preload("res://scenes/gameplay/compact_griddle_unit.tscn")
 
 class FakeProgression:
 	extends RefCounted
@@ -77,9 +78,9 @@ func _run() -> void:
 	_check(station.get_node_or_null("Background") == null, "multi-griddle station has no redundant outer background frame")
 	station.bind_session(session, Callable(self, "_order"))
 	station.set_griddle_count(1)
-	_check(is_equal_approx(station.units[0].position.x, 390.0), "logical slot 0 is displayed as the center main griddle")
-	_check(is_equal_approx(station.units[1].position.x, 0.0), "logical slot 1 is displayed as the left griddle")
-	_check(is_equal_approx(station.units[2].position.x, 780.0), "logical slot 2 is displayed as the right griddle")
+	_check(is_equal_approx(station.units[0].position.x, 405.0), "logical slot 0 is displayed as the center main griddle")
+	_check(is_equal_approx(station.units[1].position.x, 96.0), "logical slot 1 is displayed as the left griddle")
+	_check(is_equal_approx(station.units[2].position.x, 714.0), "logical slot 2 is displayed as the right griddle")
 	var locked_batter_before := int(session.inventory["stock.pancake.batter"])
 	station.call("_on_main_action", 1)
 	_check(int(session.inventory["stock.pancake.batter"]) == locked_batter_before, "clicking a locked griddle does not consume batter")
@@ -116,10 +117,48 @@ func _run() -> void:
 	for unit_index in 3:
 		station.call("_on_main_action", unit_index)
 	_check(int(session.inventory["stock.pancake.batter"]) == 0, "starting three griddles immediately consumes three portions of batter")
+	for unit_index in 3:
+		var started_unit: Node = station.units[unit_index]
+		started_unit.pancake_surface.force_texture_upload()
+		var renderer_diagnostics := Dictionary(started_unit.pancake_surface.get_renderer_diagnostics())
+		_check(started_unit.pancake_model.covered_cell_count() > 0, "griddle %d receives a centered batter deposit immediately after stock is consumed" % (unit_index + 1))
+		_check(started_unit.pancake_surface.visible and int(renderer_diagnostics.get("upload_count", 0)) > 0, "griddle %d uploads the initial batter texture in the first visible frame" % (unit_index + 1))
+		_check(_visible_coverage_pixels(renderer_diagnostics.get("field_image")) > 0, "griddle %d initial batter field contains visible coverage pixels" % (unit_index + 1))
+		_check(is_equal_approx(float(renderer_diagnostics.get("update_hz", 0.0)), 30.0), "griddle %d refreshes dirty batter fields at 30 Hz" % (unit_index + 1))
+	var left_unit: Control = station.units[1]
+	var center_unit: Control = station.units[0]
+	var right_unit: Control = station.units[2]
+	var left_art_rect := Rect2(left_unit.position + left_unit.griddle_art.position, left_unit.griddle_art.size)
+	var center_art_rect := Rect2(center_unit.position + center_unit.griddle_art.position, center_unit.griddle_art.size)
+	var right_art_rect := Rect2(right_unit.position + right_unit.griddle_art.position, right_unit.griddle_art.size)
+	_check(left_art_rect.intersects(center_art_rect) and center_art_rect.intersects(right_art_rect), "left-center-right griddle artwork visually closes the gaps")
+	_check(not left_unit.pancake_surface.get_global_rect().intersects(center_unit.pancake_surface.get_global_rect()) and not center_unit.pancake_surface.get_global_rect().intersects(right_unit.pancake_surface.get_global_rect()), "three pancake surfaces keep independent non-overlapping pointer regions")
+	var zero_coverage_snapshot: Dictionary = visual_unit.snapshot()
+	var zero_model := Dictionary(zero_coverage_snapshot.get("pancake_model", {}))
+	for field_name in ["coverage", "thickness", "wetness", "doneness", "back_doneness", "damage", "scrape_stress", "sauce_concentration", "chili_sauce_concentration", "egg_white", "egg_yolk", "egg_doneness"]:
+		var empty_field := PackedFloat32Array()
+		empty_field.resize(64 * 64)
+		zero_model[field_name] = empty_field
+	zero_coverage_snapshot["pancake_model"] = zero_model
+	var migrated_unit := COMPACT_GRIDDLE_SCENE.instantiate()
+	root.add_child(migrated_unit)
+	await process_frame
+	_check(bool(Dictionary(migrated_unit.load_snapshot(zero_coverage_snapshot)).get("success", false)), "legacy BATTER snapshot with zero coverage still loads")
+	_check(migrated_unit.pancake_model.covered_cell_count() > 0, "legacy BATTER snapshot with zero coverage rebuilds the centered batter deposit")
+	migrated_unit.pancake_surface.force_texture_upload()
+	_check(_visible_coverage_pixels(Dictionary(migrated_unit.pancake_surface.get_renderer_diagnostics()).get("field_image")) > 0, "migrated zero-coverage snapshot uploads visible batter pixels")
+	migrated_unit.queue_free()
 	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
+	var spread_before: int = visual_unit.pancake_model.covered_cell_count()
 	visual_unit.call("_on_surface_pointer_started", visual_surface.size * 0.5)
+	_check(visual_unit.pancake_model.covered_cell_count() == spread_before, "the first spreader press does not add a duplicate batter portion")
 	_check(visual_unit.spreader_artwork.visible and visual_unit.spreader_artwork.texture.resource_path == "res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png", "basic real spreader artwork appears at the compact pan contact point")
-	visual_unit.call("_on_surface_pointer_ended", visual_surface.size * 0.5)
+	var spread_target := visual_surface.size * 0.5 + Vector2(86.0, 0.0)
+	visual_surface.pointer_local_position = spread_target
+	visual_unit.call("_process_manual_spread", 0.05)
+	_check(visual_unit.pancake_model.covered_cell_count() > spread_before, "one fast continuous spread stroke expands the batter area")
+	_check(_path_has_coverage(visual_unit.pancake_model, Vector2(31.5, 31.5), Vector2(PancakeSpace.local_to_grid(spread_target, visual_surface.size, 64))), "segmented spread sampling leaves no blank gap along a fast drag path")
+	visual_unit.call("_on_surface_pointer_ended", spread_target)
 	_check(not visual_unit.spreader_artwork.visible, "spreader artwork hides when the surface stroke ends")
 	session.progression.wide_spreader = true
 	station.call("_on_shared_tool_selected", &"tool.pancake.spreader")
@@ -192,7 +231,7 @@ func _run() -> void:
 	await process_frame
 	restored.bind_session(session, Callable(self, "_order"))
 	_check(bool(Dictionary(restored.load_snapshot(persisted)).get("success", false)), "v1 three-slot snapshot restores without migration")
-	_check(restored.units[0].unit_index == 0 and restored.units[0].position.x == 390.0 and restored.units[1].unit_index == 1 and restored.units[1].position.x == 0.0, "restored v1 slots keep source indices while using center-left-right display mapping")
+	_check(restored.units[0].unit_index == 0 and restored.units[0].position.x == 405.0 and restored.units[1].unit_index == 1 and restored.units[1].position.x == 96.0, "restored v1 slots keep source indices while using center-left-right display mapping")
 	restored.queue_free()
 	_check(station.consume_ready(0), "delivered griddle can be consumed by source index")
 	_check(station.ready_source_refs().is_empty(), "consumed griddle returns to an empty work surface")
@@ -208,6 +247,37 @@ func _order() -> Dictionary:
 func _check(condition: bool, message: String) -> void:
 	if not condition:
 		failures.append(message)
+
+
+func _visible_coverage_pixels(value: Variant) -> int:
+	var image := value as Image
+	if image == null:
+		return 0
+	var count := 0
+	for y in image.get_height():
+		for x in image.get_width():
+			if image.get_pixel(x, y).r > 0.01:
+				count += 1
+	return count
+
+
+func _path_has_coverage(model: PancakeModel, from_grid: Vector2, to_grid: Vector2) -> bool:
+	var distance := from_grid.distance_to(to_grid)
+	var sample_count := maxi(1, ceili(distance))
+	for sample_index in range(sample_count + 1):
+		var sample := from_grid.lerp(to_grid, float(sample_index) / float(sample_count))
+		var found := false
+		for y_offset in range(-2, 3):
+			for x_offset in range(-2, 3):
+				var index := model.index_of(Vector2i(roundi(sample.x) + x_offset, roundi(sample.y) + y_offset))
+				if index >= 0 and model.coverage[index] > 0.0:
+					found = true
+					break
+			if found:
+				break
+		if not found:
+			return false
+	return true
 
 
 func _finish() -> void:

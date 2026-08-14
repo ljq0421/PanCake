@@ -18,6 +18,10 @@ const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spr
 const SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png")
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SAUCE_BRUSH_ART_ROTATION_OFFSET := 1.02
+const INITIAL_BATTER_AMOUNT := 4.0
+const INITIAL_BATTER_RADIUS := 14.0
+const SPREADER_SAMPLE_SPACING := 2.5
+const SPREADER_SEGMENT_MIN_STRENGTH := 0.32
 const SURFACE_ACTION_NONE: StringName = &""
 const SURFACE_ACTION_SPREAD_BATTER: StringName = &"spread_batter"
 const SURFACE_ACTION_SPREAD_EGG: StringName = &"spread_egg"
@@ -123,6 +127,7 @@ func begin_order(value: Dictionary) -> void:
 	order = value.duplicate(true)
 	p1_session.start(order)
 	state = State.BATTER
+	_seed_initial_batter_if_needed()
 	_refresh_ui()
 
 
@@ -303,6 +308,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		pancake_surface.set_model(pancake_model)
 		ingredient_layer.set_model(ingredient_model)
 		ingredient_layer.set_fold_model(fold_model)
+		_seed_initial_batter_if_needed()
 		_refresh_ui()
 	return {"success": true}
 
@@ -343,9 +349,7 @@ func _on_surface_pointer_started(local_position: Vector2) -> void:
 	if radial.length_squared() > 0.0001:
 		_last_tool_direction = radial.normalized()
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
-	if _surface_action == SURFACE_ACTION_SPREAD_BATTER and pancake_model.covered_cell_count() <= 0:
-		_surface_changed = pancake_model.add_batter(grid_position, 1.35, 8.0) > 0
-	elif _surface_action == SURFACE_ACTION_BRUSH_SAUCE:
+	if _surface_action == SURFACE_ACTION_BRUSH_SAUCE:
 		_sauce_stroke_id = pancake_model.begin_sauce_stroke()
 		_surface_changed = _apply_sauce_sample(grid_position) or _surface_changed
 	_spread_previous_grid = grid_position
@@ -377,13 +381,30 @@ func _process_manual_spread(delta: float) -> void:
 		_spread_previous_grid = current
 		_spread_has_previous = true
 	var movement: Vector2 = current - _spread_previous_grid
-	var direction: Vector2 = movement.normalized() if movement.length_squared() > 0.0001 else Vector2.RIGHT
-	if movement.length_squared() > 0.0001:
-		_last_tool_direction = direction
+	if movement.length_squared() <= 0.0001:
+		return
+	var direction := movement.normalized()
+	_last_tool_direction = direction
 	var speed: float = movement.length() / maxf(delta, 0.001)
-	var result := Dictionary(pancake_model.apply_scraper_sample(current, direction, speed, _surface_width_multiplier))
-	_surface_changed = bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0 or _surface_changed
+	var sample_count := maxi(1, ceili(movement.length() / SPREADER_SAMPLE_SPACING))
+	# A long pointer event is one physical stroke, not N full-strength strokes.
+	# Scale each interpolated sample so path densification closes visual gaps
+	# without multiplying moved mass and scrape stress by sample_count.
+	var segment_strength := maxf(1.0 / float(sample_count), SPREADER_SEGMENT_MIN_STRENGTH)
+	for sample_index in range(1, sample_count + 1):
+		var sample_position := _spread_previous_grid.lerp(current, float(sample_index) / float(sample_count))
+		var result := Dictionary(pancake_model.apply_scraper_sample(sample_position, direction, speed, _surface_width_multiplier, segment_strength))
+		_surface_changed = bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0 or _surface_changed
 	_spread_previous_grid = current
+
+
+func _seed_initial_batter_if_needed() -> void:
+	if state != State.BATTER or pancake_model.covered_cell_count() > 0:
+		return
+	var center := Vector2.ONE * (float(pancake_model.grid_size) - 1.0) * 0.5
+	pancake_model.add_batter(center, INITIAL_BATTER_AMOUNT, INITIAL_BATTER_RADIUS)
+	if is_node_ready():
+		pancake_surface.force_texture_upload()
 
 
 func _process_egg_spread(delta: float) -> void:

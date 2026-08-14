@@ -83,6 +83,12 @@ void fragment() {
 		float charred_mix = smoothstep(0.76, 1.0, doneness);
 		vec3 pancake_color = mix(raw_color, cooked_color, cooked_mix);
 		pancake_color = mix(pancake_color, charred_color, charred_mix);
+		// Fresh batter must remain legible against the dark griddle before it
+		// begins to brown.  Wetness only affects presentation; simulation fields
+		// and scoring remain unchanged.
+		float raw_batter_visibility = wetness * (1.0 - cooked_mix);
+		pancake_color = mix(pancake_color, vec3(0.92, 0.82, 0.58), raw_batter_visibility * 0.34);
+		pancake_color += vec3(0.055, 0.042, 0.018) * raw_batter_visibility;
 
 		float neighbor_coverage = min(
 			min(texture(field_texture, UV + vec2(field_texel_size.x, 0.0)).r, texture(field_texture, UV - vec2(field_texel_size.x, 0.0)).r),

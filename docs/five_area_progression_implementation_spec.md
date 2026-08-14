@@ -1,5 +1,7 @@
 # 五区域成长系统实施规格
 
+> 运行时现状已收敛为三区域；正式入口、场景结构和当前验证合同见 `docs/three_area_workstation_runtime.md`。本文其余内容保留五区域设计与实施历史，和当前运行时冲突时以前述三区域合同为准。
+
 > 状态：实施基线 v1。  
 > 日期：2026-08-05。  
 > 产品规则来源：`docs/five_area_progression_redesign_optimized.md`。  

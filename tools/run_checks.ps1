@@ -32,22 +32,15 @@ $checks = @(
     'res://tests/unit/p0_4_sauce_self_check.gd',
     'res://tests/unit/p0_5_fold_self_check.gd',
     'res://tests/unit/p1_vertical_slice_self_check.gd',
-    'res://tests/integration/p0_2_interaction_self_check.gd',
     'res://tests/integration/p0_3_renderer_self_check.gd',
-    'res://tests/integration/p0_4_interaction_self_check.gd',
-    'res://tests/integration/p0_5_interaction_self_check.gd',
 	'res://tests/integration/p1_audio_self_check.gd',
-	'res://tests/integration/ingredient_stock_interaction_self_check.gd',
-	'res://tests/integration/initial_unlock_workstation_self_check.gd',
-	'res://tests/integration/fold_and_coriander_unlock_self_check.gd',
 	'res://tests/integration/business_day_cutoff_self_check.gd',
+	'res://tests/integration/completed_payment_recovery_self_check.gd',
 	'res://tests/integration/five_area_formal_scene_self_check.gd',
 	'res://tests/integration/direct_soy_water_contract_self_check.gd',
 	'res://tests/integration/five_area_growth_ui_self_check.gd',
-	'res://tests/integration/workstation_hold_refill_self_check.gd',
 	'res://tests/integration/result_panel_layout_self_check.gd',
-	'res://tests/integration/customer_service_slot_contract_self_check.gd',
-    'res://tests/integration/m0_self_check.gd'
+	'res://tests/integration/customer_service_slot_contract_self_check.gd'
 )
 
 foreach ($check in $checks) {

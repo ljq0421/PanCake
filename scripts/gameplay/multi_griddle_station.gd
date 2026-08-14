@@ -444,7 +444,7 @@ func _apply_count_layout() -> void:
 	count_label.text = "%d/3张鏊子运行 · 每张独立火候、配料与出餐" % _active_count
 	# Logical slots and v1 save slots stay [0, 1, 2]. Only their authored display
 	# positions change so unlocks are main (center), left, then right.
-	var positions: Array[float] = [390.0, 0.0, 780.0]
+	var positions: Array[float] = [405.0, 96.0, 714.0]
 	for index in units.size():
 		units[index].visible = true
 		units[index].position = Vector2(positions[index], 36.0)

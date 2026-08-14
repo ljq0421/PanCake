@@ -595,7 +595,7 @@ func mean_side_doneness(back_side: bool) -> float:
 	return total / maxf(float(count), 1.0)
 
 
-func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, width_multiplier: float = 1.0) -> Dictionary:
+func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_second: float, width_multiplier: float = 1.0, sample_strength: float = 1.0) -> Dictionary:
 	var started := Time.get_ticks_usec()
 	var safe_direction := direction.normalized()
 	if safe_direction.is_zero_approx():
@@ -608,6 +608,7 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 	var min_y := maxi(floori(center.y - radius), 0)
 	var max_y := mini(ceili(center.y + radius), grid_size - 1)
 	var speed_factor := clampf(1.12 - maxf(speed_cells_per_second, 0.0) / 220.0, 0.32, 1.0)
+	var safe_sample_strength := clampf(sample_strength, 0.01, 1.0)
 	var deltas: Dictionary = {}
 	var moved_mass := 0.0
 	var source_indices := PackedInt32Array()
@@ -628,7 +629,7 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 	if not source_indices.is_empty():
 		var source_mean := source_total / float(source_indices.size())
 		var mean_wetness := source_wetness_total / float(source_indices.size())
-		var flatten_strength := parameters.scraper_flatten_strength * (0.15 + mean_wetness * 0.85) * speed_factor
+		var flatten_strength := parameters.scraper_flatten_strength * (0.15 + mean_wetness * 0.85) * speed_factor * safe_sample_strength
 		for source_index in source_indices:
 			deltas[source_index] = (source_mean - thickness[source_index]) * flatten_strength
 	for y in range(min_y, max_y + 1):
@@ -649,7 +650,7 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 			var falloff := crossbar_falloff * radial_falloff
 			var liquid_factor := clampf(wetness[source_index], 0.0, 1.0)
 			var effectiveness := (0.15 + liquid_factor * 0.85) * speed_factor
-			var moved := thickness[source_index] * parameters.scraper_transfer_ratio * falloff * effectiveness
+			var moved := thickness[source_index] * parameters.scraper_transfer_ratio * falloff * effectiveness * safe_sample_strength
 			if moved <= 0.000001:
 				continue
 			if parameters.scraper_push_distance <= 0.0:
@@ -681,7 +682,7 @@ func apply_scraper_sample(center: Vector2, direction: Vector2, speed_cells_per_s
 			coverage[index] = 0.0
 		if thickness[index] <= parameters.thin_damage_threshold:
 			var speed_stress := clampf(maxf(speed_cells_per_second, 0.0) / 120.0, 0.35, 1.5)
-			scrape_stress[index] = minf(scrape_stress[index] + 0.035 * speed_stress, 2.0)
+			scrape_stress[index] = minf(scrape_stress[index] + 0.035 * speed_stress * safe_sample_strength, 2.0)
 			if scrape_stress[index] > 0.28:
 				var previous_damage := damage[index]
 				damage[index] = clampf(damage[index] + (scrape_stress[index] - 0.28) * 0.06, 0.0, 1.0)

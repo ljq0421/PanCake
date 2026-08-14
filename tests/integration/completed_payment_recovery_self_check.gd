@@ -1,6 +1,6 @@
 extends SceneTree
 
-const SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
+const SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
 const SESSION := preload("res://scripts/gameplay/p1_session.gd")
 
 var _failures: Array[String] = []

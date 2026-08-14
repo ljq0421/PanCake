@@ -237,47 +237,47 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 
 @export var parameters: PancakeSimulationParameters
 
-@onready var pancake_surface: PancakeHeatmap = %PancakeSurface
-@onready var pancake_visual: TextureRect = %PancakeVisual
-@onready var tool_controller: ToolController = %ToolController
-@onready var ladle_button: Button = %LadleButton
-@onready var scraper_button: Button = %ScraperButton
-@onready var sauce_brush_button: Button = %SauceBrushButton
-@onready var press_spreader_button: Button = get_node("SafeArea/LeftRack/PressSpreaderButton") as Button
-@onready var automatic_sauce_brush_button: Button = get_node("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
-@onready var sauce_refill_button: Button = %SauceRefillButton
-@onready var sauce_status_label: Label = %SauceStatusLabel
-@onready var fold_button: Button = %FoldButton
-@onready var paper_sleeve_button: Button = %PaperSleeveButton
-@onready var tray_button: Button = %TrayButton
-@onready var fold_status_label: Label = %FoldStatusLabel
-@onready var fold_overlay: Control = %PancakeFoldOverlay
-@onready var spreader_artwork: Sprite2D = %SpreaderArtwork
+@onready var pancake_surface: PancakeHeatmap = get_node_or_null("SafeArea/PanBase/PancakeSurface") as PancakeHeatmap
+@onready var pancake_visual: TextureRect = get_node_or_null("SafeArea/PanBase/PancakeSurface/PancakeVisual") as TextureRect
+@onready var tool_controller: ToolController = get_node_or_null("ToolController") as ToolController
+@onready var ladle_button: Button = get_node_or_null("SafeArea/LeftRack/LadleButton") as Button
+@onready var scraper_button: Button = get_node_or_null("SafeArea/LeftRack/ScraperButton") as Button
+@onready var sauce_brush_button: Button = get_node_or_null("SafeArea/LeftRack/SauceBrushButton") as Button
+@onready var press_spreader_button: Button = get_node_or_null("SafeArea/LeftRack/PressSpreaderButton") as Button
+@onready var automatic_sauce_brush_button: Button = get_node_or_null("SafeArea/LeftRack/AutomaticSauceBrushButton") as Button
+@onready var sauce_refill_button: Button = get_node_or_null("SafeArea/RightRack/SauceRefillButton") as Button
+@onready var sauce_status_label: Label = get_node_or_null("SafeArea/RightRack/SauceStatusLabel") as Label
+@onready var fold_button: Button = get_node_or_null("SafeArea/LeftRack/FoldButton") as Button
+@onready var paper_sleeve_button: Button = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices/PaperSleeveButton") as Button
+@onready var tray_button: Button = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices/TrayButton") as Button
+@onready var fold_status_label: Label = get_node_or_null("SafeArea/RightRack/FoldStatusLabel") as Label
+@onready var fold_overlay: Control = get_node_or_null("SafeArea/PanBase/PancakeSurface/PancakeFoldOverlay") as Control
+@onready var spreader_artwork: Sprite2D = get_node_or_null("SafeArea/PanBase/PancakeSurface/SpreaderArtwork") as Sprite2D
 @onready var tool_status_label: Label = %ToolStatusLabel
 @onready var warning_label: Label = %WarningLabel
 @onready var business_day_timer_label: Label = _resolve_business_day_timer_label()
 @onready var global_status_label: Label = %GlobalStatusLabel
 @onready var warning_tone: AudioStreamPlayer = %DamageWarningTone
-@onready var surface_readout_label: Label = %SurfaceReadoutLabel
-@onready var chili_sauce_refill_button: Button = %ChiliSauceRefillButton
-@onready var ingredient_layer: IngredientLayer = %IngredientLayer
-@onready var sauce_blob_overlay: Control = %SauceBlobOverlay
-@onready var egg_crack_artwork: Sprite2D = %EggCrackArtwork
-@onready var egg_crack_effect: AnimatedSprite2D = %EggCrackEffect
-@onready var ingredient_drag_preview: TextureRect = %IngredientDragPreview
-@onready var egg_button: Button = %EggButton
-@onready var baocui_button: Button = %BaocuiButton
-@onready var ham_button: Button = %HamButton
-@onready var scallion_button: Button = %ScallionButton
-@onready var meat_floss_button: Button = %MeatFlossButton
-@onready var pork_tenderloin_button: Button = %PorkTenderloinButton
-@onready var coriander_button: Button = get_node("SafeArea/IngredientRack/CorianderButton") as Button
-@onready var preserved_mustard_button: Button = get_node("SafeArea/IngredientRack/PreservedMustardButton") as Button
-@onready var egg_restock_button: Button = %EggRestockButton
-@onready var baocui_restock_button: Button = %BaocuiRestockButton
-@onready var ham_restock_button: Button = %HamRestockButton
-@onready var scallion_restock_button: Button = %ScallionRestockButton
-@onready var customer_portrait: TextureRect = %CustomerPortrait
+@onready var surface_readout_label: Label = get_node_or_null("SafeArea/SurfaceReadoutLabel") as Label
+@onready var chili_sauce_refill_button: Button = get_node_or_null("SafeArea/RightRack/ChiliSauceRefillButton") as Button
+@onready var ingredient_layer: IngredientLayer = get_node_or_null("SafeArea/PanBase/PancakeSurface/IngredientLayer") as IngredientLayer
+@onready var sauce_blob_overlay: Control = get_node_or_null("SafeArea/PanBase/PancakeSurface/SauceBlobOverlay") as Control
+@onready var egg_crack_artwork: Sprite2D = get_node_or_null("SafeArea/PanBase/PancakeSurface/EggCrackArtwork") as Sprite2D
+@onready var egg_crack_effect: AnimatedSprite2D = get_node_or_null("SafeArea/PanBase/PancakeSurface/EggCrackEffect") as AnimatedSprite2D
+@onready var ingredient_drag_preview: TextureRect = get_node_or_null("SafeArea/IngredientDragPreview") as TextureRect
+@onready var egg_button: Button = get_node_or_null("SafeArea/IngredientRack/EggButton") as Button
+@onready var baocui_button: Button = get_node_or_null("SafeArea/IngredientRack/BaocuiButton") as Button
+@onready var ham_button: Button = get_node_or_null("SafeArea/IngredientRack/HamButton") as Button
+@onready var scallion_button: Button = get_node_or_null("SafeArea/IngredientRack/ScallionButton") as Button
+@onready var meat_floss_button: Button = get_node_or_null("SafeArea/IngredientRack/MeatFlossButton") as Button
+@onready var pork_tenderloin_button: Button = get_node_or_null("SafeArea/IngredientRack/PorkTenderloinButton") as Button
+@onready var coriander_button: Button = get_node_or_null("SafeArea/IngredientRack/CorianderButton") as Button
+@onready var preserved_mustard_button: Button = get_node_or_null("SafeArea/IngredientRack/PreservedMustardButton") as Button
+@onready var egg_restock_button: Button = get_node_or_null("SafeArea/RestockRack/EggRestockButton") as Button
+@onready var baocui_restock_button: Button = get_node_or_null("SafeArea/RestockRack/BaocuiRestockButton") as Button
+@onready var ham_restock_button: Button = get_node_or_null("SafeArea/RestockRack/HamRestockButton") as Button
+@onready var scallion_restock_button: Button = get_node_or_null("SafeArea/RestockRack/ScallionRestockButton") as Button
+@onready var customer_portrait: TextureRect = get_node_or_null("SafeArea/CustomerPortrait") as TextureRect
 @onready var queue_status_label: Label = %QueueStatusLabel
 @onready var customer_slot_buttons: Array[Button] = [%CustomerSlot1, %CustomerSlot2, %CustomerSlot3]
 @onready var customer_slot_patience_bars: Array[ProgressBar] = [
@@ -286,27 +286,27 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 	%CustomerSlot3.get_node("Patience"),
 ]
 @onready var customer_service_slots: Array[Control] = _resolve_customer_service_slots()
-@onready var customer_line_label: Label = %CustomerLineLabel
-@onready var order_coin_icon: TextureRect = %OrderCoinIcon
-@onready var order_amount_label: Label = %OrderAmountLabel
-@onready var order_dish_icons: Array[TextureRect] = [%OrderDish1, %OrderDish2, %OrderDish3]
-@onready var order_dish_buttons: Array[Button] = [%OrderDishTarget1, %OrderDishTarget2, %OrderDishTarget3]
-@onready var order_ingredient_icons: Array[TextureRect] = [%OrderIngredient01, %OrderIngredient02, %OrderIngredient03, %OrderIngredient04, %OrderIngredient05, %OrderIngredient06, %OrderIngredient07, %OrderIngredient08]
-@onready var order_ingredient_backgrounds: Array[Panel] = [%OrderIngredientBackground01, %OrderIngredientBackground02, %OrderIngredientBackground03, %OrderIngredientBackground04, %OrderIngredientBackground05, %OrderIngredientBackground06, %OrderIngredientBackground07, %OrderIngredientBackground08]
-@onready var order_heat_backgrounds: Array[Panel] = [%OrderHeatBackground01, %OrderHeatBackground02, %OrderHeatBackground03, %OrderHeatBackground04, %OrderHeatBackground05, %OrderHeatBackground06, %OrderHeatBackground07, %OrderHeatBackground08]
-@onready var order_heart_fill: Polygon2D = %OrderHeartFill
-@onready var order_patience_bar: ProgressBar = %OrderPatienceBar
-@onready var patience_bar: ProgressBar = %PatienceBar
-@onready var patience_text_label: Label = %PatienceTextLabel
+@onready var customer_line_label: Label = get_node_or_null("SafeArea/CustomerLineLabel") as Label
+@onready var order_coin_icon: TextureRect = get_node_or_null("SafeArea/OrderCard/OrderCoinIcon") as TextureRect
+@onready var order_amount_label: Label = get_node_or_null("SafeArea/OrderCard/OrderAmountLabel") as Label
+@onready var order_dish_icons: Array[TextureRect] = _optional_texture_rects("SafeArea/OrderCard", "OrderDish", 3)
+@onready var order_dish_buttons: Array[Button] = _optional_buttons("SafeArea/OrderCard", "OrderDishTarget", 3)
+@onready var order_ingredient_icons: Array[TextureRect] = _optional_texture_rects("SafeArea/OrderCard", "OrderIngredient", 8)
+@onready var order_ingredient_backgrounds: Array[Panel] = _optional_panels("SafeArea/OrderCard", "OrderIngredientBackground", 8)
+@onready var order_heat_backgrounds: Array[Panel] = _optional_panels("SafeArea/OrderCard", "OrderHeatBackground", 8)
+@onready var order_heart_fill: Polygon2D = get_node_or_null("SafeArea/OrderCard/OrderHeartFill") as Polygon2D
+@onready var order_patience_bar: ProgressBar = get_node_or_null("SafeArea/OrderCard/OrderPatienceBar") as ProgressBar
+@onready var patience_bar: ProgressBar = get_node_or_null("SafeArea/PatienceBar") as ProgressBar
+@onready var patience_text_label: Label = get_node_or_null("SafeArea/PatienceTextLabel") as Label
 @onready var tutorial_guide_label: Label = get_node("SafeArea/BottomStrip/TutorialGuideLabel") as Label
-@onready var phase_label: Label = %PhaseLabel
-@onready var heat_slider: HSlider = %HeatSlider
-@onready var heat_label: Label = %HeatLabel
-@onready var step_action_button: Button = %StepActionButton
-@onready var discard_current_pancake_button: Button = %DiscardCurrentPancakeButton
-@onready var packaging_choices: Control = %PackagingChoices
-@onready var bag_button: Button = %BagButton
-@onready var serve_button: Button = %ServeButton
+@onready var phase_label: Label = get_node_or_null("SafeArea/PhaseLabel") as Label
+@onready var heat_slider: HSlider = get_node_or_null("SafeArea/P1ControlBar/HeatSlider") as HSlider
+@onready var heat_label: Label = get_node_or_null("SafeArea/P1ControlBar/HeatLabel") as Label
+@onready var step_action_button: Button = get_node_or_null("SafeArea/P1ControlBar/StepActionButton") as Button
+@onready var discard_current_pancake_button: Button = get_node_or_null("SafeArea/DiscardCurrentPancakeButton") as Button
+@onready var packaging_choices: Control = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices") as Control
+@onready var bag_button: Button = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices/BagButton") as Button
+@onready var serve_button: Button = get_node_or_null("SafeArea/P1ControlBar/ServeButton") as Button
 @onready var result_panel: PanelContainer = %ResultPanel
 @onready var result_title_label: Label = %ResultTitleLabel
 @onready var result_detail_label: Label = %ResultDetailLabel
@@ -326,12 +326,12 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 @onready var payment_collection_area: Button = %PaymentCollectionArea
 @onready var payment_display: TextureRect = %PaymentDisplay
 @onready var kitchen_audio: AudioStreamPlayer = %KitchenAudio
-@onready var p1_control_bar: Panel = %P1ControlBar
-@onready var serve_product_button: Button = %ServeProductButton
-@onready var store_pancake_button: Button = %StorePancakeButton
-@onready var pancake_holding_tray: Panel = %PancakeHoldingTray
-@onready var pancake_holding_slots: Array[Button] = [%PancakeHoldingSlot01, %PancakeHoldingSlot02]
-@onready var handoff_product_sprite: TextureRect = %HandoffProductSprite
+@onready var p1_control_bar: Panel = get_node_or_null("SafeArea/P1ControlBar") as Panel
+@onready var serve_product_button: Button = get_node_or_null("SafeArea/ServeProductButton") as Button
+@onready var store_pancake_button: Button = get_node_or_null("SafeArea/StorePancakeButton") as Button
+@onready var pancake_holding_tray: Panel = get_node_or_null("SafeArea/PancakeHoldingTray") as Panel
+@onready var pancake_holding_slots: Array[Button] = _optional_buttons("SafeArea/PancakeHoldingTray", "PancakeHoldingSlot", 2)
+@onready var handoff_product_sprite: TextureRect = get_node_or_null("SafeArea/HandoffProductSprite") as TextureRect
 @onready var order_summary_card: PanelContainer = %OrderSummaryCard
 @onready var summary_score_label: Label = %SummaryScoreLabel
 @onready var summary_feedback_label: Label = %SummaryFeedbackLabel
@@ -350,7 +350,7 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 @onready var unlock_progress_label: Label = %UnlockProgressLabel
 @onready var unlock_progress_close_button: Button = %UnlockProgressCloseButton
 @onready var growth_ticket_buttons: Array[Button] = [%GrowthTicket1, %GrowthTicket2, %GrowthTicket3]
-@onready var station_interaction_controller: PancakeWorkstationInteractionController = %PancakeWorkstationInteractionController
+@onready var station_interaction_controller: PancakeWorkstationInteractionController = get_node_or_null("SafeArea/PancakeWorkstationInteractionController") as PancakeWorkstationInteractionController
 @onready var refuse_active_order_button: Button = %RefuseActiveOrderButton
 @onready var skip_active_tutorial_button: Button = %SkipActiveTutorialButton
 
@@ -423,6 +423,36 @@ var _business_day_expiration_pending := false
 var _last_persisted_business_second := -1
 
 
+func _optional_texture_rects(parent_path: String, prefix: String, count: int) -> Array[TextureRect]:
+	var result: Array[TextureRect] = []
+	for index in count:
+		var suffix := "%02d" % (index + 1) if count >= 8 else str(index + 1)
+		var node := get_node_or_null("%s/%s%s" % [parent_path, prefix, suffix]) as TextureRect
+		if node != null:
+			result.append(node)
+	return result
+
+
+func _optional_buttons(parent_path: String, prefix: String, count: int) -> Array[Button]:
+	var result: Array[Button] = []
+	for index in count:
+		var suffix := "%02d" % (index + 1) if count >= 8 else str(index + 1)
+		var node := get_node_or_null("%s/%s%s" % [parent_path, prefix, suffix]) as Button
+		if node != null:
+			result.append(node)
+	return result
+
+
+func _optional_panels(parent_path: String, prefix: String, count: int) -> Array[Panel]:
+	var result: Array[Panel] = []
+	for index in count:
+		var suffix := "%02d" % (index + 1) if count >= 8 else str(index + 1)
+		var node := get_node_or_null("%s/%s%s" % [parent_path, prefix, suffix]) as Panel
+		if node != null:
+			result.append(node)
+	return result
+
+
 func _resolve_business_day_timer_label() -> Label:
 	# The initial-unlock gameplay scene intentionally hides the inherited
 	# BottomStrip, so its live countdown is a direct SafeArea child instead.
@@ -482,6 +512,9 @@ func _ready() -> void:
 		OrderService.SAUCE_CHILI: SAUCE_TOOL_STATE_SCRIPT.new(parameters.sauce_brush_capacity),
 	}
 	sauce_tool_state = sauce_tool_states[current_sauce_type]
+	if pancake_surface == null:
+		_ready_formal_shop_shell(game_session, formal_active)
+		return
 	pancake_surface.heatmap_update_hz = parameters.heatmap_update_hz
 	pancake_surface.render_texture_size = parameters.render_texture_size
 	pancake_surface.set_model(pancake_model)
@@ -572,6 +605,33 @@ func _ready() -> void:
 	_refresh_spreader_upgrade_presentation()
 	_refresh_sauce_brush_upgrade_presentation()
 	_log_info(&"workstation", "PancakeModel ready: %dx%d" % [parameters.grid_size, parameters.grid_size])
+
+
+func _ready_formal_shop_shell(game_session: Node, formal_active: Dictionary) -> void:
+	for service_slot in customer_service_slots:
+		service_slot.connect("focus_requested", Callable(self, "_on_customer_service_focus_requested"))
+		service_slot.connect("delivery_requested", Callable(self, "_on_customer_service_delivery_requested"))
+	next_order_button.pressed.connect(_close_result_detail)
+	summary_view_button.pressed.connect(_open_result_detail)
+	summary_dismiss_button.pressed.connect(_dismiss_order_summary)
+	payment_coin_layer.z_index = 40
+	payment_collection_area.visible = false
+	daily_bill_close_button.pressed.connect(_close_daily_bill)
+	begin_next_day_button.pressed.connect(_begin_next_business_day)
+	unlock_progress_button.pressed.connect(_open_unlock_progress)
+	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
+	refuse_active_order_button.pressed.connect(_on_refuse_active_order_pressed)
+	skip_active_tutorial_button.pressed.connect(_on_skip_active_tutorial_pressed)
+	for ticket_index in growth_ticket_buttons.size():
+		growth_ticket_buttons[ticket_index].pressed.connect(_on_growth_ticket_pressed.bind(ticket_index))
+	_bind_global_status(game_session)
+	var legacy_order := Dictionary(Dictionary(formal_active.get("metadata", {})).get("legacy_order", {}))
+	p1_session.start(legacy_order)
+	_formal_order_id = StringName(formal_active.get("order_id", &""))
+	_refresh_customer_queue()
+	_refresh_formal_patience_ui(game_session)
+	_refresh_global_status()
+	_log_info(&"workstation", "Three-area shop shell ready")
 
 
 func _open_f3_station(_area_id: StringName) -> void:
@@ -1063,6 +1123,9 @@ func _process(delta: float) -> void:
 		game_session.call("advance_pancake_holding_tray", delta)
 	if game_session != null and game_session.has_method("advance_f3_production") and not formal_time_paused:
 		game_session.call("advance_f3_production", delta)
+	if pancake_surface == null:
+		_recover_completed_payment_if_needed()
+		return
 	_update_surface_readout()
 	_update_spreader_artwork(delta)
 	if p1_session != null and not formal_time_paused:
@@ -1196,6 +1259,13 @@ func _end_business_day_at_cutoff(cutoff_reason: StringName) -> void:
 
 func reset_pancake() -> void:
 	_pending_delivery_item_index = -1
+	# The formal three-area shell has no inherited single-griddle surface. Its
+	# compact units own their own reset lifecycle and must not be cleared when a
+	# customer order advances or a payment recovery finishes.
+	if pancake_surface == null:
+		if p1_session != null:
+			p1_session.start(p1_session.order)
+		return
 	pancake_model.reset()
 	ingredient_model.reset()
 	pancake_visual.visible = true
@@ -3419,12 +3489,15 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 			"texture": ORDER_CARD_HEAT_TEXTURE,
 			"product_id": StringName(item.get("product_id", &"")),
 		})
-	if requirements.size() > order_ingredient_icons.size():
-		requirements.resize(order_ingredient_icons.size())
+	var requirement_capacity := order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8
+	if requirements.size() > requirement_capacity:
+		requirements.resize(requirement_capacity)
 	return requirements
 
 
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
+	if order_dish_icons.is_empty():
+		return
 	var tutorial_unlimited := bool(order.get("tutorial_no_countdown", false))
 	order_patience_bar.visible = not tutorial_unlimited
 	order_heart_fill.visible = not tutorial_unlimited
@@ -3519,7 +3592,7 @@ func _refresh_formal_patience_ui(game_session: Node) -> void:
 		bar.tooltip_text = "教学单·不限时" if unlimited else "耐心 %d 秒" % ceili(float(slot_order.get("remaining_patience_seconds", 0.0)))
 		if StringName(slot_order.get("order_id", &"")) == _formal_order_id:
 			focused_order = slot_order
-	if not focused_order.is_empty():
+	if not focused_order.is_empty() and order_patience_bar != null and order_heart_fill != null:
 		var focused_ratio := _formal_order_patience_ratio(focused_order)
 		var focused_unlimited := bool(focused_order.get("tutorial_no_countdown", false))
 		order_patience_bar.visible = not focused_unlimited
@@ -3541,6 +3614,14 @@ func _order_card_uses_click_delivery() -> bool:
 
 
 func _refresh_p1_ui() -> void:
+	if pancake_surface == null:
+		var formal_session := get_node_or_null("/root/GameSession")
+		if p1_session != null and not p1_session.order.is_empty():
+			_refresh_formal_patience_ui(formal_session)
+		_refresh_customer_queue()
+		result_panel.visible = _result_detail_open
+		order_summary_card.visible = _order_summary_visible and not _result_detail_open
+		return
 	if p1_session == null or p1_session.order.is_empty():
 		return
 	customer_line_label.text = "“%s”" % str(p1_session.order.customer_line)

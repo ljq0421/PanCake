@@ -6,6 +6,9 @@ const SCREENSHOT_SPECS := [
 	{"size": Vector2i(1366, 768), "path": "res://tmp/validation/three_area_multi_griddle_gpu_1366x768.png"},
 	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/three_area_multi_griddle_gpu_1280x720.png"},
 ]
+const INITIAL_BATTER_SCREENSHOT := "res://tmp/validation/three_area_initial_batter_1920x1080.png"
+const SPREADING_SCREENSHOT := "res://tmp/validation/three_area_spreading_1920x1080.png"
+const FORMED_SCREENSHOT := "res://tmp/validation/three_area_formed_1920x1080.png"
 
 var failures := PackedStringArray()
 
@@ -46,12 +49,10 @@ func _run() -> void:
 	multi.call("set_griddle_count", 3)
 	_check(multi.get_node_or_null("Background") == null, "multi-griddle station renders without the redundant outer brown frame")
 	var units: Array = multi.get("units")
-	var legacy_controls_stayed_hidden := true
 	for _refresh_index in 12:
 		station.call("_refresh_p1_ui")
 		await process_frame
-		legacy_controls_stayed_hidden = legacy_controls_stayed_hidden and not (station.get_node("SafeArea/P1ControlBar") as Control).visible and not (station.get_node("SafeArea/PhaseLabel") as Control).visible
-	_check(legacy_controls_stayed_hidden, "repeated P1 refreshes never flash the legacy heat or phase controls in multi-griddle mode")
+	_check(station.get_node_or_null("SafeArea/P1ControlBar") == null and station.get_node_or_null("SafeArea/PhaseLabel") == null, "repeated P1 refreshes do not recreate retired single-griddle controls")
 	var order := {
 		"product_id": &"product.pancake.custom",
 		"heat_preference": &"golden",
@@ -105,6 +106,14 @@ func _run() -> void:
 	var spread_unit: Node = units[0]
 	spread_unit.call("reset_unit")
 	spread_unit.call("begin_order", order)
+	spread_unit.pancake_surface.force_texture_upload()
+	var initial_coverage: int = spread_unit.pancake_model.covered_cell_count()
+	var initial_diagnostics := Dictionary(spread_unit.pancake_surface.get_renderer_diagnostics())
+	_check(initial_coverage > 0 and _visible_coverage_pixels(initial_diagnostics.get("field_image")) > 0, "adding batter immediately uploads visible center coverage before the first spreader press")
+	var captured_paths := PackedStringArray()
+	var initial_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), INITIAL_BATTER_SCREENSHOT))
+	_check(bool(initial_capture.get("success", false)), "captured the initial centered batter frame")
+	captured_paths.append(str(initial_capture.get("path", "")))
 	multi.call("_on_shared_tool_selected", &"tool.pancake.spreader")
 	var spread_center := (spread_unit.pancake_surface as Control).get_global_rect().get_center()
 	_move_at(spread_center)
@@ -114,8 +123,21 @@ func _run() -> void:
 	_move_at(spread_target, MOUSE_BUTTON_MASK_LEFT)
 	await process_frame
 	_check(spread_unit.spreader_artwork.visible and spread_unit.spreader_artwork.position.distance_to(spread_unit.pancake_surface.pointer_local_position) < 1.0, "real pointer drag shows the authored spreader at the compact-pan contact point")
-	for _frame in 4:
+	_check(spread_unit.pancake_model.covered_cell_count() > initial_coverage, "real pointer drag expands the initial batter deposit")
+	# Continue the same real held-pointer stroke as an outward spiral. This both
+	# exercises long segmented moves and produces the actual in-progress visual
+	# players see, rather than a synthetic filled field.
+	for spread_step in 30:
+		var progress := float(spread_step + 1) / 30.0
+		var angle := progress * TAU * 3.2
+		var radius := lerpf(20.0, 104.0, progress)
+		var spiral_point := spread_center + Vector2(cos(angle) * radius, sin(angle) * radius * 0.70)
+		_move_at(spiral_point, MOUSE_BUTTON_MASK_LEFT)
 		await process_frame
+	var spread_release_point := spread_center + Vector2(cos(TAU * 3.2) * 104.0, sin(TAU * 3.2) * 104.0 * 0.70)
+	var spreading_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), SPREADING_SCREENSHOT))
+	_check(bool(spreading_capture.get("success", false)), "captured the visibly expanding batter frame")
+	captured_paths.append(str(spreading_capture.get("path", "")))
 
 	var stations := station.get_node("FiveAreaInfrastructure/Stations") as Control
 	var soy := stations.get_node("FreshSoyMilkStation") as Control
@@ -126,12 +148,10 @@ func _run() -> void:
 	_check(multi.call("griddle_count") == 3, "advanced pancake station exposes three direct-operation griddles")
 	_check(not soy.get_global_rect().intersects(pancake.get_global_rect()) and not pancake.get_global_rect().intersects(youtiao.get_global_rect()), "the three operating regions do not overlap")
 	_check(soy.get_global_rect().end.x < pancake.get_global_rect().position.x and pancake.get_global_rect().end.x < youtiao.get_global_rect().position.x, "the visual order is soy, pancake, youtiao")
-	_check(not (station.get_node("FiveAreaInfrastructure/WasteArea") as Control).visible, "legacy global waste target does not cover a compact griddle")
-	_check(not (station.get_node("SafeArea/DiscardCurrentPancakeButton") as Control).visible, "legacy single-griddle redo button does not cover the third griddle")
-	var old_rack := station.get_node("SafeArea/IngredientRack") as Control
-	_check(not old_rack.visible and old_rack.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "legacy single-griddle topping drag layer is hidden and input-disabled")
-	var old_material_dock := station.get_node("SafeArea/MaterialDock") as Control
-	_check(not old_material_dock.visible and old_material_dock.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "legacy material-slot and transparent lock layers are hidden and input-disabled")
+	_check(station.get_node_or_null("FiveAreaInfrastructure/WasteArea") == null, "legacy global waste target is physically absent")
+	_check(station.get_node_or_null("SafeArea/DiscardCurrentPancakeButton") == null, "legacy single-griddle redo button is physically absent")
+	_check(station.get_node_or_null("SafeArea/IngredientRack") == null, "legacy single-griddle topping rack is physically absent")
+	_check(station.get_node_or_null("SafeArea/MaterialDock") == null, "legacy material dock and transparent lock layer are physically absent")
 	var tray := multi.get_node("SharedToolTray") as Control
 	_check(tray.visible and tray.get_node_or_null("Background") == null and tray.get_node_or_null("PhysicalToolRow") == null, "pancake tools render directly in the authored worktop without a dark second tray")
 	_check(tray.get_global_rect().position.x == 341.0 and tray.get_global_rect().end.x == 1580.0 and tray.get_global_rect().position.y == 956.0, "pancake tools occupy exact physical worktop slots 04 through 15")
@@ -147,7 +167,11 @@ func _run() -> void:
 	_check(baocui_slot.material_texture.resource_path == "res://resources/art/ingredients/baocui/baocui_intact_v1.png", "physical worktop slot 07 displays real baocui artwork")
 	var youtiao_slots: Array[Node] = station.get("youtiao_dough_slots")
 	_check(youtiao_slots[0].get_global_rect().position.x == 1595.0 and youtiao_slots[2].get_global_rect().end.x == 1893.0, "youtiao dough aligns to worktop slots 16 through 18")
-	_check(units[0].position.x == 390.0 and units[1].position.x == 0.0 and units[2].position.x == 780.0, "logical griddles render center, left, right without slot reordering")
+	_check(units[0].position.x == 405.0 and units[1].position.x == 96.0 and units[2].position.x == 714.0, "logical griddles render as touching left, center, right artwork without slot reordering")
+	var left_surface_rect: Rect2 = units[1].pancake_surface.get_global_rect()
+	var center_surface_rect: Rect2 = units[0].pancake_surface.get_global_rect()
+	var right_surface_rect: Rect2 = units[2].pancake_surface.get_global_rect()
+	_check(not left_surface_rect.intersects(center_surface_rect) and not center_surface_rect.intersects(right_surface_rect), "touching griddle artwork keeps all three real pointer surfaces independent")
 	for index in 3:
 		var unit := units[index] as Control
 		_check(unit.visible and multi.get_global_rect().encloses(unit.get_global_rect()), "griddle %d remains fully inside the pancake operation region" % (index + 1))
@@ -159,20 +183,20 @@ func _run() -> void:
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/PackagedDrinkStation") == null, "packaged-drink region is absent")
 	_check(station.get_node_or_null("FiveAreaInfrastructure/Stations/SteamerStation") == null, "steamer region is absent")
 
-	var captured_paths := PackedStringArray()
+	_release_at(spread_release_point)
+	await process_frame
+	_check(float(spread_unit.pancake_model.calculate_summary().get("coverage_ratio", 0.0)) >= 0.48 and spread_unit.state == CompactGriddleUnit.State.FIRST_SIDE, "one continuous real spiral forms the pancake and enters first-side cooking")
+	_check(_maximum_field_value(spread_unit.pancake_model.damage) < spread_unit.pancake_model.parameters.hole_damage_threshold, "one ordinary continuous spiral does not create a torn or charred-looking hole")
+	for _cook_frame in 18:
+		spread_unit.call("_process", 1.0 / 30.0)
+	var formed_capture := Dictionary(await _capture_frame(Vector2i(1920, 1080), FORMED_SCREENSHOT))
+	_check(bool(formed_capture.get("success", false)), "captured the formed/cooked griddle state")
+	captured_paths.append(str(formed_capture.get("path", "")))
 	for screenshot_spec in SCREENSHOT_SPECS:
+		var responsive_capture := Dictionary(await _capture_frame(screenshot_spec["size"], screenshot_spec["path"]))
 		var requested_size: Vector2i = screenshot_spec["size"]
-		DisplayServer.window_set_size(requested_size)
-		for _frame in 4:
-			await process_frame
-		await RenderingServer.frame_post_draw
-		var output_absolute := ProjectSettings.globalize_path(str(screenshot_spec["path"]))
-		DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
-		var image := root.get_texture().get_image()
-		var save_error := image.save_png(output_absolute)
-		_check(save_error == OK and image.get_size() == requested_size, "captured a real %dx%d GPU frame" % [requested_size.x, requested_size.y])
-		captured_paths.append(output_absolute)
-	_release_at(spread_target)
+		_check(bool(responsive_capture.get("success", false)), "captured a real %dx%d GPU frame" % [requested_size.x, requested_size.y])
+		captured_paths.append(str(responsive_capture.get("path", "")))
 	game.queue_free()
 	await process_frame
 	_finish(",".join(captured_paths))
@@ -221,6 +245,37 @@ func _release_at(position: Vector2) -> void:
 	released.position = position
 	released.global_position = position
 	root.push_input(released)
+
+
+func _capture_frame(requested_size: Vector2i, relative_path: String) -> Dictionary:
+	DisplayServer.window_set_size(requested_size)
+	for _frame in 4:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	var output_absolute := ProjectSettings.globalize_path(relative_path)
+	DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
+	var image := root.get_texture().get_image()
+	var save_error := image.save_png(output_absolute)
+	return {"success": save_error == OK and image.get_size() == requested_size, "path": output_absolute}
+
+
+func _visible_coverage_pixels(value: Variant) -> int:
+	var image := value as Image
+	if image == null:
+		return 0
+	var count := 0
+	for y in image.get_height():
+		for x in image.get_width():
+			if image.get_pixel(x, y).r > 0.01:
+				count += 1
+	return count
+
+
+func _maximum_field_value(values: PackedFloat32Array) -> float:
+	var maximum := 0.0
+	for value in values:
+		maximum = maxf(maximum, value)
+	return maximum
 
 
 func _check(condition: bool, message: String) -> void:

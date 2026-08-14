@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
 var failures := PackedStringArray()

@@ -1,36 +1,151 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/gameplay/initial_unlock_workstation.tscn" id="1_base"]
-[ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="2_controller"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_soy_station.tscn" id="3_soy"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_youtiao_station.tscn" id="4_youtiao"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/multi_griddle_station.tscn" id="7_multi_griddle"]
-[ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="8_disposition"]
-[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="9_source"]
-[ext_resource type="Script" path="res://scripts/ui/five_area_material_slot.gd" id="14_material_slot"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png" id="15_yellow_bean"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="16_black_bean"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="17_red_bean"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png" id="18_multigrain"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png" id="19_plain_dough"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png" id="20_oil_dough"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png" id="21_sugar_dough"]
-[ext_resource type="Script" path="res://scripts/ui/tutorial_guide_overlay.gd" id="22_tutorial_overlay"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/customer_service_slot.tscn" id="23_customer_service"]
+[ext_resource type="Script" path="res://scripts/gameplay/five_area_workstation.gd" id="1_38olv"]
+[ext_resource type="Resource" path="res://resources/data/pancake_simulation_parameters.tres" id="2_g7se5"]
+[ext_resource type="Script" path="res://scripts/ui/warning_tone_player.gd" id="3_0vksd"]
+[ext_resource type="Script" path="res://scripts/ui/kitchen_audio_player.gd" id="4_ofs8n"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/batter_drop.wav" id="5_d6mlq"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/spreader_scrape.wav" id="6_31n77"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/pancake_flip.wav" id="7_b836k"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/sauce_brush.wav" id="8_iidmo"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/pancake_fold.wav" id="9_g8thx"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/order_serve.wav" id="10_t8d3v"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/cooking_sizzle.wav" id="11_3q22l"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/background/workstation_18_single_row_1920x1080_v8_chinese.png" id="12_whx3a"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="13_wq4vo"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/foreground/workstation_front_lip_v1.png" id="14_t3cko"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png" id="15_is580"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png" id="16_4rwsg"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_heat_uniformity_v2_chinese_ui.png" id="17_7ocih"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_egg_spread_v2_chinese_ui.png" id="18_s41j2"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_sauce_coverage_v2_chinese_ui.png" id="19_rpixn"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_ingredient_distribution_v2_chinese_ui.png" id="20_cg88a"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_fold_stability_v2_chinese_ui.png" id="21_hr3xd"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png" id="22_hbj51"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/quality/quality_preparation_time_v2_chinese_ui.png" id="23_xps2s"]
+[ext_resource type="Texture2D" path="res://resources/art/payments/payment_cash_small_v2_chinese_ui.png" id="24_174he"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v2_chinese_ui.png" id="25_54nji"]
+[ext_resource type="Script" path="res://scripts/ui/modal_outside_input_shield.gd" id="26_wxlxi"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/customer_service_slot.tscn" id="27_rkfb0"]
+[ext_resource type="Script" path="res://scripts/ui/customer_service_slot.gd" id="28_x074j"]
+[ext_resource type="Script" path="res://scripts/ui/five_area_material_slot.gd" id="29_uwcff"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png" id="30_ph66a"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="31_a7u70"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="32_ow317"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/grains/five_grain_mix_portion_v1_five_area_v2.png" id="33_2km7b"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v2.png" id="34_ajejd"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/oil_cake_dough_five_area_v2.png" id="35_i6tov"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/youtiao/sugar_oil_cake_dough_five_area_v2.png" id="36_v625l"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_soy_station.tscn" id="37_830a8"]
+[ext_resource type="Script" path="res://scripts/ui/direct_soy_station.gd" id="38_3s4wm"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_youtiao_station.tscn" id="39_31ofd"]
+[ext_resource type="Script" path="res://scripts/ui/direct_youtiao_station.gd" id="40_e85s0"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_0_body_v1_chinese.png" id="41_rv0uk"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_body_v2_chinese.png" id="42_7ag8f"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_body_v1_chinese.png" id="43_k5x5w"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_0_lowered_v1_chinese.png" id="44_ac1bj"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_lowered_v2_chinese.png" id="45_7ma7a"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_lowered_v1_chinese.png" id="46_as3gp"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_0_raised_v1_chinese.png" id="47_8cdur"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_1_raised_v2_chinese.png" id="48_m2eym"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_fryer_tier_2_raised_v1_chinese.png" id="49_q6pp1"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v2.png" id="50_tbn3x"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/oil_cake_five_area_v2.png" id="51_11yoh"]
+[ext_resource type="Texture2D" path="res://resources/art/products/youtiao/sugar_oil_cake_five_area_v2.png" id="52_kn8f7"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_auto_lift_arm_five_area_v4.png" id="53_cyu5r"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/youtiao_auto_load_feeder_five_area_v4.png" id="54_qympc"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/youtiao/youtiao_sizzle_bubbles_five_area_v4.png" id="55_f84nq"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/youtiao/youtiao_oil_drips_five_area_v4.png" id="56_rgdnl"]
+[ext_resource type="Texture2D" path="res://resources/art/effects/steamer/steamer_burnt_smoke_puff_five_area_v2.png" id="57_5usul"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/multi_griddle_station.tscn" id="58_qkje3"]
+[ext_resource type="Script" path="res://scripts/gameplay/multi_griddle_station.gd" id="59_v60m8"]
+[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="60_ikhp0"]
+[ext_resource type="Script" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
 
-[sub_resource type="StyleBoxFlat" id="WasteStyle"]
-bg_color = Color(0.72, 0.18, 0.1, 0.9)
+[sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
+bg_color = Color(0.045, 0.09, 0.1, 0.92)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="LabelSettings" id="LabelSettings_title"]
+font_size = 30
+font_color = Color(0.96, 0.91, 0.8, 1)
+outline_size = 6
+outline_color = Color(0.045, 0.09, 0.1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_p1_card"]
+bg_color = Color(0.045, 0.09, 0.1, 0.96)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
-border_color = Color(0.98, 0.68, 0.26, 1)
+border_color = Color(1, 0.82, 0.44, 0.95)
 corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
-shadow_color = Color(0.18, 0.08, 0.03, 0.35)
-shadow_size = 6
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_payment"]
+atlas = ExtResource("24_174he")
+region = Rect2(281, 390, 1020, 259)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.1, 0.36, 0.31, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.85, 0.68, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_pressed"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.075, 0.28, 0.24, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_hover"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.14, 0.46, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_disabled"]
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.13, 0.16, 0.16, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.32, 0.38, 0.37, 0.76)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="TutorialHighlightStyle"]
 bg_color = Color(1, 0.78, 0.33, 0.08)
@@ -43,10 +158,14 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-shadow_color = Color(0.43, 0.20, 0.05, 0.28)
+shadow_color = Color(0.43, 0.2, 0.05, 0.28)
 shadow_size = 7
 
 [sub_resource type="StyleBoxFlat" id="TutorialBubbleStyle"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
 bg_color = Color(1, 0.95, 0.82, 0.98)
 border_width_left = 3
 border_width_top = 3
@@ -57,349 +176,1407 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-content_margin_left = 16.0
-content_margin_top = 10.0
-content_margin_right = 16.0
-content_margin_bottom = 10.0
-shadow_color = Color(0.34, 0.16, 0.04, 0.30)
+shadow_color = Color(0.34, 0.16, 0.04, 0.3)
 shadow_size = 8
 
-[node name="Workstation" instance=ExtResource("1_base")]
-script = ExtResource("2_controller")
+[node name="Workstation" type="Control" unique_id=54162380]
+process_mode = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_38olv")
+parameters = ExtResource("2_g7se5")
+metadata/unlocked_ingredient_ids = Array[StringName]([&"egg", &"baocui", &"scallion"])
 
-[node name="Backdrop" parent="."]
+[node name="DamageWarningTone" type="AudioStreamPlayer" parent="." unique_id=2058471195]
+unique_name_in_owner = true
+bus = &"SFX"
+script = ExtResource("3_0vksd")
+
+[node name="KitchenAudio" type="AudioStreamPlayer" parent="." unique_id=542558854]
+unique_name_in_owner = true
+bus = &"SFX"
+script = ExtResource("4_ofs8n")
+pour_stream = ExtResource("5_d6mlq")
+scrape_stream = ExtResource("6_31n77")
+flip_stream = ExtResource("7_b836k")
+sauce_stream = ExtResource("8_iidmo")
+fold_stream = ExtResource("9_g8thx")
+serve_stream = ExtResource("10_t8d3v")
+
+[node name="CookingSizzle" type="AudioStreamPlayer" parent="KitchenAudio" unique_id=2106976027]
+stream = ExtResource("11_3q22l")
+volume_db = -80.0
+bus = &"SFX"
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1303603113]
 z_index = -200
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.48, 0.69, 0.7, 1)
 
-[node name="FiveAreaStationArtwork" parent="SafeArea"]
-visible = false
-
-[node name="BackgroundArtwork" parent="SafeArea"]
-z_index = -100
-
-[node name="FiveAreaStationClickLayers" parent="SafeArea"]
-visible = false
+[node name="SafeArea" type="Control" parent="." unique_id=1991309391]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -960.0
+offset_top = -540.0
+offset_right = 960.0
+offset_bottom = 540.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
-[node name="CustomerPortrait" parent="SafeArea"]
-visible = false
+[node name="BackgroundArtwork" type="TextureRect" parent="SafeArea" unique_id=1027853457]
+z_index = -100
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_whx3a")
+expand_mode = 1
 
-[node name="PatienceBar" parent="SafeArea"]
-visible = false
+[node name="BusinessDayTimerLabel" type="Label" parent="SafeArea" unique_id=1531366971]
+z_index = 20
+layout_mode = 0
+offset_left = 720.0
+offset_top = 86.0
+offset_right = 1200.0
+offset_bottom = 124.0
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+theme_override_colors/font_outline_color = Color(0.13, 0.08, 0.04, 1)
+theme_override_constants/outline_size = 5
+text = "营业倒计时 02:00"
+vertical_alignment = 1
 
-[node name="PatienceTextLabel" parent="SafeArea"]
-visible = false
-
-[node name="CustomerLineLabel" parent="SafeArea"]
-visible = false
-
-[node name="OrderCard" parent="SafeArea"]
-visible = false
-
-[node name="Title" parent="SafeArea/CustomerStrip"]
-text = "等候队列 · 等候期间不扣耐心"
-
-[node name="ServiceCustomer1" parent="SafeArea" instance=ExtResource("23_customer_service")]
+[node name="GlobalStatusLabel" type="Label" parent="SafeArea" unique_id=1290960937]
 unique_name_in_owner = true
-z_index = 0
+z_index = 150
+layout_mode = 0
+offset_left = 100.0
+offset_top = 136.0
+offset_right = 1080.0
+offset_bottom = 170.0
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
+theme_override_constants/outline_size = 4
+text = "金币 0  ·  营业日 1  ·  声誉 0"
+vertical_alignment = 1
+
+[node name="PaymentSprite" type="TextureRect" parent="SafeArea" unique_id=1227648355]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 895.0
+offset_top = 295.0
+offset_right = 991.0
+offset_bottom = 391.0
+mouse_filter = 2
+texture = ExtResource("13_wq4vo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PaymentCoinLayer" type="Control" parent="SafeArea" unique_id=1961100552]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = -1.0
+offset_right = 3.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CustomerStrip" type="Panel" parent="SafeArea" unique_id=178361706]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 20.0
+offset_right = 1820.0
+offset_bottom = 132.0
+theme_override_styles/panel = SubResource("StyleBox_strip")
+
+[node name="Title" type="Label" parent="SafeArea/CustomerStrip" unique_id=929719916]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 4.0
+offset_right = 1200.0
+offset_bottom = 54.0
+text = "等候队列 · 等候期间不扣耐心"
+label_settings = SubResource("LabelSettings_title")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="QueueStatusLabel" type="Label" parent="SafeArea/CustomerStrip" unique_id=75826110]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 24.0
+offset_top = 8.0
+offset_right = 138.0
+offset_bottom = 76.0
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "排队中 · 2位"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CustomerSlot1" type="Button" parent="SafeArea/CustomerStrip" unique_id=53044050]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 112.0
+offset_top = 5.0
+offset_right = 272.0
+offset_bottom = 87.0
+text = "顾客1"
+alignment = 0
+expand_icon = true
+
+[node name="Patience" type="ProgressBar" parent="SafeArea/CustomerStrip/CustomerSlot1" unique_id=358359878]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 55.0
+offset_right = 152.0
+offset_bottom = 72.0
+value = 100.0
+show_percentage = false
+
+[node name="CustomerSlot2" type="Button" parent="SafeArea/CustomerStrip" unique_id=1169848395]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 280.0
+offset_top = 5.0
+offset_right = 440.0
+offset_bottom = 87.0
+text = "顾客2"
+alignment = 0
+expand_icon = true
+
+[node name="Patience" type="ProgressBar" parent="SafeArea/CustomerStrip/CustomerSlot2" unique_id=1337165229]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 55.0
+offset_right = 152.0
+offset_bottom = 72.0
+value = 100.0
+show_percentage = false
+
+[node name="CustomerSlot3" type="Button" parent="SafeArea/CustomerStrip" unique_id=1918944460]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 448.0
+offset_top = 5.0
+offset_right = 608.0
+offset_bottom = 87.0
+text = "顾客3"
+alignment = 0
+expand_icon = true
+
+[node name="Patience" type="ProgressBar" parent="SafeArea/CustomerStrip/CustomerSlot3" unique_id=1499151106]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 55.0
+offset_right = 152.0
+offset_bottom = 72.0
+value = 100.0
+show_percentage = false
+
+[node name="SkipActiveTutorialButton" type="Button" parent="SafeArea/CustomerStrip" unique_id=1292230064]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1370.0
+offset_top = 15.0
+offset_right = 1520.0
+offset_bottom = 69.0
+text = "跳过教学"
+
+[node name="RefuseActiveOrderButton" type="Button" parent="SafeArea/CustomerStrip" unique_id=508053485]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1534.0
+offset_top = 15.0
+offset_right = 1696.0
+offset_bottom = 69.0
+text = "婉拒订单"
+
+[node name="ForegroundLip" type="TextureRect" parent="SafeArea" unique_id=16553652]
+visible = false
+layout_mode = 0
+offset_top = 515.0
+offset_right = 1920.0
+offset_bottom = 1596.0
+mouse_filter = 2
+texture = ExtResource("14_t3cko")
+expand_mode = 1
+
+[node name="BottomStrip" type="Panel" parent="SafeArea" unique_id=438973155]
+z_index = 7
+layout_mode = 0
+offset_left = 100.0
+offset_top = 180.0
+offset_right = 700.0
+offset_bottom = 390.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_strip")
+
+[node name="Instructions" type="Label" parent="SafeArea/BottomStrip" unique_id=137339466]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 180.0
+offset_right = 582.0
+offset_bottom = 206.0
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.94, 0.89, 0.78, 1)
+text = "左键拖动制作 · 右键取消工具 · R 重置"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="ToolStatusLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=221707924]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 8.0
+offset_right = 582.0
+offset_bottom = 38.0
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.5, 0.94, 0.94, 1)
+text = "当前工具：未拿工具"
+vertical_alignment = 1
+
+[node name="BusinessDayTimerLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=2105247511]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 650.0
+offset_top = 2.0
+offset_right = 1010.0
+offset_bottom = 28.0
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+text = "营业倒计时 02:00"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TutorialGuideLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1818673484]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 72.0
+offset_right = 582.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+horizontal_alignment = 1
+clip_text = true
+
+[node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1009949277]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 18.0
+offset_top = 40.0
+offset_right = 582.0
+offset_bottom = 68.0
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.76, 0.92, 0.76, 1)
+text = "当前无破洞风险"
+vertical_alignment = 1
+clip_text = true
+
+[node name="PaymentCollectionArea" type="Button" parent="SafeArea" unique_id=1503407811]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 390.0
+offset_top = 468.0
+offset_right = 1530.0
+offset_bottom = 552.0
+tooltip_text = "金币待收取：点击收款槽"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="ResultPanel" type="PanelContainer" parent="SafeArea" unique_id=118070438]
+unique_name_in_owner = true
+visible = false
+z_index = 80
+layout_mode = 0
+offset_left = 430.0
+offset_top = 170.0
+offset_right = 1490.0
+offset_bottom = 880.0
+theme_override_styles/panel = SubResource("StyleBox_p1_card")
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/ResultPanel" unique_id=1872060282]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="SafeArea/ResultPanel/Margin" unique_id=2001394920]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ResultTitleLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=1016080315]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+text = "顾客评价 · 0分"
+horizontal_alignment = 1
+
+[node name="ResultDetailLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=664037926]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "评价结果"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="DimensionGrid" type="GridContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=322837851]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 242)
+layout_mode = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 10
+columns = 3
+
+[node name="IntegrityMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=242499164]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/IntegrityMetric" unique_id=1103091194]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("15_is580")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IntegrityScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/IntegrityMetric" unique_id=1818507247]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "完整度  0"
+vertical_alignment = 1
+
+[node name="ThicknessMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=1886911059]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/ThicknessMetric" unique_id=1879132934]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("16_4rwsg")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ThicknessScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/ThicknessMetric" unique_id=1723605416]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "厚薄  0"
+vertical_alignment = 1
+
+[node name="HeatMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=737284274]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/HeatMetric" unique_id=1993758722]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("17_7ocih")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeatScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/HeatMetric" unique_id=1189843024]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "火候  0"
+vertical_alignment = 1
+
+[node name="EggMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=161605580]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/EggMetric" unique_id=621958386]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("18_s41j2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EggScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/EggMetric" unique_id=1746565564]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "摊蛋  0"
+vertical_alignment = 1
+
+[node name="SauceMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=698195771]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/SauceMetric" unique_id=1817779491]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("19_rpixn")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SauceScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/SauceMetric" unique_id=1190242621]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "酱料  0"
+vertical_alignment = 1
+
+[node name="IngredientMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=1217131308]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/IngredientMetric" unique_id=1881451949]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("20_cg88a")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IngredientScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/IngredientMetric" unique_id=126343547]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "配料  0"
+vertical_alignment = 1
+
+[node name="FoldMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=2916374]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/FoldMetric" unique_id=2137995781]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("21_hr3xd")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FoldScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/FoldMetric" unique_id=441992314]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "折叠  0"
+vertical_alignment = 1
+
+[node name="OrderMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=415876231]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/OrderMetric" unique_id=115867433]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("22_hbj51")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/OrderMetric" unique_id=1573964274]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "订单  0"
+vertical_alignment = 1
+
+[node name="TimeMetric" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid" unique_id=1392474828]
+custom_minimum_size = Vector2(250, 74)
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/TimeMetric" unique_id=1372241977]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("23_xps2s")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimeScoreLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/DimensionGrid/TimeMetric" unique_id=1707839265]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "时间  0"
+vertical_alignment = 1
+
+[node name="ResultTagsLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=1042763285]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.84, 0.8, 0.68, 1)
+text = "亮点与问题"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="PaymentDisplay" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=50352582]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_payment")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NextOrderButton" type="Button" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=446753021]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 24
+text = "关闭本单详情"
+
+[node name="OrderSummaryCard" type="PanelContainer" parent="SafeArea" unique_id=1237469096]
+unique_name_in_owner = true
+visible = false
+z_index = 50
+layout_mode = 0
+offset_left = 1090.0
+offset_top = 136.0
+offset_right = 1820.0
+offset_bottom = 194.0
+theme_override_styles/panel = SubResource("StyleBox_p1_card")
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/OrderSummaryCard" unique_id=1923869061]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="VBox" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin" unique_id=1865946492]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SummaryScoreLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=1827762559]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+text = "本单 0分 · +0金币"
+vertical_alignment = 1
+
+[node name="SummaryFeedbackLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=1350807479]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "本单评价"
+autowrap_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=2015235766]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="SummaryViewButton" type="Button" parent="SafeArea/OrderSummaryCard/Margin/VBox/Actions" unique_id=1205957594]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(108, 30)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 15
+text = "查看详情"
+
+[node name="SummaryDismissButton" type="Button" parent="SafeArea/OrderSummaryCard/Margin/VBox/Actions" unique_id=1589050374]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 30)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 15
+text = "收起"
+
+[node name="LockedIngredientArtwork" type="Control" parent="SafeArea" unique_id=1365229981]
+z_index = 33
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Slot01" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1744435952]
+visible = false
+layout_mode = 0
+offset_left = 28.0
+offset_top = 956.0
+offset_right = 117.0
+offset_bottom = 1045.0
+texture = ExtResource("25_54nji")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot02" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1641674054]
+visible = false
+layout_mode = 0
+offset_left = 132.0
+offset_top = 956.0
+offset_right = 221.0
+offset_bottom = 1045.0
+texture = ExtResource("25_54nji")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot03" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=913098385]
+visible = false
+layout_mode = 0
+offset_left = 237.0
+offset_top = 956.0
+offset_right = 326.0
+offset_bottom = 1045.0
+texture = ExtResource("25_54nji")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot04" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=1126881477]
+visible = false
+layout_mode = 0
+offset_left = 1595.0
+offset_top = 956.0
+offset_right = 1684.0
+offset_bottom = 1045.0
+texture = ExtResource("25_54nji")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot05" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=705867695]
+visible = false
+layout_mode = 0
+offset_left = 1700.0
+offset_top = 956.0
+offset_right = 1789.0
+offset_bottom = 1045.0
+texture = ExtResource("25_54nji")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot06" type="TextureRect" parent="SafeArea/LockedIngredientArtwork" unique_id=733679619]
+visible = false
+layout_mode = 0
+offset_left = 1804.0
+offset_top = 956.0
+offset_right = 1893.0
+offset_bottom = 1045.0
+texture = ExtResource("25_54nji")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LockedIngredientInteractions" type="Control" parent="SafeArea" unique_id=1280393018]
+z_index = 34
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Slot01LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1923256374]
+visible = false
+layout_mode = 0
+offset_left = 28.0
+offset_top = 956.0
+offset_right = 117.0
+offset_bottom = 1045.0
+tooltip_text = "此小料槽尚未解锁"
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+flat = true
+metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot01")
+
+[node name="Slot02LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=463245495]
+visible = false
+layout_mode = 0
+offset_left = 132.0
+offset_top = 956.0
+offset_right = 221.0
+offset_bottom = 1045.0
+tooltip_text = "此小料槽尚未解锁"
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+flat = true
+metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot02")
+
+[node name="Slot03LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=1564462222]
+visible = false
+layout_mode = 0
+offset_left = 237.0
+offset_top = 956.0
+offset_right = 326.0
+offset_bottom = 1045.0
+tooltip_text = "此小料槽尚未解锁"
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+flat = true
+metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot03")
+
+[node name="Slot04LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=654321187]
+visible = false
+layout_mode = 0
+offset_left = 1595.0
+offset_top = 956.0
+offset_right = 1684.0
+offset_bottom = 1045.0
+tooltip_text = "此小料槽尚未解锁"
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+flat = true
+metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot04")
+
+[node name="PromptLabel" type="Label" parent="SafeArea/LockedIngredientInteractions/Slot04LockedButton" unique_id=1750868013]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 0.84, 0.48, 1)
+theme_override_colors/font_outline_color = Color(0.14, 0.08, 0.03, 1)
+theme_override_constants/outline_size = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot05LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=13254997]
+visible = false
+layout_mode = 0
+offset_left = 1700.0
+offset_top = 956.0
+offset_right = 1789.0
+offset_bottom = 1045.0
+tooltip_text = "此小料槽尚未解锁"
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+flat = true
+metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot05")
+
+[node name="Slot06LockedButton" type="Button" parent="SafeArea/LockedIngredientInteractions" unique_id=679484718]
+visible = false
+layout_mode = 0
+offset_left = 1804.0
+offset_top = 956.0
+offset_right = 1893.0
+offset_bottom = 1045.0
+tooltip_text = "此小料槽尚未解锁"
+mouse_filter = 2
+mouse_default_cursor_shape = 2
+flat = true
+metadata/locked_art_path = NodePath("../LockedIngredientArtwork/Slot06")
+
+[node name="BusinessDayClosedShield" type="Control" parent="SafeArea" unique_id=1199885720]
+unique_name_in_owner = true
+visible = false
+z_index = 90
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("26_wxlxi")
+excluded_control_path = NodePath("../DailyBillPanel")
+
+[node name="DailyBillPanel" type="PanelContainer" parent="SafeArea" unique_id=1347673473]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 100
+layout_mode = 0
+offset_left = 330.0
+offset_top = 80.0
+offset_right = 1590.0
+offset_bottom = 900.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_p1_card")
+
+[node name="InputSurface" type="Control" parent="SafeArea/DailyBillPanel" unique_id=363854038]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/DailyBillPanel" unique_id=1631432965]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="SafeArea/DailyBillPanel/Margin" unique_id=456859976]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="DailyBillTitleLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=195509507]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+text = "今日账单"
+horizontal_alignment = 1
+
+[node name="DailyBillStatsLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1639705512]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "完成 0 单 · 收入 0 金币 · 平均 0分"
+horizontal_alignment = 1
+
+[node name="HeaderGrid" type="GridContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=897849002]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 18
+columns = 4
+
+[node name="Index" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=301255741]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+text = "序号"
+horizontal_alignment = 1
+
+[node name="Order" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=862053456]
+custom_minimum_size = Vector2(480, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+text = "订单"
+
+[node name="Score" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=748935439]
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+text = "评分"
+horizontal_alignment = 1
+
+[node name="Income" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox/HeaderGrid" unique_id=1732441858]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+text = "收入"
+horizontal_alignment = 2
+
+[node name="RowsScroll" type="ScrollContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1663704251]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="DailyBillRows" type="GridContainer" parent="SafeArea/DailyBillPanel/Margin/VBox/RowsScroll" unique_id=1071606209]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 10
+columns = 4
+
+[node name="GrowthSeparator" type="HSeparator" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=398921416]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="GrowthHeadlineLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=924291403]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+text = "营业后成长预订：安装位 + 内容位"
+horizontal_alignment = 1
+
+[node name="GrowthBalanceLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=761589902]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "现有 0 金币 · 声誉 0"
+horizontal_alignment = 1
+
+[node name="GrowthTickets" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=679546526]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="GrowthTicket1" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=1745941365]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "成长票 1"
+autowrap_mode = 2
+clip_text = true
+
+[node name="GrowthTicket2" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=822612009]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "成长票 2"
+autowrap_mode = 2
+clip_text = true
+
+[node name="GrowthTicket3" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=489839711]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
+theme_override_colors/font_disabled_color = Color(0.86, 0.8, 0.68, 0.82)
+theme_override_font_sizes/font_size = 18
+text = "成长票 3"
+autowrap_mode = 2
+clip_text = true
+
+[node name="GrowthActions" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1350403965]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="DailyBillCloseButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=148562824]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 22
+text = "返回开始页"
+
+[node name="UnlockProgressButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=1548126579]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 58)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 22
+text = "解锁进度"
+
+[node name="BeginNextDayButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=1176729823]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 22
+text = "不购买，直接开始下一天"
+
+[node name="UnlockProgressPanel" type="PanelContainer" parent="SafeArea" unique_id=1753901486]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 110
+layout_mode = 0
+offset_left = 440.0
+offset_top = 140.0
+offset_right = 1480.0
+offset_bottom = 840.0
+theme_override_styles/panel = SubResource("StyleBox_p1_card")
+
+[node name="Margin" type="MarginContainer" parent="SafeArea/UnlockProgressPanel" unique_id=1801781266]
+layout_mode = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 32
+
+[node name="VBox" type="VBoxContainer" parent="SafeArea/UnlockProgressPanel/Margin" unique_id=1251426952]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="SafeArea/UnlockProgressPanel/Margin/VBox" unique_id=801046915]
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
+text = "解锁进度"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="SafeArea/UnlockProgressPanel/Margin/VBox" unique_id=1820323593]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.45, 0.91, 0.82, 1)
+text = "仅“已解锁”项目已在本日生效；今日预订会单独列在底部。"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="SafeArea/UnlockProgressPanel/Margin/VBox" unique_id=1619998757]
+custom_minimum_size = Vector2(0, 470)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="UnlockProgressLabel" type="Label" parent="SafeArea/UnlockProgressPanel/Margin/VBox/Scroll" unique_id=1714454535]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
+text = "正在读取解锁进度……"
+autowrap_mode = 2
+
+[node name="UnlockProgressCloseButton" type="Button" parent="SafeArea/UnlockProgressPanel/Margin/VBox" unique_id=1306316309]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBox_ui_button")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
+theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 22
+text = "返回成长选择"
+
+[node name="ServiceCustomer1" type="Control" parent="SafeArea" unique_id=560930553 instance=ExtResource("27_rkfb0")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(540, 490)
+anchors_preset = 0
 offset_left = 100.0
 offset_top = 150.0
 offset_right = 640.0
 offset_bottom = 640.0
+mouse_filter = 2
+script = ExtResource("28_x074j")
 
-[node name="ServiceCustomer2" parent="SafeArea" instance=ExtResource("23_customer_service")]
+[node name="ServiceCustomer2" type="Control" parent="SafeArea" unique_id=2033337310 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
-z_index = 0
+custom_minimum_size = Vector2(540, 490)
+anchors_preset = 0
 offset_left = 690.0
 offset_top = 150.0
 offset_right = 1230.0
 offset_bottom = 640.0
+mouse_filter = 2
+script = ExtResource("28_x074j")
 
-[node name="ServiceCustomer3" parent="SafeArea" instance=ExtResource("23_customer_service")]
+[node name="ServiceCustomer3" type="Control" parent="SafeArea" unique_id=1323426398 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
-z_index = 0
+custom_minimum_size = Vector2(540, 490)
+anchors_preset = 0
 offset_left = 1280.0
 offset_top = 150.0
 offset_right = 1820.0
 offset_bottom = 640.0
-
-[node name="OrderDishTarget1" parent="SafeArea/OrderCard"]
-disabled = false
-mouse_filter = 0
-tooltip_text = "点击交付对应成品"
-
-[node name="OrderDishTarget2" parent="SafeArea/OrderCard"]
-disabled = false
-mouse_filter = 0
-tooltip_text = "点击交付对应成品"
-
-[node name="OrderDishTarget3" parent="SafeArea/OrderCard"]
-disabled = false
-mouse_filter = 0
-tooltip_text = "点击交付对应成品"
-
-[node name="Slot01" parent="SafeArea/LockedIngredientArtwork"]
-visible = false
-[node name="Slot02" parent="SafeArea/LockedIngredientArtwork"]
-visible = false
-[node name="Slot03" parent="SafeArea/LockedIngredientArtwork"]
-visible = false
-[node name="Slot04" parent="SafeArea/LockedIngredientArtwork"]
-visible = false
-[node name="Slot05" parent="SafeArea/LockedIngredientArtwork"]
-visible = false
-[node name="Slot06" parent="SafeArea/LockedIngredientArtwork"]
-visible = false
-
-[node name="LockedIngredientArtwork" parent="SafeArea"]
-z_index = 33
-
-[node name="Slot01LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-visible = false
 mouse_filter = 2
-[node name="Slot02LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-visible = false
-mouse_filter = 2
-[node name="Slot03LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-visible = false
-mouse_filter = 2
-[node name="Slot04LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-visible = false
-mouse_filter = 2
-[node name="Slot05LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-visible = false
-mouse_filter = 2
-[node name="Slot06LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-visible = false
-mouse_filter = 2
+script = ExtResource("28_x074j")
 
-[node name="LockedIngredientInteractions" parent="SafeArea"]
-z_index = 34
-
-[node name="SoyFullYellow" type="TextureButton" parent="SafeArea"]
+[node name="SoyFullYellow" type="TextureButton" parent="SafeArea" unique_id=219143124]
 unique_name_in_owner = true
 z_index = 31
+layout_mode = 0
 offset_left = 28.0
 offset_top = 956.0
 offset_right = 117.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.yellow_bean"
 recipe_id = &"recipe.fresh_soy_milk.yellow_bean"
 product_id = &"product.fresh_soy_milk.yellow_bean"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("15_yellow_bean")
+material_texture = ExtResource("30_ph66a")
 material_label = "黄豆"
 
-[node name="SoyFullBlack" type="TextureButton" parent="SafeArea"]
+[node name="SoyFullBlack" type="TextureButton" parent="SafeArea" unique_id=287552981]
 unique_name_in_owner = true
 z_index = 31
+layout_mode = 0
 offset_left = 132.0
 offset_top = 956.0
 offset_right = 221.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.black_bean"
 recipe_id = &"recipe.fresh_soy_milk.black_bean"
 product_id = &"product.fresh_soy_milk.black_bean"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("16_black_bean")
+material_texture = ExtResource("31_a7u70")
 material_label = "黑豆"
 
-[node name="SoyFullRed" type="TextureButton" parent="SafeArea"]
+[node name="SoyFullRed" type="TextureButton" parent="SafeArea" unique_id=356030097]
 unique_name_in_owner = true
 z_index = 31
+layout_mode = 0
 offset_left = 237.0
 offset_top = 956.0
 offset_right = 326.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.red_bean"
 recipe_id = &"recipe.fresh_soy_milk.red_bean"
 product_id = &"product.fresh_soy_milk.red_bean"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("17_red_bean")
+material_texture = ExtResource("32_ow317")
 material_label = "红豆"
 
-[node name="SoySplitYellow" type="TextureButton" parent="SafeArea"]
+[node name="SoySplitYellow" type="TextureButton" parent="SafeArea" unique_id=1918811327]
 unique_name_in_owner = true
 visible = false
 z_index = 32
+layout_mode = 0
 offset_left = 28.0
 offset_top = 956.0
 offset_right = 117.0
 offset_bottom = 1000.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.yellow_bean"
 recipe_id = &"recipe.fresh_soy_milk.yellow_bean"
 product_id = &"product.fresh_soy_milk.yellow_bean"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("15_yellow_bean")
+material_texture = ExtResource("30_ph66a")
 material_label = "黄豆"
 
-[node name="SoySplitBlack" type="TextureButton" parent="SafeArea"]
+[node name="SoySplitBlack" type="TextureButton" parent="SafeArea" unique_id=3783851]
 unique_name_in_owner = true
 visible = false
 z_index = 32
+layout_mode = 0
 offset_left = 132.0
 offset_top = 956.0
 offset_right = 221.0
 offset_bottom = 1000.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.black_bean"
 recipe_id = &"recipe.fresh_soy_milk.black_bean"
 product_id = &"product.fresh_soy_milk.black_bean"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("16_black_bean")
+material_texture = ExtResource("31_a7u70")
 material_label = "黑豆"
 
-[node name="SoySplitRed" type="TextureButton" parent="SafeArea"]
+[node name="SoySplitRed" type="TextureButton" parent="SafeArea" unique_id=1266773470]
 unique_name_in_owner = true
 visible = false
 z_index = 32
+layout_mode = 0
 offset_left = 237.0
 offset_top = 956.0
 offset_right = 326.0
 offset_bottom = 1000.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.red_bean"
 recipe_id = &"recipe.fresh_soy_milk.red_bean"
 product_id = &"product.fresh_soy_milk.red_bean"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("17_red_bean")
+material_texture = ExtResource("32_ow317")
 material_label = "红豆"
 
-[node name="SoySplitMultigrain" type="TextureButton" parent="SafeArea"]
+[node name="SoySplitMultigrain" type="TextureButton" parent="SafeArea" unique_id=1543470027]
 unique_name_in_owner = true
 visible = false
 z_index = 32
+layout_mode = 0
 offset_left = 28.0
 offset_top = 1001.0
 offset_right = 117.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.fresh_soy_milk.multigrain"
 recipe_id = &"recipe.fresh_soy_milk.multigrain"
 product_id = &"product.fresh_soy_milk.multigrain"
 source_kind = &"soy_ingredient"
-material_texture = ExtResource("18_multigrain")
+material_texture = ExtResource("33_2km7b")
 material_label = "五谷"
 
-[node name="SoySplitReserved02" type="TextureButton" parent="SafeArea"]
+[node name="SoySplitReserved02" type="TextureButton" parent="SafeArea" unique_id=821567729]
 unique_name_in_owner = true
 visible = false
 z_index = 32
+layout_mode = 0
 offset_left = 132.0
 offset_top = 1001.0
 offset_right = 221.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 reserved = true
 
-[node name="SoySplitReserved03" type="TextureButton" parent="SafeArea"]
+[node name="SoySplitReserved03" type="TextureButton" parent="SafeArea" unique_id=2009046802]
 unique_name_in_owner = true
 visible = false
 z_index = 32
+layout_mode = 0
 offset_left = 237.0
 offset_top = 1001.0
 offset_right = 326.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 reserved = true
 
-[node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea"]
+[node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea" unique_id=757275453]
 unique_name_in_owner = true
 z_index = 31
+layout_mode = 0
 offset_left = 1595.0
 offset_top = 956.0
 offset_right = 1684.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.youtiao.plain_dough"
 recipe_id = &"recipe.youtiao.plain"
 product_id = &"product.youtiao.plain"
 source_kind = &"youtiao_dough"
-material_texture = ExtResource("19_plain_dough")
+material_texture = ExtResource("34_ajejd")
 material_label = "原味面胚"
 
-[node name="YoutiaoDoughOilCake" type="TextureButton" parent="SafeArea"]
+[node name="YoutiaoDoughOilCake" type="TextureButton" parent="SafeArea" unique_id=1745072717]
 unique_name_in_owner = true
 z_index = 31
+layout_mode = 0
 offset_left = 1700.0
 offset_top = 956.0
 offset_right = 1789.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.youtiao.oil_cake_dough"
 recipe_id = &"recipe.youtiao.oil_cake"
 product_id = &"product.youtiao.oil_cake"
 source_kind = &"youtiao_dough"
-material_texture = ExtResource("20_oil_dough")
+material_texture = ExtResource("35_i6tov")
 material_label = "油饼面胚"
 
-[node name="YoutiaoDoughSugar" type="TextureButton" parent="SafeArea"]
+[node name="YoutiaoDoughSugar" type="TextureButton" parent="SafeArea" unique_id=1181903008]
 unique_name_in_owner = true
 z_index = 31
+layout_mode = 0
 offset_left = 1804.0
 offset_top = 956.0
 offset_right = 1893.0
 offset_bottom = 1045.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("14_material_slot")
+script = ExtResource("29_uwcff")
 stock_id = &"stock.youtiao.sugar_oil_cake_dough"
 recipe_id = &"recipe.youtiao.sugar_oil_cake"
 product_id = &"product.youtiao.sugar_oil_cake"
 source_kind = &"youtiao_dough"
-material_texture = ExtResource("21_sugar_dough")
+material_texture = ExtResource("36_v625l")
 material_label = "糖油饼面胚"
 
-[node name="Slot04" parent="SafeArea/LockedIngredientArtwork"]
-offset_left = 1595.0
-offset_right = 1684.0
-
-[node name="Slot05" parent="SafeArea/LockedIngredientArtwork"]
-offset_left = 1700.0
-offset_right = 1789.0
-
-[node name="Slot06" parent="SafeArea/LockedIngredientArtwork"]
-offset_left = 1804.0
-offset_right = 1893.0
-
-[node name="Slot04LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-offset_left = 1595.0
-offset_right = 1684.0
-
-[node name="Slot05LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-offset_left = 1700.0
-offset_right = 1789.0
-
-[node name="Slot06LockedButton" parent="SafeArea/LockedIngredientInteractions"]
-offset_left = 1804.0
-offset_right = 1893.0
-
-[node name="FiveAreaInfrastructure" type="Control" parent="."]
+[node name="FiveAreaInfrastructure" type="Control" parent="." unique_id=521012009]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -408,7 +1585,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Stations" type="Control" parent="FiveAreaInfrastructure"]
+[node name="Stations" type="Control" parent="FiveAreaInfrastructure" unique_id=75008766]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -417,48 +1594,53 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("3_soy")]
-layout_mode = 0
+[node name="FreshSoyMilkStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=143699513 instance=ExtResource("37_830a8")]
+custom_minimum_size = Vector2(306, 340)
+anchors_preset = 0
 offset_left = 8.0
 offset_top = 610.0
 offset_right = 360.0
 offset_bottom = 950.0
+script = ExtResource("38_3s4wm")
 
-[node name="YoutiaoStation" parent="FiveAreaInfrastructure/Stations" instance=ExtResource("4_youtiao")]
-layout_mode = 0
+[node name="YoutiaoStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1646015532 instance=ExtResource("39_31ofd")]
+custom_minimum_size = Vector2(306, 340)
+anchors_preset = 0
 offset_left = 1552.0
 offset_top = 610.0
 offset_right = 1912.0
 offset_bottom = 950.0
+script = ExtResource("40_e85s0")
+body_textures = Array[Texture2D]([ExtResource("41_rv0uk"), ExtResource("42_7ag8f"), ExtResource("43_k5x5w")])
+lowered_basket_textures = Array[Texture2D]([ExtResource("44_ac1bj"), ExtResource("45_7ma7a"), ExtResource("46_as3gp")])
+raised_basket_textures = Array[Texture2D]([ExtResource("47_8cdur"), ExtResource("48_m2eym"), ExtResource("49_q6pp1")])
+raw_food_textures = Array[Texture2D]([ExtResource("34_ajejd"), ExtResource("35_i6tov"), ExtResource("36_v625l")])
+cooked_food_textures = Array[Texture2D]([ExtResource("50_tbn3x"), ExtResource("51_11yoh"), ExtResource("52_kn8f7")])
+auto_lift_texture = ExtResource("53_cyu5r")
+auto_load_texture = ExtResource("54_qympc")
+sizzle_texture = ExtResource("55_f84nq")
+oil_drips_texture = ExtResource("56_rgdnl")
+burnt_smoke_texture = ExtResource("57_5usul")
 
-[node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations"]
-layout_mode = 0
+[node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1733137153]
+anchors_preset = 0
 offset_left = 370.0
 offset_top = 610.0
 offset_right = 1540.0
 offset_bottom = 950.0
 mouse_filter = 2
 
-[node name="MultiGriddleStation" parent="FiveAreaInfrastructure/Stations/PancakeStation" instance=ExtResource("7_multi_griddle")]
+[node name="MultiGriddleStation" type="Control" parent="FiveAreaInfrastructure/Stations/PancakeStation" unique_id=2078138943 instance=ExtResource("58_qkje3")]
 unique_name_in_owner = true
 visible = false
-layout_mode = 0
+custom_minimum_size = Vector2(1170, 444)
+anchors_preset = 0
 offset_right = 1170.0
 offset_bottom = 444.0
+mouse_filter = 1
+script = ExtResource("59_v60m8")
 
-[node name="PancakeReadySource" type="TextureButton" parent="FiveAreaInfrastructure"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 850.0
-offset_top = 690.0
-offset_right = 1070.0
-offset_bottom = 870.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("9_source")
-
-[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure"]
+[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=843643587]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -468,9 +1650,9 @@ offset_right = 1275.0
 offset_bottom = 858.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("9_source")
+script = ExtResource("60_ikhp0")
 
-[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure"]
+[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=1760000249]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -480,13 +1662,13 @@ offset_right = 1275.0
 offset_bottom = 930.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("9_source")
+script = ExtResource("60_ikhp0")
 
-[node name="PendingPaymentButton" type="Button" parent="FiveAreaInfrastructure"]
+[node name="PendingPaymentButton" type="Button" parent="FiveAreaInfrastructure" unique_id=390573099]
 unique_name_in_owner = true
 visible = false
-layout_mode = 0
 z_index = 7
+layout_mode = 0
 offset_left = 825.0
 offset_top = 515.0
 offset_right = 1095.0
@@ -495,39 +1677,10 @@ mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.31, 0.17, 0.04, 1)
 theme_override_colors/font_hover_color = Color(0.5, 0.24, 0.02, 1)
 theme_override_font_sizes/font_size = 24
-text = "金币 ×0\n点击收币"
+text = "金币 ×0
+点击收币"
 
-[node name="WasteArea" type="Control" parent="FiveAreaInfrastructure"]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 1188.0
-offset_top = 704.0
-offset_right = 1288.0
-offset_bottom = 784.0
-mouse_filter = 0
-script = ExtResource("8_disposition")
-disposition = "waste"
-
-[node name="Bin" type="PanelContainer" parent="FiveAreaInfrastructure/WasteArea"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("WasteStyle")
-
-[node name="Label" type="Label" parent="FiveAreaInfrastructure/WasteArea/Bin"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.94, 0.76, 1)
-theme_override_font_sizes/font_size = 20
-text = "废弃区\n加工品只能丢这里"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure"]
+[node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure" unique_id=1664686673]
 layout_mode = 0
 offset_left = 1420.0
 offset_top = 145.0
@@ -536,20 +1689,19 @@ offset_bottom = 235.0
 mouse_filter = 2
 theme_override_constants/separation = 2
 
-[node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
+[node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=806710644]
 layout_mode = 2
-mouse_filter = 2
-horizontal_alignment = 2
-[node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
-layout_mode = 2
-mouse_filter = 2
-horizontal_alignment = 2
-[node name="Attention03" type="Label" parent="FiveAreaInfrastructure/AttentionRail"]
-layout_mode = 2
-mouse_filter = 2
 horizontal_alignment = 2
 
-[node name="TutorialGuideOverlay" type="Control" parent="."]
+[node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=1799233558]
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="Attention03" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=96487461]
+layout_mode = 2
+horizontal_alignment = 2
+
+[node name="TutorialGuideOverlay" type="Control" parent="." unique_id=171059711]
 unique_name_in_owner = true
 z_index = 80
 layout_mode = 1
@@ -559,40 +1711,38 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("22_tutorial_overlay")
+script = ExtResource("61_oefc1")
 
-[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay"]
+[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay" unique_id=1819908859]
 layout_mode = 0
 offset_right = 120.0
 offset_bottom = 100.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("TutorialHighlightStyle")
 
-[node name="GuideArrow" type="Label" parent="TutorialGuideOverlay"]
+[node name="GuideArrow" type="Label" parent="TutorialGuideOverlay" unique_id=1457040386]
 layout_mode = 0
 offset_right = 36.0
 offset_bottom = 42.0
-mouse_filter = 2
+theme_override_font_sizes/font_size = 32
 theme_override_colors/font_color = Color(0.96, 0.66, 0.18, 1)
 theme_override_colors/font_outline_color = Color(0.38, 0.17, 0.04, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 32
 text = "▼"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="GuideBubble" type="PanelContainer" parent="TutorialGuideOverlay"]
+[node name="GuideBubble" type="PanelContainer" parent="TutorialGuideOverlay" unique_id=276540577]
 layout_mode = 0
 offset_right = 330.0
 offset_bottom = 68.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("TutorialBubbleStyle")
 
-[node name="GuideLabel" type="Label" parent="TutorialGuideOverlay/GuideBubble"]
+[node name="GuideLabel" type="Label" parent="TutorialGuideOverlay/GuideBubble" unique_id=710766217]
 layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.38, 0.17, 0.06, 1)
 theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.38, 0.17, 0.06, 1)
 text = "下一步"
-autowrap_mode = 2
 vertical_alignment = 1
+autowrap_mode = 2

@@ -57,10 +57,18 @@ func _end_business_day_early_for_testing() -> void:
 
 
 func _refresh_labels() -> void:
-	if workstation == null or workstation.pancake_model == null:
+	if workstation == null:
+		return
+	var surface: PancakeHeatmap = workstation.pancake_surface
+	var model: PancakeModel = workstation.pancake_model
+	if surface == null:
+		var primary_griddle := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation/Griddle01")
+		if primary_griddle != null:
+			surface = primary_griddle.get("pancake_surface") as PancakeHeatmap
+			model = primary_griddle.get("pancake_model") as PancakeModel
+	if surface == null or model == null:
 		return
 	quick_end_business_day_button.disabled = not workstation.can_end_business_day_early_for_testing()
-	var model := workstation.pancake_model
 	var summary := model.calculate_summary()
 	performance_label.text = "FPS %d  |  model update %d us  |  revision %d" % [
 		Engine.get_frames_per_second(), model.last_update_usec, model.revision
@@ -72,12 +80,12 @@ func _refresh_labels() -> void:
 		float(summary.mean_thickness),
 		float(summary.damage_ratio) * 100.0,
 	]
-	var mouse_local := workstation.pancake_surface.get_local_mouse_position()
-	var grid_cell := workstation.pan_local_to_grid(mouse_local)
+	var mouse_local := surface.get_local_mouse_position()
+	var grid_cell := PancakeSpace.local_to_grid(mouse_local, surface.size, model.grid_size)
 	cursor_label.text = "Pan local (%.1f, %.1f)  ->  grid (%d, %d)" % [
 		mouse_local.x, mouse_local.y, grid_cell.x, grid_cell.y
 	]
-	var field := workstation.pancake_surface.heatmap_field
+	var field := surface.heatmap_field
 	mode_label.text = "当前显示：%s" % _field_display_name(field)
 	legend_label.text = _field_legend(field)
 

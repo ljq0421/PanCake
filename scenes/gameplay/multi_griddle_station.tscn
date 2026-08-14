@@ -42,22 +42,23 @@ horizontal_alignment = 2
 
 [node name="Griddle01" parent="." instance=ExtResource("2_unit")]
 unique_name_in_owner = true
-offset_left = 390.0
+offset_left = 405.0
 offset_top = 36.0
-offset_right = 750.0
+offset_right = 765.0
 offset_bottom = 328.0
 
 [node name="Griddle02" parent="." instance=ExtResource("2_unit")]
 unique_name_in_owner = true
+offset_left = 96.0
 offset_top = 36.0
-offset_right = 360.0
+offset_right = 456.0
 offset_bottom = 328.0
 
 [node name="Griddle03" parent="." instance=ExtResource("2_unit")]
 unique_name_in_owner = true
-offset_left = 780.0
+offset_left = 714.0
 offset_top = 36.0
-offset_right = 1140.0
+offset_right = 1074.0
 offset_bottom = 328.0
 
 [node name="SharedToolTray" parent="." instance=ExtResource("3_tray")]

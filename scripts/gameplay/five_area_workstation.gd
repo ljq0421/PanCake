@@ -8,9 +8,9 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
 @onready var youtiao_station: DirectYoutiaoStation = $FiveAreaInfrastructure/Stations/YoutiaoStation
 @onready var multi_griddle_station: Control = %MultiGriddleStation
-@onready var pancake_ready_source: ProductDragSource = %PancakeReadySource
+@onready var pancake_ready_source: ProductDragSource = get_node_or_null("FiveAreaInfrastructure/PancakeReadySource") as ProductDragSource
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
-@onready var waste_area: StagedProductDropTarget = %WasteArea
+@onready var waste_area: StagedProductDropTarget = get_node_or_null("FiveAreaInfrastructure/WasteArea") as StagedProductDropTarget
 @onready var pending_payment_button: Button = %PendingPaymentButton
 @onready var soy_full_slots: Array[Node] = [%SoyFullYellow, %SoyFullBlack, %SoyFullRed]
 @onready var soy_split_slots: Array[Node] = [%SoySplitYellow, %SoySplitBlack, %SoySplitRed, %SoySplitMultigrain, %SoySplitReserved02, %SoySplitReserved03]
@@ -57,7 +57,8 @@ func _ready() -> void:
 		var drop_callback := Callable(self, "_on_customer_service_product_dropped")
 		if service_slot.has_signal("product_dropped") and not service_slot.is_connected("product_dropped", drop_callback):
 			service_slot.connect("product_dropped", drop_callback)
-	waste_area.disposition_completed.connect(_on_disposition_completed)
+	if waste_area != null:
+		waste_area.disposition_completed.connect(_on_disposition_completed)
 	pending_payment_button.pressed.connect(_collect_pending_payments)
 	for material_slot in _all_material_slots():
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
@@ -76,9 +77,9 @@ func _ready() -> void:
 			production_signal.connect(_on_production_shell_changed)
 	_restore_pending_payment()
 	_refresh_formal_shell()
-	_refresh_pancake_drag_sources()
 	_refresh_material_slots()
 	_refresh_multi_griddle_mode()
+	_refresh_pancake_drag_sources()
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
 
 
@@ -110,7 +111,8 @@ func _process(delta: float) -> void:
 		_refresh_material_slots()
 		_refresh_tutorial_guide()
 		_refresh_multi_griddle_mode()
-	serve_product_button.visible = false
+	if serve_product_button != null:
+		serve_product_button.visible = false
 
 
 func _should_defer_business_day_expiration() -> bool:
@@ -398,8 +400,10 @@ func _refresh_multi_griddle_mode() -> void:
 	_apply_multi_griddle_legacy_visibility()
 	# Every compact griddle owns a dedicated discard action. The old global
 	# discard controls sat above the third griddle and intercepted its input.
-	waste_area.visible = false
-	pancake_ready_source.visible = false
+	if waste_area != null:
+		waste_area.visible = false
+	if pancake_ready_source != null:
+		pancake_ready_source.visible = false
 	var legacy_discard := get_node_or_null("SafeArea/DiscardCurrentPancakeButton") as CanvasItem
 	if legacy_discard != null:
 		legacy_discard.visible = false
@@ -469,7 +473,10 @@ func _refresh_pancake_drag_sources() -> void:
 		return
 	if _multi_griddle_mode_active:
 		_ready_pancake_source_ref.clear()
-		pancake_ready_source.visible = false
+		if pancake_ready_source != null:
+			pancake_ready_source.visible = false
+		return
+	if pancake_ready_source == null:
 		return
 	var ready := p1_session.phase == P1Session.Phase.READY_TO_SERVE
 	if ready and _ready_pancake_source_ref.is_empty():

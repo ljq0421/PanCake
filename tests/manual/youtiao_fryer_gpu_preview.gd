@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/initial_unlock_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
 const SCREENSHOT_PATH := "res://tmp/validation/youtiao_fryer_unlocked_gpu_1920x1080.png"
 
 var _failures := PackedStringArray()

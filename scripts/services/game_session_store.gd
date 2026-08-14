@@ -2530,7 +2530,9 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 		# Repeated/direct calls still enforce an empty queue, but must not rewrite
 		# the original cutoff reason or close the report and production state twice.
 		_touch_and_write()
-		var already_closed_bill := today_bill()
+		var already_closed_bill := Dictionary(_save_data.get("last_bill", {})).duplicate(true)
+		if already_closed_bill.is_empty():
+			already_closed_bill = today_bill()
 		already_closed_bill["success"] = true
 		return already_closed_bill
 	normalized_cutoff["reason"] = cutoff_reason
@@ -2562,13 +2564,14 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	var tray_waste: Array = _pancake_holding_tray.call("clear_for_day_end")
 	for waste_index in range(tray_waste.size()):
 		var waste := Dictionary(tray_waste[waste_index])
+		var product := Dictionary(waste.get("product", {}))
 		_record_business_event({
 			"event_id": _next_ledger_event_id(&"tray_day_end"),
 			"kind": &"waste",
 			"area_id": &"area.pancake",
 			"source_id": &"pancake_holding_tray",
 			"quantity": 1,
-			"details": {"reason": &"day_end", "attributed_cost": int(waste.get("material_cost", 0))},
+			"details": {"reason": &"day_end", "attributed_cost": maxi(int(product.get("material_cost", 0)), 0)},
 		})
 	_sync_pancake_holding_tray_to_save()
 	var prepared_clear := clear_prepared_product_slots(false)

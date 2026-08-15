@@ -69,8 +69,12 @@ func _run() -> void:
 	_check(root.gui_get_hovered_control() == soy_bottom, "1920x1080 pointer resolves the red-bean slot")
 	workstation.tutorial_guide_overlay.call("show_guide", soy_top, "把黄豆拖入豆浆机")
 	await process_frame
-	var guide_highlight_1920 := workstation.tutorial_guide_overlay.get_node("TargetHighlight") as Control
-	_check(guide_highlight_1920.get_global_rect().has_point(soy_top.get_global_rect().get_center()), "1920x1080 guide arrow layer aligns to the bean slot")
+	var guide_arrow_1920 := workstation.tutorial_guide_overlay.get_node("GuideArrow") as Control
+	_check(
+		absf(guide_arrow_1920.get_global_rect().get_center().x - soy_top.get_global_rect().get_center().x) <= 2.0
+		and guide_arrow_1920.get_global_rect().position.y <= soy_top.get_global_rect().position.y,
+		"1920x1080 guide arrow aligns above the bean slot",
+	)
 	workstation.tutorial_guide_overlay.call("hide_guide")
 	workstation.set_process(false)
 	_clear_formal_orders(session)
@@ -229,8 +233,13 @@ func _run() -> void:
 	_check(root.gui_get_hovered_control() == soy_bottom, "1280x720 pointer resolves the red-bean slot")
 	workstation.tutorial_guide_overlay.call("show_guide", soy_bottom, "把红豆拖入豆浆机")
 	await process_frame
-	var guide_highlight := workstation.tutorial_guide_overlay.get_node("TargetHighlight") as Control
-	_check(workstation.tutorial_guide_overlay.visible and guide_highlight.get_global_rect().has_point(soy_bottom.get_global_rect().get_center()), "1280x720 guide arrow layer remains aligned to the red-bean slot")
+	var guide_arrow := workstation.tutorial_guide_overlay.get_node("GuideArrow") as Control
+	_check(
+		workstation.tutorial_guide_overlay.visible
+		and absf(guide_arrow.get_global_rect().get_center().x - soy_bottom.get_global_rect().get_center().x) <= 2.0
+		and guide_arrow.get_global_rect().position.y <= soy_bottom.get_global_rect().position.y,
+		"1280x720 guide arrow remains aligned above the red-bean slot",
+	)
 	await _save_viewport(SCREENSHOT_1280, Vector2i(1280, 720))
 	var stage_rect_before_tiers := station.machine_stage.get_global_rect()
 	var start_rect_before_tiers := station.start_button.get_global_rect()

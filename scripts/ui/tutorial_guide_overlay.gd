@@ -1,7 +1,6 @@
 class_name TutorialGuideOverlay
 extends Control
 
-@onready var target_highlight: Panel = $TargetHighlight
 @onready var guide_arrow: Label = $GuideArrow
 @onready var guide_bubble: PanelContainer = $GuideBubble
 @onready var guide_label: Label = $GuideBubble/GuideLabel
@@ -38,7 +37,6 @@ func _process(delta: float) -> void:
 	_layout_for_target()
 	var pulse := 1.0 + sin(_pulse_time * 5.0) * 0.08
 	guide_arrow.scale = Vector2.ONE * pulse
-	target_highlight.modulate.a = 0.76 + (sin(_pulse_time * 4.0) + 1.0) * 0.10
 
 
 func _layout_for_target() -> void:
@@ -50,8 +48,6 @@ func _layout_for_target() -> void:
 	var bounds := Rect2(Vector2.ZERO, size)
 	local_rect.position.x = clampf(local_rect.position.x, 4.0, maxf(bounds.size.x - local_rect.size.x - 4.0, 4.0))
 	local_rect.position.y = clampf(local_rect.position.y, 4.0, maxf(bounds.size.y - local_rect.size.y - 4.0, 4.0))
-	target_highlight.position = local_rect.position
-	target_highlight.size = local_rect.size
 	guide_arrow.pivot_offset = guide_arrow.size * 0.5
 	guide_arrow.position = Vector2(local_rect.get_center().x - 18.0, maxf(local_rect.position.y - 42.0, 4.0))
 	var bubble_size := Vector2(330.0, 68.0)

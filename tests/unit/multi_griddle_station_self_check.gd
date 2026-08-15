@@ -235,8 +235,8 @@ func _run() -> void:
 	var baocui_source := {"source_kind": &"pancake_shared_ingredient", "stock_id": &"stock.pancake.baocui"}
 	var center_local: Vector2 = unit_one.pancake_surface.size * 0.5
 	var baocui_before_invalid := int(session.inventory["stock.pancake.baocui"])
-	_check(not station.can_drop_on_unit(1, baocui_source, center_local), "garnish cannot be dropped during the first-side stage")
-	_check(int(session.inventory["stock.pancake.baocui"]) == baocui_before_invalid, "wrong-stage drop does not consume stock")
+	_check(station.can_drop_on_unit(1, baocui_source, center_local), "garnish can be dropped during the first-side stage without forcing a flip")
+	_check(int(session.inventory["stock.pancake.baocui"]) == baocui_before_invalid, "first-side drop validation does not consume stock before placement")
 	var egg_drop := Dictionary(station.drop_on_unit(1, egg_source, center_local))
 	_check(bool(egg_drop.get("success", false)) and unit_one.ingredient_model.has_type(IngredientModel.EGG), "egg drop changes only the actual target griddle")
 	_check(unit_one.egg_crack_effect.visible, "a successful egg drop immediately starts the authored two-frame crack effect on its target griddle")
@@ -368,6 +368,47 @@ func _run() -> void:
 	_check(bool(reset_result.get("success", false)) and restored.units[2].state == CompactGriddleUnit.State.IDLE, "R-target reset clears the most recently operated griddle")
 	_check(restored.units[0].state == restored_unit_zero_state and restored.units[1].state == CompactGriddleUnit.State.IDLE, "active-griddle reset leaves both other griddles untouched")
 	restored.queue_free()
+	var no_flip_session := FakeSession.new()
+	root.add_child(no_flip_session)
+	var no_flip_station := STATION_SCENE.instantiate()
+	root.add_child(no_flip_station)
+	await process_frame
+	no_flip_station.bind_session(no_flip_session)
+	no_flip_station.call("_on_main_action", 0)
+	var no_flip_unit: Node = no_flip_station.units[0]
+	no_flip_unit.pancake_model.add_batter(Vector2(31.5, 31.5), 1.2, 27.0)
+	no_flip_unit.p1_session.confirm_spread(no_flip_unit.pancake_model)
+	no_flip_unit.state = CompactGriddleUnit.State.FIRST_SIDE
+	var no_flip_center: Vector2 = no_flip_unit.pancake_surface.size * 0.5
+	var no_flip_topping := Dictionary(no_flip_station.drop_on_unit(0, baocui_source, no_flip_center))
+	_check(
+		bool(no_flip_topping.get("success", false))
+		and no_flip_unit.state == CompactGriddleUnit.State.GARNISH
+		and no_flip_unit.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		and not no_flip_unit.pancake_model.is_flipped,
+		"a first-side topping enters the real no-flip garnish route without turning the pancake"
+	)
+	_check(
+		not bool(Dictionary(no_flip_station.drop_on_unit(0, egg_source, no_flip_center)).get("success", false))
+		and not no_flip_unit.ingredient_model.has_type(IngredientModel.EGG),
+		"egg placement remains restricted to the first-side egg stage after no-flip garnish begins"
+	)
+	no_flip_station.call("_on_shared_tool_selected", &"stock.pancake.sauce.sweet_flour")
+	var no_flip_sauce := Dictionary(no_flip_station.begin_surface_action(0, no_flip_center))
+	_check(
+		bool(no_flip_sauce.get("success", false))
+		and StringName(no_flip_sauce.get("action", &"")) == CompactGriddleUnit.SURFACE_ACTION_BRUSH_SAUCE
+		and not no_flip_unit.pancake_model.is_flipped,
+		"the no-flip route also permits sauce brushing before folding"
+	)
+	no_flip_station.clear_held_tool()
+	var no_flip_fold: Dictionary = no_flip_unit.begin_manual_fold(Vector2(24.0, no_flip_center.y))
+	_check(
+		bool(no_flip_fold.get("success", false)) and no_flip_unit.state == CompactGriddleUnit.State.FOLDING,
+		"the no-flip route proceeds from garnish to the normal manual-fold flow (%s)" % str(no_flip_fold.get("reason", ""))
+	)
+	no_flip_station.queue_free()
+	no_flip_session.queue_free()
 	_check(station.consume_ready(0), "delivered griddle can be consumed by source index")
 	_check(station.ready_source_refs().is_empty(), "consumed griddle returns to an empty work surface")
 	station.queue_free()

@@ -312,6 +312,44 @@ func _test_unflipped_sauce_and_toppings_skip_flip() -> void:
 		and not guarded_model.is_flipped,
 		"the guarded flip action keeps topping-first preparation open without flipping"
 	)
+	var flipped_model := _uniform_pancake(64, 0.42)
+	var unflipped_model := _uniform_pancake(64, 0.42)
+	for scored_model in [flipped_model, unflipped_model]:
+		scored_model.doneness.fill(0.64)
+		scored_model.back_doneness.fill(0.64)
+		scored_model.sauce_concentration.fill(0.35)
+	flipped_model.flip()
+	var flipped_ingredients := _classic_ingredients(flipped_model)
+	var unflipped_ingredients := _classic_ingredients(unflipped_model)
+	var flipped_fold := PancakeFoldModel.new(flipped_model, flipped_ingredients)
+	var unflipped_fold := PancakeFoldModel.new(unflipped_model, unflipped_ingredients)
+	_fold_both(flipped_fold)
+	_fold_both(unflipped_fold)
+	flipped_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	unflipped_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	var flipped_score := PancakeScorer.evaluate_order(flipped_model, flipped_ingredients, flipped_fold, order, 48.0, 0.6)
+	var unflipped_score := PancakeScorer.evaluate_order(unflipped_model, unflipped_ingredients, unflipped_fold, order, 48.0, 0.6)
+	_check(
+		is_equal_approx(float(flipped_score.get("score", 0.0)) - float(unflipped_score.get("score", 0.0)), 12.0)
+		and float(Dictionary(unflipped_score.get("score_adjustments", {})).get("unflipped_delivery_penalty", 0.0)) == 12.0
+		and PackedStringArray(unflipped_score.get("tags", [])).has("未翻面交付（-12分）"),
+		"unflipped delivery receives a visible fixed 12-point penalty in addition to heat scoring"
+	)
+	var stored_unflipped := {"serving_score_basis": Dictionary(unflipped_score.get("serving_score_basis", {})).duplicate(true)}
+	var rescored_unflipped := PancakeScorer.evaluate_stored_product(stored_unflipped, order, 48.0, 0.6)
+	_check(
+		is_equal_approx(float(rescored_unflipped.get("score", 0.0)), float(unflipped_score.get("score", 0.0)))
+		and float(Dictionary(rescored_unflipped.get("score_adjustments", {})).get("unflipped_delivery_penalty", 0.0)) == 12.0,
+		"stored unflipped products preserve their delivery penalty when rescored"
+	)
+	var legacy_basis := Dictionary(flipped_score.get("serving_score_basis", {})).duplicate(true)
+	legacy_basis.erase("production")
+	var legacy_rescore := PancakeScorer.evaluate_stored_product({"serving_score_basis": legacy_basis}, order, 48.0, 0.6)
+	_check(
+		is_equal_approx(float(legacy_rescore.get("score", 0.0)), float(flipped_score.get("score", 0.0)))
+		and is_zero_approx(float(Dictionary(legacy_rescore.get("score_adjustments", {})).get("unflipped_delivery_penalty", -1.0))),
+		"legacy stored score bases do not receive a retroactive unflipped penalty"
+	)
 
 
 func _test_customer_reaction_persists_after_handoff() -> void:

@@ -259,6 +259,19 @@ func confirm_second_side_for_followup() -> Dictionary:
 	return {"success": false, "reason": &"wrong_stage"}
 
 
+func begin_garnish_without_flip() -> Dictionary:
+	if state == State.GARNISH:
+		return {"success": true, "without_flip": true, "already_active": true}
+	if state != State.FIRST_SIDE:
+		return {"success": false, "reason": &"wrong_stage"}
+	var preparation := Dictionary(p1_session.begin_sauce_and_fillings_without_flip())
+	if not bool(preparation.get("success", false)):
+		return preparation
+	state = State.GARNISH
+	_refresh_ui()
+	return preparation
+
+
 func begin_manual_fold(local_position: Vector2) -> Dictionary:
 	if state not in [State.SECOND_SIDE, State.GARNISH, State.FOLDING]:
 		return {"success": false, "reason": &"wrong_stage"}
@@ -710,7 +723,7 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 		return {"success": false, "reason": &"duplicate_ingredient", "stock_id": stock_id}
 	if ingredient_type == IngredientModel.EGG and state != State.FIRST_SIDE:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
-	if ingredient_type != IngredientModel.EGG and state not in [State.SECOND_SIDE, State.GARNISH]:
+	if ingredient_type != IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
 	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
@@ -747,7 +760,7 @@ func place_validated_ingredient(validation: Dictionary) -> Dictionary:
 
 
 func can_apply_sauce_at(local_position: Vector2) -> bool:
-	if state not in [State.SECOND_SIDE, State.GARNISH]:
+	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
 		return false
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
 	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
@@ -883,12 +896,12 @@ func _refresh_ui() -> void:
 			state_label.text = "按住鏊面画圈摊开"
 			main_action.text = "手动摊面中"
 		State.FIRST_SIDE:
-			state_label.text = "第一面 %.1f秒" % first_side_seconds
+			state_label.text = "第一面 %.1f秒 · 可直接加料（交付-12分）" % first_side_seconds
 			main_action.text = "翻面"
 		State.SECOND_SIDE:
 			state_label.text = "第二面 %.1f秒 · 后续操作确认火候" % second_side_seconds
 		State.GARNISH:
-			state_label.text = "可继续加料，也可直接抓边折叠"
+			state_label.text = "未翻面备料 · 可加料折叠，交付-12分" if not pancake_model.is_flipped else "可继续加料，也可直接抓边折叠"
 			main_action.text = "等待备料"
 		State.FOLDING:
 			state_label.text = "手动折叠 %d/2 · 抓另一侧饼边" % fold_steps
@@ -921,7 +934,7 @@ func _refresh_heat_visual() -> void:
 	var doneness := maxf(float(summary.get("mean_doneness", 0.0)), float(summary.get("mean_back_doneness", 0.0)))
 	heat_bar.value = clampf(doneness * 100.0, 0.0, 100.0)
 	if state == State.FIRST_SIDE:
-		state_label.text = "第一面 %.1f秒" % first_side_seconds
+		state_label.text = "第一面 %.1f秒 · 可直接加料（交付-12分）" % first_side_seconds
 	elif state == State.SECOND_SIDE:
 		state_label.text = "第二面 %.1f秒" % second_side_seconds
 

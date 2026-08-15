@@ -141,20 +141,6 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="TutorialHighlightStyle"]
-bg_color = Color(1, 0.78, 0.33, 0.08)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.96, 0.66, 0.18, 1)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-shadow_color = Color(0.43, 0.2, 0.05, 0.28)
-shadow_size = 7
-
 [sub_resource type="StyleBoxFlat" id="TutorialBubbleStyle"]
 content_margin_left = 16.0
 content_margin_top = 10.0
@@ -1532,17 +1518,11 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("61_oefc1")
 
-[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay" unique_id=1819908859]
-layout_mode = 0
-offset_right = 120.0
-offset_bottom = 100.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("TutorialHighlightStyle")
-
 [node name="GuideArrow" type="Label" parent="TutorialGuideOverlay" unique_id=1457040386]
 layout_mode = 0
 offset_right = 36.0
 offset_bottom = 42.0
+mouse_filter = 2
 theme_override_font_sizes/font_size = 32
 theme_override_colors/font_color = Color(0.96, 0.66, 0.18, 1)
 theme_override_colors/font_outline_color = Color(0.38, 0.17, 0.04, 1)
@@ -1560,6 +1540,7 @@ theme_override_styles/panel = SubResource("TutorialBubbleStyle")
 
 [node name="GuideLabel" type="Label" parent="TutorialGuideOverlay/GuideBubble" unique_id=710766217]
 layout_mode = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(0.38, 0.17, 0.06, 1)
 text = "下一步"

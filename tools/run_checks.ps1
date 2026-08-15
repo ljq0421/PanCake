@@ -41,6 +41,7 @@ $checks = @(
 	'res://tests/integration/business_day_cutoff_self_check.gd',
 	'res://tests/integration/completed_payment_recovery_self_check.gd',
 	'res://tests/integration/five_area_formal_scene_self_check.gd',
+	'res://tests/integration/five_area_tutorial_guide_self_check.gd',
 	'res://tests/integration/direct_soy_water_contract_self_check.gd',
 	'res://tests/integration/fresh_soy_milk_automation_self_check.gd',
 	'res://tests/integration/five_area_growth_ui_self_check.gd',

@@ -76,7 +76,25 @@ func _run() -> void:
 	workstation.set_process(false)
 	overlay.call("show_guide", workstation.youtiao_station.start_button, "点击启动")
 	await process_frame
-	_check(overlay.visible and overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE and overlay.get_node("TargetHighlight").mouse_filter == Control.MOUSE_FILTER_IGNORE and overlay.get_node("GuideBubble").mouse_filter == Control.MOUSE_FILTER_IGNORE, "guide highlight, arrow shell, and callout never intercept input")
+	var guide_arrow := overlay.get_node("GuideArrow") as Control
+	var guide_bubble := overlay.get_node("GuideBubble") as Control
+	var guide_label := overlay.get_node("GuideBubble/GuideLabel") as Control
+	_check(overlay.get_node_or_null("TargetHighlight") == null, "tutorial guide does not draw a tinting target highlight")
+	_check(
+		overlay.visible
+		and guide_arrow.visible
+		and guide_bubble.visible
+		and guide_arrow.size.x > 0.0
+		and guide_bubble.size.x > 0.0,
+		"guide keeps the arrow and text callout positioned for the active target",
+	)
+	_check(
+		overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and guide_arrow.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and guide_bubble.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and guide_label.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+		"guide arrow and callout never intercept input",
+	)
 
 	stub.queue_free()
 	workstation.queue_free()

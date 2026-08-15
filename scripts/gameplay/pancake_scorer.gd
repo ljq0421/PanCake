@@ -1,6 +1,7 @@
 class_name PancakeScorer
 extends RefCounted
 
+const UNFLIPPED_DELIVERY_PENALTY := 12.0
 
 static func evaluate_sauce(model: PancakeModel) -> Dictionary:
 	return evaluate_sauce_type(model, &"sweet_flour")
@@ -179,6 +180,12 @@ static func evaluate_order(
 		+ order_score * 0.11
 		+ time_score * 0.04
 	)
+	var unflipped_delivery_penalty := UNFLIPPED_DELIVERY_PENALTY if not model.is_flipped else 0.0
+	overall = maxf(overall - unflipped_delivery_penalty, 0.0)
+	var score_adjustments := {
+		"unflipped_delivery_penalty": unflipped_delivery_penalty,
+		"total": -unflipped_delivery_penalty,
+	}
 	var tags := PackedStringArray()
 	if integrity_score >= 85.0:
 		tags.append("饼皮完整")
@@ -188,6 +195,8 @@ static func evaluate_order(
 		tags.append("两面火候有偏差")
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
+	if unflipped_delivery_penalty > 0.0:
+		tags.append("未翻面交付（-%d分）" % roundi(unflipped_delivery_penalty))
 	for egg_tag in egg_result.tags:
 		if not tags.has(egg_tag):
 			tags.append(egg_tag)
@@ -233,7 +242,11 @@ static func evaluate_order(
 	var selected_chili := chili_special if is_equal_approx(sauce_intensity_multiplier, 1.35) else Dictionary(sauce_results.get(OrderService.SAUCE_CHILI, {}))
 	var spice_target_met := _spice_profile_meets_target(selected_chili)
 	var serving_score_basis := {
-		"version": 2,
+		"version": 3,
+		"production": {
+			"was_flipped": model.is_flipped,
+			"unflipped_delivery_penalty": unflipped_delivery_penalty,
+		},
 		"intrinsic_dimensions": {
 			"integrity": integrity_score,
 			"thickness": thickness_score,
@@ -258,6 +271,7 @@ static func evaluate_order(
 	}
 	return {
 		"score": overall,
+		"score_adjustments": score_adjustments,
 		"dimensions": {
 			"integrity": integrity_score,
 			"thickness": thickness_score,
@@ -390,6 +404,15 @@ static func evaluate_stored_product(
 		+ order_score * 0.11
 		+ time_score * 0.04
 	)
+	# Older stored products do not contain production metadata, so their original
+	# score remains unchanged rather than retroactively receiving this penalty.
+	var production: Dictionary = Dictionary(basis.get("production", {}))
+	var unflipped_delivery_penalty := maxf(float(production.get("unflipped_delivery_penalty", 0.0)), 0.0)
+	overall = maxf(overall - unflipped_delivery_penalty, 0.0)
+	var score_adjustments := {
+		"unflipped_delivery_penalty": unflipped_delivery_penalty,
+		"total": -unflipped_delivery_penalty,
+	}
 	var tags := PackedStringArray()
 	if integrity_score >= 85.0:
 		tags.append("饼皮完整")
@@ -399,6 +422,8 @@ static func evaluate_stored_product(
 		tags.append("两面火候有偏差")
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
+	if unflipped_delivery_penalty > 0.0:
+		tags.append("未翻面交付（-%d分）" % roundi(unflipped_delivery_penalty))
 	if not missing_ingredients.is_empty():
 		tags.append("缺少%s" % "、".join(missing_ingredients))
 	if not unexpected_ingredients.is_empty():
@@ -416,6 +441,7 @@ static func evaluate_stored_product(
 		selected_chili_profile = Dictionary(stored_chili_profiles.get(stored_profile_key, {}))
 	return {
 		"score": overall,
+		"score_adjustments": score_adjustments,
 		"dimensions": {
 			"integrity": integrity_score,
 			"thickness": thickness_score,

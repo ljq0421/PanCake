@@ -185,8 +185,8 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		status_message.emit("摊饼器当前只能摊面糊，或在第一面摊开已放入的鸡蛋")
 		return {"success": false, "reason": &"wrong_stage"}
 	if _selected_tool in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
-		if unit.state not in [UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH]:
-			status_message.emit("酱刷只能在确认火候后的加料阶段使用")
+		if unit.state not in [UNIT_SCRIPT.State.FIRST_SIDE, UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH]:
+			status_message.emit("酱刷可在第一面直接使用；不翻面交付会额外扣12分")
 			return {"success": false, "reason": &"wrong_stage"}
 		if unit.applied_sauce_ids.has(str(_selected_tool)):
 			status_message.emit("这张饼已经刷过同一种酱")
@@ -198,7 +198,9 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		if not bool(consumed.get("success", false)):
 			status_message.emit("%s库存不足" % _stock_label(_selected_tool))
 			return consumed
-		unit.confirm_second_side_for_followup()
+		var preparation: Dictionary = unit.begin_garnish_without_flip() if unit.state == UNIT_SCRIPT.State.FIRST_SIDE else unit.confirm_second_side_for_followup()
+		if not bool(preparation.get("success", false)):
+			return preparation
 		shared_tool_tray.refresh_from_session()
 		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _selected_tool}
 	status_message.emit("先从共享料台拿起摊饼器或酱刷")
@@ -265,7 +267,9 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	if not bool(consumed.get("success", false)):
 		return consumed
 	if StringName(validation.get("ingredient_type", &"")) != IngredientModel.EGG:
-		unit.confirm_second_side_for_followup()
+		var preparation: Dictionary = unit.begin_garnish_without_flip() if unit.state == UNIT_SCRIPT.State.FIRST_SIDE else unit.confirm_second_side_for_followup()
+		if not bool(preparation.get("success", false)):
+			return preparation
 	var placed := Dictionary(unit.place_validated_ingredient(validation))
 	if not bool(placed.get("success", false)):
 		return placed
@@ -278,7 +282,7 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	status_message.emit(
 		"%s已放到%s；摊饼器已自动拿起" % [placed_label, unit.title_label.text]
 		if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG
-		else "%s已放到%s" % [placed_label, unit.title_label.text]
+		else "%s已放到%s%s" % [placed_label, unit.title_label.text, "；未翻面交付会额外扣12分" if not unit.pancake_model.is_flipped else ""]
 	)
 	return placed
 

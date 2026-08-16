@@ -17,14 +17,14 @@ func _run() -> void:
 	var starter_tutorial := starter.tutorial_snapshot()
 	_check(StringName(starter_tutorial.get("active_id", &"")) == &"area.pancake", "pancake is the first tutorial")
 	var route_ids := PackedStringArray(CATALOG.growth_ids())
-	_check(route_ids.size() == 29, "growth route exposes twenty-nine three-area upgrades")
-	_check(route_ids.slice(10) == PackedStringArray([
+	_check(route_ids.size() == 27, "growth route excludes both retired pancake capacity upgrades")
+	_check(route_ids.slice(9) == PackedStringArray([
 		"growth.area.fresh_soy_milk", "growth.equipment.fresh_soy_milk.intermediate", "growth.assist.fresh_soy_milk.water_guide", "growth.recipe.fresh_soy_milk.black_bean",
 		"growth.capacity.pancake_holding_tray.two_slots", "growth.add_on.pancake.preserved_mustard", "growth.add_on.pancake.pork_tenderloin",
-		"growth.recipe.fresh_soy_milk.red_bean", "growth.recipe.fresh_soy_milk.multigrain", "growth.equipment.pancake.advanced", "growth.capacity.stock.advanced",
+		"growth.recipe.fresh_soy_milk.red_bean", "growth.recipe.fresh_soy_milk.multigrain", "growth.capacity.stock.advanced",
 		"growth.automation.youtiao.auto_lift", "growth.equipment.youtiao.advanced", "growth.equipment.fresh_soy_milk.advanced", "growth.automation.fresh_soy_milk.auto_yellow_restock",
 		"growth.automation.fresh_soy_milk.auto_cup_rack", "growth.automation.fresh_soy_milk.auto_production", "growth.quality.fresh_soy_milk.max", "growth.pricing.fresh_soy_milk.premium",
-	]), "growth route keeps the first ten entries and follows the approved soy sequence")
+	]), "growth route keeps the approved soy sequence after the single-stall change")
 	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake"), "retired fryer recipes are absent from growth")
 	_check(int(CATALOG.growth_definition(&"growth.assist.fresh_soy_milk.water_guide").get("price", 0)) == 24, "water guide costs 24")
 	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_production").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 15, "auto production requires fifteen A-grade soy orders")
@@ -63,30 +63,7 @@ func _run() -> void:
 	_check(bool(youtiao_activation.get("success", false)) and early.owns_area(&"area.youtiao"), "youtiao unlock activates next business day")
 	early.advance_tutorial_for_new_business_day()
 	_check(StringName(early.tutorial_snapshot().get("active_id", &"")) == &"area.youtiao", "youtiao tutorial follows pancake")
-	var dual := SERVICE.new({
-		"coins": 100,
-		"current_day": 5,
-		"unlocked_area_ids": [&"area.pancake"],
-		"area_mastery_details": {&"area.pancake": {"qualified": 8, "a_grade": 4}},
-		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
-	})
-	_check(bool(dual.purchase(&"growth.equipment.pancake.intermediate").get("success", false)), "four A-grade pancakes can reserve the second griddle")
-	dual.set_day_open(false)
-	dual.begin_next_business_day()
-	_check(dual.device_tier(&"device.pancake_griddle") == 1, "intermediate upgrade activates two-griddle tier")
-	var triple := SERVICE.new({
-		"coins": 200,
-		"current_day": 20,
-		"reputation": 300,
-		"unlocked_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"],
-		"device_tiers": {&"device.pancake_griddle": 1, &"device.youtiao_fryer": 0, &"device.fresh_soy_milk_machine": 0},
-		"area_mastery_details": {&"area.pancake": {"qualified": 20, "a_grade": 12}},
-		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
-	})
-	_check(bool(triple.purchase(&"growth.equipment.pancake.advanced").get("success", false)), "all three areas and twelve A grades can reserve third griddle")
-	triple.set_day_open(false)
-	triple.begin_next_business_day()
-	_check(triple.device_tier(&"device.pancake_griddle") == 2, "advanced upgrade activates three-griddle tier")
+	_check(CATALOG.growth_definition(&"growth.equipment.pancake.intermediate").is_empty() and CATALOG.growth_definition(&"growth.equipment.pancake.advanced").is_empty(), "pancake capacity upgrades cannot be purchased")
 	var soy_gate := SERVICE.new({
 		"coins": 100,
 		"current_day": 7,
@@ -113,7 +90,7 @@ func _run() -> void:
 	_check(PackedStringArray(legacy_snapshot.get("unlocked_area_ids", [])) == PackedStringArray(["area.pancake", "area.youtiao", "area.fresh_soy_milk"]), "legacy save strips retired areas while preserving active ones")
 	_check(not legacy.owns_device(&"device.packaged_drink_heater") and not legacy.owns_device(&"device.steamer"), "legacy save strips retired devices")
 	_check(not legacy.owns_stock(&"stock.packaged_drink.milk") and not legacy.owns_stock(&"stock.steamer.mantou"), "legacy save strips retired stock")
-	_check(legacy.device_tier(&"device.pancake_griddle") == 2, "legacy griddle tier clamps to the three-griddle maximum")
+	_check(legacy.device_tier(&"device.pancake_griddle") == 0, "legacy griddle tier normalizes to the permanent single-stall tier")
 	var normalized_tutorial := legacy.tutorial_snapshot()
 	_check(StringName(normalized_tutorial.get("active_id", &"")) == &"" and PackedStringArray(normalized_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(normalized_tutorial.get("queue_device_ids", [])).is_empty(), "legacy device tutorial activity is cleared while compatibility fields remain empty")
 	_check(legacy.coins == 77, "legacy normalization preserves economy")

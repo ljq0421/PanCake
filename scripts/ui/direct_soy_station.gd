@@ -117,8 +117,11 @@ func refresh_from_session() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_area := Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
 	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	# The stall artwork provides the closed-machine presentation.  Keep this
+	# operational overlay out of view until the soy station is actually owned.
+	visible = unlocked_area
 	_refresh_machine_artwork(int(machine.get("tier", 0)))
-	lock_cover.visible = not unlocked_area
+	lock_cover.visible = false
 	var state := StringName(machine.get("state", &"unowned"))
 	var water_filling := bool(machine.get("water_filling", false))
 	water_button.disabled = state != &"loaded"
@@ -276,7 +279,7 @@ static func _state_text(state: StringName) -> String:
 		&"overcooking": "即将变质",
 		&"blocked": "接杯架已满",
 		&"spoiled": "豆浆已变质",
-	}.get(state, "未安装")
+	}.get(state, "")
 
 
 static func _timed_state_text(state: StringName, machine: Dictionary) -> String:

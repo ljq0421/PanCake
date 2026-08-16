@@ -3228,7 +3228,6 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		&"growth.tool.pancake.wide_spreader": "宽刮板",
 		&"growth.add_on.pancake.red_chili": "辣椒酱",
 		&"growth.add_on.pancake.ham_sausage": "火腿肠",
-		&"growth.equipment.pancake.intermediate": "煎饼鏊子升级",
 		&"growth.add_on.pancake.meat_floss": "肉松",
 		&"growth.capacity.pancake_holding_tray.two_slots": "双格暂存托盘",
 		&"growth.add_on.pancake.coriander": "香菜",

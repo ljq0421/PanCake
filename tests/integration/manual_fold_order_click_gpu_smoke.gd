@@ -45,18 +45,17 @@ func _run() -> void:
 		await process_frame
 	var workstation: Node = game.get_node("Workstation")
 	var multi: Node = workstation.multi_griddle_station
-	multi.set_griddle_count(3)
-	var fold_unit: Node = multi.units[2]
+	multi.set_griddle_count(1)
+	var fold_unit: Node = multi.units[0]
 	_prepare_fold_surface(fold_unit, item)
 	var surface_rect: Rect2 = fold_unit.pancake_surface.get_global_rect()
 	await _drag(surface_rect.position + Vector2(24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(224.0, surface_rect.size.y * 0.5))
 	_check(fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT) and fold_unit.fold_steps == 1, "real pointer drag commits the left fold")
 	await _drag(surface_rect.position + Vector2(surface_rect.size.x - 24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(54.0, surface_rect.size.y * 0.5))
 	_check(fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_RIGHT) and fold_unit.state == CompactGriddleUnit.State.READY, "real pointer drag commits the right fold and packages")
-	var other_state: int = multi.units[0].state
 	_press_and_release_r()
 	await process_frame
-	_check(fold_unit.state == CompactGriddleUnit.State.IDLE and multi.units[0].state == other_state, "real R key clears only the last-operated griddle")
+	_check(fold_unit.state == CompactGriddleUnit.State.IDLE, "real R key clears the single active griddle")
 
 	var ready_unit: Node = multi.units[0]
 	ready_unit.mark_ready({

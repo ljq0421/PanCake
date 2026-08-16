@@ -46,17 +46,7 @@ func _run() -> void:
 	_check(StringName(workstation.get("_formal_order_id")) == first_order_id, "the first customer is focused before clicking another card")
 
 	_prepare_ready_pancake(workstation, item)
-	workstation.multi_griddle_station.set_griddle_count(3)
-	var redo_unit: Node = workstation.multi_griddle_station.units[1]
-	redo_unit.begin_order(item)
-	workstation.multi_griddle_station.set("_active_index", 1)
-	var reset_event := InputEventAction.new()
-	reset_event.action = &"reset_pancake"
-	reset_event.pressed = true
-	workstation.call("_input", reset_event)
-	_check(redo_unit.state == CompactGriddleUnit.State.IDLE and workstation.multi_griddle_station.units[0].state == CompactGriddleUnit.State.READY, "the gameplay R action resets only the most recently operated griddle")
-	workstation.call("_input", reset_event)
-	_check(workstation.multi_griddle_station.units[0].state == CompactGriddleUnit.State.READY, "pressing R on an empty active griddle does not clear another ready pancake")
+	_check(workstation.multi_griddle_station.griddle_count() == 1 and workstation.multi_griddle_station.units.size() == 1, "click delivery operates from the permanent single griddle")
 	var second_slot := _service_slot_for_order(workstation, second_order_id)
 	var second_button := second_slot.get_node("OrderPanel/ItemButton1") as Button if second_slot != null else null
 	_check(second_button != null and second_button.visible and not second_button.disabled, "the non-focused customer's real item button is clickable")

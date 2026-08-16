@@ -8,7 +8,7 @@ const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 
 @onready var count_label: Label = %CountLabel
-@onready var units: Array[Node] = [%Griddle01, %Griddle02, %Griddle03]
+@onready var units: Array[Node] = [%Griddle01]
 @onready var shared_tool_tray: Control = %SharedToolTray
 
 var _session: Node
@@ -25,7 +25,7 @@ func _ready() -> void:
 	# This records the exact slots without advancing heat behind the pause UI.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_last_tree_paused = get_tree().paused
-	var display_names := ["主鏊", "左鏊", "右鏊"]
+	var display_names := ["主鏊"]
 	for index in units.size():
 		var unit: Node = units[index]
 		unit.configure(index, display_names[index])
@@ -56,12 +56,11 @@ func _process(delta: float) -> void:
 		_sync_snapshot_to_session()
 
 
-func set_griddle_count(value: int) -> void:
-	var next_count := clampi(value, 1, 3)
-	if next_count == _active_count:
-		return
-	_active_count = next_count
-	_active_index = mini(_active_index, _active_count - 1)
+func set_griddle_count(_value: int) -> void:
+	# Keep the public setter for existing callers, but the redesigned stall has
+	# exactly one physical cooking surface regardless of legacy device tiers.
+	_active_count = 1
+	_active_index = 0
 	if is_node_ready():
 		_apply_count_layout()
 		_sync_snapshot_to_session()
@@ -114,12 +113,12 @@ func reset_active() -> Dictionary:
 
 func snapshot() -> Dictionary:
 	var slots: Array[Dictionary] = []
-	for unit in units:
-		slots.append(Dictionary(unit.snapshot()))
+	if not units.is_empty():
+		slots.append(Dictionary(units[0].snapshot()))
 	return {
-		"version": 1,
-		"griddle_count": _active_count,
-		"active_index": _active_index,
+		"version": 2,
+		"griddle_count": 1,
+		"active_index": 0,
 		"product_sequence": _product_sequence,
 		"slots": slots,
 	}
@@ -127,12 +126,14 @@ func snapshot() -> Dictionary:
 
 func load_snapshot(value: Dictionary) -> Dictionary:
 	clear_held_tool()
-	_active_count = clampi(int(value.get("griddle_count", _active_count)), 1, 3)
-	_active_index = clampi(int(value.get("active_index", 0)), 0, _active_count - 1)
+	# Version 1 snapshots may contain up to three griddles. Preserve only the
+	# primary slot; secondary in-progress pancakes intentionally do not migrate.
+	_active_count = 1
+	_active_index = 0
 	_product_sequence = maxi(int(value.get("product_sequence", 0)), 0)
 	var slots := Array(value.get("slots", []))
-	for index in mini(slots.size(), units.size()):
-		var result := Dictionary(units[index].load_snapshot(Dictionary(slots[index])))
+	if not slots.is_empty() and not units.is_empty():
+		var result := Dictionary(units[0].load_snapshot(Dictionary(slots[0])))
 		if not bool(result.get("success", false)):
 			return result
 	_apply_count_layout()
@@ -448,11 +449,9 @@ static func _ingredient_type_for_stock(stock_id: StringName) -> StringName:
 
 
 func _apply_count_layout() -> void:
-	count_label.text = "%d/3张鏊子运行 · 每张独立火候、配料与出餐" % _active_count
-	# Logical slots and v1 save slots stay [0, 1, 2]. Only their authored display
-	# positions change so unlocks are main (center), left, then right.
-	var positions: Array[float] = [405.0, 96.0, 714.0]
-	for index in units.size():
-		units[index].visible = true
-		units[index].position = Vector2(positions[index], 36.0)
-		units[index].call("set_upgrade_locked", index >= _active_count)
+	count_label.text = "单张鏊子 · 现做现出"
+	if units.is_empty():
+		return
+	units[0].visible = true
+	units[0].position = Vector2(380.0, 105.0)
+	units[0].call("set_upgrade_locked", false)

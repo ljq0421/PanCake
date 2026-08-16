@@ -1,7 +1,7 @@
 [gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png" id="2_griddle"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/jianbing-griddle.png" id="2_griddle"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_raw_texture_v1.png" id="3_pancake"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/paper_bag_package_v1.png" id="4_bag"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="5_heatmap"]
@@ -46,6 +46,10 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_jianbing_griddle"]
+atlas = ExtResource("2_griddle")
+region = Rect2(128, 48, 1276, 900)
+
 [sub_resource type="ShaderMaterial" id="PancakeMaterial"]
 shader = ExtResource("15_pancake_shader")
 shader_parameter/raw_texture = ExtResource("3_pancake")
@@ -75,16 +79,17 @@ animations = [{
 }]
 
 [node name="CompactGriddleUnit" type="Control"]
-custom_minimum_size = Vector2(360, 292)
+custom_minimum_size = Vector2(480, 380)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 360.0
-offset_bottom = 292.0
+offset_right = 480.0
+offset_bottom = 380.0
 mouse_filter = 1
 script = ExtResource("1_script")
 
 [node name="TitleLabel" type="Label" parent="."]
 unique_name_in_owner = true
+visible = false
 offset_left = 16.0
 offset_top = 8.0
 offset_right = 108.0
@@ -97,6 +102,7 @@ text = "鏊子 1"
 
 [node name="StateLabel" type="Label" parent="."]
 unique_name_in_owner = true
+visible = false
 offset_left = 108.0
 offset_top = 10.0
 offset_right = 344.0
@@ -110,22 +116,22 @@ horizontal_alignment = 2
 
 [node name="GriddleArt" type="TextureRect" parent="."]
 unique_name_in_owner = true
-offset_left = -22.8
-offset_top = 11.4
-offset_right = 382.8
-offset_bottom = 224.6
+offset_left = -40.0
+offset_top = -10.0
+offset_right = 460.0
+offset_bottom = 322.0
 mouse_filter = 2
-texture = ExtResource("2_griddle")
+texture = SubResource("AtlasTexture_jianbing_griddle")
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 
 [node name="PancakeSurface" type="Control" parent="."]
 unique_name_in_owner = true
 visible = false
-offset_left = 40.9
-offset_top = -24.1
-offset_right = 319.1
-offset_bottom = 254.1
+offset_left = 10.0
+offset_top = -49.0
+offset_right = 410.0
+offset_bottom = 351.0
 mouse_filter = 0
 script = ExtResource("5_heatmap")
 heatmap_update_hz = 30.0
@@ -192,8 +198,8 @@ unique_name_in_owner = true
 visible = false
 z_index = 6
 texture_filter = 1
-position = Vector2(139.1, 0)
-scale = Vector2(0.45, 0.45)
+position = Vector2(175, 0)
+scale = Vector2(0.56, 0.56)
 sprite_frames = SubResource("SpriteFrames_egg_crack")
 animation = &"crack"
 
@@ -202,8 +208,8 @@ unique_name_in_owner = true
 visible = false
 z_index = 3
 texture_filter = 1
-position = Vector2(139.1, 139.1)
-scale = Vector2(0.25, 0.25)
+position = Vector2(175, 175)
+scale = Vector2(0.32, 0.32)
 texture = ExtResource("26_egg_intact")
 
 [node name="SpreaderArtwork" type="Sprite2D" parent="PancakeSurface"]
@@ -211,21 +217,21 @@ unique_name_in_owner = true
 visible = false
 z_index = 4
 texture_filter = 1
-position = Vector2(139.1, 139.1)
-scale = Vector2(0.15, 0.15)
+position = Vector2(175, 175)
+scale = Vector2(0.19, 0.19)
 texture = ExtResource("22_spreader")
-offset = Vector2(15, 90)
+offset = Vector2(19, 113)
 
 [node name="SauceBrushArtwork" type="Sprite2D" parent="PancakeSurface"]
 unique_name_in_owner = true
 visible = false
 z_index = 5
 texture_filter = 1
-position = Vector2(139.1, 139.1)
+position = Vector2(175, 175)
 rotation = -0.6
-scale = Vector2(0.15, 0.15)
+scale = Vector2(0.19, 0.19)
 texture = ExtResource("24_sauce_brush")
-offset = Vector2(0, 96)
+offset = Vector2(0, 120)
 
 [node name="PackageVisual" type="TextureRect" parent="."]
 unique_name_in_owner = true
@@ -241,10 +247,10 @@ stretch_mode = 5
 
 [node name="MainAction" type="Button" parent="."]
 unique_name_in_owner = true
-offset_left = 68.0
-offset_top = 226.0
-offset_right = 292.0
-offset_bottom = 250.0
+offset_left = 98.0
+offset_top = 344.0
+offset_right = 322.0
+offset_bottom = 370.0
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("ActionStyle")
@@ -254,9 +260,9 @@ text = "添面糊"
 
 [node name="HeatBar" type="ProgressBar" parent="."]
 unique_name_in_owner = true
-offset_left = 28.0
-offset_top = 212.0
-offset_right = 332.0
-offset_bottom = 224.0
+offset_left = 55.0
+offset_top = 326.0
+offset_right = 365.0
+offset_bottom = 340.0
 mouse_filter = 2
 show_percentage = false

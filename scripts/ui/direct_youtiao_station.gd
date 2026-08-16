@@ -120,6 +120,9 @@ func refresh_from_session() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_area := _contains_id(Array(progression.get("unlocked_area_ids", [])), &"area.youtiao")
 	var unlocked_recipes := Array(progression.get("unlocked_recipe_ids", []))
+	# The fryer is represented by the permanent stall artwork before purchase;
+	# do not place a second, "not installed" UI on top of it.
+	visible = unlocked_area
 	_unlocked_recipe_ids = unlocked_recipes.duplicate()
 	_inventory = Dictionary(session.call("inventory_snapshot"))
 	var snapshot := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
@@ -127,7 +130,7 @@ func refresh_from_session() -> void:
 	snapshot["unlocked_automation_ids"] = Array(progression.get("unlocked_automation_ids", [])).duplicate()
 	snapshot["auto_lift_enabled"] = bool(session.call("youtiao_auto_lift_enabled"))
 	snapshot["owned_assist_ids"] = Array(progression.get("owned_assist_ids", [])).duplicate()
-	lock_cover.visible = not unlocked_area
+	lock_cover.visible = false
 	_apply_machine_snapshot(snapshot)
 	_refresh_prepared_slots(session)
 	_refresh_controls()
@@ -137,7 +140,8 @@ func apply_visual_snapshot(snapshot: Dictionary, inventory: Dictionary = {}) -> 
 	_session_refresh_enabled = false
 	_inventory = inventory.duplicate(true)
 	_unlocked_recipe_ids = Array(snapshot.get("unlocked_recipe_ids", [RECIPE_ID])).duplicate()
-	lock_cover.visible = not bool(snapshot.get("owned", false))
+	visible = bool(snapshot.get("owned", false))
+	lock_cover.visible = false
 	_apply_machine_snapshot(snapshot, true)
 	_refresh_controls()
 
@@ -505,4 +509,4 @@ static func _state_text(state: StringName) -> String:
 		&"draining": "沥油中",
 		&"ready_to_collect": "整锅可收纳",
 		&"burnt": "已焦糊，需报废",
-	}.get(state, "未安装")
+	}.get(state, "")

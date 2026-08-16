@@ -89,13 +89,14 @@ burnt_smoke_texture = ExtResource("15_smoke")
 
 [node name="StateLabel" type="Label" parent="."]
 unique_name_in_owner = true
+visible = false
 offset_left = 8.0
 offset_top = 1.0
 offset_right = 244.0
 offset_bottom = 25.0
 theme_override_colors/font_color = Color(0.26, 0.13, 0.05, 1)
 theme_override_font_sizes/font_size = 16
-text = "油条炸锅 · 未安装"
+text = ""
 
 [node name="QuantityLabel" type="Label" parent="."]
 unique_name_in_owner = true
@@ -150,6 +151,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ArtRoot" type="Control" parent="MachineStage"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -703,6 +705,7 @@ horizontal_alignment = 1
 
 [node name="LockCover" type="Button" parent="."]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -718,4 +721,4 @@ theme_override_font_sizes/font_size = 20
 theme_override_styles/normal = SubResource("LockStyle")
 theme_override_styles/hover = SubResource("LockStyle")
 theme_override_styles/pressed = SubResource("LockStyle")
-text = "油条炸锅\n尚未安装"
+text = ""

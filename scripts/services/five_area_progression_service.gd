@@ -340,7 +340,8 @@ func load_snapshot(value: Dictionary) -> void:
 	unlocked_area_ids = _load_id_set(value.get("unlocked_area_ids", [&"area.pancake"]))
 	unlocked_area_ids[&"area.pancake"] = true
 	device_tiers = Dictionary(value.get("device_tiers", {&"device.pancake_griddle": 0})).duplicate(true)
-	device_tiers[&"device.pancake_griddle"] = maxi(int(device_tiers.get(&"device.pancake_griddle", 0)), 0)
+	# The storefront now has one permanent griddle. Normalize legacy tiered saves.
+	device_tiers[&"device.pancake_griddle"] = 0
 	unlocked_recipe_ids = _load_id_set(value.get("unlocked_recipe_ids", [&"recipe.pancake.base"]))
 	unlocked_recipe_ids[&"recipe.pancake.base"] = true
 	unlocked_product_ids = _load_id_set(value.get("unlocked_product_ids", [&"product.pancake.custom"]))
@@ -399,7 +400,7 @@ func _normalize_three_area_state() -> void:
 	if not pending_content_purchase.is_empty() and not CATALOG.FIXED_GROWTH_ROUTE.has(pending_content_purchase):
 		pending_content_purchase = &""
 	unlocked_area_ids[&"area.pancake"] = true
-	device_tiers[&"device.pancake_griddle"] = clampi(int(device_tiers.get(&"device.pancake_griddle", 0)), 0, 2)
+	device_tiers[&"device.pancake_griddle"] = 0
 	for starter_recipe in [&"recipe.pancake.base"]:
 		unlocked_recipe_ids[starter_recipe] = true
 	unlocked_product_ids[&"product.pancake.custom"] = true

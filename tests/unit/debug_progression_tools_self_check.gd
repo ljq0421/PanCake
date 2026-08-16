@@ -50,8 +50,6 @@ func _run() -> void:
 
 	var tier_cases := [
 		{&"area_id": &"area.pancake", &"tier": 0},
-		{&"area_id": &"area.pancake", &"tier": 1},
-		{&"area_id": &"area.pancake", &"tier": 2},
 		{&"area_id": &"area.youtiao", &"tier": 0},
 		{&"area_id": &"area.youtiao", &"tier": 1},
 		{&"area_id": &"area.youtiao", &"tier": 2},

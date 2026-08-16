@@ -86,11 +86,14 @@ func set_pancake_griddles_snapshot(value: Dictionary) -> Dictionary:
 	var slots := Array(value.get("slots", []))
 	if slots.size() > 3:
 		return _failure(&"invalid_griddle_slot_count")
-	var griddle_count := clampi(int(value.get("griddle_count", 1)), 1, 3)
+	# Legacy snapshots may retain three slots. The single-stall migration keeps
+	# the primary slot and drops secondary work-in-progress safely.
+	if slots.size() > 1:
+		slots = [slots[0]]
 	_pancake_griddles = {
-		"version": 1,
-		"griddle_count": griddle_count,
-		"active_index": clampi(int(value.get("active_index", 0)), 0, griddle_count - 1),
+		"version": 2,
+		"griddle_count": 1,
+		"active_index": 0,
 		"product_sequence": maxi(int(value.get("product_sequence", 0)), 0),
 		"slots": slots.duplicate(true),
 	}
@@ -438,8 +441,8 @@ func clear_for_day_end() -> Dictionary:
 			attributed_cost,
 		))
 	_pancake_griddles = {
-		"version": 1,
-		"griddle_count": clampi(int(_pancake_griddles.get("griddle_count", 1)), 1, 3),
+		"version": 2,
+		"griddle_count": 1,
 		"active_index": 0,
 		"product_sequence": maxi(int(_pancake_griddles.get("product_sequence", 0)), 0),
 		"slots": [],

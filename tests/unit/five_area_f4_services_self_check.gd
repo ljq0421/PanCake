@@ -81,7 +81,7 @@ func _initialize() -> void:
 	_check(StringName(first_product.get("product_id", &"")) == &"product.fresh_soy_milk.yellow_bean" and StringName(first_product.get("product_instance_id", &"")) != StringName(second_product.get("product_instance_id", &"")), "soy service creates distinct product instances through repeated cups")
 
 	var ready_product := {
-		"product_instance_id": &"product_instance.pancake_griddle.2.7",
+		"product_instance_id": &"product_instance.pancake_griddle.1.7",
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
 		"grade": &"A",
@@ -92,20 +92,20 @@ func _initialize() -> void:
 		"active_index": 1,
 		"product_sequence": 7,
 		"slots": [
-			{"state": 0, "order": {}, "ready_product": {}},
 			{"state": 6, "order": {"product_id": &"product.pancake.custom"}, "ready_product": ready_product},
+			{"state": 0, "order": {}, "ready_product": {}},
 			{"state": 2, "order": {"product_id": &"product.pancake.custom"}, "ready_product": {}},
 		],
 	}
-	_check(bool(production.call("set_pancake_griddles_snapshot", griddle_snapshot).get("success", false)), "production service accepts three independent griddle slots")
-	var preview: Dictionary = production.call("preview_pancake_griddle_ready", 1)
-	_check(bool(preview.get("success", false)) and StringName(Dictionary(preview.get("product", {})).get("product_instance_id", &"")) == &"product_instance.pancake_griddle.2.7", "ready pancake can be previewed without consuming it")
+	_check(bool(production.call("set_pancake_griddles_snapshot", griddle_snapshot).get("success", false)), "production service migrates legacy griddle slots")
+	var preview: Dictionary = production.call("preview_pancake_griddle_ready", 0)
+	_check(bool(preview.get("success", false)) and StringName(Dictionary(preview.get("product", {})).get("product_instance_id", &"")) == &"product_instance.pancake_griddle.1.7", "primary legacy pancake can be previewed without consuming it")
 
 	var restored: RefCounted = PRODUCTION.new(stub, production.call("snapshot"))
 	var restored_griddles: Dictionary = restored.call("pancake_griddles_snapshot")
-	_check(int(restored_griddles.get("griddle_count", 0)) == 3 and int(restored_griddles.get("active_index", -1)) == 1 and int(restored_griddles.get("product_sequence", 0)) == 7, "griddle count, focus and product sequence survive service restore")
-	_check(bool(restored.call("take_pancake_griddle_ready", 1).get("success", false)), "delivery atomically consumes the selected ready pancake")
-	_check(StringName(restored.call("preview_pancake_griddle_ready", 1).get("reason", &"")) == &"pancake_not_ready", "consumed pancake cannot be delivered twice")
+	_check(int(restored_griddles.get("griddle_count", 0)) == 1 and int(restored_griddles.get("active_index", -1)) == 0 and Array(restored_griddles.get("slots", [])).size() == 1 and int(restored_griddles.get("product_sequence", 0)) == 7, "legacy griddle snapshots restore as one primary slot")
+	_check(bool(restored.call("take_pancake_griddle_ready", 0).get("success", false)), "delivery atomically consumes the primary ready pancake")
+	_check(StringName(restored.call("preview_pancake_griddle_ready", 0).get("reason", &"")) == &"pancake_not_ready", "consumed pancake cannot be delivered twice")
 	_check(StringName(restored.call("machine_snapshot", &"device.steamer").get("state", &"")) == &"unsupported", "retired steamer is not exposed as a production machine")
 	_check(StringName(restored.call("machine_snapshot", &"device.packaged_drink_heater").get("state", &"")) == &"unsupported", "retired packaged-drink heater is not exposed as a production machine")
 	var all_machines: Dictionary = restored.call("all_machine_snapshots")

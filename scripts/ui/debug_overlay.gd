@@ -49,7 +49,7 @@ func _bind_area_buttons() -> void:
 		&"area.pancake": {
 			"qualified": &"PancakeQualifiedButton",
 			"a_grade": &"PancakeAGradeButton",
-			"tiers": [&"PancakeTier0Button", &"PancakeTier1Button", &"PancakeTier2Button"],
+			"tiers": [&"PancakeTier0Button"],
 		},
 		&"area.youtiao": {
 			"qualified": &"YoutiaoQualifiedButton",

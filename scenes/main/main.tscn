@@ -1,6 +1,6 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://dfvj8fgty25lj"]
 
-[ext_resource type="Script" path="res://scripts/main/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://c8x7c0isyisdm" path="res://scripts/main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/five_area_workstation.tscn" id="2_workstation"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="3_debug"]
 
@@ -23,7 +23,7 @@ font_color = Color(1, 0.82, 0.46, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBox_pause_button"]
 content_margin_top = 12.0
 content_margin_bottom = 12.0
-bg_color = Color(0.10, 0.36, 0.31, 1)
+bg_color = Color(0.1, 0.36, 0.31, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -48,7 +48,7 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=2022929695]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -57,13 +57,13 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="Workstation" parent="." instance=ExtResource("2_workstation")]
+[node name="Workstation" parent="." unique_id=1302757268 instance=ExtResource("2_workstation")]
 layout_mode = 1
 
-[node name="PausePanel" type="PanelContainer" parent="."]
+[node name="PausePanel" type="PanelContainer" parent="." unique_id=2120767147]
 unique_name_in_owner = true
-visible = false
 process_mode = 3
+visible = false
 z_index = 200
 layout_mode = 1
 anchors_preset = 8
@@ -79,59 +79,59 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBox_pause")
 
-[node name="Content" type="VBoxContainer" parent="PausePanel"]
+[node name="Content" type="VBoxContainer" parent="PausePanel" unique_id=180588640]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="Title" type="Label" parent="PausePanel/Content"]
+[node name="Title" type="Label" parent="PausePanel/Content" unique_id=1209828531]
 layout_mode = 2
 text = "暂停营业"
 label_settings = SubResource("LabelSettings_pause")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Hint" type="Label" parent="PausePanel/Content"]
+[node name="Hint" type="Label" parent="PausePanel/Content" unique_id=173755525]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.80, 0.72, 0.62, 1)
+theme_override_colors/font_color = Color(0.8, 0.72, 0.62, 1)
 theme_override_font_sizes/font_size = 18
 text = "炉火与顾客耐心均已暂停"
 horizontal_alignment = 1
 
-[node name="ResumeButton" type="Button" parent="PausePanel/Content"]
+[node name="ResumeButton" type="Button" parent="PausePanel/Content" unique_id=1450846178]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.88, 0.76, 1)
 theme_override_font_sizes/font_size = 23
 theme_override_styles/normal = SubResource("StyleBox_pause_button")
-theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/pressed = SubResource("StyleBox_pause_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/focus = SubResource("StyleBox_pause_button_hover")
 text = "继续游戏"
 
-[node name="MainMenuButton" type="Button" parent="PausePanel/Content"]
+[node name="MainMenuButton" type="Button" parent="PausePanel/Content" unique_id=1286864271]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.96, 0.88, 0.76, 1)
 theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBox_pause_button")
-theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/pressed = SubResource("StyleBox_pause_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/focus = SubResource("StyleBox_pause_button_hover")
 text = "返回开始页"
 
-[node name="EndBusinessButton" type="Button" parent="PausePanel/Content"]
+[node name="EndBusinessButton" type="Button" parent="PausePanel/Content" unique_id=1589439124]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
 theme_override_font_sizes/font_size = 21
 theme_override_styles/normal = SubResource("StyleBox_pause_button")
-theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/pressed = SubResource("StyleBox_pause_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/focus = SubResource("StyleBox_pause_button_hover")
 text = "结束营业并查看今日账单"
 
-[node name="DebugOverlay" parent="." instance=ExtResource("3_debug")]
+[node name="DebugOverlay" parent="." unique_id=1098079469 instance=ExtResource("3_debug")]
 workstation_path = NodePath("../Workstation")

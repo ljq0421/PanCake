@@ -227,12 +227,14 @@ text = "T0"
 
 [node name="PancakeTier1Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeTierRow"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(140, 42)
 layout_mode = 2
 text = "T1"
 
 [node name="PancakeTier2Button" type="Button" parent="Root/DebugPanel/Scroll/Labels/PancakeTierRow"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(140, 42)
 layout_mode = 2
 text = "T2"

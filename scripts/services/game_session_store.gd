@@ -35,7 +35,7 @@ const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.04": {"product_id": &"product.youtiao.plain", "recipe_id": &"recipe.youtiao.plain"},
 }
 const DEBUG_TIER_GROWTH_IDS := {
-	&"area.pancake": [&"", &"growth.equipment.pancake.intermediate", &"growth.equipment.pancake.advanced"],
+	&"area.pancake": [&""],
 	&"area.youtiao": [&"growth.area.youtiao", &"growth.equipment.youtiao.intermediate", &"growth.equipment.youtiao.advanced"],
 	&"area.fresh_soy_milk": [&"growth.area.fresh_soy_milk", &"growth.equipment.fresh_soy_milk.intermediate", &"growth.equipment.fresh_soy_milk.advanced"],
 }
@@ -2174,7 +2174,7 @@ func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dict
 	var before := five_area_progression_snapshot()
 	if bool(_progression.get("day_open")):
 		return _debug_result(false, &"business_day_open", before, {"area_id": area_id, "target_tier": target_tier})
-	if not DEBUG_TIER_GROWTH_IDS.has(area_id) or target_tier < 0 or target_tier > 2:
+	if not DEBUG_TIER_GROWTH_IDS.has(area_id) or target_tier < 0 or target_tier >= Array(DEBUG_TIER_GROWTH_IDS[area_id]).size():
 		return _debug_result(false, &"unknown_device_tier", before, {"area_id": area_id, "target_tier": target_tier})
 	if not StringName(before.get("pending_install_purchase", &"")).is_empty() or not StringName(before.get("pending_content_purchase", &"")).is_empty():
 		return _debug_result(false, &"pending_purchase_exists", before, {"area_id": area_id, "target_tier": target_tier})

@@ -203,9 +203,13 @@ func _refresh_material_slots() -> void:
 		var slot := fixed_slots[index]
 		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and _id_in(unlocked_recipes, slot.recipe_id)
-		fixed_material_lock_artworks[index].visible = not unlocked
-		fixed_material_lock_buttons[index].visible = not unlocked
-		fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_STOP if not unlocked else Control.MOUSE_FILTER_IGNORE
+		# The countertop art contains the physical ingredients.  These former
+		# bottom-dock controls are intentionally removed from the workbench view.
+		slot.visible = false
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fixed_material_lock_artworks[index].visible = false
+		fixed_material_lock_buttons[index].visible = false
+		fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _on_material_hold_requested(source_ref: Dictionary, slot: Node) -> void:
@@ -387,16 +391,10 @@ func _refresh_formal_shell() -> void:
 func _refresh_multi_griddle_mode() -> void:
 	if not is_node_ready():
 		return
-	var session := get_node_or_null("/root/GameSession")
-	var griddle_count := 1
-	if session != null and session.has_method("progression_service"):
-		var progression: RefCounted = session.call("progression_service")
-		var tier := int(progression.call("device_tier", &"device.pancake_griddle"))
-		griddle_count = int(CATALOG.device_tier(&"device.pancake_griddle", tier).get("griddle_count", tier + 1))
 	_multi_griddle_mode_active = true
 	multi_griddle_station.visible = true
 	multi_griddle_station.process_mode = Node.PROCESS_MODE_INHERIT
-	multi_griddle_station.set_griddle_count(griddle_count)
+	multi_griddle_station.set_griddle_count(1)
 	_apply_multi_griddle_legacy_visibility()
 	# Every compact griddle owns a dedicated discard action. The compact target
 	# inside the youtiao station remains available for fryer and soy waste.

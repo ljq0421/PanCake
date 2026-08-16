@@ -27,14 +27,16 @@ func _run() -> void:
 	var soy := stations.get_node_or_null("FreshSoyMilkStation") as Control if stations != null else null
 	var pancake := stations.get_node_or_null("PancakeStation") as Control if stations != null else null
 	var youtiao := stations.get_node_or_null("YoutiaoStation") as Control if stations != null else null
-	_check(soy != null and Rect2(soy.position, soy.size) == Rect2(8.0, 610.0, 352.0, 340.0), "soy machine owns the widened left area")
-	_check(pancake != null and Rect2(pancake.position, pancake.size) == Rect2(370.0, 610.0, 1170.0, 340.0), "pancake operation owns the large center area")
-	_check(youtiao != null and Rect2(youtiao.position, youtiao.size) == Rect2(1552.0, 610.0, 360.0, 340.0), "youtiao fryer owns the right area")
+	_check(soy != null and Rect2(soy.position, soy.size) == Rect2(8.0, 448.0, 352.0, 340.0), "soy controls align with the left-hand stall artwork")
+	_check(pancake != null and Rect2(pancake.position, pancake.size) == Rect2(370.0, 520.0, 1170.0, 340.0), "pancake operation aligns with the centered griddle artwork")
+	_check(youtiao != null and Rect2(youtiao.position, youtiao.size) == Rect2(1552.0, 430.0, 360.0, 340.0), "fryer controls align with the right-hand stall artwork")
 	var multi := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation") as Control
 	_check(multi != null and multi.has_method("set_griddle_count") and multi.has_method("ready_source_refs"), "multi-griddle station exposes its direct-operation contract")
-	for unit_name in [&"Griddle01", &"Griddle02", &"Griddle03"]:
-		var unit := multi.get_node_or_null(NodePath(str(unit_name))) if multi != null else null
-		_check(unit != null and unit.has_method("begin_order") and unit.has_method("advance_main"), "%s is preauthored as an independent griddle" % unit_name)
+	var unit := multi.get_node_or_null("Griddle01") if multi != null else null
+	_check(unit != null and unit.has_method("begin_order") and unit.has_method("advance_main"), "the single centered griddle remains directly operable")
+	_check(multi != null and multi.get_node_or_null("Griddle02") == null and multi.get_node_or_null("Griddle03") == null and multi.call("griddle_count") == 1, "the live shop cannot expand beyond one griddle")
+	var artwork := workstation.get_node_or_null("SafeArea/JianbingStallArtwork") as Control
+	_check(artwork != null and artwork.mouse_filter == Control.MOUSE_FILTER_IGNORE and artwork.get_node_or_null("SoyMilkDispenser") != null and artwork.get_node_or_null("YoutiaoFryer") != null, "stall artwork is present and cannot intercept gameplay input")
 	_check(workstation.get_node_or_null("FiveAreaInfrastructure/CustomerHandoffTray") == null, "retired handoff tray remains absent")
 	_check(workstation.get_node_or_null("F3StationOverlay") == null, "production overlay remains absent")
 	_check(workstation.get_node_or_null("FiveAreaInfrastructure/WasteArea") == null, "retired global waste target is absent; each griddle owns discard")

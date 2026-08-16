@@ -37,8 +37,6 @@ const DEVICE_DEFINITIONS := {
 		"area_id": &"area.pancake",
 		"tiers": [
 			{"tier": 0, "label": "单张煎饼鏊子", "griddle_count": 1, "heat_window_bonus": 0.0, "reheat_seconds": 0.0},
-			{"tier": 1, "label": "双张并行鏊台", "griddle_count": 2, "heat_window_bonus": 0.08, "reheat_seconds": 0.0},
-			{"tier": 2, "label": "三张并行鏊台", "griddle_count": 3, "heat_window_bonus": 0.12, "reheat_seconds": 1.0},
 		],
 	},
 	&"device.youtiao_fryer": {
@@ -151,13 +149,11 @@ const GROWTH_DEFINITIONS := {
 	&"growth.tool.pancake.wide_spreader": {"label": "宽幅摊饼器", "purchase_slot": &"install", "kind": &"tool", "price": 12, "min_day": 2, "requires_area_id": &"area.pancake"},
 	&"growth.add_on.pancake.red_chili": {"label": "辣椒酱", "purchase_slot": &"content", "kind": &"stock_unlock", "price": 8, "min_reputation": 10, "requires_area_id": &"area.pancake", "unlock_stock_ids": [&"stock.pancake.sauce.red_chili"]},
 	&"growth.add_on.pancake.ham_sausage": {"label": "火腿肠", "purchase_slot": &"content", "kind": &"stock_unlock", "price": 12, "min_day": 4, "requires_area_id": &"area.pancake", "unlock_stock_ids": [&"stock.pancake.ham_sausage"]},
-	&"growth.equipment.pancake.intermediate": {"label": "双张并行鏊台", "purchase_slot": &"install", "kind": &"device_tier", "price": 36, "requires_area_id": &"area.pancake", "requires_mastery": {&"area.pancake": {"a_grade": 4}}, "device_id": &"device.pancake_griddle", "target_tier": 1},
 	&"growth.add_on.pancake.meat_floss": {"label": "肉松", "purchase_slot": &"content", "kind": &"stock_unlock", "price": 18, "min_reputation": 45, "requires_area_id": &"area.pancake", "unlock_stock_ids": [&"stock.pancake.meat_floss"]},
 	&"growth.capacity.pancake_holding_tray.two_slots": {"label": "两格成品暂存托盘", "purchase_slot": &"content", "kind": &"pancake_holding_tray", "price": 32, "min_day": 8, "requires_area_id": &"area.pancake", "requires_tutorial_area_id": &"area.youtiao"},
 	&"growth.add_on.pancake.coriander": {"label": "香菜", "purchase_slot": &"content", "kind": &"stock_unlock", "price": 10, "min_day": 8, "requires_area_id": &"area.pancake", "unlock_stock_ids": [&"stock.pancake.coriander"]},
 	&"growth.add_on.pancake.preserved_mustard": {"label": "榨菜", "purchase_slot": &"content", "kind": &"stock_unlock", "price": 12, "min_reputation": 100, "requires_area_id": &"area.pancake", "unlock_stock_ids": [&"stock.pancake.preserved_mustard"]},
 	&"growth.add_on.pancake.pork_tenderloin": {"label": "里脊肉", "purchase_slot": &"content", "kind": &"stock_unlock", "price": 28, "min_day": 10, "requires_area_id": &"area.pancake", "unlock_stock_ids": [&"stock.pancake.pork_tenderloin"]},
-	&"growth.equipment.pancake.advanced": {"label": "三张并行鏊台", "purchase_slot": &"install", "kind": &"device_tier", "price": 72, "requires_area_id": &"area.pancake", "requires_all_areas": true, "requires_mastery": {&"area.pancake": {"a_grade": 12}}, "device_id": &"device.pancake_griddle", "target_tier": 2},
 	&"growth.capacity.stock.intermediate": {"label": "库存容量10", "purchase_slot": &"content", "kind": &"stock_capacity", "price": 20, "min_reputation": 80, "requires_area_id": &"area.pancake", "target_capacity": 10},
 	&"growth.capacity.stock.advanced": {"label": "库存容量14", "purchase_slot": &"content", "kind": &"stock_capacity", "price": 40, "min_reputation": 200, "requires_area_id": &"area.pancake", "requires_all_areas": true, "requires_growth_ids": [&"growth.capacity.stock.intermediate"], "target_capacity": 14},
 	&"growth.area.youtiao": {"label": "油条炸锅", "purchase_slot": &"install", "kind": &"area_unlock", "price": 30, "min_reputation": 20, "requires_area_id": &"area.pancake", "requires_tutorial_area_id": &"area.pancake", "requires_mastery": {&"area.pancake": {"qualified": 6}}, "area_id": &"area.youtiao", "device_id": &"device.youtiao_fryer", "target_tier": 0, "unlock_recipe_ids": [&"recipe.youtiao.plain"], "unlock_product_ids": [&"product.youtiao.plain"], "unlock_stock_ids": [&"stock.youtiao.plain_dough"]},
@@ -185,7 +181,6 @@ const FIXED_GROWTH_ROUTE: Array[StringName] = [
 	&"growth.add_on.pancake.red_chili",
 	&"growth.add_on.pancake.ham_sausage",
 	&"growth.area.youtiao",
-	&"growth.equipment.pancake.intermediate",
 	&"growth.add_on.pancake.meat_floss",
 	&"growth.assist.youtiao.temperature_indicator",
 	&"growth.capacity.stock.intermediate",
@@ -200,7 +195,6 @@ const FIXED_GROWTH_ROUTE: Array[StringName] = [
 	&"growth.add_on.pancake.pork_tenderloin",
 	&"growth.recipe.fresh_soy_milk.red_bean",
 	&"growth.recipe.fresh_soy_milk.multigrain",
-	&"growth.equipment.pancake.advanced",
 	&"growth.capacity.stock.advanced",
 	&"growth.automation.youtiao.auto_lift",
 	&"growth.equipment.youtiao.advanced",
@@ -366,7 +360,8 @@ static func validate_catalog() -> PackedStringArray:
 			if seen_tiers.has(tier):
 				errors.append("Device has duplicate tier: %s/%d" % [device_id, tier])
 			seen_tiers.append(tier)
-		for required_tier in [0, 1, 2]:
+		var required_tiers := [0] if device_id == &"device.pancake_griddle" else [0, 1, 2]
+		for required_tier in required_tiers:
 			if not seen_tiers.has(required_tier):
 				errors.append("Device is missing tier: %s/%d" % [device_id, required_tier])
 	if FIXED_GROWTH_ROUTE.is_empty():

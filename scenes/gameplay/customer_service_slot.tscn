@@ -20,9 +20,10 @@ script = ExtResource("1_script")
 [node name="Portrait" type="TextureRect" parent="." unique_id=175191323]
 unique_name_in_owner = true
 layout_mode = 0
-offset_top = 194.0
-offset_right = 174.0
-offset_bottom = 486.0
+offset_left = 12.0
+offset_top = 65.0
+offset_right = 162.0
+offset_bottom = 310.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
@@ -31,9 +32,10 @@ z_index = -20
 [node name="PortraitButton" type="Button" parent="." unique_id=124302953]
 unique_name_in_owner = true
 layout_mode = 0
-offset_top = 175.0
-offset_right = 174.0
-offset_bottom = 483.0
+offset_left = 12.0
+offset_top = 58.0
+offset_right = 162.0
+offset_bottom = 312.0
 tooltip_text = "点击切换当前制作目标"
 flat = true
 z_index = -19

@@ -1,0 +1,124 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/soy-milk-dispenser.png" id="1_soy"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/serving-supplies-set.png" id="2_supplies"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/soybean-basket.png" id="3_soybeans"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/green-pea-bowl.png" id="4_peas"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/ingredient-bowls-sheet.png" id="5_ingredients"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/sauce-and-tools-set.png" id="6_sauces"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer.png" id="7_fryer"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_soy"]
+atlas = ExtResource("1_soy")
+region = Rect2(100, 12, 928, 1344)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_supplies"]
+atlas = ExtResource("2_supplies")
+region = Rect2(292, 28, 992, 960)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_soybeans"]
+atlas = ExtResource("3_soybeans")
+region = Rect2(70, 40, 1235, 1040)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_peas"]
+atlas = ExtResource("4_peas")
+region = Rect2(96, 80, 1110, 1050)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ingredients"]
+atlas = ExtResource("5_ingredients")
+region = Rect2(88, 72, 1996, 580)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sauces"]
+atlas = ExtResource("6_sauces")
+region = Rect2(252, 36, 992, 928)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fryer"]
+atlas = ExtResource("7_fryer")
+region = Rect2(172, 64, 888, 1144)
+
+[node name="JianbingStallArtwork" type="Control"]
+z_index = -90
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SoyMilkDispenser" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 448.0
+offset_right = 300.0
+offset_bottom = 824.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_soy")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ServingSupplies" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 220.0
+offset_top = 538.0
+offset_right = 480.0
+offset_bottom = 790.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_supplies")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SoybeanBasket" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 310.0
+offset_top = 480.0
+offset_right = 465.0
+offset_bottom = 613.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_soybeans")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GreenPeaBowl" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 470.0
+offset_top = 488.0
+offset_right = 604.0
+offset_bottom = 623.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_peas")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IngredientBowls" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 620.0
+offset_top = 475.0
+offset_right = 1050.0
+offset_bottom = 615.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_ingredients")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SauceAndTools" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 530.0
+offset_right = 1396.0
+offset_bottom = 790.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_sauces")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YoutiaoFryer" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 1450.0
+offset_top = 440.0
+offset_right = 1690.0
+offset_bottom = 750.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_fryer")
+expand_mode = 1
+stretch_mode = 5

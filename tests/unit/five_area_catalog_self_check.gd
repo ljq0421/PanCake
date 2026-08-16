@@ -10,21 +10,19 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 29, "three-area growth route contains 29 active upgrades after retiring two fryer recipes")
+	_check(CATALOG.growth_ids().size() == 27, "single-stall growth route removes both pancake expansion upgrades")
 	for growth_id in CATALOG.growth_ids():
 		var definition := CATALOG.growth_definition(growth_id)
 		_check(CATALOG.AREA_IDS.has(StringName(definition.get("requires_area_id", &""))), "%s belongs to an active area" % growth_id)
-	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.equipment.pancake.intermediate")) == "mastery:area.pancake:a_grade:4", "second griddle requires four A-grade pancakes")
-	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.equipment.pancake.advanced")) == "mastery:area.pancake:a_grade:12", "third griddle requires twelve A-grade pancakes")
 	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.area.youtiao")) == "reputation:20,mastery:area.pancake:qualified:6", "youtiao unlock follows pancake mastery")
 	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.area.fresh_soy_milk")) == "day:7,reputation:60,mastery:area.youtiao:qualified:4", "soy unlock follows youtiao mastery")
 	for area_id in CATALOG.AREA_IDS:
 		var device_id := StringName(CATALOG.area_definition(area_id).get("device_id", &""))
-		for tier in range(3):
+		var tier_count := 1 if device_id == &"device.pancake_griddle" else 3
+		for tier in range(tier_count):
 			_check(not CATALOG.device_tier(StringName(device_id), tier).is_empty(), "%s owns continuous tier %d" % [device_id, tier])
 	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 0).get("griddle_count", 0)) == 1, "basic pancake station has one griddle")
-	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 1).get("griddle_count", 0)) == 2, "intermediate pancake station has two griddles")
-	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 2).get("griddle_count", 0)) == 3, "advanced pancake station has three griddles")
+	_check(CATALOG.device_tier(&"device.pancake_griddle", 1).is_empty() and CATALOG.growth_definition(&"growth.equipment.pancake.intermediate").is_empty(), "pancake capacity expansion is absent from catalog")
 	for youtiao_tier in [{"tier": 0, "capacity": 4, "duration": 10.0}, {"tier": 1, "capacity": 6, "duration": 8.0}, {"tier": 2, "capacity": 8, "duration": 6.0}]:
 		var definition := CATALOG.device_tier(&"device.youtiao_fryer", int(youtiao_tier["tier"]))
 		_check(int(definition.get("capacity", 0)) == int(youtiao_tier["capacity"]) and is_equal_approx(float(definition.get("duration_seconds", 0.0)), float(youtiao_tier["duration"])), "youtiao tier %d uses its 4/6/8 and 10/8/6 contract" % int(youtiao_tier["tier"]))

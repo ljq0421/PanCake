@@ -118,6 +118,7 @@ func _add_stock_slot(host: Control, definition: Dictionary) -> void:
 	slot.material_texture = definition.get("texture") as Texture2D
 	slot.material_label = str(definition.get("label", ""))
 	slot.native_drag_enabled = bool(definition.get("native_drag", true))
+	slot.unlimited = bool(CATALOG.stock_definition(slot.stock_id).get("unlimited", false))
 	slot.short_clicked.connect(_on_slot_short_clicked.bind(slot))
 	slot.hold_requested.connect(_on_hold_requested.bind(slot))
 	slot.hold_advanced.connect(_on_hold_advanced.bind(slot))
@@ -156,10 +157,14 @@ func _on_slot_short_clicked(source_ref: Dictionary, _slot: FiveAreaMaterialSlot)
 		tool_selected.emit(stock_id)
 		status_message.emit("已拿起%s酱刷；在加料阶段的目标鏊面连续刷涂" % _stock_label(stock_id))
 	elif source_kind == &"pancake_shared_batter":
-		status_message.emit("点击空鏊的“添面糊”；长按面糊桶可补货")
+		status_message.emit("面糊供应充足，无需补货；点击空鏊的“添面糊”即可制作")
 
 
 func _on_hold_requested(source_ref: Dictionary, slot: FiveAreaMaterialSlot) -> void:
+	if slot.unlimited:
+		slot.reject_hold()
+		status_message.emit("面糊供应充足，无需补货")
+		return
 	if _session == null or not _session.has_method("five_area_restock_status"):
 		slot.reject_hold()
 		return

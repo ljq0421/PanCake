@@ -18,6 +18,8 @@ var _product_sequence := 0
 var _save_elapsed := 0.0
 var _last_tree_paused := false
 var _selected_tool: StringName = &""
+var _primed_sauce_stock_id: StringName = &""
+var _primed_sauce_unit_index := -1
 
 
 func _ready() -> void:
@@ -146,10 +148,6 @@ func _on_main_action(unit_index: int) -> void:
 		return
 	_active_index = unit_index
 	if unit.state == UNIT_SCRIPT.State.IDLE:
-		var consumed := _consume_inventory_stock(&"stock.pancake.batter")
-		if not bool(consumed.get("success", false)):
-			status_message.emit("面糊不足：先补货再给空鏊子添面")
-			return
 		unit.begin_order(_unbound_production_context())
 		_set_selected_tool(&"tool.pancake.spreader")
 		_sync_snapshot_to_session()
@@ -165,6 +163,15 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 	if unit == null:
 		return {"success": false, "reason": &"griddle_locked"}
 	_active_index = unit_index
+	if (
+		unit_index == _primed_sauce_unit_index
+		and _selected_tool == _primed_sauce_stock_id
+		and not _primed_sauce_stock_id.is_empty()
+	):
+		if not unit.can_apply_sauce_at(local_position):
+			status_message.emit("酱刷必须先接触有效饼面")
+			return {"success": false, "reason": &"outside_pancake"}
+		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _primed_sauce_stock_id}
 	if unit.state in [UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH, UNIT_SCRIPT.State.FOLDING]:
 		var fold_result := Dictionary(unit.begin_manual_fold(local_position))
 		if bool(fold_result.get("success", false)):
@@ -186,24 +193,8 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		status_message.emit("摊饼器当前只能摊面糊，或在第一面摊开已放入的鸡蛋")
 		return {"success": false, "reason": &"wrong_stage"}
 	if _selected_tool in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
-		if unit.state not in [UNIT_SCRIPT.State.FIRST_SIDE, UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH]:
-			status_message.emit("酱刷可在第一面直接使用；不翻面交付会额外扣12分")
-			return {"success": false, "reason": &"wrong_stage"}
-		if unit.applied_sauce_ids.has(str(_selected_tool)):
-			status_message.emit("这张饼已经刷过同一种酱")
-			return {"success": false, "reason": &"duplicate_sauce"}
-		if not unit.can_apply_sauce_at(local_position):
-			status_message.emit("酱刷必须先接触有效饼面")
-			return {"success": false, "reason": &"outside_pancake"}
-		var consumed := _consume_inventory_stock(_selected_tool)
-		if not bool(consumed.get("success", false)):
-			status_message.emit("%s库存不足" % _stock_label(_selected_tool))
-			return consumed
-		var preparation: Dictionary = unit.begin_garnish_without_flip() if unit.state == UNIT_SCRIPT.State.FIRST_SIDE else unit.confirm_second_side_for_followup()
-		if not bool(preparation.get("success", false)):
-			return preparation
-		shared_tool_tray.refresh_from_session()
-		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _selected_tool}
+		status_message.emit("请重新点击酱罐落酱后再刷")
+		return {"success": false, "reason": &"sauce_not_primed"}
 	status_message.emit("先从共享料台拿起摊饼器或酱刷")
 	return {"success": false, "reason": &"tool_not_selected"}
 
@@ -211,7 +202,7 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 func _contextual_spreader_action(unit: Node) -> StringName:
 	if unit.state == UNIT_SCRIPT.State.BATTER:
 		return UNIT_SCRIPT.SURFACE_ACTION_SPREAD_BATTER
-	if unit.state == UNIT_SCRIPT.State.FIRST_SIDE and unit.pancake_model.has_egg():
+	if unit.state in [UNIT_SCRIPT.State.FIRST_SIDE, UNIT_SCRIPT.State.SECOND_SIDE] and unit.pancake_model.has_egg():
 		return UNIT_SCRIPT.SURFACE_ACTION_SPREAD_EGG
 	return &""
 
@@ -290,14 +281,64 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 
 func clear_held_tool() -> void:
 	_selected_tool = &""
+	_primed_sauce_stock_id = &""
+	_primed_sauce_unit_index = -1
 	if is_instance_valid(shared_tool_tray):
 		shared_tool_tray.set_selected_tool(&"")
 	for unit in units:
 		unit.cancel_held_tool()
 
 
+func is_spreader_selected() -> bool:
+	return _selected_tool == &"tool.pancake.spreader"
+
+
 func _on_shared_tool_selected(tool_id: StringName) -> void:
+	select_worktop_tool(tool_id)
+
+
+func select_worktop_tool(tool_id: StringName) -> Dictionary:
+	if tool_id == &"tool.pancake.spreader":
+		clear_held_tool()
+		_set_selected_tool(tool_id)
+		status_message.emit("已拿起摊饼器；在鏊面按住画圈摊面或摊蛋")
+		return {"success": true, "tool_id": tool_id}
+	if tool_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
+		return {"success": false, "reason": &"unknown_tool"}
+	if _session == null or not _session.has_method("inventory_snapshot"):
+		return {"success": false, "reason": &"no_session"}
+	var progression: RefCounted = _session.call("progression_service") if _session.has_method("progression_service") else null
+	if progression == null or not bool(progression.call("owns_stock", tool_id)):
+		status_message.emit("%s尚未解锁" % _stock_label(tool_id))
+		return {"success": false, "reason": &"stock_locked"}
+	if int(Dictionary(_session.call("inventory_snapshot")).get(str(tool_id), 0)) <= 0:
+		status_message.emit("%s库存不足；请长按酱罐补货" % _stock_label(tool_id))
+		return {"success": false, "reason": &"insufficient_stock"}
+	var unit := _unit(_active_index)
+	if unit == null or not unit.has_method("validate_sauce_prime"):
+		return {"success": false, "reason": &"griddle_locked"}
+	var validation := Dictionary(unit.call("validate_sauce_prime", tool_id))
+	if not bool(validation.get("success", false)):
+		var reason := StringName(validation.get("reason", &""))
+		match reason:
+			&"duplicate_sauce": status_message.emit("这张饼已经加过同一种酱")
+			&"outside_pancake": status_message.emit("当前饼面没有可落酱的位置")
+			_: status_message.emit("摊开面饼后才能点击酱罐落酱")
+		return validation
+	var consumed := _consume_inventory_stock(tool_id)
+	if not bool(consumed.get("success", false)):
+		status_message.emit("%s库存不足" % _stock_label(tool_id))
+		return consumed
+	var primed := Dictionary(unit.call("prime_sauce", tool_id, validation))
+	if not bool(primed.get("success", false)):
+		return primed
 	_set_selected_tool(tool_id)
+	_primed_sauce_stock_id = tool_id
+	_primed_sauce_unit_index = _active_index
+	shared_tool_tray.refresh_from_session()
+	_sync_snapshot_to_session()
+	status_message.emit("%s已落到饼面；酱刷已拿起，按住鏊面拖动刷开" % _stock_label(tool_id))
+	return primed.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
 
 
 func _set_selected_tool(tool_id: StringName) -> void:

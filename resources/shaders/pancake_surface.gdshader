@@ -31,6 +31,24 @@ vec3 thickness_heat(float value) {
 	return t < 0.5 ? mix(cold, even, t * 2.0) : mix(even, thick, (t - 0.5) * 2.0);
 }
 
+// The simulation uses a deliberately inexpensive 64 x 64 field.  Its values
+// must stay discrete for scoring, but showing a hard cell boundary makes the
+// outer pancake silhouette look stair-stepped at the workstation scale.
+// This compact five-tap filter is presentation-only: it samples the already
+// uploaded field and is used solely for the visible edge and alpha.
+float visual_coverage(vec2 uv) {
+	vec2 x_offset = vec2(field_texel_size.x, 0.0);
+	vec2 y_offset = vec2(0.0, field_texel_size.y);
+	float center = texture(field_texture, uv).r * 0.50;
+	float cardinal = (
+		texture(field_texture, uv - x_offset).r
+		+ texture(field_texture, uv + x_offset).r
+		+ texture(field_texture, uv - y_offset).r
+		+ texture(field_texture, uv + y_offset).r
+	) * 0.125;
+	return center + cardinal;
+}
+
 void fragment() {
 	vec4 fields = texture(field_texture, UV);
 	float coverage = fields.r;
@@ -75,6 +93,7 @@ void fragment() {
 		}
 		COLOR = vec4(debug_color, debug_alpha * pan_mask);
 	} else {
+		float smoothed_coverage = visual_coverage(UV);
 		vec2 detail_uv = UV;
 		vec3 raw_color = texture(raw_texture, detail_uv).rgb;
 		vec3 cooked_color = texture(cooked_texture, detail_uv).rgb;
@@ -94,7 +113,7 @@ void fragment() {
 			min(texture(field_texture, UV + vec2(field_texel_size.x, 0.0)).r, texture(field_texture, UV - vec2(field_texel_size.x, 0.0)).r),
 			min(texture(field_texture, UV + vec2(0.0, field_texel_size.y)).r, texture(field_texture, UV - vec2(0.0, field_texel_size.y)).r)
 		);
-		float edge = coverage * (1.0 - smoothstep(0.20, 0.82, neighbor_coverage));
+		float edge = smoothed_coverage * (1.0 - smoothstep(0.20, 0.82, neighbor_coverage));
 		float edge_detail = texture(edge_texture, detail_uv).r;
 		pancake_color *= mix(0.92, 1.08, wetness * texture(raw_texture, detail_uv.yx).r);
 		pancake_color *= mix(0.86, 1.08, clamp(thickness * 1.25, 0.0, 1.0));
@@ -140,7 +159,9 @@ void fragment() {
 		float chili_visibility = smoothstep(0.015, 0.32, chili_sauce) * stationary_sauce_visibility;
 		pancake_color = mix(pancake_color, chili_color, chili_visibility * 0.80);
 
-		float alpha = smoothstep(0.02, 0.32, coverage) * pan_mask;
+		// Keep the physical coverage above untouched.  A short, filtered alpha
+		// transition rounds off grid corners without extending the playable pan.
+		float alpha = smoothstep(0.12, 0.62, smoothed_coverage) * pan_mask;
 		alpha *= 1.0 - smoothstep(0.91, 1.0, damage);
 		float left_fold_source = 1.0 - step(fold_left_line_ratio, UV.x);
 		float right_fold_source = step(fold_right_line_ratio, UV.x);

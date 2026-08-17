@@ -23,7 +23,7 @@ func _run() -> void:
 		return
 	session.call("begin_new_game")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.pancake.batter"] = 2
+	inventory["stock.pancake.batter"] = 0
 	session.call("save_inventory", inventory)
 	var game := MAIN_SCENE.instantiate()
 	root.add_child(game)
@@ -36,7 +36,7 @@ func _run() -> void:
 	var unit: Control = station.units[0]
 	await _click_control(unit.main_action)
 	_check(unit.state == CompactGriddleUnit.State.BATTER, "the sole visible pointer target starts a pancake without a customer order")
-	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.batter", 0)) == 1, "one pointer start consumes exactly one batter portion")
+	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.batter", 0)) == 0, "one pointer start uses the unlimited batter source without consuming inventory")
 	game.queue_free()
 	await process_frame
 	_finish()

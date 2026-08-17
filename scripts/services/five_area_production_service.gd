@@ -42,8 +42,8 @@ func advance_time(delta: float) -> void:
 		return
 	_sync_ownership()
 	_youtiao.call("advance_time", step, youtiao_auto_lift_enabled())
-	_soy.call("configure_upgrades", _owns_assist(&"assist.fresh_soy_milk.water_guide"), _owns_growth(&"growth.quality.fresh_soy_milk.max"))
-	_soy.call("advance_time", step, _owns_automation(&"automation.fresh_soy_milk.auto_cup_rack"))
+	_configure_soy_serving_upgrades()
+	_soy.call("advance_time", step, false)
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
 	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
 
@@ -57,6 +57,76 @@ func machine_snapshot(device_id: StringName) -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return Dictionary(_soy.call("snapshot")).duplicate(true)
 	return {"device_id": device_id, "owned": false, "state": &"unsupported"}
+
+
+func take_soy_empty_cup() -> Dictionary:
+	_sync_ownership()
+	var result: Dictionary = _soy.call("take_empty_cup")
+	if bool(result.get("success", false)):
+		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return result
+
+
+func select_soy_recipe(recipe_id: StringName) -> Dictionary:
+	_sync_ownership()
+	var result: Dictionary = _soy.call("select_recipe", recipe_id)
+	if bool(result.get("success", false)):
+		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return result
+
+
+func fill_soy_empty_cup(held_seconds: float) -> Dictionary:
+	_sync_ownership()
+	var result: Dictionary = _soy.call("fill_held_cup", held_seconds)
+	if bool(result.get("success", false)):
+		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return result
+
+
+func add_soy_sugar() -> Dictionary:
+	var result: Dictionary = _soy.call("add_sugar")
+	if bool(result.get("success", false)):
+		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return result
+
+
+func preview_soy_cup() -> Dictionary:
+	var result: Dictionary = _soy.call("preview_cup")
+	if not bool(result.get("success", false)):
+		return result
+	var source_product := Dictionary(result.get("product", {}))
+	var product := _new_product(
+		StringName(source_product.get("product_id", &"")),
+		&"area.fresh_soy_milk",
+		&"room_temperature",
+		float(source_product.get("quality", 0.0)),
+		StringName(source_product.get("grade", &"waste")),
+		false,
+	)
+	_copy_soy_product_fields(product, source_product)
+	product["fill_ratio"] = float(source_product.get("fill_ratio", 1.0))
+	product["sugar_servings"] = int(source_product.get("sugar_servings", 0))
+	return _success({"product": product})
+
+
+func take_soy_cup() -> Dictionary:
+	var preview := preview_soy_cup()
+	if not bool(preview.get("success", false)):
+		return preview
+	var taken: Dictionary = _soy.call("take_filled_cup")
+	if not bool(taken.get("success", false)):
+		return taken
+	var product := Dictionary(preview.get("product", {})).duplicate(true)
+	product["product_instance_id"] = _new_product(
+		StringName(product.get("product_id", &"")),
+		&"area.fresh_soy_milk",
+		&"room_temperature",
+		float(product.get("quality", 0.0)),
+		StringName(product.get("grade", &"waste")),
+	).get("product_instance_id", &"")
+	product_created.emit(product.duplicate(true))
+	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return _success({"product": product})
 
 
 func youtiao_auto_lift_enabled() -> bool:
@@ -555,7 +625,23 @@ func _sync_ownership() -> void:
 		_youtiao.call("configure_owned", int(_progression.call("device_tier", YOUTIAO_DEVICE)))
 	if bool(_progression.call("owns_area", &"area.fresh_soy_milk")):
 		_soy.call("configure_owned", int(_progression.call("device_tier", SOY_DEVICE)))
-		_soy.call("configure_upgrades", _owns_assist(&"assist.fresh_soy_milk.water_guide"), _owns_growth(&"growth.quality.fresh_soy_milk.max"))
+		_configure_soy_serving_upgrades()
+
+
+func _configure_soy_serving_upgrades() -> void:
+	if _progression == null:
+		return
+	var recipes: Array[StringName] = []
+	for recipe_id in SOY_MODEL.SOY_RECIPE_IDS:
+		if _owns_recipe(recipe_id):
+			recipes.append(recipe_id)
+	_soy.call("configure_available_recipes", recipes)
+	_soy.call(
+		"configure_upgrades",
+		_owns_assist(&"assist.fresh_soy_milk.fill_guide"),
+		_owns_automation(&"automation.fresh_soy_milk.auto_fill"),
+		_owns_growth(&"growth.quality.fresh_soy_milk.rich_formula")
+	)
 
 
 func _owns_recipe(recipe_id: StringName) -> bool:
@@ -647,6 +733,8 @@ static func _youtiao_material_cost(product_id: StringName) -> int:
 func _copy_soy_product_fields(product: Dictionary, source: Dictionary) -> void:
 	product["ingredient_ids"] = PackedStringArray(source.get("ingredient_ids", PackedStringArray()))
 	product["quality_multiplier"] = float(source.get("quality_multiplier", 1.0))
+	product["fill_ratio"] = float(source.get("fill_ratio", 1.0))
+	product["sugar_servings"] = int(source.get("sugar_servings", 0))
 	var material_cost := 0
 	if product["ingredient_ids"].is_empty():
 		var recipe := CATALOG.recipe_definition(StringName(CATALOG.product_definition(StringName(product.get("product_id", &""))).get("recipe_id", &"")))

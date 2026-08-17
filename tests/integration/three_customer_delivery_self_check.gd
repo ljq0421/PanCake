@@ -161,7 +161,7 @@ func _service_slot_scene_contract(workstation: Node) -> bool:
 			return false
 		if portrait_button.mouse_filter != Control.MOUSE_FILTER_STOP or card_focus_button.mouse_filter != Control.MOUSE_FILTER_STOP:
 			return false
-		if card_background.texture == null or not card_background.texture.resource_path.ends_with("order_card_multi_dish_v4_chinese_ui.png"):
+		if card_background.texture == null or not card_background.texture.resource_path.ends_with("order_card_multi_dish_v3_five_area_v2.png"):
 			return false
 		if not _rect_matches(first_item, Rect2(36.0, 95.0, 62.0, 62.0)):
 			return false

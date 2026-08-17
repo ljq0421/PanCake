@@ -17,19 +17,19 @@ func _run() -> void:
 	var starter_tutorial := starter.tutorial_snapshot()
 	_check(StringName(starter_tutorial.get("active_id", &"")) == &"area.pancake", "pancake is the first tutorial")
 	var route_ids := PackedStringArray(CATALOG.growth_ids())
-	_check(route_ids.size() == 27, "growth route excludes both retired pancake capacity upgrades")
+	_check(route_ids.size() == 25, "growth route removes retired soy production and cup-rack upgrades")
 	_check(route_ids.slice(9) == PackedStringArray([
-		"growth.area.fresh_soy_milk", "growth.equipment.fresh_soy_milk.intermediate", "growth.assist.fresh_soy_milk.water_guide", "growth.recipe.fresh_soy_milk.black_bean",
+		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.fill_guide", "growth.flavor.fresh_soy_milk.black_bean", "growth.equipment.fresh_soy_milk.intermediate",
 		"growth.capacity.pancake_holding_tray.two_slots", "growth.add_on.pancake.preserved_mustard", "growth.add_on.pancake.pork_tenderloin",
-		"growth.recipe.fresh_soy_milk.red_bean", "growth.recipe.fresh_soy_milk.multigrain", "growth.capacity.stock.advanced",
-		"growth.automation.youtiao.auto_lift", "growth.equipment.youtiao.advanced", "growth.equipment.fresh_soy_milk.advanced", "growth.automation.fresh_soy_milk.auto_yellow_restock",
-		"growth.automation.fresh_soy_milk.auto_cup_rack", "growth.automation.fresh_soy_milk.auto_production", "growth.quality.fresh_soy_milk.max", "growth.pricing.fresh_soy_milk.premium",
-	]), "growth route keeps the approved soy sequence after the single-stall change")
+		"growth.automation.fresh_soy_milk.auto_fill", "growth.flavor.fresh_soy_milk.red_bean", "growth.capacity.stock.advanced",
+		"growth.automation.youtiao.auto_lift", "growth.equipment.youtiao.advanced", "growth.equipment.fresh_soy_milk.advanced", "growth.flavor.fresh_soy_milk.multigrain",
+		"growth.quality.fresh_soy_milk.rich_formula", "growth.pricing.fresh_soy_milk.premium",
+	]), "growth route orders flavour buttons, fill assistance, capacity, then quality and revenue")
 	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake"), "retired fryer recipes are absent from growth")
-	_check(int(CATALOG.growth_definition(&"growth.assist.fresh_soy_milk.water_guide").get("price", 0)) == 24, "water guide costs 24")
-	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_production").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 15, "auto production requires fifteen A-grade soy orders")
-	_check(int(Dictionary(CATALOG.growth_definition(&"growth.quality.fresh_soy_milk.max").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 18, "quality MAX requires eighteen A-grade soy orders")
-	_check(int(Dictionary(CATALOG.growth_definition(&"growth.pricing.fresh_soy_milk.premium").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 20, "soy premium requires twenty A-grade soy orders")
+	_check(int(CATALOG.growth_definition(&"growth.assist.fresh_soy_milk.fill_guide").get("price", 0)) == 18, "fill guide costs 18")
+	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 4, "automatic filling requires four A-grade soy orders")
+	_check(int(Dictionary(CATALOG.growth_definition(&"growth.quality.fresh_soy_milk.rich_formula").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 12, "quality formula requires twelve A-grade soy orders")
+	_check(int(Dictionary(CATALOG.growth_definition(&"growth.pricing.fresh_soy_milk.premium").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 16, "soy premium requires sixteen A-grade soy orders")
 	for retired_growth in [&"growth.area.packaged_drink", &"growth.area.steamer", &"growth.equipment.packaged_drink.advanced"]:
 		_check(not route_ids.has(str(retired_growth)), "%s is absent from active growth" % retired_growth)
 	var early := SERVICE.new({

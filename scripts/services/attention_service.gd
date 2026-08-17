@@ -7,7 +7,7 @@ const MAX_ITEMS := 3
 
 static func build_attention(
 	machine_snapshots: Dictionary,
-	output_rack: Array[Dictionary],
+	output_rack: Array,
 	tray_snapshot: Dictionary
 ) -> Array[Dictionary]:
 	var items: Array[Dictionary] = []

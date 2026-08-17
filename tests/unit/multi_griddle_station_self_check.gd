@@ -5,6 +5,7 @@ const PRODUCTION_SERVICE := preload("res://scripts/services/five_area_production
 
 class FakeProgression:
 	extends RefCounted
+	var stock_capacity := 6
 
 	func owns_stock(_stock_id: StringName) -> bool:
 		return true
@@ -16,7 +17,7 @@ class FakeProgression:
 class FakeSession:
 	extends Node
 	var progression := FakeProgression.new()
-	var inventory := {"stock.pancake.batter": 2}
+	var inventory := {"stock.pancake.batter": 0}
 
 	func progression_service() -> RefCounted:
 		return progression
@@ -56,7 +57,7 @@ func _run() -> void:
 	var unit: Node = station.units[0]
 	_check(unit.position.is_equal_approx(Vector2(405.0, 36.0)), "the sole griddle remains centered in the operation area")
 	station.call("_on_main_action", 0)
-	_check(int(session.inventory["stock.pancake.batter"]) == 1 and unit.state == CompactGriddleUnit.State.BATTER, "the visible griddle still starts batter production")
+	_check(int(session.inventory["stock.pancake.batter"]) == 0 and unit.state == CompactGriddleUnit.State.BATTER, "the visible griddle starts with unlimited batter and does not consume inventory")
 	_check(unit.pancake_surface.visible and unit.pancake_surface._has_point(unit.pancake_surface.size * 0.5), "the single griddle keeps its elliptical interactive pancake surface")
 	var legacy_slot := Dictionary(unit.snapshot())
 	var legacy_snapshot := {"version": 1, "griddle_count": 3, "active_index": 2, "product_sequence": 7, "slots": [legacy_slot, {}, {}]}

@@ -45,7 +45,7 @@ func _run() -> void:
 	source_ref["product"] = source_product
 	workstation.set("_ready_pancake_source_ref", source_ref)
 	var inventory := Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.pancake.batter"] = 1
+	inventory["stock.pancake.batter"] = 0
 	for sauce_id_variant in Array(source_product.get("sauce_ids", [])):
 		inventory[str(StringName(sauce_id_variant))] = 1
 	session.call("save_inventory", inventory)
@@ -70,7 +70,7 @@ func _run() -> void:
 	_check(
 		StringName(settled.get("state", &"")) == &"settled"
 		and bool(settlement.get("order_success", false))
-		and batter_after == batter_before - 1
+		and batter_after == batter_before
 		and workstation.p1_session.phase == P1Session.Phase.SPREAD
 		and Dictionary(workstation.get("_ready_pancake_source_ref")).is_empty(),
 		"one real pointer click consumes and clears exactly one packaged pancake"

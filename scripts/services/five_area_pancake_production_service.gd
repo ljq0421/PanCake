@@ -35,10 +35,6 @@ func can_produce() -> Dictionary:
 	var progression: RefCounted = _session.call("progression_service")
 	if not bool(progression.call("owns_area", &"area.pancake")) or not bool(progression.call("owns_recipe", &"recipe.pancake.base")):
 		return {"success": false, "reason": &"recipe_locked"}
-	if _session.has_method("inventory_snapshot"):
-		var inventory: Dictionary = _session.call("inventory_snapshot")
-		if int(inventory.get("stock.pancake.batter", 0)) <= 0:
-			return {"success": false, "reason": &"insufficient_stock", "stock_id": &"stock.pancake.batter"}
 	return {"success": true}
 
 
@@ -98,7 +94,7 @@ func settle_completed_pancake(score_result: Dictionary, order: Dictionary = {}, 
 	var availability := can_produce()
 	if not bool(availability.get("success", false)):
 		return availability
-	var consumed: Array[StringName] = [&"stock.pancake.batter"]
+	var consumed: Array[StringName] = []
 	for sauce_id in Array(score_result.get("applied_sauce_ids", [])):
 		var stock_id: StringName = LEGACY_SAUCE_TO_STOCK.get(StringName(sauce_id), &"")
 		if not stock_id.is_empty():

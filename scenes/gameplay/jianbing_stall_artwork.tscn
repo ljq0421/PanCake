@@ -1,16 +1,30 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene format=3 uid="uid://dngeu6txsruyi"]
 
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/soy-milk-dispenser.png" id="1_soy"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/serving-supplies-set.png" id="2_supplies"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/soybean-basket.png" id="3_soybeans"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/green-pea-bowl.png" id="4_peas"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/ingredient-bowls-sheet.png" id="5_ingredients"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/sauce-and-tools-set.png" id="6_sauces"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer.png" id="7_fryer"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_soy"]
-atlas = ExtResource("1_soy")
-region = Rect2(100, 12, 928, 1344)
+[ext_resource type="Texture2D" uid="uid://h30y780vs2v4" path="res://assets/jianbing-stall/soy-milk-dispenser.png" id="1_soy"]
+[ext_resource type="Texture2D" uid="uid://8gebprytv4cy" path="res://assets/jianbing-stall/serving-supplies-set.png" id="2_supplies"]
+[ext_resource type="Texture2D" uid="uid://dr2cvvaepqbbg" path="res://assets/jianbing-stall/soybean-basket.png" id="3_soybeans"]
+[ext_resource type="Texture2D" uid="uid://c8ljpdbtsfvfd" path="res://assets/jianbing-stall/green-pea-bowl.png" id="4_peas"]
+[ext_resource type="Texture2D" uid="uid://bg8nk8hnqim5u" path="res://assets/jianbing-stall/ingredient-bowls-sheet.png" id="5_ingredients"]
+[ext_resource type="Texture2D" uid="uid://dupss5avdbgbg" path="res://assets/jianbing-stall/sauce-and-tools-set.png" id="6_sauces"]
+[ext_resource type="Texture2D" uid="uid://bn8qftp04q8hd" path="res://assets/jianbing-stall/youtiao-fryer.png" id="7_fryer"]
+[ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://assets/jianbing-stall/sweet-bean-sauce-jar-no-brush.png" id="9_sweet_bean_sauce"]
+[ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="10_baocui_basket"]
+[ext_resource type="Script" uid="uid://csf2fcu74kb2q" path="res://scripts/ui/baocui_basket_source.gd" id="11_baocui_source"]
+[ext_resource type="Texture2D" uid="uid://bfbax40gcit57" path="res://resources/art/ingredients/baocui/baocui_crisps_01.png" id="12_baocui_01"]
+[ext_resource type="Texture2D" uid="uid://cye41peqgyfhl" path="res://resources/art/ingredients/baocui/baocui_crisps_02.png" id="13_baocui_02"]
+[ext_resource type="Texture2D" uid="uid://devd2wrnoov5c" path="res://resources/art/ingredients/baocui/baocui_crisps_03.png" id="14_baocui_03"]
+[ext_resource type="Texture2D" uid="uid://db588mrtwiat3" path="res://resources/art/ingredients/baocui/baocui_crisps_04.png" id="15_baocui_04"]
+[ext_resource type="Texture2D" uid="uid://mxqqqnl8pkh6" path="res://resources/art/ingredients/baocui/baocui_crisps_05.png" id="16_baocui_05"]
+[ext_resource type="Texture2D" uid="uid://dwl4y0ubm5aid" path="res://resources/art/ingredients/baocui/baocui_crisps_06.png" id="17_baocui_06"]
+[ext_resource type="Texture2D" uid="uid://bw3mvw6iui46x" path="res://assets/cilantro-jars/cilantro-jar-empty.png" id="19_coriander_empty"]
+[ext_resource type="Texture2D" uid="uid://dm713nd34nj1y" path="res://assets/cilantro-jars/cilantro-jar-half.png" id="20_coriander_half"]
+[ext_resource type="Texture2D" uid="uid://d3r50b1mpjkww" path="res://assets/cilantro-jars/cilantro-jar-full.png" id="21_coriander_full"]
+[ext_resource type="Texture2D" uid="uid://dueqcchyh6gs2" path="res://assets/jianbing-stall/sugar-jar-for-soy-milk.png" id="22_sugar_jar"]
+[ext_resource type="Script" uid="uid://c18e6b07u6icb" path="res://scripts/ui/ingredient_tray_visual.gd" id="23_scallion_tray"]
+[ext_resource type="Texture2D" uid="uid://c3gsx5d06hspl" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-empty.png" id="24_scallion_empty"]
+[ext_resource type="Texture2D" uid="uid://cjnkvhu7e0ynu" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-half.png" id="25_scallion_half"]
+[ext_resource type="Texture2D" uid="uid://ckmdjtq575161" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-full.png" id="26_scallion_full"]
+[ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://assets/jianbing-stall/chili-sauce-jar-no-brush.png" id="27_chili_sauce"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_supplies"]
 atlas = ExtResource("2_supplies")
@@ -36,9 +50,9 @@ region = Rect2(252, 36, 992, 928)
 atlas = ExtResource("7_fryer")
 region = Rect2(172, 64, 888, 1144)
 
-[node name="JianbingStallArtwork" type="Control"]
+[node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90
-layout_mode = 1
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -46,18 +60,31 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SoyMilkDispenser" type="TextureRect" parent="."]
+[node name="SoyMilkDispenser" type="TextureRect" parent="." unique_id=1348399319]
 layout_mode = 0
-offset_left = 40.0
-offset_top = 448.0
-offset_right = 300.0
-offset_bottom = 824.0
+offset_left = 1500.0
+offset_top = 480.0
+offset_right = 1897.5
+offset_bottom = 877.5
 mouse_filter = 2
-texture = SubResource("AtlasTexture_soy")
+texture = ExtResource("1_soy")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ServingSupplies" type="TextureRect" parent="."]
+[node name="SoyMilkSugarJar" type="TextureRect" parent="." unique_id=1075617131]
+z_index = 1
+layout_mode = 0
+offset_left = 1790.0
+offset_top = 811.0
+offset_right = 1900.0
+offset_bottom = 921.0
+mouse_filter = 2
+texture = ExtResource("22_sugar_jar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ServingSupplies" type="TextureRect" parent="." unique_id=849624144]
+visible = false
 layout_mode = 0
 offset_left = 220.0
 offset_top = 538.0
@@ -68,7 +95,8 @@ texture = SubResource("AtlasTexture_supplies")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SoybeanBasket" type="TextureRect" parent="."]
+[node name="SoybeanBasket" type="TextureRect" parent="." unique_id=932642421]
+visible = false
 layout_mode = 0
 offset_left = 310.0
 offset_top = 480.0
@@ -79,7 +107,8 @@ texture = SubResource("AtlasTexture_soybeans")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="GreenPeaBowl" type="TextureRect" parent="."]
+[node name="GreenPeaBowl" type="TextureRect" parent="." unique_id=1486849752]
+visible = false
 layout_mode = 0
 offset_left = 470.0
 offset_top = 488.0
@@ -90,7 +119,74 @@ texture = SubResource("AtlasTexture_peas")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="IngredientBowls" type="TextureRect" parent="."]
+[node name="HerbMetalTray" type="TextureRect" parent="." unique_id=1425551347]
+layout_mode = 0
+offset_left = 1085.0
+offset_top = 553.0
+offset_right = 1245.0
+offset_bottom = 713.0
+mouse_filter = 2
+texture = ExtResource("24_scallion_empty")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.scallion"
+state_textures = Array[Texture2D]([ExtResource("24_scallion_empty"), ExtResource("25_scallion_half"), ExtResource("26_scallion_full")])
+contents_visual_path = NodePath("MissingContents")
+
+[node name="CorianderMetalTray" type="TextureRect" parent="." unique_id=1925334901]
+layout_mode = 0
+offset_left = 1210.0
+offset_top = 553.0
+offset_right = 1370.0
+offset_bottom = 713.0
+mouse_filter = 2
+texture = ExtResource("19_coriander_empty")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.coriander"
+state_textures = Array[Texture2D]([ExtResource("19_coriander_empty"), ExtResource("20_coriander_half"), ExtResource("21_coriander_full")])
+contents_visual_path = NodePath("../CorianderContents")
+
+[node name="CorianderContents" type="TextureRect" parent="." unique_id=1464400700]
+visible = false
+layout_mode = 0
+offset_left = 1348.0
+offset_top = 585.0
+offset_right = 1482.0
+offset_bottom = 680.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BaocuiContents" type="TextureRect" parent="." unique_id=681966432]
+z_index = 121
+layout_mode = 0
+offset_left = 722.75
+offset_top = 586.1
+offset_right = 924.25
+offset_bottom = 671.9
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BaocuiBasket" type="TextureButton" parent="." unique_id=1739890305]
+z_index = 120
+layout_mode = 0
+offset_left = 693.8
+offset_top = 544.5
+offset_right = 951.2
+offset_bottom = 739.5
+texture_normal = ExtResource("10_baocui_basket")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("11_baocui_source")
+stock_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
+contents_visual_path = NodePath("../BaocuiContents")
+
+[node name="IngredientBowls" type="TextureRect" parent="." unique_id=1295553282]
+visible = false
 layout_mode = 0
 offset_left = 620.0
 offset_top = 475.0
@@ -101,7 +197,8 @@ texture = SubResource("AtlasTexture_ingredients")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SauceAndTools" type="TextureRect" parent="."]
+[node name="SauceAndTools" type="TextureRect" parent="." unique_id=775217004]
+visible = false
 layout_mode = 0
 offset_left = 1120.0
 offset_top = 530.0
@@ -112,7 +209,30 @@ texture = SubResource("AtlasTexture_sauces")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="YoutiaoFryer" type="TextureRect" parent="."]
+[node name="SweetBeanSauceJar" type="TextureRect" parent="." unique_id=698685248]
+layout_mode = 0
+offset_left = 1250.8
+offset_top = 800.0
+offset_right = 1385.2
+offset_bottom = 934.4
+mouse_filter = 2
+texture = ExtResource("9_sweet_bean_sauce")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChiliSauceJar" type="TextureRect" parent="." unique_id=1273568794]
+layout_mode = 0
+offset_left = 1259.0
+offset_top = 874.0
+offset_right = 1376.0
+offset_bottom = 1003.4
+mouse_filter = 2
+texture = ExtResource("27_chili_sauce")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YoutiaoFryer" type="TextureRect" parent="." unique_id=133798007]
+visible = false
 layout_mode = 0
 offset_left = 1450.0
 offset_top = 440.0

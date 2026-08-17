@@ -42,6 +42,24 @@ func _run() -> void:
 	slot.end_gesture()
 	_check(int(counts["short"]) == 1, "a hold-capable dough slot still emits short click for auto-loader recipe selection")
 	slot.queue_free()
+
+	var unlimited_slot := MATERIAL_SLOT.new()
+	unlimited_slot.size = Vector2(89.0, 89.0)
+	unlimited_slot.stock_id = &"stock.pancake.batter"
+	unlimited_slot.source_kind = &"pancake_shared_batter"
+	unlimited_slot.material_label = "面糊桶"
+	unlimited_slot.unlimited = true
+	root.add_child(unlimited_slot)
+	await process_frame
+	unlimited_slot.apply_state(0, true, 1)
+	var unlimited_holds := 0
+	unlimited_slot.hold_requested.connect(func(_ref: Dictionary): unlimited_holds += 1)
+	unlimited_slot.begin_gesture(Vector2.ZERO)
+	unlimited_slot.advance_gesture(0.5)
+	unlimited_slot.end_gesture()
+	_check(not unlimited_slot.hold_enabled and unlimited_holds == 0, "unlimited batter never enters the restock hold gesture")
+	_check("供应充足" in unlimited_slot.tooltip_text and "无需补货" in unlimited_slot.tooltip_text, "unlimited batter explains that restocking is unnecessary")
+	unlimited_slot.queue_free()
 	_finish()
 
 

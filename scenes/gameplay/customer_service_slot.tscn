@@ -1,8 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://bcgkauxm4opdi"]
+[gd_scene format=3 uid="uid://bcgkauxm4opdi"]
 
 [ext_resource type="Script" uid="uid://bx27p8vbu7lxg" path="res://scripts/ui/customer_service_slot.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://01c6ab302kc5" path="res://resources/art/ui/order/order_card_multi_dish_v4_chinese_ui.png" id="2_order_card"]
-[ext_resource type="Script" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
+[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png" id="2_order_card"]
+[ext_resource type="Script" uid="uid://c46h1inlchljr" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
 
 [sub_resource type="StyleBoxFlat" id="TransparentStyle"]
 bg_color = Color(0, 0, 0, 0)
@@ -16,9 +16,9 @@ offset_bottom = 490.0
 mouse_filter = 2
 script = ExtResource("1_script")
 
-
 [node name="Portrait" type="TextureRect" parent="." unique_id=175191323]
 unique_name_in_owner = true
+z_index = -20
 layout_mode = 0
 offset_left = 12.0
 offset_top = 65.0
@@ -27,10 +27,10 @@ offset_bottom = 310.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-z_index = -20
 
 [node name="PortraitButton" type="Button" parent="." unique_id=124302953]
 unique_name_in_owner = true
+z_index = -19
 layout_mode = 0
 offset_left = 12.0
 offset_top = 58.0
@@ -38,16 +38,15 @@ offset_right = 162.0
 offset_bottom = 312.0
 tooltip_text = "点击切换当前制作目标"
 flat = true
-z_index = -19
 
 [node name="OrderPanel" type="Control" parent="." unique_id=1300932323]
+z_index = 30
 anchors_preset = 0
 offset_left = 155.0
-offset_top = 54.0
+offset_top = -2.0
 offset_right = 455.0
-offset_bottom = 424.0
+offset_bottom = 368.0
 mouse_filter = 2
-z_index = 30
 
 [node name="CardBackground" type="TextureRect" parent="OrderPanel" unique_id=1319771723]
 unique_name_in_owner = true
@@ -73,7 +72,7 @@ grow_vertical = 2
 tooltip_text = "点击订单卡切换当前制作目标"
 flat = true
 
-[node name="SpecialTitle" type="Label" parent="OrderPanel"]
+[node name="SpecialTitle" type="Label" parent="OrderPanel" unique_id=1217521710]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -107,7 +106,6 @@ offset_bottom = 157.0
 mouse_default_cursor_shape = 2
 flat = true
 script = ExtResource("3_drop_button")
-item_index = 0
 
 [node name="ItemIcon1" type="TextureRect" parent="OrderPanel/ItemButton1" unique_id=1669439767]
 unique_name_in_owner = true
@@ -121,7 +119,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Quantity1" type="Label" parent="OrderPanel/ItemButton1"]
+[node name="Quantity1" type="Label" parent="OrderPanel/ItemButton1" unique_id=523987239]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -129,7 +127,6 @@ offset_left = 16.0
 offset_top = 40.0
 offset_right = 62.0
 offset_bottom = 64.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.94, 0.68, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 4
@@ -161,7 +158,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Quantity2" type="Label" parent="OrderPanel/ItemButton2"]
+[node name="Quantity2" type="Label" parent="OrderPanel/ItemButton2" unique_id=1056742400]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -169,7 +166,6 @@ offset_left = 16.0
 offset_top = 40.0
 offset_right = 62.0
 offset_bottom = 64.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.94, 0.68, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 4
@@ -201,7 +197,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Quantity3" type="Label" parent="OrderPanel/ItemButton3"]
+[node name="Quantity3" type="Label" parent="OrderPanel/ItemButton3" unique_id=484162368]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -209,7 +205,6 @@ offset_left = 16.0
 offset_top = 40.0
 offset_right = 62.0
 offset_bottom = 64.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.94, 0.68, 1)
 theme_override_colors/font_outline_color = Color(0.18, 0.06, 0.02, 1)
 theme_override_constants/outline_size = 4
@@ -396,7 +391,7 @@ offset_bottom = 342.0
 theme_override_colors/font_color = Color(0.56, 0.24, 0.04, 1)
 theme_override_font_sizes/font_size = 15
 
-[node name="SpecialRule" type="Label" parent="OrderPanel"]
+[node name="SpecialRule" type="Label" parent="OrderPanel" unique_id=1119498488]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0

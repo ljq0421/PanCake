@@ -619,6 +619,8 @@ func _product_mismatch_reasons(item: Dictionary, product: Dictionary) -> PackedS
 		reasons.append("ingredient_ids")
 	if not _same_ids(product.get("sauce_ids", []), item.get("sauce_ids", [])):
 		reasons.append("sauce_ids")
+	if area_id == &"area.fresh_soy_milk" and int(product.get("sugar_servings", 0)) != int(item.get("sugar_servings", 0)):
+		reasons.append("sugar_servings")
 	return reasons
 
 

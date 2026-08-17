@@ -12,6 +12,7 @@ signal business_ledger_changed(snapshot: Dictionary)
 signal prepared_product_slots_changed(snapshot: Dictionary)
 
 const SAVE_PATH := "user://project_cake_save.json"
+const SOY_TEST_SAVE_PATH := "user://project_cake_soy_test_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
 const SAVE_VERSION := 6
 const SAVE_KIND := "breakfast_stall_v1"
@@ -65,7 +66,6 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"youtiao": &"stock.pancake.youtiao",
 }
 const DAILY_PANCAKE_CONSUMABLE_STOCK := {
-	&"stock.pancake.batter": 6,
 	&"stock.pancake.sauce.sweet_flour": 6,
 	&"stock.pancake.sauce.red_chili": 6,
 }
@@ -77,6 +77,7 @@ const DEFAULT_SETTINGS := {
 }
 
 var _save_data: Dictionary = {}
+var _active_save_path := SAVE_PATH
 var _settings: Dictionary = DEFAULT_SETTINGS.duplicate(true)
 var _progression: RefCounted
 var _pancake_holding_tray: RefCounted
@@ -105,6 +106,49 @@ func has_save() -> bool:
 
 func is_five_area_save_active() -> bool:
 	return has_save()
+
+
+func open_soy_test_profile() -> Dictionary:
+	# Keep the developer-facing soy test save in a separate user:// file.  The
+	# normal save remains loaded at startup and is never overwritten by the
+	# start-menu test-profile shortcut.
+	_active_save_path = SOY_TEST_SAVE_PATH
+	var result := begin_new_game()
+	if not bool(result.get("success", false)):
+		return result
+	var progression := progression_service()
+	progression.set("unlocked_area_ids", {
+		&"area.pancake": true,
+		&"area.fresh_soy_milk": true,
+	})
+	progression.set("device_tiers", {
+		&"device.pancake_griddle": 0,
+		&"device.fresh_soy_milk_machine": 0,
+	})
+	progression.set("unlocked_recipe_ids", {
+		&"recipe.pancake.base": true,
+		&"recipe.fresh_soy_milk.yellow_bean": true,
+	})
+	progression.set("unlocked_product_ids", {
+		&"product.pancake.custom": true,
+		&"product.fresh_soy_milk.yellow_bean": true,
+	})
+	_sync_progression_to_save()
+	_production_service = null
+	_ensure_production_service()
+	var order_result := open_formal_order([{
+		"area_id": &"area.fresh_soy_milk",
+		"product_id": &"product.fresh_soy_milk.yellow_bean",
+		"quantity": 1,
+		"ingredient_ids": PackedStringArray(),
+		"sauce_ids": PackedStringArray(),
+		"sugar_servings": 1,
+	}], {"patience_seconds": 120.0, "base_coins": 7})
+	if not bool(order_result.get("success", false)):
+		return order_result
+	_sync_production_to_save()
+	_touch_and_write()
+	return {"success": true, "profile": &"soy_test"}
 
 
 func uses_five_area_progression() -> bool:
@@ -232,12 +276,12 @@ func resume_summary() -> String:
 func reset_incompatible_development_save() -> Dictionary:
 	_save_data.clear()
 	_progression = PROGRESSION_SERVICE.new()
-	var absolute_path := ProjectSettings.globalize_path(SAVE_PATH)
+	var absolute_path := ProjectSettings.globalize_path(_active_save_path)
 	var removed := false
-	if FileAccess.file_exists(SAVE_PATH):
+	if FileAccess.file_exists(_active_save_path):
 		removed = DirAccess.remove_absolute(absolute_path) == OK
 	_incompatible_development_save_removed = removed
-	return {"success": removed or not FileAccess.file_exists(SAVE_PATH), "removed": removed}
+	return {"success": removed or not FileAccess.file_exists(_active_save_path), "removed": removed}
 
 
 func progression_service() -> RefCounted:
@@ -975,6 +1019,8 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 			return preview_take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output":
 			return Dictionary(_production_service.call("preview_collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("preview_collect_soy", 1))
+		&"soy_cup":
+			return Dictionary(_production_service.call("preview_soy_cup"))
 		&"pancake_holding":
 			var tray_preview := Dictionary(_pancake_holding_tray.call("preview_serve", source_index, order_item))
 			if bool(tray_preview.get("success", false)):
@@ -995,6 +1041,7 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 	match source_kind:
 		&"prepared_product_slot": return take_prepared_product(StringName(source_ref.get("source_slot_id", &"")))
 		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
+		&"soy_cup": return Dictionary(_production_service.call("take_soy_cup"))
 		&"pancake_holding":
 			var served := Dictionary(_pancake_holding_tray.call("serve", source_index, order_item))
 			if bool(served.get("success", false)):
@@ -1002,7 +1049,7 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 			return served
 		&"pancake_ready":
 			var product := Dictionary(source_ref.get("product", {})).duplicate(true)
-			var consumed_stock_ids: Array[StringName] = [&"stock.pancake.batter"]
+			var consumed_stock_ids: Array[StringName] = []
 			for stock_value in Array(product.get("sauce_ids", [])):
 				var stock_id := StringName(stock_value)
 				if not stock_id.is_empty():
@@ -1143,117 +1190,9 @@ func advance_f3_production(delta: float) -> void:
 	if not bool(_progression.get("day_open")):
 		return
 	_ensure_production_service()
-	if bool(_progression.call("owns_automation", &"automation.fresh_soy_milk.auto_yellow_restock")):
-		advance_five_area_restock_hold(&"stock.fresh_soy_milk.yellow_bean", delta)
-	_try_auto_produce_soy()
 	_production_service.call("advance_time", delta)
 	_sync_production_to_save()
 	production_changed.emit(five_area_production_snapshot())
-
-
-func _try_auto_produce_soy() -> Dictionary:
-	if not bool(_progression.call("owns_automation", &"automation.fresh_soy_milk.auto_production")):
-		return {"success": false, "reason": &"automation_unowned"}
-	var machine := Dictionary(_production_service.call("machine_snapshot", &"device.fresh_soy_milk_machine"))
-	if StringName(machine.get("state", &"")) != &"idle":
-		return {"success": false, "reason": &"machine_busy"}
-	var capacity := maxi(int(machine.get("capacity", 0)), 0)
-	if capacity <= 0:
-		return {"success": false, "reason": &"device_unowned"}
-	var demand := _next_uncovered_soy_demand(machine, capacity)
-	if demand.is_empty():
-		return {"success": false, "reason": &"no_uncovered_soy_demand"}
-	var batch_quantity := int(demand.get("quantity", 0))
-	var ingredient_ids := PackedStringArray(demand.get("ingredient_ids", PackedStringArray()))
-	if batch_quantity <= 0 or ingredient_ids.is_empty():
-		return {"success": false, "reason": &"invalid_auto_batch"}
-	if bool(_progression.call("owns_automation", &"automation.fresh_soy_milk.auto_cup_rack")):
-		var empty_slots := 0
-		for cup_value in Array(machine.get("output_rack", [])):
-			if Dictionary(cup_value).is_empty():
-				empty_slots += 1
-		if empty_slots < batch_quantity:
-			return {"success": false, "reason": &"output_rack_full"}
-	var inventory := inventory_snapshot()
-	for stock_id_text in ingredient_ids:
-		if int(inventory.get(str(stock_id_text), 0)) < batch_quantity:
-			return {"success": false, "reason": &"insufficient_stock", "stock_id": StringName(stock_id_text)}
-	for _cup in range(batch_quantity):
-		for stock_id_text in ingredient_ids:
-			var added: Dictionary = _production_service.call("add_soy_ingredient", StringName(stock_id_text))
-			if not bool(added.get("success", false)):
-				return added
-	var watered: Dictionary = _production_service.call("perform_soy_action", &"add_water")
-	if not bool(watered.get("success", false)):
-		return watered
-	var started: Dictionary = _production_service.call("perform_soy_action", &"start")
-	if not bool(started.get("success", false)):
-		return started
-	_persist_production_change()
-	return {"success": true, "reason": &"", "product_id": demand.get("product_id", &""), "ingredient_ids": ingredient_ids, "quantity": batch_quantity}
-
-
-func _next_uncovered_soy_demand(machine: Dictionary, capacity: int) -> Dictionary:
-	var coverage: Dictionary = {}
-	for cup_value in Array(machine.get("output_rack", [])):
-		var cup := Dictionary(cup_value)
-		if cup.is_empty() or StringName(cup.get("state", &"")) == &"spoiled":
-			continue
-		var cup_recipe := CATALOG.recipe_definition(StringName(cup.get("recipe_id", &"")))
-		var cup_product := StringName(cup_recipe.get("product_id", &""))
-		var cup_signature := _soy_demand_signature(cup_product, cup.get("ingredient_ids", PackedStringArray()))
-		coverage[cup_signature] = int(coverage.get(cup_signature, 0)) + 1
-	var orders := active_formal_orders()
-	orders.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
-		return float(left.get("remaining_patience_seconds", INF)) < float(right.get("remaining_patience_seconds", INF))
-	)
-	var selected_signature := ""
-	var selected_product: StringName = &""
-	var selected_ingredients := PackedStringArray()
-	var selected_quantity := 0
-	for order in orders:
-		for item_value in Array(order.get("items", [])):
-			var item := Dictionary(item_value)
-			if StringName(item.get("area_id", &"")) != &"area.fresh_soy_milk":
-				continue
-			var required := maxi(int(item.get("quantity", 1)) - int(item.get("attached_quantity", 0)), 0)
-			if required <= 0:
-				continue
-			var product_id := StringName(item.get("product_id", &""))
-			var ingredient_ids := _soy_item_ingredients(item)
-			var signature := _soy_demand_signature(product_id, ingredient_ids)
-			var covered := mini(required, int(coverage.get(signature, 0)))
-			coverage[signature] = int(coverage.get(signature, 0)) - covered
-			var uncovered := required - covered
-			if uncovered <= 0:
-				continue
-			if selected_signature.is_empty():
-				selected_signature = signature
-				selected_product = product_id
-				selected_ingredients = ingredient_ids
-			if signature == selected_signature:
-				selected_quantity = mini(selected_quantity + uncovered, capacity)
-				if selected_quantity >= capacity:
-					return {"product_id": selected_product, "ingredient_ids": selected_ingredients, "quantity": selected_quantity}
-	return {} if selected_signature.is_empty() else {"product_id": selected_product, "ingredient_ids": selected_ingredients, "quantity": selected_quantity}
-
-
-func _soy_item_ingredients(item: Dictionary) -> PackedStringArray:
-	var product_id := StringName(item.get("product_id", &""))
-	if product_id == &"product.fresh_soy_milk.multigrain":
-		var dynamic_ids := PackedStringArray(item.get("ingredient_ids", PackedStringArray()))
-		dynamic_ids.sort()
-		return dynamic_ids
-	var product := CATALOG.product_definition(product_id)
-	var recipe := CATALOG.recipe_definition(StringName(product.get("recipe_id", &"")))
-	var stocks := Array(recipe.get("stock_ids", []))
-	return PackedStringArray([str(stocks[0])]) if not stocks.is_empty() else PackedStringArray()
-
-
-static func _soy_demand_signature(product_id: StringName, ingredient_values: Variant) -> String:
-	var ingredients := PackedStringArray(ingredient_values)
-	ingredients.sort()
-	return "%s|%s" % [product_id, ",".join(ingredients)]
 
 
 func discard_product_source(source_ref: Dictionary) -> Dictionary:
@@ -1379,17 +1318,57 @@ func perform_f4_soy_action(action_id: StringName) -> Dictionary:
 	return result
 
 
+func take_f4_soy_empty_cup() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("take_soy_empty_cup")
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func select_f4_soy_flavor(recipe_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("select_soy_recipe", recipe_id)
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func fill_f4_soy_empty_cup(held_seconds: float) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("fill_soy_empty_cup", held_seconds)
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
+func add_f4_soy_sugar() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("add_soy_sugar")
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
 func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
-	var preview: Dictionary = _production_service.call("preview_collect_soy_output", output_slot_index) if output_slot_index >= 0 else _production_service.call("preview_collect_soy", 1)
+	var preview: Dictionary = _production_service.call("preview_soy_cup")
 	if not bool(preview.get("success", false)):
 		return preview
-	return stage_product_to_order({"source_kind": &"soy_output", "source_index": output_slot_index, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
+	return stage_product_to_order({"source_kind": &"soy_cup", "source_index": -1, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
 func discard_f4_soy(output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("discard_soy_output", output_slot_index) if output_slot_index >= 0 else _production_service.call("discard_soy")
+	var result: Dictionary = _production_service.call("discard_soy")
 	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result
@@ -1892,6 +1871,8 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 	var definition := CATALOG.stock_definition(stock_id)
 	if definition.is_empty():
 		return {"success": false, "reason": &"unknown_stock", "stock_id": stock_id}
+	if bool(definition.get("unlimited", false)):
+		return {"success": false, "reason": &"restock_unnecessary", "stock_id": stock_id}
 	if StringName(definition.get("category", &"")) == &"prepared_add_on":
 		return {"success": false, "reason": &"restock_unavailable", "stock_id": stock_id}
 	if not _progression.call("owns_stock", stock_id):
@@ -2016,8 +1997,15 @@ func save_pancake_legacy_inventory(snapshot: Dictionary) -> Dictionary:
 func consume_inventory_stock_ids(stock_ids: Array[StringName]) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
-	var required := {}
+	var consumable_stock_ids: Array[StringName] = []
 	for stock_id in stock_ids:
+		if bool(CATALOG.stock_definition(stock_id).get("unlimited", false)):
+			continue
+		consumable_stock_ids.append(stock_id)
+	if consumable_stock_ids.is_empty():
+		return {"success": true, "inventory": inventory_snapshot(), "consumed_stock_ids": []}
+	var required := {}
+	for stock_id in consumable_stock_ids:
 		required[stock_id] = int(required.get(stock_id, 0)) + 1
 	var inventory := inventory_snapshot()
 	for stock_id in required:
@@ -2029,7 +2017,7 @@ func consume_inventory_stock_ids(stock_ids: Array[StringName]) -> Dictionary:
 		inventory[key] = int(inventory[key]) - int(required[stock_id])
 	var saved := save_inventory(inventory)
 	if bool(saved.get("success", false)):
-		saved["consumed_stock_ids"] = stock_ids.duplicate()
+		saved["consumed_stock_ids"] = consumable_stock_ids.duplicate()
 	return saved
 
 
@@ -2859,9 +2847,9 @@ func apply_settings() -> void:
 
 func _load_save() -> void:
 	_save_data.clear()
-	if not FileAccess.file_exists(SAVE_PATH):
+	if not FileAccess.file_exists(_active_save_path):
 		return
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var file := FileAccess.open(_active_save_path, FileAccess.READ)
 	if file == null:
 		return
 	var save_text := file.get_as_text()
@@ -3185,7 +3173,9 @@ func _new_inventory_snapshot() -> Dictionary:
 	var inventory := {}
 	for stock_id in CATALOG.stock_ids():
 		inventory[str(stock_id)] = 0
-	for stock_id in [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]:
+	# Scallion starts empty so its countertop crock begins in the authored empty
+	# state and the player learns the shared hold-to-restock interaction.
+	for stock_id in [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.sauce.sweet_flour"]:
 		inventory[str(stock_id)] = 6
 	return inventory
 
@@ -3194,6 +3184,9 @@ func _normalize_inventory(source: Dictionary) -> Dictionary:
 	var normalized := _new_inventory_snapshot()
 	for stock_id in CATALOG.stock_ids():
 		var key := str(stock_id)
+		if bool(CATALOG.stock_definition(stock_id).get("unlimited", false)):
+			normalized[key] = 0
+			continue
 		if source.has(key):
 			normalized[key] = maxi(int(source[key]), 0)
 	return normalized
@@ -3218,7 +3211,7 @@ func _write_save() -> void:
 	if _scene_binding_save_batch_active:
 		_scene_binding_save_pending = true
 		return
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(_active_save_path, FileAccess.WRITE)
 	if file == null:
 		push_warning("Could not write ProjectCake save data")
 		return
@@ -3304,6 +3297,11 @@ func _f3_reputation_delta(order_success: bool, grades: PackedStringArray) -> int
 			has_c = true
 		elif grade == "B":
 			has_b = true
+		elif grade != "A":
+			# A prematurely released cup can reach the waste threshold while still
+			# matching the requested flavour and sweetness. It must never receive
+			# the all-A reputation reward.
+			has_c = true
 	if has_c:
 		return 1
 	if has_b:

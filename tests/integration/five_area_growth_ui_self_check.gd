@@ -77,10 +77,10 @@ func _run() -> void:
 	var soy_tickets := _growth_tickets(soy_station)
 	_check(_ticket_ids(soy_tickets) == [
 		&"growth.area.fresh_soy_milk",
-		&"growth.equipment.fresh_soy_milk.intermediate",
-		&"growth.assist.fresh_soy_milk.water_guide",
-	], "mid-route window unlocks soy first, then power and water guidance")
-	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled and soy_tickets[2].disabled, "soy content and machine upgrades wait until the soy area is actually installed")
+		&"growth.assist.fresh_soy_milk.fill_guide",
+		&"growth.flavor.fresh_soy_milk.black_bean",
+	], "mid-route window unlocks soy, then fill guidance and its first flavour button")
+	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled and soy_tickets[2].disabled, "soy serving upgrades wait until the soy area is actually installed")
 	_check(_all_active_text(soy_tickets), "soy growth window contains only active three-area content")
 	soy_station.queue_free()
 	_finish()

@@ -10,7 +10,7 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 27, "single-stall growth route removes both pancake expansion upgrades")
+	_check(CATALOG.growth_ids().size() == 25, "serving-only soy growth route keeps only flavour, fill, capacity and value upgrades")
 	for growth_id in CATALOG.growth_ids():
 		var definition := CATALOG.growth_definition(growth_id)
 		_check(CATALOG.AREA_IDS.has(StringName(definition.get("requires_area_id", &""))), "%s belongs to an active area" % growth_id)
@@ -31,7 +31,6 @@ func _run() -> void:
 	for stock_id in CATALOG.stock_ids():
 		_check(CATALOG.AREA_IDS.has(StringName(CATALOG.stock_definition(stock_id).get("area_id", &""))), "%s belongs to an active area" % stock_id)
 	var expected_slots := {
-		1: &"stock.fresh_soy_milk.yellow_bean", 2: &"stock.fresh_soy_milk.black_bean", 3: &"stock.fresh_soy_milk.red_bean",
 		4: &"stock.youtiao.plain_dough",
 		7: &"stock.pancake.egg", 8: &"stock.pancake.baocui", 9: &"stock.pancake.scallion",
 	}
@@ -39,6 +38,8 @@ func _run() -> void:
 		var slot := CATALOG.material_slot_definition(StringName("slot.%02d" % slot_index))
 		if expected_slots.has(slot_index):
 			_check(slot.get("kind") == &"stock" and slot.get("stock_id") == expected_slots[slot_index], "slot %02d stock ownership" % slot_index)
+		elif slot_index in [1, 2, 3]:
+			_check(slot.get("kind") == &"reserved", "retired soy slot %02d remains reserved" % slot_index)
 		elif slot_index in [5, 6]:
 			_check(slot.is_empty(), "retired youtiao slot %02d has no active definition" % slot_index)
 		elif CATALOG.PANCAKE_ADD_ON_SLOT_PRIORITY.has(StringName("slot.%02d" % slot_index)):
@@ -56,9 +57,9 @@ func _run() -> void:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the confirmed pancake-ingredient speed" % stock_id)
 	_check(CATALOG.recipe_definition(&"recipe.youtiao.oil_cake").is_empty() and CATALOG.recipe_definition(&"recipe.youtiao.sugar_oil_cake").is_empty(), "retired fryer recipes are absent")
 	_check(CATALOG.product_definition(&"product.youtiao.oil_cake").is_empty() and CATALOG.product_definition(&"product.youtiao.sugar_oil_cake").is_empty(), "retired fryer products are absent")
-	for stock_id in [&"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean"]:
-		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the pancake-ingredient speed" % stock_id)
-	_check(CATALOG.stock_definition(&"stock.fresh_soy_milk.multigrain").is_empty() and Array(CATALOG.recipe_definition(&"recipe.fresh_soy_milk.multigrain").get("stock_ids", [])).is_empty(), "multigrain remains a product recipe without an independent stock")
+	for recipe_id in [&"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.black_bean", &"recipe.fresh_soy_milk.red_bean", &"recipe.fresh_soy_milk.multigrain"]:
+		_check(Array(CATALOG.recipe_definition(recipe_id).get("stock_ids", [])).is_empty(), "%s is ready-made and never creates bean inventory" % recipe_id)
+	_check(CATALOG.growth_definition(&"growth.flavor.fresh_soy_milk.black_bean").get("label") == "口味按钮：黑豆" and CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("label") == "自动满杯", "soy growth path uses flavour buttons and automatic filling")
 	var copy := CATALOG.stock_definition(&"stock.pancake.egg")
 	copy["material_slot_id"] = &"slot.invalid"
 	_check(CATALOG.stock_definition(&"stock.pancake.egg").get("material_slot_id") == &"slot.07", "catalog queries return deep copies")

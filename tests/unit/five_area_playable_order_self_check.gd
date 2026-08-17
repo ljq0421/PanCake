@@ -30,6 +30,7 @@ func _run() -> void:
 	_check(seen.has(&"area.pancake") and seen.has(&"area.youtiao") and seen.has(&"area.fresh_soy_milk"), "deterministic sampling reaches all three active areas")
 	_check(not seen.has(&"area.packaged_drink") and not seen.has(&"area.steamer") and supported_only, "sampling never emits retired areas")
 	_check(combo_seen, "full three-area shop can generate combo orders")
+	_check_basic_soy_flavour_orders(inventory)
 	_check_youtiao_quantities(inventory)
 	_check_youtiao_stage_ratios(inventory)
 	_check_three_area_ratios(inventory)
@@ -126,6 +127,21 @@ func _check_three_area_ratios(inventory: Dictionary) -> void:
 	_check(absf(float(pancake_plain) / maxf(float(pancake_main), 1.0) - 0.55) <= 0.04, "pancake-main mix keeps 55% plain")
 	_check(absf(float(pancake_one_side) / maxf(float(pancake_main), 1.0) - 0.35) <= 0.04, "pancake-main mix keeps 35% one-side combos")
 	_check(absf(float(pancake_two_sides) / maxf(float(pancake_main), 1.0) - 0.10) <= 0.03, "pancake-main mix keeps 10% two-side combos")
+
+
+func _check_basic_soy_flavour_orders(inventory: Dictionary) -> void:
+	var progression := _fully_playable_progression()
+	progression["unlocked_recipe_ids"] = [&"recipe.pancake.base", &"recipe.youtiao.plain", &"recipe.fresh_soy_milk.yellow_bean"]
+	progression["unlocked_product_ids"] = [&"product.pancake.custom", &"product.youtiao.plain", &"product.fresh_soy_milk.yellow_bean"]
+	var soy_orders := 0
+	for sequence in range(1, 200):
+		var candidate := Dictionary(GENERATOR.generate(progression, inventory, 24680, sequence, 8, 0))
+		for item_value in Array(candidate.get("items", [])):
+			var item := Dictionary(item_value)
+			if StringName(item.get("area_id", &"")) == &"area.fresh_soy_milk":
+				soy_orders += 1
+				_check(StringName(item.get("product_id", &"")) == &"product.fresh_soy_milk.yellow_bean", "basic soy machine never generates locked flavour requirements")
+	_check(soy_orders > 0, "basic soy order sampling includes yellow-soy requests")
 
 
 func _fully_playable_progression() -> Dictionary:

@@ -54,6 +54,8 @@ const FIVE_AREA_PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_v
 const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
 const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
+const ORDER_REQUIREMENT_SUGAR := &"sugar"
+const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://assets/jianbing-stall/sugar-jar-for-soy-milk.png"
 const DEFAULT_ORDER_COINS := 3
 const PAYMENT_SLOT_COIN_SIZE := Vector2(48.0, 48.0)
 const PAYMENT_COIN_START_POSITION := Vector2(842.0, 312.0)
@@ -1803,10 +1805,7 @@ func _auto_pour_center() -> void:
 	if five_area_pancake_production != null:
 		var availability: Dictionary = five_area_pancake_production.call("can_produce")
 		if not bool(availability.get("success", false)):
-			if StringName(availability.get("stock_id", &"")) == &"stock.pancake.batter":
-				tool_status_label.text = "面糊已经用完；请结束本日营业，下一营业日会补满基础面糊"
-			else:
-				tool_status_label.text = _pancake_availability_failure_text(availability)
+			tool_status_label.text = _pancake_availability_failure_text(availability)
 			return
 	var center := Vector2(pancake_model.grid_size - 1, pancake_model.grid_size - 1) * 0.5
 	pancake_model.add_batter(center, parameters.automatic_pour_amount, parameters.automatic_pour_radius)
@@ -3239,7 +3238,9 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		&"growth.product.packaged_drink.soy_milk": "豆奶饮品",
 		&"growth.area.youtiao": "油条档口",
 		&"growth.area.fresh_soy_milk": "现磨豆浆档口",
-		&"growth.recipe.fresh_soy_milk.black_bean": "黑豆豆浆配方",
+		&"growth.flavor.fresh_soy_milk.black_bean": "黑豆口味按钮",
+		&"growth.flavor.fresh_soy_milk.red_bean": "红豆口味按钮",
+		&"growth.flavor.fresh_soy_milk.multigrain": "五谷口味按钮",
 		&"growth.area.steamer": "蒸品档口",
 		&"growth.recipe.steamer.vegetable_bun": "菜包配方",
 	}
@@ -3397,6 +3398,16 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 			"texture": load(ORDER_CARD_HEAT_TEXTURE_PATH) as Texture2D,
 			"product_id": StringName(item.get("product_id", &"")),
 		})
+	for item in items:
+		if StringName(item.get("area_id", &"")) != &"area.fresh_soy_milk":
+			continue
+		var sugar_servings := clampi(int(item.get("sugar_servings", 0)), 0, 2)
+		var sugar_text: String = ["无糖", "正常糖（1份）", "多糖（2份）"][sugar_servings]
+		requirements.append({
+			"kind": ORDER_REQUIREMENT_SUGAR,
+			"texture": load(ORDER_CARD_SUGAR_TEXTURE_PATH) as Texture2D,
+			"display_name": sugar_text,
+		})
 	var requirement_capacity := order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8
 	if requirements.size() > requirement_capacity:
 		requirements.resize(requirement_capacity)
@@ -3457,6 +3468,8 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 			ingredient_icon.tooltip_text = "需要加热"
 		elif requirement_kind == ORDER_REQUIREMENT_SAUCE:
 			ingredient_icon.tooltip_text = str(requirement.get("display_name", "酱料"))
+		elif requirement_kind == ORDER_REQUIREMENT_SUGAR:
+			ingredient_icon.tooltip_text = str(requirement.get("display_name", "甜度"))
 		else:
 			ingredient_icon.tooltip_text = ""
 		# The v3 order-card artwork already owns the eight requirement cells.

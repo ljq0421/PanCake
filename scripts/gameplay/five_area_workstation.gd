@@ -3,6 +3,8 @@ extends "res://scripts/gameplay/workstation.gd"
 
 const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const RIGHT_SOY_STATION_POSITION := Vector2(1500.0, 480.0)
+const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 460.0)
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
@@ -15,6 +17,7 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 @onready var soy_full_slots: Array[Node] = [%SoyFullYellow, %SoyFullBlack, %SoyFullRed]
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
+@onready var pancake_worktop_hotspots: Control = get_node_or_null("FiveAreaInfrastructure/PancakeWorktopHotspots") as Control
 @onready var fixed_material_lock_artworks: Array[Control] = [
 	$SafeArea/LockedIngredientArtwork/Slot01,
 	$SafeArea/LockedIngredientArtwork/Slot02,
@@ -39,6 +42,12 @@ var _multi_griddle_mode_active := false
 
 func _ready() -> void:
 	super._ready()
+	# The serving interaction overlays the permanent right-side green dispenser
+	# from JianbingStallArtwork. Scene-instanced Control offsets are normalized
+	# here to prevent the retired left-side placement from resurfacing.
+	fresh_soy_station.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	fresh_soy_station.position = RIGHT_SOY_STATION_POSITION
+	fresh_soy_station.size = RIGHT_SOY_STATION_SIZE
 	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
 	for station in [fresh_soy_station, youtiao_station]:
 		station.status_message.connect(_show_station_status)
@@ -46,8 +55,11 @@ func _ready() -> void:
 		# Full-station covers would otherwise steal pointer input from the pancake
 		# sauce rack and discard control where their authored rectangles overlap.
 		station.mouse_filter = Control.MOUSE_FILTER_STOP if station in [fresh_soy_station, youtiao_station] else Control.MOUSE_FILTER_IGNORE
-		station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if station.lock_cover != null:
+			station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	multi_griddle_station.status_message.connect(_show_station_status)
+	if pancake_worktop_hotspots != null:
+		pancake_worktop_hotspots.status_message.connect(_show_station_status)
 	for service_slot in customer_service_slots:
 		var drop_callback := Callable(self, "_on_customer_service_product_dropped")
 		if service_slot.has_signal("product_dropped") and not service_slot.is_connected("product_dropped", drop_callback):
@@ -64,6 +76,8 @@ func _ready() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
 		multi_griddle_station.bind_session(session)
+		if pancake_worktop_hotspots != null:
+			pancake_worktop_hotspots.bind_session(session)
 		var order_signal := Signal(session, &"order_changed")
 		if not order_signal.is_connected(_on_formal_shell_changed):
 			order_signal.connect(_on_formal_shell_changed)
@@ -330,13 +344,9 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
-				&"idle":
-					var message := "长按黄豆槽补货" if int(inventory.get("stock.fresh_soy_milk.yellow_bean", 0)) <= 0 else "把黄豆拖入豆浆机料口"
-					return {"target": soy_full_slots[0], "message": message}
-				&"loaded": return {"target": fresh_soy_station.water_button, "message": "点击开始注水，再次点击停在绿色区间"}
-				&"water_added": return {"target": fresh_soy_station.start_button, "message": "水已加入，点击启动研磨"}
-				&"grinding": return {"target": fresh_soy_station.state_label, "message": "等待研磨完成"}
-				&"ready_safe", &"overcooking", &"blocked": return {"target": _tutorial_delivery_target(session, area_id), "message": "点击订单商品，从出杯口或接杯架交付"}
+				&"ready": return {"target": fresh_soy_station.machine_output, "message": "点击空杯，拿到出浆口"}
+				&"held_empty": return {"target": fresh_soy_station.nozzle_button, "message": "按住出浆口 0.8 秒接满豆浆"}
+				&"filled": return {"target": fresh_soy_station.sugar_jar, "message": "按订单选择无糖、正常糖或多糖，再拖杯交付"}
 		&"area.pancake":
 			if _multi_griddle_mode_active:
 				return {"target": multi_griddle_station, "message": "选择空鏊添加面糊；每张鏊子独立摊、翻、加料和出餐"}

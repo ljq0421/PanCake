@@ -52,6 +52,17 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and event.alt_pressed and event.keycode == KEY_J:
+		if _loading:
+			get_viewport().set_input_as_handled()
+			return
+		var result := Dictionary(_session.call("open_soy_test_profile"))
+		if bool(result.get("success", false)):
+			_begin_game_load(false)
+		else:
+			resume_label.text = "豆浆测试档创建失败，请重试。"
+		get_viewport().set_input_as_handled()
+		return
 	if not event.is_action_pressed(&"ui_cancel"):
 		return
 	if _loading:

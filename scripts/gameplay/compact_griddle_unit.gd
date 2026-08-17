@@ -229,6 +229,57 @@ func apply_sauce(stock_id: StringName) -> void:
 	_refresh_ui()
 
 
+func validate_sauce_prime(stock_id: StringName) -> Dictionary:
+	if stock_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
+		return {"success": false, "reason": &"not_pancake_sauce"}
+	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
+		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
+	if state == State.FIRST_SIDE and p1_session.phase != P1Session.Phase.FIRST_SIDE:
+		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
+	if state == State.SECOND_SIDE and p1_session.phase != P1Session.Phase.SECOND_SIDE:
+		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
+	if state == State.GARNISH and p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
+		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
+	if applied_sauce_ids.has(str(stock_id)):
+		return {"success": false, "reason": &"duplicate_sauce", "stock_id": stock_id}
+	var grid_position := _nearest_valid_sauce_grid_position()
+	if grid_position.x < 0.0:
+		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
+	return {"success": true, "stock_id": stock_id, "grid_position": grid_position}
+
+
+func prime_sauce(stock_id: StringName, validation: Dictionary = {}) -> Dictionary:
+	var checked := validation if bool(validation.get("success", false)) else validate_sauce_prime(stock_id)
+	if not bool(checked.get("success", false)):
+		return checked
+	var preparation: Dictionary
+	if state == State.FIRST_SIDE:
+		preparation = begin_garnish_without_flip()
+	elif state == State.SECOND_SIDE:
+		preparation = confirm_second_side_for_followup()
+	else:
+		preparation = {"success": true}
+	if not bool(preparation.get("success", false)):
+		return preparation
+	var grid_position := Vector2(checked.get("grid_position", Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5))
+	var sauce_type: StringName = &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var stroke_id := pancake_model.begin_sauce_stroke()
+	var result := Dictionary(pancake_model.apply_sauce_sample(grid_position, 0.38, 6.0, stroke_id, 2147483647, sauce_type))
+	if int(result.get("changed_cells", 0)) <= 0:
+		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
+	applied_sauce_ids.append(str(stock_id))
+	_surface_action = SURFACE_ACTION_BRUSH_SAUCE
+	_surface_stock_id = stock_id
+	_surface_changed = false
+	_sauce_stroke_id = -1
+	_spread_has_previous = false
+	if is_node_ready():
+		pancake_surface.force_texture_upload()
+		_refresh_surface_cursor()
+		_refresh_ui()
+	return {"success": true, "stock_id": stock_id, "grid_position": grid_position}
+
+
 func apply_ingredient(stock_id: StringName) -> void:
 	if stock_id.is_empty() or applied_ingredient_ids.has(str(stock_id)):
 		return
@@ -712,6 +763,27 @@ func _apply_sauce_sample(grid_position: Vector2) -> bool:
 	return changed
 
 
+func _nearest_valid_sauce_grid_position() -> Vector2:
+	var center := Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5
+	var nearest := Vector2(-1.0, -1.0)
+	var nearest_distance_squared := INF
+	for y in pancake_model.grid_size:
+		for x in pancake_model.grid_size:
+			var grid_position := Vector2(x, y)
+			if not pancake_model.is_inside_pan(grid_position):
+				continue
+			var cell_index := pancake_model.index_of(Vector2i(x, y))
+			if cell_index < 0 or pancake_model.coverage[cell_index] <= 0.0:
+				continue
+			if pancake_model.damage[cell_index] >= pancake_model.parameters.hole_damage_threshold:
+				continue
+			var distance_squared := center.distance_squared_to(grid_position)
+			if distance_squared < nearest_distance_squared:
+				nearest_distance_squared = distance_squared
+				nearest = grid_position
+	return nearest
+
+
 func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -> Dictionary:
 	if upgrade_locked:
 		return {"success": false, "reason": &"griddle_locked"}
@@ -721,7 +793,7 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 		return {"success": false, "reason": &"not_pancake_ingredient"}
 	if ingredient_model.has_type(ingredient_type):
 		return {"success": false, "reason": &"duplicate_ingredient", "stock_id": stock_id}
-	if ingredient_type == IngredientModel.EGG and state != State.FIRST_SIDE:
+	if ingredient_type == IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	if ingredient_type != IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}

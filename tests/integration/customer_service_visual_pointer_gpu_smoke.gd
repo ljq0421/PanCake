@@ -49,8 +49,8 @@ func _run() -> void:
 	)
 	_check(
 		card_background.texture != null
-		and card_background.texture.resource_path.ends_with("order_card_multi_dish_v4_chinese_ui.png"),
-		"the centered tutorial uses the approved v4 Chinese order-card texture",
+		and card_background.texture.resource_path.ends_with("order_card_multi_dish_v3_five_area_v2.png"),
+		"the centered tutorial uses the approved five-area order-card texture",
 	)
 	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "the tutorial customer and order card have no frame or selection tint")
 	await _move_at(_screen_point(portrait_button))

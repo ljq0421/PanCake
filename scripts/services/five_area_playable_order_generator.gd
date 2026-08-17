@@ -568,7 +568,7 @@ static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, se
 			"patience_seconds": patience,
 			"base_coins": maxi(int(legacy.get("payment_coins", 1)), 1),
 		},
-		"required_stock_ids": Array(template.get("ingredient_stock_ids", [])) + Array(template.get("sauce_stock_ids", [])) + [&"stock.pancake.batter"],
+		"required_stock_ids": Array(template.get("ingredient_stock_ids", [])) + Array(template.get("sauce_stock_ids", [])),
 	}
 
 
@@ -605,12 +605,13 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 		var quantity_roll := _roll(seed, sequence, 127, 100)
 		quantity = 1 if quantity_roll < 50 else (2 if quantity_roll < 85 else 3)
 	var ingredient_ids := PackedStringArray()
+	var sugar_servings := 0
+	if area_id == &"area.fresh_soy_milk":
+		# The soy station intentionally makes sweetness part of the serving
+		# interaction instead of another recipe slot. Tutorials start with normal
+		# sugar; regular orders distribute the three supported requests evenly.
+		sugar_servings = 1 if teaching else _roll(seed, sequence, 137, 3)
 	var required_stock_ids := Array(recipe.get("stock_ids", []))
-	if product_id == &"product.fresh_soy_milk.multigrain":
-		ingredient_ids = _soy_multigrain_ingredients(progression, seed, sequence)
-		required_stock_ids = Array(ingredient_ids)
-		if ingredient_ids.size() < 2:
-			return {"success": false, "reason": &"multigrain_ingredients_unavailable"}
 	return {
 		"success": true,
 		"items": [{
@@ -622,6 +623,7 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 			"pancake_template_id": &"",
 			"ingredient_ids": ingredient_ids,
 			"sauce_ids": PackedStringArray(),
+			"sugar_servings": sugar_servings,
 		}],
 		"metadata": {
 			"teaching_area_id": area_id if teaching else &"",

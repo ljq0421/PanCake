@@ -1,368 +1,148 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_0_v2_chinese.png" id="2_machine"]
-[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="7_source"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_lid_closed_v3.png" id="8_lid_closed"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_1_lid_open_v3.png" id="9_lid_open"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png" id="10_ingredient"]
-[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_yellow_bean_v3.png" id="11_cup"]
-[ext_resource type="Texture2D" path="res://resources/art/effects/soy_milk/soy_milk_water_pour_v3.png" id="12_water"]
-[ext_resource type="Texture2D" path="res://resources/art/effects/soy_milk/soy_milk_liquid_stream_v3.png" id="13_stream"]
-[ext_resource type="Texture2D" path="res://resources/art/effects/steamer/steamer_steam_puff_five_area_v2.png" id="14_steam"]
-[ext_resource type="Texture2D" path="res://resources/art/effects/soy_milk/soy_milk_spoiled_vapor_v3.png" id="15_spoiled"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="16_black_ingredient"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="17_red_ingredient"]
-[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_black_bean_v3.png" id="19_black_cup"]
-[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_red_bean_v3.png" id="20_red_cup"]
-[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_multigrain_v3.png" id="21_multigrain_cup"]
-[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_empty_v3.png" id="22_empty_cup"]
+[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/expansion/machines/soy_milk_machine_tier_0_v2_chinese.png" id="3_machine"]
+[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/soy_milk_cup_empty_v3.png" id="4_cup"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/sugar-jar-for-soy-milk.png" id="5_sugar"]
 
-[sub_resource type="StyleBoxFlat" id="PartStyle"]
-bg_color = Color(0.96, 0.92, 0.78, 0.94)
+[sub_resource type="AtlasTexture" id="AtlasTexture_machine"]
+atlas = ExtResource("3_machine")
+region = Rect2(332, 30, 360, 458)
+
+[sub_resource type="StyleBoxFlat" id="NozzleStyle"]
+bg_color = Color(0.35, 0.18, 0.07, 0.9)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.65, 0.4, 0.15, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="LockStyle"]
-bg_color = Color(0.97, 0.92, 0.76, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.68, 0.43, 0.16, 0.92)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_machine_cropped"]
-atlas = ExtResource("2_machine")
-region = Rect2(332, 30, 360, 458)
+border_color = Color(0.95, 0.77, 0.35, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="DirectSoyStation" type="Control"]
-custom_minimum_size = Vector2(306, 340)
-offset_right = 306.0
-offset_bottom = 340.0
+custom_minimum_size = Vector2(410, 460)
+offset_right = 410.0
+offset_bottom = 460.0
 mouse_filter = 0
 script = ExtResource("1_root")
 
-
 [node name="Machine" type="TextureRect" parent="."]
 visible = false
-offset_left = 73.0
-offset_top = 8.0
-offset_right = 233.0
-offset_bottom = 208.0
+layout_mode = 0
+offset_left = 66.0
+offset_top = 6.0
+offset_right = 226.0
+offset_bottom = 206.0
 mouse_filter = 2
-texture = SubResource("AtlasTexture_machine_cropped")
+texture = SubResource("AtlasTexture_machine")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="VisualRig" type="Control" parent="."]
+[node name="FlavorMenu" type="MenuButton" parent="."]
 unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
+layout_mode = 0
+offset_left = 10.0
+offset_top = 12.0
+offset_right = 116.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
+theme_override_font_sizes/font_size = 11
+text = "黄豆豆浆 ▾"
+tooltip_text = "升级口味按钮后可选择黑豆、红豆和五谷"
 
-[node name="ClosedLidVisual" type="TextureRect" parent="VisualRig"]
+[node name="NozzleButton" type="Button" parent="."]
 unique_name_in_owner = true
-offset_left = 92.0
-offset_top = 7.0
-offset_right = 214.0
-offset_bottom = 72.0
-mouse_filter = 2
-texture = ExtResource("8_lid_closed")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="OpenLidVisual" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_left = 82.0
-offset_top = 0.0
-offset_right = 224.0
-offset_bottom = 86.0
-mouse_filter = 2
-texture = ExtResource("9_lid_open")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="IngredientVisual" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_right = 46.0
-offset_bottom = 46.0
-mouse_filter = 2
-texture = ExtResource("10_ingredient")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="WaterEffect" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_right = 54.0
-offset_bottom = 78.0
-mouse_filter = 2
-texture = ExtResource("12_water")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="StreamEffect" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_right = 28.0
-offset_bottom = 72.0
-mouse_filter = 2
-texture = ExtResource("13_stream")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="MachineCupVisual" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_left = 82.0
-offset_top = 110.0
-offset_right = 154.0
-offset_bottom = 184.0
-mouse_filter = 2
-texture = ExtResource("11_cup")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SteamEffect" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_left = 94.0
-offset_top = 76.0
-offset_right = 140.0
-offset_bottom = 122.0
-mouse_filter = 2
-texture = ExtResource("14_steam")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SpoiledVapor" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_left = 98.0
-offset_top = 68.0
-offset_right = 153.0
-offset_bottom = 123.0
-mouse_filter = 2
-texture = ExtResource("15_spoiled")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="RackSpoiledVapor" type="TextureRect" parent="VisualRig"]
-unique_name_in_owner = true
-visible = false
-offset_left = 236.0
-offset_top = 106.0
-offset_right = 291.0
-offset_bottom = 161.0
-mouse_filter = 2
-texture = ExtResource("15_spoiled")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="WaterButton" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 12.0
-offset_top = 72.0
-offset_right = 80.0
-offset_bottom = 130.0
-theme_override_styles/normal = SubResource("PartStyle")
-text = "加水"
-[node name="StartButton" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 226.0
-offset_top = 72.0
-offset_right = 294.0
-offset_bottom = 130.0
-theme_override_styles/normal = SubResource("PartStyle")
-text = "启动"
-
-[node name="ClearHopperButton" type="Button" parent="."]
-unique_name_in_owner = true
-offset_left = 12.0
-offset_top = 136.0
-offset_right = 80.0
-offset_bottom = 174.0
-theme_override_styles/normal = SubResource("PartStyle")
-text = "清仓"
+layout_mode = 0
+# Invisible hit area precisely over the tap on the large right-side dispenser.
+offset_left = 108.0
+offset_top = 230.0
+offset_right = 220.0
+offset_bottom = 330.0
+flat = true
+tooltip_text = "按住出浆口接浆"
 
 [node name="MachineOutput" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 78.0
-offset_top = 110.0
-offset_right = 154.0
-offset_bottom = 184.0
+layout_mode = 0
+offset_left = 20.0
+offset_top = 316.0
+offset_right = 92.0
+offset_bottom = 388.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("7_source")
+texture_normal = ExtResource("4_cup")
+script = ExtResource("2_source")
 
-[node name="RackOutput01" type="TextureButton" parent="."]
+[node name="SugarJar" type="TextureButton" parent="."]
 unique_name_in_owner = true
-offset_left = 90.0
-offset_top = 190.0
-offset_right = 142.0
-offset_bottom = 242.0
+layout_mode = 0
+offset_left = 280.0
+offset_top = 324.0
+offset_right = 402.0
+offset_bottom = 446.0
 ignore_texture_size = true
 stretch_mode = 5
-script = ExtResource("7_source")
-[node name="RackOutput02" type="TextureButton" parent="."]
+# The actual sugar jar is already drawn by JianbingStallArtwork underneath.
+modulate = Color(1, 1, 1, 0)
+tooltip_text = "成品杯加糖（最多两份）"
+
+[node name="SugarLabel" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 144.0
-offset_top = 190.0
-offset_right = 196.0
-offset_bottom = 242.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
-[node name="RackOutput03" type="TextureButton" parent="."]
+layout_mode = 0
+offset_left = 242.0
+offset_top = 292.0
+offset_right = 408.0
+offset_bottom = 316.0
+theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "糖：无糖"
+
+[node name="CupDetailLabel" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 198.0
-offset_top = 190.0
-offset_right = 250.0
-offset_bottom = 242.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
-[node name="RackOutput04" type="TextureButton" parent="."]
-unique_name_in_owner = true
-offset_left = 252.0
-offset_top = 190.0
-offset_right = 304.0
-offset_bottom = 242.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("7_source")
+layout_mode = 0
+offset_left = 4.0
+offset_top = 394.0
+offset_right = 280.0
+offset_bottom = 418.0
+theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+text = "黄豆豆浆 · 0 / 1 / 2 份糖"
 
 [node name="StateLabel" type="Label" parent="."]
 unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 286.0
-offset_right = 298.0
-offset_bottom = 306.0
-theme_override_colors/font_color = Color(0.24, 0.13, 0.06, 1)
+layout_mode = 0
+offset_left = 4.0
+offset_top = 418.0
+offset_right = 280.0
+offset_bottom = 442.0
+theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
 theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
+text = "① 点击取空杯"
 
-[node name="HopperSummary" type="Label" parent="."]
+[node name="DispenseProgress" type="ProgressBar" parent="."]
 unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 246.0
-offset_right = 298.0
-offset_bottom = 266.0
-theme_override_colors/font_color = Color(0.24, 0.13, 0.06, 1)
-theme_override_font_sizes/font_size = 14
-text = "料仓：空"
-
-[node name="AutomationStatus" type="Label" parent="."]
-unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 266.0
-offset_right = 298.0
-offset_bottom = 286.0
-theme_override_colors/font_color = Color(0.34, 0.24, 0.1, 1)
-theme_override_font_sizes/font_size = 13
-text = "自动化：关"
-
-[node name="WaterMeter" type="ProgressBar" parent="."]
-unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 308.0
-offset_right = 298.0
-offset_bottom = 322.0
-max_value = 100.0
-show_percentage = false
-modulate = Color(1, 1, 1, 0.58)
-
-[node name="WaterGuideZones" type="Control" parent="."]
-unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 308.0
-offset_right = 298.0
-offset_bottom = 322.0
-mouse_filter = 2
-show_behind_parent = true
-
-[node name="RedLow" type="ColorRect" parent="WaterGuideZones"]
-offset_right = 72.5
-offset_bottom = 14.0
-color = Color(0.78, 0.22, 0.18, 0.9)
-
-[node name="YellowLow" type="ColorRect" parent="WaterGuideZones"]
-offset_left = 72.5
-offset_right = 130.5
-offset_bottom = 14.0
-color = Color(0.95, 0.72, 0.2, 0.9)
-
-[node name="Green" type="ColorRect" parent="WaterGuideZones"]
-offset_left = 130.5
-offset_right = 174.0
-offset_bottom = 14.0
-color = Color(0.24, 0.72, 0.32, 0.95)
-
-[node name="YellowHigh" type="ColorRect" parent="WaterGuideZones"]
-offset_left = 174.0
-offset_right = 232.0
-offset_bottom = 14.0
-color = Color(0.95, 0.72, 0.2, 0.9)
-
-[node name="RedHigh" type="ColorRect" parent="WaterGuideZones"]
-offset_left = 232.0
-offset_right = 290.0
-offset_bottom = 14.0
-color = Color(0.78, 0.22, 0.18, 0.9)
-
-[node name="WaterMarker" type="ColorRect" parent="."]
-unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 306.0
-offset_right = 11.0
-offset_bottom = 324.0
-mouse_filter = 2
-color = Color(0.12, 0.08, 0.04, 1)
-
-[node name="ProductionProgress" type="ProgressBar" parent="."]
-unique_name_in_owner = true
-offset_left = 8.0
-offset_top = 324.0
-offset_right = 298.0
-offset_bottom = 338.0
+layout_mode = 0
+offset_left = 4.0
+offset_top = 444.0
+offset_right = 280.0
+offset_bottom = 458.0
 max_value = 100.0
 show_percentage = false
 
-
-[node name="LockCover" type="Button" parent="."]
-unique_name_in_owner = true
+[node name="Hint" type="Label" parent="."]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.34, 0.18, 0.06, 1)
-theme_override_colors/font_hover_color = Color(0.34, 0.18, 0.06, 1)
-theme_override_colors/font_pressed_color = Color(0.34, 0.18, 0.06, 1)
-theme_override_colors/font_hover_pressed_color = Color(0.34, 0.18, 0.06, 1)
-theme_override_colors/font_focus_color = Color(0.34, 0.18, 0.06, 1)
-theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("LockStyle")
-theme_override_styles/hover = SubResource("LockStyle")
-theme_override_styles/pressed = SubResource("LockStyle")
-text = ""
+layout_mode = 0
+offset_left = 4.0
+offset_top = 444.0
+offset_right = 280.0
+offset_bottom = 460.0
+theme_override_colors/font_color = Color(0.42, 0.27, 0.11, 1)
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+text = "接满需 0.8 秒；提前松开会降低品质"

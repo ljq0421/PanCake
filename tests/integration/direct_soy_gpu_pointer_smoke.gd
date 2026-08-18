@@ -55,7 +55,14 @@ func _run() -> void:
 	_check(not order_id.is_empty(), "soy delivery order opens in a visible customer slot")
 	await _click_control(soy_station.machine_output)
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("cup_state", &"")) == &"held_empty", "mouse click takes an empty cup")
-	await _hold_control(soy_station.nozzle_button, 0.85)
+	var nozzle_press := await _begin_hold_control(soy_station.nozzle_button)
+	await create_timer(0.20).timeout
+	_check(soy_station.dispense_effect.visible, "holding the nozzle shows the soy stream and cup-fill effect")
+	_check(float(soy_station.dispense_effect.get("_fill_ratio")) > 0.10, "holding the nozzle raises the cup liquid level")
+	await create_timer(0.66).timeout
+	await _release_hold_control(nozzle_press)
+	_check(not bool(soy_station.dispense_effect.get("_dispensing")), "releasing the nozzle stops the live soy stream")
+	_check(soy_station.dispense_effect.visible and is_equal_approx(float(soy_station.dispense_effect.get("_fill_ratio")), 1.0), "the transparent cup keeps the final fill level visible")
 	var filled := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 	_check(StringName(filled.get("cup_state", &"")) == &"filled" and is_equal_approx(float(Dictionary(filled.get("cup", {})).get("fill_ratio", 0.0)), 1.0), "holding the nozzle for 0.8 seconds fills the cup")
 	await _click_control(soy_station.sugar_jar)
@@ -131,7 +138,7 @@ func _click_control(control: Control) -> void:
 	await process_frame
 
 
-func _hold_control(control: Control, seconds: float) -> void:
+func _begin_hold_control(control: Control) -> InputEventMouseButton:
 	var position := _pointer_position(control)
 	Input.warp_mouse(position)
 	var pressed := InputEventMouseButton.new()
@@ -140,7 +147,11 @@ func _hold_control(control: Control, seconds: float) -> void:
 	pressed.position = position
 	pressed.global_position = position
 	root.push_input(pressed)
-	await create_timer(seconds).timeout
+	await process_frame
+	return pressed
+
+
+func _release_hold_control(pressed: InputEventMouseButton) -> void:
 	var released := pressed.duplicate()
 	released.pressed = false
 	root.push_input(released)

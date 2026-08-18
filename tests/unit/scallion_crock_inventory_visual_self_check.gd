@@ -17,6 +17,9 @@ func _run() -> void:
 	var crock := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/HerbMetalTray") as IngredientTrayVisual
 	var coriander_crock := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/CorianderMetalTray") as TextureRect
 	var source := hotspots.get_node_or_null("ScallionHotspot") as ProductDragSource if hotspots != null else null
+	var coriander_source := hotspots.get_node_or_null("CorianderHotspot") as ProductDragSource if hotspots != null else null
+	var spreader_source := hotspots.get_node_or_null("SpreaderHotspot") as TextureButton if hotspots != null else null
+	var spreader_holder := hotspots.get_node_or_null("SpreaderHolderFilledVisual") as TextureRect if hotspots != null else null
 	_check(crock != null, "the workbench includes a dedicated scallion crock visual")
 	_check(source != null and source.hold_enabled and source.native_drag_enabled, "the crock keeps shared drag-to-griddle and hold-to-restock gestures")
 	if crock != null:
@@ -27,6 +30,12 @@ func _run() -> void:
 	if crock != null and source != null:
 		_check(crock.get_global_rect() == source.get_global_rect(), "crock artwork and interaction target share the HerbMetalTray placement")
 		_check(coriander_crock != null and crock.size == coriander_crock.size, "scallion crock uses the same on-workbench size as the coriander crock")
+	if coriander_crock != null and coriander_source != null:
+		_check(coriander_crock.get_global_rect() == coriander_source.get_global_rect(), "coriander crock artwork and interaction target share the CorianderMetalTray placement")
+	if crock != null and source != null and spreader_source != null:
+		_check(not crock.get_global_rect().intersects(spreader_source.get_global_rect()), "scallion crock input is not blocked by the spreader hotspot")
+	if spreader_source != null and spreader_holder != null:
+		_check(spreader_source.get_global_rect() == spreader_holder.get_global_rect(), "spreader hotspot matches its visible holder")
 	workstation.queue_free()
 	_finish()
 

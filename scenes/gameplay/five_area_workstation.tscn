@@ -1418,8 +1418,8 @@ offset_bottom = 770.0
 layout_mode = 0
 offset_left = 30.0
 offset_top = 550.0
-offset_right = 330.0
-offset_bottom = 950.0
+offset_right = 630.0
+offset_bottom = 1350.0
 
 [node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1733137153]
 anchors_preset = 0
@@ -1479,10 +1479,10 @@ stretch_mode = 5
 [node name="ScallionHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1874852951]
 z_index = 2
 layout_mode = 0
-offset_left = 1131.0
-offset_top = 570.5
-offset_right = 1291.0
-offset_bottom = 730.5
+offset_left = 1085.0
+offset_top = 553.0
+offset_right = 1245.0
+offset_bottom = 713.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("60_ikhp0")
@@ -1532,10 +1532,10 @@ stretch_mode = 5
 
 [node name="SpreaderHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=544913172]
 layout_mode = 0
-offset_left = 1100.0
-offset_top = 515.0
-offset_right = 1235.0
-offset_bottom = 790.0
+offset_left = 1092.0
+offset_top = 920.0
+offset_right = 1252.0
+offset_bottom = 1080.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
 
@@ -1580,10 +1580,11 @@ mouse_default_cursor_shape = 2
 flat = true
 
 [node name="CorianderHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1015290762]
+z_index = 2
 layout_mode = 0
-offset_left = 1335.0
+offset_left = 1210.0
 offset_top = 553.0
-offset_right = 1495.0
+offset_right = 1370.0
 offset_bottom = 713.0
 focus_mode = 0
 mouse_default_cursor_shape = 2

@@ -21,6 +21,7 @@ class FakeSession:
 	extends Node
 
 	var progression := FakeProgression.new()
+	var restock_hold_seconds := {}
 	var inventory := {
 		"stock.pancake.batter": 2,
 		"stock.pancake.egg": 2,
@@ -45,6 +46,19 @@ class FakeSession:
 			var key := str(stock_id)
 			inventory[key] = int(inventory.get(key, 0)) - 1
 		return {"success": true}
+
+	func five_area_restock_status(stock_id: StringName) -> Dictionary:
+		return {
+			"success": true,
+			"stock_id": stock_id,
+			"current_stock": int(inventory.get(str(stock_id), 0)),
+			"capacity": 6,
+			"unit_cost": 1,
+		}
+
+	func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dictionary:
+		restock_hold_seconds[stock_id] = float(restock_hold_seconds.get(stock_id, 0.0)) + delta
+		return {"success": true, "completed_units": 0, "auto_stopped": false}
 
 
 var failures := PackedStringArray()
@@ -162,10 +176,19 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	_check(StringName(hotspots.get_node("CorianderHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.coriander", "coriander tray maps to coriander stock")
 	_check(StringName(hotspots.get_node("BaocuiHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")
 	_check(StringName(hotspots.get_node("EggHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.egg", "right worktop basket maps to egg stock")
+	_check(not bool(hotspots.get_node("ScallionHotspot").disabled), "owned scallion stock is enabled for drag and hold input")
+	_check(not bool(hotspots.get_node("CorianderHotspot").disabled), "owned coriander stock is enabled for drag and hold input")
 	_check(bool(hotspots.get_node("ScallionHotspot").native_drag_enabled), "ingredient bowls use drag placement")
 	_check(bool(hotspots.get_node("CorianderHotspot").native_drag_enabled), "coriander tray uses drag placement")
 	_check(not bool(hotspots.get_node("SweetSauceHotspot").native_drag_enabled), "sauce jars select direct brushing instead of drag placement")
 	_check(bool(hotspots.get_node("ChiliSauceHotspot").disabled), "locked chili sauce hotspot cannot be used")
+	var scallion := hotspots.get_node("ScallionHotspot") as ProductDragSource
+	scallion.begin_gesture(Vector2.ZERO)
+	scallion.advance_gesture(0.20)
+	_check(scallion.is_hold_active(), "holding owned scallion stock enters the restock gesture")
+	scallion.advance_gesture(0.20)
+	_check(float(session.restock_hold_seconds.get(&"stock.pancake.scallion", 0.0)) > 0.0, "holding scallion stock advances the restock service")
+	scallion.end_gesture()
 	session.progression.locked.erase(&"stock.pancake.sauce.red_chili")
 	hotspots.refresh_from_session()
 	_check(not bool(hotspots.get_node("ChiliSauceHotspot").disabled), "unlocked chili sauce hotspot becomes usable")

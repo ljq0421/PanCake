@@ -3,12 +3,11 @@ extends Control
 
 signal status_message(message: String)
 
-const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
-const EMPTY_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_cup_empty_v3.png")
+const GLASS_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_glass_empty_cartoon_v1.png")
 const SUGAR_JAR_TEXTURE := preload("res://assets/jianbing-stall/sugar-jar-for-soy-milk.png")
 const FULL_CUP_SECONDS := 0.8
 const EMPTY_CUP_POSITION := Vector2(20.0, 316.0)
-const DISPENSING_CUP_POSITION := Vector2(128.0, 318.0)
+const DISPENSING_CUP_POSITION := Vector2(105.0, 318.0)
 const FLAVOR_RECIPES: Array[StringName] = [
 	&"recipe.fresh_soy_milk.yellow_bean",
 	&"recipe.fresh_soy_milk.black_bean",
@@ -22,6 +21,7 @@ const FLAVOR_RECIPES: Array[StringName] = [
 @onready var state_label: Label = %StateLabel
 @onready var cup_detail_label: Label = %CupDetailLabel
 @onready var dispense_progress: ProgressBar = %DispenseProgress
+@onready var dispense_effect: SoyDispenseEffect = %DispenseEffect
 @onready var sugar_label: Label = %SugarLabel
 @onready var flavor_menu: MenuButton = %FlavorMenu
 
@@ -57,6 +57,7 @@ func _process(delta: float) -> void:
 		return
 	_held_seconds += maxf(delta, 0.0)
 	dispense_progress.value = clampf(_held_seconds / FULL_CUP_SECONDS * 100.0, 0.0, 100.0)
+	dispense_effect.set_dispense_state(true, dispense_progress.value / 100.0, _liquid_color_for_recipe(_selected_recipe_id()))
 	state_label.text = "接浆中 · %d%%" % roundi(dispense_progress.value) if _fill_guide_enabled else "接浆中"
 
 
@@ -72,6 +73,7 @@ func refresh_from_session() -> void:
 	var cup_state := StringName(machine.get("cup_state", &"ready"))
 	var cup := Dictionary(machine.get("cup", {}))
 	var product_id := StringName(cup.get("product_id", &"product.fresh_soy_milk.yellow_bean"))
+	var fill_ratio := float(cup.get("fill_ratio", 0.0))
 	var sugar_servings := int(cup.get("sugar_servings", 0))
 	_fill_guide_enabled = bool(machine.get("fill_guide_enabled", false))
 	dispense_progress.visible = _fill_guide_enabled
@@ -80,22 +82,26 @@ func refresh_from_session() -> void:
 	_filling = _filling and cup_state == &"held_empty"
 	if not _filling:
 		dispense_progress.value = 0.0
+		if cup_state == &"filled":
+			dispense_effect.set_filled_cup(fill_ratio, _liquid_color_for_recipe(StringName(cup.get("recipe_id", selected_recipe_id))))
+		else:
+			dispense_effect.set_filled_cup(0.0, _liquid_color_for_recipe(selected_recipe_id))
 	if cup_state == &"ready":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, EMPTY_CUP_TEXTURE, true, "点击取一个空杯")
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, GLASS_CUP_TEXTURE, true, "点击取一个空杯")
 		machine_output.set_drag_available(false)
 		machine_output.position = EMPTY_CUP_POSITION
 		state_label.text = "① 点击取空杯"
 		cup_detail_label.text = "%s · 0 / 1 / 2 份糖" % _recipe_label(selected_recipe_id)
 	elif cup_state == &"held_empty":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, EMPTY_CUP_TEXTURE, false, "空杯已拿起，请按住出浆口")
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, GLASS_CUP_TEXTURE, false, "空杯已拿起，请按住出浆口")
 		machine_output.position = DISPENSING_CUP_POSITION
 		state_label.text = "② 按住出浆口接豆浆" if not _filling else state_label.text
 		cup_detail_label.text = "松开即出杯；满杯需要 0.8 秒"
 	else:
-		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, PRODUCT_VISUALS.texture_for(product_id), true, "拖到订单商品交付")
+		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, GLASS_CUP_TEXTURE, true, "拖到订单商品交付")
 		machine_output.set_drag_available(true)
 		machine_output.position = DISPENSING_CUP_POSITION
-		var fill_percent := roundi(float(cup.get("fill_ratio", 1.0)) * 100.0)
+		var fill_percent := roundi(fill_ratio * 100.0)
 		state_label.text = "③ 加糖或拖杯交付"
 		cup_detail_label.text = "%s · %d%% 满杯" % [_recipe_label(StringName(cup.get("recipe_id", selected_recipe_id))), fill_percent]
 	sugar_jar.disabled = cup_state != &"filled" or sugar_servings >= 2
@@ -117,6 +123,7 @@ func _on_nozzle_down() -> void:
 	_filling = true
 	_held_seconds = 0.0
 	dispense_progress.value = 0.0
+	dispense_effect.set_dispense_state(true, 0.0, _liquid_color_for_recipe(_selected_recipe_id()))
 
 
 func _on_nozzle_up() -> void:
@@ -176,3 +183,19 @@ static func _recipe_label(recipe_id: StringName) -> String:
 		&"recipe.fresh_soy_milk.red_bean": "红豆豆浆",
 		&"recipe.fresh_soy_milk.multigrain": "五谷豆浆",
 	}.get(recipe_id, "黄豆豆浆")
+
+
+func _selected_recipe_id() -> StringName:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		return &"recipe.fresh_soy_milk.yellow_bean"
+	return StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("recipe_id", &"recipe.fresh_soy_milk.yellow_bean"))
+
+
+static func _liquid_color_for_recipe(recipe_id: StringName) -> Color:
+	return {
+		&"recipe.fresh_soy_milk.yellow_bean": Color("f4d99c"),
+		&"recipe.fresh_soy_milk.black_bean": Color("8f7a63"),
+		&"recipe.fresh_soy_milk.red_bean": Color("d89a74"),
+		&"recipe.fresh_soy_milk.multigrain": Color("c8ad7d"),
+	}.get(recipe_id, Color("f4d99c"))

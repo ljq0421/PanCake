@@ -1,15 +1,118 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/cartoon_youtiao_fryer_toggle.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-lowered.png" id="2_lowered"]
 [ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="3_raised"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-raw-dough-v4.png" id="4_raw"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-golden-v4.png" id="5_golden"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-burnt-v4.png" id="6_burnt"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board.png" id="7_board"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-empty-serving-plate.png" id="8_plate"]
 
-[node name="CartoonYoutiaoFryerToggle" type="TextureButton"]
-custom_minimum_size = Vector2(300, 400)
+[node name="CartoonYoutiaoFryerToggle" type="Control"]
+custom_minimum_size = Vector2(600, 800)
+mouse_filter = 0
 mouse_default_cursor_shape = 2
-ignore_texture_size = true
-stretch_mode = 5
-texture_normal = ExtResource("3_raised")
 script = ExtResource("1_script")
-lowered_texture = ExtResource("2_lowered")
-raised_texture = ExtResource("3_raised")
+lowered_machine_texture = ExtResource("2_lowered")
+raised_machine_texture = ExtResource("3_raised")
+raw_youtiao_texture = ExtResource("4_raw")
+golden_youtiao_texture = ExtResource("5_golden")
+burnt_youtiao_texture = ExtResource("6_burnt")
+
+[node name="FryerVisual" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 140.0
+offset_right = 460.0
+offset_bottom = 426.0
+mouse_filter = 2
+texture = ExtResource("3_raised")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ProductVisual" type="TextureRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+layout_mode = 0
+offset_left = 226.0
+offset_top = 150.0
+offset_right = 374.0
+offset_bottom = 270.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WoodenBoardVisual" type="TextureRect" parent="."]
+layout_mode = 0
+offset_top = 450.0
+offset_right = 300.0
+offset_bottom = 650.0
+mouse_filter = 2
+texture = ExtResource("7_board")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DoughVisual" type="TextureRect" parent="."]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 72.0
+offset_top = 480.0
+offset_right = 228.0
+offset_bottom = 620.0
+mouse_filter = 2
+texture = ExtResource("4_raw")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlateVisual" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 340.0
+offset_top = 440.0
+offset_right = 600.0
+offset_bottom = 650.0
+mouse_filter = 2
+texture = ExtResource("8_plate")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlateProductVisual" type="TextureRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+layout_mode = 0
+offset_left = 390.0
+offset_top = 480.0
+offset_right = 550.0
+offset_bottom = 610.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DragVisual" type="TextureRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 10
+layout_mode = 0
+offset_right = 156.0
+offset_bottom = 140.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StatusLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 660.0
+offset_right = 600.0
+offset_bottom = 800.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.73, 1)
+theme_override_colors/font_outline_color = Color(0.16, 0.08, 0.03, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2

@@ -27,19 +27,32 @@ func _run() -> void:
 	var soy := stations.get_node_or_null("FreshSoyMilkStation") as Control if stations != null else null
 	var pancake := stations.get_node_or_null("PancakeStation") as Control if stations != null else null
 	var youtiao := stations.get_node_or_null("YoutiaoStation") as Control if stations != null else null
-	var cartoon_fryer := stations.get_node_or_null("CartoonYoutiaoFryer") as TextureButton if stations != null else null
+	var cartoon_fryer := stations.get_node_or_null("CartoonYoutiaoFryer") as Control if stations != null else null
 	_check(soy != null and Rect2(soy.position, soy.size) == Rect2(8.0, 448.0, 352.0, 340.0), "soy controls align with the left-hand stall artwork")
 	_check(pancake != null and Rect2(pancake.position, pancake.size) == Rect2(370.0, 520.0, 1170.0, 340.0), "pancake operation aligns with the centered griddle artwork")
 	_check(youtiao != null and Rect2(youtiao.position, youtiao.size) == Rect2(1552.0, 430.0, 360.0, 340.0), "fryer controls align with the right-hand stall artwork")
-	_check(cartoon_fryer != null and Rect2(cartoon_fryer.position, cartoon_fryer.size) == Rect2(30.0, 30.0, 300.0, 400.0), "cartoon fryer occupies the left-side workbench space")
+	_check(cartoon_fryer != null and Rect2(cartoon_fryer.position, cartoon_fryer.size) == Rect2(30.0, 550.0, 600.0, 800.0), "cartoon fryer occupies the left-side workbench space at 2× scale")
 	if cartoon_fryer != null:
-		_check(cartoon_fryer.texture_normal == cartoon_fryer.get("raised_texture"), "cartoon fryer starts with the drain raised")
-		cartoon_fryer.emit_signal("pressed")
-		await process_frame
-		_check(cartoon_fryer.texture_normal == cartoon_fryer.get("lowered_texture"), "clicking the cartoon fryer lowers only its drain state")
-		cartoon_fryer.emit_signal("pressed")
-		await process_frame
-		_check(cartoon_fryer.texture_normal == cartoon_fryer.get("raised_texture"), "clicking the lowered cartoon fryer raises its drain")
+		var cartoon_machine := cartoon_fryer.get_node_or_null("FryerVisual") as TextureRect
+		var cartoon_product := cartoon_fryer.get_node_or_null("ProductVisual") as TextureRect
+		var plate_product := cartoon_fryer.get_node_or_null("PlateProductVisual") as TextureRect
+		_check(cartoon_machine != null and cartoon_machine.texture == cartoon_fryer.get("raised_machine_texture"), "cartoon fryer starts with the drain raised")
+		cartoon_fryer.call("_load_dough")
+		cartoon_fryer.call("_on_machine_clicked")
+		_check(cartoon_machine.texture == cartoon_fryer.get("lowered_machine_texture"), "clicking the loaded fryer lowers its drain and starts frying")
+		cartoon_fryer.call("_process", 10.0)
+		_check(cartoon_product.texture == cartoon_fryer.get("golden_youtiao_texture"), "ten seconds of frying produces golden youtiao")
+		cartoon_fryer.call("_on_machine_clicked")
+		_check(cartoon_machine.texture == cartoon_fryer.get("raised_machine_texture"), "clicking the golden fryer raises its drain")
+		cartoon_fryer.call("_process", 2.0)
+		cartoon_fryer.call("_serve_product")
+		_check(plate_product.visible and plate_product.texture == cartoon_fryer.get("golden_youtiao_texture"), "dragging the finished youtiao to the plate serves it")
+		cartoon_fryer.call("_load_dough")
+		cartoon_fryer.call("_on_machine_clicked")
+		cartoon_fryer.call("_process", 10.0)
+		cartoon_fryer.call("_process", 5.0)
+		cartoon_fryer.call("_process", 10.0)
+		_check(cartoon_product.texture == cartoon_fryer.get("burnt_youtiao_texture"), "leaving golden youtiao down too long burns it")
 	var multi := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation") as Control
 	_check(multi != null and multi.has_method("set_griddle_count") and multi.has_method("ready_source_refs"), "multi-griddle station exposes its direct-operation contract")
 	var worktop_hotspots := workstation.get_node_or_null("FiveAreaInfrastructure/PancakeWorktopHotspots") as Control

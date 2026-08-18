@@ -117,8 +117,11 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 		hint = "%s尚未解锁" % label
 	elif count <= 0:
 		hint = "%s库存不足；原地长按补货" % label
-	# Keep an empty but unlocked material clickable so a player can still begin
-	# the shared hold-to-restock gesture from its physical worktop location.
+	# Always reconfigure after the session state is available. The sources start
+	# disabled in _ready(), so only refreshing the empty/locked branches leaves
+	# an owned, stocked material unable to receive either drag or hold input.
+	# Empty but unlocked materials remain clickable for the hold-to-restock
+	# gesture, while dragging is available only when stock exists.
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, unlocked, hint)
 	hotspot.set_drag_available(unlocked and count > 0 and source_kind == &"pancake_shared_ingredient")
 	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if unlocked else Control.CURSOR_FORBIDDEN

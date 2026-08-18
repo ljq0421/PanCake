@@ -34,25 +34,42 @@ func _run() -> void:
 	_check(cartoon_fryer != null and Rect2(cartoon_fryer.position, cartoon_fryer.size) == Rect2(30.0, 550.0, 600.0, 800.0), "cartoon fryer occupies the left-side workbench space at 2× scale")
 	if cartoon_fryer != null:
 		var cartoon_machine := cartoon_fryer.get_node_or_null("FryerVisual") as TextureRect
-		var cartoon_product := cartoon_fryer.get_node_or_null("ProductVisual") as TextureRect
-		var plate_product := cartoon_fryer.get_node_or_null("PlateProductVisual") as TextureRect
+		var dough_one := cartoon_fryer.get_node_or_null("DoughVisual1") as TextureRect
+		var dough_two := cartoon_fryer.get_node_or_null("DoughVisual2") as TextureRect
+		var cartoon_product_one := cartoon_fryer.get_node_or_null("ProductVisual1") as TextureRect
+		var cartoon_product_two := cartoon_fryer.get_node_or_null("ProductVisual2") as TextureRect
+		var plate_product_one := cartoon_fryer.get_node_or_null("PlateProductVisual1") as TextureRect
+		var plate_product_two := cartoon_fryer.get_node_or_null("PlateProductVisual2") as TextureRect
+		cartoon_fryer.set("reduce_motion", true)
 		_check(cartoon_machine != null and cartoon_machine.texture == cartoon_fryer.get("raised_machine_texture"), "cartoon fryer starts with the drain raised")
+		_check(dough_one != null and dough_one.visible and dough_two != null and dough_two.visible, "cutting board starts with two raw youtiao dough pieces")
 		cartoon_fryer.call("_load_dough")
+		cartoon_fryer.call("_load_dough")
+		_check(cartoon_product_one != null and cartoon_product_one.visible and cartoon_product_one.texture == cartoon_fryer.get("raw_youtiao_texture") and cartoon_product_two != null and cartoon_product_two.visible and cartoon_product_two.texture == cartoon_fryer.get("raw_youtiao_texture"), "both raw dough pieces remain visible in the raised fryer before lowering the drain")
+		_check(cartoon_product_one.position == Vector2(225.0, 68.0) and cartoon_product_two.position == Vector2(310.0, 68.0), "raised drain positions both raw dough pieces in the center of its basket")
 		cartoon_fryer.call("_on_machine_clicked")
 		_check(cartoon_machine.texture == cartoon_fryer.get("lowered_machine_texture"), "clicking the loaded fryer lowers its drain and starts frying")
-		cartoon_fryer.call("_process", 10.0)
-		_check(cartoon_product.texture == cartoon_fryer.get("golden_youtiao_texture"), "ten seconds of frying produces golden youtiao")
+		_check(cartoon_product_one.position == Vector2(225.0, 132.0) and cartoon_product_two.position == Vector2(310.0, 132.0), "lowered drain positions both youtiao inside the oil basket")
+		cartoon_fryer.call("_process", 6.0)
+		_check(cartoon_product_one.texture == cartoon_fryer.get("golden_youtiao_texture") and cartoon_product_two.texture == cartoon_fryer.get("golden_youtiao_texture"), "frying visibly transitions both youtiao from raw dough to golden")
+		cartoon_fryer.call("_process", 4.0)
 		cartoon_fryer.call("_on_machine_clicked")
 		_check(cartoon_machine.texture == cartoon_fryer.get("raised_machine_texture"), "clicking the golden fryer raises its drain")
+		_check(cartoon_product_one.position == Vector2(225.0, 68.0) and cartoon_product_two.position == Vector2(310.0, 68.0), "raised drain returns both golden youtiao to the center of its basket")
 		cartoon_fryer.call("_process", 2.0)
 		cartoon_fryer.call("_serve_product")
-		_check(plate_product.visible and plate_product.texture == cartoon_fryer.get("golden_youtiao_texture"), "dragging the finished youtiao to the plate serves it")
+		cartoon_fryer.call("_serve_product")
+		_check(plate_product_one.visible and plate_product_one.texture == cartoon_fryer.get("golden_youtiao_texture") and plate_product_two.visible and plate_product_two.texture == cartoon_fryer.get("golden_youtiao_texture"), "the plate accepts two finished golden youtiao")
+		cartoon_fryer.call("_reset_idle")
+		cartoon_fryer.call("_load_dough")
 		cartoon_fryer.call("_load_dough")
 		cartoon_fryer.call("_on_machine_clicked")
 		cartoon_fryer.call("_process", 10.0)
 		cartoon_fryer.call("_process", 5.0)
 		cartoon_fryer.call("_process", 10.0)
-		_check(cartoon_product.texture == cartoon_fryer.get("burnt_youtiao_texture"), "leaving golden youtiao down too long burns it")
+		_check(cartoon_product_one.texture == cartoon_fryer.get("burnt_youtiao_texture") and cartoon_product_two.texture == cartoon_fryer.get("burnt_youtiao_texture"), "leaving the batch down too long burns both youtiao")
+		cartoon_fryer.call("_on_machine_clicked")
+		_check(cartoon_machine.texture == cartoon_fryer.get("raised_machine_texture") and cartoon_product_one.visible and cartoon_product_two.visible, "raising the drain keeps the burnt youtiao visible")
 	var multi := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation") as Control
 	_check(multi != null and multi.has_method("set_griddle_count") and multi.has_method("ready_source_refs"), "multi-griddle station exposes its direct-operation contract")
 	var worktop_hotspots := workstation.get_node_or_null("FiveAreaInfrastructure/PancakeWorktopHotspots") as Control

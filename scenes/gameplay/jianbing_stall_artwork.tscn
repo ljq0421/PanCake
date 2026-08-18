@@ -25,6 +25,7 @@
 [ext_resource type="Texture2D" uid="uid://cjnkvhu7e0ynu" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-half.png" id="25_scallion_half"]
 [ext_resource type="Texture2D" uid="uid://ckmdjtq575161" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-full.png" id="26_scallion_full"]
 [ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://assets/jianbing-stall/chili-sauce-jar-no-brush.png" id="27_chili_sauce"]
+[ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://assets/jianbing-stall/tomato-sauce-jar-no-brush.png" id="28_tomato_sauce"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_supplies"]
 atlas = ExtResource("2_supplies")
@@ -211,10 +212,10 @@ stretch_mode = 5
 
 [node name="SweetBeanSauceJar" type="TextureRect" parent="." unique_id=698685248]
 layout_mode = 0
-offset_left = 1250.8
-offset_top = 800.0
-offset_right = 1385.2
-offset_bottom = 934.4
+offset_left = 1120.0
+offset_top = 682.0
+offset_right = 1243.0
+offset_bottom = 816.4
 mouse_filter = 2
 texture = ExtResource("9_sweet_bean_sauce")
 expand_mode = 1
@@ -228,6 +229,17 @@ offset_right = 1376.0
 offset_bottom = 1003.4
 mouse_filter = 2
 texture = ExtResource("27_chili_sauce")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TomatoSauceJar" type="TextureRect" parent="." unique_id=184690208]
+layout_mode = 0
+offset_left = 1353.0
+offset_top = 870.0
+offset_right = 1470.0
+offset_bottom = 999.4
+mouse_filter = 2
+texture = ExtResource("28_tomato_sauce")
 expand_mode = 1
 stretch_mode = 5
 

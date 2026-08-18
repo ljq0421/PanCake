@@ -12,6 +12,8 @@ const CUP_RIM_Y := 327.0
 const CUP_BOTTOM_Y := 379.0
 const NOZZLE_TIP := Vector2(141.0, 316.0)
 const STREAM_WIDTH := 5.0
+const CUP_SIDE_SAMPLES := 12
+const SURFACE_SAMPLES := 18
 
 var _dispensing := false
 var _fill_ratio := 0.0
@@ -66,7 +68,9 @@ func _draw_stream() -> void:
 	# The flow is deliberately restrained: the actual fill progress is the
 	# primary feedback, while this small highlight keeps the source legible.
 	var sway := 0.0 if _reduced_motion else sin(_flow_time * 18.0) * 0.8
-	var stream_end := Vector2(CUP_CENTER_X + sway, CUP_RIM_Y + 4.0)
+	# The stream meets the live surface rather than ending at the rim.  This
+	# keeps it visually continuous even at the beginning of a fill.
+	var stream_end := Vector2(CUP_CENTER_X + sway, _surface_y() + 0.6)
 	var stream_color := _liquid_color.lightened(0.05)
 	draw_line(NOZZLE_TIP, stream_end, stream_color, STREAM_WIDTH, true)
 	draw_line(NOZZLE_TIP + Vector2(-1.2, 0.0), stream_end + Vector2(-1.2, 0.0), Color(1.0, 0.97, 0.83, 0.72), 1.2, true)
@@ -76,28 +80,50 @@ func _draw_stream() -> void:
 func _draw_cup_fill() -> void:
 	if _fill_ratio <= 0.0:
 		return
-	# The opaque cup has no separate interior layer.  This tapered fill shape
-	# stays within its bowl silhouette and becomes wider as the liquid rises.
-	var fill_height := (CUP_BOTTOM_Y - CUP_RIM_Y) * _fill_ratio
-	var surface_y := CUP_BOTTOM_Y - fill_height
-	var surface_half_width := lerpf(13.0, 20.0, _fill_ratio)
-	var lower_half_width := 14.0
+	# Trace the tapered plastic cup with several points instead of a four-corner
+	# polygon.  The full cup therefore keeps a rounded profile and has no square
+	# liquid corners.
+	var surface_y := _surface_y()
 	var wave := 0.0 if _reduced_motion else sin(_flow_time * 14.0) * 0.8
-	var body_points := PackedVector2Array([
-		Vector2(CUP_CENTER_X - lower_half_width, CUP_BOTTOM_Y),
-		Vector2(CUP_CENTER_X + lower_half_width, CUP_BOTTOM_Y),
-		Vector2(CUP_CENTER_X + surface_half_width, surface_y),
-		Vector2(CUP_CENTER_X, surface_y + wave),
-		Vector2(CUP_CENTER_X - surface_half_width, surface_y),
-	])
-	draw_colored_polygon(body_points, Color(_liquid_color, 0.79))
-	var surface_points := PackedVector2Array()
-	for index in range(9):
-		var progress := float(index) / 8.0
-		var x := lerpf(CUP_CENTER_X - surface_half_width, CUP_CENTER_X + surface_half_width, progress)
-		var crest := sin(progress * PI) * 2.0
-		surface_points.append(Vector2(x, surface_y - crest + wave))
+	var fill_color := Color(_liquid_color, 0.79)
+	# Rendering a stack of convex tapered strips avoids the renderer's
+	# triangulation failure for a dynamically changing concave polygon.
+	for index in range(CUP_SIDE_SAMPLES):
+		var top_progress := float(index) / CUP_SIDE_SAMPLES
+		var bottom_progress := float(index + 1) / CUP_SIDE_SAMPLES
+		var y_top := lerpf(surface_y, CUP_BOTTOM_Y, top_progress)
+		var y_bottom := lerpf(surface_y, CUP_BOTTOM_Y, bottom_progress)
+		var top_half_width := _cup_half_width_at(y_top)
+		var bottom_half_width := _cup_half_width_at(y_bottom)
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(CUP_CENTER_X - top_half_width, y_top),
+			Vector2(CUP_CENTER_X + top_half_width, y_top),
+			Vector2(CUP_CENTER_X + bottom_half_width, y_bottom),
+			Vector2(CUP_CENTER_X - bottom_half_width, y_bottom),
+		]), fill_color)
+	var surface_points := _surface_points(surface_y, wave)
 	draw_polyline(surface_points, _liquid_color.lightened(0.18), 1.4, true)
+
+
+func _surface_y() -> float:
+	return CUP_BOTTOM_Y - (CUP_BOTTOM_Y - CUP_RIM_Y) * maxf(_fill_ratio, 0.03)
+
+
+func _cup_half_width_at(y: float) -> float:
+	var down_cup := inverse_lerp(CUP_RIM_Y, CUP_BOTTOM_Y, y)
+	return lerpf(19.0, 14.0, clampf(down_cup, 0.0, 1.0))
+
+
+func _surface_points(surface_y: float, wave: float) -> PackedVector2Array:
+	var half_width := _cup_half_width_at(surface_y)
+	var points := PackedVector2Array()
+	for index in range(SURFACE_SAMPLES + 1):
+		var progress := float(index) / SURFACE_SAMPLES
+		var x := lerpf(CUP_CENTER_X - half_width, CUP_CENTER_X + half_width, progress)
+		# A shallow ellipse-like arc preserves a rounded liquid edge at 100%.
+		var arc := sin(progress * PI) * 2.0
+		points.append(Vector2(x, surface_y - arc + wave))
+	return points
 
 
 func _should_reduce_motion() -> bool:

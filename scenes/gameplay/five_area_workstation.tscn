@@ -49,7 +49,7 @@
 [ext_resource type="Script" uid="uid://b2326s32jjhdn" path="res://scripts/ui/egg_carton_drag_source.gd" id="71_egg_carton_drag"]
 [ext_resource type="Texture2D" uid="uid://bl8kaj3c2qww3" path="res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png" id="72_spreader_holder_empty"]
 [ext_resource type="Texture2D" uid="uid://didjm28d6kq2e" path="res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png" id="73_spreader_holder_filled"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
+[ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -1398,11 +1398,7 @@ mouse_filter = 2
 
 [node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" unique_id=143699513 instance=ExtResource("37_830a8")]
 z_index = 20
-layout_mode = 0
 anchors_preset = 0
-# The interactive layer must sit over the authored right-side dispenser, not
-# the retired standalone station at the bottom-left of the workbench.
-offset_left = 1500.0
 offset_top = 480.0
 offset_right = 1910.0
 offset_bottom = 940.0
@@ -1417,9 +1413,9 @@ offset_bottom = 770.0
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0
 offset_left = 30.0
-offset_top = 550.0
+offset_top = 420.0
 offset_right = 630.0
-offset_bottom = 1350.0
+offset_bottom = 1220.0
 
 [node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1733137153]
 anchors_preset = 0

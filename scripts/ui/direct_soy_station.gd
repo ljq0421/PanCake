@@ -3,7 +3,7 @@ extends Control
 
 signal status_message(message: String)
 
-const GLASS_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_glass_empty_cartoon_v1.png")
+const PLASTIC_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v2.png")
 const SUGAR_JAR_TEXTURE := preload("res://assets/jianbing-stall/sugar-jar-for-soy-milk.png")
 const FULL_CUP_SECONDS := 0.8
 const EMPTY_CUP_POSITION := Vector2(20.0, 316.0)
@@ -87,18 +87,18 @@ func refresh_from_session() -> void:
 		else:
 			dispense_effect.set_filled_cup(0.0, _liquid_color_for_recipe(selected_recipe_id))
 	if cup_state == &"ready":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, GLASS_CUP_TEXTURE, true, "点击取一个空杯")
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, PLASTIC_CUP_TEXTURE, true, "点击取一个空杯")
 		machine_output.set_drag_available(false)
 		machine_output.position = EMPTY_CUP_POSITION
 		state_label.text = "① 点击取空杯"
 		cup_detail_label.text = "%s · 0 / 1 / 2 份糖" % _recipe_label(selected_recipe_id)
 	elif cup_state == &"held_empty":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, GLASS_CUP_TEXTURE, false, "空杯已拿起，请按住出浆口")
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, PLASTIC_CUP_TEXTURE, false, "空杯已拿起，请按住出浆口")
 		machine_output.position = DISPENSING_CUP_POSITION
 		state_label.text = "② 按住出浆口接豆浆" if not _filling else state_label.text
 		cup_detail_label.text = "松开即出杯；满杯需要 0.8 秒"
 	else:
-		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, GLASS_CUP_TEXTURE, true, "拖到订单商品交付")
+		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, PLASTIC_CUP_TEXTURE, true, "拖到订单商品交付")
 		machine_output.set_drag_available(true)
 		machine_output.position = DISPENSING_CUP_POSITION
 		var fill_percent := roundi(fill_ratio * 100.0)

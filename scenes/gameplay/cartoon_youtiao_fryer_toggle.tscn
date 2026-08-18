@@ -1,26 +1,26 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene format=3 uid="uid://cutgih44ymmyc"]
 
-[ext_resource type="Script" path="res://scripts/ui/cartoon_youtiao_fryer_toggle.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-lowered.png" id="2_lowered"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="3_raised"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-raw-dough-v4.png" id="4_raw"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-golden-v4.png" id="5_golden"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-burnt-v4.png" id="6_burnt"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board.png" id="7_board"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-empty-serving-plate.png" id="8_plate"]
+[ext_resource type="Script" uid="uid://bt7tqa6n1h2od" path="res://scripts/ui/cartoon_youtiao_fryer_toggle.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ctgo3hannsusp" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-lowered.png" id="2_lowered"]
+[ext_resource type="Texture2D" uid="uid://dlos2ddb5jwdv" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="3_raised"]
+[ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-raw-dough-v4.png" id="4_raw"]
+[ext_resource type="Texture2D" uid="uid://7ymhng5eocrj" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-burnt-v4.png" id="6_burnt"]
+[ext_resource type="Texture2D" uid="uid://ce1h868ldt7xi" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board.png" id="7_board"]
+[ext_resource type="Texture2D" uid="uid://cxyxfs4u3mhre" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-empty-serving-plate.png" id="8_plate"]
 
-[node name="CartoonYoutiaoFryerToggle" type="Control"]
+[node name="CartoonYoutiaoFryerToggle" type="Control" unique_id=1247571894]
 custom_minimum_size = Vector2(600, 800)
-mouse_filter = 0
+layout_mode = 3
+anchors_preset = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("1_script")
 lowered_machine_texture = ExtResource("2_lowered")
 raised_machine_texture = ExtResource("3_raised")
 raw_youtiao_texture = ExtResource("4_raw")
-golden_youtiao_texture = ExtResource("5_golden")
+golden_youtiao_texture = ExtResource("4_raw")
 burnt_youtiao_texture = ExtResource("6_burnt")
 
-[node name="FryerVisual" type="TextureRect" parent="."]
+[node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 140.0
@@ -31,43 +31,69 @@ texture = ExtResource("3_raised")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ProductVisual" type="TextureRect" parent="."]
+[node name="ProductVisual1" type="TextureRect" parent="." unique_id=279161112]
 unique_name_in_owner = true
 visible = false
 z_index = 2
 layout_mode = 0
-offset_left = 226.0
-offset_top = 150.0
-offset_right = 374.0
-offset_bottom = 270.0
+offset_left = 225.0
+offset_top = 68.0
+offset_right = 300.0
+offset_bottom = 145.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="WoodenBoardVisual" type="TextureRect" parent="."]
+[node name="ProductVisual2" type="TextureRect" parent="." unique_id=138441394]
+unique_name_in_owner = true
+visible = false
+z_index = 2
 layout_mode = 0
-offset_top = 450.0
-offset_right = 300.0
+offset_left = 310.0
+offset_top = 68.0
+offset_right = 385.0
+offset_bottom = 145.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WoodenBoardVisual" type="TextureRect" parent="." unique_id=1089327243]
+layout_mode = 0
+offset_top = 429.0
+offset_right = 338.0
 offset_bottom = 650.0
 mouse_filter = 2
 texture = ExtResource("7_board")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DoughVisual" type="TextureRect" parent="."]
+[node name="DoughVisual1" type="TextureRect" parent="." unique_id=134491490]
 unique_name_in_owner = true
 z_index = 2
 layout_mode = 0
-offset_left = 72.0
-offset_top = 480.0
-offset_right = 228.0
-offset_bottom = 620.0
+offset_left = 90.0
+offset_top = 508.0
+offset_right = 202.0
+offset_bottom = 618.0
 mouse_filter = 2
 texture = ExtResource("4_raw")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlateVisual" type="TextureRect" parent="."]
+[node name="DoughVisual2" type="TextureRect" parent="." unique_id=1021922570]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 136.0
+offset_top = 508.0
+offset_right = 248.0
+offset_bottom = 618.0
+mouse_filter = 2
+texture = ExtResource("4_raw")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlateVisual" type="TextureRect" parent="." unique_id=686091902]
 layout_mode = 0
 offset_left = 340.0
 offset_top = 440.0
@@ -78,20 +104,33 @@ texture = ExtResource("8_plate")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PlateProductVisual" type="TextureRect" parent="."]
+[node name="PlateProductVisual1" type="TextureRect" parent="." unique_id=1933140994]
 unique_name_in_owner = true
 visible = false
 z_index = 2
 layout_mode = 0
-offset_left = 390.0
-offset_top = 480.0
-offset_right = 550.0
-offset_bottom = 610.0
+offset_left = 362.0
+offset_top = 490.0
+offset_right = 470.0
+offset_bottom = 590.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DragVisual" type="TextureRect" parent="."]
+[node name="PlateProductVisual2" type="TextureRect" parent="." unique_id=6270652]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+layout_mode = 0
+offset_left = 472.0
+offset_top = 490.0
+offset_right = 580.0
+offset_bottom = 590.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DragVisual" type="TextureRect" parent="." unique_id=1157962629]
 unique_name_in_owner = true
 visible = false
 z_index = 10
@@ -102,13 +141,12 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="StatusLabel" type="Label" parent="."]
+[node name="StatusLabel" type="Label" parent="." unique_id=948688222]
 unique_name_in_owner = true
 layout_mode = 0
 offset_top = 660.0
 offset_right = 600.0
 offset_bottom = 800.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.93, 0.73, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3

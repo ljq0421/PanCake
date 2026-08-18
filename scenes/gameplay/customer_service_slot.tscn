@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bcgkauxm4opdi"]
 
 [ext_resource type="Script" uid="uid://bx27p8vbu7lxg" path="res://scripts/ui/customer_service_slot.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png" id="2_order_card"]
+[ext_resource type="Texture2D" uid="uid://c5v11ifr0600d" path="res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png" id="2_order_card"]
 [ext_resource type="Script" uid="uid://c46h1inlchljr" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
 
 [sub_resource type="StyleBoxFlat" id="TransparentStyle"]
@@ -110,9 +110,15 @@ script = ExtResource("3_drop_button")
 [node name="ItemIcon1" type="TextureRect" parent="OrderPanel/ItemButton1" unique_id=1669439767]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = 0.40300003
+anchor_top = -0.16100001
+anchor_right = 1.4030001
+anchor_bottom = 0.83900005
+offset_left = 0.013998032
+offset_top = -1.0179996
+offset_right = 0.01399231
+offset_bottom = -1.0180016
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -149,9 +155,15 @@ item_index = 1
 [node name="ItemIcon2" type="TextureRect" parent="OrderPanel/ItemButton2" unique_id=953765645]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = -0.93500006
+anchor_top = -0.177
+anchor_right = 0.065000005
+anchor_bottom = 0.823
+offset_left = -0.029994965
+offset_top = -0.026000023
+offset_right = -0.03000021
+offset_bottom = -0.026000977
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -188,9 +200,15 @@ item_index = 2
 [node name="ItemIcon3" type="TextureRect" parent="OrderPanel/ItemButton3" unique_id=1518845551]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = -0.38700002
+anchor_top = -0.177
+anchor_right = 0.61300004
+anchor_bottom = 0.823
+offset_left = -0.0059986115
+offset_top = -0.026000023
+offset_right = -0.006000519
+offset_bottom = -0.026000977
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -224,9 +242,13 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon1" type="TextureRect" parent="OrderPanel/Requirement1" unique_id=995116168]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = -0.18200001
+anchor_top = 0.275
+anchor_right = 0.818
+anchor_bottom = 1.2750001
+offset_left = 0.008000374
+offset_right = 0.00799942
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -245,9 +267,13 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon2" type="TextureRect" parent="OrderPanel/Requirement2" unique_id=1048000811]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = -0.045
+anchor_top = 0.275
+anchor_right = 0.95500004
+anchor_bottom = 1.2750001
+offset_left = -0.01999998
+offset_right = -0.020000458
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -266,9 +292,10 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon3" type="TextureRect" parent="OrderPanel/Requirement3" unique_id=443992175]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
+anchor_top = 0.275
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 1.2750001
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -287,9 +314,13 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon4" type="TextureRect" parent="OrderPanel/Requirement4" unique_id=1605647781]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = 0.15900001
+anchor_top = 0.3
+anchor_right = 1.159
+anchor_bottom = 1.3000001
+offset_left = 0.00399971
+offset_right = 0.0039978027
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -308,9 +339,13 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon5" type="TextureRect" parent="OrderPanel/Requirement5" unique_id=458720093]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = -0.18200001
+anchor_top = 0.57500005
+anchor_right = 0.818
+anchor_bottom = 1.575
+offset_left = 0.008000374
+offset_right = 0.00799942
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -329,9 +364,13 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon6" type="TextureRect" parent="OrderPanel/Requirement6" unique_id=1212615713]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
+anchor_left = -0.045
+anchor_top = 0.57500005
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 1.575
+offset_left = -0.01999998
+offset_right = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -350,9 +389,10 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon7" type="TextureRect" parent="OrderPanel/Requirement7" unique_id=249199944]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
+anchor_top = 0.57500005
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 1.575
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -371,9 +411,13 @@ theme_override_styles/panel = SubResource("TransparentStyle")
 [node name="RequirementIcon8" type="TextureRect" parent="OrderPanel/Requirement8" unique_id=329431414]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = 0.15900001
+anchor_top = 0.57500005
+anchor_right = 1.159
+anchor_bottom = 1.575
+offset_left = 0.00399971
+offset_right = 0.0039978027
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -417,8 +461,8 @@ horizontal_alignment = 2
 [node name="PatienceBar" type="ProgressBar" parent="OrderPanel" unique_id=984888558]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 84.0
-offset_top = 288.0
-offset_right = 240.0
-offset_bottom = 301.0
+offset_left = 75.0
+offset_top = 308.0
+offset_right = 255.0
+offset_bottom = 329.0
 show_percentage = false

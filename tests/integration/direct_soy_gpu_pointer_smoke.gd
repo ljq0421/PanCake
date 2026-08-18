@@ -59,7 +59,10 @@ func _run() -> void:
 	await create_timer(0.20).timeout
 	_check(soy_station.dispense_effect.visible, "holding the nozzle shows the soy stream and cup-fill effect")
 	_check(float(soy_station.dispense_effect.get("_fill_ratio")) > 0.10, "holding the nozzle raises the cup liquid level")
-	await create_timer(0.66).timeout
+	await create_timer(0.76).timeout
+	_check(float(soy_station.dispense_effect.get("_fill_ratio")) >= 0.999, "holding through the full mark fills the cup")
+	_check(bool(soy_station.dispense_effect.get("_dispensing")), "the stream remains active while the pointer is still held")
+	_check(soy_station.dispense_effect.is_overflowing(), "holding a full cup activates the overflow animation")
 	await _release_hold_control(nozzle_press)
 	_check(not bool(soy_station.dispense_effect.get("_dispensing")), "releasing the nozzle stops the live soy stream")
 	_check(soy_station.dispense_effect.visible and is_equal_approx(float(soy_station.dispense_effect.get("_fill_ratio")), 1.0), "the transparent cup keeps the final fill level visible")
@@ -67,6 +70,7 @@ func _run() -> void:
 	_check(StringName(filled.get("cup_state", &"")) == &"filled" and is_equal_approx(float(Dictionary(filled.get("cup", {})).get("fill_ratio", 0.0)), 1.0), "holding the nozzle for 0.8 seconds fills the cup")
 	await _click_control(soy_station.sugar_jar)
 	_check(int(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("cup", {}).get("sugar_servings", 0)) == 1, "mouse click adds normal sugar")
+	_check(float(soy_station.dispense_effect.get("_sugar_animation_time")) >= 0.0, "adding sugar starts the visible jar-to-cup action")
 	var target := workstation.call("_tutorial_delivery_target", session, &"area.fresh_soy_milk") as Control
 	_check(target != null and not (target as Button).disabled, "soy order exposes an enabled drop target")
 	if target != null:
@@ -113,16 +117,22 @@ func _open_normal_sugar_order(session: Node, workstation: Node) -> StringName:
 
 
 func _hover_control(control: Control) -> void:
-	var position := _pointer_position(control)
-	Input.warp_mouse(position)
-	var motion := InputEventMouseMotion.new()
-	motion.position = position
-	motion.global_position = position
-	Input.parse_input_event(motion)
-	await process_frame
+	# Window focus can swallow the first synthetic motion after a resolution
+	# change.  Retry the same real-pointer hover before reporting a UI failure.
+	for _attempt in range(3):
+		var position := _pointer_position(control)
+		Input.warp_mouse(position)
+		var motion := InputEventMouseMotion.new()
+		motion.position = position
+		motion.global_position = position
+		Input.parse_input_event(motion)
+		await process_frame
+		if root.gui_get_hovered_control() == control:
+			return
 
 
 func _click_control(control: Control) -> void:
+	await _hover_control(control)
 	var position := _pointer_position(control)
 	Input.warp_mouse(position)
 	var pressed := InputEventMouseButton.new()
@@ -139,6 +149,7 @@ func _click_control(control: Control) -> void:
 
 
 func _begin_hold_control(control: Control) -> InputEventMouseButton:
+	await _hover_control(control)
 	var position := _pointer_position(control)
 	Input.warp_mouse(position)
 	var pressed := InputEventMouseButton.new()

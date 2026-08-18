@@ -3,11 +3,18 @@ extends Control
 
 signal status_message(message: String)
 
-const PLASTIC_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v2.png")
+const PLASTIC_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v3_512.png")
 const SUGAR_JAR_TEXTURE := preload("res://assets/jianbing-stall/sugar-jar-for-soy-milk.png")
 const FULL_CUP_SECONDS := 0.8
 const EMPTY_CUP_POSITION := Vector2(20.0, 316.0)
 const DISPENSING_CUP_POSITION := Vector2(105.0, 318.0)
+# Measured on soy-milk-dispenser.png.  This is the lower opening of the tap,
+# not the handle or its mounting point.
+const DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(464.0, 1000.0)
+const SUGAR_JAR_SPOUT := Vector2(345.0, 347.0)
+# The visible jar belongs to this station, while its transparent button keeps
+# a slightly forgiving hit area instead of relying on the pixel edge.
+const SUGAR_JAR_HIT_RECT := Rect2(264.0, 316.0, 146.0, 144.0)
 const FLAVOR_RECIPES: Array[StringName] = [
 	&"recipe.fresh_soy_milk.yellow_bean",
 	&"recipe.fresh_soy_milk.black_bean",
@@ -18,6 +25,7 @@ const FLAVOR_RECIPES: Array[StringName] = [
 @onready var machine_output: ProductDragSource = %MachineOutput
 @onready var nozzle_button: Button = %NozzleButton
 @onready var sugar_jar: TextureButton = %SugarJar
+@onready var soy_milk_dispenser: TextureRect = $SoyMilkDispenser
 @onready var state_label: Label = %StateLabel
 @onready var cup_detail_label: Label = %CupDetailLabel
 @onready var dispense_progress: ProgressBar = %DispenseProgress
@@ -35,15 +43,15 @@ var _fill_guide_enabled := false
 
 
 func _ready() -> void:
-	# These hit regions are intentionally transparent: the permanent workbench
-	# art beneath this control is the visual source of truth for the right-side
-	# dispenser and sugar jar.
+	# These hit regions are intentionally transparent: sibling station artwork
+	# remains the visual source of truth for the dispenser and sugar jar.
 	nozzle_button.position = Vector2(108.0, 230.0)
 	nozzle_button.size = Vector2(112.0, 100.0)
 	flavor_menu.position = Vector2(10.0, 12.0)
 	flavor_menu.size = Vector2(106.0, 30.0)
-	sugar_jar.position = Vector2(280.0, 324.0)
-	sugar_jar.size = Vector2(122.0, 122.0)
+	sugar_jar.position = SUGAR_JAR_HIT_RECT.position
+	sugar_jar.size = SUGAR_JAR_HIT_RECT.size
+	dispense_effect.configure_geometry(Rect2(DISPENSING_CUP_POSITION, machine_output.size), _nozzle_outlet_position())
 	machine_output.short_clicked.connect(_on_cup_short_clicked)
 	nozzle_button.button_down.connect(_on_nozzle_down)
 	nozzle_button.button_up.connect(_on_nozzle_up)
@@ -58,7 +66,10 @@ func _process(delta: float) -> void:
 	_held_seconds += maxf(delta, 0.0)
 	dispense_progress.value = clampf(_held_seconds / FULL_CUP_SECONDS * 100.0, 0.0, 100.0)
 	dispense_effect.set_dispense_state(true, dispense_progress.value / 100.0, _liquid_color_for_recipe(_selected_recipe_id()))
-	state_label.text = "接浆中 · %d%%" % roundi(dispense_progress.value) if _fill_guide_enabled else "接浆中"
+	if dispense_progress.value >= 100.0:
+		state_label.text = "已满杯 · 继续按住会溢出"
+	else:
+		state_label.text = "接浆中 · %d%%" % roundi(dispense_progress.value) if _fill_guide_enabled else "接浆中"
 
 
 func refresh_from_session() -> void:
@@ -145,6 +156,7 @@ func _on_sugar_jar_pressed() -> void:
 	var result: Dictionary = session.call("add_f4_soy_sugar") if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
 		var servings := int(result.get("sugar_servings", 0))
+		dispense_effect.play_sugar_add(SUGAR_JAR_SPOUT)
 		status_message.emit("已加正常糖" if servings == 1 else "已加多糖")
 	else:
 		status_message.emit("无法加糖：%s" % str(result.get("reason", &"unknown")))
@@ -199,3 +211,15 @@ static func _liquid_color_for_recipe(recipe_id: StringName) -> Color:
 		&"recipe.fresh_soy_milk.red_bean": Color("d89a74"),
 		&"recipe.fresh_soy_milk.multigrain": Color("c8ad7d"),
 	}.get(recipe_id, Color("f4d99c"))
+
+
+func _nozzle_outlet_position() -> Vector2:
+	# The dispenser uses KEEP_ASPECT_COVERED, which crops its square source in
+	# this non-square slot.  Resolve that crop before converting the verified
+	# source-pixel outlet into station coordinates.
+	var texture_size := soy_milk_dispenser.texture.get_size()
+	var display_size := soy_milk_dispenser.size
+	var scale := maxf(display_size.x / texture_size.x, display_size.y / texture_size.y)
+	var drawn_size := texture_size * scale
+	var crop_offset := (display_size - drawn_size) * 0.5
+	return soy_milk_dispenser.position + crop_offset + DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION * scale

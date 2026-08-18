@@ -26,6 +26,7 @@ class FakeSession:
 		"stock.pancake.batter": 2,
 		"stock.pancake.egg": 2,
 		"stock.pancake.baocui": 2,
+		"stock.pancake.meat_floss": 2,
 		"stock.pancake.scallion": 2,
 		"stock.pancake.coriander": 2,
 		"stock.pancake.sauce.sweet_flour": 2,
@@ -161,10 +162,20 @@ func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, sessi
 func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSession) -> void:
 	var hotspots := HOTSPOTS_SCRIPT.new()
 	hotspots.griddle_station_path = NodePath("../MultiGriddleStation")
-	for hotspot_name in [&"ScallionHotspot", &"CorianderHotspot", &"BaocuiHotspot", &"EggHotspot", &"SweetSauceHotspot", &"ChiliSauceHotspot"]:
+	for component_name in [&"ScallionTray", &"CorianderTray", &"BaocuiBasket", &"EggCarton"]:
+		var component := Control.new()
+		component.name = component_name
+		hotspots.add_child(component)
 		var source := DRAG_SOURCE_SCRIPT.new()
-		source.name = hotspot_name
-		hotspots.add_child(source)
+		source.name = &"Hotspot"
+		component.add_child(source)
+	for hotspot_name in [&"SweetSauceHotspot", &"ChiliSauceHotspot"]:
+		var sauce_source := DRAG_SOURCE_SCRIPT.new()
+		sauce_source.name = hotspot_name
+		hotspots.add_child(sauce_source)
+	var pork_floss := DRAG_SOURCE_SCRIPT.new()
+	pork_floss.name = &"PorkFlossHotspot"
+	hotspots.add_child(pork_floss)
 	var spreader := TextureButton.new()
 	spreader.name = &"SpreaderHotspot"
 	hotspots.add_child(spreader)
@@ -172,23 +183,32 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	await process_frame
 	session.progression.locked[&"stock.pancake.sauce.red_chili"] = true
 	hotspots.bind_session(session)
-	_check(StringName(hotspots.get_node("ScallionHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")
-	_check(StringName(hotspots.get_node("CorianderHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.coriander", "coriander tray maps to coriander stock")
-	_check(StringName(hotspots.get_node("BaocuiHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")
-	_check(StringName(hotspots.get_node("EggHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.egg", "right worktop basket maps to egg stock")
-	_check(not bool(hotspots.get_node("ScallionHotspot").disabled), "owned scallion stock is enabled for drag and hold input")
-	_check(not bool(hotspots.get_node("CorianderHotspot").disabled), "owned coriander stock is enabled for drag and hold input")
-	_check(bool(hotspots.get_node("ScallionHotspot").native_drag_enabled), "ingredient bowls use drag placement")
-	_check(bool(hotspots.get_node("CorianderHotspot").native_drag_enabled), "coriander tray uses drag placement")
+	_check(StringName(hotspots.get_node("ScallionTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")
+	_check(StringName(hotspots.get_node("CorianderTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.coriander", "coriander tray maps to coriander stock")
+	_check(StringName(hotspots.get_node("BaocuiBasket/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")
+	_check(StringName(hotspots.get_node("EggCarton/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.egg", "right worktop basket maps to egg stock")
+	_check(StringName(hotspots.get_node("PorkFlossHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.meat_floss", "pork-floss tray maps to meat-floss stock")
+	_check(not bool(hotspots.get_node("ScallionTray/Hotspot").disabled), "owned scallion stock is enabled for drag and hold input")
+	_check(not bool(hotspots.get_node("CorianderTray/Hotspot").disabled), "owned coriander stock is enabled for drag and hold input")
+	_check(not bool(hotspots.get_node("PorkFlossHotspot").disabled), "owned pork-floss tray is enabled for drag and hold input")
+	_check(bool(hotspots.get_node("ScallionTray/Hotspot").native_drag_enabled), "ingredient bowls use drag placement")
+	_check(bool(hotspots.get_node("CorianderTray/Hotspot").native_drag_enabled), "coriander tray uses drag placement")
 	_check(not bool(hotspots.get_node("SweetSauceHotspot").native_drag_enabled), "sauce jars select direct brushing instead of drag placement")
 	_check(bool(hotspots.get_node("ChiliSauceHotspot").disabled), "locked chili sauce hotspot cannot be used")
-	var scallion := hotspots.get_node("ScallionHotspot") as ProductDragSource
+	var scallion := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
 	scallion.begin_gesture(Vector2.ZERO)
 	scallion.advance_gesture(0.20)
 	_check(scallion.is_hold_active(), "holding owned scallion stock enters the restock gesture")
 	scallion.advance_gesture(0.20)
 	_check(float(session.restock_hold_seconds.get(&"stock.pancake.scallion", 0.0)) > 0.0, "holding scallion stock advances the restock service")
 	scallion.end_gesture()
+	var pork_floss_source := hotspots.get_node("PorkFlossHotspot") as ProductDragSource
+	pork_floss_source.begin_gesture(Vector2.ZERO)
+	pork_floss_source.advance_gesture(0.20)
+	_check(pork_floss_source.is_hold_active(), "holding pork-floss tray enters the restock gesture")
+	pork_floss_source.advance_gesture(0.20)
+	_check(float(session.restock_hold_seconds.get(&"stock.pancake.meat_floss", 0.0)) > 0.0, "holding pork-floss tray advances the restock service")
+	pork_floss_source.end_gesture()
 	session.progression.locked.erase(&"stock.pancake.sauce.red_chili")
 	hotspots.refresh_from_session()
 	_check(not bool(hotspots.get_node("ChiliSauceHotspot").disabled), "unlocked chili sauce hotspot becomes usable")

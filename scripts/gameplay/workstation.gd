@@ -23,6 +23,7 @@ const ADVANCED_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/
 const BASIC_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_v1.png")
 const WIDE_SPREADER_TEXTURE_PATH := "res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png"
 const CUSTOMER_PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
+const PATIENCE_BAR_STYLE := preload("res://scripts/ui/patience_bar_style.gd")
 const ORDER_CARD_COIN_TEXTURE_PATH := "res://resources/art/ui/economy/currency_coin_v2_chinese_ui.png"
 const ORDER_CARD_DISH_TEXTURE_PATH := "res://resources/art/workstation/textures/pancake_cooked_texture_v1.png"
 const ORDER_CARD_INGREDIENT_TEXTURE_PATHS := {
@@ -129,6 +130,8 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 	%CustomerSlot2.get_node("Patience"),
 	%CustomerSlot3.get_node("Patience"),
 ]
+var _customer_slot_patience_tiers := [-1, -1, -1]
+var _order_patience_tier := -1
 @onready var customer_service_slots: Array[Control] = _resolve_customer_service_slots()
 @onready var customer_line_label: Label = get_node_or_null("SafeArea/CustomerLineLabel") as Label
 @onready var order_coin_icon: TextureRect = get_node_or_null("SafeArea/OrderCard/OrderCoinIcon") as TextureRect
@@ -3458,6 +3461,7 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	order_coin_icon.visible = coin_total > 0
 	order_amount_label.text = str(coin_total)
 	order_patience_bar.value = clampf(patience_ratio, 0.0, 1.0) * 100.0
+	_order_patience_tier = PATIENCE_BAR_STYLE.apply(order_patience_bar, patience_ratio, _order_patience_tier)
 	order_heart_fill.modulate = Color.WHITE if patience_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
 
 
@@ -3481,6 +3485,7 @@ func _refresh_formal_patience_ui(game_session: Node) -> void:
 		var ratio := _formal_order_patience_ratio(slot_order)
 		var bar := customer_slot_patience_bars[slot_index]
 		bar.value = ratio * 100.0
+		_customer_slot_patience_tiers[slot_index] = PATIENCE_BAR_STYLE.apply(bar, ratio, _customer_slot_patience_tiers[slot_index])
 		var unlimited := bool(slot_order.get("tutorial_no_countdown", false))
 		bar.visible = not unlimited
 		bar.tooltip_text = "教学单·不限时" if unlimited else "耐心 %d 秒" % ceili(float(slot_order.get("remaining_patience_seconds", 0.0)))
@@ -3492,6 +3497,7 @@ func _refresh_formal_patience_ui(game_session: Node) -> void:
 		order_patience_bar.visible = not focused_unlimited
 		order_heart_fill.visible = not focused_unlimited
 		order_patience_bar.value = focused_ratio * 100.0
+		_order_patience_tier = PATIENCE_BAR_STYLE.apply(order_patience_bar, focused_ratio, _order_patience_tier)
 		order_heart_fill.modulate = Color.WHITE if focused_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
 	_refresh_customer_service_slots(orders)
 

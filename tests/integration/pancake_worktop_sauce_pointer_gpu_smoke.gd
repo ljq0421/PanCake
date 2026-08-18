@@ -37,8 +37,8 @@ func _run() -> void:
 	unit.begin_order({})
 	unit.state = CompactGriddleUnit.State.FIRST_SIDE
 	unit.p1_session.phase = P1Session.Phase.FIRST_SIDE
-	var sweet := workstation.get_node("FiveAreaInfrastructure/PancakeWorktopHotspots/SweetSauceHotspot") as ProductDragSource
-	var hit := workstation.get_node("FiveAreaInfrastructure/PancakeWorktopHotspots/SweetSauceHotspotHitButton") as Button
+	var sweet := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SweetSauceHotspot") as ProductDragSource
+	var hit := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SweetSauceHotspotHitButton") as Button
 	var hotspots := hit.get_parent()
 	var short_clicks := [0]
 	sweet.short_clicked.connect(func(_source_ref: Dictionary) -> void: short_clicks[0] += 1)
@@ -46,10 +46,8 @@ func _run() -> void:
 	await _hover_control(hit)
 	_check(root.gui_get_hovered_control() == hit, "the authored transparent sauce button owns the rendered jar hit area")
 	_check(not sweet.disabled, "the sweet-sauce source is enabled")
-	hotspots.call("_on_sauce_hit_button_down", sweet)
-	hotspots.call("_on_sauce_hit_button_up", sweet)
-	await process_frame
-	_check(short_clicks[0] == 1, "the authored sauce button routes one short click")
+	await _click_control(hit)
+	_check(short_clicks[0] == 1, "a real pointer click on the rendered sweet-sauce jar routes one short click")
 	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour"), "the sauce click places sweet sauce on the pancake")
 	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.sauce.sweet_flour", 0)) == before - 1, "the sauce click consumes one sweet-sauce unit")
 	_check(unit.pancake_surface.cursor_is_sauce_brush, "the sauce click arms the sauce brush")
@@ -64,6 +62,22 @@ func _hover_control(control: Control) -> void:
 	motion.position = position
 	motion.global_position = position
 	root.push_input(motion)
+	await process_frame
+
+
+func _click_control(control: Control) -> void:
+	var position := control.get_global_rect().get_center()
+	await _hover_control(control)
+	var pressed := InputEventMouseButton.new()
+	pressed.button_index = MOUSE_BUTTON_LEFT
+	pressed.pressed = true
+	pressed.position = position
+	pressed.global_position = position
+	root.push_input(pressed)
+	await process_frame
+	var released := pressed.duplicate() as InputEventMouseButton
+	released.pressed = false
+	root.push_input(released)
 	await process_frame
 
 

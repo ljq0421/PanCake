@@ -35,7 +35,7 @@ func _initialize() -> void:
 	assisted_machine.call("configure_upgrades", true, true, true)
 	assisted_machine.call("take_empty_cup")
 	var assisted_cup := Dictionary(assisted_machine.call("fill_held_cup", 0.1).get("cup", {}))
-	_check(is_equal_approx(float(assisted_cup.get("fill_ratio", 0.0)), 1.0) and is_equal_approx(float(assisted_cup.get("quality", 0.0)), 100.0), "automatic full-cup upgrade completes a prematurely released cup")
+	_check(is_equal_approx(float(assisted_cup.get("fill_ratio", 0.0)), 0.125) and float(assisted_cup.get("quality", 0.0)) < 100.0, "manual release keeps its exact pour level even when legacy automation is enabled")
 
 	var orders: RefCounted = ORDERS.new()
 	var opened := Dictionary(orders.call("open_order", [{

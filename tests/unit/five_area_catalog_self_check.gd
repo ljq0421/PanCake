@@ -10,7 +10,7 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 25, "serving-only soy growth route keeps only flavour, fill, capacity and value upgrades")
+	_check(CATALOG.growth_ids().size() == 23, "serving-only soy growth route keeps only flavour, fill, capacity and value upgrades")
 	for growth_id in CATALOG.growth_ids():
 		var definition := CATALOG.growth_definition(growth_id)
 		_check(CATALOG.AREA_IDS.has(StringName(definition.get("requires_area_id", &""))), "%s belongs to an active area" % growth_id)
@@ -18,14 +18,14 @@ func _run() -> void:
 	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.area.fresh_soy_milk")) == "day:7,reputation:60,mastery:area.youtiao:qualified:4", "soy unlock follows youtiao mastery")
 	for area_id in CATALOG.AREA_IDS:
 		var device_id := StringName(CATALOG.area_definition(area_id).get("device_id", &""))
-		var tier_count := 1 if device_id == &"device.pancake_griddle" else 3
+		var tier_count := 3 if device_id == &"device.fresh_soy_milk_machine" else 1
 		for tier in range(tier_count):
 			_check(not CATALOG.device_tier(StringName(device_id), tier).is_empty(), "%s owns continuous tier %d" % [device_id, tier])
 	_check(int(CATALOG.device_tier(&"device.pancake_griddle", 0).get("griddle_count", 0)) == 1, "basic pancake station has one griddle")
 	_check(CATALOG.device_tier(&"device.pancake_griddle", 1).is_empty() and CATALOG.growth_definition(&"growth.equipment.pancake.intermediate").is_empty(), "pancake capacity expansion is absent from catalog")
-	for youtiao_tier in [{"tier": 0, "capacity": 4, "duration": 10.0}, {"tier": 1, "capacity": 6, "duration": 8.0}, {"tier": 2, "capacity": 8, "duration": 6.0}]:
-		var definition := CATALOG.device_tier(&"device.youtiao_fryer", int(youtiao_tier["tier"]))
-		_check(int(definition.get("capacity", 0)) == int(youtiao_tier["capacity"]) and is_equal_approx(float(definition.get("duration_seconds", 0.0)), float(youtiao_tier["duration"])), "youtiao tier %d uses its 4/6/8 and 10/8/6 contract" % int(youtiao_tier["tier"]))
+	var youtiao_definition := CATALOG.device_tier(&"device.youtiao_fryer", 0)
+	_check(int(youtiao_definition.get("capacity", 0)) == 4 and is_equal_approx(float(youtiao_definition.get("duration_seconds", 0.0)), 10.0), "youtiao fryer remains fixed at four slots and ten seconds")
+	_check(CATALOG.device_tier(&"device.youtiao_fryer", 1).is_empty() and CATALOG.growth_definition(&"growth.equipment.youtiao.intermediate").is_empty() and CATALOG.growth_definition(&"growth.equipment.youtiao.advanced").is_empty(), "youtiao capacity upgrades are absent from catalog")
 	_check(CATALOG.PHYSICAL_AREA_IDS == [&"area.fresh_soy_milk", &"area.pancake", &"area.youtiao"], "physical area order")
 	_check(CATALOG.UNLOCK_AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "unlock area order")
 	for stock_id in CATALOG.stock_ids():

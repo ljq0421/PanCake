@@ -51,11 +51,11 @@ func _bind_area_buttons() -> void:
 			"a_grade": &"PancakeAGradeButton",
 			"tiers": [&"PancakeTier0Button"],
 		},
-		&"area.youtiao": {
-			"qualified": &"YoutiaoQualifiedButton",
-			"a_grade": &"YoutiaoAGradeButton",
-			"tiers": [&"YoutiaoTier0Button", &"YoutiaoTier1Button", &"YoutiaoTier2Button"],
-		},
+	&"area.youtiao": {
+		"qualified": &"YoutiaoQualifiedButton",
+		"a_grade": &"YoutiaoAGradeButton",
+		"tiers": [&"YoutiaoTier0Button"],
+	},
 		&"area.fresh_soy_milk": {
 			"qualified": &"SoyQualifiedButton",
 			"a_grade": &"SoyAGradeButton",

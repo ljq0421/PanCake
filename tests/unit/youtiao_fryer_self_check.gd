@@ -5,17 +5,6 @@ var _failures: Array[String] = []
 
 
 func _initialize() -> void:
-	for tier_case in [
-		{"tier": 0, "capacity": 4, "duration": 10.0},
-		{"tier": 1, "capacity": 6, "duration": 8.0},
-		{"tier": 2, "capacity": 8, "duration": 6.0},
-	]:
-		var tier_fryer: RefCounted = MODEL.new(int(tier_case["tier"]), true)
-		_check(int(tier_fryer.call("capacity")) == int(tier_case["capacity"]), "tier %d exposes the authored capacity" % int(tier_case["tier"]))
-		tier_fryer.call("load_recipe", &"recipe.youtiao.plain", int(tier_case["capacity"]))
-		var started := Dictionary(tier_fryer.call("start"))
-		_check(is_equal_approx(float(started.get("duration_seconds", 0.0)), float(tier_case["duration"])), "tier %d exposes the authored cook time" % int(tier_case["tier"]))
-
 	var fryer: RefCounted = MODEL.new()
 	_check(fryer.call("load_recipe", &"recipe.youtiao.plain", 1).get("reason") == &"equipment_not_owned", "locked fryer rejects loading")
 	fryer.call("configure_owned", 0)
@@ -54,11 +43,11 @@ func _initialize() -> void:
 	legacy_slots.call("load_snapshot", {"owned": true, "tier": 0, "state": &"loaded", "recipe_id": &"recipe.youtiao.plain", "quantity": 2})
 	_check(Array(legacy_slots.call("snapshot").get("occupied_slot_indices", [])).hash() == [0, 1].hash(), "legacy quantity-only snapshots rebuild slots from left to right")
 
-	var burnt: RefCounted = MODEL.new(2, true)
-	burnt.call("load_recipe", &"recipe.youtiao.plain", 8)
+	var burnt: RefCounted = MODEL.new(0, true)
+	burnt.call("load_recipe", &"recipe.youtiao.plain", 4)
 	burnt.call("start")
-	burnt.call("advance_time", 21.001)
-	_check(burnt.get("state") == &"burnt", "advanced fryer still burns without auto lift")
+	burnt.call("advance_time", 25.001)
+	_check(burnt.get("state") == &"burnt", "four-slot fryer still burns without auto lift")
 	_check(bool(burnt.call("discard").get("success", false)) and burnt.get("state") == &"idle", "burnt batch discards as one batch")
 
 	for discard_state in [&"loaded", &"frying", &"ready_safe", &"overcooking", &"draining", &"ready_to_collect", &"burnt"]:

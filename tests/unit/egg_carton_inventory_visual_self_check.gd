@@ -13,14 +13,15 @@ func _run() -> void:
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
-	var hotspots := workstation.get_node_or_null("FiveAreaInfrastructure/PancakeWorktopHotspots") as PancakeWorktopHotspots
-	var carton := hotspots.get_node_or_null("EggBasketVisual") as TextureRect if hotspots != null else null
-	var contents := hotspots.get_node_or_null("EggContentVisual") as TextureRect if hotspots != null else null
-	var source := hotspots.get_node_or_null("EggHotspot") as ProductDragSource if hotspots != null else null
-	_check(hotspots != null, "the physical egg carton owns a worktop-hotspot controller")
-	_check(carton != null and contents != null, "the egg carton has fixed base and changing contents layers")
-	if carton != null and contents != null:
-		_check(Rect2(carton.position, carton.size) == Rect2(contents.position, contents.size), "egg overlays share the carton base coordinates")
+	var hotspots := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots
+	var carton := hotspots.get_node_or_null("EggCarton") as Control if hotspots != null else null
+	var visual := carton.get_node_or_null("Visual") as TextureRect if carton != null else null
+	var contents := visual.get_node_or_null("Contents") as TextureRect if visual != null else null
+	var source := carton.get_node_or_null("Hotspot") as ProductDragSource if carton != null else null
+	_check(hotspots != null, "the physical egg carton belongs to the worktop controller")
+	_check(carton != null and visual != null and contents != null, "the egg-carton component owns visual, contents, and hotspot nodes")
+	if carton != null and visual != null and contents != null:
+		_check(carton.get_global_rect() == visual.get_global_rect() and visual.get_global_rect() == contents.get_global_rect(), "egg contents share the carton component coordinates")
 	if hotspots != null:
 		_check(hotspots.egg_content_textures.size() == 7 and hotspots.egg_content_textures[0] == null, "egg inventory maps empty stock plus all six filled states")
 		for count in range(1, 7):

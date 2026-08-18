@@ -29,16 +29,17 @@ func _run() -> void:
 	root.add_child(workstation)
 	for _frame in range(4):
 		await process_frame
-	var basket := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/BaocuiBasket") as BaocuiBasketSource
-	_check(basket != null, "BaocuiBasket uses the dedicated interactive source")
+	var basket_component := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BaocuiBasket") as Control
+	var basket := basket_component.get_node_or_null("Hotspot") as ProductDragSource if basket_component != null else null
+	_check(basket_component != null and basket != null, "BaocuiBasket owns the shared worktop source")
 	if basket != null:
 		_check(not basket.disabled, "an empty unlocked basket remains clickable for restocking")
 		await _hold_control(basket)
 		await process_frame
 		var replenished := Dictionary(session.call("inventory_snapshot"))
 		_check(int(replenished.get(str(STOCK_ID), 0)) == 1, "holding an empty basket replenishes one crisp through real pointer input")
-		var contents := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/BaocuiContents") as TextureRect
-		_check(contents != null and contents.visible and contents.texture != null, "one-crisp artwork appears after restocking")
+		var contents := basket_component.get_node_or_null("Contents") as TextureRect
+		_check(contents != null and contents.get_parent() == basket_component and contents.visible and contents.texture != null, "one-crisp artwork appears in the managed basket contents layer after restocking")
 	workstation.queue_free()
 	await process_frame
 	_finish()
@@ -53,7 +54,7 @@ func _hold_control(control: Control) -> void:
 	Input.parse_input_event(motion)
 	await process_frame
 	var hovered := root.gui_get_hovered_control()
-	_check(hovered == control, "real pointer reaches BaocuiBasket")
+	_check(hovered == control, "real pointer reaches the BaocuiBasket hotspot")
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -78,8 +79,8 @@ func _check(condition: bool, message: String) -> void:
 
 func _finish() -> void:
 	if failures.is_empty():
-		print("BAOCUI_BASKET_SOURCE_SELF_CHECK_PASS")
+		print("PANCAKE_WORKTOP_BAOCUI_SELF_CHECK_PASS")
 		quit(0)
 		return
-	printerr("BAOCUI_BASKET_SOURCE_SELF_CHECK_FAIL\n" + "\n".join(failures))
+	printerr("PANCAKE_WORKTOP_BAOCUI_SELF_CHECK_FAIL\n" + "\n".join(failures))
 	quit(1)

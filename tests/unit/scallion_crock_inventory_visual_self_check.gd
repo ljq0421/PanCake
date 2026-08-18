@@ -13,11 +13,11 @@ func _run() -> void:
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
-	var hotspots := workstation.get_node_or_null("FiveAreaInfrastructure/PancakeWorktopHotspots") as PancakeWorktopHotspots
-	var crock := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/HerbMetalTray") as IngredientTrayVisual
-	var coriander_crock := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/CorianderMetalTray") as TextureRect
-	var source := hotspots.get_node_or_null("ScallionHotspot") as ProductDragSource if hotspots != null else null
-	var coriander_source := hotspots.get_node_or_null("CorianderHotspot") as ProductDragSource if hotspots != null else null
+	var hotspots := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots
+	var crock := hotspots.get_node_or_null("ScallionTray/Visual") as IngredientTrayVisual if hotspots != null else null
+	var coriander_crock := hotspots.get_node_or_null("CorianderTray/Visual") as TextureRect if hotspots != null else null
+	var source := hotspots.get_node_or_null("ScallionTray/Hotspot") as ProductDragSource if hotspots != null else null
+	var coriander_source := hotspots.get_node_or_null("CorianderTray/Hotspot") as ProductDragSource if hotspots != null else null
 	var spreader_source := hotspots.get_node_or_null("SpreaderHotspot") as TextureButton if hotspots != null else null
 	var spreader_holder := hotspots.get_node_or_null("SpreaderHolderFilledVisual") as TextureRect if hotspots != null else null
 	_check(crock != null, "the workbench includes a dedicated scallion crock visual")
@@ -28,10 +28,11 @@ func _run() -> void:
 		_check(crock._state_texture_for_quantity(1).resource_path.ends_with("scallion-crock-half.png"), "partial scallion stock shows the half-full crock")
 		_check(crock._state_texture_for_quantity(6).resource_path.ends_with("scallion-crock-full.png"), "full scallion stock shows the full crock")
 	if crock != null and source != null:
-		_check(crock.get_global_rect() == source.get_global_rect(), "crock artwork and interaction target share the HerbMetalTray placement")
+		_check(crock.get_global_rect() == source.get_global_rect(), "crock artwork and interaction target share the ScallionTray placement")
 		_check(coriander_crock != null and crock.size == coriander_crock.size, "scallion crock uses the same on-workbench size as the coriander crock")
 	if coriander_crock != null and coriander_source != null:
-		_check(coriander_crock.get_global_rect() == coriander_source.get_global_rect(), "coriander crock artwork and interaction target share the CorianderMetalTray placement")
+		_check(coriander_crock.get_global_rect() == coriander_source.get_global_rect(), "coriander crock artwork and interaction target share the CorianderTray placement")
+		_check(coriander_crock.get_node_or_null("Contents") == null, "state-texture coriander crock keeps no redundant contents layer")
 	if crock != null and source != null and spreader_source != null:
 		_check(not crock.get_global_rect().intersects(spreader_source.get_global_rect()), "scallion crock input is not blocked by the spreader hotspot")
 	if spreader_source != null and spreader_holder != null:

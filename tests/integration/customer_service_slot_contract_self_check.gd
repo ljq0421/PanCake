@@ -23,6 +23,15 @@ func _run() -> void:
 		"metadata": {"legacy_order": {"title": "this must not replace the quote"}},
 	}
 	slot.bind_order(order, null, [null], [], 17)
+	_check(slot.patience_bar.get_theme_stylebox(&"fill").bg_color == Color("6eaa78"), "patience above 60 percent renders green")
+	order["remaining_patience_seconds"] = 60.0 * 0.60
+	slot.bind_order(order, null, [null], [], 17)
+	_check(slot.patience_bar.get_theme_stylebox(&"fill").bg_color == Color("e9b44f"), "patience from 31 to 60 percent renders yellow")
+	order["remaining_patience_seconds"] = 60.0 * 0.30
+	slot.bind_order(order, null, [null], [], 17)
+	_check(slot.patience_bar.get_theme_stylebox(&"fill").bg_color == Color("dc5a3e"), "patience at 30 percent or below renders red")
+	order["remaining_patience_seconds"] = 60.0
+	slot.bind_order(order, null, [null], [], 17)
 	_check(slot.order_title.text == "完美完成可得 ×17 金币", "order card top displays the exact perfect-completion quote")
 	_check(not slot.coin_label.visible, "order card removes the duplicate lower coin amount")
 	_check(slot.portrait.z_index < 0 and slot.portrait_button.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("FocusFrame") == null, "portrait and transparent portrait hit area render behind all order-card controls without a customer focus frame")

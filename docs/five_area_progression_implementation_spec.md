@@ -1440,7 +1440,7 @@ DailyBillOverlay
 - `scenes/gameplay/stations/pancake_station.tscn`；
 - `scenes/gameplay/stations/packaged_drink_station.tscn`；
 - `scenes/gameplay/stations/youtiao_station.tscn`；
-- `scenes/gameplay/stations/fresh_soy_milk_station.tscn`；
+- `scenes/gameplay/direct_soy_station.tscn`；
 - `scenes/gameplay/stations/steamer_station.tscn`；
 - `scenes/gameplay/components/pancake_holding_tray.tscn`；
 - `scenes/ui/daily_bill_overlay.tscn`；

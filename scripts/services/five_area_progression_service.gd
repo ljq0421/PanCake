@@ -342,6 +342,9 @@ func load_snapshot(value: Dictionary) -> void:
 	device_tiers = Dictionary(value.get("device_tiers", {&"device.pancake_griddle": 0})).duplicate(true)
 	# The storefront now has one permanent griddle. Normalize legacy tiered saves.
 	device_tiers[&"device.pancake_griddle"] = 0
+	# The youtiao fryer is permanently four-slot. Normalize retired tiered saves.
+	if device_tiers.has(&"device.youtiao_fryer"):
+		device_tiers[&"device.youtiao_fryer"] = 0
 	unlocked_recipe_ids = _load_id_set(value.get("unlocked_recipe_ids", [&"recipe.pancake.base"]))
 	unlocked_recipe_ids[&"recipe.pancake.base"] = true
 	unlocked_product_ids = _load_id_set(value.get("unlocked_product_ids", [&"product.pancake.custom"]))
@@ -401,6 +404,8 @@ func _normalize_three_area_state() -> void:
 		pending_content_purchase = &""
 	unlocked_area_ids[&"area.pancake"] = true
 	device_tiers[&"device.pancake_griddle"] = 0
+	if device_tiers.has(&"device.youtiao_fryer"):
+		device_tiers[&"device.youtiao_fryer"] = 0
 	for starter_recipe in [&"recipe.pancake.base"]:
 		unlocked_recipe_ids[starter_recipe] = true
 	unlocked_product_ids[&"product.pancake.custom"] = true

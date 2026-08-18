@@ -45,6 +45,7 @@ func _run() -> void:
 	session.call("save_inventory", inventory)
 	var youtiao_status := Dictionary(service.call("status", YOUTIAO_STOCK))
 	_check(is_equal_approx(float(youtiao_status.get("unit_seconds", 0.0)), 0.25), "plain youtiao dough uses the confirmed 0.25-second unit duration")
+	_check(int(youtiao_status.get("capacity", 0)) == 4, "plain youtiao dough is limited to the four physical board slots")
 	service.call("advance_hold", YOUTIAO_STOCK, 0.10)
 	service.call("release", YOUTIAO_STOCK)
 	var youtiao_completed := Dictionary(service.call("advance_hold", YOUTIAO_STOCK, 0.15))

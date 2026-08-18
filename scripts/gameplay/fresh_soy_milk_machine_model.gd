@@ -101,8 +101,9 @@ func fill_held_cup(held_seconds: float) -> Dictionary:
 	if cup_state != CUP_HELD_EMPTY:
 		return _failure(&"empty_cup_required")
 	var fill_ratio := clampf(maxf(held_seconds, 0.0) / FULL_CUP_SECONDS, 0.0, 1.0)
-	if auto_fill_enabled:
-		fill_ratio = 1.0
+	# Releasing is always literal: the served amount is the amount the player
+	# poured.  The legacy automation flag remains serialised for save
+	# compatibility, but must never overwrite a manual release.
 	var quality := minf(snappedf(fill_ratio * 100.0 + quality_bonus, 1.0), 100.0)
 	cup = _product_payload(fill_ratio, quality)
 	cup_state = CUP_FILLED

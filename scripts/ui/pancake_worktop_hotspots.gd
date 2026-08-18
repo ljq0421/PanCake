@@ -4,24 +4,32 @@ extends Control
 signal status_message(message: String)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png")
+const WIDE_SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_wide_filled_v1.png")
+const WIDE_SPREADER_GROWTH_ID := &"growth.tool.pancake.wide_spreader"
 
 const INGREDIENT_HOTSPOT_IDS: Dictionary = {
-	&"ScallionHotspot": &"stock.pancake.scallion",
-	&"CorianderHotspot": &"stock.pancake.coriander",
-	&"BaocuiHotspot": &"stock.pancake.baocui",
-	&"EggHotspot": &"stock.pancake.egg",
+	&"PorkFlossHotspot": &"stock.pancake.meat_floss",
+	&"ScallionTray/Hotspot": &"stock.pancake.scallion",
+	&"CorianderTray/Hotspot": &"stock.pancake.coriander",
+	&"BaocuiBasket/Hotspot": &"stock.pancake.baocui",
+	&"EggCarton/Hotspot": &"stock.pancake.egg",
 }
 const SAUCE_HOTSPOT_IDS: Dictionary = {
 	&"SweetSauceHotspot": &"stock.pancake.sauce.sweet_flour",
 	&"ChiliSauceHotspot": &"stock.pancake.sauce.red_chili",
 }
 const EGG_STOCK_ID := &"stock.pancake.egg"
+const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 
 @export var griddle_station_path: NodePath
 ## Indexes map directly to egg counts.  The scene starts with no content
 ## textures, so the new carton stays visible while the matching egg layers
 ## are authored.
 @export var egg_content_textures: Array[Texture2D] = []
+## Ordered from one to the maximum visible crisp count. The basket itself is
+## the shared drag source; this array updates its separate contents layer.
+@export var baocui_content_textures: Array[Texture2D] = []
 
 var _session: Node
 var _refresh_elapsed := 0.0
@@ -29,6 +37,7 @@ var _refresh_elapsed := 0.0
 
 func _ready() -> void:
 	_update_egg_inventory_visual(0, int(CATALOG.stock_definition(EGG_STOCK_ID).get("restock_capacity", 6)))
+	_update_baocui_inventory_visual(0)
 	_update_spreader_holder_visual()
 	for hotspot_name in INGREDIENT_HOTSPOT_IDS:
 		_configure_material_hotspot(_material_hotspot(hotspot_name), INGREDIENT_HOTSPOT_IDS[hotspot_name], &"pancake_shared_ingredient")
@@ -72,6 +81,7 @@ func refresh_from_session() -> void:
 		var egg_status := Dictionary(_session.call("five_area_restock_status", EGG_STOCK_ID))
 		egg_capacity = int(egg_status.get("capacity", egg_capacity))
 	_update_egg_inventory_visual(int(inventory.get(str(EGG_STOCK_ID), 0)), egg_capacity)
+	_update_baocui_inventory_visual(int(inventory.get(str(BAOCUI_STOCK_ID), 0)))
 	_update_spreader_holder_visual()
 
 
@@ -125,6 +135,15 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, unlocked, hint)
 	hotspot.set_drag_available(unlocked and count > 0 and source_kind == &"pancake_shared_ingredient")
 	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if unlocked else Control.CURSOR_FORBIDDEN
+	if source_kind == &"pancake_shared_sauce":
+		# The visible jar uses a native Button for reliable pointer delivery.
+		# Keep its availability and hover hint in sync with the backing source so
+		# a locked jar no longer looks clickable but silently ignores the gesture.
+		var hit_button := get_node_or_null(NodePath("%sHitButton" % hotspot.name)) as BaseButton
+		if hit_button != null:
+			hit_button.disabled = not unlocked
+			hit_button.tooltip_text = hint
+			hit_button.mouse_default_cursor_shape = hotspot.mouse_default_cursor_shape
 
 
 func _on_spreader_pressed() -> void:
@@ -199,25 +218,43 @@ func _material_hotspot(hotspot_name: StringName) -> ProductDragSource:
 
 
 func _update_egg_inventory_visual(stock: int, capacity: int) -> void:
-	var carton_base := get_node_or_null("EggBasketVisual") as TextureRect
+	var carton := get_node_or_null("EggCarton") as Control
+	if carton == null:
+		return
+	var carton_base := carton.get_node_or_null("Visual") as TextureRect
 	if carton_base == null:
 		return
-	# The carton is a fixed base layer.  Only the optional egg-content layer
-	# changes with stock, so the old woven-basket states can never reappear.
-	var content_visual := get_node_or_null("EggContentVisual") as TextureRect
+	# The carton owns its optional content layer. Only that child changes with
+	# stock, so the old woven-basket states can never reappear.
+	var content_visual := carton_base.get_node_or_null("Contents") as TextureRect
 	if content_visual == null:
 		return
 	var capped_stock := clampi(stock, 0, maxi(capacity, 0))
 	content_visual.texture = egg_content_textures[capped_stock] if capped_stock < egg_content_textures.size() else null
 
 
+func _update_baocui_inventory_visual(stock: int) -> void:
+	var basket := get_node_or_null("BaocuiBasket") as Control
+	if basket == null:
+		return
+	var contents := basket.get_node_or_null("Contents") as TextureRect
+	if contents == null:
+		return
+	var texture_index := clampi(stock, 0, baocui_content_textures.size()) - 1
+	contents.texture = baocui_content_textures[texture_index] if texture_index >= 0 else null
+	contents.visible = texture_index >= 0
+
+
 func _update_spreader_holder_visual() -> void:
 	var holder_empty := get_node_or_null("SpreaderHolderEmptyVisual") as CanvasItem
-	var holder_filled := get_node_or_null("SpreaderHolderFilledVisual") as CanvasItem
+	var holder_filled := get_node_or_null("SpreaderHolderFilledVisual") as TextureRect
 	if holder_empty == null or holder_filled == null:
 		return
 	var station := _griddle_station()
 	var spreader_selected := station != null and station.has_method("is_spreader_selected") and bool(station.call("is_spreader_selected"))
+	var progression: RefCounted = _session.call("progression_service") if _session != null and _session.has_method("progression_service") else null
+	var wide_spreader_owned := progression != null and bool(progression.call("owns_growth", WIDE_SPREADER_GROWTH_ID))
+	holder_filled.texture = WIDE_SPREADER_HOLDER_FILLED if wide_spreader_owned else SPREADER_HOLDER_FILLED
 	holder_empty.visible = spreader_selected
 	holder_filled.visible = not spreader_selected
 

@@ -11,7 +11,7 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="9_g8thx"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="10_t8d3v"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="11_3q22l"]
-[ext_resource type="Texture2D" uid="uid://cej24xwwa08an" path="res://assets/jianbing-stall/empty-workbench.png" id="12_whx3a"]
+[ext_resource type="Texture2D" uid="uid://da8bphae6srtv" path="res://assets/jianbing-stall/empty-workbench.png" id="12_whx3a"]
 [ext_resource type="Texture2D" uid="uid://c4kc7vci8tfog" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="13_wq4vo"]
 [ext_resource type="Texture2D" uid="uid://c6cp33o4ggko6" path="res://resources/art/workstation/foreground/workstation_front_lip_v1.png" id="14_t3cko"]
 [ext_resource type="Texture2D" uid="uid://cixfa2ukur0jb" path="res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png" id="15_is580"]
@@ -32,22 +32,11 @@
 [ext_resource type="Texture2D" uid="uid://byr6aendmfemh" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="31_a7u70"]
 [ext_resource type="Texture2D" uid="uid://cvu2osldoi35e" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="32_ow317"]
 [ext_resource type="Texture2D" uid="uid://ghrsjrdg6w05" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v3.png" id="34_ajejd"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_soy_station.tscn" id="37_830a8"]
+[ext_resource type="PackedScene" uid="uid://bgfmpn1k6dtn5" path="res://scenes/gameplay/direct_soy_station.tscn" id="37_830a8"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/multi_griddle_station.tscn" id="58_qkje3"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="60_ikhp0"]
 [ext_resource type="Script" uid="uid://3dm4r8fyaulo" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
 [ext_resource type="PackedScene" uid="uid://dngeu6txsruyi" path="res://scenes/gameplay/jianbing_stall_artwork.tscn" id="62_stall"]
-[ext_resource type="Script" uid="uid://ejg6b1jv4gxj" path="res://scripts/ui/pancake_worktop_hotspots.gd" id="63_worktop_hotspots"]
-[ext_resource type="Texture2D" uid="uid://cu2vspaobypqo" path="res://assets/jianbing-stall/inventory-containers-v1/egg-carton-base-empty-2x3-lidless-cartoon-bold-outline-v4-512.png" id="64_egg_empty"]
-[ext_resource type="Texture2D" uid="uid://c607hq20vrhw2" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-1-egg-512.png" id="65_egg_01"]
-[ext_resource type="Texture2D" uid="uid://cvau77um513r5" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-2-egg-512.png" id="66_egg_02"]
-[ext_resource type="Texture2D" uid="uid://b821mqxbsco5o" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-3-egg-512.png" id="67_egg_03"]
-[ext_resource type="Texture2D" uid="uid://cqg0677r2afdj" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-4-egg-512.png" id="68_egg_04"]
-[ext_resource type="Texture2D" uid="uid://ca235rvnaqant" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-5-egg-512.png" id="69_egg_05"]
-[ext_resource type="Texture2D" uid="uid://d0gefpovfiack" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-6-egg-512.png" id="70_egg_06"]
-[ext_resource type="Script" uid="uid://b2326s32jjhdn" path="res://scripts/ui/egg_carton_drag_source.gd" id="71_egg_carton_drag"]
-[ext_resource type="Texture2D" uid="uid://bl8kaj3c2qww3" path="res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png" id="72_spreader_holder_empty"]
-[ext_resource type="Texture2D" uid="uid://didjm28d6kq2e" path="res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png" id="73_spreader_holder_filled"]
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
@@ -974,7 +963,7 @@ vertical_alignment = 1
 [node name="BusinessDayClosedShield" type="Control" parent="SafeArea" unique_id=1199885720]
 unique_name_in_owner = true
 visible = false
-z_index = 90
+z_index = 999
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -988,7 +977,7 @@ excluded_control_path = NodePath("../DailyBillPanel")
 unique_name_in_owner = true
 process_mode = 3
 visible = false
-z_index = 100
+z_index = 1000
 layout_mode = 0
 offset_left = 330.0
 offset_top = 80.0
@@ -1397,16 +1386,15 @@ mouse_filter = 2
 
 [node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" unique_id=143699513 instance=ExtResource("37_830a8")]
 z_index = 20
-anchors_preset = 0
+layout_mode = 0
 offset_top = 480.0
-offset_right = 1910.0
 offset_bottom = 940.0
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0
-offset_left = 30.0
+offset_left = -5.0
 offset_top = 420.0
-offset_right = 630.0
+offset_right = 595.0
 offset_bottom = 1220.0
 
 [node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1733137153]
@@ -1422,161 +1410,6 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(1170, 444)
 layout_mode = 0
 offset_bottom = 444.0
-
-[node name="PancakeWorktopHotspots" type="Control" parent="FiveAreaInfrastructure" unique_id=1386042981]
-z_index = 12
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -960.0
-offset_top = -540.0
-offset_right = 960.0
-offset_bottom = 540.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("63_worktop_hotspots")
-griddle_station_path = NodePath("../Stations/PancakeStation/MultiGriddleStation")
-egg_content_textures = Array[Texture2D]([null, ExtResource("65_egg_01"), ExtResource("66_egg_02"), ExtResource("67_egg_03"), ExtResource("68_egg_04"), ExtResource("69_egg_05"), ExtResource("70_egg_06")])
-
-[node name="EggBasketVisual" type="TextureRect" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=326901718]
-layout_mode = 0
-offset_left = 900.0
-offset_top = 520.0
-offset_right = 1116.0
-offset_bottom = 754.0
-mouse_filter = 2
-texture = ExtResource("64_egg_empty")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="EggContentVisual" type="TextureRect" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=563220941]
-z_index = 1
-layout_mode = 0
-offset_left = 900.0
-offset_top = 520.0
-offset_right = 1116.0
-offset_bottom = 754.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ScallionHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1874852951]
-z_index = 2
-layout_mode = 0
-offset_left = 1085.0
-offset_top = 553.0
-offset_right = 1245.0
-offset_bottom = 713.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("60_ikhp0")
-
-[node name="BaocuiHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1239654067]
-layout_mode = 0
-offset_left = 755.0
-offset_top = 435.0
-offset_right = 920.0
-offset_bottom = 625.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("60_ikhp0")
-
-[node name="EggHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1146976014]
-layout_mode = 0
-offset_left = 900.0
-offset_top = 520.0
-offset_right = 1116.0
-offset_bottom = 754.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("71_egg_carton_drag")
-
-[node name="SpreaderHolderEmptyVisual" type="TextureRect" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1478005217]
-visible = false
-layout_mode = 0
-offset_left = 1092.0
-offset_top = 920.0
-offset_right = 1252.0
-offset_bottom = 1080.0
-mouse_filter = 2
-texture = ExtResource("72_spreader_holder_empty")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SpreaderHolderFilledVisual" type="TextureRect" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=71572555]
-layout_mode = 0
-offset_left = 1092.0
-offset_top = 920.0
-offset_right = 1252.0
-offset_bottom = 1080.0
-mouse_filter = 2
-texture = ExtResource("73_spreader_holder_filled")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SpreaderHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=544913172]
-layout_mode = 0
-offset_left = 1092.0
-offset_top = 920.0
-offset_right = 1252.0
-offset_bottom = 1080.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-
-[node name="SweetSauceHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1539400609]
-layout_mode = 0
-offset_left = 1235.0
-offset_top = 495.0
-offset_right = 1435.0
-offset_bottom = 635.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("60_ikhp0")
-
-[node name="ChiliSauceHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=639556417]
-layout_mode = 0
-offset_left = 1235.0
-offset_top = 635.0
-offset_right = 1435.0
-offset_bottom = 795.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("60_ikhp0")
-
-[node name="SweetSauceHotspotHitButton" type="Button" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1697016334]
-layout_mode = 0
-offset_left = 1235.0
-offset_top = 495.0
-offset_right = 1435.0
-offset_bottom = 635.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
-[node name="ChiliSauceHotspotHitButton" type="Button" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1470490415]
-layout_mode = 0
-offset_left = 1235.0
-offset_top = 635.0
-offset_right = 1435.0
-offset_bottom = 795.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
-[node name="CorianderHotspot" type="TextureButton" parent="FiveAreaInfrastructure/PancakeWorktopHotspots" unique_id=1015290762]
-z_index = 2
-layout_mode = 0
-offset_left = 1210.0
-offset_top = 553.0
-offset_right = 1370.0
-offset_bottom = 713.0
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("60_ikhp0")
 
 [node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=843643587]
 unique_name_in_owner = true

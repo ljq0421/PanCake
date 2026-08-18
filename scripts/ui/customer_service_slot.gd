@@ -1,6 +1,8 @@
 class_name CustomerServiceSlot
 extends Control
 
+const PATIENCE_BAR_STYLE := preload("res://scripts/ui/patience_bar_style.gd")
+
 signal focus_requested(order_id: StringName)
 signal delivery_requested(order_id: StringName, item_index: int)
 signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictionary)
@@ -21,6 +23,7 @@ signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictio
 @onready var patience_label: Label = %PatienceLabel
 
 var _order_id: StringName = &""
+var _patience_bar_tier := -1
 
 
 func _ready() -> void:
@@ -78,6 +81,7 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 	var ratio := 1.0 if unlimited else clampf(remaining / total, 0.0, 1.0)
 	patience_bar.visible = not unlimited
 	patience_bar.value = ratio * 100.0
+	_patience_bar_tier = PATIENCE_BAR_STYLE.apply(patience_bar, ratio, _patience_bar_tier)
 	patience_label.text = "教学单 · 不限时" if unlimited else "耐心 %d 秒" % ceili(remaining)
 
 

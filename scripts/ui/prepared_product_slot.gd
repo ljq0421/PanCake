@@ -94,6 +94,7 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 		and _count < _capacity
 		and StringName(source_ref.get("source_kind", &"")) == &"youtiao_batch"
 		and StringName(source_ref.get("product_id", &"")) == product_id
+		and bool(source_ref.get("plated", false))
 	)
 
 

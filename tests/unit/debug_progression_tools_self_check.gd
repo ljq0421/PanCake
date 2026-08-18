@@ -51,8 +51,6 @@ func _run() -> void:
 	var tier_cases := [
 		{&"area_id": &"area.pancake", &"tier": 0},
 		{&"area_id": &"area.youtiao", &"tier": 0},
-		{&"area_id": &"area.youtiao", &"tier": 1},
-		{&"area_id": &"area.youtiao", &"tier": 2},
 		{&"area_id": &"area.fresh_soy_milk", &"tier": 0},
 		{&"area_id": &"area.fresh_soy_milk", &"tier": 1},
 		{&"area_id": &"area.fresh_soy_milk", &"tier": 2},
@@ -76,15 +74,14 @@ func _run() -> void:
 
 	session.call("begin_new_game")
 	session.call("end_business_day", {"reason": &"test_early_end"})
-	var tier_one := Dictionary(session.call("debug_advance_to_device_tier", &"area.youtiao", 1))
-	var downgrade := Dictionary(session.call("debug_advance_to_device_tier", &"area.youtiao", 0))
-	_check(bool(tier_one.get("success", false)) and not bool(downgrade.get("success", false)) and StringName(downgrade.get("reason", &"")) == &"downgrade_not_allowed", "device checkpoints reject downgrade requests")
+	var removed_tier := Dictionary(session.call("debug_advance_to_device_tier", &"area.youtiao", 1))
+	_check(not bool(removed_tier.get("success", true)) and StringName(removed_tier.get("reason", &"")) == &"unknown_device_tier", "debug checkpoints reject removed youtiao capacity tiers")
 
 	session.call("_write_save")
 	session.call("_load_save")
 	session.call("_restore_progression")
 	var restored: RefCounted = session.call("progression_service")
-	_check(int(restored.call("device_tier", &"device.youtiao_fryer")) == 1, "debug checkpoint survives save reload")
+	_check(int(restored.call("device_tier", &"device.youtiao_fryer")) == 0, "four-slot youtiao checkpoint survives save reload")
 	session.call("reset_incompatible_development_save")
 	_finish()
 

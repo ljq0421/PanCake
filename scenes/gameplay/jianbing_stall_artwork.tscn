@@ -1,15 +1,7 @@
 [gd_scene format=3 uid="uid://dngeu6txsruyi"]
 
-[ext_resource type="Texture2D" uid="uid://h30y780vs2v4" path="res://assets/jianbing-stall/soy-milk-dispenser.png" id="1_soy"]
-[ext_resource type="Texture2D" uid="uid://8gebprytv4cy" path="res://assets/jianbing-stall/serving-supplies-set.png" id="2_supplies"]
-[ext_resource type="Texture2D" uid="uid://dr2cvvaepqbbg" path="res://assets/jianbing-stall/soybean-basket.png" id="3_soybeans"]
-[ext_resource type="Texture2D" uid="uid://c8ljpdbtsfvfd" path="res://assets/jianbing-stall/green-pea-bowl.png" id="4_peas"]
-[ext_resource type="Texture2D" uid="uid://bg8nk8hnqim5u" path="res://assets/jianbing-stall/ingredient-bowls-sheet.png" id="5_ingredients"]
-[ext_resource type="Texture2D" uid="uid://dupss5avdbgbg" path="res://assets/jianbing-stall/sauce-and-tools-set.png" id="6_sauces"]
-[ext_resource type="Texture2D" uid="uid://bn8qftp04q8hd" path="res://assets/jianbing-stall/youtiao-fryer.png" id="7_fryer"]
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://assets/jianbing-stall/sweet-bean-sauce-jar-no-brush.png" id="9_sweet_bean_sauce"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="10_baocui_basket"]
-[ext_resource type="Script" uid="uid://csf2fcu74kb2q" path="res://scripts/ui/baocui_basket_source.gd" id="11_baocui_source"]
 [ext_resource type="Texture2D" uid="uid://bfbax40gcit57" path="res://resources/art/ingredients/baocui/baocui_crisps_01.png" id="12_baocui_01"]
 [ext_resource type="Texture2D" uid="uid://cye41peqgyfhl" path="res://resources/art/ingredients/baocui/baocui_crisps_02.png" id="13_baocui_02"]
 [ext_resource type="Texture2D" uid="uid://devd2wrnoov5c" path="res://resources/art/ingredients/baocui/baocui_crisps_03.png" id="14_baocui_03"]
@@ -19,37 +11,31 @@
 [ext_resource type="Texture2D" uid="uid://bw3mvw6iui46x" path="res://assets/cilantro-jars/cilantro-jar-empty.png" id="19_coriander_empty"]
 [ext_resource type="Texture2D" uid="uid://dm713nd34nj1y" path="res://assets/cilantro-jars/cilantro-jar-half.png" id="20_coriander_half"]
 [ext_resource type="Texture2D" uid="uid://d3r50b1mpjkww" path="res://assets/cilantro-jars/cilantro-jar-full.png" id="21_coriander_full"]
-[ext_resource type="Texture2D" uid="uid://dueqcchyh6gs2" path="res://assets/jianbing-stall/sugar-jar-for-soy-milk.png" id="22_sugar_jar"]
 [ext_resource type="Script" uid="uid://c18e6b07u6icb" path="res://scripts/ui/ingredient_tray_visual.gd" id="23_scallion_tray"]
 [ext_resource type="Texture2D" uid="uid://c3gsx5d06hspl" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-empty.png" id="24_scallion_empty"]
 [ext_resource type="Texture2D" uid="uid://cjnkvhu7e0ynu" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-half.png" id="25_scallion_half"]
 [ext_resource type="Texture2D" uid="uid://ckmdjtq575161" path="res://assets/jianbing-stall/scallion-crock-states-v1/scallion-crock-full.png" id="26_scallion_full"]
 [ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://assets/jianbing-stall/chili-sauce-jar-no-brush.png" id="27_chili_sauce"]
 [ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://assets/jianbing-stall/tomato-sauce-jar-no-brush.png" id="28_tomato_sauce"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_supplies"]
-atlas = ExtResource("2_supplies")
-region = Rect2(292, 28, 992, 960)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_soybeans"]
-atlas = ExtResource("3_soybeans")
-region = Rect2(70, 40, 1235, 1040)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_peas"]
-atlas = ExtResource("4_peas")
-region = Rect2(96, 80, 1110, 1050)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ingredients"]
-atlas = ExtResource("5_ingredients")
-region = Rect2(88, 72, 1996, 580)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_sauces"]
-atlas = ExtResource("6_sauces")
-region = Rect2(252, 36, 992, 928)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_fryer"]
-atlas = ExtResource("7_fryer")
-region = Rect2(172, 64, 888, 1144)
+[ext_resource type="Texture2D" uid="uid://dhlixsd00feh7" path="res://assets/jianbing-stall/empty-square-ingredient-tray.png" id="29_topping_tray"]
+[ext_resource type="Script" uid="uid://ejg6b1jv4gxj" path="res://scripts/ui/pancake_worktop_hotspots.gd" id="30_worktop_hotspots"]
+[ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="31_product_drag"]
+[ext_resource type="Texture2D" uid="uid://cu2vspaobypqo" path="res://assets/jianbing-stall/inventory-containers-v1/egg-carton-base-empty-2x3-lidless-cartoon-bold-outline-v4-512.png" id="32_egg_empty"]
+[ext_resource type="Texture2D" uid="uid://c607hq20vrhw2" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-1-egg-512.png" id="33_egg_01"]
+[ext_resource type="Texture2D" uid="uid://cvau77um513r5" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-2-egg-512.png" id="34_egg_02"]
+[ext_resource type="Texture2D" uid="uid://b821mqxbsco5o" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-3-egg-512.png" id="35_egg_03"]
+[ext_resource type="Texture2D" uid="uid://cqg0677r2afdj" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-4-egg-512.png" id="36_egg_04"]
+[ext_resource type="Texture2D" uid="uid://ca235rvnaqant" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-5-egg-512.png" id="37_egg_05"]
+[ext_resource type="Texture2D" uid="uid://d0gefpovfiack" path="res://assets/jianbing-stall/inventory-eggs-v1/egg-carton-overlay-6-egg-512.png" id="38_egg_06"]
+[ext_resource type="Script" uid="uid://b2326s32jjhdn" path="res://scripts/ui/egg_carton_drag_source.gd" id="39_egg_carton_drag"]
+[ext_resource type="Texture2D" uid="uid://bl8kaj3c2qww3" path="res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png" id="40_spreader_holder_empty"]
+[ext_resource type="Texture2D" uid="uid://didjm28d6kq2e" path="res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png" id="41_spreader_holder_filled"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-1.png" id="42_pork_floss_01"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-2.png" id="43_pork_floss_02"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-3.png" id="44_pork_floss_03"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-4.png" id="45_pork_floss_04"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-5.png" id="46_pork_floss_05"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-6.png" id="47_pork_floss_06"]
 
 [node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90
@@ -61,152 +47,42 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SoyMilkDispenser" type="TextureRect" parent="." unique_id=1348399319]
+[node name="ToppingIngredientTray" type="TextureRect" parent="." unique_id=1915430299]
+z_index = 119
 layout_mode = 0
-offset_left = 1500.0
-offset_top = 480.0
-offset_right = 1897.5
-offset_bottom = 877.5
+offset_left = 1087.0
+offset_top = 551.0
+offset_right = 1297.0
+offset_bottom = 727.0
 mouse_filter = 2
-texture = ExtResource("1_soy")
+texture = ExtResource("29_topping_tray")
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.meat_floss"
+stock_textures = Array[Texture2D]([ExtResource("42_pork_floss_01"), ExtResource("43_pork_floss_02"), ExtResource("44_pork_floss_03"), ExtResource("45_pork_floss_04"), ExtResource("46_pork_floss_05"), ExtResource("47_pork_floss_06")])
+contents_visual_path = NodePath("PorkFlossContents")
 
-[node name="SoyMilkSugarJar" type="TextureRect" parent="." unique_id=1075617131]
+[node name="PorkFlossContents" type="TextureRect" parent="ToppingIngredientTray"]
 z_index = 1
 layout_mode = 0
-offset_left = 1790.0
-offset_top = 811.0
-offset_right = 1900.0
-offset_bottom = 921.0
-mouse_filter = 2
-texture = ExtResource("22_sugar_jar")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ServingSupplies" type="TextureRect" parent="." unique_id=849624144]
-visible = false
-layout_mode = 0
-offset_left = 220.0
-offset_top = 538.0
-offset_right = 480.0
-offset_bottom = 790.0
-mouse_filter = 2
-texture = SubResource("AtlasTexture_supplies")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SoybeanBasket" type="TextureRect" parent="." unique_id=932642421]
-visible = false
-layout_mode = 0
-offset_left = 310.0
-offset_top = 480.0
-offset_right = 465.0
-offset_bottom = 613.0
-mouse_filter = 2
-texture = SubResource("AtlasTexture_soybeans")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="GreenPeaBowl" type="TextureRect" parent="." unique_id=1486849752]
-visible = false
-layout_mode = 0
-offset_left = 470.0
-offset_top = 488.0
-offset_right = 604.0
-offset_bottom = 623.0
-mouse_filter = 2
-texture = SubResource("AtlasTexture_peas")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="HerbMetalTray" type="TextureRect" parent="." unique_id=1425551347]
-layout_mode = 0
-offset_left = 1085.0
-offset_top = 553.0
-offset_right = 1245.0
-offset_bottom = 713.0
-mouse_filter = 2
-texture = ExtResource("24_scallion_empty")
-expand_mode = 1
-stretch_mode = 5
-script = ExtResource("23_scallion_tray")
-stock_id = &"stock.pancake.scallion"
-state_textures = Array[Texture2D]([ExtResource("24_scallion_empty"), ExtResource("25_scallion_half"), ExtResource("26_scallion_full")])
-contents_visual_path = NodePath("MissingContents")
-
-[node name="CorianderMetalTray" type="TextureRect" parent="." unique_id=1925334901]
-layout_mode = 0
-offset_left = 1210.0
-offset_top = 553.0
-offset_right = 1370.0
-offset_bottom = 713.0
-mouse_filter = 2
-texture = ExtResource("19_coriander_empty")
-expand_mode = 1
-stretch_mode = 5
-script = ExtResource("23_scallion_tray")
-stock_id = &"stock.pancake.coriander"
-state_textures = Array[Texture2D]([ExtResource("19_coriander_empty"), ExtResource("20_coriander_half"), ExtResource("21_coriander_full")])
-contents_visual_path = NodePath("../CorianderContents")
-
-[node name="CorianderContents" type="TextureRect" parent="." unique_id=1464400700]
-visible = false
-layout_mode = 0
-offset_left = 1348.0
-offset_top = 585.0
-offset_right = 1482.0
-offset_bottom = 680.0
+offset_left = 21.0
+offset_top = 42.0
+offset_right = 189.0
+offset_bottom = 128.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BaocuiContents" type="TextureRect" parent="." unique_id=681966432]
-z_index = 121
+[node name="ToppingIngredientTray2" type="TextureRect" parent="." unique_id=40359447]
+z_index = 119
 layout_mode = 0
-offset_left = 722.75
-offset_top = 586.1
-offset_right = 924.25
-offset_bottom = 671.9
+offset_left = 1267.0
+offset_top = 551.0
+offset_right = 1477.0
+offset_bottom = 727.0
 mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BaocuiBasket" type="TextureButton" parent="." unique_id=1739890305]
-z_index = 120
-layout_mode = 0
-offset_left = 693.8
-offset_top = 544.5
-offset_right = 951.2
-offset_bottom = 739.5
-texture_normal = ExtResource("10_baocui_basket")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("11_baocui_source")
-stock_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
-contents_visual_path = NodePath("../BaocuiContents")
-
-[node name="IngredientBowls" type="TextureRect" parent="." unique_id=1295553282]
-visible = false
-layout_mode = 0
-offset_left = 620.0
-offset_top = 475.0
-offset_right = 1050.0
-offset_bottom = 615.0
-mouse_filter = 2
-texture = SubResource("AtlasTexture_ingredients")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SauceAndTools" type="TextureRect" parent="." unique_id=775217004]
-visible = false
-layout_mode = 0
-offset_left = 1120.0
-offset_top = 530.0
-offset_right = 1396.0
-offset_bottom = 790.0
-mouse_filter = 2
-texture = SubResource("AtlasTexture_sauces")
+texture = ExtResource("29_topping_tray")
 expand_mode = 1
 stretch_mode = 5
 
@@ -243,14 +119,243 @@ texture = ExtResource("28_tomato_sauce")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="YoutiaoFryer" type="TextureRect" parent="." unique_id=133798007]
-visible = false
-layout_mode = 0
-offset_left = 1450.0
-offset_top = 440.0
-offset_right = 1690.0
-offset_bottom = 750.0
+[node name="PancakeWorktopHotspots" type="Control" parent="." unique_id=1386042981]
+z_index = 12
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -960.0
+offset_top = -540.0
+offset_right = 960.0
+offset_bottom = 540.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-texture = SubResource("AtlasTexture_fryer")
+script = ExtResource("30_worktop_hotspots")
+griddle_station_path = NodePath("../../../FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation")
+egg_content_textures = Array[Texture2D]([null, ExtResource("33_egg_01"), ExtResource("34_egg_02"), ExtResource("35_egg_03"), ExtResource("36_egg_04"), ExtResource("37_egg_05"), ExtResource("38_egg_06")])
+baocui_content_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
+
+[node name="PorkFlossHotspot" type="TextureButton" parent="PancakeWorktopHotspots"]
+z_index = 120
+layout_mode = 0
+offset_left = 1087.0
+offset_top = 551.0
+offset_right = 1297.0
+offset_bottom = 727.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="EggCarton" type="Control" parent="PancakeWorktopHotspots" unique_id=565590056]
+anchors_preset = 0
+offset_left = 900.0
+offset_top = 520.0
+offset_right = 1116.0
+offset_bottom = 754.0
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/EggCarton" unique_id=326901718]
+layout_mode = 0
+offset_right = 216.0
+offset_bottom = 234.0
+mouse_filter = 2
+texture = ExtResource("32_egg_empty")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="Contents" type="TextureRect" parent="PancakeWorktopHotspots/EggCarton/Visual" unique_id=563220941]
+z_index = 1
+layout_mode = 0
+offset_right = 216.0
+offset_bottom = 234.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/EggCarton" unique_id=1146976014]
+z_index = 2
+layout_mode = 0
+offset_right = 216.0
+offset_bottom = 234.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("39_egg_carton_drag")
+
+[node name="ScallionTray" type="Control" parent="PancakeWorktopHotspots" unique_id=1021085658]
+anchors_preset = 0
+offset_left = 590.0
+offset_top = 555.0
+offset_right = 750.0
+offset_bottom = 715.0
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/ScallionTray" unique_id=1425551347]
+z_index = -102
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 160.0
+mouse_filter = 2
+texture = ExtResource("24_scallion_empty")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.scallion"
+state_textures = Array[Texture2D]([ExtResource("24_scallion_empty"), ExtResource("25_scallion_half"), ExtResource("26_scallion_full")])
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/ScallionTray" unique_id=1874852951]
+z_index = 2
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 160.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="CorianderTray" type="Control" parent="PancakeWorktopHotspots" unique_id=817709265]
+anchors_preset = 0
+offset_left = 471.0
+offset_top = 555.0
+offset_right = 631.0
+offset_bottom = 715.0
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/CorianderTray" unique_id=1925334901]
+z_index = -102
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 160.0
+mouse_filter = 2
+texture = ExtResource("19_coriander_empty")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.coriander"
+state_textures = Array[Texture2D]([ExtResource("19_coriander_empty"), ExtResource("20_coriander_half"), ExtResource("21_coriander_full")])
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/CorianderTray" unique_id=1015290762]
+z_index = 2
+layout_mode = 0
+offset_right = 160.0
+offset_bottom = 160.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="BaocuiBasket" type="Control" parent="PancakeWorktopHotspots" unique_id=1496909340]
+z_index = 120
+anchors_preset = 0
+offset_left = 693.8
+offset_top = 544.5
+offset_right = 951.2
+offset_bottom = 739.5
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=356035899]
+layout_mode = 0
+offset_right = 257.4
+offset_bottom = 195.0
+mouse_filter = 2
+texture = ExtResource("10_baocui_basket")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Contents" type="TextureRect" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=2013521190]
+z_index = 1
+layout_mode = 0
+offset_left = 28.95
+offset_top = 41.6
+offset_right = 230.45
+offset_bottom = 127.4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=1739890305]
+z_index = 2
+layout_mode = 0
+offset_right = 257.4
+offset_bottom = 195.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="SpreaderHolderEmptyVisual" type="TextureRect" parent="PancakeWorktopHotspots" unique_id=1478005217]
+visible = false
+layout_mode = 0
+offset_left = 1092.0
+offset_top = 920.0
+offset_right = 1252.0
+offset_bottom = 1080.0
+mouse_filter = 2
+texture = ExtResource("40_spreader_holder_empty")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpreaderHolderFilledVisual" type="TextureRect" parent="PancakeWorktopHotspots" unique_id=71572555]
+layout_mode = 0
+offset_left = 1092.0
+offset_top = 920.0
+offset_right = 1252.0
+offset_bottom = 1080.0
+mouse_filter = 2
+texture = ExtResource("41_spreader_holder_filled")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SpreaderHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=544913172]
+layout_mode = 0
+offset_left = 1092.0
+offset_top = 920.0
+offset_right = 1252.0
+offset_bottom = 1080.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+
+[node name="SweetSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1539400609]
+z_index = 3
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 686.0
+offset_right = 1229.0
+offset_bottom = 820.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="ChiliSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=639556417]
+z_index = 3
+layout_mode = 0
+offset_left = 1229.0
+offset_top = 686.0
+offset_right = 1346.0
+offset_bottom = 815.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="SweetSauceHotspotHitButton" type="Button" parent="PancakeWorktopHotspots" unique_id=1697016334]
+z_index = 3
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 686.0
+offset_right = 1229.0
+offset_bottom = 820.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="ChiliSauceHotspotHitButton" type="Button" parent="PancakeWorktopHotspots" unique_id=1470490415]
+z_index = 3
+layout_mode = 0
+offset_left = 1229.0
+offset_top = 686.0
+offset_right = 1346.0
+offset_bottom = 815.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true

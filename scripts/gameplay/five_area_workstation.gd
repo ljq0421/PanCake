@@ -5,6 +5,11 @@ const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd"
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const RIGHT_SOY_STATION_POSITION := Vector2(1500.0, 480.0)
 const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 460.0)
+const FORMAL_PAYMENT_COIN_SIZE := Vector2(44.0, 44.0)
+const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(842.0, 526.0)
+const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 38.0
+const FORMAL_PAYMENT_COIN_ROW_SPACING := 24.0
+const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 6
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
@@ -17,7 +22,7 @@ const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 460.0)
 @onready var soy_full_slots: Array[Node] = [%SoyFullYellow, %SoyFullBlack, %SoyFullRed]
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
-@onready var pancake_worktop_hotspots: Control = get_node_or_null("FiveAreaInfrastructure/PancakeWorktopHotspots") as Control
+@onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
 @onready var fixed_material_lock_artworks: Array[Control] = [
 	$SafeArea/LockedIngredientArtwork/Slot01,
 	$SafeArea/LockedIngredientArtwork/Slot02,
@@ -38,13 +43,18 @@ var _delivery_click_in_progress := false
 var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 var _multi_griddle_mode_active := false
+var _formal_payment_coin_sprites: Array[TextureRect] = []
 
 
 func _ready() -> void:
 	super._ready()
-	# The serving interaction overlays the permanent right-side green dispenser
-	# from JianbingStallArtwork. Scene-instanced Control offsets are normalized
-	# here to prevent the retired left-side placement from resurfacing.
+	# The formal-order shell returns from the parent setup before its legacy
+	# payment animation setup. Keep the real coin sprites above the counter,
+	# but below modal result panels.
+	payment_coin_layer.z_index = 30
+	# DirectSoyStation owns both the right-side dispenser artwork and its serving
+	# interactions. Normalize its instance offsets so the retired left-side
+	# placement cannot resurface.
 	fresh_soy_station.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	fresh_soy_station.position = RIGHT_SOY_STATION_POSITION
 	fresh_soy_station.size = RIGHT_SOY_STATION_SIZE
@@ -340,7 +350,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"ready_safe", &"overcooking": return {"target": cartoon_youtiao_fryer.lift_button, "message": "及时升篮"}
 				&"burnt": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把整锅焦糊油条拖到废弃区"}
 				&"draining": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待沥油完成"}
-				&"ready_to_collect": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "拖动盘中油条，将整锅油条放入成品区"}
+				&"ready_to_collect": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到成品盘"}
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
@@ -689,6 +699,8 @@ func _finish_clicked_order(result: Dictionary) -> void:
 	kitchen_audio.call("set_sizzle", false, 0.0)
 	kitchen_audio.call("play_cue", &"serve")
 	var earned := int(finished.get("earned_coins", 0))
+	if earned > 0:
+		_show_formal_payment_coins(earned)
 	if _business_day_expiration_pending:
 		_business_day_expiration_pending = false
 		_end_business_day_for_timer()
@@ -714,6 +726,7 @@ func _collect_pending_payments() -> void:
 	if not bool(collected.get("success", false)):
 		tool_status_label.text = "收币失败：%s" % str(collected.get("reason", &"unknown"))
 		return
+	_clear_formal_payment_coins()
 	_refresh_pending_payment_button()
 	tool_status_label.text = "已一次收取 %d 金币；当前顾客订单继续" % int(collected.get("amount", 0))
 
@@ -723,7 +736,46 @@ func _collect_tray_payment() -> void:
 
 
 func _restore_pending_payment() -> void:
+	_clear_formal_payment_coins()
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("pending_order_payments"):
+		for payment_value in Array(session.call("pending_order_payments")):
+			_show_formal_payment_coins(maxi(int(Dictionary(payment_value).get("amount", 0)), 0))
 	_refresh_pending_payment_button()
+
+
+func _show_formal_payment_coins(amount: int) -> void:
+	for denomination in PAYMENT_COIN_MODEL_SCRIPT.decompose(amount):
+		var coin := payment_sprite.duplicate() as TextureRect
+		if coin == null:
+			continue
+		var texture := PAYMENT_COIN_TEXTURES.get(denomination, payment_sprite.texture) as Texture2D
+		coin.name = "FormalPaymentCoin%d_%d" % [denomination, _formal_payment_coin_sprites.size()]
+		coin.unique_name_in_owner = false
+		coin.texture = texture
+		coin.position = _formal_payment_coin_target(_formal_payment_coin_sprites.size())
+		coin.size = FORMAL_PAYMENT_COIN_SIZE
+		coin.visible = true
+		coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		coin.tooltip_text = "%d 金币待收取" % denomination
+		payment_coin_layer.add_child(coin)
+		_formal_payment_coin_sprites.append(coin)
+
+
+func _clear_formal_payment_coins() -> void:
+	for coin in _formal_payment_coin_sprites:
+		if is_instance_valid(coin):
+			coin.queue_free()
+	_formal_payment_coin_sprites.clear()
+
+
+func _formal_payment_coin_target(index: int) -> Vector2:
+	var column := index % FORMAL_PAYMENT_COIN_MAX_COLUMNS
+	var row := floori(float(index) / float(FORMAL_PAYMENT_COIN_MAX_COLUMNS))
+	return FORMAL_PAYMENT_COIN_ORIGIN + Vector2(
+		float(column) * FORMAL_PAYMENT_COIN_COLUMN_SPACING,
+		float(row) * FORMAL_PAYMENT_COIN_ROW_SPACING,
+	)
 
 
 func _refresh_pending_payment_button() -> void:

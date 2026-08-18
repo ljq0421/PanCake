@@ -22,10 +22,7 @@ func _run() -> void:
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
 	progression.set("unlocked_automation_ids", {&"automation.youtiao.auto_lift": true})
-	for tier_case in [{"tier": 0, "capacity": 4}, {"tier": 1, "capacity": 6}, {"tier": 2, "capacity": 8}]:
-		progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": int(tier_case["tier"])})
-		_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("capacity", 0)) == int(tier_case["capacity"]), "prepared capacity follows fryer tier %d" % int(tier_case["tier"]))
-	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0})
+	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("capacity", 0)) == 4, "prepared capacity remains fixed at four with the fryer")
 
 	var fryer_inventory := Dictionary(session.call("inventory_snapshot"))
 	fryer_inventory["stock.youtiao.plain_dough"] = 8
@@ -59,6 +56,28 @@ func _run() -> void:
 		"two dough portions occupy two fryer slots and store exactly two products"
 	)
 	session.call("clear_prepared_product_slots")
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.youtiao.plain_dough"] = 4
+	session.call("save_inventory", fryer_inventory)
+	var loaded_single := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 2))
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 10.0)
+	session.call("perform_f3_youtiao_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var stored_single := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", 0))
+	var fryer_after_single_store := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		bool(loaded_single.get("success", false))
+		and bool(stored_single.get("success", false))
+		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 1
+		and Array(fryer_after_single_store.get("occupied_slot_indices", [])).hash() == [1].hash(),
+		"storing one finished fryer slot moves exactly one oil strip to the serving plate"
+	)
+	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
+	session.call("clear_prepared_product_slots")
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.youtiao.plain_dough"] = 4
+	session.call("save_inventory", fryer_inventory)
 	var loaded_batch := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 4))
 	session.call("perform_f3_youtiao_action", &"start")
 	session.call("advance_f3_production", 10.0)

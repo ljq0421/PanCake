@@ -4,10 +4,18 @@
 [ext_resource type="Texture2D" uid="uid://ctgo3hannsusp" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-lowered.png" id="2_lowered"]
 [ext_resource type="Texture2D" uid="uid://dlos2ddb5jwdv" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="3_raised"]
 [ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-raw-dough-v4.png" id="4_raw"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-golden-v5-transparent.png" id="5_golden"]
+[ext_resource type="Texture2D" uid="uid://nkx1i8u234up" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-golden-v5-transparent.png" id="5_golden"]
 [ext_resource type="Texture2D" uid="uid://7ymhng5eocrj" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-burnt-v4.png" id="6_burnt"]
-[ext_resource type="Texture2D" uid="uid://ce1h868ldt7xi" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board.png" id="7_board"]
+[ext_resource type="Texture2D" uid="uid://cg2wsdgpatsud" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board - v1.png" id="7_board"]
 [ext_resource type="Texture2D" uid="uid://cxyxfs4u3mhre" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-empty-serving-plate.png" id="8_plate"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_plate_youtiao"]
+atlas = ExtResource("5_golden")
+region = Rect2(174, 8, 677, 1500)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_board_dough"]
+atlas = ExtResource("4_raw")
+region = Rect2(144, 54, 230, 402)
 
 [node name="CartoonYoutiaoFryerToggle" type="Control" unique_id=1247571894]
 custom_minimum_size = Vector2(600, 800)
@@ -19,14 +27,16 @@ lowered_machine_texture = ExtResource("2_lowered")
 raised_machine_texture = ExtResource("3_raised")
 raw_youtiao_texture = ExtResource("4_raw")
 golden_youtiao_texture = ExtResource("5_golden")
+plate_youtiao_texture = SubResource("AtlasTexture_plate_youtiao")
 burnt_youtiao_texture = ExtResource("6_burnt")
 
 [node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 140.0
-offset_right = 460.0
-offset_bottom = 426.0
+offset_left = 81.0
+offset_top = 3.0
+offset_right = 401.0
+offset_bottom = 429.0
 mouse_filter = 2
 texture = ExtResource("3_raised")
 expand_mode = 1
@@ -58,11 +68,84 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
+[node name="RaisedBasketSlot1" type="ReferenceRect" parent="." unique_id=1715217002]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 143.0
+offset_top = 66.0
+offset_right = 218.0
+offset_bottom = 143.0
+mouse_filter = 2
+
+[node name="RaisedBasketSlot2" type="ReferenceRect" parent="." unique_id=1790936311]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 182.0
+offset_top = 66.0
+offset_right = 257.0
+offset_bottom = 143.0
+mouse_filter = 2
+
+[node name="RaisedBasketSlot3" type="ReferenceRect" parent="." unique_id=172802687]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 221.0
+offset_top = 66.0
+offset_right = 296.0
+offset_bottom = 143.0
+mouse_filter = 2
+
+[node name="RaisedBasketSlot4" type="ReferenceRect" parent="." unique_id=1817747762]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 260.0
+offset_top = 66.0
+offset_right = 335.0
+offset_bottom = 143.0
+mouse_filter = 2
+
+[node name="LoweredBasketSlot1" type="ReferenceRect" parent="." unique_id=761069202]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 143.0
+offset_top = 132.0
+offset_right = 218.0
+offset_bottom = 209.0
+mouse_filter = 2
+
+[node name="LoweredBasketSlot2" type="ReferenceRect" parent="." unique_id=169518652]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 182.0
+offset_top = 132.0
+offset_right = 257.0
+offset_bottom = 209.0
+mouse_filter = 2
+
+[node name="LoweredBasketSlot3" type="ReferenceRect" parent="." unique_id=156327122]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 221.0
+offset_top = 132.0
+offset_right = 296.0
+offset_bottom = 209.0
+mouse_filter = 2
+
+[node name="LoweredBasketSlot4" type="ReferenceRect" parent="." unique_id=1577531112]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 260.0
+offset_top = 132.0
+offset_right = 335.0
+offset_bottom = 209.0
+mouse_filter = 2
+
 [node name="WoodenBoardVisual" type="TextureRect" parent="." unique_id=1089327243]
 layout_mode = 0
-offset_top = 429.0
-offset_right = 338.0
-offset_bottom = 650.0
+offset_left = -39.0
+offset_top = 390.0
+offset_right = 345.0
+offset_bottom = 645.0
 mouse_filter = 2
 texture = ExtResource("7_board")
 expand_mode = 1
@@ -72,38 +155,97 @@ stretch_mode = 5
 unique_name_in_owner = true
 z_index = 2
 layout_mode = 0
-offset_left = 90.0
-offset_top = 508.0
-offset_right = 202.0
-offset_bottom = 618.0
+offset_left = 60.0
+offset_top = 459.0
+offset_right = 172.0
+offset_bottom = 569.0
 mouse_filter = 2
-texture = ExtResource("4_raw")
+texture = SubResource("AtlasTexture_board_dough")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DoughVisual2" type="TextureRect" parent="." unique_id=1021922570]
+[node name="BoardDoughSlot1" type="ReferenceRect" parent="." unique_id=1705983745]
 unique_name_in_owner = true
-z_index = 2
+layout_mode = 0
+offset_left = 96.0
+offset_top = 472.0
+offset_right = 136.0
+offset_bottom = 558.0
+mouse_filter = 2
+
+[node name="BoardDoughSlot2" type="ReferenceRect" parent="." unique_id=866897306]
+unique_name_in_owner = true
 layout_mode = 0
 offset_left = 136.0
-offset_top = 508.0
-offset_right = 248.0
-offset_bottom = 618.0
+offset_top = 472.0
+offset_right = 176.0
+offset_bottom = 558.0
 mouse_filter = 2
-texture = ExtResource("4_raw")
-expand_mode = 1
-stretch_mode = 5
+
+[node name="BoardDoughSlot3" type="ReferenceRect" parent="." unique_id=1730036934]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 176.0
+offset_top = 472.0
+offset_right = 216.0
+offset_bottom = 558.0
+mouse_filter = 2
+
+[node name="BoardDoughSlot4" type="ReferenceRect" parent="." unique_id=699844867]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 216.0
+offset_top = 472.0
+offset_right = 256.0
+offset_bottom = 558.0
+mouse_filter = 2
 
 [node name="PlateVisual" type="TextureRect" parent="." unique_id=686091902]
 layout_mode = 0
-offset_left = 340.0
-offset_top = 440.0
-offset_right = 600.0
-offset_bottom = 650.0
+offset_left = 246.0
+offset_top = 403.0
+offset_right = 524.0
+offset_bottom = 640.0
 mouse_filter = 2
 texture = ExtResource("8_plate")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="PlateProductSlot1" type="ReferenceRect" parent="." unique_id=1967002742]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 294.0
+offset_top = 465.0
+offset_right = 342.0
+offset_bottom = 569.0
+mouse_filter = 2
+
+[node name="PlateProductSlot2" type="ReferenceRect" parent="." unique_id=1307494881]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 338.0
+offset_top = 465.0
+offset_right = 386.0
+offset_bottom = 569.0
+mouse_filter = 2
+
+[node name="PlateProductSlot3" type="ReferenceRect" parent="." unique_id=1884254557]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 382.0
+offset_top = 465.0
+offset_right = 430.0
+offset_bottom = 569.0
+mouse_filter = 2
+
+[node name="PlateProductSlot4" type="ReferenceRect" parent="." unique_id=1454995356]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 425.0
+offset_top = 465.0
+offset_right = 473.0
+offset_bottom = 569.0
+mouse_filter = 2
 
 [node name="PlateProductVisual1" type="TextureRect" parent="." unique_id=1933140994]
 unique_name_in_owner = true
@@ -145,9 +287,9 @@ stretch_mode = 5
 [node name="StatusLabel" type="Label" parent="." unique_id=948688222]
 unique_name_in_owner = true
 layout_mode = 0
-offset_top = 660.0
+offset_top = 581.0
 offset_right = 600.0
-offset_bottom = 800.0
+offset_bottom = 721.0
 theme_override_colors/font_color = Color(1, 0.93, 0.73, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3

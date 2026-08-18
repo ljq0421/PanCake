@@ -37,7 +37,7 @@ const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 }
 const DEBUG_TIER_GROWTH_IDS := {
 	&"area.pancake": [&""],
-	&"area.youtiao": [&"growth.area.youtiao", &"growth.equipment.youtiao.intermediate", &"growth.equipment.youtiao.advanced"],
+	&"area.youtiao": [&"growth.area.youtiao"],
 	&"area.fresh_soy_milk": [&"growth.area.fresh_soy_milk", &"growth.equipment.fresh_soy_milk.intermediate", &"growth.equipment.fresh_soy_milk.advanced"],
 }
 const LEGACY_PANCAKE_STOCK_IDS := {
@@ -1795,6 +1795,49 @@ func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size()}
 
 
+func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var status := prepared_product_slot_status(slot_id)
+	if not bool(status.get("success", false)):
+		return status
+	if int(status.get("count", 0)) >= int(status.get("capacity", 0)):
+		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
+	if not bool(preview.get("success", false)):
+		return preview
+	var product := Dictionary(preview.get("product", {}))
+	if StringName(product.get("product_id", &"")) != StringName(status.get("product_id", &"")):
+		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index}
+
+
+func store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:
+	var preview := preview_store_ready_youtiao_slot(slot_id, source_index)
+	if not bool(preview.get("success", false)):
+		return preview
+	var production_rollback := five_area_production_snapshot()
+	var slots_rollback := prepared_product_slots_snapshot()
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
+	if not bool(collected.get("success", false)):
+		return collected
+	var product := Dictionary(collected.get("product", {}))
+	if StringName(product.get("product_id", &"")) != StringName(Dictionary(preview.get("product", {})).get("product_id", &"")):
+		_production_service.call("load_snapshot", production_rollback)
+		return {"success": false, "reason": &"prepared_product_changed"}
+	var slots := slots_rollback.duplicate(true)
+	var stored_products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
+	stored_products.append(product)
+	slots[str(slot_id)] = stored_products
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index, "count": stored_products.size()}
+
+
 func preview_store_ready_youtiao(slot_id: StringName) -> Dictionary:
 	return preview_store_ready_youtiao_batch(slot_id)
 
@@ -1879,8 +1922,7 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 		return {"success": false, "reason": &"stock_locked", "stock_id": stock_id}
 	var inventory := inventory_snapshot()
 	var key := str(stock_id)
-	var capacity := maxi(int(definition.get("restock_capacity", 0)), 0)
-	capacity = maxi(capacity, int(_progression.get("stock_capacity")))
+	var capacity := _restock_capacity(stock_id, definition)
 	if capacity <= 0:
 		return {"success": false, "reason": &"restock_unavailable", "stock_id": stock_id}
 	var unit_seconds := maxf(float(definition.get("refill_seconds", 0.0)), 0.001)
@@ -2396,12 +2438,11 @@ func _debug_complete_tutorial_on(progression: RefCounted, kind: StringName, tuto
 func _debug_fill_owned_stock_to_capacity() -> bool:
 	var inventory := inventory_snapshot()
 	var before := inventory.duplicate(true)
-	var stock_capacity := maxi(int(_progression.get("stock_capacity")), 0)
 	for stock_id in CATALOG.stock_ids():
 		if not bool(_progression.call("owns_stock", stock_id)):
 			continue
 		var definition := CATALOG.stock_definition(stock_id)
-		var capacity := maxi(int(definition.get("restock_capacity", 0)), stock_capacity)
+		var capacity := _restock_capacity(stock_id, definition)
 		if capacity > 0:
 			inventory[str(stock_id)] = capacity
 	_save_data["inventory"] = _normalize_inventory(inventory)
@@ -3188,8 +3229,18 @@ func _normalize_inventory(source: Dictionary) -> Dictionary:
 			normalized[key] = 0
 			continue
 		if source.has(key):
-			normalized[key] = maxi(int(source[key]), 0)
+			var quantity := maxi(int(source[key]), 0)
+			if bool(CATALOG.stock_definition(stock_id).get("fixed_restock_capacity", false)):
+				quantity = mini(quantity, maxi(int(CATALOG.stock_definition(stock_id).get("restock_capacity", 0)), 0))
+			normalized[key] = quantity
 	return normalized
+
+
+func _restock_capacity(_stock_id: StringName, definition: Dictionary) -> int:
+	var base_capacity := maxi(int(definition.get("restock_capacity", 0)), 0)
+	if bool(definition.get("fixed_restock_capacity", false)):
+		return base_capacity
+	return maxi(base_capacity, int(_progression.get("stock_capacity")))
 
 
 func _stable_pancake_stock_ids(source_ids: Array, mapping: Dictionary) -> PackedStringArray:

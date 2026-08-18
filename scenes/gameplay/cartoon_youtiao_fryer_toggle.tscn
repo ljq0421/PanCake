@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://ctgo3hannsusp" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-lowered.png" id="2_lowered"]
 [ext_resource type="Texture2D" uid="uid://dlos2ddb5jwdv" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="3_raised"]
 [ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-raw-dough-v4.png" id="4_raw"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-golden-v5-transparent.png" id="5_golden"]
 [ext_resource type="Texture2D" uid="uid://7ymhng5eocrj" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-burnt-v4.png" id="6_burnt"]
 [ext_resource type="Texture2D" uid="uid://ce1h868ldt7xi" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board.png" id="7_board"]
 [ext_resource type="Texture2D" uid="uid://cxyxfs4u3mhre" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-empty-serving-plate.png" id="8_plate"]
@@ -17,7 +18,7 @@ script = ExtResource("1_script")
 lowered_machine_texture = ExtResource("2_lowered")
 raised_machine_texture = ExtResource("3_raised")
 raw_youtiao_texture = ExtResource("4_raw")
-golden_youtiao_texture = ExtResource("4_raw")
+golden_youtiao_texture = ExtResource("5_golden")
 burnt_youtiao_texture = ExtResource("6_burnt")
 
 [node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]

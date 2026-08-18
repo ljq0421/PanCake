@@ -14,11 +14,7 @@ static func build_attention(
 	for device_key in machine_snapshots:
 		var device_id := StringName(device_key)
 		var snapshot := Dictionary(machine_snapshots[device_key])
-		if device_id == &"device.steamer":
-			for raw_layer in Array(snapshot.get("layers", [])):
-				_append_machine_attention(items, Dictionary(raw_layer), device_id, StringName("%s.layer.%d" % [device_id, int(Dictionary(raw_layer).get("layer_index", 0))]))
-		else:
-			_append_machine_attention(items, snapshot, device_id, device_id)
+		_append_machine_attention(items, snapshot, device_id, device_id)
 	for rack_index in range(output_rack.size()):
 		var cup := Dictionary(output_rack[rack_index])
 		if cup.is_empty():

@@ -213,9 +213,9 @@ stretch_mode = 5
 [node name="SweetBeanSauceJar" type="TextureRect" parent="." unique_id=698685248]
 layout_mode = 0
 offset_left = 1120.0
-offset_top = 682.0
+offset_top = 686.0
 offset_right = 1243.0
-offset_bottom = 816.4
+offset_bottom = 820.4
 mouse_filter = 2
 texture = ExtResource("9_sweet_bean_sauce")
 expand_mode = 1
@@ -223,10 +223,10 @@ stretch_mode = 5
 
 [node name="ChiliSauceJar" type="TextureRect" parent="." unique_id=1273568794]
 layout_mode = 0
-offset_left = 1259.0
-offset_top = 874.0
-offset_right = 1376.0
-offset_bottom = 1003.4
+offset_left = 1229.0
+offset_top = 686.0
+offset_right = 1346.0
+offset_bottom = 815.4
 mouse_filter = 2
 texture = ExtResource("27_chili_sauce")
 expand_mode = 1
@@ -234,10 +234,10 @@ stretch_mode = 5
 
 [node name="TomatoSauceJar" type="TextureRect" parent="." unique_id=184690208]
 layout_mode = 0
-offset_left = 1353.0
-offset_top = 870.0
-offset_right = 1470.0
-offset_bottom = 999.4
+offset_left = 1332.0
+offset_top = 686.0
+offset_right = 1449.0
+offset_bottom = 815.4
 mouse_filter = 2
 texture = ExtResource("28_tomato_sauce")
 expand_mode = 1

@@ -33,7 +33,6 @@
 [ext_resource type="Texture2D" uid="uid://cvu2osldoi35e" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="32_ow317"]
 [ext_resource type="Texture2D" uid="uid://ghrsjrdg6w05" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v3.png" id="34_ajejd"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/direct_soy_station.tscn" id="37_830a8"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/direct_youtiao_station.tscn" id="39_31ofd"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/multi_griddle_station.tscn" id="58_qkje3"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="60_ikhp0"]
 [ext_resource type="Script" uid="uid://3dm4r8fyaulo" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
@@ -1402,13 +1401,6 @@ anchors_preset = 0
 offset_top = 480.0
 offset_right = 1910.0
 offset_bottom = 940.0
-
-[node name="YoutiaoStation" parent="FiveAreaInfrastructure/Stations" unique_id=1646015532 instance=ExtResource("39_31ofd")]
-anchors_preset = 0
-offset_left = 1552.0
-offset_top = 430.0
-offset_right = 1912.0
-offset_bottom = 770.0
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0

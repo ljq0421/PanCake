@@ -12,13 +12,10 @@ $headlessChecks = @(
 	'res://tests/unit/five_area_game_session_store_self_check.gd',
 	'res://tests/unit/five_area_order_service_self_check.gd',
 	'res://tests/unit/five_area_playable_order_self_check.gd',
-	'res://tests/unit/packaged_drink_heater_self_check.gd',
 	'res://tests/unit/youtiao_fryer_self_check.gd',
-	'res://tests/unit/f3_progression_path_self_check.gd',
-	'res://tests/integration/f3_production_order_self_check.gd',
-	'res://tests/integration/f3_station_scene_self_check.gd',
 	'res://tests/integration/five_area_growth_ui_self_check.gd',
-	'res://tests/integration/three_playable_area_order_loop_self_check.gd'
+	'res://tests/integration/three_playable_area_order_loop_self_check.gd',
+	'res://tests/integration/five_area_formal_scene_self_check.gd'
 )
 
 foreach ($check in $headlessChecks) {
@@ -32,8 +29,7 @@ foreach ($check in $headlessChecks) {
 }
 
 $pointerChecks = @(
-	'res://tests/integration/f3_station_pointer_smoke.gd',
-	'res://tests/integration/packaged_drink_workstation_pointer_smoke.gd'
+	'res://tests/integration/direct_soy_gpu_pointer_smoke.gd'
 )
 foreach ($pointerCheck in $pointerChecks) {
 	$pointerLog = Join-Path $env:TEMP ("projectcake-f3-pointer-{0}.log" -f [Guid]::NewGuid().ToString('N'))

@@ -6,10 +6,8 @@ signal station_requested(area_id: StringName)
 const RESTOCK_SERVICE := preload("res://scripts/services/five_area_restock_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const INTERACTIVE_STATION_AREAS: Array[StringName] = [
-	&"area.packaged_drink",
 	&"area.youtiao",
 	&"area.fresh_soy_milk",
-	&"area.steamer",
 ]
 
 const INGREDIENT_STOCK_IDS := {
@@ -372,10 +370,8 @@ func _on_locked_art_pressed(button: Button) -> void:
 
 static func _station_label(area_id: StringName) -> String:
 	match area_id:
-		&"area.packaged_drink": return "成品饮品"
 		&"area.youtiao": return "油条"
 		&"area.fresh_soy_milk": return "现磨豆浆"
-		&"area.steamer": return "蒸笼"
 	return "分区"
 
 

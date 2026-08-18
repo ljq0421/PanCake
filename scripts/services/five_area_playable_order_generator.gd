@@ -592,13 +592,6 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 	if product.is_empty() or recipe.is_empty():
 		return {"success": false, "reason": &"invalid_product_definition"}
 	var temperature_mode := &"room_temperature"
-	if area_id == &"area.packaged_drink" and not teaching and bool(product.get("can_heat", false)):
-		var tutorial := Dictionary(progression.get("tutorial", {}))
-		var completed_devices := _id_set(tutorial.get("completed_device_ids", []))
-		var device_tiers := Dictionary(progression.get("device_tiers", {}))
-		var heater_owned := device_tiers.has(&"device.packaged_drink_heater") or device_tiers.has("device.packaged_drink_heater")
-		if heater_owned and completed_devices.has(&"device.packaged_drink_heater") and _roll(seed, sequence, 79, 100) < 35:
-			temperature_mode = &"heated"
 	var patience := float(BASE_PATIENCE_SECONDS.get(area_id, 24.0))
 	var quantity := 1
 	if area_id == &"area.youtiao" and not teaching:
@@ -649,7 +642,7 @@ static func _eligible_product_ids(area_id: StringName, progression: Dictionary) 
 	var device_tiers := Dictionary(progression.get("device_tiers", {}))
 	var area_definition := CATALOG.area_definition(area_id)
 	var device_id := StringName(area_definition.get("device_id", &""))
-	if area_id != &"area.packaged_drink" and (device_id.is_empty() or not (device_tiers.has(device_id) or device_tiers.has(str(device_id)))):
+	if device_id.is_empty() or not (device_tiers.has(device_id) or device_tiers.has(str(device_id))):
 		return []
 	var ids: Array[StringName] = []
 	for product_key in CATALOG.PRODUCT_DEFINITIONS.keys():
@@ -770,23 +763,3 @@ static func _id_set(values: Variant) -> Dictionary:
 	for value in Array(values):
 		result[StringName(value)] = true
 	return result
-static func _heater_teaching_candidate(progression: Dictionary) -> Dictionary:
-	var product_id := &"product.packaged_drink.milk"
-	if not _eligible_product_ids(&"area.packaged_drink", progression).has(product_id):
-		return {"success": false, "reason": &"tutorial_content_unavailable", "tutorial_id": &"device.packaged_drink_heater"}
-	var candidate := _product_candidate(&"area.packaged_drink", product_id, progression, 0, 0, true)
-	if not bool(candidate.get("success", false)):
-		return candidate
-	var items: Array = Array(candidate.get("items", [])).duplicate(true)
-	if not items.is_empty():
-		var item := Dictionary(items[0])
-		item["temperature_mode"] = &"heated"
-		items[0] = item
-	candidate["items"] = items
-	var metadata := Dictionary(candidate.get("metadata", {})).duplicate(true)
-	metadata["teaching_area_id"] = &"area.packaged_drink"
-	metadata["tutorial_kind"] = &"device"
-	metadata["tutorial_id"] = &"device.packaged_drink_heater"
-	metadata["tutorial_no_countdown"] = true
-	candidate["metadata"] = metadata
-	return candidate

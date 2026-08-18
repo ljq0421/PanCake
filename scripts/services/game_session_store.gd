@@ -14,7 +14,7 @@ signal prepared_product_slots_changed(snapshot: Dictionary)
 const SAVE_PATH := "user://project_cake_save.json"
 const SOY_TEST_SAVE_PATH := "user://project_cake_soy_test_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
-const SAVE_VERSION := 6
+const SAVE_VERSION := 7
 const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"

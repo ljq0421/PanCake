@@ -8,11 +8,11 @@ const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 460.0)
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
-@onready var youtiao_station: DirectYoutiaoStation = $FiveAreaInfrastructure/Stations/YoutiaoStation
+@onready var cartoon_youtiao_fryer: CartoonYoutiaoFryerToggle = $FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer
 @onready var multi_griddle_station: Control = %MultiGriddleStation
 @onready var pancake_ready_source: ProductDragSource = get_node_or_null("FiveAreaInfrastructure/PancakeReadySource") as ProductDragSource
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
-@onready var waste_area: StagedProductDropTarget = get_node_or_null("FiveAreaInfrastructure/Stations/YoutiaoStation/WasteTarget") as StagedProductDropTarget
+@onready var waste_area: StagedProductDropTarget = cartoon_youtiao_fryer.waste_target
 @onready var pending_payment_button: Button = %PendingPaymentButton
 @onready var soy_full_slots: Array[Node] = [%SoyFullYellow, %SoyFullBlack, %SoyFullRed]
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
@@ -49,12 +49,12 @@ func _ready() -> void:
 	fresh_soy_station.position = RIGHT_SOY_STATION_POSITION
 	fresh_soy_station.size = RIGHT_SOY_STATION_SIZE
 	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
-	for station in [fresh_soy_station, youtiao_station]:
+	for station in [fresh_soy_station, cartoon_youtiao_fryer]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
 		# Full-station covers would otherwise steal pointer input from the pancake
 		# sauce rack and discard control where their authored rectangles overlap.
-		station.mouse_filter = Control.MOUSE_FILTER_STOP if station in [fresh_soy_station, youtiao_station] else Control.MOUSE_FILTER_IGNORE
+		station.mouse_filter = Control.MOUSE_FILTER_STOP
 		if station.lock_cover != null:
 			station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	multi_griddle_station.status_message.connect(_show_station_status)
@@ -71,7 +71,7 @@ func _ready() -> void:
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
 		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
 		material_slot.short_clicked.connect(_on_material_short_clicked)
-	for source in youtiao_station.output_sources:
+	for source in cartoon_youtiao_fryer.output_sources:
 		source.native_drag_enabled = true
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
@@ -254,7 +254,7 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, slot: Node
 
 func _on_material_short_clicked(source_ref: Dictionary) -> void:
 	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
-		youtiao_station.select_recipe(StringName(source_ref.get("recipe_id", &"")))
+		cartoon_youtiao_fryer.select_recipe(StringName(source_ref.get("recipe_id", &"")))
 
 
 func place_youtiao_source_on_pancake(source_ref: Dictionary, viewport_position: Vector2) -> void:
@@ -335,12 +335,12 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 					var quantity := int(machine.get("quantity", 0))
 					var capacity := int(machine.get("capacity", 2))
 					var message := "已装%d/%d，点击启动" % [quantity, capacity] if quantity >= capacity else "已装%d/%d，可再放一份或直接启动" % [quantity, capacity]
-					return {"target": youtiao_station.start_button, "message": message}
-				&"frying": return {"target": youtiao_station.state_label, "message": "等待炸制完成，留意设备状态"}
-				&"ready_safe", &"overcooking": return {"target": youtiao_station.lift_button, "message": "及时升篮"}
-				&"burnt": return {"target": youtiao_station.output_sources[0], "message": "把整锅焦糊油条拖到废弃区"}
-				&"draining": return {"target": youtiao_station.state_label, "message": "等待沥油完成"}
-				&"ready_to_collect": return {"target": youtiao_station.output_sources[0], "message": "拖动任意一根，将整锅油条放入成品区"}
+					return {"target": cartoon_youtiao_fryer.start_button, "message": message}
+				&"frying": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待炸制完成，留意设备状态"}
+				&"ready_safe", &"overcooking": return {"target": cartoon_youtiao_fryer.lift_button, "message": "及时升篮"}
+				&"burnt": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把整锅焦糊油条拖到废弃区"}
+				&"draining": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待沥油完成"}
+				&"ready_to_collect": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "拖动盘中油条，将整锅油条放入成品区"}
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
@@ -620,7 +620,7 @@ func _delivery_source_for_item(session: Node, order_id: StringName, order: Dicti
 
 
 func _available_delivery_source_refs() -> Array[Dictionary]:
-	youtiao_station.refresh_from_session()
+	cartoon_youtiao_fryer.refresh_from_session()
 	_refresh_pancake_drag_sources()
 	var result: Array[Dictionary] = []
 	# A completed pancake is business state, not presentation state.  Keep its
@@ -629,7 +629,7 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 	result.append_array(multi_griddle_station.ready_source_refs())
 	var sources: Array[ProductDragSource] = []
 	sources.append_array(pancake_holding_sources)
-	sources.append_array(youtiao_station.output_sources)
+	sources.append_array(cartoon_youtiao_fryer.output_sources)
 	sources.append(fresh_soy_station.machine_output)
 	sources.append_array(fresh_soy_station.rack_outputs)
 	for source in sources:
@@ -656,7 +656,7 @@ func _on_clicked_product_consumed(source_ref: Dictionary) -> void:
 	if StringName(source_ref.get("source_kind", &"")) == &"pancake_griddle_ready":
 		multi_griddle_station.consume_ready(int(source_ref.get("source_index", -1)))
 	_refresh_pancake_drag_sources()
-	youtiao_station.refresh_from_session()
+	cartoon_youtiao_fryer.refresh_from_session()
 	fresh_soy_station.refresh_from_session()
 
 
@@ -749,7 +749,7 @@ func _on_disposition_completed(result: Dictionary) -> void:
 	if bool(result.get("success", false)):
 		tool_status_label.text = "餐品已计入浪费"
 		_refresh_pancake_drag_sources()
-		youtiao_station.refresh_from_session()
+		cartoon_youtiao_fryer.refresh_from_session()
 	else:
 		tool_status_label.text = "餐品回到原处：%s" % str(result.get("reason", &"unknown"))
 

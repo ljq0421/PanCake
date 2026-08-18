@@ -567,7 +567,7 @@ func _route_active_playable_order_legacy(restart_pancake: bool = true) -> void:
 			var area_id := StringName(ensured.get("teaching_area_id", &""))
 			var missing := PackedStringArray(ensured.get("missing_stock_ids", PackedStringArray()))
 			tool_status_label.text = "教学待补货：%s" % "、".join(missing)
-			if area_id == &"area.packaged_drink" or area_id == &"area.youtiao":
+			if area_id == &"area.youtiao":
 				_open_f3_station(area_id)
 		else:
 			tool_status_label.text = "当前没有可生成的正式订单：%s" % str(reason)
@@ -592,7 +592,7 @@ func _route_active_playable_order_legacy(restart_pancake: bool = true) -> void:
 			_refresh_p1_ui()
 	else:
 		_open_f3_station(area_id)
-		tool_status_label.text = "已切换到%s正式订单。" % ("成品饮品" if area_id == &"area.packaged_drink" else "油条")
+		tool_status_label.text = "已切换到油条正式订单。"
 
 
 func _on_playable_order_finished(result: Dictionary = {}) -> void:
@@ -3200,8 +3200,6 @@ func _growth_mastery_metric_label(area_id: StringName, metric: StringName) -> St
 
 func _tutorial_requirement_text(recommendation: Dictionary) -> String:
 	var required_device_id := StringName(recommendation.get("requires_tutorial_device_id", recommendation.get("required_tutorial_device_id", &"")))
-	if required_device_id == &"device.packaged_drink_heater":
-		return "先完成饮品加热教学：安装基础加热器后的第 1 位顾客会点一份加热纯牛奶，完成加热与交付即可。"
 	var required_area_id := StringName(recommendation.get("requires_tutorial_area_id", recommendation.get("required_tutorial_area_id", &"")))
 	var area_label := _tutorial_area_label(required_area_id)
 	if required_area_id == &"area.pancake":
@@ -3212,10 +3210,8 @@ func _tutorial_requirement_text(recommendation: Dictionary) -> String:
 func _tutorial_area_label(area_id: StringName) -> String:
 	match area_id:
 		&"area.pancake": return "煎饼"
-		&"area.packaged_drink": return "成品饮品"
 		&"area.youtiao": return "油条"
 		&"area.fresh_soy_milk": return "现磨豆浆"
-		&"area.steamer": return "蒸品"
 	return "前一区域"
 
 
@@ -3234,15 +3230,11 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		&"growth.add_on.pancake.pork_tenderloin": "里脊肉",
 		&"growth.automation.pancake.auto_sauce_brush": "自动刷酱",
 		&"growth.automation.pancake.press_once": "一键压饼",
-		&"growth.area.packaged_drink": "成品饮品档口",
-		&"growth.product.packaged_drink.soy_milk": "豆奶饮品",
 		&"growth.area.youtiao": "油条档口",
 		&"growth.area.fresh_soy_milk": "现磨豆浆档口",
 		&"growth.flavor.fresh_soy_milk.black_bean": "黑豆口味按钮",
 		&"growth.flavor.fresh_soy_milk.red_bean": "红豆口味按钮",
 		&"growth.flavor.fresh_soy_milk.multigrain": "五谷口味按钮",
-		&"growth.area.steamer": "蒸品档口",
-		&"growth.recipe.steamer.vegetable_bun": "菜包配方",
 	}
 	return str(names.get(growth_id, "未命名成长项目"))
 
@@ -3319,13 +3311,6 @@ func _refresh_global_status() -> void:
 		int(snapshot.get("reputation", 0)),
 		pancake_mastery,
 	]
-	if Array(snapshot.get("unlocked_area_ids", [])).has("area.packaged_drink"):
-		var details_by_area: Dictionary = Dictionary(snapshot.get("area_mastery_details", {}))
-		var drink_mastery: Dictionary = Dictionary(details_by_area.get(
-			&"area.packaged_drink",
-			details_by_area.get("area.packaged_drink", {}),
-		))
-		global_status_label.text += "  ·  熟练度（饮品正确温度）%d" % int(drink_mastery.get("correct_temperature", 0))
 
 
 func _raw_order_items_for_card(order: Dictionary) -> Array[Dictionary]:
@@ -3386,18 +3371,6 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 				"sauce_id": sauce_id,
 				"display_name": str(ORDER_CARD_SAUCE_NAMES.get(sauce_id, sauce_id)),
 			})
-	# Heating is a preparation requirement, not another product icon. It follows
-	# all pancake ingredients and is omitted entirely for room-temperature drinks.
-	for item in items:
-		if StringName(item.get("area_id", &"")) != &"area.packaged_drink":
-			continue
-		if StringName(item.get("temperature_mode", &"room_temperature")) != &"heated":
-			continue
-		requirements.append({
-			"kind": ORDER_REQUIREMENT_HEATED,
-			"texture": load(ORDER_CARD_HEAT_TEXTURE_PATH) as Texture2D,
-			"product_id": StringName(item.get("product_id", &"")),
-		})
 	for item in items:
 		if StringName(item.get("area_id", &"")) != &"area.fresh_soy_milk":
 			continue

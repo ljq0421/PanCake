@@ -18,8 +18,8 @@ func _run() -> void:
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true})
 	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0})
-	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true})
-	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true})
+	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.youtiao.sesame": true})
+	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.youtiao.sesame": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
 	progression.set("unlocked_automation_ids", {&"automation.youtiao.auto_lift": true})
 	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("capacity", 0)) == 4, "prepared capacity remains fixed at four with the fryer")
@@ -72,6 +72,25 @@ func _run() -> void:
 		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 1
 		and Array(fryer_after_single_store.get("occupied_slot_indices", [])).hash() == [1].hash(),
 		"storing one finished fryer slot moves exactly one oil strip to the serving plate"
+	)
+	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
+	session.call("clear_prepared_product_slots")
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.youtiao.plain_dough"] = 2
+	session.call("save_inventory", fryer_inventory)
+	var loaded_for_sesame := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1))
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 10.0)
+	session.call("perform_f3_youtiao_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var sesame_result := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", 0, &"product.youtiao.sesame"))
+	var sesame_products := Array(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("products", []))
+	_check(
+		bool(loaded_for_sesame.get("success", false))
+		and bool(sesame_result.get("success", false))
+		and sesame_products.size() == 1
+		and StringName(Dictionary(sesame_products[0]).get("product_id", &"")) == &"product.youtiao.sesame",
+		"a finished fryer slot can become a sesame youtiao in the prepared-product slot"
 	)
 	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
 	session.call("clear_prepared_product_slots")

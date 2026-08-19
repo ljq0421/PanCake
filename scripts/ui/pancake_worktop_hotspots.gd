@@ -6,9 +6,14 @@ signal status_message(message: String)
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png")
 const WIDE_SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_wide_filled_v1.png")
+const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png")
+const BATTER_LADLE_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
+const BATTER_LADLE_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png")
 const WIDE_SPREADER_GROWTH_ID := &"growth.tool.pancake.wide_spreader"
+const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
 
 const INGREDIENT_HOTSPOT_IDS: Dictionary = {
+	&"HamTrayHotspot": &"stock.pancake.ham_sausage",
 	&"PorkFlossHotspot": &"stock.pancake.meat_floss",
 	&"ScallionTray/Hotspot": &"stock.pancake.scallion",
 	&"CorianderTray/Hotspot": &"stock.pancake.coriander",
@@ -43,6 +48,8 @@ const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 
 var _session: Node
 var _refresh_elapsed := 0.0
+var _workshop_preview := false
+var _spreader_hit_button: Button
 
 
 func _ready() -> void:
@@ -60,13 +67,30 @@ func _ready() -> void:
 				hit_button.button_down.connect(_on_sauce_hit_button_down.bind(hotspot))
 			if not hit_button.button_up.is_connected(_on_sauce_hit_button_up):
 				hit_button.button_up.connect(_on_sauce_hit_button_up.bind(hotspot))
-	var spreader := get_node_or_null("SpreaderHotspot") as BaseButton
-	if spreader != null and not spreader.pressed.is_connected(_on_spreader_pressed):
-		spreader.pressed.connect(_on_spreader_pressed)
+	var spreader := get_node_or_null("SpreaderHotspot") as TextureButton
+	_ensure_texture_button_hit_surface(spreader)
+	var spreader_hit_button := _ensure_spreader_hit_button(spreader)
+	if spreader_hit_button != null and not spreader_hit_button.pressed.is_connected(_on_spreader_pressed):
+		spreader_hit_button.pressed.connect(_on_spreader_pressed)
+	var batter_ladle := get_node_or_null("BatterLadleHolderHotspot") as TextureButton
+	_ensure_texture_button_hit_surface(batter_ladle)
+	if batter_ladle != null and not batter_ladle.pressed.is_connected(_on_batter_ladle_pressed):
+		batter_ladle.pressed.connect(_on_batter_ladle_pressed)
+	_update_batter_ladle_holder_visual()
 
 
 func bind_session(session: Node) -> void:
 	_session = session
+	refresh_from_session()
+
+
+func set_workshop_preview(enabled: bool) -> void:
+	_workshop_preview = enabled
+	mouse_behavior_recursive = (
+		Control.MOUSE_BEHAVIOR_DISABLED
+		if enabled
+		else Control.MOUSE_BEHAVIOR_INHERITED
+	)
 	refresh_from_session()
 
 
@@ -94,6 +118,7 @@ func refresh_from_session() -> void:
 	_update_egg_inventory_visual(int(inventory.get(str(EGG_STOCK_ID), 0)), egg_capacity)
 	_update_baocui_inventory_visual(int(inventory.get(str(BAOCUI_STOCK_ID), 0)))
 	_update_spreader_holder_visual()
+	_update_batter_ladle_holder_visual()
 
 
 func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringName, source_kind: StringName) -> void:
@@ -125,10 +150,58 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hit_texture, false)
 
 
+func _ensure_texture_button_hit_surface(button: TextureButton) -> void:
+	if button == null or button.texture_normal != null:
+		return
+	# TextureButtons without a texture can display the art below them, but may
+	# not receive pointer events. Keep the button visually transparent while
+	# giving the press its own reliable hit surface.
+	var hit_image := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	hit_image.fill(Color.TRANSPARENT)
+	var hit_texture := ImageTexture.create_from_image(hit_image)
+	button.ignore_texture_size = true
+	button.texture_normal = hit_texture
+	button.texture_hover = hit_texture
+	button.texture_pressed = hit_texture
+
+
+func _ensure_spreader_hit_button(spreader: TextureButton) -> Button:
+	if spreader == null:
+		return null
+	var hit_button := _spreader_hit_button
+	if hit_button == null:
+		var host := _spreader_hit_host()
+		hit_button = host.get_node_or_null("SpreaderHotspotHitButton") as Button
+	if hit_button == null:
+		hit_button = Button.new()
+		hit_button.name = &"SpreaderHotspotHitButton"
+		hit_button.focus_mode = Control.FOCUS_NONE
+		hit_button.flat = true
+		hit_button.tooltip_text = "压饼器：倒入面糊后点击一次，形成标准饼皮"
+		_spreader_hit_host().add_child(hit_button)
+	_spreader_hit_button = hit_button
+	var spreader_rect := spreader.get_global_rect()
+	var hit_host := hit_button.get_parent() as Control
+	if hit_host != null:
+		hit_button.position = hit_host.get_global_transform_with_canvas().affine_inverse() * spreader_rect.position
+		hit_button.size = spreader_rect.size
+	hit_button.z_index = 200
+	hit_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	return hit_button
+
+
+func _spreader_hit_host() -> Control:
+	# FiveAreaInfrastructure is authored after SafeArea, so this overlay lives
+	# above the griddle control that otherwise captures clicks in the tool slot.
+	var infrastructure := get_node_or_null("../../../FiveAreaInfrastructure") as Control
+	return infrastructure if infrastructure != null else self
+
+
 func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName, source_kind: StringName, inventory: Dictionary, progression: RefCounted) -> void:
 	if hotspot == null:
 		return
 	var unlocked := progression != null and bool(progression.call("owns_stock", stock_id))
+	var interactive := unlocked and not _workshop_preview
 	var count := maxi(int(inventory.get(str(stock_id), 0)), 0)
 	if hotspot.has_method("set_filled_slot_count"):
 		hotspot.call("set_filled_slot_count", count)
@@ -143,16 +216,16 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	# an owned, stocked material unable to receive either drag or hold input.
 	# Empty but unlocked materials remain clickable for the hold-to-restock
 	# gesture, while dragging is available only when stock exists.
-	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, unlocked, hint)
-	hotspot.set_drag_available(unlocked and count > 0 and source_kind == &"pancake_shared_ingredient")
-	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if unlocked else Control.CURSOR_FORBIDDEN
+	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, interactive, hint)
+	hotspot.set_drag_available(interactive and count > 0 and source_kind == &"pancake_shared_ingredient")
+	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if interactive else Control.CURSOR_FORBIDDEN
 	if source_kind == &"pancake_shared_sauce":
 		# The visible jar uses a native Button for reliable pointer delivery.
 		# Keep its availability and hover hint in sync with the backing source so
 		# a locked jar no longer looks clickable but silently ignores the gesture.
 		var hit_button := get_node_or_null(NodePath("%sHitButton" % hotspot.name)) as BaseButton
 		if hit_button != null:
-			hit_button.disabled = not unlocked
+			hit_button.disabled = not interactive
 			hit_button.tooltip_text = hint
 			hit_button.mouse_default_cursor_shape = hotspot.mouse_default_cursor_shape
 
@@ -161,14 +234,16 @@ func _refresh_optional_stock_visuals(progression: RefCounted) -> void:
 	for stock_id_variant in STOCK_VISUAL_PATHS:
 		var stock_id := StringName(stock_id_variant)
 		var unlocked := progression != null and bool(progression.call("owns_stock", stock_id))
+		var visible_in_preview := unlocked or _workshop_preview
 		for visual_path_variant in Array(STOCK_VISUAL_PATHS[stock_id_variant]):
 			var visual := get_node_or_null(visual_path_variant) as Control
 			if visual == null:
 				continue
-			visual.visible = unlocked
+			visual.visible = visible_in_preview
+			visual.modulate = Color(1.0, 1.0, 1.0, 0.42) if _workshop_preview and not unlocked else Color.WHITE
 			visual.mouse_behavior_recursive = (
 				Control.MOUSE_BEHAVIOR_INHERITED
-				if unlocked
+				if unlocked and not _workshop_preview
 				else Control.MOUSE_BEHAVIOR_DISABLED
 			)
 
@@ -177,9 +252,21 @@ func _on_spreader_pressed() -> void:
 	var station := _griddle_station()
 	if station == null or not station.has_method("select_worktop_tool"):
 		return
-	var result := Dictionary(station.call("select_worktop_tool", &"tool.pancake.spreader"))
+	var progression: RefCounted = _session.call("progression_service") if _session != null and _session.has_method("progression_service") else null
+	var tool_id := &"tool.pancake.press_once" if progression != null and bool(progression.call("owns_growth", PRESS_SPREADER_GROWTH_ID)) else &"tool.pancake.spreader"
+	var result := Dictionary(station.call("select_worktop_tool", tool_id))
 	if not bool(result.get("success", false)):
-		status_message.emit("当前无法使用摊饼器")
+		status_message.emit("当前无法使用压饼器" if tool_id == &"tool.pancake.press_once" else "当前无法使用摊饼器")
+
+
+func _on_batter_ladle_pressed() -> void:
+	var station := _griddle_station()
+	if station == null or not station.has_method("take_batter_from_ladle"):
+		return
+	var result := Dictionary(station.call("take_batter_from_ladle"))
+	if not bool(result.get("success", false)):
+		status_message.emit("当前鏊面无法添加面糊")
+	_update_batter_ladle_holder_visual()
 
 
 func _on_sauce_hit_button_down(hotspot: ProductDragSource) -> void:
@@ -281,9 +368,44 @@ func _update_spreader_holder_visual() -> void:
 	var spreader_selected := station != null and station.has_method("is_spreader_selected") and bool(station.call("is_spreader_selected"))
 	var progression: RefCounted = _session.call("progression_service") if _session != null and _session.has_method("progression_service") else null
 	var wide_spreader_owned := progression != null and bool(progression.call("owns_growth", WIDE_SPREADER_GROWTH_ID))
-	holder_filled.texture = WIDE_SPREADER_HOLDER_FILLED if wide_spreader_owned else SPREADER_HOLDER_FILLED
-	holder_empty.visible = spreader_selected
-	holder_filled.visible = not spreader_selected
+	var press_spreader_owned := progression != null and bool(progression.call("owns_growth", PRESS_SPREADER_GROWTH_ID))
+	var show_wide_preview := _workshop_preview and not wide_spreader_owned
+	# Once the wide spreader is owned, the workshop uses the same artwork slot
+	# for the press-spreader preview. Keep the runtime holder out of that slot;
+	# the overlay supplies the translucent (locked) or opaque (owned) press.
+	var replace_with_press_preview := _workshop_preview and wide_spreader_owned
+	holder_filled.texture = (
+		PRESS_SPREADER
+		if press_spreader_owned and not _workshop_preview
+		else WIDE_SPREADER_HOLDER_FILLED
+		if wide_spreader_owned or _workshop_preview
+		else SPREADER_HOLDER_FILLED
+	)
+	holder_filled.modulate = Color(1.0, 1.0, 1.0, 0.42) if show_wide_preview else Color.WHITE
+	# The workshop must consistently show the upgrade target instead of the
+	# runtime's temporarily selected/empty holder state.
+	holder_empty.visible = spreader_selected and not _workshop_preview and not press_spreader_owned
+	holder_filled.visible = (not spreader_selected or _workshop_preview or press_spreader_owned) and not replace_with_press_preview
+
+
+func _update_batter_ladle_holder_visual() -> void:
+	var holder := get_node_or_null("BatterLadleHolderHotspot") as TextureButton
+	if holder == null:
+		return
+	var station := _griddle_station()
+	# Keep the authored filled sprite through scene construction. The griddle's
+	# @onready unit list is populated a little later than this worktop artwork.
+	if station == null or not station.is_node_ready():
+		return
+	var batter_available := (
+		station.has_method("can_take_batter_from_ladle")
+		and bool(station.call("can_take_batter_from_ladle"))
+	)
+	holder.texture_normal = BATTER_LADLE_HOLDER_FILLED if batter_available else BATTER_LADLE_HOLDER_EMPTY
+	holder.texture_hover = holder.texture_normal
+	holder.texture_pressed = holder.texture_normal
+	holder.disabled = not batter_available or _workshop_preview
+	holder.tooltip_text = "点击加面糊" if batter_available else "鏊面制作中"
 
 
 func _griddle_station() -> Node:

@@ -74,6 +74,13 @@ func _initialize() -> void:
 	var restored: RefCounted = MODEL.new()
 	restored.call("load_snapshot", automated.call("snapshot"))
 	_check(restored.get("state") == &"ready_to_collect", "fryer snapshot restores without offline time progression")
+
+	var advanced: RefCounted = MODEL.new(1, true)
+	_check(int(advanced.call("capacity")) == 4, "advanced fryer keeps the four-slot basket")
+	advanced.call("load_recipe", &"recipe.youtiao.plain", 1)
+	advanced.call("start")
+	advanced.call("advance_time", 10.0, true)
+	_check(advanced.get("state") == &"draining", "advanced fryer supports automatic basket lifting")
 	_finish()
 
 

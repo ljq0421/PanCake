@@ -12,6 +12,7 @@ $headlessChecks = @(
 	'res://tests/unit/five_area_game_session_store_self_check.gd',
 	'res://tests/unit/five_area_order_service_self_check.gd',
 	'res://tests/unit/five_area_playable_order_self_check.gd',
+	'res://tests/unit/direct_soy_station_dual_outlet_self_check.gd',
 	'res://tests/unit/youtiao_fryer_self_check.gd',
 	'res://tests/integration/five_area_growth_ui_self_check.gd',
 	'res://tests/integration/three_playable_area_order_loop_self_check.gd',

@@ -5,13 +5,20 @@ signal status_message(message: String)
 
 const PLASTIC_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v3_512.png")
 const SUGAR_JAR_TEXTURE := preload("res://assets/jianbing-stall/sugar-jar-for-soy-milk.png")
+const MANUAL_DISPENSER_TEXTURE := preload("res://assets/jianbing-stall/soy-milk-dispenser.png")
+const AUTO_DISPENSER_TEXTURE := preload("res://assets/jianbing-stall/automatic-soy-milk-dispenser-two-outlets-transparent.png")
 const FULL_CUP_SECONDS := 0.8
 const EMPTY_CUP_POSITION := Vector2(20.0, 316.0)
 const DISPENSING_CUP_POSITION := Vector2(105.0, 318.0)
 # Measured on soy-milk-dispenser.png.  This is the lower opening of the tap,
 # not the handle or its mounting point.
 const DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(464.0, 1000.0)
+# The upgraded prop has two visible outlets.  The left one is the active
+# single-cup outlet; the current automatic workflow still serves one cup at a
+# time, so its stream/effect remains deliberately anchored there.
+const AUTO_DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(428.0, 1033.0)
 const SUGAR_JAR_SPOUT := Vector2(345.0, 347.0)
+const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 # The visible jar belongs to this station, while its transparent button keeps
 # a slightly forgiving hit area instead of relying on the pixel edge.
 const SUGAR_JAR_HIT_RECT := Rect2(264.0, 316.0, 146.0, 144.0)
@@ -40,6 +47,7 @@ var lock_cover: Control = null
 var _filling := false
 var _held_seconds := 0.0
 var _fill_guide_enabled := false
+var _auto_fill_enabled := false
 var _workshop_preview := false
 
 
@@ -56,6 +64,7 @@ func _ready() -> void:
 	machine_output.short_clicked.connect(_on_cup_short_clicked)
 	nozzle_button.button_down.connect(_on_nozzle_down)
 	nozzle_button.button_up.connect(_on_nozzle_up)
+	nozzle_button.pressed.connect(_on_nozzle_pressed)
 	sugar_jar.pressed.connect(_on_sugar_jar_pressed)
 	ice_button.pressed.connect(_on_ice_button_pressed)
 	flavor_menu.get_popup().id_pressed.connect(_on_flavor_selected)
@@ -79,10 +88,13 @@ func refresh_from_session() -> void:
 	if session == null:
 		return
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
-	visible = _workshop_preview or Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
+	var area_unlocked := Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
+	visible = _workshop_preview or area_unlocked
+	modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not area_unlocked else Color.WHITE
 	if not visible:
 		return
 	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	var auto_fill_owned := bool(machine.get("auto_fill_enabled", false))
 	if _workshop_preview:
 		machine["available_recipe_ids"] = FLAVOR_RECIPES.duplicate()
 		machine["sugar_enabled"] = true
@@ -97,7 +109,14 @@ func refresh_from_session() -> void:
 	var sugar_enabled := bool(machine.get("sugar_enabled", false))
 	var ice_enabled := bool(machine.get("ice_enabled", false))
 	_fill_guide_enabled = bool(machine.get("fill_guide_enabled", false))
-	dispense_progress.visible = _fill_guide_enabled
+	_auto_fill_enabled = bool(machine.get("auto_fill_enabled", false))
+	soy_milk_dispenser.texture = AUTO_DISPENSER_TEXTURE if _auto_fill_enabled else MANUAL_DISPENSER_TEXTURE
+	# The workshop always previews the automatic dispenser so it can act as the
+	# upgrade target.  Until the player owns that upgrade, keep only this future
+	# machine translucent; the already-unlocked manual dispenser stays opaque.
+	soy_milk_dispenser.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not auto_fill_owned else Color.WHITE
+	dispense_effect.configure_geometry(Rect2(DISPENSING_CUP_POSITION, machine_output.size), _nozzle_outlet_position())
+	dispense_progress.visible = _fill_guide_enabled and not _workshop_preview
 	var selected_recipe_id := StringName(machine.get("recipe_id", &"recipe.fresh_soy_milk.yellow_bean"))
 	_refresh_flavor_menu(Array(machine.get("available_recipe_ids", [selected_recipe_id])), selected_recipe_id, cup_state == &"ready")
 	_filling = _filling and cup_state == &"held_empty"
@@ -114,10 +133,10 @@ func refresh_from_session() -> void:
 		state_label.text = "① 点击取空杯"
 		cup_detail_label.text = "%s · 0 / 1 / 2 份糖" % _recipe_label(selected_recipe_id)
 	elif cup_state == &"held_empty":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, PLASTIC_CUP_TEXTURE, false, "空杯已拿起，请按住出浆口")
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, PLASTIC_CUP_TEXTURE, false, "空杯已拿起，请点击自动出浆口" if _auto_fill_enabled else "空杯已拿起，请按住出浆口")
 		machine_output.position = DISPENSING_CUP_POSITION
-		state_label.text = "② 按住出浆口接豆浆" if not _filling else state_label.text
-		cup_detail_label.text = "松开即出杯；满杯需要 0.8 秒"
+		state_label.text = "② 点击出浆口自动满杯" if _auto_fill_enabled else "② 按住出浆口接豆浆" if not _filling else state_label.text
+		cup_detail_label.text = "自动接满一杯豆浆" if _auto_fill_enabled else "松开即出杯；满杯需要 0.8 秒"
 	else:
 		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, PLASTIC_CUP_TEXTURE, true, "拖到订单商品交付")
 		machine_output.set_drag_available(true)
@@ -133,13 +152,24 @@ func refresh_from_session() -> void:
 	ice_button.visible = ice_enabled
 	ice_button.disabled = not ice_enabled or cup_state != &"filled" or StringName(cup.get("temperature_mode", &"room_temperature")) == &"iced"
 	nozzle_button.disabled = cup_state != &"held_empty"
+	nozzle_button.tooltip_text = "点击自动接满一杯豆浆" if _auto_fill_enabled else "按住出浆口接浆"
 	if _workshop_preview:
+		# The author-positioned dispenser, cup, sugar jar and ice box remain;
+		# operating instructions and progress are intentionally absent.
+		state_label.visible = false
+		cup_detail_label.visible = false
+		sugar_label.visible = false
+		flavor_menu.visible = false
 		nozzle_button.disabled = true
 		machine_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ice_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		flavor_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
+		state_label.visible = true
+		cup_detail_label.visible = true
+		sugar_label.visible = sugar_enabled
+		flavor_menu.visible = true
 		machine_output.mouse_filter = Control.MOUSE_FILTER_STOP
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_STOP
 		ice_button.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -154,17 +184,25 @@ func set_workshop_preview(enabled: bool) -> void:
 func _on_cup_short_clicked(_source_ref: Dictionary) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result: Dictionary = session.call("take_f4_soy_empty_cup") if session != null else {"success": false, "reason": &"no_game_session"}
-	status_message.emit("空杯已拿起，按住豆浆机出浆口接浆" if bool(result.get("success", false)) else "无法取杯：%s" % str(result.get("reason", &"unknown")))
+	var success_message := "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
+	status_message.emit(success_message if bool(result.get("success", false)) else "无法取杯：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
 
 
 func _on_nozzle_down() -> void:
 	if nozzle_button.disabled:
 		return
+	if _auto_fill_enabled:
+		return
 	_filling = true
 	_held_seconds = 0.0
 	dispense_progress.value = 0.0
 	dispense_effect.set_dispense_state(true, 0.0, _liquid_color_for_recipe(_selected_recipe_id()))
+
+
+func _on_nozzle_pressed() -> void:
+	if not nozzle_button.disabled and _auto_fill_enabled:
+		_fill_cup_automatically()
 
 
 func _on_nozzle_up() -> void:
@@ -178,6 +216,16 @@ func _on_nozzle_up() -> void:
 		status_message.emit("满杯黄豆豆浆" if ratio >= 0.999 else "未接满（%d%%），收益和口碑将降低" % roundi(ratio * 100.0))
 	else:
 		status_message.emit("接浆失败：%s" % str(result.get("reason", &"unknown")))
+	refresh_from_session()
+
+
+func _fill_cup_automatically() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var result: Dictionary = session.call("fill_f4_soy_empty_cup", FULL_CUP_SECONDS) if session != null else {"success": false, "reason": &"no_game_session"}
+	if bool(result.get("success", false)):
+		status_message.emit("自动豆浆机已接满一杯")
+	else:
+		status_message.emit("自动接浆失败：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
 
 
@@ -249,12 +297,12 @@ static func _liquid_color_for_recipe(recipe_id: StringName) -> Color:
 
 
 func _nozzle_outlet_position() -> Vector2:
-	# The dispenser uses KEEP_ASPECT_COVERED, which crops its square source in
-	# this non-square slot.  Resolve that crop before converting the verified
-	# source-pixel outlet into station coordinates.
+	# The dispenser uses KEEP_ASPECT_COVERED. Resolve any source-image crop
+	# before converting its verified source-pixel outlet into station coordinates.
 	var texture_size := soy_milk_dispenser.texture.get_size()
 	var display_size := soy_milk_dispenser.size
 	var scale := maxf(display_size.x / texture_size.x, display_size.y / texture_size.y)
 	var drawn_size := texture_size * scale
 	var crop_offset := (display_size - drawn_size) * 0.5
-	return soy_milk_dispenser.position + crop_offset + DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION * scale
+	var outlet := AUTO_DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION if _auto_fill_enabled else DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION
+	return soy_milk_dispenser.position + crop_offset + outlet * scale

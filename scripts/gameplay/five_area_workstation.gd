@@ -241,6 +241,14 @@ func _refresh_formal_area_visibility() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	if session == null or not session.has_method("five_area_progression_snapshot"):
 		return
+	# Purchasing an area broadcasts a progression update immediately, while the
+	# purchase itself remains pending until the next business day.  Keep both
+	# station previews visible during the workshop so that update cannot remove
+	# the just-reserved soy machine from under its purchase status.
+	if _upgrade_workshop != null and _upgrade_workshop.visible:
+		fresh_soy_station.set_workshop_preview(true)
+		cartoon_youtiao_fryer.set_workshop_preview(true)
+		return
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
 	_set_formal_area_visible(cartoon_youtiao_fryer, _id_in(unlocked_areas, &"area.youtiao"))
@@ -308,7 +316,7 @@ func _ingredient_available_for_drag(ingredient_type: StringName) -> bool:
 		var session := get_node_or_null("/root/GameSession")
 		if session == null:
 			return false
-		return StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot" and bool(Dictionary(session.call("preview_take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")))).get("success", false))
+		return StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot" and bool(Dictionary(session.call("preview_take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")), int(_pending_youtiao_ingredient_source_ref.get("source_index", 0)))).get("success", false))
 	return super._ingredient_available_for_drag(ingredient_type)
 
 
@@ -317,7 +325,7 @@ func _consume_dragged_ingredient(ingredient_type: StringName) -> bool:
 		var session := get_node_or_null("/root/GameSession")
 		if session == null:
 			return false
-		return StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot" and bool(Dictionary(session.call("take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")))).get("success", false))
+		return StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot" and bool(Dictionary(session.call("take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")), int(_pending_youtiao_ingredient_source_ref.get("source_index", 0)))).get("success", false))
 	return super._consume_dragged_ingredient(ingredient_type)
 
 

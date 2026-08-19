@@ -158,6 +158,21 @@ func _on_main_action(unit_index: int) -> void:
 	status_message.emit(str(result.get("message", "继续操作鏊子")))
 
 
+func can_take_batter_from_ladle() -> bool:
+	if units.is_empty():
+		return false
+	var unit := _unit(_active_index)
+	return unit != null and unit.state == UNIT_SCRIPT.State.IDLE
+
+
+func take_batter_from_ladle() -> Dictionary:
+	if not can_take_batter_from_ladle():
+		status_message.emit("鏊面制作中，暂时不能再加面糊")
+		return {"success": false, "reason": &"griddle_busy"}
+	_on_main_action(_active_index)
+	return {"success": true, "unit_index": _active_index}
+
+
 func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionary:
 	var unit := _unit(unit_index)
 	if unit == null:
@@ -239,7 +254,7 @@ func can_drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: V
 	if StringName(source_ref.get("product_id", &"")) != &"product.youtiao.plain":
 		return false
 	if source_kind == &"prepared_product_slot":
-		return _session != null and _session.has_method("preview_take_prepared_product") and bool(Dictionary(_session.call("preview_take_prepared_product", StringName(source_ref.get("source_slot_id", &"")))).get("success", false))
+		return _session != null and _session.has_method("preview_take_prepared_product") and bool(Dictionary(_session.call("preview_take_prepared_product", StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))).get("success", false))
 	return false
 
 
@@ -253,7 +268,7 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	var consumed: Dictionary
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	if source_kind == &"prepared_product_slot":
-		consumed = Dictionary(_session.call("take_prepared_product", StringName(source_ref.get("source_slot_id", &""))))
+		consumed = Dictionary(_session.call("take_prepared_product", StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0))))
 	else:
 		consumed = _consume_inventory_stock(StringName(validation.get("stock_id", &"")))
 	if not bool(consumed.get("success", false)):
@@ -298,6 +313,24 @@ func _on_shared_tool_selected(tool_id: StringName) -> void:
 
 
 func select_worktop_tool(tool_id: StringName) -> Dictionary:
+	if tool_id == &"tool.pancake.press_once":
+		if _session == null or not _session.has_method("progression_service"):
+			return {"success": false, "reason": &"no_session"}
+		var progression: RefCounted = _session.call("progression_service")
+		if progression == null or not bool(progression.call("owns_growth", &"growth.automation.pancake.press_once")):
+			status_message.emit("压饼器尚未解锁")
+			return {"success": false, "reason": &"tool_locked"}
+		var press_unit := _unit(_active_index)
+		if press_unit == null:
+			return {"success": false, "reason": &"griddle_locked"}
+		var press_result := Dictionary(press_unit.call("use_press_spreader"))
+		clear_held_tool()
+		_sync_snapshot_to_session()
+		if bool(press_result.get("success", false)):
+			status_message.emit("压饼器已压平饼皮，进入第一面煎制")
+		else:
+			status_message.emit(str(press_result.get("message", "倒入面糊后、进入煎制前才能使用压饼器")))
+		return press_result
 	if tool_id == &"tool.pancake.spreader":
 		clear_held_tool()
 		_set_selected_tool(tool_id)

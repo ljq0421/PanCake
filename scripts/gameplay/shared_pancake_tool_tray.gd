@@ -7,6 +7,7 @@ signal status_message(message: String)
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png")
 const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
+const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png")
 const LOCK_TEXTURE := preload("res://resources/art/workstation/material_slots/individual/slot_05_locked_v1_five_area_v2.png")
 const WORKTOP_SLOT_NAMES := [
 	&"WorktopSlot04", &"WorktopSlot05", &"WorktopSlot06", &"WorktopSlot07",
@@ -31,6 +32,7 @@ var _session: Node
 var _stock_slots: Array[FiveAreaMaterialSlot] = []
 var _slot_by_stock := {}
 var _spreader_button: TextureButton
+var _press_spreader_button: TextureButton
 var _selected_tool: StringName = &""
 var _refresh_elapsed := 0.0
 
@@ -73,6 +75,9 @@ func refresh_from_session() -> void:
 	var wide := progression != null and bool(progression.call("owns_growth", &"growth.tool.pancake.wide_spreader"))
 	_spreader_button.texture_normal = SPREADER_WIDE if wide else SPREADER_NORMAL
 	_spreader_button.tooltip_text = "宽幅摊饼器：落点更宽" if wide else "T形摊饼器：点选后在任意已解锁鏊面画圈"
+	var press_unlocked := progression != null and bool(progression.call("owns_growth", &"growth.automation.pancake.press_once"))
+	_press_spreader_button.visible = press_unlocked
+	_press_spreader_button.disabled = not press_unlocked
 	_refresh_selection_visuals()
 
 
@@ -104,6 +109,20 @@ func _build_tray() -> void:
 	)
 	_add_caption(_spreader_button, "摊饼器")
 	worktop_slots[1].add_child(_spreader_button)
+	_press_spreader_button = TextureButton.new()
+	_press_spreader_button.name = "PressSpreaderButton"
+	_press_spreader_button.position = Vector2(88.0, -6.0)
+	_press_spreader_button.size = Vector2(76.0, 76.0)
+	_press_spreader_button.z_index = 5
+	_press_spreader_button.ignore_texture_size = true
+	_press_spreader_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	_press_spreader_button.texture_normal = PRESS_SPREADER
+	_press_spreader_button.tooltip_text = "压饼器：倒入面糊后点击一次，形成标准饼皮并进入煎制"
+	_press_spreader_button.visible = false
+	_press_spreader_button.pressed.connect(func() -> void:
+		tool_selected.emit(&"tool.pancake.press_once")
+	)
+	_spreader_button.add_child(_press_spreader_button)
 	for index in range(1, SLOT_DEFINITIONS.size()):
 		_add_stock_slot(worktop_slots[index + 1], SLOT_DEFINITIONS[index])
 

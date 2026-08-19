@@ -39,7 +39,7 @@ func _run() -> void:
 		"current_day": 4,
 		"unlocked_area_ids": [&"area.pancake"],
 		"area_mastery_details": {&"area.pancake": {"qualified": 6, "a_grade": 4}},
-		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+		"tutorial": {"completed_area_ids": [], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
 	})
 	var early_cards: Array = Array(early.growth_recommendations(4).get("recommended", []))
 	_check(_growth_ids(early_cards) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.add_on.pancake.ham_sausage", &"growth.area.youtiao"], "early route leads from pancake improvements into youtiao")
@@ -58,7 +58,7 @@ func _run() -> void:
 	var wide_tutorial := wide_only.tutorial_snapshot()
 	_check(wide_only.owns_growth(&"growth.tool.pancake.wide_spreader") and StringName(wide_tutorial.get("active_id", &"")).is_empty() and PackedStringArray(wide_tutorial.get("queue_area_ids", [])).is_empty() and PackedStringArray(wide_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(wide_tutorial.get("queue_device_ids", [])).is_empty(), "wide spreader activation never creates a tutorial and legacy device tutorial fields remain empty")
 	var youtiao_purchase := Dictionary(early.purchase(&"growth.area.youtiao"))
-	_check(bool(youtiao_purchase.get("success", false)) and early.pending_install_purchase == &"growth.area.youtiao", "qualified pancake play can reserve youtiao unlock")
+	_check(bool(youtiao_purchase.get("success", false)) and early.pending_install_purchase == &"growth.area.youtiao", "qualified pancake play can reserve the 30-coin youtiao unlock without completing teaching")
 	early.set_day_open(false)
 	var youtiao_activation := Dictionary(early.begin_next_business_day())
 	_check(bool(youtiao_activation.get("success", false)) and early.owns_area(&"area.youtiao"), "youtiao unlock activates next business day")
@@ -73,9 +73,9 @@ func _run() -> void:
 		"unlocked_area_ids": [&"area.pancake", &"area.youtiao"],
 		"device_tiers": {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0},
 		"area_mastery_details": {&"area.youtiao": {"qualified": 4, "a_grade": 0}},
-		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.youtiao"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+		"tutorial": {"completed_area_ids": [], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
 	})
-	_check(bool(soy_gate.purchase(&"growth.area.fresh_soy_milk").get("success", false)), "soy unlock follows four qualified youtiao orders")
+	_check(bool(soy_gate.purchase(&"growth.area.fresh_soy_milk").get("success", false)), "four qualified youtiao orders can reserve the 60-coin soy unlock without completing teaching")
 	soy_gate.set_day_open(false)
 	soy_gate.begin_next_business_day()
 	soy_gate.advance_tutorial_for_new_business_day()

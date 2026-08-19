@@ -1,0 +1,552 @@
+[gd_scene format=3 uid="uid://bykh0r1vfsv8t"]
+
+[ext_resource type="Script" uid="uid://cnpgrfexl1hdy" path="res://scripts/ui/upgrade_workshop_overlay.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://b7hh75ge4rl1u" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png" id="2_press_spreader"]
+
+[node name="UpgradeWorkshopOverlay" type="Control" unique_id=73984800]
+z_index = 1100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Shade" type="ColorRect" parent="." unique_id=786317994]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03, 0.05, 0.08, 0.16)
+
+[node name="QueueLabel" type="Label" parent="." unique_id=1984833927]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 540.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(1, 0.952941, 0.780392, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="DetailPanel" type="Panel" parent="." unique_id=469032986]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 26.0
+offset_top = 703.0
+offset_right = 386.0
+offset_bottom = 1068.0
+
+[node name="DetailText" type="RichTextLabel" parent="DetailPanel" unique_id=107276871]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 14.0
+offset_top = 12.0
+offset_right = 346.0
+offset_bottom = 254.0
+bbcode_enabled = true
+
+[node name="BuyButton" type="Button" parent="DetailPanel" unique_id=1877647080]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 14.0
+offset_top = 270.0
+offset_right = 346.0
+offset_bottom = 308.0
+
+[node name="NextDayButton" type="Button" parent="DetailPanel" unique_id=1729491656]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 14.0
+offset_top = 314.0
+offset_right = 224.0
+offset_bottom = 350.0
+text = "确认预订，开始下一天"
+
+[node name="BackButton" type="Button" parent="DetailPanel" unique_id=1066707137]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 230.0
+offset_top = 314.0
+offset_right = 346.0
+offset_bottom = 350.0
+text = "返回账单"
+
+[node name="HoverHint" type="PanelContainer" parent="." unique_id=309771395]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+custom_minimum_size = Vector2(310, 128)
+layout_mode = 0
+offset_right = 310.0
+offset_bottom = 128.0
+mouse_filter = 2
+
+[node name="HintLabel" type="Label" parent="HoverHint" unique_id=1558537490]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+autowrap_mode = 2
+
+[node name="UpgradeProps" type="Control" parent="." unique_id=330733207]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PressSpreaderPreview" type="TextureRect" parent="UpgradeProps" unique_id=554992908]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 0
+offset_left = 1146.0
+offset_top = 945.0
+offset_right = 1258.0
+offset_bottom = 1061.0
+mouse_filter = 2
+texture = ExtResource("2_press_spreader")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WorkshopProp_growth_tool_pancake_wide_spreader" type="Button" parent="UpgradeProps" unique_id=299481946]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.tool.pancake.wide_spreader"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_tool_pancake_wide_spreader" unique_id=123582371]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_red_chili" type="Button" parent="UpgradeProps" unique_id=1155675195]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.red_chili"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_red_chili" unique_id=58333178]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_ham_sausage" type="Button" parent="UpgradeProps" unique_id=361921089]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.ham_sausage"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_ham_sausage" unique_id=362305681]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_coriander" type="Button" parent="UpgradeProps" unique_id=1073138523]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.coriander"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_coriander" unique_id=1821746444]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_meat_floss" type="Button" parent="UpgradeProps" unique_id=885670596]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.meat_floss"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_meat_floss" unique_id=682706816]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_tomato" type="Button" parent="UpgradeProps" unique_id=1493020166]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.tomato"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_tomato" unique_id=1301591704]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_press_once" type="Button" parent="UpgradeProps" unique_id=1673754009]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.press_once"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_press_once" unique_id=2134933108]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_auto_sauce_brush" type="Button" parent="UpgradeProps" unique_id=1387020756]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.auto_sauce_brush"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_auto_sauce_brush" unique_id=911653424]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_area_youtiao" type="Button" parent="UpgradeProps" unique_id=1458882523]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.area.youtiao"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_youtiao" unique_id=649853762]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_flavor_youtiao_sesame" type="Button" parent="UpgradeProps" unique_id=306160546]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.flavor.youtiao.sesame"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_youtiao_sesame" unique_id=681523927]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_flavor_youtiao_sugar" type="Button" parent="UpgradeProps" unique_id=431879458]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.flavor.youtiao.sugar"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_youtiao_sugar" unique_id=76448878]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_assist_youtiao_temperature_indicator" type="Button" parent="UpgradeProps" unique_id=1098466780]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.assist.youtiao.temperature_indicator"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_assist_youtiao_temperature_indicator" unique_id=1762195128]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_equipment_youtiao_advanced" type="Button" parent="UpgradeProps" unique_id=1304254307]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.equipment.youtiao.advanced"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_equipment_youtiao_advanced" unique_id=1311344186]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_area_fresh_soy_milk" type="Button" parent="UpgradeProps" unique_id=156752281]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.area.fresh_soy_milk"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_fresh_soy_milk" unique_id=452249764]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_assist_fresh_soy_milk_sugar" type="Button" parent="UpgradeProps" unique_id=1912690860]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.assist.fresh_soy_milk.sugar"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_assist_fresh_soy_milk_sugar" unique_id=911204717]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_flavor_fresh_soy_milk_black_bean" type="Button" parent="UpgradeProps" unique_id=1515300774]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.flavor.fresh_soy_milk.black_bean"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_fresh_soy_milk_black_bean" unique_id=2120774105]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_assist_fresh_soy_milk_ice" type="Button" parent="UpgradeProps" unique_id=186146404]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.assist.fresh_soy_milk.ice"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_assist_fresh_soy_milk_ice" unique_id=1432071178]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_flavor_fresh_soy_milk_red_bean" type="Button" parent="UpgradeProps" unique_id=1759833380]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.flavor.fresh_soy_milk.red_bean"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_fresh_soy_milk_red_bean" unique_id=831215024]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" type="Button" parent="UpgradeProps" unique_id=425460390]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.fresh_soy_milk.auto_fill"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" unique_id=457926876]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2

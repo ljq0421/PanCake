@@ -8,21 +8,27 @@ signal status_message(message: String)
 const DEVICE_ID := &"device.youtiao_fryer"
 const RECIPE_ID := &"recipe.youtiao.plain"
 const PRODUCT_ID := &"product.youtiao.plain"
+const SESAME_PRODUCT_ID := &"product.youtiao.sesame"
 const DOUGH_STOCK_ID := &"stock.youtiao.plain_dough"
 const BOARD_HOLD_THRESHOLD_SECONDS := 0.20
 const BOARD_DRAG_THRESHOLD_PIXELS := 10.0
 const BOARD_VISUAL_CAPACITY := 4
 const PLATE_VISUAL_CAPACITY := 4
+const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 
 @export var lowered_machine_texture: Texture2D
 @export var raised_machine_texture: Texture2D
+@export var advanced_lowered_machine_texture: Texture2D
+@export var advanced_raised_machine_texture: Texture2D
 @export var raw_youtiao_texture: Texture2D
 @export var golden_youtiao_texture: Texture2D
 @export var plate_youtiao_texture: Texture2D
+@export var black_sesame_youtiao_texture: Texture2D
 @export var burnt_youtiao_texture: Texture2D
 @export var reduce_motion := false
 
 @onready var fryer_visual: TextureRect = %FryerVisual
+@onready var black_sesame_tray: TextureRect = %BlackSesameTray
 @onready var dough_visuals: Array[TextureRect] = [%DoughVisual1]
 @onready var product_visuals: Array[TextureRect] = [%ProductVisual1, %ProductVisual2]
 @onready var plate_product_visuals: Array[TextureRect] = [%PlateProductVisual1, %PlateProductVisual2]
@@ -46,6 +52,7 @@ var lock_cover: Button
 var _machine: Dictionary = {}
 var _dough_stock := 0
 var _plate_count := 0
+var _plate_products: Array[Dictionary] = []
 var _refresh_elapsed := 0.0
 var _drag_kind := &""
 var _drag_item_index := -1
@@ -55,9 +62,9 @@ var _board_hold_elapsed := 0.0
 var _board_press_position := Vector2.ZERO
 var _board_dough_index := -1
 var _seasoned_product_id: StringName = &""
-var _sesame_button: Button
 var _sugar_button: Button
 var _workshop_preview := false
+var _workshop_advanced_preview := false
 
 
 func _ready() -> void:
@@ -113,12 +120,12 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		return true
-	return (
+	var can_store_finished_youtiao := (
 		StringName(source_ref.get("source_kind", &"")) == &"youtiao_fryer_slot"
 		and StringName(_machine.get("state", &"")) == &"ready_to_collect"
 		and _plate_count < PLATE_VISUAL_CAPACITY
-		and _is_plate_point(_at_position)
 	)
+	return can_store_finished_youtiao and (_is_plate_point(_at_position) or _is_black_sesame_tray_point(_at_position))
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
@@ -126,8 +133,13 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		_load_dough(StringName(source_ref.get("recipe_id", RECIPE_ID)))
 		return
-	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_fryer_slot" and _is_plate_point(_at_position):
-		_store_fryer_slot_on_plate(int(source_ref.get("source_index", -1)))
+	if StringName(source_ref.get("source_kind", &"")) != &"youtiao_fryer_slot":
+		return
+	var source_index := int(source_ref.get("source_index", -1))
+	if _is_black_sesame_tray_point(_at_position):
+		_store_fryer_slot_on_plate(source_index, SESAME_PRODUCT_ID)
+	elif _is_plate_point(_at_position):
+		_store_fryer_slot_on_plate(source_index)
 
 
 func select_recipe(_recipe_id: StringName) -> void:
@@ -142,19 +154,29 @@ func refresh_from_session() -> void:
 	if _workshop_preview:
 		visible = true
 		_machine["state"] = &"idle"
-		_machine["capacity"] = 8
+		_machine["capacity"] = 4
 		_machine["quantity"] = 0
 	var progression := Dictionary(session.call("five_area_progression_snapshot")) if session.has_method("five_area_progression_snapshot") else {}
+	var area_unlocked := Array(progression.get("unlocked_area_ids", [])).has("area.youtiao")
+	_workshop_advanced_preview = _workshop_preview and area_unlocked
+	modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not area_unlocked else Color.WHITE
 	var unlocked_products := Array(progression.get("unlocked_product_ids", []))
-	_sesame_button.visible = unlocked_products.has("product.youtiao.sesame")
+	var sesame_unlocked := unlocked_products.has(SESAME_PRODUCT_ID)
 	_sugar_button.visible = unlocked_products.has("product.youtiao.sugar")
+	# The physical sesame tray arrives with the existing sesame-oil-stick
+	# upgrade, so it shares that upgrade's unlock queue entry.  In the workshop
+	# it remains visible as a preview, but must not look installed before that
+	# entry has activated.
+	black_sesame_tray.visible = sesame_unlocked or _workshop_preview
+	# The whole fryer is already translucent while its area is locked. Avoid
+	# multiplying that alpha; once the fryer is unlocked, only the still-locked
+	# sesame tray receives the same workshop-preview treatment.
+	black_sesame_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and not sesame_unlocked else Color.WHITE
 	if _workshop_preview:
-		_sesame_button.visible = true
 		_sugar_button.visible = true
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		mouse_filter = Control.MOUSE_FILTER_STOP
-	if not _sesame_button.visible and _seasoned_product_id == &"product.youtiao.sesame": _seasoned_product_id = &""
 	if not _sugar_button.visible and _seasoned_product_id == &"product.youtiao.sugar": _seasoned_product_id = &""
 	var inventory := Dictionary(session.call("inventory_snapshot")) if session.has_method("inventory_snapshot") else {}
 	_dough_stock = maxi(int(inventory.get(str(DOUGH_STOCK_ID), 0)), 0)
@@ -267,11 +289,12 @@ func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
 	refresh_from_session()
 
 
-func _store_fryer_slot_on_plate(source_index: int) -> void:
+func _store_fryer_slot_on_plate(source_index: int, seasoned_product_id: StringName = &"") -> void:
 	var session := get_node_or_null("/root/GameSession")
-	var result := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index, _seasoned_product_id)) if session != null else {"success": false, "reason": &"no_game_session"}
+	var final_product_id := seasoned_product_id if not seasoned_product_id.is_empty() else _seasoned_product_id
+	var result := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index, final_product_id)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		status_message.emit("油条已放入成品盘" if _seasoned_product_id.is_empty() else "油条已完成调味并放入成品盘")
+		status_message.emit("芝麻油条已放入成品盘" if final_product_id == SESAME_PRODUCT_ID else "油条已放入成品盘" if final_product_id.is_empty() else "油条已完成调味并放入成品盘")
 		_seasoned_product_id = &""
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
@@ -297,7 +320,11 @@ func _apply_snapshot() -> void:
 	var cooking := state in [&"loaded", &"frying"]
 	var finished_texture := burnt_youtiao_texture if state == &"burnt" else golden_youtiao_texture
 	var basket_slots := lowered_basket_slots if state == &"frying" else raised_basket_slots
-	fryer_visual.texture = lowered_machine_texture if state == &"frying" else raised_machine_texture
+	var use_advanced_art := int(_machine.get("tier", 0)) >= 1 or _workshop_advanced_preview
+	if use_advanced_art and advanced_lowered_machine_texture != null and advanced_raised_machine_texture != null:
+		fryer_visual.texture = advanced_lowered_machine_texture if state == &"frying" else advanced_raised_machine_texture
+	else:
+		fryer_visual.texture = lowered_machine_texture if state == &"frying" else raised_machine_texture
 	for index in range(product_visuals.size()):
 		var visible := index < capacity and occupied.has(index)
 		var visual := product_visuals[index]
@@ -317,10 +344,20 @@ func _apply_snapshot() -> void:
 		var visual := plate_product_visuals[index]
 		var slot := plate_product_slots[index]
 		visual.visible = index < _plate_count
-		visual.texture = _plate_youtiao_texture()
+		visual.texture = _prepared_youtiao_texture(StringName(_plate_products[index].get("product_id", PRODUCT_ID))) if index < _plate_products.size() else _plate_youtiao_texture()
 		visual.position = slot.position
 		visual.size = slot.size
+	status_label.visible = not _workshop_preview
 	status_label.text = "%s · %d/%d" % [_state_text(state), int(_machine.get("quantity", 0)), int(_machine.get("capacity", 0))]
+	if _workshop_preview:
+		# A workshop is a layout preview, not a frozen production snapshot.
+		# Never leak current stock, prepared goods, or runtime controls into it.
+		for visual in dough_visuals + product_visuals + plate_product_visuals:
+			visual.visible = false
+		for control in output_sources + plate_sources:
+			control.visible = false
+		if prepared_slot != null: prepared_slot.visible = false
+		if waste_target != null: waste_target.visible = false
 	_refresh_output_source(state, occupied)
 	_refresh_plate_sources()
 
@@ -344,11 +381,18 @@ func _refresh_output_source(state: StringName, occupied: Array[int]) -> void:
 		output.visible = ready_slot or burnt_batch_source
 
 
+func _is_black_sesame_tray_point(point: Vector2) -> bool:
+	return black_sesame_tray.visible and black_sesame_tray.get_rect().has_point(point)
+
+
 func _refresh_prepared_slot(session: Node) -> void:
 	if prepared_slot == null:
 		return
 	var status := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
-	_plate_count = clampi(int(status.get("count", 0)), 0, PLATE_VISUAL_CAPACITY)
+	_plate_products.clear()
+	for product_value in Array(status.get("products", [])):
+		_plate_products.append(Dictionary(product_value).duplicate(true))
+	_plate_count = clampi(_plate_products.size(), 0, PLATE_VISUAL_CAPACITY)
 	prepared_slot.configure_count(int(status.get("count", 0)), StringName(status.get("reason", &"")) != &"recipe_locked", int(status.get("capacity", 4)))
 
 
@@ -356,6 +400,7 @@ func _refresh_plate_sources() -> void:
 	for source_index in range(plate_sources.size()):
 		var source := plate_sources[source_index]
 		var visible := source_index < _plate_count
+		var product_id := StringName(_plate_products[source_index].get("product_id", PRODUCT_ID)) if visible and source_index < _plate_products.size() else PRODUCT_ID
 		source.position = plate_product_visuals[source_index].position
 		source.size = plate_product_visuals[source_index].size
 		source.self_modulate = Color(1.0, 1.0, 1.0, 0.0)
@@ -363,15 +408,14 @@ func _refresh_plate_sources() -> void:
 			"source_kind": &"prepared_product_slot",
 			"source_slot_id": &"slot.04",
 			"source_index": source_index,
-			"product_id": PRODUCT_ID,
+			"product_id": product_id,
 			"discardable": true,
-		}, _plate_youtiao_texture(), visible, "拖这一根油条到煎饼或出餐位")
+		}, _prepared_youtiao_texture(product_id), visible, "拖这一根%s到出餐位" % ("芝麻油条" if product_id == SESAME_PRODUCT_ID else "油条"))
 		source.visible = visible
 
 
-func _select_sesame_seasoning() -> void:
-	_seasoned_product_id = &"product.youtiao.sesame"
-	status_message.emit("下一根出锅油条将裹芝麻")
+func _prepared_youtiao_texture(product_id: StringName) -> Texture2D:
+	return black_sesame_youtiao_texture if product_id == SESAME_PRODUCT_ID else _plate_youtiao_texture()
 
 
 func _select_sugar_seasoning() -> void:
@@ -385,15 +429,9 @@ func set_workshop_preview(enabled: bool) -> void:
 
 
 func _create_runtime_controls() -> void:
-	_sesame_button = Button.new()
-	_sesame_button.text = "芝麻调味"
-	_sesame_button.position = Vector2(10.0, 650.0)
-	_sesame_button.size = Vector2(112.0, 38.0)
-	_sesame_button.pressed.connect(_select_sesame_seasoning)
-	add_child(_sesame_button)
 	_sugar_button = Button.new()
 	_sugar_button.text = "白糖调味"
-	_sugar_button.position = Vector2(130.0, 650.0)
+	_sugar_button.position = Vector2(10.0, 650.0)
 	_sugar_button.size = Vector2(112.0, 38.0)
 	_sugar_button.pressed.connect(_select_sugar_seasoning)
 	add_child(_sugar_button)

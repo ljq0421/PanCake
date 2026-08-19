@@ -6,12 +6,13 @@ const PRODUCTION_SERVICE := preload("res://scripts/services/five_area_production
 class FakeProgression:
 	extends RefCounted
 	var stock_capacity := 6
+	var owned_growth_ids := PackedStringArray()
 
 	func owns_stock(_stock_id: StringName) -> bool:
 		return true
 
-	func owns_growth(_growth_id: StringName) -> bool:
-		return false
+	func owns_growth(growth_id: StringName) -> bool:
+		return owned_growth_ids.has(str(growth_id))
 
 
 class FakeSession:
@@ -50,7 +51,9 @@ func _run() -> void:
 	root.add_child(station)
 	await process_frame
 	station.bind_session(session)
+	var shared_tool_tray := station.get_node("SharedToolTray") as SharedPancakeToolTray
 	_check(station.units.size() == 1, "single-stall scene authors exactly one griddle unit")
+	_check(not shared_tool_tray._press_spreader_button.visible, "the press icon stays hidden before its upgrade activates")
 	_check(station.get_node_or_null("Griddle01") != null and station.get_node_or_null("Griddle02") == null and station.get_node_or_null("Griddle03") == null, "secondary griddle nodes are absent")
 	station.set_griddle_count(3)
 	_check(station.griddle_count() == 1, "legacy count requests cannot expand the single stall")
@@ -59,6 +62,15 @@ func _run() -> void:
 	station.call("_on_main_action", 0)
 	_check(int(session.inventory["stock.pancake.batter"]) == 0 and unit.state == CompactGriddleUnit.State.BATTER, "the visible griddle starts with unlimited batter and does not consume inventory")
 	_check(unit.pancake_surface.visible and unit.pancake_surface._has_point(unit.pancake_surface.size * 0.5), "the single griddle keeps its elliptical interactive pancake surface")
+	var locked_press := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
+	_check(not bool(locked_press.get("success", false)) and StringName(locked_press.get("reason", &"")) == &"tool_locked", "the press tool stays unavailable before its growth unlock")
+	session.progression.owned_growth_ids.append("growth.automation.pancake.press_once")
+	shared_tool_tray.refresh_from_session()
+	_check(shared_tool_tray._press_spreader_button.visible, "the press icon appears in the shared workstation tray after activation")
+	var press_result := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
+	_check(bool(press_result.get("success", false)) and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "the unlocked press tool converts batter into a ready first-side pancake")
+	unit.reset_unit()
+	station.call("_on_main_action", 0)
 	var legacy_slot := Dictionary(unit.snapshot())
 	var legacy_snapshot := {"version": 1, "griddle_count": 3, "active_index": 2, "product_sequence": 7, "slots": [legacy_slot, {}, {}]}
 	unit.reset_unit()

@@ -14,9 +14,11 @@ extends TextureRect
 @export var contents_visual_path: NodePath
 
 var _session: Node
+var _base_texture: Texture2D
 
 
 func _ready() -> void:
+	_base_texture = texture
 	call_deferred("_bind_session")
 
 
@@ -63,6 +65,13 @@ func _refresh_from_session() -> void:
 func _state_texture_for_quantity(quantity: int) -> Texture2D:
 	if state_textures.is_empty():
 		return null
+	# A full quantity-indexed container set has one texture for each stocked
+	# amount (1..full_quantity), while the scene's original texture is kept for
+	# the empty state.
+	if state_textures.size() == full_quantity:
+		if quantity <= 0:
+			return _base_texture
+		return state_textures[clampi(quantity, 1, state_textures.size()) - 1]
 	if quantity <= 0:
 		return state_textures[0]
 	var full_index := state_textures.size() - 1

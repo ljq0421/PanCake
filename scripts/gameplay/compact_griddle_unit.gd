@@ -177,6 +177,22 @@ func begin_order(value: Dictionary) -> void:
 	_refresh_ui()
 
 
+func use_press_spreader() -> Dictionary:
+	if state != State.BATTER:
+		return {"success": false, "reason": &"wrong_stage", "message": "倒入面糊后、进入煎制前才能使用压饼器"}
+	var pressed := Dictionary(pancake_model.apply_standard_press_spread())
+	if not bool(pressed.get("success", false)):
+		return {"success": false, "reason": &"no_batter", "message": "当前没有可压平的面糊"}
+	var confirmed := Dictionary(p1_session.confirm_spread(pancake_model))
+	if not bool(confirmed.get("success", false)):
+		return {"success": false, "reason": &"press_incomplete", "message": "压饼未能形成可煎制的完整饼皮"}
+	state = State.FIRST_SIDE
+	if is_node_ready():
+		pancake_surface.force_texture_upload()
+		_refresh_ui()
+	return {"success": true, "coverage_ratio": float(pressed.get("coverage_ratio", 0.0))}
+
+
 func advance_main() -> Dictionary:
 	match state:
 		State.BATTER:
@@ -956,14 +972,15 @@ func _refresh_ui() -> void:
 		main_action.visible = false
 		heat_bar.value = 0.0
 		return
-	main_action.visible = state in [State.IDLE, State.FIRST_SIDE]
+	# Batter is now added by the ladle holder on the main worktop. This button
+	# remains only for the later flip action.
+	main_action.visible = state == State.FIRST_SIDE
 	var active := state != State.IDLE
 	pancake_surface.visible = active and state != State.READY
 	package_visual.visible = state == State.READY
 	match state:
 		State.IDLE:
-			state_label.text = "空闲 · 点击添面糊"
-			main_action.text = "添面糊"
+			state_label.text = "空闲 · 点击面糊勺加面糊"
 		State.BATTER:
 			state_label.text = "按住鏊面画圈摊开"
 			main_action.text = "手动摊面中"

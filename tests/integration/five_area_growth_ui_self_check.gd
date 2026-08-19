@@ -82,6 +82,24 @@ func _run() -> void:
 	], "mid-route window unlocks soy, then fill guidance and its first flavour button")
 	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled and soy_tickets[2].disabled, "soy serving upgrades wait until the soy area is actually installed")
 	_check(_all_active_text(soy_tickets), "soy growth window contains only active three-area content")
+	soy_station.call("_open_upgrade_workshop")
+	await process_frame
+	var workshop := soy_station.get_node_or_null("SafeArea/UpgradeWorkshopOverlay") as UpgradeWorkshopOverlay
+	var soy_purchase_target := workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_area_fresh_soy_milk") as Button if workshop != null else null
+	_check(soy_purchase_target != null and soy_purchase_target.visible, "workshop exposes a visible soy-machine purchase target")
+	_check(soy_purchase_target != null and (soy_purchase_target.get_node_or_null("ConditionTag") as Label).text.begins_with("豆浆机"), "soy-machine purchase target has an explicit label")
+	if soy_purchase_target != null:
+		soy_purchase_target.emit_signal("pressed")
+		await process_frame
+		var buy_button := workshop.get_node_or_null("DetailPanel/BuyButton") as Button
+		_check(buy_button != null and not buy_button.disabled, "soy-machine detail enables reservation when its conditions are met")
+		if buy_button != null and not buy_button.disabled:
+			buy_button.emit_signal("pressed")
+			await process_frame
+			soy_station.call("_refresh_formal_area_visibility")
+			await process_frame
+			var soy_preview := soy_station.get_node_or_null("FiveAreaInfrastructure/Stations/FreshSoyMilkStation") as Control
+			_check(soy_preview != null and soy_preview.visible and is_equal_approx(soy_preview.modulate.a, 0.42), "reserved soy machine remains a translucent workshop preview until next day")
 	soy_station.queue_free()
 	_finish()
 

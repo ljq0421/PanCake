@@ -168,11 +168,15 @@ func _scale_for(ingredient_type: StringName) -> float:
 		IngredientModel.BAOCUI:
 			return 0.16
 		IngredientModel.HAM_SAUSAGE:
-			return 0.13
+			# The serving asset has generous transparent margins; this keeps the
+			# visible ham portion at a satisfying, easy-to-read size on the pancake.
+			return 0.24
 		IngredientModel.SCALLION:
 			return scallion_scale
 		IngredientModel.MEAT_FLOSS:
-			return 0.16
+			# Match the ham portion's visual weight while preserving the floss mound's
+			# naturally more compact silhouette.
+			return 0.24
 		IngredientModel.PORK_TENDERLOIN:
 			return 0.13
 		IngredientModel.CORIANDER:

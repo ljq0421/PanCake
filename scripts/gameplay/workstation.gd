@@ -17,7 +17,7 @@ const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const UPGRADE_WORKSHOP_OVERLAY := preload("res://scripts/ui/upgrade_workshop_overlay.gd")
+const UPGRADE_WORKSHOP_SCENE := preload("res://scenes/ui/upgrade_workshop_overlay.tscn")
 const BASIC_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png")
 const INTERMEDIATE_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png"
 const ADVANCED_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png"
@@ -215,6 +215,8 @@ var _spreader_smoothed_angular_speed := 0.0
 var _spreader_speed_initialized := false
 var _growth_recommendations: Array[Dictionary] = []
 var _upgrade_workshop: UpgradeWorkshopOverlay
+var _workshop_customer_visibility: Dictionary = {}
+var _workshop_runtime_visibility: Dictionary = {}
 var _spreader_width_multiplier := 1.0
 var _wide_spreader_owned := false
 var _press_spreader_owned := false
@@ -3222,7 +3224,7 @@ func _open_unlock_progress() -> void:
 
 func _open_upgrade_workshop() -> void:
 	if _upgrade_workshop == null:
-		_upgrade_workshop = UPGRADE_WORKSHOP_OVERLAY.new()
+		_upgrade_workshop = UPGRADE_WORKSHOP_SCENE.instantiate() as UpgradeWorkshopOverlay
 		_upgrade_workshop.begin_next_day_requested.connect(_begin_next_business_day)
 		_upgrade_workshop.closed.connect(_close_upgrade_workshop)
 		$SafeArea.add_child(_upgrade_workshop)
@@ -3242,20 +3244,49 @@ func _close_upgrade_workshop() -> void:
 
 
 func _set_upgrade_workshop_preview(enabled: bool) -> void:
+	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3", &"CustomerStrip", &"CustomerPortrait"]:
+		var customer_node := get_node_or_null("SafeArea/%s" % node_name) as CanvasItem
+		if customer_node == null:
+			continue
+		if enabled:
+			_workshop_customer_visibility[node_name] = customer_node.visible
+			customer_node.visible = false
+		elif _workshop_customer_visibility.has(node_name):
+			customer_node.visible = bool(_workshop_customer_visibility[node_name])
+	if not enabled:
+		_workshop_customer_visibility.clear()
+	for scene_path in [
+		"SafeArea/BottomStrip",
+		"SafeArea/BusinessDayTimerLabel",
+		"SafeArea/GlobalStatusLabel",
+		"SafeArea/P1ControlBar",
+		"SafeArea/IngredientRack",
+		"SafeArea/RestockRack",
+		"SafeArea/LeftRack",
+		"SafeArea/RightRack",
+		"SafeArea/SurfaceReadoutLabel",
+		"SafeArea/IngredientDragPreview",
+	]:
+		var runtime_node := get_node_or_null(scene_path) as CanvasItem
+		if runtime_node == null:
+			continue
+		if enabled:
+			_workshop_runtime_visibility[scene_path] = runtime_node.visible
+			runtime_node.visible = false
+		elif _workshop_runtime_visibility.has(scene_path):
+			runtime_node.visible = bool(_workshop_runtime_visibility[scene_path])
+	if not enabled:
+		_workshop_runtime_visibility.clear()
+	var pancake_worktop_hotspots := get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots")
+	if pancake_worktop_hotspots != null and pancake_worktop_hotspots.has_method("set_workshop_preview"):
+		pancake_worktop_hotspots.call("set_workshop_preview", enabled)
 	var soy_station := get_node_or_null("FiveAreaInfrastructure/Stations/FreshSoyMilkStation")
 	if soy_station != null and soy_station.has_method("set_workshop_preview"):
 		soy_station.call("set_workshop_preview", enabled)
 	var fryer := get_node_or_null("FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer")
 	if fryer != null and fryer.has_method("set_workshop_preview"):
 		fryer.call("set_workshop_preview", enabled)
-	# Pancake workbench itself is always present. The preview anchors supply the
-	# add-on props that still await bespoke art, while these real controls show
-	# the two automation tools without enabling their gameplay actions.
-	if enabled:
-		if press_spreader_button != null: press_spreader_button.visible = true
-		if automatic_sauce_brush_button != null: automatic_sauce_brush_button.visible = true
-		if chili_sauce_refill_button != null: chili_sauce_refill_button.visible = true
-	else:
+	if not enabled:
 		var session := get_node_or_null("/root/GameSession")
 		if session != null and session.has_method("five_area_progression_snapshot"):
 			apply_progression_effects(Dictionary(session.call("five_area_progression_snapshot")))

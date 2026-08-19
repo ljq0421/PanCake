@@ -30,12 +30,19 @@
 [ext_resource type="Script" uid="uid://b2326s32jjhdn" path="res://scripts/ui/egg_carton_drag_source.gd" id="39_egg_carton_drag"]
 [ext_resource type="Texture2D" uid="uid://bl8kaj3c2qww3" path="res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png" id="40_spreader_holder_empty"]
 [ext_resource type="Texture2D" uid="uid://didjm28d6kq2e" path="res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png" id="41_spreader_holder_filled"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-1.png" id="42_pork_floss_01"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-2.png" id="43_pork_floss_02"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-3.png" id="44_pork_floss_03"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-4.png" id="45_pork_floss_04"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-5.png" id="46_pork_floss_05"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-6.png" id="47_pork_floss_06"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-1.png" id="42_pork_floss_01"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-2.png" id="43_pork_floss_02"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-3.png" id="44_pork_floss_03"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-4.png" id="45_pork_floss_04"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-5.png" id="46_pork_floss_05"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-6.png" id="47_pork_floss_06"]
+[ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="49_ladle_holder_filled"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-1.png" id="50_ham_tray_01"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-2.png" id="51_ham_tray_02"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-3.png" id="52_ham_tray_03"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-4.png" id="53_ham_tray_04"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-5.png" id="54_ham_tray_05"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-6.png" id="55_ham_tray_06"]
 
 [node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90
@@ -60,10 +67,10 @@ expand_mode = 1
 stretch_mode = 5
 script = ExtResource("23_scallion_tray")
 stock_id = &"stock.pancake.meat_floss"
-stock_textures = Array[Texture2D]([ExtResource("42_pork_floss_01"), ExtResource("43_pork_floss_02"), ExtResource("44_pork_floss_03"), ExtResource("45_pork_floss_04"), ExtResource("46_pork_floss_05"), ExtResource("47_pork_floss_06")])
+state_textures = Array[Texture2D]([ExtResource("42_pork_floss_01"), ExtResource("43_pork_floss_02"), ExtResource("44_pork_floss_03"), ExtResource("45_pork_floss_04"), ExtResource("46_pork_floss_05"), ExtResource("47_pork_floss_06")])
 contents_visual_path = NodePath("PorkFlossContents")
 
-[node name="PorkFlossContents" type="TextureRect" parent="ToppingIngredientTray"]
+[node name="PorkFlossContents" type="TextureRect" parent="ToppingIngredientTray" unique_id=656663924]
 z_index = 1
 layout_mode = 0
 offset_left = 21.0
@@ -85,6 +92,10 @@ mouse_filter = 2
 texture = ExtResource("29_topping_tray")
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.ham_sausage"
+state_textures = Array[Texture2D]([ExtResource("50_ham_tray_01"), ExtResource("51_ham_tray_02"), ExtResource("52_ham_tray_03"), ExtResource("53_ham_tray_04"), ExtResource("54_ham_tray_05"), ExtResource("55_ham_tray_06")])
+full_quantity = 6
 
 [node name="SweetBeanSauceJar" type="TextureRect" parent="." unique_id=698685248]
 layout_mode = 0
@@ -140,12 +151,23 @@ griddle_station_path = NodePath("../../../FiveAreaInfrastructure/Stations/Pancak
 egg_content_textures = Array[Texture2D]([null, ExtResource("33_egg_01"), ExtResource("34_egg_02"), ExtResource("35_egg_03"), ExtResource("36_egg_04"), ExtResource("37_egg_05"), ExtResource("38_egg_06")])
 baocui_content_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
 
-[node name="PorkFlossHotspot" type="TextureButton" parent="PancakeWorktopHotspots"]
+[node name="PorkFlossHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=910270213]
 z_index = 120
 layout_mode = 0
 offset_left = 1087.0
 offset_top = 551.0
 offset_right = 1297.0
+offset_bottom = 727.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="HamTrayHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1764209521]
+z_index = 120
+layout_mode = 0
+offset_left = 1267.0
+offset_top = 551.0
+offset_right = 1477.0
 offset_bottom = 727.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
@@ -315,6 +337,19 @@ offset_right = 1252.0
 offset_bottom = 1080.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
+
+[node name="BatterLadleHolderHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=888931824]
+layout_mode = 0
+offset_left = 1262.0
+offset_top = 920.0
+offset_right = 1422.0
+offset_bottom = 1080.0
+tooltip_text = "点击加面糊"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("49_ladle_holder_filled")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="SweetSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1539400609]
 z_index = 3

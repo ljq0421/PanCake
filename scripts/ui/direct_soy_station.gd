@@ -19,12 +19,12 @@ const FLAVOR_RECIPES: Array[StringName] = [
 	&"recipe.fresh_soy_milk.yellow_bean",
 	&"recipe.fresh_soy_milk.black_bean",
 	&"recipe.fresh_soy_milk.red_bean",
-	&"recipe.fresh_soy_milk.multigrain",
 ]
 
 @onready var machine_output: ProductDragSource = %MachineOutput
 @onready var nozzle_button: Button = %NozzleButton
 @onready var sugar_jar: TextureButton = %SugarJar
+@onready var ice_button: Button = %IceButton
 @onready var soy_milk_dispenser: TextureRect = $SoyMilkDispenser
 @onready var state_label: Label = %StateLabel
 @onready var cup_detail_label: Label = %CupDetailLabel
@@ -40,6 +40,7 @@ var lock_cover: Control = null
 var _filling := false
 var _held_seconds := 0.0
 var _fill_guide_enabled := false
+var _workshop_preview := false
 
 
 func _ready() -> void:
@@ -56,6 +57,7 @@ func _ready() -> void:
 	nozzle_button.button_down.connect(_on_nozzle_down)
 	nozzle_button.button_up.connect(_on_nozzle_up)
 	sugar_jar.pressed.connect(_on_sugar_jar_pressed)
+	ice_button.pressed.connect(_on_ice_button_pressed)
 	flavor_menu.get_popup().id_pressed.connect(_on_flavor_selected)
 	refresh_from_session()
 
@@ -77,15 +79,23 @@ func refresh_from_session() -> void:
 	if session == null:
 		return
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
-	visible = Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
+	visible = _workshop_preview or Array(progression.get("unlocked_area_ids", [])).has("area.fresh_soy_milk")
 	if not visible:
 		return
 	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	if _workshop_preview:
+		machine["available_recipe_ids"] = FLAVOR_RECIPES.duplicate()
+		machine["sugar_enabled"] = true
+		machine["ice_enabled"] = true
+		machine["auto_fill_enabled"] = true
+		machine["fill_guide_enabled"] = true
 	var cup_state := StringName(machine.get("cup_state", &"ready"))
 	var cup := Dictionary(machine.get("cup", {}))
 	var product_id := StringName(cup.get("product_id", &"product.fresh_soy_milk.yellow_bean"))
 	var fill_ratio := float(cup.get("fill_ratio", 0.0))
 	var sugar_servings := int(cup.get("sugar_servings", 0))
+	var sugar_enabled := bool(machine.get("sugar_enabled", false))
+	var ice_enabled := bool(machine.get("ice_enabled", false))
 	_fill_guide_enabled = bool(machine.get("fill_guide_enabled", false))
 	dispense_progress.visible = _fill_guide_enabled
 	var selected_recipe_id := StringName(machine.get("recipe_id", &"recipe.fresh_soy_milk.yellow_bean"))
@@ -115,10 +125,30 @@ func refresh_from_session() -> void:
 		var fill_percent := roundi(fill_ratio * 100.0)
 		state_label.text = "③ 加糖或拖杯交付"
 		cup_detail_label.text = "%s · %d%% 满杯" % [_recipe_label(StringName(cup.get("recipe_id", selected_recipe_id))), fill_percent]
-	sugar_jar.disabled = cup_state != &"filled" or sugar_servings >= 2
+	sugar_jar.visible = sugar_enabled
+	sugar_label.visible = sugar_enabled
+	sugar_jar.disabled = not sugar_enabled or cup_state != &"filled" or sugar_servings >= 2
 	sugar_jar.tooltip_text = "成品杯加糖（最多两份）" if not sugar_jar.disabled else "请先接好豆浆" if cup_state != &"filled" else "已是多糖"
 	sugar_label.text = "糖：%s" % ["无糖", "正常糖（1份）", "多糖（2份）"][clampi(sugar_servings, 0, 2)]
+	ice_button.visible = ice_enabled
+	ice_button.disabled = not ice_enabled or cup_state != &"filled" or StringName(cup.get("temperature_mode", &"room_temperature")) == &"iced"
 	nozzle_button.disabled = cup_state != &"held_empty"
+	if _workshop_preview:
+		nozzle_button.disabled = true
+		machine_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sugar_jar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ice_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		flavor_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		machine_output.mouse_filter = Control.MOUSE_FILTER_STOP
+		sugar_jar.mouse_filter = Control.MOUSE_FILTER_STOP
+		ice_button.mouse_filter = Control.MOUSE_FILTER_STOP
+		flavor_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+
+
+func set_workshop_preview(enabled: bool) -> void:
+	_workshop_preview = enabled
+	refresh_from_session()
 
 
 func _on_cup_short_clicked(_source_ref: Dictionary) -> void:
@@ -163,6 +193,13 @@ func _on_sugar_jar_pressed() -> void:
 	refresh_from_session()
 
 
+func _on_ice_button_pressed() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var result: Dictionary = session.call("add_f4_soy_ice") if session != null else {"success": false, "reason": &"no_game_session"}
+	status_message.emit("已加冰" if bool(result.get("success", false)) else "无法加冰：%s" % str(result.get("reason", &"unknown")))
+	refresh_from_session()
+
+
 func _refresh_flavor_menu(raw_recipe_ids: Array, selected_recipe_id: StringName, can_select: bool) -> void:
 	var popup := flavor_menu.get_popup()
 	popup.clear()
@@ -175,7 +212,7 @@ func _refresh_flavor_menu(raw_recipe_ids: Array, selected_recipe_id: StringName,
 		popup.add_item(_recipe_label(recipe_id), FLAVOR_RECIPES.find(recipe_id))
 	flavor_menu.disabled = not can_select or available.size() <= 1
 	flavor_menu.text = "%s ▾" % _recipe_label(selected_recipe_id)
-	flavor_menu.tooltip_text = "选择已解锁的豆浆口味" if available.size() > 1 else "升级口味按钮后可选择黑豆、红豆和五谷"
+	flavor_menu.tooltip_text = "选择已解锁的豆浆口味" if available.size() > 1 else "升级口味按钮后可选择黑豆和红豆"
 
 
 func _on_flavor_selected(index: int) -> void:
@@ -193,7 +230,6 @@ static func _recipe_label(recipe_id: StringName) -> String:
 		&"recipe.fresh_soy_milk.yellow_bean": "黄豆豆浆",
 		&"recipe.fresh_soy_milk.black_bean": "黑豆豆浆",
 		&"recipe.fresh_soy_milk.red_bean": "红豆豆浆",
-		&"recipe.fresh_soy_milk.multigrain": "五谷豆浆",
 	}.get(recipe_id, "黄豆豆浆")
 
 
@@ -209,7 +245,6 @@ static func _liquid_color_for_recipe(recipe_id: StringName) -> Color:
 		&"recipe.fresh_soy_milk.yellow_bean": Color("f4d99c"),
 		&"recipe.fresh_soy_milk.black_bean": Color("8f7a63"),
 		&"recipe.fresh_soy_milk.red_bean": Color("d89a74"),
-		&"recipe.fresh_soy_milk.multigrain": Color("c8ad7d"),
 	}.get(recipe_id, Color("f4d99c"))
 
 

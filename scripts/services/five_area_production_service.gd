@@ -90,6 +90,13 @@ func add_soy_sugar() -> Dictionary:
 	return result
 
 
+func add_soy_ice() -> Dictionary:
+	var result: Dictionary = _soy.call("add_ice")
+	if bool(result.get("success", false)):
+		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return result
+
+
 func preview_soy_cup() -> Dictionary:
 	var result: Dictionary = _soy.call("preview_cup")
 	if not bool(result.get("success", false)):
@@ -98,7 +105,7 @@ func preview_soy_cup() -> Dictionary:
 	var product := _new_product(
 		StringName(source_product.get("product_id", &"")),
 		&"area.fresh_soy_milk",
-		&"room_temperature",
+		StringName(source_product.get("temperature_mode", &"room_temperature")),
 		float(source_product.get("quality", 0.0)),
 		StringName(source_product.get("grade", &"waste")),
 		false,
@@ -120,7 +127,7 @@ func take_soy_cup() -> Dictionary:
 	product["product_instance_id"] = _new_product(
 		StringName(product.get("product_id", &"")),
 		&"area.fresh_soy_milk",
-		&"room_temperature",
+		StringName(product.get("temperature_mode", &"room_temperature")),
 		float(product.get("quality", 0.0)),
 		StringName(product.get("grade", &"waste")),
 	).get("product_instance_id", &"")
@@ -638,9 +645,10 @@ func _configure_soy_serving_upgrades() -> void:
 	_soy.call("configure_available_recipes", recipes)
 	_soy.call(
 		"configure_upgrades",
-		_owns_assist(&"assist.fresh_soy_milk.fill_guide"),
+		false,
 		_owns_automation(&"automation.fresh_soy_milk.auto_fill"),
-		_owns_growth(&"growth.quality.fresh_soy_milk.rich_formula")
+		_owns_assist(&"assist.fresh_soy_milk.sugar"),
+		_owns_assist(&"assist.fresh_soy_milk.ice")
 	)
 
 

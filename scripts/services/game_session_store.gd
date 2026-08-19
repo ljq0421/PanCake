@@ -14,7 +14,9 @@ signal prepared_product_slots_changed(snapshot: Dictionary)
 const SAVE_PATH := "user://project_cake_save.json"
 const SOY_TEST_SAVE_PATH := "user://project_cake_soy_test_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
-const SAVE_VERSION := 7
+## v8 intentionally starts a new three-area upgrade economy. Older saves are
+## rejected by _load_save and therefore restart from the new opening state.
+const SAVE_VERSION := 8
 const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
@@ -38,7 +40,7 @@ const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 const DEBUG_TIER_GROWTH_IDS := {
 	&"area.pancake": [&""],
 	&"area.youtiao": [&"growth.area.youtiao"],
-	&"area.fresh_soy_milk": [&"growth.area.fresh_soy_milk", &"growth.equipment.fresh_soy_milk.intermediate", &"growth.equipment.fresh_soy_milk.advanced"],
+	&"area.fresh_soy_milk": [&"growth.area.fresh_soy_milk"],
 }
 const LEGACY_PANCAKE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -53,6 +55,7 @@ const LEGACY_PANCAKE_STOCK_IDS := {
 const LEGACY_PANCAKE_SAUCE_STOCK_IDS := {
 	&"sweet_flour": &"stock.pancake.sauce.sweet_flour",
 	&"red_chili": &"stock.pancake.sauce.red_chili",
+	&"tomato": &"stock.pancake.sauce.tomato",
 }
 const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -68,6 +71,7 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 const DAILY_PANCAKE_CONSUMABLE_STOCK := {
 	&"stock.pancake.sauce.sweet_flour": 6,
 	&"stock.pancake.sauce.red_chili": 6,
+	&"stock.pancake.sauce.tomato": 6,
 }
 const RECONCILED_FORMAL_ORDER_IDS_KEY := "reconciled_formal_order_ids"
 const DEFAULT_SETTINGS := {
@@ -1358,6 +1362,16 @@ func add_f4_soy_sugar() -> Dictionary:
 	return result
 
 
+func add_f4_soy_ice() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("add_soy_ice")
+	if bool(result.get("success", false)):
+		_persist_production_change()
+	return result
+
+
 func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
 	var preview: Dictionary = _production_service.call("preview_soy_cup")
@@ -1813,7 +1827,7 @@ func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int) ->
 	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index}
 
 
-func store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:
+func store_ready_youtiao_slot(slot_id: StringName, source_index: int, seasoned_product_id: StringName = &"") -> Dictionary:
 	var preview := preview_store_ready_youtiao_slot(slot_id, source_index)
 	if not bool(preview.get("success", false)):
 		return preview
@@ -1823,6 +1837,13 @@ func store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Diction
 	if not bool(collected.get("success", false)):
 		return collected
 	var product := Dictionary(collected.get("product", {}))
+	if not seasoned_product_id.is_empty():
+		var seasoned_definition := CATALOG.product_definition(seasoned_product_id)
+		if seasoned_definition.is_empty() or not bool(_progression.call("owns_product", seasoned_product_id)):
+			_production_service.call("load_snapshot", production_rollback)
+			return {"success": false, "reason": &"youtiao_seasoning_locked"}
+		product["product_id"] = seasoned_product_id
+		product["recipe_id"] = StringName(seasoned_definition.get("recipe_id", &""))
 	if StringName(product.get("product_id", &"")) != StringName(Dictionary(preview.get("product", {})).get("product_id", &"")):
 		_production_service.call("load_snapshot", production_rollback)
 		return {"success": false, "reason": &"prepared_product_changed"}
@@ -2112,6 +2133,14 @@ func growth_recommendations(limit_total: int = 3) -> Dictionary:
 	return Dictionary(_progression.call("growth_recommendations", limit_total)).duplicate(true)
 
 
+func growth_overview() -> Array[Dictionary]:
+	_ensure_progression()
+	var result: Array[Dictionary] = []
+	for item in Array(_progression.call("growth_overview")):
+		result.append(Dictionary(item).duplicate(true))
+	return result
+
+
 func growth_purchase_status(growth_id: StringName) -> Dictionary:
 	_ensure_progression()
 	return Dictionary(_progression.call("purchase_status", growth_id)).duplicate(true)
@@ -2166,7 +2195,7 @@ func debug_fulfill_next_growth_requirements() -> Dictionary:
 	var before := five_area_progression_snapshot()
 	if bool(_progression.get("day_open")):
 		return _debug_result(false, &"business_day_open", before)
-	if not StringName(before.get("pending_install_purchase", &"")).is_empty() or not StringName(before.get("pending_content_purchase", &"")).is_empty():
+	if not Array(before.get("pending_growth_ids", [])).is_empty():
 		return _debug_result(false, &"pending_purchase_exists", before)
 	var target_growth_id := _debug_next_unowned_growth_id(_progression)
 	if target_growth_id.is_empty():
@@ -2206,7 +2235,7 @@ func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dict
 		return _debug_result(false, &"business_day_open", before, {"area_id": area_id, "target_tier": target_tier})
 	if not DEBUG_TIER_GROWTH_IDS.has(area_id) or target_tier < 0 or target_tier >= Array(DEBUG_TIER_GROWTH_IDS[area_id]).size():
 		return _debug_result(false, &"unknown_device_tier", before, {"area_id": area_id, "target_tier": target_tier})
-	if not StringName(before.get("pending_install_purchase", &"")).is_empty() or not StringName(before.get("pending_content_purchase", &"")).is_empty():
+	if not Array(before.get("pending_growth_ids", [])).is_empty():
 		return _debug_result(false, &"pending_purchase_exists", before, {"area_id": area_id, "target_tier": target_tier})
 	var area_definition := CATALOG.area_definition(area_id)
 	var device_id := StringName(area_definition.get("device_id", &""))
@@ -2237,7 +2266,7 @@ func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dict
 			"current_tier": current_tier,
 			"target_tier": target_tier,
 		})
-	var target_route_index := CATALOG.FIXED_GROWTH_ROUTE.find(target_growth_id)
+	var target_route_index := CATALOG.GROWTH_DISPLAY_ORDER.find(target_growth_id)
 	if target_route_index < 0:
 		return _debug_result(false, &"target_not_in_growth_route", before, {"growth_id": target_growth_id})
 
@@ -2246,16 +2275,16 @@ func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dict
 	var purchased_growth_ids: Array[StringName] = []
 	var activated_growth_ids: Array[StringName] = []
 	for route_index in range(target_route_index + 1):
-		var growth_id: StringName = CATALOG.FIXED_GROWTH_ROUTE[route_index]
+		var growth_id: StringName = CATALOG.GROWTH_DISPLAY_ORDER[route_index]
 		if bool(preview.call("owns_growth", growth_id)):
 			continue
 		var attempts := 0
 		while not bool(preview.call("owns_growth", growth_id)):
 			attempts += 1
-			if attempts > CATALOG.FIXED_GROWTH_ROUTE.size() + 4:
+			if attempts > CATALOG.GROWTH_DISPLAY_ORDER.size() + 4:
 				return _debug_result(false, &"debug_progression_stalled", before, {"growth_id": growth_id})
 			var status: Dictionary = preview.call("purchase_status", growth_id)
-			if bool(status.get("pending_activation", false)) or StringName(status.get("reason", &"")) == &"purchase_slot_occupied":
+			if bool(status.get("pending_activation", false)):
 				var advanced := _debug_advance_preview_day(preview, activated_growth_ids)
 				if not bool(advanced.get("success", false)):
 					return _debug_result(false, StringName(advanced.get("reason", &"debug_day_advance_failed")), before, {"growth_id": growth_id})
@@ -2278,7 +2307,7 @@ func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dict
 			purchased_growth_ids.append(growth_id)
 			break
 
-	while not StringName(Dictionary(preview.call("snapshot")).get("pending_install_purchase", &"")).is_empty() or not StringName(Dictionary(preview.call("snapshot")).get("pending_content_purchase", &"")).is_empty():
+	while not Array(Dictionary(preview.call("snapshot")).get("pending_growth_ids", [])).is_empty():
 		var advanced := _debug_advance_preview_day(preview, activated_growth_ids)
 		if not bool(advanced.get("success", false)):
 			return _debug_result(false, StringName(advanced.get("reason", &"debug_day_advance_failed")), before, {"growth_id": target_growth_id})
@@ -2336,7 +2365,7 @@ func _debug_persist_progression(emit_inventory: bool) -> void:
 
 
 func _debug_next_unowned_growth_id(progression: RefCounted) -> StringName:
-	for growth_id in CATALOG.FIXED_GROWTH_ROUTE:
+	for growth_id in CATALOG.GROWTH_DISPLAY_ORDER:
 		if not bool(progression.call("owns_growth", growth_id)):
 			return growth_id
 	return &""

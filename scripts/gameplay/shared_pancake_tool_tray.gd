@@ -66,9 +66,10 @@ func refresh_from_session() -> void:
 			capacity = maxi(capacity, int(progression.get("stock_capacity")))
 		var count := maxi(int(inventory.get(str(stock_id), 0)), 0)
 		slot.apply_state(count, unlocked, capacity)
+		slot.visible = unlocked
 		var lock_visual := slot.get_node_or_null("LockVisual") as TextureRect
 		if lock_visual != null:
-			lock_visual.visible = not unlocked
+			lock_visual.visible = false
 	var wide := progression != null and bool(progression.call("owns_growth", &"growth.tool.pancake.wide_spreader"))
 	_spreader_button.texture_normal = SPREADER_WIDE if wide else SPREADER_NORMAL
 	_spreader_button.tooltip_text = "宽幅摊饼器：落点更宽" if wide else "T形摊饼器：点选后在任意已解锁鏊面画圈"
@@ -119,6 +120,7 @@ func _add_stock_slot(host: Control, definition: Dictionary) -> void:
 	slot.material_label = str(definition.get("label", ""))
 	slot.native_drag_enabled = bool(definition.get("native_drag", true))
 	slot.unlimited = bool(CATALOG.stock_definition(slot.stock_id).get("unlimited", false))
+	slot.visible = false
 	slot.short_clicked.connect(_on_slot_short_clicked.bind(slot))
 	slot.hold_requested.connect(_on_hold_requested.bind(slot))
 	slot.hold_advanced.connect(_on_hold_advanced.bind(slot))

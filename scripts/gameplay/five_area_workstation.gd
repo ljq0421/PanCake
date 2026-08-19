@@ -96,6 +96,7 @@ func _ready() -> void:
 			production_signal.connect(_on_production_shell_changed)
 	_restore_pending_payment()
 	_refresh_formal_shell()
+	_refresh_formal_area_visibility()
 	_refresh_material_slots()
 	_refresh_multi_griddle_mode()
 	_refresh_pancake_drag_sources()
@@ -234,6 +235,30 @@ func _refresh_material_slots() -> void:
 		fixed_material_lock_artworks[index].visible = false
 		fixed_material_lock_buttons[index].visible = false
 		fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+func _refresh_formal_area_visibility() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or not session.has_method("five_area_progression_snapshot"):
+		return
+	var progression := Dictionary(session.call("five_area_progression_snapshot"))
+	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
+	_set_formal_area_visible(cartoon_youtiao_fryer, _id_in(unlocked_areas, &"area.youtiao"))
+	_set_formal_area_visible(fresh_soy_station, _id_in(unlocked_areas, &"area.fresh_soy_milk"))
+
+
+static func _set_formal_area_visible(area_node: Control, unlocked: bool) -> void:
+	area_node.visible = unlocked
+	area_node.mouse_behavior_recursive = (
+		Control.MOUSE_BEHAVIOR_INHERITED
+		if unlocked
+		else Control.MOUSE_BEHAVIOR_DISABLED
+	)
+
+
+func _on_global_status_changed(value: Variant = null) -> void:
+	super._on_global_status_changed(value)
+	_refresh_formal_area_visibility()
 
 
 func _on_material_hold_requested(source_ref: Dictionary, slot: Node) -> void:

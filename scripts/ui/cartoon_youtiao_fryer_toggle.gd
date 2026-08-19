@@ -54,6 +54,10 @@ var _board_hold_active := false
 var _board_hold_elapsed := 0.0
 var _board_press_position := Vector2.ZERO
 var _board_dough_index := -1
+var _seasoned_product_id: StringName = &""
+var _sesame_button: Button
+var _sugar_button: Button
+var _workshop_preview := false
 
 
 func _ready() -> void:
@@ -135,6 +139,23 @@ func refresh_from_session() -> void:
 	if session == null or not session.has_method("f3_machine_snapshot"):
 		return
 	_machine = Dictionary(session.call("f3_machine_snapshot", DEVICE_ID))
+	if _workshop_preview:
+		visible = true
+		_machine["state"] = &"idle"
+		_machine["capacity"] = 8
+		_machine["quantity"] = 0
+	var progression := Dictionary(session.call("five_area_progression_snapshot")) if session.has_method("five_area_progression_snapshot") else {}
+	var unlocked_products := Array(progression.get("unlocked_product_ids", []))
+	_sesame_button.visible = unlocked_products.has("product.youtiao.sesame")
+	_sugar_button.visible = unlocked_products.has("product.youtiao.sugar")
+	if _workshop_preview:
+		_sesame_button.visible = true
+		_sugar_button.visible = true
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+	if not _sesame_button.visible and _seasoned_product_id == &"product.youtiao.sesame": _seasoned_product_id = &""
+	if not _sugar_button.visible and _seasoned_product_id == &"product.youtiao.sugar": _seasoned_product_id = &""
 	var inventory := Dictionary(session.call("inventory_snapshot")) if session.has_method("inventory_snapshot") else {}
 	_dough_stock = maxi(int(inventory.get(str(DOUGH_STOCK_ID), 0)), 0)
 	_refresh_prepared_slot(session)
@@ -248,9 +269,10 @@ func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
 
 func _store_fryer_slot_on_plate(source_index: int) -> void:
 	var session := get_node_or_null("/root/GameSession")
-	var result := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index)) if session != null else {"success": false, "reason": &"no_game_session"}
+	var result := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index, _seasoned_product_id)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		status_message.emit("油条已放入成品盘")
+		status_message.emit("油条已放入成品盘" if _seasoned_product_id.is_empty() else "油条已完成调味并放入成品盘")
+		_seasoned_product_id = &""
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
@@ -347,7 +369,34 @@ func _refresh_plate_sources() -> void:
 		source.visible = visible
 
 
+func _select_sesame_seasoning() -> void:
+	_seasoned_product_id = &"product.youtiao.sesame"
+	status_message.emit("下一根出锅油条将裹芝麻")
+
+
+func _select_sugar_seasoning() -> void:
+	_seasoned_product_id = &"product.youtiao.sugar"
+	status_message.emit("下一根出锅油条将裹白糖")
+
+
+func set_workshop_preview(enabled: bool) -> void:
+	_workshop_preview = enabled
+	refresh_from_session()
+
+
 func _create_runtime_controls() -> void:
+	_sesame_button = Button.new()
+	_sesame_button.text = "芝麻调味"
+	_sesame_button.position = Vector2(10.0, 650.0)
+	_sesame_button.size = Vector2(112.0, 38.0)
+	_sesame_button.pressed.connect(_select_sesame_seasoning)
+	add_child(_sesame_button)
+	_sugar_button = Button.new()
+	_sugar_button.text = "白糖调味"
+	_sugar_button.position = Vector2(130.0, 650.0)
+	_sugar_button.size = Vector2(112.0, 38.0)
+	_sugar_button.pressed.connect(_select_sugar_seasoning)
+	add_child(_sugar_button)
 	for source_index in range(product_visuals.size()):
 		var output := ProductDragSource.new()
 		output.name = "FryerSlotSource%d" % (source_index + 1)

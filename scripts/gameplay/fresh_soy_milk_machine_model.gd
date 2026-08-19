@@ -15,7 +15,6 @@ const SOY_RECIPE_IDS: Array[StringName] = [
 	&"recipe.fresh_soy_milk.yellow_bean",
 	&"recipe.fresh_soy_milk.black_bean",
 	&"recipe.fresh_soy_milk.red_bean",
-	&"recipe.fresh_soy_milk.multigrain",
 ]
 
 const CUP_READY := &"ready"
@@ -30,7 +29,8 @@ var cup: Dictionary = {}
 var available_recipe_ids: Array[StringName] = [DEFAULT_RECIPE_ID]
 var fill_guide_enabled := false
 var auto_fill_enabled := false
-var quality_bonus := 0.0
+var sugar_enabled := false
+var ice_enabled := false
 
 
 func _init(next_tier: int = 0, is_owned: bool = false) -> void:
@@ -46,10 +46,11 @@ func configure_owned(next_tier: int) -> Dictionary:
 	return _success()
 
 
-func configure_upgrades(has_fill_guide: bool, has_auto_fill: bool, has_quality_upgrade: bool) -> void:
+func configure_upgrades(has_fill_guide: bool, has_auto_fill: bool, has_sugar: bool, has_ice: bool) -> void:
 	fill_guide_enabled = has_fill_guide
 	auto_fill_enabled = has_auto_fill
-	quality_bonus = 10.0 if has_quality_upgrade else 0.0
+	sugar_enabled = has_sugar
+	ice_enabled = has_ice
 
 
 func configure_available_recipes(next_recipe_ids: Array) -> void:
@@ -101,16 +102,17 @@ func fill_held_cup(held_seconds: float) -> Dictionary:
 	if cup_state != CUP_HELD_EMPTY:
 		return _failure(&"empty_cup_required")
 	var fill_ratio := clampf(maxf(held_seconds, 0.0) / FULL_CUP_SECONDS, 0.0, 1.0)
-	# Releasing is always literal: the served amount is the amount the player
-	# poured.  The legacy automation flag remains serialised for save
-	# compatibility, but must never overwrite a manual release.
-	var quality := minf(snappedf(fill_ratio * 100.0 + quality_bonus, 1.0), 100.0)
+	if auto_fill_enabled:
+		fill_ratio = 1.0
+	var quality := minf(snappedf(fill_ratio * 100.0, 1.0), 100.0)
 	cup = _product_payload(fill_ratio, quality)
 	cup_state = CUP_FILLED
 	return _success({"cup": cup.duplicate(true), "fill_ratio": fill_ratio, "is_full": fill_ratio >= 0.999})
 
 
 func add_sugar() -> Dictionary:
+	if not sugar_enabled:
+		return _failure(&"sugar_locked")
 	if cup_state != CUP_FILLED:
 		return _failure(&"filled_cup_required")
 	var sugar_servings := int(cup.get("sugar_servings", 0))
@@ -118,6 +120,15 @@ func add_sugar() -> Dictionary:
 		return _failure(&"sugar_limit_reached")
 	cup["sugar_servings"] = sugar_servings + 1
 	return _success({"cup": cup.duplicate(true), "sugar_servings": sugar_servings + 1})
+
+
+func add_ice() -> Dictionary:
+	if not ice_enabled:
+		return _failure(&"ice_locked")
+	if cup_state != CUP_FILLED:
+		return _failure(&"filled_cup_required")
+	cup["temperature_mode"] = &"iced"
+	return _success({"cup": cup.duplicate(true), "temperature_mode": &"iced"})
 
 
 # Retired production-loop entry points are retained as explicit failures so
@@ -215,7 +226,8 @@ func snapshot() -> Dictionary:
 		"available_recipe_ids": available_recipe_ids.duplicate(),
 		"fill_guide_enabled": fill_guide_enabled,
 		"auto_fill_enabled": auto_fill_enabled,
-		"quality_bonus": quality_bonus,
+		"sugar_enabled": sugar_enabled,
+		"ice_enabled": ice_enabled,
 		"output_rack": [],
 	}
 

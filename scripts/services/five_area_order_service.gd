@@ -643,6 +643,8 @@ static func normalized_temperature_mode(value: Variant) -> StringName:
 		return &"room_temperature"
 	if normalized == &"heated":
 		return &"heated"
+	if normalized == &"iced":
+		return &"iced"
 	return &""
 
 

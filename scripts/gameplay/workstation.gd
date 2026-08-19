@@ -17,6 +17,7 @@ const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const UPGRADE_WORKSHOP_OVERLAY := preload("res://scripts/ui/upgrade_workshop_overlay.gd")
 const BASIC_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png")
 const INTERMEDIATE_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png"
 const ADVANCED_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png"
@@ -213,6 +214,7 @@ var _spreader_direction_grace_remaining := 0
 var _spreader_smoothed_angular_speed := 0.0
 var _spreader_speed_initialized := false
 var _growth_recommendations: Array[Dictionary] = []
+var _upgrade_workshop: UpgradeWorkshopOverlay
 var _spreader_width_multiplier := 1.0
 var _wide_spreader_owned := false
 var _press_spreader_owned := false
@@ -408,7 +410,7 @@ func _ready() -> void:
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	_configure_debug_growth_button()
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
-	unlock_progress_button.pressed.connect(_open_unlock_progress)
+	unlock_progress_button.pressed.connect(_open_upgrade_workshop)
 	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
 	station_interaction_controller.station_requested.connect(_open_f3_station)
 	refuse_active_order_button.pressed.connect(_on_refuse_active_order_pressed)
@@ -470,7 +472,7 @@ func _ready_formal_shop_shell(game_session: Node, formal_active: Dictionary) -> 
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	_configure_debug_growth_button()
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
-	unlock_progress_button.pressed.connect(_open_unlock_progress)
+	unlock_progress_button.pressed.connect(_open_upgrade_workshop)
 	unlock_progress_close_button.pressed.connect(_close_unlock_progress)
 	refuse_active_order_button.pressed.connect(_on_refuse_active_order_pressed)
 	skip_active_tutorial_button.pressed.connect(_on_skip_active_tutorial_pressed)
@@ -2999,52 +3001,21 @@ func _refresh_growth_section(message: String = "") -> void:
 		begin_next_day_button.disabled = true
 		return
 	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
-	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
-	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
-	var grouped_recommendations: Dictionary = game_session.call("growth_recommendations", 3)
-	var recommended: Array = Array(grouped_recommendations.get("recommended", []))
-	for recommendation_variant in recommended:
-		var recommendation: Dictionary = Dictionary(recommendation_variant).duplicate(true)
-		var purchase_slot := StringName(recommendation.get("purchase_slot", &""))
-		recommendation["slot_title"] = "安装位" if purchase_slot == &"install" else "内容位"
-		_growth_recommendations.append(recommendation)
-	while _growth_recommendations.size() < 3:
-		_growth_recommendations.append({"hidden": true})
-	var route_range_text := "路线已完成"
-	var visible_route_indices: Array[int] = []
-	for recommendation in _growth_recommendations:
-		if not bool(recommendation.get("hidden", false)):
-			visible_route_indices.append(int(recommendation.get("route_index", 0)) + 1)
-	if not visible_route_indices.is_empty():
-		route_range_text = "固定路线第 %d-%d 项" % [visible_route_indices.front(), visible_route_indices.back()]
-	var balance_text := "现有 %d 金币 · 声誉 %d · %s · 安装位与内容位各可预订一项 · 已预订项目于下一营业日生效" % [
+	var pending_growth_ids: Array = Array(snapshot.get("pending_growth_ids", []))
+	var balance_text := "现有 %d 金币 · 声誉 %d · 全部 20 项升级均可在工坊查看；本夜可预订多个，次日统一生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
-		route_range_text,
 	]
 	growth_balance_label.text = balance_text if message.is_empty() else "%s · %s" % [balance_text, message]
-	for index in growth_ticket_buttons.size():
-		var button := growth_ticket_buttons[index]
-		button.visible = index < _growth_recommendations.size() and not bool(_growth_recommendations[index].get("hidden", false))
-		if not button.visible:
-			continue
-		var recommendation := _growth_recommendations[index]
-		button.set_meta(&"growth_item_id", StringName(recommendation.get("growth_id", "")))
-		var presentation := _growth_ticket_presentation(recommendation)
-		button.text = "[%s] %s\n%s" % [
-			str(recommendation.get("slot_title", "成长")),
-			("已预订：" if bool(recommendation.get("pending_activation", false)) else "") + _growth_ticket_display_name(StringName(recommendation.get("growth_id", ""))),
-			str(presentation.get("compact", "")),
-		]
-		button.tooltip_text = str(presentation.get("tooltip", ""))
-		button.disabled = bool(presentation.get("disabled", true))
-		button.mouse_filter = Control.MOUSE_FILTER_STOP
-		button.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN if button.disabled else Control.CURSOR_POINTING_HAND
+	for button in growth_ticket_buttons:
+		button.visible = false
 	begin_next_day_button.disabled = false
-	begin_next_day_button.text = "确认预订并开始下一天" if not pending_install.is_empty() or not pending_content.is_empty() else "不购买，直接开始下一天"
+	begin_next_day_button.text = "确认预订并开始下一天" if not pending_growth_ids.is_empty() else "不购买，直接开始下一天"
 	if unlock_progress_panel.visible:
 		_refresh_unlock_progress()
 	daily_bill_panel.size = DAILY_BILL_FIXED_SIZE
+	if _upgrade_workshop != null and _upgrade_workshop.visible:
+		_upgrade_workshop.refresh()
 
 
 func _configure_debug_growth_button() -> void:
@@ -3249,6 +3220,47 @@ func _open_unlock_progress() -> void:
 	unlock_progress_close_button.grab_focus()
 
 
+func _open_upgrade_workshop() -> void:
+	if _upgrade_workshop == null:
+		_upgrade_workshop = UPGRADE_WORKSHOP_OVERLAY.new()
+		_upgrade_workshop.begin_next_day_requested.connect(_begin_next_business_day)
+		_upgrade_workshop.closed.connect(_close_upgrade_workshop)
+		$SafeArea.add_child(_upgrade_workshop)
+	_set_upgrade_workshop_preview(true)
+	daily_bill_panel.visible = false
+	_upgrade_workshop.move_to_front()
+	_upgrade_workshop.visible = true
+	_upgrade_workshop.refresh()
+
+
+func _close_upgrade_workshop() -> void:
+	if _upgrade_workshop != null:
+		_upgrade_workshop.visible = false
+	_set_upgrade_workshop_preview(false)
+	daily_bill_panel.visible = true
+	daily_bill_panel.move_to_front()
+
+
+func _set_upgrade_workshop_preview(enabled: bool) -> void:
+	var soy_station := get_node_or_null("FiveAreaInfrastructure/Stations/FreshSoyMilkStation")
+	if soy_station != null and soy_station.has_method("set_workshop_preview"):
+		soy_station.call("set_workshop_preview", enabled)
+	var fryer := get_node_or_null("FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer")
+	if fryer != null and fryer.has_method("set_workshop_preview"):
+		fryer.call("set_workshop_preview", enabled)
+	# Pancake workbench itself is always present. The preview anchors supply the
+	# add-on props that still await bespoke art, while these real controls show
+	# the two automation tools without enabling their gameplay actions.
+	if enabled:
+		if press_spreader_button != null: press_spreader_button.visible = true
+		if automatic_sauce_brush_button != null: automatic_sauce_brush_button.visible = true
+		if chili_sauce_refill_button != null: chili_sauce_refill_button.visible = true
+	else:
+		var session := get_node_or_null("/root/GameSession")
+		if session != null and session.has_method("five_area_progression_snapshot"):
+			apply_progression_effects(Dictionary(session.call("five_area_progression_snapshot")))
+
+
 func _close_unlock_progress() -> void:
 	unlock_progress_panel.visible = false
 	unlock_progress_button.grab_focus()
@@ -3260,28 +3272,20 @@ func _refresh_unlock_progress() -> void:
 		unlock_progress_label.text = "当前无法读取解锁进度。"
 		return
 	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
-	var install_names := PackedStringArray(["基础煎饼档口与基础鏊子"])
-	var content_names := PackedStringArray(["基础内容：面糊、鸡蛋、薄脆、葱花、甜面酱"])
+	var owned_names := PackedStringArray(["基础煎饼档口与基础鏊子"])
 	for growth_id_variant in Array(snapshot.get("owned_growth_ids", [])):
 		var growth_id := StringName(growth_id_variant)
-		var definition: Dictionary = FIVE_AREA_CATALOG.growth_definition(growth_id)
-		if definition.get("purchase_slot", &"") == &"install":
-			install_names.append(_growth_ticket_display_name(growth_id))
-		elif definition.get("purchase_slot", &"") == &"content":
-			content_names.append(_growth_ticket_display_name(growth_id))
-	install_names.sort()
-	content_names.sort()
-	var pending_install := StringName(snapshot.get("pending_install_purchase", ""))
-	var pending_content := StringName(snapshot.get("pending_content_purchase", ""))
+		owned_names.append(_growth_ticket_display_name(growth_id))
+	owned_names.sort()
+	var pending_names := PackedStringArray()
+	for growth_id_variant in Array(snapshot.get("pending_growth_ids", [])):
+		pending_names.append(_growth_ticket_display_name(StringName(growth_id_variant)))
 	unlock_progress_label.text = (
-		"已解锁安装（%d）\n• %s\n\n已解锁内容（%d）\n• %s\n\n明日生效（尚未计入已解锁）\n• 安装：%s\n• 内容：%s"
+		"已拥有升级（%d）\n• %s\n\n明日统一生效（尚未计入已拥有）\n• %s"
 		% [
-			install_names.size(),
-			"\n• ".join(install_names),
-			content_names.size(),
-			"\n• ".join(content_names),
-			"无" if pending_install.is_empty() else _growth_ticket_display_name(pending_install),
-			"无" if pending_content.is_empty() else _growth_ticket_display_name(pending_content),
+			owned_names.size(),
+			"\n• ".join(owned_names),
+			"无" if pending_names.is_empty() else "、".join(pending_names),
 		]
 	)
 

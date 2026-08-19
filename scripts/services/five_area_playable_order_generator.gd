@@ -600,10 +600,11 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 	var ingredient_ids := PackedStringArray()
 	var sugar_servings := 0
 	if area_id == &"area.fresh_soy_milk":
-		# The soy station intentionally makes sweetness part of the serving
-		# interaction instead of another recipe slot. Tutorials start with normal
-		# sugar; regular orders distribute the three supported requests evenly.
-		sugar_servings = 1 if teaching else _roll(seed, sequence, 137, 3)
+		var assists := _id_set(progression.get("owned_assist_ids", []))
+		if assists.has(&"assist.fresh_soy_milk.sugar"):
+			sugar_servings = 1 if teaching else _roll(seed, sequence, 137, 3)
+		if assists.has(&"assist.fresh_soy_milk.ice") and not teaching and _roll(seed, sequence, 149, 100) < 35:
+			temperature_mode = &"iced"
 	var required_stock_ids := Array(recipe.get("stock_ids", []))
 	return {
 		"success": true,

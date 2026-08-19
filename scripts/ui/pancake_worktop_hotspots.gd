@@ -19,6 +19,16 @@ const SAUCE_HOTSPOT_IDS: Dictionary = {
 	&"SweetSauceHotspot": &"stock.pancake.sauce.sweet_flour",
 	&"ChiliSauceHotspot": &"stock.pancake.sauce.red_chili",
 }
+## Some optional ingredients are rendered by the stall artwork rather than by
+## their drag source. Keep those visuals in the same unlock state as the source
+## so locked items do not leave an empty tray or sauce jar on the workbench.
+const STOCK_VISUAL_PATHS: Dictionary = {
+	&"stock.pancake.ham_sausage": [NodePath("../ToppingIngredientTray2")],
+	&"stock.pancake.meat_floss": [NodePath("../ToppingIngredientTray"), NodePath("PorkFlossHotspot")],
+	&"stock.pancake.coriander": [NodePath("CorianderTray")],
+	&"stock.pancake.sauce.red_chili": [NodePath("../ChiliSauceJar"), NodePath("ChiliSauceHotspot"), NodePath("ChiliSauceHotspotHitButton")],
+	&"stock.pancake.sauce.tomato": [NodePath("../TomatoSauceJar")],
+}
 const EGG_STOCK_ID := &"stock.pancake.egg"
 const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 
@@ -76,6 +86,7 @@ func refresh_from_session() -> void:
 		_refresh_material_hotspot(_material_hotspot(hotspot_name), INGREDIENT_HOTSPOT_IDS[hotspot_name], &"pancake_shared_ingredient", inventory, progression)
 	for hotspot_name in SAUCE_HOTSPOT_IDS:
 		_refresh_material_hotspot(_material_hotspot(hotspot_name), SAUCE_HOTSPOT_IDS[hotspot_name], &"pancake_shared_sauce", inventory, progression)
+	_refresh_optional_stock_visuals(progression)
 	var egg_capacity := int(CATALOG.stock_definition(EGG_STOCK_ID).get("restock_capacity", 6))
 	if _session.has_method("five_area_restock_status"):
 		var egg_status := Dictionary(_session.call("five_area_restock_status", EGG_STOCK_ID))
@@ -144,6 +155,22 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 			hit_button.disabled = not unlocked
 			hit_button.tooltip_text = hint
 			hit_button.mouse_default_cursor_shape = hotspot.mouse_default_cursor_shape
+
+
+func _refresh_optional_stock_visuals(progression: RefCounted) -> void:
+	for stock_id_variant in STOCK_VISUAL_PATHS:
+		var stock_id := StringName(stock_id_variant)
+		var unlocked := progression != null and bool(progression.call("owns_stock", stock_id))
+		for visual_path_variant in Array(STOCK_VISUAL_PATHS[stock_id_variant]):
+			var visual := get_node_or_null(visual_path_variant) as Control
+			if visual == null:
+				continue
+			visual.visible = unlocked
+			visual.mouse_behavior_recursive = (
+				Control.MOUSE_BEHAVIOR_INHERITED
+				if unlocked
+				else Control.MOUSE_BEHAVIOR_DISABLED
+			)
 
 
 func _on_spreader_pressed() -> void:

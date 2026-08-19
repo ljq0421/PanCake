@@ -6,8 +6,6 @@ extends RefCounted
 ## the persistence coordinator in phase 4.
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const INSTALL_SLOT := &"install"
-const CONTENT_SLOT := &"content"
 
 var coins := 0
 var reputation := 0
@@ -31,8 +29,9 @@ var stock_capacity := 6
 var area_mastery: Dictionary = {}
 var area_mastery_details: Dictionary = {}
 var applied_mastery_settlement_ids: Dictionary = {}
-var pending_install_purchase: StringName = &""
-var pending_content_purchase: StringName = &""
+## Ordered day-end transaction. Every queued item is charged immediately and
+## activates together when the next business day opens.
+var pending_growth_ids: Array[StringName] = []
 ## Tutorial state uses stable region/device IDs and is never inferred from UI.
 var tutorial_completed_area_ids: Dictionary = {}
 var tutorial_completed_device_ids: Dictionary = {}
@@ -135,55 +134,32 @@ func purchase(growth_id: StringName) -> Dictionary:
 	var evaluation := _evaluate_purchase(growth_id)
 	if not bool(evaluation.get("can_purchase", false)):
 		return {"success": false, "reason": evaluation.get("reason", &"purchase_unavailable"), "status": evaluation}
-	var slot: StringName = evaluation.get("purchase_slot", &"")
 	coins -= int(evaluation.get("price", 0))
-	_set_pending(slot, growth_id)
+	pending_growth_ids.append(growth_id)
 	return {
 		"success": true,
 		"growth_id": growth_id,
-		"purchase_slot": slot,
 		"charged_coins": int(evaluation.get("price", 0)),
 		"activates_on_day": current_day + 1,
+		"pending_growth_ids": pending_growth_ids.duplicate(),
 	}
 
 
-func growth_recommendations(limit_total: int = 3) -> Dictionary:
-	var safe_limit := maxi(limit_total, 0)
-	var raw_recommendations := _raw_growth_window(safe_limit)
-	var recommended: Array[Dictionary] = []
-	for index in mini(safe_limit, raw_recommendations.size()):
-		recommended.append(raw_recommendations[index].duplicate(true))
-
-	var install: Array[Dictionary] = []
-	var content: Array[Dictionary] = []
-	var nearest_locked: Array[Dictionary] = []
-	for status in recommended:
-		if status.get("purchase_slot", &"") == INSTALL_SLOT:
-			install.append(status)
-		else:
-			content.append(status)
-		if not bool(status.get("can_purchase", false)):
-			nearest_locked.append(status)
-	return {
-		"recommended": recommended,
-		"install": install,
-		"content": content,
-		"nearest_locked": nearest_locked,
-	}
-
-func _raw_growth_window(limit_total: int) -> Array[Dictionary]:
+func growth_overview() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	var safe_limit := maxi(limit_total, 0)
-	for route_index in CATALOG.FIXED_GROWTH_ROUTE.size():
-		if result.size() >= safe_limit:
-			break
-		var growth_id: StringName = CATALOG.FIXED_GROWTH_ROUTE[route_index]
+	for display_index in CATALOG.GROWTH_DISPLAY_ORDER.size():
+		var growth_id: StringName = CATALOG.GROWTH_DISPLAY_ORDER[display_index]
 		var status := _evaluate_purchase(growth_id)
-		if bool(status.get("already_owned", false)):
-			continue
-		status["route_index"] = route_index
+		status["display_index"] = display_index
+		status["anchor_id"] = StringName(CATALOG.growth_definition(growth_id).get("anchor_id", &""))
 		result.append(status)
 	return result
+
+
+## Retained as a non-limiting compatibility entry point for non-workshop UI.
+func growth_recommendations(_limit_total: int = 0) -> Dictionary:
+	var overview := growth_overview()
+	return {"recommended": overview, "install": overview, "content": overview, "nearest_locked": overview.filter(func(item: Dictionary) -> bool: return not bool(item.get("can_purchase", false)))}
 
 func record_area_result(area_id: StringName, result: Dictionary) -> Dictionary:
 	if not owns_area(area_id):
@@ -290,18 +266,15 @@ func begin_next_business_day() -> Dictionary:
 		return {"success": false, "reason": &"business_day_open"}
 	var rollback_snapshot := snapshot()
 	var activated: Array[StringName] = []
-	for slot in [INSTALL_SLOT, CONTENT_SLOT]:
-		var growth_id := _pending_for(slot)
-		if growth_id.is_empty():
-			continue
+	for growth_id in pending_growth_ids:
 		var definition := CATALOG.growth_definition(growth_id)
-		if definition.is_empty() or definition.get("purchase_slot", &"") != slot:
+		var activation_status := _evaluate_activation(growth_id)
+		if definition.is_empty() or not bool(activation_status.get("can_activate", false)):
 			load_snapshot(rollback_snapshot)
 			return {"success": false, "reason": &"activation_rollback", "failed_growth_id": growth_id, "activated_growth_ids": []}
 		_apply_growth(growth_id, definition)
 		activated.append(growth_id)
-	pending_install_purchase = &""
-	pending_content_purchase = &""
+	pending_growth_ids.clear()
 	current_day += 1
 	day_open = true
 	return {"success": true, "activated_growth_ids": activated, "current_day": current_day}
@@ -326,8 +299,7 @@ func snapshot() -> Dictionary:
 		"area_mastery_details": area_mastery_details.duplicate(true),
 		"specialization": specialization_snapshot(),
 		"applied_mastery_settlement_ids": _snapshot_id_set(applied_mastery_settlement_ids),
-		"pending_install_purchase": str(pending_install_purchase),
-		"pending_content_purchase": str(pending_content_purchase),
+		"pending_growth_ids": pending_growth_ids.duplicate(),
 		"tutorial": tutorial_snapshot(),
 	}
 
@@ -342,9 +314,6 @@ func load_snapshot(value: Dictionary) -> void:
 	device_tiers = Dictionary(value.get("device_tiers", {&"device.pancake_griddle": 0})).duplicate(true)
 	# The storefront now has one permanent griddle. Normalize legacy tiered saves.
 	device_tiers[&"device.pancake_griddle"] = 0
-	# The youtiao fryer is permanently four-slot. Normalize retired tiered saves.
-	if device_tiers.has(&"device.youtiao_fryer"):
-		device_tiers[&"device.youtiao_fryer"] = 0
 	unlocked_recipe_ids = _load_id_set(value.get("unlocked_recipe_ids", [&"recipe.pancake.base"]))
 	unlocked_recipe_ids[&"recipe.pancake.base"] = true
 	unlocked_product_ids = _load_id_set(value.get("unlocked_product_ids", [&"product.pancake.custom"]))
@@ -365,8 +334,7 @@ func load_snapshot(value: Dictionary) -> void:
 	area_mastery = Dictionary(value.get("area_mastery", {})).duplicate(true)
 	area_mastery_details = Dictionary(value.get("area_mastery_details", {})).duplicate(true)
 	applied_mastery_settlement_ids = _load_id_set(value.get("applied_mastery_settlement_ids", []))
-	pending_install_purchase = StringName(value.get("pending_install_purchase", ""))
-	pending_content_purchase = StringName(value.get("pending_content_purchase", ""))
+	pending_growth_ids = _load_id_array(value.get("pending_growth_ids", []))
 	var tutorial: Dictionary = Dictionary(value.get("tutorial", {}))
 	tutorial_completed_area_ids = _load_id_set(tutorial.get("completed_area_ids", []))
 	tutorial_completed_device_ids = {}
@@ -386,7 +354,7 @@ func _normalize_three_area_state() -> void:
 	unlocked_stock_ids = _active_definition_set(unlocked_stock_ids, &"stock")
 	var active_growth := {}
 	for growth_id in owned_growth_ids:
-		if bool(owned_growth_ids[growth_id]) and CATALOG.FIXED_GROWTH_ROUTE.has(StringName(growth_id)):
+		if bool(owned_growth_ids[growth_id]) and CATALOG.GROWTH_DISPLAY_ORDER.has(StringName(growth_id)):
 			active_growth[StringName(growth_id)] = true
 	owned_growth_ids = active_growth
 	area_mastery = _active_area_dictionary(area_mastery)
@@ -398,14 +366,9 @@ func _normalize_three_area_state() -> void:
 	if tutorial_active_kind != &"area" or not CATALOG.AREA_IDS.has(tutorial_active_id):
 		tutorial_active_kind = &""
 		tutorial_active_id = &""
-	if not pending_install_purchase.is_empty() and not CATALOG.FIXED_GROWTH_ROUTE.has(pending_install_purchase):
-		pending_install_purchase = &""
-	if not pending_content_purchase.is_empty() and not CATALOG.FIXED_GROWTH_ROUTE.has(pending_content_purchase):
-		pending_content_purchase = &""
+	pending_growth_ids = _active_growth_array(pending_growth_ids)
 	unlocked_area_ids[&"area.pancake"] = true
 	device_tiers[&"device.pancake_griddle"] = 0
-	if device_tiers.has(&"device.youtiao_fryer"):
-		device_tiers[&"device.youtiao_fryer"] = 0
 	for starter_recipe in [&"recipe.pancake.base"]:
 		unlocked_recipe_ids[starter_recipe] = true
 	unlocked_product_ids[&"product.pancake.custom"] = true
@@ -435,6 +398,14 @@ func _active_area_array(source: Array[StringName]) -> Array[StringName]:
 	var result: Array[StringName] = []
 	for id in source:
 		if CATALOG.AREA_IDS.has(id) and not result.has(id):
+			result.append(id)
+	return result
+
+
+func _active_growth_array(source: Array[StringName]) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for id in source:
+		if CATALOG.GROWTH_DISPLAY_ORDER.has(id) and not owns_growth(id) and not result.has(id):
 			result.append(id)
 	return result
 
@@ -494,14 +465,12 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	if definition.is_empty():
 		push_error("Growth configuration is missing: %s" % growth_id)
 		return {"growth_id": growth_id, "can_purchase": false, "reason": &"unknown_growth", "missing_requirements": [{"reason": &"unknown_growth", "growth_id": growth_id}]}
-	var slot: StringName = definition.get("purchase_slot", &"")
 	var required_area: StringName = definition.get("requires_area_id", &"")
 	var min_day := int(definition.get("min_day", 1))
 	var min_reputation := int(definition.get("min_reputation", 0))
 	var price := int(definition.get("price", 0))
 	var status := {
 		"growth_id": growth_id,
-		"purchase_slot": slot,
 		"kind": StringName(definition.get("kind", &"")),
 		"price": price,
 		"min_day": min_day,
@@ -522,18 +491,15 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 		status["reason"] = &"already_owned"
 		return status
 	var missing_requirements: Array[Dictionary] = []
-	var pending := _pending_for(slot)
-	if pending == growth_id:
+	if pending_growth_ids.has(growth_id):
 		status["pending_activation"] = true
 		status["reason"] = &"pending_activation"
 		return status
-	if not pending.is_empty():
-		missing_requirements.append({"reason": &"purchase_slot_occupied", "pending_growth_id": pending})
-	if not required_area.is_empty() and not owns_area(required_area):
+	if not required_area.is_empty() and not _will_own_area_after_pending(required_area):
 		missing_requirements.append({"reason": &"area_locked", "required_area_id": required_area})
 	for required_growth_variant in Array(definition.get("requires_growth_ids", [])):
 		var required_growth_id := StringName(required_growth_variant)
-		if not owns_growth(required_growth_id):
+		if not owns_growth(required_growth_id) and not pending_growth_ids.has(required_growth_id):
 			missing_requirements.append({"reason": &"growth_requirement", "required_growth_id": required_growth_id})
 	if current_day < min_day:
 		missing_requirements.append({"reason": &"day_requirement", "min_day": min_day, "current_day": current_day})
@@ -545,10 +511,10 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	if bool(definition.get("requires_all_areas", false)):
 		var current_area_count := 0
 		for area_id in CATALOG.UNLOCK_AREA_IDS:
-			if owns_area(area_id):
+			if _will_own_area_after_pending(area_id):
 				current_area_count += 1
 		for area_id in CATALOG.UNLOCK_AREA_IDS:
-			if not owns_area(area_id):
+			if not _will_own_area_after_pending(area_id):
 				missing_requirements.append({"reason": &"all_areas_requirement", "required_area_id": area_id, "current_area_count": current_area_count, "required_area_count": CATALOG.UNLOCK_AREA_IDS.size()})
 				break
 	var mastery_requirements: Dictionary = Dictionary(definition.get("requires_mastery", {}))
@@ -602,16 +568,29 @@ func _apply_growth(growth_id: StringName, definition: Dictionary) -> void:
 	if definition.get("kind", &"") == &"stock_capacity":
 		stock_capacity = maxi(stock_capacity, int(definition.get("target_capacity", 6)))
 
+func _will_own_area_after_pending(area_id: StringName) -> bool:
+	if owns_area(area_id):
+		return true
+	for pending_id in pending_growth_ids:
+		var pending_definition := CATALOG.growth_definition(pending_id)
+		if StringName(pending_definition.get("area_id", &"")) == area_id:
+			return true
+	return false
 
-func _pending_for(slot: StringName) -> StringName:
-	return pending_install_purchase if slot == INSTALL_SLOT else pending_content_purchase
 
-
-func _set_pending(slot: StringName, growth_id: StringName) -> void:
-	if slot == INSTALL_SLOT:
-		pending_install_purchase = growth_id
-	else:
-		pending_content_purchase = growth_id
+## Activation rechecks only structural facts. Day, reputation, mastery and coin
+## were already real at booking time; queued prerequisites are applied in order.
+func _evaluate_activation(growth_id: StringName) -> Dictionary:
+	var definition := CATALOG.growth_definition(growth_id)
+	if definition.is_empty() or owns_growth(growth_id):
+		return {"can_activate": false}
+	var required_area := StringName(definition.get("requires_area_id", &""))
+	if not required_area.is_empty() and not owns_area(required_area):
+		return {"can_activate": false}
+	for raw_required_growth_id in Array(definition.get("requires_growth_ids", [])):
+		if not owns_growth(StringName(raw_required_growth_id)):
+			return {"can_activate": false}
+	return {"can_activate": true}
 
 
 func _snapshot_id_set(source: Dictionary) -> PackedStringArray:

@@ -3,8 +3,6 @@ extends SceneTree
 const MODEL := preload("res://scripts/gameplay/fresh_soy_milk_machine_model.gd")
 
 const YELLOW := &"stock.fresh_soy_milk.yellow_bean"
-const BLACK := &"stock.fresh_soy_milk.black_bean"
-const RED := &"stock.fresh_soy_milk.red_bean"
 
 var failures := PackedStringArray()
 
@@ -20,27 +18,6 @@ func _initialize() -> void:
 		four.call("add_ingredient", YELLOW)
 	_check(int(four.call("snapshot").get("quantity", 0)) == 4, "advanced machine forms a four-cup batch")
 
-	var two_bean: RefCounted = MODEL.new(0, true)
-	two_bean.call("add_ingredient", YELLOW)
-	two_bean.call("add_ingredient", BLACK)
-	var two_bean_snapshot := Dictionary(two_bean.call("snapshot"))
-	_check(StringName(two_bean_snapshot.get("recipe_id", &"")) == &"recipe.fresh_soy_milk.multigrain" and PackedStringArray(two_bean_snapshot.get("ingredient_ids", [])).size() == 2, "equal two-bean composition resolves to multigrain")
-
-	var three_bean: RefCounted = MODEL.new(2, true)
-	for _cup in range(2):
-		for stock_id in [YELLOW, BLACK, RED]:
-			three_bean.call("add_ingredient", stock_id)
-	var three_bean_snapshot := Dictionary(three_bean.call("snapshot"))
-	_check(int(three_bean_snapshot.get("quantity", 0)) == 2 and PackedStringArray(three_bean_snapshot.get("ingredient_ids", [])).size() == 3, "equal three-bean counts form a two-cup multigrain batch")
-
-	var incomplete: RefCounted = MODEL.new(0, true)
-	incomplete.call("add_ingredient", YELLOW)
-	incomplete.call("add_ingredient", YELLOW)
-	incomplete.call("add_ingredient", BLACK)
-	_check(StringName(incomplete.call("snapshot").get("recipe_id", &"")) == &"" and StringName(incomplete.call("start_water").get("reason", &"")) == &"water_not_available", "unequal bean counts cannot create a mixed-product batch")
-	var cleared := Dictionary(incomplete.call("clear_hopper"))
-	_check(bool(cleared.get("success", false)) and int(cleared.get("quantity", 0)) == 3 and StringName(incomplete.call("snapshot").get("state", &"")) == &"idle", "clear hopper reports every discarded scoop before water")
-
 	_check(_water_grade_at(0.48) == &"C", "water below 25 is C")
 	_check(_water_grade_at(0.50) == &"B", "water boundary 25 is B")
 	_check(_water_grade_at(0.90) == &"A", "water boundary 45 is A")
@@ -51,8 +28,6 @@ func _initialize() -> void:
 
 	for tier in range(3):
 		_check(is_equal_approx(_duration_for(tier, [YELLOW]), 5.0 - tier), "yellow duration follows tier %d" % tier)
-		_check(is_equal_approx(_duration_for(tier, [BLACK]), 6.0 - tier), "black duration follows tier %d" % tier)
-		_check(is_equal_approx(_duration_for(tier, [YELLOW, BLACK]), 7.0 - tier), "multigrain duration follows tier %d" % tier)
 
 	var c_grade: RefCounted = MODEL.new(0, true)
 	c_grade.call("add_ingredient", YELLOW)

@@ -187,7 +187,7 @@ func _refresh_progression_controls() -> void:
 	var details_by_area := Dictionary(snapshot.get("area_mastery_details", {}))
 	var pending := not StringName(snapshot.get("pending_install_purchase", &"")).is_empty() or not StringName(snapshot.get("pending_content_purchase", &"")).is_empty()
 	var summary_lines := PackedStringArray([
-		"营业日 %d · 金币 %d · 声誉 %d" % [int(snapshot.get("current_day", 1)), int(snapshot.get("coins", 0)), int(snapshot.get("reputation", 0))],
+		"营业日 %d · 金币 %d · 口碑 %d" % [int(snapshot.get("current_day", 1)), int(snapshot.get("coins", 0)), int(snapshot.get("reputation", 0))],
 	])
 	var report_open := workstation.daily_bill_panel != null and workstation.daily_bill_panel.visible
 	for area_id in CATALOG.AREA_IDS:

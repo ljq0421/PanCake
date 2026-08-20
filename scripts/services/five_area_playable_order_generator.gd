@@ -671,8 +671,6 @@ static func _soy_multigrain_ingredients(progression: Dictionary, seed: int, sequ
 	var beans: Array[StringName] = []
 	for stock_id in [
 		&"stock.fresh_soy_milk.yellow_bean",
-		&"stock.fresh_soy_milk.black_bean",
-		&"stock.fresh_soy_milk.red_bean",
 	]:
 		if unlocked.has(stock_id):
 			beans.append(stock_id)

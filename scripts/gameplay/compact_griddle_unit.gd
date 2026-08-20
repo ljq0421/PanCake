@@ -16,7 +16,10 @@ const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spr
 const SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png")
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SAUCE_BRUSH_ART_ROTATION_OFFSET := 1.02
-const INITIAL_BATTER_AMOUNT := 4.0
+const MIN_BATTER_AMOUNT := 1.5
+const STANDARD_BATTER_AMOUNT := 4.0
+const MAX_BATTER_AMOUNT := 6.5
+const INITIAL_BATTER_AMOUNT := STANDARD_BATTER_AMOUNT
 const INITIAL_BATTER_RADIUS := 14.0
 const SPREADER_SAMPLE_SPACING := 2.5
 const EGG_SAMPLE_SPACING := 3.0
@@ -34,10 +37,17 @@ const EGG_CRACK_EFFECT_BASE_SCALE := Vector2(0.45, 0.45)
 const EGG_CRACK_FALL_DISTANCE := 34.0
 const EGG_INTACT_VISUAL_SCALE := Vector2(0.25, 0.25)
 const SURFACE_ACTION_NONE: StringName = &""
+const SURFACE_ACTION_POUR_BATTER: StringName = &"pour_batter"
 const SURFACE_ACTION_SPREAD_BATTER: StringName = &"spread_batter"
 const SURFACE_ACTION_SPREAD_EGG: StringName = &"spread_egg"
 const SURFACE_ACTION_BRUSH_SAUCE: StringName = &"brush_sauce"
 const SURFACE_ACTION_FOLD: StringName = &"fold"
+const BATTER_POUR_RATE := 5.0
+const MIN_BATTER_POUR_AMOUNT := 1.5
+const MIN_BATTER_POUR_RADIUS := 4.0
+const MAX_BATTER_POUR_RADIUS := float(GRID_SIZE) * 0.5 - 1.0
+const BEST_BATTER_INNER_RADIUS := INITIAL_BATTER_RADIUS - 2.0
+const BEST_BATTER_OUTER_RADIUS := INITIAL_BATTER_RADIUS
 
 enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 
@@ -78,6 +88,9 @@ var _surface_stock_id: StringName = &""
 var _surface_changed := false
 var _surface_width_multiplier := 1.0
 var _sauce_stroke_id := -1
+var _batter_pour_center := Vector2.ZERO
+var _batter_pour_amount := 0.0
+var _batter_ladle_armed := false
 var _last_tool_direction := Vector2(0.45, 0.89).normalized()
 var _scrape_sampler := StrokeSampler.new(SPREADER_SAMPLE_SPACING)
 var _egg_sampler := StrokeSampler.new(EGG_SAMPLE_SPACING)
@@ -127,9 +140,13 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var step := maxf(delta, 0.0)
-	if pancake_surface.pointer_pressed:
+	if _batter_ladle_armed:
+		_process_batter_ladle_drag(step)
+	elif pancake_surface.pointer_pressed:
 		_update_surface_tool_artwork(pancake_surface.pointer_local_position, step)
 		match _surface_action:
+			SURFACE_ACTION_POUR_BATTER:
+				_process_batter_pour(step)
 			SURFACE_ACTION_SPREAD_BATTER:
 				_process_manual_spread(step)
 			SURFACE_ACTION_SPREAD_EGG:
@@ -154,6 +171,27 @@ func _process(delta: float) -> void:
 		_refresh_heat_visual()
 
 
+func _process_batter_ladle_drag(delta: float) -> void:
+	var local_position := pancake_surface.get_local_mouse_position()
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		if _surface_action == SURFACE_ACTION_POUR_BATTER:
+			_on_surface_pointer_ended(local_position)
+		else:
+			_batter_ladle_armed = false
+			var station := get_parent()
+			if station != null and station.has_method("clear_held_tool"):
+				station.call("clear_held_tool")
+			_refresh_ui()
+		return
+	if _surface_action == SURFACE_ACTION_NONE:
+		if not PancakeSpace.is_inside_pan(local_position, pancake_surface.size, pancake_model.parameters.pan_height_ratio):
+			return
+		_on_surface_pointer_started(local_position)
+	if _surface_action == SURFACE_ACTION_POUR_BATTER:
+		pancake_surface.pointer_local_position = local_position
+		_process_batter_pour(delta)
+
+
 func configure(index: int, display_name: String = "") -> void:
 	unit_index = index
 	_display_name = display_name if not display_name.is_empty() else "鏊子 %d" % (unit_index + 1)
@@ -168,13 +206,32 @@ func set_upgrade_locked(value: bool) -> void:
 		_refresh_ui()
 
 
-func begin_order(value: Dictionary) -> void:
+func begin_order(value: Dictionary, batter_amount: float = STANDARD_BATTER_AMOUNT) -> void:
 	reset_unit()
 	order = value.duplicate(true)
 	p1_session.start(order)
 	state = State.BATTER
-	_seed_initial_batter_if_needed()
+	_seed_initial_batter_if_needed(batter_amount)
 	_refresh_ui()
+
+
+func begin_batter_pour(value: Dictionary) -> Dictionary:
+	if state != State.IDLE:
+		return {"success": false, "reason": &"griddle_busy"}
+	reset_unit()
+	order = value.duplicate(true)
+	p1_session.start(order)
+	state = State.BATTER
+	_batter_ladle_armed = true
+	_batter_pour_amount = 0.0
+	_refresh_ui()
+	return {"success": true}
+
+
+func set_batter_ladle_armed(value: bool) -> void:
+	_batter_ladle_armed = value
+	if is_node_ready():
+		_refresh_ui()
 
 
 func use_press_spreader() -> Dictionary:
@@ -246,7 +303,7 @@ func apply_sauce(stock_id: StringName) -> void:
 
 
 func validate_sauce_prime(stock_id: StringName) -> Dictionary:
-	if stock_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
+	if stock_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili", &"stock.pancake.sauce.tomato"]:
 		return {"success": false, "reason": &"not_pancake_sauce"}
 	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
@@ -294,6 +351,31 @@ func prime_sauce(stock_id: StringName, validation: Dictionary = {}) -> Dictionar
 		_refresh_surface_cursor()
 		_refresh_ui()
 	return {"success": true, "stock_id": stock_id, "grid_position": grid_position}
+
+
+func apply_sauce_automatically(stock_id: StringName, validation: Dictionary = {}) -> Dictionary:
+	var checked := validation if bool(validation.get("success", false)) else validate_sauce_prime(stock_id)
+	if not bool(checked.get("success", false)):
+		return checked
+	var preparation: Dictionary
+	if state == State.FIRST_SIDE:
+		preparation = begin_garnish_without_flip()
+	elif state == State.SECOND_SIDE:
+		preparation = confirm_second_side_for_followup()
+	else:
+		preparation = {"success": true}
+	if not bool(preparation.get("success", false)):
+		return preparation
+	var sauce_type: StringName = &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var result := Dictionary(pancake_model.apply_uniform_sauce(pancake_model.parameters.sauce_target_concentration, sauce_type))
+	if int(result.get("covered_cells", 0)) <= 0:
+		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
+	applied_sauce_ids.append(str(stock_id))
+	_reset_surface_action()
+	if is_node_ready():
+		pancake_surface.force_texture_upload()
+		_refresh_ui()
+	return {"success": true, "stock_id": stock_id, "automated": true, "changed_cells": int(result.get("changed_cells", 0))}
 
 
 func apply_ingredient(stock_id: StringName) -> void:
@@ -472,6 +554,9 @@ func reset_unit() -> void:
 	_stop_egg_crack_effect()
 	_scrape_sampler.reset()
 	_egg_sampler.reset()
+	_batter_pour_amount = 0.0
+	_batter_pour_center = Vector2.ZERO
+	_batter_ladle_armed = false
 	_spread_has_previous = false
 	_reset_surface_action()
 	if is_node_ready():
@@ -508,6 +593,9 @@ func _on_surface_pointer_started(local_position: Vector2) -> void:
 		_spreader_speed_initialized = false
 		_spreader_speed_band = SPREADER_SPEED_MEDIUM
 		pancake_surface.spreader_motion_valid = false
+	elif _surface_action == SURFACE_ACTION_POUR_BATTER:
+		_batter_pour_center = grid_position
+		_batter_pour_amount = 0.0
 	if _surface_action == SURFACE_ACTION_BRUSH_SAUCE:
 		_sauce_stroke_id = pancake_model.begin_sauce_stroke()
 		_surface_changed = _apply_sauce_sample(grid_position) or _surface_changed
@@ -524,7 +612,14 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 	_spreader_angle_initialized = false
 	_spreader_speed_initialized = false
 	pancake_surface.spreader_motion_valid = false
-	if _surface_action == SURFACE_ACTION_SPREAD_BATTER and state == State.BATTER:
+	if _surface_action == SURFACE_ACTION_POUR_BATTER:
+		_surface_changed = _batter_pour_amount >= MIN_BATTER_POUR_AMOUNT
+		_batter_ladle_armed = false
+		_refresh_ui()
+		if not _surface_changed:
+			pancake_model.reset()
+			_refresh_ui()
+	elif _surface_action == SURFACE_ACTION_SPREAD_BATTER and state == State.BATTER:
 		var confirmed := p1_session.confirm_spread(pancake_model)
 		if bool(confirmed.get("success", false)):
 			state = State.FIRST_SIDE
@@ -549,6 +644,21 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 	if station != null and station.has_method("complete_surface_action"):
 		station.call("complete_surface_action", unit_index, _surface_action, _surface_changed)
 	_reset_surface_action()
+
+
+func _process_batter_pour(delta: float) -> void:
+	if state != State.BATTER:
+		return
+	var remaining_radius_growth := MAX_BATTER_POUR_RADIUS - (MIN_BATTER_POUR_RADIUS + _batter_pour_amount)
+	if remaining_radius_growth <= 0.0:
+		return
+	var addition := minf(BATTER_POUR_RATE * maxf(delta, 0.0), remaining_radius_growth)
+	if addition <= 0.0:
+		return
+	_batter_pour_amount += addition
+	var pour_radius := minf(MIN_BATTER_POUR_RADIUS + _batter_pour_amount, MAX_BATTER_POUR_RADIUS)
+	pancake_model.add_batter(_batter_pour_center, addition, pour_radius)
+	state_label.text = "正在倒入面糊 %.1f · 松开后放回面糊勺" % _batter_pour_amount
 
 
 func _process_manual_spread(delta: float) -> void:
@@ -620,11 +730,11 @@ func _apply_radial_batter_sweep(sample: Vector2, outward_direction: Vector2, eff
 	return changed
 
 
-func _seed_initial_batter_if_needed() -> void:
+func _seed_initial_batter_if_needed(batter_amount: float = STANDARD_BATTER_AMOUNT) -> void:
 	if state != State.BATTER or pancake_model.covered_cell_count() > 0:
 		return
 	var center := Vector2.ONE * (float(pancake_model.grid_size) - 1.0) * 0.5
-	pancake_model.add_batter(center, INITIAL_BATTER_AMOUNT, INITIAL_BATTER_RADIUS)
+	pancake_model.add_batter(center, clampf(batter_amount, MIN_BATTER_AMOUNT, MAX_BATTER_AMOUNT), INITIAL_BATTER_RADIUS)
 	if is_node_ready():
 		pancake_surface.force_texture_upload()
 
@@ -862,7 +972,10 @@ func can_apply_sauce_at(local_position: Vector2) -> bool:
 
 
 func cancel_held_tool() -> void:
+	_batter_ladle_armed = false
 	_reset_surface_action()
+	if is_node_ready():
+		_refresh_ui()
 
 
 func can_accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2) -> bool:
@@ -975,12 +1088,17 @@ func _refresh_ui() -> void:
 	# Batter is now added by the ladle holder on the main worktop. This button
 	# remains only for the later flip action.
 	main_action.visible = state == State.FIRST_SIDE
-	var active := state != State.IDLE
+	var active := state != State.IDLE or _batter_ladle_armed
 	pancake_surface.visible = active and state != State.READY
+	pancake_surface.batter_pour_guide_visible = _batter_ladle_armed
+	pancake_surface.batter_pour_guide_center = pancake_surface.size * 0.5
+	pancake_surface.batter_pour_guide_inner_radius_pixels = BEST_BATTER_INNER_RADIUS / float(GRID_SIZE) * pancake_surface.size.x
+	pancake_surface.batter_pour_guide_outer_radius_pixels = BEST_BATTER_OUTER_RADIUS / float(GRID_SIZE) * pancake_surface.size.x
+	pancake_surface.queue_redraw()
 	package_visual.visible = state == State.READY
 	match state:
 		State.IDLE:
-			state_label.text = "空闲 · 点击面糊勺加面糊"
+			state_label.text = "长按鏊面倒入面糊" if _batter_ladle_armed else "空闲 · 使用面糊勺加面糊"
 		State.BATTER:
 			state_label.text = "按住鏊面画圈摊开"
 			main_action.text = "手动摊面中"

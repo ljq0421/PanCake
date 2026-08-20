@@ -84,6 +84,10 @@ var cursor_radius_pixels: float = 8.0
 var cursor_is_t_spreader := false
 var cursor_is_sauce_brush := false
 var cursor_sauce_color := Color(0.34, 0.08, 0.035, 0.98)
+var batter_pour_guide_visible := false
+var batter_pour_guide_center := Vector2.ZERO
+var batter_pour_guide_inner_radius_pixels := 0.0
+var batter_pour_guide_outer_radius_pixels := 0.0
 var spreader_radial_angle := 0.0
 var spreader_motion_valid := false
 @export var draw_spreader_fallback := true
@@ -428,6 +432,10 @@ func _draw() -> void:
 			draw_line(Vector2(0, position), Vector2(size.x, position), Color(1, 1, 1, 0.10), 1.0)
 	if draw_pointer_trace and _trace_points.size() > 1:
 		draw_polyline(_trace_points, Color(0.96, 0.96, 1.0, 0.76), 3.0, true)
+	if batter_pour_guide_visible:
+		var guide_center := batter_pour_guide_center if batter_pour_guide_center != Vector2.ZERO else size * 0.5
+		draw_circle(guide_center, batter_pour_guide_inner_radius_pixels, Color(1.0, 0.82, 0.30, 0.88), false, 2.0, true)
+		draw_circle(guide_center, batter_pour_guide_outer_radius_pixels, Color(1.0, 0.93, 0.54, 0.96), false, 2.5, true)
 	if mouse_grid_cell.x >= 0 and model != null:
 		var local_position := PancakeSpace.grid_to_local(mouse_grid_cell, size, model.grid_size)
 		if cursor_is_t_spreader and draw_spreader_fallback:

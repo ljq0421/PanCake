@@ -2,6 +2,7 @@ class_name PancakeScorer
 extends RefCounted
 
 const UNFLIPPED_DELIVERY_PENALTY := 12.0
+const MAX_PORTIONS_PER_REQUIREMENT := 2
 
 static func evaluate_sauce(model: PancakeModel) -> Dictionary:
 	return evaluate_sauce_type(model, &"sweet_flour")
@@ -62,6 +63,26 @@ static func evaluate_sauce_type(model: PancakeModel, sauce_type: StringName, int
 	}
 
 
+static func _portion_counts(values: Array) -> Dictionary:
+	var counts := {}
+	for value in values:
+		var id := StringName(value)
+		if id.is_empty():
+			continue
+		counts[id] = mini(int(counts.get(id, 0)) + 1, MAX_PORTIONS_PER_REQUIREMENT)
+	return counts
+
+
+static func _sauce_portion_count(sauce_result: Dictionary, base_target: float) -> int:
+	if float(sauce_result.get("coverage_ratio", 0.0)) <= 0.08:
+		return 0
+	return clampi(roundi(float(sauce_result.get("mean_concentration", 0.0)) / maxf(base_target, 0.001)), 1, MAX_PORTIONS_PER_REQUIREMENT)
+
+
+static func _portion_label(display_name: String, portions: int) -> String:
+	return display_name if portions <= 1 else "%s×%d" % [display_name, portions]
+
+
 static func evaluate_order(
 	model: PancakeModel,
 	ingredients: IngredientModel,
@@ -112,38 +133,52 @@ static func evaluate_order(
 	var egg_score := float(egg_result.score)
 
 	var sauce_intensity_multiplier := maxf(float(order.get("sauce_intensity_multiplier", 1.0)), 0.01)
+	var required_sauces: Array = order.get("sauces", [])
+	var required_sauce_quantities := _portion_counts(required_sauces)
 	var sauce_results := {}
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
-		var multiplier := sauce_intensity_multiplier if sauce_type == OrderService.SAUCE_CHILI else 1.0
+		var portions := int(required_sauce_quantities.get(sauce_type, 1))
+		var multiplier := float(portions) * (sauce_intensity_multiplier if sauce_type == OrderService.SAUCE_CHILI else 1.0)
 		sauce_results[sauce_type] = evaluate_sauce_type(model, sauce_type, multiplier)
-	var required_sauces: Array = order.get("sauces", [])
+	var applied_sauce_quantities := {}
+	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
+		var measured := evaluate_sauce_type(model, sauce_type)
+		applied_sauce_quantities[sauce_type] = _sauce_portion_count(measured, model.parameters.sauce_target_concentration)
 	var sauce_scores := PackedFloat32Array()
 	var missing_sauces := PackedStringArray()
-	for sauce_type in required_sauces:
+	for sauce_type in required_sauce_quantities:
 		var sauce_result: Dictionary = Dictionary(sauce_results.get(StringName(sauce_type), {}))
 		sauce_scores.append(float(sauce_result.score))
-		if float(sauce_result.coverage_ratio) < 0.35:
-			missing_sauces.append(OrderService.sauce_display_name(sauce_type))
+		var required_portions := int(required_sauce_quantities[sauce_type])
+		var applied_portions := int(applied_sauce_quantities.get(sauce_type, 0))
+		if applied_portions < required_portions:
+			missing_sauces.append(_portion_label(OrderService.sauce_display_name(sauce_type), required_portions - applied_portions))
 	var sauce_score := 0.0
 	for value in sauce_scores:
 		sauce_score += value
 	sauce_score /= maxf(float(sauce_scores.size()), 1.0)
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
-		if required_sauces.has(sauce_type):
+		if required_sauce_quantities.has(sauce_type):
 			continue
 		var unexpected: Dictionary = Dictionary(sauce_results.get(sauce_type, {}))
 		if float(unexpected.coverage_ratio) > 0.08:
 			sauce_score = maxf(sauce_score - 24.0, 0.0)
 
 	var required_ingredients: Array = order.get("ingredients", [])
+	var required_ingredient_quantities := _portion_counts(required_ingredients)
+	var applied_ingredient_quantities := ingredients.quantities()
 	var missing_ingredients := PackedStringArray()
 	var unexpected_ingredients := PackedStringArray()
-	for ingredient_type in required_ingredients:
-		if not ingredients.has_type(ingredient_type):
-			missing_ingredients.append(IngredientModel.display_name(ingredient_type))
+	for ingredient_type in required_ingredient_quantities:
+		var required_portions := int(required_ingredient_quantities[ingredient_type])
+		var applied_portions := int(applied_ingredient_quantities.get(ingredient_type, 0))
+		if applied_portions < required_portions:
+			missing_ingredients.append(_portion_label(IngredientModel.display_name(ingredient_type), required_portions - applied_portions))
 	for ingredient_type in IngredientModel.ALL_TYPES:
-		if ingredients.has_type(ingredient_type) and not required_ingredients.has(ingredient_type):
-			unexpected_ingredients.append(IngredientModel.display_name(ingredient_type))
+		var applied_portions := int(applied_ingredient_quantities.get(ingredient_type, 0))
+		var required_portions := int(required_ingredient_quantities.get(ingredient_type, 0))
+		if applied_portions > required_portions:
+			unexpected_ingredients.append(_portion_label(IngredientModel.display_name(ingredient_type), applied_portions - required_portions))
 	var ingredient_distribution := ingredients.evaluate_distribution(model.grid_size)
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
 	var ingredient_score := clampf(float(ingredient_distribution.score) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
@@ -211,13 +246,13 @@ static func evaluate_order(
 		tags.append(tag)
 	var feedback := _feedback_for(overall, tags, patience_ratio)
 	var applied_ingredient_ids: Array[StringName] = []
-	var applied_ingredient_quantities := ingredients.quantities()
 	for ingredient_type in IngredientModel.ALL_TYPES:
 		if ingredients.has_type(ingredient_type):
 			applied_ingredient_ids.append(ingredient_type)
 	var applied_sauce_ids: Array[StringName] = []
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
-		if float(Dictionary(sauce_results.get(sauce_type, {})).get("coverage_ratio", 0.0)) > 0.08:
+		var sauce_portions := int(applied_sauce_quantities.get(sauce_type, 0))
+		if sauce_portions > 0:
 			applied_sauce_ids.append(sauce_type)
 	var serving_sauce_results := {}
 	for sauce_type in sauce_results:
@@ -266,6 +301,7 @@ static func evaluate_order(
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
 		"applied_ingredient_quantities": applied_ingredient_quantities.duplicate(true),
 		"applied_sauce_ids": applied_sauce_ids.duplicate(),
+		"applied_sauce_quantities": applied_sauce_quantities.duplicate(true),
 		"repair_tags": Array(repair_tags).duplicate(),
 		"score_caps": score_caps.duplicate(true),
 	}
@@ -301,6 +337,7 @@ static func evaluate_order(
 		"applied_ingredient_ids": applied_ingredient_ids,
 		"applied_ingredient_quantities": applied_ingredient_quantities,
 		"applied_sauce_ids": applied_sauce_ids,
+		"applied_sauce_quantities": applied_sauce_quantities,
 		"score_caps": score_caps,
 		"serving_score_basis": serving_score_basis,
 		"special_evaluation": {
@@ -344,11 +381,15 @@ static func evaluate_stored_product(
 	var sauce_profiles: Dictionary = Dictionary(basis.get("sauce_profiles", {}))
 	var sauce_intensity_multiplier := maxf(float(order.get("sauce_intensity_multiplier", 1.0)), 0.01)
 	var required_sauces: Array = Array(order.get("sauces", []))
+	var required_sauce_quantities := _portion_counts(required_sauces)
+	var applied_sauce_quantities: Dictionary = Dictionary(basis.get("applied_sauce_quantities", {}))
+	if applied_sauce_quantities.is_empty():
+		applied_sauce_quantities = _portion_counts(Array(basis.get("applied_sauce_ids", [])))
 	var sauce_score := 0.0
 	var sauce_score_count := 0
 	var missing_sauces := PackedStringArray()
-	for sauce_variant in required_sauces:
-		var sauce_type := StringName(sauce_variant)
+	for sauce_type_variant in required_sauce_quantities:
+		var sauce_type := StringName(sauce_type_variant)
 		var sauce_result: Dictionary = Dictionary(sauce_results.get(str(sauce_type), {}))
 		if sauce_type == OrderService.SAUCE_CHILI:
 			var chili_profiles := Dictionary(sauce_profiles.get(str(OrderService.SAUCE_CHILI), {}))
@@ -358,29 +399,41 @@ static func evaluate_stored_product(
 				sauce_result = target_profile
 		sauce_score += float(sauce_result.get("score", 0.0))
 		sauce_score_count += 1
-		if float(sauce_result.get("coverage_ratio", 0.0)) < 0.35:
-			missing_sauces.append(OrderService.sauce_display_name(sauce_type))
+		var required_portions := int(required_sauce_quantities[sauce_type])
+		var applied_portions := int(applied_sauce_quantities.get(sauce_type, applied_sauce_quantities.get(str(sauce_type), 0)))
+		if applied_portions < required_portions:
+			missing_sauces.append(_portion_label(OrderService.sauce_display_name(sauce_type), required_portions - applied_portions))
 	if sauce_score_count > 0:
 		sauce_score /= float(sauce_score_count)
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
-		if required_sauces.has(sauce_type):
+		if required_sauce_quantities.has(sauce_type):
 			continue
 		var unexpected: Dictionary = Dictionary(sauce_results.get(str(sauce_type), {}))
 		if float(unexpected.get("coverage_ratio", 0.0)) > 0.08:
 			sauce_score = maxf(sauce_score - 24.0, 0.0)
 
-	var applied_ingredients: Array = Array(basis.get("applied_ingredient_ids", []))
 	var required_ingredients: Array = Array(order.get("ingredients", []))
+	var required_ingredient_quantities := _portion_counts(required_ingredients)
+	var applied_ingredient_quantities: Dictionary = Dictionary(basis.get("applied_ingredient_quantities", {}))
+	if applied_ingredient_quantities.is_empty():
+		applied_ingredient_quantities = _portion_counts(Array(basis.get("applied_ingredient_ids", [])))
 	var missing_ingredients := PackedStringArray()
 	var unexpected_ingredients := PackedStringArray()
-	for ingredient_variant in required_ingredients:
-		var ingredient_type := StringName(ingredient_variant)
-		if not applied_ingredients.has(ingredient_type) and not applied_ingredients.has(str(ingredient_type)):
-			missing_ingredients.append(IngredientModel.display_name(ingredient_type))
-	for ingredient_variant in applied_ingredients:
-		var ingredient_type := StringName(ingredient_variant)
-		if not required_ingredients.has(ingredient_type) and not required_ingredients.has(str(ingredient_type)):
-			unexpected_ingredients.append(IngredientModel.display_name(ingredient_type))
+	for ingredient_type_variant in required_ingredient_quantities:
+		var ingredient_type := StringName(ingredient_type_variant)
+		var required_portions := int(required_ingredient_quantities[ingredient_type])
+		var applied_portions := int(applied_ingredient_quantities.get(ingredient_type, applied_ingredient_quantities.get(str(ingredient_type), 0)))
+		if applied_portions < required_portions:
+			missing_ingredients.append(_portion_label(IngredientModel.display_name(ingredient_type), required_portions - applied_portions))
+	for ingredient_type in IngredientModel.ALL_TYPES:
+		var applied_portions := int(applied_ingredient_quantities.get(ingredient_type, applied_ingredient_quantities.get(str(ingredient_type), 0)))
+		var required_portions := int(required_ingredient_quantities.get(ingredient_type, 0))
+		if applied_portions > required_portions:
+			unexpected_ingredients.append(_portion_label(IngredientModel.display_name(ingredient_type), applied_portions - required_portions))
+	var applied_ingredients: Array[StringName] = []
+	for ingredient_type in IngredientModel.ALL_TYPES:
+		if int(applied_ingredient_quantities.get(ingredient_type, applied_ingredient_quantities.get(str(ingredient_type), 0))) > 0:
+			applied_ingredients.append(ingredient_type)
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
 	var ingredient_score := clampf(float(basis.get("ingredient_distribution_score", 0.0)) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
 	var order_score := clampf(

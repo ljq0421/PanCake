@@ -28,8 +28,6 @@
 [ext_resource type="PackedScene" uid="uid://bcgkauxm4opdi" path="res://scenes/gameplay/customer_service_slot.tscn" id="27_rkfb0"]
 [ext_resource type="Script" uid="uid://c0knmwo6mgf78" path="res://scripts/ui/five_area_material_slot.gd" id="29_uwcff"]
 [ext_resource type="Texture2D" uid="uid://byqia43hguctx" path="res://resources/art/ingredients/soybean/yellow_soybean_portion_v2_five_area_v2.png" id="30_ph66a"]
-[ext_resource type="Texture2D" uid="uid://byr6aendmfemh" path="res://resources/art/ingredients/beans/black_bean_portion_v1_five_area_v2.png" id="31_a7u70"]
-[ext_resource type="Texture2D" uid="uid://cvu2osldoi35e" path="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png" id="32_ow317"]
 [ext_resource type="Texture2D" uid="uid://ghrsjrdg6w05" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v3.png" id="34_ajejd"]
 [ext_resource type="PackedScene" uid="uid://bgfmpn1k6dtn5" path="res://scenes/gameplay/direct_soy_station.tscn" id="37_830a8"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/multi_griddle_station.tscn" id="58_qkje3"]
@@ -244,7 +242,7 @@ theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
 theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 24
-text = "金币 0  ·  营业日 1  ·  声誉 0"
+text = "金币 0  ·  营业日 1  ·  口碑 0"
 vertical_alignment = 1
 
 [node name="PaymentSprite" type="TextureRect" parent="SafeArea" unique_id=1227648355]
@@ -1078,7 +1076,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
 theme_override_font_sizes/font_size = 18
-text = "现有 0 金币 · 声誉 0"
+text = "现有 0 金币 · 口碑 0"
 horizontal_alignment = 1
 
 [node name="GrowthTickets" type="HBoxContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=679546526]
@@ -1301,42 +1299,6 @@ product_id = &"product.fresh_soy_milk.yellow_bean"
 source_kind = &"soy_ingredient"
 material_texture = ExtResource("30_ph66a")
 material_label = "黄豆"
-
-[node name="SoyFullBlack" type="TextureButton" parent="SafeArea" unique_id=287552981]
-unique_name_in_owner = true
-z_index = 31
-layout_mode = 0
-offset_left = 132.0
-offset_top = 956.0
-offset_right = 221.0
-offset_bottom = 1045.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("29_uwcff")
-stock_id = &"stock.fresh_soy_milk.black_bean"
-recipe_id = &"recipe.fresh_soy_milk.black_bean"
-product_id = &"product.fresh_soy_milk.black_bean"
-source_kind = &"soy_ingredient"
-material_texture = ExtResource("31_a7u70")
-material_label = "黑豆"
-
-[node name="SoyFullRed" type="TextureButton" parent="SafeArea" unique_id=356030097]
-unique_name_in_owner = true
-z_index = 31
-layout_mode = 0
-offset_left = 237.0
-offset_top = 956.0
-offset_right = 326.0
-offset_bottom = 1045.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("29_uwcff")
-stock_id = &"stock.fresh_soy_milk.red_bean"
-recipe_id = &"recipe.fresh_soy_milk.red_bean"
-product_id = &"product.fresh_soy_milk.red_bean"
-source_kind = &"soy_ingredient"
-material_texture = ExtResource("32_ow317")
-material_label = "红豆"
 
 [node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea" unique_id=757275453]
 unique_name_in_owner = true

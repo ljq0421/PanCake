@@ -1,5 +1,7 @@
 extends SceneTree
 
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+
 var _failures: Array[String] = []
 
 
@@ -8,6 +10,10 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	_check(
+		int(CATALOG.product_definition(&"product.fresh_soy_milk.yellow_bean").get("material_cost", 0)) == 2,
+		"yellow-soy material cost remains configured",
+	)
 	var session := root.get_node_or_null("GameSession")
 	_check(session != null, "GameSession exists")
 	if session == null:
@@ -19,7 +25,7 @@ func _run() -> void:
 	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0, &"device.fresh_soy_milk_machine": 0})
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.fresh_soy_milk.yellow_bean": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true})
-	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true})
+	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
 	progression.set("owned_growth_ids", {&"growth.capacity.pancake_holding_tray.two_slots": true})
 
 	var inventory := Dictionary(session.call("inventory_snapshot"))
@@ -28,20 +34,13 @@ func _run() -> void:
 	inventory["stock.pancake.egg"] = 2
 	inventory["stock.pancake.scallion"] = 3
 	inventory["stock.youtiao.plain_dough"] = 3
-	inventory["stock.fresh_soy_milk.yellow_bean"] = 2
 	session.call("save_inventory", inventory)
 	var griddle_snapshot := {
 		"version": 1,
-		"griddle_count": 2,
+		"griddle_count": 1,
 		"active_index": 0,
 		"product_sequence": 2,
 		"slots": [
-			{
-				"state": 1,
-				"applied_ingredient_ids": PackedStringArray(),
-				"applied_sauce_ids": PackedStringArray(),
-				"ready_product": {},
-			},
 			{
 				"state": 6,
 				"applied_ingredient_ids": PackedStringArray(["stock.pancake.egg", "stock.pancake.scallion"]),
@@ -57,23 +56,10 @@ func _run() -> void:
 	}
 	session.call("save_five_area_pancake_griddles", griddle_snapshot)
 	var youtiao_load := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1))
-	var soy_load := Dictionary(session.call("load_f4_soy", &"recipe.fresh_soy_milk.yellow_bean", 1))
-	_check(bool(youtiao_load.get("success", false)) and bool(soy_load.get("success", false)), "fixture loads two machine work-in-progress batches")
-	var production: RefCounted = session.call("production_service")
-	var production_snapshot := Dictionary(production.call("snapshot"))
-	var soy_snapshot := Dictionary(production_snapshot.get("fresh_soy_milk_machine", {}))
-	soy_snapshot["output_rack"] = [{
-		"recipe_id": &"recipe.fresh_soy_milk.yellow_bean",
-		"ingredient_ids": PackedStringArray(),
-		"quality": 90.0,
-		"grade": &"A",
-		"quality_multiplier": 1.0,
-		"age_seconds": 0.0,
-		"state": &"ready_safe",
-	}, {}, {}, {}]
-	production_snapshot["fresh_soy_milk_machine"] = soy_snapshot
-	var production_restore := Dictionary(production.call("load_snapshot", production_snapshot))
-	_check(bool(production_restore.get("success", false)), "fixture restores one finished soy cup beside active work in progress")
+	_check(bool(youtiao_load.get("success", false)), "fixture loads one machine work-in-progress batch")
+	var soy_empty_cup := Dictionary(session.call("take_f4_soy_empty_cup"))
+	var soy_filled_cup := Dictionary(session.call("fill_f4_soy_empty_cup", 1.0))
+	_check(bool(soy_empty_cup.get("success", false)) and bool(soy_filled_cup.get("success", false)), "fixture prepares one finished soy cup")
 	var tray_product := {
 		"product_instance_id": &"day.end.tray.pancake",
 		"area_id": &"area.pancake",
@@ -114,20 +100,21 @@ func _run() -> void:
 	var cleared_inventory := Dictionary(session.call("inventory_snapshot"))
 	_check(cleared_inventory.values().all(func(value): return int(value) == 0), "day end clears every remaining stock lane")
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "day end clears youtiao work in progress")
-	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("state", &"")) == &"idle", "day end clears soy work in progress")
+	var soy_after_day_end := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	_check(StringName(soy_after_day_end.get("cup_state", &"")) == &"ready" and Dictionary(soy_after_day_end.get("cup", {})).is_empty(), "day end clears finished soy cups")
 	_check(Array(Dictionary(session.call("five_area_pancake_griddles_snapshot")).get("slots", [])).is_empty(), "day end clears pancake work in progress")
 	_check(Array(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("output_rack", [])).all(func(value): return Dictionary(value).is_empty()), "day end clears finished soy output")
 	_check(Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", [])).all(func(value): return Dictionary(value).is_empty()), "day end clears finished pancakes from the holding tray")
 	_check(Array(Dictionary(session.call("prepared_product_slots_snapshot")).get("slot.04", [])).is_empty(), "day end clears finished youtiao from prepared slots")
 	_check(Array(session.call("active_formal_orders")).is_empty(), "day end clears all unsettled customer orders")
-	_check(Array(bill.get("inventory_waste", [])).size() == 4, "day end exposes every non-empty leftover stock row")
-	_check(Array(bill.get("production_waste", [])).size() == 5, "day end exposes work in progress and finished machine output")
+	_check(Array(bill.get("inventory_waste", [])).size() == 3, "day end exposes every non-empty leftover stock row")
+	_check(Array(bill.get("production_waste", [])).size() == 3, "day end exposes work in progress and finished machine output")
 	_check(Array(bill.get("tray_waste", [])).size() == 1, "day end exposes finished pancake holding waste")
 	_check(Array(bill.get("prepared_product_slot_waste", [])).size() == 1, "day end exposes finished youtiao holding waste")
 	_check(Array(bill.get("abandoned_product_waste", [])).size() == 1, "day end counts a staged but unsettled product as unsold waste")
-	_check(int(bill.get("sold_material_cost", -1)) == 3 and int(bill.get("waste_cost", 0)) == 30 and int(bill.get("total_cost", 0)) == 33 and int(bill.get("total_profit", 0)) == -25, "sold material and unsold waste enter daily cost exactly once")
+	_check(int(bill.get("sold_material_cost", -1)) == 3 and int(bill.get("waste_cost", 0)) == 25 and int(bill.get("total_cost", 0)) == 28 and int(bill.get("total_profit", 0)) == -20, "sold material and unsold waste enter daily cost exactly once")
 	var repeated := Dictionary(session.call("end_business_day"))
-	_check(int(repeated.get("waste_cost", 0)) == 30 and int(repeated.get("total_cost", 0)) == 33, "repeated day end does not duplicate clearance cost")
+	_check(int(repeated.get("waste_cost", 0)) == 25 and int(repeated.get("total_cost", 0)) == 28, "repeated day end does not duplicate clearance cost")
 	_check(int(repeated.get("event_count", -1)) == int(bill.get("event_count", -2)), "repeated day end does not append ledger events")
 	_check(Array(repeated.get("inventory_waste", [])) == Array(bill.get("inventory_waste", [])), "repeated day end preserves inventory waste details")
 	_check(Array(repeated.get("production_waste", [])) == Array(bill.get("production_waste", [])), "repeated day end preserves production waste details")

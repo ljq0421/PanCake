@@ -12,6 +12,7 @@ const PORK_TENDERLOIN: StringName = &"pork_tenderloin"
 const CORIANDER: StringName = &"coriander"
 const PRESERVED_MUSTARD: StringName = &"preserved_mustard"
 const YOUTIAO: StringName = &"youtiao"
+const MAX_PORTIONS_PER_TYPE := 2
 const TYPES: Array[StringName] = [EGG, BAOCUI, HAM_SAUSAGE, SCALLION, MEAT_FLOSS, PORK_TENDERLOIN, CORIANDER, PRESERVED_MUSTARD]
 const ALL_TYPES: Array[StringName] = [EGG, BAOCUI, HAM_SAUSAGE, SCALLION, MEAT_FLOSS, PORK_TENDERLOIN, CORIANDER, PRESERVED_MUSTARD, YOUTIAO]
 
@@ -78,6 +79,8 @@ func place(ingredient_type: StringName, grid_position: Vector2, rotation: float,
 		return {"success": false, "reason": "未知配料"}
 	if pancake_model == null:
 		return {"success": false, "reason": "面饼数据尚未准备"}
+	if count_type(ingredient_type) >= MAX_PORTIONS_PER_TYPE:
+		return {"success": false, "reason": "%s最多加%d份" % [display_name(ingredient_type), MAX_PORTIONS_PER_TYPE]}
 	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
 	var index := pancake_model.index_of(cell)
 	if index < 0 or not pancake_model.is_inside_pan(grid_position):

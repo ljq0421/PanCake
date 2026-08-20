@@ -77,6 +77,12 @@ func _run() -> void:
 	_check(bool(restored.call("owns_area", &"area.youtiao")) and not bool(restored.call("owns_area", &"area.packaged_drink")), "save reload restores active area and never revives retired area")
 	var restored_inventory := Dictionary(session.call("inventory_snapshot"))
 	_check(not restored_inventory.has("stock.packaged_drink.milk") and not restored_inventory.has("stock.steamer.mantou"), "save reload keeps retired stock filtered")
+	var soy_test_profile := Dictionary(session.call("open_soy_test_profile"))
+	var soy_test_order := Dictionary(session.call("active_formal_order"))
+	var soy_test_items := Array(soy_test_order.get("items", []))
+	var soy_test_progression: RefCounted = session.call("progression_service")
+	_check(bool(soy_test_profile.get("success", false)) and not bool(soy_test_progression.call("owns_assist", &"assist.fresh_soy_milk.sugar")), "soy test profile leaves the sugar jar locked")
+	_check(soy_test_items.size() == 1 and int(Dictionary(soy_test_items[0]).get("sugar_servings", -1)) == 0, "locked sugar jar never creates a sweetened soy test order")
 	session.call("reset_incompatible_development_save")
 	_finish()
 

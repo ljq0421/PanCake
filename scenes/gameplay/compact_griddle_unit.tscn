@@ -176,7 +176,7 @@ meat_floss_texture = ExtResource("28_pork_floss_portion")
 pork_tenderloin_texture = ExtResource("12_tenderloin")
 coriander_texture = ExtResource("13_coriander")
 preserved_mustard_texture = ExtResource("14_mustard")
-scallion_scale = 0.18
+scallion_scale = 0.45
 
 [node name="PancakeFoldOverlay" type="Control" parent="PancakeSurface"]
 unique_name_in_owner = true
@@ -247,10 +247,11 @@ stretch_mode = 5
 
 [node name="MainAction" type="Button" parent="."]
 unique_name_in_owner = true
+z_index = 1
 offset_left = 98.0
-offset_top = 344.0
+offset_top = 318.0
 offset_right = 322.0
-offset_bottom = 370.0
+offset_bottom = 344.0
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("ActionStyle")

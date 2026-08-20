@@ -28,6 +28,13 @@ const DOUBLE_SAUCE_PANCAKE_ITEM := {
 		&"stock.pancake.sauce.red_chili",
 	],
 }
+const DOUBLE_PORTION_PANCAKE_ITEM := {
+	"area_id": &"area.pancake",
+	"product_id": &"product.pancake.custom",
+	"quantity": 1,
+	"ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.meat_floss", &"stock.pancake.meat_floss"],
+	"sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"],
+}
 const HEATED_SOY_ITEM := {
 	"area_id": &"area.packaged_drink",
 	"product_id": &"product.packaged_drink.soy_milk",
@@ -76,6 +83,14 @@ func _run() -> void:
 	_assert_texture(workstation, 0, "egg_whole_v1.png", "single-sauce order keeps topping first")
 	_assert_texture(workstation, 1, "sweet_flour_sauce_texture_v1.png", "single-sauce order shows sweet flour sauce")
 	_check(_icon(workstation, 1).tooltip_text == "甜面酱", "sweet flour sauce requirement has a distinct name")
+
+	workstation.call("_refresh_order_card_ui", {"items": [DOUBLE_PORTION_PANCAKE_ITEM]}, 1.0)
+	_assert_texture(workstation, 0, "egg_whole_v1.png", "double-portion order shows the first egg")
+	_assert_texture(workstation, 1, "egg_whole_v1.png", "double-portion order visibly repeats the egg")
+	_check(_icon(workstation, 0).tooltip_text == "鸡蛋×2" and _icon(workstation, 1).tooltip_text == "鸡蛋×2", "double ingredient tooltip states the required quantity")
+	_assert_texture(workstation, 4, "sweet_flour_sauce_texture_v1.png", "double-portion order shows the first sauce serving")
+	_assert_texture(workstation, 5, "sweet_flour_sauce_texture_v1.png", "double-portion order visibly repeats the sauce serving")
+	_check(_icon(workstation, 4).tooltip_text == "甜面酱×2" and _icon(workstation, 5).tooltip_text == "甜面酱×2", "double sauce tooltip states the required quantity")
 
 	workstation.call("_refresh_order_card_ui", {"items": [HEATED_SOY_ITEM, DOUBLE_SAUCE_PANCAKE_ITEM]}, 1.0)
 	_assert_texture(workstation, 0, "egg_whole_v1.png", "double-sauce order keeps topping first")

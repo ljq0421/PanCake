@@ -114,7 +114,7 @@ text = "金币 +1000"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(180, 44)
 layout_mode = 2
-text = "声誉 +20"
+text = "口碑 +20"
 
 [node name="QuickEndBusinessDayButton" type="Button" parent="Root/DebugPanel/Scroll/Labels/ResourceActions"]
 unique_name_in_owner = true

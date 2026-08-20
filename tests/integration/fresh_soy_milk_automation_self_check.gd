@@ -23,8 +23,6 @@ func _run() -> void:
 
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	inventory["stock.fresh_soy_milk.yellow_bean"] = 0
-	inventory["stock.fresh_soy_milk.black_bean"] = 4
-	inventory["stock.fresh_soy_milk.red_bean"] = 4
 	session.call("save_inventory", inventory)
 	progression.set("coins", 100)
 	progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_yellow_restock": true})
@@ -32,29 +30,6 @@ func _run() -> void:
 	_check(int(session.call("inventory_snapshot").get("stock.fresh_soy_milk.yellow_bean", 0)) == 0, "auto restock waits for the full 0.25-second unit")
 	session.call("advance_f3_production", 0.01)
 	_check(int(session.call("inventory_snapshot").get("stock.fresh_soy_milk.yellow_bean", 0)) == 1 and int(progression.get("coins")) == 98, "auto restock buys one yellow bean at normal price after 0.25 seconds")
-
-	progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_production": true})
-	var black_item := {"area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.black_bean", "quantity": 1, "ingredient_ids": PackedStringArray(), "sauce_ids": PackedStringArray()}
-	var first := Dictionary(session.call("open_formal_order", [black_item], {"patience_seconds": 9.0, "base_coins": 9}))
-	var second := Dictionary(session.call("open_formal_order", [black_item], {"patience_seconds": 15.0, "base_coins": 9}))
-	session.call("open_formal_order", [{"area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "quantity": 1, "ingredient_ids": PackedStringArray(), "sauce_ids": PackedStringArray()}], {"patience_seconds": 25.0, "base_coins": 7})
-	_check(bool(first.get("success", false)) and bool(second.get("success", false)), "automation test opens two black-bean demands")
-	session.call("advance_f3_production", 0.01)
-	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
-	_check(StringName(machine.get("state", &"")) == &"grinding" and StringName(machine.get("recipe_id", &"")) == &"recipe.fresh_soy_milk.black_bean" and int(machine.get("quantity", 0)) == 2, "auto production prioritizes the least-patient uncovered demand and batches matching orders")
-	_check(int(session.call("inventory_snapshot").get("stock.fresh_soy_milk.black_bean", 0)) == 2, "auto production consumes exactly the batched bean quantity")
-
-	var generation_progression := Dictionary(progression.call("snapshot"))
-	var saw_two := false
-	var saw_three := false
-	for seed in range(24):
-		var candidate := Dictionary(GENERATOR._product_candidate(&"area.fresh_soy_milk", &"product.fresh_soy_milk.multigrain", generation_progression, seed, 3, false))
-		var ids := PackedStringArray(Dictionary(Array(candidate.get("items", []))[0]).get("ingredient_ids", PackedStringArray()))
-		saw_two = saw_two or ids.size() == 2
-		saw_three = saw_three or ids.size() == 3
-		var repeated := Dictionary(GENERATOR._product_candidate(&"area.fresh_soy_milk", &"product.fresh_soy_milk.multigrain", generation_progression, seed, 3, false))
-		_check(ids == PackedStringArray(Dictionary(Array(repeated.get("items", []))[0]).get("ingredient_ids", PackedStringArray())), "multigrain composition is deterministic for seed %d" % seed)
-	_check(saw_two and saw_three, "multigrain order generation covers deterministic two-bean and three-bean combinations")
 
 	var combo_order := {"items": [
 		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "base_price_coins": 23},
@@ -74,9 +49,9 @@ func _run() -> void:
 func _configure_full_soy(progression: RefCounted) -> void:
 	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
 	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0, &"device.fresh_soy_milk_machine": 0})
-	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.fresh_soy_milk.yellow_bean": true, &"recipe.fresh_soy_milk.black_bean": true, &"recipe.fresh_soy_milk.red_bean": true, &"recipe.fresh_soy_milk.multigrain": true})
-	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true, &"product.fresh_soy_milk.black_bean": true, &"product.fresh_soy_milk.red_bean": true, &"product.fresh_soy_milk.multigrain": true})
-	progression.set("unlocked_stock_ids", {&"stock.pancake.batter": true, &"stock.pancake.egg": true, &"stock.pancake.baocui": true, &"stock.pancake.scallion": true, &"stock.pancake.sauce.sweet_flour": true, &"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true, &"stock.fresh_soy_milk.black_bean": true, &"stock.fresh_soy_milk.red_bean": true})
+	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.fresh_soy_milk.yellow_bean": true})
+	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true})
+	progression.set("unlocked_stock_ids", {&"stock.pancake.batter": true, &"stock.pancake.egg": true, &"stock.pancake.baocui": true, &"stock.pancake.scallion": true, &"stock.pancake.sauce.sweet_flour": true, &"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true})
 
 
 func _check(condition: bool, message: String) -> void:

@@ -9,8 +9,6 @@ var _failures: Array[String] = []
 func _initialize() -> void:
 	for stock_id in [
 		&"stock.fresh_soy_milk.yellow_bean",
-		&"stock.fresh_soy_milk.black_bean",
-		&"stock.fresh_soy_milk.red_bean",
 	]:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s refills in 0.25 seconds" % stock_id)
 

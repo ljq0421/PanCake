@@ -101,6 +101,9 @@ func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true
 		_native_drag_in_progress = true
 		var preview := TextureRect.new()
 		preview.texture = texture_normal
+		# Drag previews must stay above decorative drop targets (for example, the
+		# black-sesame tray), otherwise the product appears to slip underneath it.
+		preview.z_index = z_index + 1
 		preview.custom_minimum_size = Vector2(72.0, 72.0)
 		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

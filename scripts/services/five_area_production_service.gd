@@ -83,15 +83,15 @@ func fill_soy_empty_cup(held_seconds: float) -> Dictionary:
 	return result
 
 
-func add_soy_sugar() -> Dictionary:
-	var result: Dictionary = _soy.call("add_sugar")
+func add_soy_sugar(cup_index: int = 0) -> Dictionary:
+	var result: Dictionary = _soy.call("add_sugar", cup_index)
 	if bool(result.get("success", false)):
 		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
 	return result
 
 
-func add_soy_ice() -> Dictionary:
-	var result: Dictionary = _soy.call("add_ice")
+func add_soy_ice(cup_index: int = 0) -> Dictionary:
+	var result: Dictionary = _soy.call("add_ice", cup_index)
 	if bool(result.get("success", false)):
 		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
 	return result
@@ -547,6 +547,26 @@ func clear_for_day_end() -> Dictionary:
 	})
 
 	var soy_snapshot := machine_snapshot(SOY_DEVICE)
+	var soy_cup_clear := Dictionary(_soy.call("clear_for_day_end"))
+	var soy_cup_products: Array = Array(soy_cup_clear.get("discarded_products", []))
+	if soy_cup_products.is_empty():
+		var legacy_soy_cup_product := Dictionary(soy_cup_clear.get("discarded_product", {}))
+		if not legacy_soy_cup_product.is_empty():
+			soy_cup_products.append(legacy_soy_cup_product)
+	for raw_soy_cup_product in soy_cup_products:
+		var soy_cup_product := Dictionary(raw_soy_cup_product)
+		if soy_cup_product.is_empty():
+			continue
+		var soy_cup_product_id := StringName(soy_cup_product.get("product_id", &""))
+		var soy_cup_cost := maxi(int(soy_cup_product.get("material_cost", CATALOG.product_definition(soy_cup_product_id).get("material_cost", 0))), 0)
+		cleared_waste.append(_record_waste(
+			&"area.fresh_soy_milk",
+			&"fresh_soy_cup",
+			soy_cup_product_id,
+			&"day_end_unsold_product",
+			1,
+			soy_cup_cost,
+		))
 	var soy_counts := Dictionary(soy_snapshot.get("ingredient_counts", {}))
 	var soy_quantity := maxi(int(soy_snapshot.get("quantity", 0)), 0)
 	if soy_quantity > 0 or not soy_counts.is_empty():
@@ -648,7 +668,8 @@ func _configure_soy_serving_upgrades() -> void:
 		false,
 		_owns_automation(&"automation.fresh_soy_milk.auto_fill"),
 		_owns_assist(&"assist.fresh_soy_milk.sugar"),
-		_owns_assist(&"assist.fresh_soy_milk.ice")
+		_owns_assist(&"assist.fresh_soy_milk.ice"),
+		_owns_automation(&"automation.fresh_soy_milk.double_fill")
 	)
 
 
@@ -758,8 +779,6 @@ func _copy_soy_product_fields(product: Dictionary, source: Dictionary) -> void:
 static func _soy_recipe_for_stock(stock_id: StringName) -> StringName:
 	match stock_id:
 		&"stock.fresh_soy_milk.yellow_bean": return &"recipe.fresh_soy_milk.yellow_bean"
-		&"stock.fresh_soy_milk.black_bean": return &"recipe.fresh_soy_milk.black_bean"
-		&"stock.fresh_soy_milk.red_bean": return &"recipe.fresh_soy_milk.red_bean"
 	return &""
 
 

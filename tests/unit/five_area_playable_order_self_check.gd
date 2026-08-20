@@ -141,6 +141,7 @@ func _check_basic_soy_flavour_orders(inventory: Dictionary) -> void:
 			if StringName(item.get("area_id", &"")) == &"area.fresh_soy_milk":
 				soy_orders += 1
 				_check(StringName(item.get("product_id", &"")) == &"product.fresh_soy_milk.yellow_bean", "basic soy machine never generates locked flavour requirements")
+				_check(int(item.get("sugar_servings", 0)) == 0, "soy orders remain unsweetened until the sugar jar is unlocked")
 	_check(soy_orders > 0, "basic soy order sampling includes yellow-soy requests")
 
 
@@ -148,9 +149,9 @@ func _fully_playable_progression() -> Dictionary:
 	return {
 		"unlocked_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"],
 		"device_tiers": {&"device.pancake_griddle": 2, &"device.youtiao_fryer": 2, &"device.fresh_soy_milk_machine": 2},
-		"unlocked_recipe_ids": [&"recipe.pancake.base", &"recipe.youtiao.plain", &"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.black_bean", &"recipe.fresh_soy_milk.red_bean", &"recipe.fresh_soy_milk.multigrain"],
-		"unlocked_product_ids": [&"product.pancake.custom", &"product.youtiao.plain", &"product.fresh_soy_milk.yellow_bean", &"product.fresh_soy_milk.black_bean", &"product.fresh_soy_milk.red_bean", &"product.fresh_soy_milk.multigrain"],
-		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour", &"stock.youtiao.plain_dough", &"stock.fresh_soy_milk.yellow_bean", &"stock.fresh_soy_milk.black_bean", &"stock.fresh_soy_milk.red_bean"],
+		"unlocked_recipe_ids": [&"recipe.pancake.base", &"recipe.youtiao.plain", &"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.multigrain"],
+		"unlocked_product_ids": [&"product.pancake.custom", &"product.youtiao.plain", &"product.fresh_soy_milk.yellow_bean", &"product.fresh_soy_milk.multigrain"],
+		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour", &"stock.youtiao.plain_dough", &"stock.fresh_soy_milk.yellow_bean"],
 		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "active_kind": &"", "active_id": &""},
 	}
 

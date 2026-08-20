@@ -12,7 +12,8 @@ const SPECIALS := preload("res://scripts/data/special_customer_catalog.gd")
 ## Pancake production currently supports sweet-flour and red-chili sauce.  The
 ## formal contract nevertheless owns the upper bound so a malformed order can
 ## never introduce a third sauce when more sauce content is added later.
-const MAX_SAUCE_REQUIREMENTS_PER_ITEM := 2
+const MAX_SAUCE_TYPES_PER_ITEM := 2
+const MAX_PORTIONS_PER_REQUIREMENT := 2
 const MAX_OPEN_ORDERS := 6
 const MAX_ACTIVE_CUSTOMERS := 3
 const CUSTOMER_IDS: Array[StringName] = [
@@ -78,19 +79,37 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		var item: Dictionary = Dictionary(source_item).duplicate(true)
 		if StringName(item.get("area_id", &"")).is_empty() or StringName(item.get("product_id", &"")).is_empty():
 			return {"success": false, "reason": &"invalid_order_item"}
+		var ingredient_ids := _normalized_ids(item.get("ingredient_ids", []))
+		var ingredient_overage := _first_over_portioned_id(ingredient_ids)
+		if not ingredient_overage.is_empty():
+			return {
+				"success": false,
+				"reason": &"too_many_ingredient_portions",
+				"ingredient_id": ingredient_overage,
+				"max_portions": MAX_PORTIONS_PER_REQUIREMENT,
+			}
 		var sauce_ids := _normalized_ids(item.get("sauce_ids", []))
-		if sauce_ids.size() > MAX_SAUCE_REQUIREMENTS_PER_ITEM:
+		var sauce_overage := _first_over_portioned_id(sauce_ids)
+		if not sauce_overage.is_empty():
+			return {
+				"success": false,
+				"reason": &"too_many_sauce_portions",
+				"sauce_id": sauce_overage,
+				"max_portions": MAX_PORTIONS_PER_REQUIREMENT,
+			}
+		if _unique_id_count(sauce_ids) > MAX_SAUCE_TYPES_PER_ITEM:
 			return {
 				"success": false,
 				"reason": &"too_many_sauce_requirements",
-				"max_sauce_requirements": MAX_SAUCE_REQUIREMENTS_PER_ITEM,
-				"requested_sauce_count": sauce_ids.size(),
+				"max_sauce_requirements": MAX_SAUCE_TYPES_PER_ITEM,
+				"requested_sauce_count": _unique_id_count(sauce_ids),
 			}
 		item["quantity"] = maxi(int(item.get("quantity", 1)), 1)
 		var normalized_temperature := normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))
 		if normalized_temperature.is_empty():
 			return {"success": false, "reason": &"invalid_temperature_mode", "value": item.get("temperature_mode")}
 		item["temperature_mode"] = normalized_temperature
+		item["ingredient_ids"] = ingredient_ids
 		item["sauce_ids"] = sauce_ids
 		item["prepared_product_instance_ids"] = PackedStringArray()
 		item["attached_products"] = []
@@ -656,6 +675,22 @@ static func _normalized_ids(source: Variant) -> PackedStringArray:
 	var ids := PackedStringArray(Array(source).map(func(value): return str(value)))
 	ids.sort()
 	return ids
+
+
+static func _first_over_portioned_id(ids: PackedStringArray) -> StringName:
+	var counts := {}
+	for id in ids:
+		counts[id] = int(counts.get(id, 0)) + 1
+		if int(counts[id]) > MAX_PORTIONS_PER_REQUIREMENT:
+			return StringName(id)
+	return &""
+
+
+static func _unique_id_count(ids: PackedStringArray) -> int:
+	var unique := {}
+	for id in ids:
+		unique[id] = true
+	return unique.size()
 
 
 func _restore(source: Dictionary) -> void:

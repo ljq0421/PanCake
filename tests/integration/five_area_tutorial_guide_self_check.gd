@@ -42,16 +42,16 @@ func _run() -> void:
 	root.add_child(stub)
 
 	var guide := Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao"))
-	_check(guide.get("target") == workstation.youtiao_dough_slots[0] and str(guide.get("message", "")).contains("长按"), "zero-stock youtiao tutorial points to bottom restock")
+	_check(guide.get("target") == workstation.cartoon_youtiao_fryer.start_button and str(guide.get("message", "")).contains("长按油条机"), "zero-stock youtiao tutorial points to direct fryer loading")
 	stub.inventory["stock.youtiao.plain_dough"] = 1
 	guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao"))
-	_check(guide.get("target") == workstation.youtiao_dough_slots[0] and str(guide.get("message", "")).contains("拖入"), "stocked youtiao tutorial keeps the target and switches to drag wording")
+	_check(guide.get("target") == workstation.cartoon_youtiao_fryer.start_button and str(guide.get("message", "")).contains("长按油条机"), "stocked youtiao tutorial keeps direct fryer loading guidance")
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"loaded"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.youtiao_station.start_button, "loaded youtiao points to start")
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.start_button, "loaded youtiao points to start")
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"frying"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.youtiao_station.state_label, "frying wait points to the device state")
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.state_label, "frying wait points to the device state")
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"ready_to_collect"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.youtiao_station.output_sources[0], "ready youtiao points to the fryer output that stores the whole batch")
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.output_sources[0], "ready youtiao points to the fryer output that stores the whole batch")
 
 	var youtiao_target := _bind_centered_tutorial_order(workstation, stub, &"area.youtiao", &"product.youtiao.plain")
 	stub.prepared_counts[&"slot.04"] = 1
@@ -74,7 +74,7 @@ func _run() -> void:
 	_check(workstation.call("_tutorial_delivery_target", stub, &"area.pancake") == pancake_target, "ready pancake resolves through the same real customer-card target")
 	var overlay := workstation.tutorial_guide_overlay as Control
 	workstation.set_process(false)
-	overlay.call("show_guide", workstation.youtiao_station.start_button, "点击启动")
+	overlay.call("show_guide", workstation.cartoon_youtiao_fryer.start_button, "点击启动")
 	await process_frame
 	var guide_arrow := overlay.get_node("GuideArrow") as Control
 	var guide_bubble := overlay.get_node("GuideBubble") as Control

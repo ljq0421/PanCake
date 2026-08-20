@@ -12,12 +12,12 @@ const SOURCE_PATHS := {
 	&"growth.area.youtiao": "FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer/FryerVisual",
 	&"growth.equipment.youtiao.advanced": "FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer/FryerVisual",
 	&"growth.area.fresh_soy_milk": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/SoyMilkDispenser",
-	&"growth.flavor.fresh_soy_milk.black_bean": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/SoyMilkDispenser",
-	&"growth.flavor.fresh_soy_milk.red_bean": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/SoyMilkDispenser",
 	&"growth.assist.fresh_soy_milk.sugar": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/SoyMilkSugarJar",
 	&"growth.assist.fresh_soy_milk.ice": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/IceButton",
 	&"growth.automation.fresh_soy_milk.auto_fill": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/SoyMilkDispenser",
+	&"growth.automation.fresh_soy_milk.advanced": "FiveAreaInfrastructure/Stations/FreshSoyMilkStation/SoyMilkDispenser",
 	&"growth.tool.pancake.wide_spreader": "SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderHolderFilledVisual",
+	&"growth.automation.pancake.auto_batter_ladle": "SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BatterLadleHolderHotspot",
 	&"growth.automation.pancake.press_once": "SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderHolderFilledVisual",
 	&"growth.automation.pancake.auto_sauce_brush": "SafeArea/JianbingStallArtwork/SweetBeanSauceJar",
 	&"growth.add_on.pancake.chili_sauce": "SafeArea/JianbingStallArtwork/ChiliSauceJar",
@@ -27,20 +27,15 @@ const SOURCE_PATHS := {
 	&"growth.add_on.pancake.coriander": "SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/CorianderTray/Visual",
 	&"growth.add_on.pancake.red_chili": "SafeArea/JianbingStallArtwork/ChiliSauceJar",
 	&"growth.flavor.youtiao.sesame": "FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer",
-	&"growth.flavor.youtiao.sugar": "FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer",
-	&"growth.assist.youtiao.temperature_indicator": "FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer/FryerVisual",
 }
 const TAG_OFFSETS := {
 	&"growth.flavor.youtiao.sesame": Vector2(0.0, -84.0),
-	&"growth.flavor.youtiao.sugar": Vector2(0.0, -42.0),
-	&"growth.assist.youtiao.temperature_indicator": Vector2(0.0, 42.0),
 	# The area unlock shares the dispenser artwork with three follow-up upgrades.
 	# Give it its own row so the essential "豆浆机" purchase target cannot be
 	# covered by the red-bean flavour target.
 	&"growth.area.fresh_soy_milk": Vector2(0.0, -84.0),
-	&"growth.flavor.fresh_soy_milk.black_bean": Vector2(0.0, -42.0),
-	&"growth.flavor.fresh_soy_milk.red_bean": Vector2(0.0, 0.0),
 	&"growth.automation.fresh_soy_milk.auto_fill": Vector2(0.0, 42.0),
+	&"growth.automation.fresh_soy_milk.advanced": Vector2(0.0, 84.0),
 	&"growth.tool.pancake.wide_spreader": Vector2(0.0, -42.0),
 	&"growth.automation.pancake.press_once": Vector2(0.0, 0.0),
 	&"growth.automation.pancake.auto_sauce_brush": Vector2(0.0, 42.0),
@@ -100,8 +95,57 @@ func refresh() -> void:
 		var condition_tag := prop.get_node_or_null("ConditionTag") as Label
 		if condition_tag != null:
 			condition_tag.text = "%s\n%s" % [CATALOG.growth_definition(growth_id).get("label", "升级"), _inline_requirement(status)]
+		_apply_upgrade_tag_style(prop, status)
 		prop.modulate = Color.WHITE if _state_text(status) != "条件不足" and _state_text(status) != "金币不足" else Color(0.62, 0.62, 0.62, 1.0)
 	if not _selected_id.is_empty(): _show_detail(_selected_id)
+
+
+func _apply_upgrade_tag_style(prop: Button, status: Dictionary) -> void:
+	# Every upgrade state is a labelled UI target rather than unframed text over
+	# the workstation artwork. Colour distinguishes the actionable state at a
+	# glance without changing the label copy.
+	prop.flat = false
+	var normal_background := Color(0.15, 0.17, 0.20, 0.94)
+	var normal_border := Color(0.54, 0.58, 0.63, 0.94)
+	var hover_background := Color(0.20, 0.23, 0.27, 0.98)
+	var hover_border := Color(0.72, 0.76, 0.81, 1.0)
+	if bool(status.get("already_owned", false)):
+		normal_background = Color(0.08, 0.20, 0.30, 0.96)
+		normal_border = Color(0.42, 0.75, 0.94, 1.0)
+		hover_background = Color(0.11, 0.28, 0.40, 0.98)
+		hover_border = Color(0.67, 0.88, 1.0, 1.0)
+	elif bool(status.get("pending_activation", false)):
+		normal_background = Color(0.31, 0.20, 0.06, 0.96)
+		normal_border = Color(1.0, 0.75, 0.32, 1.0)
+		hover_background = Color(0.40, 0.27, 0.08, 0.98)
+		hover_border = Color(1.0, 0.89, 0.56, 1.0)
+	elif bool(status.get("can_purchase", false)):
+		normal_background = Color(0.07, 0.27, 0.16, 0.96)
+		normal_border = Color(0.47, 0.91, 0.60, 1.0)
+		hover_background = Color(0.10, 0.36, 0.21, 0.98)
+		hover_border = Color(0.78, 1.0, 0.72, 1.0)
+	var normal := _upgrade_tag_box(normal_background, normal_border)
+	var hover := _upgrade_tag_box(hover_background, hover_border)
+	prop.add_theme_stylebox_override("normal", normal)
+	prop.add_theme_stylebox_override("hover", hover)
+	prop.add_theme_stylebox_override("pressed", hover)
+	prop.add_theme_color_override("font_color", Color(1.0, 0.98, 0.84, 1.0))
+	prop.add_theme_color_override("font_hover_color", Color.WHITE)
+
+
+func _upgrade_tag_box(background: Color, border: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = background
+	box.border_color = border
+	box.set_border_width_all(2)
+	box.corner_radius_top_left = 7
+	box.corner_radius_top_right = 7
+	box.corner_radius_bottom_right = 7
+	box.corner_radius_bottom_left = 7
+	box.shadow_color = Color(0.02, 0.08, 0.04, 0.55)
+	box.shadow_size = 3
+	box.shadow_offset = Vector2(0, 2)
+	return box
 
 
 func _anchor_to_source(prop: Control, growth_id: StringName) -> void:
@@ -217,7 +261,7 @@ func _requirement_text(requirement: Dictionary) -> String:
 		&"area_locked": return "先解锁%s区域" % _area_label(StringName(requirement.get("required_area_id", &"")))
 		&"growth_requirement": return "先预订%s" % CATALOG.growth_definition(StringName(requirement.get("required_growth_id", &""))).get("label", "前置升级")
 		&"day_requirement": return "第 %d 天（当前第 %d 天）" % [int(requirement.get("min_day", 1)), int(requirement.get("current_day", 1))]
-		&"reputation_requirement": return "声望 %d（当前 %d）" % [int(requirement.get("min_reputation", 0)), int(requirement.get("current_reputation", 0))]
+		&"reputation_requirement": return "口碑 %d（当前 %d）" % [int(requirement.get("min_reputation", 0)), int(requirement.get("current_reputation", 0))]
 		&"tutorial_requirement": return "完成%s教学" % _area_label(StringName(requirement.get("required_tutorial_area_id", &"")))
 		&"mastery_requirement": return "%s%s %d 次（当前 %d 次）" % [_area_label(StringName(requirement.get("mastery_area_id", &""))), " A级" if StringName(requirement.get("mastery_metric", &"")) == &"a_grade" else "合格", int(requirement.get("required_mastery", 0)), int(requirement.get("current_mastery", 0))]
 		&"insufficient_coins": return "金币 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]

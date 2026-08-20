@@ -62,18 +62,14 @@ func create_product_snapshot(
 	var product_instance_id := product_instance_id_override
 	if product_instance_id.is_empty():
 		product_instance_id = StringName("product_instance.pancake.%d" % _product_sequence)
-	var ingredient_ids := PackedStringArray()
+	var fallback_ingredient_ids := PackedStringArray()
 	for ingredient_id in Array(score_result.get("applied_ingredient_ids", [])):
-		var stock_id: StringName = LEGACY_INGREDIENT_TO_STOCK.get(StringName(ingredient_id), &"")
-		if not stock_id.is_empty():
-			ingredient_ids.append(str(stock_id))
-	var sauce_ids := PackedStringArray()
-	for sauce_id in Array(score_result.get("applied_sauce_ids", [])):
-		var stock_id: StringName = LEGACY_SAUCE_TO_STOCK.get(StringName(sauce_id), &"")
-		if not stock_id.is_empty():
-			sauce_ids.append(str(stock_id))
-	var ingredient_cost_stock_ids := _ingredient_cost_stock_ids(score_result, ingredient_ids)
-	var cost_stock_ids := _cost_stock_ids(ingredient_cost_stock_ids, sauce_ids)
+		var fallback_stock_id: StringName = LEGACY_INGREDIENT_TO_STOCK.get(StringName(ingredient_id), &"")
+		if not fallback_stock_id.is_empty():
+			fallback_ingredient_ids.append(str(fallback_stock_id))
+	var ingredient_ids := _ingredient_cost_stock_ids(score_result, fallback_ingredient_ids)
+	var sauce_ids := _sauce_stock_ids(score_result)
+	var cost_stock_ids := _cost_stock_ids(ingredient_ids, sauce_ids)
 	return {
 		"product_instance_id": product_instance_id,
 		"product_id": &"product.pancake.custom",
@@ -95,10 +91,8 @@ func settle_completed_pancake(score_result: Dictionary, order: Dictionary = {}, 
 	if not bool(availability.get("success", false)):
 		return availability
 	var consumed: Array[StringName] = []
-	for sauce_id in Array(score_result.get("applied_sauce_ids", [])):
-		var stock_id: StringName = LEGACY_SAUCE_TO_STOCK.get(StringName(sauce_id), &"")
-		if not stock_id.is_empty():
-			consumed.append(stock_id)
+	for stock_id in _sauce_stock_ids(score_result):
+		consumed.append(StringName(stock_id))
 	var accounting: Dictionary = _session.call("consume_inventory_stock_ids", consumed)
 	if not bool(accounting.get("success", false)):
 		return accounting
@@ -163,6 +157,19 @@ func _ingredient_cost_stock_ids(score_result: Dictionary, fallback_ids: PackedSt
 		if stock_id.is_empty():
 			continue
 		var portions := maxi(int(quantities.get(ingredient_type, quantities.get(str(ingredient_type), 0))), 0)
+		for _portion in portions:
+			stock_ids.append(str(stock_id))
+	return stock_ids
+
+
+func _sauce_stock_ids(score_result: Dictionary) -> PackedStringArray:
+	var quantities := Dictionary(score_result.get("applied_sauce_quantities", {}))
+	var stock_ids := PackedStringArray()
+	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
+		var stock_id: StringName = LEGACY_SAUCE_TO_STOCK.get(sauce_type, &"")
+		var portions := maxi(int(quantities.get(sauce_type, quantities.get(str(sauce_type), 0))), 0)
+		if portions <= 0 and quantities.is_empty() and Array(score_result.get("applied_sauce_ids", [])).has(sauce_type):
+			portions = 1
 		for _portion in portions:
 			stock_ids.append(str(stock_id))
 	return stock_ids

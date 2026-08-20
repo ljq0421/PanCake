@@ -19,6 +19,7 @@ func _run() -> void:
 	_test_customer_reaction_persists_after_handoff()
 	_test_customer_queue_rotation()
 	_test_every_order_combination()
+	_test_double_portion_order_scoring()
 	_test_ingredients_affect_fold_and_score()
 	_test_repair_tags_and_score_caps()
 	_finish()
@@ -445,6 +446,37 @@ func _test_every_order_combination() -> void:
 		fold.package_with(PancakeFoldModel.PACKAGE_BAG)
 		var result := PancakeScorer.evaluate_order(model, ingredients, fold, order, 45.0, 0.7)
 		_check(is_equal_approx(float(result.dimensions.order), 100.0) and result.missing_ingredients.is_empty() and result.missing_sauces.is_empty(), "order correctness accepts combination %s" % order.id)
+
+
+func _test_double_portion_order_scoring() -> void:
+	var order := {
+		"heat_preference": &"golden",
+		"ingredients": [IngredientModel.EGG, IngredientModel.EGG],
+		"sauces": [OrderService.SAUCE_SWEET, OrderService.SAUCE_SWEET],
+		"time_limit": 72.0,
+	}
+	var model := _uniform_pancake(64, 0.42)
+	_seed_even_egg(model)
+	model.doneness.fill(0.64)
+	model.back_doneness.fill(0.64)
+	model.sauce_concentration.fill(0.70)
+	var double_ingredients := IngredientModel.new()
+	double_ingredients.place(IngredientModel.EGG, Vector2(28, 30), 0.0, model)
+	double_ingredients.place(IngredientModel.EGG, Vector2(36, 34), 0.0, model)
+	var double_fold := PancakeFoldModel.new(model, double_ingredients)
+	_fold_both(double_fold)
+	double_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	var complete := PancakeScorer.evaluate_order(model, double_ingredients, double_fold, order, 45.0, 0.8)
+	_check(is_equal_approx(float(complete.dimensions.order), 100.0) and complete.missing_ingredients.is_empty() and complete.missing_sauces.is_empty(), "two requested portions of an ingredient and sauce score as complete")
+
+	var single_ingredients := IngredientModel.new()
+	single_ingredients.place(IngredientModel.EGG, Vector2(32, 32), 0.0, model)
+	model.sauce_concentration.fill(0.35)
+	var single_fold := PancakeFoldModel.new(model, single_ingredients)
+	_fold_both(single_fold)
+	single_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
+	var incomplete := PancakeScorer.evaluate_order(model, single_ingredients, single_fold, order, 45.0, 0.8)
+	_check(float(incomplete.dimensions.order) < float(complete.dimensions.order) and not incomplete.missing_ingredients.is_empty() and not incomplete.missing_sauces.is_empty(), "one portion does not satisfy a two-portion order")
 
 
 func _test_ingredients_affect_fold_and_score() -> void:

@@ -65,7 +65,7 @@ func _test_reentry_adds_layers_without_requiring_release() -> void:
 	var after_same_press_return := model.sauce_concentration[center_index]
 	var second_stroke := model.begin_sauce_stroke()
 	model.apply_sauce_sample(Vector2(32, 32), 0.35, 16.0, second_stroke)
-	_check(model.sauce_concentration[center_index] > after_same_press_return, "a later press can also add another concentration layer")
+	_check(is_equal_approx(model.sauce_concentration[center_index], after_same_press_return), "a third sauce serving is capped after two portions")
 
 
 func _test_wide_brush_covers_pancake_quickly() -> void:

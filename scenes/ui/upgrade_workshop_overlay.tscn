@@ -137,6 +137,29 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="WorkshopProp_growth_automation_pancake_auto_batter_ladle" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_right = 120.0
+offset_bottom = 38.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.auto_batter_ladle"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_auto_batter_ladle"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 [node name="WorkshopProp_growth_add_on_pancake_red_chili" type="Button" parent="UpgradeProps" unique_id=1155675195]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -344,52 +367,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_flavor_youtiao_sugar" type="Button" parent="UpgradeProps" unique_id=431879458]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 0
-offset_right = 120.0
-offset_bottom = 38.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.flavor.youtiao.sugar"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_youtiao_sugar" unique_id=76448878]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="WorkshopProp_growth_assist_youtiao_temperature_indicator" type="Button" parent="UpgradeProps" unique_id=1098466780]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 0
-offset_right = 120.0
-offset_bottom = 38.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.assist.youtiao.temperature_indicator"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_assist_youtiao_temperature_indicator" unique_id=1762195128]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
 [node name="WorkshopProp_growth_equipment_youtiao_advanced" type="Button" parent="UpgradeProps" unique_id=1304254307]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -459,29 +436,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_flavor_fresh_soy_milk_black_bean" type="Button" parent="UpgradeProps" unique_id=1515300774]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 0
-offset_right = 120.0
-offset_bottom = 38.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.flavor.fresh_soy_milk.black_bean"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_fresh_soy_milk_black_bean" unique_id=2120774105]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
 [node name="WorkshopProp_growth_assist_fresh_soy_milk_ice" type="Button" parent="UpgradeProps" unique_id=186146404]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -505,16 +459,16 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_flavor_fresh_soy_milk_red_bean" type="Button" parent="UpgradeProps" unique_id=1759833380]
+[node name="WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" type="Button" parent="UpgradeProps" unique_id=425460390]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
 offset_right = 120.0
 offset_bottom = 38.0
 focus_mode = 0
 flat = true
-metadata/growth_id = "growth.flavor.fresh_soy_milk.red_bean"
+metadata/growth_id = "growth.automation.fresh_soy_milk.auto_fill"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_fresh_soy_milk_red_bean" unique_id=831215024]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" unique_id=457926876]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -528,16 +482,16 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" type="Button" parent="UpgradeProps" unique_id=425460390]
+[node name="WorkshopProp_growth_automation_fresh_soy_milk_advanced" type="Button" parent="UpgradeProps" unique_id=1980421157]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
 offset_right = 120.0
 offset_bottom = 38.0
 focus_mode = 0
 flat = true
-metadata/growth_id = "growth.automation.fresh_soy_milk.auto_fill"
+metadata/growth_id = "growth.automation.fresh_soy_milk.advanced"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" unique_id=457926876]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_fresh_soy_milk_advanced" unique_id=982047331]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

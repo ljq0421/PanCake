@@ -6,6 +6,20 @@
 [ext_resource type="Texture2D" uid="uid://dueqcchyh6gs2" path="res://assets/jianbing-stall/sugar-jar-for-soy-milk.png" id="5_sugar"]
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
 [ext_resource type="Texture2D" uid="uid://dh1yg3ajx34oo" path="res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v3_512.png" id="7_cup"]
+[ext_resource type="Texture2D" path="res://assets/jianbing-stall/ice-tray-with-scoop.png" id="8_ice_tray"]
+[ext_resource type="Script" path="res://scripts/ui/alpha_texture_hit_button.gd" id="9_alpha_hit"]
+
+[sub_resource type="StyleBoxFlat" id="Style_cup_selected"]
+bg_color = Color(0.56, 0.88, 1, 0.14)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.22, 0.74, 1, 0.96)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="DirectSoyStation" type="Control" unique_id=1720502831]
 custom_minimum_size = Vector2(410, 460)
@@ -72,6 +86,55 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
 
+[node name="QueuedCupPreview" type="TextureRect" parent="." unique_id=1125039614]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 0
+offset_left = 240.0
+offset_top = 318.0
+offset_right = 333.0
+offset_bottom = 412.0
+mouse_filter = 2
+texture = ExtResource("7_cup")
+expand_mode = 1
+stretch_mode = 5
+visible = false
+
+[node name="QueuedCupButton" type="Button" parent="." unique_id=196913412]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 240.0
+offset_top = 318.0
+offset_right = 333.0
+offset_bottom = 412.0
+tooltip_text = "点击选择这杯豆浆"
+flat = true
+visible = false
+script = ExtResource("9_alpha_hit")
+hit_texture = ExtResource("7_cup")
+
+[node name="CupSelectionFrame" type="Panel" parent="." unique_id=138775050]
+unique_name_in_owner = true
+z_index = 3
+layout_mode = 0
+offset_left = 141.0
+offset_top = 314.0
+offset_right = 242.0
+offset_bottom = 416.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_cup_selected")
+visible = false
+
+[node name="QueuedCupEffect" type="Control" parent="." unique_id=1820359412]
+unique_name_in_owner = true
+z_index = 2
+anchors_preset = 0
+offset_right = 410.0
+offset_bottom = 390.0
+mouse_filter = 2
+script = ExtResource("6_effect")
+
 [node name="DispenseEffect" type="Control" parent="." unique_id=1536517679]
 unique_name_in_owner = true
 z_index = 1
@@ -81,38 +144,69 @@ offset_bottom = 390.0
 mouse_filter = 2
 script = ExtResource("6_effect")
 
-[node name="SugarJar" type="TextureButton" parent="." unique_id=1158254122]
+[node name="SugarJar" type="Button" parent="." unique_id=1158254122]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 270.0
-offset_top = 405.0
-offset_right = 392.0
-offset_bottom = 527.0
+offset_left = 276.0
+offset_top = 415.0
+offset_right = 386.0
+offset_bottom = 525.0
 tooltip_text = "成品杯加糖（最多两份）"
-ignore_texture_size = true
-stretch_mode = 5
+flat = true
+script = ExtResource("9_alpha_hit")
+hit_texture = ExtResource("5_sugar")
 
 [node name="SugarLabel" type="Label" parent="." unique_id=485603011]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 242.0
-offset_top = 292.0
+offset_top = 302.0
 offset_right = 408.0
-offset_bottom = 316.0
+offset_bottom = 326.0
 theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
 theme_override_font_sizes/font_size = 13
 text = "糖：无糖"
 horizontal_alignment = 1
 
+[node name="IceTrayVisual" type="TextureRect" parent="." unique_id=599021210]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 282.0
+offset_top = 202.0
+offset_right = 402.0
+offset_bottom = 282.0
+mouse_filter = 2
+texture = ExtResource("8_ice_tray")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="IceButton" type="Button" parent="." unique_id=985603011]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 282.0
-offset_top = 252.0
+offset_top = 202.0
 offset_right = 402.0
-offset_bottom = 286.0
+offset_bottom = 282.0
 tooltip_text = "成品杯加冰"
-text = "加冰盒"
+flat = true
+script = ExtResource("9_alpha_hit")
+hit_texture = ExtResource("8_ice_tray")
+
+[node name="IceLabel" type="Label" parent="IceButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.12, 0.24, 0.34, 1)
+theme_override_colors/font_outline_color = Color(0.92, 0.98, 1, 0.92)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 13
+text = "加冰"
+horizontal_alignment = 1
+vertical_alignment = 2
 
 [node name="CupDetailLabel" type="Label" parent="." unique_id=1522849159]
 unique_name_in_owner = true

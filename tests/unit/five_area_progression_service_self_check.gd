@@ -17,20 +17,14 @@ func _run() -> void:
 	var starter_tutorial := starter.tutorial_snapshot()
 	_check(StringName(starter_tutorial.get("active_id", &"")) == &"area.pancake", "pancake is the first tutorial")
 	var route_ids := PackedStringArray(CATALOG.growth_ids())
-	_check(route_ids.size() == 23, "growth route removes retired soy production, cup-rack and youtiao capacity upgrades")
-	_check(route_ids.slice(7) == PackedStringArray([
-		"growth.add_on.pancake.coriander",
-		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.fill_guide", "growth.flavor.fresh_soy_milk.black_bean", "growth.equipment.fresh_soy_milk.intermediate",
-		"growth.capacity.pancake_holding_tray.two_slots", "growth.add_on.pancake.preserved_mustard", "growth.add_on.pancake.pork_tenderloin",
-		"growth.automation.fresh_soy_milk.auto_fill", "growth.flavor.fresh_soy_milk.red_bean", "growth.capacity.stock.advanced",
-		"growth.automation.youtiao.auto_lift", "growth.equipment.fresh_soy_milk.advanced", "growth.flavor.fresh_soy_milk.multigrain",
-		"growth.quality.fresh_soy_milk.rich_formula", "growth.pricing.fresh_soy_milk.premium",
-	]), "growth route orders flavour buttons, fill assistance, capacity, then quality and revenue")
+	_check(route_ids == PackedStringArray([
+		"growth.tool.pancake.wide_spreader", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
+		"growth.add_on.pancake.meat_floss", "growth.add_on.pancake.tomato", "growth.automation.pancake.press_once", "growth.automation.pancake.auto_sauce_brush",
+		"growth.area.youtiao", "growth.flavor.youtiao.sesame", "growth.equipment.youtiao.advanced",
+		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.sugar", "growth.assist.fresh_soy_milk.ice", "growth.automation.fresh_soy_milk.auto_fill", "growth.automation.fresh_soy_milk.advanced",
+	]), "growth route contains only active upgrades in display order")
 	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake"), "retired fryer recipes are absent from growth")
-	_check(int(CATALOG.growth_definition(&"growth.assist.fresh_soy_milk.fill_guide").get("price", 0)) == 18, "fill guide costs 18")
 	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 4, "automatic filling requires four A-grade soy orders")
-	_check(int(Dictionary(CATALOG.growth_definition(&"growth.quality.fresh_soy_milk.rich_formula").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 12, "quality formula requires twelve A-grade soy orders")
-	_check(int(Dictionary(CATALOG.growth_definition(&"growth.pricing.fresh_soy_milk.premium").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 16, "soy premium requires sixteen A-grade soy orders")
 	for retired_growth in [&"growth.area.packaged_drink", &"growth.area.steamer", &"growth.equipment.packaged_drink.advanced"]:
 		_check(not route_ids.has(str(retired_growth)), "%s is absent from active growth" % retired_growth)
 	var early := SERVICE.new({

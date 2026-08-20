@@ -42,6 +42,15 @@ const ORDER_CARD_INGREDIENT_TEXTURE_PATHS := {
 	&"stock.pancake.pork_tenderloin": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png",
 	IngredientModel.YOUTIAO: "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
 	&"stock.pancake.youtiao": "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
+	IngredientModel.CORIANDER: "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",
+	&"stock.pancake.coriander": "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",
+	IngredientModel.PRESERVED_MUSTARD: "res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png",
+	&"stock.pancake.preserved_mustard": "res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png",
+}
+const ORDER_CARD_INGREDIENT_NAMES := {
+	&"stock.pancake.egg": "鸡蛋", &"stock.pancake.baocui": "薄脆", &"stock.pancake.scallion": "香葱",
+	&"stock.pancake.ham_sausage": "火腿", &"stock.pancake.meat_floss": "肉松", &"stock.pancake.pork_tenderloin": "里脊肉",
+	&"stock.pancake.coriander": "香菜", &"stock.pancake.preserved_mustard": "榨菜", &"stock.pancake.youtiao": "油条",
 }
 const ORDER_CARD_SAUCE_TEXTURE_PATHS := {
 	&"stock.pancake.sauce.sweet_flour": "res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png",
@@ -616,7 +625,7 @@ func _on_formal_order_expired(result: Dictionary) -> void:
 	if expired_order_id == _formal_order_id:
 		_formal_order_id = &""
 	_pending_delivery_item_index = -1
-	tool_status_label.text = "顾客耐心耗尽，声誉 -2；店内已补入新顾客"
+	tool_status_label.text = "顾客耐心耗尽，口碑 -2；店内已补入新顾客"
 	_route_active_playable_order(false)
 
 
@@ -2942,7 +2951,7 @@ func _populate_daily_bill(bill: Dictionary) -> void:
 		cutoff_summary = " · 测试提前结束，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
 	elif StringName(cutoff.get("reason", &"")) == &"manual_early_end":
 		cutoff_summary = " · 提前打烊，未服务 %d 位" % maxi(int(cutoff.get("unserved_customer_count", 0)), 0)
-	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 成本 %d 金币（含报废 %d） · 毛利 %d 金币 · 平均 %d分 · 声誉 %+d%s" % [
+	daily_bill_stats_label.text = "完成 %d 单 · 收入 %d 金币 · 成本 %d 金币（含报废 %d） · 毛利 %d 金币 · 平均 %d分 · 口碑 %+d%s" % [
 		int(bill.get("order_count", 0)),
 		int(bill.get("total_coins", 0)),
 		int(bill.get("total_cost", 0)),
@@ -3004,7 +3013,7 @@ func _refresh_growth_section(message: String = "") -> void:
 		return
 	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
 	var pending_growth_ids: Array = Array(snapshot.get("pending_growth_ids", []))
-	var balance_text := "现有 %d 金币 · 声誉 %d · 全部 20 项升级均可在工坊查看；本夜可预订多个，次日统一生效" % [
+	var balance_text := "现有 %d 金币 · 口碑 %d · 全部 20 项升级均可在工坊查看；本夜可预订多个，次日统一生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
 	]
@@ -3135,7 +3144,7 @@ func _growth_requirement_text(requirement: Dictionary, compact: bool = false) ->
 		&"insufficient_coins":
 			return "金币 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]
 		&"reputation_requirement":
-			return "声誉 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
+			return "口碑 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
 		&"tutorial_requirement":
 			var required_device_id := StringName(requirement.get("requires_tutorial_device_id", requirement.get("required_tutorial_device_id", &"")))
 			if not required_device_id.is_empty():
@@ -3208,8 +3217,6 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		&"growth.automation.pancake.press_once": "一键压饼",
 		&"growth.area.youtiao": "油条档口",
 		&"growth.area.fresh_soy_milk": "现磨豆浆档口",
-		&"growth.flavor.fresh_soy_milk.black_bean": "黑豆口味按钮",
-		&"growth.flavor.fresh_soy_milk.red_bean": "红豆口味按钮",
 		&"growth.flavor.fresh_soy_milk.multigrain": "五谷口味按钮",
 	}
 	return str(names.get(growth_id, "未命名成长项目"))
@@ -3343,7 +3350,7 @@ func _refresh_global_status() -> void:
 		snapshot = Dictionary(game_session.call("five_area_progression_snapshot"))
 	var mastery_by_area: Dictionary = Dictionary(snapshot.get("area_mastery", {}))
 	var pancake_mastery := int(mastery_by_area.get(&"area.pancake", mastery_by_area.get("area.pancake", 0)))
-	global_status_label.text = "金币 %d  ·  营业日 %d  ·  声誉 %d  ·  熟练度（煎饼）%d" % [
+	global_status_label.text = "金币 %d  ·  营业日 %d  ·  口碑 %d  ·  熟练度（煎饼）%d" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("current_day", 1)),
 		int(snapshot.get("reputation", 0)),
@@ -3379,6 +3386,10 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 		if not area_id.is_empty() and area_id != &"area.pancake":
 			continue
 		var ingredient_ids: Array = Array(item.get("ingredients", item.get("ingredient_ids", [])))
+		var ingredient_counts := {}
+		for ingredient_id_value in ingredient_ids:
+			var ingredient_id := StringName(ingredient_id_value)
+			ingredient_counts[ingredient_id] = int(ingredient_counts.get(ingredient_id, 0)) + 1
 		for ingredient_id_value in ingredient_ids:
 			var ingredient_id := StringName(ingredient_id_value)
 			var ingredient_texture_path := str(ORDER_CARD_INGREDIENT_TEXTURE_PATHS.get(ingredient_id, ""))
@@ -3389,6 +3400,7 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 				"kind": ORDER_REQUIREMENT_INGREDIENT,
 				"texture": ingredient_texture,
 				"ingredient_id": ingredient_id,
+				"display_name": "%s×%d" % [str(ORDER_CARD_INGREDIENT_NAMES.get(ingredient_id, ingredient_id)), int(ingredient_counts[ingredient_id])] if int(ingredient_counts[ingredient_id]) > 1 else str(ORDER_CARD_INGREDIENT_NAMES.get(ingredient_id, ingredient_id)),
 			})
 	# Sauce requirements follow pancake toppings. They use the same stable stock
 	# IDs as scoring so one- and two-sauce orders remain visually unambiguous.
@@ -3397,6 +3409,10 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 		if not area_id.is_empty() and area_id != &"area.pancake":
 			continue
 		var sauce_ids: Array = Array(item.get("sauce_ids", []))
+		var sauce_counts := {}
+		for sauce_id_value in sauce_ids:
+			var sauce_id := StringName(sauce_id_value)
+			sauce_counts[sauce_id] = int(sauce_counts.get(sauce_id, 0)) + 1
 		for sauce_id_value in sauce_ids:
 			var sauce_id := StringName(sauce_id_value)
 			var sauce_texture_path := str(ORDER_CARD_SAUCE_TEXTURE_PATHS.get(sauce_id, ""))
@@ -3407,7 +3423,7 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 				"kind": ORDER_REQUIREMENT_SAUCE,
 				"texture": sauce_texture,
 				"sauce_id": sauce_id,
-				"display_name": str(ORDER_CARD_SAUCE_NAMES.get(sauce_id, sauce_id)),
+				"display_name": "%s×%d" % [str(ORDER_CARD_SAUCE_NAMES.get(sauce_id, sauce_id)), int(sauce_counts[sauce_id])] if int(sauce_counts[sauce_id]) > 1 else str(ORDER_CARD_SAUCE_NAMES.get(sauce_id, sauce_id)),
 			})
 	for item in items:
 		if StringName(item.get("area_id", &"")) != &"area.fresh_soy_milk":
@@ -3482,7 +3498,7 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		elif requirement_kind == ORDER_REQUIREMENT_SUGAR:
 			ingredient_icon.tooltip_text = str(requirement.get("display_name", "甜度"))
 		else:
-			ingredient_icon.tooltip_text = ""
+			ingredient_icon.tooltip_text = str(requirement.get("display_name", "配料"))
 		# The v3 order-card artwork already owns the eight requirement cells.
 		# Ingredient overlays only render the icon; another panel would produce a
 		# visibly offset second box. Heating keeps its semantic state highlight.

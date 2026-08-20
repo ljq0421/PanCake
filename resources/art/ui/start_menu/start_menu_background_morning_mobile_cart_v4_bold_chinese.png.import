@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dieexeoo73dsv"
-path="res://.godot/imported/automatic-soy-milk-dispenser-dual-flavor-transparent.png-709e18113ba876052b5bb75e9bec793c.ctex"
+uid="uid://df3yuhdk3o5j"
+path="res://.godot/imported/start_menu_background_morning_mobile_cart_v4_bold_chinese.png-cff0d2e851aa2acf9154b2c72b96376c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/jianbing-stall/automatic-soy-milk-dispenser-dual-flavor-transparent.png"
-dest_files=["res://.godot/imported/automatic-soy-milk-dispenser-dual-flavor-transparent.png-709e18113ba876052b5bb75e9bec793c.ctex"]
+source_file="res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v4_bold_chinese.png"
+dest_files=["res://.godot/imported/start_menu_background_morning_mobile_cart_v4_bold_chinese.png-cff0d2e851aa2acf9154b2c72b96376c.ctex"]
 
 [params]
 

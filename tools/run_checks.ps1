@@ -28,6 +28,7 @@ $checks = @(
 	'res://tests/unit/product_drag_source_drag_end_self_check.gd',
 	'res://tests/unit/five_area_material_slot_self_check.gd',
 	'res://tests/unit/youtiao_fryer_self_check.gd',
+	'res://tests/unit/youtiao_direct_machine_load_self_check.gd',
 	'res://tests/unit/prepared_product_slots_self_check.gd',
 	'res://tests/unit/youtiao_pancake_add_on_self_check.gd',
 	'res://tests/unit/five_area_pancake_production_self_check.gd',

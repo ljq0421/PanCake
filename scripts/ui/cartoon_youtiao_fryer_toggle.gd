@@ -10,11 +10,14 @@ const RECIPE_ID := &"recipe.youtiao.plain"
 const PRODUCT_ID := &"product.youtiao.plain"
 const SESAME_PRODUCT_ID := &"product.youtiao.sesame"
 const DOUGH_STOCK_ID := &"stock.youtiao.plain_dough"
-const BOARD_HOLD_THRESHOLD_SECONDS := 0.20
-const BOARD_DRAG_THRESHOLD_PIXELS := 10.0
-const BOARD_VISUAL_CAPACITY := 4
+const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
+const MACHINE_ADD_INTERVAL_SECONDS := 0.25
 const PLATE_VISUAL_CAPACITY := 4
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
+const SESAME_TRAY_COLUMNS := 2
+const SESAME_TRAY_PRODUCT_SIZE := Vector2(56.0, 72.0)
+const SESAME_TRAY_PRODUCT_ORIGIN := Vector2(16.0, 13.0)
+const SESAME_TRAY_PRODUCT_STEP := Vector2(80.0, 73.0)
 
 @export var lowered_machine_texture: Texture2D
 @export var raised_machine_texture: Texture2D
@@ -29,14 +32,12 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 
 @onready var fryer_visual: TextureRect = %FryerVisual
 @onready var black_sesame_tray: TextureRect = %BlackSesameTray
-@onready var dough_visuals: Array[TextureRect] = [%DoughVisual1]
+@onready var plate_visual: TextureRect = $PlateVisual
 @onready var product_visuals: Array[TextureRect] = [%ProductVisual1, %ProductVisual2]
 @onready var plate_product_visuals: Array[TextureRect] = [%PlateProductVisual1, %PlateProductVisual2]
-@onready var board_dough_slots: Array[Control] = [%BoardDoughSlot1, %BoardDoughSlot2, %BoardDoughSlot3, %BoardDoughSlot4]
 @onready var raised_basket_slots: Array[Control] = [%RaisedBasketSlot1, %RaisedBasketSlot2, %RaisedBasketSlot3, %RaisedBasketSlot4]
 @onready var lowered_basket_slots: Array[Control] = [%LoweredBasketSlot1, %LoweredBasketSlot2, %LoweredBasketSlot3, %LoweredBasketSlot4]
 @onready var plate_product_slots: Array[Control] = [%PlateProductSlot1, %PlateProductSlot2, %PlateProductSlot3, %PlateProductSlot4]
-@onready var drag_visual: TextureRect = %DragVisual
 @onready var status_label: Label = %StatusLabel
 
 # Compatibility surface consumed by FiveAreaWorkstation and tutorial routing.
@@ -54,15 +55,10 @@ var _dough_stock := 0
 var _plate_count := 0
 var _plate_products: Array[Dictionary] = []
 var _refresh_elapsed := 0.0
-var _drag_kind := &""
-var _drag_item_index := -1
-var _board_press_active := false
-var _board_hold_active := false
-var _board_hold_elapsed := 0.0
-var _board_press_position := Vector2.ZERO
-var _board_dough_index := -1
-var _seasoned_product_id: StringName = &""
-var _sugar_button: Button
+var _machine_press_active := false
+var _machine_hold_active := false
+var _machine_hold_elapsed := 0.0
+var _machine_add_elapsed := 0.0
 var _workshop_preview := false
 var _workshop_advanced_preview := false
 
@@ -78,13 +74,11 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_advance_board_hold(delta)
+	_advance_machine_hold(delta)
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
 		refresh_from_session()
-	if not _drag_kind.is_empty():
-		drag_visual.position = get_local_mouse_position() - drag_visual.size * 0.5
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -94,22 +88,14 @@ func _gui_input(event: InputEvent) -> void:
 		else:
 			_finish_drag_or_click(event.position)
 		accept_event()
-	elif event is InputEventMouseMotion and (_board_press_active or not _drag_kind.is_empty()):
-		if _board_press_active:
-			_update_board_gesture(event.position)
-		accept_event()
 
 
 func _input(event: InputEvent) -> void:
-	# Once a press begins on the board, keep tracking it even when a player
-	# drags or releases outside this Control's bounds.
-	if not _board_press_active and _drag_kind.is_empty():
+	# Continue tracking a press that began on the fryer, even if it is released
+	# outside this Control's bounds.
+	if not _machine_press_active:
 		return
-	if event is InputEventMouseMotion:
-		if _board_press_active:
-			_update_board_gesture(get_local_mouse_position())
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_finish_drag_or_click(get_local_mouse_position())
 		get_viewport().set_input_as_handled()
 
@@ -123,7 +109,6 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	var can_store_finished_youtiao := (
 		StringName(source_ref.get("source_kind", &"")) == &"youtiao_fryer_slot"
 		and StringName(_machine.get("state", &"")) == &"ready_to_collect"
-		and _plate_count < PLATE_VISUAL_CAPACITY
 	)
 	return can_store_finished_youtiao and (_is_plate_point(_at_position) or _is_black_sesame_tray_point(_at_position))
 
@@ -162,7 +147,6 @@ func refresh_from_session() -> void:
 	modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not area_unlocked else Color.WHITE
 	var unlocked_products := Array(progression.get("unlocked_product_ids", []))
 	var sesame_unlocked := unlocked_products.has(SESAME_PRODUCT_ID)
-	_sugar_button.visible = unlocked_products.has("product.youtiao.sugar")
 	# The physical sesame tray arrives with the existing sesame-oil-stick
 	# upgrade, so it shares that upgrade's unlock queue entry.  In the workshop
 	# it remains visible as a preview, but must not look installed before that
@@ -173,11 +157,9 @@ func refresh_from_session() -> void:
 	# sesame tray receives the same workshop-preview treatment.
 	black_sesame_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and not sesame_unlocked else Color.WHITE
 	if _workshop_preview:
-		_sugar_button.visible = true
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		mouse_filter = Control.MOUSE_FILTER_STOP
-	if not _sugar_button.visible and _seasoned_product_id == &"product.youtiao.sugar": _seasoned_product_id = &""
 	var inventory := Dictionary(session.call("inventory_snapshot")) if session.has_method("inventory_snapshot") else {}
 	_dough_stock = maxi(int(inventory.get(str(DOUGH_STOCK_ID), 0)), 0)
 	_refresh_prepared_slot(session)
@@ -185,117 +167,97 @@ func refresh_from_session() -> void:
 
 
 func _begin_drag_or_click(point: Vector2) -> void:
-	if _is_board_point(point):
-		_begin_board_gesture(point)
-		return
 	if fryer_visual.get_rect().has_point(point):
-		_perform_machine_click()
+		_begin_machine_gesture()
 
 
 func _finish_drag_or_click(point: Vector2) -> void:
-	if _drag_kind == &"dough":
-		drag_visual.visible = false
-		if fryer_visual.get_rect().has_point(point):
-			_load_dough(RECIPE_ID)
-		else:
-			dough_visuals[_drag_item_index].visible = true
-	_drag_kind = &""
-	_drag_item_index = -1
-	_end_board_gesture()
-
-
-func _begin_board_gesture(point: Vector2) -> void:
-	_board_press_active = true
-	_board_hold_active = false
-	_board_hold_elapsed = 0.0
-	_board_press_position = point
-	_board_dough_index = _visible_item_at(dough_visuals, point)
-
-
-func _update_board_gesture(point: Vector2) -> void:
-	if not _board_press_active or point.distance_to(_board_press_position) <= BOARD_DRAG_THRESHOLD_PIXELS:
+	if not _machine_press_active:
 		return
-	if _board_hold_active:
-		# Movement after a hold keeps the familiar dough-drag interaction when a
-		# physical piece is available, while ending replenishment immediately.
-		_board_hold_active = false
-	if _board_dough_index >= 0 and _can_load_dough() and dough_visuals[_board_dough_index].visible:
-		_begin_drag(&"dough", _board_dough_index, raw_youtiao_texture, _board_press_position)
-		if _drag_kind == &"dough":
-			drag_visual.position = point - drag_visual.size * 0.5
-	_end_board_gesture()
+	var was_hold := _machine_hold_active
+	_end_machine_gesture()
+	if not was_hold:
+		_perform_machine_click()
 
 
-func _advance_board_hold(delta: float) -> void:
-	if not _board_press_active or not _drag_kind.is_empty():
+func _begin_machine_gesture() -> void:
+	_machine_press_active = true
+	_machine_hold_active = false
+	_machine_hold_elapsed = 0.0
+	_machine_add_elapsed = 0.0
+
+
+func _advance_machine_hold(delta: float) -> void:
+	if not _machine_press_active:
 		return
-	if not _board_hold_active:
-		_board_hold_elapsed += maxf(delta, 0.0)
-		if _board_hold_elapsed + 0.000001 < BOARD_HOLD_THRESHOLD_SECONDS:
+	if not _machine_hold_active:
+		_machine_hold_elapsed += maxf(delta, 0.0)
+		if _machine_hold_elapsed + 0.000001 < MACHINE_HOLD_THRESHOLD_SECONDS:
 			return
-		_start_board_restock_hold()
+		_start_machine_dough_hold()
+		return
+	if not _can_load_dough():
+		_end_machine_gesture()
+		status_message.emit("炸篮已满，点击油条机开始炸制")
+		return
+	if _dough_stock > 0:
+		_machine_add_elapsed += maxf(delta, 0.0)
+		if _machine_add_elapsed + 0.000001 >= MACHINE_ADD_INTERVAL_SECONDS:
+			_machine_add_elapsed = 0.0
+			_load_dough(RECIPE_ID)
 		return
 	var session := get_node_or_null("/root/GameSession")
 	var result := Dictionary(session.call("advance_five_area_restock_hold", DOUGH_STOCK_ID, delta)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if int(result.get("completed_units", 0)) > 0:
-		status_message.emit("油条面胚补货 +%d" % int(result.get("completed_units", 0)))
+		for _unit in int(result.get("completed_units", 0)):
+			_load_dough(RECIPE_ID)
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):
-		_board_hold_active = false
-		_board_press_active = false
+		_end_machine_gesture()
 		status_message.emit(_restock_failure_text(StringName(result.get("reason", &"")), result))
 	refresh_from_session()
 
 
-func _start_board_restock_hold() -> void:
+func _start_machine_dough_hold() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var status := Dictionary(session.call("five_area_restock_status", DOUGH_STOCK_ID)) if session != null else {"success": false, "reason": &"no_game_session"}
 	var can_restock := bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)) and int(status.get("coins", 0)) >= int(status.get("unit_cost", 0))
-	if can_restock:
-		_board_hold_active = true
-		status_message.emit("持续长按案板补充油条面胚；每完成一份才扣金币")
+	if _can_load_dough() and (_dough_stock > 0 or can_restock):
+		_machine_hold_active = true
+		status_message.emit("持续长按油条机添加油条面胚；每完成一份才扣金币")
 		return
-	_board_press_active = false
+	_end_machine_gesture()
+	if not _can_load_dough():
+		status_message.emit("炸篮已满，点击油条机开始炸制")
+		return
 	if not bool(status.get("success", false)):
 		status_message.emit(_restock_failure_text(StringName(status.get("reason", &"")), status))
-	elif int(status.get("current_stock", 0)) >= int(status.get("capacity", 0)):
-		status_message.emit("油条面胚已补满")
 	else:
 		status_message.emit("余额不足：每份需要 %d 金币" % int(status.get("unit_cost", 0)))
 
 
-func _end_board_gesture() -> void:
-	_board_press_active = false
-	_board_hold_active = false
-	_board_hold_elapsed = 0.0
-	_board_dough_index = -1
-
-
-func _begin_drag(kind: StringName, item_index: int, texture: Texture2D, point: Vector2) -> void:
-	_drag_kind = kind
-	_drag_item_index = item_index
-	drag_visual.texture = texture
-	drag_visual.position = point - drag_visual.size * 0.5
-	drag_visual.visible = true
-	dough_visuals[item_index].visible = false
+func _end_machine_gesture() -> void:
+	_machine_press_active = false
+	_machine_hold_active = false
+	_machine_hold_elapsed = 0.0
+	_machine_add_elapsed = 0.0
 
 
 func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result := Dictionary(session.call("load_f3_youtiao", recipe_id, 1)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		status_message.emit("面胚已放入卡通油条机")
+		status_message.emit("油条面胚已加入炸篮")
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
 
 
-func _store_fryer_slot_on_plate(source_index: int, seasoned_product_id: StringName = &"") -> void:
+func _store_fryer_slot_on_plate(source_index: int, product_id: StringName = &"") -> void:
 	var session := get_node_or_null("/root/GameSession")
-	var final_product_id := seasoned_product_id if not seasoned_product_id.is_empty() else _seasoned_product_id
+	var final_product_id := product_id
 	var result := Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index, final_product_id)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		status_message.emit("芝麻油条已放入成品盘" if final_product_id == SESAME_PRODUCT_ID else "油条已放入成品盘" if final_product_id.is_empty() else "油条已完成调味并放入成品盘")
-		_seasoned_product_id = &""
+		status_message.emit("芝麻油条已放入芝麻成品盘" if final_product_id == SESAME_PRODUCT_ID else "油条已放入成品盘")
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
@@ -305,7 +267,7 @@ func _perform_machine_click() -> void:
 	var state := StringName(_machine.get("state", &"idle"))
 	var action := &"start" if state == &"loaded" else &"lift" if state in [&"ready_safe", &"overcooking"] else &""
 	if action.is_empty():
-		status_message.emit("先将面胚拖入炸篮" if state == &"idle" else _state_text(state))
+		status_message.emit("长按油条机添加面胚" if state == &"idle" else _state_text(state))
 		return
 	var session := get_node_or_null("/root/GameSession")
 	var result := Dictionary(session.call("perform_f3_youtiao_action", action)) if session != null else {"success": false, "reason": &"no_game_session"}
@@ -334,25 +296,20 @@ func _apply_snapshot() -> void:
 		visual.position = slot.position
 		visual.size = slot.size
 		visual.modulate = Color.WHITE
-	for index in range(dough_visuals.size()):
-		var visual := dough_visuals[index]
-		var slot := board_dough_slots[index]
-		visual.position = slot.position
-		visual.size = slot.size
-		visual.visible = state != &"unowned" and index < _dough_stock
 	for index in range(plate_product_visuals.size()):
 		var visual := plate_product_visuals[index]
-		var slot := plate_product_slots[index]
+		var product_id := StringName(_plate_products[index].get("product_id", PRODUCT_ID)) if index < _plate_products.size() else PRODUCT_ID
+		var product_rect := _prepared_product_rect(index, product_id)
 		visual.visible = index < _plate_count
-		visual.texture = _prepared_youtiao_texture(StringName(_plate_products[index].get("product_id", PRODUCT_ID))) if index < _plate_products.size() else _plate_youtiao_texture()
-		visual.position = slot.position
-		visual.size = slot.size
+		visual.texture = _prepared_youtiao_texture(product_id)
+		visual.position = product_rect.position
+		visual.size = product_rect.size
 	status_label.visible = not _workshop_preview
 	status_label.text = "%s · %d/%d" % [_state_text(state), int(_machine.get("quantity", 0)), int(_machine.get("capacity", 0))]
 	if _workshop_preview:
 		# A workshop is a layout preview, not a frozen production snapshot.
 		# Never leak current stock, prepared goods, or runtime controls into it.
-		for visual in dough_visuals + product_visuals + plate_product_visuals:
+		for visual in product_visuals + plate_product_visuals:
 			visual.visible = false
 		for control in output_sources + plate_sources:
 			control.visible = false
@@ -410,7 +367,7 @@ func _refresh_plate_sources() -> void:
 			"source_index": source_index,
 			"product_id": product_id,
 			"discardable": true,
-		}, _prepared_youtiao_texture(product_id), visible, "拖这一根%s到出餐位" % ("芝麻油条" if product_id == SESAME_PRODUCT_ID else "油条"))
+		}, _prepared_youtiao_texture(product_id), visible, "从%s拖这一根%s到出餐位" % ["芝麻成品盘" if product_id == SESAME_PRODUCT_ID else "成品盘", "芝麻油条" if product_id == SESAME_PRODUCT_ID else "油条"])
 		source.visible = visible
 
 
@@ -418,9 +375,28 @@ func _prepared_youtiao_texture(product_id: StringName) -> Texture2D:
 	return black_sesame_youtiao_texture if product_id == SESAME_PRODUCT_ID else _plate_youtiao_texture()
 
 
-func _select_sugar_seasoning() -> void:
-	_seasoned_product_id = &"product.youtiao.sugar"
-	status_message.emit("下一根出锅油条将裹白糖")
+func _prepared_product_rect(product_index: int, product_id: StringName) -> Rect2:
+	var sesame_product := product_id == SESAME_PRODUCT_ID
+	var display_index := _prepared_product_display_index(product_index, sesame_product)
+	if sesame_product:
+		var column := display_index % SESAME_TRAY_COLUMNS
+		var row := display_index / SESAME_TRAY_COLUMNS
+		return Rect2(
+			black_sesame_tray.position + SESAME_TRAY_PRODUCT_ORIGIN + Vector2(column * SESAME_TRAY_PRODUCT_STEP.x, row * SESAME_TRAY_PRODUCT_STEP.y),
+			SESAME_TRAY_PRODUCT_SIZE
+		)
+	var plate_index := clampi(display_index, 0, plate_product_slots.size() - 1)
+	var plate_slot := plate_product_slots[plate_index]
+	return Rect2(plate_slot.position, plate_slot.size)
+
+
+func _prepared_product_display_index(product_index: int, sesame_product: bool) -> int:
+	var result := 0
+	for index in range(mini(product_index, _plate_products.size())):
+		var prior_product_id := StringName(_plate_products[index].get("product_id", PRODUCT_ID))
+		if (prior_product_id == SESAME_PRODUCT_ID) == sesame_product:
+			result += 1
+	return result
 
 
 func set_workshop_preview(enabled: bool) -> void:
@@ -429,15 +405,13 @@ func set_workshop_preview(enabled: bool) -> void:
 
 
 func _create_runtime_controls() -> void:
-	_sugar_button = Button.new()
-	_sugar_button.text = "白糖调味"
-	_sugar_button.position = Vector2(10.0, 650.0)
-	_sugar_button.size = Vector2(112.0, 38.0)
-	_sugar_button.pressed.connect(_select_sugar_seasoning)
-	add_child(_sugar_button)
 	for source_index in range(product_visuals.size()):
 		var output := ProductDragSource.new()
 		output.name = "FryerSlotSource%d" % (source_index + 1)
+		# A finished stick can be dragged across the black-sesame tray.  Keep the
+		# source above that tray while it is being dragged so the target artwork
+		# cannot visually cover the stick.
+		output.z_index = black_sesame_tray.z_index + 1
 		output.ignore_texture_size = true
 		output.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		output.native_drag_enabled = true
@@ -447,6 +421,7 @@ func _create_runtime_controls() -> void:
 	for source_index in range(plate_product_visuals.size()):
 		var plate_source := ProductDragSource.new()
 		plate_source.name = "PlateYoutiaoSource%d" % (source_index + 1)
+		plate_source.z_index = black_sesame_tray.z_index + 1
 		plate_source.ignore_texture_size = true
 		plate_source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		plate_source.native_drag_enabled = true
@@ -503,11 +478,6 @@ func _plate_youtiao_texture() -> Texture2D:
 
 
 func _expand_visual_capacity() -> void:
-	for index in range(1, BOARD_VISUAL_CAPACITY):
-		var dough_visual := dough_visuals[0].duplicate() as TextureRect
-		dough_visual.name = "DoughVisual%d" % (index + 1)
-		add_child(dough_visual)
-		dough_visuals.append(dough_visual)
 	for index in range(2, 4):
 		var basket_visual := product_visuals[0].duplicate() as TextureRect
 		basket_visual.name = "ProductVisual%d" % (index + 1)
@@ -537,24 +507,16 @@ func _occupied_slots() -> Array[int]:
 	return result
 
 
-func _is_board_point(point: Vector2) -> bool:
-	return Rect2(Vector2(0.0, 429.0), Vector2(338.0, 221.0)).has_point(point)
-
-
 func _is_plate_point(point: Vector2) -> bool:
-	return Rect2(Vector2(340.0, 440.0), Vector2(260.0, 210.0)).has_point(point)
-
-
-func _visible_item_at(items: Array[TextureRect], point: Vector2) -> int:
-	for index in range(items.size() - 1, -1, -1):
-		if items[index].visible and items[index].get_rect().has_point(point):
-			return index
-	return -1
+	# Treat the entire rendered serving plate as a drop target.  The old
+	# hand-authored rectangle began well inside the artwork, so drops on the
+	# visible left and upper portions of the plate were silently rejected.
+	return plate_visual != null and plate_visual.get_rect().has_point(point)
 
 
 static func _state_text(state: StringName) -> String:
 	return {
-		&"unowned": "油条机未解锁", &"idle": "拖面胚到炸篮；长按案板补货", &"loaded": "点击油条机开始炸制",
+		&"unowned": "油条机未解锁", &"idle": "长按油条机添加面胚", &"loaded": "点击油条机开始炸制",
 		&"frying": "炸制中", &"ready_safe": "点击油条机抬起沥网", &"overcooking": "油条即将炸糊",
 		&"draining": "正在沥油", &"ready_to_collect": "逐根拖油条到成品盘", &"burnt": "油条已炸糊，拖去废弃",
 	}.get(state, "油条机")
@@ -564,6 +526,7 @@ static func _failure_text(reason: StringName) -> String:
 	return {
 		&"capacity_exceeded": "炸篮已满", &"insufficient_stock": "油条面胚不足", &"recipe_locked": "油条配方尚未解锁",
 		&"equipment_not_owned": "油条机尚未解锁", &"invalid_equipment_state": "当前不能放入面胚",
+		&"prepared_product_slot_full": "成品盘已满，请先出餐或废弃盘内油条",
 	}.get(reason, "操作未完成：%s" % str(reason))
 
 

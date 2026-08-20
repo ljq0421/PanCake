@@ -150,7 +150,7 @@ func open_soy_test_profile() -> Dictionary:
 		"quantity": 1,
 		"ingredient_ids": PackedStringArray(),
 		"sauce_ids": PackedStringArray(),
-		"sugar_servings": 1,
+		"sugar_servings": 0,
 	}], {"patience_seconds": 120.0, "base_coins": 7})
 	if not bool(order_result.get("success", false)):
 		return order_result
@@ -1356,21 +1356,21 @@ func fill_f4_soy_empty_cup(held_seconds: float) -> Dictionary:
 	return result
 
 
-func add_f4_soy_sugar() -> Dictionary:
+func add_f4_soy_sugar(cup_index: int = 0) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("add_soy_sugar")
+	var result: Dictionary = _production_service.call("add_soy_sugar", cup_index)
 	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result
 
 
-func add_f4_soy_ice() -> Dictionary:
+func add_f4_soy_ice(cup_index: int = 0) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("add_soy_ice")
+	var result: Dictionary = _production_service.call("add_soy_ice", cup_index)
 	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result
@@ -2526,7 +2526,7 @@ static func _growth_requirement_status_text(requirement: Dictionary) -> String:
 		&"day_requirement":
 			return "营业日 %d/%d" % [int(requirement.get("current_day", 1)), int(requirement.get("min_day", 1))]
 		&"reputation_requirement":
-			return "声誉 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
+			return "口碑 %d/%d" % [int(requirement.get("current_reputation", 0)), int(requirement.get("min_reputation", 0))]
 		&"insufficient_coins":
 			return "金币 %d/%d" % [int(requirement.get("current_coins", 0)), int(requirement.get("price", 0))]
 		&"tutorial_requirement":

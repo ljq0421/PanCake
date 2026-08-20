@@ -100,10 +100,20 @@ static func sauce_display_name(sauce_type: StringName) -> String:
 
 static func format_requirements(order: Dictionary) -> String:
 	var ingredient_names := PackedStringArray()
+	var ingredient_counts := {}
 	for ingredient_type in order.get("ingredients", []):
-		ingredient_names.append(IngredientModel.display_name(ingredient_type))
+		ingredient_counts[ingredient_type] = int(ingredient_counts.get(ingredient_type, 0)) + 1
+	for ingredient_type in ingredient_counts:
+		var portions := int(ingredient_counts[ingredient_type])
+		var label := IngredientModel.display_name(ingredient_type)
+		ingredient_names.append(label if portions == 1 else "%s×%d" % [label, portions])
 	var sauce_names := PackedStringArray()
+	var sauce_counts := {}
 	for sauce_type in order.get("sauces", []):
-		sauce_names.append(sauce_display_name(sauce_type))
+		sauce_counts[sauce_type] = int(sauce_counts.get(sauce_type, 0)) + 1
+	for sauce_type in sauce_counts:
+		var portions := int(sauce_counts[sauce_type])
+		var label := sauce_display_name(sauce_type)
+		sauce_names.append(label if portions == 1 else "%s×%d" % [label, portions])
 	var heat_label: String = str({&"light": "嫩火", &"golden": "金黄", &"well_done": "偏香脆"}.get(order.get("heat_preference", &"golden"), "金黄"))
 	return "%s\n配料：%s\n酱料：%s · 火候：%s" % [order.title, "、".join(ingredient_names), "、".join(sauce_names), heat_label]

@@ -29,7 +29,7 @@ const DEFINITIONS := {
 		"customer_id": &"customer_special_student",
 		"title": "手头拮据的学生",
 		"customer_line": "预算有点紧，麻烦给我最实惠的经典简餐，谢谢。",
-		"rule_text": "最低价经典简餐 · 成功额外声誉+2",
+		"rule_text": "最低价经典简餐 · 成功额外口碑+2",
 		"patience_seconds": 90.0,
 		"unlock_completed_area_ids": [&"area.pancake"],
 	},
@@ -45,7 +45,7 @@ const DEFINITIONS := {
 		"customer_id": &"customer_special_blogger",
 		"title": "探店博主",
 		"customer_line": "今天做一期早餐摊探店，拿出你们最稳的水准吧。",
-		"rule_text": "全A金币+50%且总声誉+8 · 含C或失败声誉-4",
+		"rule_text": "全A金币+50%且总口碑+8 · 含C或失败口碑-4",
 		"unlock_completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"],
 	},
 }

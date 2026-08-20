@@ -8,6 +8,7 @@ var failures := PackedStringArray()
 
 func _initialize() -> void:
 	var machine: RefCounted = MODEL.new(0, true)
+	machine.call("configure_upgrades", false, false, true)
 	_check(bool(machine.call("take_empty_cup").get("success", false)), "player can take an empty soy cup")
 	var partial := Dictionary(machine.call("fill_held_cup", 0.2))
 	var partial_cup := Dictionary(partial.get("cup", {}))
@@ -22,20 +23,35 @@ func _initialize() -> void:
 	full_machine.call("take_empty_cup")
 	var full := Dictionary(full_machine.call("fill_held_cup", 0.8))
 	_check(bool(full.get("is_full", false)) and is_equal_approx(float(full.get("fill_ratio", 0.0)), 1.0), "holding the spout for 0.8 seconds fills the cup")
-
-	var flavour_machine: RefCounted = MODEL.new(0, true)
-	_check(StringName(flavour_machine.call("select_recipe", &"recipe.fresh_soy_milk.black_bean").get("reason", &"")) == &"soy_flavor_locked", "base machine only exposes yellow-soy flavour")
-	flavour_machine.call("configure_available_recipes", [&"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.black_bean"])
-	_check(bool(flavour_machine.call("select_recipe", &"recipe.fresh_soy_milk.black_bean").get("success", false)), "unlocked flavour button can select black-soy output")
-	flavour_machine.call("take_empty_cup")
-	var black_cup := Dictionary(flavour_machine.call("fill_held_cup", 0.8).get("cup", {}))
-	_check(StringName(black_cup.get("product_id", &"")) == &"product.fresh_soy_milk.black_bean", "selected flavour is preserved in the served cup")
+	full_machine.call("configure_upgrades", false, false, false, true)
+	_check(bool(full_machine.call("add_ice").get("success", false)), "filled soy cup can be iced after the ice-box upgrade")
+	_check(StringName(Dictionary(full_machine.call("preview_cup").get("product", {})).get("temperature_mode", &"")) == &"iced", "iced soy cup preserves its temperature for delivery")
+	_check(StringName(full_machine.call("add_ice").get("reason", &"")) == &"ice_already_added", "a soy cup cannot receive ice twice")
 
 	var assisted_machine: RefCounted = MODEL.new(0, true)
-	assisted_machine.call("configure_upgrades", true, true, true)
+	assisted_machine.call("configure_upgrades", true, false, true)
 	assisted_machine.call("take_empty_cup")
 	var assisted_cup := Dictionary(assisted_machine.call("fill_held_cup", 0.1).get("cup", {}))
-	_check(is_equal_approx(float(assisted_cup.get("fill_ratio", 0.0)), 0.125) and float(assisted_cup.get("quality", 0.0)) < 100.0, "manual release keeps its exact pour level even when legacy automation is enabled")
+	_check(is_equal_approx(float(assisted_cup.get("fill_ratio", 0.0)), 0.125) and float(assisted_cup.get("quality", 0.0)) < 100.0, "fill guide keeps a manual release at its exact pour level")
+
+	var advanced_machine: RefCounted = MODEL.new(0, true)
+	advanced_machine.call("configure_upgrades", false, true, false, false, true)
+	advanced_machine.call("take_empty_cup")
+	var double_fill := Dictionary(advanced_machine.call("fill_held_cup", 0.1))
+	_check(int(double_fill.get("quantity", 0)) == 2 and int(Dictionary(advanced_machine.call("snapshot")).get("ready_cup_count", 0)) == 2, "advanced soy machine fills two cups from one automatic press")
+	advanced_machine.call("take_filled_cup")
+	_check(StringName(Dictionary(advanced_machine.call("snapshot")).get("cup_state", &"")) == &"filled" and int(Dictionary(advanced_machine.call("snapshot")).get("ready_cup_count", 0)) == 1, "the queued advanced-machine cup is promoted after the first cup is collected")
+
+	var selectable_machine: RefCounted = MODEL.new(0, true)
+	selectable_machine.call("configure_upgrades", false, true, true, true, true)
+	selectable_machine.call("take_empty_cup")
+	selectable_machine.call("fill_held_cup", 0.1)
+	_check(bool(selectable_machine.call("add_sugar", 1).get("success", false)) and bool(selectable_machine.call("add_ice", 1).get("success", false)), "selected queued cup accepts sugar and ice")
+	var selectable_snapshot := Dictionary(selectable_machine.call("snapshot"))
+	var active_cup := Dictionary(selectable_snapshot.get("cup", {}))
+	var queued_cup := Dictionary(Array(selectable_snapshot.get("queued_cups", [])).front())
+	_check(int(active_cup.get("sugar_servings", 0)) == 0 and StringName(active_cup.get("temperature_mode", &"")) == &"room_temperature", "adding to the queued cup leaves the active cup unchanged")
+	_check(int(queued_cup.get("sugar_servings", 0)) == 1 and StringName(queued_cup.get("temperature_mode", &"")) == &"iced", "selected queued cup retains its own sugar and ice state")
 
 	var orders: RefCounted = ORDERS.new()
 	var opened := Dictionary(orders.call("open_order", [{
@@ -48,6 +64,16 @@ func _initialize() -> void:
 	var normal_sugar := {"product_instance_id": &"soy.right", "product_id": &"product.fresh_soy_milk.yellow_bean", "sugar_servings": 1}
 	_check(PackedStringArray(orders.call("preview_attach_product", order_id, 0, wrong_sweetness).get("mismatch_reasons", [])).has("sugar_servings"), "wrong sweetness is an order mismatch")
 	_check(bool(orders.call("preview_attach_product", order_id, 0, normal_sugar).get("will_match", false)), "matching sweetness is accepted")
+	var iced_opened := Dictionary(orders.call("open_order", [{
+		"area_id": &"area.fresh_soy_milk",
+		"product_id": &"product.fresh_soy_milk.yellow_bean",
+		"temperature_mode": &"iced",
+	}]))
+	var iced_order_id := StringName(Dictionary(iced_opened.get("order", {})).get("order_id", &""))
+	var room_temperature_cup := {"product_instance_id": &"soy.room", "product_id": &"product.fresh_soy_milk.yellow_bean", "temperature_mode": &"room_temperature"}
+	var iced_cup := {"product_instance_id": &"soy.iced", "product_id": &"product.fresh_soy_milk.yellow_bean", "temperature_mode": &"iced"}
+	_check(PackedStringArray(orders.call("preview_attach_product", iced_order_id, 0, room_temperature_cup).get("mismatch_reasons", [])).has("temperature_mode"), "room-temperature soy milk does not satisfy an iced order")
+	_check(bool(orders.call("preview_attach_product", iced_order_id, 0, iced_cup).get("will_match", false)), "iced soy milk satisfies an iced order")
 
 	if failures.is_empty():
 		print("SOY_CUP_SERVICE_SELF_CHECK_PASS")

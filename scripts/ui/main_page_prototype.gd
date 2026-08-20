@@ -169,5 +169,5 @@ func _refresh_global_status() -> void:
 	if session != null and session.has_method("five_area_progression_snapshot"):
 		snapshot = Dictionary(session.call("five_area_progression_snapshot"))
 	coin_label.text = "金币  %d" % int(snapshot.get("coins", 0))
-	reputation_label.text = "声誉  %d" % int(snapshot.get("reputation", 0))
+	reputation_label.text = "口碑  %d" % int(snapshot.get("reputation", 0))
 	business_day_label.text = "营业日  %d" % int(snapshot.get("current_day", 1))

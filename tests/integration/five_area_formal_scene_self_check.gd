@@ -25,6 +25,7 @@ func _run() -> void:
 	_check(fryer != null and fryer.has_signal("status_message"), "cartoon fryer exposes workstation status messages")
 	_check(fryer != null and fryer.black_sesame_tray != null and fryer.black_sesame_tray.texture != null, "black sesame tray is authored beside the fryer")
 	_check(fryer != null and fryer.output_sources.size() == 4 and fryer.plate_sources.size() == 4 and fryer.prepared_slot != null and not fryer.prepared_slot.visible and fryer.waste_target != null, "cartoon fryer exposes four fryer and plate oil-stick sources while keeping the former storage control hidden")
+	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.black_sesame_tray.z_index), "finished youtiao drag sources render above the black sesame tray")
 	_check(fryer != null and fryer.product_visuals.size() == 4 and fryer.raised_basket_slots.size() == 4 and fryer.lowered_basket_slots.size() == 4, "cartoon fryer renders exactly four fixed fryer slots")
 	_check(fryer != null and fryer.dough_visuals.size() == 4 and fryer.plate_product_visuals.size() == 4 and fryer.board_dough_slots.size() == 4 and fryer.plate_product_slots.size() == 4, "board and serving plate expose four scene-authored oil-stick positions")
 	if fryer != null:
@@ -61,6 +62,25 @@ func _run() -> void:
 			fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 1, "occupied_slot_indices": [0]}
 			fryer._plate_count = 0
 			_check(fryer._can_drop_data(fryer.black_sesame_tray.get_rect().get_center(), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a finished youtiao slot can be dropped onto the unlocked black sesame tray")
+			fryer._plate_products = [{"product_id": &"product.youtiao.sesame"}]
+			fryer._plate_count = 1
+			fryer._apply_snapshot()
+			_check(fryer.plate_product_visuals[0].visible and fryer.black_sesame_tray.get_rect().has_point(fryer.plate_product_visuals[0].get_rect().get_center()) and fryer.plate_product_visuals[0].z_index > fryer.black_sesame_tray.z_index, "sesame youtiao remains visibly above the sesame tray as its finished-product plate")
+			_check(fryer.plate_sources[0].visible and fryer.plate_sources[0].z_index > fryer.black_sesame_tray.z_index and StringName(fryer.plate_sources[0].source_ref().get("product_id", &"")) == &"product.youtiao.sesame", "sesame tray product remains directly draggable to service")
+	var game_session := root.get_node_or_null("GameSession")
+	var griddle := workstation.multi_griddle_station as MultiGriddleStation
+	if game_session != null and griddle != null:
+		game_session.call("begin_new_game")
+		griddle.bind_session(game_session)
+		griddle.reset_all()
+		griddle.call("_on_main_action", 0)
+		_check(griddle.units[0].state == CompactGriddleUnit.State.BATTER, "fixture leaves an unfinished pancake on the live griddle")
+		workstation.end_business_day({"reason": &"test_early_end"})
+		await create_timer(1.1).timeout
+		var saved_griddles := Dictionary(game_session.call("five_area_pancake_griddles_snapshot"))
+		var saved_slots := Array(saved_griddles.get("slots", []))
+		_check(griddle.units[0].state == CompactGriddleUnit.State.IDLE and (saved_slots.is_empty() or int(Dictionary(saved_slots[0]).get("state", -1)) == CompactGriddleUnit.State.IDLE), "day end clears the live unfinished pancake before it can resave during the workshop")
+		_check(bool(Dictionary(game_session.call("begin_next_business_day")).get("success", false)) and griddle.units[0].state == CompactGriddleUnit.State.IDLE, "next business day never restores an unfinished pancake")
 	workstation.queue_free()
 	_finish()
 

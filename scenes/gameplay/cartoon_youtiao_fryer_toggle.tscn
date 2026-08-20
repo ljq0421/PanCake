@@ -6,20 +6,15 @@
 [ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-raw-dough-v4.png" id="4_raw"]
 [ext_resource type="Texture2D" uid="uid://nkx1i8u234up" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-golden-v5-transparent.png" id="5_golden"]
 [ext_resource type="Texture2D" uid="uid://7ymhng5eocrj" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-burnt-v4.png" id="6_burnt"]
-[ext_resource type="Texture2D" uid="uid://dbgaa0aijutqd" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-wooden-cutting-board-oblique-v2.png" id="7_board"]
 [ext_resource type="Texture2D" uid="uid://cx77v7agg1d0x" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-empty-serving-plate-oblique-v2.png" id="8_plate"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/black-sesame-square-tray-v2.png" id="9_sesame_tray"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-black-sesame-v1-transparent.png" id="10_sesame_youtiao"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png" id="11_advanced_lowered"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png" id="12_advanced_raised"]
+[ext_resource type="Texture2D" uid="uid://b7k5yyrupgj2b" path="res://assets/jianbing-stall/black-sesame-square-tray-v2.png" id="9_sesame_tray"]
+[ext_resource type="Texture2D" uid="uid://bs4in4gxlfg18" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/youtiao-black-sesame-v1-transparent.png" id="10_sesame_youtiao"]
+[ext_resource type="Texture2D" uid="uid://cwy3t8rau3wcw" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png" id="11_advanced_lowered"]
+[ext_resource type="Texture2D" uid="uid://c7eoyl36rys2y" path="res://assets/jianbing-stall/youtiao-fryer-assets-v2/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png" id="12_advanced_raised"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_plate_youtiao"]
 atlas = ExtResource("5_golden")
 region = Rect2(174, 8, 677, 1500)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_board_dough"]
-atlas = ExtResource("4_raw")
-region = Rect2(144, 54, 230, 402)
 
 [node name="CartoonYoutiaoFryerToggle" type="Control" unique_id=1247571894]
 custom_minimum_size = Vector2(600, 600)
@@ -36,8 +31,8 @@ advanced_raised_machine_texture = ExtResource("12_advanced_raised")
 raw_youtiao_texture = ExtResource("4_raw")
 golden_youtiao_texture = ExtResource("5_golden")
 plate_youtiao_texture = SubResource("AtlasTexture_plate_youtiao")
-burnt_youtiao_texture = ExtResource("6_burnt")
 black_sesame_youtiao_texture = ExtResource("10_sesame_youtiao")
+burnt_youtiao_texture = ExtResource("6_burnt")
 
 [node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]
 unique_name_in_owner = true
@@ -163,66 +158,6 @@ offset_right = 335.0
 offset_bottom = 209.0
 mouse_filter = 2
 
-[node name="WoodenBoardVisual" type="TextureRect" parent="." unique_id=1089327243]
-layout_mode = 0
-offset_left = -53.0
-offset_top = 390.0
-offset_right = 331.0
-offset_bottom = 645.0
-mouse_filter = 2
-texture = ExtResource("7_board")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="DoughVisual1" type="TextureRect" parent="." unique_id=134491490]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 46.0
-offset_top = 459.0
-offset_right = 158.0
-offset_bottom = 569.0
-mouse_filter = 2
-texture = SubResource("AtlasTexture_board_dough")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BoardDoughSlot1" type="ReferenceRect" parent="." unique_id=1705983745]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 82.0
-offset_top = 472.0
-offset_right = 122.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="BoardDoughSlot2" type="ReferenceRect" parent="." unique_id=866897306]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 122.0
-offset_top = 472.0
-offset_right = 162.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="BoardDoughSlot3" type="ReferenceRect" parent="." unique_id=1730036934]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 162.0
-offset_top = 472.0
-offset_right = 202.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="BoardDoughSlot4" type="ReferenceRect" parent="." unique_id=699844867]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 202.0
-offset_top = 472.0
-offset_right = 242.0
-offset_bottom = 558.0
-mouse_filter = 2
-
 [node name="PlateVisual" type="TextureRect" parent="." unique_id=686091902]
 layout_mode = 0
 offset_left = 246.0
@@ -292,17 +227,6 @@ offset_left = 472.0
 offset_top = 490.0
 offset_right = 580.0
 offset_bottom = 590.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="DragVisual" type="TextureRect" parent="." unique_id=1157962629]
-unique_name_in_owner = true
-visible = false
-z_index = 10
-layout_mode = 0
-offset_right = 156.0
-offset_bottom = 140.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5

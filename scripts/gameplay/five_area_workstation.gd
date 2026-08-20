@@ -19,7 +19,7 @@ const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 6
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = cartoon_youtiao_fryer.waste_target
 @onready var pending_payment_button: Button = %PendingPaymentButton
-@onready var soy_full_slots: Array[Node] = [%SoyFullYellow, %SoyFullBlack, %SoyFullRed]
+@onready var soy_full_slots: Array[Node] = [%SoyFullYellow]
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
@@ -120,6 +120,12 @@ func reset_pancake() -> void:
 
 func end_business_day(cutoff: Dictionary = {}) -> void:
 	super.end_business_day(cutoff)
+	# GameSession has already attributed the unfinished pancake's consumed
+	# materials to today's waste. Clear the live griddle too: otherwise its
+	# periodic snapshot sync can overwrite that cleared save while the daily
+	# bill or upgrade workshop is still open.
+	if daily_bill_panel.visible and is_instance_valid(multi_griddle_station):
+		multi_griddle_station.reset_all()
 	if daily_bill_panel.visible:
 		_set_daily_bill_modal_input(true)
 
@@ -223,7 +229,7 @@ func _refresh_material_slots() -> void:
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and (slot.recipe_id.is_empty() or _id_in(unlocked_recipes, slot.recipe_id))
 		var status := Dictionary(session.call("five_area_restock_status", slot.stock_id)) if not slot.stock_id.is_empty() else {}
 		slot.apply_state(int(inventory.get(str(slot.stock_id), 0)), unlocked, int(status.get("capacity", 6)))
-	var fixed_slots: Array[Node] = [soy_full_slots[0], soy_full_slots[1], soy_full_slots[2], youtiao_dough_slots[0]]
+	var fixed_slots: Array[Node] = soy_full_slots + youtiao_dough_slots
 	for index in fixed_slots.size():
 		var slot := fixed_slots[index]
 		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
@@ -232,9 +238,11 @@ func _refresh_material_slots() -> void:
 		# bottom-dock controls are intentionally removed from the workbench view.
 		slot.visible = false
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fixed_material_lock_artworks[index].visible = false
-		fixed_material_lock_buttons[index].visible = false
-		fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if index < fixed_material_lock_artworks.size():
+			fixed_material_lock_artworks[index].visible = false
+		if index < fixed_material_lock_buttons.size():
+			fixed_material_lock_buttons[index].visible = false
+			fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _refresh_formal_area_visibility() -> void:
@@ -372,8 +380,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 			match StringName(machine.get("state", &"idle")):
 				&"idle":
-					var message := "长按油条面胚补货；基础炸篮共4格" if int(inventory.get("stock.youtiao.plain_dough", 0)) <= 0 else "把油条面胚拖入炸篮；基础炸篮共4格"
-					return {"target": youtiao_dough_slots[0], "message": message}
+					return {"target": cartoon_youtiao_fryer.start_button, "message": "长按油条机添加面胚；基础炸篮共4格"}
 				&"loaded":
 					var quantity := int(machine.get("quantity", 0))
 					var capacity := int(machine.get("capacity", 2))
@@ -392,7 +399,8 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"filled": return {"target": fresh_soy_station.sugar_jar, "message": "按订单选择无糖、正常糖或多糖，再拖杯交付"}
 		&"area.pancake":
 			if _multi_griddle_mode_active:
-				return {"target": multi_griddle_station, "message": "选择空鏊添加面糊；每张鏊子独立摊、翻、加料和出餐"}
+				var active_griddle := multi_griddle_station.units[0] as Control if not multi_griddle_station.units.is_empty() else multi_griddle_station
+				return {"target": active_griddle, "message": "选择空鏊添加面糊；每张鏊子独立摊、翻、加料和出餐"}
 			match p1_session.phase:
 				P1Session.Phase.SPREAD: return {"target": ladle_button, "message": "舀取面糊，在鏊面摊成完整饼皮"}
 				P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE: return {"target": step_action_button, "message": "观察火候并在合适时机翻面或确认"}

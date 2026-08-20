@@ -2,10 +2,12 @@ class_name MultiGriddleStation
 extends Control
 
 signal status_message(message: String)
+signal held_tool_changed(tool_id: StringName)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
+const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
 
 @onready var count_label: Label = %CountLabel
 @onready var units: Array[Node] = [%Griddle01]
@@ -165,12 +167,19 @@ func can_take_batter_from_ladle() -> bool:
 	return unit != null and unit.state == UNIT_SCRIPT.State.IDLE
 
 
-func take_batter_from_ladle() -> Dictionary:
+func take_batter_from_ladle(batter_amount: float = UNIT_SCRIPT.STANDARD_BATTER_AMOUNT) -> Dictionary:
 	if not can_take_batter_from_ladle():
 		status_message.emit("鏊面制作中，暂时不能再加面糊")
 		return {"success": false, "reason": &"griddle_busy"}
-	_on_main_action(_active_index)
-	return {"success": true, "unit_index": _active_index}
+	var unit := _unit(_active_index)
+	if unit == null:
+		return {"success": false, "reason": &"griddle_locked"}
+	var actual_amount := clampf(batter_amount, UNIT_SCRIPT.MIN_BATTER_AMOUNT, UNIT_SCRIPT.MAX_BATTER_AMOUNT)
+	unit.begin_order(_unbound_production_context(), actual_amount)
+	_set_selected_tool(&"tool.pancake.spreader")
+	_sync_snapshot_to_session()
+	status_message.emit("面糊已倒入：摊饼器已自动拿起，按住鏊面画圈摊开")
+	return {"success": true, "unit_index": _active_index, "batter_amount": actual_amount}
 
 
 func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionary:
@@ -178,6 +187,14 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 	if unit == null:
 		return {"success": false, "reason": &"griddle_locked"}
 	_active_index = unit_index
+	if _selected_tool == &"tool.pancake.ladle":
+		if unit.state != UNIT_SCRIPT.State.IDLE:
+			status_message.emit("空鏊子上才能倒入面糊")
+			return {"success": false, "reason": &"griddle_busy"}
+		var pour_result := Dictionary(unit.call("begin_batter_pour", _unbound_production_context()))
+		if not bool(pour_result.get("success", false)):
+			return pour_result
+		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_POUR_BATTER}
 	if (
 		unit_index == _primed_sauce_unit_index
 		and _selected_tool == _primed_sauce_stock_id
@@ -224,6 +241,20 @@ func _contextual_spreader_action(unit: Node) -> StringName:
 
 func complete_surface_action(unit_index: int, action: StringName, changed: bool) -> void:
 	if action.is_empty():
+		return
+	if action == UNIT_SCRIPT.SURFACE_ACTION_POUR_BATTER:
+		var pour_unit := _unit(unit_index)
+		if changed:
+			# Pouring is complete when the pointer is released. Put the ladle
+			# back into its holder instead of leaving another tool in hand.
+			clear_held_tool()
+			status_message.emit("面糊已倒入；面糊勺已放回筒中")
+		else:
+			if pour_unit != null:
+				pour_unit.reset_unit()
+			status_message.emit("面糊不足；请在鏊子上方多按住一会儿")
+			clear_held_tool()
+		_sync_snapshot_to_session()
 		return
 	if action == UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE:
 		status_message.emit("酱料已完成一次连续刷涂" if changed else "酱刷没有接触到有效饼面")
@@ -302,10 +333,15 @@ func clear_held_tool() -> void:
 		shared_tool_tray.set_selected_tool(&"")
 	for unit in units:
 		unit.cancel_held_tool()
+	held_tool_changed.emit(&"")
 
 
 func is_spreader_selected() -> bool:
 	return _selected_tool == &"tool.pancake.spreader"
+
+
+func is_batter_ladle_selected() -> bool:
+	return _selected_tool == &"tool.pancake.ladle"
 
 
 func _on_shared_tool_selected(tool_id: StringName) -> void:
@@ -313,6 +349,17 @@ func _on_shared_tool_selected(tool_id: StringName) -> void:
 
 
 func select_worktop_tool(tool_id: StringName) -> Dictionary:
+	if tool_id == &"tool.pancake.ladle":
+		if not can_take_batter_from_ladle():
+			status_message.emit("鏊面制作中，暂时不能添加面糊")
+			return {"success": false, "reason": &"griddle_busy"}
+		clear_held_tool()
+		_set_selected_tool(tool_id)
+		var ladle_unit := _unit(_active_index)
+		if ladle_unit != null:
+			ladle_unit.call("set_batter_ladle_armed", true)
+		status_message.emit("已拿起面糊勺；按住拖到空鏊子上方，松开即放回")
+		return {"success": true, "tool_id": tool_id}
 	if tool_id == &"tool.pancake.press_once":
 		if _session == null or not _session.has_method("progression_service"):
 			return {"success": false, "reason": &"no_session"}
@@ -336,7 +383,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 		_set_selected_tool(tool_id)
 		status_message.emit("已拿起摊饼器；在鏊面按住画圈摊面或摊蛋")
 		return {"success": true, "tool_id": tool_id}
-	if tool_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
+	if tool_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili", &"stock.pancake.sauce.tomato"]:
 		return {"success": false, "reason": &"unknown_tool"}
 	if _session == null or not _session.has_method("inventory_snapshot"):
 		return {"success": false, "reason": &"no_session"}
@@ -362,6 +409,15 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 	if not bool(consumed.get("success", false)):
 		status_message.emit("%s库存不足" % _stock_label(tool_id))
 		return consumed
+	if _auto_sauce_brush_owned():
+		var automated := Dictionary(unit.call("apply_sauce_automatically", tool_id, validation))
+		if not bool(automated.get("success", false)):
+			return automated
+		clear_held_tool()
+		shared_tool_tray.refresh_from_session()
+		_sync_snapshot_to_session()
+		status_message.emit("%s已自动刷好" % _stock_label(tool_id))
+		return automated.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
 	var primed := Dictionary(unit.call("prime_sauce", tool_id, validation))
 	if not bool(primed.get("success", false)):
 		return primed
@@ -377,6 +433,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 func _set_selected_tool(tool_id: StringName) -> void:
 	_selected_tool = tool_id
 	shared_tool_tray.set_selected_tool(tool_id)
+	held_tool_changed.emit(tool_id)
 
 
 func _spreader_width_multiplier() -> float:
@@ -404,6 +461,13 @@ func _consume_inventory_stock(stock_id: StringName) -> Dictionary:
 		return {"success": false, "reason": &"no_inventory"}
 	var stock_ids: Array[StringName] = [stock_id]
 	return Dictionary(_session.call("consume_inventory_stock_ids", stock_ids))
+
+
+func _auto_sauce_brush_owned() -> bool:
+	if _session == null or not _session.has_method("progression_service"):
+		return false
+	var progression: RefCounted = _session.call("progression_service")
+	return progression != null and bool(progression.call("owns_growth", AUTO_SAUCE_BRUSH_GROWTH_ID))
 
 
 func _build_product(unit: Node) -> Dictionary:

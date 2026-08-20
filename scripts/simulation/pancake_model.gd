@@ -836,7 +836,10 @@ func apply_sauce_sample(center: Vector2, layer_amount: float, radius: float, str
 			if was_inside_previous_sample or changed_cells >= cell_budget:
 				continue
 			var previous := target_field[index]
-			target_field[index] = minf(previous + safe_amount, parameters.sauce_maximum_concentration)
+			# A sauce serving is one uniform target layer.  Keep room for exactly two
+			# servings of each sauce, independent of the legacy renderer's broader
+			# concentration safety ceiling.
+			target_field[index] = minf(previous + safe_amount, parameters.sauce_target_concentration * 2.0)
 			deposited_sauce += target_field[index] - previous
 			peak_concentration = maxf(peak_concentration, target_field[index])
 			changed_cells += 1
@@ -848,6 +851,27 @@ func apply_sauce_sample(center: Vector2, layer_amount: float, radius: float, str
 		"newly_layered_cells": changed_cells,
 		"deposited_sauce": deposited_sauce,
 		"peak_concentration": peak_concentration,
+	}
+
+
+func apply_uniform_sauce(layer_amount: float, sauce_type: StringName = &"sweet_flour") -> Dictionary:
+	var target_amount := clampf(layer_amount, 0.0, parameters.sauce_target_concentration * 2.0)
+	var target_field := chili_sauce_concentration if sauce_type == &"red_chili" else sauce_concentration
+	var changed_cells := 0
+	var covered_cells := 0
+	for index in cell_count:
+		if coverage[index] <= 0.0 or damage[index] >= parameters.hole_damage_threshold:
+			continue
+		covered_cells += 1
+		if is_equal_approx(target_field[index], target_amount):
+			continue
+		target_field[index] = target_amount
+		changed_cells += 1
+	_commit_change(changed_cells)
+	return {
+		"changed_cells": changed_cells,
+		"covered_cells": covered_cells,
+		"layer_amount": target_amount,
 	}
 
 

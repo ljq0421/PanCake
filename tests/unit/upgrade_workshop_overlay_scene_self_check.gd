@@ -18,7 +18,7 @@ func _run() -> void:
 	_check(overlay.get_node_or_null("DetailPanel/BuyButton") is Button, "reservation button is authored in the workshop scene")
 	_check(overlay.get_node_or_null("HoverHint/HintLabel") is Label, "hover hint is authored in the workshop scene")
 	var props := overlay.get_node_or_null("UpgradeProps") as Control
-	_check(props != null and props.get_child_count() == 20, "all active upgrade hotspots and the press preview are authored in the workshop scene")
+	_check(props != null and props.get_child_count() == 18, "all remaining active upgrade hotspots and the press preview are authored in the workshop scene")
 	_check(props.get_node_or_null("PressSpreaderPreview") is TextureRect, "press preview is an authored workshop-scene node")
 	overlay.queue_free()
 	_finish()

@@ -77,9 +77,9 @@ func _run() -> void:
 	var soy_tickets := _growth_tickets(soy_station)
 	_check(_ticket_ids(soy_tickets) == [
 		&"growth.area.fresh_soy_milk",
-		&"growth.assist.fresh_soy_milk.fill_guide",
-		&"growth.flavor.fresh_soy_milk.black_bean",
-	], "mid-route window unlocks soy, then fill guidance and its first flavour button")
+		&"growth.assist.fresh_soy_milk.sugar",
+		&"growth.assist.fresh_soy_milk.ice",
+	], "mid-route window unlocks soy and its remaining serving assists")
 	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled and soy_tickets[2].disabled, "soy serving upgrades wait until the soy area is actually installed")
 	_check(_all_active_text(soy_tickets), "soy growth window contains only active three-area content")
 	soy_station.call("_open_upgrade_workshop")
@@ -87,7 +87,7 @@ func _run() -> void:
 	var workshop := soy_station.get_node_or_null("SafeArea/UpgradeWorkshopOverlay") as UpgradeWorkshopOverlay
 	var soy_purchase_target := workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_area_fresh_soy_milk") as Button if workshop != null else null
 	_check(soy_purchase_target != null and soy_purchase_target.visible, "workshop exposes a visible soy-machine purchase target")
-	_check(soy_purchase_target != null and (soy_purchase_target.get_node_or_null("ConditionTag") as Label).text.begins_with("豆浆机"), "soy-machine purchase target has an explicit label")
+	_check(soy_purchase_target != null and (soy_purchase_target.get_node_or_null("ConditionTag") as Label).text.begins_with("初级豆浆机"), "soy-machine purchase target has the basic-machine label")
 	if soy_purchase_target != null:
 		soy_purchase_target.emit_signal("pressed")
 		await process_frame

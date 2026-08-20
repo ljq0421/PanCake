@@ -10,7 +10,7 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 23, "serving-only soy growth route keeps only flavour, fill, capacity and value upgrades")
+	_check(CATALOG.growth_ids().size() == 17, "growth route includes the active batter-ladle upgrade and excludes retired upgrades")
 	for growth_id in CATALOG.growth_ids():
 		var definition := CATALOG.growth_definition(growth_id)
 		_check(CATALOG.AREA_IDS.has(StringName(definition.get("requires_area_id", &""))), "%s belongs to an active area" % growth_id)
@@ -57,9 +57,19 @@ func _run() -> void:
 		_check(is_equal_approx(float(CATALOG.stock_definition(stock_id).get("refill_seconds", 0.0)), 0.25), "%s restocks at the confirmed pancake-ingredient speed" % stock_id)
 	_check(CATALOG.recipe_definition(&"recipe.youtiao.oil_cake").is_empty() and CATALOG.recipe_definition(&"recipe.youtiao.sugar_oil_cake").is_empty(), "retired fryer recipes are absent")
 	_check(CATALOG.product_definition(&"product.youtiao.oil_cake").is_empty() and CATALOG.product_definition(&"product.youtiao.sugar_oil_cake").is_empty(), "retired fryer products are absent")
-	for recipe_id in [&"recipe.fresh_soy_milk.yellow_bean", &"recipe.fresh_soy_milk.black_bean", &"recipe.fresh_soy_milk.red_bean", &"recipe.fresh_soy_milk.multigrain"]:
-		_check(Array(CATALOG.recipe_definition(recipe_id).get("stock_ids", [])).is_empty(), "%s is ready-made and never creates bean inventory" % recipe_id)
-	_check(CATALOG.growth_definition(&"growth.flavor.fresh_soy_milk.black_bean").get("label") == "口味按钮：黑豆" and CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("label") == "自动满杯", "soy growth path uses flavour buttons and automatic filling")
+	_check(Array(CATALOG.recipe_definition(&"recipe.fresh_soy_milk.yellow_bean").get("stock_ids", [])).is_empty(), "yellow soy is ready-made and never creates bean inventory")
+	for retired_id in [
+		&"recipe.youtiao.sugar", &"product.youtiao.sugar", &"growth.flavor.youtiao.sugar", &"growth.assist.youtiao.temperature_indicator",
+		&"recipe.fresh_soy_milk.black_bean", &"product.fresh_soy_milk.black_bean", &"growth.flavor.fresh_soy_milk.black_bean",
+		&"recipe.fresh_soy_milk.red_bean", &"product.fresh_soy_milk.red_bean", &"growth.flavor.fresh_soy_milk.red_bean",
+	]:
+		_check(CATALOG.recipe_definition(retired_id).is_empty() and CATALOG.product_definition(retired_id).is_empty() and CATALOG.growth_definition(retired_id).is_empty(), "%s is absent from the active catalog" % retired_id)
+	_check(CATALOG.growth_definition(&"growth.area.fresh_soy_milk").get("label") == "初级豆浆机", "the first soy unlock is named the basic soy machine")
+	_check(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("label") == "中级豆浆机", "the second soy unlock is named the intermediate soy machine")
+	_check(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.advanced").get("label") == "高级豆浆机", "the final soy unlock is named the advanced soy machine")
+	var batter_ladle := CATALOG.growth_definition(&"growth.automation.pancake.auto_batter_ladle")
+	_check(batter_ladle.get("label") == "定量面糊勺" and int(batter_ladle.get("price", 0)) == 20, "batter-ladle upgrade uses the approved name and price")
+	_check(int(Dictionary(batter_ladle.get("requires_mastery", {})).get(&"area.pancake", {}).get("a_grade", 0)) == 3, "batter-ladle upgrade unlocks after three A-grade pancakes")
 	var copy := CATALOG.stock_definition(&"stock.pancake.egg")
 	copy["material_slot_id"] = &"slot.invalid"
 	_check(CATALOG.stock_definition(&"stock.pancake.egg").get("material_slot_id") == &"slot.07", "catalog queries return deep copies")

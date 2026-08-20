@@ -40,11 +40,15 @@ func _process(delta: float) -> void:
 
 
 func _layout_for_target() -> void:
-	var global_rect := _target.get_global_rect()
-	var inverse := get_global_transform_with_canvas().affine_inverse()
-	var top_left := inverse * global_rect.position
-	var bottom_right := inverse * global_rect.end
-	var local_rect := Rect2(top_left, bottom_right - top_left).grow(8.0)
+	# Both controls live in the same canvas. Their global rectangles therefore
+	# have the same coordinate origin even when the viewport is stretched. Using
+	# their difference avoids applying a canvas transform twice.
+	var target_global_rect := _target.get_global_rect()
+	var overlay_global_rect := get_global_rect()
+	var local_rect := Rect2(
+		target_global_rect.position - overlay_global_rect.position,
+		target_global_rect.size,
+	).grow(8.0)
 	var bounds := Rect2(Vector2.ZERO, size)
 	local_rect.position.x = clampf(local_rect.position.x, 4.0, maxf(bounds.size.x - local_rect.size.x - 4.0, 4.0))
 	local_rect.position.y = clampf(local_rect.position.y, 4.0, maxf(bounds.size.y - local_rect.size.y - 4.0, 4.0))

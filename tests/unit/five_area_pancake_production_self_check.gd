@@ -37,9 +37,9 @@ func _run() -> void:
 		"applied_sauce_ids": [],
 	}, {"id": &"order.pancake.classic", "heat_preference": &"golden"})
 	_check(
-		Array(double_egg_product.get("ingredient_ids", [])).count("stock.pancake.egg") == 1
+		Array(double_egg_product.get("ingredient_ids", [])).count("stock.pancake.egg") == 2
 		and int(double_egg_product.get("material_cost", 0)) == 4,
-		"extra portions increase material cost without changing the order's ingredient-type contract"
+		"extra portions remain in the product contract and increase material cost"
 	)
 	_check(session.call("store_pancake_product", product).get("reason") == &"tray_locked", "holding tray is not available before its content unlock")
 	var progression: RefCounted = session.call("progression_service")

@@ -28,6 +28,20 @@ func _run() -> void:
 	var sauce_contract: RefCounted = ORDERS.new()
 	var double_sauce: Dictionary = sauce_contract.call("open_pancake_order", {"id": &"order.pancake.double_sauce", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]})
 	_check(bool(double_sauce.get("success", false)), "formal pancake order accepts the confirmed two-sauce maximum")
+	var double_portion_contract: RefCounted = ORDERS.new()
+	var double_portion: Dictionary = double_portion_contract.call("open_pancake_order", {"id": &"order.pancake.double_portion", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.meat_floss", &"stock.pancake.meat_floss"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"]})
+	var double_item: Dictionary = {}
+	if bool(double_portion.get("success", false)):
+		var double_items: Array = Array(Dictionary(double_portion.get("order", {})).get("items", []))
+		if not double_items.is_empty():
+			double_item = Dictionary(double_items[0])
+	_check(bool(double_portion.get("success", false)) and Array(double_item.get("ingredient_ids", [])).count("stock.pancake.egg") == 2 and Array(double_item.get("sauce_ids", [])).count("stock.pancake.sauce.sweet_flour") == 2, "formal pancake order preserves two portions of every requested topping and sauce")
+	var over_ingredient_contract: RefCounted = ORDERS.new()
+	var over_ingredient: Dictionary = over_ingredient_contract.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.egg"]}])
+	_check(not bool(over_ingredient.get("success", true)) and over_ingredient.get("reason", &"") == &"too_many_ingredient_portions", "formal pancake order rejects a third ingredient portion")
+	var over_portion_contract: RefCounted = ORDERS.new()
+	var over_portion: Dictionary = over_portion_contract.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"]}])
+	_check(not bool(over_portion.get("success", true)) and over_portion.get("reason", &"") == &"too_many_sauce_portions", "formal pancake order rejects a third sauce portion")
 	var over_sauce_contract: RefCounted = ORDERS.new()
 	var over_sauced: Dictionary = over_sauce_contract.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "sauce_ids": [&"sauce.one", &"sauce.two", &"sauce.three"]}])
 	_check(not bool(over_sauced.get("success", true)) and over_sauced.get("reason", &"") == &"too_many_sauce_requirements", "formal order rejects a third sauce requirement")

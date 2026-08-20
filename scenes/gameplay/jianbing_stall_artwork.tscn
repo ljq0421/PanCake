@@ -30,19 +30,20 @@
 [ext_resource type="Script" uid="uid://b2326s32jjhdn" path="res://scripts/ui/egg_carton_drag_source.gd" id="39_egg_carton_drag"]
 [ext_resource type="Texture2D" uid="uid://bl8kaj3c2qww3" path="res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png" id="40_spreader_holder_empty"]
 [ext_resource type="Texture2D" uid="uid://didjm28d6kq2e" path="res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png" id="41_spreader_holder_filled"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-1.png" id="42_pork_floss_01"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-2.png" id="43_pork_floss_02"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-3.png" id="44_pork_floss_03"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-4.png" id="45_pork_floss_04"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-5.png" id="46_pork_floss_05"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-6.png" id="47_pork_floss_06"]
+[ext_resource type="Texture2D" uid="uid://coge4f4exwo5n" path="res://assets/jianbing-stall/empty-square-ingredient-tray-1.png" id="42_pork_floss_01"]
+[ext_resource type="Texture2D" uid="uid://bajcgtdv5ioc6" path="res://assets/jianbing-stall/empty-square-ingredient-tray-2.png" id="43_pork_floss_02"]
+[ext_resource type="Texture2D" uid="uid://1u1w81qr6a42" path="res://assets/jianbing-stall/empty-square-ingredient-tray-3.png" id="44_pork_floss_03"]
+[ext_resource type="Texture2D" uid="uid://ca1h8m6npsms6" path="res://assets/jianbing-stall/empty-square-ingredient-tray-4.png" id="45_pork_floss_04"]
+[ext_resource type="Texture2D" uid="uid://bat6ilmx2dwif" path="res://assets/jianbing-stall/empty-square-ingredient-tray-5.png" id="46_pork_floss_05"]
+[ext_resource type="Texture2D" uid="uid://b7dijr1i4xnu7" path="res://assets/jianbing-stall/empty-square-ingredient-tray-6.png" id="47_pork_floss_06"]
 [ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="49_ladle_holder_filled"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-1.png" id="50_ham_tray_01"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-2.png" id="51_ham_tray_02"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-3.png" id="52_ham_tray_03"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-4.png" id="53_ham_tray_04"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-5.png" id="54_ham_tray_05"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-6.png" id="55_ham_tray_06"]
+[ext_resource type="Texture2D" uid="uid://7gtsjoi1qfok" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-1.png" id="50_ham_tray_01"]
+[ext_resource type="Texture2D" uid="uid://cselojxogv3n" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-2.png" id="51_ham_tray_02"]
+[ext_resource type="Texture2D" uid="uid://cimgj8etmu3i0" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-3.png" id="52_ham_tray_03"]
+[ext_resource type="Texture2D" uid="uid://bcnwqpw66e63m" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-4.png" id="53_ham_tray_04"]
+[ext_resource type="Texture2D" uid="uid://by3e6x3dp27v6" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-5.png" id="54_ham_tray_05"]
+[ext_resource type="Texture2D" uid="uid://oqdkwlo8wcdf" path="res://assets/jianbing-stall/empty-square-ingredient-tray-ham-6.png" id="55_ham_tray_06"]
+[ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="56_alpha_hit_button"]
 
 [node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90
@@ -95,7 +96,6 @@ stretch_mode = 5
 script = ExtResource("23_scallion_tray")
 stock_id = &"stock.pancake.ham_sausage"
 state_textures = Array[Texture2D]([ExtResource("50_ham_tray_01"), ExtResource("51_ham_tray_02"), ExtResource("52_ham_tray_03"), ExtResource("53_ham_tray_04"), ExtResource("54_ham_tray_05"), ExtResource("55_ham_tray_06")])
-full_quantity = 6
 
 [node name="SweetBeanSauceJar" type="TextureRect" parent="." unique_id=698685248]
 layout_mode = 0
@@ -344,7 +344,7 @@ offset_left = 1262.0
 offset_top = 920.0
 offset_right = 1422.0
 offset_bottom = 1080.0
-tooltip_text = "点击加面糊"
+tooltip_text = "按住面糊勺拖到空鏊子倒入"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("49_ladle_holder_filled")
@@ -356,7 +356,7 @@ z_index = 3
 layout_mode = 0
 offset_left = 1120.0
 offset_top = 686.0
-offset_right = 1229.0
+offset_right = 1243.0
 offset_bottom = 820.4
 focus_mode = 0
 mouse_default_cursor_shape = 2
@@ -373,16 +373,40 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
 
+[node name="TomatoSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=216947675]
+z_index = 3
+layout_mode = 0
+offset_left = 1332.0
+offset_top = 686.0
+offset_right = 1449.0
+offset_bottom = 815.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
 [node name="SweetSauceHotspotHitButton" type="Button" parent="PancakeWorktopHotspots" unique_id=1697016334]
 z_index = 3
 layout_mode = 0
 offset_left = 1120.0
 offset_top = 686.0
-offset_right = 1229.0
+offset_right = 1243.0
 offset_bottom = 820.4
 focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
+
+[node name="TomatoSauceHotspotHitButton" type="Button" parent="PancakeWorktopHotspots" unique_id=1788109489]
+z_index = 3
+layout_mode = 0
+offset_left = 1332.0
+offset_top = 686.0
+offset_right = 1449.0
+offset_bottom = 815.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+script = ExtResource("56_alpha_hit_button")
+hit_texture = ExtResource("28_tomato_sauce")
 
 [node name="ChiliSauceHotspotHitButton" type="Button" parent="PancakeWorktopHotspots" unique_id=1470490415]
 z_index = 3
@@ -394,3 +418,5 @@ offset_bottom = 815.4
 focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
+script = ExtResource("56_alpha_hit_button")
+hit_texture = ExtResource("27_chili_sauce")

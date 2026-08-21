@@ -93,11 +93,14 @@ func _has_point(point: Vector2) -> bool:
 	# This root also spans the adjacent pancake toppings. Restrict its input
 	# bounds to the fryer and its own finished-product trays so the invisible
 	# portion of the Control cannot swallow their hover, drag, or hold gestures.
-	if fryer_visual.get_rect().has_point(point):
+	# A sibling hotspot can cause Godot to recalculate the hovered Control while
+	# this preview node is still entering the scene tree. @onready references are
+	# not assigned until this node's _ready(), so it cannot claim input yet.
+	if fryer_visual != null and fryer_visual.get_rect().has_point(point):
 		return true
-	if plate_visual.visible and plate_visual.get_rect().has_point(point):
+	if plate_visual != null and plate_visual.visible and plate_visual.get_rect().has_point(point):
 		return true
-	return black_sesame_tray.visible and black_sesame_tray.get_rect().has_point(point)
+	return black_sesame_tray != null and black_sesame_tray.visible and black_sesame_tray.get_rect().has_point(point)
 
 
 func _input(event: InputEvent) -> void:

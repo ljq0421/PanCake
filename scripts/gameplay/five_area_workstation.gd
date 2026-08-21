@@ -149,12 +149,11 @@ func _set_daily_bill_modal_input(_active: bool) -> void:
 
 
 func _refresh_five_area_modal_input() -> void:
-	# The result summary is interactive UI, not part of the direct-manipulation
-	# station. Disable every station hotspot until the summary is dismissed so
-	# it cannot steal clicks from either the action card or the detail close button.
+	# Only full-screen/modal presentations block the workbench. The compact order
+	# summary intentionally stays visible while the next customer is being served,
+	# so it must not freeze the production hotspots.
 	var result_modal_visible := result_panel != null and result_panel.visible
-	var summary_visible := order_summary_card != null and order_summary_card.visible
-	var modal_is_open := result_modal_visible or summary_visible or (daily_bill_panel != null and daily_bill_panel.visible)
+	var modal_is_open := result_modal_visible or (daily_bill_panel != null and daily_bill_panel.visible)
 	five_area_infrastructure.mouse_behavior_recursive = (
 		Control.MOUSE_BEHAVIOR_DISABLED
 		if modal_is_open
@@ -899,15 +898,47 @@ static func _tray_result_summary(settlement: Dictionary) -> Dictionary:
 	var item_results := Array(settlement.get("item_results", []))
 	var primary_result := Dictionary(item_results[0]) if not item_results.is_empty() else {}
 	var product := Dictionary(primary_result.get("product", {}))
-	var mismatch_reasons := PackedStringArray(Array(settlement.get("mismatch_reasons", [])))
+	var feedback_items := _delivery_feedback_items(item_results)
 	summary["score"] = float(product.get("score", 100.0 if bool(settlement.get("order_success", false)) else 0.0))
 	summary["dimensions"] = Dictionary(product.get("dimension_scores", {})).duplicate(true)
-	summary["tags"] = mismatch_reasons
-	if mismatch_reasons.is_empty():
+	summary["tags"] = feedback_items
+	if feedback_items.is_empty():
 		summary["feedback"] = "顾客已收到完整订单"
 	else:
-		summary["feedback"] = "顾客指出：%s" % "、".join(mismatch_reasons)
+		summary["feedback"] = "顾客指出：%s" % "、".join(feedback_items)
 	return summary
+
+
+static func _delivery_feedback_items(item_results: Array) -> PackedStringArray:
+	var feedback_items := PackedStringArray()
+	for item_result_value in item_results:
+		var item_result := Dictionary(item_result_value)
+		var expected_product := _product_label(StringName(item_result.get("product_id", &"")))
+		var actual_product := _product_label(StringName(Dictionary(item_result.get("product", {})).get("product_id", &"")))
+		for reason_value in Array(item_result.get("mismatch_reasons", [])):
+			var feedback := _delivery_feedback_text(StringName(reason_value), expected_product, actual_product)
+			if not feedback.is_empty() and not feedback_items.has(feedback):
+				feedback_items.append(feedback)
+	return feedback_items
+
+
+static func _delivery_feedback_text(reason: StringName, expected_product: String, actual_product: String) -> String:
+	match reason:
+		&"missing_order_item", &"incomplete_quantity": return "%s未按订单交齐" % expected_product
+		&"product_id": return "交付的%s与订单要求的%s不符" % [actual_product, expected_product]
+		&"heat_preference": return "%s火候不符合订单要求" % expected_product
+		&"temperature_mode": return "%s温度不符合订单要求" % expected_product
+		&"ingredient_ids": return "%s配料与订单要求不符" % expected_product
+		&"sauce_ids": return "%s酱料与订单要求不符" % expected_product
+		&"sugar_servings": return "%s糖量不符合订单要求" % expected_product
+		_: return "交付的%s不符合订单要求" % expected_product
+
+
+static func _product_label(product_id: StringName) -> String:
+	if product_id == &"product.pancake.custom":
+		return "煎饼"
+	var definition := CATALOG.product_definition(product_id)
+	return str(definition.get("label", "餐品"))
 
 
 static func _missing_delivery_source_text(area_id: StringName) -> String:

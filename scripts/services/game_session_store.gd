@@ -21,6 +21,7 @@ const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
+const CONSOLATION_PAYMENT_COINS := 1
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_HOLDING_TRAY_MODEL := preload("res://scripts/gameplay/pancake_holding_tray_model.gd")
@@ -78,6 +79,14 @@ const DAILY_PANCAKE_CONSUMABLE_STOCK := {
 	&"stock.pancake.sauce.red_chili": 6,
 	&"stock.pancake.sauce.tomato": 6,
 }
+const DAILY_PANCAKE_TOPPING_STOCK: Array[StringName] = [
+	&"stock.pancake.coriander",
+	&"stock.pancake.scallion",
+	&"stock.pancake.egg",
+	&"stock.pancake.baocui",
+	&"stock.pancake.meat_floss",
+	&"stock.pancake.ham_sausage",
+]
 const RECONCILED_FORMAL_ORDER_IDS_KEY := "reconciled_formal_order_ids"
 const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
@@ -210,6 +219,7 @@ func begin_new_game() -> Dictionary:
 		ORDER_PROMOTIONS_KEY: [],
 		SPECIAL_CUSTOMER_STATE_KEY: SPECIAL_CUSTOMER_CATALOG.default_state(1),
 	}
+	_replenish_daily_pancake_toppings()
 	_configure_service_connections()
 	_write_save()
 	progression_changed.emit(five_area_progression_snapshot())
@@ -1501,11 +1511,16 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 		item_results,
 	)
 	base_coins = int(special_economics.get("earned_coins", base_coins))
+	var consolation_coins := 0
+	if base_coins <= 0 and _has_delivered_formal_product(item_results):
+		consolation_coins = CONSOLATION_PAYMENT_COINS
+		base_coins = consolation_coins
 	var reputation_delta := int(special_economics.get("reputation_delta", normal_reputation_delta))
 	settlement["special_customer_id"] = special_economics.get("special_customer_id", &"")
 	settlement["special_outcome"] = special_economics.get("outcome", &"ordinary")
 	settlement["perfect_achieved"] = bool(special_economics.get("perfect_achieved", false))
 	settlement["perfect_bonus_coins"] = int(special_economics.get("perfect_bonus_coins", 0))
+	settlement["consolation_coins"] = consolation_coins
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
 	var tutorial_identity := _tutorial_identity_for_order(order)
 	var tutorial_kind := StringName(tutorial_identity.get("kind", &""))
@@ -1573,6 +1588,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 			"special_customer_id": settlement.get("special_customer_id", &""),
 			"special_outcome": settlement.get("special_outcome", &"ordinary"),
 			"perfect_bonus_coins": settlement.get("perfect_bonus_coins", 0),
+			"consolation_coins": consolation_coins,
 		},
 	})
 	for item_index in range(mastery_results.size()):
@@ -2765,6 +2781,7 @@ func begin_next_business_day() -> Dictionary:
 		int(_progression.get("current_day")),
 	)
 	_replenish_daily_pancake_consumables()
+	_replenish_daily_pancake_toppings()
 	result["restock_required_ids"] = _provision_activated_stock(Array(result.get("activated_growth_ids", [])))
 	_enqueue_growth_order_promotions(Array(result.get("activated_growth_ids", [])))
 	_sync_progression_to_save()
@@ -2788,6 +2805,17 @@ func _replenish_daily_pancake_consumables() -> void:
 			continue
 		var key := str(stock_id)
 		inventory[key] = maxi(int(inventory.get(key, 0)), int(DAILY_PANCAKE_CONSUMABLE_STOCK[stock_id]))
+	_save_data["inventory"] = _normalize_inventory(inventory)
+
+
+func _replenish_daily_pancake_toppings() -> void:
+	var inventory := inventory_snapshot()
+	for stock_id in DAILY_PANCAKE_TOPPING_STOCK:
+		if not bool(_progression.call("owns_stock", stock_id)):
+			continue
+		var capacity := _restock_capacity(stock_id, CATALOG.stock_definition(stock_id))
+		if capacity > 0:
+			inventory[str(stock_id)] = capacity
 	_save_data["inventory"] = _normalize_inventory(inventory)
 
 
@@ -3269,10 +3297,6 @@ func _new_inventory_snapshot() -> Dictionary:
 	var inventory := {}
 	for stock_id in CATALOG.stock_ids():
 		inventory[str(stock_id)] = 0
-	# Scallion starts empty so its countertop crock begins in the authored empty
-	# state and the player learns the shared hold-to-restock interaction.
-	for stock_id in [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.sauce.sweet_flour"]:
-		inventory[str(stock_id)] = 6
 	return inventory
 
 
@@ -3391,6 +3415,14 @@ func _quality_adjusted_formal_quote(order: Dictionary, item_results: Array, quot
 		return maxi(quoted_coins, 0)
 	var combo_multiplier := float(quoted_coins) / raw_total
 	return maxi(roundi(adjusted_total * combo_multiplier), 0)
+
+
+static func _has_delivered_formal_product(item_results: Array) -> bool:
+	for item_result_value in item_results:
+		var item_result := Dictionary(item_result_value)
+		if not Array(item_result.get("products", [])).is_empty() or not Dictionary(item_result.get("product", {})).is_empty():
+			return true
+	return false
 
 
 func _f3_reputation_delta(order_success: bool, grades: PackedStringArray) -> int:

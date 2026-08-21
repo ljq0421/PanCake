@@ -45,7 +45,7 @@ func _run() -> void:
 	_check(bool(progression.call("owns_area", &"area.pancake")) and not bool(progression.call("owns_area", &"area.youtiao")) and not bool(progression.call("owns_area", &"area.fresh_soy_milk")), "new save opens only pancake area")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	_check(inventory.has("stock.pancake.batter") and inventory.has("stock.youtiao.plain_dough") and not inventory.has("stock.fresh_soy_milk.yellow_bean"), "serving-only soy station does not create managed bean inventory")
-	_check(int(inventory.get("stock.pancake.scallion", -1)) == 0, "new save starts with an empty scallion crock")
+	_check(int(inventory.get("stock.pancake.scallion", -1)) == 6, "new save starts with a full scallion crock")
 	for retired_stock in ["stock.packaged_drink.milk", "stock.packaged_drink.soy_milk", "stock.steamer.mantou", "stock.steamer.vegetable_bun"]:
 		_check(not inventory.has(retired_stock), "%s is absent from the new inventory" % retired_stock)
 	var production := Dictionary(session.call("five_area_production_snapshot"))

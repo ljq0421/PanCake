@@ -75,6 +75,10 @@ func _run() -> void:
 	_check(not panel.is_visible_in_tree(), "close action hides the result panel")
 	_check(workstation.order_summary_card.is_visible_in_tree(), "close action returns to the clickable order summary")
 	_check(input_shield != null and not input_shield.is_visible_in_tree(), "closing detail removes its outside-input shield")
+	_check(
+		five_area_infrastructure.mouse_behavior_recursive != Control.MOUSE_BEHAVIOR_DISABLED,
+		"closing detail restores workbench input even while the order summary remains visible"
+	)
 
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw

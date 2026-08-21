@@ -220,7 +220,6 @@ stretch_mode = 5
 layout_mode = 1
 
 [node name="BusinessDayTimerLabel" type="Label" parent="SafeArea" unique_id=1531366971]
-visible = false
 z_index = 20
 layout_mode = 0
 offset_left = 720.0
@@ -236,7 +235,6 @@ vertical_alignment = 1
 
 [node name="GlobalStatusLabel" type="Label" parent="SafeArea" unique_id=1290960937]
 unique_name_in_owner = true
-visible = false
 z_index = 150
 layout_mode = 0
 offset_left = 100.0
@@ -278,7 +276,6 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="CustomerStrip" type="Panel" parent="SafeArea" unique_id=178361706]
-visible = false
 layout_mode = 0
 offset_left = 100.0
 offset_top = 20.0
@@ -390,7 +387,6 @@ offset_bottom = 69.0
 text = "婉拒订单"
 
 [node name="BottomStrip" type="Panel" parent="SafeArea" unique_id=438973155]
-visible = false
 z_index = 7
 layout_mode = 0
 offset_left = 100.0
@@ -1278,7 +1274,6 @@ text = "返回成长选择"
 
 [node name="ServiceCustomer1" parent="SafeArea" unique_id=560930553 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 offset_left = 100.0
 offset_top = 150.0
@@ -1287,7 +1282,6 @@ offset_bottom = 640.0
 
 [node name="ServiceCustomer2" parent="SafeArea" unique_id=2033337310 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 offset_left = 690.0
 offset_top = 150.0
@@ -1296,7 +1290,6 @@ offset_bottom = 640.0
 
 [node name="ServiceCustomer3" parent="SafeArea" unique_id=1323426398 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 offset_left = 1280.0
 offset_top = 150.0

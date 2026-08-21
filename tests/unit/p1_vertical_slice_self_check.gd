@@ -72,10 +72,15 @@ func _test_egg_spreading_and_score() -> void:
 	var multi_egg_model := _uniform_pancake(128, 0.42)
 	_check(bool(multi_egg_model.crack_egg(Vector2(54, 64)).success), "the first egg can be cracked onto the pancake")
 	var first_egg_mass := multi_egg_model.total_egg_amount()
+	for step in 24:
+		var angle := TAU * float(step) / 24.0
+		multi_egg_model.apply_egg_spreader_sample(Vector2(54, 64) + Vector2.from_angle(angle) * 8.0, Vector2.from_angle(angle), 70.0)
+	_check(multi_egg_model.yolk_broken, "spreading the first egg keeps its liquid layer visible")
 	_check(
 		bool(multi_egg_model.crack_egg(Vector2(74, 64)).success)
-		and multi_egg_model.total_egg_amount() > first_egg_mass,
-		"the pancake simulation accepts and accumulates a second egg"
+		and multi_egg_model.total_egg_amount() > first_egg_mass
+		and multi_egg_model.yolk_broken,
+		"cracking the second egg preserves the already-spread first egg visual"
 	)
 	var model := _uniform_pancake(128, 0.42)
 	var center := Vector2(64, 64)

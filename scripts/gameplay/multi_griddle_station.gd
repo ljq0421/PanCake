@@ -401,7 +401,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 	if not bool(validation.get("success", false)):
 		var reason := StringName(validation.get("reason", &""))
 		match reason:
-			&"duplicate_sauce": status_message.emit("这张饼已经加过同一种酱")
+			&"portion_limit": status_message.emit("同一种小料最多加2份")
 			&"outside_pancake": status_message.emit("当前饼面没有可落酱的位置")
 			_: status_message.emit("摊开面饼后才能点击酱罐落酱")
 		return validation

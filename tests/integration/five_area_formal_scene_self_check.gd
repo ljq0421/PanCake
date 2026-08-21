@@ -37,6 +37,11 @@ func _run() -> void:
 			fryer.set_workshop_preview(true)
 			_check(fryer.black_sesame_tray.visible and is_equal_approx(fryer.black_sesame_tray.self_modulate.a, 0.42), "locked black sesame tray is translucent in the workshop preview")
 			fryer.set_workshop_preview(false)
+			fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 1, "occupied_slot_indices": [0]}
+			fryer._apply_snapshot()
+			_check(not fryer.plate_visual.visible and not fryer._can_drop_data(Vector2(470.0, 520.0), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "before the finished tray unlock, fried youtiao stays in the raised filter basket")
+			progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true})
+			fryer.refresh_from_session()
 		fryer._machine = {"state": &"idle", "capacity": 4, "quantity": 0, "occupied_slot_indices": []}
 		fryer._dough_stock = 4
 		fryer._apply_snapshot()

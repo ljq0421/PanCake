@@ -16,9 +16,10 @@ func set_filled_slot_count(value: int) -> void:
 
 
 func _has_point(point: Vector2) -> bool:
-	# The full carton is a long-press restock target. _slot_index_at() still
-	# gates dragging, so a blank slot can never consume an arbitrary egg.
-	return Rect2(Vector2.ZERO, size).has_point(point)
+	# The whole *visible* carton remains a long-press restock target.
+	# _slot_index_at() still gates dragging, so a blank slot can never consume
+	# an arbitrary egg.
+	return super._has_point(point)
 
 
 func _gui_input(event: InputEvent) -> void:

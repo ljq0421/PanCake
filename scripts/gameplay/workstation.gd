@@ -194,6 +194,7 @@ var _order_patience_tier := -1
 @onready var summary_feedback_label: Label = %SummaryFeedbackLabel
 @onready var summary_view_button: Button = %SummaryViewButton
 @onready var summary_dismiss_button: Button = %SummaryDismissButton
+@onready var result_detail_input_shield: Control = get_node_or_null("SafeArea/ResultDetailInputShield") as Control
 @onready var daily_bill_panel: PanelContainer = %DailyBillPanel
 @onready var business_day_closed_shield: Control = %BusinessDayClosedShield
 @onready var daily_bill_title_label: Label = %DailyBillTitleLabel
@@ -1179,6 +1180,8 @@ func reset_pancake() -> void:
 	_update_sauce_status()
 	result_panel.visible = false
 	order_summary_card.visible = false
+	if result_detail_input_shield != null:
+		result_detail_input_shield.visible = false
 	payment_sprite.visible = false
 	handoff_product_sprite.visible = false
 	serve_product_button.visible = false
@@ -2831,6 +2834,8 @@ func _restore_in_progress_after_tray_handoff() -> void:
 	handoff_product_sprite.visible = false
 	result_panel.visible = false
 	order_summary_card.visible = false
+	if result_detail_input_shield != null:
+		result_detail_input_shield.visible = false
 	payment_sprite.visible = false
 	pancake_surface.pointer_pressed = false
 	pancake_surface.spreader_motion_valid = false
@@ -2933,6 +2938,8 @@ func end_business_day(cutoff: Dictionary = {}) -> void:
 	_populate_daily_bill(bill)
 	result_panel.visible = false
 	order_summary_card.visible = false
+	if result_detail_input_shield != null:
+		result_detail_input_shield.visible = false
 	# GUI input follows scene-tree order rather than CanvasItem z_index. Derived
 	# workstation controls are appended after this inherited panel, so keep the
 	# outside shield and then the modal panel as the final SafeArea siblings.
@@ -3266,6 +3273,9 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		"SafeArea/BottomStrip",
 		"SafeArea/BusinessDayTimerLabel",
 		"SafeArea/GlobalStatusLabel",
+		"SafeArea/PaymentSprite",
+		"SafeArea/PaymentCoinLayer",
+		"SafeArea/PaymentCollectionArea",
 		"SafeArea/P1ControlBar",
 		"SafeArea/IngredientRack",
 		"SafeArea/RestockRack",
@@ -3273,6 +3283,7 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		"SafeArea/RightRack",
 		"SafeArea/SurfaceReadoutLabel",
 		"SafeArea/IngredientDragPreview",
+		"FiveAreaInfrastructure/PendingPaymentButton",
 	]:
 		var runtime_node := get_node_or_null(scene_path) as CanvasItem
 		if runtime_node == null:
@@ -3564,14 +3575,20 @@ func _order_card_uses_click_delivery() -> bool:
 	return false
 
 
+func _refresh_result_presentation() -> void:
+	result_panel.visible = _result_detail_open
+	order_summary_card.visible = _order_summary_visible and not _result_detail_open
+	if result_detail_input_shield != null:
+		result_detail_input_shield.visible = _result_detail_open
+
+
 func _refresh_p1_ui() -> void:
 	if pancake_surface == null:
 		var formal_session := get_node_or_null("/root/GameSession")
 		if p1_session != null and not p1_session.order.is_empty():
 			_refresh_formal_patience_ui(formal_session)
 		_refresh_customer_queue()
-		result_panel.visible = _result_detail_open
-		order_summary_card.visible = _order_summary_visible and not _result_detail_open
+		_refresh_result_presentation()
 		return
 	if p1_session == null or p1_session.order.is_empty():
 		return
@@ -3652,8 +3669,7 @@ func _refresh_p1_ui() -> void:
 	store_pancake_button.visible = ready_to_serve and pancake_holding_tray.visible
 	var transaction_phase := p1_session.phase in [P1Session.Phase.HANDOFF, P1Session.Phase.PAYMENT, P1Session.Phase.RESULT]
 	p1_control_bar.visible = not transaction_phase and not _result_detail_open
-	result_panel.visible = _result_detail_open
-	order_summary_card.visible = _order_summary_visible and not _result_detail_open
+	_refresh_result_presentation()
 	customer_line_label.visible = not _result_detail_open
 	phase_label.visible = not _result_detail_open
 	if p1_session.phase == P1Session.Phase.RESULT:

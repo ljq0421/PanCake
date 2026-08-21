@@ -22,6 +22,8 @@ func _run() -> void:
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.youtiao.sesame": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
 	progression.set("unlocked_automation_ids", {&"automation.youtiao.auto_lift": true})
+	_check(StringName(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("reason", &"")) == &"finished_tray_locked", "finished youtiao cannot leave the filter basket before the tray is unlocked")
+	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true})
 	_check(int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("capacity", 0)) == 4, "prepared capacity remains fixed at four with the fryer")
 
 	var fryer_inventory := Dictionary(session.call("inventory_snapshot"))

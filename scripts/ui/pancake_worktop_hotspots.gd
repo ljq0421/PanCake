@@ -33,9 +33,18 @@ const STOCK_VISUAL_PATHS: Dictionary = {
 	&"stock.pancake.ham_sausage": [NodePath("../ToppingIngredientTray2")],
 	&"stock.pancake.meat_floss": [NodePath("../ToppingIngredientTray"), NodePath("PorkFlossHotspot")],
 	&"stock.pancake.coriander": [NodePath("CorianderTray")],
-	&"stock.pancake.sauce.red_chili": [NodePath("../ChiliSauceJar"), NodePath("ChiliSauceHotspot"), NodePath("ChiliSauceHotspotHitButton")],
-	&"stock.pancake.sauce.tomato": [NodePath("../TomatoSauceJar"), NodePath("TomatoSauceHotspot"), NodePath("TomatoSauceHotspotHitButton")],
+	&"stock.pancake.sauce.red_chili": [NodePath("../ChiliSauceJar"), NodePath("ChiliSauceHotspot")],
+	&"stock.pancake.sauce.tomato": [NodePath("../TomatoSauceJar"), NodePath("TomatoSauceHotspot")],
 }
+## Container artwork stays in the scene while its drag source lives under the
+## worktop hotspots. These paths let the workshop present a stocked catalogue
+## without changing the service-day inventory.
+const CONTAINER_VISUAL_PATHS := [
+	NodePath("../ToppingIngredientTray"),
+	NodePath("../ToppingIngredientTray2"),
+	NodePath("ScallionTray/Visual"),
+	NodePath("CorianderTray/Visual"),
+]
 const EGG_STOCK_ID := &"stock.pancake.egg"
 const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 
@@ -51,8 +60,6 @@ const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 var _session: Node
 var _refresh_elapsed := 0.0
 var _workshop_preview := false
-var _spreader_hit_button: Button
-var _sauce_hit_buttons := {}
 
 
 func _ready() -> void:
@@ -65,25 +72,18 @@ func _ready() -> void:
 		var hotspot := _material_hotspot(hotspot_name)
 		_configure_material_hotspot(hotspot, SAUCE_HOTSPOT_IDS[hotspot_name], &"pancake_shared_sauce")
 		var authored_hit_button := get_node_or_null(NodePath("%sHitButton" % str(hotspot_name))) as BaseButton
-		_connect_sauce_hit_button(authored_hit_button, hotspot)
 		if authored_hit_button != null:
-			# The griddle is authored after this worktop and captures clicks over
-			# the jar body. Its static hit target is retained for the scene, while
-			# the overlay below receives the actual pointer input above the griddle.
 			authored_hit_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var hit_button := _ensure_sauce_hit_button(hotspot)
+		var hit_button := _static_overlay_hit_button(StringName("%sOverlayHitButton" % hotspot_name))
 		_connect_sauce_hit_button(hit_button, hotspot)
-	var spreader := get_node_or_null("SpreaderHotspot") as TextureButton
-	_ensure_texture_button_hit_surface(spreader)
-	var spreader_hit_button := _ensure_spreader_hit_button(spreader)
+	var spreader_hit_button := _static_overlay_hit_button(&"SpreaderHotspotHitButton")
 	if spreader_hit_button != null and not spreader_hit_button.pressed.is_connected(_on_spreader_pressed):
 		spreader_hit_button.pressed.connect(_on_spreader_pressed)
-	var batter_ladle := get_node_or_null("BatterLadleHolderHotspot") as TextureButton
-	_ensure_texture_button_hit_surface(batter_ladle)
-	if batter_ladle != null and not batter_ladle.button_down.is_connected(_on_batter_ladle_button_down):
-		batter_ladle.button_down.connect(_on_batter_ladle_button_down)
-	if batter_ladle != null and not batter_ladle.pressed.is_connected(_on_batter_ladle_pressed):
-		batter_ladle.pressed.connect(_on_batter_ladle_pressed)
+	var batter_ladle_hit_button := _static_overlay_hit_button(&"BatterLadleHolderOverlayHitButton")
+	if batter_ladle_hit_button != null and not batter_ladle_hit_button.button_down.is_connected(_on_batter_ladle_button_down):
+		batter_ladle_hit_button.button_down.connect(_on_batter_ladle_button_down)
+	if batter_ladle_hit_button != null and not batter_ladle_hit_button.pressed.is_connected(_on_batter_ladle_pressed):
+		batter_ladle_hit_button.pressed.connect(_on_batter_ladle_pressed)
 	var station := _griddle_station()
 	if station != null and station.has_signal("held_tool_changed") and not station.is_connected("held_tool_changed", _on_station_held_tool_changed):
 		station.connect("held_tool_changed", _on_station_held_tool_changed)
@@ -102,6 +102,7 @@ func set_workshop_preview(enabled: bool) -> void:
 		if enabled
 		else Control.MOUSE_BEHAVIOR_INHERITED
 	)
+	_set_container_preview(enabled)
 	refresh_from_session()
 
 
@@ -170,74 +171,46 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hit_texture, false)
 
 
-func _ensure_texture_button_hit_surface(button: TextureButton) -> void:
-	if button == null or button.texture_normal != null:
-		return
-	# TextureButtons without a texture can display the art below them, but may
-	# not receive pointer events. Keep the button visually transparent while
-	# giving the press its own reliable hit surface.
-	var hit_image := Image.create(1, 1, false, Image.FORMAT_RGBA8)
-	hit_image.fill(Color.TRANSPARENT)
-	var hit_texture := ImageTexture.create_from_image(hit_image)
-	button.ignore_texture_size = true
-	button.texture_normal = hit_texture
-	button.texture_hover = hit_texture
-	button.texture_pressed = hit_texture
+func _sync_container_alpha_hit_regions() -> void:
+	_sync_container_alpha_hit_region(&"EggCarton")
+	_sync_container_alpha_hit_region(&"BaocuiBasket")
 
 
-func _ensure_spreader_hit_button(spreader: TextureButton) -> Button:
-	if spreader == null:
-		return null
-	var hit_button := _spreader_hit_button
-	if hit_button == null:
-		var host := _spreader_hit_host()
-		hit_button = host.get_node_or_null("SpreaderHotspotHitButton") as Button
-	if hit_button == null:
-		hit_button = Button.new()
-		hit_button.name = &"SpreaderHotspotHitButton"
-		hit_button.focus_mode = Control.FOCUS_NONE
-		hit_button.flat = true
-		hit_button.tooltip_text = "压饼器：倒入面糊后点击一次，形成标准饼皮"
-		_spreader_hit_host().add_child(hit_button)
-	_spreader_hit_button = hit_button
-	var spreader_rect := spreader.get_global_rect()
-	var hit_host := hit_button.get_parent() as Control
-	if hit_host != null:
-		hit_button.position = hit_host.get_global_transform_with_canvas().affine_inverse() * spreader_rect.position
-		hit_button.size = spreader_rect.size
-	hit_button.z_index = 200
-	hit_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	return hit_button
-
-
-func _spreader_hit_host() -> Control:
-	# FiveAreaInfrastructure is authored after SafeArea, so this overlay lives
-	# above the griddle control that otherwise captures clicks in the tool slot.
-	var infrastructure := get_node_or_null("../../../FiveAreaInfrastructure") as Control
-	return infrastructure if infrastructure != null else self
-
-
-func _ensure_sauce_hit_button(hotspot: ProductDragSource) -> Button:
+func _sync_container_alpha_hit_region(container_name: StringName) -> void:
+	var container := get_node_or_null(NodePath(str(container_name))) as Control
+	var hotspot := container.get_node_or_null("Hotspot") as ProductDragSource if container != null else null
 	if hotspot == null:
-		return null
-	var hotspot_key := StringName(hotspot.name)
-	var hit_button := _sauce_hit_buttons.get(hotspot_key) as Button
-	var hit_host := _spreader_hit_host()
-	if hit_button == null:
-		hit_button = hit_host.get_node_or_null(NodePath("%sOverlayHitButton" % hotspot.name)) as Button
-	if hit_button == null:
-		hit_button = Button.new()
-		hit_button.name = "%sOverlayHitButton" % hotspot.name
-		hit_button.focus_mode = Control.FOCUS_NONE
-		hit_button.flat = true
-		hit_host.add_child(hit_button)
-	_sauce_hit_buttons[hotspot_key] = hit_button
-	var hotspot_rect := hotspot.get_global_rect()
-	hit_button.position = hit_host.get_global_transform_with_canvas().affine_inverse() * hotspot_rect.position
-	hit_button.size = hotspot_rect.size
-	hit_button.z_index = 201
-	hit_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	return hit_button
+		return
+	var regions: Array[Dictionary] = []
+	for layer_path in [NodePath("Visual"), NodePath("Visual/Contents"), NodePath("Contents")]:
+		var layer := container.get_node_or_null(layer_path) as TextureRect
+		if layer == null or not layer.visible or layer.texture == null:
+			continue
+		regions.append({"texture": layer.texture, "rect": _painted_rect_in_hotspot(layer, hotspot)})
+	hotspot.set_alpha_hit_regions(regions)
+
+
+func _painted_rect_in_hotspot(layer: TextureRect, hotspot: ProductDragSource) -> Rect2:
+	var hotspot_global_rect := hotspot.get_global_rect()
+	var layer_global_rect := layer.get_global_rect()
+	if hotspot_global_rect.size.x <= 0.0 or hotspot_global_rect.size.y <= 0.0:
+		return Rect2()
+	var rect := Rect2(
+		(layer_global_rect.position - hotspot_global_rect.position) * hotspot.size / hotspot_global_rect.size,
+		layer_global_rect.size * hotspot.size / hotspot_global_rect.size
+	)
+	if layer.stretch_mode not in [TextureRect.STRETCH_KEEP_ASPECT, TextureRect.STRETCH_KEEP_ASPECT_CENTERED]:
+		return rect
+	var texture_size := layer.texture.get_size()
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return rect
+	var scale := minf(rect.size.x / texture_size.x, rect.size.y / texture_size.y)
+	var painted_size := texture_size * scale
+	return Rect2(rect.position + (rect.size - painted_size) * 0.5, painted_size)
+
+
+func _static_overlay_hit_button(node_name: StringName) -> BaseButton:
+	return get_node_or_null("../../../FiveAreaInfrastructure/%s" % node_name) as BaseButton
 
 
 func _connect_sauce_hit_button(hit_button: BaseButton, hotspot: ProductDragSource) -> void:
@@ -272,16 +245,11 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	hotspot.set_drag_available(interactive and count > 0 and source_kind == &"pancake_shared_ingredient")
 	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if interactive else Control.CURSOR_FORBIDDEN
 	if source_kind == &"pancake_shared_sauce":
-		# Keep the authored and foreground overlay buttons in sync. The overlay
-		# sits above the griddle input surface so the complete jar remains usable.
-		var authored_hit_button := get_node_or_null(NodePath("%sHitButton" % hotspot.name)) as BaseButton
-		var overlay_hit_button := _ensure_sauce_hit_button(hotspot)
-		for hit_button in [authored_hit_button, overlay_hit_button]:
-			if hit_button == null:
-				continue
-			hit_button.disabled = not interactive
-			hit_button.tooltip_text = hint
-			hit_button.mouse_default_cursor_shape = hotspot.mouse_default_cursor_shape
+		var overlay_hit_button := _static_overlay_hit_button(StringName("%sOverlayHitButton" % hotspot.name))
+		if overlay_hit_button != null:
+			overlay_hit_button.disabled = not interactive
+			overlay_hit_button.tooltip_text = hint
+			overlay_hit_button.mouse_default_cursor_shape = hotspot.mouse_default_cursor_shape
 
 
 func _refresh_optional_stock_visuals(progression: RefCounted) -> void:
@@ -300,6 +268,13 @@ func _refresh_optional_stock_visuals(progression: RefCounted) -> void:
 				if unlocked and not _workshop_preview
 				else Control.MOUSE_BEHAVIOR_DISABLED
 			)
+
+
+func _set_container_preview(enabled: bool) -> void:
+	for visual_path in CONTAINER_VISUAL_PATHS:
+		var visual := get_node_or_null(visual_path)
+		if visual != null and visual.has_method("set_workshop_preview"):
+			visual.call("set_workshop_preview", enabled)
 
 
 func _on_spreader_pressed() -> void:
@@ -416,8 +391,10 @@ func _update_egg_inventory_visual(stock: int, capacity: int) -> void:
 	var content_visual := carton_base.get_node_or_null("Contents") as TextureRect
 	if content_visual == null:
 		return
-	var capped_stock := clampi(stock, 0, maxi(capacity, 0))
+	var display_stock := capacity if _workshop_preview else stock
+	var capped_stock := clampi(display_stock, 0, maxi(capacity, 0))
 	content_visual.texture = egg_content_textures[capped_stock] if capped_stock < egg_content_textures.size() else null
+	_sync_container_alpha_hit_regions()
 
 
 func _update_baocui_inventory_visual(stock: int) -> void:
@@ -427,9 +404,11 @@ func _update_baocui_inventory_visual(stock: int) -> void:
 	var contents := basket.get_node_or_null("Contents") as TextureRect
 	if contents == null:
 		return
-	var texture_index := clampi(stock, 0, baocui_content_textures.size()) - 1
+	var display_stock := baocui_content_textures.size() if _workshop_preview else stock
+	var texture_index := clampi(display_stock, 0, baocui_content_textures.size()) - 1
 	contents.texture = baocui_content_textures[texture_index] if texture_index >= 0 else null
 	contents.visible = texture_index >= 0
+	_sync_container_alpha_hit_regions()
 
 
 func _update_spreader_holder_visual() -> void:
@@ -484,9 +463,18 @@ func _update_batter_ladle_holder_visual() -> void:
 	elif _auto_batter_ladle_owned():
 		holder.tooltip_text = "点击加标准分量面糊"
 	elif ladle_selected:
-		holder.tooltip_text = "按住面糊勺拖到空鏊子；松开即停止"
+		holder.tooltip_text = "面糊勺已拿起；在空鏊子上方按住倒入"
 	else:
-		holder.tooltip_text = "按住面糊勺拖到空鏊子倒入"
+		holder.tooltip_text = "点击拿起面糊勺，再在空鏊子上方按住倒入"
+	_sync_batter_ladle_input_state(holder)
+
+
+func _sync_batter_ladle_input_state(holder: TextureButton) -> void:
+	var hit_button := _static_overlay_hit_button(&"BatterLadleHolderOverlayHitButton")
+	if hit_button == null:
+		return
+	hit_button.disabled = holder.disabled
+	hit_button.tooltip_text = holder.tooltip_text
 
 
 func _auto_batter_ladle_owned() -> bool:

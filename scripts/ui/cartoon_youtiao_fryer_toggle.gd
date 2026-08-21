@@ -10,14 +10,11 @@ const RECIPE_ID := &"recipe.youtiao.plain"
 const PRODUCT_ID := &"product.youtiao.plain"
 const SESAME_PRODUCT_ID := &"product.youtiao.sesame"
 const DOUGH_STOCK_ID := &"stock.youtiao.plain_dough"
+const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
 const PLATE_VISUAL_CAPACITY := 4
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
-const SESAME_TRAY_COLUMNS := 2
-const SESAME_TRAY_PRODUCT_SIZE := Vector2(56.0, 72.0)
-const SESAME_TRAY_PRODUCT_ORIGIN := Vector2(16.0, 13.0)
-const SESAME_TRAY_PRODUCT_STEP := Vector2(80.0, 73.0)
 
 @export var lowered_machine_texture: Texture2D
 @export var raised_machine_texture: Texture2D
@@ -38,6 +35,7 @@ const SESAME_TRAY_PRODUCT_STEP := Vector2(80.0, 73.0)
 @onready var raised_basket_slots: Array[Control] = [%RaisedBasketSlot1, %RaisedBasketSlot2, %RaisedBasketSlot3, %RaisedBasketSlot4]
 @onready var lowered_basket_slots: Array[Control] = [%LoweredBasketSlot1, %LoweredBasketSlot2, %LoweredBasketSlot3, %LoweredBasketSlot4]
 @onready var plate_product_slots: Array[Control] = [%PlateProductSlot1, %PlateProductSlot2, %PlateProductSlot3, %PlateProductSlot4]
+@onready var sesame_tray_product_slots: Array[Control] = [%SesameTrayProductSlot1, %SesameTrayProductSlot2, %SesameTrayProductSlot3, %SesameTrayProductSlot4]
 @onready var status_label: Label = %StatusLabel
 
 # Compatibility surface consumed by FiveAreaWorkstation and tutorial routing.
@@ -52,6 +50,7 @@ var lock_cover: Button
 
 var _machine: Dictionary = {}
 var _dough_stock := 0
+var _finished_tray_unlocked := false
 var _plate_count := 0
 var _plate_products: Array[Dictionary] = []
 var _refresh_elapsed := 0.0
@@ -90,6 +89,17 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+func _has_point(point: Vector2) -> bool:
+	# This root also spans the adjacent pancake toppings. Restrict its input
+	# bounds to the fryer and its own finished-product trays so the invisible
+	# portion of the Control cannot swallow their hover, drag, or hold gestures.
+	if fryer_visual.get_rect().has_point(point):
+		return true
+	if plate_visual.visible and plate_visual.get_rect().has_point(point):
+		return true
+	return black_sesame_tray.visible and black_sesame_tray.get_rect().has_point(point)
+
+
 func _input(event: InputEvent) -> void:
 	# Continue tracking a press that began on the fryer, even if it is released
 	# outside this Control's bounds.
@@ -106,7 +116,7 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		return true
-	var can_store_finished_youtiao := (
+	var can_store_finished_youtiao := _finished_tray_unlocked and (
 		StringName(source_ref.get("source_kind", &"")) == &"youtiao_fryer_slot"
 		and StringName(_machine.get("state", &"")) == &"ready_to_collect"
 	)
@@ -143,19 +153,21 @@ func refresh_from_session() -> void:
 		_machine["quantity"] = 0
 	var progression := Dictionary(session.call("five_area_progression_snapshot")) if session.has_method("five_area_progression_snapshot") else {}
 	var area_unlocked := Array(progression.get("unlocked_area_ids", [])).has("area.youtiao")
+	_finished_tray_unlocked = Array(progression.get("owned_growth_ids", [])).has(FINISHED_TRAY_GROWTH_ID)
 	_workshop_advanced_preview = _workshop_preview and area_unlocked
 	modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not area_unlocked else Color.WHITE
 	var unlocked_products := Array(progression.get("unlocked_product_ids", []))
 	var sesame_unlocked := unlocked_products.has(SESAME_PRODUCT_ID)
-	# The physical sesame tray arrives with the existing sesame-oil-stick
-	# upgrade, so it shares that upgrade's unlock queue entry.  In the workshop
-	# it remains visible as a preview, but must not look installed before that
-	# entry has activated.
-	black_sesame_tray.visible = sesame_unlocked or _workshop_preview
+	plate_visual.visible = _finished_tray_unlocked or _workshop_preview
+	plate_visual.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not _finished_tray_unlocked else Color.WHITE
+	# The sesame tray needs both the general finished-product tray and the
+	# sesame recipe.  Before the general tray is unlocked, all fried sticks stay
+	# in the raised filter basket.
+	black_sesame_tray.visible = (_finished_tray_unlocked and sesame_unlocked) or _workshop_preview
 	# The whole fryer is already translucent while its area is locked. Avoid
 	# multiplying that alpha; once the fryer is unlocked, only the still-locked
 	# sesame tray receives the same workshop-preview treatment.
-	black_sesame_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and not sesame_unlocked else Color.WHITE
+	black_sesame_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and (not _finished_tray_unlocked or not sesame_unlocked) else Color.WHITE
 	if _workshop_preview:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
@@ -300,7 +312,7 @@ func _apply_snapshot() -> void:
 		var visual := plate_product_visuals[index]
 		var product_id := StringName(_plate_products[index].get("product_id", PRODUCT_ID)) if index < _plate_products.size() else PRODUCT_ID
 		var product_rect := _prepared_product_rect(index, product_id)
-		visual.visible = index < _plate_count
+		visual.visible = _finished_tray_unlocked and index < _plate_count
 		visual.texture = _prepared_youtiao_texture(product_id)
 		visual.position = product_rect.position
 		visual.size = product_rect.size
@@ -356,7 +368,7 @@ func _refresh_prepared_slot(session: Node) -> void:
 func _refresh_plate_sources() -> void:
 	for source_index in range(plate_sources.size()):
 		var source := plate_sources[source_index]
-		var visible := source_index < _plate_count
+		var visible := _finished_tray_unlocked and source_index < _plate_count
 		var product_id := StringName(_plate_products[source_index].get("product_id", PRODUCT_ID)) if visible and source_index < _plate_products.size() else PRODUCT_ID
 		source.position = plate_product_visuals[source_index].position
 		source.size = plate_product_visuals[source_index].size
@@ -379,12 +391,9 @@ func _prepared_product_rect(product_index: int, product_id: StringName) -> Rect2
 	var sesame_product := product_id == SESAME_PRODUCT_ID
 	var display_index := _prepared_product_display_index(product_index, sesame_product)
 	if sesame_product:
-		var column := display_index % SESAME_TRAY_COLUMNS
-		var row := display_index / SESAME_TRAY_COLUMNS
-		return Rect2(
-			black_sesame_tray.position + SESAME_TRAY_PRODUCT_ORIGIN + Vector2(column * SESAME_TRAY_PRODUCT_STEP.x, row * SESAME_TRAY_PRODUCT_STEP.y),
-			SESAME_TRAY_PRODUCT_SIZE
-		)
+		var sesame_index := clampi(display_index, 0, sesame_tray_product_slots.size() - 1)
+		var sesame_slot := sesame_tray_product_slots[sesame_index]
+		return Rect2(sesame_slot.position, sesame_slot.size)
 	var plate_index := clampi(display_index, 0, plate_product_slots.size() - 1)
 	var plate_slot := plate_product_slots[plate_index]
 	return Rect2(plate_slot.position, plate_slot.size)
@@ -511,14 +520,14 @@ func _is_plate_point(point: Vector2) -> bool:
 	# Treat the entire rendered serving plate as a drop target.  The old
 	# hand-authored rectangle began well inside the artwork, so drops on the
 	# visible left and upper portions of the plate were silently rejected.
-	return plate_visual != null and plate_visual.get_rect().has_point(point)
+	return _finished_tray_unlocked and plate_visual != null and plate_visual.get_rect().has_point(point)
 
 
-static func _state_text(state: StringName) -> String:
+func _state_text(state: StringName) -> String:
 	return {
 		&"unowned": "油条机未解锁", &"idle": "长按油条机添加面胚", &"loaded": "点击油条机开始炸制",
 		&"frying": "炸制中", &"ready_safe": "点击油条机抬起沥网", &"overcooking": "油条即将炸糊",
-		&"draining": "正在沥油", &"ready_to_collect": "逐根拖油条到成品盘", &"burnt": "油条已炸糊，拖去废弃",
+		&"draining": "正在沥油", &"ready_to_collect": "逐根拖油条到成品盘" if _finished_tray_unlocked else "油条已沥油，暂存在滤网中；请先解锁成品盘", &"burnt": "油条已炸糊，拖去废弃",
 	}.get(state, "油条机")
 
 
@@ -526,6 +535,7 @@ static func _failure_text(reason: StringName) -> String:
 	return {
 		&"capacity_exceeded": "炸篮已满", &"insufficient_stock": "油条面胚不足", &"recipe_locked": "油条配方尚未解锁",
 		&"equipment_not_owned": "油条机尚未解锁", &"invalid_equipment_state": "当前不能放入面胚",
+		&"finished_tray_locked": "成品盘尚未解锁，炸好的油条请暂存在滤网中",
 		&"prepared_product_slot_full": "成品盘已满，请先出餐或废弃盘内油条",
 	}.get(reason, "操作未完成：%s" % str(reason))
 

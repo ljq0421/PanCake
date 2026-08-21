@@ -6,6 +6,7 @@ const FRYER_SCENE := preload("res://scenes/gameplay/cartoon_youtiao_fryer_toggle
 class FakeGameSession extends Node:
 	var inventory := {"stock.youtiao.plain_dough": 2}
 	var coins := 10
+	var finished_tray_unlocked := true
 	var machine := {
 		"state": &"idle",
 		"capacity": 4,
@@ -21,6 +22,7 @@ class FakeGameSession extends Node:
 		return {
 			"unlocked_area_ids": [&"area.youtiao"],
 			"unlocked_product_ids": [],
+			"owned_growth_ids": [&"growth.capacity.youtiao_finished_tray"] if finished_tray_unlocked else [],
 		}
 
 	func inventory_snapshot() -> Dictionary:
@@ -90,8 +92,12 @@ func _run() -> void:
 	session.machine["state"] = &"ready_to_collect"
 	session.machine["quantity"] = 1
 	session.machine["occupied_slot_indices"] = [0]
+	session.finished_tray_unlocked = false
 	fryer.call("refresh_from_session")
 	var finished_stick := {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}
+	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.plate_visual.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
+	session.finished_tray_unlocked = true
+	fryer.call("refresh_from_session")
 	_check(bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)), "the visible upper-left portion of the serving plate accepts a finished youtiao")
 
 	fryer.queue_free()

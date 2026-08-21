@@ -10,11 +10,13 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 17, "growth route includes the active batter-ladle upgrade and excludes retired upgrades")
+	_check(CATALOG.growth_ids().size() == 18, "growth route includes the oil-strip finished-product tray and excludes retired upgrades")
 	for growth_id in CATALOG.growth_ids():
 		var definition := CATALOG.growth_definition(growth_id)
 		_check(CATALOG.AREA_IDS.has(StringName(definition.get("requires_area_id", &""))), "%s belongs to an active area" % growth_id)
 	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.area.youtiao")) == "reputation:20,mastery:area.pancake:qualified:6", "youtiao unlock follows pancake mastery")
+	var youtiao_tray := CATALOG.growth_definition(&"growth.capacity.youtiao_finished_tray")
+	_check(youtiao_tray.get("label") == "油条成品盘" and int(youtiao_tray.get("price", 0)) == 12 and Array(youtiao_tray.get("requires_growth_ids", [])).has(&"growth.area.youtiao"), "finished youtiao tray is a 12-coin purchase after the fryer")
 	_check(_primary_gate_signature(CATALOG.growth_definition(&"growth.area.fresh_soy_milk")) == "day:7,reputation:60,mastery:area.youtiao:qualified:4", "soy unlock follows youtiao mastery")
 	for area_id in CATALOG.AREA_IDS:
 		var device_id := StringName(CATALOG.area_definition(area_id).get("device_id", &""))

@@ -10,6 +10,7 @@ const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(842.0, 526.0)
 const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 38.0
 const FORMAL_PAYMENT_COIN_ROW_SPACING := 24.0
 const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 6
+const RESULT_OVERLAY_Z_INDEX := 300
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
@@ -44,10 +45,19 @@ var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 var _multi_griddle_mode_active := false
 var _formal_payment_coin_sprites: Array[TextureRect] = []
+var _workshop_payment_display_hidden := false
 
 
 func _ready() -> void:
+	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
 	super._ready()
+	# The base shop setup initializes legacy foreground layers after the scene
+	# has been instantiated. Set these application-layer values after that setup
+	# so the result UI always remains above all direct-manipulation hotspots.
+	result_panel.z_index = RESULT_OVERLAY_Z_INDEX
+	order_summary_card.z_index = RESULT_OVERLAY_Z_INDEX
+	if result_detail_input_shield != null:
+		result_detail_input_shield.z_index = RESULT_OVERLAY_Z_INDEX - 1
 	# The formal-order shell returns from the parent setup before its legacy
 	# payment animation setup. Keep the real coin sprites above the counter,
 	# but below modal result panels.
@@ -58,7 +68,6 @@ func _ready() -> void:
 	fresh_soy_station.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	fresh_soy_station.position = RIGHT_SOY_STATION_POSITION
 	fresh_soy_station.size = RIGHT_SOY_STATION_SIZE
-	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
 	for station in [fresh_soy_station, cartoon_youtiao_fryer]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
@@ -131,16 +140,38 @@ func end_business_day(cutoff: Dictionary = {}) -> void:
 
 
 func _close_daily_bill() -> void:
-	_set_daily_bill_modal_input(false)
 	super._close_daily_bill()
+	_refresh_five_area_modal_input()
 
 
-func _set_daily_bill_modal_input(active: bool) -> void:
+func _set_daily_bill_modal_input(_active: bool) -> void:
+	_refresh_five_area_modal_input()
+
+
+func _refresh_five_area_modal_input() -> void:
+	# The result summary is interactive UI, not part of the direct-manipulation
+	# station. Disable every station hotspot until the summary is dismissed so
+	# it cannot steal clicks from either the action card or the detail close button.
+	var result_modal_visible := result_panel != null and result_panel.visible
+	var summary_visible := order_summary_card != null and order_summary_card.visible
+	var modal_is_open := result_modal_visible or summary_visible or (daily_bill_panel != null and daily_bill_panel.visible)
 	five_area_infrastructure.mouse_behavior_recursive = (
 		Control.MOUSE_BEHAVIOR_DISABLED
-		if active
+		if modal_is_open
 		else _five_area_mouse_behavior_before_daily_bill
 	)
+
+
+func _raise_result_presentation_input() -> void:
+	# CanvasItem z-order controls drawing, but Control hit testing follows sibling
+	# order. Put the active result UI at the end of SafeArea too, otherwise an
+	# order card created later in the scene can receive the click beneath it.
+	if _result_detail_open and result_panel.visible:
+		if result_detail_input_shield != null:
+			result_detail_input_shield.move_to_front()
+		result_panel.move_to_front()
+	elif _order_summary_visible and order_summary_card.visible:
+		order_summary_card.move_to_front()
 
 
 func _process(delta: float) -> void:
@@ -390,7 +421,10 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"ready_safe", &"overcooking": return {"target": cartoon_youtiao_fryer.lift_button, "message": "及时升篮"}
 				&"burnt": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把整锅焦糊油条拖到废弃区"}
 				&"draining": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待沥油完成"}
-				&"ready_to_collect": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到成品盘"}
+				&"ready_to_collect":
+					if not bool(prepared_plain.get("success", false)) and StringName(prepared_plain.get("reason", &"")) == &"finished_tray_locked":
+						return {"target": cartoon_youtiao_fryer.state_label, "message": "油条已沥油，暂存在滤网中；请先解锁成品盘"}
+					return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到成品盘"}
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
@@ -500,6 +534,8 @@ func _hide_unused_worktop_locks() -> void:
 
 func _refresh_p1_ui() -> void:
 	super._refresh_p1_ui()
+	_raise_result_presentation_input()
+	_refresh_five_area_modal_input()
 	if not _multi_griddle_mode_active:
 		return
 	_apply_multi_griddle_legacy_visibility()
@@ -821,11 +857,18 @@ func _formal_payment_coin_target(index: int) -> Vector2:
 
 func _refresh_pending_payment_button() -> void:
 	var pending_total := _pending_payment_total()
-	pending_payment_button.visible = pending_total > 0
-	pending_payment_button.disabled = pending_total <= 0
-	pending_payment_button.mouse_filter = Control.MOUSE_FILTER_STOP if pending_total > 0 else Control.MOUSE_FILTER_IGNORE
+	var can_collect := pending_total > 0 and not _workshop_payment_display_hidden
+	pending_payment_button.visible = can_collect
+	pending_payment_button.disabled = not can_collect
+	pending_payment_button.mouse_filter = Control.MOUSE_FILTER_STOP if can_collect else Control.MOUSE_FILTER_IGNORE
 	pending_payment_button.text = "金币 ×%d\n点击全部收取" % pending_total
 	pending_payment_button.tooltip_text = "收取所有尚未领取的顾客付款" if pending_total > 0 else "当前没有待收金币"
+
+
+func _set_upgrade_workshop_preview(enabled: bool) -> void:
+	_workshop_payment_display_hidden = enabled
+	super._set_upgrade_workshop_preview(enabled)
+	_refresh_pending_payment_button()
 
 
 func _pending_payment_total() -> int:

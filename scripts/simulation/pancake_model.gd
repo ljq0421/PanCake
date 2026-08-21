@@ -346,8 +346,13 @@ func crack_egg(center: Vector2) -> Dictionary:
 					egg_yolk[index] + parameters.egg_initial_yolk_amount * yolk_falloff,
 					parameters.egg_maximum_concentration
 				)
+	# Egg liquid shares one visible field.  Once an earlier egg has been spread,
+	# keep that field visible while the next egg is cracked and spread into it.
+	# Resetting this flag here hid every already-spread egg until the new yolk
+	# was broken, which made a double-egg pancake look as if its first egg vanished.
+	var had_spread_egg := yolk_broken
 	egg_state = EggState.CRACKED
-	yolk_broken = false
+	yolk_broken = had_spread_egg
 	egg_surface_is_back = is_flipped
 	last_update_usec = Time.get_ticks_usec() - started
 	_commit_change(changed_cells)

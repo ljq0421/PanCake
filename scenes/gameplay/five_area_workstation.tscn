@@ -35,6 +35,11 @@
 [ext_resource type="Script" uid="uid://3dm4r8fyaulo" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
 [ext_resource type="PackedScene" uid="uid://dngeu6txsruyi" path="res://scenes/gameplay/jianbing_stall_artwork.tscn" id="62_stall"]
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
+[ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="75_alpha_hit_button"]
+[ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="76_ladle_hit"]
+[ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://assets/jianbing-stall/sweet-bean-sauce-jar-no-brush.png" id="77_sweet_sauce_hit"]
+[ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://assets/jianbing-stall/chili-sauce-jar-no-brush.png" id="78_chili_sauce_hit"]
+[ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://assets/jianbing-stall/tomato-sauce-jar-no-brush.png" id="79_tomato_sauce_hit"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -472,10 +477,24 @@ focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
 
+[node name="ResultDetailInputShield" type="Control" parent="SafeArea" unique_id=1552220954]
+unique_name_in_owner = true
+visible = false
+z_index = 299
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("26_wxlxi")
+excluded_control_path = NodePath("../ResultPanel")
+
 [node name="ResultPanel" type="PanelContainer" parent="SafeArea" unique_id=118070438]
 unique_name_in_owner = true
 visible = false
-z_index = 80
+# This is an application modal above every five-area foreground and hotspot layer.
+z_index = 300
 layout_mode = 0
 offset_left = 430.0
 offset_top = 170.0
@@ -754,7 +773,8 @@ text = "关闭本单详情"
 [node name="OrderSummaryCard" type="PanelContainer" parent="SafeArea" unique_id=1237469096]
 unique_name_in_owner = true
 visible = false
-z_index = 50
+# Keep the action card above every equipment hotspot while it is clickable.
+z_index = 300
 layout_mode = 0
 offset_left = 1090.0
 offset_top = 136.0
@@ -979,6 +999,7 @@ theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="InputSurface" type="Control" parent="SafeArea/DailyBillPanel" unique_id=363854038]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Margin" type="MarginContainer" parent="SafeArea/DailyBillPanel" unique_id=1631432965]
 layout_mode = 2
@@ -1370,6 +1391,71 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(1170, 444)
 layout_mode = 0
 offset_bottom = 444.0
+
+[node name="SpreaderHotspotHitButton" type="Button" parent="FiveAreaInfrastructure"]
+z_index = 200
+layout_mode = 0
+offset_left = 1193.0
+offset_top = 944.0
+offset_right = 1260.0
+offset_bottom = 1063.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "摊饼器：在鏊面按住画圈摊开面糊或鸡蛋"
+flat = true
+
+[node name="SweetSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure"]
+z_index = 201
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 686.0
+offset_right = 1243.0
+offset_bottom = 820.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+script = ExtResource("75_alpha_hit_button")
+hit_texture = ExtResource("77_sweet_sauce_hit")
+
+[node name="ChiliSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure"]
+z_index = 201
+layout_mode = 0
+offset_left = 1229.0
+offset_top = 686.0
+offset_right = 1346.0
+offset_bottom = 815.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+script = ExtResource("75_alpha_hit_button")
+hit_texture = ExtResource("78_chili_sauce_hit")
+
+[node name="TomatoSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure"]
+z_index = 201
+layout_mode = 0
+offset_left = 1332.0
+offset_top = 686.0
+offset_right = 1449.0
+offset_bottom = 815.4
+focus_mode = 0
+mouse_default_cursor_shape = 2
+flat = true
+script = ExtResource("75_alpha_hit_button")
+hit_texture = ExtResource("79_tomato_sauce_hit")
+
+[node name="BatterLadleHolderOverlayHitButton" type="Button" parent="FiveAreaInfrastructure"]
+z_index = 202
+layout_mode = 0
+offset_left = 1262.0
+offset_top = 920.0
+offset_right = 1422.0
+offset_bottom = 1080.0
+focus_mode = 0
+mouse_default_cursor_shape = 2
+tooltip_text = "按住面糊勺拖到空鏊子倒入"
+flat = true
+script = ExtResource("75_alpha_hit_button")
+hit_texture = ExtResource("76_ladle_hit")
 
 [node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=843643587]
 unique_name_in_owner = true

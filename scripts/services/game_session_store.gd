@@ -38,6 +38,7 @@ const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.04": {
 		"product_id": &"product.youtiao.plain",
 		"recipe_id": &"recipe.youtiao.plain",
+		"requires_growth_id": &"growth.capacity.youtiao_finished_tray",
 		"accepted_product_ids": [&"product.youtiao.plain", &"product.youtiao.sesame"],
 	},
 }
@@ -1736,16 +1737,20 @@ func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
 		return {"success": false, "reason": &"unknown_prepared_product_slot", "slot_id": slot_id}
 	_ensure_progression()
 	var recipe_id := StringName(definition.get("recipe_id", &""))
-	var unlocked := bool(_progression.call("owns_recipe", recipe_id))
+	var required_growth_id := StringName(definition.get("requires_growth_id", &""))
+	var recipe_unlocked := bool(_progression.call("owns_recipe", recipe_id))
+	var tray_unlocked := required_growth_id.is_empty() or bool(_progression.call("owns_growth", required_growth_id))
+	var unlocked := recipe_unlocked and tray_unlocked
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), []))
 	var capacity := _prepared_product_slot_capacity()
 	return {
 		"success": unlocked,
-		"reason": &"" if unlocked else &"recipe_locked",
+		"reason": &"" if unlocked else &"finished_tray_locked" if not tray_unlocked else &"recipe_locked",
 		"slot_id": slot_id,
 		"product_id": StringName(definition.get("product_id", &"")),
 		"recipe_id": recipe_id,
+		"requires_growth_id": required_growth_id,
 		"capacity": capacity,
 		"count": products.size(),
 		"products": products.duplicate(true),

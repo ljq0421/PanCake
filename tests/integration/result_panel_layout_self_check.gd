@@ -1,7 +1,7 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const SCREENSHOT_PATH := "res://tmp/validation/result_panel_layout_1210x582.png"
+const SCREENSHOT_PATH := "res://tmp/validation/result_panel_layout_1920x1080.png"
 
 var _failures := PackedStringArray()
 
@@ -12,7 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	if DisplayServer.get_name() == "headless":
-		root.size = Vector2i(1210, 582)
+		root.size = Vector2i(1920, 1080)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 		DisplayServer.window_set_size(Vector2i(1210, 582))
@@ -41,7 +41,8 @@ func _run() -> void:
 	workstation._order_summary_visible = true
 	workstation._result_detail_open = false
 	workstation._refresh_p1_ui()
-	workstation.summary_view_button.pressed.emit()
+	await process_frame
+	_click(workstation.summary_view_button)
 	for _frame in 4:
 		await process_frame
 
@@ -49,19 +50,31 @@ func _run() -> void:
 	var panel_rect := panel.get_global_rect()
 	var viewport_rect := Rect2(Vector2.ZERO, root.get_visible_rect().size)
 	_check(panel.is_visible_in_tree(), "view-order action opens the result panel")
-	_check(viewport_rect.encloses(panel_rect), "the complete result panel remains inside the 1210x582 expanded viewport")
+	_check(viewport_rect.encloses(panel_rect), "the complete result panel remains inside the virtual viewport")
 	for node_name in ["ResultTitleLabel", "ResultDetailLabel", "DimensionGrid", "ResultTagsLabel", "PaymentDisplay", "NextOrderButton"]:
 		var control := workstation.get_node("%" + node_name) as Control
 		_check(control.is_visible_in_tree(), "%s remains visible" % node_name)
 		_check(panel_rect.encloses(control.get_global_rect()), "%s remains inside the result panel" % node_name)
 
-	var station_artwork := workstation.get_node_or_null("FiveAreaInfrastructure/Stations") as CanvasItem
-	_check(station_artwork != null, "formal three-area workstation content is present")
-	if station_artwork != null:
+	var five_area_infrastructure := workstation.get_node_or_null("FiveAreaInfrastructure") as Control
+	_check(five_area_infrastructure != null, "formal five-area workstation content is present")
+	if five_area_infrastructure != null:
 		_check(
-			panel.z_index > _maximum_effective_z_index(station_artwork),
-			"result panel renders above every workstation foreground layer"
+			panel.z_index > _maximum_effective_z_index(five_area_infrastructure),
+			"result panel renders above every five-area foreground and hotspot layer"
 		)
+		_check(
+			five_area_infrastructure.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED,
+			"opening result detail disables underlying workstation hotspots"
+		)
+	var input_shield := workstation.get_node_or_null("SafeArea/ResultDetailInputShield") as Control
+	_check(input_shield != null and input_shield.is_visible_in_tree(), "result detail shows an outside-input shield")
+
+	_click(workstation.next_order_button)
+	await process_frame
+	_check(not panel.is_visible_in_tree(), "close action hides the result panel")
+	_check(workstation.order_summary_card.is_visible_in_tree(), "close action returns to the clickable order summary")
+	_check(input_shield != null and not input_shield.is_visible_in_tree(), "closing detail removes its outside-input shield")
 
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
@@ -93,3 +106,25 @@ func _maximum_effective_z_index(item: CanvasItem, parent_z := 0) -> int:
 func _check(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+
+func _click(control: Control) -> void:
+	var position := control.get_global_transform_with_canvas() * (control.size * 0.5)
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	motion.global_position = position
+	root.push_input(motion, true)
+	var hovered := root.gui_get_hovered_control()
+	_check(hovered == control, "%s receives pointer input at its visual center" % control.name)
+	var press := InputEventMouseButton.new()
+	press.position = position
+	press.global_position = position
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	root.push_input(press, true)
+	var release := InputEventMouseButton.new()
+	release.position = position
+	release.global_position = position
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.pressed = false
+	root.push_input(release, true)

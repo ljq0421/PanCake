@@ -16,6 +16,10 @@
 atlas = ExtResource("5_golden")
 region = Rect2(174, 8, 677, 1500)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_sesame_youtiao"]
+atlas = ExtResource("10_sesame_youtiao")
+region = Rect2(147, 13, 218, 484)
+
 [node name="CartoonYoutiaoFryerToggle" type="Control" unique_id=1247571894]
 custom_minimum_size = Vector2(600, 600)
 layout_mode = 3
@@ -31,7 +35,7 @@ advanced_raised_machine_texture = ExtResource("12_advanced_raised")
 raw_youtiao_texture = ExtResource("4_raw")
 golden_youtiao_texture = ExtResource("5_golden")
 plate_youtiao_texture = SubResource("AtlasTexture_plate_youtiao")
-black_sesame_youtiao_texture = ExtResource("10_sesame_youtiao")
+black_sesame_youtiao_texture = SubResource("AtlasTexture_sesame_youtiao")
 burnt_youtiao_texture = ExtResource("6_burnt")
 
 [node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]
@@ -48,17 +52,52 @@ stretch_mode = 5
 
 [node name="BlackSesameTray" type="TextureRect" parent="." unique_id=993540118]
 unique_name_in_owner = true
-visible = false
 z_index = 1
 layout_mode = 0
-offset_left = 410.0
-offset_top = 220.0
-offset_right = 585.0
-offset_bottom = 395.0
+offset_left = 295.0
+offset_top = 414.0
+offset_right = 514.0
+offset_bottom = 620.0
 mouse_filter = 2
 texture = ExtResource("9_sesame_tray")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="SesameTrayProductSlot1" type="ReferenceRect" parent="." unique_id=154062532]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 315.0
+offset_top = 454.0
+offset_right = 363.0
+offset_bottom = 558.0
+mouse_filter = 2
+
+[node name="SesameTrayProductSlot2" type="ReferenceRect" parent="." unique_id=1633583298]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 359.0
+offset_top = 454.0
+offset_right = 407.0
+offset_bottom = 558.0
+mouse_filter = 2
+
+[node name="SesameTrayProductSlot3" type="ReferenceRect" parent="." unique_id=1964141223]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 403.0
+offset_top = 454.0
+offset_right = 451.0
+offset_bottom = 558.0
+mouse_filter = 2
+
+[node name="SesameTrayProductSlot4" type="ReferenceRect" parent="." unique_id=131561143]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 447.0
+offset_top = 454.0
+offset_right = 495.0
+offset_bottom = 558.0
+mouse_filter = 2
 
 [node name="ProductVisual1" type="TextureRect" parent="." unique_id=279161112]
 unique_name_in_owner = true
@@ -160,10 +199,10 @@ mouse_filter = 2
 
 [node name="PlateVisual" type="TextureRect" parent="." unique_id=686091902]
 layout_mode = 0
-offset_left = 246.0
-offset_top = 403.0
-offset_right = 524.0
-offset_bottom = 640.0
+offset_left = 22.0
+offset_top = 393.0
+offset_right = 300.0
+offset_bottom = 630.0
 mouse_filter = 2
 texture = ExtResource("8_plate")
 expand_mode = 1
@@ -172,37 +211,37 @@ stretch_mode = 5
 [node name="PlateProductSlot1" type="ReferenceRect" parent="." unique_id=1967002742]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 294.0
-offset_top = 465.0
-offset_right = 342.0
-offset_bottom = 569.0
+offset_left = 70.0
+offset_top = 455.0
+offset_right = 118.0
+offset_bottom = 559.0
 mouse_filter = 2
 
 [node name="PlateProductSlot2" type="ReferenceRect" parent="." unique_id=1307494881]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 338.0
-offset_top = 465.0
-offset_right = 386.0
-offset_bottom = 569.0
+offset_left = 114.0
+offset_top = 455.0
+offset_right = 162.0
+offset_bottom = 559.0
 mouse_filter = 2
 
 [node name="PlateProductSlot3" type="ReferenceRect" parent="." unique_id=1884254557]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 382.0
-offset_top = 465.0
-offset_right = 430.0
-offset_bottom = 569.0
+offset_left = 158.0
+offset_top = 455.0
+offset_right = 206.0
+offset_bottom = 559.0
 mouse_filter = 2
 
 [node name="PlateProductSlot4" type="ReferenceRect" parent="." unique_id=1454995356]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 425.0
-offset_top = 465.0
-offset_right = 473.0
-offset_bottom = 569.0
+offset_left = 201.0
+offset_top = 455.0
+offset_right = 249.0
+offset_bottom = 559.0
 mouse_filter = 2
 
 [node name="PlateProductVisual1" type="TextureRect" parent="." unique_id=1933140994]

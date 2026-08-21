@@ -1,7 +1,6 @@
 extends SceneTree
 
 const STATION_SCENE := preload("res://scenes/gameplay/multi_griddle_station.tscn")
-const ARTWORK_SCENE := preload("res://scenes/gameplay/jianbing_stall_artwork.tscn")
 const HOTSPOTS_SCRIPT := preload("res://scripts/ui/pancake_worktop_hotspots.gd")
 const DRAG_SOURCE_SCRIPT := preload("res://scripts/ui/product_drag_source.gd")
 
@@ -31,7 +30,7 @@ class FakeSession:
 		"stock.pancake.meat_floss": 2,
 		"stock.pancake.scallion": 2,
 		"stock.pancake.coriander": 2,
-		"stock.pancake.sauce.sweet_flour": 2,
+		"stock.pancake.sauce.sweet_flour": 4,
 		"stock.pancake.sauce.red_chili": 2,
 		"stock.pancake.sauce.tomato": 2,
 	}
@@ -107,7 +106,10 @@ func _test_egg_on_both_sides(station: Node, unit: Node, session: FakeSession) ->
 	var placed := Dictionary(station.drop_on_unit(0, source, center))
 	_check(bool(placed.get("success", false)) and unit.pancake_model.has_egg(), "second-side egg placement records the egg")
 	_check(int(session.inventory["stock.pancake.egg"]) == 1, "egg placement consumes exactly one inventory unit")
-	_check(not bool(unit.validate_ingredient_drop(source, center).get("success", false)), "a second egg is rejected as a duplicate")
+	var second_placed := Dictionary(station.drop_on_unit(0, source, center + Vector2(20.0, 0.0)))
+	_check(bool(second_placed.get("success", false)) and unit.ingredient_model.count_type(IngredientModel.EGG) == 2 and int(session.inventory["stock.pancake.egg"]) == 0, "a second egg is accepted and consumes a second inventory unit")
+	var third_validation := Dictionary(unit.validate_ingredient_drop(source, center + Vector2(-20.0, 0.0)))
+	_check(not bool(third_validation.get("success", false)) and StringName(third_validation.get("reason", &"")) == &"portion_limit", "a third egg is rejected at the two-portion limit")
 
 
 func _test_sauce_selection_and_first_stroke(station: Node, unit: Node, session: FakeSession) -> void:
@@ -127,9 +129,11 @@ func _test_sauce_selection_and_first_stroke(station: Node, unit: Node, session: 
 	unit._on_surface_pointer_ended(center)
 	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "drag brushing does not consume a second inventory unit")
 	_check(float(unit.pancake_model.total_sauce()) >= primed_total, "drag brushing preserves and spreads the primed sauce")
-	var before_duplicate := int(session.inventory["stock.pancake.sauce.sweet_flour"])
-	var duplicate := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
-	_check(not bool(duplicate.get("success", false)) and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before_duplicate, "duplicate sauce jar click is rejected without consuming inventory")
+	var second_portion := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
+	_check(bool(second_portion.get("success", false)) and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2 and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 2, "a second sauce portion is accepted and recorded separately")
+	var before_limit := int(session.inventory["stock.pancake.sauce.sweet_flour"])
+	var over_limit := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
+	_check(not bool(over_limit.get("success", false)) and StringName(over_limit.get("reason", &"")) == &"portion_limit" and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before_limit, "a third sauce portion is rejected without consuming inventory")
 
 
 func _test_automatic_sauce_brush(station: Node, unit: Node, session: FakeSession) -> void:
@@ -197,22 +201,25 @@ func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, sessi
 func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSession) -> void:
 	_check(HOTSPOTS_SCRIPT.SAUCE_HOTSPOT_IDS.size() == 3, "all three sauce jars have worktop hotspot mappings")
 	_check(HOTSPOTS_SCRIPT.SAUCE_HOTSPOT_IDS.get(&"TomatoSauceHotspot", &"") == &"stock.pancake.sauce.tomato", "tomato sauce mapping targets the tomato stock")
-	var artwork := ARTWORK_SCENE.instantiate()
-	root.add_child(artwork)
-	await process_frame
-	var artwork_hotspots := artwork.get_node("PancakeWorktopHotspots")
-	var sweet_hit := artwork_hotspots.get_node("SweetSauceHotspotHitButton") as Button
-	var chili_hit := artwork_hotspots.get_node("ChiliSauceHotspotHitButton") as Button
-	var tomato_hit := artwork_hotspots.get_node("TomatoSauceHotspotHitButton") as Button
-	_check(sweet_hit != null and chili_hit != null and tomato_hit != null, "every visible sauce jar has a native button hit target")
-	if sweet_hit != null and chili_hit != null and tomato_hit != null:
-		_check(is_equal_approx(sweet_hit.size.x, 123.0) and is_equal_approx(chili_hit.size.x, 117.0) and is_equal_approx(tomato_hit.size.x, 117.0), "sauce hit controls retain their matching artwork bounds")
-		_check(sweet_hit.has_point(Vector2(1.0, sweet_hit.size.y * 0.5)) and sweet_hit.has_point(sweet_hit.size * 0.5) and sweet_hit.has_point(Vector2(sweet_hit.size.x * 0.5, sweet_hit.size.y - 1.0)), "sweet-sauce hit target covers the entire visible dish and jar area")
-		_check(not chili_hit.has_point(Vector2(0.0, chili_hit.size.y * 0.5)) and chili_hit.has_point(chili_hit.size * 0.5), "chili-sauce hit test excludes transparent margins but accepts visible artwork")
-		_check(not tomato_hit.has_point(Vector2(0.0, tomato_hit.size.y * 0.5)) and tomato_hit.has_point(tomato_hit.size * 0.5), "tomato-sauce hit test excludes transparent margins but accepts visible artwork")
-	artwork.queue_free()
+	var infrastructure := Control.new()
+	infrastructure.name = &"FiveAreaInfrastructure"
+	root.add_child(infrastructure)
+	for overlay_name in [&"SpreaderHotspotHitButton", &"BatterLadleHolderOverlayHitButton", &"SweetSauceHotspotOverlayHitButton", &"ChiliSauceHotspotOverlayHitButton", &"TomatoSauceHotspotOverlayHitButton"]:
+		var overlay := Button.new()
+		overlay.name = overlay_name
+		overlay.z_index = 200
+		if overlay_name == &"SpreaderHotspotHitButton":
+			overlay.position = Vector2(40.0, 40.0)
+			overlay.size = Vector2(160.0, 160.0)
+		infrastructure.add_child(overlay)
+	var safe_area := Control.new()
+	safe_area.name = &"SafeArea"
+	root.add_child(safe_area)
+	var artwork := Control.new()
+	artwork.name = &"JianbingStallArtwork"
+	safe_area.add_child(artwork)
 	var hotspots := HOTSPOTS_SCRIPT.new()
-	hotspots.griddle_station_path = NodePath("../MultiGriddleStation")
+	hotspots.griddle_station_path = NodePath("../../../MultiGriddleStation")
 	hotspots.size = Vector2(320.0, 240.0)
 	for component_name in [&"ScallionTray", &"CorianderTray", &"BaocuiBasket", &"EggCarton"]:
 		var component := Control.new()
@@ -247,11 +254,10 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	var spreader_holder_filled := TextureRect.new()
 	spreader_holder_filled.name = &"SpreaderHolderFilledVisual"
 	hotspots.add_child(spreader_holder_filled)
-	root.add_child(hotspots)
+	artwork.add_child(hotspots)
 	await process_frame
-	_check(spreader.texture_normal != null, "spreader position has a texture-backed hit surface")
-	var spreader_hit_button := hotspots.get_node_or_null("SpreaderHotspotHitButton") as Button
-	_check(spreader_hit_button != null, "spreader position has a native button hit target")
+	var spreader_hit_button := infrastructure.get_node_or_null("SpreaderHotspotHitButton") as Button
+	_check(spreader_hit_button != null, "spreader uses the static scene hit target")
 	session.progression.locked[&"stock.pancake.sauce.red_chili"] = true
 	hotspots.bind_session(session)
 	_check(StringName(hotspots.get_node("ScallionTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")
@@ -267,12 +273,14 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	_check(not bool(hotspots.get_node("SweetSauceHotspot").native_drag_enabled), "sauce jars select direct brushing instead of drag placement")
 	_check(StringName(hotspots.get_node("TomatoSauceHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.sauce.tomato", "tomato sauce jar maps to tomato sauce stock")
 	_check(not bool(hotspots.get_node("TomatoSauceHotspot").disabled), "owned tomato sauce hotspot is enabled for direct brushing")
-	_check(not bool(hotspots.get_node("TomatoSauceHotspotHitButton").disabled), "owned tomato sauce button is enabled for pointer input")
+	_check(not bool(infrastructure.get_node("TomatoSauceHotspotOverlayHitButton").disabled), "owned tomato sauce button is enabled for pointer input")
 	_check(bool(hotspots.get_node("ChiliSauceHotspot").disabled), "locked chili sauce hotspot cannot be used")
-	_check(batter_ladle.tooltip_text == "按住面糊勺拖到空鏊子倒入", "basic batter ladle explains the hold-and-drag interaction")
+	_check(batter_ladle.tooltip_text == "点击拿起面糊勺，再在空鏊子上方按住倒入", "basic batter ladle explains the two-step pick-up and hold interaction")
 	hotspots.call("_on_batter_ladle_button_down")
 	_check(bool(station.call("is_batter_ladle_selected")) and unit.state == CompactGriddleUnit.State.IDLE, "basic batter ladle click picks up the tool without immediately pouring")
 	_check(unit.pancake_surface.batter_pour_guide_visible and unit.pancake_surface.batter_pour_guide_outer_radius_pixels > unit.pancake_surface.batter_pour_guide_inner_radius_pixels, "basic batter ladle shows two rings for the recommended batter area")
+	unit.call("_process_batter_ladle_drag", 0.0)
+	_check(bool(station.call("is_batter_ladle_selected")) and unit.state == CompactGriddleUnit.State.IDLE, "releasing the holder click keeps the basic ladle in hand until an empty griddle is pressed")
 	var pour_center: Vector2 = unit.pancake_surface.size * 0.5
 	unit.call("_on_surface_pointer_started", pour_center)
 	unit.call("_process_batter_pour", 0.20)
@@ -354,7 +362,7 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	unit.begin_order({})
 	unit.state = CompactGriddleUnit.State.FIRST_SIDE
 	unit.p1_session.phase = P1Session.Phase.FIRST_SIDE
-	var tomato_hit_button := hotspots.get_node("TomatoSauceHotspotHitButton") as Button
+	var tomato_hit_button := infrastructure.get_node("TomatoSauceHotspotOverlayHitButton") as Button
 	tomato_hit_button.emit_signal(&"button_down")
 	tomato_hit_button.emit_signal(&"button_up")
 	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.tomato"), "tomato sauce button pointer signals route to direct brushing")
@@ -369,6 +377,8 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	var brush_start := Dictionary(station.begin_surface_action(0, unit.pancake_surface.size * 0.5))
 	_check(bool(brush_start.get("success", false)) and StringName(brush_start.get("action", &"")) == CompactGriddleUnit.SURFACE_ACTION_BRUSH_SAUCE, "sweet sauce hotspot short click routes to direct brushing")
 	hotspots.queue_free()
+	infrastructure.queue_free()
+	safe_area.queue_free()
 
 
 func _check(condition: bool, message: String) -> void:

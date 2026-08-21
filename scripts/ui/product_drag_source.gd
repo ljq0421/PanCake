@@ -21,6 +21,10 @@ var _drag_available := false
 var _holding := false
 var _hold_elapsed := 0.0
 var _native_drag_in_progress := false
+## Optional alpha-tested layers that define the clickable silhouette.  A source
+## without these layers keeps the regular rectangular hit area.
+var _alpha_hit_regions: Array[Dictionary] = []
+var _alpha_hit_images: Dictionary = {}
 
 
 func _ready() -> void:
@@ -49,6 +53,40 @@ func configure(source_ref: Dictionary, product_texture: Texture2D, available: bo
 
 func set_drag_available(value: bool) -> void:
 	_drag_available = value
+
+
+func set_alpha_hit_regions(regions: Array[Dictionary]) -> void:
+	_alpha_hit_regions.clear()
+	for region in regions:
+		var texture := region.get("texture") as Texture2D
+		var rect := region.get("rect", Rect2()) as Rect2
+		if texture == null or rect.size.x <= 0.0 or rect.size.y <= 0.0:
+			continue
+		var texture_id := texture.get_instance_id()
+		var image := _alpha_hit_images.get(texture_id) as Image
+		if image == null:
+			image = texture.get_image()
+			_alpha_hit_images[texture_id] = image
+		if image == null or image.is_empty():
+			continue
+		_alpha_hit_regions.append({"image": image, "rect": rect})
+
+
+func _has_point(point: Vector2) -> bool:
+	if not Rect2(Vector2.ZERO, size).has_point(point):
+		return false
+	if _alpha_hit_regions.is_empty():
+		return true
+	for region in _alpha_hit_regions:
+		var rect := region["rect"] as Rect2
+		if not rect.has_point(point):
+			continue
+		var image := region["image"] as Image
+		var pixel_x := clampi(floori((point.x - rect.position.x) / rect.size.x * float(image.get_width())), 0, image.get_width() - 1)
+		var pixel_y := clampi(floori((point.y - rect.position.y) / rect.size.y * float(image.get_height())), 0, image.get_height() - 1)
+		if image.get_pixel(pixel_x, pixel_y).a > 0.0:
+			return true
+	return false
 
 
 func _process(delta: float) -> void:

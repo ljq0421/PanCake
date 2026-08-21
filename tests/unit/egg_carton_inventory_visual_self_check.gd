@@ -30,6 +30,7 @@ func _run() -> void:
 			_check(texture_path.ends_with("egg-carton-overlay-%d-egg-512.png" % count), "%d-egg stock state uses its matching overlay" % count)
 	_check(source != null and source is EggCartonDragSource and source.hold_enabled and is_equal_approx(source.hold_threshold_seconds, 0.20) and source.native_drag_enabled, "egg carton supports both drag-to-griddle and a 0.2-second hold-to-restock")
 	if source is EggCartonDragSource:
+		_check(not source._has_point(Vector2.ZERO), "transparent margin outside the egg-carton artwork is not clickable")
 		source.set_filled_slot_count(3)
 		var first_egg := Vector2(source.size.x * 0.25, source.size.y * 0.348)
 		var empty_lower_right := Vector2(source.size.x * 0.75, source.size.y * 0.504)

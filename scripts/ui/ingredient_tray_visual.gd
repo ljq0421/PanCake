@@ -15,6 +15,7 @@ extends TextureRect
 
 var _session: Node
 var _base_texture: Texture2D
+var _workshop_preview := false
 
 
 func _ready() -> void:
@@ -43,11 +44,19 @@ func _on_progression_changed(_progression: Dictionary) -> void:
 	_refresh_from_session()
 
 
+## The upgrade workshop is an equipment catalogue, not an inventory readout.
+## Keep its countertop examples full even when the live service inventory is
+## currently depleted. Leaving the preview restores the live stock state.
+func set_workshop_preview(enabled: bool) -> void:
+	_workshop_preview = enabled
+	_refresh_from_session()
+
+
 func _refresh_from_session() -> void:
 	if _session == null or stock_id.is_empty() or not _session.has_method("inventory_snapshot"):
 		return
 	var inventory := Dictionary(_session.call("inventory_snapshot"))
-	var quantity := maxi(int(inventory.get(str(stock_id), 0)), 0)
+	var quantity := full_quantity if _workshop_preview else maxi(int(inventory.get(str(stock_id), 0)), 0)
 	var contents := get_node_or_null(contents_visual_path) as TextureRect
 	if not state_textures.is_empty():
 		texture = _state_texture_for_quantity(quantity)

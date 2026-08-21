@@ -176,12 +176,9 @@ func _process_batter_ladle_drag(delta: float) -> void:
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if _surface_action == SURFACE_ACTION_POUR_BATTER:
 			_on_surface_pointer_ended(local_position)
-		else:
-			_batter_ladle_armed = false
-			var station := get_parent()
-			if station != null and station.has_method("clear_held_tool"):
-				station.call("clear_held_tool")
-			_refresh_ui()
+		# Picking up the basic ladle and pouring are two separate gestures. A
+		# click on the holder must keep the ladle in hand until the player starts
+		# a press on an empty griddle (or explicitly cancels the held tool).
 		return
 	if _surface_action == SURFACE_ACTION_NONE:
 		if not PancakeSpace.is_inside_pan(local_position, pancake_surface.size, pancake_model.parameters.pan_height_ratio):
@@ -277,7 +274,7 @@ func advance_main() -> Dictionary:
 func next_sauce_id() -> StringName:
 	for value in Array(order.get("sauce_ids", [])):
 		var stock_id := StringName(value)
-		if not applied_sauce_ids.has(str(stock_id)):
+		if _applied_stock_portion_count(applied_sauce_ids, stock_id) < _ordered_stock_portion_count("sauce_ids", stock_id):
 			return stock_id
 	return &""
 
@@ -285,13 +282,13 @@ func next_sauce_id() -> StringName:
 func next_ingredient_id() -> StringName:
 	for value in Array(order.get("ingredient_ids", [])):
 		var stock_id := StringName(value)
-		if not applied_ingredient_ids.has(str(stock_id)):
+		if _applied_stock_portion_count(applied_ingredient_ids, stock_id) < _ordered_stock_portion_count("ingredient_ids", stock_id):
 			return stock_id
 	return &""
 
 
 func apply_sauce(stock_id: StringName) -> void:
-	if stock_id.is_empty() or applied_sauce_ids.has(str(stock_id)):
+	if stock_id.is_empty() or _applied_stock_portion_count(applied_sauce_ids, stock_id) >= IngredientModel.MAX_PORTIONS_PER_TYPE:
 		return
 	var sauce_type := &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
 	var stroke_id := pancake_model.begin_sauce_stroke()
@@ -313,8 +310,8 @@ func validate_sauce_prime(stock_id: StringName) -> Dictionary:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	if state == State.GARNISH and p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
-	if applied_sauce_ids.has(str(stock_id)):
-		return {"success": false, "reason": &"duplicate_sauce", "stock_id": stock_id}
+	if _applied_stock_portion_count(applied_sauce_ids, stock_id) >= IngredientModel.MAX_PORTIONS_PER_TYPE:
+		return {"success": false, "reason": &"portion_limit", "stock_id": stock_id}
 	var grid_position := _nearest_valid_sauce_grid_position()
 	if grid_position.x < 0.0:
 		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
@@ -379,7 +376,7 @@ func apply_sauce_automatically(stock_id: StringName, validation: Dictionary = {}
 
 
 func apply_ingredient(stock_id: StringName) -> void:
-	if stock_id.is_empty() or applied_ingredient_ids.has(str(stock_id)):
+	if stock_id.is_empty() or _applied_stock_portion_count(applied_ingredient_ids, stock_id) >= IngredientModel.MAX_PORTIONS_PER_TYPE:
 		return
 	var ingredient_type := _ingredient_type_for_stock(stock_id)
 	if ingredient_type.is_empty():
@@ -454,6 +451,22 @@ func is_reserving_batter() -> bool:
 
 func is_reserving_sauce(stock_id: StringName) -> bool:
 	return state != State.IDLE and applied_sauce_ids.has(str(stock_id))
+
+
+func _applied_stock_portion_count(stock_ids: PackedStringArray, stock_id: StringName) -> int:
+	var count := 0
+	for value in stock_ids:
+		if StringName(value) == stock_id:
+			count += 1
+	return count
+
+
+func _ordered_stock_portion_count(order_key: String, stock_id: StringName) -> int:
+	var count := 0
+	for value in Array(order.get(order_key, [])):
+		if StringName(value) == stock_id:
+			count += 1
+	return count
 
 
 func source_ref() -> Dictionary:
@@ -884,8 +897,6 @@ func _apply_sauce_sample(grid_position: Vector2) -> bool:
 	var sauce_type: StringName = &"red_chili" if _surface_stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
 	var result := Dictionary(pancake_model.apply_sauce_sample(grid_position, 0.18, 3.8, _sauce_stroke_id, 2147483647, sauce_type))
 	var changed := bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0
-	if changed and not applied_sauce_ids.has(str(_surface_stock_id)):
-		applied_sauce_ids.append(str(_surface_stock_id))
 	return changed
 
 
@@ -917,8 +928,8 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 	var ingredient_type := _ingredient_type_for_stock(stock_id)
 	if ingredient_type.is_empty():
 		return {"success": false, "reason": &"not_pancake_ingredient"}
-	if ingredient_model.has_type(ingredient_type):
-		return {"success": false, "reason": &"duplicate_ingredient", "stock_id": stock_id}
+	if ingredient_model.count_type(ingredient_type) >= IngredientModel.MAX_PORTIONS_PER_TYPE:
+		return {"success": false, "reason": &"portion_limit", "stock_id": stock_id}
 	if ingredient_type == IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	if ingredient_type != IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:

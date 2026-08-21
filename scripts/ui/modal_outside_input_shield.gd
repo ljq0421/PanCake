@@ -5,6 +5,8 @@ extends Control
 
 
 func _has_point(point: Vector2) -> bool:
+	if not is_visible_in_tree():
+		return false
 	var excluded := get_node_or_null(excluded_control_path) as Control
 	if excluded == null or not excluded.visible:
 		return true

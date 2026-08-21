@@ -142,6 +142,7 @@ func _unlock_three_areas(progression: RefCounted) -> void:
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.fresh_soy_milk.yellow_bean": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true})
 	progression.set("unlocked_stock_ids", {&"stock.pancake.batter": true, &"stock.pancake.egg": true, &"stock.pancake.baocui": true, &"stock.pancake.scallion": true, &"stock.pancake.sauce.sweet_flour": true, &"stock.youtiao.plain_dough": true, &"stock.fresh_soy_milk.yellow_bean": true})
+	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true})
 
 
 func _set_active_tutorial(progression: RefCounted, area_id: StringName, completed: Array) -> void:

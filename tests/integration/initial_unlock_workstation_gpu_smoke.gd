@@ -206,7 +206,7 @@ func _run() -> void:
 	await _click_control_settled(flip_button)
 	await process_frame
 	_check(flip_hovered == flip_button, "five-area passive station layer does not cover the real flip button")
-	_check(workstation.pancake_model.is_flipped and workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "real GPU pointer click completes the flip interaction")
+	_check(workstation.pancake_model.is_flipped and workstation.p1_session.phase == P1Session.Phase.SECOND_SIDE, "real GPU pointer click enters second-side cooking")
 
 	_check(bool(egg.get_meta(&"refill_enabled", false)), "the real main-game egg tray supports direct hold refill")
 	_check(is_equal_approx(float(egg.get("hold_threshold_seconds")), 0.1), "the real main-game egg tray uses the 0.1-second hold threshold")
@@ -327,21 +327,6 @@ func _run() -> void:
 	var stored_product_consumed := slots_after_delivery_click.is_empty() or Dictionary(slots_after_delivery_click[0]).is_empty()
 	_check(StringName(order_after_delivery_click.get("state", &"")) == &"settled" and stored_product_consumed, "real order-icon click delivers and consumes the displayed holding-tray product")
 	_check(StringName(workstation.get("_formal_order_id")) != target_order_id, "real pointer delivery advances to the next customer before payment collection")
-	workstation.get("payment_coin_model").call("add_payment", 3)
-	var payment_denominations: Array[int] = [2, 1]
-	workstation._spawn_payment_flight(payment_denominations)
-	workstation._pending_payment_sprites.append_array(workstation._payment_flight_sprites)
-	workstation._payment_flight_sprites.clear()
-	workstation._layout_pending_payment_sprites()
-	var pending_coins: Array[TextureRect] = workstation._pending_payment_sprites
-	var payment_strip := workstation.get_node("SafeArea/PaymentCollectionArea") as Button
-	var non_coin_point := payment_strip.get_global_rect().get_center()
-	_click_at(non_coin_point)
-	await process_frame
-	_check(int(workstation.payment_coin_model.pending_total) == 3 and pending_coins.size() == 2, "clicking empty space in the old payment strip does not collect coins")
-	_click_control(pending_coins[0] as Control)
-	await process_frame
-	_check(int(workstation.payment_coin_model.pending_total) == 0 and workstation._pending_payment_sprites.is_empty(), "clicking a visible coin collects the pending payment")
 	game.queue_free()
 	await process_frame
 	_finish(output_absolute, refill_output_absolute, egg_crack_output_absolute)

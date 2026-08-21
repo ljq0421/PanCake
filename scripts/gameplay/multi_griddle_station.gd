@@ -271,8 +271,25 @@ func can_drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: V
 	if unit == null:
 		return false
 	var validation := Dictionary(unit.validate_ingredient_drop(source_ref, local_position))
-	if not bool(validation.get("success", false)):
+	return bool(validation.get("success", false)) and _source_is_available_for_drop(source_ref, validation)
+
+
+func can_preview_drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vector2) -> bool:
+	var unit := _unit(unit_index)
+	if unit == null:
 		return false
+	# Native drag hover is called for every pointer update. Keep it local to the
+	# griddle model, then repeat the session-backed stock check once on release.
+	if not bool(Dictionary(unit.validate_ingredient_drop(source_ref, local_position)).get("success", false)):
+		return false
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	return source_kind == &"pancake_shared_ingredient" or (
+		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
+		and source_kind == &"prepared_product_slot"
+	)
+
+
+func _source_is_available_for_drop(source_ref: Dictionary, validation: Dictionary) -> bool:
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	if source_kind == &"pancake_shared_ingredient":
 		var stock_id := StringName(validation.get("stock_id", &""))
@@ -294,7 +311,7 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	if unit == null:
 		return {"success": false, "reason": &"griddle_locked"}
 	var validation := Dictionary(unit.validate_ingredient_drop(source_ref, local_position))
-	if not bool(validation.get("success", false)) or not can_drop_on_unit(unit_index, source_ref, local_position):
+	if not bool(validation.get("success", false)) or not _source_is_available_for_drop(source_ref, validation):
 		return validation if not bool(validation.get("success", false)) else {"success": false, "reason": &"source_unavailable"}
 	var consumed: Dictionary
 	var source_kind := StringName(source_ref.get("source_kind", &""))
@@ -304,10 +321,6 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 		consumed = _consume_inventory_stock(StringName(validation.get("stock_id", &"")))
 	if not bool(consumed.get("success", false)):
 		return consumed
-	if StringName(validation.get("ingredient_type", &"")) != IngredientModel.EGG:
-		var preparation: Dictionary = unit.begin_garnish_without_flip() if unit.state == UNIT_SCRIPT.State.FIRST_SIDE else unit.confirm_second_side_for_followup()
-		if not bool(preparation.get("success", false)):
-			return preparation
 	var placed := Dictionary(unit.place_validated_ingredient(validation))
 	if not bool(placed.get("success", false)):
 		return placed

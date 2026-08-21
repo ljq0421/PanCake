@@ -41,8 +41,8 @@ func _run() -> void:
 		DisplayServer.window_set_size(resolution)
 		for _frame in 3:
 			await process_frame
-		await _hover_control(soy_station.machine_output)
-		_check(root.gui_get_hovered_control() == soy_station.machine_output, "%dx%d pointer reaches the empty-cup control (actual: %s)" % [resolution.x, resolution.y, _hovered_path()])
+		await _hover_control(soy_station.cup_stack)
+		_check(root.gui_get_hovered_control() == soy_station.cup_stack, "%dx%d pointer reaches the cup-stack control (actual: %s)" % [resolution.x, resolution.y, _hovered_path()])
 		await _hover_control(soy_station.nozzle_button)
 		_check(root.gui_get_hovered_control() == soy_station.nozzle_button, "%dx%d pointer reaches the dispensing nozzle (actual: %s)" % [resolution.x, resolution.y, _hovered_path()])
 		await _hover_control(soy_station.sugar_jar)
@@ -53,7 +53,9 @@ func _run() -> void:
 		await process_frame
 	var order_id := await _open_normal_sugar_order(session, workstation)
 	_check(not order_id.is_empty(), "soy delivery order opens in a visible customer slot")
-	await _click_control(soy_station.machine_output)
+	_check(int(soy_station.get("_cup_stack_count")) == 8, "cup stack starts with eight cups")
+	await _click_control(soy_station.cup_stack)
+	_check(int(soy_station.get("_cup_stack_count")) == 7, "taking a cup changes the stack to seven cups")
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("cup_state", &"")) == &"held_empty", "mouse click takes an empty cup")
 	var nozzle_press := await _begin_hold_control(soy_station.nozzle_button)
 	await create_timer(0.20).timeout
@@ -80,9 +82,18 @@ func _run() -> void:
 		await _drag_control(soy_station.machine_output, target)
 	var settled := Dictionary(session.call("formal_order", order_id))
 	_check(StringName(settled.get("state", &"")) == &"settled", "dragging the sweetened cup completes delivery")
+	soy_station.set("_cup_stack_count", 0)
+	soy_station.refresh_from_session()
+	await _hover_control(soy_station.cup_stack)
+	_check(is_zero_approx(soy_station.cup_stack.self_modulate.a), "an empty cup stack is visually transparent")
+	var restock_press := await _begin_hold_control(soy_station.cup_stack)
+	await create_timer(0.60).timeout
+	await _release_hold_control(restock_press)
+	_check(int(soy_station.get("_cup_stack_count")) == 1, "one long press restocks exactly one cup")
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_fill": true, &"automation.fresh_soy_milk.double_fill": true})
-	await _click_control(soy_station.machine_output)
+	await _click_control(soy_station.cup_stack)
+	_check(int(soy_station.get("_cup_stack_count")) == 0, "taking the restocked cup returns the stack to empty")
 	await _click_control(soy_station.nozzle_button)
 	_check(soy_station.queued_cup_button.visible, "dual-outlet fill exposes a separately selectable second cup")
 	await _click_control(soy_station.queued_cup_button)

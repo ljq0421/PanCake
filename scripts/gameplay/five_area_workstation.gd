@@ -3,6 +3,14 @@ extends "res://scripts/gameplay/workstation.gd"
 
 const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
+const PAYMENT_COIN_TEXTURES := {
+	1: preload("res://resources/art/payments/coin_1_v2_chinese_ui.png"),
+	2: preload("res://resources/art/payments/coin_2_v2_chinese_ui.png"),
+	5: preload("res://resources/art/payments/coin_5_v2_chinese_ui.png"),
+	10: preload("res://resources/art/payments/coin_10_v2_chinese_ui.png"),
+	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
+}
 const RIGHT_SOY_STATION_POSITION := Vector2(1500.0, 480.0)
 const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 460.0)
 const FORMAL_PAYMENT_COIN_SIZE := Vector2(44.0, 44.0)
@@ -45,6 +53,8 @@ var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 var _multi_griddle_mode_active := false
 var _formal_payment_coin_sprites: Array[TextureRect] = []
+var _formal_payment_collection_tween: Tween
+var _formal_payment_collection_active := false
 var _workshop_payment_display_hidden := false
 
 
@@ -729,12 +739,19 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 		for slot_id in [&"slot.04"]:
 			var status := Dictionary(session.call("prepared_product_slot_status", slot_id))
 			if bool(status.get("success", false)) and int(status.get("count", 0)) > 0:
-				result.append({
-					"source_kind": &"prepared_product_slot",
-					"source_slot_id": slot_id,
-					"source_index": -1,
-					"product_id": StringName(status.get("product_id", &"")),
-				})
+				# A finished tray can contain both plain and sesame youtiao.  Each
+				# stored product needs its own source index; using the legacy -1
+				# shortcut always previews index 0 and makes later matching products
+				# invisible to click delivery.
+				var products := Array(status.get("products", []))
+				for source_index in range(products.size()):
+					var product := Dictionary(products[source_index])
+					result.append({
+						"source_kind": &"prepared_product_slot",
+						"source_slot_id": slot_id,
+						"source_index": source_index,
+						"product_id": StringName(product.get("product_id", &"")),
+					})
 	return result
 
 
@@ -795,6 +812,8 @@ func _finish_clicked_order(result: Dictionary) -> void:
 
 
 func _collect_pending_payments() -> void:
+	if _formal_payment_collection_active:
+		return
 	var session := get_node_or_null("/root/GameSession")
 	if session == null:
 		return
@@ -802,9 +821,109 @@ func _collect_pending_payments() -> void:
 	if not bool(collected.get("success", false)):
 		tool_status_label.text = "收币失败：%s" % str(collected.get("reason", &"unknown"))
 		return
-	_clear_formal_payment_coins()
+	var amount := int(collected.get("amount", 0))
+	var collected_coins: Array[TextureRect] = []
+	collected_coins.append_array(_formal_payment_coin_sprites)
+	_formal_payment_coin_sprites.clear()
 	_refresh_pending_payment_button()
-	tool_status_label.text = "已一次收取 %d 金币；当前顾客订单继续" % int(collected.get("amount", 0))
+	if collected_coins.is_empty():
+		tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % amount
+		return
+	_formal_payment_collection_active = true
+	var origin := _formal_payment_collection_origin(collected_coins)
+	var target := _formal_payment_collection_target()
+	_show_formal_payment_reward(amount, origin)
+	for index in collected_coins.size():
+		var coin := collected_coins[index]
+		if is_instance_valid(coin):
+			_play_formal_payment_collection_flight(coin, target, index)
+	if _formal_payment_collection_tween != null and _formal_payment_collection_tween.is_valid():
+		_formal_payment_collection_tween.kill()
+	_formal_payment_collection_tween = create_tween()
+	_formal_payment_collection_tween.tween_interval(0.42 + float(maxi(collected_coins.size() - 1, 0)) * 0.045)
+	_formal_payment_collection_tween.tween_callback(_complete_formal_payment_collection.bind(amount, collected_coins))
+	tool_status_label.text = "收取中：%d 金币正在入账" % amount
+
+
+func _formal_payment_collection_origin(coins: Array[TextureRect]) -> Vector2:
+	var total := Vector2.ZERO
+	var visible_coin_count := 0
+	for coin in coins:
+		if is_instance_valid(coin):
+			total += coin.get_global_rect().get_center()
+			visible_coin_count += 1
+	return total / float(visible_coin_count) if visible_coin_count > 0 else pending_payment_button.get_global_rect().get_center()
+
+
+func _formal_payment_collection_target() -> Vector2:
+	var status_rect := global_status_label.get_global_rect()
+	return status_rect.position + Vector2(78.0, status_rect.size.y * 0.5)
+
+
+func _play_formal_payment_collection_flight(coin: TextureRect, target: Vector2, index: int) -> void:
+	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coin.z_index = 125
+	coin.pivot_offset = coin.size * 0.5
+	var launch_position := coin.global_position + Vector2(float(index % 3 - 1) * 12.0, -32.0 - float(index % 2) * 8.0)
+	var destination := target - coin.size * 0.5 + Vector2(float(index % 3 - 1) * 14.0, float(index % 2) * 4.0)
+	var coin_tween := create_tween()
+	coin_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	coin_tween.tween_interval(float(index) * 0.045)
+	coin_tween.set_parallel(true)
+	coin_tween.tween_property(coin, "global_position", launch_position, 0.10)
+	coin_tween.tween_property(coin, "scale", Vector2(1.28, 1.28), 0.10)
+	coin_tween.chain().set_parallel(true)
+	coin_tween.tween_property(coin, "global_position", destination, 0.30)
+	coin_tween.tween_property(coin, "scale", Vector2(0.72, 0.72), 0.30)
+	coin_tween.tween_property(coin, "modulate:a", 0.0, 0.22).set_delay(0.08)
+
+
+func _show_formal_payment_reward(amount: int, origin: Vector2) -> void:
+	var reward_label := Label.new()
+	reward_label.name = "FormalCoinCollectionReward"
+	reward_label.text = "+%d 金币" % amount
+	reward_label.size = Vector2(250.0, 64.0)
+	reward_label.global_position = origin - Vector2(125.0, 92.0)
+	reward_label.z_index = 126
+	reward_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reward_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	reward_label.add_theme_color_override(&"font_color", Color(1.0, 0.85, 0.24, 1.0))
+	reward_label.add_theme_color_override(&"font_outline_color", Color(0.20, 0.09, 0.02, 0.96))
+	reward_label.add_theme_constant_override(&"outline_size", 7)
+	reward_label.add_theme_font_size_override(&"font_size", 42)
+	reward_label.pivot_offset = reward_label.size * 0.5
+	reward_label.scale = Vector2(0.94, 0.94)
+	reward_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	payment_coin_layer.add_child(reward_label)
+	var reward_tween := create_tween()
+	reward_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	reward_tween.set_parallel(true)
+	reward_tween.tween_property(reward_label, "global_position", reward_label.global_position - Vector2(0.0, 14.0), 0.10)
+	reward_tween.tween_property(reward_label, "scale", Vector2(1.14, 1.14), 0.10)
+	reward_tween.tween_property(reward_label, "modulate:a", 1.0, 0.10)
+	reward_tween.chain().set_parallel(true)
+	reward_tween.tween_property(reward_label, "global_position", reward_label.global_position - Vector2(0.0, 76.0), 0.26)
+	reward_tween.tween_property(reward_label, "scale", Vector2.ONE, 0.26)
+	reward_tween.tween_property(reward_label, "modulate:a", 0.0, 0.18).set_delay(0.08)
+	reward_tween.chain().tween_callback(reward_label.queue_free)
+
+
+func _complete_formal_payment_collection(amount: int, coins: Array[TextureRect]) -> void:
+	for coin in coins:
+		if is_instance_valid(coin):
+			coin.queue_free()
+	_formal_payment_collection_active = false
+	_pulse_formal_coin_total()
+	tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % amount
+
+
+func _pulse_formal_coin_total() -> void:
+	global_status_label.pivot_offset = global_status_label.size * 0.5
+	var pulse_tween := create_tween()
+	pulse_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	pulse_tween.tween_property(global_status_label, "scale", Vector2(1.08, 1.08), 0.10)
+	pulse_tween.tween_property(global_status_label, "scale", Vector2.ONE, 0.16)
 
 
 func _collect_tray_payment() -> void:

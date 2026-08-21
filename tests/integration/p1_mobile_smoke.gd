@@ -126,12 +126,6 @@ func _run() -> void:
 	if root.get_texture().get_image().save_png(paying_path) != OK:
 		_fail("Failed to save P1 customer-paying capture")
 		return
-	var payment_deadline_msec := Time.get_ticks_msec() + 2000
-	while workstation._payment_animation_active and Time.get_ticks_msec() < payment_deadline_msec:
-		await process_frame
-	if workstation._payment_animation_active:
-		_fail("Customer payment animation did not settle before capture")
-		return
 	await process_frame
 	var result_path := capture_directory.path_join("p1_result_latest.png")
 	if root.get_texture().get_image().save_png(result_path) != OK:

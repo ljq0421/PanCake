@@ -11,6 +11,7 @@ func _run() -> void:
 	_test_field_allocation_and_reset()
 	_test_deterministic_debug_input()
 	_test_bounds_and_finite_values()
+	_test_per_side_cooking_exposure()
 	_test_snapshot_is_detached()
 	_test_summary_contract()
 	_finish()
@@ -49,6 +50,22 @@ func _test_bounds_and_finite_values() -> void:
 	_check(model.index_of(Vector2i(-1, 0)) == -1, "negative grid coordinate is rejected")
 	_check(model.index_of(Vector2i(16, 0)) == -1, "upper grid coordinate is rejected")
 	_check(model.validate().is_empty(), "clipped writes leave all fields finite and valid")
+
+
+func _test_per_side_cooking_exposure() -> void:
+	var model := PancakeModel.new(16)
+	var center := Vector2i(8, 8)
+	var center_index := model.index_of(center)
+	model.apply_debug_stamp(center, 3.0, 0.20)
+	model.advance_cooking(7.9, 0.5)
+	_check(is_equal_approx(model.cooking_exposure_seconds[center_index], 7.9), "front-side exposure preserves uncapped seconds before the eight-second char gate")
+	_check(is_zero_approx(model.back_cooking_exposure_seconds[center_index]), "front-side cooking does not advance second-side exposure")
+	model.flip(false)
+	model.advance_cooking(2.0, 0.5)
+	_check(is_equal_approx(model.cooking_exposure_seconds[center_index], 7.9) and is_equal_approx(model.back_cooking_exposure_seconds[center_index], 2.0), "each side records independent cooking exposure")
+	var restored := PancakeModel.new(16)
+	var loaded := restored.load_snapshot(model.snapshot())
+	_check(bool(loaded.success) and is_equal_approx(restored.back_cooking_exposure_seconds[center_index], 2.0), "cooking exposure survives a snapshot round trip")
 
 
 func _test_snapshot_is_detached() -> void:

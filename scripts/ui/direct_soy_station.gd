@@ -3,7 +3,17 @@ extends Control
 
 signal status_message(message: String)
 
-const PLASTIC_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v3_512.png")
+const CUP_STACK_CAPACITY := 8
+const CUP_STACK_TEXTURES := [
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_1_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_2_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_3_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_4_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_5_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_6_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_7_v3_bold_cartoon_transparent.png"),
+	preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png"),
+]
 const SUGAR_JAR_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png")
 const MANUAL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png")
 const AUTO_FILL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png")
@@ -27,6 +37,7 @@ const FLAVOR_RECIPES: Array[StringName] = [
 ]
 
 @onready var machine_output: ProductDragSource = %MachineOutput
+@onready var cup_stack: ProductDragSource = %CupStack
 @onready var queued_cup_preview: TextureRect = %QueuedCupPreview
 @onready var queued_cup_button: AlphaTextureHitButton = %QueuedCupButton
 @onready var cup_selection_frame: Panel = %CupSelectionFrame
@@ -56,11 +67,16 @@ var _double_fill_enabled := false
 var _workshop_preview := false
 var _selected_cup_index := 0
 var _displayed_machine_tier := 0
+var _cup_stack_count := CUP_STACK_CAPACITY
+var _outlet_cup_texture: Texture2D
 
 
 func _ready() -> void:
 	# Ingredient controls sit exactly over the visible artwork; their alpha-aware
 	# hit test ignores transparent canvas margins.
+	_outlet_cup_texture = _create_outlet_cup_texture()
+	queued_cup_preview.texture = _outlet_cup_texture
+	queued_cup_button.hit_texture = _outlet_cup_texture
 	nozzle_button.size = Vector2(112.0, 100.0)
 	flavor_menu.position = Vector2(10.0, 12.0)
 	flavor_menu.size = Vector2(106.0, 30.0)
@@ -69,6 +85,8 @@ func _ready() -> void:
 	ice_button.position = ice_tray_visual.position
 	ice_button.size = ice_tray_visual.size
 	machine_output.short_clicked.connect(_on_cup_short_clicked)
+	cup_stack.short_clicked.connect(_on_cup_stack_short_clicked)
+	cup_stack.hold_requested.connect(_on_cup_stack_hold_requested)
 	queued_cup_button.pressed.connect(_on_queued_cup_pressed)
 	nozzle_button.button_down.connect(_on_nozzle_down)
 	nozzle_button.button_up.connect(_on_nozzle_up)
@@ -148,19 +166,23 @@ func refresh_from_session() -> void:
 			dispense_effect.set_filled_cup(0.0, _liquid_color_for_recipe(selected_recipe_id))
 	var queued_cup := _cup_at_index(cup, queued_cups, 1)
 	queued_cup_effect.set_filled_cup(float(queued_cup.get("fill_ratio", 0.0)) if cup_state == &"filled" and ready_cup_count > 1 else 0.0, _liquid_color_for_recipe(StringName(queued_cup.get("recipe_id", selected_recipe_id))))
+	_refresh_cup_stack()
 	if cup_state == &"ready":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, PLASTIC_CUP_TEXTURE, true, "点击取一个空杯")
+		machine_output.visible = false
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "请点击杯堆取空杯")
 		machine_output.set_drag_available(false)
 		machine_output.position = _active_cup_position()
-		state_label.text = "① 点击取空杯"
+		state_label.text = "① 点击杯堆取空杯 · 剩余 %d 个" % _cup_stack_count if _cup_stack_count > 0 else "空杯已用完 · 长按杯堆位置补货"
 		cup_detail_label.text = "%s · 0 / 1 / 2 份糖" % _recipe_label(selected_recipe_id)
 	elif cup_state == &"held_empty":
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, PLASTIC_CUP_TEXTURE, false, "双杯已就位，请点击双出浆口" if _double_fill_enabled else "空杯已拿起，请点击自动出浆口" if _auto_fill_enabled else "空杯已拿起，请按住出浆口")
+		machine_output.visible = true
+		machine_output.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "双杯已就位，请点击双出浆口" if _double_fill_enabled else "空杯已拿起，请点击自动出浆口" if _auto_fill_enabled else "空杯已拿起，请按住出浆口")
 		machine_output.position = _active_cup_position()
 		state_label.text = "② 点击双出浆口自动接满两杯" if _double_fill_enabled else "② 点击出浆口自动满杯" if _auto_fill_enabled else "② 按住出浆口接豆浆" if not _filling else state_label.text
 		cup_detail_label.text = "一次自动接满两杯豆浆" if _double_fill_enabled else "自动接满一杯豆浆" if _auto_fill_enabled else "松开即出杯；满杯需要 0.8 秒"
 	else:
-		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, PLASTIC_CUP_TEXTURE, true, "拖到订单商品交付")
+		machine_output.visible = true
+		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, _outlet_cup_texture, true, "拖到订单商品交付")
 		machine_output.set_drag_available(true)
 		machine_output.position = _active_cup_position()
 		var fill_percent := roundi(selected_fill_ratio * 100.0)
@@ -222,11 +244,89 @@ func _on_cup_short_clicked(_source_ref: Dictionary) -> void:
 		var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 		if StringName(machine.get("cup_state", &"ready")) == &"filled":
 			_select_cup(0)
-			return
-	var result: Dictionary = session.call("take_f4_soy_empty_cup") if session != null else {"success": false, "reason": &"no_game_session"}
+
+
+func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
+	if _workshop_preview:
+		return
+	if _cup_stack_count <= 0:
+		status_message.emit("空杯已用完，请长按杯堆位置补货")
+		return
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		return
+	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+	if StringName(machine.get("cup_state", &"ready")) != &"ready":
+		status_message.emit("请先完成当前这杯豆浆")
+		return
+	var result: Dictionary = session.call("take_f4_soy_empty_cup")
+	if not bool(result.get("success", false)):
+		status_message.emit("无法取杯：%s" % str(result.get("reason", &"unknown")))
+		return
+	_cup_stack_count -= 1
 	var success_message := "双杯已就位，点击双出浆口同时接满" if _double_fill_enabled else "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
-	status_message.emit(success_message if bool(result.get("success", false)) else "无法取杯：%s" % str(result.get("reason", &"unknown")))
+	status_message.emit("%s（杯堆剩余 %d 个）" % [success_message, _cup_stack_count])
 	refresh_from_session()
+
+
+func _on_cup_stack_hold_requested(_source_ref: Dictionary) -> void:
+	# A completed hold intentionally adds exactly one cup.  Rejecting the
+	# gesture prevents the release from also being interpreted as a take-cup tap.
+	cup_stack.reject_hold()
+	if _workshop_preview:
+		return
+	if _cup_stack_count >= CUP_STACK_CAPACITY:
+		status_message.emit("杯堆已经补满")
+		return
+	_cup_stack_count += 1
+	status_message.emit("补货完成：杯堆现有 %d 个" % _cup_stack_count)
+	refresh_from_session()
+
+
+func _refresh_cup_stack() -> void:
+	var display_count := clampi(_cup_stack_count, 1, CUP_STACK_CAPACITY)
+	var stack_texture := CUP_STACK_TEXTURES[display_count - 1] as Texture2D
+	var has_stock := _cup_stack_count > 0
+	cup_stack.visible = not _workshop_preview
+	cup_stack.configure(
+		{"source_kind": &"soy_cup_stack", "cup_count": _cup_stack_count},
+		stack_texture,
+		not _workshop_preview,
+		"点击取空杯（剩余 %d 个）" % _cup_stack_count if has_stock else "空杯已用完，长按此处补货"
+	)
+	cup_stack.set_drag_available(false)
+	cup_stack.self_modulate = Color.WHITE if has_stock else Color(1.0, 1.0, 1.0, 0.0)
+	if has_stock:
+		cup_stack.set_alpha_hit_regions([{"texture": stack_texture, "rect": Rect2(Vector2.ZERO, cup_stack.size)}])
+	else:
+		# The empty location stays fully transparent, but its entire slot remains
+		# interactive so players can long-press it to restore one cup.
+		cup_stack.set_alpha_hit_regions([])
+
+
+static func _create_outlet_cup_texture() -> Texture2D:
+	# The stack_1 asset deliberately preserves the common stack canvas, leaving
+	# transparent space above the cup. Crop that canvas at runtime so the nozzle
+	# receives the same new cup art at the size expected by the fill effect.
+	var source_texture := CUP_STACK_TEXTURES[0] as Texture2D
+	var source_image := source_texture.get_image()
+	if source_image == null or source_image.is_empty():
+		return source_texture
+	var left := source_image.get_width()
+	var top := source_image.get_height()
+	var right := -1
+	var bottom := -1
+	for y in range(source_image.get_height()):
+		for x in range(source_image.get_width()):
+			if source_image.get_pixel(x, y).a <= 0.0:
+				continue
+			left = mini(left, x)
+			top = mini(top, y)
+			right = maxi(right, x)
+			bottom = maxi(bottom, y)
+	if right < left or bottom < top:
+		return source_texture
+	return ImageTexture.create_from_image(source_image.get_region(Rect2i(left, top, right - left + 1, bottom - top + 1)))
 
 
 func _on_queued_cup_pressed() -> void:

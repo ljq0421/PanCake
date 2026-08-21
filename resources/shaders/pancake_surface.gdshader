@@ -2,6 +2,10 @@ shader_type canvas_item;
 render_mode unshaded;
 
 uniform sampler2D field_texture : filter_linear;
+// Nearest sampling preserves the hard per-cell eight-second guarantee. Linear
+// interpolation could leak a neighbouring over-eight-second cell into one that
+// has not yet reached the gate.
+uniform sampler2D heat_exposure_texture : filter_nearest;
 uniform sampler2D damage_texture : filter_linear;
 uniform sampler2D sauce_texture : filter_linear;
 uniform sampler2D chili_sauce_field : filter_linear;
@@ -99,7 +103,13 @@ void fragment() {
 		vec3 cooked_color = texture(cooked_texture, detail_uv).rgb;
 		vec3 charred_color = texture(charred_texture, detail_uv).rgb;
 		float cooked_mix = smoothstep(0.12, 0.72, doneness);
-		float charred_mix = smoothstep(0.76, 1.0, doneness);
+		// A capped doneness value cannot distinguish a thin cell that reached 1.0
+		// in five seconds from one held for nine. The uncapped per-cell exposure
+		// texture supplies that missing time dimension: charring remains exactly
+		// zero until eight seconds, then local doneness controls where it appears.
+		float heat_exposure_seconds = texture(heat_exposure_texture, UV).r * 12.0;
+		float charred_time_gate = smoothstep(8.0, 9.5, heat_exposure_seconds);
+		float charred_mix = charred_time_gate * smoothstep(0.92, 1.0, doneness);
 		vec3 pancake_color = mix(raw_color, cooked_color, cooked_mix);
 		pancake_color = mix(pancake_color, charred_color, charred_mix);
 		// Fresh batter must remain legible against the dark griddle before it

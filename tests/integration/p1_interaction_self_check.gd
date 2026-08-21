@@ -130,14 +130,16 @@ func _run() -> void:
 	_check(workstation.pancake_surface.get_renderer_diagnostics().egg_texture != null, "renderer uploads the spread egg field")
 	workstation.pancake_model.doneness.fill(0.62)
 	workstation.step_action_button.pressed.emit()
-	_check(workstation.pancake_model.is_flipped and workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "step action flips and immediately enters sauce and fillings")
+	_check(workstation.pancake_model.is_flipped and workstation.p1_session.phase == P1Session.Phase.SECOND_SIDE, "step action flips into a separately cooking second-side stage")
 	_check(
 		workstation.tool_controller.current_tool == ToolController.Tool.NONE
 		and not workstation.spreader_artwork.visible
 		and not workstation.pancake_surface.cursor_is_t_spreader,
 		"successful flip returns and hides the egg spreader"
 	)
-	_check(is_equal_approx(workstation.pancake_model.mean_side_doneness(true), workstation.pancake_model.mean_side_doneness(false)), "quick flip settles the second-side heat without waiting")
+	_check(is_zero_approx(workstation.pancake_model.mean_side_doneness(true)), "the flipped side starts uncooked and requires its own cooking time")
+	workstation._process(6.0)
+	_check(not workstation.step_action_button.visible and workstation.p1_session.phase == P1Session.Phase.SECOND_SIDE, "second-side fire level has no confirmation gate")
 	workstation.set_sauce_unlocked(OrderService.SAUCE_CHILI, true)
 	_check(not workstation.sauce_refill_button.disabled and not workstation.chili_sauce_refill_button.disabled, "both sauce bottles respond immediately after flipping")
 	if DisplayServer.get_name() == "headless":
@@ -147,12 +149,12 @@ func _run() -> void:
 	else:
 		await _hold_control_with_process(workstation, workstation.chili_sauce_refill_button, 0.5)
 	var chili_load := float(workstation.sauce_tool_state.load)
-	_check(workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "clicking a sauce bottle stays in the immediate post-flip sauce stage")
+	_check(workstation.p1_session.phase == P1Session.Phase.SECOND_SIDE, "clicking a sauce bottle does not interrupt second-side cooking")
 	_check(workstation.current_sauce_type == OrderService.SAUCE_CHILI and chili_load > 0.0 and workstation.sauce_blob_overlay.visible, "holding the chili bottle creates a visible chili blob on the pancake")
 	_check(workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH and workstation.chili_sauce_refill_button.button_pressed and workstation.pancake_surface.cursor_is_sauce_brush, "releasing the chili bottle automatically equips the chili brush and brush cursor")
 	var doneness_before_sauce := workstation.pancake_model.mean_side_doneness(true)
 	workstation._process(15.0)
-	_check(is_equal_approx(workstation.pancake_model.mean_side_doneness(true), doneness_before_sauce), "sauce and filling time no longer burns the finished pancake")
+	_check(workstation.pancake_model.mean_side_doneness(true) > doneness_before_sauce, "second-side cooking continues while sauce is applied")
 	if DisplayServer.get_name() == "headless":
 		workstation.sauce_refill_button.button_down.emit()
 		workstation._process(0.5)
@@ -263,9 +265,8 @@ func _run() -> void:
 	_check(workstation.pancake_model.covered_cell_count() == 0 and workstation.ingredient_model.placements.is_empty(), "order-card delivery clears the delivered pancake from the griddle")
 	_check(StringName(workstation.get("_formal_order_id")) != completed_order_id and workstation.p1_session.phase == P1Session.Phase.SPREAD, "the next customer starts immediately without waiting for coin collection")
 	_check(
-		not workstation.payment_collection_area.pressed.is_connected(workstation._collect_payment)
-		and not workstation.payment_collection_area.mouse_entered.is_connected(workstation._collect_payment),
-		"no broad payment-slot hit target or hover collection path remains"
+		workstation.get_node_or_null("SafeArea/PaymentCollectionArea") == null,
+		"the obsolete broad payment-slot hit target has been removed"
 	)
 	_check(
 		not bool(tray_settlement.get("order_success", true))
@@ -446,9 +447,9 @@ func _test_unflipped_sauce_paths(workstation: Workstation) -> void:
 	workstation._advance_p1_step()
 	_check(
 		workstation.pancake_model.is_flipped
-		and workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
-		and not workstation.step_action_button.visible,
-		"sauce-covered pancake can still flip, after which the flip button disappears"
+		and workstation.p1_session.phase == P1Session.Phase.SECOND_SIDE
+		and workstation.step_action_button.visible,
+		"sauce-covered pancake can still flip into second-side cooking"
 	)
 	var fold_edge := Vector2(workstation.pancake_surface.size.x * 0.12, workstation.pancake_surface.size.y * 0.5)
 	workstation._on_pointer_started(fold_edge)
@@ -461,13 +462,13 @@ func _test_unflipped_sauce_paths(workstation: Workstation) -> void:
 	var surface_center := workstation.pancake_surface.get_global_transform_with_canvas() * (workstation.pancake_surface.size * 0.5)
 	await _place_ingredient_from_rack(workstation, workstation.baocui_button, IngredientModel.BAOCUI, surface_center + Vector2(-45.0, -20.0))
 	_check(
-		workstation.p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS
+		workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE
 		and not workstation.pancake_model.is_flipped
 		and not workstation.sauce_refill_button.disabled
 		and workstation.step_action_button.visible
 		and workstation.step_action_button.disabled
 		and workstation.step_action_button.tooltip_text.contains("小料"),
-		"placing a topping first keeps sauce available while leaving a visible disabled flip explanation"
+		"placing a topping first keeps first-side cooking and sauce available while leaving a visible disabled flip explanation"
 	)
 	workstation._on_sauce_squeeze_started()
 	workstation._process(0.12)

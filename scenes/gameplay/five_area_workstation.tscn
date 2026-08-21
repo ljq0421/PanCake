@@ -460,19 +460,6 @@ text = "当前无破洞风险"
 vertical_alignment = 1
 clip_text = true
 
-[node name="PaymentCollectionArea" type="Button" parent="SafeArea" unique_id=1503407811]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 390.0
-offset_top = 468.0
-offset_right = 1530.0
-offset_bottom = 552.0
-tooltip_text = "金币待收取：点击收款槽"
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
 [node name="ResultDetailInputShield" type="Control" parent="SafeArea" unique_id=1552220954]
 unique_name_in_owner = true
 visible = false

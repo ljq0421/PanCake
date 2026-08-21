@@ -14,7 +14,6 @@ const ORDER_SERVICE_SCRIPT := preload("res://scripts/services/order_service.gd")
 const FIVE_AREA_PANCAKE_ORDER_PROVIDER := preload("res://scripts/services/five_area_pancake_order_provider.gd")
 const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
-const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const UPGRADE_WORKSHOP_SCENE := preload("res://scenes/ui/upgrade_workshop_overlay.tscn")
@@ -67,22 +66,7 @@ const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
 const ORDER_REQUIREMENT_SUGAR := &"sugar"
 const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
-const DEFAULT_ORDER_COINS := 3
-const PAYMENT_SLOT_COIN_SIZE := Vector2(48.0, 48.0)
-const PAYMENT_COIN_START_POSITION := Vector2(842.0, 312.0)
-const PAYMENT_COIN_START_SIZE := Vector2(82.0, 82.0)
-const PAYMENT_SLOT_ORIGIN := Vector2(600.0, 474.0)
-const PAYMENT_SLOT_COLUMN_SPACING := 44.0
-const PAYMENT_SLOT_ROW_SPACING := 24.0
-const PAYMENT_SLOT_MAX_COLUMNS := 20
 const DAILY_BILL_FIXED_SIZE := Vector2(1260.0, 820.0)
-const PAYMENT_COIN_TEXTURES := {
-	1: preload("res://resources/art/payments/coin_1_v2_chinese_ui.png"),
-	2: preload("res://resources/art/payments/coin_2_v2_chinese_ui.png"),
-	5: preload("res://resources/art/payments/coin_5_v2_chinese_ui.png"),
-	10: preload("res://resources/art/payments/coin_10_v2_chinese_ui.png"),
-	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
-}
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SPREADER_SPEED_SLOW := -1
 const SPREADER_SPEED_MEDIUM := 0
@@ -181,7 +165,6 @@ var _order_patience_tier := -1
 @onready var next_order_button: Button = %NextOrderButton
 @onready var payment_sprite: TextureRect = %PaymentSprite
 @onready var payment_coin_layer: Control = %PaymentCoinLayer
-@onready var payment_collection_area: Button = %PaymentCollectionArea
 @onready var payment_display: TextureRect = %PaymentDisplay
 @onready var kitchen_audio: AudioStreamPlayer = %KitchenAudio
 @onready var p1_control_bar: Panel = get_node_or_null("SafeArea/P1ControlBar") as Panel
@@ -253,7 +236,6 @@ var ingredient_stock_model
 var order_service: RefCounted
 var customer_queue: RefCounted
 var p1_session: P1Session
-var payment_coin_model: RefCounted
 var five_area_pancake_production: RefCounted
 var _formal_order_id: StringName = &""
 var _pending_delivery_item_index := -1
@@ -270,16 +252,6 @@ var _result_detail_open := false
 var _order_summary_visible := false
 var _handoff_tween: Tween
 var _egg_crack_tween: Tween
-var _payment_tween: Tween
-var _payment_collection_tween: Tween
-var _payment_waiting_collection := false
-var _payment_animation_active := false
-var _payment_collection_active := false
-var _recovering_completed_payment := false
-var _current_payment_amount := 0
-var _current_payment_denominations: Array[int] = []
-var _payment_flight_sprites: Array[TextureRect] = []
-var _pending_payment_sprites: Array[TextureRect] = []
 var _customer_reaction_tween: Tween
 var _customer_visual_state: StringName = &""
 var _customer_portraits: RefCounted = CUSTOMER_PORTRAIT_CATALOG_SCRIPT.new()
@@ -374,7 +346,6 @@ func _ready() -> void:
 		business_day_remaining = float(game_session.call("business_day_remaining_seconds"))
 	business_day_timer = BUSINESS_DAY_TIMER_SCRIPT.new(business_day_remaining)
 	_last_persisted_business_second = ceili(business_day_remaining)
-	payment_coin_model = PAYMENT_COIN_MODEL_SCRIPT.new()
 	_scrape_sampler = StrokeSampler.new(parameters.scraper_sample_spacing)
 	_egg_sampler = StrokeSampler.new(parameters.egg_sample_spacing)
 	_sauce_sampler = StrokeSampler.new(parameters.sauce_sample_spacing)
@@ -424,8 +395,6 @@ func _ready() -> void:
 	next_order_button.pressed.connect(_close_result_detail)
 	summary_view_button.pressed.connect(_open_result_detail)
 	summary_dismiss_button.pressed.connect(_dismiss_order_summary)
-	payment_coin_layer.z_index = 40
-	payment_collection_area.visible = false
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	_configure_debug_growth_button()
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
@@ -486,8 +455,6 @@ func _ready_formal_shop_shell(game_session: Node, formal_active: Dictionary) -> 
 	next_order_button.pressed.connect(_close_result_detail)
 	summary_view_button.pressed.connect(_open_result_detail)
 	summary_dismiss_button.pressed.connect(_dismiss_order_summary)
-	payment_coin_layer.z_index = 40
-	payment_collection_area.visible = false
 	daily_bill_close_button.pressed.connect(_close_daily_bill)
 	_configure_debug_growth_button()
 	begin_next_day_button.pressed.connect(_begin_next_business_day)
@@ -1009,7 +976,6 @@ func _process(delta: float) -> void:
 	if game_session != null and game_session.has_method("advance_f3_production") and not formal_time_paused:
 		game_session.call("advance_f3_production", delta)
 	if pancake_surface == null:
-		_recover_completed_payment_if_needed()
 		return
 	_update_surface_readout()
 	_update_spreader_artwork(delta)
@@ -1018,7 +984,6 @@ func _process(delta: float) -> void:
 			p1_session.advance_elapsed_time(delta)
 		else:
 			p1_session.advance_time(delta)
-	_recover_completed_payment_if_needed()
 	if _squeezing_sauce:
 		sauce_tool_state.add(parameters.sauce_squeeze_rate * delta)
 		_refresh_sauce_load_display()
@@ -1130,8 +1095,6 @@ func _end_business_day_at_cutoff(cutoff_reason: StringName) -> void:
 	_business_day_closed = true
 	if _handoff_tween != null and _handoff_tween.is_valid():
 		_handoff_tween.kill()
-	if _payment_tween != null and _payment_tween.is_valid():
-		_payment_tween.kill()
 	business_day_closed_shield.visible = true
 	var queued_customers: int = customer_queue.call("queue_snapshot").size() if customer_queue != null else 0
 	var game_session := get_node_or_null("/root/GameSession")
@@ -1525,7 +1488,7 @@ func _select_fold() -> void:
 		fold_button.button_pressed = false
 		tool_status_label.text = "折叠阶段已完成；请选择可用包装或按 R 重置"
 		return
-	if p1_session != null and p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS:
+	if p1_session != null and p1_session.phase in [P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE, P1Session.Phase.SAUCE_AND_FILLINGS]:
 		var phase_result := p1_session.begin_folding()
 		if not bool(phase_result.success):
 			tool_status_label.text = str(phase_result.reason)
@@ -1790,13 +1753,11 @@ func _folding_locks_preparation() -> bool:
 func _enter_sauce_and_fillings_for_sauce_action() -> Dictionary:
 	if p1_session == null:
 		return {"success": false, "reason": "煎饼制作状态尚未就绪"}
-	if p1_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS:
+	if p1_session.phase in [P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE, P1Session.Phase.SAUCE_AND_FILLINGS]:
+		# Sauce is available while either side is cooking; it never confirms or
+		# interrupts the current fire-level stage.
 		return {"success": true, "without_flip": not pancake_model.is_flipped, "already_active": true}
-	if p1_session.phase != P1Session.Phase.FIRST_SIDE:
-		return {"success": false, "reason": "摊饼完成后、开始折叠前才能加酱"}
-	# Sauce does not commit the player to the no-flip preparation route. The
-	# first topping still does so through begin_sauce_and_fillings_without_flip().
-	return {"success": true, "without_flip": false, "already_active": true}
+	return {"success": false, "reason": "摊饼完成后、开始折叠前才能加酱"}
 
 
 func _scraper_can_act() -> bool:
@@ -2006,15 +1967,13 @@ func _advance_p1_step() -> void:
 				tool_controller.clear_tool()
 				_stop_egg_crack_effect()
 				tool_status_label.text = (
-					"已提前翻面：本单火候分和订单评价会降低；现在可继续挤酱并放入小料"
+					"已提前翻面：本单火候分和订单评价会降低；可继续煎第二面或直接进行后续操作"
 					if bool(action_result.get("early_flip", false))
-					else "翻面完成：现在直接挤酱并放入小料"
+					else "翻面完成：可继续煎第二面，火候仅影响最终评分"
 				)
 				kitchen_audio.call("play_cue", &"flip")
 		P1Session.Phase.SECOND_SIDE:
-			action_result = p1_session.finish_cooking(pancake_model)
-			if bool(action_result.success):
-				tool_status_label.text = "火候确认：现在刷酱并放入订单配料"
+			tool_status_label.text = "火候仅影响评分；可继续加酱、加料或直接折叠"
 		P1Session.Phase.SAUCE_AND_FILLINGS:
 			action_result = p1_session.begin_folding()
 			if bool(action_result.success):
@@ -2057,7 +2016,7 @@ func _begin_ingredient_drag(ingredient_type: StringName, press_position: Vector2
 	if not _ingredient_available_for_drag(ingredient_type):
 		tool_status_label.text = "%s托盘已经空了，请原地长按当前小料盘补货" % IngredientModel.display_name(ingredient_type)
 		return
-	if p1_session.phase != P1Session.Phase.FIRST_SIDE and p1_session.phase != P1Session.Phase.SAUCE_AND_FILLINGS:
+	if p1_session.phase not in [P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE, P1Session.Phase.SAUCE_AND_FILLINGS]:
 		tool_status_label.text = "当前步骤不能放配料"
 		return
 	_ingredient_drag_type = ingredient_type
@@ -2129,15 +2088,7 @@ func _finish_ingredient_drag(viewport_position: Vector2) -> void:
 			tool_controller.select_tool(ToolController.Tool.SCRAPER)
 			tool_status_label.text = "鸡蛋已打入；用 T 形摊面器连续画圈摊开蛋黄和蛋白"
 		else:
-			if p1_session.phase == P1Session.Phase.FIRST_SIDE:
-				var preparation_transition := p1_session.begin_sauce_and_fillings_without_flip()
-				if bool(preparation_transition.get("success", false)):
-					tool_controller.clear_tool()
-					tool_status_label.text = "%s已放到饼面，不再翻面；可继续刷酱、放料，完成后抓住饼皮边缘折叠" % IngredientModel.display_name(_ingredient_drag_type)
-				else:
-					tool_status_label.text = str(preparation_transition.get("reason", "无法进入未翻面备料阶段"))
-			else:
-				tool_status_label.text = "%s已放到饼面，可继续调整下一种配料" % IngredientModel.display_name(_ingredient_drag_type)
+			tool_status_label.text = "%s已放到饼面，可继续调整下一种配料" % IngredientModel.display_name(_ingredient_drag_type)
 	else:
 		tool_status_label.text = "%s；本次用料已损耗" % str(result.reason)
 	_ingredient_drag_type = &""
@@ -2366,7 +2317,7 @@ func _begin_pancake_handoff_visual(score_result: Dictionary, package_result: Str
 	_handoff_tween.parallel().tween_property(handoff_product_sprite, "position", Vector2(885.0, 255.0), 0.48)
 	_handoff_tween.parallel().tween_property(handoff_product_sprite, "size", Vector2(150.0, 150.0), 0.48)
 	_handoff_tween.parallel().tween_property(handoff_product_sprite, "modulate:a", 0.25, 0.48)
-	_handoff_tween.tween_callback(_complete_handoff_animation)
+	_handoff_tween.tween_callback(_finish_handoff_visual)
 	kitchen_audio.call("set_sizzle", false, 0.0)
 	kitchen_audio.call("play_cue", &"serve")
 	_refresh_p1_ui()
@@ -2583,125 +2534,8 @@ func _refresh_pancake_holding_tray() -> void:
 		button.tooltip_text = "空：完成并包装煎饼后，点击“暂存成品”放入这里。" if slot.is_empty() else "暂存成品与新鲜度展示；交付时点击订单商品图标。"
 
 
-func _complete_handoff_animation() -> void:
-	if p1_session.phase != P1Session.Phase.HANDOFF:
-		return
+func _finish_handoff_visual() -> void:
 	handoff_product_sprite.visible = false
-	var payment_result := p1_session.begin_payment()
-	if not bool(payment_result.get("success", false)):
-		return
-	var reaction := p1_session.post_handoff_reaction()
-	_set_customer_portrait_state(&"accepting_bag" if reaction == P1Session.REACTION_SATISFIED else reaction)
-	tool_status_label.text = "顾客已经接到纸袋"
-	var hold_tween := create_tween()
-	hold_tween.tween_interval(0.55)
-	hold_tween.tween_callback(_show_customer_payment)
-
-
-func _show_customer_payment() -> void:
-	if p1_session.phase != P1Session.Phase.PAYMENT or _payment_animation_active:
-		return
-	var reaction := p1_session.post_handoff_reaction()
-	_set_customer_portrait_state(&"paying_coins" if reaction == P1Session.REACTION_SATISFIED else reaction)
-	_current_payment_amount = _order_payment_coins(p1_session.order)
-	_current_payment_denominations = PAYMENT_COIN_MODEL_SCRIPT.decompose(_current_payment_amount)
-	_payment_animation_active = true
-	_spawn_payment_flight(_current_payment_denominations)
-	tool_status_label.text = "顾客正在支付 %d 金币" % _current_payment_amount
-	if _payment_tween != null and _payment_tween.is_valid():
-		_payment_tween.kill()
-	_payment_tween = create_tween()
-	_payment_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	_payment_tween.set_parallel(true)
-	for index in _payment_flight_sprites.size():
-		var coin := _payment_flight_sprites[index]
-		var delay := float(index) * 0.06
-		_payment_tween.tween_property(coin, "position", _payment_coin_target(payment_coin_model.pending_denominations.size() + index), 0.55).set_delay(delay)
-		_payment_tween.tween_property(coin, "size", PAYMENT_SLOT_COIN_SIZE, 0.55).set_delay(delay)
-	_payment_tween.chain().tween_callback(_complete_payment_animation)
-
-
-func _complete_payment_animation() -> void:
-	if p1_session.phase != P1Session.Phase.PAYMENT or not _payment_animation_active:
-		return
-	_payment_animation_active = false
-	var payment_result := p1_session.finish_payment()
-	if not bool(payment_result.get("success", false)):
-		return
-	var result_for_session := p1_session.result.duplicate(true)
-	var game_session := get_node_or_null("/root/GameSession")
-	if game_session != null:
-		if not _handoff_product_from_tray.is_empty():
-			result_for_session["area_id"] = &"area.pancake"
-			result_for_session["product_id"] = &"product.pancake.custom"
-			result_for_session["material_cost"] = int(_handoff_product_from_tray.get("material_cost", 0))
-			_handoff_product_from_tray.clear()
-		elif five_area_pancake_production != null:
-			var production_result: Dictionary = five_area_pancake_production.call("settle_completed_pancake", result_for_session, p1_session.order, {"package_result": fold_model.package_result})
-			if not bool(production_result.get("success", false)):
-				tool_status_label.text = "煎饼库存结算失败：%s" % str(production_result.get("reason", "unknown"))
-				return
-			result_for_session["area_id"] = production_result.get("area_id", &"area.pancake")
-			result_for_session["product_id"] = production_result.get("product_id", &"product.pancake.custom")
-			result_for_session["material_cost"] = int(production_result.get("material_cost", 0))
-			if not _settle_formal_pancake_product(production_result.get("product", {})):
-				return
-	_finalize_completed_payment(result_for_session)
-
-
-func _finalize_completed_payment(result_for_session: Dictionary) -> void:
-	var game_session := get_node_or_null("/root/GameSession")
-	if game_session != null:
-		game_session.call("record_order_completed", p1_session.order, result_for_session, _current_payment_amount, _formal_order_id)
-	summary_score_label.text = "本单 %d分 · +%d金币" % [roundi(float(p1_session.result.get("score", 0.0))), _current_payment_amount]
-	summary_feedback_label.text = str(p1_session.result.get("feedback", "本单已完成"))
-	_result_detail_open = false
-	_order_summary_visible = true
-	payment_coin_model.add_payment(_current_payment_amount)
-	_pending_payment_sprites.append_array(_payment_flight_sprites)
-	_payment_flight_sprites.clear()
-	_layout_pending_payment_sprites()
-	_current_payment_denominations.clear()
-	_current_payment_amount = 0
-	_payment_waiting_collection = payment_coin_model.has_pending()
-	payment_collection_area.visible = false
-	if _business_day_expiration_pending:
-		_end_business_day_for_timer()
-		return
-	_start_next_order()
-	tool_status_label.text = "下一位顾客已到摊前；收款槽中待收取 %d 金币" % payment_coin_model.pending_total
-
-
-func _recover_completed_payment_if_needed() -> void:
-	# finish_payment() changes the session to RESULT before the durable order
-	# bookkeeping runs.  If a callback is interrupted after the formal order is
-	# already settled, the old code left this scene with no actionable control.
-	# The settled record is authoritative, so complete the idempotent tail on the
-	# next frame and proceed to the queued customer.
-	if _recovering_completed_payment or p1_session == null:
-		return
-	if p1_session.phase != P1Session.Phase.RESULT or _formal_order_id.is_empty():
-		return
-	if not _formal_pancake_order_is_settled():
-		# RESULT means the customer has already received the pancake and paid.
-		# Inventory validation belongs before that point; never discard a paid
-		# order and force the player to cook the same customer again.  Rebuild the
-		# product snapshot and finish only the durable formal-order tail.
-		if five_area_pancake_production == null:
-			return
-		var recovered_product: Dictionary = five_area_pancake_production.call(
-			"create_product_snapshot",
-			p1_session.result,
-			p1_session.order,
-			{"package_result": fold_model.package_result},
-		)
-		if not _settle_formal_pancake_product(recovered_product):
-			return
-	_recovering_completed_payment = true
-	var recovered_result := p1_session.result.duplicate(true)
-	recovered_result["area_id"] = &"area.pancake"
-	recovered_result["product_id"] = &"product.pancake.custom"
-	_finalize_completed_payment(recovered_result)
 
 
 func _formal_pancake_order_is_settled() -> bool:
@@ -2713,120 +2547,6 @@ func _formal_pancake_order_is_settled() -> bool:
 	var formal_snapshot: Dictionary = game_session.call("formal_order_snapshot")
 	var saved_order: Dictionary = Dictionary(Dictionary(formal_snapshot.get("orders", {})).get(str(_formal_order_id), {}))
 	return StringName(saved_order.get("state", &"")) == &"settled"
-
-
-func _collect_payment() -> void:
-	if _payment_collection_active or not payment_coin_model.has_pending():
-		return
-	var collected: int = int(payment_coin_model.collect_all())
-	var collected_sprites: Array[TextureRect] = []
-	collected_sprites.append_array(_pending_payment_sprites)
-	_payment_collection_active = true
-	_payment_waiting_collection = false
-	payment_collection_area.visible = false
-	_pending_payment_sprites.clear()
-	var target_position := _coin_collection_target_position()
-	for index in collected_sprites.size():
-		var coin := collected_sprites[index]
-		if is_instance_valid(coin):
-			_play_coin_collection_flight(coin, target_position, index)
-	if _payment_collection_tween != null and _payment_collection_tween.is_valid():
-		_payment_collection_tween.kill()
-	_payment_collection_tween = create_tween()
-	_payment_collection_tween.tween_interval(0.42 + float(maxi(collected_sprites.size() - 1, 0)) * 0.045)
-	_payment_collection_tween.tween_callback(_complete_coin_collection.bind(collected, collected_sprites))
-	tool_status_label.text = "收取中：%d 金币正在入账" % collected
-
-
-func _play_coin_collection_flight(coin: TextureRect, target_position: Vector2, index: int) -> void:
-	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	coin.pivot_offset = coin.size * 0.5
-	var launch_position := coin.global_position - Vector2(0.0, 12.0 + float(index % 2) * 6.0)
-	var destination := target_position - coin.size * 0.5
-	var delay := float(index) * 0.045
-	var coin_tween := create_tween()
-	coin_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	coin_tween.tween_interval(delay)
-	coin_tween.set_parallel(true)
-	coin_tween.tween_property(coin, "global_position", launch_position, 0.10)
-	coin_tween.tween_property(coin, "scale", Vector2(1.16, 1.16), 0.10)
-	coin_tween.chain().set_parallel(true)
-	coin_tween.tween_property(coin, "global_position", destination, 0.30)
-	coin_tween.tween_property(coin, "scale", Vector2(0.58, 0.58), 0.30)
-	coin_tween.tween_property(coin, "modulate:a", 0.0, 0.22).set_delay(0.08)
-
-
-func _coin_collection_target_position() -> Vector2:
-	if global_status_label != null:
-		return global_status_label.get_global_rect().get_center()
-	return payment_coin_layer.get_global_rect().get_center()
-
-
-func _complete_coin_collection(collected: int, collected_sprites: Array[TextureRect]) -> void:
-	for coin in collected_sprites:
-		if is_instance_valid(coin):
-			coin.queue_free()
-	var game_session := get_node_or_null("/root/GameSession")
-	if game_session != null and game_session.has_method("credit_coins"):
-		game_session.call("credit_coins", collected)
-	_pulse_coin_total()
-	_payment_collection_active = false
-	tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % collected
-
-
-func _pulse_coin_total() -> void:
-	if global_status_label == null:
-		return
-	global_status_label.pivot_offset = global_status_label.size * 0.5
-	var pulse_tween := create_tween()
-	pulse_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	pulse_tween.tween_property(global_status_label, "scale", Vector2(1.08, 1.08), 0.10)
-	pulse_tween.tween_property(global_status_label, "scale", Vector2.ONE, 0.16)
-
-
-func _on_payment_coin_gui_input(event: InputEvent) -> void:
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event == null or mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
-		return
-	_collect_payment()
-	get_viewport().set_input_as_handled()
-
-
-func _spawn_payment_flight(denominations: Array[int]) -> void:
-	_payment_flight_sprites.clear()
-	for index in denominations.size():
-		var denomination := denominations[index]
-		var coin := payment_sprite.duplicate() as TextureRect
-		coin.name = "PaymentCoin%d_%d" % [denomination, payment_coin_layer.get_child_count()]
-		coin.unique_name_in_owner = false
-		coin.texture = PAYMENT_COIN_TEXTURES[denomination]
-		coin.position = PAYMENT_COIN_START_POSITION + Vector2(float(index) * 24.0, float(index % 2) * 10.0)
-		coin.size = PAYMENT_COIN_START_SIZE
-		coin.modulate = Color.WHITE
-		coin.visible = true
-		coin.mouse_filter = Control.MOUSE_FILTER_STOP
-		coin.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		payment_coin_layer.add_child(coin)
-		coin.gui_input.connect(_on_payment_coin_gui_input)
-		_payment_flight_sprites.append(coin)
-
-
-func _layout_pending_payment_sprites() -> void:
-	for index in _pending_payment_sprites.size():
-		var coin := _pending_payment_sprites[index]
-		if is_instance_valid(coin):
-			coin.position = _payment_coin_target(index)
-			coin.size = PAYMENT_SLOT_COIN_SIZE
-
-
-func _payment_coin_target(index: int) -> Vector2:
-	var column := index % PAYMENT_SLOT_MAX_COLUMNS
-	var row := floori(float(index) / float(PAYMENT_SLOT_MAX_COLUMNS)) % 2
-	return PAYMENT_SLOT_ORIGIN + Vector2(float(column) * PAYMENT_SLOT_COLUMN_SPACING, float(row) * PAYMENT_SLOT_ROW_SPACING)
-
-
-func _order_payment_coins(order: Dictionary) -> int:
-	return maxi(int(order.get("payment_coins", DEFAULT_ORDER_COINS)), 1)
 
 
 func _populate_result(score_result: Dictionary) -> void:
@@ -2847,7 +2567,6 @@ func _populate_result(score_result: Dictionary) -> void:
 
 
 func _start_next_order() -> void:
-	_recovering_completed_payment = false
 	if _uses_playable_formal_orders():
 		var preserve_formal_production := _resume_production_after_tray_handoff and p1_session.has_suspended_tray_production()
 		if preserve_formal_production:
@@ -3335,7 +3054,6 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		"SafeArea/GlobalStatusLabel",
 		"SafeArea/PaymentSprite",
 		"SafeArea/PaymentCoinLayer",
-		"SafeArea/PaymentCollectionArea",
 		"SafeArea/P1ControlBar",
 		"SafeArea/IngredientRack",
 		"SafeArea/RestockRack",
@@ -3681,7 +3399,7 @@ func _refresh_p1_ui() -> void:
 		P1Session.Phase.FIRST_SIDE:
 			step_action_button.text = "翻面"
 		P1Session.Phase.SECOND_SIDE:
-			step_action_button.text = "确认火候"
+			step_action_button.text = ""
 		P1Session.Phase.SAUCE_AND_FILLINGS:
 			step_action_button.text = "翻面" if not pancake_model.is_flipped else ""
 		P1Session.Phase.FOLD, P1Session.Phase.PACKAGE:
@@ -3702,10 +3420,7 @@ func _refresh_p1_ui() -> void:
 		and not pancake_model.is_flipped
 		and ingredient_model.has_toppings()
 	)
-	step_action_button.visible = p1_session.phase in [
-		P1Session.Phase.FIRST_SIDE,
-		P1Session.Phase.SECOND_SIDE,
-	] or blocked_unflipped_topping
+	step_action_button.visible = p1_session.phase == P1Session.Phase.FIRST_SIDE or blocked_unflipped_topping
 	step_action_button.disabled = false
 	step_action_button.tooltip_text = ""
 	if p1_session.phase == P1Session.Phase.FIRST_SIDE:

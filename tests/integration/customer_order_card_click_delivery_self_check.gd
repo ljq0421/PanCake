@@ -76,6 +76,49 @@ func _run() -> void:
 	_check(float(first_product.get("score", 0.0)) > float(second_product.get("score", 100.0)), "identical unbound pancakes are scored against the customer that actually receives them")
 	_check(StringName(first_product.get("grade", &"")) == &"A" and StringName(second_product.get("grade", &"")) != &"A", "delivery-time order differences flow into the final pancake grade")
 
+	_clear_orders(session)
+	_unlock_youtiao_finished_tray(session)
+	session.call("clear_prepared_product_slots")
+	session.call("_append_prepared_product", &"slot.04", _youtiao_product(&"test.mixed.sesame", &"product.youtiao.sesame"))
+	session.call("_append_prepared_product", &"slot.04", _youtiao_product(&"test.mixed.plain_1", &"product.youtiao.plain"))
+	session.call("_append_prepared_product", &"slot.04", _youtiao_product(&"test.mixed.plain_2", &"product.youtiao.plain"))
+	var youtiao_opened := Dictionary(session.call("open_formal_order", [{
+		"area_id": &"area.youtiao",
+		"product_id": &"product.youtiao.plain",
+		"quantity": 2,
+	}], {"source": &"mixed_youtiao_click_delivery", "patience_seconds": 120.0}))
+	var youtiao_order_id := StringName(Dictionary(youtiao_opened.get("order", {})).get("order_id", &""))
+	await process_frame
+	var youtiao_slot := _service_slot_for_order(workstation, youtiao_order_id)
+	var youtiao_button := youtiao_slot.get_node("OrderPanel/ItemButton1") as Button if youtiao_slot != null else null
+	var youtiao_icon := youtiao_slot.get_node("OrderPanel/ItemButton1/ItemIcon1") as TextureRect if youtiao_slot != null else null
+	_check(youtiao_button != null and not youtiao_button.disabled, "mixed-tray plain-youtiao order exposes an enabled customer-card button")
+	_check(youtiao_button != null and youtiao_icon != null and youtiao_button.get_global_rect().encloses(youtiao_icon.get_global_rect()), "the first order-item drop target covers its visible icon")
+	if youtiao_button != null:
+		youtiao_button.pressed.emit()
+	var youtiao_after_first := Dictionary(session.call("formal_order", youtiao_order_id))
+	var tray_after_first := Array(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("products", []))
+	_check(
+		_attached_count(youtiao_after_first, 0) == 1
+		and StringName(Dictionary(Array(Dictionary(Array(youtiao_after_first.get("items", []))[0]).get("attached_products", []))[0]).get("product_id", &"")) == &"product.youtiao.plain"
+		and tray_after_first.size() == 2
+		and StringName(Dictionary(tray_after_first[0]).get("product_id", &"")) == &"product.youtiao.sesame",
+		"click delivery skips a leading sesame youtiao and consumes the first matching plain youtiao"
+	)
+	youtiao_slot = _service_slot_for_order(workstation, youtiao_order_id)
+	youtiao_button = youtiao_slot.get_node("OrderPanel/ItemButton1") as Button if youtiao_slot != null else null
+	if youtiao_button != null:
+		youtiao_button.pressed.emit()
+	var youtiao_after_second := Dictionary(session.call("formal_order", youtiao_order_id))
+	var tray_after_second := Array(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("products", []))
+	_check(
+		StringName(youtiao_after_second.get("state", &"")) == &"settled"
+		and _attached_count(youtiao_after_second, 0) == 2
+		and tray_after_second.size() == 1
+		and StringName(Dictionary(tray_after_second[0]).get("product_id", &"")) == &"product.youtiao.sesame",
+		"two click deliveries fulfill a plain-youtiao x2 order without consuming the leading sesame youtiao"
+	)
+
 	workstation.queue_free()
 	_finish()
 
@@ -133,6 +176,47 @@ func _complete_initial_pancake_tutorial(session: Node) -> void:
 	progression.set("tutorial_active_kind", &"")
 	progression.set("tutorial_active_id", &"")
 	session.call("_sync_progression_to_save")
+
+
+func _unlock_youtiao_finished_tray(session: Node) -> void:
+	var progression: RefCounted = session.call("progression_service")
+	var areas := Dictionary(progression.get("unlocked_area_ids"))
+	areas[&"area.youtiao"] = true
+	progression.set("unlocked_area_ids", areas)
+	var recipes := Dictionary(progression.get("unlocked_recipe_ids"))
+	recipes[&"recipe.youtiao.plain"] = true
+	recipes[&"recipe.youtiao.sesame"] = true
+	progression.set("unlocked_recipe_ids", recipes)
+	var products := Dictionary(progression.get("unlocked_product_ids"))
+	products[&"product.youtiao.plain"] = true
+	products[&"product.youtiao.sesame"] = true
+	progression.set("unlocked_product_ids", products)
+	var growth := Dictionary(progression.get("owned_growth_ids"))
+	growth[&"growth.capacity.youtiao_finished_tray"] = true
+	progression.set("owned_growth_ids", growth)
+	session.call("_sync_progression_to_save")
+
+
+func _youtiao_product(instance_id: StringName, product_id: StringName) -> Dictionary:
+	return {
+		"product_instance_id": instance_id,
+		"area_id": &"area.youtiao",
+		"product_id": product_id,
+		"quality": 100.0,
+		"grade": &"A",
+		"temperature_mode": &"room_temperature",
+		"ingredient_ids": PackedStringArray(),
+		"sauce_ids": PackedStringArray(),
+		"material_cost": 2,
+		"status": &"available",
+	}
+
+
+func _attached_count(order: Dictionary, item_index: int) -> int:
+	var items := Array(order.get("items", []))
+	if item_index < 0 or item_index >= items.size():
+		return 0
+	return Array(Dictionary(items[item_index]).get("attached_products", [])).size()
 
 
 func _check(condition: bool, message: String) -> void:

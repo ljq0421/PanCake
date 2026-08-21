@@ -40,7 +40,6 @@ $checks = @(
     'res://tests/integration/p0_3_renderer_self_check.gd',
 	'res://tests/integration/p1_audio_self_check.gd',
 	'res://tests/integration/business_day_cutoff_self_check.gd',
-	'res://tests/integration/completed_payment_recovery_self_check.gd',
 	'res://tests/integration/five_area_formal_scene_self_check.gd',
 	'res://tests/integration/five_area_tutorial_guide_self_check.gd',
 	'res://tests/integration/five_area_growth_ui_self_check.gd',

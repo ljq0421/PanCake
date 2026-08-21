@@ -203,6 +203,17 @@ scale = Vector2(0.56, 0.56)
 sprite_frames = SubResource("SpriteFrames_egg_crack")
 animation = &"crack"
 
+[node name="EggShellVisual" type="Sprite2D" parent="PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+z_index = 6
+texture_filter = 1
+position = Vector2(175, 0)
+scale = Vector2(0.45, 0.45)
+texture = ExtResource("23_egg_crack_1")
+region_enabled = true
+region_rect = Rect2(0, 0, 256, 128)
+
 [node name="EggIntactVisual" type="Sprite2D" parent="PancakeSurface"]
 unique_name_in_owner = true
 visible = false

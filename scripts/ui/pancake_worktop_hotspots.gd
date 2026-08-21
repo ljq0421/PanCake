@@ -10,6 +10,14 @@ const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-p
 const BATTER_LADLE_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
 const BATTER_LADLE_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png")
 const BAOCUI_EMPTY_BASKET := preload("res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png")
+const DRAG_PREVIEW_TEXTURES: Dictionary = {
+	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png"),
+	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
+	&"stock.pancake.ham_sausage": preload("res://resources/art/ingredients/ham_sausage/ham-sausage-1.png"),
+	&"stock.pancake.scallion": preload("res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png"),
+	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png"),
+	&"stock.pancake.coriander": preload("res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png"),
+}
 const WIDE_SPREADER_GROWTH_ID := &"growth.tool.pancake.wide_spreader"
 const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_ladle"
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
@@ -157,6 +165,12 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	hotspot.hold_threshold_seconds = 0.50 if source_kind == &"pancake_shared_sauce" else 0.20
 	hotspot.cancel_pending_on_mouse_exit = false
 	hotspot.native_drag_enabled = source_kind == &"pancake_shared_ingredient"
+	# Worktop ingredient hotspots use an invisible hit texture, so give their
+	# native drag a real portion image instead of an empty cursor.
+	hotspot.set_drag_preview_texture(DRAG_PREVIEW_TEXTURES.get(stock_id) as Texture2D)
+	# Keep the whole egg above the pointer while dragging. The visual offset does
+	# not affect the release coordinate used to crack it onto the pancake.
+	hotspot.set_drag_preview_offset(Vector2(0.0, -60.0) if stock_id == EGG_STOCK_ID else Vector2.ZERO)
 	# Sauce jars use a sibling AlphaTextureHitButton so their transparent image
 	# margins never select a sauce. The backing source only owns the gesture
 	# state machine and must not receive pointer events through those margins.

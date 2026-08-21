@@ -146,8 +146,10 @@ func request_flip(model: PancakeModel, ingredients: IngredientModel) -> Dictiona
 		if bool(readiness.get("requires_folding", false)):
 			begin_sauce_and_fillings_without_flip()
 		return readiness
-	model.flip(true)
-	phase = Phase.SAUCE_AND_FILLINGS
+	# The second side must cook on its own.  The player confirms its fire level
+	# when ready, which then unlocks sauce and fillings.
+	model.flip(false)
+	phase = Phase.SECOND_SIDE
 	changed.emit()
 	return readiness.duplicate(true)
 
@@ -190,8 +192,8 @@ func begin_sauce_and_fillings_without_flip() -> Dictionary:
 
 
 func begin_folding() -> Dictionary:
-	if phase != Phase.SAUCE_AND_FILLINGS and phase != Phase.FOLD:
-		return {"success": false, "reason": "请先完成翻面，或选择未翻面加酱/放料后再折叠"}
+	if phase not in [Phase.FIRST_SIDE, Phase.SECOND_SIDE, Phase.SAUCE_AND_FILLINGS, Phase.FOLD]:
+		return {"success": false, "reason": "摊好饼后才能开始折叠"}
 	phase = Phase.FOLD
 	changed.emit()
 	return {"success": true}

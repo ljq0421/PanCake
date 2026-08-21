@@ -13,6 +13,13 @@ signal hold_released(source_ref: Dictionary)
 @export var hold_threshold_seconds := 0.1
 @export var native_drag_enabled := true
 @export var cancel_pending_on_mouse_exit := true
+## Visual used under the pointer during native dragging. This remains separate
+## from texture_normal because some sources deliberately use an invisible
+## texture solely as a reliable hit target.
+@export var drag_preview_texture: Texture2D
+## Visual-only offset for the native drag preview, relative to the pointer.
+## This lets a source remain visible without moving the actual drop position.
+@export var drag_preview_offset := Vector2.ZERO
 
 var _source_ref: Dictionary = {}
 var _press_position := Vector2.ZERO
@@ -54,6 +61,14 @@ func configure(source_ref: Dictionary, product_texture: Texture2D, available: bo
 
 func set_drag_available(value: bool) -> void:
 	_drag_available = value
+
+
+func set_drag_preview_texture(value: Texture2D) -> void:
+	drag_preview_texture = value
+
+
+func set_drag_preview_offset(value: Vector2) -> void:
+	drag_preview_offset = value
 
 
 func set_drop_forward_target(target: Control) -> void:
@@ -164,7 +179,10 @@ func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true
 			return
 		_native_drag_in_progress = true
 		var preview := TextureRect.new()
-		preview.texture = texture_normal
+		preview.texture = drag_preview_texture if drag_preview_texture != null else texture_normal
+		preview.offset_transform_enabled = drag_preview_offset != Vector2.ZERO
+		preview.offset_transform_visual_only = true
+		preview.offset_transform_position = drag_preview_offset
 		# Drag previews must stay above decorative drop targets (for example, the
 		# black-sesame tray), otherwise the product appears to slip underneath it.
 		preview.z_index = z_index + 1

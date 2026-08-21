@@ -45,16 +45,20 @@ func _test_two_sided_cooking_and_two_sauces() -> void:
 
 
 func _test_beginner_heat_window() -> void:
-	var minimum_heat_model := _uniform_pancake(48, 0.42)
-	for step in 1200:
-		minimum_heat_model.advance_cooking(0.05, 0.20)
-	var minimum_heat_doneness := minimum_heat_model.mean_side_doneness(false)
-	_check(minimum_heat_doneness >= 0.30, "minimum heat still cooks a normal pancake within one novice minute")
-	_check(minimum_heat_doneness < 0.72, "minimum heat leaves a safe non-charred novice window after one minute")
 	var default_heat_model := _uniform_pancake(48, 0.42)
-	for step in 700:
+	for step in 120:
 		default_heat_model.advance_cooking(0.05, 0.50)
-	_check(default_heat_model.mean_side_doneness(false) < 0.86, "default heat does not make a normal pancake brittle during a 35-second learning window")
+	var golden_doneness := default_heat_model.mean_side_doneness(false)
+	_check(
+		golden_doneness >= 0.60 and golden_doneness <= 0.70,
+		"default heat reaches the golden target for a standard pancake in about six seconds",
+	)
+	for step in 40:
+		default_heat_model.advance_cooking(0.05, 0.50)
+	_check(
+		default_heat_model.mean_side_doneness(false) >= 0.80,
+		"continuing past eight seconds at default heat creates a clear browning risk",
+	)
 
 
 func _test_egg_spreading_and_score() -> void:
@@ -211,7 +215,14 @@ func _test_order_and_session_guards() -> void:
 	)
 	model.doneness.fill(0.50)
 	_check(bool(session.flip_readiness(model, ingredients).success), "egg is optional and does not block flip readiness")
-	_check(bool(session.request_flip(model, ingredients).success) and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "egg-free pancake can flip immediately once the bottom is cooked")
+	_check(
+		bool(session.request_flip(model, ingredients).success)
+		and session.phase == P1Session.Phase.SECOND_SIDE
+		and is_zero_approx(model.mean_side_doneness(true)),
+		"egg-free pancake enters a separately cooking second-side stage after flipping",
+	)
+	model.back_doneness.fill(0.50)
+	_check(bool(session.finish_cooking(model).success) and session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "the legacy fire-level confirmation remains compatible with preparation")
 	var early_score := PancakeScorer.evaluate_order(early_model, early_ingredients, PancakeFoldModel.new(early_model, early_ingredients), first, 0.0, 1.0)
 	var ready_score := PancakeScorer.evaluate_order(model, ingredients, PancakeFoldModel.new(model, ingredients), first, 0.0, 1.0)
 	_check(
@@ -228,8 +239,9 @@ func _test_order_and_session_guards() -> void:
 	egg_model.doneness.fill(0.50)
 	var incomplete_egg := egg_model.calculate_egg_spread_summary()
 	_check(float(incomplete_egg.coverage_ratio) < egg_model.parameters.egg_minimum_spread_coverage, "unspread egg begins below the quality-coverage target")
-	_check(bool(egg_session.request_flip(egg_model, egg_ingredients).success) and egg_session.phase == P1Session.Phase.SAUCE_AND_FILLINGS, "incomplete egg coverage no longer blocks flipping and is left to scoring")
-	_check(is_equal_approx(model.mean_side_doneness(true), model.mean_side_doneness(false)), "quick flip settles the second-side heat without a waiting stage")
+	_check(bool(egg_session.request_flip(egg_model, egg_ingredients).success) and egg_session.phase == P1Session.Phase.SECOND_SIDE, "incomplete egg coverage no longer blocks the separately cooking second side")
+	_check(is_zero_approx(egg_model.mean_side_doneness(true)), "flipping no longer settles the second-side heat immediately")
+	_check(bool(egg_session.begin_folding().success) and egg_session.phase == P1Session.Phase.FOLD, "second-side fire level does not block the folding flow")
 	_check(bool(session.begin_folding().success) and session.phase == P1Session.Phase.FOLD, "state machine reaches folding without a dead end")
 	_check(bool(session.mark_ready_for_package().success) and session.phase == P1Session.Phase.PACKAGE, "state machine reaches packaging without direct phase mutation")
 	_check(bool(session.mark_packaged().success) and session.phase == P1Session.Phase.READY_TO_SERVE, "valid packaging reaches the serving phase")
@@ -394,6 +406,8 @@ func _ready_session(order: Dictionary) -> P1Session:
 	_seed_even_egg(model)
 	model.doneness.fill(0.50)
 	session.request_flip(model, ingredients)
+	model.back_doneness.fill(0.50)
+	session.finish_cooking(model)
 	session.begin_folding()
 	session.mark_ready_for_package()
 	session.mark_packaged()

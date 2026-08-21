@@ -105,6 +105,8 @@ func _test_egg_on_both_sides(station: Node, unit: Node, session: FakeSession) ->
 	_check(bool(second_validation.get("success", false)), "egg can be dropped on the second side")
 	var placed := Dictionary(station.drop_on_unit(0, source, center))
 	_check(bool(placed.get("success", false)) and unit.pancake_model.has_egg(), "second-side egg placement records the egg")
+	_check(unit.egg_shell_visual.visible and unit.egg_shell_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg shell bottom stays 60px above the pancake while liquid falls")
+	_check(unit.egg_intact_visual.visible and unit.egg_intact_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg liquid begins at the opened shell position")
 	_check(int(session.inventory["stock.pancake.egg"]) == 1, "egg placement consumes exactly one inventory unit")
 	var second_placed := Dictionary(station.drop_on_unit(0, source, center + Vector2(20.0, 0.0)))
 	_check(bool(second_placed.get("success", false)) and unit.ingredient_model.count_type(IngredientModel.EGG) == 2 and int(session.inventory["stock.pancake.egg"]) == 0, "a second egg is accepted and consumes a second inventory unit")
@@ -124,7 +126,7 @@ func _test_sauce_selection_and_first_stroke(station: Node, unit: Node, session: 
 	_check(bool(selected.get("success", false)), "sweet sauce jar primes the direct-brush tool")
 	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "sauce jar click consumes exactly one inventory unit")
 	_check(primed_total > 0.0 and unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour"), "sauce jar click places a central dollop and records its recipe identifier")
-	_check(unit.pancake_surface.cursor_is_sauce_brush and unit.state == CompactGriddleUnit.State.GARNISH, "sauce jar click enters garnish flow and automatically arms the brush")
+	_check(unit.pancake_surface.cursor_is_sauce_brush and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "sauce jar click stays available during first-side cooking and automatically arms the brush")
 	unit._on_surface_pointer_started(center)
 	unit._on_surface_pointer_ended(center)
 	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "drag brushing does not consume a second inventory unit")
@@ -148,7 +150,7 @@ func _test_automatic_sauce_brush(station: Node, unit: Node, session: FakeSession
 	var sauce_quality := PancakeScorer.evaluate_sauce(unit.pancake_model)
 	_check(bool(selected.get("success", false)) and bool(selected.get("automated", false)), "automatic sauce brush applies sauce from a jar click")
 	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "automatic sauce brush consumes exactly one sauce unit")
-	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour") and unit.state == CompactGriddleUnit.State.GARNISH, "automatic sauce brush records the sauce and advances to garnish")
+	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour") and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "automatic sauce brush records the sauce without ending first-side cooking")
 	_check(not unit.pancake_surface.cursor_is_sauce_brush and float(sauce_quality.get("coverage_ratio", 0.0)) >= 0.99 and float(sauce_quality.get("uniformity", 0.0)) >= 0.99, "automatic sauce brush completes a uniform layer without arming manual brushing")
 	session.progression.owned_growth.erase(&"growth.automation.pancake.auto_sauce_brush")
 
@@ -183,7 +185,7 @@ func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, sessi
 	_check(not bool(depleted.get("success", false)) and is_zero_approx(float(unit.pancake_model.total_sauce())), "depleted chili sauce cannot create a dollop")
 	session.inventory["stock.pancake.sauce.red_chili"] = initial_chili
 	var primed := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.red_chili"))
-	_check(bool(primed.get("success", false)) and unit.state == CompactGriddleUnit.State.GARNISH, "chili sauce can prime on the second side")
+	_check(bool(primed.get("success", false)) and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "chili sauce can prime without ending second-side cooking")
 	_check(int(session.inventory["stock.pancake.sauce.red_chili"]) == initial_chili - 1 and unit.applied_sauce_ids.has("stock.pancake.sauce.red_chili"), "second-side chili prime consumes and records exactly once")
 	var saved := Dictionary(unit.snapshot())
 	var saved_sauce_total := float(unit.pancake_model.total_sauce())
@@ -268,6 +270,12 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	_check(not bool(hotspots.get_node("PorkFlossHotspot").disabled), "owned pork-floss tray is enabled for drag and hold input")
 	_check(bool(hotspots.get_node("ScallionTray/Hotspot").native_drag_enabled), "ingredient bowls use drag placement")
 	_check(bool(hotspots.get_node("CorianderTray/Hotspot").native_drag_enabled), "coriander tray uses drag placement")
+	_check((hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource).drag_preview_texture != null, "scallion drag shows a visible portion under the pointer")
+	_check((hotspots.get_node("PorkFlossHotspot") as ProductDragSource).drag_preview_texture != null, "pork-floss drag shows a visible portion under the pointer")
+	var egg_source := hotspots.get_node("EggCarton/Hotspot") as ProductDragSource
+	var egg_preview := egg_source.drag_preview_texture
+	_check(egg_preview != null and egg_preview.resource_path.ends_with("egg_whole_v1_five_area_v2.png"), "egg drag shows a whole egg before release")
+	_check(egg_source.drag_preview_offset == Vector2(0.0, -60.0), "egg drag preview stays 60px above the release point")
 	_check(not bool(hotspots.get_node("SweetSauceHotspot").native_drag_enabled), "sauce jars select direct brushing instead of drag placement")
 	_check(StringName(hotspots.get_node("TomatoSauceHotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.sauce.tomato", "tomato sauce jar maps to tomato sauce stock")
 	_check(not bool(hotspots.get_node("TomatoSauceHotspot").disabled), "owned tomato sauce hotspot is enabled for direct brushing")

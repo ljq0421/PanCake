@@ -8,7 +8,10 @@ extends Resource
 @export_range(0.1, 32.0, 0.1) var automatic_pour_amount: float = 7.5
 @export_range(1.0, 64.0, 0.5) var automatic_pour_radius: float = 20.0
 @export_range(0.0, 10.0, 0.01) var solidification_rate: float = 0.18
-@export_range(0.0, 2.0, 0.01) var cooking_rate: float = 0.035
+## At the fixed default heat (0.50), a standard-thickness pancake reaches the
+## golden target in about six seconds. Past eight seconds it is noticeably
+## over the golden target, so waiting carries a clear browning risk.
+@export_range(0.0, 2.0, 0.01) var cooking_rate: float = 0.16
 @export_range(0.0, 2.0, 0.01) var edge_cooking_boost: float = 0.10
 @export_range(1.0, 128.0, 0.5) var scraper_width: float = 54.0
 @export_range(1.0, 24.0, 0.5) var spreader_bar_thickness: float = 10.0

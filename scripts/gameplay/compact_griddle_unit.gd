@@ -22,6 +22,14 @@ const MAX_BATTER_AMOUNT := 6.5
 const INITIAL_BATTER_AMOUNT := STANDARD_BATTER_AMOUNT
 const INITIAL_BATTER_RADIUS := 14.0
 const SPREADER_SAMPLE_SPACING := 2.5
+## Standard batter at the fixed default heat reaches about 0.84 doneness in
+## eight seconds. The griddle bar maps that point to full, not to the model's
+## absolute 1.0 maximum.
+const HEAT_BAR_FULL_DONENESS := 0.84
+## A single pointer sample used to invoke the full field simulation once per
+## radial segment (up to fourteen times). Representative weighted anchors keep
+## the same total spread force without stalling the input frame.
+const MAX_RADIAL_SWEEP_ANCHORS := 6
 const EGG_SAMPLE_SPACING := 3.0
 const SPREADER_CENTER_DEAD_ZONE := 4.0
 const SPREADER_INWARD_TOLERANCE := 20.0
@@ -34,7 +42,13 @@ const SPREADER_SPEED_SLOW := -1
 const SPREADER_SPEED_MEDIUM := 0
 const SPREADER_SPEED_FAST := 1
 const EGG_CRACK_EFFECT_BASE_SCALE := Vector2(0.45, 0.45)
-const EGG_CRACK_FALL_DISTANCE := 34.0
+const EGG_SHELL_CLEARANCE := 60.0
+## EggShellVisual crops a 128 px-tall texture and renders at 0.45 scale. Move
+## its center by the half-height too, so its *bottom edge* remains 60 px above
+## the pancake instead of appearing to rest on it.
+const EGG_SHELL_HALF_HEIGHT := 28.8
+const EGG_CRACK_STAGE_OFFSET := Vector2(0.0, -(EGG_SHELL_CLEARANCE + EGG_SHELL_HALF_HEIGHT))
+const EGG_LIQUID_FALL_DURATION := 0.22
 const EGG_INTACT_VISUAL_SCALE := Vector2(0.25, 0.25)
 const SURFACE_ACTION_NONE: StringName = &""
 const SURFACE_ACTION_POUR_BATTER: StringName = &"pour_batter"
@@ -59,6 +73,7 @@ enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 @onready var ingredient_layer: IngredientLayer = %IngredientLayer
 @onready var fold_overlay: PancakeFoldOverlay = %PancakeFoldOverlay
 @onready var egg_crack_effect: AnimatedSprite2D = %EggCrackEffect
+@onready var egg_shell_visual: Sprite2D = %EggShellVisual
 @onready var egg_intact_visual: Sprite2D = %EggIntactVisual
 @onready var spreader_artwork: Sprite2D = %SpreaderArtwork
 @onready var sauce_brush_artwork: Sprite2D = %SauceBrushArtwork
@@ -104,6 +119,7 @@ var _spreader_speed_band := SPREADER_SPEED_MEDIUM
 var _spreader_smoothed_angle := 0.0
 var _spreader_angle_initialized := false
 var _egg_crack_tween: Tween
+var _egg_liquid_falling := false
 var _intact_egg_local_override := Vector2.ZERO
 var _has_intact_egg_local_override := false
 
@@ -255,13 +271,13 @@ func advance_main() -> Dictionary:
 			if pancake_model.covered_cell_count() <= 0:
 				return {"success": false, "message": "鏊面还没有完整饼皮"}
 			_stop_egg_crack_effect()
-			pancake_model.flip(true)
+			pancake_model.flip(false)
 			p1_session.phase = P1Session.Phase.SECOND_SIDE
 			state = State.SECOND_SIDE
 			_refresh_ui()
 			return {"success": true, "message": "鏊子%d已翻面，继续观察第二面" % (unit_index + 1)}
 		State.SECOND_SIDE:
-			return {"success": false, "message": "第二面继续受热；刷酱、放料或抓边折叠时确认火候"}
+			return {"success": false, "message": "第二面继续受热；火候仅影响评分，可随时刷酱、放料或折叠"}
 		State.GARNISH:
 			return {"success": false, "message": "可继续加酱加料，也可直接抓住饼边折叠"}
 		State.FOLDING:
@@ -322,15 +338,8 @@ func prime_sauce(stock_id: StringName, validation: Dictionary = {}) -> Dictionar
 	var checked := validation if bool(validation.get("success", false)) else validate_sauce_prime(stock_id)
 	if not bool(checked.get("success", false)):
 		return checked
-	var preparation: Dictionary
-	if state == State.FIRST_SIDE:
-		preparation = begin_garnish_without_flip()
-	elif state == State.SECOND_SIDE:
-		preparation = confirm_second_side_for_followup()
-	else:
-		preparation = {"success": true}
-	if not bool(preparation.get("success", false)):
-		return preparation
+	# Sauce remains available during either cooking side and does not confirm
+	# the fire level or stop the cooking timer.
 	var grid_position := Vector2(checked.get("grid_position", Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5))
 	var sauce_type: StringName = &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
 	var stroke_id := pancake_model.begin_sauce_stroke()
@@ -354,15 +363,7 @@ func apply_sauce_automatically(stock_id: StringName, validation: Dictionary = {}
 	var checked := validation if bool(validation.get("success", false)) else validate_sauce_prime(stock_id)
 	if not bool(checked.get("success", false)):
 		return checked
-	var preparation: Dictionary
-	if state == State.FIRST_SIDE:
-		preparation = begin_garnish_without_flip()
-	elif state == State.SECOND_SIDE:
-		preparation = confirm_second_side_for_followup()
-	else:
-		preparation = {"success": true}
-	if not bool(preparation.get("success", false)):
-		return preparation
+	# Automatic sauce follows the same rule as manual sauce during cooking.
 	var sauce_type: StringName = &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
 	var result := Dictionary(pancake_model.apply_uniform_sauce(pancake_model.parameters.sauce_target_concentration, sauce_type))
 	if int(result.get("covered_cells", 0)) <= 0:
@@ -424,16 +425,11 @@ func begin_manual_fold(local_position: Vector2) -> Dictionary:
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
 	if not fold_model.begin_drag(grid_position):
 		return {"success": false, "reason": &"not_fold_edge"}
-	var followup := confirm_second_side_for_followup()
-	if not bool(followup.get("success", false)):
+	var phase_result := Dictionary(p1_session.begin_folding())
+	if not bool(phase_result.get("success", false)):
 		fold_model.cancel_drag()
-		return followup
-	if state == State.GARNISH:
-		var phase_result := Dictionary(p1_session.begin_folding())
-		if not bool(phase_result.get("success", false)):
-			fold_model.cancel_drag()
-			return phase_result
-		state = State.FOLDING
+		return phase_result
+	state = State.FOLDING
 	_surface_action = SURFACE_ACTION_FOLD
 	_refresh_ui()
 	return {"success": true, "action": SURFACE_ACTION_FOLD}
@@ -724,13 +720,19 @@ func _apply_radial_batter_sweep(sample: Vector2, outward_direction: Vector2, eff
 	var segment_count := maxi(1, ceili(radial_distance / SPREADER_SAMPLE_SPACING))
 	var anchor_count := segment_count + 1
 	var total_anchor_weight := float(anchor_count * (anchor_count + 1)) * 0.5
+	var anchor_group_size := maxi(1, ceili(float(anchor_count) / float(MAX_RADIAL_SWEEP_ANCHORS)))
 	var changed := false
-	# Work from the contact point back toward the center. Newly pushed batter is
-	# therefore not picked up and pushed repeatedly during the same pointer sample.
-	for anchor_index in range(segment_count, -1, -1):
-		var progress := float(anchor_index) / float(segment_count)
+	# Apply weighted representative anchors instead of simulating every radial
+	# segment. The original weights are summed per group, so a long sweep keeps
+	# its total flattening and transfer strength while avoiding input-frame spikes.
+	for group_start in range(0, anchor_count, anchor_group_size):
+		var group_end := mini(group_start + anchor_group_size, anchor_count)
+		var represented_anchor_index := (group_start + group_end - 1) / 2
+		var represented_count := group_end - group_start
+		var group_weight := float(represented_count * (2 * anchor_count - group_start - group_end + 1)) * 0.5
+		var progress := float(represented_anchor_index) / float(segment_count)
 		var anchor := pan_center.lerp(sample, progress)
-		var anchor_strength := float(anchor_count - anchor_index) / total_anchor_weight
+		var anchor_strength := group_weight / total_anchor_weight
 		var result := Dictionary(pancake_model.apply_scraper_sample(
 			anchor,
 			outward_direction,
@@ -826,24 +828,39 @@ func _play_egg_crack_effect(local_position: Vector2) -> void:
 	_stop_egg_crack_effect()
 	_intact_egg_local_override = local_position
 	_has_intact_egg_local_override = true
-	egg_intact_visual.visible = false
-	egg_crack_effect.position = local_position - Vector2(0.0, EGG_CRACK_FALL_DISTANCE)
-	egg_crack_effect.frame = 0
-	egg_crack_effect.rotation = -0.10
-	egg_crack_effect.scale = EGG_CRACK_EFFECT_BASE_SCALE * 0.82
-	egg_crack_effect.visible = true
-	egg_crack_effect.play(&"crack")
+	var crack_position := local_position + EGG_CRACK_STAGE_OFFSET
+	# The shell opens and remains at the upper crack position. The liquid is a
+	# separate visual so it can fall to the actual pancake drop point.
+	egg_shell_visual.position = crack_position
+	egg_shell_visual.scale = EGG_CRACK_EFFECT_BASE_SCALE * 0.78
+	egg_shell_visual.visible = true
+	egg_intact_visual.position = crack_position
+	egg_intact_visual.scale = EGG_INTACT_VISUAL_SCALE * 0.78
+	egg_intact_visual.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	egg_intact_visual.visible = true
+	_egg_liquid_falling = true
+	# EggCrackEffect contains both shells and egg liquid, which would show a
+	# second egg above the pan. The shell-only crop below supplies the opening
+	# visual instead.
+	egg_crack_effect.visible = false
 	_egg_crack_tween = create_tween()
 	_egg_crack_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "position", local_position, 0.18)
-	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "scale", EGG_CRACK_EFFECT_BASE_SCALE * 1.10, 0.16)
-	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "rotation", 0.055, 0.16)
-	_egg_crack_tween.tween_property(egg_crack_effect, "scale", EGG_CRACK_EFFECT_BASE_SCALE, 0.16)
-	_egg_crack_tween.parallel().tween_property(egg_crack_effect, "rotation", 0.0, 0.16)
+	_egg_crack_tween.parallel().tween_property(egg_shell_visual, "scale", EGG_CRACK_EFFECT_BASE_SCALE, 0.12)
+	_egg_crack_tween.parallel().tween_property(egg_intact_visual, "position", local_position, EGG_LIQUID_FALL_DURATION)
+	_egg_crack_tween.parallel().tween_property(egg_intact_visual, "scale", EGG_INTACT_VISUAL_SCALE, EGG_LIQUID_FALL_DURATION)
+	_egg_crack_tween.parallel().tween_property(egg_intact_visual, "modulate", Color.WHITE, EGG_LIQUID_FALL_DURATION * 0.65)
+	_egg_crack_tween.tween_callback(_complete_egg_liquid_fall)
 
 
 func _on_egg_crack_animation_finished() -> void:
-	_stop_egg_crack_effect()
+	# The shell remains above the griddle while the egg liquid finishes falling.
+	egg_crack_effect.visible = false
+
+
+func _complete_egg_liquid_fall() -> void:
+	_egg_liquid_falling = false
+	if is_instance_valid(egg_shell_visual):
+		egg_shell_visual.visible = false
 	_refresh_intact_egg_visual()
 
 
@@ -851,16 +868,23 @@ func _stop_egg_crack_effect() -> void:
 	if _egg_crack_tween != null and _egg_crack_tween.is_valid():
 		_egg_crack_tween.kill()
 	_egg_crack_tween = null
+	_egg_liquid_falling = false
 	if is_instance_valid(egg_crack_effect):
 		egg_crack_effect.stop()
 		egg_crack_effect.frame = 0
 		egg_crack_effect.visible = false
 		egg_crack_effect.rotation = 0.0
 		egg_crack_effect.scale = EGG_CRACK_EFFECT_BASE_SCALE
+	if is_instance_valid(egg_shell_visual):
+		egg_shell_visual.visible = false
+	if is_instance_valid(egg_intact_visual):
+		egg_intact_visual.modulate = Color.WHITE
 
 
 func _refresh_intact_egg_visual() -> void:
 	if not is_node_ready():
+		return
+	if _egg_liquid_falling:
 		return
 	var show_intact := (
 		pancake_model.has_egg()
@@ -994,6 +1018,11 @@ func can_accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vec
 	return station != null and station.has_method("can_drop_on_unit") and bool(station.call("can_drop_on_unit", unit_index, source_ref, local_position))
 
 
+func can_preview_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2) -> bool:
+	var station := get_parent()
+	return station != null and station.has_method("can_preview_drop_on_unit") and bool(station.call("can_preview_drop_on_unit", unit_index, source_ref, local_position))
+
+
 func accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2) -> void:
 	var station := get_parent()
 	if station != null and station.has_method("drop_on_unit"):
@@ -1117,7 +1146,7 @@ func _refresh_ui() -> void:
 			state_label.text = "第一面 %.1f秒 · 可直接加料（交付-12分）" % first_side_seconds
 			main_action.text = "翻面"
 		State.SECOND_SIDE:
-			state_label.text = "第二面 %.1f秒 · 后续操作确认火候" % second_side_seconds
+			state_label.text = "第二面 %.1f秒 · 火候仅影响评分" % second_side_seconds
 		State.GARNISH:
 			state_label.text = "未翻面备料 · 可加料折叠，交付-12分" if not pancake_model.is_flipped else "可继续加料，也可直接抓边折叠"
 			main_action.text = "等待备料"
@@ -1148,9 +1177,8 @@ func _refresh_fold_visual() -> void:
 func _refresh_heat_visual() -> void:
 	if not is_node_ready():
 		return
-	var summary := pancake_model.calculate_summary()
-	var doneness := maxf(float(summary.get("mean_doneness", 0.0)), float(summary.get("mean_back_doneness", 0.0)))
-	heat_bar.value = clampf(doneness * 100.0, 0.0, 100.0)
+	var visible_side_doneness := pancake_model.mean_side_doneness(pancake_model.is_flipped)
+	heat_bar.value = clampf(visible_side_doneness / HEAT_BAR_FULL_DONENESS * 100.0, 0.0, 100.0)
 	if state == State.FIRST_SIDE:
 		state_label.text = "第一面 %.1f秒 · 可直接加料（交付-12分）" % first_side_seconds
 	elif state == State.SECOND_SIDE:

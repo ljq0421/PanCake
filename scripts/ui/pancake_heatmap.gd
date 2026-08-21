@@ -11,6 +11,11 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	var source_ref := Dictionary(payload.get("source_ref", {}))
 	var target := _find_surface_drop_target()
 	if target != null:
+		# Godot calls this continuously while a native drag is hovering. The
+		# lightweight preview avoids copying the session inventory every pointer
+		# event; the authoritative availability check still runs on drop.
+		if target.has_method("can_preview_pancake_surface_drop"):
+			return bool(target.call("can_preview_pancake_surface_drop", source_ref, at_position))
 		return bool(target.call("can_accept_pancake_surface_drop", source_ref, at_position))
 	return (
 		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
@@ -53,6 +58,9 @@ signal pointer_ended(local_position: Vector2)
 signal cancel_requested
 
 const TRACE_LIMIT := 160
+## R8 texture stores 0–12 seconds. Eight seconds is the visual charring gate;
+## the extra range retains a gradual post-window ramp without clipping early.
+const CHARRED_EXPOSURE_TEXTURE_MAX_SECONDS := 12.0
 const VIEW_APPEARANCE: StringName = &"appearance"
 const VIEW_MODES := {
 	VIEW_APPEARANCE: 0,
@@ -95,6 +103,7 @@ var spreader_motion_valid := false
 var _dirty := true
 var _elapsed := 0.0
 var _field_texture: ImageTexture
+var _heat_exposure_texture: ImageTexture
 var _damage_texture: ImageTexture
 var _sauce_texture: ImageTexture
 var _chili_sauce_texture: ImageTexture
@@ -102,6 +111,7 @@ var _fold_sweet_sauce_texture: ImageTexture
 var _fold_chili_sauce_texture: ImageTexture
 var _egg_texture: ImageTexture
 var _last_field_image: Image
+var _last_heat_exposure_image: Image
 var _last_damage_image: Image
 var _last_sauce_image: Image
 var _last_chili_sauce_image: Image
@@ -201,6 +211,7 @@ func get_renderer_diagnostics() -> Dictionary:
 		"upload_count": _upload_count,
 		"last_uploaded_revision": _last_uploaded_revision,
 		"field_texture": _field_texture,
+		"heat_exposure_texture": _heat_exposure_texture,
 		"damage_texture": _damage_texture,
 		"sauce_texture": _sauce_texture,
 		"chili_sauce_texture": _chili_sauce_texture,
@@ -208,6 +219,7 @@ func get_renderer_diagnostics() -> Dictionary:
 		"fold_chili_sauce_texture": _fold_chili_sauce_texture,
 		"egg_texture": _egg_texture,
 		"field_image": _last_field_image,
+		"heat_exposure_image": _last_heat_exposure_image,
 		"damage_image": _last_damage_image,
 		"sauce_image": _last_sauce_image,
 		"chili_sauce_image": _last_chili_sauce_image,
@@ -275,6 +287,7 @@ func _rebuild_heatmap_texture() -> void:
 	_prepare_sauce_material_images(texture_size)
 	var pixel_count := texture_size * texture_size
 	var field_pixels := PackedByteArray()
+	var heat_exposure_pixels := PackedByteArray()
 	var damage_pixels := PackedByteArray()
 	var sauce_pixels := PackedByteArray()
 	var chili_sauce_pixels := PackedByteArray()
@@ -282,6 +295,7 @@ func _rebuild_heatmap_texture() -> void:
 	var fold_chili_sauce_pixels := PackedByteArray()
 	var egg_pixels := PackedByteArray()
 	field_pixels.resize(pixel_count * 4)
+	heat_exposure_pixels.resize(pixel_count)
 	damage_pixels.resize(pixel_count)
 	sauce_pixels.resize(pixel_count)
 	chili_sauce_pixels.resize(pixel_count)
@@ -299,6 +313,7 @@ func _rebuild_heatmap_texture() -> void:
 	var thickness: PackedFloat32Array = model.thickness
 	var wetness: PackedFloat32Array = model.wetness
 	var visible_doneness: PackedFloat32Array = model.back_doneness if model.is_flipped else model.doneness
+	var visible_exposure: PackedFloat32Array = model.back_cooking_exposure_seconds if model.is_flipped else model.cooking_exposure_seconds
 	var damage: PackedFloat32Array = model.damage
 	var sweet_sauce: PackedFloat32Array = model.sauce_concentration
 	var chili_sauce: PackedFloat32Array = model.chili_sauce_concentration
@@ -312,6 +327,7 @@ func _rebuild_heatmap_texture() -> void:
 		var wetness_byte := roundi(clampf(wetness[source_index], 0.0, 1.0) * 255.0)
 		var doneness_byte := roundi(clampf(visible_doneness[source_index], 0.0, 1.0) * 255.0)
 		field_pixels.encode_u32(target_index * 4, coverage_byte | (thickness_byte << 8) | (wetness_byte << 16) | (doneness_byte << 24))
+		heat_exposure_pixels[target_index] = roundi(clampf(visible_exposure[source_index] / CHARRED_EXPOSURE_TEXTURE_MAX_SECONDS, 0.0, 1.0) * 255.0)
 		damage_pixels[target_index] = roundi(clampf(damage[source_index], 0.0, 1.0) * 255.0)
 		var sweet_sauce_byte := roundi(clampf(sweet_sauce[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
 		var chili_sauce_byte := roundi(clampf(chili_sauce[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
@@ -343,6 +359,7 @@ func _rebuild_heatmap_texture() -> void:
 			egg_alpha_byte = roundi(clampf((egg_white[source_index] + egg_yolk[source_index]) * inverse_maximum_egg, 0.0, 1.0) * 255.0)
 		egg_pixels.encode_u32(target_index * 4, egg_white_byte | (egg_yolk_byte << 8) | (egg_doneness_byte << 16) | (egg_alpha_byte << 24))
 	var field_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, field_pixels)
+	var heat_exposure_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, heat_exposure_pixels)
 	var damage_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, damage_pixels)
 	var sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, sauce_pixels)
 	var chili_sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, chili_sauce_pixels)
@@ -350,14 +367,16 @@ func _rebuild_heatmap_texture() -> void:
 	var fold_chili_sauce_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, fold_chili_sauce_pixels)
 	var egg_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, egg_pixels)
 	_last_field_image = field_image
+	_last_heat_exposure_image = heat_exposure_image
 	_last_damage_image = damage_image
 	_last_sauce_image = sauce_image
 	_last_chili_sauce_image = chili_sauce_image
 	_last_fold_sweet_sauce_image = fold_sweet_sauce_image
 	_last_fold_chili_sauce_image = fold_chili_sauce_image
 	_last_egg_image = egg_image
-	if _field_texture == null or _damage_texture == null or _sauce_texture == null or _chili_sauce_texture == null or _fold_sweet_sauce_texture == null or _fold_chili_sauce_texture == null or _egg_texture == null or _allocated_texture_size != texture_size:
+	if _field_texture == null or _heat_exposure_texture == null or _damage_texture == null or _sauce_texture == null or _chili_sauce_texture == null or _fold_sweet_sauce_texture == null or _fold_chili_sauce_texture == null or _egg_texture == null or _allocated_texture_size != texture_size:
 		_field_texture = ImageTexture.create_from_image(field_image)
+		_heat_exposure_texture = ImageTexture.create_from_image(heat_exposure_image)
 		_damage_texture = ImageTexture.create_from_image(damage_image)
 		_sauce_texture = ImageTexture.create_from_image(sauce_image)
 		_chili_sauce_texture = ImageTexture.create_from_image(chili_sauce_image)
@@ -367,6 +386,7 @@ func _rebuild_heatmap_texture() -> void:
 		_allocated_texture_size = texture_size
 	else:
 		_field_texture.update(field_image)
+		_heat_exposure_texture.update(heat_exposure_image)
 		_damage_texture.update(damage_image)
 		_sauce_texture.update(sauce_image)
 		_chili_sauce_texture.update(chili_sauce_image)
@@ -377,6 +397,7 @@ func _rebuild_heatmap_texture() -> void:
 	var shader_material := pancake_visual.material as ShaderMaterial
 	if shader_material != null:
 		shader_material.set_shader_parameter(&"field_texture", _field_texture)
+		shader_material.set_shader_parameter(&"heat_exposure_texture", _heat_exposure_texture)
 		shader_material.set_shader_parameter(&"damage_texture", _damage_texture)
 		shader_material.set_shader_parameter(&"sauce_texture", _sauce_texture)
 		shader_material.set_shader_parameter(&"chili_sauce_field", _chili_sauce_texture)

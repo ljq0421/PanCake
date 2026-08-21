@@ -48,6 +48,11 @@ var thickness := PackedFloat32Array()
 var wetness := PackedFloat32Array()
 var doneness := PackedFloat32Array()
 var back_doneness := PackedFloat32Array()
+## Uncapped per-cell time spent on each side of the griddle. This is separate
+## from doneness so a thin cell that reaches the scoring cap early still cannot
+## show charring before the visible-side eight-second window has elapsed.
+var cooking_exposure_seconds := PackedFloat32Array()
+var back_cooking_exposure_seconds := PackedFloat32Array()
 var damage := PackedFloat32Array()
 var scrape_stress := PackedFloat32Array()
 var sauce_concentration := PackedFloat32Array()
@@ -94,6 +99,8 @@ func _allocate_fields() -> void:
 	wetness.resize(cell_count)
 	doneness.resize(cell_count)
 	back_doneness.resize(cell_count)
+	cooking_exposure_seconds.resize(cell_count)
+	back_cooking_exposure_seconds.resize(cell_count)
 	damage.resize(cell_count)
 	scrape_stress.resize(cell_count)
 	sauce_concentration.resize(cell_count)
@@ -116,6 +123,8 @@ func reset() -> void:
 	wetness.fill(0.0)
 	doneness.fill(0.0)
 	back_doneness.fill(0.0)
+	cooking_exposure_seconds.fill(0.0)
+	back_cooking_exposure_seconds.fill(0.0)
 	damage.fill(0.0)
 	scrape_stress.fill(0.0)
 	sauce_concentration.fill(0.0)
@@ -269,6 +278,7 @@ func advance_cooking(delta_seconds: float, heat_level: float = 0.65) -> int:
 	var safe_delta := maxf(delta_seconds, 0.0)
 	var safe_heat := clampf(heat_level, 0.0, 1.25)
 	var target_field := back_doneness if is_flipped else doneness
+	var exposure_field := back_cooking_exposure_seconds if is_flipped else cooking_exposure_seconds
 	var center := Vector2(grid_size - 1, grid_size - 1) * 0.5
 	var radii := Vector2(float(grid_size) * 0.5, float(grid_size) * 0.5 * parameters.pan_height_ratio)
 	var egg_amount_total := 0.0
@@ -282,6 +292,10 @@ func advance_cooking(delta_seconds: float, heat_level: float = 0.65) -> int:
 		var thickness_resistance := clampf(0.45 + thickness[index] * 0.75, 0.45, 2.4)
 		var cooking_delta := parameters.cooking_rate * safe_heat * edge_factor * safe_delta / thickness_resistance
 		target_field[index] = minf(target_field[index] + cooking_delta, clampf(cooking_doneness_cap, 0.0, 1.0))
+		# Deliberately do not cap this. It is visual-only timing data, and preserves
+		# the distinction between a thin cell capped at 1.0 after five seconds and
+		# that same cell held on the griddle for longer.
+		exposure_field[index] += safe_delta
 		wetness[index] = maxf(wetness[index] - parameters.solidification_rate * safe_delta / thickness_resistance, 0.0)
 		var egg_amount := egg_white[index] + egg_yolk[index]
 		if egg_amount >= parameters.egg_coverage_minimum:
@@ -592,6 +606,7 @@ func flip(complete_back_side_immediately: bool = false) -> void:
 		for index in cell_count:
 			if coverage[index] > 0.0:
 				back_doneness[index] = maxf(back_doneness[index], doneness[index])
+				back_cooking_exposure_seconds[index] = maxf(back_cooking_exposure_seconds[index], cooking_exposure_seconds[index])
 	revision += 1
 	changed.emit()
 
@@ -739,6 +754,8 @@ func apply_standard_press_spread() -> Dictionary:
 	var wetness_mass := 0.0
 	var front_doneness_mass := 0.0
 	var back_doneness_mass := 0.0
+	var front_exposure_mass := 0.0
+	var back_exposure_mass := 0.0
 	for index in cell_count:
 		var cell_mass := maxf(thickness[index], 0.0)
 		if cell_mass <= 0.0:
@@ -747,6 +764,8 @@ func apply_standard_press_spread() -> Dictionary:
 		wetness_mass += wetness[index] * cell_mass
 		front_doneness_mass += doneness[index] * cell_mass
 		back_doneness_mass += back_doneness[index] * cell_mass
+		front_exposure_mass += cooking_exposure_seconds[index] * cell_mass
+		back_exposure_mass += back_cooking_exposure_seconds[index] * cell_mass
 	if total_mass <= 0.000001:
 		return {
 			"success": false,
@@ -776,11 +795,15 @@ func apply_standard_press_spread() -> Dictionary:
 	var mean_wetness := wetness_mass / total_mass
 	var mean_front_doneness := front_doneness_mass / total_mass
 	var mean_back_doneness := back_doneness_mass / total_mass
+	var mean_front_exposure := front_exposure_mass / total_mass
+	var mean_back_exposure := back_exposure_mass / total_mass
 	coverage.fill(0.0)
 	thickness.fill(0.0)
 	wetness.fill(0.0)
 	doneness.fill(0.0)
 	back_doneness.fill(0.0)
+	cooking_exposure_seconds.fill(0.0)
+	back_cooking_exposure_seconds.fill(0.0)
 	damage.fill(0.0)
 	scrape_stress.fill(0.0)
 	for index in target_indices:
@@ -789,6 +812,8 @@ func apply_standard_press_spread() -> Dictionary:
 		wetness[index] = mean_wetness
 		doneness[index] = mean_front_doneness
 		back_doneness[index] = mean_back_doneness
+		cooking_exposure_seconds[index] = mean_front_exposure
+		back_cooking_exposure_seconds[index] = mean_back_exposure
 	last_update_usec = Time.get_ticks_usec() - started
 	_commit_change(target_indices.size())
 	return {
@@ -920,6 +945,8 @@ func snapshot() -> Dictionary:
 		"wetness": wetness.duplicate(),
 		"doneness": doneness.duplicate(),
 		"back_doneness": back_doneness.duplicate(),
+		"cooking_exposure_seconds": cooking_exposure_seconds.duplicate(),
+		"back_cooking_exposure_seconds": back_cooking_exposure_seconds.duplicate(),
 		"damage": damage.duplicate(),
 		"scrape_stress": scrape_stress.duplicate(),
 		"sauce_concentration": sauce_concentration.duplicate(),
@@ -948,6 +975,15 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		"chili_sauce_concentration", "egg_white", "egg_yolk", "egg_doneness",
 	]
 	for field_name in field_names:
+		var source := PackedFloat32Array(value.get(field_name, PackedFloat32Array()))
+		if source.size() != cell_count:
+			return {"success": false, "reason": &"invalid_field_size", "field": field_name, "expected": cell_count, "actual": source.size()}
+		set(field_name, source.duplicate())
+	# Older saves did not record visual exposure. Keep loading them with the
+	# reset-zero default instead of rejecting otherwise valid order snapshots.
+	for field_name in ["cooking_exposure_seconds", "back_cooking_exposure_seconds"]:
+		if not value.has(field_name):
+			continue
 		var source := PackedFloat32Array(value.get(field_name, PackedFloat32Array()))
 		if source.size() != cell_count:
 			return {"success": false, "reason": &"invalid_field_size", "field": field_name, "expected": cell_count, "actual": source.size()}
@@ -1019,6 +1055,8 @@ func validate() -> PackedStringArray:
 	var fields := _all_fields()
 	var field_names: Array[StringName] = FIELD_NAMES.duplicate()
 	field_names.insert(4, &"back_doneness")
+	field_names.insert(5, &"cooking_exposure_seconds")
+	field_names.insert(6, &"back_cooking_exposure_seconds")
 	field_names.append(&"scrape_stress")
 	for field_index in field_names.size():
 		var field_name := field_names[field_index]
@@ -1044,6 +1082,8 @@ func _all_fields() -> Array:
 		wetness,
 		doneness,
 		back_doneness,
+		cooking_exposure_seconds,
+		back_cooking_exposure_seconds,
 		damage,
 		sauce_concentration,
 		chili_sauce_concentration,

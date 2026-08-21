@@ -271,8 +271,10 @@ var _order_summary_visible := false
 var _handoff_tween: Tween
 var _egg_crack_tween: Tween
 var _payment_tween: Tween
+var _payment_collection_tween: Tween
 var _payment_waiting_collection := false
 var _payment_animation_active := false
+var _payment_collection_active := false
 var _recovering_completed_payment := false
 var _current_payment_amount := 0
 var _current_payment_denominations: Array[int] = []
@@ -2714,19 +2716,72 @@ func _formal_pancake_order_is_settled() -> bool:
 
 
 func _collect_payment() -> void:
-	if not payment_coin_model.has_pending():
+	if _payment_collection_active or not payment_coin_model.has_pending():
 		return
 	var collected: int = int(payment_coin_model.collect_all())
+	var collected_sprites: Array[TextureRect] = []
+	collected_sprites.append_array(_pending_payment_sprites)
+	_payment_collection_active = true
 	_payment_waiting_collection = false
 	payment_collection_area.visible = false
-	for coin in _pending_payment_sprites:
+	_pending_payment_sprites.clear()
+	var target_position := _coin_collection_target_position()
+	for index in collected_sprites.size():
+		var coin := collected_sprites[index]
+		if is_instance_valid(coin):
+			_play_coin_collection_flight(coin, target_position, index)
+	if _payment_collection_tween != null and _payment_collection_tween.is_valid():
+		_payment_collection_tween.kill()
+	_payment_collection_tween = create_tween()
+	_payment_collection_tween.tween_interval(0.42 + float(maxi(collected_sprites.size() - 1, 0)) * 0.045)
+	_payment_collection_tween.tween_callback(_complete_coin_collection.bind(collected, collected_sprites))
+	tool_status_label.text = "收取中：%d 金币正在入账" % collected
+
+
+func _play_coin_collection_flight(coin: TextureRect, target_position: Vector2, index: int) -> void:
+	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coin.pivot_offset = coin.size * 0.5
+	var launch_position := coin.global_position - Vector2(0.0, 12.0 + float(index % 2) * 6.0)
+	var destination := target_position - coin.size * 0.5
+	var delay := float(index) * 0.045
+	var coin_tween := create_tween()
+	coin_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	coin_tween.tween_interval(delay)
+	coin_tween.set_parallel(true)
+	coin_tween.tween_property(coin, "global_position", launch_position, 0.10)
+	coin_tween.tween_property(coin, "scale", Vector2(1.16, 1.16), 0.10)
+	coin_tween.chain().set_parallel(true)
+	coin_tween.tween_property(coin, "global_position", destination, 0.30)
+	coin_tween.tween_property(coin, "scale", Vector2(0.58, 0.58), 0.30)
+	coin_tween.tween_property(coin, "modulate:a", 0.0, 0.22).set_delay(0.08)
+
+
+func _coin_collection_target_position() -> Vector2:
+	if global_status_label != null:
+		return global_status_label.get_global_rect().get_center()
+	return payment_coin_layer.get_global_rect().get_center()
+
+
+func _complete_coin_collection(collected: int, collected_sprites: Array[TextureRect]) -> void:
+	for coin in collected_sprites:
 		if is_instance_valid(coin):
 			coin.queue_free()
-	_pending_payment_sprites.clear()
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null and game_session.has_method("credit_coins"):
 		game_session.call("credit_coins", collected)
-	tool_status_label.text = "已一次收取 %d 金币；当前顾客订单继续" % collected
+	_pulse_coin_total()
+	_payment_collection_active = false
+	tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % collected
+
+
+func _pulse_coin_total() -> void:
+	if global_status_label == null:
+		return
+	global_status_label.pivot_offset = global_status_label.size * 0.5
+	var pulse_tween := create_tween()
+	pulse_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	pulse_tween.tween_property(global_status_label, "scale", Vector2(1.08, 1.08), 0.10)
+	pulse_tween.tween_property(global_status_label, "scale", Vector2.ONE, 0.16)
 
 
 func _on_payment_coin_gui_input(event: InputEvent) -> void:

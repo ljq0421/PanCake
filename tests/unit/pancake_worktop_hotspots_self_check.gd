@@ -204,13 +204,10 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	var infrastructure := Control.new()
 	infrastructure.name = &"FiveAreaInfrastructure"
 	root.add_child(infrastructure)
-	for overlay_name in [&"SpreaderHotspotHitButton", &"BatterLadleHolderOverlayHitButton", &"SweetSauceHotspotOverlayHitButton", &"ChiliSauceHotspotOverlayHitButton", &"TomatoSauceHotspotOverlayHitButton"]:
+	for overlay_name in [&"BatterLadleHolderOverlayHitButton", &"SweetSauceHotspotOverlayHitButton", &"ChiliSauceHotspotOverlayHitButton", &"TomatoSauceHotspotOverlayHitButton"]:
 		var overlay := Button.new()
 		overlay.name = overlay_name
 		overlay.z_index = 200
-		if overlay_name == &"SpreaderHotspotHitButton":
-			overlay.position = Vector2(40.0, 40.0)
-			overlay.size = Vector2(160.0, 160.0)
 		infrastructure.add_child(overlay)
 	var safe_area := Control.new()
 	safe_area.name = &"SafeArea"
@@ -238,8 +235,9 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	var pork_floss := DRAG_SOURCE_SCRIPT.new()
 	pork_floss.name = &"PorkFlossHotspot"
 	hotspots.add_child(pork_floss)
-	var spreader := TextureButton.new()
+	var spreader := Button.new()
 	spreader.name = &"SpreaderHotspot"
+	spreader.z_index = 200
 	spreader.position = Vector2(40.0, 40.0)
 	spreader.size = Vector2(160.0, 160.0)
 	hotspots.add_child(spreader)
@@ -256,8 +254,8 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	hotspots.add_child(spreader_holder_filled)
 	artwork.add_child(hotspots)
 	await process_frame
-	var spreader_hit_button := infrastructure.get_node_or_null("SpreaderHotspotHitButton") as Button
-	_check(spreader_hit_button != null, "spreader uses the static scene hit target")
+	var spreader_hit_button := hotspots.get_node_or_null("SpreaderHotspot") as Button
+	_check(spreader_hit_button != null, "spreader uses the artwork-local hit target")
 	session.progression.locked[&"stock.pancake.sauce.red_chili"] = true
 	hotspots.bind_session(session)
 	_check(StringName(hotspots.get_node("ScallionTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")

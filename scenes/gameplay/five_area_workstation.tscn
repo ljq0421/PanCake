@@ -1381,18 +1381,6 @@ custom_minimum_size = Vector2(1170, 444)
 layout_mode = 0
 offset_bottom = 444.0
 
-[node name="SpreaderHotspotHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=1975294221]
-z_index = 200
-layout_mode = 0
-offset_left = 1193.0
-offset_top = 944.0
-offset_right = 1260.0
-offset_bottom = 1063.0
-tooltip_text = "摊饼器：在鏊面按住画圈摊开面糊或鸡蛋"
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
 [node name="SweetSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=1176445763]
 z_index = 201
 layout_mode = 0

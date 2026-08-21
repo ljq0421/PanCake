@@ -32,6 +32,12 @@ func _run() -> void:
 	var basket_component := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BaocuiBasket") as Control
 	var basket := basket_component.get_node_or_null("Hotspot") as ProductDragSource if basket_component != null else null
 	_check(basket_component != null and basket != null, "BaocuiBasket owns the shared worktop source")
+	var hotspot_controller := basket_component.get_parent() as PancakeWorktopHotspots if basket_component != null else null
+	_check(hotspot_controller != null and hotspot_controller.baocui_basket_textures.size() == 6, "the crisp basket has one complete-basket texture for each of the six stock states")
+	if hotspot_controller != null:
+		for texture_index in range(hotspot_controller.baocui_basket_textures.size()):
+			var expected_path := "res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-%d.png" % (texture_index + 1)
+			_check(hotspot_controller.baocui_basket_textures[texture_index].resource_path == expected_path, "crisp basket state %d uses its matching bamboo basket artwork" % (texture_index + 1))
 	if basket != null:
 		_check(not basket.disabled, "an empty unlocked basket remains clickable for restocking")
 		_check(not basket._has_point(Vector2.ZERO), "transparent margin outside the crisp-basket artwork is not clickable")
@@ -39,8 +45,8 @@ func _run() -> void:
 		await process_frame
 		var replenished := Dictionary(session.call("inventory_snapshot"))
 		_check(int(replenished.get(str(STOCK_ID), 0)) == 1, "holding an empty basket replenishes one crisp through real pointer input")
-		var contents := basket_component.get_node_or_null("Contents") as TextureRect
-		_check(contents != null and contents.get_parent() == basket_component and contents.visible and contents.texture != null, "one-crisp artwork appears in the managed basket contents layer after restocking")
+		var visual := basket_component.get_node_or_null("Visual") as TextureRect
+		_check(visual != null and hotspot_controller != null and visual.texture == hotspot_controller.baocui_basket_textures.front(), "one-crisp bamboo basket artwork appears after restocking")
 	workstation.queue_free()
 	await process_frame
 	_finish()

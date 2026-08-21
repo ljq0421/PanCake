@@ -111,6 +111,11 @@ var _last_egg_image: Image
 var _sweet_sauce_material_image: Image
 var _chili_sauce_material_image: Image
 var _sauce_material_image_size := 0
+## The source material textures do not change while a griddle is in use. Keep
+## their converted RGB bytes so a heatmap upload never performs thousands of
+## Image.get_pixel calls on the main thread.
+var _sweet_sauce_material_rgb := PackedByteArray()
+var _chili_sauce_material_rgb := PackedByteArray()
 var _trace_points := PackedVector2Array()
 var _allocated_texture_size := 0
 var _upload_count := 0
@@ -287,16 +292,29 @@ func _rebuild_heatmap_texture() -> void:
 	var inverse_maximum_sauce := 1.0 / maxf(model.parameters.sauce_maximum_concentration, 0.001)
 	var inverse_maximum_egg := 1.0 / maxf(model.parameters.egg_maximum_concentration, 0.001)
 	var egg_visible := (model.yolk_broken or show_unbroken_egg_from_model) and model.egg_is_on_visible_side()
+	# Retain references to the simulation fields for the full upload. Apart from
+	# avoiding dynamic property access, this keeps the visible-side selection out
+	# of the 16k-pixel loop.
+	var coverage: PackedFloat32Array = model.coverage
+	var thickness: PackedFloat32Array = model.thickness
+	var wetness: PackedFloat32Array = model.wetness
+	var visible_doneness: PackedFloat32Array = model.back_doneness if model.is_flipped else model.doneness
+	var damage: PackedFloat32Array = model.damage
+	var sweet_sauce: PackedFloat32Array = model.sauce_concentration
+	var chili_sauce: PackedFloat32Array = model.chili_sauce_concentration
+	var egg_white: PackedFloat32Array = model.egg_white
+	var egg_yolk: PackedFloat32Array = model.egg_yolk
+	var egg_doneness: PackedFloat32Array = model.egg_doneness
 	for target_index in pixel_count:
 		var source_index := _source_indices[target_index]
-		var coverage_byte := roundi(clampf(model.coverage[source_index], 0.0, 1.0) * 255.0)
-		var thickness_byte := roundi(clampf(model.thickness[source_index] * inverse_maximum_thickness, 0.0, 1.0) * 255.0)
-		var wetness_byte := roundi(clampf(model.wetness[source_index], 0.0, 1.0) * 255.0)
-		var doneness_byte := roundi(clampf(model.visible_doneness_at(source_index), 0.0, 1.0) * 255.0)
+		var coverage_byte := roundi(clampf(coverage[source_index], 0.0, 1.0) * 255.0)
+		var thickness_byte := roundi(clampf(thickness[source_index] * inverse_maximum_thickness, 0.0, 1.0) * 255.0)
+		var wetness_byte := roundi(clampf(wetness[source_index], 0.0, 1.0) * 255.0)
+		var doneness_byte := roundi(clampf(visible_doneness[source_index], 0.0, 1.0) * 255.0)
 		field_pixels.encode_u32(target_index * 4, coverage_byte | (thickness_byte << 8) | (wetness_byte << 16) | (doneness_byte << 24))
-		damage_pixels[target_index] = roundi(clampf(model.damage[source_index], 0.0, 1.0) * 255.0)
-		var sweet_sauce_byte := roundi(clampf(model.sauce_concentration[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
-		var chili_sauce_byte := roundi(clampf(model.chili_sauce_concentration[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
+		damage_pixels[target_index] = roundi(clampf(damage[source_index], 0.0, 1.0) * 255.0)
+		var sweet_sauce_byte := roundi(clampf(sweet_sauce[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
+		var chili_sauce_byte := roundi(clampf(chili_sauce[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
 		sauce_pixels[target_index] = sweet_sauce_byte
 		chili_sauce_pixels[target_index] = chili_sauce_byte
 		# Match the appearance shader exactly. A linear concentration alpha makes
@@ -305,20 +323,13 @@ func _rebuild_heatmap_texture() -> void:
 		var chili_strength := smoothstep(0.015, 0.32, float(chili_sauce_byte) / 255.0) * 0.80
 		var sweet_alpha := roundi(clampf(sweet_strength, 0.0, 1.0) * 255.0)
 		var chili_alpha := roundi(clampf(chili_strength, 0.0, 1.0) * 255.0)
-		var target_x := target_index % texture_size
-		var target_y := floori(float(target_index) / float(texture_size))
-		var sweet_material_color := Color(0.36, 0.12, 0.045, 1.0)
-		var chili_material_color := Color(0.85, 0.13, 0.055, 1.0)
-		if _sweet_sauce_material_image != null:
-			sweet_material_color = _sweet_sauce_material_image.get_pixel(target_x, target_y)
-		if _chili_sauce_material_image != null:
-			chili_material_color = _chili_sauce_material_image.get_pixel(target_x, target_y)
-		var sweet_red := roundi(clampf(sweet_material_color.r, 0.0, 1.0) * 255.0)
-		var sweet_green := roundi(clampf(sweet_material_color.g, 0.0, 1.0) * 255.0)
-		var sweet_blue := roundi(clampf(sweet_material_color.b, 0.0, 1.0) * 255.0)
-		var chili_red := roundi(clampf(chili_material_color.r, 0.0, 1.0) * 255.0)
-		var chili_green := roundi(clampf(chili_material_color.g, 0.0, 1.0) * 255.0)
-		var chili_blue := roundi(clampf(chili_material_color.b, 0.0, 1.0) * 255.0)
+		var material_offset := target_index * 3
+		var sweet_red := _sweet_sauce_material_rgb[material_offset]
+		var sweet_green := _sweet_sauce_material_rgb[material_offset + 1]
+		var sweet_blue := _sweet_sauce_material_rgb[material_offset + 2]
+		var chili_red := _chili_sauce_material_rgb[material_offset]
+		var chili_green := _chili_sauce_material_rgb[material_offset + 1]
+		var chili_blue := _chili_sauce_material_rgb[material_offset + 2]
 		fold_sweet_sauce_pixels.encode_u32(target_index * 4, sweet_red | (sweet_green << 8) | (sweet_blue << 16) | (sweet_alpha << 24))
 		fold_chili_sauce_pixels.encode_u32(target_index * 4, chili_red | (chili_green << 8) | (chili_blue << 16) | (chili_alpha << 24))
 		var egg_white_byte := 0
@@ -326,10 +337,10 @@ func _rebuild_heatmap_texture() -> void:
 		var egg_doneness_byte := 0
 		var egg_alpha_byte := 0
 		if egg_visible:
-			egg_white_byte = roundi(clampf(model.egg_white[source_index] * inverse_maximum_egg, 0.0, 1.0) * 255.0)
-			egg_yolk_byte = roundi(clampf(model.egg_yolk[source_index] * inverse_maximum_egg, 0.0, 1.0) * 255.0)
-			egg_doneness_byte = roundi(clampf(model.egg_doneness[source_index], 0.0, 1.0) * 255.0)
-			egg_alpha_byte = roundi(clampf((model.egg_white[source_index] + model.egg_yolk[source_index]) * inverse_maximum_egg, 0.0, 1.0) * 255.0)
+			egg_white_byte = roundi(clampf(egg_white[source_index] * inverse_maximum_egg, 0.0, 1.0) * 255.0)
+			egg_yolk_byte = roundi(clampf(egg_yolk[source_index] * inverse_maximum_egg, 0.0, 1.0) * 255.0)
+			egg_doneness_byte = roundi(clampf(egg_doneness[source_index], 0.0, 1.0) * 255.0)
+			egg_alpha_byte = roundi(clampf((egg_white[source_index] + egg_yolk[source_index]) * inverse_maximum_egg, 0.0, 1.0) * 255.0)
 		egg_pixels.encode_u32(target_index * 4, egg_white_byte | (egg_yolk_byte << 8) | (egg_doneness_byte << 16) | (egg_alpha_byte << 24))
 	var field_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_RGBA8, field_pixels)
 	var damage_image := Image.create_from_data(texture_size, texture_size, false, Image.FORMAT_R8, damage_pixels)
@@ -380,14 +391,39 @@ func _rebuild_heatmap_texture() -> void:
 
 
 func _prepare_sauce_material_images(texture_size: int) -> void:
-	if _sauce_material_image_size == texture_size and _sweet_sauce_material_image != null and _chili_sauce_material_image != null:
+	if _sauce_material_image_size == texture_size and not _sweet_sauce_material_rgb.is_empty() and not _chili_sauce_material_rgb.is_empty():
 		return
 	var shader_material := pancake_visual.material as ShaderMaterial
 	if shader_material == null:
 		return
 	_sweet_sauce_material_image = _resized_texture_image(shader_material.get_shader_parameter(&"sweet_sauce_texture") as Texture2D, texture_size)
 	_chili_sauce_material_image = _resized_texture_image(shader_material.get_shader_parameter(&"chili_sauce_texture") as Texture2D, texture_size)
+	_sweet_sauce_material_rgb = _material_rgb_bytes(_sweet_sauce_material_image, texture_size, Color(0.36, 0.12, 0.045, 1.0))
+	_chili_sauce_material_rgb = _material_rgb_bytes(_chili_sauce_material_image, texture_size, Color(0.85, 0.13, 0.055, 1.0))
 	_sauce_material_image_size = texture_size
+
+
+func _material_rgb_bytes(image: Image, texture_size: int, fallback: Color) -> PackedByteArray:
+	var pixel_count := texture_size * texture_size
+	var bytes := PackedByteArray()
+	bytes.resize(pixel_count * 3)
+	var fallback_red := roundi(clampf(fallback.r, 0.0, 1.0) * 255.0)
+	var fallback_green := roundi(clampf(fallback.g, 0.0, 1.0) * 255.0)
+	var fallback_blue := roundi(clampf(fallback.b, 0.0, 1.0) * 255.0)
+	for index in pixel_count:
+		var offset := index * 3
+		if image == null:
+			bytes[offset] = fallback_red
+			bytes[offset + 1] = fallback_green
+			bytes[offset + 2] = fallback_blue
+			continue
+		var x := index % texture_size
+		var y := index / texture_size
+		var color := image.get_pixel(x, y)
+		bytes[offset] = roundi(clampf(color.r, 0.0, 1.0) * 255.0)
+		bytes[offset + 1] = roundi(clampf(color.g, 0.0, 1.0) * 255.0)
+		bytes[offset + 2] = roundi(clampf(color.b, 0.0, 1.0) * 255.0)
+	return bytes
 
 
 func _resized_texture_image(texture: Texture2D, texture_size: int) -> Image:

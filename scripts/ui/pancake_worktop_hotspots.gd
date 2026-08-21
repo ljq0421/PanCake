@@ -9,6 +9,7 @@ const WIDE_SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/to
 const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png")
 const BATTER_LADLE_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
 const BATTER_LADLE_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png")
+const BAOCUI_EMPTY_BASKET := preload("res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png")
 const WIDE_SPREADER_GROWTH_ID := &"growth.tool.pancake.wide_spreader"
 const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_ladle"
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
@@ -53,9 +54,9 @@ const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 ## textures, so the new carton stays visible while the matching egg layers
 ## are authored.
 @export var egg_content_textures: Array[Texture2D] = []
-## Ordered from one to the maximum visible crisp count. The basket itself is
-## the shared drag source; this array updates its separate contents layer.
-@export var baocui_content_textures: Array[Texture2D] = []
+## Ordered from one to the maximum visible crisp count. Each texture is a
+## complete bamboo basket, so inventory changes replace the basket artwork.
+@export var baocui_basket_textures: Array[Texture2D] = []
 
 var _session: Node
 var _refresh_elapsed := 0.0
@@ -76,7 +77,7 @@ func _ready() -> void:
 			authored_hit_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var hit_button := _static_overlay_hit_button(StringName("%sOverlayHitButton" % hotspot_name))
 		_connect_sauce_hit_button(hit_button, hotspot)
-	var spreader_hit_button := _static_overlay_hit_button(&"SpreaderHotspotHitButton")
+	var spreader_hit_button := get_node_or_null("SpreaderHotspot") as BaseButton
 	if spreader_hit_button != null and not spreader_hit_button.pressed.is_connected(_on_spreader_pressed):
 		spreader_hit_button.pressed.connect(_on_spreader_pressed)
 	var batter_ladle_hit_button := _static_overlay_hit_button(&"BatterLadleHolderOverlayHitButton")
@@ -401,13 +402,12 @@ func _update_baocui_inventory_visual(stock: int) -> void:
 	var basket := get_node_or_null("BaocuiBasket") as Control
 	if basket == null:
 		return
-	var contents := basket.get_node_or_null("Contents") as TextureRect
-	if contents == null:
+	var visual := basket.get_node_or_null("Visual") as TextureRect
+	if visual == null:
 		return
-	var display_stock := baocui_content_textures.size() if _workshop_preview else stock
-	var texture_index := clampi(display_stock, 0, baocui_content_textures.size()) - 1
-	contents.texture = baocui_content_textures[texture_index] if texture_index >= 0 else null
-	contents.visible = texture_index >= 0
+	var display_stock := baocui_basket_textures.size() if _workshop_preview else stock
+	var texture_index := clampi(display_stock, 0, baocui_basket_textures.size()) - 1
+	visual.texture = baocui_basket_textures[texture_index] if texture_index >= 0 else BAOCUI_EMPTY_BASKET
 	_sync_container_alpha_hit_regions()
 
 

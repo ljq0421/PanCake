@@ -2,12 +2,12 @@
 
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="9_sweet_bean_sauce"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="10_baocui_basket"]
-[ext_resource type="Texture2D" uid="uid://bfbax40gcit57" path="res://resources/art/ingredients/baocui/baocui_crisps_01.png" id="12_baocui_01"]
-[ext_resource type="Texture2D" uid="uid://cye41peqgyfhl" path="res://resources/art/ingredients/baocui/baocui_crisps_02.png" id="13_baocui_02"]
-[ext_resource type="Texture2D" uid="uid://devd2wrnoov5c" path="res://resources/art/ingredients/baocui/baocui_crisps_03.png" id="14_baocui_03"]
-[ext_resource type="Texture2D" uid="uid://db588mrtwiat3" path="res://resources/art/ingredients/baocui/baocui_crisps_04.png" id="15_baocui_04"]
-[ext_resource type="Texture2D" uid="uid://mxqqqnl8pkh6" path="res://resources/art/ingredients/baocui/baocui_crisps_05.png" id="16_baocui_05"]
-[ext_resource type="Texture2D" uid="uid://dwl4y0ubm5aid" path="res://resources/art/ingredients/baocui/baocui_crisps_06.png" id="17_baocui_06"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-1.png" id="12_baocui_01"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-2.png" id="13_baocui_02"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-3.png" id="14_baocui_03"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-4.png" id="15_baocui_04"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-5.png" id="16_baocui_05"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-6.png" id="17_baocui_06"]
 [ext_resource type="Texture2D" uid="uid://bw3mvw6iui46x" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-empty.png" id="19_coriander_empty"]
 [ext_resource type="Texture2D" uid="uid://dm713nd34nj1y" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-half.png" id="20_coriander_half"]
 [ext_resource type="Texture2D" uid="uid://d3r50b1mpjkww" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-full.png" id="21_coriander_full"]
@@ -148,7 +148,7 @@ mouse_filter = 2
 script = ExtResource("30_worktop_hotspots")
 griddle_station_path = NodePath("../../../FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation")
 egg_content_textures = Array[Texture2D]([null, ExtResource("33_egg_01"), ExtResource("34_egg_02"), ExtResource("35_egg_03"), ExtResource("36_egg_04"), ExtResource("37_egg_05"), ExtResource("38_egg_06")])
-baocui_content_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
+baocui_basket_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
 
 [node name="PorkFlossHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=910270213]
 z_index = 120
@@ -285,19 +285,8 @@ texture = ExtResource("10_baocui_basket")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Contents" type="TextureRect" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=2013521190]
-z_index = 1
-layout_mode = 0
-offset_left = 28.95
-offset_top = 41.6
-offset_right = 230.45
-offset_bottom = 127.4
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=1739890305]
-z_index = 2
+z_index = 1
 layout_mode = 0
 offset_right = 257.4
 offset_bottom = 195.0
@@ -327,15 +316,17 @@ texture = ExtResource("41_spreader_holder_filled")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SpreaderHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=544913172]
+[node name="SpreaderHotspot" type="Button" parent="PancakeWorktopHotspots" unique_id=544913172]
+z_index = 200
 layout_mode = 0
 offset_left = 1193.0
 offset_top = 944.0
 offset_right = 1260.0
 offset_bottom = 1063.0
+tooltip_text = "摊饼器：在鏊面按住画圈摊开面糊或鸡蛋"
 focus_mode = 0
 mouse_default_cursor_shape = 2
-mouse_filter = 2
+flat = true
 
 [node name="BatterLadleHolderHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=888931824]
 layout_mode = 0

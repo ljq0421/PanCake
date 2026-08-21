@@ -28,7 +28,7 @@ func _run() -> void:
 		"workshop preview shows a full egg carton"
 	)
 	_check(
-		(artwork.get_node("PancakeWorktopHotspots/BaocuiBasket/Contents") as TextureRect).texture == worktop.baocui_content_textures.back(),
+		(artwork.get_node("PancakeWorktopHotspots/BaocuiBasket/Visual") as TextureRect).texture == worktop.baocui_basket_textures.back(),
 		"workshop preview shows a full crisp basket"
 	)
 	worktop.set_workshop_preview(false)

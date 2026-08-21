@@ -78,13 +78,8 @@ func _run() -> void:
 		var card_button := service_slot.get_node("OrderPanel/CardFocusButton") as Button
 		var item_button := service_slot.get_node("OrderPanel/ItemButton1") as Button
 		_check(service_slot.visible and not customer_button.disabled and not card_button.disabled and item_button.visible and not item_button.disabled, "customer, order card, and item in service slot %d are independently clickable" % (slot_index + 1))
-	var waiting_label := workstation.get_node("SafeArea/CustomerStrip/QueueStatusLabel") as Label
-	var waiting_contract_valid := waiting_label.text.contains("3/3")
-	for waiting_index in 3:
-		var waiting_button := workstation.get_node("SafeArea/CustomerStrip/CustomerSlot%d" % (waiting_index + 1)) as Button
-		var waiting_patience := waiting_button.get_node("Patience") as ProgressBar
-		waiting_contract_valid = waiting_contract_valid and waiting_button.visible and waiting_button.mouse_filter == Control.MOUSE_FILTER_IGNORE and not waiting_patience.visible
-	_check(waiting_contract_valid, "top strip shows three non-interactive waiting portraits with no patience countdown")
+	var waiting_strip := workstation.get_node("SafeArea/CustomerStrip") as Control
+	_check(not waiting_strip.visible, "waiting customers are not shown in the shop UI")
 
 	var first_target_id := StringName(original_ids_by_slot.get(2, &""))
 	workstation.call("_on_customer_service_focus_requested", StringName(original_ids_by_slot.get(0, &"")))

@@ -308,7 +308,7 @@ func _run() -> void:
 	workstation.call("_refresh_pancake_holding_tray")
 	var holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
 	_check(bool(stored_for_route.get("success", false)) and holding_slot.visible and holding_slot.disabled and holding_slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "formal tray displays a stored pancake without becoming a delivery button")
-	var customer_slot := workstation.get_node("SafeArea/CustomerStrip/CustomerSlot%d" % (target_service_slot + 1)) as Button
+	var customer_slot := workstation.get_node("SafeArea/ServiceCustomer%d/PortraitButton" % (target_service_slot + 1)) as Button
 	_move_at(customer_slot.get_global_rect().get_center())
 	await process_frame
 	_click_control(customer_slot)

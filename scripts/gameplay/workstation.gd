@@ -133,6 +133,7 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 @onready var ham_restock_button: Button = get_node_or_null("SafeArea/RestockRack/HamRestockButton") as Button
 @onready var scallion_restock_button: Button = get_node_or_null("SafeArea/RestockRack/ScallionRestockButton") as Button
 @onready var customer_portrait: TextureRect = get_node_or_null("SafeArea/CustomerPortrait") as TextureRect
+@onready var waiting_customer_strip: Control = get_node_or_null("SafeArea/CustomerStrip") as Control
 @onready var queue_status_label: Label = %QueueStatusLabel
 @onready var customer_slot_buttons: Array[Button] = [%CustomerSlot1, %CustomerSlot2, %CustomerSlot3]
 @onready var customer_slot_patience_bars: Array[ProgressBar] = [
@@ -327,6 +328,10 @@ func _resolve_business_day_timer_label() -> Label:
 
 
 func _ready() -> void:
+	# Waiting orders continue to be queued and promoted normally, but only
+	# customers currently being served are shown on the shop floor.
+	if waiting_customer_strip != null:
+		waiting_customer_strip.visible = false
 	if parameters == null:
 		parameters = PancakeSimulationParameters.new()
 	pancake_model = PancakeModel.new(parameters.grid_size, parameters)
@@ -3452,6 +3457,17 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 	return requirements
 
 
+func _order_requirement_groups_for_card(order: Dictionary) -> Array:
+	var groups: Array = []
+	for item in _order_items_for_card(order):
+		# Each product owns its own ingredient sequence on the customer card.
+		# Keeping this separate from the legacy flat list preserves the compact
+		# top-right order hint while allowing the service cards to show one
+		# product row at a time.
+		groups.append(_order_requirements_for_card({"items": [item]}))
+	return groups
+
+
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	if order_dish_icons.is_empty():
 		return
@@ -3794,9 +3810,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		for item_variant in items:
 			var item := Dictionary(item_variant)
 			item_textures.append(FIVE_AREA_PRODUCT_VISUALS.texture_for(StringName(item.get("product_id", &"")), StringName(item.get("temperature_mode", &"room_temperature"))))
-		var requirements: Array = _order_requirements_for_card(order)
-		if requirements.size() > 8:
-			requirements.resize(8)
+		var requirement_groups: Array = _order_requirement_groups_for_card(order)
 		var metadata := Dictionary(order.get("metadata", {}))
 		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
@@ -3807,7 +3821,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 			order,
 			_customer_portraits.call("texture_for", customer_id, reaction) as Texture2D,
 			item_textures,
-			requirements,
+			requirement_groups,
 			coin_total,
 		)
 

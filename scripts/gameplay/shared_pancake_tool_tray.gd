@@ -8,7 +8,6 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png")
 const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
 const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png")
-const LOCK_TEXTURE := preload("res://resources/art/workstation/material_slots/individual/slot_05_locked_v1_five_area_v2.png")
 const WORKTOP_SLOT_NAMES := [
 	&"WorktopSlot04", &"WorktopSlot05", &"WorktopSlot06", &"WorktopSlot07",
 	&"WorktopSlot08", &"WorktopSlot09", &"WorktopSlot10", &"WorktopSlot11",
@@ -24,7 +23,6 @@ const SLOT_DEFINITIONS := [
 	{ "name": "CorianderSlot", "label": "香菜", "stock_id": &"stock.pancake.coriander", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/coriander/coriander_pile_five_area_v2.png")},
 	{ "name": "MustardSlot", "label": "榨菜", "stock_id": &"stock.pancake.preserved_mustard", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png")},
 	{ "name": "TenderloinSlot", "label": "里脊", "stock_id": &"stock.pancake.pork_tenderloin", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1_five_area_v2.png")},
-	{ "name": "SweetSauceSlot", "label": "甜面酱", "stock_id": &"stock.pancake.sauce.sweet_flour", "source_kind": &"pancake_shared_sauce", "texture": preload("res://resources/art/workstation/material_slots/individual/slot_04_sweet_flour_sauce_v1_five_area_v2.png"), "native_drag": false},
 	{ "name": "ChiliSauceSlot", "label": "辣酱", "stock_id": &"stock.pancake.sauce.red_chili", "source_kind": &"pancake_shared_sauce", "texture": preload("res://resources/art/workstation/textures/red_chili_sauce_texture_v1_five_area_v2.png"), "native_drag": false},
 ]
 
@@ -69,9 +67,6 @@ func refresh_from_session() -> void:
 		var count := maxi(int(inventory.get(str(stock_id), 0)), 0)
 		slot.apply_state(count, unlocked, capacity)
 		slot.visible = unlocked
-		var lock_visual := slot.get_node_or_null("LockVisual") as TextureRect
-		if lock_visual != null:
-			lock_visual.visible = false
 	var wide := progression != null and bool(progression.call("owns_growth", &"growth.tool.pancake.wide_spreader"))
 	_spreader_button.texture_normal = SPREADER_WIDE if wide else SPREADER_NORMAL
 	_spreader_button.tooltip_text = "宽幅摊饼器：落点更宽" if wide else "T形摊饼器：点选后在任意已解锁鏊面画圈"
@@ -145,14 +140,6 @@ func _add_stock_slot(host: Control, definition: Dictionary) -> void:
 	slot.hold_advanced.connect(_on_hold_advanced.bind(slot))
 	slot.hold_released.connect(_on_hold_released.bind(slot))
 	_add_caption(slot, slot.material_label)
-	var lock_visual := TextureRect.new()
-	lock_visual.name = "LockVisual"
-	lock_visual.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	lock_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lock_visual.texture = LOCK_TEXTURE
-	lock_visual.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	lock_visual.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	slot.add_child(lock_visual)
 	host.add_child(slot)
 	_stock_slots.append(slot)
 	_slot_by_stock[str(slot.stock_id)] = slot

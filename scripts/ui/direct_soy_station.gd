@@ -4,10 +4,10 @@ extends Control
 signal status_message(message: String)
 
 const PLASTIC_CUP_TEXTURE := preload("res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v3_512.png")
-const SUGAR_JAR_TEXTURE := preload("res://assets/jianbing-stall/sugar-jar-for-soy-milk.png")
-const MANUAL_DISPENSER_TEXTURE := preload("res://assets/jianbing-stall/soy-milk-dispenser.png")
-const AUTO_FILL_DISPENSER_TEXTURE := preload("res://assets/jianbing-stall/automatic-soy-milk-dispenser-transparent.png")
-const ADVANCED_DISPENSER_TEXTURE := preload("res://assets/jianbing-stall/automatic-soy-milk-dispenser-two-outlets-transparent.png")
+const SUGAR_JAR_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png")
+const MANUAL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png")
+const AUTO_FILL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png")
+const ADVANCED_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png")
 const FULL_CUP_SECONDS := 0.8
 const EMPTY_CUP_POSITION := Vector2(193.0, 316.0)
 const SINGLE_DISPENSING_CUP_POSITION := Vector2(193.0, 318.0)

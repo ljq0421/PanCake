@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" uid="uid://d0se1e6c7txsd" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
-[ext_resource type="Texture2D" uid="uid://h30y780vs2v4" path="res://assets/jianbing-stall/soy-milk-dispenser.png" id="3_dispenser"]
-[ext_resource type="Texture2D" uid="uid://dueqcchyh6gs2" path="res://assets/jianbing-stall/sugar-jar-for-soy-milk.png" id="5_sugar"]
+[ext_resource type="Texture2D" uid="uid://h30y780vs2v4" path="res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png" id="3_dispenser"]
+[ext_resource type="Texture2D" uid="uid://dueqcchyh6gs2" path="res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png" id="5_sugar"]
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
 [ext_resource type="Texture2D" uid="uid://dh1yg3ajx34oo" path="res://resources/art/products/soy_milk/soy_milk_plastic_cup_empty_cartoon_v3_512.png" id="7_cup"]
-[ext_resource type="Texture2D" uid="uid://cwk2ap6fmtqt4" path="res://assets/jianbing-stall/ice-tray-with-scoop.png" id="8_ice_tray"]
+[ext_resource type="Texture2D" uid="uid://cwk2ap6fmtqt4" path="res://resources/art/workstation/machines/soy_milk/ice-tray-with-scoop.png" id="8_ice_tray"]
 [ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="9_alpha_hit"]
 
 [sub_resource type="StyleBoxFlat" id="Style_cup_selected"]

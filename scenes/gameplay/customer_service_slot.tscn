@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bcgkauxm4opdi"]
 
 [ext_resource type="Script" uid="uid://bx27p8vbu7lxg" path="res://scripts/ui/customer_service_slot.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://resources/art/ui/order/order_card_product_rows_3_v1.png" id="2_order_card"]
+[ext_resource type="Texture2D" uid="uid://c5v11ifr0600d" path="res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png" id="2_order_card"]
 [ext_resource type="Script" uid="uid://c46h1inlchljr" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
 
 [sub_resource type="StyleBoxFlat" id="TransparentStyle"]

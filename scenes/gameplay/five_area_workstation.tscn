@@ -11,7 +11,7 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="9_g8thx"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="10_t8d3v"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="11_3q22l"]
-[ext_resource type="Texture2D" uid="uid://da8bphae6srtv" path="res://assets/jianbing-stall/empty-workbench.png" id="12_whx3a"]
+[ext_resource type="Texture2D" uid="uid://da8bphae6srtv" path="res://resources/art/workstation/background/empty-workbench.png" id="12_whx3a"]
 [ext_resource type="Texture2D" uid="uid://c4kc7vci8tfog" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="13_wq4vo"]
 [ext_resource type="Texture2D" uid="uid://cixfa2ukur0jb" path="res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png" id="15_is580"]
 [ext_resource type="Texture2D" uid="uid://dqmp2grbjmbw5" path="res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png" id="16_4rwsg"]
@@ -37,9 +37,9 @@
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 [ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="75_alpha_hit_button"]
 [ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="76_ladle_hit"]
-[ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://assets/jianbing-stall/sweet-bean-sauce-jar-no-brush.png" id="77_sweet_sauce_hit"]
-[ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://assets/jianbing-stall/chili-sauce-jar-no-brush.png" id="78_chili_sauce_hit"]
-[ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://assets/jianbing-stall/tomato-sauce-jar-no-brush.png" id="79_tomato_sauce_hit"]
+[ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="77_sweet_sauce_hit"]
+[ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png" id="78_chili_sauce_hit"]
+[ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png" id="79_tomato_sauce_hit"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)

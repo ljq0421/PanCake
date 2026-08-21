@@ -26,8 +26,10 @@ func _run() -> void:
 	_check(fryer != null and fryer.black_sesame_tray != null and fryer.black_sesame_tray.texture != null, "black sesame tray is authored beside the fryer")
 	_check(fryer != null and fryer.output_sources.size() == 4 and fryer.plate_sources.size() == 4 and fryer.prepared_slot != null and not fryer.prepared_slot.visible and fryer.waste_target != null, "cartoon fryer exposes four fryer and plate oil-stick sources while keeping the former storage control hidden")
 	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.black_sesame_tray.z_index), "finished youtiao drag sources render above the black sesame tray")
+	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return is_equal_approx(source.drag_threshold_pixels, 4.0)), "oil-strip sources start dragging with a short movement")
+	_check(fryer != null and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return source._drop_forward_target == fryer), "stored oil strips forward drops to their serving tray")
 	_check(fryer != null and fryer.product_visuals.size() == 4 and fryer.raised_basket_slots.size() == 4 and fryer.lowered_basket_slots.size() == 4, "cartoon fryer renders exactly four fixed fryer slots")
-	_check(fryer != null and fryer.dough_visuals.size() == 4 and fryer.plate_product_visuals.size() == 4 and fryer.board_dough_slots.size() == 4 and fryer.plate_product_slots.size() == 4, "board and serving plate expose four scene-authored oil-stick positions")
+	_check(fryer != null and fryer.plate_product_visuals.size() == 4 and fryer.plate_product_slots.size() == 4 and fryer.sesame_tray_product_slots.size() == 4, "serving and sesame trays expose four scene-authored oil-stick positions")
 	if fryer != null:
 		var session: Node = root.get_node_or_null("GameSession")
 		if session != null:
@@ -42,21 +44,15 @@ func _run() -> void:
 			_check(not fryer.plate_visual.visible and not fryer._can_drop_data(Vector2(470.0, 520.0), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "before the finished tray unlock, fried youtiao stays in the raised filter basket")
 			progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true})
 			fryer.refresh_from_session()
-		fryer._machine = {"state": &"idle", "capacity": 4, "quantity": 0, "occupied_slot_indices": []}
-		fryer._dough_stock = 4
-		fryer._apply_snapshot()
-		_check(_visible_count(fryer.dough_visuals) == 4 and fryer.dough_visuals[0].position == fryer.board_dough_slots[0].position, "four stocked dough units fill the scene-authored board positions")
-		fryer._dough_stock = 3
-		fryer._apply_snapshot()
-		_check(_visible_count(fryer.dough_visuals) == 3, "consuming one dough unit removes one board visual")
 		fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 4, "occupied_slot_indices": [0, 1, 2, 3]}
 		fryer._plate_count = 0
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_product_visuals) == 0, "finished youtiao remains in the basket until each stick is dragged to the plate")
-		_check(fryer._can_drop_data(Vector2(470.0, 520.0), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a single finished fryer slot can be dropped on the serving plate")
+		_check(fryer._can_drop_data(fryer.plate_visual.get_rect().get_center(), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a single finished fryer slot can be dropped on the serving plate")
 		fryer._plate_count = 1
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_product_visuals) == 1 and fryer.plate_product_visuals[0].position == fryer.plate_product_slots[0].position and fryer.plate_sources[0].visible, "storing one fried youtiao displays one draggable scene-positioned plate visual")
+		_check(fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a stored oil strip does not block dropping another fryer stick on the serving plate")
 		if session != null:
 			var progression: RefCounted = session.call("progression_service")
 			var unlocked_products: Dictionary = Dictionary(progression.get("unlocked_product_ids"))

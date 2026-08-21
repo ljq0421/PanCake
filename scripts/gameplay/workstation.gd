@@ -66,7 +66,7 @@ const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
 const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
 const ORDER_REQUIREMENT_SUGAR := &"sugar"
-const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://assets/jianbing-stall/sugar-jar-for-soy-milk.png"
+const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
 const DEFAULT_ORDER_COINS := 3
 const PAYMENT_SLOT_COIN_SIZE := Vector2(48.0, 48.0)
 const PAYMENT_COIN_START_POSITION := Vector2(842.0, 312.0)
@@ -3457,17 +3457,6 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 	return requirements
 
 
-func _order_requirement_groups_for_card(order: Dictionary) -> Array:
-	var groups: Array = []
-	for item in _order_items_for_card(order):
-		# Each product owns its own ingredient sequence on the customer card.
-		# Keeping this separate from the legacy flat list preserves the compact
-		# top-right order hint while allowing the service cards to show one
-		# product row at a time.
-		groups.append(_order_requirements_for_card({"items": [item]}))
-	return groups
-
-
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	if order_dish_icons.is_empty():
 		return
@@ -3810,7 +3799,9 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		for item_variant in items:
 			var item := Dictionary(item_variant)
 			item_textures.append(FIVE_AREA_PRODUCT_VISUALS.texture_for(StringName(item.get("product_id", &"")), StringName(item.get("temperature_mode", &"room_temperature"))))
-		var requirement_groups: Array = _order_requirement_groups_for_card(order)
+		var requirements: Array = _order_requirements_for_card(order)
+		if requirements.size() > 8:
+			requirements.resize(8)
 		var metadata := Dictionary(order.get("metadata", {}))
 		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
@@ -3821,7 +3812,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 			order,
 			_customer_portraits.call("texture_for", customer_id, reaction) as Texture2D,
 			item_textures,
-			requirement_groups,
+			requirements,
 			coin_total,
 		)
 

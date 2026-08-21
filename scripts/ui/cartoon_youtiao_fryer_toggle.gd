@@ -77,7 +77,11 @@ func _process(delta: float) -> void:
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
-		refresh_from_session()
+		# Do not reconfigure live drag controls in the middle of a native drag.
+		# Repeatedly changing their rects and disabled state made the preview feel
+		# sticky even though the product was already being dragged.
+		if not _has_active_product_drag():
+			refresh_from_session()
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -349,7 +353,12 @@ func _refresh_output_source(state: StringName, occupied: Array[int]) -> void:
 		if burnt_batch_source:
 			source_ref = {"source_kind": &"youtiao_batch", "source_index": -1, "product_id": PRODUCT_ID, "quantity": occupied.size(), "discardable": true}
 			hint = "拖到废弃区报废整锅油条"
-		output.configure(source_ref, burnt_youtiao_texture if state == &"burnt" else golden_youtiao_texture, ready_slot or burnt_batch_source, hint)
+		var product_texture := burnt_youtiao_texture if state == &"burnt" else golden_youtiao_texture
+		output.configure(source_ref, product_texture, ready_slot or burnt_batch_source, hint)
+		# The four visual sticks overlap for depth, but their transparent padding
+		# must not overlap as hit areas.  Alpha hit testing keeps each visible stick
+		# independently draggable without changing the authored artwork layout.
+		_set_youtiao_alpha_hit_region(output, product_texture, ready_slot)
 		output.visible = ready_slot or burnt_batch_source
 
 
@@ -376,18 +385,27 @@ func _refresh_plate_sources() -> void:
 		source.position = plate_product_visuals[source_index].position
 		source.size = plate_product_visuals[source_index].size
 		source.self_modulate = Color(1.0, 1.0, 1.0, 0.0)
+		var product_texture := _prepared_youtiao_texture(product_id)
 		source.configure({
 			"source_kind": &"prepared_product_slot",
 			"source_slot_id": &"slot.04",
 			"source_index": source_index,
 			"product_id": product_id,
 			"discardable": true,
-		}, _prepared_youtiao_texture(product_id), visible, "从%s拖这一根%s到出餐位" % ["芝麻成品盘" if product_id == SESAME_PRODUCT_ID else "成品盘", "芝麻油条" if product_id == SESAME_PRODUCT_ID else "油条"])
+		}, product_texture, visible, "从%s拖这一根%s到出餐位" % ["芝麻成品盘" if product_id == SESAME_PRODUCT_ID else "成品盘", "芝麻油条" if product_id == SESAME_PRODUCT_ID else "油条"])
+		_set_youtiao_alpha_hit_region(source, product_texture, visible)
 		source.visible = visible
 
 
 func _prepared_youtiao_texture(product_id: StringName) -> Texture2D:
 	return black_sesame_youtiao_texture if product_id == SESAME_PRODUCT_ID else _plate_youtiao_texture()
+
+
+func _set_youtiao_alpha_hit_region(source: ProductDragSource, product_texture: Texture2D, enabled: bool) -> void:
+	var regions: Array[Dictionary] = []
+	if enabled:
+		regions.append({"texture": product_texture, "rect": Rect2(Vector2.ZERO, source.size)})
+	source.set_alpha_hit_regions(regions)
 
 
 func _prepared_product_rect(product_index: int, product_id: StringName) -> Rect2:
@@ -427,6 +445,7 @@ func _create_runtime_controls() -> void:
 		output.ignore_texture_size = true
 		output.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		output.native_drag_enabled = true
+		output.drag_threshold_pixels = 4.0
 		output.visible = false
 		add_child(output)
 		output_sources.append(output)
@@ -437,6 +456,10 @@ func _create_runtime_controls() -> void:
 		plate_source.ignore_texture_size = true
 		plate_source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		plate_source.native_drag_enabled = true
+		plate_source.drag_threshold_pixels = 4.0
+		# A stored oil strip stays draggable, while drops over it continue to be
+		# evaluated by this fryer as the plate or sesame-tray destination.
+		plate_source.set_drop_forward_target(self)
 		plate_source.visible = false
 		add_child(plate_source)
 		plate_sources.append(plate_source)
@@ -524,6 +547,13 @@ func _is_plate_point(point: Vector2) -> bool:
 	# hand-authored rectangle began well inside the artwork, so drops on the
 	# visible left and upper portions of the plate were silently rejected.
 	return _finished_tray_unlocked and plate_visual != null and plate_visual.get_rect().has_point(point)
+
+
+func _has_active_product_drag() -> bool:
+	for source in output_sources + plate_sources:
+		if source.is_native_drag_active():
+			return true
+	return false
 
 
 func _state_text(state: StringName) -> String:

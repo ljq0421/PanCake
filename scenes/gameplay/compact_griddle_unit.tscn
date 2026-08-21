@@ -1,7 +1,7 @@
 [gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/jianbing-griddle.png" id="2_griddle"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/jianbing-griddle.png" id="2_griddle"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_raw_texture_v1.png" id="3_pancake"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/paper_bag_package_v1.png" id="4_bag"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="5_heatmap"]
@@ -24,8 +24,8 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png" id="24_sauce_brush"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_fold_overlay.gd" id="25_fold_overlay"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_intact_raw_v1_five_area_v2.png" id="26_egg_intact"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/ham-sausage-1.png" id="27_ham_portion"]
-[ext_resource type="Texture2D" path="res://assets/jianbing-stall/pork-floss-portion-2.png" id="28_pork_floss_portion"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham-sausage-1.png" id="27_ham_portion"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png" id="28_pork_floss_portion"]
 
 [sub_resource type="StyleBoxFlat" id="ActionStyle"]
 bg_color = Color(0.88, 0.47, 0.13, 0.94)

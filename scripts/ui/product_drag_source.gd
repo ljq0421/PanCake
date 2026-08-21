@@ -21,6 +21,7 @@ var _drag_available := false
 var _holding := false
 var _hold_elapsed := 0.0
 var _native_drag_in_progress := false
+var _drop_forward_target: Control
 ## Optional alpha-tested layers that define the clickable silhouette.  A source
 ## without these layers keeps the regular rectangular hit area.
 var _alpha_hit_regions: Array[Dictionary] = []
@@ -53,6 +54,31 @@ func configure(source_ref: Dictionary, product_texture: Texture2D, available: bo
 
 func set_drag_available(value: bool) -> void:
 	_drag_available = value
+
+
+func set_drop_forward_target(target: Control) -> void:
+	_drop_forward_target = target
+
+
+func is_native_drag_active() -> bool:
+	return _native_drag_in_progress
+
+
+func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	if _drop_forward_target == null or not is_instance_valid(_drop_forward_target):
+		return false
+	return bool(_drop_forward_target.call("_can_drop_data", _forwarded_target_position(at_position), data))
+
+
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	if _drop_forward_target == null or not is_instance_valid(_drop_forward_target):
+		return
+	_drop_forward_target.call("_drop_data", _forwarded_target_position(at_position), data)
+
+
+func _forwarded_target_position(local_position: Vector2) -> Vector2:
+	var canvas_position := get_global_transform_with_canvas() * local_position
+	return _drop_forward_target.get_global_transform_with_canvas().affine_inverse() * canvas_position
 
 
 func set_alpha_hit_regions(regions: Array[Dictionary]) -> void:

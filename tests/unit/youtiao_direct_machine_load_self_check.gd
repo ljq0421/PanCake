@@ -99,6 +99,9 @@ func _run() -> void:
 	session.finished_tray_unlocked = true
 	fryer.call("refresh_from_session")
 	_check(bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)), "the visible upper-left portion of the serving plate accepts a finished youtiao")
+	_check(not fryer.call("_requires_timed_session_refresh"), "a ready fryer stops rebuilding drag sources before a serving-tray drag")
+	fryer._machine["state"] = &"draining"
+	_check(bool(fryer.call("_requires_timed_session_refresh")), "a draining fryer continues to refresh until its output becomes draggable")
 
 	fryer.queue_free()
 	session.queue_free()

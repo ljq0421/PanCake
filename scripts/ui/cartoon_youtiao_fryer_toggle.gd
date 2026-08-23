@@ -77,6 +77,12 @@ func _process(delta: float) -> void:
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
+		# Once a batch is ready to collect, only a player action can change its
+		# state. Do not keep rebuilding the draggable sticks and their alpha hit
+		# regions every 100 ms while the player moves one to either serving tray.
+		# The time-driven fryer states below still refresh at the same cadence.
+		if not _requires_timed_session_refresh():
+			return
 		# Do not reconfigure live drag controls in the middle of a native drag.
 		# Repeatedly changing their rects and disabled state made the preview feel
 		# sticky even though the product was already being dragged.
@@ -554,6 +560,15 @@ func _has_active_product_drag() -> bool:
 		if source.is_native_drag_active():
 			return true
 	return false
+
+
+func _requires_timed_session_refresh() -> bool:
+	return StringName(_machine.get("state", &"")) in [
+		&"frying",
+		&"ready_safe",
+		&"overcooking",
+		&"draining",
+	]
 
 
 func _state_text(state: StringName) -> String:

@@ -272,6 +272,20 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	_check(bool(hotspots.get_node("CorianderTray/Hotspot").native_drag_enabled), "coriander tray uses drag placement")
 	_check((hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource).drag_preview_texture != null, "scallion drag shows a visible portion under the pointer")
 	_check((hotspots.get_node("PorkFlossHotspot") as ProductDragSource).drag_preview_texture != null, "pork-floss drag shows a visible portion under the pointer")
+	for stock_id_variant in HOTSPOTS_SCRIPT.DRAG_PREVIEW_INGREDIENT_TYPES:
+		var stock_id := StringName(stock_id_variant)
+		var texture := HOTSPOTS_SCRIPT.DRAG_PREVIEW_TEXTURES.get(stock_id) as Texture2D
+		var ingredient_type := StringName(HOTSPOTS_SCRIPT.DRAG_PREVIEW_INGREDIENT_TYPES[stock_id_variant])
+		var expected_size := texture.get_size() * IngredientLayer.visual_scale_for(ingredient_type)
+		_check(
+			hotspots.call("_drag_preview_size", stock_id, texture).is_equal_approx(expected_size),
+			"%s drag preview uses the pancake sprite's texture scale" % stock_id
+		)
+	var scallion_source := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
+	_check(
+		scallion_source.drag_preview_offset.is_equal_approx(-scallion_source.drag_preview_size * 0.5),
+		"small-ingredient drag previews stay centered under the release point"
+	)
 	var egg_source := hotspots.get_node("EggCarton/Hotspot") as ProductDragSource
 	var egg_preview := egg_source.drag_preview_texture
 	_check(egg_preview != null and egg_preview.resource_path.ends_with("egg_whole_v1_five_area_v2.png"), "egg drag shows a whole egg before release")

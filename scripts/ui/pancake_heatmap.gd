@@ -89,6 +89,9 @@ var mouse_grid_cell := Vector2i(-1, -1)
 var pointer_local_position := Vector2.ZERO
 var pointer_pressed := false
 var cursor_radius_pixels: float = 8.0
+## Only active hand tools draw a canvas cue. Ingredient drags use Godot's drag
+## preview, so a fallback ring there is stale feedback at a different position.
+var cursor_visual_enabled := true
 var cursor_is_t_spreader := false
 var spreader_cursor_visual_enabled := true
 var cursor_is_sauce_brush := false
@@ -570,7 +573,7 @@ func _draw() -> void:
 		var guide_center := batter_pour_guide_center if batter_pour_guide_center != Vector2.ZERO else size * 0.5
 		draw_circle(guide_center, batter_pour_guide_inner_radius_pixels, Color(1.0, 0.82, 0.30, 0.88), false, 2.0, true)
 		draw_circle(guide_center, batter_pour_guide_outer_radius_pixels, Color(1.0, 0.93, 0.54, 0.96), false, 2.5, true)
-	if mouse_grid_cell.x >= 0 and model != null:
+	if cursor_visual_enabled and mouse_grid_cell.x >= 0 and model != null:
 		# While dragging, render the cursor at the exact current pointer position
 		# rather than at the most recently delivered GUI event / quantized cell.
 		var local_position := pointer_local_position if pointer_pressed else PancakeSpace.grid_to_local(mouse_grid_cell, size, model.grid_size)
@@ -581,8 +584,6 @@ func _draw() -> void:
 				_draw_t_spreader(local_position)
 			elif cursor_is_sauce_brush and draw_sauce_brush_fallback:
 				_draw_sauce_brush_cursor(local_position)
-			else:
-				draw_circle(local_position, cursor_radius_pixels, Color.WHITE, false, 2.0)
 	if draw_pan_outline:
 		var center := size * 0.5
 		var radii := Vector2(size.x * 0.5 - 2.0, size.y * 0.5 * model.parameters.pan_height_ratio - 2.0)

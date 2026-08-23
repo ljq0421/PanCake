@@ -26,6 +26,9 @@ var cup_state: StringName = CUP_READY
 var cup: Dictionary = {}
 var queued_cups: Array[Dictionary] = []
 var held_empty_cup_count := 0
+# The advanced machine can hold a new empty cup at its right outlet while the
+# already-filled left cup remains available for seasoning or delivery.
+var secondary_empty_cup_placed := false
 var available_recipe_ids: Array[StringName] = [DEFAULT_RECIPE_ID]
 var fill_guide_enabled := false
 var auto_fill_enabled := false
@@ -90,9 +93,12 @@ func take_empty_cup() -> Dictionary:
 		held_empty_cup_count = 1
 		return _success({"cup_state": cup_state, "held_empty_cup_count": held_empty_cup_count})
 	if cup_state != CUP_HELD_EMPTY or not double_fill_enabled or held_empty_cup_count >= 2:
-		return _failure(&"cup_not_available")
+		if cup_state != CUP_FILLED or not double_fill_enabled or secondary_empty_cup_placed or not queued_cups.is_empty():
+			return _failure(&"cup_not_available")
+		secondary_empty_cup_placed = true
+		return _success({"cup_state": cup_state, "secondary_empty_cup_placed": true, "outlet_index": 1})
 	held_empty_cup_count += 1
-	return _success({"cup_state": cup_state, "held_empty_cup_count": held_empty_cup_count})
+	return _success({"cup_state": cup_state, "held_empty_cup_count": held_empty_cup_count, "outlet_index": held_empty_cup_count - 1})
 
 
 func return_empty_cup() -> Dictionary:
@@ -103,9 +109,13 @@ func return_empty_cup() -> Dictionary:
 	return _success({"cup_state": cup_state})
 
 
-func fill_held_cup(held_seconds: float) -> Dictionary:
+func fill_held_cup(held_seconds: float, outlet_index: int = 0) -> Dictionary:
 	if not owned:
 		return _failure(&"device_unowned")
+	if outlet_index == 1:
+		return _fill_secondary_empty_cup(held_seconds)
+	if outlet_index != 0:
+		return _failure(&"invalid_outlet_index")
 	if cup_state != CUP_HELD_EMPTY:
 		return _failure(&"empty_cup_required")
 	if double_fill_enabled and held_empty_cup_count < 2:
@@ -123,6 +133,21 @@ func fill_held_cup(held_seconds: float) -> Dictionary:
 	cup_state = CUP_FILLED
 	held_empty_cup_count = 0
 	return _success({"cup": cup.duplicate(true), "fill_ratio": fill_ratio, "is_full": fill_ratio >= 0.999, "quantity": 1 + queued_cups.size()})
+
+
+func _fill_secondary_empty_cup(held_seconds: float) -> Dictionary:
+	if not double_fill_enabled:
+		return _failure(&"second_outlet_locked")
+	if cup_state != CUP_FILLED or not secondary_empty_cup_placed:
+		return _failure(&"second_empty_cup_required")
+	var fill_ratio := clampf(maxf(held_seconds, 0.0) / FULL_CUP_SECONDS, 0.0, 1.0)
+	if auto_fill_enabled:
+		fill_ratio = 1.0
+	var quality := minf(snappedf(fill_ratio * 100.0, 1.0), 100.0)
+	var second_cup := _product_payload(fill_ratio, quality)
+	queued_cups.append(second_cup)
+	secondary_empty_cup_placed = false
+	return _success({"cup": second_cup.duplicate(true), "cup_index": 1, "fill_ratio": fill_ratio, "is_full": fill_ratio >= 0.999, "quantity": 1 + queued_cups.size()})
 
 
 func add_sugar(cup_index: int = 0) -> Dictionary:
@@ -247,6 +272,7 @@ func clear_for_day_end() -> Dictionary:
 	cup = {}
 	queued_cups.clear()
 	held_empty_cup_count = 0
+	secondary_empty_cup_placed = false
 	cup_state = CUP_READY
 	return _success({"discarded_product": discarded_products.front() if not discarded_products.is_empty() else {}, "discarded_products": discarded_products})
 
@@ -262,6 +288,7 @@ func snapshot() -> Dictionary:
 		"cup": cup.duplicate(true),
 		"queued_cups": queued_cups.duplicate(true),
 		"held_empty_cup_count": held_empty_cup_count,
+		"secondary_empty_cup_placed": secondary_empty_cup_placed,
 		"ready_cup_count": (1 if cup_state == CUP_FILLED and not cup.is_empty() else 0) + queued_cups.size(),
 		"full_cup_seconds": FULL_CUP_SECONDS,
 		"soy_reservoir_capacity": int(CATALOG.device_tier(DEVICE_ID, tier).get("soy_reservoir_capacity", 1)),
@@ -285,6 +312,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	cup = {}
 	queued_cups.clear()
 	held_empty_cup_count = 0
+	secondary_empty_cup_placed = false
 	available_recipe_ids = [DEFAULT_RECIPE_ID]
 	if value.is_empty() or not bool(value.get("owned", false)):
 		return _success()
@@ -311,6 +339,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 			var queued_cup := Dictionary(raw_queued_cup).duplicate(true)
 			if not queued_cup.is_empty():
 				queued_cups.append(queued_cup)
+		secondary_empty_cup_placed = bool(value.get("secondary_empty_cup_placed", false)) and queued_cups.is_empty()
 	elif restored_state == CUP_HELD_EMPTY:
 		cup_state = CUP_HELD_EMPTY
 		held_empty_cup_count = clampi(int(value.get("held_empty_cup_count", 1)), 1, 2)
@@ -343,8 +372,15 @@ func _promote_queued_cup() -> void:
 		cup = queued_cups.pop_front()
 		cup_state = CUP_FILLED
 		return
+	if secondary_empty_cup_placed:
+		cup = {}
+		secondary_empty_cup_placed = false
+		held_empty_cup_count = 1
+		cup_state = CUP_HELD_EMPTY
+		return
 	cup = {}
 	held_empty_cup_count = 0
+	secondary_empty_cup_placed = false
 	cup_state = CUP_READY
 
 

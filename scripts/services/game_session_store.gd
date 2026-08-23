@@ -1357,11 +1357,11 @@ func select_f4_soy_flavor(recipe_id: StringName) -> Dictionary:
 	return result
 
 
-func fill_f4_soy_empty_cup(held_seconds: float) -> Dictionary:
+func fill_f4_soy_empty_cup(held_seconds: float, outlet_index: int = 0) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("fill_soy_empty_cup", held_seconds)
+	var result: Dictionary = _production_service.call("fill_soy_empty_cup", held_seconds, outlet_index)
 	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result

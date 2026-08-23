@@ -61,7 +61,7 @@ func _rebuild_sprites() -> void:
 			grid_maximum = maxf(float(fold_model.pancake_model.grid_size - 1), 1.0)
 		sprite.position = (placement.position as Vector2) / grid_maximum * size
 		sprite.rotation = float(placement.rotation)
-		sprite.scale = Vector2.ONE * _scale_for(placement.type)
+		sprite.scale = Vector2.ONE * visual_scale_for(placement.type)
 		sprite.modulate = Color(0.90, 0.90, 0.90, 1.0) if bool(placement.damaged) else Color.WHITE
 		sprite.set_meta(&"ingredient_type", placement.type)
 		sprite.set_meta(&"grid_x", float((placement.position as Vector2).x))
@@ -161,26 +161,26 @@ func texture_for(ingredient_type: StringName) -> Texture2D:
 	return null
 
 
-func _scale_for(ingredient_type: StringName) -> float:
+static func visual_scale_for(ingredient_type: StringName) -> float:
 	match ingredient_type:
 		IngredientModel.EGG:
 			return 0.14
 		IngredientModel.BAOCUI:
-			return 0.16
+			return 0.20
 		IngredientModel.HAM_SAUSAGE:
 			# The serving asset has generous transparent margins; this keeps the
 			# visible ham portion at a satisfying, easy-to-read size on the pancake.
-			return 0.24
+			return 0.40
 		IngredientModel.SCALLION:
-			return scallion_scale
+			return 0.70
 		IngredientModel.MEAT_FLOSS:
 			# Match the ham portion's visual weight while preserving the floss mound's
 			# naturally more compact silhouette.
-			return 0.24
+			return 0.45
 		IngredientModel.PORK_TENDERLOIN:
 			return 0.13
 		IngredientModel.CORIANDER:
-			return 0.11
+			return 0.70
 		IngredientModel.PRESERVED_MUSTARD:
 			return 0.12
 		IngredientModel.YOUTIAO:

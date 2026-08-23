@@ -28,7 +28,6 @@ const RESULT_OVERLAY_Z_INDEX := 300
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = cartoon_youtiao_fryer.waste_target
 @onready var pending_payment_button: Button = %PendingPaymentButton
-@onready var soy_full_slots: Array[Node] = [%SoyFullYellow]
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
@@ -251,7 +250,6 @@ func _on_production_shell_changed(_snapshot: Dictionary = {}) -> void:
 
 func _all_material_slots() -> Array[Node]:
 	var result: Array[Node] = []
-	result.append_array(soy_full_slots)
 	result.append_array(youtiao_dough_slots)
 	return result
 
@@ -269,7 +267,7 @@ func _refresh_material_slots() -> void:
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and (slot.recipe_id.is_empty() or _id_in(unlocked_recipes, slot.recipe_id))
 		var status := Dictionary(session.call("five_area_restock_status", slot.stock_id)) if not slot.stock_id.is_empty() else {}
 		slot.apply_state(int(inventory.get(str(slot.stock_id), 0)), unlocked, int(status.get("capacity", 6)))
-	var fixed_slots: Array[Node] = soy_full_slots + youtiao_dough_slots
+	var fixed_slots: Array[Node] = youtiao_dough_slots
 	for index in fixed_slots.size():
 		var slot := fixed_slots[index]
 		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"

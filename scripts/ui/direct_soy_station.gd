@@ -42,6 +42,7 @@ const FLAVOR_RECIPES: Array[StringName] = [
 @onready var queued_cup_button: AlphaTextureHitButton = %QueuedCupButton
 @onready var cup_selection_frame: Panel = %CupSelectionFrame
 @onready var nozzle_button: Button = %NozzleButton
+@onready var second_nozzle_button: Button = %SecondNozzleButton
 @onready var sugar_jar_visual: TextureRect = $SoyMilkSugarJar
 @onready var sugar_jar: AlphaTextureHitButton = %SugarJar
 @onready var ice_tray_visual: TextureRect = %IceTrayVisual
@@ -78,6 +79,7 @@ func _ready() -> void:
 	queued_cup_preview.texture = _outlet_cup_texture
 	queued_cup_button.hit_texture = _outlet_cup_texture
 	nozzle_button.size = Vector2(112.0, 100.0)
+	second_nozzle_button.size = Vector2(112.0, 100.0)
 	flavor_menu.position = Vector2(10.0, 12.0)
 	flavor_menu.size = Vector2(106.0, 30.0)
 	sugar_jar.position = sugar_jar_visual.position
@@ -91,6 +93,7 @@ func _ready() -> void:
 	nozzle_button.button_down.connect(_on_nozzle_down)
 	nozzle_button.button_up.connect(_on_nozzle_up)
 	nozzle_button.pressed.connect(_on_nozzle_pressed)
+	second_nozzle_button.pressed.connect(_on_second_nozzle_pressed)
 	sugar_jar.pressed.connect(_on_sugar_jar_pressed)
 	ice_button.pressed.connect(_on_ice_button_pressed)
 	flavor_menu.get_popup().id_pressed.connect(_on_flavor_selected)
@@ -138,6 +141,7 @@ func refresh_from_session() -> void:
 	var queued_cups := Array(machine.get("queued_cups", []))
 	var ready_cup_count := int(machine.get("ready_cup_count", 0))
 	var held_empty_cup_count := int(machine.get("held_empty_cup_count", 0))
+	var secondary_empty_cup_placed := bool(machine.get("secondary_empty_cup_placed", false))
 	if cup_state != &"filled" or _selected_cup_index >= ready_cup_count:
 		_selected_cup_index = 0
 	var selected_cup := _cup_at_index(cup, queued_cups, _selected_cup_index)
@@ -191,11 +195,11 @@ func refresh_from_session() -> void:
 		machine_output.set_drag_available(true)
 		machine_output.position = _active_cup_position()
 		var fill_percent := roundi(selected_fill_ratio * 100.0)
-		state_label.text = "③ 已选第%d杯；点击糖罐或冰盒加料" % (_selected_cup_index + 1) if ready_cup_count > 1 else "③ 已选豆浆；点击糖罐或冰盒加料"
+		state_label.text = "第1杯已满；右侧空杯已就位，点击右出浆口接浆" if secondary_empty_cup_placed else "③ 已选第%d杯；点击糖罐或冰盒加料" % (_selected_cup_index + 1) if ready_cup_count > 1 else "③ 已选豆浆；点击糖罐或冰盒加料"
 		var temperature_label := "冰镇" if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced" else "常温"
-		cup_detail_label.text = "第%d杯 · %s · %s · %d%% 满杯" % [_selected_cup_index + 1, _recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent]
+		cup_detail_label.text = "第1杯 · %s · %s · %d%% 满杯；第2杯空杯待接浆" % [_recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent] if secondary_empty_cup_placed else "第%d杯 · %s · %s · %d%% 满杯" % [_selected_cup_index + 1, _recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent]
 	var second_empty_cup_visible := cup_state == &"held_empty" and _double_fill_enabled and held_empty_cup_count >= 2
-	queued_cup_preview.visible = second_empty_cup_visible or (cup_state == &"filled" and ready_cup_count > 1)
+	queued_cup_preview.visible = second_empty_cup_visible or secondary_empty_cup_placed or (cup_state == &"filled" and ready_cup_count > 1)
 	queued_cup_preview.position = DUAL_RIGHT_CUP_POSITION
 	queued_cup_button.visible = cup_state == &"filled" and ready_cup_count > 1
 	queued_cup_button.disabled = not queued_cup_button.visible
@@ -214,6 +218,9 @@ func refresh_from_session() -> void:
 	ice_button.tooltip_text = "给第%d杯加冰" % (_selected_cup_index + 1) if not ice_button.disabled else "第%d杯已加冰" % (_selected_cup_index + 1) if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced" else "请先接好豆浆"
 	nozzle_button.disabled = cup_state != &"held_empty" or (_double_fill_enabled and held_empty_cup_count < 2)
 	nozzle_button.tooltip_text = "请先放置第二个空杯" if _double_fill_enabled and held_empty_cup_count < 2 else "点击同时接满两杯豆浆" if _double_fill_enabled else "点击自动接满一杯豆浆" if _auto_fill_enabled else "按住出浆口接浆"
+	second_nozzle_button.visible = secondary_empty_cup_placed
+	second_nozzle_button.disabled = not secondary_empty_cup_placed
+	second_nozzle_button.tooltip_text = "点击右侧出浆口，接满第2杯豆浆"
 	if _workshop_preview:
 		# The author-positioned dispenser, cup, sugar jar and ice box remain;
 		# operating instructions and progress are intentionally absent.
@@ -222,6 +229,7 @@ func refresh_from_session() -> void:
 		sugar_label.visible = false
 		flavor_menu.visible = false
 		nozzle_button.disabled = true
+		second_nozzle_button.visible = false
 		machine_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		queued_cup_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -266,7 +274,8 @@ func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
 	var held_empty_cup_count := int(machine.get("held_empty_cup_count", 0))
 	var can_place_first_cup := cup_state == &"ready"
 	var can_place_second_cup := cup_state == &"held_empty" and _double_fill_enabled and held_empty_cup_count < 2
-	if not can_place_first_cup and not can_place_second_cup:
+	var can_refill_second_outlet := cup_state == &"filled" and _double_fill_enabled and not bool(machine.get("secondary_empty_cup_placed", false)) and int(machine.get("ready_cup_count", 0)) == 1
+	if not can_place_first_cup and not can_place_second_cup and not can_refill_second_outlet:
 		status_message.emit("请先完成当前这杯豆浆")
 		return
 	var result: Dictionary = session.call("take_f4_soy_empty_cup")
@@ -274,7 +283,7 @@ func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
 		status_message.emit("无法取杯：%s" % str(result.get("reason", &"unknown")))
 		return
 	_cup_stack_count -= 1
-	var success_message := "第一个空杯已放置，再点击杯堆放置第二个" if _double_fill_enabled and int(result.get("held_empty_cup_count", 0)) == 1 else "双杯已就位，点击双出浆口同时接满" if _double_fill_enabled else "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
+	var success_message := "第2个空杯已放到右出浆口，请单独点击右侧出浆口接浆" if bool(result.get("secondary_empty_cup_placed", false)) else "第一个空杯已放置，再点击杯堆放置第二个" if _double_fill_enabled and int(result.get("held_empty_cup_count", 0)) == 1 else "双杯已就位，点击双出浆口同时接满" if _double_fill_enabled else "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
 	status_message.emit("%s（杯堆剩余 %d 个）" % [success_message, _cup_stack_count])
 	refresh_from_session()
 
@@ -372,6 +381,11 @@ func _on_nozzle_pressed() -> void:
 		_fill_cup_automatically()
 
 
+func _on_second_nozzle_pressed() -> void:
+	if not second_nozzle_button.disabled:
+		_fill_cup_automatically(1)
+
+
 func _on_nozzle_up() -> void:
 	if not _filling:
 		return
@@ -386,11 +400,11 @@ func _on_nozzle_up() -> void:
 	refresh_from_session()
 
 
-func _fill_cup_automatically() -> void:
+func _fill_cup_automatically(outlet_index: int = 0) -> void:
 	var session := get_node_or_null("/root/GameSession")
-	var result: Dictionary = session.call("fill_f4_soy_empty_cup", FULL_CUP_SECONDS) if session != null else {"success": false, "reason": &"no_game_session"}
+	var result: Dictionary = session.call("fill_f4_soy_empty_cup", FULL_CUP_SECONDS, outlet_index) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		status_message.emit("高级豆浆机已同时接满两杯" if _double_fill_enabled else "自动豆浆机已接满一杯")
+		status_message.emit("第2杯豆浆已接满" if outlet_index == 1 else "高级豆浆机已同时接满两杯" if _double_fill_enabled else "自动豆浆机已接满一杯")
 	else:
 		status_message.emit("自动接浆失败：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
@@ -489,9 +503,13 @@ func _refresh_machine_geometry() -> void:
 		clampf(outlet.x - nozzle_button.size.x * 0.5, 0.0, size.x - nozzle_button.size.x),
 		clampf(outlet.y - nozzle_button.size.y, 0.0, size.y - nozzle_button.size.y)
 	)
+	var second_outlet := _texture_position_to_station(ADVANCED_RIGHT_NOZZLE_OUTLET_TEXTURE_POSITION) if _displayed_machine_tier >= 2 else outlet
+	second_nozzle_button.position = Vector2(
+		clampf(second_outlet.x - second_nozzle_button.size.x * 0.5, 0.0, size.x - second_nozzle_button.size.x),
+		clampf(second_outlet.y - second_nozzle_button.size.y, 0.0, size.y - second_nozzle_button.size.y)
+	)
 	dispense_effect.configure_geometry(Rect2(_active_cup_position(), machine_output.size), outlet)
-	var queued_outlet := _texture_position_to_station(ADVANCED_RIGHT_NOZZLE_OUTLET_TEXTURE_POSITION) if _displayed_machine_tier >= 2 else outlet
-	queued_cup_effect.configure_geometry(Rect2(DUAL_RIGHT_CUP_POSITION, machine_output.size), queued_outlet)
+	queued_cup_effect.configure_geometry(Rect2(DUAL_RIGHT_CUP_POSITION, machine_output.size), second_outlet)
 
 
 func _update_cup_selection_frame(has_filled_cup: bool, ready_cup_count: int) -> void:

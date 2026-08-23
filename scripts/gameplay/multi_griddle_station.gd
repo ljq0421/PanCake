@@ -11,7 +11,7 @@ const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush
 
 @onready var count_label: Label = %CountLabel
 @onready var units: Array[Node] = [%Griddle01]
-@onready var shared_tool_tray: Control = %SharedToolTray
+@onready var shared_tool_tray: SharedPancakeToolTray = %SharedToolTray
 
 var _session: Node
 var _active_count := 1

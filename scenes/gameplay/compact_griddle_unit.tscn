@@ -9,7 +9,6 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v2_five_area_v2.png" id="7_egg"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="8_baocui"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png" id="10_scallion"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_slices_v1_five_area_v2.png" id="12_tenderloin"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png" id="13_coriander"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png" id="14_mustard"]
 [ext_resource type="Shader" path="res://resources/shaders/pancake_surface.gdshader" id="15_pancake_shader"]
@@ -173,7 +172,6 @@ baocui_texture = ExtResource("8_baocui")
 ham_texture = ExtResource("27_ham_portion")
 scallion_texture = ExtResource("10_scallion")
 meat_floss_texture = ExtResource("28_pork_floss_portion")
-pork_tenderloin_texture = ExtResource("12_tenderloin")
 coriander_texture = ExtResource("13_coriander")
 preserved_mustard_texture = ExtResource("14_mustard")
 scallion_scale = 0.45

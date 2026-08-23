@@ -43,6 +43,12 @@ func _initialize() -> void:
 	_check(int(double_fill.get("quantity", 0)) == 2 and int(Dictionary(advanced_machine.call("snapshot")).get("ready_cup_count", 0)) == 2, "advanced soy machine fills the two placed cups from one automatic press")
 	advanced_machine.call("take_filled_cup")
 	_check(StringName(Dictionary(advanced_machine.call("snapshot")).get("cup_state", &"")) == &"filled" and int(Dictionary(advanced_machine.call("snapshot")).get("ready_cup_count", 0)) == 1, "the queued advanced-machine cup is promoted after the first cup is collected")
+	var refill_second_outlet := Dictionary(advanced_machine.call("take_empty_cup"))
+	var second_outlet_snapshot := Dictionary(advanced_machine.call("snapshot"))
+	_check(bool(refill_second_outlet.get("success", false)) and bool(second_outlet_snapshot.get("secondary_empty_cup_placed", false)), "a filled first outlet accepts a new empty cup at the second outlet")
+	var refilled_second_cup := Dictionary(advanced_machine.call("fill_held_cup", 0.1, 1))
+	var refilled_second_snapshot := Dictionary(advanced_machine.call("snapshot"))
+	_check(bool(refilled_second_cup.get("success", false)) and int(refilled_second_snapshot.get("ready_cup_count", 0)) == 2, "the right outlet fills its added cup without removing the left cup")
 
 	var selectable_machine: RefCounted = MODEL.new(0, true)
 	selectable_machine.call("configure_upgrades", false, true, true, true, true)

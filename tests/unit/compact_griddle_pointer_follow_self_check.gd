@@ -22,6 +22,8 @@ func _run() -> void:
 	unit.state = CompactGriddleUnit.State.BATTER
 	unit.pancake_surface.visible = true
 	unit._surface_action = CompactGriddleUnit.SURFACE_ACTION_SPREAD_BATTER
+	unit.call("_refresh_surface_cursor")
+	_check(unit.pancake_surface.cursor_visual_enabled, "active hand tools enable their on-pancake cursor cue")
 	unit.pancake_surface.pointer_pressed = true
 	unit.call("_update_surface_tool_artwork", unit.pancake_surface.size * 0.5, 0.0)
 
@@ -52,6 +54,8 @@ func _run() -> void:
 	var hidden_spread_changed := bool(unit.call("_apply_radial_batter_sweep", Vector2(48.0, 32.0), Vector2.RIGHT, 70.0))
 	_check(hidden_spread_changed and unit.pancake_model.revision > revision_before_hidden_spread, "no-visual test mode keeps the spread simulation functional")
 
+	unit.call("_reset_surface_action")
+	_check(not unit.pancake_surface.cursor_visual_enabled, "idle and ingredient-drag states do not leave a stale canvas cursor ring")
 	unit.pancake_surface.pointer_pressed = false
 	unit.queue_free()
 	await process_frame

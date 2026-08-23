@@ -8,7 +8,9 @@ signal hold_requested(source_ref: Dictionary)
 signal hold_advanced(source_ref: Dictionary, delta: float)
 signal hold_released(source_ref: Dictionary)
 
-@export var drag_threshold_pixels := 10.0
+## Keep the drag threshold low enough that a deliberate drag starts immediately,
+## without turning a normal click into a drag.
+@export var drag_threshold_pixels := 4.0
 @export var hold_enabled := false
 @export var hold_threshold_seconds := 0.1
 @export var native_drag_enabled := true
@@ -17,6 +19,9 @@ signal hold_released(source_ref: Dictionary)
 ## from texture_normal because some sources deliberately use an invisible
 ## texture solely as a reliable hit target.
 @export var drag_preview_texture: Texture2D
+## The preview's canvas size. Ingredient sources set this to the same rendered
+## size used on the pancake so the item neither shrinks nor grows mid-drag.
+@export var drag_preview_size := Vector2(72.0, 72.0)
 ## Visual-only offset for the native drag preview, relative to the pointer.
 ## This lets a source remain visible without moving the actual drop position.
 @export var drag_preview_offset := Vector2.ZERO
@@ -65,6 +70,10 @@ func set_drag_available(value: bool) -> void:
 
 func set_drag_preview_texture(value: Texture2D) -> void:
 	drag_preview_texture = value
+
+
+func set_drag_preview_size(value: Vector2) -> void:
+	drag_preview_size = Vector2(maxf(value.x, 1.0), maxf(value.y, 1.0))
 
 
 func set_drag_preview_offset(value: Vector2) -> void:
@@ -186,7 +195,7 @@ func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true
 		# Drag previews must stay above decorative drop targets (for example, the
 		# black-sesame tray), otherwise the product appears to slip underneath it.
 		preview.z_index = z_index + 1
-		preview.custom_minimum_size = Vector2(72.0, 72.0)
+		preview.custom_minimum_size = drag_preview_size
 		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		preview.modulate = Color(1.0, 1.0, 1.0, 0.92)

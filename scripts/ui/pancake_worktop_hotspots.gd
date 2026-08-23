@@ -18,6 +18,16 @@ const DRAG_PREVIEW_TEXTURES: Dictionary = {
 	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png"),
 	&"stock.pancake.coriander": preload("res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png"),
 }
+## A source's drag image and its pancake sprite deliberately share both texture
+## and scale. Keeping this mapping beside the drag source prevents a later
+## visual tweak from making the held item a different physical size again.
+const DRAG_PREVIEW_INGREDIENT_TYPES: Dictionary = {
+	&"stock.pancake.baocui": IngredientModel.BAOCUI,
+	&"stock.pancake.ham_sausage": IngredientModel.HAM_SAUSAGE,
+	&"stock.pancake.scallion": IngredientModel.SCALLION,
+	&"stock.pancake.meat_floss": IngredientModel.MEAT_FLOSS,
+	&"stock.pancake.coriander": IngredientModel.CORIANDER,
+}
 const WIDE_SPREADER_GROWTH_ID := &"growth.tool.pancake.wide_spreader"
 const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_ladle"
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
@@ -167,10 +177,17 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	hotspot.native_drag_enabled = source_kind == &"pancake_shared_ingredient"
 	# Worktop ingredient hotspots use an invisible hit texture, so give their
 	# native drag a real portion image instead of an empty cursor.
-	hotspot.set_drag_preview_texture(DRAG_PREVIEW_TEXTURES.get(stock_id) as Texture2D)
+	var drag_texture := DRAG_PREVIEW_TEXTURES.get(stock_id) as Texture2D
+	hotspot.set_drag_preview_texture(drag_texture)
+	var drag_preview_size := _drag_preview_size(stock_id, drag_texture)
+	hotspot.set_drag_preview_size(drag_preview_size)
 	# Keep the whole egg above the pointer while dragging. The visual offset does
 	# not affect the release coordinate used to crack it onto the pancake.
-	hotspot.set_drag_preview_offset(Vector2(0.0, -60.0) if stock_id == EGG_STOCK_ID else Vector2.ZERO)
+	hotspot.set_drag_preview_offset(
+		Vector2(0.0, -60.0)
+		if stock_id == EGG_STOCK_ID
+		else -drag_preview_size * 0.5
+	)
 	# Sauce jars use a sibling AlphaTextureHitButton so their transparent image
 	# margins never select a sauce. The backing source only owns the gesture
 	# state machine and must not receive pointer events through those margins.
@@ -184,6 +201,15 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	if not hotspot.hold_released.is_connected(_on_material_hold_released):
 		hotspot.hold_released.connect(_on_material_hold_released.bind(hotspot))
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hit_texture, false)
+
+
+func _drag_preview_size(stock_id: StringName, texture: Texture2D) -> Vector2:
+	if texture == null:
+		return Vector2(72.0, 72.0)
+	var ingredient_type := StringName(DRAG_PREVIEW_INGREDIENT_TYPES.get(stock_id, &""))
+	if ingredient_type.is_empty():
+		return Vector2(72.0, 72.0)
+	return texture.get_size() * IngredientLayer.visual_scale_for(ingredient_type)
 
 
 func _sync_container_alpha_hit_regions() -> void:

@@ -75,9 +75,9 @@ func select_soy_recipe(recipe_id: StringName) -> Dictionary:
 	return result
 
 
-func fill_soy_empty_cup(held_seconds: float) -> Dictionary:
+func fill_soy_empty_cup(held_seconds: float, outlet_index: int = 0) -> Dictionary:
 	_sync_ownership()
-	var result: Dictionary = _soy.call("fill_held_cup", held_seconds)
+	var result: Dictionary = _soy.call("fill_held_cup", held_seconds, outlet_index)
 	if bool(result.get("success", false)):
 		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
 	return result

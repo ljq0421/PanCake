@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ctr4jfigiwait"
-path="res://.godot/imported/pork_tenderloin_stock_14_v2.png-cee7dd361baf8e1b18b51edeb795b007.ctex"
+uid="uid://cn5lk2oaagq7r"
+path="res://.godot/imported/order_card_product_rows_2_v3.png-db108f7009076117aa2cec4c86f03ee4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/ingredients/pork_tenderloin/stock/pork_tenderloin_stock_14_v2.png"
-dest_files=["res://.godot/imported/pork_tenderloin_stock_14_v2.png-cee7dd361baf8e1b18b51edeb795b007.ctex"]
+source_file="res://resources/art/ui/order/order_card_product_rows_2_v3.png"
+dest_files=["res://.godot/imported/order_card_product_rows_2_v3.png-db108f7009076117aa2cec4c86f03ee4.ctex"]
 
 [params]
 

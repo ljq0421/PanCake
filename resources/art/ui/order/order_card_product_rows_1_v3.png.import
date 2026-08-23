@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cvu2osldoi35e"
-path="res://.godot/imported/red_bean_portion_v1_five_area_v2.png-69f523bba007a9e8a52b4f61e597abb3.ctex"
+uid="uid://b8l28tmnd4cli"
+path="res://.godot/imported/order_card_product_rows_1_v3.png-6cb337ce345dfa79b4c6cc12c29e3954.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/ingredients/beans/red_bean_portion_v1_five_area_v2.png"
-dest_files=["res://.godot/imported/red_bean_portion_v1_five_area_v2.png-69f523bba007a9e8a52b4f61e597abb3.ctex"]
+source_file="res://resources/art/ui/order/order_card_product_rows_1_v3.png"
+dest_files=["res://.godot/imported/order_card_product_rows_1_v3.png-6cb337ce345dfa79b4c6cc12c29e3954.ctex"]
 
 [params]
 

@@ -1156,6 +1156,11 @@ func _reset_surface_action() -> void:
 func _refresh_surface_cursor() -> void:
 	if not is_node_ready():
 		return
+	pancake_surface.cursor_visual_enabled = _surface_action in [
+		SURFACE_ACTION_SPREAD_BATTER,
+		SURFACE_ACTION_SPREAD_EGG,
+		SURFACE_ACTION_BRUSH_SAUCE,
+	]
 	pancake_surface.cursor_is_t_spreader = _surface_action in [SURFACE_ACTION_SPREAD_BATTER, SURFACE_ACTION_SPREAD_EGG]
 	pancake_surface.cursor_is_sauce_brush = _surface_action == SURFACE_ACTION_BRUSH_SAUCE
 	pancake_surface.cursor_radius_pixels = 16.0 * _surface_width_multiplier

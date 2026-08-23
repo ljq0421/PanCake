@@ -74,6 +74,28 @@ func _run() -> void:
 		var advanced_dispenser := advanced_station.get_node_or_null("SoyMilkDispenser") as TextureRect
 		_check(advanced_dispenser != null and advanced_dispenser.texture != null and advanced_dispenser.texture.resource_path == DUAL_OUTLET_TEXTURE_PATH, "advanced soy machine uses the dual-outlet asset on the main workstation")
 		advanced_station.queue_free()
+		session.call("begin_new_game")
+		var interaction_progression: RefCounted = session.call("progression_service")
+		interaction_progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.fresh_soy_milk": true})
+		interaction_progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_fill": true})
+		session.call("_sync_progression_to_save")
+		session.set("_production_service", null)
+		session.call("_ensure_production_service")
+		var refill_station := STATION_SCENE.instantiate() as DirectSoyStation
+		root.add_child(refill_station)
+		await process_frame
+		refill_station._on_cup_stack_short_clicked({})
+		refill_station._on_nozzle_pressed()
+		_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("cup_state", &"")) == &"filled", "the first outlet can remain filled before adding a second cup")
+		interaction_progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_fill": true, &"automation.fresh_soy_milk.double_fill": true})
+		refill_station.refresh_from_session()
+		refill_station._on_cup_stack_short_clicked({})
+		var right_cup_pending := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+		_check(bool(right_cup_pending.get("secondary_empty_cup_placed", false)) and refill_station.queued_cup_preview.visible and refill_station.second_nozzle_button.visible, "clicking the cup stack puts a new empty cup at the right outlet beside the filled left cup")
+		refill_station._on_second_nozzle_pressed()
+		var right_cup_filled := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+		_check(int(right_cup_filled.get("ready_cup_count", 0)) == 2 and not refill_station.second_nozzle_button.visible, "clicking the right outlet fills only its added cup")
+		refill_station.queue_free()
 	if failures.is_empty():
 		print("DIRECT_SOY_STATION_DUAL_OUTLET_SELF_CHECK_PASS")
 		quit(0)

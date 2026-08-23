@@ -37,8 +37,6 @@ const ORDER_CARD_INGREDIENT_TEXTURE_PATHS := {
 	&"stock.pancake.scallion": "res://resources/art/ingredients/scallion/scallion_scattered_v1.png",
 	IngredientModel.MEAT_FLOSS: "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png",
 	&"stock.pancake.meat_floss": "res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png",
-	IngredientModel.PORK_TENDERLOIN: "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png",
-	&"stock.pancake.pork_tenderloin": "res://resources/art/ingredients/pork_tenderloin/pork_tenderloin_portion_v1.png",
 	IngredientModel.YOUTIAO: "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
 	&"stock.pancake.youtiao": "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
 	IngredientModel.CORIANDER: "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",

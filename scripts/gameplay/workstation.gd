@@ -3230,6 +3230,18 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 	return requirements
 
 
+func _order_requirements_by_item_for_customer_card(order: Dictionary) -> Array:
+	var grouped_requirements: Array = []
+	for item in _order_items_for_card(order):
+		var item_order := order.duplicate(true)
+		item_order["items"] = [item]
+		var item_requirements: Array = _order_requirements_for_card(item_order)
+		if item_requirements.size() > 8:
+			item_requirements.resize(8)
+		grouped_requirements.append(item_requirements)
+	return grouped_requirements
+
+
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	if order_dish_icons.is_empty():
 		return
@@ -3569,9 +3581,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		for item_variant in items:
 			var item := Dictionary(item_variant)
 			item_textures.append(FIVE_AREA_PRODUCT_VISUALS.texture_for(StringName(item.get("product_id", &"")), StringName(item.get("temperature_mode", &"room_temperature"))))
-		var requirements: Array = _order_requirements_for_card(order)
-		if requirements.size() > 8:
-			requirements.resize(8)
+		var requirements_by_item := _order_requirements_by_item_for_customer_card(order)
 		var metadata := Dictionary(order.get("metadata", {}))
 		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
@@ -3582,7 +3592,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 			order,
 			_customer_portraits.call("texture_for", customer_id, reaction) as Texture2D,
 			item_textures,
-			requirements,
+			requirements_by_item,
 			coin_total,
 		)
 

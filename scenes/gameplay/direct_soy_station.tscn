@@ -77,43 +77,39 @@ flat = true
 [node name="MachineOutput" type="TextureButton" parent="." unique_id=1233758645]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 9.0
+offset_left = 113.0
 offset_top = 454.0
-offset_right = 102.0
-offset_bottom = 548.0
+offset_right = 168.0
+offset_bottom = 524.0
 texture_normal = ExtResource("7_cup")
 ignore_texture_size = true
-stretch_mode = 5
+stretch_mode = 4
 script = ExtResource("2_source")
 
 [node name="CupStack" type="TextureButton" parent="." unique_id=1873904211]
 unique_name_in_owner = true
 z_index = 3
 layout_mode = 0
-offset_left = 290.0
-offset_top = 250.0
-offset_right = 394.0
+offset_left = 281.0
+offset_top = 219.0
+offset_right = 403.0
 offset_bottom = 430.0
 ignore_texture_size = true
-stretch_mode = 5
-hold_enabled = true
-hold_threshold_seconds = 0.55
-native_drag_enabled = false
+stretch_mode = 4
 script = ExtResource("2_source")
 
 [node name="QueuedCupPreview" type="TextureRect" parent="." unique_id=1125039614]
 unique_name_in_owner = true
-visible = false
 z_index = 1
 layout_mode = 0
 offset_left = 240.0
-offset_top = 318.0
-offset_right = 333.0
-offset_bottom = 412.0
+offset_top = 359.0
+offset_right = 300.0
+offset_bottom = 429.0
 mouse_filter = 2
 texture = ExtResource("7_cup")
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 4
 
 [node name="QueuedCupButton" type="Button" parent="." unique_id=196913412]
 unique_name_in_owner = true
@@ -122,8 +118,8 @@ z_index = 4
 layout_mode = 0
 offset_left = 240.0
 offset_top = 318.0
-offset_right = 333.0
-offset_bottom = 412.0
+offset_right = 300.0
+offset_bottom = 388.0
 tooltip_text = "点击选择这杯豆浆"
 flat = true
 script = ExtResource("9_alpha_hit")

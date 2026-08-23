@@ -19,10 +19,10 @@ const MANUAL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machi
 const AUTO_FILL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png")
 const ADVANCED_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png")
 const FULL_CUP_SECONDS := 0.8
-const EMPTY_CUP_POSITION := Vector2(193.0, 316.0)
-const SINGLE_DISPENSING_CUP_POSITION := Vector2(193.0, 318.0)
-const DUAL_LEFT_CUP_POSITION := Vector2(145.0, 318.0)
-const DUAL_RIGHT_CUP_POSITION := Vector2(240.0, 318.0)
+const EMPTY_CUP_POSITION := Vector2(210.0, 330.0)
+const SINGLE_DISPENSING_CUP_POSITION := Vector2(210.0, 330.0)
+const DUAL_LEFT_CUP_POSITION := Vector2(162.0, 330.0)
+const DUAL_RIGHT_CUP_POSITION := Vector2(257.0, 330.0)
 # Measured on soy-milk-dispenser.png.  This is the lower opening of the tap,
 # not the handle or its mounting point.
 const DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(615.0, 1000.0)
@@ -137,6 +137,7 @@ func refresh_from_session() -> void:
 	var cup := Dictionary(machine.get("cup", {}))
 	var queued_cups := Array(machine.get("queued_cups", []))
 	var ready_cup_count := int(machine.get("ready_cup_count", 0))
+	var held_empty_cup_count := int(machine.get("held_empty_cup_count", 0))
 	if cup_state != &"filled" or _selected_cup_index >= ready_cup_count:
 		_selected_cup_index = 0
 	var selected_cup := _cup_at_index(cup, queued_cups, _selected_cup_index)
@@ -178,8 +179,12 @@ func refresh_from_session() -> void:
 		machine_output.visible = true
 		machine_output.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "双杯已就位，请点击双出浆口" if _double_fill_enabled else "空杯已拿起，请点击自动出浆口" if _auto_fill_enabled else "空杯已拿起，请按住出浆口")
 		machine_output.position = _active_cup_position()
-		state_label.text = "② 点击双出浆口自动接满两杯" if _double_fill_enabled else "② 点击出浆口自动满杯" if _auto_fill_enabled else "② 按住出浆口接豆浆" if not _filling else state_label.text
-		cup_detail_label.text = "一次自动接满两杯豆浆" if _double_fill_enabled else "自动接满一杯豆浆" if _auto_fill_enabled else "松开即出杯；满杯需要 0.8 秒"
+		if _double_fill_enabled:
+			state_label.text = "② 再点击杯堆，将空杯放到右出浆口" if held_empty_cup_count < 2 else "③ 点击双出浆口同时接满两杯"
+			cup_detail_label.text = "已放置 %d / 2 个空杯" % held_empty_cup_count
+		else:
+			state_label.text = "② 点击出浆口自动满杯" if _auto_fill_enabled else "② 按住出浆口接豆浆" if not _filling else state_label.text
+			cup_detail_label.text = "自动接满一杯豆浆" if _auto_fill_enabled else "松开即出杯；满杯需要 0.8 秒"
 	else:
 		machine_output.visible = true
 		machine_output.configure({"source_kind": &"soy_cup", "product_id": product_id}, _outlet_cup_texture, true, "拖到订单商品交付")
@@ -189,9 +194,10 @@ func refresh_from_session() -> void:
 		state_label.text = "③ 已选第%d杯；点击糖罐或冰盒加料" % (_selected_cup_index + 1) if ready_cup_count > 1 else "③ 已选豆浆；点击糖罐或冰盒加料"
 		var temperature_label := "冰镇" if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced" else "常温"
 		cup_detail_label.text = "第%d杯 · %s · %s · %d%% 满杯" % [_selected_cup_index + 1, _recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent]
-	queued_cup_preview.visible = cup_state == &"filled" and ready_cup_count > 1
+	var second_empty_cup_visible := cup_state == &"held_empty" and _double_fill_enabled and held_empty_cup_count >= 2
+	queued_cup_preview.visible = second_empty_cup_visible or (cup_state == &"filled" and ready_cup_count > 1)
 	queued_cup_preview.position = DUAL_RIGHT_CUP_POSITION
-	queued_cup_button.visible = queued_cup_preview.visible
+	queued_cup_button.visible = cup_state == &"filled" and ready_cup_count > 1
 	queued_cup_button.disabled = not queued_cup_button.visible
 	queued_cup_button.position = DUAL_RIGHT_CUP_POSITION
 	queued_cup_button.size = queued_cup_preview.size
@@ -206,8 +212,8 @@ func refresh_from_session() -> void:
 	ice_button.visible = ice_enabled
 	ice_button.disabled = not ice_enabled or cup_state != &"filled" or StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced"
 	ice_button.tooltip_text = "给第%d杯加冰" % (_selected_cup_index + 1) if not ice_button.disabled else "第%d杯已加冰" % (_selected_cup_index + 1) if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced" else "请先接好豆浆"
-	nozzle_button.disabled = cup_state != &"held_empty"
-	nozzle_button.tooltip_text = "点击同时接满两杯豆浆" if _double_fill_enabled else "点击自动接满一杯豆浆" if _auto_fill_enabled else "按住出浆口接浆"
+	nozzle_button.disabled = cup_state != &"held_empty" or (_double_fill_enabled and held_empty_cup_count < 2)
+	nozzle_button.tooltip_text = "请先放置第二个空杯" if _double_fill_enabled and held_empty_cup_count < 2 else "点击同时接满两杯豆浆" if _double_fill_enabled else "点击自动接满一杯豆浆" if _auto_fill_enabled else "按住出浆口接浆"
 	if _workshop_preview:
 		# The author-positioned dispenser, cup, sugar jar and ice box remain;
 		# operating instructions and progress are intentionally absent.
@@ -256,7 +262,11 @@ func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
 	if session == null:
 		return
 	var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
-	if StringName(machine.get("cup_state", &"ready")) != &"ready":
+	var cup_state := StringName(machine.get("cup_state", &"ready"))
+	var held_empty_cup_count := int(machine.get("held_empty_cup_count", 0))
+	var can_place_first_cup := cup_state == &"ready"
+	var can_place_second_cup := cup_state == &"held_empty" and _double_fill_enabled and held_empty_cup_count < 2
+	if not can_place_first_cup and not can_place_second_cup:
 		status_message.emit("请先完成当前这杯豆浆")
 		return
 	var result: Dictionary = session.call("take_f4_soy_empty_cup")
@@ -264,7 +274,7 @@ func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
 		status_message.emit("无法取杯：%s" % str(result.get("reason", &"unknown")))
 		return
 	_cup_stack_count -= 1
-	var success_message := "双杯已就位，点击双出浆口同时接满" if _double_fill_enabled else "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
+	var success_message := "第一个空杯已放置，再点击杯堆放置第二个" if _double_fill_enabled and int(result.get("held_empty_cup_count", 0)) == 1 else "双杯已就位，点击双出浆口同时接满" if _double_fill_enabled else "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
 	status_message.emit("%s（杯堆剩余 %d 个）" % [success_message, _cup_stack_count])
 	refresh_from_session()
 

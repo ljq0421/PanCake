@@ -34,6 +34,32 @@ func _run() -> void:
 	slot.bind_order(order, null, [null], [], 17)
 	_check(slot.order_title.text == "完美完成可得 ×17 金币", "order card top displays the exact perfect-completion quote")
 	_check(not slot.coin_label.visible, "order card removes the duplicate lower coin amount")
+	var multi_item_order := order.duplicate(true)
+	multi_item_order["items"] = [
+		{"product_id": &"product.pancake.custom", "quantity": 1, "prepared_product_instance_ids": []},
+		{"product_id": &"product.youtiao.plain", "quantity": 1, "prepared_product_instance_ids": []},
+		{"product_id": &"product.packaged_drink.milk", "quantity": 1, "prepared_product_instance_ids": []},
+	]
+	var eight_ingredients: Array = []
+	for ingredient_index in 8:
+		eight_ingredients.append({"display_name": "配料%d" % ingredient_index})
+	slot.bind_order(multi_item_order, null, [null, null, null], [eight_ingredients, [], []], 17)
+	_check(
+		slot.get_node("OrderPanel").size.y == 320.0
+		and slot.item_buttons[0].visible
+		and slot.item_buttons[1].visible
+		and slot.item_buttons[2].visible
+		and slot.get_node("OrderPanel/IngredientSlot1_8").visible,
+		"three ordered products render three simple rows and allow eight ingredient slots in one row",
+	)
+	slot.bind_order(order, null, [null], [[]], 17)
+	_check(
+		slot.get_node("OrderPanel").size.y == 160.0
+		and slot.item_buttons[0].visible
+		and not slot.item_buttons[1].visible
+		and not slot.item_buttons[2].visible,
+		"a one-product order collapses the simple card to one row",
+	)
 	_check(slot.portrait.z_index < 0 and slot.portrait_button.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("FocusFrame") == null, "portrait and transparent portrait hit area render behind all order-card controls without a customer focus frame")
 	_check(slot.portrait_button.mouse_filter == Control.MOUSE_FILTER_STOP and slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "portrait and order card keep separate explicit click targets")
 	_check(slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "customer slot shell cannot cover unrelated foreground controls")

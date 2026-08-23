@@ -14,7 +14,8 @@ const READY_DRAG_TEXTURE := preload("res://resources/art/workstation/packaging/p
 const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png")
 const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
 const SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png")
-const SPREADER_ART_ROTATION_OFFSET := 1.124
+const DISABLE_SPREADER_VISUAL_ARGUMENT := "--disable-spreader-visual"
+const HARDWARE_SPREADER_CURSOR_SIZE := Vector2i(96, 96)
 const SAUCE_BRUSH_ART_ROTATION_OFFSET := 1.02
 const MIN_BATTER_AMOUNT := 1.5
 const STANDARD_BATTER_AMOUNT := 4.0
@@ -22,6 +23,11 @@ const MAX_BATTER_AMOUNT := 6.5
 const INITIAL_BATTER_AMOUNT := STANDARD_BATTER_AMOUNT
 const INITIAL_BATTER_RADIUS := 14.0
 const SPREADER_SAMPLE_SPACING := 2.5
+## Each compact radial sample already sweeps from the pan center to the current
+## contact point. Replaying every interpolated pointer sample in one frame can
+## turn a single fast move into a 40+ ms feedback loop, so only the newest path
+## representative is simulated; pointer sampling remains fully event-driven.
+const MAX_SPREAD_SIMULATION_SAMPLES_PER_FRAME := 1
 ## Standard batter at the fixed default heat reaches about 0.84 doneness in
 ## eight seconds. The griddle bar maps that point to full, not to the model's
 ## absolute 1.0 maximum.
@@ -29,7 +35,7 @@ const HEAT_BAR_FULL_DONENESS := 0.84
 ## A single pointer sample used to invoke the full field simulation once per
 ## radial segment (up to fourteen times). Representative weighted anchors keep
 ## the same total spread force without stalling the input frame.
-const MAX_RADIAL_SWEEP_ANCHORS := 6
+const MAX_RADIAL_SWEEP_ANCHORS := 3
 const EGG_SAMPLE_SPACING := 3.0
 const SPREADER_CENTER_DEAD_ZONE := 4.0
 const SPREADER_INWARD_TOLERANCE := 20.0
@@ -122,6 +128,12 @@ var _egg_crack_tween: Tween
 var _egg_liquid_falling := false
 var _intact_egg_local_override := Vector2.ZERO
 var _has_intact_egg_local_override := false
+var spreader_visual_enabled := true
+var _hardware_spreader_cursor_normal: Texture2D
+var _hardware_spreader_cursor_wide: Texture2D
+var _hardware_spreader_cursor_hotspot := Vector2.ZERO
+var _hardware_spreader_cursor_active := false
+var _hardware_spreader_cursor_is_wide := false
 
 
 static func _compact_pancake_parameters() -> PancakeSimulationParameters:
@@ -150,6 +162,8 @@ func _ready() -> void:
 	pancake_surface.pointer_ended.connect(_on_surface_pointer_ended)
 	pancake_surface.cancel_requested.connect(_cancel_surface_action)
 	egg_crack_effect.animation_finished.connect(_on_egg_crack_animation_finished)
+	_build_hardware_spreader_cursors()
+	set_spreader_visual_enabled(not OS.get_cmdline_user_args().has(DISABLE_SPREADER_VISUAL_ARGUMENT))
 	_refresh_intact_egg_visual()
 	_refresh_ui()
 
@@ -159,7 +173,11 @@ func _process(delta: float) -> void:
 	if _batter_ladle_armed:
 		_process_batter_ladle_drag(step)
 	elif pancake_surface.pointer_pressed:
-		_update_surface_tool_artwork(pancake_surface.pointer_local_position, step)
+		# Never rely solely on _gui_input during a held gesture. Other visual
+		# layers can receive mouse motion, while the viewport position is always
+		# current in PancakeSurface's local coordinate system.
+		var live_pointer_position := pancake_surface.sync_pointer_to_viewport()
+		_update_surface_tool_artwork(live_pointer_position, step)
 		match _surface_action:
 			SURFACE_ACTION_POUR_BATTER:
 				_process_batter_pour(step)
@@ -185,6 +203,10 @@ func _process(delta: float) -> void:
 		pancake_model.advance_cooking(step, p1_session.heat_level)
 		p1_session.advance_elapsed_time(step)
 		_refresh_heat_visual()
+
+
+func _exit_tree() -> void:
+	_deactivate_hardware_spreader_cursor()
 
 
 func _process_batter_ladle_drag(delta: float) -> void:
@@ -217,6 +239,64 @@ func set_upgrade_locked(value: bool) -> void:
 	process_mode = Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
 	if is_node_ready():
 		_refresh_ui()
+
+
+func set_spreader_visual_enabled(value: bool) -> void:
+	spreader_visual_enabled = value
+	if not is_instance_valid(pancake_surface):
+		return
+	# The spreader uses the operating-system cursor in normal mode, and no custom
+	# cursor at all in the A/B mode. Neither path draws a canvas cursor ring.
+	pancake_surface.spreader_cursor_visual_enabled = false
+	spreader_artwork.visible = false
+	if not value:
+		_deactivate_hardware_spreader_cursor()
+	pancake_surface.queue_redraw()
+
+
+func _build_hardware_spreader_cursors() -> void:
+	_hardware_spreader_cursor_normal = _scaled_cursor_texture(SPREADER_NORMAL)
+	_hardware_spreader_cursor_wide = _scaled_cursor_texture(SPREADER_WIDE)
+	var source_size := Vector2(SPREADER_NORMAL.get_size())
+	if source_size.x > 0.0 and source_size.y > 0.0:
+		var source_hotspot := source_size * 0.5 - spreader_artwork.offset
+		_hardware_spreader_cursor_hotspot = source_hotspot / source_size * Vector2(HARDWARE_SPREADER_CURSOR_SIZE)
+		_hardware_spreader_cursor_hotspot = _hardware_spreader_cursor_hotspot.clamp(
+			Vector2.ZERO,
+			Vector2(HARDWARE_SPREADER_CURSOR_SIZE - Vector2i.ONE)
+		)
+
+
+func _scaled_cursor_texture(source: Texture2D) -> Texture2D:
+	var image := source.get_image()
+	if image == null or image.is_empty():
+		return null
+	image.resize(HARDWARE_SPREADER_CURSOR_SIZE.x, HARDWARE_SPREADER_CURSOR_SIZE.y, Image.INTERPOLATE_LANCZOS)
+	return ImageTexture.create_from_image(image)
+
+
+func _update_hardware_spreader_cursor(active: bool) -> void:
+	if not active or not spreader_visual_enabled:
+		_deactivate_hardware_spreader_cursor()
+		return
+	var use_wide := _surface_width_multiplier > 1.0
+	var cursor_texture := _hardware_spreader_cursor_wide if use_wide else _hardware_spreader_cursor_normal
+	if cursor_texture == null:
+		_deactivate_hardware_spreader_cursor()
+		return
+	if _hardware_spreader_cursor_active and _hardware_spreader_cursor_is_wide == use_wide:
+		return
+	Input.set_custom_mouse_cursor(cursor_texture, Input.CURSOR_ARROW, _hardware_spreader_cursor_hotspot)
+	_hardware_spreader_cursor_active = true
+	_hardware_spreader_cursor_is_wide = use_wide
+
+
+func _deactivate_hardware_spreader_cursor() -> void:
+	if not _hardware_spreader_cursor_active:
+		return
+	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	_hardware_spreader_cursor_active = false
+	_hardware_spreader_cursor_is_wide = false
 
 
 func begin_order(value: Dictionary, batter_amount: float = STANDARD_BATTER_AMOUNT) -> void:
@@ -672,7 +752,7 @@ func _process_batter_pour(delta: float) -> void:
 
 func _process_manual_spread(delta: float) -> void:
 	var current := Vector2(PancakeSpace.local_to_grid(pancake_surface.pointer_local_position, pancake_surface.size, pancake_model.grid_size))
-	var samples := _scrape_sampler.sample_to(current)
+	var samples := _limit_spread_samples(_scrape_sampler.sample_to(current))
 	var previous_polar := _pan_polar_offset(_last_process_grid_position)
 	var current_polar := _pan_polar_offset(current)
 	var angular_delta := absf(wrapf(current_polar.angle() - previous_polar.angle(), -PI, PI))
@@ -712,6 +792,19 @@ func _process_manual_spread(delta: float) -> void:
 	_last_process_grid_position = current
 	pancake_surface.spreader_motion_valid = applied_sample
 	pancake_surface.queue_redraw()
+
+
+func _limit_spread_samples(raw_samples: PackedVector2Array) -> PackedVector2Array:
+	var budget := maxi(MAX_SPREAD_SIMULATION_SAMPLES_PER_FRAME, 1)
+	if raw_samples.size() <= budget:
+		return raw_samples
+	# Prefer the newest points. They keep the simulated contact aligned with the
+	# visible tool and collapse any backlog instead of carrying lag into later frames.
+	var limited := PackedVector2Array()
+	var first_index := raw_samples.size() - budget
+	for sample_index in range(first_index, raw_samples.size()):
+		limited.append(raw_samples[sample_index])
+	return limited
 
 
 func _apply_radial_batter_sweep(sample: Vector2, outward_direction: Vector2, effect_speed: float) -> bool:
@@ -1076,9 +1169,14 @@ func _update_surface_tool_artwork(local_position: Vector2, delta: float = 0.0) -
 	var inside_pan := PancakeSpace.is_inside_pan(local_position, pancake_surface.size, pancake_model.parameters.pan_height_ratio)
 	var spreading := _surface_action in [SURFACE_ACTION_SPREAD_BATTER, SURFACE_ACTION_SPREAD_EGG]
 	var brushing := _surface_action == SURFACE_ACTION_BRUSH_SAUCE
-	spreader_artwork.visible = spreading and inside_pan
+	var spreader_active := spreading and inside_pan
+	# Hardware cursors are composited by the operating system and therefore do
+	# not wait for the game canvas or mutate a Sprite2D transform while moving.
+	spreader_artwork.visible = false
 	sauce_brush_artwork.visible = brushing and inside_pan
-	if spreader_artwork.visible:
+	# Direction is part of the simulation contract, not the sprite. Keep updating
+	# it in the no-visual A/B mode so the test changes rendering only.
+	if spreader_active:
 		var radial := local_position - pancake_surface.size * 0.5
 		if radial.length_squared() > 0.01:
 			var target_angle := Vector2(radial.x, radial.y / maxf(pancake_model.parameters.pan_height_ratio, 0.01)).angle()
@@ -1097,19 +1195,23 @@ func _update_surface_tool_artwork(local_position: Vector2, delta: float = 0.0) -
 						PI
 					)
 			pancake_surface.spreader_radial_angle = _spreader_smoothed_angle
-		spreader_artwork.texture = SPREADER_WIDE if _surface_width_multiplier > 1.0 else SPREADER_NORMAL
-		spreader_artwork.position = local_position
-		spreader_artwork.rotation = _spreader_smoothed_angle + SPREADER_ART_ROTATION_OFFSET
+	_update_hardware_spreader_cursor(spreader_active)
 	if sauce_brush_artwork.visible:
 		sauce_brush_artwork.texture = SAUCE_BRUSH_TEXTURE
-		sauce_brush_artwork.position = local_position
 		sauce_brush_artwork.rotation = _last_tool_direction.angle() + SAUCE_BRUSH_ART_ROTATION_OFFSET
+	_update_surface_tool_position(local_position)
+
+
+func _update_surface_tool_position(local_position: Vector2) -> void:
+	if sauce_brush_artwork.visible:
+		sauce_brush_artwork.position = local_position
 
 
 func _refresh_tool_artwork_visibility() -> void:
 	if not is_node_ready():
 		return
 	spreader_artwork.visible = false
+	_deactivate_hardware_spreader_cursor()
 	sauce_brush_artwork.visible = false
 
 

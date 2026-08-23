@@ -22,6 +22,7 @@ $checks = @(
 	'res://tests/unit/special_customer_order_self_check.gd',
 	'res://tests/unit/soy_cup_service_self_check.gd',
 	'res://tests/unit/multi_griddle_station_self_check.gd',
+	'res://tests/unit/compact_griddle_pointer_follow_self_check.gd',
 	'res://tests/unit/pancake_worktop_hotspots_self_check.gd',
 	'res://tests/unit/five_area_business_systems_self_check.gd',
 	'res://tests/unit/day_end_clearance_self_check.gd',

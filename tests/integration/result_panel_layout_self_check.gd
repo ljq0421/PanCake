@@ -51,6 +51,9 @@ func _run() -> void:
 	var viewport_rect := Rect2(Vector2.ZERO, root.get_visible_rect().size)
 	_check(panel.is_visible_in_tree(), "view-order action opens the result panel")
 	_check(viewport_rect.encloses(panel_rect), "the complete result panel remains inside the virtual viewport")
+	for metric_name in ["IntegrityMetric", "ThicknessMetric", "HeatMetric", "EggMetric", "SauceMetric", "IngredientMetric", "FoldMetric", "OrderMetric", "TimeMetric"]:
+		var icon := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s/Icon" % metric_name) as TextureRect
+		_check(icon != null and icon.texture != null, "%s loads its quality icon when the result panel opens" % metric_name)
 	for node_name in ["ResultTitleLabel", "ResultDetailLabel", "DimensionGrid", "ResultTagsLabel", "PaymentDisplay", "NextOrderButton"]:
 		var control := workstation.get_node("%" + node_name) as Control
 		_check(control.is_visible_in_tree(), "%s remains visible" % node_name)
@@ -69,6 +72,32 @@ func _run() -> void:
 		)
 	var input_shield := workstation.get_node_or_null("SafeArea/ResultDetailInputShield") as Control
 	_check(input_shield != null and input_shield.is_visible_in_tree(), "result detail shows an outside-input shield")
+
+	workstation._populate_result({
+		"product_id": &"product.youtiao.plain",
+		"score": 83.0,
+		"feedback": "油条已送达",
+		"display_product": {"quality": 83.0},
+		"display_item": {"mismatch_reasons": PackedStringArray()},
+	})
+	_check(workstation.integrity_score_label.text == "火候  83", "youtiao result shows its cooking score")
+	_check(workstation.thickness_score_label.text == "沥油  100", "youtiao result shows its draining score")
+	_check(workstation.order_score_label.text == "订单  100", "youtiao result shows its order score")
+	for metric_name in ["EggMetric", "SauceMetric", "IngredientMetric", "FoldMetric", "TimeMetric"]:
+		var metric := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
+		_check(not metric.visible, "youtiao result hides pancake-only %s" % metric_name)
+
+	workstation._populate_result({
+		"product_id": &"product.fresh_soy_milk.yellow_bean",
+		"score": 90.0,
+		"feedback": "豆浆已送达",
+		"display_product": {"fill_ratio": 0.9, "sugar_servings": 1, "temperature_mode": &"iced"},
+		"display_item": {"mismatch_reasons": PackedStringArray(), "requested_sugar_servings": 1, "requested_temperature_mode": &"iced"},
+	})
+	_check(workstation.integrity_score_label.text == "满杯度  90", "soy result shows its fill score")
+	_check(workstation.thickness_score_label.text == "糖度  100", "soy result shows its sugar score")
+	_check(workstation.heat_score_label.text == "温度  100", "soy result shows its temperature score")
+	_check(workstation.order_score_label.text == "订单  100", "soy result shows its order score")
 
 	_click(workstation.next_order_button)
 	await process_frame

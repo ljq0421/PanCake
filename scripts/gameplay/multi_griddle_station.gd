@@ -23,6 +23,7 @@ var _last_synced_snapshot: Dictionary = {}
 var _selected_tool: StringName = &""
 var _primed_sauce_stock_id: StringName = &""
 var _primed_sauce_unit_index := -1
+var _reserved_ingredient_drag_stock_id: StringName = &""
 
 
 func _ready() -> void:
@@ -62,6 +63,12 @@ func _process(delta: float) -> void:
 		_sync_snapshot_to_session()
 	_save_elapsed += maxf(delta, 0.0)
 	if _save_elapsed >= 1.0:
+		# A cooking snapshot contains the complete simulation fields and is written
+		# as JSON. Defer this safety save while a native preview is following the
+		# pointer, then flush it immediately after the drag ends.
+		var viewport := get_viewport()
+		if viewport != null and viewport.gui_is_dragging():
+			return
 		_save_elapsed = 0.0
 		_sync_snapshot_to_session()
 
@@ -300,9 +307,39 @@ func can_preview_drop_on_unit(unit_index: int, source_ref: Dictionary, local_pos
 	)
 
 
+func reserve_ingredient_drag(source_ref: Dictionary) -> Dictionary:
+	if StringName(source_ref.get("source_kind", &"")) != &"pancake_shared_ingredient":
+		return {"success": false, "reason": &"unsupported_source"}
+	var stock_id := StringName(source_ref.get("stock_id", &""))
+	if stock_id.is_empty():
+		return {"success": false, "reason": &"stock_id_missing"}
+	# Native GUI dragging is single-pointer. Restore any abandoned reservation
+	# defensively before beginning another one so inventory cannot leak if a drag
+	# source disappears without receiving NOTIFICATION_DRAG_END.
+	if not _reserved_ingredient_drag_stock_id.is_empty():
+		_restore_reserved_ingredient_drag()
+	var consumed := _consume_inventory_stock(stock_id)
+	if not bool(consumed.get("success", false)):
+		return consumed
+	_reserved_ingredient_drag_stock_id = stock_id
+	shared_tool_tray.refresh_from_session()
+	return {"success": true, "stock_id": stock_id}
+
+
+func finish_ingredient_drag(source_ref: Dictionary, successful: bool) -> Dictionary:
+	if not _source_matches_reserved_ingredient_drag(source_ref):
+		return {"success": true, "already_finished": true}
+	if successful:
+		_reserved_ingredient_drag_stock_id = &""
+		return {"success": true}
+	return _restore_reserved_ingredient_drag()
+
+
 func _source_is_available_for_drop(source_ref: Dictionary, validation: Dictionary) -> bool:
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	if source_kind == &"pancake_shared_ingredient":
+		if _source_matches_reserved_ingredient_drag(source_ref):
+			return true
 		var stock_id := StringName(validation.get("stock_id", &""))
 		if _session == null or not _session.has_method("inventory_snapshot"):
 			return false
@@ -326,15 +363,22 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 		return validation if not bool(validation.get("success", false)) else {"success": false, "reason": &"source_unavailable"}
 	var consumed: Dictionary
 	var source_kind := StringName(source_ref.get("source_kind", &""))
+	var used_reservation := _source_matches_reserved_ingredient_drag(source_ref)
 	if source_kind == &"prepared_product_slot":
 		consumed = Dictionary(_session.call("take_prepared_product", StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0))))
+	elif used_reservation:
+		consumed = {"success": true, "stock_id": _reserved_ingredient_drag_stock_id}
 	else:
 		consumed = _consume_inventory_stock(StringName(validation.get("stock_id", &"")))
 	if not bool(consumed.get("success", false)):
 		return consumed
 	var placed := Dictionary(unit.place_validated_ingredient(validation))
 	if not bool(placed.get("success", false)):
+		if used_reservation:
+			_restore_reserved_ingredient_drag()
 		return placed
+	if used_reservation:
+		_reserved_ingredient_drag_stock_id = &""
 	_active_index = unit_index
 	shared_tool_tray.refresh_from_session()
 	if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG:
@@ -347,6 +391,27 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 		else "%s已放到%s%s" % [placed_label, unit.title_label.text, "；未翻面交付会额外扣12分" if not unit.pancake_model.is_flipped else ""]
 	)
 	return placed
+
+
+func _source_matches_reserved_ingredient_drag(source_ref: Dictionary) -> bool:
+	return (
+		not _reserved_ingredient_drag_stock_id.is_empty()
+		and StringName(source_ref.get("source_kind", &"")) == &"pancake_shared_ingredient"
+		and StringName(source_ref.get("stock_id", &"")) == _reserved_ingredient_drag_stock_id
+	)
+
+
+func _restore_reserved_ingredient_drag() -> Dictionary:
+	if _reserved_ingredient_drag_stock_id.is_empty():
+		return {"success": true, "already_finished": true}
+	var stock_id := _reserved_ingredient_drag_stock_id
+	_reserved_ingredient_drag_stock_id = &""
+	if _session == null or not _session.has_method("restore_inventory_stock_ids"):
+		return {"success": false, "reason": &"restore_unavailable", "stock_id": stock_id}
+	var stock_ids: Array[StringName] = [stock_id]
+	var restored := Dictionary(_session.call("restore_inventory_stock_ids", stock_ids))
+	shared_tool_tray.refresh_from_session()
+	return restored
 
 
 func clear_held_tool() -> void:

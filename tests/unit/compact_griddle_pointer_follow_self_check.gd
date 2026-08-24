@@ -93,6 +93,16 @@ func _test_dropped_ingredient_orientation(unit: CompactGriddleUnit) -> void:
 	var placement := Dictionary(unit.ingredient_model.placements.back()) if not unit.ingredient_model.placements.is_empty() else {}
 	_check(bool(result.get("success", false)), "a valid manually dragged topping still lands on the pancake")
 	_check(is_zero_approx(float(placement.get("rotation", INF))), "a manually dragged topping keeps the drag preview orientation after release")
+	var subcell_local := center + Vector2(2.3, 1.7)
+	var subcell_validation := Dictionary(unit.validate_ingredient_drop({
+		"source_kind": &"pancake_shared_ingredient",
+		"stock_id": &"stock.pancake.baocui",
+	}, subcell_local))
+	var expected_grid_position := subcell_local / unit.pancake_surface.size * float(unit.pancake_model.grid_size - 1)
+	_check(
+		Vector2(subcell_validation.get("grid_position", Vector2.INF)).is_equal_approx(expected_grid_position),
+		"a dropped topping retains its continuous cursor position instead of snapping to a grid vertex",
+	)
 
 
 func _test_small_topping_visual_scale() -> void:

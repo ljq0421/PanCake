@@ -171,6 +171,12 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	_elapsed += delta
 	if _dirty and _elapsed >= 1.0 / maxf(heatmap_update_hz, 1.0):
+		# Rebuilding the visual walks and uploads every heatmap pixel. The model
+		# keeps cooking during a native drag, but the presentation can catch up on
+		# release instead of stealing time from pointer-follow rendering.
+		var viewport := get_viewport()
+		if viewport != null and viewport.gui_is_dragging():
+			return
 		_elapsed = 0.0
 		_rebuild_heatmap_texture()
 

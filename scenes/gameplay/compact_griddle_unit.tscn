@@ -221,6 +221,15 @@ position = Vector2(175, 175)
 scale = Vector2(0.32, 0.32)
 texture = ExtResource("26_egg_intact")
 
+[node name="EggIntactVisualSecond" type="Sprite2D" parent="PancakeSurface"]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+texture_filter = 1
+position = Vector2(175, 175)
+scale = Vector2(0.32, 0.32)
+texture = ExtResource("26_egg_intact")
+
 [node name="SpreaderArtwork" type="Sprite2D" parent="PancakeSurface"]
 unique_name_in_owner = true
 visible = false
@@ -250,7 +259,7 @@ offset_top = 56.0
 offset_right = 244.0
 offset_bottom = 174.0
 pivot_offset = Vector2(64, 59)
-scale = Vector2(3, 3)
+scale = Vector2(2, 2)
 mouse_filter = 2
 texture = ExtResource("4_bag")
 expand_mode = 1

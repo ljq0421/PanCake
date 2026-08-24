@@ -444,6 +444,8 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 		all_reasons.append_array(reasons)
 		item_results.append({
 			"product_id": item.get("product_id", &""),
+			"requested_sugar_servings": int(item.get("sugar_servings", 0)),
+			"requested_temperature_mode": item.get("temperature_mode", &"room_temperature"),
 			"success": reasons.is_empty(),
 			"mismatch_reasons": reasons,
 			"product": products.front().duplicate(true) if not products.is_empty() else {},

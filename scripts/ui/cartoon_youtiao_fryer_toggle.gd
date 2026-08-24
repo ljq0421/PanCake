@@ -13,19 +13,22 @@ const DOUGH_STOCK_ID := &"stock.youtiao.plain_dough"
 const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
-const PLATE_VISUAL_CAPACITY := 4
+const TRAY_VISUAL_CAPACITY := 4
+const PLATE_VISUAL_CAPACITY := TRAY_VISUAL_CAPACITY * 2
 const ADVANCED_RAISED_BASKET_OFFSET := Vector2(0.0, 24.0)
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
-
-@export var lowered_machine_texture: Texture2D
-@export var raised_machine_texture: Texture2D
-@export var advanced_lowered_machine_texture: Texture2D
-@export var advanced_raised_machine_texture: Texture2D
-@export var raw_youtiao_texture: Texture2D
-@export var golden_youtiao_texture: Texture2D
-@export var plate_youtiao_texture: Texture2D
-@export var black_sesame_youtiao_texture: Texture2D
-@export var burnt_youtiao_texture: Texture2D
+const LOWERED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-lowered.png"
+const RAISED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-raised-coherent.png"
+const ADVANCED_LOWERED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png"
+const ADVANCED_RAISED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png"
+const RAW_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png"
+const GOLDEN_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-golden-v5-transparent.png"
+const BURNT_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-burnt-v4.png"
+const PLATE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-empty-serving-plate-oblique-v2.png"
+const BLACK_SESAME_TRAY_TEXTURE_PATH := "res://resources/art/workstation/material_slots/legacy_trays/black-sesame-square-tray-v2.png"
+const BLACK_SESAME_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-black-sesame-v1-transparent.png"
+const PLATE_YOUTIAO_REGION := Rect2(174.0, 8.0, 677.0, 1500.0)
+const BLACK_SESAME_YOUTIAO_REGION := Rect2(147.0, 13.0, 218.0, 484.0)
 @export var reduce_motion := false
 
 @onready var fryer_visual: TextureRect = %FryerVisual
@@ -62,6 +65,16 @@ var _machine_add_elapsed := 0.0
 var _workshop_preview := false
 var _workshop_advanced_preview := false
 var _session_refresh_pending := false
+var _texture_cache: Dictionary = {}
+var lowered_machine_texture: Texture2D
+var raised_machine_texture: Texture2D
+var advanced_lowered_machine_texture: Texture2D
+var advanced_raised_machine_texture: Texture2D
+var raw_youtiao_texture: Texture2D
+var golden_youtiao_texture: Texture2D
+var plate_youtiao_texture: Texture2D
+var black_sesame_youtiao_texture: Texture2D
+var burnt_youtiao_texture: Texture2D
 
 
 func _ready() -> void:
@@ -85,6 +98,9 @@ func _process(delta: float) -> void:
 		# regions every 100 ms while the player moves one to either serving tray.
 		# The time-driven fryer states below still refresh at the same cadence.
 		if not _requires_timed_session_refresh():
+			return
+		var viewport := get_viewport()
+		if viewport != null and viewport.gui_is_dragging():
 			return
 		# Do not reconfigure live drag controls in the middle of a native drag.
 		# Repeatedly changing their rects and disabled state made the preview feel
@@ -177,6 +193,8 @@ func refresh_from_session() -> void:
 	var area_unlocked := Array(progression.get("unlocked_area_ids", [])).has("area.youtiao")
 	_finished_tray_unlocked = Array(progression.get("owned_growth_ids", [])).has(FINISHED_TRAY_GROWTH_ID)
 	_workshop_advanced_preview = _workshop_preview and area_unlocked
+	if area_unlocked or _workshop_preview:
+		_ensure_visual_resources()
 	modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not area_unlocked else Color.WHITE
 	var unlocked_products := Array(progression.get("unlocked_product_ids", []))
 	var sesame_unlocked := unlocked_products.has(SESAME_PRODUCT_ID)
@@ -367,8 +385,8 @@ func _refresh_output_source(state: StringName, occupied: Array[int]) -> void:
 		output.position = product_visuals[source_index].position if ready_slot else Vector2(140.0, 0.0)
 		output.size = product_visuals[source_index].size if ready_slot else Vector2(320.0, 426.0)
 		output.self_modulate = Color(1.0, 1.0, 1.0, 0.0)
-		var source_ref := {"source_kind": &"youtiao_fryer_slot", "source_index": source_index, "product_id": PRODUCT_ID, "discardable": false}
-		var hint := "拖这一根油条到成品盘"
+		var source_ref := {"source_kind": &"youtiao_fryer_slot", "source_index": source_index, "product_id": PRODUCT_ID, "discardable": ready_slot}
+		var hint := "拖这一根油条到顾客订单或成品盘"
 		if burnt_batch_source:
 			source_ref = {"source_kind": &"youtiao_batch", "source_index": -1, "product_id": PRODUCT_ID, "quantity": occupied.size(), "discardable": true}
 			hint = "拖到废弃区报废整锅油条"
@@ -533,6 +551,38 @@ func _plate_youtiao_texture() -> Texture2D:
 	return plate_youtiao_texture if plate_youtiao_texture != null else golden_youtiao_texture
 
 
+func _ensure_visual_resources() -> void:
+	if raised_machine_texture != null:
+		return
+	lowered_machine_texture = _load_texture(LOWERED_MACHINE_TEXTURE_PATH)
+	raised_machine_texture = _load_texture(RAISED_MACHINE_TEXTURE_PATH)
+	advanced_lowered_machine_texture = _load_texture(ADVANCED_LOWERED_MACHINE_TEXTURE_PATH)
+	advanced_raised_machine_texture = _load_texture(ADVANCED_RAISED_MACHINE_TEXTURE_PATH)
+	raw_youtiao_texture = _load_texture(RAW_YOUTIAO_TEXTURE_PATH)
+	golden_youtiao_texture = _load_texture(GOLDEN_YOUTIAO_TEXTURE_PATH)
+	burnt_youtiao_texture = _load_texture(BURNT_YOUTIAO_TEXTURE_PATH)
+	var plate_texture := _load_texture(PLATE_TEXTURE_PATH)
+	black_sesame_tray.texture = _load_texture(BLACK_SESAME_TRAY_TEXTURE_PATH)
+	var black_sesame_texture := _load_texture(BLACK_SESAME_YOUTIAO_TEXTURE_PATH)
+	if golden_youtiao_texture != null:
+		plate_youtiao_texture = AtlasTexture.new()
+		plate_youtiao_texture.atlas = golden_youtiao_texture
+		plate_youtiao_texture.region = PLATE_YOUTIAO_REGION
+	if black_sesame_texture != null:
+		black_sesame_youtiao_texture = AtlasTexture.new()
+		black_sesame_youtiao_texture.atlas = black_sesame_texture
+		black_sesame_youtiao_texture.region = BLACK_SESAME_YOUTIAO_REGION
+	plate_visual.texture = plate_texture
+
+
+func _load_texture(path: String) -> Texture2D:
+	if _texture_cache.has(path):
+		return _texture_cache[path] as Texture2D
+	var texture := load(path) as Texture2D
+	_texture_cache[path] = texture
+	return texture
+
+
 func _expand_visual_capacity() -> void:
 	for index in range(2, 4):
 		var basket_visual := product_visuals[0].duplicate() as TextureRect
@@ -621,7 +671,7 @@ func _state_text(state: StringName) -> String:
 	return {
 		&"unowned": "油条机未解锁", &"idle": "长按油条机添加面胚", &"loaded": "点击油条机开始炸制",
 		&"frying": "炸制中", &"ready_safe": "点击油条机抬起沥网", &"overcooking": "油条即将炸糊",
-		&"draining": "正在沥油", &"ready_to_collect": "逐根拖油条到成品盘" if _finished_tray_unlocked else "油条已沥油，暂存在滤网中；请先解锁成品盘", &"burnt": "油条已炸糊，拖去废弃",
+		&"draining": "正在沥油", &"ready_to_collect": "逐根拖油条到顾客订单或成品盘" if _finished_tray_unlocked else "逐根拖油条到顾客订单；成品盘尚未解锁", &"burnt": "油条已炸糊，拖去废弃",
 	}.get(state, "油条机")
 
 

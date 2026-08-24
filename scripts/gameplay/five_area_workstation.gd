@@ -4,6 +4,28 @@ extends "res://scripts/gameplay/workstation.gd"
 const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
+const RESULT_QUALITY_ICON_PATHS := {
+	&"IntegrityMetric": "res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png",
+	&"ThicknessMetric": "res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png",
+	&"HeatMetric": "res://resources/art/ui/quality/quality_heat_uniformity_v2_chinese_ui.png",
+	&"EggMetric": "res://resources/art/ui/quality/quality_egg_spread_v2_chinese_ui.png",
+	&"SauceMetric": "res://resources/art/ui/quality/quality_sauce_coverage_v2_chinese_ui.png",
+	&"IngredientMetric": "res://resources/art/ui/quality/quality_ingredient_distribution_v2_chinese_ui.png",
+	&"FoldMetric": "res://resources/art/ui/quality/quality_fold_stability_v2_chinese_ui.png",
+	&"OrderMetric": "res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png",
+	&"TimeMetric": "res://resources/art/ui/quality/quality_preparation_time_v2_chinese_ui.png",
+}
+const RESULT_METRIC_LABEL_NAMES := {
+	&"IntegrityMetric": &"IntegrityScoreLabel",
+	&"ThicknessMetric": &"ThicknessScoreLabel",
+	&"HeatMetric": &"HeatScoreLabel",
+	&"EggMetric": &"EggScoreLabel",
+	&"SauceMetric": &"SauceScoreLabel",
+	&"IngredientMetric": &"IngredientScoreLabel",
+	&"FoldMetric": &"FoldScoreLabel",
+	&"OrderMetric": &"OrderScoreLabel",
+	&"TimeMetric": &"TimeScoreLabel",
+}
 const PAYMENT_COIN_TEXTURES := {
 	1: preload("res://resources/art/payments/coin_1_v2_chinese_ui.png"),
 	2: preload("res://resources/art/payments/coin_2_v2_chinese_ui.png"),
@@ -35,7 +57,7 @@ const RESULT_OVERLAY_Z_INDEX := 300
 @onready var multi_griddle_station: Control = %MultiGriddleStation
 @onready var pancake_ready_source: ProductDragSource = get_node_or_null("FiveAreaInfrastructure/PancakeReadySource") as ProductDragSource
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
-@onready var waste_area: StagedProductDropTarget = cartoon_youtiao_fryer.waste_target
+@onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var pending_payment_button: Button = %PendingPaymentButton
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
@@ -64,6 +86,7 @@ var _formal_payment_coin_sprites: Array[TextureRect] = []
 var _formal_payment_total_pulse_tween: Tween
 var _formal_payment_collection_active := false
 var _workshop_payment_display_hidden := false
+var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
 
 
@@ -105,6 +128,8 @@ func _ready() -> void:
 			service_slot.connect("product_dropped", drop_callback)
 	if waste_area != null:
 		waste_area.disposition_completed.connect(_on_disposition_completed)
+		waste_area.product_source_discarded.connect(_on_waste_product_source_discarded)
+		waste_area.active_griddle_clear_requested.connect(_on_waste_active_griddle_clear_requested)
 	pending_payment_button.pressed.connect(_collect_pending_payments)
 	for material_slot in _all_material_slots():
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
@@ -130,6 +155,85 @@ func _ready() -> void:
 	_refresh_multi_griddle_mode()
 	_refresh_pancake_drag_sources()
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
+
+
+func _refresh_result_presentation() -> void:
+	super._refresh_result_presentation()
+	if result_panel != null and result_panel.visible:
+		_load_result_quality_icons()
+
+
+func _populate_result(score_result: Dictionary) -> void:
+	var product_id := StringName(score_result.get("product_id", &"product.pancake.custom"))
+	if product_id == &"product.pancake.custom":
+		_set_result_metric_visibility(RESULT_METRIC_LABEL_NAMES.keys(), true, true)
+		super._populate_result(score_result)
+		return
+	var metric_profile := _non_pancake_result_metric_profile(score_result, product_id)
+	_set_result_metric_visibility(RESULT_METRIC_LABEL_NAMES.keys(), false, false)
+	for metric_value in metric_profile:
+		var metric := Dictionary(metric_value)
+		var metric_name := StringName(metric.get("metric", &""))
+		var metric_control := get_node_or_null("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
+		var score_label_name := StringName(RESULT_METRIC_LABEL_NAMES.get(metric_name, &""))
+		var score_label := get_node_or_null("%%%s" % score_label_name) as Label
+		if metric_control != null:
+			metric_control.visible = true
+		if score_label != null:
+			score_label.text = "%s  %d" % [str(metric.get("label", "评分")), roundi(float(metric.get("score", 0.0)))]
+	result_title_label.text = "顾客评价 · %d分" % roundi(float(score_result.get("score", 0.0)))
+	result_detail_label.text = str(score_result.get("feedback", "本单已完成"))
+	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
+	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
+
+
+func _set_result_metric_visibility(metric_names: Array, visible: bool, show_icons: bool) -> void:
+	for metric_value in metric_names:
+		var metric_name := StringName(metric_value)
+		var metric_control := get_node_or_null("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
+		if metric_control != null:
+			metric_control.visible = visible
+			var icon := metric_control.get_node_or_null("Icon") as TextureRect
+			if icon != null:
+				icon.visible = visible and show_icons
+
+
+static func _non_pancake_result_metric_profile(score_result: Dictionary, product_id: StringName) -> Array[Dictionary]:
+	var displayed_item := Dictionary(score_result.get("display_item", {}))
+	var product := Dictionary(score_result.get("display_product", {}))
+	if product.is_empty():
+		product = {"product_id": product_id}
+	var mismatch_reasons := PackedStringArray(displayed_item.get("mismatch_reasons", PackedStringArray()))
+	var order_score := 100.0 if mismatch_reasons.is_empty() else 0.0
+	match product_id:
+		&"product.youtiao.plain", &"product.youtiao.sesame":
+			return [
+				{"metric": &"IntegrityMetric", "label": "火候", "score": float(product.get("quality", 0.0))},
+				# A youtiao can only become a deliverable product after its draining
+				# phase has completed, so the delivered state represents full draining.
+				{"metric": &"ThicknessMetric", "label": "沥油", "score": 100.0},
+				{"metric": &"OrderMetric", "label": "订单", "score": order_score},
+			]
+		&"product.fresh_soy_milk.yellow_bean":
+			var requested_sugar := int(displayed_item.get("requested_sugar_servings", 0))
+			var requested_temperature := StringName(displayed_item.get("requested_temperature_mode", &"room_temperature"))
+			return [
+				{"metric": &"IntegrityMetric", "label": "满杯度", "score": float(product.get("fill_ratio", 0.0)) * 100.0},
+				{"metric": &"ThicknessMetric", "label": "糖度", "score": 100.0 if int(product.get("sugar_servings", 0)) == requested_sugar else 0.0},
+				{"metric": &"HeatMetric", "label": "温度", "score": 100.0 if StringName(product.get("temperature_mode", &"room_temperature")) == requested_temperature else 0.0},
+				{"metric": &"OrderMetric", "label": "订单", "score": order_score},
+			]
+	return [{"metric": &"OrderMetric", "label": "订单", "score": order_score}]
+
+
+func _load_result_quality_icons() -> void:
+	if _result_quality_icons_loaded:
+		return
+	for metric_name in RESULT_QUALITY_ICON_PATHS:
+		var icon := get_node_or_null("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s/Icon" % metric_name) as TextureRect
+		if icon != null:
+			icon.texture = load(str(RESULT_QUALITY_ICON_PATHS[metric_name])) as Texture2D
+	_result_quality_icons_loaded = true
 
 
 func _input(event: InputEvent) -> void:
@@ -197,11 +301,17 @@ func _process(delta: float) -> void:
 	super._process(delta)
 	_refresh_elapsed += delta
 	if _refresh_elapsed >= 0.10:
-		_refresh_elapsed = 0.0
-		_refresh_pancake_drag_sources()
-		_refresh_material_slots()
-		_refresh_tutorial_guide()
-		_refresh_multi_griddle_mode()
+		# Native dragging already performs synchronous Control hit testing for each
+		# pointer sample. Periodic source reconfiguration invalidates that tree and
+		# makes unrelated drags visibly hitch. These views are presentation-only and
+		# catch up on the first frame after release.
+		var viewport := get_viewport()
+		if viewport == null or not viewport.gui_is_dragging():
+			_refresh_elapsed = 0.0
+			_refresh_pancake_drag_sources()
+			_refresh_material_slots()
+			_refresh_tutorial_guide()
+			_refresh_multi_griddle_mode()
 	if serve_product_button != null:
 		serve_product_button.visible = false
 
@@ -440,9 +550,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"burnt": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把整锅焦糊油条拖到废弃区"}
 				&"draining": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待沥油完成"}
 				&"ready_to_collect":
-					if not bool(prepared_plain.get("success", false)) and StringName(prepared_plain.get("reason", &"")) == &"finished_tray_locked":
-						return {"target": cartoon_youtiao_fryer.state_label, "message": "油条已沥油，暂存在滤网中；请先解锁成品盘"}
-					return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到成品盘"}
+					return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到顾客订单或成品盘"}
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
@@ -613,7 +721,7 @@ func _refresh_pancake_drag_sources() -> void:
 		holding_slots = Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
 	for slot_index in range(pancake_holding_sources.size()):
 		var product := Dictionary(holding_slots[slot_index]) if slot_index < holding_slots.size() else {}
-		pancake_holding_sources[slot_index].configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &""))}, PRODUCT_VISUALS.texture_for(&"product.pancake.custom"), not product.is_empty(), "暂存煎饼可交付；点击订单商品图标取用")
+		pancake_holding_sources[slot_index].configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "discardable": true}, PRODUCT_VISUALS.texture_for(&"product.pancake.custom"), not product.is_empty(), "暂存煎饼可交付；点击订单商品图标取用，或拖入废弃篓")
 		pancake_holding_sources[slot_index].visible = not product.is_empty()
 
 
@@ -1242,6 +1350,22 @@ func _on_disposition_completed(result: Dictionary) -> void:
 		tool_status_label.text = "餐品回到原处：%s" % str(result.get("reason", &"unknown"))
 
 
+func _on_waste_product_source_discarded(source_ref: Dictionary) -> void:
+	if StringName(source_ref.get("source_kind", &"")) != &"pancake_griddle_ready":
+		return
+	var source_index := int(source_ref.get("source_index", -1))
+	if source_index >= 0 and multi_griddle_station != null:
+		multi_griddle_station.consume_ready(source_index)
+
+
+func _on_waste_active_griddle_clear_requested() -> void:
+	if multi_griddle_station == null:
+		return
+	var result := Dictionary(multi_griddle_station.reset_active())
+	if bool(result.get("success", false)):
+		tool_status_label.text = "已废弃当前煎饼；原料不返还，请重新添面糊"
+
+
 func _show_station_status(message: String) -> void:
 	tool_status_label.text = message
 
@@ -1254,6 +1378,9 @@ static func _tray_result_summary(settlement: Dictionary) -> Dictionary:
 	var feedback_items := _delivery_feedback_items(item_results)
 	summary["score"] = float(product.get("score", 100.0 if bool(settlement.get("order_success", false)) else 0.0))
 	summary["dimensions"] = Dictionary(product.get("dimension_scores", {})).duplicate(true)
+	summary["product_id"] = StringName(product.get("product_id", &"product.pancake.custom"))
+	summary["display_product"] = product.duplicate(true)
+	summary["display_item"] = primary_result.duplicate(true)
 	summary["tags"] = feedback_items
 	if feedback_items.is_empty():
 		summary["feedback"] = "顾客已收到完整订单"

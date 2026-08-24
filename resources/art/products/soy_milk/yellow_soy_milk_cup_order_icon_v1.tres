@@ -1,0 +1,8 @@
+[gd_resource type="AtlasTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png" id="1_texture"]
+
+[resource]
+atlas = ExtResource("1_texture")
+region = Rect2(256, 1079, 435, 498)
+filter_clip = true

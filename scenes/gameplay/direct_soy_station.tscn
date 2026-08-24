@@ -2,11 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d0se1e6c7txsd" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
-[ext_resource type="Texture2D" uid="uid://h30y780vs2v4" path="res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png" id="3_dispenser"]
-[ext_resource type="Texture2D" uid="uid://dueqcchyh6gs2" path="res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png" id="5_sugar"]
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
-[ext_resource type="Texture2D" uid="uid://df7pyiqdakuu7" path="res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_1_v3_bold_cartoon_transparent.png" id="7_cup"]
-[ext_resource type="Texture2D" uid="uid://cwk2ap6fmtqt4" path="res://resources/art/workstation/machines/soy_milk/ice-tray-with-scoop.png" id="8_ice_tray"]
 [ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="9_alpha_hit"]
 
 [sub_resource type="StyleBoxFlat" id="Style_cup_selected"]
@@ -20,6 +16,51 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="Style_nozzle_action"]
+bg_color = Color(1, 0.71, 0.2, 0.18)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.76, 0.28, 0.9)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.23, 0.1, 0.01, 0.3)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="Style_nozzle_action_hover"]
+bg_color = Color(1, 0.68, 0.13, 0.32)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.85, 0.47, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.26, 0.11, 0.01, 0.44)
+shadow_size = 8
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="Style_nozzle_action_pressed"]
+bg_color = Color(0.94, 0.54, 0.08, 0.42)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.92, 0.65, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.22, 0.08, 0.01, 0.5)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
 
 [node name="DirectSoyStation" type="Control" unique_id=1720502831]
 custom_minimum_size = Vector2(410, 496)
@@ -36,7 +77,6 @@ offset_top = -24.0
 offset_right = 458.0
 offset_bottom = 454.0
 mouse_filter = 2
-texture = ExtResource("3_dispenser")
 expand_mode = 1
 stretch_mode = 5
 
@@ -48,7 +88,6 @@ offset_top = 445.0
 offset_right = 434.0
 offset_bottom = 555.0
 mouse_filter = 2
-texture = ExtResource("5_sugar")
 expand_mode = 1
 stretch_mode = 5
 
@@ -72,7 +111,18 @@ offset_top = 230.0
 offset_right = 220.0
 offset_bottom = 348.0
 tooltip_text = "按住出浆口接浆"
-flat = true
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.08, 0.02, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.08, 0.02, 1)
+theme_override_colors/font_outline_color = Color(1, 0.96, 0.82, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_nozzle_action")
+theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
+theme_override_styles/pressed = SubResource("Style_nozzle_action_pressed")
+theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
+text = "按住出浆"
 
 [node name="SecondNozzleButton" type="Button" parent="." unique_id=196913413]
 unique_name_in_owner = true
@@ -83,7 +133,41 @@ offset_top = 230.0
 offset_right = 352.0
 offset_bottom = 330.0
 tooltip_text = "点击右侧出浆口接浆"
-flat = true
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.08, 0.02, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.08, 0.02, 1)
+theme_override_colors/font_outline_color = Color(1, 0.96, 0.82, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("Style_nozzle_action")
+theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
+theme_override_styles/pressed = SubResource("Style_nozzle_action_pressed")
+theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
+text = "点击出浆"
+
+[node name="DualNozzleButton" type="Button" parent="." unique_id=196913414]
+unique_name_in_owner = true
+visible = false
+z_index = 1
+layout_mode = 0
+offset_left = 164.0
+offset_top = 164.0
+offset_right = 282.0
+offset_bottom = 198.0
+tooltip_text = "同时接满左右两杯豆浆"
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
+theme_override_colors/font_hover_color = Color(0.18, 0.08, 0.02, 1)
+theme_override_colors/font_pressed_color = Color(0.18, 0.08, 0.02, 1)
+theme_override_colors/font_outline_color = Color(1, 0.96, 0.82, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("Style_nozzle_action")
+theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
+theme_override_styles/pressed = SubResource("Style_nozzle_action_pressed")
+theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
+text = "双口出浆"
 
 [node name="MachineOutput" type="TextureButton" parent="." unique_id=1233758645]
 unique_name_in_owner = true
@@ -92,10 +176,22 @@ offset_left = 113.0
 offset_top = 454.0
 offset_right = 168.0
 offset_bottom = 524.0
-texture_normal = ExtResource("7_cup")
 ignore_texture_size = true
 stretch_mode = 4
 script = ExtResource("2_source")
+
+[node name="PrimaryEmptyCupPreview" type="TextureRect" parent="." unique_id=196913415]
+unique_name_in_owner = true
+visible = false
+z_index = 1
+layout_mode = 0
+offset_left = 146.0
+offset_top = 359.0
+offset_right = 206.0
+offset_bottom = 429.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 4
 
 [node name="CupStack" type="TextureButton" parent="." unique_id=1873904211]
 unique_name_in_owner = true
@@ -118,7 +214,6 @@ offset_top = 359.0
 offset_right = 300.0
 offset_bottom = 429.0
 mouse_filter = 2
-texture = ExtResource("7_cup")
 expand_mode = 1
 stretch_mode = 4
 
@@ -134,7 +229,6 @@ offset_bottom = 388.0
 tooltip_text = "点击选择这杯豆浆"
 flat = true
 script = ExtResource("9_alpha_hit")
-hit_texture = ExtResource("7_cup")
 
 [node name="CupSelectionFrame" type="Panel" parent="." unique_id=138775050]
 unique_name_in_owner = true
@@ -176,7 +270,6 @@ offset_bottom = 555.0
 tooltip_text = "成品杯加糖（最多两份）"
 flat = true
 script = ExtResource("9_alpha_hit")
-hit_texture = ExtResource("5_sugar")
 
 [node name="SugarLabel" type="Label" parent="." unique_id=485603011]
 unique_name_in_owner = true
@@ -198,7 +291,6 @@ offset_top = 450.0
 offset_right = 313.0
 offset_bottom = 547.0
 mouse_filter = 2
-texture = ExtResource("8_ice_tray")
 expand_mode = 1
 stretch_mode = 5
 
@@ -212,7 +304,6 @@ offset_bottom = 547.0
 tooltip_text = "成品杯加冰"
 flat = true
 script = ExtResource("9_alpha_hit")
-hit_texture = ExtResource("8_ice_tray")
 
 [node name="IceLabel" type="Label" parent="IceButton" unique_id=1549235280]
 layout_mode = 1

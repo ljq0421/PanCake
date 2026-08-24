@@ -2,13 +2,27 @@ class_name CustomerServiceSlot
 extends Control
 
 const PATIENCE_BAR_STYLE := preload("res://scripts/ui/patience_bar_style.gd")
-const CARD_WIDTH := 300.0
-const CARD_HEIGHT_BY_ITEM_COUNT := {1: 160.0, 2: 240.0, 3: 320.0}
-const ROW_TOP := 48.0
-const ROW_HEIGHT := 72.0
-const ROW_GAP := 8.0
+const CARD_BACKGROUND_BY_ITEM_COUNT := {
+	1: preload("res://resources/art/ui/order/order_card_background_rows_1_v1.png"),
+	2: preload("res://resources/art/ui/order/order_card_background_rows_2_v1.png"),
+	3: preload("res://resources/art/ui/order/order_card_background_rows_3_v1.png"),
+}
 const INGREDIENT_COLUMNS := 4
 const INGREDIENTS_PER_ITEM := 8
+
+@export_category("Order Card Layout")
+@export_range(1.0, 1000.0, 1.0, "suffix:px") var card_width := 0.0
+@export_range(1.0, 1000.0, 1.0, "suffix:px") var card_height_one_item := 0.0
+@export_range(1.0, 1000.0, 1.0, "suffix:px") var card_height_two_items := 0.0
+@export_range(1.0, 1000.0, 1.0, "suffix:px") var card_height_three_items := 0.0
+@export_range(0.0, 500.0, 1.0, "suffix:px") var row_top := 0.0
+@export_range(1.0, 500.0, 1.0, "suffix:px") var row_height := 0.0
+@export_range(0.0, 500.0, 1.0, "suffix:px") var row_gap := 0.0
+@export var product_icon_offset := Vector2.ZERO
+@export var product_icon_size := Vector2.ZERO
+@export var ingredient_grid_offset := Vector2.ZERO
+@export var ingredient_grid_spacing := Vector2.ZERO
+@export var ingredient_icon_size := Vector2.ZERO
 
 signal focus_requested(order_id: StringName)
 signal delivery_requested(order_id: StringName, item_index: int)
@@ -25,17 +39,11 @@ signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictio
 @onready var item_buttons: Array[Button] = [%ItemButton1, %ItemButton2, %ItemButton3]
 @onready var item_icons: Array[TextureRect] = [%ItemIcon1, %ItemIcon2, %ItemIcon3]
 @onready var quantity_labels: Array[Label] = [%Quantity1, %Quantity2, %Quantity3]
-@onready var requirement_panels: Array[Panel] = [%Requirement1, %Requirement2, %Requirement3, %Requirement4, %Requirement5, %Requirement6, %Requirement7, %Requirement8]
-@onready var requirement_icons: Array[TextureRect] = [%RequirementIcon1, %RequirementIcon2, %RequirementIcon3, %RequirementIcon4, %RequirementIcon5, %RequirementIcon6, %RequirementIcon7, %RequirementIcon8]
-@onready var coin_label: Label = %CoinLabel
 @onready var patience_bar: ProgressBar = %PatienceBar
 @onready var patience_label: Label = %PatienceLabel
 
 var _order_id: StringName = &""
 var _patience_bar_tier := -1
-var _simple_card_background: Panel
-var _row_panels: Array[Panel] = []
-var _product_frames: Array[Panel] = []
 var _ingredient_icons_by_item: Array = []
 
 
@@ -62,7 +70,8 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 	special_title.text = title_text
 	special_rule.visible = not special_customer_id.is_empty()
 	special_rule.text = rule_text
-	order_title.text = "完美完成可得 ×%d 金币" % maxi(perfect_quote, 0)
+	# The coin is baked into the card background; leave only the dynamic reward amount.
+	order_title.text = str(maxi(perfect_quote, 0))
 	var items := Array(order.get("items", []))
 	if items.size() > item_buttons.size():
 		items.resize(item_buttons.size())
@@ -84,7 +93,12 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 		quantity_labels[item_index].visible = required_count > 1
 		quantity_labels[item_index].text = "✓" if completed else "%d/%d" % [mini(attached_count, required_count), required_count]
 	_bind_requirements_by_item(requirements_by_item)
-	coin_label.visible = false
+	update_patience(order)
+
+
+func update_patience(order: Dictionary) -> void:
+	if _order_id.is_empty() or StringName(order.get("order_id", &"")) != _order_id:
+		return
 	var unlimited := bool(order.get("tutorial_no_countdown", false))
 	var total := maxf(float(order.get("patience_seconds", 0.0)), 0.001)
 	var remaining := maxf(float(order.get("remaining_patience_seconds", total)), 0.0)
@@ -96,39 +110,16 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 
 
 func _create_simple_card_controls() -> void:
-	# This card deliberately uses plain Godot controls instead of a painted card image.
-	card_background.visible = false
-	for panel in requirement_panels:
-		panel.visible = false
-	_simple_card_background = Panel.new()
-	_simple_card_background.name = "SimpleCardBackground"
-	_simple_card_background.z_index = -3
-	_simple_card_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_simple_card_background.add_theme_stylebox_override("panel", _simple_style(Color("fff7df"), Color("5d3a1a"), 3, 12))
-	order_panel.add_child(_simple_card_background)
-	order_panel.move_child(_simple_card_background, 0)
+	# The painted card contains only the background; dish and ingredient icons remain dynamic.
+	card_background.visible = true
 	for item_index in range(item_buttons.size()):
-		var row := Panel.new()
-		row.name = "OrderRow%d" % (item_index + 1)
-		row.z_index = -2
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_theme_stylebox_override("panel", _simple_style(Color("fffdf3"), Color("c89b56"), 2, 8))
-		order_panel.add_child(row)
-		_row_panels.append(row)
-		var product_frame := Panel.new()
-		product_frame.name = "ProductFrame%d" % (item_index + 1)
-		product_frame.z_index = -1
-		product_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		product_frame.add_theme_stylebox_override("panel", _simple_style(Color("fff0b5"), Color("6e451f"), 2, 5))
-		order_panel.add_child(product_frame)
-		_product_frames.append(product_frame)
 		var ingredient_icons: Array[TextureRect] = []
 		for ingredient_index in range(INGREDIENTS_PER_ITEM):
-			var ingredient_slot := Panel.new()
+			var ingredient_slot := Control.new()
 			ingredient_slot.name = "IngredientSlot%d_%d" % [item_index + 1, ingredient_index + 1]
-			ingredient_slot.z_index = -1
+			# The painted order-card background is now visible, so requirements must render above it.
+			ingredient_slot.z_index = 1
 			ingredient_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			ingredient_slot.add_theme_stylebox_override("panel", _simple_style(Color("fffdf3"), Color("6e451f"), 2, 999))
 			var ingredient_icon := TextureRect.new()
 			ingredient_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			ingredient_icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 3)
@@ -142,43 +133,47 @@ func _create_simple_card_controls() -> void:
 
 func _apply_simple_card_layout(item_count: int) -> void:
 	var visible_item_count := clampi(item_count, 1, item_buttons.size())
-	var extra_special_height := 18.0 if special_title.visible else 0.0
-	var card_height := float(CARD_HEIGHT_BY_ITEM_COUNT[visible_item_count]) + extra_special_height
-	order_panel.size = Vector2(CARD_WIDTH, card_height)
-	_simple_card_background.position = Vector2.ZERO
-	_simple_card_background.size = order_panel.size
-	order_title.position = Vector2(14.0, 8.0)
-	order_title.size = Vector2(272.0, 22.0)
-	special_title.position = Vector2(14.0, 27.0)
-	special_title.size = Vector2(272.0, 18.0)
-	special_rule.position = Vector2(14.0, card_height - 47.0)
-	special_rule.size = Vector2(272.0, 17.0)
-	patience_bar.position = Vector2(70.0, card_height - 26.0)
-	patience_bar.size = Vector2(190.0, 16.0)
-	patience_label.position = Vector2(70.0, card_height - 26.0)
-	patience_label.size = Vector2(190.0, 16.0)
+	var card_height := _card_height_for_item_count(visible_item_count)
+	order_panel.size = Vector2(card_width, card_height)
+	card_background.texture = CARD_BACKGROUND_BY_ITEM_COUNT[visible_item_count]
+	order_title.position = Vector2(52.0, 7.0)
+	order_title.size = Vector2(144.0, 20.0)
+	special_title.position = Vector2(52.0, 28.0)
+	special_title.size = Vector2(182.0, 16.0)
+	special_rule.position = Vector2(18.0, card_height - 47.0)
+	special_rule.size = Vector2(214.0, 17.0)
+	patience_bar.position = Vector2(54.0, card_height - 22.0)
+	patience_bar.size = Vector2(172.0, 12.0)
+	patience_label.visible = false
 	for item_index in range(item_buttons.size()):
-		var row_top := ROW_TOP + item_index * (ROW_HEIGHT + ROW_GAP) + extra_special_height
+		var item_row_top := row_top + item_index * (row_height + row_gap)
 		var is_visible := item_index < visible_item_count
-		_row_panels[item_index].position = Vector2(12.0, row_top)
-		_row_panels[item_index].size = Vector2(276.0, ROW_HEIGHT)
-		_row_panels[item_index].visible = is_visible
-		_product_frames[item_index].position = Vector2(22.0, row_top + 10.0)
-		_product_frames[item_index].size = Vector2(52.0, 52.0)
-		_product_frames[item_index].visible = is_visible
-		item_buttons[item_index].position = Vector2(24.0, row_top + 12.0)
-		item_buttons[item_index].size = Vector2(48.0, 48.0)
+		item_buttons[item_index].position = Vector2(product_icon_offset.x, item_row_top + product_icon_offset.y)
+		item_buttons[item_index].size = product_icon_size
 		quantity_labels[item_index].position = Vector2(5.0, 42.0)
 		quantity_labels[item_index].size = Vector2(45.0, 20.0)
 		var ingredient_icons: Array = _ingredient_icons_by_item[item_index]
 		for ingredient_index in range(ingredient_icons.size()):
 			var ingredient_icon := ingredient_icons[ingredient_index] as TextureRect
-			var ingredient_slot := ingredient_icon.get_parent() as Panel
+			var ingredient_slot := ingredient_icon.get_parent() as Control
 			var column := ingredient_index % INGREDIENT_COLUMNS
 			var ingredient_row := ingredient_index / INGREDIENT_COLUMNS
-			ingredient_slot.position = Vector2(99.0 + column * 42.0, row_top + 9.0 + ingredient_row * 31.0)
-			ingredient_slot.size = Vector2(26.0, 26.0)
+			ingredient_slot.position = Vector2(
+				ingredient_grid_offset.x + column * ingredient_grid_spacing.x,
+				item_row_top + ingredient_grid_offset.y + ingredient_row * ingredient_grid_spacing.y,
+			)
+			ingredient_slot.size = ingredient_icon_size
 			ingredient_slot.visible = false
+
+
+func _card_height_for_item_count(item_count: int) -> float:
+	match item_count:
+		1:
+			return card_height_one_item
+		2:
+			return card_height_two_items
+		_:
+			return card_height_three_items
 
 
 func _bind_requirements_by_item(requirements_by_item: Array) -> void:
@@ -189,7 +184,7 @@ func _bind_requirements_by_item(requirements_by_item: Array) -> void:
 		var ingredient_icons: Array = _ingredient_icons_by_item[item_index]
 		for ingredient_index in range(ingredient_icons.size()):
 			var ingredient_icon := ingredient_icons[ingredient_index] as TextureRect
-			var ingredient_slot := ingredient_icon.get_parent() as Panel
+			var ingredient_slot := ingredient_icon.get_parent() as Control
 			var has_requirement := item_buttons[item_index].visible and ingredient_index < item_requirements.size()
 			ingredient_slot.visible = has_requirement
 			if not has_requirement:
@@ -197,18 +192,9 @@ func _bind_requirements_by_item(requirements_by_item: Array) -> void:
 				ingredient_slot.tooltip_text = ""
 				continue
 			var requirement := Dictionary(item_requirements[ingredient_index])
+			var kind := StringName(requirement.get("kind", &""))
 			ingredient_icon.texture = requirement.get("texture") as Texture2D
-			ingredient_slot.tooltip_text = "需要加热" if StringName(requirement.get("kind", &"")) == &"heated" else str(requirement.get("display_name", "配料要求"))
-
-
-func _simple_style(background: Color, border: Color, border_width: int, corner_radius: int) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = background
-	style.border_color = border
-	style.set_border_width_all(border_width)
-	style.set_corner_radius_all(corner_radius)
-	return style
-
+			ingredient_slot.tooltip_text = "需要加热" if kind == &"heated" else str(requirement.get("display_name", "配料要求"))
 
 func delivery_target(order_id: StringName, item_index: int) -> Control:
 	if _order_id != order_id or item_index < 0 or item_index >= item_buttons.size():

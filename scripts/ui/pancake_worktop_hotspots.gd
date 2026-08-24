@@ -128,6 +128,9 @@ func set_workshop_preview(enabled: bool) -> void:
 func _process(delta: float) -> void:
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.20:
+		var viewport := get_viewport()
+		if viewport != null and viewport.gui_is_dragging():
+			return
 		_refresh_elapsed = 0.0
 		refresh_from_session()
 
@@ -200,6 +203,11 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 		hotspot.hold_advanced.connect(_on_material_hold_advanced.bind(hotspot))
 	if not hotspot.hold_released.is_connected(_on_material_hold_released):
 		hotspot.hold_released.connect(_on_material_hold_released.bind(hotspot))
+	if source_kind == &"pancake_shared_ingredient":
+		if not hotspot.drag_started.is_connected(_on_material_drag_started):
+			hotspot.drag_started.connect(_on_material_drag_started.bind(hotspot))
+		if not hotspot.drag_ended.is_connected(_on_material_drag_ended):
+			hotspot.drag_ended.connect(_on_material_drag_ended.bind(hotspot))
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hit_texture, false)
 
 
@@ -384,6 +392,28 @@ func _on_material_short_clicked(source_ref: Dictionary, hotspot: ProductDragSour
 		hotspot.release_focus()
 
 
+func _on_material_drag_started(source_ref: Dictionary, hotspot: ProductDragSource) -> void:
+	var station := _griddle_station()
+	if station == null or not station.has_method("reserve_ingredient_drag"):
+		hotspot.set_drag_available(false)
+		return
+	var result := Dictionary(station.call("reserve_ingredient_drag", source_ref))
+	if not bool(result.get("success", false)):
+		hotspot.set_drag_available(false)
+		status_message.emit("%s库存不足，请原地长按补货" % _stock_label(StringName(source_ref.get("stock_id", &""))))
+	# Reconfigure on the next idle step, after ProductDragSource has created the
+	# native drag. This makes the physical tray lose a portion immediately while
+	# still allowing the last reserved portion to remain under the pointer.
+	call_deferred("refresh_from_session")
+
+
+func _on_material_drag_ended(source_ref: Dictionary, successful: bool, _hotspot: ProductDragSource) -> void:
+	var station := _griddle_station()
+	if station != null and station.has_method("finish_ingredient_drag"):
+		station.call("finish_ingredient_drag", source_ref, successful)
+	call_deferred("refresh_from_session")
+
+
 func _on_material_hold_requested(source_ref: Dictionary, hotspot: ProductDragSource) -> void:
 	if _session == null or not _session.has_method("five_area_restock_status"):
 		hotspot.reject_hold()
@@ -494,7 +524,10 @@ func _update_batter_ladle_holder_visual() -> void:
 		and bool(station.call("can_take_batter_from_ladle"))
 	)
 	var ladle_selected := station.has_method("is_batter_ladle_selected") and bool(station.call("is_batter_ladle_selected"))
-	holder.texture_normal = BATTER_LADLE_HOLDER_EMPTY if ladle_selected or not batter_available else BATTER_LADLE_HOLDER_FILLED
+	# Availability only controls whether the holder can be pressed. Once pouring
+	# ends, the ladle is physically back in the cylinder even though the active
+	# griddle remains busy with that pancake.
+	holder.texture_normal = BATTER_LADLE_HOLDER_EMPTY if ladle_selected else BATTER_LADLE_HOLDER_FILLED
 	holder.texture_hover = holder.texture_normal
 	holder.texture_pressed = holder.texture_normal
 	holder.disabled = not batter_available or _workshop_preview

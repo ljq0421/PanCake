@@ -1,11 +1,8 @@
 [gd_scene format=3 uid="uid://bcgkauxm4opdi"]
 
 [ext_resource type="Script" uid="uid://bx27p8vbu7lxg" path="res://scripts/ui/customer_service_slot.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://c5v11ifr0600d" path="res://resources/art/ui/order/order_card_multi_dish_v3_five_area_v2.png" id="2_order_card"]
+[ext_resource type="Texture2D" uid="uid://bv7l61doyv7q7" path="res://resources/art/ui/order/order_card_background_rows_1_v1.png" id="2_order_card"]
 [ext_resource type="Script" uid="uid://c46h1inlchljr" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
-
-[sub_resource type="StyleBoxFlat" id="TransparentStyle"]
-bg_color = Color(0, 0, 0, 0)
 
 [node name="CustomerServiceSlot" type="Control" unique_id=894083715]
 custom_minimum_size = Vector2(540, 490)
@@ -15,6 +12,18 @@ offset_right = 540.0
 offset_bottom = 490.0
 mouse_filter = 2
 script = ExtResource("1_script")
+card_width = 250.0
+card_height_one_item = 160.0
+card_height_two_items = 240.0
+card_height_three_items = 320.0
+row_top = 38.0
+row_height = 72.0
+row_gap = 8.0
+product_icon_offset = Vector2(20, 10)
+product_icon_size = Vector2(64, 64)
+ingredient_grid_offset = Vector2(82, 7)
+ingredient_grid_spacing = Vector2(36, 31)
+ingredient_icon_size = Vector2(39, 39)
 
 [node name="Portrait" type="TextureRect" parent="." unique_id=175191323]
 unique_name_in_owner = true
@@ -222,211 +231,6 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 15
 text = "0/3"
 horizontal_alignment = 2
-
-[node name="Requirement1" type="Panel" parent="OrderPanel" unique_id=1561222828]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 52.0
-offset_top = 173.0
-offset_right = 96.0
-offset_bottom = 213.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon1" type="TextureRect" parent="OrderPanel/Requirement1" unique_id=995116168]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.18200001
-anchor_top = 0.275
-anchor_right = 0.818
-anchor_bottom = 1.2750001
-offset_left = 0.008000374
-offset_right = 0.00799942
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement2" type="Panel" parent="OrderPanel" unique_id=1046256676]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 101.0
-offset_top = 173.0
-offset_right = 145.0
-offset_bottom = 213.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon2" type="TextureRect" parent="OrderPanel/Requirement2" unique_id=1048000811]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.045
-anchor_top = 0.275
-anchor_right = 0.95500004
-anchor_bottom = 1.2750001
-offset_left = -0.01999998
-offset_right = -0.020000458
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement3" type="Panel" parent="OrderPanel" unique_id=1903029987]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 155.0
-offset_top = 173.0
-offset_right = 199.0
-offset_bottom = 213.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon3" type="TextureRect" parent="OrderPanel/Requirement3" unique_id=443992175]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_top = 0.275
-anchor_right = 1.0
-anchor_bottom = 1.2750001
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement4" type="Panel" parent="OrderPanel" unique_id=1285447003]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 204.0
-offset_top = 173.0
-offset_right = 248.0
-offset_bottom = 213.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon4" type="TextureRect" parent="OrderPanel/Requirement4" unique_id=1605647781]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.15900001
-anchor_top = 0.3
-anchor_right = 1.159
-anchor_bottom = 1.3000001
-offset_left = 0.00399971
-offset_right = 0.0039978027
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement5" type="Panel" parent="OrderPanel" unique_id=231476865]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 52.0
-offset_top = 224.0
-offset_right = 96.0
-offset_bottom = 264.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon5" type="TextureRect" parent="OrderPanel/Requirement5" unique_id=458720093]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.18200001
-anchor_top = 0.57500005
-anchor_right = 0.818
-anchor_bottom = 1.575
-offset_left = 0.008000374
-offset_right = 0.00799942
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement6" type="Panel" parent="OrderPanel" unique_id=1271298497]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 101.0
-offset_top = 224.0
-offset_right = 145.0
-offset_bottom = 264.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon6" type="TextureRect" parent="OrderPanel/Requirement6" unique_id=1212615713]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.045
-anchor_top = 0.57500005
-anchor_right = 1.0
-anchor_bottom = 1.575
-offset_left = -0.01999998
-offset_right = -2.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement7" type="Panel" parent="OrderPanel" unique_id=609510531]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 155.0
-offset_top = 224.0
-offset_right = 199.0
-offset_bottom = 264.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon7" type="TextureRect" parent="OrderPanel/Requirement7" unique_id=249199944]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_top = 0.57500005
-anchor_right = 1.0
-anchor_bottom = 1.575
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="Requirement8" type="Panel" parent="OrderPanel" unique_id=1509896163]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 204.0
-offset_top = 224.0
-offset_right = 248.0
-offset_bottom = 264.0
-theme_override_styles/panel = SubResource("TransparentStyle")
-
-[node name="RequirementIcon8" type="TextureRect" parent="OrderPanel/Requirement8" unique_id=329431414]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.15900001
-anchor_top = 0.57500005
-anchor_right = 1.159
-anchor_bottom = 1.575
-offset_left = 0.00399971
-offset_right = 0.0039978027
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CoinLabel" type="Label" parent="OrderPanel" unique_id=1997241226]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 18.0
-offset_top = 306.0
-offset_right = 82.0
-offset_bottom = 342.0
-theme_override_colors/font_color = Color(0.56, 0.24, 0.04, 1)
-theme_override_font_sizes/font_size = 15
 
 [node name="SpecialRule" type="Label" parent="OrderPanel" unique_id=1119498488]
 unique_name_in_owner = true

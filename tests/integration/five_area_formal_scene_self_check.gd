@@ -23,13 +23,13 @@ func _run() -> void:
 		_check(stations != null and stations.get_node_or_null(NodePath(str(retired_name))) == null, "%s is absent" % retired_name)
 	var fryer := stations.get_node_or_null("CartoonYoutiaoFryer") as CartoonYoutiaoFryerToggle if stations != null else null
 	_check(fryer != null and fryer.has_signal("status_message"), "cartoon fryer exposes workstation status messages")
-	_check(fryer != null and fryer.black_sesame_tray != null and fryer.black_sesame_tray.texture != null, "black sesame tray is authored beside the fryer")
-	_check(fryer != null and fryer.output_sources.size() == 4 and fryer.plate_sources.size() == 4 and fryer.prepared_slot != null and not fryer.prepared_slot.visible and fryer.waste_target != null, "cartoon fryer exposes four fryer and plate oil-stick sources while keeping the former storage control hidden")
+	_check(fryer != null and fryer.black_sesame_tray != null, "black sesame tray is authored beside the fryer")
+	_check(fryer != null and fryer.output_sources.size() == 4 and fryer.plate_sources.size() == 8 and fryer.prepared_slot != null and not fryer.prepared_slot.visible and fryer.waste_target != null, "cartoon fryer exposes four fryer sources and eight stored-product sources across two trays while keeping the former storage control hidden")
 	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.black_sesame_tray.z_index), "finished youtiao drag sources render above the black sesame tray")
 	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return is_equal_approx(source.drag_threshold_pixels, 4.0)), "oil-strip sources start dragging with a short movement")
 	_check(fryer != null and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return source._drop_forward_target == fryer), "stored oil strips forward drops to their serving tray")
 	_check(fryer != null and fryer.product_visuals.size() == 4 and fryer.raised_basket_slots.size() == 4 and fryer.lowered_basket_slots.size() == 4, "cartoon fryer renders exactly four fixed fryer slots")
-	_check(fryer != null and fryer.plate_product_visuals.size() == 4 and fryer.plate_product_slots.size() == 4 and fryer.sesame_tray_product_slots.size() == 4, "serving and sesame trays expose four scene-authored oil-stick positions")
+	_check(fryer != null and fryer.plate_product_visuals.size() == 8 and fryer.plate_product_slots.size() == 4 and fryer.sesame_tray_product_slots.size() == 4, "serving and sesame trays each expose four oil-stick positions backed by eight stored-product visuals")
 	if fryer != null:
 		var session: Node = root.get_node_or_null("GameSession")
 		if session != null:
@@ -37,7 +37,7 @@ func _run() -> void:
 			progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true})
 			progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true})
 			fryer.set_workshop_preview(true)
-			_check(fryer.black_sesame_tray.visible and is_equal_approx(fryer.black_sesame_tray.self_modulate.a, 0.42), "locked black sesame tray is translucent in the workshop preview")
+			_check(fryer.black_sesame_tray.visible and fryer.black_sesame_tray.texture != null and is_equal_approx(fryer.black_sesame_tray.self_modulate.a, 0.42), "locked black sesame tray is lazily loaded and translucent in the workshop preview")
 			fryer.set_workshop_preview(false)
 			fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 1, "occupied_slot_indices": [0]}
 			fryer._apply_snapshot()

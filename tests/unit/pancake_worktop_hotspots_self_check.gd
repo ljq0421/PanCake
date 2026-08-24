@@ -109,22 +109,38 @@ func _test_egg_on_both_sides(station: Node, unit: Node, session: FakeSession) ->
 	_check(unit.egg_intact_visual.visible and unit.egg_intact_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg liquid begins at the opened shell position")
 	_check(int(session.inventory["stock.pancake.egg"]) == 1, "egg placement consumes exactly one inventory unit")
 	unit.call("_complete_egg_liquid_fall")
-	var first_egg_grid_position := Vector2(unit.ingredient_model.placements.back().position)
-	var first_spread := Dictionary(unit.pancake_model.apply_egg_spreader_sample(first_egg_grid_position, Vector2.RIGHT, 70.0))
-	unit.call("_stop_egg_crack_effect")
-	unit._has_intact_egg_local_override = false
-	unit.call("_refresh_intact_egg_visual")
-	_check(float(first_spread.get("moved_mass", 0.0)) > 0.0 and unit.pancake_model.yolk_broken, "the first egg can be spread before adding the second egg")
 	var second_egg_position := center + Vector2(20.0, 0.0)
 	var second_placed := Dictionary(station.drop_on_unit(0, source, second_egg_position))
 	_check(bool(second_placed.get("success", false)) and unit.ingredient_model.count_type(IngredientModel.EGG) == 2 and int(session.inventory["stock.pancake.egg"]) == 0, "a second egg is accepted and consumes a second inventory unit")
 	unit.call("_complete_egg_liquid_fall")
 	_check(
-		unit.pancake_model.yolk_broken
-		and unit.egg_intact_visual.visible
+		unit.egg_intact_visual.visible
 		and unit.egg_intact_visual.position.is_equal_approx(second_egg_position)
+		and unit.egg_intact_visual_second.visible
+		and unit.egg_intact_visual_second.position.is_equal_approx(center)
 		and unit.egg_intact_visual.scale.is_equal_approx(CompactGriddleUnit.EGG_INTACT_VISUAL_SCALE),
-		"the second egg remains a complete fried egg after landing, matching the first egg",
+		"two consecutively cracked eggs remain complete and visible before one shared spread action",
+	)
+	var staged_double_egg_snapshot: Dictionary = Dictionary(unit.snapshot())
+	var restored_double_egg := Dictionary(unit.load_snapshot(staged_double_egg_snapshot))
+	_check(
+		bool(restored_double_egg.get("success", false))
+		and unit.egg_intact_visual.visible
+		and unit.egg_intact_visual_second.visible
+		and not unit.egg_intact_visual.position.is_equal_approx(unit.egg_intact_visual_second.position),
+		"two intact eggs remain visible after restoring an in-progress pancake",
+	)
+	var first_egg_grid_position := Vector2(unit.ingredient_model.placements.front().position)
+	var double_egg_spread := Dictionary(unit.pancake_model.apply_egg_spreader_sample(first_egg_grid_position, Vector2.RIGHT, 70.0))
+	unit.call("_finish_egg_spread_visuals")
+	_check(
+		float(double_egg_spread.get("moved_mass", 0.0)) > 0.0
+		and unit.pancake_model.yolk_broken,
+		"one spread action starts the shared double-egg spreading layer",
+	)
+	_check(
+		not unit.egg_intact_visual.visible and not unit.egg_intact_visual_second.visible,
+		"spreading clears both complete-egg sprites together",
 	)
 	var third_validation := Dictionary(unit.validate_ingredient_drop(source, center + Vector2(-20.0, 0.0)))
 	_check(not bool(third_validation.get("success", false)) and StringName(third_validation.get("reason", &"")) == &"portion_limit", "a third egg is rejected at the two-portion limit")
@@ -329,7 +345,11 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	var held_batter_thickness := float(unit.pancake_model.calculate_summary().get("mean_thickness", 0.0))
 	_check(unit.state == CompactGriddleUnit.State.BATTER and held_batter_thickness > 0.0 and not bool(station.call("is_batter_ladle_selected")) and not bool(station.call("is_spreader_selected")), "releasing after pouring returns the ladle to its holder")
 	hotspots.refresh_from_session()
-	_check(batter_ladle.texture_normal == HOTSPOTS_SCRIPT.BATTER_LADLE_HOLDER_FILLED, "released ladle restores the filled holder artwork")
+	_check(
+		batter_ladle.texture_normal.resource_path.ends_with("batter_ladle_holder_occupied_v1.png")
+		and batter_ladle.disabled,
+		"released ladle returns visibly to its disabled holder while the griddle is busy",
+	)
 	unit.reset_unit()
 	session.progression.owned_growth[&"growth.automation.pancake.auto_batter_ladle"] = true
 	hotspots.refresh_from_session()
@@ -337,6 +357,12 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	hotspots.call("_on_batter_ladle_pressed")
 	var automatic_batter_thickness := float(unit.pancake_model.calculate_summary().get("mean_thickness", 0.0))
 	_check(unit.state == CompactGriddleUnit.State.BATTER and automatic_batter_thickness > held_batter_thickness, "upgraded batter ladle immediately adds the standard amount")
+	hotspots.refresh_from_session()
+	_check(
+		batter_ladle.texture_normal.resource_path.ends_with("batter_ladle_holder_occupied_v1.png")
+		and batter_ladle.disabled,
+		"automatic filling also leaves the ladle visibly returned to its holder",
+	)
 	unit.reset_unit()
 	var scallion := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
 	scallion.begin_gesture(Vector2.ZERO)

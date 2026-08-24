@@ -34,7 +34,7 @@ class FakeGameSession extends Node:
 		return inventory.duplicate(true)
 
 	func prepared_product_slot_status(_slot_id: StringName) -> Dictionary:
-		return {"count": prepared_products.size(), "capacity": 4, "products": prepared_products.duplicate(true)}
+		return {"count": prepared_products.size(), "capacity": 8, "capacity_per_product": 4, "products": prepared_products.duplicate(true)}
 
 	func load_f3_youtiao(_recipe_id: StringName, quantity: int) -> Dictionary:
 		if int(inventory.get("stock.youtiao.plain_dough", 0)) < quantity:

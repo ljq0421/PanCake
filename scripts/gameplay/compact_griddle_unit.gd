@@ -81,6 +81,7 @@ enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 @onready var egg_crack_effect: AnimatedSprite2D = %EggCrackEffect
 @onready var egg_shell_visual: Sprite2D = %EggShellVisual
 @onready var egg_intact_visual: Sprite2D = %EggIntactVisual
+@onready var egg_intact_visual_second: Sprite2D = %EggIntactVisualSecond
 @onready var spreader_artwork: Sprite2D = %SpreaderArtwork
 @onready var sauce_brush_artwork: Sprite2D = %SauceBrushArtwork
 @onready var package_visual: TextureRect = %PackageVisual
@@ -559,6 +560,7 @@ func source_ref() -> Dictionary:
 		"source_index": unit_index,
 		"product_id": &"product.pancake.custom",
 		"product": ready_product.duplicate(true),
+		"discardable": true,
 	}
 
 
@@ -599,7 +601,7 @@ func snapshot() -> Dictionary:
 
 
 func load_snapshot(value: Dictionary) -> Dictionary:
-	_has_intact_egg_local_override = false
+	_clear_intact_egg_visuals()
 	var pancake_result: Dictionary = pancake_model.load_snapshot(Dictionary(value.get("pancake_model", {})))
 	if not bool(pancake_result.get("success", false)):
 		return pancake_result
@@ -627,6 +629,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		fold_overlay.set_fold_model(fold_model)
 		_seed_initial_batter_if_needed()
 		_refresh_fold_visual()
+		_restore_intact_egg_visuals_from_snapshot()
 		_refresh_intact_egg_visual()
 		_refresh_ui()
 	return {"success": true}
@@ -644,7 +647,7 @@ func reset_unit() -> void:
 	pancake_model.reset()
 	ingredient_model.reset()
 	fold_model.reset()
-	_has_intact_egg_local_override = false
+	_clear_intact_egg_visuals()
 	p1_session.start({})
 	_stop_egg_crack_effect()
 	_scrape_sampler.reset()
@@ -913,9 +916,7 @@ func _process_egg_spread(delta: float) -> void:
 	var changed := int(result.get("changed_cells", 0)) > 0
 	_surface_changed = changed or _surface_changed
 	if changed:
-		_stop_egg_crack_effect()
-		_has_intact_egg_local_override = false
-		_refresh_intact_egg_visual()
+		_finish_egg_spread_visuals()
 	if not samples.is_empty():
 		_previous_scrape_sample = samples[samples.size() - 1]
 	_last_process_grid_position = current
@@ -924,7 +925,12 @@ func _process_egg_spread(delta: float) -> void:
 
 
 func _play_egg_crack_effect(local_position: Vector2) -> void:
+	# A quick second drop should land the first egg before the next egg starts
+	# falling, so two completed fried eggs remain visible until spreading begins.
+	if _egg_liquid_falling:
+		_complete_egg_liquid_fall()
 	_stop_egg_crack_effect()
+	_preserve_current_intact_egg_visual()
 	_intact_egg_local_override = local_position
 	_has_intact_egg_local_override = true
 	var crack_position := local_position + EGG_CRACK_STAGE_OFFSET
@@ -978,6 +984,35 @@ func _stop_egg_crack_effect() -> void:
 		egg_shell_visual.visible = false
 	if is_instance_valid(egg_intact_visual):
 		egg_intact_visual.modulate = Color.WHITE
+	if is_instance_valid(egg_intact_visual_second):
+		egg_intact_visual_second.modulate = Color.WHITE
+
+
+func _preserve_current_intact_egg_visual() -> void:
+	if not is_instance_valid(egg_intact_visual) or not egg_intact_visual.visible:
+		return
+	if not is_instance_valid(egg_intact_visual_second):
+		return
+	# The primary sprite performs the falling animation for the newest egg. Keep
+	# the earlier complete egg in a lower visual layer until both are spread.
+	egg_intact_visual_second.position = egg_intact_visual.position
+	egg_intact_visual_second.scale = egg_intact_visual.scale
+	egg_intact_visual_second.modulate = Color.WHITE
+	egg_intact_visual_second.visible = true
+
+
+func _clear_intact_egg_visuals() -> void:
+	_has_intact_egg_local_override = false
+	if is_instance_valid(egg_intact_visual):
+		egg_intact_visual.visible = false
+	if is_instance_valid(egg_intact_visual_second):
+		egg_intact_visual_second.visible = false
+
+
+func _finish_egg_spread_visuals() -> void:
+	_stop_egg_crack_effect()
+	_clear_intact_egg_visuals()
+	_refresh_intact_egg_visual()
 
 
 func _refresh_intact_egg_visual() -> void:
@@ -996,6 +1031,8 @@ func _refresh_intact_egg_visual() -> void:
 	)
 	egg_intact_visual.visible = show_intact
 	if not show_intact:
+		if is_instance_valid(egg_intact_visual_second):
+			egg_intact_visual_second.visible = false
 		return
 	if _has_intact_egg_local_override:
 		egg_intact_visual.position = _intact_egg_local_override
@@ -1003,6 +1040,30 @@ func _refresh_intact_egg_visual() -> void:
 		var egg_center := pancake_model.egg_visual_center()
 		egg_intact_visual.position = (egg_center + Vector2(0.5, 0.5)) / float(pancake_model.grid_size) * pancake_surface.size
 	egg_intact_visual.scale = EGG_INTACT_VISUAL_SCALE
+
+
+func _restore_intact_egg_visuals_from_snapshot() -> void:
+	_clear_intact_egg_visuals()
+	if (
+		not pancake_model.has_egg()
+		or pancake_model.egg_state != PancakeModel.EggState.CRACKED
+		or not pancake_model.egg_is_on_visible_side()
+	):
+		return
+	var egg_positions: Array[Vector2] = []
+	for placement in ingredient_model.placements:
+		if StringName(placement.get("type", &"")) == IngredientModel.EGG:
+			egg_positions.append(Vector2(placement.get("position", Vector2.ZERO)))
+	if egg_positions.is_empty():
+		return
+	_intact_egg_local_override = (egg_positions.back() + Vector2(0.5, 0.5)) / float(pancake_model.grid_size) * pancake_surface.size
+	_has_intact_egg_local_override = true
+	if egg_positions.size() < 2 or pancake_model.yolk_broken or not is_instance_valid(egg_intact_visual_second):
+		return
+	egg_intact_visual_second.position = (egg_positions[egg_positions.size() - 2] + Vector2(0.5, 0.5)) / float(pancake_model.grid_size) * pancake_surface.size
+	egg_intact_visual_second.scale = EGG_INTACT_VISUAL_SCALE
+	egg_intact_visual_second.modulate = Color.WHITE
+	egg_intact_visual_second.visible = true
 
 
 func _process_sauce_brush() -> void:
@@ -1059,7 +1120,12 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	if ingredient_type != IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
-	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
+	# Keep the continuous cursor position for the visual placement.  The
+	# ingredient layer maps grid coordinates from 0..grid_size - 1 back to the
+	# pancake surface, so storing a rounded cell here made every dropped item
+	# visibly snap a few pixels away from its drag preview.
+	var grid_maximum := float(pancake_model.grid_size - 1)
+	var grid_position := local_position / pancake_surface.size * grid_maximum
 	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
 	var cell_index := pancake_model.index_of(cell)
 	if cell_index < 0 or not pancake_model.is_inside_pan(grid_position):

@@ -184,6 +184,11 @@ func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true
 	set_process(false)
 	if _drag_available:
 		drag_started.emit(_source_ref.duplicate(true))
+		# A drag-start handler may reserve the backing inventory. If that
+		# transaction fails, it disables dragging before native drag data is
+		# created so a stale source can never produce a phantom portion.
+		if not _drag_available:
+			return
 		if not perform_native_drag or not native_drag_enabled:
 			return
 		_native_drag_in_progress = true

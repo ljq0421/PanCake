@@ -13,15 +13,6 @@
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="11_3q22l"]
 [ext_resource type="Texture2D" uid="uid://da8bphae6srtv" path="res://resources/art/workstation/background/empty-workbench.png" id="12_whx3a"]
 [ext_resource type="Texture2D" uid="uid://c4kc7vci8tfog" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="13_wq4vo"]
-[ext_resource type="Texture2D" uid="uid://cixfa2ukur0jb" path="res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png" id="15_is580"]
-[ext_resource type="Texture2D" uid="uid://dqmp2grbjmbw5" path="res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png" id="16_4rwsg"]
-[ext_resource type="Texture2D" uid="uid://rvuuc2yonxm2" path="res://resources/art/ui/quality/quality_heat_uniformity_v2_chinese_ui.png" id="17_7ocih"]
-[ext_resource type="Texture2D" uid="uid://c015102uq7w23" path="res://resources/art/ui/quality/quality_egg_spread_v2_chinese_ui.png" id="18_s41j2"]
-[ext_resource type="Texture2D" uid="uid://qcnoao0h2rsk" path="res://resources/art/ui/quality/quality_sauce_coverage_v2_chinese_ui.png" id="19_rpixn"]
-[ext_resource type="Texture2D" uid="uid://gcd40byegsr0" path="res://resources/art/ui/quality/quality_ingredient_distribution_v2_chinese_ui.png" id="20_cg88a"]
-[ext_resource type="Texture2D" uid="uid://b10m321epp82r" path="res://resources/art/ui/quality/quality_fold_stability_v2_chinese_ui.png" id="21_hr3xd"]
-[ext_resource type="Texture2D" uid="uid://dvieus48notbg" path="res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png" id="22_hbj51"]
-[ext_resource type="Texture2D" uid="uid://jaop6khqrr0q" path="res://resources/art/ui/quality/quality_preparation_time_v2_chinese_ui.png" id="23_xps2s"]
 [ext_resource type="Texture2D" uid="uid://c20iol4qkhexk" path="res://resources/art/payments/payment_cash_small_v2_chinese_ui.png" id="24_174he"]
 [ext_resource type="Texture2D" uid="uid://dpqaloq0qsygj" path="res://resources/art/workstation/expansion/trays/ingredient_slot_locked_cover_v2_chinese_ui.png" id="25_54nji"]
 [ext_resource type="Script" uid="uid://w156b2v4cjh1" path="res://scripts/ui/modal_outside_input_shield.gd" id="26_wxlxi"]
@@ -39,6 +30,8 @@
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="77_sweet_sauce_hit"]
 [ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png" id="78_chili_sauce_hit"]
 [ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png" id="79_tomato_sauce_hit"]
+[ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
+[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -530,7 +523,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("15_is580")
 expand_mode = 1
 stretch_mode = 5
 
@@ -552,7 +544,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("16_4rwsg")
 expand_mode = 1
 stretch_mode = 5
 
@@ -574,7 +565,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("17_7ocih")
 expand_mode = 1
 stretch_mode = 5
 
@@ -596,7 +586,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("18_s41j2")
 expand_mode = 1
 stretch_mode = 5
 
@@ -618,7 +607,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("19_rpixn")
 expand_mode = 1
 stretch_mode = 5
 
@@ -640,7 +628,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("20_cg88a")
 expand_mode = 1
 stretch_mode = 5
 
@@ -662,7 +649,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("21_hr3xd")
 expand_mode = 1
 stretch_mode = 5
 
@@ -684,7 +670,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("22_hbj51")
 expand_mode = 1
 stretch_mode = 5
 
@@ -706,7 +691,6 @@ alignment = 1
 custom_minimum_size = Vector2(72, 72)
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("23_xps2s")
 expand_mode = 1
 stretch_mode = 5
 
@@ -1348,6 +1332,58 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(1170, 444)
 layout_mode = 0
 offset_bottom = 444.0
+
+[node name="WasteBasket" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1652300954]
+unique_name_in_owner = true
+z_index = 80
+layout_mode = 0
+offset_left = 610.0
+offset_top = 778.0
+offset_right = 742.0
+offset_bottom = 940.0
+mouse_default_cursor_shape = 2
+tooltip_text = "将成品拖入废弃篓报废"
+script = ExtResource("80_waste_target")
+disposition = "waste"
+
+[node name="BasketArtwork" type="TextureRect" parent="FiveAreaInfrastructure/Stations/WasteBasket"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 0.0
+offset_right = 124.0
+offset_bottom = 116.0
+mouse_filter = 2
+texture = ExtResource("81_waste_basket")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 104.0
+offset_right = 124.0
+offset_bottom = 130.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.3, 0.12, 0.035, 1)
+theme_override_colors/font_outline_color = Color(1, 0.91, 0.67, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
+text = "废弃篓"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket"]
+layout_mode = 0
+offset_top = 132.0
+offset_right = 132.0
+offset_bottom = 162.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.37, 0.18, 0.06, 1)
+theme_override_colors/font_outline_color = Color(1, 0.82, 0.42, 0.9)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 13
+text = "拖入报废\n长按清空鏊面"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SweetSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=1176445763]
 z_index = 201

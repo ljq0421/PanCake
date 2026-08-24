@@ -92,6 +92,13 @@ func _run() -> void:
 	_check(int(soy_station.get("_cup_stack_count")) == 1, "one long press restocks exactly one cup")
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_fill": true, &"automation.fresh_soy_milk.double_fill": true})
+	# Progression changes are persisted before the production service is rebuilt,
+	# matching the in-game upgrade path.  Otherwise this already-created machine
+	# would still expose the prior single-outlet configuration.
+	session.call("_sync_progression_to_save")
+	session.set("_production_service", null)
+	session.call("_ensure_production_service")
+	soy_station.refresh_from_session()
 	await _click_control(soy_station.cup_stack)
 	_check(int(soy_station.get("_cup_stack_count")) == 0, "taking the first advanced-machine cup returns the stack to empty")
 	_check(int(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("held_empty_cup_count", 0)) == 1, "first advanced-machine click places one cup at the first outlet")
@@ -101,7 +108,8 @@ func _run() -> void:
 	_check(int(soy_station.get("_cup_stack_count")) == 1, "one additional hold restocks one second cup")
 	await _click_control(soy_station.cup_stack)
 	_check(int(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("held_empty_cup_count", 0)) == 2, "second advanced-machine click places a cup at the second outlet")
-	await _click_control(soy_station.nozzle_button)
+	_check(not soy_station.nozzle_button.disabled and not soy_station.second_nozzle_button.disabled and not soy_station.dual_nozzle_button.disabled, "both outlets and the separate dual-outlet control are actionable with two empty cups")
+	await _click_control(soy_station.dual_nozzle_button)
 	_check(soy_station.queued_cup_button.visible, "dual-outlet fill exposes a separately selectable second cup")
 	await _click_control(soy_station.queued_cup_button)
 	_check(int(soy_station.get("_selected_cup_index")) == 1, "clicking the second cup selects it for ingredients")

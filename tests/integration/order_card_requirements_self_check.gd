@@ -49,6 +49,27 @@ const ROOM_TEMPERATURE_SOY_ITEM := {
 	"temperature_mode": &"room_temperature",
 	"ingredient_ids": [],
 }
+const MULTI_SUGAR_ICE_SOY_ITEM := {
+	"area_id": &"area.fresh_soy_milk",
+	"product_id": &"product.fresh_soy_milk.yellow_bean",
+	"quantity": 1,
+	"temperature_mode": &"iced",
+	"sugar_servings": 2,
+}
+const NORMAL_SUGAR_SOY_ITEM := {
+	"area_id": &"area.fresh_soy_milk",
+	"product_id": &"product.fresh_soy_milk.yellow_bean",
+	"quantity": 1,
+	"temperature_mode": &"room_temperature",
+	"sugar_servings": 1,
+}
+const NO_SUGAR_SOY_ITEM := {
+	"area_id": &"area.fresh_soy_milk",
+	"product_id": &"product.fresh_soy_milk.yellow_bean",
+	"quantity": 1,
+	"temperature_mode": &"room_temperature",
+	"sugar_servings": 0,
+}
 const EXPECTED_INGREDIENT_TEXTURE_SUFFIXES := [
 	"egg_whole_v1.png",
 	"baocui_broken_v1.png",
@@ -81,21 +102,21 @@ func _run() -> void:
 
 	workstation.call("_refresh_order_card_ui", {"items": [SINGLE_SAUCE_PANCAKE_ITEM]}, 1.0)
 	_assert_texture(workstation, 0, "egg_whole_v1.png", "single-sauce order keeps topping first")
-	_assert_texture(workstation, 1, "sweet_flour_sauce_texture_v1.png", "single-sauce order shows sweet flour sauce")
+	_assert_texture(workstation, 1, "sweet-bean-sauce-jar-no-brush.png", "single-sauce order shows the sweet-bean sauce jar")
 	_check(_icon(workstation, 1).tooltip_text == "甜面酱", "sweet flour sauce requirement has a distinct name")
 
 	workstation.call("_refresh_order_card_ui", {"items": [DOUBLE_PORTION_PANCAKE_ITEM]}, 1.0)
 	_assert_texture(workstation, 0, "egg_whole_v1.png", "double-portion order shows the first egg")
 	_assert_texture(workstation, 1, "egg_whole_v1.png", "double-portion order visibly repeats the egg")
 	_check(_icon(workstation, 0).tooltip_text == "鸡蛋×2" and _icon(workstation, 1).tooltip_text == "鸡蛋×2", "double ingredient tooltip states the required quantity")
-	_assert_texture(workstation, 4, "sweet_flour_sauce_texture_v1.png", "double-portion order shows the first sauce serving")
-	_assert_texture(workstation, 5, "sweet_flour_sauce_texture_v1.png", "double-portion order visibly repeats the sauce serving")
+	_assert_texture(workstation, 4, "sweet-bean-sauce-jar-no-brush.png", "double-portion order shows the first sweet-bean sauce jar")
+	_assert_texture(workstation, 5, "sweet-bean-sauce-jar-no-brush.png", "double-portion order visibly repeats the sweet-bean sauce jar")
 	_check(_icon(workstation, 4).tooltip_text == "甜面酱×2" and _icon(workstation, 5).tooltip_text == "甜面酱×2", "double sauce tooltip states the required quantity")
 
 	workstation.call("_refresh_order_card_ui", {"items": [HEATED_SOY_ITEM, DOUBLE_SAUCE_PANCAKE_ITEM]}, 1.0)
 	_assert_texture(workstation, 0, "egg_whole_v1.png", "double-sauce order keeps topping first")
-	_assert_texture(workstation, 1, "sweet_flour_sauce_texture_v1.png", "double-sauce order shows sweet flour sauce")
-	_assert_texture(workstation, 2, "red_chili_sauce_texture_v1.png", "double-sauce order shows chili sauce")
+	_assert_texture(workstation, 1, "sweet-bean-sauce-jar-no-brush.png", "double-sauce order shows the sweet-bean sauce jar")
+	_assert_texture(workstation, 2, "chili-sauce-jar-no-brush.png", "double-sauce order shows the chili sauce jar")
 	_check(_icon(workstation, 2).tooltip_text == "辣椒酱", "chili sauce requirement has a distinct name")
 	_assert_texture(workstation, 3, "quality_heat_requirement_v2_chinese_ui.png", "heating marker follows toppings and sauces")
 
@@ -120,6 +141,30 @@ func _run() -> void:
 	_assert_empty_slot(workstation, 3, "room-temperature packaged drink omits the heat marker and clears stale styling")
 	for slot_index in range(4, 8):
 		_assert_empty_slot(workstation, slot_index, "room-temperature two-item order leaves later requirement slots empty")
+
+	var soy_requirements_by_item := Array(workstation.call("_order_requirements_by_item_for_customer_card", {"items": [MULTI_SUGAR_ICE_SOY_ITEM]}))
+	var soy_requirements := Array(soy_requirements_by_item.front()) if not soy_requirements_by_item.is_empty() else []
+	var ice_requirement := Dictionary(soy_requirements[2]) if soy_requirements.size() > 2 else {}
+	var ice_texture := ice_requirement.get("texture") as Texture2D
+	_check(
+		soy_requirements.size() == 3
+		and StringName(Dictionary(soy_requirements[0]).get("kind", &"")) == &"sugar"
+		and StringName(Dictionary(soy_requirements[1]).get("kind", &"")) == &"sugar"
+		and StringName(Dictionary(soy_requirements[2]).get("kind", &"")) == &"ice"
+		and ice_texture != null
+		and ice_texture.resource_path.ends_with("ice_cube_requirement_v2.png"),
+		"fresh soy order exposes two sugar jars and an ice-cube requirement to the customer card",
+	)
+	var normal_sugar_requirements_by_item := Array(workstation.call("_order_requirements_by_item_for_customer_card", {"items": [NORMAL_SUGAR_SOY_ITEM]}))
+	var normal_sugar_requirements := Array(normal_sugar_requirements_by_item.front()) if not normal_sugar_requirements_by_item.is_empty() else []
+	var no_sugar_requirements_by_item := Array(workstation.call("_order_requirements_by_item_for_customer_card", {"items": [NO_SUGAR_SOY_ITEM]}))
+	var no_sugar_requirements := Array(no_sugar_requirements_by_item.front()) if not no_sugar_requirements_by_item.is_empty() else []
+	_check(
+		normal_sugar_requirements.size() == 1
+		and StringName(Dictionary(normal_sugar_requirements[0]).get("kind", &"")) == &"sugar"
+		and no_sugar_requirements.is_empty(),
+		"fresh soy card uses zero, one, or two sugar-jar icons to represent the requested sugar servings",
+	)
 
 	workstation.queue_free()
 	_finish()

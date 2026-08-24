@@ -641,12 +641,14 @@ func advance_formal_order_patience(delta: float) -> Dictionary:
 		var expired: Dictionary = Dictionary(expired_variant)
 		if not bool(expired.get("already_settled", false)):
 			_finalize_failed_formal_order(expired)
-	if expired_results.is_empty():
-		_save_data["formal_orders"] = formal_order_snapshot()
-	else:
+	if not expired_results.is_empty():
 		var refill := ensure_active_playable_order()
 		result["refill"] = refill
-	result["active_orders"] = active_formal_orders()
+		# Expiration/refill changes the active set after OrderService produced its
+		# result, so only that rare path needs a fresh snapshot. On normal timer
+		# frames the service result is already current; cloning all orders again was
+		# pure per-frame overhead on the native drag path.
+		result["active_orders"] = active_formal_orders()
 	return result
 
 
@@ -1036,10 +1038,18 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 	match source_kind:
 		&"prepared_product_slot":
 			return preview_take_prepared_product(StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))
+		&"youtiao_fryer_slot":
+			# Finished sticks remain valid delivery stock while they are still in
+			# the raised fryer basket.  The source index is the authored basket
+			# position, so a direct handoff removes exactly the stick the player
+			# dragged instead of reflowing the remaining batch.
+			if source_index < 0:
+				return {"success": false, "reason": &"invalid_youtiao_fryer_slot"}
+			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
 		&"soy_output":
 			return Dictionary(_production_service.call("preview_collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("preview_collect_soy", 1))
 		&"soy_cup":
-			return Dictionary(_production_service.call("preview_soy_cup"))
+			return Dictionary(_production_service.call("preview_soy_cup", source_index)) if source_index >= 0 else Dictionary(_production_service.call("preview_soy_cup"))
 		&"pancake_holding":
 			var tray_preview := Dictionary(_pancake_holding_tray.call("preview_serve", source_index, order_item))
 			if bool(tray_preview.get("success", false)):
@@ -1059,8 +1069,12 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 	var source_index := int(source_ref.get("source_index", -1))
 	match source_kind:
 		&"prepared_product_slot": return take_prepared_product(StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))
+		&"youtiao_fryer_slot":
+			if source_index < 0:
+				return {"success": false, "reason": &"invalid_youtiao_fryer_slot"}
+			return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
 		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
-		&"soy_cup": return Dictionary(_production_service.call("take_soy_cup"))
+		&"soy_cup": return Dictionary(_production_service.call("take_soy_cup", source_index)) if source_index >= 0 else Dictionary(_production_service.call("take_soy_cup"))
 		&"pancake_holding":
 			var served := Dictionary(_pancake_holding_tray.call("serve", source_index, order_item))
 			if bool(served.get("success", false)):
@@ -1219,12 +1233,18 @@ func discard_product_source(source_ref: Dictionary) -> Dictionary:
 	if not bool(source_ref.get("discardable", false)):
 		return {"success": false, "reason": &"source_not_discardable"}
 	match StringName(source_ref.get("source_kind", &"")):
-		&"soy_output":
+		&"soy_output", &"soy_cup":
 			return discard_f4_soy(int(source_ref.get("source_index", -1)))
 		&"youtiao_batch":
 			return discard_f3_youtiao()
+		&"youtiao_fryer_slot":
+			return discard_f3_youtiao_slot(int(source_ref.get("source_index", -1)))
 		&"prepared_product_slot":
 			return discard_prepared_product(StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))
+		&"pancake_holding":
+			return discard_pancake_holding(int(source_ref.get("source_index", -1)))
+		&"pancake_griddle_ready":
+			return discard_pancake_griddle_ready(Dictionary(source_ref.get("product", {})))
 	return {"success": false, "reason": &"unsupported_product_source"}
 
 
@@ -1246,6 +1266,36 @@ func discard_prepared_product(slot_id: StringName, source_index: int = 0) -> Dic
 	production_changed.emit(five_area_production_snapshot())
 	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
 	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "count": products.size(), "waste": waste.get("waste", {})}
+
+
+func discard_pancake_holding(slot_index: int) -> Dictionary:
+	_ensure_pancake_holding_tray()
+	var result := Dictionary(_pancake_holding_tray.call("discard", slot_index, &"pancake_holding_discarded"))
+	if not bool(result.get("success", false)):
+		return result
+	var product := Dictionary(Dictionary(result.get("waste", {})).get("product", {}))
+	_ensure_production_service()
+	var waste := Dictionary(_production_service.call("record_staged_waste", product, &"pancake_holding_discarded"))
+	if not bool(waste.get("success", false)):
+		return waste
+	_sync_pancake_holding_tray_to_save()
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return {"success": true, "product": product, "waste": waste.get("waste", {})}
+
+
+func discard_pancake_griddle_ready(product: Dictionary) -> Dictionary:
+	if product.is_empty():
+		return {"success": false, "reason": &"pancake_product_missing"}
+	_ensure_production_service()
+	var waste := Dictionary(_production_service.call("record_staged_waste", product, &"pancake_griddle_discarded"))
+	if not bool(waste.get("success", false)):
+		return waste
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return {"success": true, "product": product, "waste": waste.get("waste", {})}
 
 
 func load_f3_youtiao(recipe_id: StringName, quantity: int, order_id: StringName = &"") -> Dictionary:
@@ -1303,6 +1353,16 @@ func take_ready_youtiao_for_pancake() -> Dictionary:
 func discard_f3_youtiao() -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("discard_batch", &"device.youtiao_fryer")
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func discard_f3_youtiao_slot(slot_index: int) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("discard_youtiao_slot", slot_index)
 	if bool(result.get("success", false)):
 		_sync_production_to_save()
 		_touch_and_write()
@@ -1390,15 +1450,15 @@ func add_f4_soy_ice(cup_index: int = 0) -> Dictionary:
 
 func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
-	var preview: Dictionary = _production_service.call("preview_soy_cup")
+	var preview: Dictionary = Dictionary(_production_service.call("preview_soy_cup", output_slot_index)) if output_slot_index >= 0 else Dictionary(_production_service.call("preview_soy_cup"))
 	if not bool(preview.get("success", false)):
 		return preview
-	return stage_product_to_order({"source_kind": &"soy_cup", "source_index": -1, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
+	return stage_product_to_order({"source_kind": &"soy_cup", "source_index": output_slot_index, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
 func discard_f4_soy(output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("discard_soy")
+	var result: Dictionary = _production_service.call("discard_soy", output_slot_index)
 	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result
@@ -1760,7 +1820,8 @@ func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
 	var unlocked := recipe_unlocked and tray_unlocked
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), []))
-	var capacity := _prepared_product_slot_capacity()
+	var capacity_per_product := _prepared_product_capacity_per_product()
+	var capacity := _prepared_product_slot_capacity(slot_id)
 	return {
 		"success": unlocked,
 		"reason": &"" if unlocked else &"finished_tray_locked" if not tray_unlocked else &"recipe_locked",
@@ -1769,6 +1830,7 @@ func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
 		"recipe_id": recipe_id,
 		"requires_growth_id": required_growth_id,
 		"capacity": capacity,
+		"capacity_per_product": capacity_per_product,
 		"count": products.size(),
 		"products": products.duplicate(true),
 	}
@@ -1785,22 +1847,26 @@ func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	var quantity := maxi(int(machine.get("quantity", 0)), 0)
 	if quantity <= 0:
 		return {"success": false, "reason": &"product_not_ready", "slot_id": slot_id}
-	var available_capacity := maxi(int(status.get("capacity", 0)) - int(status.get("count", 0)), 0)
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", quantity))
+	if not bool(preview.get("success", false)):
+		return preview
+	var product := Dictionary(preview.get("product", {})).duplicate(true)
+	var product_id := StringName(product.get("product_id", &""))
+	if not _prepared_product_slot_accepts_product(slot_id, product_id):
+		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": product}
+	var products: Array = Array(status.get("products", []))
+	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
+	var available_capacity := maxi(capacity_per_product - _prepared_product_count(products, product_id), 0)
 	if quantity > available_capacity:
 		return {
 			"success": false,
 			"reason": &"prepared_product_slot_full",
 			"slot_id": slot_id,
+			"product_id": product_id,
 			"required_capacity": quantity,
 			"available_capacity": available_capacity,
 			"missing_capacity": quantity - available_capacity,
 		}
-	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", quantity))
-	if not bool(preview.get("success", false)):
-		return preview
-	var product := Dictionary(preview.get("product", {})).duplicate(true)
-	if not _prepared_product_slot_accepts_product(slot_id, StringName(product.get("product_id", &""))):
-		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": product}
 	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "quantity": quantity}
 
 
@@ -1835,35 +1901,36 @@ func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size()}
 
 
-func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:
+func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int, seasoned_product_id: StringName = &"") -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
 	var status := prepared_product_slot_status(slot_id)
 	if not bool(status.get("success", false)):
 		return status
-	if int(status.get("count", 0)) >= int(status.get("capacity", 0)):
-		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
 	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := Dictionary(preview.get("product", {}))
-	if not _prepared_product_slot_accepts_product(slot_id, StringName(product.get("product_id", &""))):
-		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
-	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index}
-
-
-func store_ready_youtiao_slot(slot_id: StringName, source_index: int, seasoned_product_id: StringName = &"") -> Dictionary:
-	var preview := preview_store_ready_youtiao_slot(slot_id, source_index)
-	if not bool(preview.get("success", false)):
-		return preview
-	var final_product_id := seasoned_product_id if not seasoned_product_id.is_empty() else StringName(Dictionary(preview.get("product", {})).get("product_id", &""))
+	var final_product_id := seasoned_product_id if not seasoned_product_id.is_empty() else StringName(product.get("product_id", &""))
 	if not seasoned_product_id.is_empty():
 		var seasoned_definition := CATALOG.product_definition(seasoned_product_id)
 		if seasoned_definition.is_empty() or not bool(_progression.call("owns_product", seasoned_product_id)):
 			return {"success": false, "reason": &"youtiao_seasoning_locked"}
 	if not _prepared_product_slot_accepts_product(slot_id, final_product_id):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
+	var products: Array = Array(status.get("products", []))
+	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
+	if _prepared_product_count(products, final_product_id) >= capacity_per_product:
+		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id, "product_id": final_product_id}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index, "final_product_id": final_product_id}
+
+
+func store_ready_youtiao_slot(slot_id: StringName, source_index: int, seasoned_product_id: StringName = &"") -> Dictionary:
+	var preview := preview_store_ready_youtiao_slot(slot_id, source_index, seasoned_product_id)
+	if not bool(preview.get("success", false)):
+		return preview
+	var final_product_id := StringName(preview.get("final_product_id", &""))
 	var production_rollback := five_area_production_snapshot()
 	var slots_rollback := prepared_product_slots_snapshot()
 	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
@@ -1945,12 +2012,14 @@ func _append_prepared_product(slot_id: StringName, product: Dictionary) -> Dicti
 	var status := prepared_product_slot_status(slot_id)
 	if not bool(status.get("success", false)):
 		return status
-	if not _prepared_product_slot_accepts_product(slot_id, StringName(product.get("product_id", &""))):
+	var product_id := StringName(product.get("product_id", &""))
+	if not _prepared_product_slot_accepts_product(slot_id, product_id):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
-	if products.size() >= int(status.get("capacity", 0)):
-		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id}
+	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
+	if _prepared_product_count(products, product_id) >= capacity_per_product:
+		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id, "product_id": product_id}
 	products.append(product.duplicate(true))
 	slots[str(slot_id)] = products
 	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
@@ -1963,6 +2032,14 @@ static func _prepared_product_slot_accepts_product(slot_id: StringName, product_
 		return false
 	var accepted_product_ids := Array(definition.get("accepted_product_ids", [definition.get("product_id", &"")]))
 	return accepted_product_ids.has(product_id)
+
+
+static func _prepared_product_count(products: Array, product_id: StringName) -> int:
+	var result := 0
+	for product_value in products:
+		if StringName(Dictionary(product_value).get("product_id", &"")) == product_id:
+			result += 1
+	return result
 
 
 func inventory_snapshot() -> Dictionary:
@@ -2122,6 +2199,28 @@ func consume_inventory_stock_ids(stock_ids: Array[StringName]) -> Dictionary:
 	var saved := save_inventory(inventory)
 	if bool(saved.get("success", false)):
 		saved["consumed_stock_ids"] = consumable_stock_ids.duplicate()
+	return saved
+
+
+func restore_inventory_stock_ids(stock_ids: Array[StringName]) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var restored_stock_ids: Array[StringName] = []
+	var inventory := inventory_snapshot()
+	for stock_id in stock_ids:
+		var definition := CATALOG.stock_definition(stock_id)
+		if definition.is_empty() or bool(definition.get("unlimited", false)):
+			continue
+		var key := str(stock_id)
+		var capacity := _restock_capacity(stock_id, definition)
+		if int(inventory.get(key, 0)) >= capacity:
+			continue
+		inventory[key] = int(inventory.get(key, 0)) + 1
+		restored_stock_ids.append(stock_id)
+	var saved := save_inventory(inventory)
+	if bool(saved.get("success", false)):
+		saved["restored_stock_ids"] = restored_stock_ids
 	return saved
 
 
@@ -3208,24 +3307,33 @@ static func _prepared_slot_id_for_product(product_id: StringName) -> StringName:
 
 func _normalize_prepared_product_slots(value: Dictionary) -> Dictionary:
 	var normalized := _empty_prepared_product_slots()
-	var capacity := _prepared_product_slot_capacity()
+	var capacity_per_product := _prepared_product_capacity_per_product()
 	for slot_id in PREPARED_PRODUCT_SLOT_DEFINITIONS:
 		var products: Array = []
+		var counts_by_product: Dictionary = {}
 		for product_variant in Array(value.get(str(slot_id), value.get(slot_id, []))):
 			var product := Dictionary(product_variant).duplicate(true)
-			if product.is_empty() or not _prepared_product_slot_accepts_product(StringName(slot_id), StringName(product.get("product_id", &""))):
+			var product_id := StringName(product.get("product_id", &""))
+			if product.is_empty() or not _prepared_product_slot_accepts_product(StringName(slot_id), product_id):
+				continue
+			if int(counts_by_product.get(product_id, 0)) >= capacity_per_product:
 				continue
 			products.append(product)
-			if products.size() >= capacity:
-				break
+			counts_by_product[product_id] = int(counts_by_product.get(product_id, 0)) + 1
 		normalized[str(slot_id)] = products
 	return normalized
 
 
-func _prepared_product_slot_capacity() -> int:
+func _prepared_product_capacity_per_product() -> int:
 	_ensure_progression()
 	var tier := int(_progression.call("device_tier", &"device.youtiao_fryer"))
 	return maxi(int(CATALOG.device_tier(&"device.youtiao_fryer", tier).get("capacity", 4)), 0)
+
+
+func _prepared_product_slot_capacity(slot_id: StringName) -> int:
+	var definition := Dictionary(PREPARED_PRODUCT_SLOT_DEFINITIONS.get(slot_id, {}))
+	var accepted_product_ids := Array(definition.get("accepted_product_ids", [definition.get("product_id", &"")]))
+	return _prepared_product_capacity_per_product() * accepted_product_ids.size()
 
 
 func _reconcile_unrecorded_settled_orders() -> void:

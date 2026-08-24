@@ -16,7 +16,7 @@ const CUSTOMER_QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const BUSINESS_DAY_TIMER_SCRIPT := preload("res://scripts/services/business_day_timer.gd")
 const FIVE_AREA_CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const UPGRADE_WORKSHOP_SCENE := preload("res://scenes/ui/upgrade_workshop_overlay.tscn")
+const UPGRADE_WORKSHOP_SCENE_PATH := "res://scenes/ui/upgrade_workshop_overlay.tscn"
 const BASIC_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/griddle_base_angled_ellipse_v4_chinese.png")
 const INTERMEDIATE_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png"
 const ADVANCED_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png"
@@ -50,12 +50,17 @@ const ORDER_CARD_INGREDIENT_NAMES := {
 	&"stock.pancake.coriander": "香菜", &"stock.pancake.preserved_mustard": "榨菜", &"stock.pancake.youtiao": "油条",
 }
 const ORDER_CARD_SAUCE_TEXTURE_PATHS := {
-	&"stock.pancake.sauce.sweet_flour": "res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png",
-	&"stock.pancake.sauce.red_chili": "res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png",
+	# Reuse the labeled condiment jars from the material grid: a sauce smear
+	# communicates colour, whereas the jar artwork makes the selected sauce
+	# immediately identifiable on an order card.
+	&"stock.pancake.sauce.sweet_flour": "res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png",
+	&"stock.pancake.sauce.red_chili": "res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png",
+	&"stock.pancake.sauce.tomato": "res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png",
 }
 const ORDER_CARD_SAUCE_NAMES := {
 	&"stock.pancake.sauce.sweet_flour": "甜面酱",
 	&"stock.pancake.sauce.red_chili": "辣椒酱",
+	&"stock.pancake.sauce.tomato": "番茄酱",
 }
 const ORDER_CARD_HEAT_TEXTURE_PATH := "res://resources/art/ui/quality/quality_heat_requirement_v2_chinese_ui.png"
 const FIVE_AREA_PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
@@ -63,7 +68,9 @@ const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
 const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
 const ORDER_REQUIREMENT_SUGAR := &"sugar"
+const ORDER_REQUIREMENT_ICE := &"ice"
 const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
+const ORDER_CARD_ICE_TEXTURE_PATH := "res://resources/art/ui/order/ice_cube_requirement_v2.png"
 const DAILY_BILL_FIXED_SIZE := Vector2(1260.0, 820.0)
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SPREADER_SPEED_SLOW := -1
@@ -124,6 +131,11 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 	%CustomerSlot3.get_node("Patience"),
 ]
 var _customer_slot_patience_tiers := [-1, -1, -1]
+## Static customer-card content is cached separately from the continuously
+## changing patience value. Rebinding a card relayouts its complete drop-target
+## subtree, so doing that every frame makes every native drag compete with GUI
+## hit-test invalidation.
+var _customer_service_slot_signatures: Dictionary = {}
 var _order_patience_tier := -1
 @onready var customer_service_slots: Array[Control] = _resolve_customer_service_slots()
 @onready var customer_line_label: Label = get_node_or_null("SafeArea/CustomerLineLabel") as Label
@@ -950,14 +962,16 @@ func _process(delta: float) -> void:
 	var game_session := get_node_or_null("/root/GameSession")
 	var formal_time_paused := _formal_order_time_paused()
 	var active_formal_order: Dictionary = {}
+	var current_formal_orders: Variant = null
 	var mirrors_formal_pancake_patience := false
 	if game_session != null and game_session.has_method("advance_formal_order_patience") and not formal_time_paused:
 		var patience_result: Dictionary = game_session.call("advance_formal_order_patience", delta)
+		current_formal_orders = Array(patience_result.get("active_orders", []))
 		for expired_variant in Array(patience_result.get("expired_results", [])):
 			var expired: Dictionary = Dictionary(expired_variant)
 			if not bool(expired.get("already_settled", false)):
 				_on_formal_order_expired(expired)
-	_refresh_formal_patience_ui(game_session)
+	_refresh_formal_patience_ui(game_session, current_formal_orders)
 	if game_session != null and game_session.has_method("formal_order") and not _formal_order_id.is_empty():
 		active_formal_order = game_session.call("formal_order", _formal_order_id)
 	elif game_session != null and game_session.has_method("active_formal_order"):
@@ -3015,7 +3029,11 @@ func _open_unlock_progress() -> void:
 
 func _open_upgrade_workshop() -> void:
 	if _upgrade_workshop == null:
-		_upgrade_workshop = UPGRADE_WORKSHOP_SCENE.instantiate() as UpgradeWorkshopOverlay
+		var workshop_scene := load(UPGRADE_WORKSHOP_SCENE_PATH) as PackedScene
+		if workshop_scene == null:
+			push_error("Could not load upgrade workshop scene")
+			return
+		_upgrade_workshop = workshop_scene.instantiate() as UpgradeWorkshopOverlay
 		_upgrade_workshop.begin_next_day_requested.connect(_begin_next_business_day)
 		_upgrade_workshop.closed.connect(_close_upgrade_workshop)
 		$SafeArea.add_child(_upgrade_workshop)
@@ -3217,11 +3235,18 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 			continue
 		var sugar_servings := clampi(int(item.get("sugar_servings", 0)), 0, 2)
 		var sugar_text: String = ["无糖", "正常糖（1份）", "多糖（2份）"][sugar_servings]
-		requirements.append({
-			"kind": ORDER_REQUIREMENT_SUGAR,
-			"texture": load(ORDER_CARD_SUGAR_TEXTURE_PATH) as Texture2D,
-			"display_name": sugar_text,
-		})
+		for _sugar_serving in sugar_servings:
+			requirements.append({
+				"kind": ORDER_REQUIREMENT_SUGAR,
+				"texture": load(ORDER_CARD_SUGAR_TEXTURE_PATH) as Texture2D,
+				"display_name": sugar_text,
+			})
+		if StringName(item.get("temperature_mode", &"room_temperature")) == &"iced":
+			requirements.append({
+				"kind": ORDER_REQUIREMENT_ICE,
+				"texture": load(ORDER_CARD_ICE_TEXTURE_PATH) as Texture2D,
+				"display_name": "加冰",
+			})
 	var requirement_capacity := order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8
 	if requirements.size() > requirement_capacity:
 		requirements.resize(requirement_capacity)
@@ -3315,12 +3340,14 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 	order_heart_fill.modulate = Color.WHITE if patience_ratio > P1Session.IMPATIENT_RATIO_THRESHOLD else Color(1.0, 0.58, 0.58, 1.0)
 
 
-func _refresh_formal_patience_ui(game_session: Node) -> void:
+func _refresh_formal_patience_ui(game_session: Node, current_orders: Variant = null) -> void:
 	if game_session == null or not game_session.has_method("active_formal_orders"):
 		return
 	# One snapshot drives both the order card and all three customer slots so a
 	# frame can never mix timer values from different service reads.
-	var orders: Array = Array(game_session.call("active_formal_orders"))
+	# advance_formal_order_patience already returns that snapshot on normal play
+	# frames; reusing it avoids another pair of deep copies of every order.
+	var orders: Array = Array(current_orders) if current_orders is Array else Array(game_session.call("active_formal_orders"))
 	var focused_order: Dictionary = {}
 	for slot_index in customer_slot_patience_bars.size():
 		var slot_order: Dictionary = {}
@@ -3570,7 +3597,15 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 					order = candidate
 					break
 		if order.is_empty():
-			customer_service_slots[service_slot_index].call("bind_order", {}, null, [], [], 0)
+			if _customer_service_slot_signatures.has(service_slot_index):
+				customer_service_slots[service_slot_index].call("bind_order", {}, null, [], [], 0)
+				_customer_service_slot_signatures.erase(service_slot_index)
+			continue
+		var ratio := _formal_order_patience_ratio(order)
+		var reaction := &"impatient" if ratio <= P1Session.IMPATIENT_RATIO_THRESHOLD else &"neutral"
+		var signature := _customer_service_slot_signature(order, reaction)
+		if _customer_service_slot_signatures.get(service_slot_index) == signature:
+			customer_service_slots[service_slot_index].call("update_patience", order)
 			continue
 		var item_textures: Array = []
 		var items := Array(order.get("items", []))
@@ -3583,8 +3618,6 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		var metadata := Dictionary(order.get("metadata", {}))
 		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
-		var ratio := _formal_order_patience_ratio(order)
-		var reaction := &"impatient" if ratio <= P1Session.IMPATIENT_RATIO_THRESHOLD else &"neutral"
 		customer_service_slots[service_slot_index].call(
 			"bind_order",
 			order,
@@ -3593,6 +3626,26 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 			requirements_by_item,
 			coin_total,
 		)
+		_customer_service_slot_signatures[service_slot_index] = signature
+
+
+static func _customer_service_slot_signature(order: Dictionary, reaction: StringName) -> Dictionary:
+	var metadata := Dictionary(order.get("metadata", {}))
+	return {
+		"order_id": StringName(order.get("order_id", &"")),
+		"customer_id": StringName(order.get("customer_id", &"customer_01")),
+		"reaction": reaction,
+		"tutorial_no_countdown": bool(order.get("tutorial_no_countdown", false)),
+		"patience_seconds": float(order.get("patience_seconds", 0.0)),
+		"perfect_quote_coins": int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0))))),
+		"special_customer_id": StringName(order.get("special_customer_id", metadata.get("special_customer_id", &""))),
+		"special_title": str(order.get("special_title", metadata.get("special_title", ""))),
+		"special_rule_text": str(order.get("special_rule_text", metadata.get("special_rule_text", ""))),
+		# Order items contain every field that affects the product icon,
+		# requirements, quantity and delivered state. They change only on an
+		# actual order action, unlike remaining_patience_seconds.
+		"items": Array(order.get("items", [])),
+	}
 
 
 func _refresh_customer_queue_legacy() -> void:

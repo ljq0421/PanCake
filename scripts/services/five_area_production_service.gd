@@ -107,8 +107,8 @@ func add_soy_ice(cup_index: int = 0) -> Dictionary:
 	return result
 
 
-func preview_soy_cup() -> Dictionary:
-	var result: Dictionary = _soy.call("preview_cup")
+func preview_soy_cup(cup_index: int = 0) -> Dictionary:
+	var result: Dictionary = _soy.call("preview_cup", cup_index)
 	if not bool(result.get("success", false)):
 		return result
 	var source_product := Dictionary(result.get("product", {}))
@@ -126,11 +126,11 @@ func preview_soy_cup() -> Dictionary:
 	return _success({"product": product})
 
 
-func take_soy_cup() -> Dictionary:
-	var preview := preview_soy_cup()
+func take_soy_cup(cup_index: int = 0) -> Dictionary:
+	var preview := preview_soy_cup(cup_index)
 	if not bool(preview.get("success", false)):
 		return preview
-	var taken: Dictionary = _soy.call("take_filled_cup")
+	var taken: Dictionary = _soy.call("take_filled_cup", cup_index)
 	if not bool(taken.get("success", false)):
 		return taken
 	var product := Dictionary(preview.get("product", {})).duplicate(true)
@@ -315,6 +315,24 @@ func discard_batch(device_id: StringName) -> Dictionary:
 	return _success({"waste": entry})
 
 
+func discard_youtiao_slot(slot_index: int) -> Dictionary:
+	if slot_index < 0:
+		return _failure(&"invalid_source_index")
+	var before := machine_snapshot(YOUTIAO_DEVICE)
+	var result: Dictionary = _youtiao.call("discard_slot", slot_index)
+	if not bool(result.get("success", false)):
+		return result
+	var recipe := CATALOG.recipe_definition(StringName(result.get("recipe_id", &"")))
+	var unit_cost := 0
+	for stock_id_variant in Array(recipe.get("stock_ids", [])):
+		unit_cost += _stock_cost(StringName(stock_id_variant))
+	var entry := _record_waste(&"area.youtiao", YOUTIAO_DEVICE, StringName(recipe.get("product_id", &"")), StringName(result.get("waste_reason", &"youtiao_slot_discarded")), 1, unit_cost)
+	entry["quality_before_discard"] = float(before.get("quality", 0.0))
+	entry["machine_state_before_discard"] = StringName(before.get("state", &""))
+	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
+	return _success({"waste": entry})
+
+
 func load_soy_batch(recipe_id: StringName, quantity: int) -> Dictionary:
 	_sync_ownership()
 	if not _owns_recipe(recipe_id):
@@ -447,12 +465,13 @@ func clear_soy_hopper() -> Dictionary:
 	return _success({"waste": entry, "ingredient_counts": counts})
 
 
-func discard_soy() -> Dictionary:
+func discard_soy(cup_index: int = 0) -> Dictionary:
 	var before := machine_snapshot(SOY_DEVICE)
-	var result: Dictionary = _soy.call("discard")
+	var result: Dictionary = _soy.call("discard", cup_index)
 	if not bool(result.get("success", false)):
 		return result
-	var recipe := CATALOG.recipe_definition(StringName(result.get("recipe_id", &"")))
+	var product := Dictionary(result.get("product", {}))
+	var recipe := CATALOG.recipe_definition(StringName(product.get("recipe_id", result.get("recipe_id", &""))))
 	var stock_ids := Array(recipe.get("stock_ids", []))
 	var attributed_cost := 0
 	var ingredient_counts := Dictionary(result.get("ingredient_counts", {}))
@@ -461,7 +480,7 @@ func discard_soy() -> Dictionary:
 	else:
 		for raw_stock_id in ingredient_counts:
 			attributed_cost += _stock_cost(StringName(raw_stock_id)) * int(ingredient_counts[raw_stock_id])
-	var entry := _record_waste(&"area.fresh_soy_milk", SOY_DEVICE, StringName(recipe.get("product_id", &"")), &"soy_spoiled", int(result.get("quantity", 0)), attributed_cost)
+	var entry := _record_waste(&"area.fresh_soy_milk", SOY_DEVICE, StringName(product.get("product_id", recipe.get("product_id", &""))), StringName(result.get("waste_reason", &"soy_cup_discarded")), maxi(int(result.get("quantity", 1)), 1), attributed_cost)
 	entry["quality_before_discard"] = float(before.get("quality", 0.0))
 	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
 	return _success({"waste": entry})

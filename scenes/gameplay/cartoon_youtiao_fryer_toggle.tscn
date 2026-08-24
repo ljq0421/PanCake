@@ -1,24 +1,6 @@
 [gd_scene format=3 uid="uid://cutgih44ymmyc"]
 
 [ext_resource type="Script" uid="uid://bt7tqa6n1h2od" path="res://scripts/ui/cartoon_youtiao_fryer_toggle.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://ctgo3hannsusp" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-lowered.png" id="2_lowered"]
-[ext_resource type="Texture2D" uid="uid://dlos2ddb5jwdv" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="3_raised"]
-[ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png" id="4_raw"]
-[ext_resource type="Texture2D" uid="uid://nkx1i8u234up" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-golden-v5-transparent.png" id="5_golden"]
-[ext_resource type="Texture2D" uid="uid://7ymhng5eocrj" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-burnt-v4.png" id="6_burnt"]
-[ext_resource type="Texture2D" uid="uid://cx77v7agg1d0x" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-empty-serving-plate-oblique-v2.png" id="8_plate"]
-[ext_resource type="Texture2D" uid="uid://b7k5yyrupgj2b" path="res://resources/art/workstation/material_slots/legacy_trays/black-sesame-square-tray-v2.png" id="9_sesame_tray"]
-[ext_resource type="Texture2D" uid="uid://bs4in4gxlfg18" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-black-sesame-v1-transparent.png" id="10_sesame_youtiao"]
-[ext_resource type="Texture2D" uid="uid://cwy3t8rau3wcw" path="res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png" id="11_advanced_lowered"]
-[ext_resource type="Texture2D" uid="uid://c7eoyl36rys2y" path="res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png" id="12_advanced_raised"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_plate_youtiao"]
-atlas = ExtResource("5_golden")
-region = Rect2(174, 8, 677, 1500)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_sesame_youtiao"]
-atlas = ExtResource("10_sesame_youtiao")
-region = Rect2(147, 13, 218, 484)
 
 [node name="CartoonYoutiaoFryerToggle" type="Control" unique_id=1247571894]
 custom_minimum_size = Vector2(600, 600)
@@ -28,15 +10,6 @@ offset_right = 600.0
 offset_bottom = 650.0
 mouse_default_cursor_shape = 2
 script = ExtResource("1_script")
-lowered_machine_texture = ExtResource("2_lowered")
-raised_machine_texture = ExtResource("3_raised")
-advanced_lowered_machine_texture = ExtResource("11_advanced_lowered")
-advanced_raised_machine_texture = ExtResource("12_advanced_raised")
-raw_youtiao_texture = ExtResource("4_raw")
-golden_youtiao_texture = ExtResource("5_golden")
-plate_youtiao_texture = SubResource("AtlasTexture_plate_youtiao")
-black_sesame_youtiao_texture = SubResource("AtlasTexture_sesame_youtiao")
-burnt_youtiao_texture = ExtResource("6_burnt")
 
 [node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]
 unique_name_in_owner = true
@@ -46,7 +19,6 @@ offset_top = 3.0
 offset_right = 401.0
 offset_bottom = 429.0
 mouse_filter = 2
-texture = ExtResource("3_raised")
 expand_mode = 1
 stretch_mode = 5
 
@@ -59,7 +31,6 @@ offset_top = 414.0
 offset_right = 514.0
 offset_bottom = 620.0
 mouse_filter = 2
-texture = ExtResource("9_sesame_tray")
 expand_mode = 1
 stretch_mode = 5
 
@@ -204,7 +175,6 @@ offset_top = 393.0
 offset_right = 300.0
 offset_bottom = 630.0
 mouse_filter = 2
-texture = ExtResource("8_plate")
 expand_mode = 1
 stretch_mode = 5
 

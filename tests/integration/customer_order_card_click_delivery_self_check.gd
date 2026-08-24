@@ -89,6 +89,7 @@ func _run() -> void:
 	}], {"source": &"mixed_youtiao_click_delivery", "patience_seconds": 120.0}))
 	var youtiao_order_id := StringName(Dictionary(youtiao_opened.get("order", {})).get("order_id", &""))
 	await process_frame
+	await process_frame
 	var youtiao_slot := _service_slot_for_order(workstation, youtiao_order_id)
 	var youtiao_button := youtiao_slot.get_node("OrderPanel/ItemButton1") as Button if youtiao_slot != null else null
 	var youtiao_icon := youtiao_slot.get_node("OrderPanel/ItemButton1/ItemIcon1") as TextureRect if youtiao_slot != null else null
@@ -117,6 +118,36 @@ func _run() -> void:
 		and tray_after_second.size() == 1
 		and StringName(Dictionary(tray_after_second[0]).get("product_id", &"")) == &"product.youtiao.sesame",
 		"two click deliveries fulfill a plain-youtiao x2 order without consuming the leading sesame youtiao"
+	)
+
+	_clear_orders(session)
+	session.call("clear_prepared_product_slots")
+	var youtiao_inventory := Dictionary(session.call("inventory_snapshot"))
+	youtiao_inventory["stock.youtiao.plain_dough"] = 1
+	session.call("save_inventory", youtiao_inventory)
+	var direct_load := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 1))
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 10.0)
+	session.call("perform_f3_youtiao_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var fryer_delivery_opened := Dictionary(session.call("open_formal_order", [{
+		"area_id": &"area.youtiao",
+		"product_id": &"product.youtiao.plain",
+		"quantity": 1,
+	}], {"source": &"fryer_youtiao_click_delivery", "patience_seconds": 120.0}))
+	var fryer_delivery_order_id := StringName(Dictionary(fryer_delivery_opened.get("order", {})).get("order_id", &""))
+	await process_frame
+	await process_frame
+	var fryer_delivery_slot := _service_slot_for_order(workstation, fryer_delivery_order_id)
+	var fryer_delivery_button := fryer_delivery_slot.get_node("OrderPanel/ItemButton1") as Button if fryer_delivery_slot != null else null
+	if fryer_delivery_button != null:
+		fryer_delivery_button.pressed.emit()
+	var fryer_after_click := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		bool(direct_load.get("success", false))
+		and StringName(Dictionary(session.call("formal_order", fryer_delivery_order_id)).get("state", &"")) == &"settled"
+		and StringName(fryer_after_click.get("state", &"")) == &"idle",
+		"click delivery can take a completed youtiao directly from the fryer",
 	)
 
 	workstation.queue_free()
@@ -191,6 +222,12 @@ func _unlock_youtiao_finished_tray(session: Node) -> void:
 	products[&"product.youtiao.plain"] = true
 	products[&"product.youtiao.sesame"] = true
 	progression.set("unlocked_product_ids", products)
+	var stocks := Dictionary(progression.get("unlocked_stock_ids"))
+	stocks[&"stock.youtiao.plain_dough"] = true
+	progression.set("unlocked_stock_ids", stocks)
+	var device_tiers := Dictionary(progression.get("device_tiers"))
+	device_tiers[&"device.youtiao_fryer"] = 0
+	progression.set("device_tiers", device_tiers)
 	var growth := Dictionary(progression.get("owned_growth_ids"))
 	growth[&"growth.capacity.youtiao_finished_tray"] = true
 	progression.set("owned_growth_ids", growth)

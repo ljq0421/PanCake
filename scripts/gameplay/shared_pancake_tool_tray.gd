@@ -78,6 +78,9 @@ func refresh_from_session() -> void:
 func _process(delta: float) -> void:
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.2:
+		var viewport := get_viewport()
+		if viewport != null and viewport.gui_is_dragging():
+			return
 		_refresh_elapsed = 0.0
 		refresh_from_session()
 

@@ -142,7 +142,7 @@ func _service_slot_scene_contract(workstation: Node) -> bool:
 		var card_focus_button := order_panel.get_node("CardFocusButton") as Button
 		var card_background := order_panel.get_node("CardBackground") as TextureRect
 		var first_item := order_panel.get_node("ItemButton1") as Button
-		var last_requirement := order_panel.get_node("Requirement8") as Panel
+		var last_dynamic_requirement := order_panel.get_node("IngredientSlot3_8") as Control
 		if not _rect_matches(service_slot, Rect2(service_slot.position.x, 150.0, 540.0, 490.0)):
 			return false
 		var slot_rect := Rect2(Vector2.ZERO, service_slot.size)
@@ -156,11 +156,11 @@ func _service_slot_scene_contract(workstation: Node) -> bool:
 			return false
 		if portrait_button.mouse_filter != Control.MOUSE_FILTER_STOP or card_focus_button.mouse_filter != Control.MOUSE_FILTER_STOP:
 			return false
-		if card_background.texture == null or not card_background.texture.resource_path.ends_with("order_card_multi_dish_v3_five_area_v2.png"):
+		if card_background.texture == null or not card_background.texture.resource_path.ends_with("order_card_background_rows_1_v1.png"):
 			return false
-		if not _rect_matches(first_item, Rect2(36.0, 95.0, 62.0, 62.0)):
+		if not _rect_matches(first_item, Rect2(20.0, 48.0, 64.0, 64.0)):
 			return false
-		if not _rect_matches(last_requirement, Rect2(204.0, 224.0, 44.0, 40.0)):
+		if order_panel.has_node("Requirement8") or last_dynamic_requirement == null:
 			return false
 	return true
 

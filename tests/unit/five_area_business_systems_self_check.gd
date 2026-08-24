@@ -28,6 +28,15 @@ func _initialize() -> void:
 	}, [{"state": &"ready_safe", "seconds_to_loss": 2.0}], {"slots": [{"slot_index": 0, "age_seconds": 30.0, "product": {"product_id": &"product.pancake.custom"}}]})
 	_check(attention.size() == 3, "attention rail is capped at three entries")
 	_check(StringName(Dictionary(attention[0]).get("severity", &"")) == &"red" and float(Dictionary(attention[0]).get("seconds_to_irreversible_loss", 99.0)) <= float(Dictionary(attention[1]).get("seconds_to_irreversible_loss", 99.0)), "attention rail sorts red irreversible loss first")
+	var ordinary_soy_ready: Array = ATTENTION.build_attention({
+		&"device.fresh_soy_milk_machine": {"state": &"ready", "seconds_to_loss": 0.0},
+		&"device.youtiao_fryer": {"state": &"ready", "seconds_to_loss": 5.0},
+	}, [], {"slots": []})
+	_check(ordinary_soy_ready.size() == 1 and StringName(Dictionary(ordinary_soy_ready[0]).get("source_id", &"")) == &"device.youtiao_fryer", "attention rail ignores the soy serving station's ordinary ready state only")
+	var safe_soy_ready: Array = ATTENTION.build_attention({
+		&"device.fresh_soy_milk_machine": {"state": &"ready_safe", "seconds_to_loss": 8.0},
+	}, [], {"slots": []})
+	_check(safe_soy_ready.size() == 1 and StringName(Dictionary(safe_soy_ready[0]).get("source_id", &"")) == &"device.fresh_soy_milk_machine", "attention rail retains soy states that carry a real loss window")
 
 	var goals: RefCounted = GOALS.new()
 	var areas := [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"]

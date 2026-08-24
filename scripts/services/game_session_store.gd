@@ -1209,7 +1209,8 @@ func advance_f3_production(delta: float) -> void:
 	if not bool(_progression.get("day_open")):
 		return
 	_ensure_production_service()
-	_production_service.call("advance_time", delta)
+	if not bool(_production_service.call("advance_time", delta)):
+		return
 	_sync_production_to_save()
 	production_changed.emit(five_area_production_snapshot())
 

@@ -18,6 +18,10 @@ const SUGAR_PARTICLE_COUNT := 11
 const SUGAR_ANIMATION_SECONDS := 0.30
 const ICE_CUBE_COUNT := 5
 const ICE_ANIMATION_SECONDS := 0.30
+const CUP_RIM_Y_RATIO := 0.21
+const CUP_BOTTOM_Y_RATIO := 0.84
+const CUP_TOP_HALF_WIDTH_RATIO := 0.39
+const CUP_BOTTOM_HALF_WIDTH_RATIO := 0.27
 
 var _dispensing := false
 var _fill_ratio := 0.0
@@ -71,14 +75,15 @@ func is_overflowing() -> bool:
 
 
 func configure_geometry(cup_rect: Rect2, nozzle_tip: Vector2) -> void:
-	# The collectible cup changed size with the plastic artwork.  Derive all
-	# liquid bounds from its actual rect so the stream and fill cannot drift.
+	# Match the transparent cup's real inner wall: a broad oval at the rim that
+	# tapers toward the raised base. These ratios were measured from the cropped
+	# single-cup artwork rather than from the control's former placeholder rect.
 	_cup_center_x = cup_rect.get_center().x
-	_cup_rim_y = cup_rect.position.y + cup_rect.size.y * 0.16
-	_cup_bottom_y = cup_rect.position.y + cup_rect.size.y * 0.86
+	_cup_rim_y = cup_rect.position.y + cup_rect.size.y * CUP_RIM_Y_RATIO
+	_cup_bottom_y = cup_rect.position.y + cup_rect.size.y * CUP_BOTTOM_Y_RATIO
 	_nozzle_tip = nozzle_tip
-	_cup_top_half_width = cup_rect.size.x * 0.28
-	_cup_bottom_half_width = cup_rect.size.x * 0.19
+	_cup_top_half_width = cup_rect.size.x * CUP_TOP_HALF_WIDTH_RATIO
+	_cup_bottom_half_width = cup_rect.size.x * CUP_BOTTOM_HALF_WIDTH_RATIO
 	queue_redraw()
 
 

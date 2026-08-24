@@ -3,6 +3,7 @@ extends Control
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png")
+const SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER := 0.8
 
 @export var egg_texture: Texture2D
 @export var baocui_texture: Texture2D
@@ -166,23 +167,23 @@ static func visual_scale_for(ingredient_type: StringName) -> float:
 		IngredientModel.EGG:
 			return 0.14
 		IngredientModel.BAOCUI:
-			return 0.20
+			return 0.20 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.HAM_SAUSAGE:
 			# The serving asset has generous transparent margins; this keeps the
 			# visible ham portion at a satisfying, easy-to-read size on the pancake.
-			return 0.40
+			return 0.40 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.SCALLION:
-			return 0.70
+			return 0.70 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.MEAT_FLOSS:
 			# Match the ham portion's visual weight while preserving the floss mound's
 			# naturally more compact silhouette.
-			return 0.45
+			return 0.45 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.PORK_TENDERLOIN:
-			return 0.13
+			return 0.13 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.CORIANDER:
-			return 0.70
+			return 0.70 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.PRESERVED_MUSTARD:
-			return 0.12
+			return 0.12 * SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER
 		IngredientModel.YOUTIAO:
 			# The five-area source is 256 px wide. Match the visible footprint of
 			# the broken baocui sheet instead of retaining the legacy 768 px scale.

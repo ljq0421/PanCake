@@ -14,6 +14,7 @@ const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
 const PLATE_VISUAL_CAPACITY := 4
+const ADVANCED_RAISED_BASKET_OFFSET := Vector2(0.0, 24.0)
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 
 @export var lowered_machine_texture: Texture2D
@@ -60,6 +61,7 @@ var _machine_hold_elapsed := 0.0
 var _machine_add_elapsed := 0.0
 var _workshop_preview := false
 var _workshop_advanced_preview := false
+var _session_refresh_pending := false
 
 
 func _ready() -> void:
@@ -69,6 +71,7 @@ func _ready() -> void:
 	state_label = status_label
 	_expand_visual_capacity()
 	_create_runtime_controls()
+	_connect_session_signals()
 	refresh_from_session()
 
 
@@ -155,6 +158,12 @@ func select_recipe(_recipe_id: StringName) -> void:
 
 
 func refresh_from_session() -> void:
+	# Public refresh requests can arrive from order delivery or another station.
+	# Never mutate the live Control that Godot is using as a native drag source;
+	# the drag-ended callback below flushes the newest session state instead.
+	if is_node_ready() and _has_active_product_drag():
+		_session_refresh_pending = true
+		return
 	var session := get_node_or_null("/root/GameSession")
 	if session == null or not session.has_method("f3_machine_snapshot"):
 		return
@@ -189,6 +198,7 @@ func refresh_from_session() -> void:
 	_dough_stock = maxi(int(inventory.get(str(DOUGH_STOCK_ID), 0)), 0)
 	_refresh_prepared_slot(session)
 	_apply_snapshot()
+	_session_refresh_pending = false
 
 
 func _begin_drag_or_click(point: Vector2) -> void:
@@ -285,7 +295,7 @@ func _store_fryer_slot_on_plate(source_index: int, product_id: StringName = &"")
 		status_message.emit("芝麻油条已放入芝麻成品盘" if final_product_id == SESAME_PRODUCT_ID else "油条已放入成品盘")
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
-	refresh_from_session()
+	_request_session_refresh()
 
 
 func _perform_machine_click() -> void:
@@ -318,7 +328,10 @@ func _apply_snapshot() -> void:
 		var slot := basket_slots[index]
 		visual.visible = visible
 		visual.texture = raw_youtiao_texture if cooking else finished_texture
-		visual.position = slot.position
+		# The advanced raised artwork places the wire-mesh bed lower than the
+		# basic fryer. Keep the basic authored slots intact and move only the
+		# advanced raised batch onto that mesh plane.
+		visual.position = slot.position + ADVANCED_RAISED_BASKET_OFFSET if use_advanced_art and state != &"frying" else slot.position
 		visual.size = slot.size
 		visual.modulate = Color.WHITE
 	for index in range(plate_product_visuals.size()):
@@ -454,6 +467,7 @@ func _create_runtime_controls() -> void:
 		output.drag_threshold_pixels = 4.0
 		output.visible = false
 		add_child(output)
+		output.drag_ended.connect(_on_product_drag_ended)
 		output_sources.append(output)
 	for source_index in range(plate_product_visuals.size()):
 		var plate_source := ProductDragSource.new()
@@ -468,6 +482,7 @@ func _create_runtime_controls() -> void:
 		plate_source.set_drop_forward_target(self)
 		plate_source.visible = false
 		add_child(plate_source)
+		plate_source.drag_ended.connect(_on_product_drag_ended)
 		plate_sources.append(plate_source)
 
 	prepared_slot = PreparedProductSlot.new()
@@ -560,6 +575,37 @@ func _has_active_product_drag() -> bool:
 		if source.is_native_drag_active():
 			return true
 	return false
+
+
+func _connect_session_signals() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or not session.has_signal("prepared_product_slots_changed"):
+		return
+	var prepared_slots_signal := Signal(session, &"prepared_product_slots_changed")
+	if not prepared_slots_signal.is_connected(_on_prepared_product_slots_changed):
+		prepared_slots_signal.connect(_on_prepared_product_slots_changed)
+
+
+func _on_prepared_product_slots_changed(_snapshot: Dictionary = {}) -> void:
+	_request_session_refresh()
+
+
+func _request_session_refresh() -> void:
+	if _has_active_product_drag():
+		_session_refresh_pending = true
+		return
+	refresh_from_session()
+
+
+func _on_product_drag_ended(_source_ref: Dictionary, _successful: bool) -> void:
+	if _session_refresh_pending:
+		_flush_pending_session_refresh.call_deferred()
+
+
+func _flush_pending_session_refresh() -> void:
+	if not _session_refresh_pending or _has_active_product_drag():
+		return
+	refresh_from_session()
 
 
 func _requires_timed_session_refresh() -> bool:

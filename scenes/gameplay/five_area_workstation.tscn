@@ -1326,7 +1326,7 @@ layout_mode = 0
 offset_left = 1490.0
 offset_top = 481.0
 offset_right = 1900.0
-offset_bottom = 941.0
+offset_bottom = 977.0
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0

@@ -39,6 +39,15 @@ var _fold_chili_sauce_texture: Texture2D
 var _last_sauce_front_strip_count := 0
 var _last_sauce_hidden_back_strip_count := 0
 var _last_sauce_hidden_enclosed := false
+var _cached_model_instance_id := 0
+var _cached_model_revision := -1
+var _cached_control_size := Vector2.ZERO
+var _cached_geometry: Dictionary = {}
+var _cached_source_profiles: Dictionary = {}
+var _cached_fold_profiles: Dictionary = {}
+var _geometry_scan_count := 0
+var _source_profile_build_count := 0
+var _fold_profile_build_count := 0
 
 
 func _ready() -> void:
@@ -50,6 +59,7 @@ func set_fold_model(value: RefCounted) -> void:
 	if fold_model != null and fold_model.changed.is_connected(_on_fold_changed):
 		fold_model.changed.disconnect(_on_fold_changed)
 	fold_model = value
+	_invalidate_fold_geometry_cache()
 	if fold_model != null:
 		fold_model.changed.connect(_on_fold_changed)
 		_last_package_result = fold_model.package_result
@@ -79,6 +89,9 @@ func get_renderer_diagnostics() -> Dictionary:
 		"sauce_front_strip_count": _last_sauce_front_strip_count,
 		"sauce_hidden_back_strip_count": _last_sauce_hidden_back_strip_count,
 		"sauce_hidden_enclosed": _last_sauce_hidden_enclosed,
+		"geometry_scan_count": _geometry_scan_count,
+		"source_profile_build_count": _source_profile_build_count,
+		"fold_profile_build_count": _fold_profile_build_count,
 	}
 
 
@@ -489,10 +502,44 @@ func _segment_polygon(region: StringName, profile: Dictionary) -> PackedVector2A
 	return points
 
 
+func _invalidate_fold_geometry_cache() -> void:
+	_cached_model_instance_id = 0
+	_cached_model_revision = -1
+	_cached_control_size = Vector2.ZERO
+	_cached_geometry.clear()
+	_cached_source_profiles.clear()
+	_cached_fold_profiles.clear()
+
+
+func _ensure_fold_geometry_cache_current() -> void:
+	if fold_model == null or fold_model.pancake_model == null:
+		_invalidate_fold_geometry_cache()
+		return
+	var model: PancakeModel = fold_model.pancake_model
+	var model_instance_id := int(model.get_instance_id())
+	var model_revision := int(model.revision)
+	if (
+		model_instance_id == _cached_model_instance_id
+		and model_revision == _cached_model_revision
+		and size.is_equal_approx(_cached_control_size)
+	):
+		return
+	_cached_model_instance_id = model_instance_id
+	_cached_model_revision = model_revision
+	_cached_control_size = size
+	_cached_geometry.clear()
+	_cached_source_profiles.clear()
+	_cached_fold_profiles.clear()
+
+
 func _pancake_geometry() -> Dictionary:
+	_ensure_fold_geometry_cache_current()
+	if not _cached_geometry.is_empty():
+		return _cached_geometry
 	var model: PancakeModel = fold_model.pancake_model
 	var minimum := Vector2i(model.grid_size, model.grid_size)
 	var maximum := Vector2i(-1, -1)
+	_geometry_scan_count += 1
 	for y in model.grid_size:
 		for x in model.grid_size:
 			var index: int = y * int(model.grid_size) + x
@@ -503,11 +550,12 @@ func _pancake_geometry() -> Dictionary:
 			maximum.x = maxi(maximum.x, x)
 			maximum.y = maxi(maximum.y, y)
 	if maximum.x < minimum.x:
-		return {
+		_cached_geometry = {
 			"center": size * 0.5,
 			"radii": Vector2.ZERO,
 			"has_coverage": false,
 		}
+		return _cached_geometry
 	var grid_extent := Vector2(maximum - minimum + Vector2i.ONE)
 	var center_grid := Vector2(minimum + maximum) * 0.5 + Vector2(0.5, 0.5)
 	var center_local := Vector2(center_grid.x / float(model.grid_size) * size.x, center_grid.y / float(model.grid_size) * size.y)
@@ -515,7 +563,8 @@ func _pancake_geometry() -> Dictionary:
 		grid_extent.x / float(model.grid_size) * size.x,
 		grid_extent.y / float(model.grid_size) * size.y
 	) * 0.5
-	return {"center": center_local, "radii": radii_local, "has_coverage": true}
+	_cached_geometry = {"center": center_local, "radii": radii_local, "has_coverage": true}
+	return _cached_geometry
 
 
 func _transform_polygon(source: PackedVector2Array, progress: float, profile: Dictionary) -> PackedVector2Array:
@@ -529,7 +578,10 @@ func get_fold_arc_profile(region: StringName, progress: float) -> PackedVector2A
 	if fold_model == null or fold_model.pancake_model == null:
 		return PackedVector2Array()
 	var profile := _build_fold_profile(region, progress)
-	return profile.points if bool(profile.get("has_coverage", false)) else PackedVector2Array()
+	if not bool(profile.get("has_coverage", false)):
+		return PackedVector2Array()
+	var points: PackedVector2Array = profile.points
+	return points.duplicate()
 
 
 func get_fold_source_span(region: StringName, distance_ratio: float) -> PackedVector2Array:
@@ -542,37 +594,30 @@ func get_fold_source_span(region: StringName, distance_ratio: float) -> PackedVe
 
 
 func _build_fold_profile(region: StringName, progress: float) -> Dictionary:
+	_ensure_fold_geometry_cache_current()
 	var line_ratio: float = fold_model.pancake_model.parameters.fold_left_line_ratio if region == FOLD_MODEL_SCRIPT.REGION_LEFT else fold_model.pancake_model.parameters.fold_right_line_ratio
-	var line_x := size.x * line_ratio
-	var geometry := _pancake_geometry()
-	var center: Vector2 = geometry.center
-	var radii: Vector2 = geometry.radii
-	var side := -1.0 if region == FOLD_MODEL_SCRIPT.REGION_LEFT else 1.0
-	var outer_x := center.x + side * radii.x
-	var flap_width := maxf(absf(outer_x - line_x), 1.0)
 	var clamped_progress := clampf(progress, 0.0, 1.0)
+	var cached_profile := Dictionary(_cached_fold_profiles.get(region, {}))
+	if (
+		not cached_profile.is_empty()
+		and is_equal_approx(float(cached_profile.get("line_ratio", -1.0)), line_ratio)
+		and is_equal_approx(float(cached_profile.get("progress", -1.0)), clamped_progress)
+	):
+		return cached_profile
+	var source_profile := _source_profile_for_region(region, line_ratio)
+	var line_x: float = source_profile.line_x
+	var center: Vector2 = source_profile.center
+	var side: float = source_profile.side
+	var flap_width: float = source_profile.flap_width
 	var total_angle := clamped_progress * PI
 	var landing := smoothstep(0.35, 1.0, clamped_progress)
 	var bend_ratio := lerpf(FOLD_EARLY_BEND_RATIO, FOLD_LANDED_BEND_RATIO, landing)
 	var x_offsets := PackedFloat32Array([0.0])
 	var heights := PackedFloat32Array([0.0])
 	var angles := PackedFloat32Array([0.0])
-	var source_tops := PackedFloat32Array()
-	var source_bottoms := PackedFloat32Array()
 	var points := PackedVector2Array([Vector2(line_x, center.y)])
 	var x_offset := 0.0
 	var height := 0.0
-	for step in range(FOLD_PROFILE_STEPS + 1):
-		var source_ratio := float(step) / float(FOLD_PROFILE_STEPS)
-		var source_x := line_x + side * flap_width * source_ratio
-		var source_span := _coverage_span_at_x(source_x, region, geometry)
-		source_tops.append(source_span.x)
-		source_bottoms.append(source_span.y)
-	# The simulation grid is intentionally coarse enough to be affordable. A
-	# short weighted filter reproduces the shader's linear sampling at the rim,
-	# while broad missing corners and hand-made asymmetry remain intact.
-	source_tops = _smooth_contour(source_tops, 2)
-	source_bottoms = _smooth_contour(source_bottoms, 2)
 	for step in range(1, FOLD_PROFILE_STEPS + 1):
 		var t0 := float(step - 1) / float(FOLD_PROFILE_STEPS)
 		var t1 := float(step) / float(FOLD_PROFILE_STEPS)
@@ -589,22 +634,60 @@ func _build_fold_profile(region: StringName, progress: float) -> Dictionary:
 			line_x + side * flap_width * x_offset,
 			center.y - flap_width * height * FOLD_HEIGHT_SCREEN_FACTOR
 		))
-	return {
+	var profile := source_profile.duplicate(false)
+	profile["progress"] = clamped_progress
+	profile["x_offsets"] = x_offsets
+	profile["heights"] = heights
+	profile["angles"] = angles
+	profile["points"] = points
+	_cached_fold_profiles[region] = profile
+	_fold_profile_build_count += 1
+	return profile
+
+
+func _source_profile_for_region(region: StringName, line_ratio: float) -> Dictionary:
+	_ensure_fold_geometry_cache_current()
+	var cached_profile := Dictionary(_cached_source_profiles.get(region, {}))
+	if (
+		not cached_profile.is_empty()
+		and is_equal_approx(float(cached_profile.get("line_ratio", -1.0)), line_ratio)
+	):
+		return cached_profile
+	var line_x := size.x * line_ratio
+	var geometry := _pancake_geometry()
+	var center: Vector2 = geometry.center
+	var radii: Vector2 = geometry.radii
+	var side := -1.0 if region == FOLD_MODEL_SCRIPT.REGION_LEFT else 1.0
+	var outer_x := center.x + side * radii.x
+	var flap_width := maxf(absf(outer_x - line_x), 1.0)
+	var source_tops := PackedFloat32Array()
+	var source_bottoms := PackedFloat32Array()
+	for step in range(FOLD_PROFILE_STEPS + 1):
+		var source_ratio := float(step) / float(FOLD_PROFILE_STEPS)
+		var source_x := line_x + side * flap_width * source_ratio
+		var source_span := _coverage_span_at_x(source_x, region, geometry)
+		source_tops.append(source_span.x)
+		source_bottoms.append(source_span.y)
+	# The simulation grid is intentionally coarse enough to be affordable. A
+	# short weighted filter reproduces the shader's linear sampling at the rim,
+	# while broad missing corners and hand-made asymmetry remain intact.
+	source_tops = _smooth_contour(source_tops, 2)
+	source_bottoms = _smooth_contour(source_bottoms, 2)
+	var profile := {
 		"region": region,
+		"line_ratio": line_ratio,
 		"has_coverage": bool(geometry.get("has_coverage", false)),
 		"line_x": line_x,
 		"center": center,
 		"radii": radii,
 		"side": side,
 		"flap_width": flap_width,
-		"progress": clamped_progress,
-		"x_offsets": x_offsets,
-		"heights": heights,
-		"angles": angles,
 		"source_tops": source_tops,
 		"source_bottoms": source_bottoms,
-		"points": points,
 	}
+	_cached_source_profiles[region] = profile
+	_source_profile_build_count += 1
+	return profile
 
 
 func _transform_fold_point(source_point: Vector2, progress: float, profile: Dictionary) -> Vector2:

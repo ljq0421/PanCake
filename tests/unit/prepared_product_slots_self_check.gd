@@ -1,6 +1,7 @@
 extends SceneTree
 
 var _failures: Array[String] = []
+var _production_change_count := 0
 
 
 func _initialize() -> void:
@@ -45,6 +46,17 @@ func _run() -> void:
 	session.call("advance_f3_production", 10.0)
 	session.call("advance_f3_production", 2.0)
 	var fryer_before_two_store := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_production_change_count = 0
+	var production_change_callback := Callable(self, "_on_production_changed")
+	session.production_changed.connect(production_change_callback)
+	for _tick in 30:
+		session.call("advance_f3_production", 1.0 / 60.0)
+	session.production_changed.disconnect(production_change_callback)
+	var fryer_after_static_ticks := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		_production_change_count == 0 and fryer_after_static_ticks == fryer_before_two_store,
+		"ready-to-collect production ticks stay silent so native youtiao dragging does not rebuild unrelated UI"
+	)
 	var stored_two := Dictionary(session.call("store_ready_youtiao_batch", &"slot.04"))
 	var fryer_after_two_store := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	_check(
@@ -174,6 +186,10 @@ static func _product(instance_id: StringName, product_id: StringName, quality: f
 		"material_cost": cost,
 		"status": &"available",
 	}
+
+
+func _on_production_changed(_snapshot: Dictionary) -> void:
+	_production_change_count += 1
 
 
 func _check(condition: bool, message: String) -> void:

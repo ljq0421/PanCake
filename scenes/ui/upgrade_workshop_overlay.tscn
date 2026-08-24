@@ -74,7 +74,7 @@ layout_mode = 0
 offset_left = 1500.0
 offset_top = 480.0
 offset_right = 1910.0
-offset_bottom = 940.0
+offset_bottom = 976.0
 
 [node name="MultiGriddleStation" parent="EditorPreview" unique_id=1016960154 instance=ExtResource("13_editor_griddle")]
 layout_mode = 0

@@ -13,6 +13,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_drag_must_cross_fold_line()
+	_test_fold_profile_reuses_static_geometry()
 	_test_fold_occludes_landing_area_fillings()
 	_test_right_then_left_uses_the_mirrored_clip()
 	_test_material_conditions_create_distinct_results()
@@ -21,15 +22,45 @@ func _run() -> void:
 	_finish()
 
 
+func _test_fold_profile_reuses_static_geometry() -> void:
+	var model := _uniform_pancake(64, 0.55, 0.55)
+	var fold: RefCounted = FOLD_MODEL_SCRIPT.new(model)
+	var overlay: PancakeFoldOverlay = FOLD_OVERLAY_SCRIPT.new()
+	overlay.size = Vector2(400.0, 400.0)
+	overlay.set_fold_model(fold)
+	for progress in [0.20, 0.45, 0.70, 0.95]:
+		overlay.left_fold_outer_edge_x(progress)
+		overlay.right_fold_outer_edge_x(progress)
+	var diagnostics := overlay.get_renderer_diagnostics()
+	_check(
+		int(diagnostics.geometry_scan_count) == 1
+		and int(diagnostics.source_profile_build_count) == 2,
+		"moving fold profiles reuse one grid scan and one static contour per side",
+	)
+	model.revision += 1
+	overlay.left_fold_outer_edge_x(0.50)
+	diagnostics = overlay.get_renderer_diagnostics()
+	_check(
+		int(diagnostics.geometry_scan_count) == 2,
+		"fold geometry cache invalidates when the pancake model revision changes",
+	)
+	overlay.free()
+
+
 func _test_drag_must_cross_fold_line() -> void:
 	var model := _uniform_pancake(64, 0.55, 0.55)
 	var fold: RefCounted = FOLD_MODEL_SCRIPT.new(model)
+	var change_events := []
+	fold.changed.connect(func() -> void: change_events.append(true))
 	_check(fold.begin_drag(Vector2(8, 32)), "left covered edge can be grabbed")
 	var cancelled: Dictionary = fold.release_drag(Vector2(20, 32))
 	_check(not bool(cancelled.committed) and fold.completed_fold_count() == 0, "releasing before the fold line does not commit")
 	_check(fold.begin_drag(Vector2(8, 32)), "cancelled fold remains retryable")
 	fold.update_drag(Vector2(18, 32))
 	_check(float(fold.drag_progress) > 0.0 and not fold.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT), "drag updates deformation before release without auto-completing")
+	var change_count_after_move := change_events.size()
+	fold.update_drag(Vector2(18, 32))
+	_check(change_events.size() == change_count_after_move, "an unchanged fold pointer does not request another redraw")
 	var committed: Dictionary = fold.release_drag(Vector2(34, 32))
 	_check(bool(committed.committed) and committed.outcome == FOLD_MODEL_SCRIPT.OUTCOME_INTACT, "crossing the line and releasing commits an intact fold")
 

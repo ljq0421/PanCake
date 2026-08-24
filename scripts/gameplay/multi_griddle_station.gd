@@ -19,6 +19,7 @@ var _active_index := 0
 var _product_sequence := 0
 var _save_elapsed := 0.0
 var _last_tree_paused := false
+var _last_synced_snapshot: Dictionary = {}
 var _selected_tool: StringName = &""
 var _primed_sauce_stock_id: StringName = &""
 var _primed_sauce_unit_index := -1
@@ -42,9 +43,14 @@ func _ready() -> void:
 
 func bind_session(session: Node) -> void:
 	_session = session
+	_last_synced_snapshot.clear()
 	shared_tool_tray.bind_session(session)
 	if is_node_ready() and _session != null and _session.has_method("five_area_pancake_griddles_snapshot"):
-		load_snapshot(Dictionary(_session.call("five_area_pancake_griddles_snapshot")))
+		var result := load_snapshot(Dictionary(_session.call("five_area_pancake_griddles_snapshot")))
+		if bool(result.get("success", false)):
+			# The session already owns this state. Seed the comparison cache so the
+			# one-second safety sync cannot immediately rewrite an unchanged save.
+			_last_synced_snapshot = snapshot().duplicate(true)
 
 
 func _process(delta: float) -> void:
@@ -63,6 +69,11 @@ func _process(delta: float) -> void:
 func set_griddle_count(_value: int) -> void:
 	# Keep the public setter for existing callers, but the redesigned stall has
 	# exactly one physical cooking surface regardless of legacy device tiers.
+	# FiveAreaWorkstation reapplies this invariant every 100 ms. Treating the
+	# already-normalized value as a mutation used to relayout the station and
+	# synchronously rewrite the complete save ten times per second.
+	if _active_count == 1 and _active_index == 0:
+		return
 	_active_count = 1
 	_active_index = 0
 	if is_node_ready():
@@ -204,7 +215,7 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 			status_message.emit("酱刷必须先接触有效饼面")
 			return {"success": false, "reason": &"outside_pancake"}
 		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _primed_sauce_stock_id}
-	if unit.state in [UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH, UNIT_SCRIPT.State.FOLDING]:
+	if unit.state in [UNIT_SCRIPT.State.FIRST_SIDE, UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH, UNIT_SCRIPT.State.FOLDING]:
 		var fold_result := Dictionary(unit.begin_manual_fold(local_position))
 		if bool(fold_result.get("success", false)):
 			_selected_tool = &""
@@ -558,8 +569,15 @@ static func _unbound_production_context() -> Dictionary:
 
 
 func _sync_snapshot_to_session() -> void:
-	if _session != null and _session.has_method("save_five_area_pancake_griddles"):
-		_session.call("save_five_area_pancake_griddles", snapshot())
+	if _session == null or not _session.has_method("save_five_area_pancake_griddles"):
+		return
+	var next_snapshot := snapshot()
+	if next_snapshot == _last_synced_snapshot:
+		return
+	var result: Variant = _session.call("save_five_area_pancake_griddles", next_snapshot)
+	if result is Dictionary and not bool(Dictionary(result).get("success", false)):
+		return
+	_last_synced_snapshot = next_snapshot.duplicate(true)
 
 
 func _unit(index: int) -> Node:

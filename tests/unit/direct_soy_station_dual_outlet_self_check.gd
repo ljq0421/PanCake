@@ -73,6 +73,14 @@ func _run() -> void:
 		await process_frame
 		var advanced_dispenser := advanced_station.get_node_or_null("SoyMilkDispenser") as TextureRect
 		_check(advanced_dispenser != null and advanced_dispenser.texture != null and advanced_dispenser.texture.resource_path == DUAL_OUTLET_TEXTURE_PATH, "advanced soy machine uses the dual-outlet asset on the main workstation")
+		var outlet_texture := advanced_station.get("_outlet_cup_texture") as Texture2D
+		var stack_texture := advanced_station.cup_stack.texture_normal
+		var stack_scale := minf(advanced_station.cup_stack.size.x / stack_texture.get_size().x, advanced_station.cup_stack.size.y / stack_texture.get_size().y)
+		var expected_outlet_size := outlet_texture.get_size() * stack_scale
+		_check(advanced_station.machine_output.size.is_equal_approx(expected_outlet_size) and advanced_station.queued_cup_preview.size.is_equal_approx(expected_outlet_size), "both outlet cups use the exact single-cup size shown in the cup stack")
+		var left_outlet := advanced_station._nozzle_outlet_position()
+		_check(advanced_station.machine_output.position.y >= left_outlet.y + 8.0, "the cup rim keeps a visible gap below the dispensing outlet")
+		_check(is_equal_approx(float(advanced_station.dispense_effect.get("_cup_top_half_width")), advanced_station.machine_output.size.x * 0.39) and is_equal_approx(float(advanced_station.dispense_effect.get("_cup_bottom_half_width")), advanced_station.machine_output.size.x * 0.27), "the soy fill follows the measured tapered inner walls of the cup")
 		advanced_station.queue_free()
 		session.call("begin_new_game")
 		var interaction_progression: RefCounted = session.call("progression_service")

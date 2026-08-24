@@ -108,8 +108,24 @@ func _test_egg_on_both_sides(station: Node, unit: Node, session: FakeSession) ->
 	_check(unit.egg_shell_visual.visible and unit.egg_shell_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg shell bottom stays 60px above the pancake while liquid falls")
 	_check(unit.egg_intact_visual.visible and unit.egg_intact_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg liquid begins at the opened shell position")
 	_check(int(session.inventory["stock.pancake.egg"]) == 1, "egg placement consumes exactly one inventory unit")
-	var second_placed := Dictionary(station.drop_on_unit(0, source, center + Vector2(20.0, 0.0)))
+	unit.call("_complete_egg_liquid_fall")
+	var first_egg_grid_position := Vector2(unit.ingredient_model.placements.back().position)
+	var first_spread := Dictionary(unit.pancake_model.apply_egg_spreader_sample(first_egg_grid_position, Vector2.RIGHT, 70.0))
+	unit.call("_stop_egg_crack_effect")
+	unit._has_intact_egg_local_override = false
+	unit.call("_refresh_intact_egg_visual")
+	_check(float(first_spread.get("moved_mass", 0.0)) > 0.0 and unit.pancake_model.yolk_broken, "the first egg can be spread before adding the second egg")
+	var second_egg_position := center + Vector2(20.0, 0.0)
+	var second_placed := Dictionary(station.drop_on_unit(0, source, second_egg_position))
 	_check(bool(second_placed.get("success", false)) and unit.ingredient_model.count_type(IngredientModel.EGG) == 2 and int(session.inventory["stock.pancake.egg"]) == 0, "a second egg is accepted and consumes a second inventory unit")
+	unit.call("_complete_egg_liquid_fall")
+	_check(
+		unit.pancake_model.yolk_broken
+		and unit.egg_intact_visual.visible
+		and unit.egg_intact_visual.position.is_equal_approx(second_egg_position)
+		and unit.egg_intact_visual.scale.is_equal_approx(CompactGriddleUnit.EGG_INTACT_VISUAL_SCALE),
+		"the second egg remains a complete fried egg after landing, matching the first egg",
+	)
 	var third_validation := Dictionary(unit.validate_ingredient_drop(source, center + Vector2(-20.0, 0.0)))
 	_check(not bool(third_validation.get("success", false)) and StringName(third_validation.get("reason", &"")) == &"portion_limit", "a third egg is rejected at the two-portion limit")
 

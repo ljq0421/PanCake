@@ -188,11 +188,7 @@ func _process(delta: float) -> void:
 			SURFACE_ACTION_BRUSH_SAUCE:
 				_process_sauce_brush()
 			SURFACE_ACTION_FOLD:
-				fold_model.update_drag(Vector2(PancakeSpace.local_to_grid(
-					pancake_surface.pointer_local_position,
-					pancake_surface.size,
-					pancake_model.grid_size,
-				)))
+				fold_model.update_drag(_fold_grid_position(pancake_surface.pointer_local_position))
 	if state == State.FIRST_SIDE:
 		first_side_seconds += step
 		pancake_model.advance_cooking(step, p1_session.heat_level)
@@ -500,9 +496,9 @@ func begin_garnish_without_flip() -> Dictionary:
 
 
 func begin_manual_fold(local_position: Vector2) -> Dictionary:
-	if state not in [State.SECOND_SIDE, State.GARNISH, State.FOLDING]:
+	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH, State.FOLDING]:
 		return {"success": false, "reason": &"wrong_stage"}
-	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
+	var grid_position := _fold_grid_position(local_position)
 	if not fold_model.begin_drag(grid_position):
 		return {"success": false, "reason": &"not_fold_edge"}
 	var phase_result := Dictionary(p1_session.begin_folding())
@@ -513,6 +509,16 @@ func begin_manual_fold(local_position: Vector2) -> Dictionary:
 	_surface_action = SURFACE_ACTION_FOLD
 	_refresh_ui()
 	return {"success": true, "action": SURFACE_ACTION_FOLD}
+
+
+func _fold_grid_position(local_position: Vector2) -> Vector2:
+	# Folding is a visual gesture, so retain sub-cell pointer precision. Using the
+	# integer simulation grid here makes the flap jump once per 6.25 px.
+	return PancakeSpace.local_to_grid_position(
+		local_position,
+		pancake_surface.size,
+		pancake_model.grid_size,
+	)
 
 
 func mark_ready(product: Dictionary) -> void:
@@ -714,7 +720,7 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 			state = State.FIRST_SIDE
 			_refresh_ui()
 	elif _surface_action == SURFACE_ACTION_FOLD and fold_model.active_region != PancakeFoldModel.REGION_NONE:
-		var grid_position := Vector2(PancakeSpace.local_to_grid(_local_position, pancake_surface.size, pancake_model.grid_size))
+		var grid_position := _fold_grid_position(_local_position)
 		var fold_result := Dictionary(fold_model.release_drag(grid_position))
 		_surface_changed = bool(fold_result.get("committed", false))
 		if _surface_changed:
@@ -982,7 +988,9 @@ func _refresh_intact_egg_visual() -> void:
 	var show_intact := (
 		pancake_model.has_egg()
 		and pancake_model.egg_state == PancakeModel.EggState.CRACKED
-		and not pancake_model.yolk_broken
+		# A spread first egg keeps the shared liquid field visible while the second
+		# egg lands.  The local override identifies that newest, still-intact egg.
+		and (not pancake_model.yolk_broken or _has_intact_egg_local_override)
 		and pancake_model.egg_is_on_visible_side()
 		and not egg_crack_effect.visible
 	)
@@ -1071,7 +1079,9 @@ func place_validated_ingredient(validation: Dictionary) -> Dictionary:
 	var stock_id := StringName(validation.get("stock_id", &""))
 	var ingredient_type := StringName(validation.get("ingredient_type", &""))
 	var grid_position := Vector2(validation.get("grid_position", Vector2.ZERO))
-	var placed := Dictionary(ingredient_model.place(ingredient_type, grid_position, float(applied_ingredient_ids.size()) * 0.35, pancake_model))
+	# The native drag preview is upright. Preserve that orientation after release
+	# so an ingredient never visibly snaps to a different angle when it lands.
+	var placed := Dictionary(ingredient_model.place(ingredient_type, grid_position, 0.0, pancake_model))
 	if not bool(placed.get("success", false)):
 		return placed
 	if ingredient_type == IngredientModel.EGG:
@@ -1250,7 +1260,7 @@ func _refresh_ui() -> void:
 			state_label.text = "按住鏊面画圈摊开"
 			main_action.text = "手动摊面中"
 		State.FIRST_SIDE:
-			state_label.text = "第一面 %.1f秒 · 可直接加料（交付-12分）" % first_side_seconds
+			state_label.text = "第一面 %.1f秒 · 可直接加料或折叠（交付-12分）" % first_side_seconds
 			main_action.text = "翻面"
 		State.SECOND_SIDE:
 			state_label.text = "第二面 %.1f秒 · 火候仅影响评分" % second_side_seconds
@@ -1287,7 +1297,7 @@ func _refresh_heat_visual() -> void:
 	var visible_side_doneness := pancake_model.mean_side_doneness(pancake_model.is_flipped)
 	heat_bar.value = clampf(visible_side_doneness / HEAT_BAR_FULL_DONENESS * 100.0, 0.0, 100.0)
 	if state == State.FIRST_SIDE:
-		state_label.text = "第一面 %.1f秒 · 可直接加料（交付-12分）" % first_side_seconds
+		state_label.text = "第一面 %.1f秒 · 可直接加料或折叠（交付-12分）" % first_side_seconds
 	elif state == State.SECOND_SIDE:
 		state_label.text = "第二面 %.1f秒" % second_side_seconds
 

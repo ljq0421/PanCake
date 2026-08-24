@@ -19,10 +19,10 @@ const MANUAL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machi
 const AUTO_FILL_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png")
 const ADVANCED_DISPENSER_TEXTURE := preload("res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png")
 const FULL_CUP_SECONDS := 0.8
-const EMPTY_CUP_POSITION := Vector2(210.0, 330.0)
-const SINGLE_DISPENSING_CUP_POSITION := Vector2(210.0, 330.0)
-const DUAL_LEFT_CUP_POSITION := Vector2(162.0, 330.0)
-const DUAL_RIGHT_CUP_POSITION := Vector2(257.0, 330.0)
+const CUP_NOZZLE_GAP := 8.0
+const SINGLE_DISPENSING_CUP_X := 210.0
+const DUAL_LEFT_CUP_X := 162.0
+const DUAL_RIGHT_CUP_X := 257.0
 # Measured on soy-milk-dispenser.png.  This is the lower opening of the tap,
 # not the handle or its mounting point.
 const DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(615.0, 1000.0)
@@ -76,6 +76,7 @@ func _ready() -> void:
 	# Ingredient controls sit exactly over the visible artwork; their alpha-aware
 	# hit test ignores transparent canvas margins.
 	_outlet_cup_texture = _create_outlet_cup_texture()
+	_sync_outlet_cup_size_to_stack()
 	queued_cup_preview.texture = _outlet_cup_texture
 	queued_cup_button.hit_texture = _outlet_cup_texture
 	nozzle_button.size = Vector2(112.0, 100.0)
@@ -200,10 +201,10 @@ func refresh_from_session() -> void:
 		cup_detail_label.text = "第1杯 · %s · %s · %d%% 满杯；第2杯空杯待接浆" % [_recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent] if secondary_empty_cup_placed else "第%d杯 · %s · %s · %d%% 满杯" % [_selected_cup_index + 1, _recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent]
 	var second_empty_cup_visible := cup_state == &"held_empty" and _double_fill_enabled and held_empty_cup_count >= 2
 	queued_cup_preview.visible = second_empty_cup_visible or secondary_empty_cup_placed or (cup_state == &"filled" and ready_cup_count > 1)
-	queued_cup_preview.position = DUAL_RIGHT_CUP_POSITION
+	queued_cup_preview.position = _secondary_cup_position()
 	queued_cup_button.visible = cup_state == &"filled" and ready_cup_count > 1
 	queued_cup_button.disabled = not queued_cup_button.visible
-	queued_cup_button.position = DUAL_RIGHT_CUP_POSITION
+	queued_cup_button.position = _secondary_cup_position()
 	queued_cup_button.size = queued_cup_preview.size
 	_update_cup_selection_frame(cup_state == &"filled", ready_cup_count)
 	sugar_jar_visual.visible = sugar_enabled
@@ -321,6 +322,21 @@ func _refresh_cup_stack() -> void:
 		# The empty location stays fully transparent, but its entire slot remains
 		# interactive so players can long-press it to restore one cup.
 		cup_stack.set_alpha_hit_regions([])
+
+
+func _sync_outlet_cup_size_to_stack() -> void:
+	# The stack textures share one canvas. Scale the cropped single-cup art by
+	# that canvas's on-screen scale so an outlet cup is pixel-for-pixel the same
+	# size as the cup visible in the stack, with no independently stretched width.
+	var stack_texture_size := (CUP_STACK_TEXTURES[0] as Texture2D).get_size()
+	var outlet_texture_size := _outlet_cup_texture.get_size()
+	if stack_texture_size.x <= 0.0 or stack_texture_size.y <= 0.0 or outlet_texture_size.x <= 0.0 or outlet_texture_size.y <= 0.0:
+		return
+	var stack_scale := minf(cup_stack.size.x / stack_texture_size.x, cup_stack.size.y / stack_texture_size.y)
+	var outlet_display_size := outlet_texture_size * stack_scale
+	machine_output.size = outlet_display_size
+	queued_cup_preview.size = outlet_display_size
+	queued_cup_button.size = outlet_display_size
 
 
 static func _create_outlet_cup_texture() -> Texture2D:
@@ -494,7 +510,14 @@ func _texture_position_to_station(texture_position: Vector2) -> Vector2:
 
 
 func _active_cup_position() -> Vector2:
-	return DUAL_LEFT_CUP_POSITION if _displayed_machine_tier >= 2 else SINGLE_DISPENSING_CUP_POSITION
+	var outlet := _nozzle_outlet_position()
+	var cup_x := DUAL_LEFT_CUP_X if _displayed_machine_tier >= 2 else SINGLE_DISPENSING_CUP_X
+	return Vector2(cup_x, outlet.y + CUP_NOZZLE_GAP)
+
+
+func _secondary_cup_position() -> Vector2:
+	var outlet := _texture_position_to_station(ADVANCED_RIGHT_NOZZLE_OUTLET_TEXTURE_POSITION)
+	return Vector2(DUAL_RIGHT_CUP_X, outlet.y + CUP_NOZZLE_GAP)
 
 
 func _refresh_machine_geometry() -> void:
@@ -509,14 +532,14 @@ func _refresh_machine_geometry() -> void:
 		clampf(second_outlet.y - second_nozzle_button.size.y, 0.0, size.y - second_nozzle_button.size.y)
 	)
 	dispense_effect.configure_geometry(Rect2(_active_cup_position(), machine_output.size), outlet)
-	queued_cup_effect.configure_geometry(Rect2(DUAL_RIGHT_CUP_POSITION, machine_output.size), second_outlet)
+	queued_cup_effect.configure_geometry(Rect2(_secondary_cup_position(), machine_output.size), second_outlet)
 
 
 func _update_cup_selection_frame(has_filled_cup: bool, ready_cup_count: int) -> void:
 	cup_selection_frame.visible = has_filled_cup and ready_cup_count > 0
 	if not cup_selection_frame.visible:
 		return
-	var cup_position := DUAL_RIGHT_CUP_POSITION if _selected_cup_index == 1 else _active_cup_position()
+	var cup_position := _secondary_cup_position() if _selected_cup_index == 1 else _active_cup_position()
 	cup_selection_frame.position = cup_position - Vector2(4.0, 4.0)
 	cup_selection_frame.size = machine_output.size + Vector2(8.0, 8.0)
 

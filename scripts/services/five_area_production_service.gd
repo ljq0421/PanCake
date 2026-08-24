@@ -12,6 +12,12 @@ const SOY_MODEL := preload("res://scripts/gameplay/fresh_soy_milk_machine_model.
 const YOUTIAO_DEVICE := &"device.youtiao_fryer"
 const SOY_DEVICE := &"device.fresh_soy_milk_machine"
 const YOUTIAO_AUTO_LIFT := &"automation.youtiao.auto_lift"
+const TIME_DRIVEN_YOUTIAO_STATES := [
+	&"frying",
+	&"ready_safe",
+	&"overcooking",
+	&"draining",
+]
 
 var _session: Node
 var _progression: RefCounted
@@ -36,16 +42,20 @@ func configure(progression: RefCounted, session: Node) -> void:
 	_sync_ownership()
 
 
-func advance_time(delta: float) -> void:
+func advance_time(delta: float) -> bool:
 	var step := maxf(delta, 0.0)
 	if step <= 0.0:
-		return
+		return false
 	_sync_ownership()
+	# Soy serving is entirely player-driven, and several fryer states are also
+	# stable until the next player action.  Reporting a change for those states
+	# made GameSession clone and broadcast the complete production snapshot every
+	# frame, even while a finished stick was following the pointer.
+	if StringName(_youtiao.get("state")) not in TIME_DRIVEN_YOUTIAO_STATES:
+		return false
 	_youtiao.call("advance_time", step, youtiao_auto_lift_enabled())
-	_configure_soy_serving_upgrades()
-	_soy.call("advance_time", step, false)
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
-	machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
+	return true
 
 
 func machine_snapshot(device_id: StringName) -> Dictionary:

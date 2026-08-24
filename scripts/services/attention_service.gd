@@ -35,6 +35,10 @@ static func build_attention(
 
 static func _append_machine_attention(items: Array[Dictionary], snapshot: Dictionary, device_id: StringName, source_id: StringName) -> void:
 	var state := StringName(snapshot.get("state", &""))
+	# The current soy station uses `ready` for an idle dispenser awaiting a cup,
+	# not for a finished product approaching irreversible loss.
+	if device_id == &"device.fresh_soy_milk_machine" and state == &"ready":
+		return
 	var area_id := StringName(CATALOG.device_definition(device_id).get("area_id", &""))
 	var seconds := maxf(float(snapshot.get("seconds_to_loss", 0.0)), 0.0)
 	var severity := &""

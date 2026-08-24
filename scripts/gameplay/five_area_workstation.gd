@@ -12,12 +12,21 @@ const PAYMENT_COIN_TEXTURES := {
 	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
 }
 const RIGHT_SOY_STATION_POSITION := Vector2(1500.0, 480.0)
-const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 460.0)
+const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 496.0)
 const FORMAL_PAYMENT_COIN_SIZE := Vector2(44.0, 44.0)
 const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(842.0, 526.0)
 const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 38.0
 const FORMAL_PAYMENT_COIN_ROW_SPACING := 24.0
 const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 6
+const FORMAL_PAYMENT_COIN_STAGGER_SECONDS := 0.05
+const FORMAL_PAYMENT_COIN_LAUNCH_SECONDS := 0.12
+const FORMAL_PAYMENT_COIN_FLIGHT_SECONDS := 0.24
+const FORMAL_PAYMENT_REDUCED_FADE_SECONDS := 0.20
+const FORMAL_PAYMENT_REWARD_POP_SECONDS := 0.16
+const FORMAL_PAYMENT_REWARD_EXIT_SECONDS := 0.20
+const FORMAL_PAYMENT_BURST_SPARK_COUNT := 10
+const FORMAL_PAYMENT_GOLD := Color(1.0, 0.72, 0.12, 1.0)
+const FORMAL_PAYMENT_GOLD_BRIGHT := Color(1.0, 0.94, 0.54, 1.0)
 const RESULT_OVERLAY_Z_INDEX := 300
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
@@ -52,9 +61,10 @@ var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 var _multi_griddle_mode_active := false
 var _formal_payment_coin_sprites: Array[TextureRect] = []
-var _formal_payment_collection_tween: Tween
+var _formal_payment_total_pulse_tween: Tween
 var _formal_payment_collection_active := false
 var _workshop_payment_display_hidden := false
+var _formal_payment_total_rest_modulate := Color.WHITE
 
 
 func _ready() -> void:
@@ -71,6 +81,7 @@ func _ready() -> void:
 	# payment animation setup. Keep the real coin sprites above the counter,
 	# but below modal result panels.
 	payment_coin_layer.z_index = 30
+	_formal_payment_total_rest_modulate = global_status_label.modulate
 	# DirectSoyStation owns both the right-side dispenser artwork and its serving
 	# interactions. Normalize its instance offsets so the retired left-side
 	# placement cannot resurface.
@@ -821,25 +832,42 @@ func _collect_pending_payments() -> void:
 		return
 	var amount := int(collected.get("amount", 0))
 	var collected_coins: Array[TextureRect] = []
-	collected_coins.append_array(_formal_payment_coin_sprites)
+	for coin in _formal_payment_coin_sprites:
+		if is_instance_valid(coin):
+			collected_coins.append(coin)
 	_formal_payment_coin_sprites.clear()
-	_refresh_pending_payment_button()
-	if collected_coins.is_empty():
-		tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % amount
-		return
+	_play_formal_payment_collection_feedback(amount, collected_coins, _formal_payment_should_reduce_motion())
+
+
+func _play_formal_payment_collection_feedback(
+	amount: int,
+	collected_coins: Array[TextureRect],
+	reduce_motion: bool
+) -> void:
 	_formal_payment_collection_active = true
+	_refresh_pending_payment_button()
 	var origin := _formal_payment_collection_origin(collected_coins)
 	var target := _formal_payment_collection_target()
-	_show_formal_payment_reward(amount, origin)
-	for index in collected_coins.size():
+	_show_formal_payment_collection_burst(origin, reduce_motion)
+	_show_formal_payment_reward(amount, origin, reduce_motion)
+	if collected_coins.is_empty():
+		_show_formal_payment_target_impact(target, true, reduce_motion)
+		var fallback_tween := create_tween()
+		fallback_tween.tween_interval(FORMAL_PAYMENT_COIN_LAUNCH_SECONDS)
+		fallback_tween.tween_callback(_complete_formal_payment_collection.bind(amount, collected_coins, reduce_motion))
+		tool_status_label.text = "收取中：%d 金币正在入账" % amount
+		return
+	for index in range(collected_coins.size()):
 		var coin := collected_coins[index]
-		if is_instance_valid(coin):
-			_play_formal_payment_collection_flight(coin, target, index)
-	if _formal_payment_collection_tween != null and _formal_payment_collection_tween.is_valid():
-		_formal_payment_collection_tween.kill()
-	_formal_payment_collection_tween = create_tween()
-	_formal_payment_collection_tween.tween_interval(0.42 + float(maxi(collected_coins.size() - 1, 0)) * 0.045)
-	_formal_payment_collection_tween.tween_callback(_complete_formal_payment_collection.bind(amount, collected_coins))
+		_play_formal_payment_collection_flight(
+			coin,
+			target,
+			index,
+			index == collected_coins.size() - 1,
+			amount,
+			collected_coins,
+			reduce_motion
+		)
 	tool_status_label.text = "收取中：%d 金币正在入账" % amount
 
 
@@ -858,70 +886,277 @@ func _formal_payment_collection_target() -> Vector2:
 	return status_rect.position + Vector2(78.0, status_rect.size.y * 0.5)
 
 
-func _play_formal_payment_collection_flight(coin: TextureRect, target: Vector2, index: int) -> void:
+func _play_formal_payment_collection_flight(
+	coin: TextureRect,
+	target: Vector2,
+	index: int,
+	is_last: bool,
+	amount: int,
+	coins: Array[TextureRect],
+	reduce_motion: bool
+) -> void:
 	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coin.z_index = 125
 	coin.pivot_offset = coin.size * 0.5
-	var launch_position := coin.global_position + Vector2(float(index % 3 - 1) * 12.0, -32.0 - float(index % 2) * 8.0)
-	var destination := target - coin.size * 0.5 + Vector2(float(index % 3 - 1) * 14.0, float(index % 2) * 4.0)
+	var stagger_delay := float(index) * FORMAL_PAYMENT_COIN_STAGGER_SECONDS
+	coin.set_meta(&"formal_payment_stagger_delay", stagger_delay)
+	if reduce_motion:
+		var reduced_tween := create_tween()
+		if stagger_delay > 0.0:
+			reduced_tween.tween_interval(stagger_delay)
+		reduced_tween.tween_property(coin, "modulate:a", 0.0, FORMAL_PAYMENT_REDUCED_FADE_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		reduced_tween.tween_callback(_on_formal_payment_coin_arrived.bind(coin, target, index, is_last, amount, coins, reduce_motion))
+		return
+	var start_position := coin.global_position
+	var spread := _formal_payment_launch_spread(index, coins.size())
+	var launch_position := start_position + Vector2(spread * (38.0 + float(index % 3) * 6.0), -48.0 - float(index % 2) * 10.0)
+	var destination := target - coin.size * 0.5 + Vector2(float(index % 3 - 1) * 10.0, float(index % 2) * 4.0)
+	var arc_control := launch_position.lerp(destination, 0.46) + Vector2(float(index % 3 - 1) * 34.0, -92.0 - float(index % 2) * 18.0)
+	var spin_direction := -1.0 if index % 2 == 0 else 1.0
+	var launch_rotation := spin_direction * 0.24
 	var coin_tween := create_tween()
-	coin_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	coin_tween.tween_interval(float(index) * 0.045)
-	coin_tween.set_parallel(true)
-	coin_tween.tween_property(coin, "global_position", launch_position, 0.10)
-	coin_tween.tween_property(coin, "scale", Vector2(1.28, 1.28), 0.10)
-	coin_tween.chain().set_parallel(true)
-	coin_tween.tween_property(coin, "global_position", destination, 0.30)
-	coin_tween.tween_property(coin, "scale", Vector2(0.72, 0.72), 0.30)
-	coin_tween.tween_property(coin, "modulate:a", 0.0, 0.22).set_delay(0.08)
+	if stagger_delay > 0.0:
+		coin_tween.tween_interval(stagger_delay)
+	coin_tween.tween_property(coin, "global_position", launch_position, FORMAL_PAYMENT_COIN_LAUNCH_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	coin_tween.parallel().tween_property(coin, "scale", Vector2(1.46, 1.46), FORMAL_PAYMENT_COIN_LAUNCH_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	coin_tween.parallel().tween_property(coin, "rotation", launch_rotation, FORMAL_PAYMENT_COIN_LAUNCH_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	coin_tween.chain().tween_method(
+		_set_formal_payment_coin_flight_position.bind(coin, launch_position, arc_control, destination),
+		0.0,
+		1.0,
+		FORMAL_PAYMENT_COIN_FLIGHT_SECONDS
+	).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN_OUT)
+	coin_tween.parallel().tween_property(coin, "scale", Vector2(0.62, 0.62), FORMAL_PAYMENT_COIN_FLIGHT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN_OUT)
+	coin_tween.parallel().tween_property(coin, "rotation", launch_rotation + spin_direction * TAU * 0.85, FORMAL_PAYMENT_COIN_FLIGHT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_IN_OUT)
+	coin_tween.parallel().tween_property(coin, "modulate:a", 0.0, 0.08).set_delay(FORMAL_PAYMENT_COIN_FLIGHT_SECONDS - 0.08).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	coin_tween.chain().tween_callback(_on_formal_payment_coin_arrived.bind(coin, target, index, is_last, amount, coins, reduce_motion))
 
 
-func _show_formal_payment_reward(amount: int, origin: Vector2) -> void:
+func _formal_payment_launch_spread(index: int, coin_count: int) -> float:
+	if coin_count <= 1:
+		return 0.0
+	match index % 5:
+		0:
+			return -0.70
+		1:
+			return 0.70
+		2:
+			return 0.0
+		3:
+			return -1.0
+		4:
+			return 1.0
+	return 0.0
+
+
+func _set_formal_payment_coin_flight_position(
+	progress: float,
+	coin: TextureRect,
+	start_position: Vector2,
+	control_position: Vector2,
+	end_position: Vector2
+) -> void:
+	if not is_instance_valid(coin):
+		return
+	var inverse := 1.0 - progress
+	coin.global_position = inverse * inverse * start_position \
+		+ 2.0 * inverse * progress * control_position \
+		+ progress * progress * end_position
+
+
+func _on_formal_payment_coin_arrived(
+	coin: TextureRect,
+	target: Vector2,
+	index: int,
+	is_last: bool,
+	amount: int,
+	coins: Array[TextureRect],
+	reduce_motion: bool
+) -> void:
+	if is_instance_valid(coin):
+		coin.visible = false
+	_show_formal_payment_target_impact(target, is_last, reduce_motion)
+	if is_last:
+		_complete_formal_payment_collection(amount, coins, reduce_motion)
+
+
+func _show_formal_payment_collection_burst(origin: Vector2, reduce_motion: bool) -> void:
+	_spawn_formal_payment_ring(
+		origin,
+		132.0,
+		1.62,
+		FORMAL_PAYMENT_GOLD,
+		&"origin_ring",
+		reduce_motion
+	)
+	if reduce_motion:
+		return
+	for index in range(FORMAL_PAYMENT_BURST_SPARK_COUNT):
+		var angle := -PI * 0.5 + TAU * float(index) / float(FORMAL_PAYMENT_BURST_SPARK_COUNT)
+		var distance := 58.0 + float(index % 3) * 13.0
+		_spawn_formal_payment_spark(origin, Vector2.RIGHT.rotated(angle), distance, index, &"origin_spark")
+
+
+func _show_formal_payment_target_impact(target: Vector2, strong: bool, reduce_motion: bool) -> void:
+	_spawn_formal_payment_ring(
+		target,
+		104.0 if strong else 62.0,
+		1.70 if strong else 1.45,
+		FORMAL_PAYMENT_GOLD_BRIGHT if strong else FORMAL_PAYMENT_GOLD,
+		&"target_ring",
+		reduce_motion
+	)
+	if reduce_motion or not strong:
+		return
+	for index in range(6):
+		var angle := TAU * float(index) / 6.0
+		_spawn_formal_payment_spark(target, Vector2.RIGHT.rotated(angle), 44.0, index, &"target_spark")
+
+
+func _spawn_formal_payment_ring(
+	center: Vector2,
+	diameter: float,
+	end_scale: float,
+	color: Color,
+	kind: StringName,
+	reduce_motion: bool
+) -> void:
+	var ring := Panel.new()
+	ring.name = "FormalCoinCollectionRing"
+	ring.size = Vector2(diameter, diameter)
+	ring.pivot_offset = ring.size * 0.5
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.z_index = 127
+	ring.set_meta(&"formal_payment_fx_kind", kind)
+	var ring_style := StyleBoxFlat.new()
+	ring_style.bg_color = Color(color.r, color.g, color.b, 0.14)
+	ring_style.border_color = color
+	ring_style.set_border_width_all(5)
+	ring_style.set_corner_radius_all(roundi(diameter * 0.5))
+	ring.add_theme_stylebox_override(&"panel", ring_style)
+	payment_coin_layer.add_child(ring)
+	ring.global_position = center - ring.size * 0.5
+	ring.scale = Vector2.ONE if reduce_motion else Vector2(0.90, 0.90)
+	var ring_tween := create_tween()
+	if reduce_motion:
+		ring_tween.tween_property(ring, "modulate:a", 0.0, FORMAL_PAYMENT_REDUCED_FADE_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	else:
+		ring_tween.tween_property(ring, "scale", Vector2(end_scale, end_scale), 0.24).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		ring_tween.parallel().tween_property(ring, "modulate:a", 0.0, 0.14).set_delay(0.10).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_callback(ring.queue_free)
+
+
+func _spawn_formal_payment_spark(
+	center: Vector2,
+	direction: Vector2,
+	distance: float,
+	index: int,
+	kind: StringName
+) -> void:
+	var spark := ColorRect.new()
+	spark.name = "FormalCoinCollectionSpark"
+	spark.size = Vector2(7.0 if index % 2 == 0 else 5.0, 18.0 if index % 2 == 0 else 13.0)
+	spark.pivot_offset = spark.size * 0.5
+	spark.color = FORMAL_PAYMENT_GOLD_BRIGHT if index % 2 == 0 else FORMAL_PAYMENT_GOLD
+	spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	spark.z_index = 128
+	spark.rotation = direction.angle() + PI * 0.5
+	spark.scale = Vector2(0.90, 0.90)
+	spark.set_meta(&"formal_payment_fx_kind", kind)
+	payment_coin_layer.add_child(spark)
+	spark.global_position = center - spark.size * 0.5
+	var spark_destination := center + direction * distance - spark.size * 0.5
+	var spark_tween := create_tween()
+	spark_tween.tween_property(spark, "global_position", spark_destination, 0.24).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	spark_tween.parallel().tween_property(spark, "scale", Vector2(0.72, 1.20), 0.24).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	spark_tween.parallel().tween_property(spark, "modulate:a", 0.0, 0.14).set_delay(0.10).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	spark_tween.tween_callback(spark.queue_free)
+
+
+func _show_formal_payment_reward(amount: int, origin: Vector2, reduce_motion: bool) -> void:
+	var reward_badge := PanelContainer.new()
+	reward_badge.name = "FormalCoinCollectionReward"
+	reward_badge.size = Vector2(320.0, 84.0)
+	reward_badge.custom_minimum_size = reward_badge.size
+	reward_badge.z_index = 124
+	reward_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_badge.set_meta(&"formal_payment_fx_kind", &"reward_badge")
+	var badge_style := StyleBoxFlat.new()
+	badge_style.bg_color = Color(0.20, 0.08, 0.01, 0.92)
+	badge_style.border_color = FORMAL_PAYMENT_GOLD
+	badge_style.set_border_width_all(3)
+	badge_style.set_corner_radius_all(24)
+	badge_style.shadow_color = Color(0.08, 0.02, 0.0, 0.50)
+	badge_style.shadow_size = 10
+	badge_style.shadow_offset = Vector2(0.0, 5.0)
+	reward_badge.add_theme_stylebox_override(&"panel", badge_style)
 	var reward_label := Label.new()
-	reward_label.name = "FormalCoinCollectionReward"
+	reward_label.name = "Amount"
 	reward_label.text = "+%d 金币" % amount
-	reward_label.size = Vector2(250.0, 64.0)
-	reward_label.global_position = origin - Vector2(125.0, 92.0)
-	reward_label.z_index = 126
-	reward_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reward_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	reward_label.add_theme_color_override(&"font_color", Color(1.0, 0.85, 0.24, 1.0))
-	reward_label.add_theme_color_override(&"font_outline_color", Color(0.20, 0.09, 0.02, 0.96))
-	reward_label.add_theme_constant_override(&"outline_size", 7)
-	reward_label.add_theme_font_size_override(&"font_size", 42)
-	reward_label.pivot_offset = reward_label.size * 0.5
-	reward_label.scale = Vector2(0.94, 0.94)
-	reward_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	payment_coin_layer.add_child(reward_label)
+	reward_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_label.add_theme_color_override(&"font_color", FORMAL_PAYMENT_GOLD_BRIGHT)
+	reward_label.add_theme_color_override(&"font_outline_color", Color(0.18, 0.06, 0.0, 0.98))
+	reward_label.add_theme_constant_override(&"outline_size", 8)
+	reward_label.add_theme_font_size_override(&"font_size", 50)
+	reward_badge.add_child(reward_label)
+	payment_coin_layer.add_child(reward_badge)
+	var shown_position := origin - Vector2(reward_badge.size.x * 0.5, 124.0)
+	var start_position := shown_position + Vector2(0.0, 16.0)
+	reward_badge.pivot_offset = reward_badge.size * 0.5
+	reward_badge.global_position = shown_position if reduce_motion else start_position
+	reward_badge.scale = Vector2.ONE if reduce_motion else Vector2(0.94, 0.94)
+	reward_badge.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	var reward_tween := create_tween()
-	reward_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	reward_tween.set_parallel(true)
-	reward_tween.tween_property(reward_label, "global_position", reward_label.global_position - Vector2(0.0, 14.0), 0.10)
-	reward_tween.tween_property(reward_label, "scale", Vector2(1.14, 1.14), 0.10)
-	reward_tween.tween_property(reward_label, "modulate:a", 1.0, 0.10)
-	reward_tween.chain().set_parallel(true)
-	reward_tween.tween_property(reward_label, "global_position", reward_label.global_position - Vector2(0.0, 76.0), 0.26)
-	reward_tween.tween_property(reward_label, "scale", Vector2.ONE, 0.26)
-	reward_tween.tween_property(reward_label, "modulate:a", 0.0, 0.18).set_delay(0.08)
-	reward_tween.chain().tween_callback(reward_label.queue_free)
+	if reduce_motion:
+		reward_tween.tween_property(reward_badge, "modulate:a", 1.0, 0.12).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		reward_tween.tween_interval(0.12)
+		reward_tween.tween_property(reward_badge, "modulate:a", 0.0, FORMAL_PAYMENT_REWARD_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	else:
+		reward_tween.tween_property(reward_badge, "global_position", shown_position, FORMAL_PAYMENT_REWARD_POP_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		reward_tween.parallel().tween_property(reward_badge, "scale", Vector2(1.16, 1.16), FORMAL_PAYMENT_REWARD_POP_SECONDS).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		reward_tween.parallel().tween_property(reward_badge, "modulate:a", 1.0, 0.12).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		reward_tween.chain().tween_interval(0.12)
+		reward_tween.tween_property(reward_badge, "global_position", shown_position - Vector2(0.0, 42.0), FORMAL_PAYMENT_REWARD_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		reward_tween.parallel().tween_property(reward_badge, "scale", Vector2.ONE, FORMAL_PAYMENT_REWARD_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		reward_tween.parallel().tween_property(reward_badge, "modulate:a", 0.0, FORMAL_PAYMENT_REWARD_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	reward_tween.tween_callback(reward_badge.queue_free)
 
 
-func _complete_formal_payment_collection(amount: int, coins: Array[TextureRect]) -> void:
+func _complete_formal_payment_collection(amount: int, coins: Array[TextureRect], reduce_motion: bool) -> void:
 	for coin in coins:
 		if is_instance_valid(coin):
 			coin.queue_free()
+	_pulse_formal_coin_total(reduce_motion, _finish_formal_payment_collection.bind(amount))
+
+
+func _finish_formal_payment_collection(amount: int) -> void:
 	_formal_payment_collection_active = false
-	_pulse_formal_coin_total()
+	_refresh_pending_payment_button()
 	tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % amount
 
 
-func _pulse_formal_coin_total() -> void:
-	global_status_label.pivot_offset = global_status_label.size * 0.5
-	var pulse_tween := create_tween()
-	pulse_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	pulse_tween.tween_property(global_status_label, "scale", Vector2(1.08, 1.08), 0.10)
-	pulse_tween.tween_property(global_status_label, "scale", Vector2.ONE, 0.16)
+func _pulse_formal_coin_total(reduce_motion: bool = false, finished_callback: Callable = Callable()) -> void:
+	if _formal_payment_total_pulse_tween != null and _formal_payment_total_pulse_tween.is_valid():
+		_formal_payment_total_pulse_tween.kill()
+	global_status_label.modulate = _formal_payment_total_rest_modulate
+	_formal_payment_total_pulse_tween = create_tween()
+	if reduce_motion:
+		global_status_label.modulate = FORMAL_PAYMENT_GOLD_BRIGHT
+		_formal_payment_total_pulse_tween.tween_property(global_status_label, "modulate", _formal_payment_total_rest_modulate, 0.20).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		if finished_callback.is_valid():
+			_formal_payment_total_pulse_tween.tween_callback(finished_callback)
+		return
+	_formal_payment_total_pulse_tween.tween_property(global_status_label, "modulate", FORMAL_PAYMENT_GOLD_BRIGHT, 0.12).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_formal_payment_total_pulse_tween.tween_property(global_status_label, "modulate", _formal_payment_total_rest_modulate, 0.20).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	if finished_callback.is_valid():
+		_formal_payment_total_pulse_tween.tween_callback(finished_callback)
+
+
+func _formal_payment_should_reduce_motion() -> bool:
+	return DisplayServer.has_method(&"accessibility_should_reduce_motion") \
+		and bool(DisplayServer.call(&"accessibility_should_reduce_motion"))
 
 
 func _collect_tray_payment() -> void:
@@ -973,8 +1208,9 @@ func _formal_payment_coin_target(index: int) -> Vector2:
 
 func _refresh_pending_payment_button() -> void:
 	var pending_total := _pending_payment_total()
-	var can_collect := pending_total > 0 and not _workshop_payment_display_hidden
-	pending_payment_button.visible = can_collect
+	var has_pending_payment := pending_total > 0 and not _workshop_payment_display_hidden
+	var can_collect := has_pending_payment and not _formal_payment_collection_active
+	pending_payment_button.visible = has_pending_payment
 	pending_payment_button.disabled = not can_collect
 	pending_payment_button.mouse_filter = Control.MOUSE_FILTER_STOP if can_collect else Control.MOUSE_FILTER_IGNORE
 	pending_payment_button.text = "金币 ×%d\n点击全部收取" % pending_total

@@ -112,14 +112,20 @@ func update_drag(grid_position: Vector2) -> void:
 	if active_region == REGION_NONE or pancake_model == null:
 		return
 	var line_x := _fold_line_x(active_region)
+	var next_progress := drag_progress
+	var next_crossed_fold_line := crossed_fold_line
 	if active_region == REGION_LEFT:
 		var destination_x := 2.0 * line_x - _drag_start.x
-		drag_progress = clampf(inverse_lerp(_drag_start.x, maxf(destination_x, line_x + 1.0), grid_position.x), 0.0, 1.0)
-		crossed_fold_line = grid_position.x >= line_x
+		next_progress = clampf(inverse_lerp(_drag_start.x, maxf(destination_x, line_x + 1.0), grid_position.x), 0.0, 1.0)
+		next_crossed_fold_line = grid_position.x >= line_x
 	else:
 		var destination_x := 2.0 * line_x - _drag_start.x
-		drag_progress = clampf(inverse_lerp(_drag_start.x, minf(destination_x, line_x - 1.0), grid_position.x), 0.0, 1.0)
-		crossed_fold_line = grid_position.x <= line_x
+		next_progress = clampf(inverse_lerp(_drag_start.x, minf(destination_x, line_x - 1.0), grid_position.x), 0.0, 1.0)
+		next_crossed_fold_line = grid_position.x <= line_x
+	if is_equal_approx(next_progress, drag_progress) and next_crossed_fold_line == crossed_fold_line:
+		return
+	drag_progress = next_progress
+	crossed_fold_line = next_crossed_fold_line
 	changed.emit()
 
 

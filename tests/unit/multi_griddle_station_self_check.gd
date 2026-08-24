@@ -19,6 +19,8 @@ class FakeSession:
 	extends Node
 	var progression := FakeProgression.new()
 	var inventory := {"stock.pancake.batter": 0}
+	var saved_griddles: Dictionary = {}
+	var griddle_save_calls := 0
 
 	func progression_service() -> RefCounted:
 		return progression
@@ -34,6 +36,14 @@ class FakeSession:
 		for stock_id in stock_ids:
 			var key := str(stock_id)
 			inventory[key] = int(inventory.get(key, 0)) - 1
+		return {"success": true}
+
+	func five_area_pancake_griddles_snapshot() -> Dictionary:
+		return saved_griddles.duplicate(true)
+
+	func save_five_area_pancake_griddles(value: Dictionary) -> Dictionary:
+		griddle_save_calls += 1
+		saved_griddles = value.duplicate(true)
 		return {"success": true}
 
 
@@ -55,11 +65,21 @@ func _run() -> void:
 	_check(station.units.size() == 1, "single-stall scene authors exactly one griddle unit")
 	_check(not shared_tool_tray._press_spreader_button.visible, "the press icon stays hidden before its upgrade activates")
 	_check(station.get_node_or_null("Griddle01") != null and station.get_node_or_null("Griddle02") == null and station.get_node_or_null("Griddle03") == null, "secondary griddle nodes are absent")
-	station.set_griddle_count(3)
+	for _refresh in 20:
+		station.set_griddle_count(3)
+	station.call("_process", 1.01)
 	_check(station.griddle_count() == 1, "legacy count requests cannot expand the single stall")
+	_check(session.griddle_save_calls == 0, "reapplying the single-griddle layout and its safety tick do not rewrite an unchanged save")
 	var unit: Node = station.units[0]
-	_check(unit.position.is_equal_approx(Vector2(405.0, 36.0)), "the sole griddle remains centered in the operation area")
+	_check(unit.position.is_equal_approx(Vector2(380.0, 105.0)), "the sole griddle retains the scene-authored single-stall position")
+	_check(
+		unit.package_visual.scale.is_equal_approx(Vector2(3.0, 3.0))
+		and unit.package_visual.pivot_offset.is_equal_approx(unit.package_visual.size * 0.5)
+		and unit.package_visual.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+		"the ready-product artwork is three times larger around its original center without taking pointer input",
+	)
 	station.call("_on_main_action", 0)
+	_check(session.griddle_save_calls == 1, "a real griddle state change still persists exactly once")
 	_check(int(session.inventory["stock.pancake.batter"]) == 0 and unit.state == CompactGriddleUnit.State.BATTER, "the visible griddle starts with unlimited batter and does not consume inventory")
 	_check(unit.pancake_surface.visible and unit.pancake_surface._has_point(unit.pancake_surface.size * 0.5), "the single griddle keeps its elliptical interactive pancake surface")
 	var locked_press := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
@@ -69,6 +89,22 @@ func _run() -> void:
 	_check(shared_tool_tray._press_spreader_button.visible, "the press icon appears in the shared workstation tray after activation")
 	var press_result := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
 	_check(bool(press_result.get("success", false)) and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "the unlocked press tool converts batter into a ready first-side pancake")
+	_check(unit.state_label.text.contains("折叠") and unit.state_label.text.contains("-12"), "the first-side hint exposes direct folding and its score cost")
+	var unflipped_fold := Dictionary(station.begin_surface_action(0, unit.pancake_surface.size * Vector2(0.12, 0.5)))
+	var unflipped_product: Dictionary = station.call("_build_product", unit)
+	var unflipped_production := Dictionary(Dictionary(unflipped_product.get("serving_score_basis", {})).get("production", {}))
+	_check(
+		bool(unflipped_fold.get("success", false))
+		and StringName(unflipped_fold.get("action", &"")) == CompactGriddleUnit.SURFACE_ACTION_FOLD
+		and unit.state == CompactGriddleUnit.State.FOLDING
+		and unit.p1_session.phase == P1Session.Phase.FOLD
+		and not unit.pancake_model.is_flipped,
+		"grabbing the first-side edge starts folding without forcing a flip",
+	)
+	_check(
+		is_equal_approx(float(unflipped_production.get("unflipped_delivery_penalty", 0.0)), 12.0),
+		"an unflipped direct-fold product preserves the 12-point delivery penalty",
+	)
 	unit.reset_unit()
 	station.call("_on_main_action", 0)
 	var legacy_slot := Dictionary(unit.snapshot())

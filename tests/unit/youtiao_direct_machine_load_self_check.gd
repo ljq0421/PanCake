@@ -4,9 +4,13 @@ const FRYER_SCENE := preload("res://scenes/gameplay/cartoon_youtiao_fryer_toggle
 
 
 class FakeGameSession extends Node:
+	signal prepared_product_slots_changed(snapshot: Dictionary)
+
 	var inventory := {"stock.youtiao.plain_dough": 2}
 	var coins := 10
 	var finished_tray_unlocked := true
+	var machine_snapshot_calls := 0
+	var prepared_products: Array[Dictionary] = []
 	var machine := {
 		"state": &"idle",
 		"capacity": 4,
@@ -16,6 +20,7 @@ class FakeGameSession extends Node:
 	}
 
 	func f3_machine_snapshot(_device_id: StringName) -> Dictionary:
+		machine_snapshot_calls += 1
 		return machine.duplicate(true)
 
 	func five_area_progression_snapshot() -> Dictionary:
@@ -29,7 +34,7 @@ class FakeGameSession extends Node:
 		return inventory.duplicate(true)
 
 	func prepared_product_slot_status(_slot_id: StringName) -> Dictionary:
-		return {"count": 0, "capacity": 4, "products": []}
+		return {"count": prepared_products.size(), "capacity": 4, "products": prepared_products.duplicate(true)}
 
 	func load_f3_youtiao(_recipe_id: StringName, quantity: int) -> Dictionary:
 		if int(inventory.get("stock.youtiao.plain_dough", 0)) < quantity:
@@ -100,8 +105,45 @@ func _run() -> void:
 	fryer.call("refresh_from_session")
 	_check(bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)), "the visible upper-left portion of the serving plate accepts a finished youtiao")
 	_check(not fryer.call("_requires_timed_session_refresh"), "a ready fryer stops rebuilding drag sources before a serving-tray drag")
+	var ready_snapshot_calls := session.machine_snapshot_calls
+	for _tick in 8:
+		fryer.call("_process", 0.11)
+	_check(session.machine_snapshot_calls == ready_snapshot_calls, "a ready fryer performs no periodic session snapshots while its output is draggable")
+
+	# Prepared products may be consumed by the pancake station rather than by the
+	# fryer itself. Keep that presentation event-driven without touching a live
+	# native drag control until Godot has completed the drag.
+	session.prepared_products = [{"product_id": &"product.youtiao.plain"}]
+	session.prepared_product_slots_changed.emit({})
+	_check(fryer.plate_sources[0].visible, "an external prepared-slot update refreshes the finished plate without polling")
+	var plate_source := fryer.plate_sources[0] as ProductDragSource
+	plate_source.set("_native_drag_in_progress", true)
+	ready_snapshot_calls = session.machine_snapshot_calls
+	session.prepared_products.clear()
+	session.prepared_product_slots_changed.emit({})
+	_check(session.machine_snapshot_calls == ready_snapshot_calls and plate_source.visible, "an external slot update does not reconfigure a live drag source")
+	plate_source.set("_native_drag_in_progress", false)
+	plate_source.drag_ended.emit(plate_source.source_ref(), true)
+	await process_frame
+	_check(session.machine_snapshot_calls == ready_snapshot_calls + 1 and not plate_source.visible, "the deferred slot refresh runs immediately after native drag completion")
 	fryer._machine["state"] = &"draining"
 	_check(bool(fryer.call("_requires_timed_session_refresh")), "a draining fryer continues to refresh until its output becomes draggable")
+
+	# The advanced raised basket has a lower mesh bed than the basic artwork.
+	# Its batch needs a dedicated display offset without changing the lowered
+	# frying layout shared by both machine appearances.
+	session.machine["state"] = &"loaded"
+	session.machine["quantity"] = 1
+	session.machine["occupied_slot_indices"] = [0]
+	session.machine["tier"] = 0
+	fryer.call("refresh_from_session")
+	var basic_raised_position: Vector2 = fryer.product_visuals[0].position
+	session.machine["tier"] = 1
+	fryer.call("refresh_from_session")
+	_check(fryer.product_visuals[0].position == basic_raised_position + Vector2(0.0, 24.0), "advanced raised fryer places dough on its lower wire-mesh bed")
+	session.machine["state"] = &"frying"
+	fryer.call("refresh_from_session")
+	_check(fryer.product_visuals[0].position == fryer.lowered_basket_slots[0].position, "advanced lowered fryer keeps the authored frying slot position")
 
 	fryer.queue_free()
 	session.queue_free()

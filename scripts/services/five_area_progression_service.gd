@@ -18,9 +18,6 @@ var unlocked_product_ids: Dictionary = {&"product.pancake.custom": true}
 var unlocked_stock_ids: Dictionary = {
 	&"stock.pancake.batter": true,
 	&"stock.pancake.egg": true,
-	&"stock.pancake.baocui": true,
-	&"stock.pancake.scallion": true,
-	&"stock.pancake.sauce.sweet_flour": true,
 }
 var unlocked_automation_ids: Dictionary = {}
 var owned_assist_ids: Dictionary = {}
@@ -322,9 +319,6 @@ func load_snapshot(value: Dictionary) -> void:
 	for starter_stock_id in [
 		&"stock.pancake.batter",
 		&"stock.pancake.egg",
-		&"stock.pancake.baocui",
-		&"stock.pancake.scallion",
-		&"stock.pancake.sauce.sweet_flour",
 	]:
 		unlocked_stock_ids[starter_stock_id] = true
 	unlocked_automation_ids = _load_id_set(value.get("unlocked_automation_ids", []))
@@ -372,7 +366,7 @@ func _normalize_three_area_state() -> void:
 	for starter_recipe in [&"recipe.pancake.base"]:
 		unlocked_recipe_ids[starter_recipe] = true
 	unlocked_product_ids[&"product.pancake.custom"] = true
-	for starter_stock in [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]:
+	for starter_stock in [&"stock.pancake.batter", &"stock.pancake.egg"]:
 		unlocked_stock_ids[starter_stock] = true
 
 

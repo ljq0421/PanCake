@@ -17,6 +17,7 @@ $checks = @(
 	'res://tests/unit/customer_portrait_catalog_self_check.gd',
 	'res://tests/unit/five_area_product_visuals_self_check.gd',
 	'res://tests/unit/five_area_game_session_store_self_check.gd',
+	'res://tests/unit/pancake_add_on_promotion_self_check.gd',
 	'res://tests/unit/five_area_order_service_self_check.gd',
 	'res://tests/unit/five_area_playable_order_self_check.gd',
 	'res://tests/unit/five_area_f4_services_self_check.gd',

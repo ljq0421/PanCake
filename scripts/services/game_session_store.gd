@@ -14,9 +14,9 @@ signal prepared_product_slots_changed(snapshot: Dictionary)
 const SAVE_PATH := "user://project_cake_save.json"
 const SOY_TEST_SAVE_PATH := "user://project_cake_soy_test_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
-## v8 intentionally starts a new three-area upgrade economy. Older saves are
+## v9 intentionally starts a new ingredient-unlock economy. Older saves are
 ## rejected by _load_save and therefore restart from the new opening state.
-const SAVE_VERSION := 8
+const SAVE_VERSION := 9
 const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
@@ -114,6 +114,10 @@ func _ready() -> void:
 	_load_save()
 	_restore_progression()
 	_reconcile_unrecorded_settled_orders()
+	# An interrupted UI callback used to leave an open business day with every
+	# formal order terminal. Restore the storefront invariant on load as well,
+	# so existing affected saves recover without requiring another checkout.
+	_replenish_playable_order_queue()
 	_load_settings()
 	apply_settings()
 
@@ -483,6 +487,18 @@ func ensure_active_playable_order() -> Dictionary:
 	return result
 
 
+## Keep the shop populated independently of whichever scene happened to
+## settle, refuse, or expire the preceding order. This belongs to GameSession,
+## not a workstation callback, because the queue is durable business state.
+func _replenish_playable_order_queue() -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	if not bool(_progression.get("day_open")):
+		return {"success": false, "reason": &"business_day_closed"}
+	return ensure_active_playable_order()
+
+
 func _queue_contains_tutorial(queue: Array) -> bool:
 	for order_variant in queue:
 		if not StringName(_tutorial_identity_for_order(Dictionary(order_variant)).get("tutorial_id", &"")).is_empty():
@@ -500,18 +516,25 @@ func _queue_contains_special_customer(queue: Array) -> bool:
 
 func _active_order_promotion_context() -> Dictionary:
 	var promotions := Array(_save_data.get(ORDER_PROMOTIONS_KEY, []))
+	var newest_legacy_promotion := {}
 	for promotion_variant in promotions:
 		var promotion := Dictionary(promotion_variant)
 		var remaining := clampi(int(promotion.get("remaining_orders", 0)), 0, 3)
 		if remaining <= 0:
 			continue
-		return {
+		var context := {
 			"kind": StringName(promotion.get("kind", &"")),
 			"target_id": StringName(promotion.get("target_id", &"")),
 			"source_growth_id": StringName(promotion.get("source_growth_id", &"")),
 			"next_index": 3 - remaining,
 		}
-	return {}
+		if bool(promotion.get("latest_first", false)):
+			return context
+		# Versions before latest-first promotion order appended items to the
+		# back. Preserve the intended newest-unlock behaviour when loading one
+		# of those saves by keeping its last pending item as a fallback.
+		newest_legacy_promotion = context
+	return newest_legacy_promotion
 
 
 func _enqueue_generated_tutorial_promotions(candidates: Array) -> void:
@@ -553,7 +576,14 @@ func _enqueue_order_promotion(promotion: Dictionary) -> void:
 	for existing_variant in promotions:
 		if StringName(Dictionary(existing_variant).get("source_growth_id", &"")) == source_growth_id:
 			return
-	promotions.append(promotion.duplicate(true))
+	# A new unlock should be visible in the next customer order. This matters
+	# when debug progression (or a recovered save) activates several upgrades at
+	# once: a FIFO queue made the latest topping wait behind every earlier
+	# promotion, so customers could keep ordering plain pancakes despite the
+	# newly available ingredient.
+	var newest_promotion := promotion.duplicate(true)
+	newest_promotion["latest_first"] = true
+	promotions.push_front(newest_promotion)
 	_save_data[ORDER_PROMOTIONS_KEY] = promotions
 
 
@@ -664,6 +694,7 @@ func refuse_formal_order(order_id: StringName) -> Dictionary:
 	var result: Dictionary = _order_service.call("refuse_order", order_id)
 	if bool(result.get("success", false)) and not bool(result.get("already_settled", false)):
 		_finalize_failed_formal_order(result)
+		result["refill"] = _replenish_playable_order_queue()
 	return result
 
 
@@ -1508,6 +1539,8 @@ func settle_formal_order(order_id: StringName) -> Dictionary:
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
+		if not bool(result.get("already_settled", false)):
+			result["refill"] = _replenish_playable_order_queue()
 	return result
 
 
@@ -1665,6 +1698,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 		})
 	_sync_business_services_to_save()
 	_touch_and_write()
+	settlement["refill"] = _replenish_playable_order_queue()
 	order_changed.emit({})
 	order_settled.emit(settlement.duplicate(true))
 	return settlement
@@ -2692,6 +2726,8 @@ func abandon_active_formal_order(reason: StringName = &"business_day_expired") -
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
+		if not is_hard_cutoff:
+			result["refill"] = _replenish_playable_order_queue()
 	return result
 
 
@@ -2703,6 +2739,8 @@ func abandon_formal_order(order_id: StringName, reason: StringName = &"refused")
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
+		if reason not in [&"business_day_expired", &"timer_expired"]:
+			result["refill"] = _replenish_playable_order_queue()
 	return result
 
 

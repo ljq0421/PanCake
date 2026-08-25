@@ -50,6 +50,8 @@ const FORMAL_PAYMENT_BURST_SPARK_COUNT := 10
 const FORMAL_PAYMENT_GOLD := Color(1.0, 0.72, 0.12, 1.0)
 const FORMAL_PAYMENT_GOLD_BRIGHT := Color(1.0, 0.94, 0.54, 1.0)
 const RESULT_OVERLAY_Z_INDEX := 300
+const TOP_WARNING_DURATION_SECONDS := 2.0
+const TOP_WARNING_FADE_SECONDS := 0.20
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
@@ -61,6 +63,7 @@ const RESULT_OVERLAY_Z_INDEX := 300
 @onready var pending_payment_button: Button = %PendingPaymentButton
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
+@onready var top_warning_label: Label = %TopWarningLabel
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
 @onready var fixed_material_lock_artworks: Array[Control] = [
 	$SafeArea/LockedIngredientArtwork/Slot01,
@@ -88,6 +91,7 @@ var _formal_payment_collection_active := false
 var _workshop_payment_display_hidden := false
 var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
+var _top_warning_tween: Tween
 
 
 func _ready() -> void:
@@ -120,6 +124,7 @@ func _ready() -> void:
 		if station.lock_cover != null:
 			station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	multi_griddle_station.status_message.connect(_show_station_status)
+	multi_griddle_station.transient_warning_requested.connect(_show_top_warning)
 	if pancake_worktop_hotspots != null:
 		pancake_worktop_hotspots.status_message.connect(_show_station_status)
 	for service_slot in customer_service_slots:
@@ -358,6 +363,9 @@ func _on_customer_service_delivery_requested(order_id: StringName, item_index: i
 
 func _on_formal_shell_changed(_snapshot: Dictionary = {}) -> void:
 	_refresh_formal_shell()
+	# The service owns refill/promotion, so every durable order change must also
+	# rebuild the service slots instead of waiting for a legacy UI callback.
+	_refresh_customer_queue()
 	_refresh_pancake_drag_sources()
 
 
@@ -559,8 +567,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"filled": return {"target": fresh_soy_station.sugar_jar, "message": "按订单选择无糖、正常糖或多糖，再拖杯交付"}
 		&"area.pancake":
 			if _multi_griddle_mode_active:
-				var active_griddle := multi_griddle_station.units[0] as Control if not multi_griddle_station.units.is_empty() else multi_griddle_station
-				return {"target": active_griddle, "message": "选择空鏊添加面糊；每张鏊子独立摊、翻、加料和出餐"}
+				return _tutorial_pancake_griddle_guide(session, area_id)
 			match p1_session.phase:
 				P1Session.Phase.SPREAD: return {"target": ladle_button, "message": "舀取面糊，在鏊面摊成完整饼皮"}
 				P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE: return {"target": step_action_button, "message": "观察火候并在合适时机翻面或确认"}
@@ -569,6 +576,54 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				P1Session.Phase.PACKAGE: return {"target": paper_sleeve_button, "message": "选择可用包装完成打包"}
 				P1Session.Phase.READY_TO_SERVE: return {"target": _tutorial_delivery_target(session, area_id), "message": "点击订单商品交付经典煎饼"}
 	return {}
+
+
+func _tutorial_pancake_griddle_guide(session: Node, area_id: StringName) -> Dictionary:
+	if multi_griddle_station.units.is_empty():
+		return {}
+	var griddle := multi_griddle_station.units[0] as CompactGriddleUnit
+	if griddle == null:
+		return {}
+	match griddle.state:
+		CompactGriddleUnit.State.IDLE:
+			return {
+				"target": _pancake_worktop_target("BatterLadleHolderHotspot", griddle),
+				"message": "第1步：按住面糊勺，拖到空鏊子倒入面糊",
+			}
+		CompactGriddleUnit.State.BATTER:
+			return {
+				"target": griddle.pancake_surface,
+				"message": "第2步：用摊饼器在鏊面画圈，把面糊摊成完整饼皮",
+			}
+		CompactGriddleUnit.State.FIRST_SIDE:
+			if not griddle.pancake_model.has_egg():
+				return {
+					"target": _pancake_worktop_target("EggCarton/Hotspot", griddle.pancake_surface),
+					"message": "第3步：把鸡蛋拖到饼面，再用摊饼器把蛋液摊开",
+				}
+			var first_side_heat := Dictionary(griddle.cooking_heat_status())
+			if bool(first_side_heat.get("charred", false)):
+				return {"target": griddle.main_action, "message": "第一面已焦糊：请立刻点击“翻面”，火候分已下降"}
+			if bool(first_side_heat.get("flip_ready", false)):
+				return {"target": griddle.main_action, "message": "第4步：现在可翻面，点击“翻面”"}
+			return {"target": griddle.heat_status_label, "message": "第4步：观察火候计时，出现“现在可翻面”后再点击翻面"}
+		CompactGriddleUnit.State.SECOND_SIDE:
+			var second_side_heat := Dictionary(griddle.cooking_heat_status())
+			if bool(second_side_heat.get("charred", false)):
+				return {"target": griddle.heat_status_label, "message": "第二面已焦糊：立即从饼边开始折叠，火候分已下降"}
+			return {"target": griddle.pancake_surface, "message": "第5步：第二面继续受热；从饼边向内拖动，完成两次折叠"}
+		CompactGriddleUnit.State.GARNISH, CompactGriddleUnit.State.FOLDING:
+			return {"target": griddle.pancake_surface, "message": "第5步：从饼边向内拖动，完成两次折叠并装袋"}
+		CompactGriddleUnit.State.READY:
+			return {"target": _tutorial_delivery_target(session, area_id), "message": "第6步：把完成的煎饼拖到订单商品上交付"}
+	return {}
+
+
+func _pancake_worktop_target(path: String, fallback: Control) -> Control:
+	if pancake_worktop_hotspots == null:
+		return fallback
+	var target := pancake_worktop_hotspots.get_node_or_null(NodePath(path)) as Control
+	return target if target != null else fallback
 
 
 func _tutorial_delivery_target(session: Node, area_id: StringName) -> Control:
@@ -1368,6 +1423,23 @@ func _on_waste_active_griddle_clear_requested() -> void:
 
 func _show_station_status(message: String) -> void:
 	tool_status_label.text = message
+
+
+func _show_top_warning(message: String) -> void:
+	if top_warning_label == null:
+		return
+	if _top_warning_tween != null and _top_warning_tween.is_valid():
+		_top_warning_tween.kill()
+	top_warning_label.text = message
+	top_warning_label.modulate = Color.WHITE
+	top_warning_label.visible = true
+	_top_warning_tween = create_tween()
+	_top_warning_tween.tween_interval(TOP_WARNING_DURATION_SECONDS)
+	if _formal_payment_should_reduce_motion():
+		_top_warning_tween.tween_callback(func() -> void: top_warning_label.visible = false)
+		return
+	_top_warning_tween.tween_property(top_warning_label, "modulate:a", 0.0, TOP_WARNING_FADE_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_top_warning_tween.tween_callback(func() -> void: top_warning_label.visible = false)
 
 
 static func _tray_result_summary(settlement: Dictionary) -> Dictionary:

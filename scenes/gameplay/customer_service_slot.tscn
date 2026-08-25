@@ -19,7 +19,7 @@ card_height_three_items = 320.0
 row_top = 38.0
 row_height = 72.0
 row_gap = 8.0
-product_icon_offset = Vector2(20, 10)
+product_icon_offset = Vector2(20, 0)
 product_icon_size = Vector2(64, 64)
 ingredient_grid_offset = Vector2(82, 7)
 ingredient_grid_spacing = Vector2(36, 31)
@@ -36,17 +36,6 @@ offset_bottom = 385.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-
-[node name="PortraitButton" type="Button" parent="." unique_id=124302953]
-unique_name_in_owner = true
-z_index = -19
-layout_mode = 0
-offset_left = 12.0
-offset_top = 58.0
-offset_right = 162.0
-offset_bottom = 312.0
-tooltip_text = "点击切换当前制作目标"
-flat = true
 
 [node name="OrderPanel" type="Control" parent="." unique_id=1300932323]
 z_index = 30
@@ -158,14 +147,9 @@ item_index = 1
 [node name="ItemIcon2" type="TextureRect" parent="OrderPanel/ItemButton2" unique_id=953765645]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = -1
-anchor_top = -0.16100001
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.823
-offset_left = -2.0
-offset_top = -0.017999649
-offset_right = -2.0
-offset_bottom = 0.973999
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -202,15 +186,9 @@ item_index = 2
 [node name="ItemIcon3" type="TextureRect" parent="OrderPanel/ItemButton3" unique_id=1518845551]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.38700002
-anchor_top = -0.177
-anchor_right = 0.61300004
-anchor_bottom = 0.823
-offset_left = -0.0059986115
-offset_top = -0.026000023
-offset_right = -0.006000519
-offset_bottom = -0.026000977
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -246,20 +224,11 @@ text = "特殊规则摘要"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="PatienceLabel" type="Label" parent="OrderPanel" unique_id=702930717]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 84.0
-offset_top = 304.0
-offset_right = 270.0
-offset_bottom = 336.0
-horizontal_alignment = 2
-
 [node name="PatienceBar" type="ProgressBar" parent="OrderPanel" unique_id=984888558]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 75.0
-offset_top = 308.0
-offset_right = 255.0
-offset_bottom = 329.0
+offset_left = 51.0
+offset_top = 135.0
+offset_right = 217.0
+offset_bottom = 147.0
 show_percentage = false

@@ -52,9 +52,9 @@ static func _tutorial_order(progression_snapshot: Dictionary, tutorial: Dictiona
 	# consume their own queued tutorial IDs when those areas are implemented.
 	if active_kind != &"area" or active_id != &"area.pancake":
 		return {}
-	if not _owns_all(progression_snapshot, [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]):
+	if not _owns_all(progression_snapshot, [&"stock.pancake.egg"]):
 		return {}
-	var order := _legacy_order(&"order.pancake.classic")
+	var order := _legacy_order(&"order.pancake.egg")
 	order["tutorial_no_countdown"] = true
 	order["tutorial_kind"] = active_kind
 	order["tutorial_id"] = active_id

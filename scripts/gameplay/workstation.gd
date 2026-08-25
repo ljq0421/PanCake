@@ -2811,7 +2811,7 @@ func _refresh_growth_section(message: String = "") -> void:
 		return
 	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
 	var pending_growth_ids: Array = Array(snapshot.get("pending_growth_ids", []))
-	var balance_text := "现有 %d 金币 · 口碑 %d · 全部 20 项升级均可在工坊查看；本夜可预订多个，次日统一生效" % [
+	var balance_text := "现有 %d 金币 · 口碑 %d · 全部 21 项升级均可在工坊查看；本夜可预订多个，次日统一生效" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
 	]
@@ -3597,9 +3597,10 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 					order = candidate
 					break
 		if order.is_empty():
-			if _customer_service_slot_signatures.has(service_slot_index):
-				customer_service_slots[service_slot_index].call("bind_order", {}, null, [], [], 0)
-				_customer_service_slot_signatures.erase(service_slot_index)
+			# Empty slots must be cleared even on the first tutorial refresh, when they
+			# have no cached signature yet. Otherwise their scene-default card remains visible.
+			customer_service_slots[service_slot_index].call("bind_order", {}, null, [], [], 0)
+			_customer_service_slot_signatures.erase(service_slot_index)
 			continue
 		var ratio := _formal_order_patience_ratio(order)
 		var reaction := &"impatient" if ratio <= P1Session.IMPATIENT_RATIO_THRESHOLD else &"neutral"

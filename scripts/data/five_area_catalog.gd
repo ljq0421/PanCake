@@ -5,7 +5,7 @@ extends RefCounted
 ## counts and pending purchases; this catalog intentionally contains no save/UI
 ## state.
 
-const BALANCE_VERSION := 8
+const BALANCE_VERSION := 9
 const PANCAKE_WIDE_SPREADER_WIDTH_MULTIPLIER := 1.65
 
 const AREA_IDS: Array[StringName] = [
@@ -115,7 +115,7 @@ const SAUCE_DEFINITIONS := {
 }
 
 const RECIPE_DEFINITIONS := {
-	&"recipe.pancake.base": {"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion", &"stock.pancake.sauce.sweet_flour"]},
+	&"recipe.pancake.base": {"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg"]},
 	&"recipe.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "stock_ids": [&"stock.youtiao.plain_dough"]},
 	&"recipe.youtiao.sesame": {"label": "芝麻油条", "area_id": &"area.youtiao", "product_id": &"product.youtiao.sesame", "stock_ids": [&"stock.youtiao.plain_dough"]},
 	# Soy milk is ready-made at the serving station.  Flavour buttons unlock
@@ -140,6 +140,9 @@ const AUTOMATION_DEFINITIONS := {
 }
 const RESTOCK_DEFINITIONS := {"stock_definition_is_source": true}
 const GROWTH_DEFINITIONS := {
+	&"growth.add_on.pancake.sweet_flour": {"label":"甜面酱", "kind":&"stock_unlock", "price":6, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":2}}, "unlock_stock_ids":[&"stock.pancake.sauce.sweet_flour"], "anchor_id":&"pancake.sweet_flour"},
+	&"growth.add_on.pancake.baocui": {"label":"薄脆", "kind":&"stock_unlock", "price":8, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":4}}, "unlock_stock_ids":[&"stock.pancake.baocui"], "anchor_id":&"pancake.baocui"},
+	&"growth.add_on.pancake.scallion": {"label":"香葱罐", "kind":&"stock_unlock", "price":8, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":6}}, "unlock_stock_ids":[&"stock.pancake.scallion"], "anchor_id":&"pancake.scallion"},
 	&"growth.tool.pancake.wide_spreader": {"label":"宽幅摊饼器", "kind":&"tool", "price":12, "min_day":2, "requires_area_id":&"area.pancake", "anchor_id":&"pancake.spreader"},
 	&"growth.add_on.pancake.red_chili": {"label":"辣椒酱", "kind":&"stock_unlock", "price":8, "min_reputation":10, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.sauce.red_chili"], "anchor_id":&"pancake.chili"},
 	&"growth.add_on.pancake.ham_sausage": {"label":"火腿", "kind":&"stock_unlock", "price":12, "min_day":4, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.ham_sausage"], "anchor_id":&"pancake.ham"},
@@ -161,7 +164,7 @@ const GROWTH_DEFINITIONS := {
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
-	&"growth.tool.pancake.wide_spreader", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.red_chili", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.tomato", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
+	&"growth.add_on.pancake.sweet_flour", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.tool.pancake.wide_spreader", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.red_chili", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.tomato", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
 	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.flavor.youtiao.sesame", &"growth.equipment.youtiao.advanced",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.assist.fresh_soy_milk.ice", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
 ]
@@ -186,6 +189,9 @@ const DAILY_GOAL_DEFINITIONS := {
 ## them to the legacy pancake simulation IDs, but eligibility never comes from
 ## visible material slots or widget state.
 const PANCAKE_ORDER_TEMPLATES := {
+	&"order.pancake.egg": {"title": "鸡蛋煎饼", "ingredient_stock_ids": [&"stock.pancake.egg"], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 68.0, "payment_coins": 3, "customer_line": "来一份鸡蛋煎饼，不加其他小料。"},
+	&"order.pancake.egg_sweet": {"title": "鸡蛋甜面酱煎饼", "ingredient_stock_ids": [&"stock.pancake.egg"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 70.0, "payment_coins": 4, "customer_line": "鸡蛋煎饼刷甜面酱就好。"},
+	&"order.pancake.crisp": {"title": "薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 5, "customer_line": "加薄脆，刷甜面酱，不要葱。"},
 	&"order.pancake.classic": {"title": "经典杂粮煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 3, "customer_line": "来一份经典的，薄脆和葱花都要。"},
 	&"order.pancake.double_egg": {"title": "双蛋薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 5, "customer_line": "鸡蛋加双份，薄脆和葱花照常。"},
 	&"order.pancake.chili_simple": {"title": "香辣薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.red_chili"], "heat_preference": &"golden", "time_limit": 74.0, "payment_coins": 8, "customer_line": "薄脆和葱花都要，刷辣酱。"},

@@ -32,8 +32,20 @@ func _run() -> void:
 	_check(slot.patience_bar.get_theme_stylebox(&"fill").bg_color == Color("dc5a3e"), "patience at 30 percent or below renders red")
 	order["remaining_patience_seconds"] = 60.0
 	slot.bind_order(order, null, [null], [], 17)
-	_check(slot.order_title.text == "完美完成可得 ×17 金币", "order card top displays the exact perfect-completion quote")
-	_check(not slot.coin_label.visible, "order card removes the duplicate lower coin amount")
+	_check(slot.order_title.text == "17", "order card top displays the exact perfect-completion quote")
+	var two_item_order := order.duplicate(true)
+	two_item_order["items"] = [
+		{"product_id": &"product.pancake.custom", "quantity": 1, "prepared_product_instance_ids": []},
+		{"product_id": &"product.youtiao.plain", "quantity": 1, "prepared_product_instance_ids": []},
+	]
+	slot.bind_order(two_item_order, null, [null, null], [[], []], 17)
+	_check(
+		slot.get_node("OrderPanel").size.y == 240.0
+		and slot.patience_bar.position == Vector2(52.0, 214.0)
+		and slot.patience_bar.size == Vector2(168.0, 10.0)
+		and is_equal_approx(slot.patience_bar.value, 100.0),
+		"a full two-item order uses the same patience-fill channel as a one-item order",
+	)
 	var multi_item_order := order.duplicate(true)
 	multi_item_order["items"] = [
 		{"product_id": &"product.pancake.custom", "quantity": 1, "prepared_product_instance_ids": []},
@@ -49,8 +61,18 @@ func _run() -> void:
 		and slot.item_buttons[0].visible
 		and slot.item_buttons[1].visible
 		and slot.item_buttons[2].visible
+		and slot.patience_bar.position == Vector2(52.0, 294.0)
+		and slot.patience_bar.size == Vector2(168.0, 10.0)
+		and is_equal_approx(slot.patience_bar.value, 100.0)
 		and slot.get_node("OrderPanel/IngredientSlot1_8").visible,
 		"three ordered products render three simple rows and allow eight ingredient slots in one row",
+	)
+	_check(
+		slot.item_buttons[0].position.y == 42.0
+		and slot.item_buttons[1].position.y == 122.0
+		and slot.item_buttons[2].position.y == 202.0
+		and slot.item_icons.all(func(icon: TextureRect) -> bool: return icon.position == Vector2.ZERO and icon.size == slot.product_icon_size),
+		"each product icon is vertically centered in its order row and fills its delivery target",
 	)
 	slot.bind_order(order, null, [null], [[]], 17)
 	_check(
@@ -60,8 +82,10 @@ func _run() -> void:
 		and not slot.item_buttons[2].visible,
 		"a one-product order collapses the simple card to one row",
 	)
-	_check(slot.portrait.z_index < 0 and slot.portrait_button.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("FocusFrame") == null, "portrait and transparent portrait hit area render behind all order-card controls without a customer focus frame")
-	_check(slot.portrait_button.mouse_filter == Control.MOUSE_FILTER_STOP and slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "portrait and order card keep separate explicit click targets")
+	_check(slot.portrait.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("PortraitButton") == null and slot.get_node_or_null("FocusFrame") == null, "portrait renders behind the order-card controls without an unused portrait click target")
+	_check(slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "the order card retains its explicit focus click target")
+	var patience_fill := slot.patience_bar.get_theme_stylebox(&"fill") as StyleBoxFlat
+	_check(slot.patience_bar.position == Vector2(52.0, 134.0) and slot.patience_bar.size == Vector2(168.0, 10.0) and is_equal_approx(slot.patience_bar.value, 100.0) and slot.patience_bar.get_theme_stylebox(&"background").bg_color == Color.TRANSPARENT and patience_fill != null and patience_fill.corner_radius_top_left == 5 and patience_fill.corner_radius_bottom_right == 5, "a full one-item order uses a pill-shaped fill inside the bitmap track")
 	_check(slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "customer slot shell cannot cover unrelated foreground controls")
 	var special_order := {
 		"order_id": &"order.special.ui",

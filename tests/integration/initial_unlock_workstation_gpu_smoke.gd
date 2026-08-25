@@ -308,14 +308,14 @@ func _run() -> void:
 	workstation.call("_refresh_pancake_holding_tray")
 	var holding_slot := workstation.get_node("SafeArea/PancakeHoldingTray/PancakeHoldingSlot01") as Button
 	_check(bool(stored_for_route.get("success", false)) and holding_slot.visible and holding_slot.disabled and holding_slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "formal tray displays a stored pancake without becoming a delivery button")
-	var customer_slot := workstation.get_node("SafeArea/ServiceCustomer%d/PortraitButton" % (target_service_slot + 1)) as Button
-	_move_at(customer_slot.get_global_rect().get_center())
+	var customer_card := workstation.get_node("SafeArea/ServiceCustomer%d/OrderPanel/CardFocusButton" % (target_service_slot + 1)) as Button
+	_move_at(customer_card.get_global_rect().get_center())
 	await process_frame
-	_click_control(customer_slot)
+	_click_control(customer_card)
 	await process_frame
 	var order_after_customer_click: Dictionary = game_session.call("formal_order", target_order_id)
 	var slots_after_customer_click: Array = Array(Dictionary(game_session.call("pancake_holding_tray_snapshot")).get("slots", []))
-	_check(StringName(order_after_customer_click.get("state", &"")) != &"settled" and not slots_after_customer_click.is_empty() and not Dictionary(slots_after_customer_click[0]).is_empty(), "real customer click only focuses the order and does not deliver the displayed tray product")
+	_check(StringName(order_after_customer_click.get("state", &"")) != &"settled" and not slots_after_customer_click.is_empty() and not Dictionary(slots_after_customer_click[0]).is_empty(), "real order-card click only focuses the order and does not deliver the displayed tray product")
 	var order_dish_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
 	_check(not order_dish_target.disabled and order_dish_target.mouse_filter == Control.MOUSE_FILTER_STOP, "order-card product art is a real pointer delivery target")
 	_move_at(order_dish_target.get_global_rect().get_center())

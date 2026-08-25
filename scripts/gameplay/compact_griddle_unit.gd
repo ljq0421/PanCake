@@ -3,6 +3,7 @@ extends Control
 
 signal main_action_requested(unit_index: int)
 signal status_message_requested(message: String)
+signal transient_warning_requested(message: String)
 
 const GRID_SIZE := 64
 const REFERENCE_GRID_SIZE := 128.0
@@ -32,6 +33,13 @@ const MAX_SPREAD_SIMULATION_SAMPLES_PER_FRAME := 1
 ## eight seconds. The griddle bar maps that point to full, not to the model's
 ## absolute 1.0 maximum.
 const HEAT_BAR_FULL_DONENESS := 0.84
+## Keep this aligned with pancake_surface.gdshader: a side begins to show
+## char marks only after it has stayed on the griddle for eight seconds and is
+## sufficiently cooked.  The score system already deducts heat quality for
+## this state; this constant makes the consequence visible while playing.
+const CHARRED_EXPOSURE_SECONDS := 8.0
+const CHARRED_DONENESS := 0.92
+const CHARRED_RATIO_WARNING := 0.10
 ## A single pointer sample used to invoke the full field simulation once per
 ## radial segment (up to fourteen times). Representative weighted anchors keep
 ## the same total spread force without stalling the input frame.
@@ -87,6 +95,7 @@ enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 @onready var package_visual: TextureRect = %PackageVisual
 @onready var main_action: Button = %MainAction
 @onready var heat_bar: ProgressBar = %HeatBar
+@onready var heat_status_label: Label = %HeatStatusLabel
 
 var unit_index := 0
 var state: State = State.IDLE
@@ -112,6 +121,7 @@ var _surface_width_multiplier := 1.0
 var _sauce_stroke_id := -1
 var _batter_pour_center := Vector2.ZERO
 var _batter_pour_amount := 0.0
+var _batter_thickness_warning_sent := false
 var _batter_ladle_armed := false
 var _last_tool_direction := Vector2(0.45, 0.89).normalized()
 var _scrape_sampler := StrokeSampler.new(SPREADER_SAMPLE_SPACING)
@@ -347,12 +357,18 @@ func advance_main() -> Dictionary:
 		State.FIRST_SIDE:
 			if pancake_model.covered_cell_count() <= 0:
 				return {"success": false, "message": "鏊面还没有完整饼皮"}
+			var first_side_heat := cooking_heat_status()
 			_stop_egg_crack_effect()
 			pancake_model.flip(false)
 			p1_session.phase = P1Session.Phase.SECOND_SIDE
 			state = State.SECOND_SIDE
 			_refresh_ui()
-			return {"success": true, "message": "鏊子%d已翻面，继续观察第二面" % (unit_index + 1)}
+			var result_message := "鏊子%d已翻面，继续观察第二面" % (unit_index + 1)
+			if bool(first_side_heat.get("charred", false)):
+				result_message = "鏊子%d已翻面，但第一面已焦糊，火候分会降低" % (unit_index + 1)
+			elif bool(first_side_heat.get("flip_ready", false)):
+				result_message = "鏊子%d在建议火候翻面，继续观察第二面" % (unit_index + 1)
+			return {"success": true, "message": result_message}
 		State.SECOND_SIDE:
 			return {"success": false, "message": "第二面继续受热；火候仅影响评分，可随时刷酱、放料或折叠"}
 		State.GARNISH:
@@ -654,6 +670,7 @@ func reset_unit() -> void:
 	_egg_sampler.reset()
 	_batter_pour_amount = 0.0
 	_batter_pour_center = Vector2.ZERO
+	_batter_thickness_warning_sent = false
 	_batter_ladle_armed = false
 	_spread_has_previous = false
 	_reset_surface_action()
@@ -692,7 +709,7 @@ func _on_surface_pointer_started(local_position: Vector2) -> void:
 		_spreader_speed_band = SPREADER_SPEED_MEDIUM
 		pancake_surface.spreader_motion_valid = false
 	elif _surface_action == SURFACE_ACTION_POUR_BATTER:
-		_batter_pour_center = grid_position
+		_set_batter_pour_center(local_position)
 		_batter_pour_amount = 0.0
 	if _surface_action == SURFACE_ACTION_BRUSH_SAUCE:
 		_sauce_stroke_id = pancake_model.begin_sauce_stroke()
@@ -747,6 +764,9 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 func _process_batter_pour(delta: float) -> void:
 	if state != State.BATTER:
 		return
+	# Keep the stream under the ladle throughout the held gesture rather than
+	# locking it to the point where the player first pressed the griddle.
+	_set_batter_pour_center(pancake_surface.pointer_local_position)
 	var remaining_radius_growth := MAX_BATTER_POUR_RADIUS - (MIN_BATTER_POUR_RADIUS + _batter_pour_amount)
 	if remaining_radius_growth <= 0.0:
 		return
@@ -756,7 +776,17 @@ func _process_batter_pour(delta: float) -> void:
 	_batter_pour_amount += addition
 	var pour_radius := minf(MIN_BATTER_POUR_RADIUS + _batter_pour_amount, MAX_BATTER_POUR_RADIUS)
 	pancake_model.add_batter(_batter_pour_center, addition, pour_radius)
-	state_label.text = "正在倒入面糊 %.1f · 松开后放回面糊勺" % _batter_pour_amount
+	if _batter_pour_amount > MAX_BATTER_AMOUNT and not _batter_thickness_warning_sent:
+		_batter_thickness_warning_sent = true
+		transient_warning_requested.emit("面饼可能偏厚")
+	var thickness_warning := " · 面饼可能偏厚" if _batter_pour_amount > MAX_BATTER_AMOUNT else ""
+	state_label.text = "正在倒入面糊 %.1f%s · 拖动勺子可调整落点，松开后放回" % [_batter_pour_amount, thickness_warning]
+
+
+func _set_batter_pour_center(local_position: Vector2) -> void:
+	if not PancakeSpace.is_inside_pan(local_position, pancake_surface.size, pancake_model.parameters.pan_height_ratio):
+		return
+	_batter_pour_center = Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
 
 
 func _process_manual_spread(delta: float) -> void:
@@ -1360,12 +1390,63 @@ func _refresh_fold_visual() -> void:
 func _refresh_heat_visual() -> void:
 	if not is_node_ready():
 		return
-	var visible_side_doneness := pancake_model.mean_side_doneness(pancake_model.is_flipped)
+	var heat_status := cooking_heat_status()
+	var cooking := bool(heat_status.get("cooking", false))
+	heat_bar.visible = cooking
+	heat_status_label.visible = cooking
+	if not cooking:
+		heat_bar.value = 0.0
+		return
+	var visible_side_doneness := float(heat_status.get("doneness", 0.0))
 	heat_bar.value = clampf(visible_side_doneness / HEAT_BAR_FULL_DONENESS * 100.0, 0.0, 100.0)
-	if state == State.FIRST_SIDE:
-		state_label.text = "第一面 %.1f秒 · 可直接加料或折叠（交付-12分）" % first_side_seconds
-	elif state == State.SECOND_SIDE:
-		state_label.text = "第二面 %.1f秒" % second_side_seconds
+	var charred := bool(heat_status.get("charred", false))
+	heat_bar.modulate = Color(1.0, 0.48, 0.34, 1.0) if charred else Color.WHITE
+	heat_status_label.modulate = Color(1.0, 0.50, 0.32, 1.0) if charred else Color.WHITE
+	heat_status_label.text = _heat_status_text(heat_status)
+
+
+func cooking_heat_status() -> Dictionary:
+	var cooking := state in [State.FIRST_SIDE, State.SECOND_SIDE]
+	if not cooking:
+		return {"cooking": false, "phase": &"", "seconds": 0.0, "doneness": 0.0, "flip_ready": false, "charred": false}
+	var first_side := state == State.FIRST_SIDE
+	var visible_side_doneness := pancake_model.mean_side_doneness(pancake_model.is_flipped)
+	var charred_ratio := _visible_side_charred_ratio()
+	return {
+		"cooking": true,
+		"phase": &"first_side" if first_side else &"second_side",
+		"seconds": first_side_seconds if first_side else second_side_seconds,
+		"doneness": visible_side_doneness,
+		"flip_ready": first_side and visible_side_doneness >= P1Session.RECOMMENDED_FLIP_DONENESS,
+		"charred": charred_ratio >= CHARRED_RATIO_WARNING,
+		"charred_ratio": charred_ratio,
+	}
+
+
+func _visible_side_charred_ratio() -> float:
+	var exposure_field := pancake_model.back_cooking_exposure_seconds if pancake_model.is_flipped else pancake_model.cooking_exposure_seconds
+	var doneness_field := pancake_model.back_doneness if pancake_model.is_flipped else pancake_model.doneness
+	var covered_cells := 0
+	var charred_cells := 0
+	for index in pancake_model.cell_count:
+		if pancake_model.coverage[index] <= 0.0:
+			continue
+		covered_cells += 1
+		if exposure_field[index] >= CHARRED_EXPOSURE_SECONDS and doneness_field[index] >= CHARRED_DONENESS:
+			charred_cells += 1
+	return float(charred_cells) / maxf(float(covered_cells), 1.0)
+
+
+func _heat_status_text(heat_status: Dictionary) -> String:
+	var is_first_side := StringName(heat_status.get("phase", &"")) == &"first_side"
+	var side_label := "第一面" if is_first_side else "第二面"
+	var seconds := float(heat_status.get("seconds", 0.0))
+	var doneness_percent := roundi(float(heat_status.get("doneness", 0.0)) * 100.0)
+	if bool(heat_status.get("charred", false)):
+		return "%s火候计时 %.1f秒 · 已焦糊，火候分下降" % [side_label, seconds]
+	if is_first_side and bool(heat_status.get("flip_ready", false)):
+		return "%s火候计时 %.1f秒 · 现在可翻面" % [side_label, seconds]
+	return "%s火候计时 %.1f秒 · 火候 %d%%" % [side_label, seconds, doneness_percent]
 
 
 static func _ingredient_type_for_stock(stock_id: StringName) -> StringName:

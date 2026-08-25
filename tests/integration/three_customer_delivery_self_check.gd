@@ -52,6 +52,8 @@ func _run() -> void:
 		"base_coins": 3,
 		"items": [item.duplicate(true)],
 	}
+	# Reproduce the first tutorial render, before any service-slot cache exists.
+	workstation.set("_customer_service_slot_signatures", {})
 	workstation.call("_refresh_customer_service_slots", [tutorial_layout_order])
 	var tutorial_left := workstation.get_node("SafeArea/ServiceCustomer1") as Control
 	var tutorial_center := workstation.get_node("SafeArea/ServiceCustomer2") as Control
@@ -74,10 +76,9 @@ func _run() -> void:
 		original_ids_by_slot[int(order.get("service_slot", -1))] = StringName(order.get("order_id", &""))
 	for slot_index in 3:
 		var service_slot := workstation.get_node("SafeArea/ServiceCustomer%d" % (slot_index + 1)) as Control
-		var customer_button := service_slot.get_node("PortraitButton") as Button
 		var card_button := service_slot.get_node("OrderPanel/CardFocusButton") as Button
 		var item_button := service_slot.get_node("OrderPanel/ItemButton1") as Button
-		_check(service_slot.visible and not customer_button.disabled and not card_button.disabled and item_button.visible and not item_button.disabled, "customer, order card, and item in service slot %d are independently clickable" % (slot_index + 1))
+		_check(service_slot.visible and service_slot.get_node_or_null("PortraitButton") == null and not card_button.disabled and item_button.visible and not item_button.disabled, "order card and item in service slot %d are independently clickable without a portrait target" % (slot_index + 1))
 	var waiting_strip := workstation.get_node("SafeArea/CustomerStrip") as Control
 	_check(not waiting_strip.visible, "waiting customers are not shown in the shop UI")
 
@@ -137,7 +138,6 @@ func _service_slot_scene_contract(workstation: Node) -> bool:
 	for slot_index in 3:
 		var service_slot := workstation.get_node("SafeArea/ServiceCustomer%d" % (slot_index + 1)) as Control
 		var portrait := service_slot.get_node("Portrait") as TextureRect
-		var portrait_button := service_slot.get_node("PortraitButton") as Button
 		var order_panel := service_slot.get_node("OrderPanel") as Control
 		var card_focus_button := order_panel.get_node("CardFocusButton") as Button
 		var card_background := order_panel.get_node("CardBackground") as TextureRect
@@ -148,13 +148,11 @@ func _service_slot_scene_contract(workstation: Node) -> bool:
 		var slot_rect := Rect2(Vector2.ZERO, service_slot.size)
 		if not slot_rect.encloses(Rect2(portrait.position, portrait.size)):
 			return false
-		if not slot_rect.encloses(Rect2(portrait_button.position, portrait_button.size)):
-			return false
 		if not slot_rect.encloses(Rect2(order_panel.position, order_panel.size)):
 			return false
-		if service_slot.mouse_filter != Control.MOUSE_FILTER_IGNORE or portrait.z_index >= order_panel.z_index or portrait_button.z_index >= order_panel.z_index:
+		if service_slot.mouse_filter != Control.MOUSE_FILTER_IGNORE or portrait.z_index >= order_panel.z_index or service_slot.has_node("PortraitButton"):
 			return false
-		if portrait_button.mouse_filter != Control.MOUSE_FILTER_STOP or card_focus_button.mouse_filter != Control.MOUSE_FILTER_STOP:
+		if card_focus_button.mouse_filter != Control.MOUSE_FILTER_STOP:
 			return false
 		if card_background.texture == null or not card_background.texture.resource_path.ends_with("order_card_background_rows_1_v1.png"):
 			return false

@@ -17,19 +17,24 @@ const TRAY_VISUAL_CAPACITY := 4
 const PLATE_VISUAL_CAPACITY := TRAY_VISUAL_CAPACITY * 2
 const ADVANCED_RAISED_BASKET_OFFSET := Vector2(0.0, 24.0)
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
-const LOWERED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-lowered.png"
-const RAISED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-raised-coherent.png"
-const ADVANCED_LOWERED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png"
-const ADVANCED_RAISED_MACHINE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png"
-const RAW_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png"
-const GOLDEN_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-golden-v5-transparent.png"
-const BURNT_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-burnt-v4.png"
-const PLATE_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-empty-serving-plate-oblique-v2.png"
-const BLACK_SESAME_TRAY_TEXTURE_PATH := "res://resources/art/workstation/material_slots/legacy_trays/black-sesame-square-tray-v2.png"
-const BLACK_SESAME_YOUTIAO_TEXTURE_PATH := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-black-sesame-v1-transparent.png"
 const PLATE_YOUTIAO_REGION := Rect2(174.0, 8.0, 677.0, 1500.0)
 const BLACK_SESAME_YOUTIAO_REGION := Rect2(147.0, 13.0, 218.0, 484.0)
 @export var reduce_motion := false
+
+# Strings, not Texture2D references: the Inspector exposes the exact source
+# artwork without making any of these PNGs a dependency of the loaded scene.
+@export_group("Artwork (lazy-loaded)")
+@export_file("*.png") var lowered_machine_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-lowered.png"
+@export_file("*.png") var raised_machine_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-raised-coherent.png"
+@export_file("*.png") var advanced_lowered_machine_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png"
+@export_file("*.png") var advanced_raised_machine_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png"
+@export_file("*.png") var raw_youtiao_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png"
+@export_file("*.png") var golden_youtiao_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-golden-v5-transparent.png"
+@export_file("*.png") var burnt_youtiao_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-burnt-v4.png"
+# @export_file("*.png") var plate_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-empty-serving-plate-oblique-v2.png"
+@export_file("*.png") var plate_texture_path := "res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png"
+@export_file("*.png") var black_sesame_tray_texture_path := "res://resources/art/workstation/material_slots/legacy_trays/black-sesame-square-tray-v2.png"
+@export_file("*.png") var black_sesame_youtiao_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-black-sesame-v1-transparent.png"
 
 @onready var fryer_visual: TextureRect = %FryerVisual
 @onready var black_sesame_tray: TextureRect = %BlackSesameTray
@@ -333,13 +338,16 @@ func _apply_snapshot() -> void:
 	var capacity := clampi(int(_machine.get("capacity", 0)), 0, product_visuals.size())
 	var occupied := _occupied_slots()
 	var cooking := state in [&"loaded", &"frying"]
+	# Reaching the target fry time does not itself lift the basic basket. Keep
+	# both its artwork and product anchors lowered until the player clicks it.
+	var basket_lowered := state in [&"frying", &"ready_safe", &"overcooking"]
 	var finished_texture := burnt_youtiao_texture if state == &"burnt" else golden_youtiao_texture
-	var basket_slots := lowered_basket_slots if state == &"frying" else raised_basket_slots
+	var basket_slots := lowered_basket_slots if basket_lowered else raised_basket_slots
 	var use_advanced_art := int(_machine.get("tier", 0)) >= 1 or _workshop_advanced_preview
 	if use_advanced_art and advanced_lowered_machine_texture != null and advanced_raised_machine_texture != null:
-		fryer_visual.texture = advanced_lowered_machine_texture if state == &"frying" else advanced_raised_machine_texture
+		fryer_visual.texture = advanced_lowered_machine_texture if basket_lowered else advanced_raised_machine_texture
 	else:
-		fryer_visual.texture = lowered_machine_texture if state == &"frying" else raised_machine_texture
+		fryer_visual.texture = lowered_machine_texture if basket_lowered else raised_machine_texture
 	for index in range(product_visuals.size()):
 		var visible := index < capacity and occupied.has(index)
 		var visual := product_visuals[index]
@@ -349,7 +357,7 @@ func _apply_snapshot() -> void:
 		# The advanced raised artwork places the wire-mesh bed lower than the
 		# basic fryer. Keep the basic authored slots intact and move only the
 		# advanced raised batch onto that mesh plane.
-		visual.position = slot.position + ADVANCED_RAISED_BASKET_OFFSET if use_advanced_art and state != &"frying" else slot.position
+		visual.position = slot.position + ADVANCED_RAISED_BASKET_OFFSET if use_advanced_art and not basket_lowered else slot.position
 		visual.size = slot.size
 		visual.modulate = Color.WHITE
 	for index in range(plate_product_visuals.size()):
@@ -554,16 +562,16 @@ func _plate_youtiao_texture() -> Texture2D:
 func _ensure_visual_resources() -> void:
 	if raised_machine_texture != null:
 		return
-	lowered_machine_texture = _load_texture(LOWERED_MACHINE_TEXTURE_PATH)
-	raised_machine_texture = _load_texture(RAISED_MACHINE_TEXTURE_PATH)
-	advanced_lowered_machine_texture = _load_texture(ADVANCED_LOWERED_MACHINE_TEXTURE_PATH)
-	advanced_raised_machine_texture = _load_texture(ADVANCED_RAISED_MACHINE_TEXTURE_PATH)
-	raw_youtiao_texture = _load_texture(RAW_YOUTIAO_TEXTURE_PATH)
-	golden_youtiao_texture = _load_texture(GOLDEN_YOUTIAO_TEXTURE_PATH)
-	burnt_youtiao_texture = _load_texture(BURNT_YOUTIAO_TEXTURE_PATH)
-	var plate_texture := _load_texture(PLATE_TEXTURE_PATH)
-	black_sesame_tray.texture = _load_texture(BLACK_SESAME_TRAY_TEXTURE_PATH)
-	var black_sesame_texture := _load_texture(BLACK_SESAME_YOUTIAO_TEXTURE_PATH)
+	lowered_machine_texture = _load_texture(lowered_machine_texture_path)
+	raised_machine_texture = _load_texture(raised_machine_texture_path)
+	advanced_lowered_machine_texture = _load_texture(advanced_lowered_machine_texture_path)
+	advanced_raised_machine_texture = _load_texture(advanced_raised_machine_texture_path)
+	raw_youtiao_texture = _load_texture(raw_youtiao_texture_path)
+	golden_youtiao_texture = _load_texture(golden_youtiao_texture_path)
+	burnt_youtiao_texture = _load_texture(burnt_youtiao_texture_path)
+	var plate_texture := _load_texture(plate_texture_path)
+	black_sesame_tray.texture = _load_texture(black_sesame_tray_texture_path)
+	var black_sesame_texture := _load_texture(black_sesame_youtiao_texture_path)
 	if golden_youtiao_texture != null:
 		plate_youtiao_texture = AtlasTexture.new()
 		plate_youtiao_texture.atlas = golden_youtiao_texture

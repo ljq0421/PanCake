@@ -3,7 +3,6 @@ extends RefCounted
 
 const GREEN_THRESHOLD := 0.60
 const YELLOW_THRESHOLD := 0.30
-const TRACK_COLOR := Color("59686a")
 const FILL_COLORS := [
 	Color("6eaa78"),
 	Color("e9b44f"),
@@ -15,7 +14,9 @@ static func apply(progress_bar: ProgressBar, patience_ratio: float, current_tier
 	var next_tier := tier_for_ratio(patience_ratio)
 	if next_tier == current_tier:
 		return next_tier
-	progress_bar.add_theme_stylebox_override(&"background", _style_box(TRACK_COLOR))
+	# The order-card bitmap owns the decorative track. Keep this control transparent
+	# so it paints only the changing fill inside that track.
+	progress_bar.add_theme_stylebox_override(&"background", _transparent_style_box())
 	progress_bar.add_theme_stylebox_override(&"fill", _style_box(FILL_COLORS[next_tier]))
 	return next_tier
 
@@ -32,8 +33,14 @@ static func tier_for_ratio(patience_ratio: float) -> int:
 static func _style_box(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
-	style.corner_radius_top_left = 7
-	style.corner_radius_top_right = 7
-	style.corner_radius_bottom_left = 7
-	style.corner_radius_bottom_right = 7
+	style.corner_radius_top_left = 5
+	style.corner_radius_top_right = 5
+	style.corner_radius_bottom_left = 5
+	style.corner_radius_bottom_right = 5
+	return style
+
+
+static func _transparent_style_box() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color.TRANSPARENT
 	return style

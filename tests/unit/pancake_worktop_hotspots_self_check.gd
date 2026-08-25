@@ -327,7 +327,7 @@ func _test_worktop_hotspot_mapping(station: Node, unit: Node, session: FakeSessi
 	_check(not bool(hotspots.get_node("TomatoSauceHotspot").disabled), "owned tomato sauce hotspot is enabled for direct brushing")
 	_check(not bool(infrastructure.get_node("TomatoSauceHotspotOverlayHitButton").disabled), "owned tomato sauce button is enabled for pointer input")
 	_check(bool(hotspots.get_node("ChiliSauceHotspot").disabled), "locked chili sauce hotspot cannot be used")
-	_check(batter_ladle.tooltip_text == "点击拿起面糊勺，再在空鏊子上方按住倒入", "basic batter ladle explains the two-step pick-up and hold interaction")
+	_check(batter_ladle.tooltip_text == "点击拿起面糊勺，在空鏊子上按住并拖动调整落点", "basic batter ladle explains the movable pour interaction")
 	hotspots.call("_on_batter_ladle_button_down")
 	_check(bool(station.call("is_batter_ladle_selected")) and unit.state == CompactGriddleUnit.State.IDLE, "basic batter ladle click picks up the tool without immediately pouring")
 	_check(unit.pancake_surface.batter_pour_guide_visible and unit.pancake_surface.batter_pour_guide_outer_radius_pixels > unit.pancake_surface.batter_pour_guide_inner_radius_pixels, "basic batter ladle shows two rings for the recommended batter area")

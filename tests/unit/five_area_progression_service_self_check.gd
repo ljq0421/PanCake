@@ -16,9 +16,10 @@ func _run() -> void:
 	_check(starter.device_tier(&"device.pancake_griddle") == 0, "new game starts with one griddle")
 	var starter_tutorial := starter.tutorial_snapshot()
 	_check(StringName(starter_tutorial.get("active_id", &"")) == &"area.pancake", "pancake is the first tutorial")
+	_check(starter.owns_stock(&"stock.pancake.egg") and not starter.owns_stock(&"stock.pancake.baocui") and not starter.owns_stock(&"stock.pancake.scallion") and not starter.owns_stock(&"stock.pancake.sauce.sweet_flour"), "new game starts with egg as its only unlocked pancake ingredient")
 	var route_ids := PackedStringArray(CATALOG.growth_ids())
 	_check(route_ids == PackedStringArray([
-		"growth.tool.pancake.wide_spreader", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
+		"growth.add_on.pancake.sweet_flour", "growth.add_on.pancake.baocui", "growth.add_on.pancake.scallion", "growth.tool.pancake.wide_spreader", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
 		"growth.add_on.pancake.meat_floss", "growth.add_on.pancake.tomato", "growth.automation.pancake.press_once", "growth.automation.pancake.auto_sauce_brush",
 		"growth.area.youtiao", "growth.capacity.youtiao_finished_tray", "growth.flavor.youtiao.sesame", "growth.equipment.youtiao.advanced",
 		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.sugar", "growth.assist.fresh_soy_milk.ice", "growth.automation.fresh_soy_milk.auto_fill", "growth.automation.fresh_soy_milk.advanced",

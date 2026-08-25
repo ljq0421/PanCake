@@ -72,6 +72,24 @@ func _run() -> void:
 	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == soy_target, "ready soy points to the real centered customer-card delivery target")
 	var pancake_target := _bind_centered_tutorial_order(workstation, stub, &"area.pancake", &"product.pancake.custom")
 	_check(workstation.call("_tutorial_delivery_target", stub, &"area.pancake") == pancake_target, "ready pancake resolves through the same real customer-card target")
+	var griddle := workstation.multi_griddle_station.units[0] as CompactGriddleUnit
+	var pancake_guide := Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))
+	_check(pancake_guide.get("target") != griddle and str(pancake_guide.get("message", "")).contains("第1步"), "idle pancake tutorial points to the batter-ladle step instead of the whole station")
+	griddle.begin_order({})
+	griddle.use_press_spreader()
+	_check(bool(Dictionary(griddle.pancake_model.crack_egg(Vector2(31, 31))).get("success", false)), "tutorial fixture adds the required egg before checking flip guidance")
+	pancake_guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))
+	_check(pancake_guide.get("target") == griddle.heat_status_label and str(pancake_guide.get("message", "")).contains("火候计时"), "first side before readiness points to the visible heat timer")
+	griddle.pancake_model.advance_cooking(4.0, 1.25)
+	griddle.first_side_seconds = 4.0
+	griddle.call("_refresh_heat_visual")
+	pancake_guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))
+	_check(pancake_guide.get("target") == griddle.main_action and str(pancake_guide.get("message", "")).contains("现在可翻面"), "recommended first-side heat points the tutorial arrow at flip")
+	griddle.pancake_model.advance_cooking(10.0, 1.25)
+	griddle.first_side_seconds = 14.0
+	griddle.call("_refresh_heat_visual")
+	pancake_guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))
+	_check(bool(Dictionary(griddle.cooking_heat_status()).get("charred", false)) and str(pancake_guide.get("message", "")).contains("焦糊"), "overcooked first side visibly warns of charring and reduced heat score")
 	var overlay := workstation.tutorial_guide_overlay as Control
 	workstation.set_process(false)
 	overlay.call("show_guide", workstation.cartoon_youtiao_fryer.start_button, "点击启动")

@@ -30,8 +30,12 @@
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="77_sweet_sauce_hit"]
 [ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png" id="78_chili_sauce_hit"]
 [ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png" id="79_tomato_sauce_hit"]
-[ext_resource type="Script" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
+[ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
+[ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/decor/fryer_zone_mat_v1_chromakey.png" id="82_fryer_zone_mat"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/decor/griddle_zone_mat_v1_chromakey.png" id="83_griddle_zone_mat"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/decor/drink_zone_mat_v1_chromakey.png" id="84_drink_zone_mat"]
+[ext_resource type="Shader" uid="uid://chlolicv51r6s" path="res://resources/art/workstation/decor/three_zone_chromakey.gdshader" id="85_zone_mats_shader"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -136,6 +140,9 @@ corner_radius_bottom_left = 14
 shadow_color = Color(0.34, 0.16, 0.04, 0.3)
 shadow_size = 8
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_zone_mats"]
+shader = ExtResource("85_zone_mats_shader")
+
 [node name="Workstation" type="Control" unique_id=54162380]
 process_mode = 1
 layout_mode = 3
@@ -238,6 +245,22 @@ theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 24
 text = "金币 0  ·  营业日 1  ·  口碑 0"
+vertical_alignment = 1
+
+[node name="TopWarningLabel" type="Label" parent="SafeArea" unique_id=558428810]
+unique_name_in_owner = true
+visible = false
+z_index = 250
+layout_mode = 0
+offset_left = 580.0
+offset_top = 36.0
+offset_right = 1340.0
+offset_bottom = 76.0
+theme_override_colors/font_color = Color(1, 0.84, 0.36, 1)
+theme_override_colors/font_outline_color = Color(0.16, 0.06, 0.015, 0.96)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PaymentSprite" type="TextureRect" parent="SafeArea" unique_id=1227648355]
@@ -1245,6 +1268,7 @@ offset_left = 100.0
 offset_top = 150.0
 offset_right = 640.0
 offset_bottom = 640.0
+product_icon_offset = Vector2(20, 10)
 
 [node name="ServiceCustomer2" parent="SafeArea" unique_id=2033337310 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
@@ -1253,6 +1277,7 @@ offset_left = 690.0
 offset_top = 150.0
 offset_right = 1230.0
 offset_bottom = 640.0
+product_icon_offset = Vector2(20, 10)
 
 [node name="ServiceCustomer3" parent="SafeArea" unique_id=1323426398 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
@@ -1261,6 +1286,7 @@ offset_left = 1280.0
 offset_top = 150.0
 offset_right = 1820.0
 offset_bottom = 640.0
+product_icon_offset = Vector2(20, 10)
 
 [node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea" unique_id=757275453]
 unique_name_in_owner = true
@@ -1314,9 +1340,9 @@ offset_bottom = 977.0
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0
-offset_left = -5.0
+offset_left = 13.0
 offset_top = 422.0
-offset_right = 595.0
+offset_right = 613.0
 offset_bottom = 1065.0
 
 [node name="PancakeStation" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1733137153]
@@ -1336,20 +1362,18 @@ offset_bottom = 444.0
 [node name="WasteBasket" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1652300954]
 unique_name_in_owner = true
 z_index = 80
-layout_mode = 0
-offset_left = 610.0
-offset_top = 778.0
-offset_right = 742.0
-offset_bottom = 940.0
-mouse_default_cursor_shape = 2
+anchors_preset = 0
+offset_left = 667.0
+offset_top = 961.0
+offset_right = 799.0
+offset_bottom = 1076.0
 tooltip_text = "将成品拖入废弃篓报废"
+mouse_default_cursor_shape = 2
 script = ExtResource("80_waste_target")
-disposition = "waste"
 
-[node name="BasketArtwork" type="TextureRect" parent="FiveAreaInfrastructure/Stations/WasteBasket"]
+[node name="BasketArtwork" type="TextureRect" parent="FiveAreaInfrastructure/Stations/WasteBasket" unique_id=1066170999]
 layout_mode = 0
 offset_left = 8.0
-offset_top = 0.0
 offset_right = 124.0
 offset_bottom = 116.0
 mouse_filter = 2
@@ -1357,13 +1381,12 @@ texture = ExtResource("81_waste_basket")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Title" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket"]
+[node name="Title" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket" unique_id=831026544]
 layout_mode = 0
-offset_left = 8.0
-offset_top = 104.0
-offset_right = 124.0
-offset_bottom = 130.0
-mouse_filter = 2
+offset_left = 7.0
+offset_top = 80.0
+offset_right = 123.0
+offset_bottom = 106.0
 theme_override_colors/font_color = Color(0.3, 0.12, 0.035, 1)
 theme_override_colors/font_outline_color = Color(1, 0.91, 0.67, 1)
 theme_override_constants/outline_size = 3
@@ -1371,17 +1394,18 @@ theme_override_font_sizes/font_size = 18
 text = "废弃篓"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket"]
+[node name="Hint" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket" unique_id=836822811]
 layout_mode = 0
-offset_top = 132.0
-offset_right = 132.0
-offset_bottom = 162.0
-mouse_filter = 2
+offset_left = -90.0
+offset_top = 37.0
+offset_right = 42.0
+offset_bottom = 76.0
 theme_override_colors/font_color = Color(0.37, 0.18, 0.06, 1)
 theme_override_colors/font_outline_color = Color(1, 0.82, 0.42, 0.9)
 theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 13
-text = "拖入报废\n长按清空鏊面"
+text = "拖入报废
+长按清空鏊面"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -1538,3 +1562,49 @@ theme_override_font_sizes/font_size = 18
 text = "下一步"
 vertical_alignment = 1
 autowrap_mode = 2
+
+[node name="ThreeZoneLowContrastMats" type="Control" parent="." unique_id=2132146347]
+z_index = -60
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="FryerMat" type="TextureRect" parent="ThreeZoneLowContrastMats"]
+self_modulate = Color(1, 1, 1, 0.42)
+material = SubResource("ShaderMaterial_zone_mats")
+layout_mode = 0
+offset_left = -70.0
+offset_top = 480.0
+offset_right = 560.0
+offset_bottom = 1100.0
+mouse_filter = 2
+texture = ExtResource("82_fryer_zone_mat")
+expand_mode = 1
+
+[node name="GriddleMat" type="TextureRect" parent="ThreeZoneLowContrastMats"]
+self_modulate = Color(1, 1, 1, 0.42)
+material = SubResource("ShaderMaterial_zone_mats")
+layout_mode = 0
+offset_left = 490.0
+offset_top = 510.0
+offset_right = 1420.0
+offset_bottom = 1100.0
+mouse_filter = 2
+texture = ExtResource("83_griddle_zone_mat")
+expand_mode = 1
+
+[node name="DrinkMat" type="TextureRect" parent="ThreeZoneLowContrastMats"]
+self_modulate = Color(1, 1, 1, 0.42)
+material = SubResource("ShaderMaterial_zone_mats")
+layout_mode = 0
+offset_left = 1370.0
+offset_top = 480.0
+offset_right = 1970.0
+offset_bottom = 1100.0
+mouse_filter = 2
+texture = ExtResource("84_drink_zone_mat")
+expand_mode = 1

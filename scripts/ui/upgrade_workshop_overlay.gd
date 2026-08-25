@@ -56,7 +56,18 @@ func refresh() -> void:
 		var growth_id := StringName(status.get("growth_id", &""))
 		var prop := _anchors.get(growth_id) as Button
 		if prop == null: continue
-		prop.visible = _has_owned_growth_prerequisites(growth_id, owned_growth_ids) and (not growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"] or growth_id == youtiao_upgrade_id)
+		# These physical props are visible in the workshop preview before their
+		# prerequisites are installed. Keep their tags visible too, so the
+		# otherwise unexplained artwork tells the player what can be reserved and
+		# which condition is still missing.
+		var show_prerequisite_locked_visual := growth_id in [
+			&"growth.capacity.youtiao_finished_tray",
+			&"growth.flavor.youtiao.sesame",
+			&"growth.add_on.pancake.sweet_flour",
+			&"growth.add_on.pancake.baocui",
+			&"growth.add_on.pancake.scallion",
+		]
+		prop.visible = (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) and (not growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"] or growth_id == youtiao_upgrade_id)
 		if growth_id == _selected_id:
 			selected_prop_is_visible = prop.visible
 		prop.tooltip_text = _requirements_text(status)
@@ -161,14 +172,14 @@ func _on_buy() -> void:
 	refresh()
 
 func _state_text(status: Dictionary) -> String:
-	if bool(status.get("already_owned", false)): return "已拥有"
+	if bool(status.get("already_owned", false)): return "已解锁"
 	if bool(status.get("pending_activation", false)): return "已预订"
 	if bool(status.get("can_purchase", false)): return "可预订"
 	var gaps: Array = Array(status.get("missing_requirements", []))
 	return "金币不足" if gaps.size() == 1 and StringName(Dictionary(gaps[0]).get("reason", &"")) == &"insufficient_coins" else "条件不足"
 
 func _requirements_text(status: Dictionary) -> String:
-	if bool(status.get("already_owned", false)): return "已安装在工作台上。"
+	if bool(status.get("already_owned", false)): return "已解锁，已安装在工作台上。"
 	if bool(status.get("pending_activation", false)): return "已预订，下一营业日统一生效。"
 	var lines := PackedStringArray()
 	for raw_requirement in Array(status.get("missing_requirements", [])):
@@ -178,7 +189,7 @@ func _requirements_text(status: Dictionary) -> String:
 
 func _inline_requirement(status: Dictionary) -> String:
 	if bool(status.get("already_owned", false)):
-		return "已安装"
+		return "已解锁"
 	if bool(status.get("pending_activation", false)):
 		return "已预订"
 	var gaps: Array = Array(status.get("missing_requirements", []))

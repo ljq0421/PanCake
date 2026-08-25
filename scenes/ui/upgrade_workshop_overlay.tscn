@@ -260,6 +260,87 @@ texture = ExtResource("2_press_spreader")
 expand_mode = 1
 stretch_mode = 5
 
+[node name="WorkshopProp_growth_add_on_pancake_scallion" type="Button" parent="UpgradeProps" unique_id=624804946]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_left = 610.0
+offset_top = 514.0
+offset_right = 730.0
+offset_bottom = 552.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.scallion"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_scallion" unique_id=774914368]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "香葱罐
+可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_baocui" type="Button" parent="UpgradeProps" unique_id=1557615106]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_left = 762.0
+offset_top = 504.0
+offset_right = 882.0
+offset_bottom = 542.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.baocui"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_baocui" unique_id=1949827382]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "薄脆
+可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_add_on_pancake_sweet_flour" type="Button" parent="UpgradeProps" unique_id=951810376]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 798.0
+offset_right = 1240.0
+offset_bottom = 836.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.add_on.pancake.sweet_flour"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_add_on_pancake_sweet_flour" unique_id=1300263415]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "甜面酱
+可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 [node name="WorkshopProp_growth_tool_pancake_wide_spreader" type="Button" parent="UpgradeProps" unique_id=299481946]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -503,33 +584,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_area_youtiao" type="Button" parent="UpgradeProps" unique_id=1458882523]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 0
-offset_left = 404.0
-offset_top = 427.0
-offset_right = 524.0
-offset_bottom = 465.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.area.youtiao"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_youtiao" unique_id=649853762]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "油条炸锅
-可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
 [node name="WorkshopProp_growth_capacity_youtiao_finished_tray" type="Button" parent="UpgradeProps" unique_id=1756423729]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -611,18 +665,18 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_area_fresh_soy_milk" type="Button" parent="UpgradeProps" unique_id=156752281]
+[node name="WorkshopProp_growth_area_youtiao" type="Button" parent="UpgradeProps" unique_id=1458882523]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1668.0
-offset_top = 422.0
-offset_right = 1788.0
-offset_bottom = 460.0
+offset_left = 176.0
+offset_top = 396.0
+offset_right = 296.0
+offset_bottom = 434.0
 focus_mode = 0
 flat = true
-metadata/growth_id = "growth.area.fresh_soy_milk"
+metadata/growth_id = "growth.area.youtiao"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_fresh_soy_milk" unique_id=452249764]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_youtiao" unique_id=649853762]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -632,7 +686,7 @@ grow_vertical = 2
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
-text = "初级豆浆机
+text = "油条炸锅
 可预订"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -692,6 +746,33 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="WorkshopProp_growth_automation_fresh_soy_milk_advanced" type="Button" parent="UpgradeProps" unique_id=1980421157]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_left = 1668.0
+offset_top = 422.0
+offset_right = 1788.0
+offset_bottom = 460.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.fresh_soy_milk.advanced"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_fresh_soy_milk_advanced" unique_id=982047331]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "高级豆浆机
+可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 [node name="WorkshopProp_growth_automation_fresh_soy_milk_auto_fill" type="Button" parent="UpgradeProps" unique_id=425460390]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -719,7 +800,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_automation_fresh_soy_milk_advanced" type="Button" parent="UpgradeProps" unique_id=1980421157]
+[node name="WorkshopProp_growth_area_fresh_soy_milk" type="Button" parent="UpgradeProps" unique_id=156752281]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
 offset_left = 1668.0
@@ -728,9 +809,9 @@ offset_right = 1788.0
 offset_bottom = 460.0
 focus_mode = 0
 flat = true
-metadata/growth_id = "growth.automation.fresh_soy_milk.advanced"
+metadata/growth_id = "growth.area.fresh_soy_milk"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_fresh_soy_milk_advanced" unique_id=982047331]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_fresh_soy_milk" unique_id=452249764]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -740,7 +821,7 @@ grow_vertical = 2
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
-text = "高级豆浆机
+text = "初级豆浆机
 可预订"
 horizontal_alignment = 1
 vertical_alignment = 1

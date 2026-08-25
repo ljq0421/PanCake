@@ -147,7 +147,12 @@ func take_soy_cup(cup_index: int = 0) -> Dictionary:
 
 
 func youtiao_auto_lift_enabled() -> bool:
-	return _youtiao_auto_lift_enabled and _owns_automation(YOUTIAO_AUTO_LIFT)
+	# Auto-lift is part of the advanced fryer, not merely a separately restored
+	# automation flag.  Older/debug snapshots can contain that flag while the
+	# physical machine is still tier 0; those batches must remain player-lifted.
+	return _youtiao_auto_lift_enabled \
+		and int(_youtiao.get("tier")) >= 1 \
+		and _owns_automation(YOUTIAO_AUTO_LIFT)
 
 
 func set_youtiao_auto_lift_enabled(enabled: bool) -> Dictionary:

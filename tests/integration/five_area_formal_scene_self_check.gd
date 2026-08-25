@@ -70,6 +70,14 @@ func _run() -> void:
 			_check(fryer.plate_sources[0].visible and fryer.plate_sources[0].z_index > fryer.black_sesame_tray.z_index and StringName(fryer.plate_sources[0].source_ref().get("product_id", &"")) == &"product.youtiao.sesame", "sesame tray product remains directly draggable to service")
 	var game_session := root.get_node_or_null("GameSession")
 	var griddle := workstation.multi_griddle_station as MultiGriddleStation
+	var top_warning := workstation.get_node_or_null("SafeArea/TopWarningLabel") as Label
+	_check(top_warning != null and not top_warning.visible, "top warning starts hidden")
+	if griddle != null:
+		griddle.transient_warning_requested.emit("面饼可能偏厚")
+		await process_frame
+		_check(top_warning != null and top_warning.visible and top_warning.text == "面饼可能偏厚", "griddle warning appears at the top of the shop")
+		await create_timer(FiveAreaWorkstation.TOP_WARNING_DURATION_SECONDS + FiveAreaWorkstation.TOP_WARNING_FADE_SECONDS + 0.10).timeout
+		_check(top_warning != null and not top_warning.visible, "top warning automatically fades away after the configured duration")
 	if game_session != null and griddle != null:
 		game_session.call("begin_new_game")
 		griddle.bind_session(game_session)

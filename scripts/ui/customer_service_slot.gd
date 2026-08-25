@@ -9,6 +9,9 @@ const CARD_BACKGROUND_BY_ITEM_COUNT := {
 }
 const INGREDIENT_COLUMNS := 4
 const INGREDIENTS_PER_ITEM := 8
+const PATIENCE_FILL_POSITION_X := 52.0
+const PATIENCE_FILL_BOTTOM_INSET := 26.0
+const PATIENCE_FILL_SIZE := Vector2(168.0, 10.0)
 
 @export_category("Order Card Layout")
 @export_range(1.0, 1000.0, 1.0, "suffix:px") var card_width := 0.0
@@ -29,7 +32,6 @@ signal delivery_requested(order_id: StringName, item_index: int)
 signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictionary)
 
 @onready var portrait: TextureRect = %Portrait
-@onready var portrait_button: Button = %PortraitButton
 @onready var order_panel: Control = $OrderPanel
 @onready var card_background: TextureRect = %CardBackground
 @onready var card_focus_button: Button = %CardFocusButton
@@ -40,7 +42,6 @@ signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictio
 @onready var item_icons: Array[TextureRect] = [%ItemIcon1, %ItemIcon2, %ItemIcon3]
 @onready var quantity_labels: Array[Label] = [%Quantity1, %Quantity2, %Quantity3]
 @onready var patience_bar: ProgressBar = %PatienceBar
-@onready var patience_label: Label = %PatienceLabel
 
 var _order_id: StringName = &""
 var _patience_bar_tier := -1
@@ -49,7 +50,6 @@ var _ingredient_icons_by_item: Array = []
 
 func _ready() -> void:
 	_create_simple_card_controls()
-	portrait_button.pressed.connect(_request_focus)
 	card_focus_button.pressed.connect(_request_focus)
 	for item_index in range(item_buttons.size()):
 		item_buttons[item_index].pressed.connect(_request_delivery.bind(item_index))
@@ -71,7 +71,8 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 	special_rule.visible = not special_customer_id.is_empty()
 	special_rule.text = rule_text
 	# The coin is baked into the card background; leave only the dynamic reward amount.
-	order_title.text = str(maxi(perfect_quote, 0))
+	# Tutorial orders use this same compact header for their no-countdown status.
+	order_title.text = "教学单 · 不限时" if bool(order.get("tutorial_no_countdown", false)) else str(maxi(perfect_quote, 0))
 	var items := Array(order.get("items", []))
 	if items.size() > item_buttons.size():
 		items.resize(item_buttons.size())
@@ -106,7 +107,6 @@ func update_patience(order: Dictionary) -> void:
 	patience_bar.visible = not unlimited
 	patience_bar.value = ratio * 100.0
 	_patience_bar_tier = PATIENCE_BAR_STYLE.apply(patience_bar, ratio, _patience_bar_tier)
-	patience_label.text = "教学单 · 不限时" if unlimited else "耐心 %d 秒" % ceili(remaining)
 
 
 func _create_simple_card_controls() -> void:
@@ -142,13 +142,17 @@ func _apply_simple_card_layout(item_count: int) -> void:
 	special_title.size = Vector2(182.0, 16.0)
 	special_rule.position = Vector2(18.0, card_height - 47.0)
 	special_rule.size = Vector2(214.0, 17.0)
-	patience_bar.position = Vector2(54.0, card_height - 22.0)
-	patience_bar.size = Vector2(172.0, 12.0)
-	patience_label.visible = false
+	# Only the fill is drawn here. The heart, track and border stay in the card bitmap.
+	patience_bar.position = Vector2(PATIENCE_FILL_POSITION_X, card_height - PATIENCE_FILL_BOTTOM_INSET)
+	patience_bar.size = PATIENCE_FILL_SIZE
 	for item_index in range(item_buttons.size()):
 		var item_row_top := row_top + item_index * (row_height + row_gap)
 		var is_visible := item_index < visible_item_count
-		item_buttons[item_index].position = Vector2(product_icon_offset.x, item_row_top + product_icon_offset.y)
+		# Center every dish target within its visual order row; icons inherit the target's full rect.
+		item_buttons[item_index].position = Vector2(
+			product_icon_offset.x,
+			item_row_top + (row_height - product_icon_size.y) * 0.5,
+		)
 		item_buttons[item_index].size = product_icon_size
 		quantity_labels[item_index].position = Vector2(5.0, 42.0)
 		quantity_labels[item_index].size = Vector2(45.0, 20.0)

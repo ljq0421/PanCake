@@ -144,6 +144,13 @@ func _run() -> void:
 	session.machine["state"] = &"frying"
 	fryer.call("refresh_from_session")
 	_check(fryer.product_visuals[0].position == fryer.lowered_basket_slots[0].position, "advanced lowered fryer keeps the authored frying slot position")
+	session.machine["state"] = &"ready_safe"
+	session.machine["tier"] = 0
+	fryer.call("refresh_from_session")
+	_check(fryer.fryer_visual.texture == fryer.lowered_machine_texture and fryer.product_visuals[0].position == fryer.lowered_basket_slots[0].position, "basic fryer stays visually lowered while waiting for the player to lift its finished batch")
+	session.machine["state"] = &"draining"
+	fryer.call("refresh_from_session")
+	_check(fryer.fryer_visual.texture == fryer.raised_machine_texture and fryer.product_visuals[0].position == fryer.raised_basket_slots[0].position, "basic fryer raises the basket only after the lift action starts draining")
 
 	fryer.queue_free()
 	session.queue_free()

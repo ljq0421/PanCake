@@ -2,6 +2,7 @@ class_name MultiGriddleStation
 extends Control
 
 signal status_message(message: String)
+signal transient_warning_requested(message: String)
 signal held_tool_changed(tool_id: StringName)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
@@ -37,6 +38,7 @@ func _ready() -> void:
 		unit.configure(index, display_names[index])
 		unit.main_action_requested.connect(_on_main_action)
 		unit.status_message_requested.connect(status_message.emit)
+		unit.transient_warning_requested.connect(transient_warning_requested.emit)
 	shared_tool_tray.tool_selected.connect(_on_shared_tool_selected)
 	shared_tool_tray.status_message.connect(status_message.emit)
 	_apply_count_layout()
@@ -447,7 +449,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 		var ladle_unit := _unit(_active_index)
 		if ladle_unit != null:
 			ladle_unit.call("set_batter_ladle_armed", true)
-		status_message.emit("已拿起面糊勺；按住拖到空鏊子上方，松开即放回")
+		status_message.emit("已拿起面糊勺；按住空鏊子并拖动可调整落点，松开即放回")
 		return {"success": true, "tool_id": tool_id}
 	if tool_id == &"tool.pancake.press_once":
 		if _session == null or not _session.has_method("progression_service"):

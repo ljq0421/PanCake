@@ -49,6 +49,9 @@ const SAUCE_HOTSPOT_IDS: Dictionary = {
 ## their drag source. Keep those visuals in the same unlock state as the source
 ## so locked items do not leave an empty tray or sauce jar on the workbench.
 const STOCK_VISUAL_PATHS: Dictionary = {
+	&"stock.pancake.baocui": [NodePath("BaocuiBasket")],
+	&"stock.pancake.scallion": [NodePath("ScallionTray")],
+	&"stock.pancake.sauce.sweet_flour": [NodePath("../SweetBeanSauceJar"), NodePath("SweetSauceHotspot")],
 	&"stock.pancake.ham_sausage": [NodePath("../ToppingIngredientTray2")],
 	&"stock.pancake.meat_floss": [NodePath("../ToppingIngredientTray"), NodePath("PorkFlossHotspot")],
 	&"stock.pancake.coriander": [NodePath("CorianderTray")],
@@ -536,9 +539,9 @@ func _update_batter_ladle_holder_visual() -> void:
 	elif _auto_batter_ladle_owned():
 		holder.tooltip_text = "点击加标准分量面糊"
 	elif ladle_selected:
-		holder.tooltip_text = "面糊勺已拿起；在空鏊子上方按住倒入"
+		holder.tooltip_text = "面糊勺已拿起；在空鏊子上按住并拖动调整落点"
 	else:
-		holder.tooltip_text = "点击拿起面糊勺，再在空鏊子上方按住倒入"
+		holder.tooltip_text = "点击拿起面糊勺，在空鏊子上按住并拖动调整落点"
 	_sync_batter_ladle_input_state(holder)
 
 

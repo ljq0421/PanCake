@@ -45,7 +45,7 @@ func _run() -> void:
 	_check(bool(progression.call("owns_area", &"area.pancake")) and not bool(progression.call("owns_area", &"area.youtiao")) and not bool(progression.call("owns_area", &"area.fresh_soy_milk")), "new save opens only pancake area")
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	_check(inventory.has("stock.pancake.batter") and inventory.has("stock.youtiao.plain_dough") and not inventory.has("stock.fresh_soy_milk.yellow_bean"), "serving-only soy station does not create managed bean inventory")
-	_check(int(inventory.get("stock.pancake.scallion", -1)) == 6, "new save starts with a full scallion crock")
+	_check(int(inventory.get("stock.pancake.egg", -1)) == 6 and int(inventory.get("stock.pancake.baocui", -1)) == 0 and int(inventory.get("stock.pancake.scallion", -1)) == 0 and int(inventory.get("stock.pancake.sauce.sweet_flour", -1)) == 0, "new save starts with only the egg ingredient stocked and unlocked")
 	for retired_stock in ["stock.packaged_drink.milk", "stock.packaged_drink.soy_milk", "stock.steamer.mantou", "stock.steamer.vegetable_bun"]:
 		_check(not inventory.has(retired_stock), "%s is absent from the new inventory" % retired_stock)
 	var production := Dictionary(session.call("five_area_production_snapshot"))
@@ -53,10 +53,20 @@ func _run() -> void:
 	_check(not production.has("packaged_drink_heater") and not production.has("steamer"), "production save excludes retired machines")
 	var first_order := Dictionary(session.call("ensure_active_playable_order"))
 	_check(bool(first_order.get("success", false)), "new save can generate its first playable customer")
+	var first_items := Array(Dictionary(session.call("active_formal_order")).get("items", []))
+	_check(first_items.size() == 1 and StringName(Dictionary(first_items[0]).get("pancake_template_id", &"")) == &"order.pancake.egg", "new save begins with an egg-only pancake order")
 	for order_value in Array(session.call("active_formal_orders")):
 		for item_value in Array(Dictionary(order_value).get("items", [])):
 			var area_id := StringName(Dictionary(item_value).get("area_id", &""))
 			_check(area_id in [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "generated formal orders stay inside three active areas")
+	var settled_first := Dictionary(session.call("settle_f3_order", StringName(Dictionary(session.call("active_formal_order")).get("order_id", &"")), true))
+	var replenished_open_count := Array(session.call("active_formal_orders")).size() + Array(session.call("waiting_formal_orders")).size()
+	_check(
+		bool(settled_first.get("success", false))
+		and bool(Dictionary(settled_first.get("refill", {})).get("success", false))
+		and replenished_open_count > 0,
+		"settling a formal order replenishes the durable customer queue without a workstation callback"
+	)
 	progression.coins = 200
 	progression.reputation = 30
 	progression.current_day = 4

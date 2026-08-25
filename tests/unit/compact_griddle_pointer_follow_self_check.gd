@@ -53,6 +53,7 @@ func _run() -> void:
 	var revision_before_hidden_spread := unit.pancake_model.revision
 	var hidden_spread_changed := bool(unit.call("_apply_radial_batter_sweep", Vector2(48.0, 32.0), Vector2.RIGHT, 70.0))
 	_check(hidden_spread_changed and unit.pancake_model.revision > revision_before_hidden_spread, "no-visual test mode keeps the spread simulation functional")
+	_test_movable_batter_pour(unit)
 	_test_fold_pointer_precision(unit)
 	_test_dropped_ingredient_orientation(unit)
 	_test_small_topping_visual_scale()
@@ -75,6 +76,32 @@ func _test_fold_pointer_precision(unit: CompactGriddleUnit) -> void:
 		floori(first_grid.x) == floori(second_grid.x) and second_grid.x > first_grid.x,
 		"fold input preserves pointer movement within one simulation-grid cell",
 	)
+
+
+func _test_movable_batter_pour(unit: CompactGriddleUnit) -> void:
+	unit.reset_unit()
+	unit.state = CompactGriddleUnit.State.BATTER
+	unit._surface_action = CompactGriddleUnit.SURFACE_ACTION_POUR_BATTER
+	var warnings := PackedStringArray()
+	unit.transient_warning_requested.connect(func(message: String) -> void: warnings.append(message))
+	var first_local := unit.pancake_surface.size * Vector2(0.30, 0.50)
+	var second_local := unit.pancake_surface.size * Vector2(0.70, 0.50)
+	unit.pancake_surface.pointer_local_position = first_local
+	unit.call("_process_batter_pour", 0.20)
+	var first_center: Vector2 = unit._batter_pour_center
+	unit.pancake_surface.pointer_local_position = second_local
+	unit.call("_process_batter_pour", 0.20)
+	var second_center: Vector2 = unit._batter_pour_center
+	var second_cell := Vector2i(roundi(second_center.x), roundi(second_center.y))
+	var second_index := unit.pancake_model.index_of(second_cell)
+	_check(not first_center.is_equal_approx(second_center), "moving the held ladle updates the active batter pour center")
+	_check(second_index >= 0 and unit.pancake_model.coverage[second_index] > 0.0, "continued batter pour lands at the moved ladle position")
+	_check(not unit.state_label.text.contains("面饼可能偏厚"), "standard batter amount does not show the thickness warning")
+	unit.call("_process_batter_pour", 1.0)
+	_check(unit._batter_pour_amount > CompactGriddleUnit.MAX_BATTER_AMOUNT and unit.state_label.text.contains("面饼可能偏厚"), "exceeding the maximum batter amount warns that the pancake may be too thick")
+	_check(warnings == PackedStringArray(["面饼可能偏厚"]), "exceeding the threshold sends one transient thickness warning")
+	unit.call("_process_batter_pour", 0.20)
+	_check(warnings.size() == 1, "a continuous overfill gesture does not repeat the transient warning")
 
 
 func _test_dropped_ingredient_orientation(unit: CompactGriddleUnit) -> void:

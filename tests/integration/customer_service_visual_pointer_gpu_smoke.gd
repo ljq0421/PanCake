@@ -35,10 +35,10 @@ func _run() -> void:
 	var left := workstation.get_node("SafeArea/ServiceCustomer1") as Control
 	var center := workstation.get_node("SafeArea/ServiceCustomer2") as Control
 	var right := workstation.get_node("SafeArea/ServiceCustomer3") as Control
-	var portrait_button := center.get_node("PortraitButton") as Button
 	var portrait := center.get_node("Portrait") as TextureRect
 	var item_button := center.get_node("OrderPanel/ItemButton1") as Button
 	var card_background := center.get_node("OrderPanel/CardBackground") as TextureRect
+	var card_focus_button := center.get_node("OrderPanel/CardFocusButton") as Button
 	_check(
 		bool(tutorial.get("tutorial_no_countdown", false))
 		and int(tutorial.get("service_slot", -1)) == 0
@@ -49,18 +49,19 @@ func _run() -> void:
 	)
 	_check(
 		card_background.texture != null
-		and card_background.texture.resource_path.ends_with("order_card_multi_dish_v3_five_area_v2.png"),
-		"the centered tutorial uses the approved five-area order-card texture",
+		and card_background.texture.resource_path.ends_with("order_card_background_rows_1_v1.png"),
+		"the centered tutorial uses the compact one-row order-card texture",
 	)
 	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "the tutorial customer and order card have no frame or selection tint")
-	await _move_at(_screen_point(portrait_button))
-	_check(root.gui_get_hovered_control() == portrait_button, "the lowered center portrait owns its real pointer target")
-	await _click_control(portrait_button)
+	_check(center.get_node_or_null("PortraitButton") == null, "the portrait has no click target")
+	await _move_at(_screen_point(card_focus_button))
+	_check(root.gui_get_hovered_control() == card_focus_button, "the order card owns its real focus target")
+	await _click_control(card_focus_button)
 	_check(
 		StringName(workstation.get("_formal_order_id")) == StringName(tutorial.get("order_id", &"")),
-		"clicking the centered portrait focuses its unchanged tutorial order_id",
+		"clicking the centered order card focuses its unchanged tutorial order_id",
 	)
-	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "clicking a customer changes the delivery target without adding visual highlighting")
+	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "clicking an order card changes the delivery target without adding visual highlighting")
 	await _move_at(_screen_point(item_button))
 	_check(root.gui_get_hovered_control() == item_button and not item_button.disabled, "the centered v4 order item owns its real pointer target")
 	await _capture(SCREENSHOT_1920, Vector2i(1920, 1080))

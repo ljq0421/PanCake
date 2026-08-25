@@ -656,8 +656,11 @@ func _request_session_refresh() -> void:
 
 
 func _on_product_drag_ended(_source_ref: Dictionary, _successful: bool) -> void:
-	if _session_refresh_pending:
-		_flush_pending_session_refresh.call_deferred()
+	# A fryer-slot youtiao can now land directly on a pancake. That consumes the
+	# production slot without touching the prepared-product signal this control
+	# previously used to trigger a redraw, so always reconcile after any release.
+	_session_refresh_pending = true
+	_flush_pending_session_refresh.call_deferred()
 
 
 func _flush_pending_session_refresh() -> void:

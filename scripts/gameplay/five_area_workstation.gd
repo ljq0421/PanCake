@@ -476,8 +476,9 @@ func _on_material_short_clicked(source_ref: Dictionary) -> void:
 
 
 func place_youtiao_source_on_pancake(source_ref: Dictionary, viewport_position: Vector2) -> void:
-	if StringName(source_ref.get("product_id", &"")) != &"product.youtiao.plain" or StringName(source_ref.get("source_kind", &"")) != &"prepared_product_slot":
-		tool_status_label.text = "油条需先整锅收纳，再从成品区逐根加入煎饼"
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	if StringName(source_ref.get("product_id", &"")) not in [&"product.youtiao.plain", &"product.youtiao.sesame"] or source_kind not in [&"prepared_product_slot", &"youtiao_fryer_slot"]:
+		tool_status_label.text = "请将炸好的油条拖到煎饼上"
 		return
 	_pending_youtiao_ingredient_source_ref = source_ref.duplicate(true)
 	_begin_ingredient_drag(IngredientModel.YOUTIAO, viewport_position)
@@ -491,7 +492,12 @@ func _ingredient_available_for_drag(ingredient_type: StringName) -> bool:
 		var session := get_node_or_null("/root/GameSession")
 		if session == null:
 			return false
-		return StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot" and bool(Dictionary(session.call("preview_take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")), int(_pending_youtiao_ingredient_source_ref.get("source_index", 0)))).get("success", false))
+		var source_kind := StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &""))
+		if source_kind == &"prepared_product_slot":
+			return bool(Dictionary(session.call("preview_take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")), int(_pending_youtiao_ingredient_source_ref.get("source_index", 0)))).get("success", false))
+		if source_kind == &"youtiao_fryer_slot" and session.has_method("preview_take_youtiao_fryer_slot"):
+			return bool(Dictionary(session.call("preview_take_youtiao_fryer_slot", int(_pending_youtiao_ingredient_source_ref.get("source_index", -1)))).get("success", false))
+		return false
 	return super._ingredient_available_for_drag(ingredient_type)
 
 
@@ -500,7 +506,12 @@ func _consume_dragged_ingredient(ingredient_type: StringName) -> bool:
 		var session := get_node_or_null("/root/GameSession")
 		if session == null:
 			return false
-		return StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &"")) == &"prepared_product_slot" and bool(Dictionary(session.call("take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")), int(_pending_youtiao_ingredient_source_ref.get("source_index", 0)))).get("success", false))
+		var source_kind := StringName(_pending_youtiao_ingredient_source_ref.get("source_kind", &""))
+		if source_kind == &"prepared_product_slot":
+			return bool(Dictionary(session.call("take_prepared_product", StringName(_pending_youtiao_ingredient_source_ref.get("source_slot_id", &"")), int(_pending_youtiao_ingredient_source_ref.get("source_index", 0)))).get("success", false))
+		if source_kind == &"youtiao_fryer_slot" and session.has_method("take_youtiao_fryer_slot"):
+			return bool(Dictionary(session.call("take_youtiao_fryer_slot", int(_pending_youtiao_ingredient_source_ref.get("source_index", -1)))).get("success", false))
+		return false
 	return super._consume_dragged_ingredient(ingredient_type)
 
 

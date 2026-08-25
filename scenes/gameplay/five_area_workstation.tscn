@@ -238,11 +238,8 @@ expand_mode = 1
 [node name="GriddleMat" type="Polygon2D" parent="SafeArea/ThreeZoneLowContrastMats" unique_id=1025811543]
 self_modulate = Color(1, 1, 1, 0.42)
 material = SubResource("ShaderMaterial_zone_mats")
-position = Vector2(485.62592, 554.414)
-scale = Vector2(0.6710586, 0.5554377)
+position = Vector2(492, 547)
 texture = ExtResource("83_griddle_zone_mat")
-polygon = PackedVector2Array(-50.84973, 200.89241, 5.3514404, 907.09296, 1389.6053, 926.70306, 1428.6874, 184.14294)
-uv = PackedVector2Array(125.32007, 184.9737, 5.3514404, 907.09296, 1389.6053, 926.70306, 1269.5673, 161.8103)
 
 [node name="DrinkMat" type="TextureRect" parent="SafeArea/ThreeZoneLowContrastMats" unique_id=1646224454]
 self_modulate = Color(1, 1, 1, 0.42)
@@ -445,21 +442,21 @@ text = "婉拒订单"
 [node name="BottomStrip" type="Panel" parent="SafeArea" unique_id=438973155]
 z_index = 7
 layout_mode = 0
-offset_left = 100.0
-offset_top = 180.0
-offset_right = 700.0
-offset_bottom = 390.0
+offset_left = 20.0
+offset_top = 952.0
+offset_right = 452.0
+offset_bottom = 1056.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_strip")
 
 [node name="Instructions" type="Label" parent="SafeArea/BottomStrip" unique_id=137339466]
 layout_mode = 0
-offset_left = 18.0
-offset_top = 180.0
-offset_right = 582.0
-offset_bottom = 206.0
+offset_left = 14.0
+offset_top = 80.0
+offset_right = 418.0
+offset_bottom = 98.0
 theme_override_colors/font_color = Color(0.94, 0.89, 0.78, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 11
 text = "左键拖动制作 · 右键取消工具 · R 重置"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -468,14 +465,15 @@ clip_text = true
 [node name="ToolStatusLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=221707924]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 8.0
-offset_right = 582.0
-offset_bottom = 38.0
+offset_left = 14.0
+offset_top = 6.0
+offset_right = 418.0
+offset_bottom = 34.0
 theme_override_colors/font_color = Color(0.5, 0.94, 0.94, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "当前工具：未拿工具"
 vertical_alignment = 1
+clip_text = true
 
 [node name="BusinessDayTimerLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=2105247511]
 unique_name_in_owner = true
@@ -494,24 +492,24 @@ vertical_alignment = 1
 [node name="TutorialGuideLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1818673484]
 visible = false
 layout_mode = 0
-offset_left = 18.0
-offset_top = 72.0
-offset_right = 582.0
-offset_bottom = 100.0
+offset_left = 14.0
+offset_top = 56.0
+offset_right = 418.0
+offset_bottom = 78.0
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 clip_text = true
 
 [node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1009949277]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 18.0
-offset_top = 40.0
-offset_right = 582.0
-offset_bottom = 68.0
+offset_left = 14.0
+offset_top = 34.0
+offset_right = 418.0
+offset_bottom = 56.0
 theme_override_colors/font_color = Color(0.76, 0.92, 0.76, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 14
 text = "当前无破洞风险"
 vertical_alignment = 1
 clip_text = true
@@ -1187,20 +1185,6 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 14
 
-[node name="DebugFulfillGrowthButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=232205324]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(250, 58)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.45, 1, 0.86, 1)
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBox_ui_button")
-theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
-theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
-theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
-text = "测试：补齐下一项条件"
-
 [node name="DailyBillCloseButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=148562824]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
@@ -1374,10 +1358,11 @@ mouse_filter = 2
 [node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" unique_id=143699513 instance=ExtResource("37_830a8")]
 z_index = 20
 layout_mode = 0
-offset_left = 1490.0
-offset_top = 481.0
-offset_right = 1900.0
-offset_bottom = 977.0
+offset_left = 1520.0
+offset_top = 490.0
+offset_right = 1930.0
+offset_bottom = 986.0
+scale = Vector2(0.8, 0.8)
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0

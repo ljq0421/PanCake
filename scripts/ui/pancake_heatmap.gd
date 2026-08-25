@@ -18,7 +18,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 			return bool(target.call("can_preview_pancake_surface_drop", source_ref, at_position))
 		return bool(target.call("can_accept_pancake_surface_drop", source_ref, at_position))
 	return (
-		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
+		StringName(source_ref.get("product_id", &"")) in [&"product.youtiao.plain", &"product.youtiao.sesame"]
 		and StringName(source_ref.get("source_kind", &"")) == &"prepared_product_slot"
 	)
 

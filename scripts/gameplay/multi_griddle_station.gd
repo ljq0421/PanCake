@@ -9,6 +9,7 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
+const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain", &"product.youtiao.sesame"]
 
 @onready var count_label: Label = %CountLabel
 @onready var units: Array[Node] = [%Griddle01]
@@ -304,8 +305,8 @@ func can_preview_drop_on_unit(unit_index: int, source_ref: Dictionary, local_pos
 		return false
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	return source_kind == &"pancake_shared_ingredient" or (
-		StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain"
-		and source_kind == &"prepared_product_slot"
+		PANCAKE_YOUTIAO_PRODUCT_IDS.has(StringName(source_ref.get("product_id", &"")))
+		and source_kind in [&"prepared_product_slot", &"youtiao_fryer_slot"]
 	)
 
 
@@ -349,10 +350,12 @@ func _source_is_available_for_drop(source_ref: Dictionary, validation: Dictionar
 		if progression == null or not bool(progression.call("owns_stock", stock_id)):
 			return false
 		return int(Dictionary(_session.call("inventory_snapshot")).get(str(stock_id), 0)) > 0
-	if StringName(source_ref.get("product_id", &"")) != &"product.youtiao.plain":
+	if not PANCAKE_YOUTIAO_PRODUCT_IDS.has(StringName(source_ref.get("product_id", &""))):
 		return false
 	if source_kind == &"prepared_product_slot":
 		return _session != null and _session.has_method("preview_take_prepared_product") and bool(Dictionary(_session.call("preview_take_prepared_product", StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))).get("success", false))
+	if source_kind == &"youtiao_fryer_slot":
+		return _session != null and _session.has_method("preview_take_youtiao_fryer_slot") and bool(Dictionary(_session.call("preview_take_youtiao_fryer_slot", int(source_ref.get("source_index", -1)))).get("success", false))
 	return false
 
 
@@ -368,6 +371,8 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	var used_reservation := _source_matches_reserved_ingredient_drag(source_ref)
 	if source_kind == &"prepared_product_slot":
 		consumed = Dictionary(_session.call("take_prepared_product", StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0))))
+	elif source_kind == &"youtiao_fryer_slot":
+		consumed = Dictionary(_session.call("take_youtiao_fryer_slot", int(source_ref.get("source_index", -1))))
 	elif used_reservation:
 		consumed = {"success": true, "stock_id": _reserved_ingredient_drag_stock_id}
 	else:

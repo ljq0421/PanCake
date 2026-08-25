@@ -207,8 +207,18 @@ static func _item_quote(items: Array) -> int:
 			var template := CATALOG.pancake_order_template(StringName(item.get("pancake_template_id", &"")))
 			total += maxi(int(template.get("payment_coins", 1)), 1) * quantity
 		else:
-			total += maxi(int(CATALOG.product_definition(StringName(item.get("product_id", &""))).get("base_sell_price", 1)), 1) * quantity
+			total += _product_item_unit_price(item) * quantity
 	return maxi(total, 1)
+
+
+static func _product_item_unit_price(item: Dictionary) -> int:
+	var product_id := StringName(item.get("product_id", &""))
+	if product_id == &"product.fresh_soy_milk.yellow_bean":
+		return CATALOG.soy_milk_sell_price(
+			int(item.get("sugar_servings", 0)),
+			StringName(item.get("temperature_mode", &"room_temperature")),
+		)
+	return maxi(int(CATALOG.product_definition(product_id).get("base_sell_price", 1)), 1)
 
 
 static func _normal_candidate(eligible_areas: Array[StringName], progression: Dictionary, seed: int, sequence: int) -> Dictionary:
@@ -326,9 +336,13 @@ static func generate_queue_candidates(
 			queue_has_special = true
 		var metadata := Dictionary(generated.get("metadata", {}))
 		var generated_tutorial_id := StringName(metadata.get("tutorial_id", &""))
-		if not generated_tutorial_id.is_empty() and not explicit_promotion:
+		# The first ordinary order after an area tutorial must demonstrate the
+		# newly unlocked area.  It takes precedence over a promotion that was
+		# already pending, which remains queued for a later refill.
+		if not generated_tutorial_id.is_empty():
 			promotion_kind = StringName(metadata.get("tutorial_kind", &"area"))
 			promotion_id = generated_tutorial_id
+			promotion_source_growth_id = StringName("tutorial:%s" % generated_tutorial_id)
 			promotion_index = 0
 		candidates.append(generated)
 	return {"success": true, "candidates": candidates, "tutorial_generated_day": generated_tutorial_day, "special_state": special_state}
@@ -574,6 +588,11 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 			sugar_servings = 1 if teaching else _roll(seed, sequence, 137, 3)
 		if assists.has(&"assist.fresh_soy_milk.ice") and not teaching and _roll(seed, sequence, 149, 100) < 35:
 			temperature_mode = &"iced"
+	var unit_price := _product_item_unit_price({
+		"product_id": product_id,
+		"sugar_servings": sugar_servings,
+		"temperature_mode": temperature_mode,
+	})
 	var required_stock_ids := Array(recipe.get("stock_ids", []))
 	return {
 		"success": true,
@@ -581,7 +600,7 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 			"area_id": area_id,
 			"product_id": product_id,
 			"quantity": quantity,
-			"base_price_coins": maxi(int(product.get("base_sell_price", 1)), 1),
+			"base_price_coins": unit_price,
 			"temperature_mode": temperature_mode,
 			"pancake_template_id": &"",
 			"ingredient_ids": ingredient_ids,
@@ -594,7 +613,7 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 			"tutorial_id": area_id if teaching else &"",
 			"tutorial_no_countdown": teaching,
 			"patience_seconds": patience,
-			"base_coins": maxi(int(product.get("base_sell_price", 1)), 1) * quantity,
+			"base_coins": unit_price * quantity,
 		},
 		"required_stock_ids": required_stock_ids,
 	}

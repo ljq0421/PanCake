@@ -45,6 +45,7 @@ func _run() -> void:
 	youtiao_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake"], "active_kind": &"area", "active_id": &"area.youtiao"}
 	var youtiao_teaching := Dictionary(GENERATOR.generate(youtiao_tutorial, {}, 3, 1, 5, 0))
 	_check(_single_area(youtiao_teaching) == &"area.youtiao" and int(Dictionary(Array(youtiao_teaching.get("items", []))[0]).get("quantity", 0)) == 1 and bool(Dictionary(youtiao_teaching.get("metadata", {})).get("tutorial_no_countdown", false)), "youtiao unlock creates one single-item unlimited teaching order even at zero stock")
+	_check_youtiao_tutorial_follow_up_order(youtiao_tutorial)
 	var soy_tutorial := _fully_playable_progression()
 	soy_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao"], "active_kind": &"area", "active_id": &"area.fresh_soy_milk"}
 	var soy_teaching := Dictionary(GENERATOR.generate(soy_tutorial, {}, 3, 1, 8, 0))
@@ -98,6 +99,41 @@ func _check_youtiao_quantities(inventory: Dictionary) -> void:
 	_check(absf(float(counts[1]) / sample_count - 0.50) <= 0.03, "one-strip orders use the authored 50% weight")
 	_check(absf(float(counts[2]) / sample_count - 0.35) <= 0.03, "two-strip orders use the authored 35% weight")
 	_check(absf(float(counts[3]) / sample_count - 0.15) <= 0.03, "three-strip orders use the authored 15% weight")
+
+
+func _check_youtiao_tutorial_follow_up_order(progression: Dictionary) -> void:
+	# A pending content promotion must not displace the first normal fryer order
+	# after the oil-strip tutorial.
+	var batch := Dictionary(GENERATOR.generate_queue_candidates(
+		progression,
+		{},
+		24680,
+		1,
+		2,
+		8,
+		0,
+		{
+			"kind": &"pancake_stock",
+			"target_id": &"stock.pancake.baocui",
+			"source_growth_id": &"growth.add_on.pancake.baocui",
+			"next_index": 0,
+		},
+	))
+	var candidates := Array(batch.get("candidates", []))
+	var teaching := Dictionary(candidates[0]) if candidates.size() > 0 else {}
+	var follow_up := Dictionary(candidates[1]) if candidates.size() > 1 else {}
+	var follow_up_metadata := Dictionary(follow_up.get("metadata", {}))
+	_check(
+		bool(batch.get("success", false))
+			and _single_area(teaching) == &"area.youtiao"
+			and bool(Dictionary(teaching.get("metadata", {})).get("tutorial_no_countdown", false)),
+		"youtiao tutorial remains the first storefront order when another promotion is pending",
+	)
+	_check(
+		_single_area(follow_up) == &"area.youtiao"
+			and StringName(follow_up_metadata.get("promotion_source_growth_id", &"")) == &"tutorial:area.youtiao",
+		"the order immediately after youtiao teaching is an ordinary youtiao promotion",
+	)
 
 
 func _check_three_area_ratios(inventory: Dictionary) -> void:

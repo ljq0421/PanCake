@@ -1166,7 +1166,7 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 		var crack_preview := Dictionary(pancake_model.can_crack_egg(grid_position))
 		if not bool(crack_preview.get("success", false)):
 			return crack_preview.merged({"stock_id": stock_id, "grid_position": grid_position}, true)
-	return {"success": true, "stock_id": stock_id, "ingredient_type": ingredient_type, "grid_position": grid_position, "local_position": local_position}
+	return {"success": true, "stock_id": stock_id, "ingredient_type": ingredient_type, "product_id": StringName(source_ref.get("product_id", &"")), "grid_position": grid_position, "local_position": local_position}
 
 
 func place_validated_ingredient(validation: Dictionary) -> Dictionary:
@@ -1177,7 +1177,7 @@ func place_validated_ingredient(validation: Dictionary) -> Dictionary:
 	var grid_position := Vector2(validation.get("grid_position", Vector2.ZERO))
 	# The native drag preview is upright. Preserve that orientation after release
 	# so an ingredient never visibly snaps to a different angle when it lands.
-	var placed := Dictionary(ingredient_model.place(ingredient_type, grid_position, 0.0, pancake_model))
+	var placed := Dictionary(ingredient_model.place(ingredient_type, grid_position, 0.0, pancake_model, StringName(validation.get("product_id", &""))))
 	if not bool(placed.get("success", false)):
 		return placed
 	if ingredient_type == IngredientModel.EGG:
@@ -1229,7 +1229,7 @@ func accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2
 
 
 func _stock_id_from_source(source_ref: Dictionary) -> StringName:
-	if StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain":
+	if StringName(source_ref.get("product_id", &"")) in [&"product.youtiao.plain", &"product.youtiao.sesame"]:
 		return &"stock.pancake.youtiao"
 	return StringName(source_ref.get("stock_id", &""))
 

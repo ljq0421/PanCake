@@ -1372,6 +1372,32 @@ func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
 	return stage_product_to_order({"source_kind": &"prepared_product_slot", "source_slot_id": slot_id, "source_index": -1, "product_id": product_id}, order_id, item_index)
 
 
+func preview_take_youtiao_fryer_slot(slot_index: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	if slot_index < 0:
+		return {"success": false, "reason": &"invalid_youtiao_fryer_slot"}
+	_ensure_production_service()
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, slot_index))
+	if not bool(preview.get("success", false)):
+		return preview
+	if StringName(Dictionary(preview.get("product", {})).get("product_id", &"")) != &"product.youtiao.plain":
+		return {"success": false, "reason": &"not_pancake_ingredient"}
+	return preview
+
+
+func take_youtiao_fryer_slot(slot_index: int) -> Dictionary:
+	var preview := preview_take_youtiao_fryer_slot(slot_index)
+	if not bool(preview.get("success", false)):
+		return preview
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, slot_index))
+	if bool(collected.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return collected
+
+
 func preview_take_ready_youtiao_for_pancake() -> Dictionary:
 	var preview := preview_take_prepared_product(&"slot.04")
 	if not bool(preview.get("success", false)):
@@ -2369,44 +2395,6 @@ func debug_grant_progression(
 	})
 
 
-func debug_fulfill_next_growth_requirements() -> Dictionary:
-	var unavailable := _debug_tools_unavailable_result()
-	if not unavailable.is_empty():
-		return unavailable
-	_ensure_progression()
-	var before := five_area_progression_snapshot()
-	if bool(_progression.get("day_open")):
-		return _debug_result(false, &"business_day_open", before)
-	if not Array(before.get("pending_growth_ids", [])).is_empty():
-		return _debug_result(false, &"pending_purchase_exists", before)
-	var target_growth_id := _debug_next_unowned_growth_id(_progression)
-	if target_growth_id.is_empty():
-		return _debug_result(true, &"route_complete", before, {"changed": false})
-	var preview: RefCounted = PROGRESSION_SERVICE.new(before)
-	preview.call("set_day_open", false)
-	var activated_growth_ids: Array[StringName] = []
-	var prepared := _debug_prepare_growth_on(preview, target_growth_id, activated_growth_ids)
-	if not bool(prepared.get("success", false)):
-		return _debug_result(false, StringName(prepared.get("reason", &"requirements_unavailable")), before, {
-			"growth_id": target_growth_id,
-			"details": prepared,
-		})
-	var purchase_status: Dictionary = preview.call("purchase_status", target_growth_id)
-	if not bool(purchase_status.get("can_purchase", false)):
-		return _debug_result(false, StringName(purchase_status.get("reason", &"requirements_unavailable")), before, {
-			"growth_id": target_growth_id,
-			"details": purchase_status,
-		})
-	_progression.call("load_snapshot", preview.call("snapshot"))
-	_progression.call("set_day_open", false)
-	_debug_persist_progression(false)
-	return _debug_result(true, &"", before, {
-		"changed": before != five_area_progression_snapshot(),
-		"growth_id": target_growth_id,
-		"affected_growth_ids": [target_growth_id],
-	})
-
-
 func debug_advance_to_device_tier(area_id: StringName, target_tier: int) -> Dictionary:
 	var unavailable := _debug_tools_unavailable_result()
 	if not unavailable.is_empty():
@@ -2544,13 +2532,6 @@ func _debug_persist_progression(emit_inventory: bool) -> void:
 	progression_changed.emit(five_area_progression_snapshot())
 	if emit_inventory:
 		inventory_changed.emit(inventory_snapshot())
-
-
-func _debug_next_unowned_growth_id(progression: RefCounted) -> StringName:
-	for growth_id in CATALOG.GROWTH_DISPLAY_ORDER:
-		if not bool(progression.call("owns_growth", growth_id)):
-			return growth_id
-	return &""
 
 
 func _debug_prepare_growth_on(progression: RefCounted, growth_id: StringName, activated_growth_ids: Array[StringName]) -> Dictionary:

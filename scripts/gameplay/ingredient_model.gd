@@ -44,6 +44,7 @@ func snapshot() -> Dictionary:
 		var position := Vector2(placement.get("position", Vector2.ZERO))
 		serialized.append({
 			"type": StringName(placement.get("type", &"")),
+			"product_id": StringName(placement.get("product_id", &"")),
 			"position": [position.x, position.y],
 			"rotation": float(placement.get("rotation", 0.0)),
 			"structural_load": float(placement.get("structural_load", 0.0)),
@@ -63,6 +64,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 			return {"success": false, "reason": &"invalid_ingredient_snapshot"}
 		placements.append({
 			"type": ingredient_type,
+			"product_id": StringName(source.get("product_id", &"")),
 			"position": Vector2(float(position_values[0]), float(position_values[1])),
 			"rotation": float(source.get("rotation", 0.0)),
 			"structural_load": float(source.get("structural_load", DEFINITIONS[ingredient_type].get("structural_load", 0.0))),
@@ -74,7 +76,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	return {"success": true}
 
 
-func place(ingredient_type: StringName, grid_position: Vector2, rotation: float, pancake_model: PancakeModel) -> Dictionary:
+func place(ingredient_type: StringName, grid_position: Vector2, rotation: float, pancake_model: PancakeModel, product_id: StringName = &"") -> Dictionary:
 	if not ALL_TYPES.has(ingredient_type):
 		return {"success": false, "reason": "未知配料"}
 	if pancake_model == null:
@@ -90,6 +92,7 @@ func place(ingredient_type: StringName, grid_position: Vector2, rotation: float,
 	var definition: Dictionary = DEFINITIONS[ingredient_type]
 	var placement := {
 		"type": ingredient_type,
+		"product_id": product_id,
 		"position": grid_position,
 		"rotation": rotation,
 		"structural_load": float(definition.structural_load),

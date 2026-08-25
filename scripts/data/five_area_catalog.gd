@@ -140,6 +140,12 @@ const PANCAKE_ADD_ON_SELL_PRICES := {
 	&"stock.pancake.meat_floss": 4,
 	&"stock.pancake.youtiao": 3,
 }
+const SOY_MILK_SELL_PRICES := {
+	&"plain": 3,
+	&"sugared": 4,
+	&"iced": 4,
+	&"sugared_iced": 5,
+}
 
 const AUTOMATION_DEFINITIONS := {
 	&"automation.pancake.auto_batter_ladle": {"area_id": &"area.pancake"},
@@ -259,6 +265,18 @@ static func pancake_order_price(template: Dictionary) -> int:
 		var stock_id := StringName(stock_id_variant)
 		total += int(PANCAKE_ADD_ON_SELL_PRICES.get(stock_id, 0))
 	return total
+
+
+static func soy_milk_sell_price(sugar_servings: int, temperature_mode: StringName) -> int:
+	var has_sugar := sugar_servings > 0
+	var is_iced := temperature_mode == &"iced"
+	if has_sugar and is_iced:
+		return int(SOY_MILK_SELL_PRICES[&"sugared_iced"])
+	if has_sugar:
+		return int(SOY_MILK_SELL_PRICES[&"sugared"])
+	if is_iced:
+		return int(SOY_MILK_SELL_PRICES[&"iced"])
+	return int(SOY_MILK_SELL_PRICES[&"plain"])
 
 static func daily_goal_definition(goal_id: StringName) -> Dictionary:
 	return _copy_definition(DAILY_GOAL_DEFINITIONS, goal_id)

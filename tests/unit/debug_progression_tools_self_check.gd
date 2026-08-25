@@ -28,25 +28,7 @@ func _run() -> void:
 	_check(int(qualified_details.get("qualified", 0)) == 10 and int(qualified_details.get("a_grade", 0)) == 5, "qualified-only debug results preserve A-grade mastery")
 	var locked_mastery := Dictionary(session.call("debug_grant_progression", 0, 0, &"area.youtiao", 5, 0))
 	_check(not bool(locked_mastery.get("success", false)) and StringName(locked_mastery.get("reason", &"")) == &"area_locked", "locked areas reject direct mastery grants")
-	var open_day_fulfill := Dictionary(session.call("debug_fulfill_next_growth_requirements"))
-	_check(not bool(open_day_fulfill.get("success", false)) and StringName(open_day_fulfill.get("reason", &"")) == &"business_day_open", "growth requirement fill is limited to the closed-day report")
-
 	session.call("end_business_day", {"reason": &"test_early_end"})
-	var fulfill := Dictionary(session.call("debug_fulfill_next_growth_requirements"))
-	var first_growth := &"growth.tool.pancake.wide_spreader"
-	var first_status := Dictionary(session.call("growth_purchase_status", first_growth))
-	var fulfill_snapshot := Dictionary(session.call("five_area_progression_snapshot"))
-	_check(bool(fulfill.get("success", false)) and StringName(fulfill.get("growth_id", &"")) == first_growth, "requirement fill targets the first unowned fixed-route item")
-	_check(bool(first_status.get("can_purchase", false)) and not Array(fulfill_snapshot.get("owned_growth_ids", [])).has(str(first_growth)), "requirement fill enables but does not purchase the target growth")
-	_check(StringName(fulfill_snapshot.get("pending_install_purchase", &"")).is_empty(), "requirement fill leaves the formal purchase slot empty")
-	var repeated_fulfill := Dictionary(session.call("debug_fulfill_next_growth_requirements"))
-	_check(bool(repeated_fulfill.get("success", false)) and not bool(repeated_fulfill.get("changed", true)), "repeated requirement fill is idempotent")
-	var formal_purchase := Dictionary(session.call("purchase_growth", first_growth))
-	_check(bool(formal_purchase.get("success", false)) and StringName(Dictionary(session.call("five_area_progression_snapshot")).get("pending_install_purchase", &"")) == first_growth, "normal purchase still owns reservation after debug requirement fill")
-	var pending_fill := Dictionary(session.call("debug_fulfill_next_growth_requirements"))
-	_check(not bool(pending_fill.get("success", false)) and StringName(pending_fill.get("reason", &"")) == &"pending_purchase_exists", "requirement fill does not clear an existing reservation")
-	var next_day := Dictionary(session.call("begin_next_business_day"))
-	_check(bool(next_day.get("success", false)) and bool(session.call("progression_service").call("owns_growth", first_growth)), "normal next-day activation remains authoritative")
 
 	var tier_cases := [
 		{&"area_id": &"area.pancake", &"tier": 0},

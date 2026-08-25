@@ -21,6 +21,8 @@ class FakeSession:
 	var inventory := {"stock.pancake.batter": 0}
 	var saved_griddles: Dictionary = {}
 	var griddle_save_calls := 0
+	var fryer_slot_available := true
+	var sesame_youtiao_available := true
 
 	func progression_service() -> RefCounted:
 		return progression
@@ -45,6 +47,24 @@ class FakeSession:
 		griddle_save_calls += 1
 		saved_griddles = value.duplicate(true)
 		return {"success": true}
+
+	func preview_take_youtiao_fryer_slot(slot_index: int) -> Dictionary:
+		return {"success": fryer_slot_available and slot_index == 0}
+
+	func take_youtiao_fryer_slot(slot_index: int) -> Dictionary:
+		var preview := preview_take_youtiao_fryer_slot(slot_index)
+		if bool(preview.get("success", false)):
+			fryer_slot_available = false
+		return preview
+
+	func preview_take_prepared_product(slot_id: StringName, source_index: int) -> Dictionary:
+		return {"success": sesame_youtiao_available and slot_id == &"slot.04" and source_index == 1}
+
+	func take_prepared_product(slot_id: StringName, source_index: int) -> Dictionary:
+		var preview := preview_take_prepared_product(slot_id, source_index)
+		if bool(preview.get("success", false)):
+			sesame_youtiao_available = false
+		return preview
 
 
 var failures := PackedStringArray()
@@ -72,6 +92,31 @@ func _run() -> void:
 	_check(session.griddle_save_calls == 0, "reapplying the single-griddle layout and its safety tick do not rewrite an unchanged save")
 	var unit: Node = station.units[0]
 	_check(unit.position.is_equal_approx(Vector2(380.0, 105.0)), "the sole griddle retains the scene-authored single-stall position")
+	for coverage_index in unit.pancake_model.coverage.size():
+		unit.pancake_model.coverage[coverage_index] = 1.0
+	unit.state = CompactGriddleUnit.State.GARNISH
+	var fryer_youtiao_source := {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}
+	var pancake_center := unit.pancake_surface.size * 0.5
+	var fryer_youtiao_preview := station.can_preview_drop_on_unit(0, fryer_youtiao_source, pancake_center)
+	var direct_youtiao_drop := Dictionary(station.drop_on_unit(0, fryer_youtiao_source, pancake_center))
+	var sesame_youtiao_source := {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 1, "product_id": &"product.youtiao.sesame"}
+	var sesame_youtiao_preview := station.can_preview_drop_on_unit(0, sesame_youtiao_source, pancake_center)
+	var sesame_youtiao_drop := Dictionary(station.drop_on_unit(0, sesame_youtiao_source, pancake_center))
+	_check(
+		fryer_youtiao_preview
+		and bool(direct_youtiao_drop.get("success", false))
+		and not session.fryer_slot_available
+		and sesame_youtiao_preview
+		and bool(sesame_youtiao_drop.get("success", false))
+		and not session.sesame_youtiao_available
+		and unit.ingredient_model.count_type(IngredientModel.YOUTIAO) == 2,
+		"ready fryer and sesame-tray youtiao can each be dragged onto the pancake and are consumed once"
+	)
+	_check(
+		StringName(unit.ingredient_model.placements[1].get("product_id", &"")) == &"product.youtiao.sesame",
+		"the sesame-tray youtiao retains its sesame product identity for pancake rendering"
+	)
+	unit.reset_unit()
 	_check(
 		unit.package_visual.scale.is_equal_approx(Vector2(3.0, 3.0))
 		and unit.package_visual.pivot_offset.is_equal_approx(unit.package_visual.size * 0.5)

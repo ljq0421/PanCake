@@ -41,11 +41,6 @@ func _run() -> void:
 	_check(main.workstation.daily_bill_panel.visible, "real pointer quick-end opens the formal daily bill")
 	await _press_f3()
 	_check(not debug_panel.visible, "F3 closes the panel so the underlying daily-bill control is reachable")
-	var fulfill_button := main.workstation.get_node("%DebugFulfillGrowthButton") as Button
-	await _click_control(fulfill_button)
-	var first_ticket := main.workstation.get_node("%GrowthTicket1") as Button
-	var fulfilled := Dictionary(session.call("five_area_progression_snapshot"))
-	_check(not first_ticket.disabled and StringName(fulfilled.get("pending_install_purchase", &"")).is_empty(), "real pointer requirement fill enables but does not reserve the first growth card")
 	await _press_f3()
 	_check(debug_panel.visible and not pancake_tier_one_button.visible, "single-stall debug panel hides retired pancake capacity checkpoints")
 	var progressed := Dictionary(session.call("five_area_progression_snapshot"))

@@ -36,13 +36,6 @@ func _run() -> void:
 	], "opening route focuses on pancake handling and add-ons before another area")
 	_check(starter_tickets[0].disabled and not starter_tickets[1].disabled and starter_tickets[2].disabled, "each opening growth card reflects its own day and reputation gates")
 	_check(_all_active_text(starter_tickets), "opening growth cards contain no retired drink or steamer copy")
-	var debug_fulfill_button := starter_station.get_node("%DebugFulfillGrowthButton") as Button
-	_check(debug_fulfill_button.visible == OS.is_debug_build(), "daily bill exposes requirement fill only in debug builds")
-	debug_fulfill_button.emit_signal("pressed")
-	await process_frame
-	var fulfilled_snapshot := Dictionary(session.call("five_area_progression_snapshot"))
-	_check(not starter_tickets[0].disabled, "debug requirement fill immediately refreshes and enables the first growth card")
-	_check(not Array(fulfilled_snapshot.get("owned_growth_ids", [])).has("growth.tool.pancake.wide_spreader") and StringName(fulfilled_snapshot.get("pending_install_purchase", &"")).is_empty(), "daily-bill debug fill does not buy or reserve the growth item")
 	starter_tickets[1].emit_signal("pressed")
 	await process_frame
 	var pending: Dictionary = session.call("five_area_progression_snapshot")

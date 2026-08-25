@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://cutgih44ymmyc"]
 
 [ext_resource type="Script" uid="uid://bt7tqa6n1h2od" path="res://scripts/ui/cartoon_youtiao_fryer_toggle.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://dlos2ddb5jwdv" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="2_4ayyu"]
+[ext_resource type="Texture2D" uid="uid://cwy3t8rau3wcw" path="res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png" id="2_4ayyu"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
 [ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png" id="3_t355c"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/youtiao_tray_view.tscn" id="3_tray"]
+[ext_resource type="PackedScene" uid="uid://ctm07paqtlqsu" path="res://scenes/gameplay/youtiao_tray_view.tscn" id="3_tray"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_8p23u"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_4ayyu"]
 atlas = ExtResource("3_t355c")
 region = Rect2(97, 53, 321, 403)
 
@@ -18,21 +18,29 @@ offset_right = 600.0
 offset_bottom = 650.0
 mouse_default_cursor_shape = 2
 script = ExtResource("1_script")
+editor_preview_tier = 1
+editor_preview_state = 2
+basic_raised_basket_position = Vector2(55, 136)
+basic_lowered_basket_position = Vector2(55, 190)
+advanced_raised_basket_position = Vector2(55, 152)
+advanced_lowered_basket_position = Vector2(55, 205)
 
 [node name="FryerAssembly" type="Control" parent="." unique_id=714480439]
 unique_name_in_owner = true
 anchors_preset = 0
 offset_left = 81.0
+offset_top = -66.0
 offset_right = 401.0
-offset_bottom = 506.0
+offset_bottom = 440.0
+scale = Vector2(1.2, 1.2)
 mouse_filter = 2
 
 [node name="FryerVisual" type="TextureRect" parent="FryerAssembly" unique_id=714480438]
 unique_name_in_owner = true
 layout_mode = 0
-offset_top = 68.0
-offset_right = 327.0
-offset_bottom = 466.28906
+offset_top = 80.0
+offset_right = 256.0
+offset_bottom = 421.0
 mouse_filter = 2
 texture = ExtResource("2_4ayyu")
 expand_mode = 1
@@ -42,10 +50,11 @@ stretch_mode = 5
 unique_name_in_owner = true
 z_index = 2
 anchors_preset = 0
-offset_left = 66.0
-offset_top = 123.0
-offset_right = 258.0
-offset_bottom = 200.0
+offset_left = 55.0
+offset_top = 205.0
+offset_right = 247.0
+offset_bottom = 282.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 
 [node name="ProductSource1" type="TextureButton" parent="FryerAssembly/BasketProducts" unique_id=279161112]
@@ -54,10 +63,11 @@ z_index = 2
 layout_mode = 0
 offset_right = 75.0
 offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 disabled = true
-texture_normal = SubResource("AtlasTexture_8p23u")
-texture_disabled = SubResource("AtlasTexture_8p23u")
+texture_normal = SubResource("AtlasTexture_4ayyu")
+texture_disabled = SubResource("AtlasTexture_4ayyu")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
@@ -69,10 +79,11 @@ layout_mode = 0
 offset_left = 39.0
 offset_right = 114.0
 offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 disabled = true
-texture_normal = SubResource("AtlasTexture_8p23u")
-texture_disabled = SubResource("AtlasTexture_8p23u")
+texture_normal = SubResource("AtlasTexture_4ayyu")
+texture_disabled = SubResource("AtlasTexture_4ayyu")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
@@ -84,10 +95,11 @@ layout_mode = 0
 offset_left = 78.0
 offset_right = 153.0
 offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 disabled = true
-texture_normal = SubResource("AtlasTexture_8p23u")
-texture_disabled = SubResource("AtlasTexture_8p23u")
+texture_normal = SubResource("AtlasTexture_4ayyu")
+texture_disabled = SubResource("AtlasTexture_4ayyu")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
@@ -99,10 +111,11 @@ layout_mode = 0
 offset_left = 117.0
 offset_right = 192.0
 offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 disabled = true
-texture_normal = SubResource("AtlasTexture_8p23u")
-texture_disabled = SubResource("AtlasTexture_8p23u")
+texture_normal = SubResource("AtlasTexture_4ayyu")
+texture_disabled = SubResource("AtlasTexture_4ayyu")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
@@ -129,18 +142,21 @@ offset_left = 22.0
 offset_top = 393.0
 offset_right = 300.0
 offset_bottom = 630.0
+scale = Vector2(0.85, 0.85)
+slot_origin = Vector2(48, 48)
 
 [node name="SesameTray" parent="." unique_id=993540118 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
 z_index = 1
 custom_minimum_size = Vector2(278, 237)
 layout_mode = 0
-offset_left = 295.0
-offset_top = 414.0
-offset_right = 514.0
-offset_bottom = 620.0
+offset_left = 222.0
+offset_top = 393.0
+offset_right = 500.0
+offset_bottom = 630.0
+scale = Vector2(0.85, 0.85)
 destination_product_id = &"product.youtiao.sesame"
-slot_origin = Vector2(20, 40)
+slot_origin = Vector2(46, 48)
 
 [node name="StatusLabel" type="Label" parent="." unique_id=948688222]
 unique_name_in_owner = true
@@ -153,7 +169,7 @@ theme_override_colors/font_color = Color(1, 0.93, 0.73, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 30
-text = "布局预览 · 初级 · 抬起面坯"
+text = "布局预览 · 高级 · 落下面坯"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2

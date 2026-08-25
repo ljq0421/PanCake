@@ -1,67 +1,77 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ctm07paqtlqsu"]
 
-[ext_resource type="Script" path="res://scripts/ui/youtiao_tray_view.gd" id="1_tray"]
-[ext_resource type="Script" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
+[ext_resource type="Script" uid="uid://q3alpodm6utg" path="res://scripts/ui/youtiao_tray_view.gd" id="1_tray"]
+[ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
 
-[node name="YoutiaoTrayView" type="Control"]
+[node name="YoutiaoTrayView" type="Control" unique_id=796360723]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 278.0
 offset_bottom = 237.0
 script = ExtResource("1_tray")
 
-[node name="Artwork" type="TextureRect" parent="."]
+[node name="Artwork" type="TextureRect" parent="." unique_id=1489592618]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -1.0
+offset_right = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ProductSource1" type="TextureButton" parent="."]
+[node name="ProductSource1" type="TextureButton" parent="." unique_id=1935543161]
 unique_name_in_owner = true
-visible = false
 z_index = 1
 layout_mode = 0
-offset_right = 48.0
-offset_bottom = 104.0
+offset_left = 48.0
+offset_top = 51.0
+offset_right = 96.0
+offset_bottom = 155.0
+mouse_filter = 2
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
 
-[node name="ProductSource2" type="TextureButton" parent="."]
+[node name="ProductSource2" type="TextureButton" parent="." unique_id=1708615871]
 unique_name_in_owner = true
-visible = false
 z_index = 1
 layout_mode = 0
-offset_right = 48.0
-offset_bottom = 104.0
+offset_left = 92.0
+offset_top = 51.0
+offset_right = 140.0
+offset_bottom = 155.0
+mouse_filter = 2
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
 
-[node name="ProductSource3" type="TextureButton" parent="."]
+[node name="ProductSource3" type="TextureButton" parent="." unique_id=693928554]
 unique_name_in_owner = true
-visible = false
 z_index = 1
 layout_mode = 0
-offset_right = 48.0
-offset_bottom = 104.0
+offset_left = 136.0
+offset_top = 51.0
+offset_right = 184.0
+offset_bottom = 155.0
+mouse_filter = 2
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
 
-[node name="ProductSource4" type="TextureButton" parent="."]
+[node name="ProductSource4" type="TextureButton" parent="." unique_id=1924358694]
 unique_name_in_owner = true
-visible = false
 z_index = 1
 layout_mode = 0
-offset_right = 48.0
-offset_bottom = 104.0
+offset_left = 180.0
+offset_top = 51.0
+offset_right = 228.0
+offset_bottom = 155.0
+mouse_filter = 2
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")

@@ -18,8 +18,8 @@ func _run() -> void:
 	var coriander_crock := hotspots.get_node_or_null("CorianderTray/Visual") as TextureRect if hotspots != null else null
 	var source := hotspots.get_node_or_null("ScallionTray/Hotspot") as ProductDragSource if hotspots != null else null
 	var coriander_source := hotspots.get_node_or_null("CorianderTray/Hotspot") as ProductDragSource if hotspots != null else null
-	var spreader_source := hotspots.get_node_or_null("SpreaderHotspot") as TextureButton if hotspots != null else null
-	var spreader_holder := hotspots.get_node_or_null("SpreaderHolderFilledVisual") as TextureRect if hotspots != null else null
+	var spreader_source := hotspots.get_node_or_null("SpreaderSource/HitButton") as AlphaTextureHitButton if hotspots != null else null
+	var spreader_holder := hotspots.get_node_or_null("SpreaderSource/Visual") as TextureRect if hotspots != null else null
 	_check(crock != null, "the workbench includes a dedicated scallion crock visual")
 	_check(source != null and source.hold_enabled and source.native_drag_enabled, "the crock keeps shared drag-to-griddle and hold-to-restock gestures")
 	if crock != null:

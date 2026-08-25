@@ -36,7 +36,7 @@ func _run() -> void:
 
 	_check(unit.pancake_surface.pointer_local_position.is_equal_approx(target_local), "raw viewport motion is converted into the exact pancake-surface coordinate")
 	unit.call("_update_surface_tool_artwork", unit.pancake_surface.pointer_local_position, 1.0 / 60.0)
-	_check(not unit.spreader_artwork.visible, "normal spread interaction no longer draws a software Sprite2D spreader")
+	_check(unit.get_node_or_null("PancakeSurface/SpreaderArtwork") == null, "retired software Sprite2D spreader node is absent")
 	_check(unit._hardware_spreader_cursor_active, "normal spread interaction activates the hardware spreader cursor")
 	_check(not unit.pancake_surface.spreader_cursor_visual_enabled, "hardware cursor mode does not also draw the custom canvas cursor ring")
 	var raw_spread_samples := PackedVector2Array([Vector2.ONE, Vector2.ONE * 2.0, Vector2.ONE * 3.0, Vector2.ONE * 4.0])
@@ -45,7 +45,7 @@ func _run() -> void:
 	_check(limited_spread_samples[0].is_equal_approx(raw_spread_samples[-1]), "spread simulation keeps the newest pointer sample when coalescing a fast move")
 	unit.set_spreader_visual_enabled(false)
 	unit.call("_update_surface_tool_artwork", target_local, 1.0 / 60.0)
-	_check(not unit.spreader_artwork.visible, "no-visual test mode hides the spreader artwork")
+	_check(unit.get_node_or_null("PancakeSurface/SpreaderArtwork") == null, "no-visual mode does not depend on a hidden spreader artwork node")
 	_check(not unit.pancake_surface.spreader_cursor_visual_enabled, "no-visual test mode hides the custom spreader cursor ring")
 	_check(not unit._hardware_spreader_cursor_active, "no-visual test mode restores the normal operating-system cursor")
 	unit.pancake_model.reset()

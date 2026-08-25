@@ -4,6 +4,7 @@ extends Control
 signal status_message(message: String)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const SPREADER_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png")
 const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png")
 const WIDE_SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_wide_filled_v1.png")
 const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png")
@@ -33,15 +34,15 @@ const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_lad
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
 
 const INGREDIENT_HOTSPOT_IDS: Dictionary = {
-	&"HamTrayHotspot": &"stock.pancake.ham_sausage",
-	&"PorkFlossHotspot": &"stock.pancake.meat_floss",
+	&"HamSource/Hotspot": &"stock.pancake.ham_sausage",
+	&"PorkFlossSource/Hotspot": &"stock.pancake.meat_floss",
 	&"ScallionTray/Hotspot": &"stock.pancake.scallion",
 	&"CorianderTray/Hotspot": &"stock.pancake.coriander",
 	&"BaocuiBasket/Hotspot": &"stock.pancake.baocui",
 	&"EggCarton/Hotspot": &"stock.pancake.egg",
 }
 const SAUCE_HOTSPOT_IDS: Dictionary = {
-	&"SecretSauceHotspot": &"stock.pancake.sauce.sweet_flour",
+	&"SecretSauceSource/Hotspot": &"stock.pancake.sauce.sweet_flour",
 }
 ## Some optional ingredients are rendered by the stall artwork rather than by
 ## their drag source. Keep those visuals in the same unlock state as the source
@@ -50,20 +51,32 @@ const STOCK_VISUAL_PATHS: Dictionary = {
 	&"stock.pancake.egg": [NodePath("EggCarton")],
 	&"stock.pancake.baocui": [NodePath("BaocuiBasket")],
 	&"stock.pancake.scallion": [NodePath("ScallionTray")],
-	&"stock.pancake.sauce.sweet_flour": [NodePath("../SecretSauceJar"), NodePath("SecretSauceHotspot")],
-	&"stock.pancake.ham_sausage": [NodePath("../ToppingIngredientTray2")],
-	&"stock.pancake.meat_floss": [NodePath("../ToppingIngredientTray"), NodePath("PorkFlossHotspot")],
+	&"stock.pancake.sauce.sweet_flour": [NodePath("SecretSauceSource")],
+	&"stock.pancake.ham_sausage": [NodePath("HamSource")],
+	&"stock.pancake.meat_floss": [NodePath("PorkFlossSource")],
 	&"stock.pancake.coriander": [NodePath("CorianderTray")],
 }
 ## Container artwork stays in the scene while its drag source lives under the
 ## worktop hotspots. These paths let the workshop present a stocked catalogue
 ## without changing the service-day inventory.
 const CONTAINER_VISUAL_PATHS := [
-	NodePath("../ToppingIngredientTray"),
-	NodePath("../ToppingIngredientTray2"),
+	NodePath("PorkFlossSource/Visual"),
+	NodePath("HamSource/Visual"),
 	NodePath("ScallionTray/Visual"),
 	NodePath("CorianderTray/Visual"),
 ]
+## Every source owns one layout rectangle. Its painted layers and input surface
+## are children of that rectangle, so moving or resizing the source cannot leave
+## a sibling hotspot behind.
+const ALPHA_HIT_VISUAL_PATHS: Dictionary = {
+	&"PorkFlossSource/Hotspot": [NodePath("PorkFlossSource/Visual")],
+	&"HamSource/Hotspot": [NodePath("HamSource/Visual")],
+	&"EggCarton/Hotspot": [NodePath("EggCarton/Visual"), NodePath("EggCarton/Visual/Contents")],
+	&"ScallionTray/Hotspot": [NodePath("ScallionTray/Visual")],
+	&"CorianderTray/Hotspot": [NodePath("CorianderTray/Visual")],
+	&"BaocuiBasket/Hotspot": [NodePath("BaocuiBasket/Visual")],
+	&"SecretSauceSource/Hotspot": [NodePath("SecretSauceSource/Visual")],
+}
 const EGG_STOCK_ID := &"stock.pancake.egg"
 const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 
@@ -90,15 +103,10 @@ func _ready() -> void:
 	for hotspot_name in SAUCE_HOTSPOT_IDS:
 		var hotspot := _material_hotspot(hotspot_name)
 		_configure_material_hotspot(hotspot, SAUCE_HOTSPOT_IDS[hotspot_name], &"pancake_shared_sauce")
-		var authored_hit_button := get_node_or_null(NodePath("%sHitButton" % str(hotspot_name))) as BaseButton
-		if authored_hit_button != null:
-			authored_hit_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var hit_button := _static_overlay_hit_button(StringName("%sOverlayHitButton" % hotspot_name))
-		_connect_sauce_hit_button(hit_button, hotspot)
-	var spreader_hit_button := get_node_or_null("SpreaderHotspot") as BaseButton
+	var spreader_hit_button := get_node_or_null("SpreaderSource/HitButton") as BaseButton
 	if spreader_hit_button != null and not spreader_hit_button.pressed.is_connected(_on_spreader_pressed):
 		spreader_hit_button.pressed.connect(_on_spreader_pressed)
-	var batter_ladle_hit_button := _static_overlay_hit_button(&"BatterLadleHolderOverlayHitButton")
+	var batter_ladle_hit_button := get_node_or_null("BatterLadleSource/HitButton") as BaseButton
 	if batter_ladle_hit_button != null and not batter_ladle_hit_button.button_down.is_connected(_on_batter_ladle_button_down):
 		batter_ladle_hit_button.button_down.connect(_on_batter_ladle_button_down)
 	if batter_ladle_hit_button != null and not batter_ladle_hit_button.pressed.is_connected(_on_batter_ladle_pressed):
@@ -107,6 +115,7 @@ func _ready() -> void:
 	if station != null and station.has_signal("held_tool_changed") and not station.is_connected("held_tool_changed", _on_station_held_tool_changed):
 		station.connect("held_tool_changed", _on_station_held_tool_changed)
 	_update_batter_ladle_holder_visual()
+	call_deferred("_sync_material_alpha_hit_regions")
 
 
 func bind_session(session: Node) -> void:
@@ -138,6 +147,7 @@ func _process(delta: float) -> void:
 func _on_station_held_tool_changed(_tool_id: StringName) -> void:
 	_update_spreader_holder_visual()
 	_update_batter_ladle_holder_visual()
+	_sync_material_alpha_hit_regions()
 
 
 func refresh_from_session() -> void:
@@ -191,10 +201,7 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 		if stock_id == EGG_STOCK_ID
 		else -drag_preview_size * 0.5
 	)
-	# Sauce jars use a sibling AlphaTextureHitButton so their transparent image
-	# margins never select a sauce. The backing source only owns the gesture
-	# state machine and must not receive pointer events through those margins.
-	hotspot.mouse_filter = Control.MOUSE_FILTER_IGNORE if source_kind == &"pancake_shared_sauce" else Control.MOUSE_FILTER_STOP
+	hotspot.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not hotspot.short_clicked.is_connected(_on_material_short_clicked):
 		hotspot.short_clicked.connect(_on_material_short_clicked.bind(hotspot))
 	if not hotspot.hold_requested.is_connected(_on_material_hold_requested):
@@ -220,23 +227,19 @@ func _drag_preview_size(stock_id: StringName, texture: Texture2D) -> Vector2:
 	return texture.get_size() * IngredientLayer.visual_scale_for(ingredient_type)
 
 
-func _sync_container_alpha_hit_regions() -> void:
-	_sync_container_alpha_hit_region(&"EggCarton")
-	_sync_container_alpha_hit_region(&"BaocuiBasket")
-
-
-func _sync_container_alpha_hit_region(container_name: StringName) -> void:
-	var container := get_node_or_null(NodePath(str(container_name))) as Control
-	var hotspot := container.get_node_or_null("Hotspot") as ProductDragSource if container != null else null
-	if hotspot == null:
-		return
-	var regions: Array[Dictionary] = []
-	for layer_path in [NodePath("Visual"), NodePath("Visual/Contents"), NodePath("Contents")]:
-		var layer := container.get_node_or_null(layer_path) as TextureRect
-		if layer == null or not layer.visible or layer.texture == null:
+func _sync_material_alpha_hit_regions() -> void:
+	for hotspot_path_variant in ALPHA_HIT_VISUAL_PATHS:
+		var hotspot_path := NodePath(str(hotspot_path_variant))
+		var hotspot := get_node_or_null(hotspot_path) as ProductDragSource
+		if hotspot == null:
 			continue
-		regions.append({"texture": layer.texture, "rect": _painted_rect_in_hotspot(layer, hotspot)})
-	hotspot.set_alpha_hit_regions(regions)
+		var regions: Array[Dictionary] = []
+		for layer_path_variant in Array(ALPHA_HIT_VISUAL_PATHS[hotspot_path_variant]):
+			var layer := get_node_or_null(NodePath(str(layer_path_variant))) as TextureRect
+			if layer == null or not layer.visible or layer.texture == null:
+				continue
+			regions.append({"texture": layer.texture, "rect": _painted_rect_in_hotspot(layer, hotspot)})
+		hotspot.set_alpha_hit_regions(regions)
 
 
 func _painted_rect_in_hotspot(layer: TextureRect, hotspot: ProductDragSource) -> Rect2:
@@ -256,19 +259,6 @@ func _painted_rect_in_hotspot(layer: TextureRect, hotspot: ProductDragSource) ->
 	var scale := minf(rect.size.x / texture_size.x, rect.size.y / texture_size.y)
 	var painted_size := texture_size * scale
 	return Rect2(rect.position + (rect.size - painted_size) * 0.5, painted_size)
-
-
-func _static_overlay_hit_button(node_name: StringName) -> BaseButton:
-	return get_node_or_null("../../../FiveAreaInfrastructure/%s" % node_name) as BaseButton
-
-
-func _connect_sauce_hit_button(hit_button: BaseButton, hotspot: ProductDragSource) -> void:
-	if hit_button == null or hotspot == null:
-		return
-	if not hit_button.button_down.is_connected(_on_sauce_hit_button_down):
-		hit_button.button_down.connect(_on_sauce_hit_button_down.bind(hotspot))
-	if not hit_button.button_up.is_connected(_on_sauce_hit_button_up):
-		hit_button.button_up.connect(_on_sauce_hit_button_up.bind(hotspot))
 
 
 func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName, source_kind: StringName, inventory: Dictionary, progression: RefCounted) -> void:
@@ -293,12 +283,6 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, interactive, hint)
 	hotspot.set_drag_available(interactive and count > 0 and source_kind == &"pancake_shared_ingredient")
 	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if interactive else Control.CURSOR_FORBIDDEN
-	if source_kind == &"pancake_shared_sauce":
-		var overlay_hit_button := _static_overlay_hit_button(StringName("%sOverlayHitButton" % hotspot.name))
-		if overlay_hit_button != null:
-			overlay_hit_button.disabled = not interactive
-			overlay_hit_button.tooltip_text = hint
-			overlay_hit_button.mouse_default_cursor_shape = hotspot.mouse_default_cursor_shape
 
 
 func _refresh_optional_stock_visuals(progression: RefCounted) -> void:
@@ -364,16 +348,6 @@ func _pour_batter(batter_amount: float) -> void:
 	if not bool(result.get("success", false)):
 		status_message.emit("当前鏊面无法添加面糊")
 	_update_batter_ladle_holder_visual()
-
-
-func _on_sauce_hit_button_down(hotspot: ProductDragSource) -> void:
-	# A plain transparent Button provides a stable native pointer target while
-	# ProductDragSource retains the existing click/hold/restock state machine.
-	hotspot.begin_gesture(hotspot.get_global_rect().get_center())
-
-
-func _on_sauce_hit_button_up(hotspot: ProductDragSource) -> void:
-	hotspot.end_gesture()
 
 
 func _on_material_short_clicked(source_ref: Dictionary, hotspot: ProductDragSource) -> void:
@@ -465,7 +439,6 @@ func _update_egg_inventory_visual(stock: int, capacity: int) -> void:
 	var display_stock := capacity if _workshop_preview else stock
 	var capped_stock := clampi(display_stock, 0, maxi(capacity, 0))
 	content_visual.texture = egg_content_textures[capped_stock] if capped_stock < egg_content_textures.size() else null
-	_sync_container_alpha_hit_regions()
 
 
 func _update_baocui_inventory_visual(stock: int) -> void:
@@ -478,13 +451,12 @@ func _update_baocui_inventory_visual(stock: int) -> void:
 	var display_stock := baocui_basket_textures.size() if _workshop_preview else stock
 	var texture_index := clampi(display_stock, 0, baocui_basket_textures.size()) - 1
 	visual.texture = baocui_basket_textures[texture_index] if texture_index >= 0 else BAOCUI_EMPTY_BASKET
-	_sync_container_alpha_hit_regions()
 
 
 func _update_spreader_holder_visual() -> void:
-	var holder_empty := get_node_or_null("SpreaderHolderEmptyVisual") as CanvasItem
-	var holder_filled := get_node_or_null("SpreaderHolderFilledVisual") as TextureRect
-	if holder_empty == null or holder_filled == null:
+	var holder_visual := get_node_or_null("SpreaderSource/Visual") as TextureRect
+	var hit_button := get_node_or_null("SpreaderSource/HitButton") as AlphaTextureHitButton
+	if holder_visual == null or hit_button == null:
 		return
 	var station := _griddle_station()
 	var spreader_selected := station != null and station.has_method("is_spreader_selected") and bool(station.call("is_spreader_selected"))
@@ -496,23 +468,27 @@ func _update_spreader_holder_visual() -> void:
 	# for the press-spreader preview. Keep the runtime holder out of that slot;
 	# the overlay supplies the translucent (locked) or opaque (owned) press.
 	var replace_with_press_preview := _workshop_preview and wide_spreader_owned
-	holder_filled.texture = (
+	var filled_texture: Texture2D = (
 		PRESS_SPREADER
 		if press_spreader_owned and not _workshop_preview
 		else WIDE_SPREADER_HOLDER_FILLED
 		if wide_spreader_owned or _workshop_preview
 		else SPREADER_HOLDER_FILLED
 	)
-	holder_filled.modulate = Color(1.0, 1.0, 1.0, 0.42) if show_wide_preview else Color.WHITE
+	var display_texture := SPREADER_HOLDER_EMPTY if spreader_selected and not _workshop_preview and not press_spreader_owned else filled_texture
+	holder_visual.texture = display_texture
+	hit_button.hit_texture = display_texture
+	holder_visual.modulate = Color(1.0, 1.0, 1.0, 0.42) if show_wide_preview else Color.WHITE
 	# The workshop must consistently show the upgrade target instead of the
 	# runtime's temporarily selected/empty holder state.
-	holder_empty.visible = spreader_selected and not _workshop_preview and not press_spreader_owned
-	holder_filled.visible = (not spreader_selected or _workshop_preview or press_spreader_owned) and not replace_with_press_preview
+	holder_visual.visible = not replace_with_press_preview
+	hit_button.disabled = _workshop_preview
 
 
 func _update_batter_ladle_holder_visual() -> void:
-	var holder := get_node_or_null("BatterLadleHolderHotspot") as TextureButton
-	if holder == null:
+	var holder_visual := get_node_or_null("BatterLadleSource/Visual") as TextureRect
+	var hit_button := get_node_or_null("BatterLadleSource/HitButton") as AlphaTextureHitButton
+	if holder_visual == null or hit_button == null:
 		return
 	var station := _griddle_station()
 	# Keep the authored filled sprite through scene construction. The griddle's
@@ -527,27 +503,18 @@ func _update_batter_ladle_holder_visual() -> void:
 	# Availability only controls whether the holder can be pressed. Once pouring
 	# ends, the ladle is physically back in the cylinder even though the active
 	# griddle remains busy with that pancake.
-	holder.texture_normal = BATTER_LADLE_HOLDER_EMPTY if ladle_selected else BATTER_LADLE_HOLDER_FILLED
-	holder.texture_hover = holder.texture_normal
-	holder.texture_pressed = holder.texture_normal
-	holder.disabled = not batter_available or _workshop_preview
+	var display_texture := BATTER_LADLE_HOLDER_EMPTY if ladle_selected else BATTER_LADLE_HOLDER_FILLED
+	holder_visual.texture = display_texture
+	hit_button.hit_texture = display_texture
+	hit_button.disabled = not batter_available or _workshop_preview
 	if not batter_available:
-		holder.tooltip_text = "鏊面制作中"
+		hit_button.tooltip_text = "鏊面制作中"
 	elif _auto_batter_ladle_owned():
-		holder.tooltip_text = "点击加标准分量面糊"
+		hit_button.tooltip_text = "点击加标准分量面糊"
 	elif ladle_selected:
-		holder.tooltip_text = "面糊勺已拿起；在空鏊子上按住并拖动调整落点"
+		hit_button.tooltip_text = "面糊勺已拿起；在空鏊子上按住并拖动调整落点"
 	else:
-		holder.tooltip_text = "点击拿起面糊勺，在空鏊子上按住并拖动调整落点"
-	_sync_batter_ladle_input_state(holder)
-
-
-func _sync_batter_ladle_input_state(holder: TextureButton) -> void:
-	var hit_button := _static_overlay_hit_button(&"BatterLadleHolderOverlayHitButton")
-	if hit_button == null:
-		return
-	hit_button.disabled = holder.disabled
-	hit_button.tooltip_text = holder.tooltip_text
+		hit_button.tooltip_text = "点击拿起面糊勺，在空鏊子上按住并拖动调整落点"
 
 
 func _auto_batter_ladle_owned() -> bool:

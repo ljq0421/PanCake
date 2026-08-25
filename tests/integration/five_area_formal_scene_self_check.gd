@@ -17,8 +17,11 @@ func _run() -> void:
 	await process_frame
 	var stations := workstation.get_node_or_null("FiveAreaInfrastructure/Stations") as Control
 	_check(stations != null, "live shop exposes its station container")
-	for station_name in [&"CartoonYoutiaoFryer", &"PancakeStation", &"FreshSoyMilkStation"]:
+	for station_name in [&"CartoonYoutiaoFryer", &"FreshSoyMilkStation"]:
 		_check(stations != null and stations.get_node_or_null(NodePath(str(station_name))) != null, "%s is present" % station_name)
+	var pancake_station := workstation.get_node_or_null("SafeArea/JianbingStallArtwork") as Control
+	_check(pancake_station != null and pancake_station.get_node_or_null("MultiGriddleStation") != null, "the unified pancake station owns its physical griddle")
+	_check(stations != null and stations.get_node_or_null("PancakeStation") == null, "the former split pancake station wrapper is absent")
 	_check(stations != null and stations.get_node_or_null("WasteBasket") != null, "the shared waste basket may coexist with production workstations")
 	for retired_name in [&"YoutiaoStation", &"SteamerStation", &"PackagedDrinkStation"]:
 		_check(stations != null and stations.get_node_or_null(NodePath(str(retired_name))) == null, "%s is absent" % retired_name)

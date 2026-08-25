@@ -81,26 +81,25 @@ func _run() -> void:
 	root.add_child(station)
 	await process_frame
 	station.bind_session(session)
-	var shared_tool_tray := station.get_node("SharedToolTray") as SharedPancakeToolTray
 	_check(station.units.size() == 1, "single-stall scene authors exactly one griddle unit")
-	_check(not shared_tool_tray._press_spreader_button.visible, "the press icon stays hidden before its upgrade activates")
+	_check(station.get_node_or_null("SharedToolTray") == null, "the retired hidden shared tool tray is absent")
 	_check(station.get_node_or_null("Griddle01") != null and station.get_node_or_null("Griddle02") == null and station.get_node_or_null("Griddle03") == null, "secondary griddle nodes are absent")
 	for _refresh in 20:
 		station.set_griddle_count(3)
 	station.call("_process", 1.01)
 	_check(station.griddle_count() == 1, "legacy count requests cannot expand the single stall")
 	_check(session.griddle_save_calls == 0, "reapplying the single-griddle layout and its safety tick do not rewrite an unchanged save")
-	var unit: Node = station.units[0]
+	var unit := station.units[0] as CompactGriddleUnit
 	_check(unit.position.is_equal_approx(Vector2(380.0, 105.0)), "the sole griddle retains the scene-authored single-stall position")
 	for coverage_index in unit.pancake_model.coverage.size():
 		unit.pancake_model.coverage[coverage_index] = 1.0
 	unit.state = CompactGriddleUnit.State.GARNISH
 	var fryer_youtiao_source := {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}
 	var pancake_center := unit.pancake_surface.size * 0.5
-	var fryer_youtiao_preview := station.can_preview_drop_on_unit(0, fryer_youtiao_source, pancake_center)
+	var fryer_youtiao_preview: bool = station.can_preview_drop_on_unit(0, fryer_youtiao_source, pancake_center)
 	var direct_youtiao_drop := Dictionary(station.drop_on_unit(0, fryer_youtiao_source, pancake_center))
 	var sesame_youtiao_source := {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 1, "product_id": &"product.youtiao.sesame"}
-	var sesame_youtiao_preview := station.can_preview_drop_on_unit(0, sesame_youtiao_source, pancake_center)
+	var sesame_youtiao_preview: bool = station.can_preview_drop_on_unit(0, sesame_youtiao_source, pancake_center)
 	var sesame_youtiao_drop := Dictionary(station.drop_on_unit(0, sesame_youtiao_source, pancake_center))
 	_check(
 		fryer_youtiao_preview
@@ -118,20 +117,19 @@ func _run() -> void:
 	)
 	unit.reset_unit()
 	_check(
-		unit.package_visual.scale.is_equal_approx(Vector2(3.0, 3.0))
+		unit.package_visual.scale.is_equal_approx(Vector2(2.0, 2.0))
 		and unit.package_visual.pivot_offset.is_equal_approx(unit.package_visual.size * 0.5)
 		and unit.package_visual.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"the ready-product artwork is three times larger around its original center without taking pointer input",
+		"the ready-product artwork keeps its authored scale around its original center without taking pointer input",
 	)
+	var save_calls_before_main_action := session.griddle_save_calls
 	station.call("_on_main_action", 0)
-	_check(session.griddle_save_calls == 1, "a real griddle state change still persists exactly once")
+	_check(session.griddle_save_calls == save_calls_before_main_action + 1, "a real griddle state change still persists exactly once")
 	_check(int(session.inventory["stock.pancake.batter"]) == 0 and unit.state == CompactGriddleUnit.State.BATTER, "the visible griddle starts with unlimited batter and does not consume inventory")
 	_check(unit.pancake_surface.visible and unit.pancake_surface._has_point(unit.pancake_surface.size * 0.5), "the single griddle keeps its elliptical interactive pancake surface")
 	var locked_press := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
 	_check(not bool(locked_press.get("success", false)) and StringName(locked_press.get("reason", &"")) == &"tool_locked", "the press tool stays unavailable before its growth unlock")
 	session.progression.owned_growth_ids.append("growth.automation.pancake.press_once")
-	shared_tool_tray.refresh_from_session()
-	_check(shared_tool_tray._press_spreader_button.visible, "the press icon appears in the shared workstation tray after activation")
 	var press_result := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
 	_check(bool(press_result.get("success", false)) and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "the unlocked press tool converts batter into a ready first-side pancake")
 	_check(unit.state_label.text.contains("折叠") and unit.state_label.text.contains("-12"), "the first-side hint exposes direct folding and its score cost")

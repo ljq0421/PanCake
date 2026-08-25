@@ -56,8 +56,8 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
 @onready var cartoon_youtiao_fryer: CartoonYoutiaoFryerToggle = $FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer
-@onready var multi_griddle_station: Control = %MultiGriddleStation
-@onready var pancake_ready_source: ProductDragSource = get_node_or_null("FiveAreaInfrastructure/PancakeReadySource") as ProductDragSource
+@onready var pancake_station_view: Control = $SafeArea/JianbingStallArtwork
+@onready var multi_griddle_station: Control = $SafeArea/JianbingStallArtwork/MultiGriddleStation
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var pending_payment_button: Button = %PendingPaymentButton
@@ -72,12 +72,12 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 	$SafeArea/LockedIngredientInteractions/Slot04LockedButton,
 ]
 
-var _ready_pancake_source_ref: Dictionary = {}
 var _pending_tray_settlement: Dictionary = {}
 var _refresh_elapsed := 0.0
 var _delivery_click_in_progress := false
 var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
+var _pancake_station_mouse_behavior_before_modal := Control.MOUSE_BEHAVIOR_INHERITED
 var _multi_griddle_mode_active := false
 var _formal_payment_coin_sprites: Array[TextureRect] = []
 var _formal_payment_total_pulse_tween: Tween
@@ -90,6 +90,7 @@ var _top_warning_tween: Tween
 
 func _ready() -> void:
 	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
+	_pancake_station_mouse_behavior_before_modal = pancake_station_view.mouse_behavior_recursive
 	super._ready()
 	# The base shop setup initializes legacy foreground layers after the scene
 	# has been instantiated. Set these application-layer values after that setup
@@ -281,6 +282,11 @@ func _refresh_five_area_modal_input() -> void:
 		Control.MOUSE_BEHAVIOR_DISABLED
 		if modal_is_open
 		else _five_area_mouse_behavior_before_daily_bill
+	)
+	pancake_station_view.mouse_behavior_recursive = (
+		Control.MOUSE_BEHAVIOR_DISABLED
+		if modal_is_open
+		else _pancake_station_mouse_behavior_before_modal
 	)
 
 
@@ -590,7 +596,7 @@ func _tutorial_pancake_griddle_guide(session: Node, area_id: StringName) -> Dict
 	match griddle.state:
 		CompactGriddleUnit.State.IDLE:
 			return {
-				"target": _pancake_worktop_target("BatterLadleHolderHotspot", griddle),
+				"target": _pancake_worktop_target("BatterLadleSource/HitButton", griddle),
 				"message": "第1步：按住面糊勺，拖到空鏊子倒入面糊",
 			}
 		CompactGriddleUnit.State.BATTER:
@@ -679,8 +685,6 @@ func _refresh_multi_griddle_mode() -> void:
 	# inside the youtiao station remains available for fryer and soy waste.
 	if waste_area != null:
 		waste_area.visible = true
-	if pancake_ready_source != null:
-		pancake_ready_source.visible = false
 	var legacy_discard := get_node_or_null("SafeArea/DiscardCurrentPancakeButton") as CanvasItem
 	if legacy_discard != null:
 		legacy_discard.visible = false
@@ -743,31 +747,6 @@ func _refresh_attention_rail() -> void:
 
 
 func _refresh_pancake_drag_sources() -> void:
-	if p1_session == null or five_area_pancake_production == null:
-		return
-	if _multi_griddle_mode_active:
-		_ready_pancake_source_ref.clear()
-		if pancake_ready_source != null:
-			pancake_ready_source.visible = false
-		return
-	if pancake_ready_source == null:
-		return
-	var ready := p1_session.phase == P1Session.Phase.READY_TO_SERVE
-	if ready and _ready_pancake_source_ref.is_empty():
-		var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(
-			pancake_model,
-			ingredient_model,
-			fold_model,
-			p1_session.order,
-			p1_session.elapsed_seconds,
-			p1_session.patience_ratio(),
-		)
-		var product := Dictionary(five_area_pancake_production.call("create_product_snapshot", score_result, p1_session.order, {"package_result": fold_model.package_result})).duplicate(true)
-		_ready_pancake_source_ref = {"source_kind": &"pancake_ready", "source_index": -1, "product_id": &"product.pancake.custom", "product": product}
-	elif not ready:
-		_ready_pancake_source_ref.clear()
-	pancake_ready_source.configure(_ready_pancake_source_ref, PRODUCT_VISUALS.texture_for(&"product.pancake.custom"), ready, "现做煎饼已完成；点击订单商品图标交付，或拖到废弃区")
-	pancake_ready_source.visible = ready
 	var session := get_node_or_null("/root/GameSession")
 	var holding_slots: Array = []
 	if session != null and session.has_method("pancake_holding_tray_snapshot"):

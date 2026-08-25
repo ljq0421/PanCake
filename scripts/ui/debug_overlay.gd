@@ -147,7 +147,7 @@ func _refresh_labels() -> void:
 	var surface: PancakeHeatmap = workstation.pancake_surface
 	var model: PancakeModel = workstation.pancake_model
 	if surface == null:
-		var primary_griddle := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation/Griddle01")
+		var primary_griddle := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/MultiGriddleStation/Griddle01")
 		if primary_griddle != null:
 			surface = primary_griddle.get("pancake_surface") as PancakeHeatmap
 			model = primary_griddle.get("pancake_model") as PancakeModel

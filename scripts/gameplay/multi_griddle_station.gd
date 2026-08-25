@@ -11,9 +11,7 @@ const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
 const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain", &"product.youtiao.sesame"]
 
-@onready var count_label: Label = %CountLabel
 @onready var units: Array[Node] = [%Griddle01]
-@onready var shared_tool_tray: SharedPancakeToolTray = %SharedToolTray
 
 var _session: Node
 var _active_count := 1
@@ -40,15 +38,12 @@ func _ready() -> void:
 		unit.main_action_requested.connect(_on_main_action)
 		unit.status_message_requested.connect(status_message.emit)
 		unit.transient_warning_requested.connect(transient_warning_requested.emit)
-	shared_tool_tray.tool_selected.connect(_on_shared_tool_selected)
-	shared_tool_tray.status_message.connect(status_message.emit)
 	_apply_count_layout()
 
 
 func bind_session(session: Node) -> void:
 	_session = session
 	_last_synced_snapshot.clear()
-	shared_tool_tray.bind_session(session)
 	if is_node_ready() and _session != null and _session.has_method("five_area_pancake_griddles_snapshot"):
 		var result := load_snapshot(Dictionary(_session.call("five_area_pancake_griddles_snapshot")))
 		if bool(result.get("success", false)):
@@ -229,7 +224,6 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		var fold_result := Dictionary(unit.begin_manual_fold(local_position))
 		if bool(fold_result.get("success", false)):
 			_selected_tool = &""
-			shared_tool_tray.set_selected_tool(&"")
 			for other_unit in units:
 				if other_unit != unit:
 					other_unit.cancel_held_tool()
@@ -325,7 +319,6 @@ func reserve_ingredient_drag(source_ref: Dictionary) -> Dictionary:
 	if not bool(consumed.get("success", false)):
 		return consumed
 	_reserved_ingredient_drag_stock_id = stock_id
-	shared_tool_tray.refresh_from_session()
 	return {"success": true, "stock_id": stock_id}
 
 
@@ -387,15 +380,14 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	if used_reservation:
 		_reserved_ingredient_drag_stock_id = &""
 	_active_index = unit_index
-	shared_tool_tray.refresh_from_session()
 	if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG:
 		_set_selected_tool(&"tool.pancake.spreader")
 	_sync_snapshot_to_session()
 	var placed_label := _stock_label(StringName(validation.get("stock_id", &"")))
 	status_message.emit(
-		"%s已放到%s；摊饼器已自动拿起" % [placed_label, unit.title_label.text]
+		"%s已放到%s；摊饼器已自动拿起" % [placed_label, unit.display_name()]
 		if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG
-		else "%s已放到%s%s" % [placed_label, unit.title_label.text, "；未翻面交付会额外扣12分" if not unit.pancake_model.is_flipped else ""]
+		else "%s已放到%s%s" % [placed_label, unit.display_name(), "；未翻面交付会额外扣12分" if not unit.pancake_model.is_flipped else ""]
 	)
 	return placed
 
@@ -417,7 +409,6 @@ func _restore_reserved_ingredient_drag() -> Dictionary:
 		return {"success": false, "reason": &"restore_unavailable", "stock_id": stock_id}
 	var stock_ids: Array[StringName] = [stock_id]
 	var restored := Dictionary(_session.call("restore_inventory_stock_ids", stock_ids))
-	shared_tool_tray.refresh_from_session()
 	return restored
 
 
@@ -425,8 +416,6 @@ func clear_held_tool() -> void:
 	_selected_tool = &""
 	_primed_sauce_stock_id = &""
 	_primed_sauce_unit_index = -1
-	if is_instance_valid(shared_tool_tray):
-		shared_tool_tray.set_selected_tool(&"")
 	for unit in units:
 		unit.cancel_held_tool()
 	held_tool_changed.emit(&"")
@@ -438,10 +427,6 @@ func is_spreader_selected() -> bool:
 
 func is_batter_ladle_selected() -> bool:
 	return _selected_tool == &"tool.pancake.ladle"
-
-
-func _on_shared_tool_selected(tool_id: StringName) -> void:
-	select_worktop_tool(tool_id)
 
 
 func select_worktop_tool(tool_id: StringName) -> Dictionary:
@@ -510,7 +495,6 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 		if not bool(automated.get("success", false)):
 			return automated
 		clear_held_tool()
-		shared_tool_tray.refresh_from_session()
 		_sync_snapshot_to_session()
 		status_message.emit("%s已自动刷好" % _stock_label(tool_id))
 		return automated.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
@@ -520,7 +504,6 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 	_set_selected_tool(tool_id)
 	_primed_sauce_stock_id = tool_id
 	_primed_sauce_unit_index = _active_index
-	shared_tool_tray.refresh_from_session()
 	_sync_snapshot_to_session()
 	status_message.emit("%s已落到饼面；酱刷已拿起，按住鏊面拖动刷开" % _stock_label(tool_id))
 	return primed.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
@@ -528,7 +511,6 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 
 func _set_selected_tool(tool_id: StringName) -> void:
 	_selected_tool = tool_id
-	shared_tool_tray.set_selected_tool(tool_id)
 	held_tool_changed.emit(tool_id)
 
 
@@ -690,7 +672,6 @@ static func _ingredient_type_for_stock(stock_id: StringName) -> StringName:
 
 
 func _apply_count_layout() -> void:
-	count_label.text = "单张鏊子 · 现做现出"
 	if units.is_empty():
 		return
 	units[0].visible = true

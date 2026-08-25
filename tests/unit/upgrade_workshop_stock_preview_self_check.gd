@@ -19,8 +19,8 @@ func _run() -> void:
 	worktop.set_workshop_preview(true)
 	await process_frame
 
-	_check_full_state(artwork.get_node("ToppingIngredientTray") as IngredientTrayVisual, "meat floss tray")
-	_check_full_state(artwork.get_node("ToppingIngredientTray2") as IngredientTrayVisual, "ham tray")
+	_check_full_state(artwork.get_node("PancakeWorktopHotspots/PorkFlossSource/Visual") as IngredientTrayVisual, "meat floss tray")
+	_check_full_state(artwork.get_node("PancakeWorktopHotspots/HamSource/Visual") as IngredientTrayVisual, "ham tray")
 	_check_full_state(artwork.get_node("PancakeWorktopHotspots/ScallionTray/Visual") as IngredientTrayVisual, "scallion jar")
 	_check_full_state(artwork.get_node("PancakeWorktopHotspots/CorianderTray/Visual") as IngredientTrayVisual, "coriander jar")
 	_check(

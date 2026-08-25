@@ -41,6 +41,8 @@
 [ext_resource type="Texture2D" uid="uid://bcnwqpw66e63m" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-ham-4.png" id="53_ham_tray_04"]
 [ext_resource type="Texture2D" uid="uid://by3e6x3dp27v6" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-ham-5.png" id="54_ham_tray_05"]
 [ext_resource type="Texture2D" uid="uid://oqdkwlo8wcdf" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-ham-6.png" id="55_ham_tray_06"]
+[ext_resource type="PackedScene" uid="uid://c027y2f04nop8" path="res://scenes/gameplay/multi_griddle_station.tscn" id="56_multi_griddle"]
+[ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="57_alpha_hit"]
 
 [node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90
@@ -52,58 +54,15 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ToppingIngredientTray" type="TextureRect" parent="." unique_id=1915430299]
-z_index = 119
+[node name="MultiGriddleStation" parent="." unique_id=2078138943 instance=ExtResource("56_multi_griddle")]
+unique_name_in_owner = true
+z_as_relative = false
+custom_minimum_size = Vector2(1170, 444)
 layout_mode = 0
-offset_left = 1087.0
-offset_top = 551.0
-offset_right = 1297.0
-offset_bottom = 727.0
-mouse_filter = 2
-texture = ExtResource("29_topping_tray")
-expand_mode = 1
-stretch_mode = 5
-script = ExtResource("23_scallion_tray")
-stock_id = &"stock.pancake.meat_floss"
-state_textures = Array[Texture2D]([ExtResource("42_pork_floss_01"), ExtResource("43_pork_floss_02"), ExtResource("44_pork_floss_03"), ExtResource("45_pork_floss_04"), ExtResource("46_pork_floss_05"), ExtResource("47_pork_floss_06")])
-contents_visual_path = NodePath("PorkFlossContents")
-
-[node name="PorkFlossContents" type="TextureRect" parent="ToppingIngredientTray" unique_id=656663924]
-z_index = 1
-layout_mode = 0
-offset_left = 21.0
-offset_top = 42.0
-offset_right = 189.0
-offset_bottom = 128.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ToppingIngredientTray2" type="TextureRect" parent="." unique_id=40359447]
-z_index = 119
-layout_mode = 0
-offset_left = 1267.0
-offset_top = 551.0
-offset_right = 1477.0
-offset_bottom = 727.0
-mouse_filter = 2
-texture = ExtResource("29_topping_tray")
-expand_mode = 1
-stretch_mode = 5
-script = ExtResource("23_scallion_tray")
-stock_id = &"stock.pancake.ham_sausage"
-state_textures = Array[Texture2D]([ExtResource("50_ham_tray_01"), ExtResource("51_ham_tray_02"), ExtResource("52_ham_tray_03"), ExtResource("53_ham_tray_04"), ExtResource("54_ham_tray_05"), ExtResource("55_ham_tray_06")])
-
-[node name="SecretSauceJar" type="TextureRect" parent="." unique_id=698685248]
-layout_mode = 0
-offset_left = 1120.0
-offset_top = 686.0
-offset_right = 1243.0
-offset_bottom = 820.4
-mouse_filter = 2
-texture = ExtResource("9_sweet_bean_sauce")
-expand_mode = 1
-stretch_mode = 5
+offset_left = 370.0
+offset_top = 618.0
+offset_right = 1540.0
+offset_bottom = 1062.0
 
 [node name="PancakeWorktopHotspots" type="Control" parent="." unique_id=1386042981]
 z_index = 12
@@ -122,28 +81,111 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("30_worktop_hotspots")
-griddle_station_path = NodePath("../../../FiveAreaInfrastructure/Stations/PancakeStation/MultiGriddleStation")
+griddle_station_path = NodePath("../MultiGriddleStation")
 egg_content_textures = Array[Texture2D]([null, ExtResource("33_egg_01"), ExtResource("34_egg_02"), ExtResource("35_egg_03"), ExtResource("36_egg_04"), ExtResource("37_egg_05"), ExtResource("38_egg_06")])
 baocui_basket_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
 
-[node name="PorkFlossHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=910270213]
-z_index = 120
+[node name="PorkFlossSource" type="Control" parent="PancakeWorktopHotspots" unique_id=1915430299]
 layout_mode = 0
 offset_left = 1087.0
 offset_top = 551.0
 offset_right = 1297.0
 offset_bottom = 727.0
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/PorkFlossSource" unique_id=656663924]
+z_index = 17
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("29_topping_tray")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.meat_floss"
+state_textures = Array[Texture2D]([ExtResource("42_pork_floss_01"), ExtResource("43_pork_floss_02"), ExtResource("44_pork_floss_03"), ExtResource("45_pork_floss_04"), ExtResource("46_pork_floss_05"), ExtResource("47_pork_floss_06")])
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/PorkFlossSource" unique_id=910270213]
+z_index = 120
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
 
-[node name="HamTrayHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1764209521]
-z_index = 120
+[node name="HamSource" type="Control" parent="PancakeWorktopHotspots" unique_id=40359447]
 layout_mode = 0
 offset_left = 1267.0
 offset_top = 551.0
 offset_right = 1477.0
 offset_bottom = 727.0
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/HamSource" unique_id=1764209522]
+z_index = 17
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("29_topping_tray")
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("23_scallion_tray")
+stock_id = &"stock.pancake.ham_sausage"
+state_textures = Array[Texture2D]([ExtResource("50_ham_tray_01"), ExtResource("51_ham_tray_02"), ExtResource("52_ham_tray_03"), ExtResource("53_ham_tray_04"), ExtResource("54_ham_tray_05"), ExtResource("55_ham_tray_06")])
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/HamSource" unique_id=1764209521]
+z_index = 120
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+script = ExtResource("31_product_drag")
+
+[node name="SecretSauceSource" type="Control" parent="PancakeWorktopHotspots" unique_id=698685248]
+layout_mode = 0
+offset_left = 1120.0
+offset_top = 686.0
+offset_right = 1243.0
+offset_bottom = 820.4
+mouse_filter = 2
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/SecretSauceSource" unique_id=698685249]
+z_index = -102
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_sweet_bean_sauce")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/SecretSauceSource" unique_id=1539400609]
+z_index = 189
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
@@ -157,9 +199,12 @@ offset_bottom = 754.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/EggCarton" unique_id=326901718]
-layout_mode = 0
-offset_right = 216.0
-offset_bottom = 234.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("32_egg_empty")
 expand_mode = 1
@@ -167,18 +212,24 @@ stretch_mode = 5
 
 [node name="Contents" type="TextureRect" parent="PancakeWorktopHotspots/EggCarton/Visual" unique_id=563220941]
 z_index = 1
-layout_mode = 0
-offset_right = 216.0
-offset_bottom = 234.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/EggCarton" unique_id=1146976014]
 z_index = 2
-layout_mode = 0
-offset_right = 216.0
-offset_bottom = 234.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("39_egg_carton_drag")
@@ -193,9 +244,12 @@ mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/ScallionTray" unique_id=1425551347]
 z_index = -102
-layout_mode = 0
-offset_right = 160.0
-offset_bottom = 160.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("24_scallion_empty")
 expand_mode = 1
@@ -206,9 +260,12 @@ state_textures = Array[Texture2D]([ExtResource("24_scallion_empty"), ExtResource
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/ScallionTray" unique_id=1874852951]
 z_index = 2
-layout_mode = 0
-offset_right = 160.0
-offset_bottom = 160.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
@@ -223,9 +280,12 @@ mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/CorianderTray" unique_id=1925334901]
 z_index = -102
-layout_mode = 0
-offset_right = 160.0
-offset_bottom = 160.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("19_coriander_empty")
 expand_mode = 1
@@ -236,9 +296,12 @@ state_textures = Array[Texture2D]([ExtResource("19_coriander_empty"), ExtResourc
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/CorianderTray" unique_id=1015290762]
 z_index = 2
-layout_mode = 0
-offset_right = 160.0
-offset_bottom = 160.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
@@ -253,9 +316,12 @@ offset_bottom = 739.5
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=356035899]
-layout_mode = 0
-offset_right = 257.4
-offset_bottom = 195.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("10_baocui_basket")
 expand_mode = 1
@@ -263,68 +329,82 @@ stretch_mode = 5
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/BaocuiBasket" unique_id=1739890305]
 z_index = 1
-layout_mode = 0
-offset_right = 257.4
-offset_bottom = 195.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
 
-[node name="SpreaderHolderEmptyVisual" type="TextureRect" parent="PancakeWorktopHotspots" unique_id=1478005217]
+[node name="SpreaderSource" type="Control" parent="PancakeWorktopHotspots" unique_id=1478005217]
 layout_mode = 0
 offset_left = 1160.0
 offset_top = 918.0
 offset_right = 1320.0
 offset_bottom = 1078.0
 mouse_filter = 2
-texture = ExtResource("40_spreader_holder_empty")
-expand_mode = 1
-stretch_mode = 5
 
-[node name="SpreaderHolderFilledVisual" type="TextureRect" parent="PancakeWorktopHotspots" unique_id=71572555]
-layout_mode = 0
-offset_left = 1160.0
-offset_top = 918.0
-offset_right = 1320.0
-offset_bottom = 1078.0
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/SpreaderSource" unique_id=71572555]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("41_spreader_holder_filled")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SpreaderHotspot" type="Button" parent="PancakeWorktopHotspots" unique_id=544913172]
+[node name="HitButton" type="Button" parent="PancakeWorktopHotspots/SpreaderSource" unique_id=544913172]
 z_index = 200
-layout_mode = 0
-offset_left = 1193.0
-offset_top = 944.0
-offset_right = 1260.0
-offset_bottom = 1063.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 tooltip_text = "摊饼器：在鏊面按住画圈摊开面糊或鸡蛋"
 focus_mode = 0
 mouse_default_cursor_shape = 2
 flat = true
+script = ExtResource("57_alpha_hit")
+hit_texture = ExtResource("41_spreader_holder_filled")
 
-[node name="BatterLadleHolderHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=888931824]
+[node name="BatterLadleSource" type="Control" parent="PancakeWorktopHotspots" unique_id=888931824]
 layout_mode = 0
 offset_left = 1262.0
 offset_top = 920.0
 offset_right = 1422.0
 offset_bottom = 1080.0
-tooltip_text = "按住面糊勺拖到空鏊子倒入"
-focus_mode = 0
 mouse_filter = 2
-mouse_default_cursor_shape = 2
-texture_normal = ExtResource("49_ladle_holder_filled")
-ignore_texture_size = true
+
+[node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/BatterLadleSource" unique_id=888931825]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("49_ladle_holder_filled")
+expand_mode = 1
 stretch_mode = 5
 
-[node name="SecretSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1539400609]
-z_index = 3
-layout_mode = 0
-offset_left = 1120.0
-offset_top = 686.0
-offset_right = 1243.0
-offset_bottom = 820.4
+[node name="HitButton" type="Button" parent="PancakeWorktopHotspots/BatterLadleSource" unique_id=888931826]
+z_index = 190
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "按住面糊勺拖到空鏊子倒入"
 focus_mode = 0
 mouse_default_cursor_shape = 2
-script = ExtResource("31_product_drag")
+flat = true
+script = ExtResource("57_alpha_hit")
+hit_texture = ExtResource("49_ladle_holder_filled")

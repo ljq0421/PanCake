@@ -17,6 +17,7 @@ const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spr
 const SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png")
 const DISABLE_SPREADER_VISUAL_ARGUMENT := "--disable-spreader-visual"
 const HARDWARE_SPREADER_CURSOR_SIZE := Vector2i(96, 96)
+const HARDWARE_SPREADER_SOURCE_OFFSET := Vector2(19.0, 113.0)
 const SAUCE_BRUSH_ART_ROTATION_OFFSET := 1.02
 const MIN_BATTER_AMOUNT := 1.5
 const STANDARD_BATTER_AMOUNT := 4.0
@@ -79,7 +80,6 @@ const BEST_BATTER_OUTER_RADIUS := INITIAL_BATTER_RADIUS
 
 enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 
-@onready var title_label: Label = %TitleLabel
 @onready var state_label: Label = %StateLabel
 @onready var griddle_art: TextureRect = %GriddleArt
 @onready var pancake_surface: PancakeHeatmap = %PancakeSurface
@@ -90,7 +90,6 @@ enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 @onready var egg_shell_visual: Sprite2D = %EggShellVisual
 @onready var egg_intact_visual: Sprite2D = %EggIntactVisual
 @onready var egg_intact_visual_second: Sprite2D = %EggIntactVisualSecond
-@onready var spreader_artwork: Sprite2D = %SpreaderArtwork
 @onready var sauce_brush_artwork: Sprite2D = %SauceBrushArtwork
 @onready var package_visual: TextureRect = %PackageVisual
 @onready var main_action: Button = %MainAction
@@ -237,8 +236,10 @@ func _process_batter_ladle_drag(delta: float) -> void:
 func configure(index: int, display_name: String = "") -> void:
 	unit_index = index
 	_display_name = display_name if not display_name.is_empty() else "鏊子 %d" % (unit_index + 1)
-	if is_node_ready():
-		title_label.text = _display_name
+
+
+func display_name() -> String:
+	return _display_name
 
 
 func set_upgrade_locked(value: bool) -> void:
@@ -255,7 +256,6 @@ func set_spreader_visual_enabled(value: bool) -> void:
 	# The spreader uses the operating-system cursor in normal mode, and no custom
 	# cursor at all in the A/B mode. Neither path draws a canvas cursor ring.
 	pancake_surface.spreader_cursor_visual_enabled = false
-	spreader_artwork.visible = false
 	if not value:
 		_deactivate_hardware_spreader_cursor()
 	pancake_surface.queue_redraw()
@@ -266,7 +266,7 @@ func _build_hardware_spreader_cursors() -> void:
 	_hardware_spreader_cursor_wide = _scaled_cursor_texture(SPREADER_WIDE)
 	var source_size := Vector2(SPREADER_NORMAL.get_size())
 	if source_size.x > 0.0 and source_size.y > 0.0:
-		var source_hotspot := source_size * 0.5 - spreader_artwork.offset
+		var source_hotspot := source_size * 0.5 - HARDWARE_SPREADER_SOURCE_OFFSET
 		_hardware_spreader_cursor_hotspot = source_hotspot / source_size * Vector2(HARDWARE_SPREADER_CURSOR_SIZE)
 		_hardware_spreader_cursor_hotspot = _hardware_spreader_cursor_hotspot.clamp(
 			Vector2.ZERO,
@@ -1283,7 +1283,6 @@ func _update_surface_tool_artwork(local_position: Vector2, delta: float = 0.0) -
 	var spreader_active := spreading and inside_pan
 	# Hardware cursors are composited by the operating system and therefore do
 	# not wait for the game canvas or mutate a Sprite2D transform while moving.
-	spreader_artwork.visible = false
 	sauce_brush_artwork.visible = brushing and inside_pan
 	# Direction is part of the simulation contract, not the sprite. Keep updating
 	# it in the no-visual A/B mode so the test changes rendering only.
@@ -1321,7 +1320,6 @@ func _update_surface_tool_position(local_position: Vector2) -> void:
 func _refresh_tool_artwork_visibility() -> void:
 	if not is_node_ready():
 		return
-	spreader_artwork.visible = false
 	_deactivate_hardware_spreader_cursor()
 	sauce_brush_artwork.visible = false
 
@@ -1329,7 +1327,6 @@ func _refresh_tool_artwork_visibility() -> void:
 func _refresh_ui() -> void:
 	if not is_node_ready():
 		return
-	title_label.text = _display_name
 	griddle_art.modulate = Color(0.55, 0.50, 0.44, 0.78) if upgrade_locked else Color.WHITE
 	if upgrade_locked:
 		state_label.text = "升级鏊台后解锁"

@@ -17,7 +17,6 @@
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/egg_spread_material_v1.png" id="19_egg_surface"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/sweet_flour_sauce_texture_v1.png" id="20_sweet_sauce"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/red_chili_sauce_texture_v1.png" id="21_chili_sauce"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/batter_spreader_v1_five_area_v2.png" id="22_spreader"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_cracked_raw_v1_five_area_v2.png" id="23_egg_crack_1"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png" id="24_sauce_brush"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_fold_overlay.gd" id="25_fold_overlay"]
@@ -84,19 +83,6 @@ offset_right = 480.0
 offset_bottom = 380.0
 mouse_filter = 1
 script = ExtResource("1_script")
-
-[node name="TitleLabel" type="Label" parent="."]
-unique_name_in_owner = true
-visible = false
-offset_left = 16.0
-offset_top = 8.0
-offset_right = 108.0
-offset_bottom = 34.0
-theme_override_colors/font_color = Color(1, 0.84, 0.55, 1)
-theme_override_colors/font_outline_color = Color(0.12, 0.055, 0.02, 0.96)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 20
-text = "鏊子 1"
 
 [node name="StateLabel" type="Label" parent="."]
 unique_name_in_owner = true
@@ -227,16 +213,6 @@ texture_filter = 1
 position = Vector2(175, 175)
 scale = Vector2(0.32, 0.32)
 texture = ExtResource("26_egg_intact")
-
-[node name="SpreaderArtwork" type="Sprite2D" parent="PancakeSurface"]
-unique_name_in_owner = true
-visible = false
-z_index = 4
-texture_filter = 1
-position = Vector2(175, 175)
-scale = Vector2(0.19, 0.19)
-texture = ExtResource("22_spreader")
-offset = Vector2(19, 113)
 
 [node name="SauceBrushArtwork" type="Sprite2D" parent="PancakeSurface"]
 unique_name_in_owner = true

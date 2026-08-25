@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://d0se1e6c7txsd" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
-[ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="9_alpha_hit"]
+[ext_resource type="Script" path="res://scripts/ui/alpha_texture_button.gd" id="10_texture_hit"]
 
 [sub_resource type="StyleBoxFlat" id="Style_nozzle_action"]
 bg_color = Color(1, 0.71, 0.2, 0.18)
@@ -70,47 +70,30 @@ offset_right = 410.0
 offset_bottom = 496.0
 script = ExtResource("1_root")
 
-[node name="SoyMilkDispenser" type="TextureRect" parent="." unique_id=1208859431]
+[node name="MachineAssembly" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 410.0
+offset_bottom = 426.0
+mouse_filter = 1
+
+[node name="SoyMilkDispenser" type="TextureRect" parent="MachineAssembly" unique_id=1208859431]
+unique_name_in_owner = true
 z_index = -2
 layout_mode = 0
-offset_top = -24.0
-offset_right = 458.0
-offset_bottom = 454.0
-scale = Vector2(0.8, 0.8)
+offset_right = 343.2
+offset_bottom = 358.4
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SoyMilkSugarJar" type="TextureRect" parent="." unique_id=1760256109]
-z_index = -1
-layout_mode = 0
-offset_left = 324.0
-offset_top = 445.0
-offset_right = 434.0
-offset_bottom = 555.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="FlavorMenu" type="MenuButton" parent="." unique_id=1353220488]
+[node name="NozzleButton" type="Button" parent="MachineAssembly" unique_id=361857652]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 10.0
-offset_top = 12.0
-offset_right = 116.0
-offset_bottom = 42.0
-tooltip_text = "升级口味按钮后可选择黑豆、红豆和五谷"
-theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
-theme_override_font_sizes/font_size = 11
-text = "黄豆豆浆 ▾"
-
-[node name="NozzleButton" type="Button" parent="." unique_id=361857652]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 146.0
-offset_top = 230.0
-offset_right = 220.0
-offset_bottom = 348.0
+offset_left = 128.0
+offset_top = 174.0
+offset_right = 240.0
+offset_bottom = 274.0
 tooltip_text = "按住出浆口接浆"
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
@@ -125,14 +108,14 @@ theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
 theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
 text = "按住出浆"
 
-[node name="SecondNozzleButton" type="Button" parent="." unique_id=196913413]
+[node name="SecondNozzleButton" type="Button" parent="MachineAssembly" unique_id=196913413]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 240.0
-offset_top = 230.0
-offset_right = 352.0
-offset_bottom = 330.0
+offset_left = 192.0
+offset_top = 174.0
+offset_right = 304.0
+offset_bottom = 274.0
 tooltip_text = "点击右侧出浆口接浆"
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
@@ -147,15 +130,15 @@ theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
 theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
 text = "点击出浆"
 
-[node name="DualNozzleButton" type="Button" parent="." unique_id=196913414]
+[node name="DualNozzleButton" type="Button" parent="MachineAssembly" unique_id=196913414]
 unique_name_in_owner = true
 visible = false
 z_index = 1
 layout_mode = 0
-offset_left = 164.0
-offset_top = 164.0
-offset_right = 282.0
-offset_bottom = 198.0
+offset_left = 126.0
+offset_top = 132.0
+offset_right = 244.0
+offset_bottom = 166.0
 tooltip_text = "同时接满左右两杯豆浆"
 mouse_default_cursor_shape = 2
 theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
@@ -170,143 +153,176 @@ theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
 theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
 text = "双口出浆"
 
-[node name="MachineOutput" type="TextureButton" parent="." unique_id=1233758645]
+[node name="LeftCupSlot" type="Control" parent="MachineAssembly"]
 unique_name_in_owner = true
+z_index = 1
 layout_mode = 0
-offset_left = 150.0
-offset_top = 300.0
-offset_right = 205.0
-offset_bottom = 370.0
-scale = Vector2(1.2, 1.2)
+offset_left = 158.0
+offset_top = 284.0
+offset_right = 218.0
+offset_bottom = 353.0
+mouse_filter = 2
+
+[node name="MachineOutput" type="TextureButton" parent="MachineAssembly/LeftCupSlot" unique_id=1233758645]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 ignore_texture_size = true
 stretch_mode = 4
 script = ExtResource("2_source")
 
-[node name="PrimaryEmptyCupPreview" type="TextureRect" parent="." unique_id=196913415]
+[node name="DispenseEffect" type="Control" parent="MachineAssembly/LeftCupSlot" unique_id=1536517679]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_effect")
+
+[node name="LeftSelectionFrame" type="Panel" parent="MachineAssembly/LeftCupSlot"]
 unique_name_in_owner = true
 visible = false
+z_index = 2
+layout_mode = 0
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 64.0
+offset_bottom = 73.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_cup_selected")
+
+[node name="RightCupSlot" type="Control" parent="MachineAssembly"]
+unique_name_in_owner = true
 z_index = 1
 layout_mode = 0
-offset_left = 146.0
-offset_top = 359.0
-offset_right = 206.0
-offset_bottom = 429.0
+offset_left = 218.0
+offset_top = 284.0
+offset_right = 278.0
+offset_bottom = 353.0
 mouse_filter = 2
-expand_mode = 1
+
+[node name="QueuedCupOutput" type="TextureButton" parent="MachineAssembly/RightCupSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ignore_texture_size = true
 stretch_mode = 4
+script = ExtResource("2_source")
+
+[node name="QueuedCupEffect" type="Control" parent="MachineAssembly/RightCupSlot" unique_id=1820359412]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_effect")
+
+[node name="RightSelectionFrame" type="Panel" parent="MachineAssembly/RightCupSlot"]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+layout_mode = 0
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 64.0
+offset_bottom = 73.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_cup_selected")
 
 [node name="CupStack" type="TextureButton" parent="." unique_id=1873904211]
 unique_name_in_owner = true
 z_index = 3
 layout_mode = 0
-offset_left = 295.0
-offset_top = 150.0
-offset_right = 417.0
-offset_bottom = 361.0
-scale = Vector2(1.1, 1.1)
+offset_left = 292.0
+offset_top = 118.0
+offset_right = 402.0
+offset_bottom = 308.0
 ignore_texture_size = true
 stretch_mode = 4
 script = ExtResource("2_source")
+hold_enabled = true
+hold_threshold_seconds = 0.5
 
-[node name="QueuedCupPreview" type="TextureRect" parent="." unique_id=1125039614]
+[node name="SugarJar" type="TextureButton" parent="." unique_id=1158254122]
 unique_name_in_owner = true
-z_index = 1
-layout_mode = 0
-offset_left = 240.0
-offset_top = 359.0
-offset_right = 300.0
-offset_bottom = 429.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 4
-
-[node name="QueuedCupButton" type="Button" parent="." unique_id=196913412]
-unique_name_in_owner = true
-visible = false
-z_index = 4
-layout_mode = 0
-offset_left = 240.0
-offset_top = 318.0
-offset_right = 300.0
-offset_bottom = 388.0
-tooltip_text = "点击选择这杯豆浆"
-flat = true
-script = ExtResource("9_alpha_hit")
-
-[node name="CupSelectionFrame" type="Panel" parent="." unique_id=138775050]
-unique_name_in_owner = true
-visible = false
 z_index = 3
 layout_mode = 0
-offset_left = 141.0
-offset_top = 314.0
-offset_right = 242.0
-offset_bottom = 416.0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("Style_cup_selected")
-
-[node name="QueuedCupEffect" type="Control" parent="." unique_id=1820359412]
-unique_name_in_owner = true
-z_index = 2
-anchors_preset = 0
-offset_right = 410.0
-offset_bottom = 390.0
-mouse_filter = 2
-script = ExtResource("6_effect")
-
-[node name="DispenseEffect" type="Control" parent="." unique_id=1536517679]
-unique_name_in_owner = true
-z_index = 1
-anchors_preset = 0
-offset_right = 410.0
-offset_bottom = 390.0
-mouse_filter = 2
-script = ExtResource("6_effect")
-
-[node name="SugarJar" type="Button" parent="." unique_id=1158254122]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 324.0
-offset_top = 445.0
-offset_right = 434.0
-offset_bottom = 555.0
+offset_left = 326.0
+offset_top = 342.0
+offset_right = 402.0
+offset_bottom = 418.0
 tooltip_text = "成品杯加糖（最多两份）"
-flat = true
-script = ExtResource("9_alpha_hit")
+ignore_texture_size = true
+stretch_mode = 4
+script = ExtResource("10_texture_hit")
 
-[node name="SugarLabel" type="Label" parent="." unique_id=485603011]
+[node name="AnimationOrigin" type="Control" parent="SugarJar"]
+layout_mode = 1
+anchor_left = 0.82
+anchor_top = 0.22
+anchor_right = 0.82
+anchor_bottom = 0.22
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SugarLabel" type="Label" parent="SugarJar" unique_id=485603011]
 unique_name_in_owner = true
-layout_mode = 0
-offset_left = 295.0
-offset_top = 549.0
-offset_right = 461.0
-offset_bottom = 573.0
-theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
-theme_override_font_sizes/font_size = 13
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -22.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
+theme_override_colors/font_outline_color = Color(1, 0.96, 0.82, 0.92)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 10
 text = "糖：无糖"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="IceTrayVisual" type="TextureRect" parent="." unique_id=599021210]
+[node name="IceButton" type="TextureButton" parent="." unique_id=985603011]
 unique_name_in_owner = true
+z_index = 3
 layout_mode = 0
-offset_left = 163.0
-offset_top = 450.0
-offset_right = 313.0
-offset_bottom = 547.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="IceButton" type="Button" parent="." unique_id=985603011]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 163.0
-offset_top = 450.0
-offset_right = 313.0
-offset_bottom = 547.0
+offset_left = 218.0
+offset_top = 354.0
+offset_right = 314.0
+offset_bottom = 418.0
 tooltip_text = "成品杯加冰"
-flat = true
-script = ExtResource("9_alpha_hit")
+ignore_texture_size = true
+stretch_mode = 4
+script = ExtResource("10_texture_hit")
+
+[node name="AnimationOrigin" type="Control" parent="IceButton"]
+layout_mode = 1
+anchor_left = 0.72
+anchor_top = 0.52
+anchor_right = 0.72
+anchor_bottom = 0.52
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="IceLabel" type="Label" parent="IceButton" unique_id=1549235280]
 layout_mode = 1
@@ -331,9 +347,9 @@ layout_mode = 0
 offset_left = 4.0
 offset_top = 430.0
 offset_right = 280.0
-offset_bottom = 454.0
+offset_bottom = 450.0
 theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "黄豆豆浆 · 0 / 1 / 2 份糖"
 horizontal_alignment = 1
 
@@ -341,11 +357,11 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 4.0
-offset_top = 454.0
+offset_top = 452.0
 offset_right = 280.0
-offset_bottom = 478.0
+offset_bottom = 474.0
 theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 13
 text = "① 点击取空杯"
 horizontal_alignment = 1
 
@@ -353,7 +369,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 4.0
-offset_top = 480.0
+offset_top = 478.0
 offset_right = 280.0
-offset_bottom = 494.0
+offset_bottom = 492.0
 show_percentage = false

@@ -797,6 +797,17 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	_refresh_sauce_button_states()
 
 
+func refresh_progression_ui_after_debug(message: String = "") -> void:
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("five_area_progression_snapshot"):
+		apply_progression_effects(Dictionary(game_session.call("five_area_progression_snapshot")))
+	_refresh_global_status()
+	if daily_bill_panel != null and daily_bill_panel.visible:
+		_refresh_growth_section(message)
+		if unlock_progress_panel.visible:
+			_refresh_unlock_progress()
+
+
 func set_sauce_unlocked(sauce_type: StringName, unlocked: bool) -> void:
 	if sauce_type == OrderService.SAUCE_CHILI:
 		_chili_sauce_unlocked = unlocked

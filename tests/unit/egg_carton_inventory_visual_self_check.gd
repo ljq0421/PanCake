@@ -1,6 +1,7 @@
 extends SceneTree
 
 const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 
 var failures := PackedStringArray()
 
@@ -20,6 +21,13 @@ func _run() -> void:
 	var source := carton.get_node_or_null("Hotspot") as ProductDragSource if carton != null else null
 	_check(hotspots != null, "the physical egg carton belongs to the worktop controller")
 	_check(carton != null and visual != null and contents != null, "the egg-carton component owns visual, contents, and hotspot nodes")
+	if hotspots != null and carton != null:
+		var starter_progression := PROGRESSION_SERVICE.new()
+		hotspots._refresh_optional_stock_visuals(starter_progression)
+		_check(not starter_progression.owns_stock(&"stock.pancake.egg") and not carton.visible, "a new game keeps egg locked and removes its carton from the worktop")
+		starter_progression.unlocked_stock_ids[&"stock.pancake.egg"] = true
+		hotspots._refresh_optional_stock_visuals(starter_progression)
+		_check(carton.visible, "unlocking egg restores its carton to the worktop")
 	if carton != null and visual != null and contents != null:
 		_check(carton.get_global_rect() == visual.get_global_rect() and visual.get_global_rect() == contents.get_global_rect(), "egg contents share the carton component coordinates")
 	if hotspots != null:

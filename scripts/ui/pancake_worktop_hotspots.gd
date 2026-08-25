@@ -47,6 +47,7 @@ const SAUCE_HOTSPOT_IDS: Dictionary = {
 ## their drag source. Keep those visuals in the same unlock state as the source
 ## so locked items do not leave an empty tray or sauce jar on the workbench.
 const STOCK_VISUAL_PATHS: Dictionary = {
+	&"stock.pancake.egg": [NodePath("EggCarton")],
 	&"stock.pancake.baocui": [NodePath("BaocuiBasket")],
 	&"stock.pancake.scallion": [NodePath("ScallionTray")],
 	&"stock.pancake.sauce.sweet_flour": [NodePath("../SecretSauceJar"), NodePath("SecretSauceHotspot")],

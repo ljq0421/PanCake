@@ -102,6 +102,8 @@ func _run() -> void:
 	await _click_control(soy_station.cup_stack)
 	_check(int(soy_station.get("_cup_stack_count")) == 0, "taking the first advanced-machine cup returns the stack to empty")
 	_check(int(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("held_empty_cup_count", 0)) == 1, "first advanced-machine click places one cup at the first outlet")
+	await _hover_control(soy_station.cup_stack)
+	_check(root.gui_get_hovered_control() == soy_station.cup_stack, "the empty cup-stack restock slot remains pointer-accessible while the first advanced cup is placed (actual: %s)" % _hovered_path())
 	var second_restock_press := await _begin_hold_control(soy_station.cup_stack)
 	await create_timer(0.60).timeout
 	await _release_hold_control(second_restock_press)
@@ -110,8 +112,8 @@ func _run() -> void:
 	_check(int(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("held_empty_cup_count", 0)) == 2, "second advanced-machine click places a cup at the second outlet")
 	_check(not soy_station.nozzle_button.disabled and not soy_station.second_nozzle_button.disabled and not soy_station.dual_nozzle_button.disabled, "both outlets and the separate dual-outlet control are actionable with two empty cups")
 	await _click_control(soy_station.dual_nozzle_button)
-	_check(soy_station.queued_cup_button.visible, "dual-outlet fill exposes a separately selectable second cup")
-	await _click_control(soy_station.queued_cup_button)
+	_check(soy_station.queued_cup_output.visible, "dual-outlet fill exposes a separately selectable second cup")
+	await _click_control(soy_station.queued_cup_output)
 	_check(int(soy_station.get("_selected_cup_index")) == 1, "clicking the second cup selects it for ingredients")
 	await _click_control(soy_station.ice_button)
 	var dual_snapshot := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
@@ -240,7 +242,27 @@ func _drag_control(source: Control, target: Control) -> void:
 
 
 func _pointer_position(control: Control) -> Vector2:
-	return root.get_final_transform() * control.get_global_rect().get_center()
+	var local_position := control.size * 0.5
+	if control is ProductDragSource:
+		var source := control as ProductDragSource
+		for region in source._alpha_hit_regions:
+			var image := region.get("image") as Image
+			var rect := region.get("rect", Rect2()) as Rect2
+			if image == null or image.is_empty():
+				continue
+			var used_rect := image.get_used_rect()
+			if used_rect.size.x <= 0 or used_rect.size.y <= 0:
+				continue
+			for pixel_y in range(used_rect.position.y, used_rect.end.y, 8):
+				for pixel_x in range(used_rect.position.x, used_rect.end.x, 8):
+					if image.get_pixel(pixel_x, pixel_y).a <= 0.05:
+						continue
+					local_position = rect.position + Vector2(
+						(float(pixel_x) + 0.5) / image.get_width() * rect.size.x,
+						(float(pixel_y) + 0.5) / image.get_height() * rect.size.y,
+					)
+					return root.get_final_transform() * (control.get_global_transform_with_canvas() * local_position)
+	return root.get_final_transform() * (control.get_global_transform_with_canvas() * local_position)
 
 
 func _hovered_path() -> String:

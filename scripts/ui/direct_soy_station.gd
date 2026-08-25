@@ -16,53 +16,51 @@ const CUP_STACK_TEXTURE_PATHS := [
 ]
 const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
 const ICE_TRAY_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/ice-tray-with-scoop.png"
-const MANUAL_DISPENSER_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png"
-const AUTO_FILL_DISPENSER_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png"
-const ADVANCED_DISPENSER_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png"
+const MACHINE_TIER_LAYOUTS: Array[Dictionary] = [
+	{
+		"texture_path": "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png",
+		"left_nozzle_texture_position": Vector2(615.0, 1000.0),
+		"right_nozzle_texture_position": Vector2.ZERO,
+	},
+	{
+		"texture_path": "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png",
+		"left_nozzle_texture_position": Vector2(573.0, 1040.0),
+		"right_nozzle_texture_position": Vector2.ZERO,
+	},
+	{
+		"texture_path": "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png",
+		"left_nozzle_texture_position": Vector2(488.0, 980.0),
+		"right_nozzle_texture_position": Vector2(730.0, 980.0),
+	},
+]
 const OUTLET_CUP_REGION := Rect2(261.0, 1125.0, 430.0, 488.0)
 const FULL_CUP_SECONDS := 0.8
 const CUP_NOZZLE_GAP := 8.0
-const SINGLE_DISPENSING_CUP_X := 210.0
-const DUAL_LEFT_CUP_X := 162.0
-const DUAL_RIGHT_CUP_X := 257.0
-# Measured on soy-milk-dispenser.png.  This is the lower opening of the tap,
-# not the handle or its mounting point.
-const DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(615.0, 1000.0)
-const AUTO_FILL_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(573.0, 1040.0)
-const ADVANCED_LEFT_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(488.0, 980.0)
-const ADVANCED_RIGHT_NOZZLE_OUTLET_TEXTURE_POSITION := Vector2(730.0, 980.0)
-const SUGAR_JAR_SPOUT := Vector2(345.0, 347.0)
-const ICE_TRAY_SCOOP := Vector2(342.0, 242.0)
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
-const FLAVOR_RECIPES: Array[StringName] = [
-	&"recipe.fresh_soy_milk.yellow_bean",
-]
 
+@onready var machine_assembly: Control = %MachineAssembly
+@onready var left_cup_slot: Control = %LeftCupSlot
+@onready var right_cup_slot: Control = %RightCupSlot
 @onready var machine_output: ProductDragSource = %MachineOutput
+@onready var queued_cup_output: ProductDragSource = %QueuedCupOutput
 @onready var cup_stack: ProductDragSource = %CupStack
-@onready var queued_cup_preview: TextureRect = %QueuedCupPreview
-@onready var queued_cup_button: AlphaTextureHitButton = %QueuedCupButton
-@onready var cup_selection_frame: Panel = %CupSelectionFrame
+@onready var left_selection_frame: Panel = %LeftSelectionFrame
+@onready var right_selection_frame: Panel = %RightSelectionFrame
 @onready var nozzle_button: Button = %NozzleButton
 @onready var second_nozzle_button: Button = %SecondNozzleButton
 @onready var dual_nozzle_button: Button = %DualNozzleButton
-@onready var sugar_jar_visual: TextureRect = $SoyMilkSugarJar
-@onready var sugar_jar: AlphaTextureHitButton = %SugarJar
-@onready var ice_tray_visual: TextureRect = %IceTrayVisual
-@onready var ice_button: AlphaTextureHitButton = %IceButton
-@onready var soy_milk_dispenser: TextureRect = $SoyMilkDispenser
-@onready var primary_empty_cup_preview: TextureRect = %PrimaryEmptyCupPreview
+@onready var sugar_jar: TextureButton = %SugarJar
+@onready var ice_button: TextureButton = %IceButton
+@onready var sugar_animation_origin: Control = $SugarJar/AnimationOrigin
+@onready var ice_animation_origin: Control = $IceButton/AnimationOrigin
+@onready var soy_milk_dispenser: TextureRect = %SoyMilkDispenser
 @onready var state_label: Label = %StateLabel
 @onready var cup_detail_label: Label = %CupDetailLabel
 @onready var dispense_progress: ProgressBar = %DispenseProgress
 @onready var dispense_effect: SoyDispenseEffect = %DispenseEffect
 @onready var queued_cup_effect: SoyDispenseEffect = %QueuedCupEffect
 @onready var sugar_label: Label = %SugarLabel
-@onready var flavor_menu: MenuButton = %FlavorMenu
 
-# Kept for the common workstation product-source collector. The retired cup
-# rack deliberately has no hidden output slots in the new interaction.
-var rack_outputs: Array[ProductDragSource] = []
 var lock_cover: Control = null
 var _filling := false
 var _held_seconds := 0.0
@@ -78,18 +76,10 @@ var _texture_cache: Dictionary = {}
 
 
 func _ready() -> void:
-	nozzle_button.size = Vector2(112.0, 100.0)
-	second_nozzle_button.size = Vector2(112.0, 100.0)
-	flavor_menu.position = Vector2(10.0, 12.0)
-	flavor_menu.size = Vector2(106.0, 30.0)
-	sugar_jar.position = sugar_jar_visual.position
-	sugar_jar.size = sugar_jar_visual.size
-	ice_button.position = ice_tray_visual.position
-	ice_button.size = ice_tray_visual.size
 	machine_output.short_clicked.connect(_on_cup_short_clicked)
+	queued_cup_output.short_clicked.connect(_on_queued_cup_short_clicked)
 	cup_stack.short_clicked.connect(_on_cup_stack_short_clicked)
 	cup_stack.hold_requested.connect(_on_cup_stack_hold_requested)
-	queued_cup_button.pressed.connect(_on_queued_cup_pressed)
 	nozzle_button.button_down.connect(_on_nozzle_down)
 	nozzle_button.button_up.connect(_on_nozzle_up)
 	nozzle_button.pressed.connect(_on_nozzle_pressed)
@@ -97,7 +87,6 @@ func _ready() -> void:
 	dual_nozzle_button.pressed.connect(_on_dual_nozzle_pressed)
 	sugar_jar.pressed.connect(_on_sugar_jar_pressed)
 	ice_button.pressed.connect(_on_ice_button_pressed)
-	flavor_menu.get_popup().id_pressed.connect(_on_flavor_selected)
 	refresh_from_session()
 
 
@@ -133,7 +122,6 @@ func refresh_from_session() -> void:
 	var auto_fill_owned := bool(machine.get("auto_fill_enabled", false))
 	_displayed_machine_tier = _workshop_preview_tier(area_unlocked, auto_fill_owned, double_fill_owned) if _workshop_preview else _owned_machine_tier(auto_fill_owned, double_fill_owned)
 	if _workshop_preview:
-		machine["available_recipe_ids"] = FLAVOR_RECIPES.duplicate()
 		machine["sugar_enabled"] = true
 		machine["ice_enabled"] = true
 		machine["auto_fill_enabled"] = true
@@ -152,7 +140,6 @@ func refresh_from_session() -> void:
 	if cup_state != &"filled" or _cup_at_index(cup, queued_cups, _selected_cup_index).is_empty():
 		_selected_cup_index = 0 if has_left_cup else 1 if has_right_cup else 0
 	var selected_cup := _cup_at_index(cup, queued_cups, _selected_cup_index)
-	var product_id := StringName(selected_cup.get("product_id", &"product.fresh_soy_milk.yellow_bean"))
 	var fill_ratio := float(cup.get("fill_ratio", 0.0))
 	var selected_fill_ratio := float(selected_cup.get("fill_ratio", 0.0))
 	var sugar_servings := int(selected_cup.get("sugar_servings", 0))
@@ -168,7 +155,6 @@ func refresh_from_session() -> void:
 	_refresh_machine_geometry()
 	dispense_progress.visible = _fill_guide_enabled and not _workshop_preview
 	var selected_recipe_id := StringName(machine.get("recipe_id", &"recipe.fresh_soy_milk.yellow_bean"))
-	_refresh_flavor_menu(Array(machine.get("available_recipe_ids", [selected_recipe_id])), selected_recipe_id, cup_state == &"ready")
 	_filling = _filling and cup_state == &"held_empty"
 	if not _filling:
 		dispense_progress.value = 0.0
@@ -178,19 +164,15 @@ func refresh_from_session() -> void:
 			dispense_effect.set_filled_cup(0.0, _liquid_color_for_recipe(selected_recipe_id))
 	queued_cup_effect.set_filled_cup(float(queued_cup.get("fill_ratio", 0.0)) if cup_state == &"filled" and has_right_cup else 0.0, _liquid_color_for_recipe(StringName(queued_cup.get("recipe_id", selected_recipe_id))))
 	_refresh_cup_stack()
+	var left_empty_visible := false
+	var right_empty_visible := false
 	if cup_state == &"ready":
-		machine_output.visible = false
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "请点击杯堆取空杯")
-		machine_output.set_drag_available(false)
-		machine_output.position = _active_cup_position()
 		state_label.text = "① 点击杯堆取空杯 · 剩余 %d 个" % _cup_stack_count if _cup_stack_count > 0 else "空杯已用完 · 长按杯堆位置补货"
 		cup_detail_label.text = "%s · 0 / 1 / 2 份糖" % _recipe_label(selected_recipe_id)
 	elif cup_state == &"held_empty":
-		machine_output.visible = true
 		var right_empty_cup_only := _double_fill_enabled and secondary_empty_cup_placed and held_empty_cup_count == 1
-		machine_output.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "右侧空杯已就位，请点击右口出浆" if right_empty_cup_only else "可点左口出浆；两杯就位后也可点双口出浆" if _double_fill_enabled else "空杯已拿起，请点击自动出浆口" if _auto_fill_enabled else "空杯已拿起，请按住出浆口")
-		machine_output.position = _secondary_cup_position() if right_empty_cup_only else _active_cup_position()
-		machine_output.z_index = 0
+		left_empty_visible = not right_empty_cup_only
+		right_empty_visible = right_empty_cup_only or (_double_fill_enabled and held_empty_cup_count >= 2)
 		if _double_fill_enabled:
 			state_label.text = "② 右侧空杯已就位，点击右口出浆" if right_empty_cup_only else "② 可点左口出浆，或再点击杯堆放置右杯" if held_empty_cup_count < 2 else "③ 可点左口、右口；或点双口同时出浆"
 			cup_detail_label.text = "右侧空杯待接浆" if right_empty_cup_only else "已放置 %d / 2 个空杯" % held_empty_cup_count
@@ -198,34 +180,20 @@ func refresh_from_session() -> void:
 			state_label.text = "② 点击出浆口自动满杯" if _auto_fill_enabled else "② 按住出浆口接豆浆" if not _filling else state_label.text
 			cup_detail_label.text = "自动接满一杯豆浆" if _auto_fill_enabled else "松开即出杯；满杯需要 0.8 秒"
 	else:
-		machine_output.visible = true
-		machine_output.configure({"source_kind": &"soy_cup", "source_index": _selected_cup_index, "product_id": product_id, "discardable": true}, _outlet_cup_texture, true, "拖动当前选中的豆浆到订单商品交付，或拖入废弃篓报废" if _selected_cup_index == 1 else "拖动当前选中的豆浆到订单商品交付，或拖入废弃篓报废")
-		machine_output.set_drag_available(true)
-		machine_output.position = _secondary_cup_position() if _selected_cup_index == 1 else _active_cup_position()
-		machine_output.z_index = 5 if _selected_cup_index == 1 else 0
+		left_empty_visible = primary_empty_cup_placed
+		right_empty_visible = secondary_empty_cup_placed
 		var fill_percent := roundi(selected_fill_ratio * 100.0)
 		state_label.text = "第1杯已满；右侧空杯已就位，点击右口出浆" if secondary_empty_cup_placed else "第2杯已满；左侧空杯已就位，点击左口出浆" if primary_empty_cup_placed else "③ 已选第%d杯；点击糖罐或冰盒加料" % (_selected_cup_index + 1) if ready_cup_count > 1 else "③ 已选豆浆；点击糖罐或冰盒加料"
 		var temperature_label := "冰镇" if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced" else "常温"
 		cup_detail_label.text = "第1杯 · %s · %s · %d%% 满杯；第2杯空杯待接浆" % [_recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent] if secondary_empty_cup_placed else "第%d杯 · %s · %s · %d%% 满杯" % [_selected_cup_index + 1, _recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), temperature_label, fill_percent]
-	var second_empty_cup_visible := cup_state == &"held_empty" and _double_fill_enabled and (held_empty_cup_count >= 2 or secondary_empty_cup_placed)
-	primary_empty_cup_preview.visible = primary_empty_cup_placed
-	primary_empty_cup_preview.position = _active_cup_position()
-	primary_empty_cup_preview.size = machine_output.size
-	queued_cup_preview.visible = second_empty_cup_visible or secondary_empty_cup_placed or (cup_state == &"filled" and has_right_cup)
-	queued_cup_preview.position = _secondary_cup_position()
-	queued_cup_button.visible = cup_state == &"filled" and has_left_cup and has_right_cup
-	queued_cup_button.disabled = not queued_cup_button.visible
-	queued_cup_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if _selected_cup_index == 1 else Control.MOUSE_FILTER_STOP
-	queued_cup_button.position = _secondary_cup_position()
-	queued_cup_button.size = queued_cup_preview.size
-	_update_cup_selection_frame(cup_state == &"filled", 1 if not selected_cup.is_empty() else 0)
-	sugar_jar_visual.visible = sugar_enabled
+	_configure_cup_source(machine_output, 0, cup, left_empty_visible, has_left_cup)
+	_configure_cup_source(queued_cup_output, 1, queued_cup, right_empty_visible, has_right_cup)
+	_update_cup_selection_frames(cup_state == &"filled")
 	sugar_jar.visible = sugar_enabled
 	sugar_label.visible = sugar_enabled
 	sugar_jar.disabled = not sugar_enabled or cup_state != &"filled" or sugar_servings >= 2
 	sugar_jar.tooltip_text = "给第%d杯加糖（最多两份）" % (_selected_cup_index + 1) if not sugar_jar.disabled else "请先接好豆浆" if cup_state != &"filled" else "第%d杯已是多糖" % (_selected_cup_index + 1)
 	sugar_label.text = "糖：%s" % ["无糖", "正常糖（1份）", "多糖（2份）"][clampi(sugar_servings, 0, 2)]
-	ice_tray_visual.visible = ice_enabled
 	ice_button.visible = ice_enabled
 	ice_button.disabled = not ice_enabled or cup_state != &"filled" or StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced"
 	ice_button.tooltip_text = "给第%d杯加冰" % (_selected_cup_index + 1) if not ice_button.disabled else "第%d杯已加冰" % (_selected_cup_index + 1) if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced" else "请先接好豆浆"
@@ -241,30 +209,26 @@ func refresh_from_session() -> void:
 	dual_nozzle_button.disabled = not dual_outlets_ready
 	dual_nozzle_button.tooltip_text = "同时接满左右两杯豆浆"
 	if _workshop_preview:
-		# The author-positioned dispenser, cup, sugar jar and ice box remain;
-		# operating instructions and progress are intentionally absent.
+		# The workshop is the canonical 410×496 authoring view. It shows the next
+		# machine and merged accessories without exposing live operating controls.
 		state_label.visible = false
 		cup_detail_label.visible = false
 		sugar_label.visible = false
-		flavor_menu.visible = false
 		nozzle_button.disabled = true
 		second_nozzle_button.visible = false
 		dual_nozzle_button.visible = false
 		machine_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		queued_cup_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		queued_cup_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ice_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		flavor_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		state_label.visible = true
 		cup_detail_label.visible = true
 		sugar_label.visible = sugar_enabled
-		flavor_menu.visible = true
-		machine_output.mouse_filter = Control.MOUSE_FILTER_STOP
-		queued_cup_button.mouse_filter = Control.MOUSE_FILTER_STOP if queued_cup_button.visible and _selected_cup_index == 0 else Control.MOUSE_FILTER_IGNORE
+		machine_output.mouse_filter = Control.MOUSE_FILTER_STOP if machine_output.visible else Control.MOUSE_FILTER_IGNORE
+		queued_cup_output.mouse_filter = Control.MOUSE_FILTER_STOP if queued_cup_output.visible else Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_STOP
 		ice_button.mouse_filter = Control.MOUSE_FILTER_STOP
-		flavor_menu.mouse_filter = Control.MOUSE_FILTER_STOP
 	_refresh_nozzle_affordances()
 
 
@@ -279,6 +243,14 @@ func _on_cup_short_clicked(_source_ref: Dictionary) -> void:
 		var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 		if StringName(machine.get("cup_state", &"ready")) == &"filled":
 			_select_cup(0)
+
+
+func _on_queued_cup_short_clicked(_source_ref: Dictionary) -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session != null:
+		var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+		if StringName(machine.get("cup_state", &"ready")) == &"filled":
+			_select_cup(1)
 
 
 func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
@@ -354,10 +326,12 @@ func _sync_outlet_cup_size_to_stack() -> void:
 		return
 	var stack_scale := minf(cup_stack.size.x / stack_texture_size.x, cup_stack.size.y / stack_texture_size.y)
 	var outlet_display_size := outlet_texture_size * stack_scale
-	machine_output.size = outlet_display_size
-	queued_cup_preview.size = outlet_display_size
-	queued_cup_button.size = outlet_display_size
-	primary_empty_cup_preview.size = outlet_display_size
+	left_cup_slot.size = outlet_display_size
+	right_cup_slot.size = outlet_display_size
+	left_selection_frame.position = Vector2(-4.0, -4.0)
+	left_selection_frame.size = outlet_display_size + Vector2(8.0, 8.0)
+	right_selection_frame.position = Vector2(-4.0, -4.0)
+	right_selection_frame.size = outlet_display_size + Vector2(8.0, 8.0)
 
 
 func _ensure_visual_resources() -> bool:
@@ -367,17 +341,12 @@ func _ensure_visual_resources() -> bool:
 	if _outlet_cup_texture == null:
 		_outlet_cup_texture = _create_outlet_cup_texture(source_texture)
 		_sync_outlet_cup_size_to_stack()
-		queued_cup_preview.texture = _outlet_cup_texture
-		queued_cup_button.hit_texture = _outlet_cup_texture
-		primary_empty_cup_preview.texture = _outlet_cup_texture
 	var sugar_texture := _load_texture(SUGAR_JAR_TEXTURE_PATH)
 	if sugar_texture != null:
-		sugar_jar_visual.texture = sugar_texture
-		sugar_jar.hit_texture = sugar_texture
+		sugar_jar.call("configure_texture", sugar_texture)
 	var ice_texture := _load_texture(ICE_TRAY_TEXTURE_PATH)
 	if ice_texture != null:
-		ice_tray_visual.texture = ice_texture
-		ice_button.hit_texture = ice_texture
+		ice_button.call("configure_texture", ice_texture)
 	return true
 
 
@@ -407,8 +376,34 @@ static func _create_outlet_cup_texture(source_texture: Texture2D) -> Texture2D:
 	return outlet_texture
 
 
-func _on_queued_cup_pressed() -> void:
-	_select_cup(1)
+func product_sources() -> Array[ProductDragSource]:
+	return [machine_output, queued_cup_output]
+
+
+func _configure_cup_source(source: ProductDragSource, cup_index: int, cup_payload: Dictionary, empty_visible: bool, filled_visible: bool) -> void:
+	var source_visible := empty_visible or filled_visible
+	var cup_slot := source.get_parent() as Control
+	if cup_slot != null:
+		cup_slot.visible = source_visible
+	source.visible = source_visible
+	if not source_visible:
+		source.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "")
+		source.set_drag_available(false)
+		return
+	if filled_visible:
+		var product_id := StringName(cup_payload.get("product_id", &"product.fresh_soy_milk.yellow_bean"))
+		source.configure(
+			{"source_kind": &"soy_cup", "source_index": cup_index, "product_id": product_id, "discardable": true},
+			_outlet_cup_texture,
+			not _workshop_preview,
+			"点击选择第%d杯；拖动可交付或报废" % (cup_index + 1),
+		)
+		source.set_drag_available(not _workshop_preview)
+	else:
+		source.configure({"source_kind": &"soy_empty_cup", "source_index": cup_index}, _outlet_cup_texture, false, "空杯已在第%d个出浆口就位" % (cup_index + 1))
+		source.set_drag_available(false)
+	source.set_drag_preview_size(source.size)
+	source.set_alpha_hit_regions([{"texture": _outlet_cup_texture, "rect": Rect2(Vector2.ZERO, source.size)}])
 
 
 func _select_cup(cup_index: int) -> void:
@@ -479,7 +474,7 @@ func _on_sugar_jar_pressed() -> void:
 	var result: Dictionary = session.call("add_f4_soy_sugar", _selected_cup_index) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
 		var servings := int(result.get("sugar_servings", 0))
-		_selected_cup_effect().play_sugar_add(SUGAR_JAR_SPOUT)
+		_selected_cup_effect().play_sugar_add(_animation_origin_in_effect(sugar_animation_origin, _selected_cup_effect()))
 		status_message.emit("第%d杯已加正常糖" % (_selected_cup_index + 1) if servings == 1 else "第%d杯已加多糖" % (_selected_cup_index + 1))
 	else:
 		status_message.emit("无法加糖：%s" % str(result.get("reason", &"unknown")))
@@ -490,35 +485,10 @@ func _on_ice_button_pressed() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result: Dictionary = session.call("add_f4_soy_ice", _selected_cup_index) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		_selected_cup_effect().play_ice_add(ICE_TRAY_SCOOP)
+		_selected_cup_effect().play_ice_add(_animation_origin_in_effect(ice_animation_origin, _selected_cup_effect()))
 		status_message.emit("第%d杯已加冰" % (_selected_cup_index + 1))
 	else:
 		status_message.emit("无法加冰：%s" % str(result.get("reason", &"unknown")))
-	refresh_from_session()
-
-
-func _refresh_flavor_menu(raw_recipe_ids: Array, selected_recipe_id: StringName, can_select: bool) -> void:
-	var popup := flavor_menu.get_popup()
-	popup.clear()
-	var available: Array[StringName] = []
-	for raw_recipe_id in raw_recipe_ids:
-		var recipe_id := StringName(raw_recipe_id)
-		if FLAVOR_RECIPES.has(recipe_id):
-			available.append(recipe_id)
-	for recipe_id in available:
-		popup.add_item(_recipe_label(recipe_id), FLAVOR_RECIPES.find(recipe_id))
-	flavor_menu.disabled = not can_select or available.size() <= 1
-	flavor_menu.text = "%s ▾" % _recipe_label(selected_recipe_id)
-	flavor_menu.tooltip_text = "当前仅供应黄豆豆浆"
-
-
-func _on_flavor_selected(index: int) -> void:
-	if index < 0 or index >= FLAVOR_RECIPES.size():
-		return
-	var session := get_node_or_null("/root/GameSession")
-	var recipe_id := FLAVOR_RECIPES[index]
-	var result: Dictionary = session.call("select_f4_soy_flavor", recipe_id) if session != null else {"success": false, "reason": &"no_game_session"}
-	status_message.emit("已选择%s" % _recipe_label(recipe_id) if bool(result.get("success", false)) else "无法切换口味：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
 
 
@@ -541,14 +511,17 @@ static func _liquid_color_for_recipe(recipe_id: StringName) -> Color:
 	}.get(recipe_id, Color("f4d99c"))
 
 
+func _machine_tier_layout() -> Dictionary:
+	return MACHINE_TIER_LAYOUTS[clampi(_displayed_machine_tier, 0, MACHINE_TIER_LAYOUTS.size() - 1)]
+
+
 func _nozzle_outlet_position() -> Vector2:
 	# The dispenser uses KEEP_ASPECT_COVERED. Resolve any source-image crop
-	# before converting its verified source-pixel outlet into station coordinates.
-	var outlet := ADVANCED_LEFT_NOZZLE_OUTLET_TEXTURE_POSITION if _displayed_machine_tier >= 2 else AUTO_FILL_NOZZLE_OUTLET_TEXTURE_POSITION if _displayed_machine_tier == 1 else DISPENSER_NOZZLE_OUTLET_TEXTURE_POSITION
-	return _texture_position_to_station(outlet)
+	# before converting its verified source-pixel outlet into assembly coordinates.
+	return _texture_position_to_machine(Vector2(_machine_tier_layout()["left_nozzle_texture_position"]))
 
 
-func _texture_position_to_station(texture_position: Vector2) -> Vector2:
+func _texture_position_to_machine(texture_position: Vector2) -> Vector2:
 	var texture_size := soy_milk_dispenser.texture.get_size()
 	var display_size := soy_milk_dispenser.size
 	var scale := maxf(display_size.x / texture_size.x, display_size.y / texture_size.y)
@@ -559,35 +532,42 @@ func _texture_position_to_station(texture_position: Vector2) -> Vector2:
 
 func _active_cup_position() -> Vector2:
 	var outlet := _nozzle_outlet_position()
-	var cup_x := DUAL_LEFT_CUP_X if _displayed_machine_tier >= 2 else SINGLE_DISPENSING_CUP_X
-	return Vector2(cup_x, outlet.y + CUP_NOZZLE_GAP)
+	return Vector2(outlet.x - left_cup_slot.size.x * 0.5, outlet.y + CUP_NOZZLE_GAP)
 
 
 func _secondary_cup_position() -> Vector2:
-	var outlet := _texture_position_to_station(ADVANCED_RIGHT_NOZZLE_OUTLET_TEXTURE_POSITION)
-	return Vector2(DUAL_RIGHT_CUP_X, outlet.y + CUP_NOZZLE_GAP)
+	var outlet := _second_nozzle_outlet_position()
+	return Vector2(outlet.x - right_cup_slot.size.x * 0.5, outlet.y + CUP_NOZZLE_GAP)
+
+
+func _second_nozzle_outlet_position() -> Vector2:
+	if _displayed_machine_tier < 2:
+		return _nozzle_outlet_position()
+	return _texture_position_to_machine(Vector2(_machine_tier_layout()["right_nozzle_texture_position"]))
 
 
 func _refresh_machine_geometry() -> void:
 	var outlet := _nozzle_outlet_position()
+	var second_outlet := _second_nozzle_outlet_position()
+	left_cup_slot.position = _active_cup_position()
+	right_cup_slot.position = _secondary_cup_position()
 	var nozzle_size := Vector2(88.0, 92.0) if _displayed_machine_tier >= 2 else Vector2(112.0, 100.0)
 	nozzle_button.size = nozzle_size
 	second_nozzle_button.size = nozzle_size
 	nozzle_button.position = Vector2(
-		clampf(outlet.x - nozzle_button.size.x * 0.5, 0.0, size.x - nozzle_button.size.x),
-		clampf(outlet.y - nozzle_button.size.y, 0.0, size.y - nozzle_button.size.y)
+		clampf(outlet.x - nozzle_button.size.x * 0.5, 0.0, machine_assembly.size.x - nozzle_button.size.x),
+		clampf(outlet.y - nozzle_button.size.y, 0.0, machine_assembly.size.y - nozzle_button.size.y)
 	)
-	var second_outlet := _texture_position_to_station(ADVANCED_RIGHT_NOZZLE_OUTLET_TEXTURE_POSITION) if _displayed_machine_tier >= 2 else outlet
 	second_nozzle_button.position = Vector2(
-		clampf(second_outlet.x - second_nozzle_button.size.x * 0.5, 0.0, size.x - second_nozzle_button.size.x),
-		clampf(second_outlet.y - second_nozzle_button.size.y, 0.0, size.y - second_nozzle_button.size.y)
+		clampf(second_outlet.x - second_nozzle_button.size.x * 0.5, 0.0, machine_assembly.size.x - second_nozzle_button.size.x),
+		clampf(second_outlet.y - second_nozzle_button.size.y, 0.0, machine_assembly.size.y - second_nozzle_button.size.y)
 	)
 	dual_nozzle_button.position = Vector2(
-		clampf((outlet.x + second_outlet.x) * 0.5 - dual_nozzle_button.size.x * 0.5, 0.0, size.x - dual_nozzle_button.size.x),
-		clampf(minf(outlet.y, second_outlet.y) - nozzle_size.y - dual_nozzle_button.size.y - 8.0, 0.0, size.y - dual_nozzle_button.size.y)
+		clampf((outlet.x + second_outlet.x) * 0.5 - dual_nozzle_button.size.x * 0.5, 0.0, machine_assembly.size.x - dual_nozzle_button.size.x),
+		clampf(minf(outlet.y, second_outlet.y) - nozzle_size.y - dual_nozzle_button.size.y - 8.0, 0.0, machine_assembly.size.y - dual_nozzle_button.size.y)
 	)
-	dispense_effect.configure_geometry(Rect2(_active_cup_position(), machine_output.size), outlet)
-	queued_cup_effect.configure_geometry(Rect2(_secondary_cup_position(), machine_output.size), second_outlet)
+	dispense_effect.configure_geometry(Rect2(Vector2.ZERO, left_cup_slot.size), outlet - left_cup_slot.position)
+	queued_cup_effect.configure_geometry(Rect2(Vector2.ZERO, right_cup_slot.size), second_outlet - right_cup_slot.position)
 
 
 func _refresh_nozzle_affordances() -> void:
@@ -609,17 +589,18 @@ func _configure_nozzle_affordance(button: Button, action_label: String) -> void:
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if actionable else Control.CURSOR_ARROW
 
 
-func _update_cup_selection_frame(has_filled_cup: bool, ready_cup_count: int) -> void:
-	cup_selection_frame.visible = has_filled_cup and ready_cup_count > 0
-	if not cup_selection_frame.visible:
-		return
-	var cup_position := _secondary_cup_position() if _selected_cup_index == 1 else _active_cup_position()
-	cup_selection_frame.position = cup_position - Vector2(4.0, 4.0)
-	cup_selection_frame.size = machine_output.size + Vector2(8.0, 8.0)
+func _update_cup_selection_frames(has_filled_cup: bool) -> void:
+	left_selection_frame.visible = has_filled_cup and _selected_cup_index == 0 and machine_output.visible and not machine_output.disabled
+	right_selection_frame.visible = has_filled_cup and _selected_cup_index == 1 and queued_cup_output.visible and not queued_cup_output.disabled
 
 
 func _selected_cup_effect() -> SoyDispenseEffect:
 	return queued_cup_effect if _selected_cup_index == 1 else dispense_effect
+
+
+func _animation_origin_in_effect(origin: Control, effect: SoyDispenseEffect) -> Vector2:
+	var canvas_position := origin.get_global_transform_with_canvas().origin
+	return effect.get_global_transform_with_canvas().affine_inverse() * canvas_position
 
 
 static func _cup_at_index(active_cup: Dictionary, queued_cups: Array, cup_index: int) -> Dictionary:
@@ -650,10 +631,5 @@ static func _workshop_preview_tier(area_unlocked: bool, auto_fill_owned: bool, d
 
 
 func _texture_for_machine_tier(tier: int) -> Texture2D:
-	match tier:
-		1:
-			return _load_texture(AUTO_FILL_DISPENSER_TEXTURE_PATH)
-		2:
-			return _load_texture(ADVANCED_DISPENSER_TEXTURE_PATH)
-		_:
-			return _load_texture(MANUAL_DISPENSER_TEXTURE_PATH)
+	var layout := MACHINE_TIER_LAYOUTS[clampi(tier, 0, MACHINE_TIER_LAYOUTS.size() - 1)]
+	return _load_texture(String(layout["texture_path"]))

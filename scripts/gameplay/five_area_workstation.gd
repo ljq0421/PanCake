@@ -573,7 +573,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
-				&"ready": return {"target": fresh_soy_station.machine_output, "message": "点击空杯，拿到出浆口"}
+				&"ready": return {"target": fresh_soy_station.cup_stack, "message": "点击杯堆，拿一个空杯放到出浆口"}
 				&"held_empty": return {"target": fresh_soy_station.nozzle_button, "message": "按住出浆口 0.8 秒接满豆浆"}
 				&"filled": return {"target": fresh_soy_station.sugar_jar, "message": "按订单选择无糖、正常糖或多糖，再拖杯交付"}
 		&"area.pancake":
@@ -909,8 +909,7 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 	var sources: Array[ProductDragSource] = []
 	sources.append_array(pancake_holding_sources)
 	sources.append_array(cartoon_youtiao_fryer.output_sources)
-	sources.append(fresh_soy_station.machine_output)
-	sources.append_array(fresh_soy_station.rack_outputs)
+	sources.append_array(fresh_soy_station.product_sources())
 	for source in sources:
 		if source == null or source.disabled or not source.visible:
 			continue

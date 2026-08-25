@@ -44,6 +44,7 @@ func refresh() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var owned_growth_ids := Array(progression.get("owned_growth_ids", []))
 	var youtiao_upgrade_id := _next_youtiao_fryer_upgrade(owned_growth_ids)
+	var soy_milk_machine_upgrade_id := _next_soy_milk_machine_upgrade(owned_growth_ids)
 	var wide_spreader_owned := owned_growth_ids.has("growth.tool.pancake.wide_spreader")
 	var press_spreader_owned := owned_growth_ids.has("growth.automation.pancake.press_once")
 	_press_preview.visible = wide_spreader_owned
@@ -69,7 +70,11 @@ func refresh() -> void:
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",
 		]
-		prop.visible = (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) and (not growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"] or growth_id == youtiao_upgrade_id)
+		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"]
+		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]
+		prop.visible = (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) \
+			and (not is_youtiao_machine_upgrade or growth_id == youtiao_upgrade_id) \
+			and (not is_soy_milk_machine_upgrade or growth_id == soy_milk_machine_upgrade_id)
 		if growth_id == _selected_id:
 			selected_prop_is_visible = prop.visible
 		prop.tooltip_text = _tag_tooltip_text(growth_id, status)
@@ -146,6 +151,16 @@ func _next_youtiao_fryer_upgrade(owned_growth_ids: Array) -> StringName:
 		return &"growth.area.youtiao"
 	if not owned_growth_ids.has("growth.equipment.youtiao.advanced"):
 		return &"growth.equipment.youtiao.advanced"
+	return &""
+
+
+func _next_soy_milk_machine_upgrade(owned_growth_ids: Array) -> StringName:
+	if not owned_growth_ids.has("growth.area.fresh_soy_milk"):
+		return &"growth.area.fresh_soy_milk"
+	if not owned_growth_ids.has("growth.automation.fresh_soy_milk.auto_fill"):
+		return &"growth.automation.fresh_soy_milk.auto_fill"
+	if not owned_growth_ids.has("growth.automation.fresh_soy_milk.advanced"):
+		return &"growth.automation.fresh_soy_milk.advanced"
 	return &""
 
 func _select(growth_id: StringName) -> void:

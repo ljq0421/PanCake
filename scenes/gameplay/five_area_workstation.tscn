@@ -1358,11 +1358,10 @@ mouse_filter = 2
 [node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" unique_id=143699513 instance=ExtResource("37_830a8")]
 z_index = 20
 layout_mode = 0
-offset_left = 1520.0
-offset_top = 490.0
-offset_right = 1930.0
-offset_bottom = 986.0
-scale = Vector2(0.8, 0.8)
+offset_left = 1500.0
+offset_top = 480.0
+offset_right = 1910.0
+offset_bottom = 976.0
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0

@@ -1,6 +1,6 @@
 extends SceneTree
 
-const GENERATOR := preload("res://scripts/services/five_area_playable_order_generator.gd")
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
 var failures := PackedStringArray()
 
@@ -20,16 +20,7 @@ func _run() -> void:
 	_configure_full_soy(progression)
 	var order_service: RefCounted = session.call("order_service")
 	order_service.call("abandon_all_open_orders", &"test_setup")
-
-	var inventory := Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.fresh_soy_milk.yellow_bean"] = 0
-	session.call("save_inventory", inventory)
-	progression.set("coins", 100)
-	progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_yellow_restock": true})
-	session.call("advance_f3_production", 0.24)
-	_check(int(session.call("inventory_snapshot").get("stock.fresh_soy_milk.yellow_bean", 0)) == 0, "auto restock waits for the full 0.25-second unit")
-	session.call("advance_f3_production", 0.01)
-	_check(int(session.call("inventory_snapshot").get("stock.fresh_soy_milk.yellow_bean", 0)) == 1 and int(progression.get("coins")) == 98, "auto restock buys one yellow bean at normal price after 0.25 seconds")
+	_check(not CATALOG.AUTOMATION_DEFINITIONS.has(&"automation.fresh_soy_milk.auto_yellow_restock"), "retired automatic bean purchasing is absent from the active catalog")
 
 	var combo_order := {"items": [
 		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "base_price_coins": 23},
@@ -42,7 +33,7 @@ func _run() -> void:
 	progression.set("owned_growth_ids", {})
 	_check(int(session.call("_quality_adjusted_formal_quote", combo_order, combo_results, 35)) == 31, "C-quality multiplier changes only the soy part of a custom-pancake combo quote")
 	progression.set("owned_growth_ids", {&"growth.pricing.fresh_soy_milk.premium": true})
-	_check(int(session.call("_quality_adjusted_formal_quote", combo_order, combo_results, 35)) == 32, "soy premium multiplies only the adjusted soy part by 1.3 without doubling multigrain")
+	_check(int(session.call("_quality_adjusted_formal_quote", combo_order, combo_results, 35)) == 32, "soy premium multiplies only the quality-adjusted soy part")
 	_finish()
 
 
@@ -61,8 +52,8 @@ func _check(condition: bool, message: String) -> void:
 
 func _finish() -> void:
 	if failures.is_empty():
-		print("FRESH_SOY_MILK_AUTOMATION_SELF_CHECK_PASS")
+		print("FRESH_SOY_MILK_PRICING_SELF_CHECK_PASS")
 		quit(0)
 		return
-	printerr("FRESH_SOY_MILK_AUTOMATION_SELF_CHECK_FAIL\n" + "\n".join(failures))
+	printerr("FRESH_SOY_MILK_PRICING_SELF_CHECK_FAIL\n" + "\n".join(failures))
 	quit(1)

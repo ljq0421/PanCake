@@ -65,12 +65,6 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var top_warning_label: Label = %TopWarningLabel
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
-@onready var fixed_material_lock_artworks: Array[Control] = [
-	$SafeArea/LockedIngredientArtwork/Slot01,
-	$SafeArea/LockedIngredientArtwork/Slot02,
-	$SafeArea/LockedIngredientArtwork/Slot03,
-	$SafeArea/LockedIngredientArtwork/Slot04,
-]
 @onready var fixed_material_lock_buttons: Array[BaseButton] = [
 	$SafeArea/LockedIngredientInteractions/Slot01LockedButton,
 	$SafeArea/LockedIngredientInteractions/Slot02LockedButton,
@@ -405,8 +399,6 @@ func _refresh_material_slots() -> void:
 		# bottom-dock controls are intentionally removed from the workbench view.
 		slot.visible = false
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if index < fixed_material_lock_artworks.size():
-			fixed_material_lock_artworks[index].visible = false
 		if index < fixed_material_lock_buttons.size():
 			fixed_material_lock_buttons[index].visible = false
 			fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -566,7 +558,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 					return {"target": cartoon_youtiao_fryer.start_button, "message": message}
 				&"frying": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待炸制完成，留意设备状态"}
 				&"ready_safe", &"overcooking": return {"target": cartoon_youtiao_fryer.lift_button, "message": "及时升篮"}
-				&"burnt": return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把整锅焦糊油条拖到废弃区"}
+				&"burnt": return {"target": cartoon_youtiao_fryer.waste_source, "message": "把整锅焦糊油条拖到废弃区"}
 				&"draining": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待沥油完成"}
 				&"ready_to_collect":
 					return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到顾客订单或成品盘"}
@@ -710,11 +702,6 @@ func _hide_unused_worktop_locks() -> void:
 		&"Slot01": true, &"Slot02": true, &"Slot03": true,
 		&"Slot04": true, &"Slot05": true, &"Slot06": true,
 	}
-	var old_artwork := get_node_or_null("SafeArea/LockedIngredientArtwork")
-	if old_artwork != null:
-		for child in old_artwork.get_children():
-			if child is CanvasItem and not retained_lock_names.has(StringName(child.name)):
-				child.visible = false
 	var old_interactions := get_node_or_null("SafeArea/LockedIngredientInteractions")
 	if old_interactions != null:
 		for child in old_interactions.get_children():
@@ -1411,6 +1398,9 @@ func _on_disposition_completed(result: Dictionary) -> void:
 		tool_status_label.text = "餐品已计入浪费"
 		_refresh_pancake_drag_sources()
 		cartoon_youtiao_fryer.refresh_from_session()
+		# The shared waste basket bypasses DirectSoyStation's local handlers.
+		# Refresh it explicitly so a discarded filled cup cannot remain visible.
+		fresh_soy_station.refresh_from_session()
 	else:
 		tool_status_label.text = "餐品回到原处：%s" % str(result.get("reason", &"unknown"))
 

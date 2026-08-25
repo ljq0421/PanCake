@@ -2,12 +2,12 @@
 
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="9_sweet_bean_sauce"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="10_baocui_basket"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-1.png" id="12_baocui_01"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-2.png" id="13_baocui_02"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-3.png" id="14_baocui_03"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-4.png" id="15_baocui_04"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-5.png" id="16_baocui_05"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-6.png" id="17_baocui_06"]
+[ext_resource type="Texture2D" uid="uid://bfewv2xik1v47" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-1.png" id="12_baocui_01"]
+[ext_resource type="Texture2D" uid="uid://6qbbil6lqnih" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-2.png" id="13_baocui_02"]
+[ext_resource type="Texture2D" uid="uid://dbkawc4i7aam6" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-3.png" id="14_baocui_03"]
+[ext_resource type="Texture2D" uid="uid://bc7kjo1iul3b6" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-4.png" id="15_baocui_04"]
+[ext_resource type="Texture2D" uid="uid://badn5gevrr6du" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-5.png" id="16_baocui_05"]
+[ext_resource type="Texture2D" uid="uid://b2dxblxv400fb" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft-6.png" id="17_baocui_06"]
 [ext_resource type="Texture2D" uid="uid://bw3mvw6iui46x" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-empty.png" id="19_coriander_empty"]
 [ext_resource type="Texture2D" uid="uid://dm713nd34nj1y" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-half.png" id="20_coriander_half"]
 [ext_resource type="Texture2D" uid="uid://d3r50b1mpjkww" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-full.png" id="21_coriander_full"]
@@ -312,8 +312,8 @@ offset_right = 1422.0
 offset_bottom = 1080.0
 tooltip_text = "按住面糊勺拖到空鏊子倒入"
 focus_mode = 0
-mouse_default_cursor_shape = 2
 mouse_filter = 2
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("49_ladle_holder_filled")
 ignore_texture_size = true
 stretch_mode = 5

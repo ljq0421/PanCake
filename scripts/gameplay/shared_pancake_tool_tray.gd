@@ -19,9 +19,8 @@ const SLOT_DEFINITIONS := [
 	{ "name": "BaocuiSlot", "label": "薄脆", "stock_id": &"stock.pancake.baocui", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/baocui/baocui_intact_v1.png")},
 	{ "name": "ScallionSlot", "label": "葱花", "stock_id": &"stock.pancake.scallion", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/scallion/scallion_pile_v1_five_area_v2.png")},
 	{ "name": "HamSlot", "label": "火腿", "stock_id": &"stock.pancake.ham_sausage", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/ham_sausage/ham_sausage_whole_v1_five_area_v2.png")},
-	{ "name": "FlossSlot", "label": "肉松", "stock_id": &"stock.pancake.meat_floss", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1_five_area_v2.png")},
+	{ "name": "FlossSlot", "label": "肉松", "stock_id": &"stock.pancake.meat_floss", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png")},
 	{ "name": "CorianderSlot", "label": "香菜", "stock_id": &"stock.pancake.coriander", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/coriander/coriander_pile_five_area_v2.png")},
-	{ "name": "MustardSlot", "label": "榨菜", "stock_id": &"stock.pancake.preserved_mustard", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png")},
 ]
 
 var _session: Node

@@ -120,6 +120,14 @@ func _run() -> void:
 	var primary_cup := Dictionary(dual_snapshot.get("cup", {}))
 	var selected_queued_cup := Dictionary(Array(dual_snapshot.get("queued_cups", [])).front())
 	_check(StringName(primary_cup.get("temperature_mode", &"")) == &"room_temperature" and StringName(selected_queued_cup.get("temperature_mode", &"")) == &"iced", "adding ice affects only the clicked second cup")
+	var waste_target := workstation.waste_area as StagedProductDropTarget
+	_check(waste_target != null, "formal workstation exposes the shared waste basket")
+	if waste_target != null:
+		await _drag_control(soy_station.queued_cup_output, waste_target)
+		await process_frame
+		var after_discard := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
+		_check(Array(after_discard.get("queued_cups", [])).is_empty() and not Dictionary(after_discard.get("cup", {})).is_empty(), "discarding the second soy cup removes only that cup")
+		_check(not soy_station.queued_cup_output.visible, "a soy cup disappears from its outlet immediately after shared-basket disposal")
 	workstation.queue_free()
 	_finish()
 

@@ -8,72 +8,47 @@ var failures := PackedStringArray()
 
 
 func _initialize() -> void:
-	var one: RefCounted = MODEL.new(0, true)
-	_check(bool(one.call("add_ingredient", YELLOW).get("success", false)) and int(one.call("snapshot").get("quantity", 0)) == 1, "one scoop forms a one-cup simple batch")
-	_check(bool(one.call("add_ingredient", YELLOW).get("success", false)) and int(one.call("snapshot").get("quantity", 0)) == 2, "two repeated scoops form a two-cup batch")
-	_check(StringName(one.call("add_ingredient", YELLOW).get("reason", &"")) == &"batch_capacity_reached", "tier-zero machine rejects a third cup")
+	var retired_contract: RefCounted = MODEL.new(0, true)
+	_check(_reason(retired_contract.call("add_ingredient", YELLOW)) == &"soy_bean_loading_retired", "bean loading remains explicitly retired")
+	_check(_reason(retired_contract.call("start_water")) == &"soy_water_timing_retired", "manual water timing remains explicitly retired")
+	_check(_reason(retired_contract.call("add_water")) == &"soy_water_timing_retired", "batch water loading remains explicitly retired")
+	_check(_reason(retired_contract.call("start")) == &"soy_batch_production_retired", "batch production remains explicitly retired")
+	_check(_reason(retired_contract.call("load_recipe", &"recipe.fresh_soy_milk.yellow_bean", 2)) == &"soy_batch_production_retired", "batch recipe loading remains explicitly retired")
+	_check(_reason(retired_contract.call("collect_output", 0)) == &"soy_cup_rack_retired", "the former output rack remains explicitly retired")
 
-	var four: RefCounted = MODEL.new(2, true)
-	for _index in range(4):
-		four.call("add_ingredient", YELLOW)
-	_check(int(four.call("snapshot").get("quantity", 0)) == 4, "advanced machine forms a four-cup batch")
+	var manual: RefCounted = MODEL.new(0, true)
+	_check(bool(manual.call("take_empty_cup").get("success", false)), "the current station takes one empty cup")
+	var half_fill := Dictionary(manual.call("fill_held_cup", 0.4))
+	var half_cup := Dictionary(half_fill.get("cup", {}))
+	_check(bool(half_fill.get("success", false)) and is_equal_approx(float(half_cup.get("fill_ratio", 0.0)), 0.5) and StringName(half_cup.get("grade", &"")) == &"C", "manual serving grades a half-filled cup without the retired production loop")
 
-	_check(_water_grade_at(0.48) == &"C", "water below 25 is C")
-	_check(_water_grade_at(0.50) == &"B", "water boundary 25 is B")
-	_check(_water_grade_at(0.90) == &"A", "water boundary 45 is A")
-	_check(_water_grade_at(1.20) == &"A", "water boundary 60 is A")
-	_check(_water_grade_at(1.22) == &"B", "water 61 is B")
-	_check(_water_grade_at(1.60) == &"B", "water boundary 80 is B")
-	_check(_water_grade_at(1.62) == &"C", "water above 80 is C")
+	var automatic: RefCounted = MODEL.new(0, true)
+	automatic.call("configure_upgrades", true, true)
+	automatic.call("take_empty_cup")
+	var auto_fill := Dictionary(automatic.call("fill_held_cup", 0.01))
+	_check(bool(auto_fill.get("success", false)) and is_equal_approx(float(auto_fill.get("fill_ratio", 0.0)), 1.0), "the current auto-fill upgrade fills one foreground cup")
 
-	for tier in range(3):
-		_check(is_equal_approx(_duration_for(tier, [YELLOW]), 5.0 - tier), "yellow duration follows tier %d" % tier)
+	var advanced: RefCounted = MODEL.new(0, true)
+	advanced.call("configure_upgrades", true, true, true, true, true)
+	advanced.call("take_empty_cup")
+	advanced.call("take_empty_cup")
+	var double_fill := Dictionary(advanced.call("fill_held_cup", 0.01, 2))
+	var advanced_snapshot := Dictionary(advanced.call("snapshot"))
+	_check(bool(double_fill.get("success", false)) and int(double_fill.get("quantity", 0)) == 2 and int(advanced_snapshot.get("ready_cup_count", 0)) == 2, "the advanced machine fills two physical cup outlets")
+	_check(Array(advanced_snapshot.get("output_rack", [])).is_empty(), "the current station does not recreate the retired output rack")
 
-	var c_grade: RefCounted = MODEL.new(0, true)
-	c_grade.call("add_ingredient", YELLOW)
-	c_grade.call("start_water")
-	c_grade.call("advance_time", 0.2, false)
-	c_grade.call("stop_water")
-	c_grade.call("start")
-	c_grade.call("advance_time", 5.0, false)
-	var c_product := Dictionary(c_grade.call("preview_collect", 1))
-	_check(StringName(c_product.get("grade", &"")) == &"C" and is_equal_approx(float(c_product.get("quality_multiplier", 0.0)), 0.5), "red-zone water creates a C cup at half payout")
-
-	var protected_rack: RefCounted = MODEL.new(2, true)
-	protected_rack.call("load_recipe", &"recipe.fresh_soy_milk.yellow_bean", 4)
-	protected_rack.call("add_water")
-	protected_rack.call("start")
-	protected_rack.call("advance_time", 3.0, true)
-	protected_rack.call("advance_time", 120.0, true)
-	var rack := Array(protected_rack.call("snapshot").get("output_rack", []))
-	var held := 0
-	for cup_value in rack:
-		var cup := Dictionary(cup_value)
-		if not cup.is_empty() and bool(cup.get("infinite_hold", false)) and StringName(cup.get("state", &"")) == &"ready_safe":
-			held += 1
-	_check(held == 4 and StringName(protected_rack.call("snapshot").get("state", &"")) == &"idle", "advanced auto rack accepts the whole batch and preserves infinite hold")
-
-	var quality_max: RefCounted = MODEL.new(0, true)
-	quality_max.call("configure_upgrades", true, true)
-	quality_max.call("add_ingredient", YELLOW)
-	_check(bool(quality_max.call("start").get("success", false)) and StringName(quality_max.call("snapshot").get("water_grade", &"")) == &"A", "quality MAX skips manual water and starts at A grade")
+	advanced.call("configure_available_recipes", [
+		&"recipe.fresh_soy_milk.yellow_bean",
+		&"recipe.fresh_soy_milk.black_bean",
+		&"recipe.fresh_soy_milk.red_bean",
+		&"recipe.fresh_soy_milk.multigrain",
+	])
+	_check(Array(advanced.call("snapshot").get("available_recipe_ids", [])) == [&"recipe.fresh_soy_milk.yellow_bean"], "only the currently supported yellow-soy recipe is available")
 	_finish()
 
 
-func _water_grade_at(seconds: float) -> StringName:
-	var machine: RefCounted = MODEL.new(0, true)
-	machine.call("add_ingredient", YELLOW)
-	machine.call("start_water")
-	machine.call("advance_time", seconds, false)
-	machine.call("stop_water")
-	return StringName(machine.call("snapshot").get("water_grade", &""))
-
-
-func _duration_for(tier: int, ingredients: Array) -> float:
-	var machine: RefCounted = MODEL.new(tier, true)
-	for stock_id in ingredients:
-		machine.call("add_ingredient", StringName(stock_id))
-	return float(machine.call("production_duration_seconds"))
+func _reason(result: Dictionary) -> StringName:
+	return StringName(result.get("reason", &""))
 
 
 func _check(condition: bool, message: String) -> void:
@@ -83,8 +58,8 @@ func _check(condition: bool, message: String) -> void:
 
 func _finish() -> void:
 	if failures.is_empty():
-		print("FRESH_SOY_MILK_V5_SELF_CHECK_PASS")
+		print("FRESH_SOY_MILK_SERVING_MODEL_SELF_CHECK_PASS")
 		quit(0)
 		return
-	printerr("FRESH_SOY_MILK_V5_SELF_CHECK_FAIL\n" + "\n".join(failures))
+	printerr("FRESH_SOY_MILK_SERVING_MODEL_SELF_CHECK_FAIL\n" + "\n".join(failures))
 	quit(1)

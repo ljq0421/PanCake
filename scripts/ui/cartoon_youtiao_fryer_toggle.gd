@@ -1,3 +1,4 @@
+@tool
 class_name CartoonYoutiaoFryerToggle
 extends Control
 
@@ -15,11 +16,36 @@ const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
 const TRAY_VISUAL_CAPACITY := 4
 const PLATE_VISUAL_CAPACITY := TRAY_VISUAL_CAPACITY * 2
-const ADVANCED_RAISED_BASKET_OFFSET := Vector2(0.0, 24.0)
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 const PLATE_YOUTIAO_REGION := Rect2(174.0, 8.0, 677.0, 1500.0)
 const BLACK_SESAME_YOUTIAO_REGION := Rect2(147.0, 13.0, 218.0, 484.0)
+const RAW_YOUTIAO_REGION := Rect2(97.0, 53.0, 321.0, 403.0)
 @export var reduce_motion := false
+
+@export_group("Editor preview")
+@export_enum("Basic", "Advanced") var editor_preview_tier := 0
+@export_enum("Raised empty", "Raised dough", "Lowered dough", "Lowered finished", "Raised finished", "Raised burnt") var editor_preview_state := 1
+@export var editor_preview_trays := true
+
+@export_group("Fryer layout")
+@export var basket_slot_size := Vector2(75.0, 77.0)
+@export var basket_slot_step := Vector2(39.0, 0.0)
+
+@export_subgroup("Basic raised")
+@export var basic_raised_machine_rect := Rect2(0.0, 80.0, 256.0, 341.0)
+@export var basic_raised_basket_position := Vector2(62.0, 66.0)
+
+@export_subgroup("Basic lowered")
+@export var basic_lowered_machine_rect := Rect2(0.0, 80.0, 256.0, 341.0)
+@export var basic_lowered_basket_position := Vector2(62.0, 132.0)
+
+@export_subgroup("Advanced raised")
+@export var advanced_raised_machine_rect := Rect2(0.0, 80.0, 256.0, 341.0)
+@export var advanced_raised_basket_position := Vector2(62.0, 90.0)
+
+@export_subgroup("Advanced lowered")
+@export var advanced_lowered_machine_rect := Rect2(0.0, 80.0, 256.0, 341.0)
+@export var advanced_lowered_basket_position := Vector2(62.0, 132.0)
 
 # Strings, not Texture2D references: the Inspector exposes the exact source
 # artwork without making any of these PNGs a dependency of the loaded scene.
@@ -36,22 +62,19 @@ const BLACK_SESAME_YOUTIAO_REGION := Rect2(147.0, 13.0, 218.0, 484.0)
 @export_file("*.png") var black_sesame_tray_texture_path := "res://resources/art/workstation/material_slots/legacy_trays/black-sesame-square-tray-v2.png"
 @export_file("*.png") var black_sesame_youtiao_texture_path := "res://resources/art/workstation/machines/youtiao_fryer/youtiao-black-sesame-v1-transparent.png"
 
+@onready var fryer_assembly: Control = %FryerAssembly
 @onready var fryer_visual: TextureRect = %FryerVisual
-@onready var black_sesame_tray: TextureRect = %BlackSesameTray
-@onready var plate_visual: TextureRect = $PlateVisual
-@onready var product_visuals: Array[TextureRect] = [%ProductVisual1, %ProductVisual2]
-@onready var plate_product_visuals: Array[TextureRect] = [%PlateProductVisual1, %PlateProductVisual2]
-@onready var raised_basket_slots: Array[Control] = [%RaisedBasketSlot1, %RaisedBasketSlot2, %RaisedBasketSlot3, %RaisedBasketSlot4]
-@onready var lowered_basket_slots: Array[Control] = [%LoweredBasketSlot1, %LoweredBasketSlot2, %LoweredBasketSlot3, %LoweredBasketSlot4]
-@onready var plate_product_slots: Array[Control] = [%PlateProductSlot1, %PlateProductSlot2, %PlateProductSlot3, %PlateProductSlot4]
-@onready var sesame_tray_product_slots: Array[Control] = [%SesameTrayProductSlot1, %SesameTrayProductSlot2, %SesameTrayProductSlot3, %SesameTrayProductSlot4]
+@onready var basket_products: Control = %BasketProducts
+@onready var fryer_slot_sources: Array[ProductDragSource] = [%ProductSource1, %ProductSource2, %ProductSource3, %ProductSource4]
+@onready var burnt_batch_source: ProductDragSource = %BurntBatchSource
+@onready var plain_tray: YoutiaoTrayView = %PlainTray
+@onready var sesame_tray: YoutiaoTrayView = %SesameTray
 @onready var status_label: Label = %StatusLabel
 
 # Compatibility surface consumed by FiveAreaWorkstation and tutorial routing.
 var output_sources: Array[ProductDragSource] = []
 var plate_sources: Array[ProductDragSource] = []
-var prepared_slot: PreparedProductSlot
-var waste_target: StagedProductDropTarget
+var waste_source: ProductDragSource
 var start_button: Control
 var lift_button: Control
 var state_label: Label
@@ -70,6 +93,7 @@ var _machine_add_elapsed := 0.0
 var _workshop_preview := false
 var _workshop_advanced_preview := false
 var _session_refresh_pending := false
+var _editor_preview_signature := 0
 var _texture_cache: Dictionary = {}
 var lowered_machine_texture: Texture2D
 var raised_machine_texture: Texture2D
@@ -87,13 +111,21 @@ func _ready() -> void:
 	start_button = fryer_visual
 	lift_button = fryer_visual
 	state_label = status_label
-	_expand_visual_capacity()
-	_create_runtime_controls()
+	if Engine.is_editor_hint():
+		_ensure_visual_resources()
+		_apply_editor_preview()
+		return
+	_configure_component_controls()
 	_connect_session_signals()
 	refresh_from_session()
 
 
 func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		var signature := _preview_signature()
+		if signature != _editor_preview_signature:
+			_apply_editor_preview()
+		return
 	_advance_machine_hold(delta)
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.10:
@@ -130,11 +162,11 @@ func _has_point(point: Vector2) -> bool:
 	# A sibling hotspot can cause Godot to recalculate the hovered Control while
 	# this preview node is still entering the scene tree. @onready references are
 	# not assigned until this node's _ready(), so it cannot claim input yet.
-	if fryer_visual != null and fryer_visual.get_rect().has_point(point):
+	if _control_contains_local_point(fryer_visual, point):
 		return true
-	if plate_visual != null and plate_visual.visible and plate_visual.get_rect().has_point(point):
+	if plain_tray != null and plain_tray.visible and _control_contains_local_point(plain_tray, point):
 		return true
-	return black_sesame_tray != null and black_sesame_tray.visible and black_sesame_tray.get_rect().has_point(point)
+	return sesame_tray != null and sesame_tray.visible and _control_contains_local_point(sesame_tray, point)
 
 
 func _input(event: InputEvent) -> void:
@@ -203,16 +235,18 @@ func refresh_from_session() -> void:
 	modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not area_unlocked else Color.WHITE
 	var unlocked_products := Array(progression.get("unlocked_product_ids", []))
 	var sesame_unlocked := unlocked_products.has(SESAME_PRODUCT_ID)
-	plate_visual.visible = _finished_tray_unlocked or _workshop_preview
-	plate_visual.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not _finished_tray_unlocked else Color.WHITE
+	plain_tray.visible = _finished_tray_unlocked or _workshop_preview
+	plain_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not _finished_tray_unlocked else Color.WHITE
+	plain_tray.set_drop_enabled(_finished_tray_unlocked and not _workshop_preview)
 	# The sesame tray needs both the general finished-product tray and the
 	# sesame recipe.  Before the general tray is unlocked, all fried sticks stay
 	# in the raised filter basket.
-	black_sesame_tray.visible = (_finished_tray_unlocked and sesame_unlocked) or _workshop_preview
+	sesame_tray.visible = (_finished_tray_unlocked and sesame_unlocked) or _workshop_preview
 	# The whole fryer is already translucent while its area is locked. Avoid
 	# multiplying that alpha; once the fryer is unlocked, only the still-locked
 	# sesame tray receives the same workshop-preview treatment.
-	black_sesame_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and (not _finished_tray_unlocked or not sesame_unlocked) else Color.WHITE
+	sesame_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and (not _finished_tray_unlocked or not sesame_unlocked) else Color.WHITE
+	sesame_tray.set_drop_enabled(_finished_tray_unlocked and sesame_unlocked and not _workshop_preview)
 	if _workshop_preview:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
@@ -225,7 +259,7 @@ func refresh_from_session() -> void:
 
 
 func _begin_drag_or_click(point: Vector2) -> void:
-	if fryer_visual.get_rect().has_point(point):
+	if _control_contains_local_point(fryer_visual, point):
 		_begin_machine_gesture()
 
 
@@ -335,115 +369,158 @@ func _perform_machine_click() -> void:
 
 func _apply_snapshot() -> void:
 	var state := StringName(_machine.get("state", &"unowned"))
-	var capacity := clampi(int(_machine.get("capacity", 0)), 0, product_visuals.size())
+	var capacity := clampi(int(_machine.get("capacity", 0)), 0, output_sources.size())
 	var occupied := _occupied_slots()
 	var cooking := state in [&"loaded", &"frying"]
 	# Reaching the target fry time does not itself lift the basic basket. Keep
-	# both its artwork and product anchors lowered until the player clicks it.
+	# both its artwork and the single basket-products group lowered until clicked.
 	var basket_lowered := state in [&"frying", &"ready_safe", &"overcooking"]
 	var finished_texture := burnt_youtiao_texture if state == &"burnt" else golden_youtiao_texture
-	var basket_slots := lowered_basket_slots if basket_lowered else raised_basket_slots
 	var use_advanced_art := int(_machine.get("tier", 0)) >= 1 or _workshop_advanced_preview
+	_apply_fryer_layout(use_advanced_art, basket_lowered)
 	if use_advanced_art and advanced_lowered_machine_texture != null and advanced_raised_machine_texture != null:
 		fryer_visual.texture = advanced_lowered_machine_texture if basket_lowered else advanced_raised_machine_texture
 	else:
 		fryer_visual.texture = lowered_machine_texture if basket_lowered else raised_machine_texture
-	for index in range(product_visuals.size()):
-		var visible := index < capacity and occupied.has(index)
-		var visual := product_visuals[index]
-		var slot := basket_slots[index]
-		visual.visible = visible
-		visual.texture = raw_youtiao_texture if cooking else finished_texture
-		# The advanced raised artwork places the wire-mesh bed lower than the
-		# basic fryer. Keep the basic authored slots intact and move only the
-		# advanced raised batch onto that mesh plane.
-		visual.position = slot.position + ADVANCED_RAISED_BASKET_OFFSET if use_advanced_art and not basket_lowered else slot.position
-		visual.size = slot.size
-		visual.modulate = Color.WHITE
-	for index in range(plate_product_visuals.size()):
-		var visual := plate_product_visuals[index]
-		var product_id := StringName(_plate_products[index].get("product_id", PRODUCT_ID)) if index < _plate_products.size() else PRODUCT_ID
-		var product_rect := _prepared_product_rect(index, product_id)
-		visual.visible = _finished_tray_unlocked and index < _plate_count
-		visual.texture = _prepared_youtiao_texture(product_id)
-		visual.position = product_rect.position
-		visual.size = product_rect.size
+	_refresh_output_sources(state, occupied, capacity, raw_youtiao_texture if cooking else finished_texture)
+	_refresh_plate_sources()
 	status_label.visible = not _workshop_preview
 	status_label.text = "%s · %d/%d" % [_state_text(state), int(_machine.get("quantity", 0)), int(_machine.get("capacity", 0))]
-	if _workshop_preview:
-		# A workshop is a layout preview, not a frozen production snapshot.
-		# Never leak current stock, prepared goods, or runtime controls into it.
-		for visual in product_visuals + plate_product_visuals:
-			visual.visible = false
-		for control in output_sources + plate_sources:
-			control.visible = false
-		if prepared_slot != null: prepared_slot.visible = false
-		if waste_target != null: waste_target.visible = false
-	_refresh_output_source(state, occupied)
-	_refresh_plate_sources()
 
 
-func _refresh_output_source(state: StringName, occupied: Array[int]) -> void:
+func _apply_editor_preview() -> void:
+	if not is_node_ready():
+		return
+	_editor_preview_signature = _preview_signature()
+	_ensure_visual_resources()
+	var use_advanced_art := editor_preview_tier >= 1
+	var basket_lowered := editor_preview_state in [2, 3]
+	_apply_fryer_layout(use_advanced_art, basket_lowered)
+	if use_advanced_art:
+		fryer_visual.texture = advanced_lowered_machine_texture if basket_lowered else advanced_raised_machine_texture
+	else:
+		fryer_visual.texture = lowered_machine_texture if basket_lowered else raised_machine_texture
+	var product_texture: Texture2D = null
+	match editor_preview_state:
+		1, 2: product_texture = raw_youtiao_texture
+		3, 4: product_texture = golden_youtiao_texture
+		5: product_texture = burnt_youtiao_texture
+	for source in fryer_slot_sources:
+		source.texture_normal = product_texture
+		source.texture_disabled = product_texture
+		source.disabled = true
+		source.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		source.self_modulate = Color.WHITE
+		source.visible = product_texture != null
+	burnt_batch_source.visible = false
+	burnt_batch_source.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plain_tray.visible = editor_preview_trays
+	sesame_tray.visible = editor_preview_trays
+	plain_tray.self_modulate = Color.WHITE
+	sesame_tray.self_modulate = Color.WHITE
+	plain_tray.preview_products(_plate_youtiao_texture(), 4 if editor_preview_trays else 0)
+	sesame_tray.preview_products(black_sesame_youtiao_texture, 4 if editor_preview_trays else 0)
+	status_label.visible = true
+	status_label.text = "布局预览 · %s · %s" % ["高级" if use_advanced_art else "初级", ["抬起空篮", "抬起面坯", "落下面坯", "落下成品", "抬起成品", "抬起焦糊"][editor_preview_state]]
+
+
+func _preview_signature() -> int:
+	return [
+		editor_preview_tier,
+		editor_preview_state,
+		editor_preview_trays,
+		basket_slot_size,
+		basket_slot_step,
+		basic_raised_machine_rect,
+		basic_raised_basket_position,
+		basic_lowered_machine_rect,
+		basic_lowered_basket_position,
+		advanced_raised_machine_rect,
+		advanced_raised_basket_position,
+		advanced_lowered_machine_rect,
+		advanced_lowered_basket_position,
+	].hash()
+
+
+func _apply_fryer_layout(use_advanced_art: bool, basket_lowered: bool) -> void:
+	var machine_rect := basic_lowered_machine_rect if basket_lowered else basic_raised_machine_rect
+	var basket_position := basic_lowered_basket_position if basket_lowered else basic_raised_basket_position
+	if use_advanced_art:
+		machine_rect = advanced_lowered_machine_rect if basket_lowered else advanced_raised_machine_rect
+		basket_position = advanced_lowered_basket_position if basket_lowered else advanced_raised_basket_position
+	fryer_visual.position = machine_rect.position
+	fryer_visual.size = machine_rect.size
+	basket_products.position = basket_position
+	basket_products.size = Vector2(
+		basket_slot_size.x + basket_slot_step.x * float(maxi(fryer_slot_sources.size() - 1, 0)),
+		basket_slot_size.y + basket_slot_step.y * float(maxi(fryer_slot_sources.size() - 1, 0)),
+	)
+	for source_index in range(fryer_slot_sources.size()):
+		var source := fryer_slot_sources[source_index]
+		source.position = basket_slot_step * float(source_index)
+		source.size = basket_slot_size
+	burnt_batch_source.position = machine_rect.position
+	burnt_batch_source.size = machine_rect.size
+
+
+func _refresh_output_sources(state: StringName, occupied: Array[int], capacity: int, product_texture: Texture2D) -> void:
 	if output_sources.is_empty():
 		return
 	for source_index in range(output_sources.size()):
 		var output := output_sources[source_index]
+		var occupied_slot := source_index < capacity and occupied.has(source_index)
 		var ready_slot := state == &"ready_to_collect" and occupied.has(source_index)
-		var burnt_batch_source := state == &"burnt" and source_index == 0 and not occupied.is_empty()
-		output.position = product_visuals[source_index].position if ready_slot else Vector2(140.0, 0.0)
-		output.size = product_visuals[source_index].size if ready_slot else Vector2(320.0, 426.0)
-		output.self_modulate = Color(1.0, 1.0, 1.0, 0.0)
-		var source_ref := {"source_kind": &"youtiao_fryer_slot", "source_index": source_index, "product_id": PRODUCT_ID, "discardable": ready_slot}
-		var hint := "拖这一根油条到顾客订单或成品盘"
-		if burnt_batch_source:
-			source_ref = {"source_kind": &"youtiao_batch", "source_index": -1, "product_id": PRODUCT_ID, "quantity": occupied.size(), "discardable": true}
-			hint = "拖到废弃区报废整锅油条"
-		var product_texture := burnt_youtiao_texture if state == &"burnt" else golden_youtiao_texture
-		output.configure(source_ref, product_texture, ready_slot or burnt_batch_source, hint)
+		output.self_modulate = Color.WHITE
+		output.configure({
+			"source_kind": &"youtiao_fryer_slot",
+			"source_index": source_index,
+			"product_id": PRODUCT_ID,
+			"discardable": ready_slot,
+		}, product_texture, ready_slot, "拖这一根油条到顾客订单或成品盘")
 		# The four visual sticks overlap for depth, but their transparent padding
 		# must not overlap as hit areas.  Alpha hit testing keeps each visible stick
-		# independently draggable without changing the authored artwork layout.
+		# independently draggable while the same node remains the visible artwork.
 		_set_youtiao_alpha_hit_region(output, product_texture, ready_slot)
-		output.visible = ready_slot or burnt_batch_source
+		output.mouse_filter = Control.MOUSE_FILTER_STOP if ready_slot else Control.MOUSE_FILTER_IGNORE
+		output.visible = occupied_slot and not _workshop_preview
+	var burnt_available := state == &"burnt" and not occupied.is_empty() and not _workshop_preview
+	burnt_batch_source.self_modulate = Color(1.0, 1.0, 1.0, 0.0)
+	burnt_batch_source.configure({
+		"source_kind": &"youtiao_batch",
+		"source_index": -1,
+		"product_id": PRODUCT_ID,
+		"quantity": occupied.size(),
+		"discardable": true,
+	}, burnt_youtiao_texture, burnt_available, "拖到废弃区报废整锅油条")
+	burnt_batch_source.set_alpha_hit_regions([])
+	burnt_batch_source.mouse_filter = Control.MOUSE_FILTER_STOP if burnt_available else Control.MOUSE_FILTER_IGNORE
+	burnt_batch_source.visible = burnt_available
 
 
 func _is_black_sesame_tray_point(point: Vector2) -> bool:
-	return black_sesame_tray.visible and black_sesame_tray.get_rect().has_point(point)
+	return sesame_tray.visible and _control_contains_local_point(sesame_tray, point)
 
 
 func _refresh_prepared_slot(session: Node) -> void:
-	if prepared_slot == null:
-		return
 	var status := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
 	_plate_products.clear()
 	for product_value in Array(status.get("products", [])):
 		_plate_products.append(Dictionary(product_value).duplicate(true))
 	_plate_count = clampi(_plate_products.size(), 0, PLATE_VISUAL_CAPACITY)
-	prepared_slot.configure_count(int(status.get("count", 0)), StringName(status.get("reason", &"")) != &"recipe_locked", int(status.get("capacity", 4)))
 
 
 func _refresh_plate_sources() -> void:
-	for source_index in range(plate_sources.size()):
-		var source := plate_sources[source_index]
-		var visible := _finished_tray_unlocked and source_index < _plate_count
-		var product_id := StringName(_plate_products[source_index].get("product_id", PRODUCT_ID)) if visible and source_index < _plate_products.size() else PRODUCT_ID
-		source.position = plate_product_visuals[source_index].position
-		source.size = plate_product_visuals[source_index].size
-		source.self_modulate = Color(1.0, 1.0, 1.0, 0.0)
-		var product_texture := _prepared_youtiao_texture(product_id)
-		source.configure({
-			"source_kind": &"prepared_product_slot",
-			"source_slot_id": &"slot.04",
-			"source_index": source_index,
-			"product_id": product_id,
-			"discardable": true,
-		}, product_texture, visible, "从%s拖这一根%s到出餐位" % ["芝麻成品盘" if product_id == SESAME_PRODUCT_ID else "成品盘", "芝麻油条" if product_id == SESAME_PRODUCT_ID else "油条"])
-		_set_youtiao_alpha_hit_region(source, product_texture, visible)
-		source.visible = visible
-
-
-func _prepared_youtiao_texture(product_id: StringName) -> Texture2D:
-	return black_sesame_youtiao_texture if product_id == SESAME_PRODUCT_ID else _plate_youtiao_texture()
+	var plain_entries: Array[Dictionary] = []
+	var sesame_entries: Array[Dictionary] = []
+	for source_index in range(mini(_plate_count, _plate_products.size())):
+		var product_id := StringName(_plate_products[source_index].get("product_id", PRODUCT_ID))
+		var entry := {"source_index": source_index, "product_id": product_id}
+		if product_id == SESAME_PRODUCT_ID:
+			sesame_entries.append(entry)
+		else:
+			plain_entries.append(entry)
+	plain_tray.configure_products(plain_entries, _plate_youtiao_texture(), _finished_tray_unlocked and not _workshop_preview)
+	sesame_tray.configure_products(sesame_entries, black_sesame_youtiao_texture, _finished_tray_unlocked and sesame_tray.visible and not _workshop_preview)
 
 
 func _set_youtiao_alpha_hit_region(source: ProductDragSource, product_texture: Texture2D, enabled: bool) -> void:
@@ -453,106 +530,31 @@ func _set_youtiao_alpha_hit_region(source: ProductDragSource, product_texture: T
 	source.set_alpha_hit_regions(regions)
 
 
-func _prepared_product_rect(product_index: int, product_id: StringName) -> Rect2:
-	var sesame_product := product_id == SESAME_PRODUCT_ID
-	var display_index := _prepared_product_display_index(product_index, sesame_product)
-	if sesame_product:
-		var sesame_index := clampi(display_index, 0, sesame_tray_product_slots.size() - 1)
-		var sesame_slot := sesame_tray_product_slots[sesame_index]
-		return Rect2(sesame_slot.position, sesame_slot.size)
-	var plate_index := clampi(display_index, 0, plate_product_slots.size() - 1)
-	var plate_slot := plate_product_slots[plate_index]
-	return Rect2(plate_slot.position, plate_slot.size)
-
-
-func _prepared_product_display_index(product_index: int, sesame_product: bool) -> int:
-	var result := 0
-	for index in range(mini(product_index, _plate_products.size())):
-		var prior_product_id := StringName(_plate_products[index].get("product_id", PRODUCT_ID))
-		if (prior_product_id == SESAME_PRODUCT_ID) == sesame_product:
-			result += 1
-	return result
-
-
 func set_workshop_preview(enabled: bool) -> void:
 	_workshop_preview = enabled
 	refresh_from_session()
 
 
-func _create_runtime_controls() -> void:
-	for source_index in range(product_visuals.size()):
-		var output := ProductDragSource.new()
-		output.name = "FryerSlotSource%d" % (source_index + 1)
-		# A finished stick can be dragged across the black-sesame tray.  Keep the
-		# source above that tray while it is being dragged so the target artwork
-		# cannot visually cover the stick.
-		output.z_index = black_sesame_tray.z_index + 1
-		output.ignore_texture_size = true
-		output.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		output.native_drag_enabled = true
-		output.drag_threshold_pixels = 4.0
-		output.visible = false
-		add_child(output)
-		output.drag_ended.connect(_on_product_drag_ended)
-		output_sources.append(output)
-	for source_index in range(plate_product_visuals.size()):
-		var plate_source := ProductDragSource.new()
-		plate_source.name = "PlateYoutiaoSource%d" % (source_index + 1)
-		plate_source.z_index = black_sesame_tray.z_index + 1
-		plate_source.ignore_texture_size = true
-		plate_source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		plate_source.native_drag_enabled = true
-		plate_source.drag_threshold_pixels = 4.0
-		# A stored oil strip stays draggable, while drops over it continue to be
-		# evaluated by this fryer as the plate or sesame-tray destination.
-		plate_source.set_drop_forward_target(self)
-		plate_source.visible = false
-		add_child(plate_source)
-		plate_source.drag_ended.connect(_on_product_drag_ended)
-		plate_sources.append(plate_source)
-
-	prepared_slot = PreparedProductSlot.new()
-	prepared_slot.name = "PreparedPlain"
-	prepared_slot.position = Vector2(340.0, 655.0)
-	prepared_slot.size = Vector2(260.0, 48.0)
-	prepared_slot.slot_id = &"slot.04"
-	prepared_slot.product_id = PRODUCT_ID
-	prepared_slot.ingredient_type = &"youtiao"
-	prepared_slot.product_texture = golden_youtiao_texture
-	prepared_slot.allow_pancake_drag = true
-	_add_prepared_slot_children(prepared_slot)
-	add_child(prepared_slot)
-	prepared_slot.visible = false
-	prepared_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	waste_target = StagedProductDropTarget.new()
-	waste_target.name = "WasteTarget"
-	waste_target.position = Vector2(340.0, 710.0)
-	waste_target.size = Vector2(260.0, 44.0)
-	waste_target.disposition = "waste"
-	var waste_label := Label.new()
-	waste_label.text = "拖到这里废弃"
-	waste_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	waste_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	waste_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	waste_target.add_child(waste_label)
-	add_child(waste_target)
+func _configure_component_controls() -> void:
+	output_sources.append_array(fryer_slot_sources)
+	plate_sources.append_array(plain_tray.product_sources)
+	plate_sources.append_array(sesame_tray.product_sources)
+	waste_source = burnt_batch_source
+	for source in output_sources:
+		source.native_drag_enabled = true
+		source.drag_threshold_pixels = 4.0
+		source.drag_ended.connect(_on_product_drag_ended)
+	burnt_batch_source.native_drag_enabled = true
+	burnt_batch_source.drag_threshold_pixels = 4.0
+	burnt_batch_source.drag_ended.connect(_on_product_drag_ended)
+	plain_tray.fryer_slot_drop_requested.connect(_on_tray_fryer_slot_drop_requested)
+	sesame_tray.fryer_slot_drop_requested.connect(_on_tray_fryer_slot_drop_requested)
+	plain_tray.product_drag_ended.connect(_on_product_drag_ended)
+	sesame_tray.product_drag_ended.connect(_on_product_drag_ended)
 
 
-func _add_prepared_slot_children(slot: PreparedProductSlot) -> void:
-	var artwork := TextureRect.new()
-	artwork.name = "Artwork"
-	artwork.position = Vector2(8.0, 4.0)
-	artwork.size = Vector2(54.0, 38.0)
-	artwork.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	artwork.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	slot.add_child(artwork)
-	var label := Label.new()
-	label.name = "CountLabel"
-	label.position = Vector2(68.0, 0.0)
-	label.size = Vector2(184.0, 48.0)
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	slot.add_child(label)
+func _on_tray_fryer_slot_drop_requested(source_index: int, destination_product_id: StringName) -> void:
+	_store_fryer_slot_on_plate(source_index, destination_product_id)
 
 
 func _plate_youtiao_texture() -> Texture2D:
@@ -566,11 +568,16 @@ func _ensure_visual_resources() -> void:
 	raised_machine_texture = _load_texture(raised_machine_texture_path)
 	advanced_lowered_machine_texture = _load_texture(advanced_lowered_machine_texture_path)
 	advanced_raised_machine_texture = _load_texture(advanced_raised_machine_texture_path)
-	raw_youtiao_texture = _load_texture(raw_youtiao_texture_path)
+	var raw_texture := _load_texture(raw_youtiao_texture_path)
+	if raw_texture != null:
+		raw_youtiao_texture = AtlasTexture.new()
+		raw_youtiao_texture.atlas = raw_texture
+		raw_youtiao_texture.region = RAW_YOUTIAO_REGION
 	golden_youtiao_texture = _load_texture(golden_youtiao_texture_path)
 	burnt_youtiao_texture = _load_texture(burnt_youtiao_texture_path)
 	var plate_texture := _load_texture(plate_texture_path)
-	black_sesame_tray.texture = _load_texture(black_sesame_tray_texture_path)
+	plain_tray.set_artwork_texture(plate_texture)
+	sesame_tray.set_artwork_texture(_load_texture(black_sesame_tray_texture_path))
 	var black_sesame_texture := _load_texture(black_sesame_youtiao_texture_path)
 	if golden_youtiao_texture != null:
 		plate_youtiao_texture = AtlasTexture.new()
@@ -580,7 +587,6 @@ func _ensure_visual_resources() -> void:
 		black_sesame_youtiao_texture = AtlasTexture.new()
 		black_sesame_youtiao_texture.atlas = black_sesame_texture
 		black_sesame_youtiao_texture.region = BLACK_SESAME_YOUTIAO_REGION
-	plate_visual.texture = plate_texture
 
 
 func _load_texture(path: String) -> Texture2D:
@@ -589,19 +595,6 @@ func _load_texture(path: String) -> Texture2D:
 	var texture := load(path) as Texture2D
 	_texture_cache[path] = texture
 	return texture
-
-
-func _expand_visual_capacity() -> void:
-	for index in range(2, 4):
-		var basket_visual := product_visuals[0].duplicate() as TextureRect
-		basket_visual.name = "ProductVisual%d" % (index + 1)
-		add_child(basket_visual)
-		product_visuals.append(basket_visual)
-	for index in range(2, PLATE_VISUAL_CAPACITY):
-		var plate_visual := plate_product_visuals[0].duplicate() as TextureRect
-		plate_visual.name = "PlateProductVisual%d" % (index + 1)
-		add_child(plate_visual)
-		plate_product_visuals.append(plate_visual)
 
 
 func _can_load_dough() -> bool:
@@ -622,14 +615,22 @@ func _occupied_slots() -> Array[int]:
 
 
 func _is_plate_point(point: Vector2) -> bool:
-	# Treat the entire rendered serving plate as a drop target.  The old
-	# hand-authored rectangle began well inside the artwork, so drops on the
-	# visible left and upper portions of the plate were silently rejected.
-	return _finished_tray_unlocked and plate_visual != null and plate_visual.get_rect().has_point(point)
+	return _finished_tray_unlocked and plain_tray != null and plain_tray.visible and _control_contains_local_point(plain_tray, point)
+
+
+func _control_contains_local_point(control: Control, point: Vector2) -> bool:
+	if control == null or not control.visible:
+		return false
+	var canvas_point := get_global_transform_with_canvas() * point
+	var control_point := control.get_global_transform_with_canvas().affine_inverse() * canvas_point
+	return Rect2(Vector2.ZERO, control.size).has_point(control_point)
 
 
 func _has_active_product_drag() -> bool:
-	for source in output_sources + plate_sources:
+	var sources := output_sources + plate_sources
+	if waste_source != null:
+		sources.append(waste_source)
+	for source in sources:
 		if source.is_native_drag_active():
 			return true
 	return false

@@ -51,7 +51,9 @@ func _run() -> void:
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"frying"}
 	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.state_label, "frying wait points to the device state")
 	stub.machines[&"device.youtiao_fryer"] = {"state": &"ready_to_collect"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.output_sources[0], "ready youtiao points to the fryer output that stores the whole batch")
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.output_sources[0], "ready youtiao points to the first independently draggable fryer slot")
+	stub.machines[&"device.youtiao_fryer"] = {"state": &"burnt"}
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.waste_source, "burnt youtiao points to the dedicated whole-batch waste source")
 
 	var youtiao_target := _bind_centered_tutorial_order(workstation, stub, &"area.youtiao", &"product.youtiao.plain")
 	stub.prepared_counts[&"slot.04"] = 1

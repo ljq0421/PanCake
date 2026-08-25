@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/jianbing-griddle.png" id="2_griddle"]
@@ -10,7 +10,6 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/baocui/baocui_broken_v1.png" id="8_baocui"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png" id="10_scallion"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png" id="13_coriander"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/preserved_mustard/preserved_mustard_scattered_five_area_v2.png" id="14_mustard"]
 [ext_resource type="Shader" path="res://resources/shaders/pancake_surface.gdshader" id="15_pancake_shader"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_cooked_texture_v1.png" id="16_cooked"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_charred_texture_v1.png" id="17_charred"]
@@ -173,7 +172,6 @@ ham_texture = ExtResource("27_ham_portion")
 scallion_texture = ExtResource("10_scallion")
 meat_floss_texture = ExtResource("28_pork_floss_portion")
 coriander_texture = ExtResource("13_coriander")
-preserved_mustard_texture = ExtResource("14_mustard")
 scallion_scale = 0.45
 
 [node name="PancakeFoldOverlay" type="Control" parent="PancakeSurface"]

@@ -9,6 +9,7 @@ class FakeGameSession extends Node:
 	var inventory := {"stock.youtiao.plain_dough": 2}
 	var coins := 10
 	var finished_tray_unlocked := true
+	var sesame_unlocked := false
 	var machine_snapshot_calls := 0
 	var prepared_products: Array[Dictionary] = []
 	var machine := {
@@ -26,7 +27,7 @@ class FakeGameSession extends Node:
 	func five_area_progression_snapshot() -> Dictionary:
 		return {
 			"unlocked_area_ids": [&"area.youtiao"],
-			"unlocked_product_ids": [],
+			"unlocked_product_ids": [&"product.youtiao.sesame"] if sesame_unlocked else [],
 			"owned_growth_ids": [&"growth.capacity.youtiao_finished_tray"] if finished_tray_unlocked else [],
 		}
 
@@ -44,6 +45,18 @@ class FakeGameSession extends Node:
 		machine["state"] = &"loaded"
 		machine["occupied_slot_indices"] = range(int(machine.get("quantity", 0)))
 		return {"success": true, "reason": &""}
+
+	func store_ready_youtiao_slot(_slot_id: StringName, source_index: int, final_product_id: StringName = &"") -> Dictionary:
+		var occupied := Array(machine.get("occupied_slot_indices", []))
+		if StringName(machine.get("state", &"")) != &"ready_to_collect" or not occupied.has(source_index):
+			return {"success": false, "reason": &"invalid_equipment_state"}
+		var product_id := final_product_id if not final_product_id.is_empty() else &"product.youtiao.plain"
+		prepared_products.append({"product_id": product_id})
+		occupied.erase(source_index)
+		machine["occupied_slot_indices"] = occupied
+		machine["quantity"] = occupied.size()
+		prepared_product_slots_changed.emit({})
+		return {"success": true, "reason": &"", "product_id": product_id}
 
 	func five_area_restock_status(_stock_id: StringName) -> Dictionary:
 		return {
@@ -100,7 +113,7 @@ func _run() -> void:
 	session.finished_tray_unlocked = false
 	fryer.call("refresh_from_session")
 	var finished_stick := {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}
-	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.plate_visual.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
+	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.plain_tray.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
 	session.finished_tray_unlocked = true
 	fryer.call("refresh_from_session")
 	_check(bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)), "the visible upper-left portion of the serving plate accepts a finished youtiao")
@@ -129,28 +142,47 @@ func _run() -> void:
 	fryer._machine["state"] = &"draining"
 	_check(bool(fryer.call("_requires_timed_session_refresh")), "a draining fryer continues to refresh until its output becomes draggable")
 
-	# The advanced raised basket has a lower mesh bed than the basic artwork.
-	# Its batch needs a dedicated display offset without changing the lowered
-	# frying layout shared by both machine appearances.
+	# Each tier/state combination owns one explicit assembly layout. Moving that
+	# profile moves all four visible-and-draggable products together.
 	session.machine["state"] = &"loaded"
 	session.machine["quantity"] = 1
 	session.machine["occupied_slot_indices"] = [0]
 	session.machine["tier"] = 0
 	fryer.call("refresh_from_session")
-	var basic_raised_position: Vector2 = fryer.product_visuals[0].position
+	var basic_raised_position: Vector2 = fryer.basket_products.position
 	session.machine["tier"] = 1
 	fryer.call("refresh_from_session")
-	_check(fryer.product_visuals[0].position == basic_raised_position + Vector2(0.0, 24.0), "advanced raised fryer places dough on its lower wire-mesh bed")
+	_check(fryer.basket_products.position == fryer.advanced_raised_basket_position and fryer.basket_products.position == basic_raised_position + Vector2(0.0, 24.0), "advanced raised fryer applies its complete basket-products layout")
 	session.machine["state"] = &"frying"
 	fryer.call("refresh_from_session")
-	_check(fryer.product_visuals[0].position == fryer.lowered_basket_slots[0].position, "advanced lowered fryer keeps the authored frying slot position")
+	_check(fryer.basket_products.position == fryer.advanced_lowered_basket_position and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products), "advanced lowered fryer moves the single four-slot basket-products group")
 	session.machine["state"] = &"ready_safe"
 	session.machine["tier"] = 0
 	fryer.call("refresh_from_session")
-	_check(fryer.fryer_visual.texture == fryer.lowered_machine_texture and fryer.product_visuals[0].position == fryer.lowered_basket_slots[0].position, "basic fryer stays visually lowered while waiting for the player to lift its finished batch")
+	_check(fryer.fryer_visual.texture == fryer.lowered_machine_texture and fryer.basket_products.position == fryer.basic_lowered_basket_position, "basic fryer stays visually lowered while waiting for the player to lift its finished batch")
 	session.machine["state"] = &"draining"
 	fryer.call("refresh_from_session")
-	_check(fryer.fryer_visual.texture == fryer.raised_machine_texture and fryer.product_visuals[0].position == fryer.raised_basket_slots[0].position, "basic fryer raises the basket only after the lift action starts draining")
+	_check(fryer.fryer_visual.texture == fryer.raised_machine_texture and fryer.basket_products.position == fryer.basic_raised_basket_position and fryer.fryer_visual.scale == Vector2.ONE, "basic fryer raises the grouped basket only after lifting and no longer uses a detached visual scale")
+	session.machine["state"] = &"ready_to_collect"
+	session.machine["quantity"] = 1
+	session.machine["occupied_slot_indices"] = [0]
+	session.prepared_products.clear()
+	fryer.call("refresh_from_session")
+	fryer.plain_tray.call("_drop_data", Vector2.ZERO, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}})
+	_check(session.prepared_products.size() == 1 and StringName(session.prepared_products[0].get("product_id", &"")) == &"product.youtiao.plain", "the reusable plain tray routes a fryer-slot drop through the existing storage transaction")
+	session.sesame_unlocked = true
+	session.machine["state"] = &"ready_to_collect"
+	session.machine["quantity"] = 1
+	session.machine["occupied_slot_indices"] = [0]
+	fryer.call("refresh_from_session")
+	fryer.sesame_tray.call("_drop_data", Vector2.ZERO, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}})
+	_check(session.prepared_products.size() == 2 and StringName(session.prepared_products[1].get("product_id", &"")) == &"product.youtiao.sesame", "the reusable sesame tray preserves its destination-product conversion")
+	fryer.editor_preview_tier = 1
+	fryer.editor_preview_state = 3
+	fryer.editor_preview_trays = true
+	fryer.call("_apply_editor_preview")
+	_check(fryer.fryer_visual.texture == fryer.advanced_lowered_machine_texture and fryer.basket_products.position == fryer.advanced_lowered_basket_position and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview exposes advanced lowered finished-product alignment without running production")
+	_check(fryer.plain_tray.visible and fryer.sesame_tray.visible and fryer.plain_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source.visible) and fryer.sesame_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview can display both reusable serving trays and all authored slots together")
 
 	fryer.queue_free()
 	session.queue_free()

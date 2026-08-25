@@ -1,6 +1,14 @@
 [gd_scene format=3 uid="uid://cutgih44ymmyc"]
 
 [ext_resource type="Script" uid="uid://bt7tqa6n1h2od" path="res://scripts/ui/cartoon_youtiao_fryer_toggle.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dlos2ddb5jwdv" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-raised-coherent.png" id="2_4ayyu"]
+[ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
+[ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png" id="3_t355c"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/youtiao_tray_view.tscn" id="3_tray"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8p23u"]
+atlas = ExtResource("3_t355c")
+region = Rect2(97, 53, 321, 403)
 
 [node name="CartoonYoutiaoFryerToggle" type="Control" unique_id=1247571894]
 custom_minimum_size = Vector2(600, 600)
@@ -11,235 +19,128 @@ offset_bottom = 650.0
 mouse_default_cursor_shape = 2
 script = ExtResource("1_script")
 
-[node name="FryerVisual" type="TextureRect" parent="." unique_id=714480438]
+[node name="FryerAssembly" type="Control" parent="." unique_id=714480439]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 81.0
-offset_top = 80.0
 offset_right = 401.0
 offset_bottom = 506.0
-scale = Vector2(0.8, 0.8)
 mouse_filter = 2
+
+[node name="FryerVisual" type="TextureRect" parent="FryerAssembly" unique_id=714480438]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 68.0
+offset_right = 327.0
+offset_bottom = 466.28906
+mouse_filter = 2
+texture = ExtResource("2_4ayyu")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BlackSesameTray" type="TextureRect" parent="." unique_id=993540118]
+[node name="BasketProducts" type="Control" parent="FryerAssembly" unique_id=714480440]
+unique_name_in_owner = true
+z_index = 2
+anchors_preset = 0
+offset_left = 66.0
+offset_top = 123.0
+offset_right = 258.0
+offset_bottom = 200.0
+mouse_filter = 2
+
+[node name="ProductSource1" type="TextureButton" parent="FryerAssembly/BasketProducts" unique_id=279161112]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 75.0
+offset_bottom = 77.0
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_8p23u")
+texture_disabled = SubResource("AtlasTexture_8p23u")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ProductSource2" type="TextureButton" parent="FryerAssembly/BasketProducts" unique_id=138441394]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 39.0
+offset_right = 114.0
+offset_bottom = 77.0
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_8p23u")
+texture_disabled = SubResource("AtlasTexture_8p23u")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ProductSource3" type="TextureButton" parent="FryerAssembly/BasketProducts" unique_id=172802687]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 78.0
+offset_right = 153.0
+offset_bottom = 77.0
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_8p23u")
+texture_disabled = SubResource("AtlasTexture_8p23u")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ProductSource4" type="TextureButton" parent="FryerAssembly/BasketProducts" unique_id=1817747762]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 117.0
+offset_right = 192.0
+offset_bottom = 77.0
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_8p23u")
+texture_disabled = SubResource("AtlasTexture_8p23u")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="BurntBatchSource" type="TextureButton" parent="FryerAssembly" unique_id=714480441]
+unique_name_in_owner = true
+visible = false
+z_index = 3
+layout_mode = 0
+offset_top = 80.0
+offset_right = 256.0
+offset_bottom = 421.0
+mouse_filter = 2
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="PlainTray" parent="." unique_id=686091902 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
 z_index = 1
-layout_mode = 0
-offset_left = 295.0
-offset_top = 414.0
-offset_right = 514.0
-offset_bottom = 620.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="SesameTrayProductSlot1" type="ReferenceRect" parent="." unique_id=154062532]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 315.0
-offset_top = 454.0
-offset_right = 363.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="SesameTrayProductSlot2" type="ReferenceRect" parent="." unique_id=1633583298]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 359.0
-offset_top = 454.0
-offset_right = 407.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="SesameTrayProductSlot3" type="ReferenceRect" parent="." unique_id=1964141223]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 403.0
-offset_top = 454.0
-offset_right = 451.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="SesameTrayProductSlot4" type="ReferenceRect" parent="." unique_id=131561143]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 447.0
-offset_top = 454.0
-offset_right = 495.0
-offset_bottom = 558.0
-mouse_filter = 2
-
-[node name="ProductVisual1" type="TextureRect" parent="." unique_id=279161112]
-unique_name_in_owner = true
-visible = false
-z_index = 2
-layout_mode = 0
-offset_left = 225.0
-offset_top = 68.0
-offset_right = 300.0
-offset_bottom = 145.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ProductVisual2" type="TextureRect" parent="." unique_id=138441394]
-unique_name_in_owner = true
-visible = false
-z_index = 2
-layout_mode = 0
-offset_left = 310.0
-offset_top = 68.0
-offset_right = 385.0
-offset_bottom = 145.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="RaisedBasketSlot1" type="ReferenceRect" parent="." unique_id=1715217002]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 143.0
-offset_top = 66.0
-offset_right = 218.0
-offset_bottom = 143.0
-mouse_filter = 2
-
-[node name="RaisedBasketSlot2" type="ReferenceRect" parent="." unique_id=1790936311]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 182.0
-offset_top = 66.0
-offset_right = 257.0
-offset_bottom = 143.0
-mouse_filter = 2
-
-[node name="RaisedBasketSlot3" type="ReferenceRect" parent="." unique_id=172802687]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 221.0
-offset_top = 66.0
-offset_right = 296.0
-offset_bottom = 143.0
-mouse_filter = 2
-
-[node name="RaisedBasketSlot4" type="ReferenceRect" parent="." unique_id=1817747762]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 260.0
-offset_top = 66.0
-offset_right = 335.0
-offset_bottom = 143.0
-mouse_filter = 2
-
-[node name="LoweredBasketSlot1" type="ReferenceRect" parent="." unique_id=761069202]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 143.0
-offset_top = 132.0
-offset_right = 218.0
-offset_bottom = 209.0
-mouse_filter = 2
-
-[node name="LoweredBasketSlot2" type="ReferenceRect" parent="." unique_id=169518652]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 182.0
-offset_top = 132.0
-offset_right = 257.0
-offset_bottom = 209.0
-mouse_filter = 2
-
-[node name="LoweredBasketSlot3" type="ReferenceRect" parent="." unique_id=156327122]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 221.0
-offset_top = 132.0
-offset_right = 296.0
-offset_bottom = 209.0
-mouse_filter = 2
-
-[node name="LoweredBasketSlot4" type="ReferenceRect" parent="." unique_id=1577531112]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 260.0
-offset_top = 132.0
-offset_right = 335.0
-offset_bottom = 209.0
-mouse_filter = 2
-
-[node name="PlateVisual" type="TextureRect" parent="." unique_id=686091902]
+custom_minimum_size = Vector2(278, 237)
 layout_mode = 0
 offset_left = 22.0
 offset_top = 393.0
 offset_right = 300.0
 offset_bottom = 630.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
 
-[node name="PlateProductSlot1" type="ReferenceRect" parent="." unique_id=1967002742]
+[node name="SesameTray" parent="." unique_id=993540118 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
+z_index = 1
+custom_minimum_size = Vector2(278, 237)
 layout_mode = 0
-offset_left = 70.0
-offset_top = 455.0
-offset_right = 118.0
-offset_bottom = 559.0
-mouse_filter = 2
-
-[node name="PlateProductSlot2" type="ReferenceRect" parent="." unique_id=1307494881]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 114.0
-offset_top = 455.0
-offset_right = 162.0
-offset_bottom = 559.0
-mouse_filter = 2
-
-[node name="PlateProductSlot3" type="ReferenceRect" parent="." unique_id=1884254557]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 158.0
-offset_top = 455.0
-offset_right = 206.0
-offset_bottom = 559.0
-mouse_filter = 2
-
-[node name="PlateProductSlot4" type="ReferenceRect" parent="." unique_id=1454995356]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 201.0
-offset_top = 455.0
-offset_right = 249.0
-offset_bottom = 559.0
-mouse_filter = 2
-
-[node name="PlateProductVisual1" type="TextureRect" parent="." unique_id=1933140994]
-unique_name_in_owner = true
-visible = false
-z_index = 2
-layout_mode = 0
-offset_left = 362.0
-offset_top = 490.0
-offset_right = 470.0
-offset_bottom = 590.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="PlateProductVisual2" type="TextureRect" parent="." unique_id=6270652]
-unique_name_in_owner = true
-visible = false
-z_index = 2
-layout_mode = 0
-offset_left = 472.0
-offset_top = 490.0
-offset_right = 580.0
-offset_bottom = 590.0
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
+offset_left = 295.0
+offset_top = 414.0
+offset_right = 514.0
+offset_bottom = 620.0
+destination_product_id = &"product.youtiao.sesame"
+slot_origin = Vector2(20, 40)
 
 [node name="StatusLabel" type="Label" parent="." unique_id=948688222]
 unique_name_in_owner = true
@@ -252,6 +153,7 @@ theme_override_colors/font_color = Color(1, 0.93, 0.73, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 30
+text = "布局预览 · 初级 · 抬起面坯"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2

@@ -1,0 +1,465 @@
+[gd_scene format=3 uid="uid://drhmny73i7d8a"]
+
+[ext_resource type="Script" uid="uid://bwy04cwecc10w" path="res://scripts/main/new_art_workbench_preview.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://baqif7ah8w5ch" path="res://resources/art/new/背景.jpg" id="2_background"]
+[ext_resource type="Texture2D" uid="uid://q8gi6fl8wjol" path="res://resources/art/new/初级豆浆机.png" id="3_soy_basic"]
+[ext_resource type="Texture2D" uid="uid://xyritebvv4v" path="res://resources/art/new/中级豆浆机.png" id="4_soy_mid"]
+[ext_resource type="Texture2D" uid="uid://l6uj51byol1o" path="res://resources/art/new/高级豆浆机.png" id="5_soy_advanced"]
+[ext_resource type="Texture2D" uid="uid://dffjikjd8dq7p" path="res://resources/art/new/高级抬起.png" id="6_fryer_adv_raised"]
+[ext_resource type="Texture2D" uid="uid://dcbnq1lmn72ew" path="res://resources/art/new/高级落下.png" id="7_fryer_adv_lowered"]
+[ext_resource type="Texture2D" uid="uid://v0xai48wfyar" path="res://resources/art/new/抬起.png" id="8_fryer_basic_raised"]
+[ext_resource type="Texture2D" uid="uid://cdb0sf0ymtaba" path="res://resources/art/new/落下.png" id="9_fryer_basic_lowered"]
+[ext_resource type="Texture2D" uid="uid://cvnqv1m1h12ts" path="res://resources/art/new/摊饼筒.png" id="11_griddle_can"]
+[ext_resource type="Texture2D" uid="uid://c3o7k4ht4ff1g" path="res://resources/art/new/面糊筒.png" id="12_batter_can"]
+[ext_resource type="Texture2D" uid="uid://bdl8uo2t2h5dd" path="res://resources/art/new/火腿6.png" id="14_ham"]
+[ext_resource type="Texture2D" uid="uid://cjhl4othwl4da" path="res://resources/art/new/肉松6.png" id="15_pork_floss"]
+[ext_resource type="Texture2D" uid="uid://dc3nhxlu05bmu" path="res://resources/art/new/冰块盒.png" id="16_ice"]
+[ext_resource type="Texture2D" uid="uid://byjhyd8t23mba" path="res://resources/art/new/糖罐.png" id="17_sugar"]
+[ext_resource type="Texture2D" uid="uid://dglvxibakg2ce" path="res://resources/art/new/油条面坯.png" id="18_youtiao_dough"]
+[ext_resource type="Texture2D" uid="uid://blkay5p3p087g" path="res://resources/art/new/原味油条.png" id="19_youtiao_plain"]
+[ext_resource type="Texture2D" uid="uid://bm3vuerjmykfg" path="res://resources/art/new/芝麻油条.png" id="20_youtiao_sesame"]
+[ext_resource type="Texture2D" uid="uid://brxykvu7og0jy" path="res://resources/art/new/烧焦油条.png" id="21_youtiao_burnt"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_top_panel"]
+bg_color = Color(0.125, 0.07, 0.035, 0.84)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.79, 0.39, 0.78)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.07, 0.025, 0.01, 0.46)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button"]
+bg_color = Color(0.12, 0.32, 0.23, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.76, 0.95, 0.62, 0.74)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_hover"]
+bg_color = Color(0.2, 0.48, 0.31, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.84, 0.39, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.09, 0.04, 0.01, 0.42)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[node name="NewArtWorkbenchPreview" type="Control" unique_id=2103948276]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1512272293]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="WarmWash" type="ColorRect" parent="." unique_id=1907977058]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.73, 0.35, 0.055)
+
+[node name="Header" type="PanelContainer" parent="." unique_id=1969414708]
+z_index = 20
+layout_mode = 0
+offset_left = 48.0
+offset_top = 32.0
+offset_right = 1872.0
+offset_bottom = 154.0
+theme_override_styles/panel = SubResource("StyleBox_top_panel")
+
+[node name="Margin" type="MarginContainer" parent="Header" unique_id=1092998254]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 14
+
+[node name="Rows" type="VBoxContainer" parent="Header/Margin" unique_id=626903287]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Title" type="Label" parent="Header/Margin/Rows" unique_id=1718257797]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.91, 0.71, 1)
+theme_override_colors/font_outline_color = Color(0.19, 0.08, 0.025, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 34
+text = "新画风 · 早餐工作台"
+
+[node name="HintLabel" type="Label" parent="Header/Margin/Rows" unique_id=1602078942]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.83, 0.95, 0.71, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.06, 0.025, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
+
+[node name="StationLabels" type="Control" parent="." unique_id=1537980715]
+z_index = 10
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="FryerTitle" type="Label" parent="StationLabels" unique_id=1170946081]
+layout_mode = 0
+offset_left = 148.0
+offset_top = 286.0
+offset_right = 550.0
+offset_bottom = 334.0
+theme_override_colors/font_color = Color(0.24, 0.12, 0.04, 1)
+theme_override_colors/font_outline_color = Color(1, 0.9, 0.62, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
+text = "油条炸制台"
+horizontal_alignment = 1
+
+[node name="GriddleTitle" type="Label" parent="StationLabels" unique_id=670731625]
+layout_mode = 0
+offset_left = 685.0
+offset_top = 350.0
+offset_right = 1180.0
+offset_bottom = 396.0
+theme_override_colors/font_color = Color(0.24, 0.12, 0.04, 1)
+theme_override_colors/font_outline_color = Color(1, 0.9, 0.62, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
+text = "摊饼备料台"
+horizontal_alignment = 1
+
+[node name="SoyTitle" type="Label" parent="StationLabels" unique_id=1616990346]
+layout_mode = 0
+offset_left = 1322.0
+offset_top = 286.0
+offset_right = 1730.0
+offset_bottom = 334.0
+theme_override_colors/font_color = Color(0.24, 0.12, 0.04, 1)
+theme_override_colors/font_outline_color = Color(1, 0.9, 0.62, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
+text = "现磨豆浆台"
+horizontal_alignment = 1
+
+[node name="FryerBasicRaised" type="TextureRect" parent="." unique_id=1764766129]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 120.0
+offset_top = 326.0
+offset_right = 550.0
+offset_bottom = 875.0
+mouse_filter = 2
+texture = ExtResource("8_fryer_basic_raised")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerBasicLowered" type="TextureRect" parent="." unique_id=488924465]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 120.0
+offset_top = 326.0
+offset_right = 550.0
+offset_bottom = 875.0
+mouse_filter = 2
+texture = ExtResource("9_fryer_basic_lowered")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerAdvancedRaised" type="TextureRect" parent="." unique_id=690600759]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 114.0
+offset_top = 326.0
+offset_right = 558.0
+offset_bottom = 875.0
+mouse_filter = 2
+texture = ExtResource("6_fryer_adv_raised")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerAdvancedLowered" type="TextureRect" parent="." unique_id=1730136749]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 114.0
+offset_top = 326.0
+offset_right = 558.0
+offset_bottom = 875.0
+mouse_filter = 2
+texture = ExtResource("7_fryer_adv_lowered")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YoutiaoDough" type="TextureRect" parent="." unique_id=1952264198]
+unique_name_in_owner = true
+z_index = 6
+layout_mode = 0
+offset_left = 392.0
+offset_top = 488.0
+offset_right = 488.0
+offset_bottom = 640.0
+mouse_filter = 2
+texture = ExtResource("18_youtiao_dough")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YoutiaoPlain" type="TextureRect" parent="." unique_id=1375743573]
+unique_name_in_owner = true
+z_index = 6
+layout_mode = 0
+offset_left = 390.0
+offset_top = 486.0
+offset_right = 490.0
+offset_bottom = 640.0
+mouse_filter = 2
+texture = ExtResource("19_youtiao_plain")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YoutiaoSesame" type="TextureRect" parent="." unique_id=2089097475]
+unique_name_in_owner = true
+z_index = 6
+layout_mode = 0
+offset_left = 390.0
+offset_top = 486.0
+offset_right = 490.0
+offset_bottom = 640.0
+mouse_filter = 2
+texture = ExtResource("20_youtiao_sesame")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="YoutiaoBurnt" type="TextureRect" parent="." unique_id=1008134279]
+unique_name_in_owner = true
+z_index = 6
+layout_mode = 0
+offset_left = 390.0
+offset_top = 486.0
+offset_right = 490.0
+offset_bottom = 640.0
+mouse_filter = 2
+texture = ExtResource("21_youtiao_burnt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GriddleCan" type="TextureRect" parent="." unique_id=817726306]
+z_index = 3
+layout_mode = 0
+offset_left = 624.0
+offset_top = 604.0
+offset_right = 838.0
+offset_bottom = 838.0
+mouse_filter = 2
+texture = ExtResource("11_griddle_can")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BatterCan" type="TextureRect" parent="." unique_id=198000898]
+z_index = 5
+layout_mode = 0
+offset_left = 646.0
+offset_top = 710.0
+offset_right = 822.0
+offset_bottom = 886.0
+mouse_filter = 2
+texture = ExtResource("12_batter_can")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HamTray" type="TextureRect" parent="." unique_id=369617409]
+z_index = 5
+layout_mode = 0
+offset_left = 1085.0
+offset_top = 670.0
+offset_right = 1298.0
+offset_bottom = 884.0
+mouse_filter = 2
+texture = ExtResource("14_ham")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PorkFlossTray" type="TextureRect" parent="." unique_id=476681885]
+z_index = 5
+layout_mode = 0
+offset_left = 885.0
+offset_top = 688.0
+offset_right = 1095.0
+offset_bottom = 895.0
+mouse_filter = 2
+texture = ExtResource("15_pork_floss")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SoyMilkBasic" type="TextureRect" parent="." unique_id=1177624367]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 1370.0
+offset_top = 332.0
+offset_right = 1670.0
+offset_bottom = 647.0
+mouse_filter = 2
+texture = ExtResource("3_soy_basic")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SoyMilkMid" type="TextureRect" parent="." unique_id=1538851180]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 1353.0
+offset_top = 332.0
+offset_right = 1686.0
+offset_bottom = 735.0
+mouse_filter = 2
+texture = ExtResource("4_soy_mid")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SoyMilkAdvanced" type="TextureRect" parent="." unique_id=1783387699]
+unique_name_in_owner = true
+z_index = 4
+layout_mode = 0
+offset_left = 1350.0
+offset_top = 332.0
+offset_right = 1685.0
+offset_bottom = 690.0
+mouse_filter = 2
+texture = ExtResource("5_soy_advanced")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IceBox" type="TextureRect" parent="." unique_id=309586626]
+z_index = 5
+layout_mode = 0
+offset_left = 1646.0
+offset_top = 634.0
+offset_right = 1845.0
+offset_bottom = 767.0
+mouse_filter = 2
+texture = ExtResource("16_ice")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SugarJar" type="TextureRect" parent="." unique_id=779771328]
+z_index = 5
+layout_mode = 0
+offset_left = 1377.0
+offset_top = 662.0
+offset_right = 1558.0
+offset_bottom = 843.0
+mouse_filter = 2
+texture = ExtResource("17_sugar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ControlStrip" type="PanelContainer" parent="." unique_id=852353912]
+z_index = 20
+layout_mode = 0
+offset_left = 128.0
+offset_top = 912.0
+offset_right = 1792.0
+offset_bottom = 1022.0
+theme_override_styles/panel = SubResource("StyleBox_top_panel")
+
+[node name="Row" type="HBoxContainer" parent="ControlStrip" unique_id=1408603314]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="SoyMilkButton" type="Button" parent="ControlStrip/Row" unique_id=2084978922]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(294, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.79, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBox_button")
+theme_override_styles/pressed = SubResource("StyleBox_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_button_hover")
+text = "切换豆浆机等级"
+
+[node name="FryerButton" type="Button" parent="ControlStrip/Row" unique_id=607662751]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.79, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBox_button")
+theme_override_styles/pressed = SubResource("StyleBox_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_button_hover")
+text = "抬起 / 落下炸篮"
+
+[node name="YoutiaoButton" type="Button" parent="ControlStrip/Row" unique_id=1671156679]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(294, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.94, 0.79, 1)
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("StyleBox_button")
+theme_override_styles/pressed = SubResource("StyleBox_button_hover")
+theme_override_styles/hover = SubResource("StyleBox_button_hover")
+text = "切换油条出品状态"
+
+[node name="Info" type="VBoxContainer" parent="ControlStrip/Row" unique_id=1337858572]
+custom_minimum_size = Vector2(470, 72)
+layout_mode = 2
+alignment = 1
+
+[node name="TierLabel" type="Label" parent="ControlStrip/Row/Info" unique_id=1885401924]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.42, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.015, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="FoodLabel" type="Label" parent="ControlStrip/Row/Info" unique_id=413398097]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.96, 0.72, 1)
+theme_override_colors/font_outline_color = Color(0.12, 0.05, 0.015, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 19
+horizontal_alignment = 1

@@ -41,8 +41,6 @@ const ORDER_CARD_INGREDIENT_TEXTURE_PATHS := {
 	&"stock.pancake.youtiao": "res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png",
 	IngredientModel.CORIANDER: "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",
 	&"stock.pancake.coriander": "res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png",
-	IngredientModel.PRESERVED_MUSTARD: "res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png",
-	&"stock.pancake.preserved_mustard": "res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png",
 }
 const ORDER_CARD_INGREDIENT_NAMES := {
 	&"stock.pancake.egg": "鸡蛋", &"stock.pancake.baocui": "薄脆", &"stock.pancake.scallion": "香葱",

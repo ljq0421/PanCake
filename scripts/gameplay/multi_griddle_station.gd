@@ -244,7 +244,7 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 	if _selected_tool == &"tool.pancake.spreader":
 		status_message.emit("摊饼器当前只能摊面糊，或在第一面摊开已放入的鸡蛋")
 		return {"success": false, "reason": &"wrong_stage"}
-	if _selected_tool in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]:
+	if _selected_tool == &"stock.pancake.sauce.sweet_flour":
 		status_message.emit("请重新点击酱罐落酱后再刷")
 		return {"success": false, "reason": &"sauce_not_primed"}
 	status_message.emit("先从共享料台拿起摊饼器或酱刷")
@@ -474,7 +474,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 		_set_selected_tool(tool_id)
 		status_message.emit("已拿起摊饼器；在鏊面按住画圈摊面或摊蛋")
 		return {"success": true, "tool_id": tool_id}
-	if tool_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili", &"stock.pancake.sauce.tomato"]:
+	if tool_id != &"stock.pancake.sauce.sweet_flour":
 		return {"success": false, "reason": &"unknown_tool"}
 	if _session == null or not _session.has_method("inventory_snapshot"):
 		return {"success": false, "reason": &"no_session"}
@@ -571,7 +571,7 @@ func _build_product(unit: Node) -> Dictionary:
 			scoring_ingredients.append(ingredient_type)
 	var scoring_sauces := PackedStringArray()
 	for stock_value in Array(unit.order.get("sauce_ids", [])):
-		scoring_sauces.append(&"red_chili" if StringName(stock_value) == &"stock.pancake.sauce.red_chili" else &"sweet_flour")
+		scoring_sauces.append(&"sweet_flour")
 	scoring_order["ingredients"] = scoring_ingredients
 	scoring_order["sauces"] = scoring_sauces
 	var score_result := PANCAKE_SCORER.evaluate_order(

@@ -28,6 +28,7 @@ func _run() -> void:
 		print("INFO: user:// unavailable; disk incompatibility assertion skipped")
 	var new_game := Dictionary(session.call("begin_new_game"))
 	_check(bool(new_game.get("success", false)) and bool(session.call("has_save")), "new breakfast-stall save is created")
+	_check(is_equal_approx(float(session.call("business_day_remaining_seconds")), 60.0), "first business day prepares a one-minute timer while the tutorial remains unlimited")
 	_check(Dictionary(new_game.get("snapshot", {})).has("special_customer_state"), "new save includes optional deterministic special-customer state")
 	var compact_file := FileAccess.open(session.SAVE_PATH, FileAccess.READ)
 	if compact_file != null:
@@ -79,7 +80,15 @@ func _run() -> void:
 		session.call("abandon_formal_order", StringName(Dictionary(order_value).get("order_id", &"")), &"test_cleanup")
 	session.call("end_business_day")
 	var next_day := Dictionary(session.call("begin_next_business_day"))
-	_check(bool(next_day.get("success", false)) and bool(progression.call("owns_area", &"area.youtiao")), "next business day activates youtiao as second area")
+	var next_day_open_orders := Array(session.call("active_formal_orders")).size() + Array(session.call("waiting_formal_orders")).size()
+	_check(
+		bool(next_day.get("success", false))
+		and bool(Dictionary(next_day.get("customer_queue", {})).get("success", false))
+		and next_day_open_orders > 0
+		and is_equal_approx(float(session.call("business_day_remaining_seconds")), session.BUSINESS_DAY_DURATION_SECONDS)
+		and bool(progression.call("owns_area", &"area.youtiao")),
+		"later business days restore the normal duration, activate youtiao, and immediately generate visible customers"
+	)
 	session.call("_write_save")
 	session.call("_load_save")
 	session.call("_restore_progression")

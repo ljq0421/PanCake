@@ -54,13 +54,9 @@ const ORDER_CARD_SAUCE_TEXTURE_PATHS := {
 	# communicates colour, whereas the jar artwork makes the selected sauce
 	# immediately identifiable on an order card.
 	&"stock.pancake.sauce.sweet_flour": "res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png",
-	&"stock.pancake.sauce.red_chili": "res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png",
-	&"stock.pancake.sauce.tomato": "res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png",
 }
 const ORDER_CARD_SAUCE_NAMES := {
-	&"stock.pancake.sauce.sweet_flour": "甜面酱",
-	&"stock.pancake.sauce.red_chili": "辣椒酱",
-	&"stock.pancake.sauce.tomato": "番茄酱",
+	&"stock.pancake.sauce.sweet_flour": "秘制酱料",
 }
 const ORDER_CARD_HEAT_TEXTURE_PATH := "res://resources/art/ui/quality/quality_heat_requirement_v2_chinese_ui.png"
 const FIVE_AREA_PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
@@ -793,7 +789,7 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	_spreader_width_multiplier = FIVE_AREA_CATALOG.PANCAKE_WIDE_SPREADER_WIDTH_MULTIPLIER if _wide_spreader_owned else 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
-	_chili_sauce_unlocked = unlocked_stock_ids.has(&"stock.pancake.sauce.red_chili") or unlocked_stock_ids.has("stock.pancake.sauce.red_chili")
+	_chili_sauce_unlocked = false
 	var griddle_tier := int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 0))
 	_intermediate_griddle_owned = griddle_tier >= 1
 	_advanced_griddle_owned = griddle_tier >= 2
@@ -1479,7 +1475,7 @@ func _select_sauce_brush() -> void:
 	if not _confirm_spread_for_next_action():
 		return
 	if float(sauce_tool_state.load) <= 0.0:
-		tool_status_label.text = "先点击或按住甜面酱/辣椒酱，把酱挤到饼面"
+		tool_status_label.text = "先点击或按住秘制酱料，把酱挤到饼面"
 		return
 	var phase_result := _enter_sauce_and_fillings_for_sauce_action()
 	if not bool(phase_result.get("success", false)):
@@ -1874,7 +1870,7 @@ func _update_surface_readout() -> void:
 		else:
 			description = "很厚"
 	var pour_state := "面糊已倒完" if pour_used else "尚可倒面"
-	surface_readout_label.text = "当前位置：%s（厚 %.2f · 火 %.2f · 甜酱 %.2f · 辣酱 %.2f） · %s" % [description, cell_thickness, doneness, sauce, chili_sauce, pour_state]
+	surface_readout_label.text = "当前位置：%s（厚 %.2f · 火 %.2f · 秘制酱 %.2f） · %s" % [description, cell_thickness, doneness, sauce, pour_state]
 
 
 func _refresh_sauce_load_display() -> void:
@@ -1940,16 +1936,14 @@ func _select_sauce_type(sauce_type: StringName) -> void:
 
 
 func _refresh_sauce_selection_presentation() -> void:
-	if sauce_refill_button == null or chili_sauce_refill_button == null or pancake_surface == null:
+	if sauce_refill_button == null or pancake_surface == null:
 		return
 	var brushing := tool_controller != null and tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH
 	sauce_refill_button.set_pressed_no_signal(brushing and current_sauce_type == OrderService.SAUCE_SWEET)
-	chili_sauce_refill_button.set_pressed_no_signal(brushing and current_sauce_type == OrderService.SAUCE_CHILI)
 	var automatic_suffix := "；松开后自动刷匀并回到空手" if _automatic_brush_owned else "；松开后自动拿起对应酱刷"
-	sauce_refill_button.tooltip_text = "按住控制甜面酱用量%s" % automatic_suffix
-	chili_sauce_refill_button.tooltip_text = "按住控制辣椒酱用量%s" % automatic_suffix
+	sauce_refill_button.tooltip_text = "按住控制秘制酱料用量%s" % automatic_suffix
 	pancake_surface.cursor_is_sauce_brush = brushing
-	pancake_surface.cursor_sauce_color = Color(0.34, 0.08, 0.035, 0.98) if current_sauce_type == OrderService.SAUCE_SWEET else Color(0.82, 0.055, 0.025, 0.98)
+	pancake_surface.cursor_sauce_color = Color(0.34, 0.08, 0.035, 0.98)
 
 
 func _on_heat_changed(value: float) -> void:
@@ -3004,7 +2998,6 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		return str(catalog_definition.get("label"))
 	var names := {
 		&"growth.tool.pancake.wide_spreader": "宽刮板",
-		&"growth.add_on.pancake.red_chili": "辣椒酱",
 		&"growth.add_on.pancake.ham_sausage": "火腿肠",
 		&"growth.add_on.pancake.meat_floss": "肉松",
 		&"growth.capacity.pancake_holding_tray.two_slots": "双格暂存托盘",

@@ -15,6 +15,7 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 @onready var _editor_preview := %EditorPreview as Control
 var _selected_id: StringName = &""
 var _anchors: Dictionary = {}
+var _tag_layouts: Dictionary = {}
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -33,6 +34,7 @@ func _ready() -> void:
 		prop.mouse_entered.connect(_show_hint.bind(growth_id, prop))
 		prop.mouse_exited.connect(func() -> void: _hint.visible = false)
 		_anchors[growth_id] = prop
+		_tag_layouts[growth_id] = {"position": prop.position, "size": prop.size}
 	refresh()
 
 func refresh() -> void:
@@ -63,17 +65,18 @@ func refresh() -> void:
 		var show_prerequisite_locked_visual := growth_id in [
 			&"growth.capacity.youtiao_finished_tray",
 			&"growth.flavor.youtiao.sesame",
-			&"growth.add_on.pancake.sweet_flour",
+			&"growth.add_on.pancake.egg",
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",
 		]
 		prop.visible = (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) and (not growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"] or growth_id == youtiao_upgrade_id)
 		if growth_id == _selected_id:
 			selected_prop_is_visible = prop.visible
-		prop.tooltip_text = _requirements_text(status)
+		prop.tooltip_text = _tag_tooltip_text(growth_id, status)
 		var condition_tag := prop.get_node_or_null("ConditionTag") as Label
 		if condition_tag != null:
-			condition_tag.text = "%s\n%s" % [CATALOG.growth_definition(growth_id).get("label", "升级"), _inline_requirement(status)]
+			condition_tag.text = _tag_text(growth_id, status)
+			_fit_tag_to_content(growth_id, prop, condition_tag)
 		_apply_upgrade_tag_style(prop, status)
 		prop.modulate = Color.WHITE if _state_text(status) != "条件不足" and _state_text(status) != "金币不足" else Color(0.62, 0.62, 0.62, 1.0)
 	if not _selected_id.is_empty() and selected_prop_is_visible:
@@ -162,7 +165,7 @@ func _show_hint(growth_id: StringName, prop: Control) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	if session == null: return
 	var status := Dictionary(session.call("growth_purchase_status", growth_id))
-	_hint_label.text = "%s\n%s" % [CATALOG.growth_definition(growth_id).get("label", "升级"), _requirements_text(status)]
+	_hint_label.text = _tag_tooltip_text(growth_id, status)
 	_hint.position = prop.position + Vector2(0, 42)
 	_hint.visible = true
 
@@ -185,6 +188,67 @@ func _requirements_text(status: Dictionary) -> String:
 	for raw_requirement in Array(status.get("missing_requirements", [])):
 		lines.append(_requirement_text(Dictionary(raw_requirement)))
 	return "可立即预订，下一营业日生效。" if lines.is_empty() else "需要：\n" + "\n".join(lines)
+
+
+func _tag_text(growth_id: StringName, status: Dictionary) -> String:
+	var definition := CATALOG.growth_definition(growth_id)
+	return "%s\n解锁条件：%s\n价格：%d 金币 · %s" % [
+		definition.get("label", "升级"),
+		"、".join(_unlock_condition_labels(definition)),
+		int(definition.get("price", 0)),
+		_state_text(status),
+	]
+
+
+func _tag_tooltip_text(growth_id: StringName, status: Dictionary) -> String:
+	return "%s\n%s" % [_tag_text(growth_id, status), _requirements_text(status)]
+
+
+func _unlock_condition_labels(definition: Dictionary) -> PackedStringArray:
+	var conditions := PackedStringArray()
+	var required_area_id := StringName(definition.get("requires_area_id", &""))
+	if not required_area_id.is_empty():
+		conditions.append("解锁%s区" % _area_label(required_area_id))
+	for raw_growth_id in Array(definition.get("requires_growth_ids", [])):
+		var prerequisite := CATALOG.growth_definition(StringName(raw_growth_id))
+		conditions.append("拥有%s" % prerequisite.get("label", "前置升级"))
+	var min_day := int(definition.get("min_day", 1))
+	if min_day > 1:
+		conditions.append("第%d天起" % min_day)
+	var min_reputation := int(definition.get("min_reputation", 0))
+	if min_reputation > 0:
+		conditions.append("口碑%d" % min_reputation)
+	var tutorial_area_id := StringName(definition.get("requires_tutorial_area_id", &""))
+	if not tutorial_area_id.is_empty():
+		conditions.append("完成%s教学" % _area_label(tutorial_area_id))
+	if bool(definition.get("requires_all_areas", false)):
+		conditions.append("解锁全部区域")
+	var mastery_requirements := Dictionary(definition.get("requires_mastery", {}))
+	for raw_area_id in mastery_requirements:
+		var area_id := StringName(raw_area_id)
+		var metrics := Dictionary(mastery_requirements[raw_area_id])
+		for raw_metric in metrics:
+			var metric := StringName(raw_metric)
+			var metric_label := "A级" if metric == &"a_grade" else "合格"
+			conditions.append("%s%s%d次" % [_area_label(area_id), metric_label, int(metrics[raw_metric])])
+	if conditions.is_empty():
+		conditions.append("无额外条件")
+	return conditions
+
+
+func _fit_tag_to_content(growth_id: StringName, prop: Button, tag: Label) -> void:
+	var authored_layout := Dictionary(_tag_layouts.get(growth_id, {}))
+	if authored_layout.is_empty():
+		return
+	var authored_position: Vector2 = authored_layout.get("position", prop.position)
+	var authored_size: Vector2 = authored_layout.get("size", prop.size)
+	var characters_per_line := 15
+	var line_count := 0
+	for line in tag.text.split("\n"):
+		line_count += maxi(1, ceili(float(line.length()) / characters_per_line))
+	var target_height := maxf(authored_size.y, 10.0 + float(line_count) * 15.0)
+	prop.size = Vector2(authored_size.x, target_height)
+	prop.position = authored_position + Vector2(0.0, authored_size.y - target_height)
 
 
 func _inline_requirement(status: Dictionary) -> String:

@@ -18,8 +18,31 @@ func _run() -> void:
 	var first_order: Dictionary = first.get("order", {})
 	_check(bool(first.get("success", false)) and bool(first_order.get("tutorial_no_countdown", false)) and StringName(first_order.get("id", &"")) == &"order.pancake.egg" and Array(first_order.get("sauces", [])).is_empty(), "pancake area tutorial uses the unlocked egg-only order")
 	var normal: Dictionary = GENERATOR.generate(day_one, {}, 0)
-	var normal_order: Dictionary = normal.get("order", {})
-	_check(bool(normal.get("success", false)) and StringName(normal_order.get("id", &"")) == &"order.pancake.egg", "locked ingredients never enter the day-one order pool")
+	var day_one_template_ids := GENERATOR._eligible_template_ids(day_one)
+	_check(
+		bool(normal.get("success", false))
+		and day_one_template_ids.size() == 3
+		and day_one_template_ids.has(&"order.pancake.egg")
+		and day_one_template_ids.has(&"order.pancake.double_egg_plain")
+		and day_one_template_ids.has(&"order.pancake.no_egg_plain"),
+		"day one offers plain egg, double-egg, and eggless pancakes without requiring locked toppings"
+	)
+	var double_egg: Dictionary = GENERATOR.generate_for_template(day_one, &"order.pancake.double_egg_plain")
+	var double_egg_order: Dictionary = double_egg.get("order", {})
+	_check(
+		bool(double_egg.get("success", false))
+		and PackedStringArray(double_egg_order.get("ingredients", PackedStringArray())) == PackedStringArray(["egg", "egg"])
+		and Array(double_egg_order.get("sauces", [])).is_empty(),
+		"double-egg pancake contains exactly two eggs and no toppings or sauce"
+	)
+	var eggless: Dictionary = GENERATOR.generate_for_template(day_one, &"order.pancake.no_egg_plain")
+	var eggless_order: Dictionary = eggless.get("order", {})
+	_check(
+		StringName(eggless_order.get("id", &"")) == &"order.pancake.no_egg_plain"
+		and Array(eggless_order.get("ingredients", [])).is_empty()
+		and Array(eggless_order.get("sauces", [])).is_empty(),
+		"eggless pancake contains no egg, toppings, or sauce"
+	)
 	var sweet_unlocked := day_one.duplicate(true)
 	sweet_unlocked["unlocked_stock_ids"].append(&"stock.pancake.sauce.sweet_flour")
 	_check(GENERATOR._eligible_template_ids(sweet_unlocked).has(&"order.pancake.egg_sweet"), "sweet-flour unlock adds the egg-and-sauce order")
@@ -46,7 +69,7 @@ func _run() -> void:
 		var order: Dictionary = candidate.get("order", {})
 		if StringName(order.get("id", &"")) != &"order.pancake.youtiao_scallion":
 			continue
-		found_youtiao_order = PackedStringArray(order.get("ingredients", PackedStringArray())) == PackedStringArray(["egg", "youtiao", "scallion"]) and PackedStringArray(order.get("sauces", PackedStringArray())) == PackedStringArray(["sweet_flour"]) and int(order.get("payment_coins", 0)) == 12 and is_equal_approx(float(order.get("time_limit", 0.0)), 72.0)
+		found_youtiao_order = PackedStringArray(order.get("ingredients", PackedStringArray())) == PackedStringArray(["egg", "youtiao", "scallion"]) and PackedStringArray(order.get("sauces", PackedStringArray())) == PackedStringArray(["sweet_flour"]) and int(order.get("payment_coins", 0)) == 8 and is_equal_approx(float(order.get("time_limit", 0.0)), 72.0)
 	_check(found_youtiao_order, "plain-youtiao recipe unlock enables the egg+youtiao+scallion+sweet-sauce order")
 	var recipe_locked_youtiao := GENERATOR._eligible_template_ids(fully_unlocked)
 	_check(not recipe_locked_youtiao.has(&"order.pancake.youtiao_scallion"), "youtiao pancake order stays ineligible before the plain-youtiao recipe unlock")

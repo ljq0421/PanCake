@@ -41,9 +41,7 @@ const INGREDIENT_HOTSPOT_IDS: Dictionary = {
 	&"EggCarton/Hotspot": &"stock.pancake.egg",
 }
 const SAUCE_HOTSPOT_IDS: Dictionary = {
-	&"SweetSauceHotspot": &"stock.pancake.sauce.sweet_flour",
-	&"ChiliSauceHotspot": &"stock.pancake.sauce.red_chili",
-	&"TomatoSauceHotspot": &"stock.pancake.sauce.tomato",
+	&"SecretSauceHotspot": &"stock.pancake.sauce.sweet_flour",
 }
 ## Some optional ingredients are rendered by the stall artwork rather than by
 ## their drag source. Keep those visuals in the same unlock state as the source
@@ -51,12 +49,10 @@ const SAUCE_HOTSPOT_IDS: Dictionary = {
 const STOCK_VISUAL_PATHS: Dictionary = {
 	&"stock.pancake.baocui": [NodePath("BaocuiBasket")],
 	&"stock.pancake.scallion": [NodePath("ScallionTray")],
-	&"stock.pancake.sauce.sweet_flour": [NodePath("../SweetBeanSauceJar"), NodePath("SweetSauceHotspot")],
+	&"stock.pancake.sauce.sweet_flour": [NodePath("../SecretSauceJar"), NodePath("SecretSauceHotspot")],
 	&"stock.pancake.ham_sausage": [NodePath("../ToppingIngredientTray2")],
 	&"stock.pancake.meat_floss": [NodePath("../ToppingIngredientTray"), NodePath("PorkFlossHotspot")],
 	&"stock.pancake.coriander": [NodePath("CorianderTray")],
-	&"stock.pancake.sauce.red_chili": [NodePath("../ChiliSauceJar"), NodePath("ChiliSauceHotspot")],
-	&"stock.pancake.sauce.tomato": [NodePath("../TomatoSauceJar"), NodePath("TomatoSauceHotspot")],
 }
 ## Container artwork stays in the scene while its drag source lives under the
 ## worktop hotspots. These paths let the workshop present a stocked catalogue

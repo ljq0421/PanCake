@@ -20,7 +20,6 @@ const STABLE_TO_LEGACY_INGREDIENT := {
 }
 const STABLE_TO_LEGACY_SAUCE := {
 	&"stock.pancake.sauce.sweet_flour": &"sweet_flour",
-	&"stock.pancake.sauce.red_chili": &"red_chili",
 }
 const MAX_SAUCE_REQUIREMENTS := 2
 
@@ -52,13 +51,13 @@ static func _tutorial_order(progression_snapshot: Dictionary, tutorial: Dictiona
 	# consume their own queued tutorial IDs when those areas are implemented.
 	if active_kind != &"area" or active_id != &"area.pancake":
 		return {}
-	if not _owns_all(progression_snapshot, [&"stock.pancake.egg"]):
+	if not _owns_all(progression_snapshot, [&"stock.pancake.sauce.sweet_flour"]):
 		return {}
-	var order := _legacy_order(&"order.pancake.egg")
+	var order := _legacy_order(&"order.pancake.no_egg_secret")
 	order["tutorial_no_countdown"] = true
 	order["tutorial_kind"] = active_kind
 	order["tutorial_id"] = active_id
-	order["tutorial_guide"] = "新手指引：按顺序完成这张基础煎饼；教学单不计倒计时。"
+	order["tutorial_guide"] = "新手指引：按顺序完成这张无蛋秘制煎饼；教学单不计倒计时。"
 	return order
 
 

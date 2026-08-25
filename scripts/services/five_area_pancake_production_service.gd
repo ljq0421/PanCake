@@ -18,7 +18,6 @@ const LEGACY_INGREDIENT_TO_STOCK := {
 }
 const LEGACY_SAUCE_TO_STOCK := {
 	&"sweet_flour": &"stock.pancake.sauce.sweet_flour",
-	&"red_chili": &"stock.pancake.sauce.red_chili",
 }
 
 var _session: Node

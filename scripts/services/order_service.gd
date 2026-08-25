@@ -16,24 +16,24 @@ const ORDERS: Array[Dictionary] = [
 		"customer_line": "来一份经典的，薄脆和葱花都要。",
 	},
 	{
-		"id": &"chili_ham",
-		"title": "香辣火腿煎饼",
+		"id": &"ham_crisp",
+		"title": "火腿薄脆煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.HAM_SAUSAGE],
-		"sauces": [SAUCE_CHILI],
+		"sauces": [SAUCE_SWEET],
 		"heat_preference": &"well_done",
 		"time_limit": 76.0,
 		"payment_coins": 12,
-		"customer_line": "火腿加辣酱，边缘煎香一点。",
+		"customer_line": "火腿薄脆，刷秘制酱料，边缘煎香一点。",
 	},
 	{
 		"id": &"double_sauce",
-		"title": "双酱全料煎饼",
+		"title": "全料秘制煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.HAM_SAUSAGE, IngredientModel.SCALLION],
-		"sauces": [SAUCE_SWEET, SAUCE_CHILI],
+		"sauces": [SAUCE_SWEET],
 		"heat_preference": &"golden",
 		"time_limit": 82.0,
 		"payment_coins": 22,
-		"customer_line": "两种酱都刷，配料给我放匀。",
+		"customer_line": "刷秘制酱料，配料给我放匀。",
 	},
 	{
 		"id": &"scallion_light",
@@ -47,23 +47,23 @@ const ORDERS: Array[Dictionary] = [
 	},
 	{
 		"id": &"meat_floss_sweet",
-		"title": "甜酱肉松煎饼",
+		"title": "秘制肉松煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.MEAT_FLOSS, IngredientModel.SCALLION],
 		"sauces": [SAUCE_SWEET],
 		"heat_preference": &"golden",
 		"time_limit": 84.0,
 		"payment_coins": 28,
-		"customer_line": "肉松铺匀些，甜酱和葱花都要。",
+		"customer_line": "肉松铺匀些，秘制酱料和葱花都要。",
 	},
 	{
-		"id": &"tenderloin_double_sauce",
-		"title": "双酱里脊煎饼",
+		"id": &"tenderloin_secret_sauce",
+		"title": "秘制里脊煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.PORK_TENDERLOIN, IngredientModel.SCALLION],
-		"sauces": [SAUCE_SWEET, SAUCE_CHILI],
+		"sauces": [SAUCE_SWEET],
 		"heat_preference": &"well_done",
 		"time_limit": 88.0,
 		"payment_coins": 36,
-		"customer_line": "里脊配双酱，饼皮要结实一点。",
+		"customer_line": "里脊配秘制酱料，饼皮要结实一点。",
 	},
 ]
 
@@ -95,7 +95,7 @@ func order_at(index: int) -> Dictionary:
 
 
 static func sauce_display_name(sauce_type: StringName) -> String:
-	return "甜面酱" if sauce_type == SAUCE_SWEET else "辣椒酱"
+	return "秘制酱料" if sauce_type == SAUCE_SWEET else "未知酱料"
 
 
 static func format_requirements(order: Dictionary) -> String:

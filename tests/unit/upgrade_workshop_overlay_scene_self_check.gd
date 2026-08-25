@@ -43,7 +43,8 @@ func _run() -> void:
 		_check(advanced_soy_prop != null and not advanced_soy_prop.visible, "advanced soy machine is hidden until the intermediate machine is installed")
 		var finished_tray_tag := finished_tray_prop.get_node_or_null("ConditionTag") as Label if finished_tray_prop != null else null
 		_check(finished_tray_prop != null and finished_tray_prop.visible, "finished-youtiao tray remains labelled before the fryer is installed")
-		_check(finished_tray_tag != null and finished_tray_tag.text.contains("先解锁油条区域"), "finished-youtiao tray label states its reservation prerequisite")
+		_check(finished_tray_tag != null and finished_tray_tag.text.contains("解锁条件：解锁油条区、拥有油条炸锅"), "workshop tags retain every unlock condition")
+		_check(finished_tray_tag != null and finished_tray_tag.text.contains("价格：12 金币"), "workshop tags show the coin price")
 		_check(finished_tray_prop != null and finished_tray_prop.tooltip_text.contains("先解锁油条区域"), "finished-youtiao tray hover explains its reservation prerequisite")
 		_check(sweet_flour_prop != null and sweet_flour_prop.visible, "sweet-flour sauce remains labelled before its qualification requirement is met")
 		_check(baocui_prop != null and baocui_prop.visible and baocui_prop.tooltip_text.contains("煎饼合格 4 次"), "baocui tag remains visible and explains its qualification requirement")
@@ -53,7 +54,7 @@ func _run() -> void:
 		overlay.refresh()
 		var sesame_tag := sesame_prop.get_node_or_null("ConditionTag") as Label if sesame_prop != null else null
 		_check(sesame_prop != null and sesame_prop.visible, "sesame-youtiao tray remains labelled before its prerequisite is installed")
-		_check(sesame_tag != null and sesame_tag.text.contains("先预订油条成品盘"), "sesame-youtiao tray label states its reservation prerequisite")
+		_check(sesame_tag != null and sesame_tag.text.contains("解锁条件：解锁油条区、拥有油条成品盘、油条合格2次"), "sesame-youtiao tray label states every reservation prerequisite")
 		_check(sesame_prop != null and sesame_prop.tooltip_text.contains("先预订油条成品盘"), "sesame-youtiao tray hover explains its reservation prerequisite")
 		progression.set("pending_growth_ids", [&"growth.tool.pancake.wide_spreader"])
 		overlay.refresh()
@@ -67,6 +68,8 @@ func _run() -> void:
 		_check(press_prop != null and press_prop.visible, "press appears after the wide spreader is installed")
 		_check(advanced_soy_prop != null and advanced_soy_prop.visible, "advanced soy machine appears after the intermediate machine is installed")
 		_check((wide_spreader_prop.get_node_or_null("ConditionTag") as Label).text.contains("已解锁"), "owned workshop upgrades use the unlocked label")
+		_check((wide_spreader_prop.get_node_or_null("ConditionTag") as Label).text.contains("解锁条件：解锁煎饼区、第2天起"), "owned workshop upgrades retain their original unlock conditions")
+		_check((wide_spreader_prop.get_node_or_null("ConditionTag") as Label).text.contains("价格：12 金币"), "owned workshop upgrades retain their original coin price")
 	overlay.queue_free()
 	_finish()
 

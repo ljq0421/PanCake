@@ -99,8 +99,6 @@ static func _filter_unconstructable_specials(ids: Array[StringName], eligible_ar
 		ids.erase(SPECIALS.GLUTTON)
 	if eligible_areas.size() < 3:
 		ids.erase(SPECIALS.BLOGGER)
-	if _eligible_chili_only_templates(progression).is_empty():
-		ids.erase(SPECIALS.SPICY_FAN)
 	if not _eligible_pancake_templates(progression).has(&"order.pancake.classic"):
 		ids.erase(SPECIALS.STUDENT)
 
@@ -120,26 +118,6 @@ static func _special_candidate(
 				90.0,
 				1.0,
 			)
-		SPECIALS.SPICY_FAN:
-			var templates := _eligible_chili_only_templates(progression)
-			if templates.is_empty():
-				return {"success": false, "reason": &"special_content_unavailable"}
-			var template_id := templates[_roll(seed, sequence, 163, templates.size())]
-			var spicy := _pancake_candidate(progression, {}, seed, sequence, false, template_id)
-			if not bool(spicy.get("success", false)):
-				return spicy
-			var spicy_items := Array(spicy.get("items", [])).duplicate(true)
-			for item_index in range(spicy_items.size()):
-				var item := Dictionary(spicy_items[item_index]).duplicate(true)
-				item["sauce_intensity_multiplier"] = 1.35
-				spicy_items[item_index] = item
-			spicy["items"] = spicy_items
-			var spicy_metadata := Dictionary(spicy.get("metadata", {})).duplicate(true)
-			var spicy_legacy := Dictionary(spicy_metadata.get("legacy_order", {})).duplicate(true)
-			spicy_legacy["sauce_intensity_multiplier"] = 1.35
-			spicy_metadata["legacy_order"] = spicy_legacy
-			spicy["metadata"] = spicy_metadata
-			return _decorate_special(spicy, special_id, 80.0, 1.35)
 		SPECIALS.GLUTTON:
 			var glutton_count := mini(3 if _roll(seed, sequence, 167, 100) < 40 else 2, eligible_areas.size())
 			var glutton := _distinct_area_combo(eligible_areas, progression, seed, sequence, glutton_count)
@@ -231,15 +209,6 @@ static func _item_quote(items: Array) -> int:
 		else:
 			total += maxi(int(CATALOG.product_definition(StringName(item.get("product_id", &""))).get("base_sell_price", 1)), 1) * quantity
 	return maxi(total, 1)
-
-
-static func _eligible_chili_only_templates(progression: Dictionary) -> Array[StringName]:
-	var result: Array[StringName] = []
-	for template_id in _eligible_pancake_templates(progression):
-		var sauces := Array(CATALOG.pancake_order_template(template_id).get("sauce_stock_ids", []))
-		if sauces.size() == 1 and StringName(sauces[0]) == &"stock.pancake.sauce.red_chili":
-			result.append(template_id)
-	return result
 
 
 static func _normal_candidate(eligible_areas: Array[StringName], progression: Dictionary, seed: int, sequence: int) -> Dictionary:

@@ -20,6 +20,7 @@ const SAVE_VERSION := 9
 const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
+const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const CONSOLATION_PAYMENT_COINS := 1
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
@@ -60,8 +61,6 @@ const LEGACY_PANCAKE_STOCK_IDS := {
 }
 const LEGACY_PANCAKE_SAUCE_STOCK_IDS := {
 	&"sweet_flour": &"stock.pancake.sauce.sweet_flour",
-	&"red_chili": &"stock.pancake.sauce.red_chili",
-	&"tomato": &"stock.pancake.sauce.tomato",
 }
 const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"egg": &"stock.pancake.egg",
@@ -76,8 +75,6 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 }
 const DAILY_PANCAKE_CONSUMABLE_STOCK := {
 	&"stock.pancake.sauce.sweet_flour": 6,
-	&"stock.pancake.sauce.red_chili": 6,
-	&"stock.pancake.sauce.tomato": 6,
 }
 const DAILY_PANCAKE_TOPPING_STOCK: Array[StringName] = [
 	&"stock.pancake.coriander",
@@ -197,7 +194,7 @@ func begin_new_game() -> Dictionary:
 		"last_played_at_unix": now,
 		"day_open": true,
 		"business_paused": false,
-		"business_day_remaining_seconds": BUSINESS_DAY_DURATION_SECONDS,
+		"business_day_remaining_seconds": FIRST_BUSINESS_DAY_DURATION_SECONDS,
 		"orders_completed": 0,
 		"today_orders": [],
 		"today_reputation_delta": 0,
@@ -223,6 +220,7 @@ func begin_new_game() -> Dictionary:
 		ORDER_PROMOTIONS_KEY: [],
 		SPECIAL_CUSTOMER_STATE_KEY: SPECIAL_CUSTOMER_CATALOG.default_state(1),
 	}
+	_replenish_daily_pancake_consumables()
 	_replenish_daily_pancake_toppings()
 	_configure_service_connections()
 	_write_save()
@@ -276,15 +274,25 @@ func _scene_binding_save_active_reset() -> void:
 
 
 func business_day_remaining_seconds() -> float:
+	var duration_seconds := business_day_duration_seconds()
 	if not has_save():
-		return BUSINESS_DAY_DURATION_SECONDS
-	return clampf(float(_save_data.get("business_day_remaining_seconds", BUSINESS_DAY_DURATION_SECONDS)), 0.0, BUSINESS_DAY_DURATION_SECONDS)
+		return duration_seconds
+	return clampf(float(_save_data.get("business_day_remaining_seconds", duration_seconds)), 0.0, duration_seconds)
+
+
+func business_day_duration_seconds() -> float:
+	# Day one starts with an unlimited tutorial. Once it is completed, the
+	# already-prepared one-minute countdown begins; later days use the normal
+	# two-minute service window.
+	if _progression != null and int(_progression.get("current_day")) == 1:
+		return FIRST_BUSINESS_DAY_DURATION_SECONDS
+	return BUSINESS_DAY_DURATION_SECONDS
 
 
 func set_business_day_remaining_seconds(remaining_seconds: float) -> void:
 	if not has_save():
 		return
-	_save_data["business_day_remaining_seconds"] = clampf(remaining_seconds, 0.0, BUSINESS_DAY_DURATION_SECONDS)
+	_save_data["business_day_remaining_seconds"] = clampf(remaining_seconds, 0.0, business_day_duration_seconds())
 	_touch_and_write()
 
 
@@ -2907,7 +2915,7 @@ func begin_next_business_day() -> Dictionary:
 	if not bool(result.get("success", false)):
 		return result
 	_save_data["day_open"] = true
-	_save_data["business_day_remaining_seconds"] = BUSINESS_DAY_DURATION_SECONDS
+	_save_data["business_day_remaining_seconds"] = business_day_duration_seconds()
 	_save_data["today_orders"] = []
 	_save_data["today_reputation_delta"] = 0
 	_save_data["today_cutoff"] = {}
@@ -2930,6 +2938,11 @@ func begin_next_business_day() -> Dictionary:
 	_daily_goal_service.call("begin_day", _daily_goal_context())
 	_sync_business_services_to_save()
 	_touch_and_write()
+	# Starting a business day must also populate the storefront.  The gameplay
+	# scene is reloaded immediately after this method returns, so relying on a
+	# later scene callback left the shop with no visible customers until another
+	# order-related action happened.
+	result["customer_queue"] = ensure_active_playable_order()
 	inventory_changed.emit(inventory_snapshot())
 	progression_changed.emit(five_area_progression_snapshot())
 	daily_goal_changed.emit(current_daily_goal())
@@ -2968,7 +2981,10 @@ func _provision_activated_stock(activated_growth_ids: Array) -> PackedStringArra
 			var capacity := maxi(int(stock_definition.get("restock_capacity", 0)), 0)
 			if capacity > 0:
 				var key := str(stock_id)
-				inventory[key] = maxi(int(inventory.get(key, 0)), 0)
+				if stock_id == &"stock.pancake.egg":
+					inventory[key] = maxi(int(inventory.get(key, 0)), _restock_capacity(stock_id, stock_definition))
+				else:
+					inventory[key] = maxi(int(inventory.get(key, 0)), 0)
 				if int(inventory[key]) <= 0 and not restock_required.has(key):
 					restock_required.append(key)
 	_save_data["inventory"] = _normalize_inventory(inventory)
@@ -3274,7 +3290,14 @@ func _mark_f3_order_started(order_id: StringName, source_id: StringName) -> void
 
 
 func _ensure_save_shape() -> void:
-	_save_data["inventory"] = _normalize_inventory(Dictionary(_save_data.get("inventory", {})))
+	var inventory_source := Dictionary(_save_data.get("inventory", {})).duplicate(true)
+	var retired_sauce_stock := maxi(
+		int(inventory_source.get("stock.pancake.sauce.red_chili", 0)),
+		int(inventory_source.get("stock.pancake.sauce.tomato", 0)),
+	)
+	if retired_sauce_stock > int(inventory_source.get("stock.pancake.sauce.sweet_flour", 0)):
+		inventory_source["stock.pancake.sauce.sweet_flour"] = retired_sauce_stock
+	_save_data["inventory"] = _normalize_inventory(inventory_source)
 	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(Dictionary(_save_data.get("prepared_product_slots", {})))
 	if not _save_data.has("restock_progress"):
 		_save_data["restock_progress"] = {}

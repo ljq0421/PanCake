@@ -15,8 +15,6 @@
 [ext_resource type="Texture2D" uid="uid://c3gsx5d06hspl" path="res://resources/art/ingredients/inventory_containers/scallion/crock_states/scallion-crock-empty.png" id="24_scallion_empty"]
 [ext_resource type="Texture2D" uid="uid://cjnkvhu7e0ynu" path="res://resources/art/ingredients/inventory_containers/scallion/crock_states/scallion-crock-half.png" id="25_scallion_half"]
 [ext_resource type="Texture2D" uid="uid://ckmdjtq575161" path="res://resources/art/ingredients/inventory_containers/scallion/crock_states/scallion-crock-full.png" id="26_scallion_full"]
-[ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png" id="27_chili_sauce"]
-[ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png" id="28_tomato_sauce"]
 [ext_resource type="Texture2D" uid="uid://dhlixsd00feh7" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="29_topping_tray"]
 [ext_resource type="Script" uid="uid://ejg6b1jv4gxj" path="res://scripts/ui/pancake_worktop_hotspots.gd" id="30_worktop_hotspots"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="31_product_drag"]
@@ -96,7 +94,7 @@ script = ExtResource("23_scallion_tray")
 stock_id = &"stock.pancake.ham_sausage"
 state_textures = Array[Texture2D]([ExtResource("50_ham_tray_01"), ExtResource("51_ham_tray_02"), ExtResource("52_ham_tray_03"), ExtResource("53_ham_tray_04"), ExtResource("54_ham_tray_05"), ExtResource("55_ham_tray_06")])
 
-[node name="SweetBeanSauceJar" type="TextureRect" parent="." unique_id=698685248]
+[node name="SecretSauceJar" type="TextureRect" parent="." unique_id=698685248]
 layout_mode = 0
 offset_left = 1120.0
 offset_top = 686.0
@@ -104,28 +102,6 @@ offset_right = 1243.0
 offset_bottom = 820.4
 mouse_filter = 2
 texture = ExtResource("9_sweet_bean_sauce")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ChiliSauceJar" type="TextureRect" parent="." unique_id=1273568794]
-layout_mode = 0
-offset_left = 1229.0
-offset_top = 686.0
-offset_right = 1346.0
-offset_bottom = 815.4
-mouse_filter = 2
-texture = ExtResource("27_chili_sauce")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TomatoSauceJar" type="TextureRect" parent="." unique_id=184690208]
-layout_mode = 0
-offset_left = 1332.0
-offset_top = 686.0
-offset_right = 1449.0
-offset_bottom = 815.4
-mouse_filter = 2
-texture = ExtResource("28_tomato_sauce")
 expand_mode = 1
 stretch_mode = 5
 
@@ -342,35 +318,13 @@ texture_normal = ExtResource("49_ladle_holder_filled")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="SweetSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1539400609]
+[node name="SecretSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=1539400609]
 z_index = 3
 layout_mode = 0
 offset_left = 1120.0
 offset_top = 686.0
 offset_right = 1243.0
 offset_bottom = 820.4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("31_product_drag")
-
-[node name="ChiliSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=639556417]
-z_index = 3
-layout_mode = 0
-offset_left = 1229.0
-offset_top = 686.0
-offset_right = 1346.0
-offset_bottom = 815.4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-script = ExtResource("31_product_drag")
-
-[node name="TomatoSauceHotspot" type="TextureButton" parent="PancakeWorktopHotspots" unique_id=216947675]
-z_index = 3
-layout_mode = 0
-offset_left = 1332.0
-offset_top = 686.0
-offset_right = 1449.0
-offset_bottom = 815.4
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")

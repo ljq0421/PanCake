@@ -28,14 +28,15 @@
 [ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="75_alpha_hit_button"]
 [ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="76_ladle_hit"]
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="77_sweet_sauce_hit"]
-[ext_resource type="Texture2D" uid="uid://bvpaji2rlstoq" path="res://resources/art/ingredients/condiments/chili-sauce-jar-no-brush.png" id="78_chili_sauce_hit"]
-[ext_resource type="Texture2D" uid="uid://drpu4m75u5ilv" path="res://resources/art/ingredients/condiments/tomato-sauce-jar-no-brush.png" id="79_tomato_sauce_hit"]
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/decor/fryer_zone_mat_v1_chromakey.png" id="82_fryer_zone_mat"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/decor/griddle_zone_mat_v1_chromakey.png" id="83_griddle_zone_mat"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/decor/drink_zone_mat_v1_chromakey.png" id="84_drink_zone_mat"]
+[ext_resource type="Texture2D" uid="uid://beq4ijq1alr07" path="res://resources/art/workstation/decor/fryer_zone_mat_v1_chromakey.png" id="82_fryer_zone_mat"]
+[ext_resource type="Texture2D" uid="uid://ccqtqa6lnrbjn" path="res://resources/art/workstation/decor/griddle_zone_mat_v1_chromakey.png" id="83_griddle_zone_mat"]
+[ext_resource type="Texture2D" uid="uid://dtxywx1n6a2mv" path="res://resources/art/workstation/decor/drink_zone_mat_v1_chromakey.png" id="84_drink_zone_mat"]
 [ext_resource type="Shader" uid="uid://chlolicv51r6s" path="res://resources/art/workstation/decor/three_zone_chromakey.gdshader" id="85_zone_mats_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_zone_mats"]
+shader = ExtResource("85_zone_mats_shader")
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -140,9 +141,6 @@ corner_radius_bottom_left = 14
 shadow_color = Color(0.34, 0.16, 0.04, 0.3)
 shadow_size = 8
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_zone_mats"]
-shader = ExtResource("85_zone_mats_shader")
-
 [node name="Workstation" type="Control" unique_id=54162380]
 process_mode = 1
 layout_mode = 3
@@ -214,6 +212,49 @@ mouse_filter = 2
 texture = ExtResource("12_whx3a")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="ThreeZoneLowContrastMats" type="Control" parent="SafeArea" unique_id=2132146347]
+z_index = -99
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="FryerMat" type="TextureRect" parent="SafeArea/ThreeZoneLowContrastMats" unique_id=123543715]
+self_modulate = Color(1, 1, 1, 0.42)
+material = SubResource("ShaderMaterial_zone_mats")
+layout_mode = 0
+offset_left = -3.0
+offset_top = 610.0
+offset_right = 504.0
+offset_bottom = 1103.0
+mouse_filter = 2
+texture = ExtResource("82_fryer_zone_mat")
+expand_mode = 1
+
+[node name="GriddleMat" type="Polygon2D" parent="SafeArea/ThreeZoneLowContrastMats" unique_id=1025811543]
+self_modulate = Color(1, 1, 1, 0.42)
+material = SubResource("ShaderMaterial_zone_mats")
+position = Vector2(485.62592, 554.414)
+scale = Vector2(0.6710586, 0.5554377)
+texture = ExtResource("83_griddle_zone_mat")
+polygon = PackedVector2Array(-50.84973, 200.89241, 5.3514404, 907.09296, 1389.6053, 926.70306, 1428.6874, 184.14294)
+uv = PackedVector2Array(125.32007, 184.9737, 5.3514404, 907.09296, 1389.6053, 926.70306, 1269.5673, 161.8103)
+
+[node name="DrinkMat" type="TextureRect" parent="SafeArea/ThreeZoneLowContrastMats" unique_id=1646224454]
+self_modulate = Color(1, 1, 1, 0.42)
+material = SubResource("ShaderMaterial_zone_mats")
+layout_mode = 0
+offset_left = 1416.0
+offset_top = 608.0
+offset_right = 1911.0
+offset_bottom = 1088.0
+mouse_filter = 2
+texture = ExtResource("84_drink_zone_mat")
+expand_mode = 1
 
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1
@@ -1409,7 +1450,7 @@ text = "拖入报废
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SweetSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=1176445763]
+[node name="SecretSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=1176445763]
 z_index = 201
 layout_mode = 0
 offset_left = 1120.0
@@ -1421,32 +1462,6 @@ mouse_default_cursor_shape = 2
 flat = true
 script = ExtResource("75_alpha_hit_button")
 hit_texture = ExtResource("77_sweet_sauce_hit")
-
-[node name="ChiliSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=613720593]
-z_index = 201
-layout_mode = 0
-offset_left = 1229.0
-offset_top = 686.0
-offset_right = 1346.0
-offset_bottom = 815.4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-script = ExtResource("75_alpha_hit_button")
-hit_texture = ExtResource("78_chili_sauce_hit")
-
-[node name="TomatoSauceHotspotOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=793922698]
-z_index = 201
-layout_mode = 0
-offset_left = 1332.0
-offset_top = 686.0
-offset_right = 1449.0
-offset_bottom = 815.4
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-script = ExtResource("75_alpha_hit_button")
-hit_texture = ExtResource("79_tomato_sauce_hit")
 
 [node name="BatterLadleHolderOverlayHitButton" type="Button" parent="FiveAreaInfrastructure" unique_id=878186088]
 z_index = 202
@@ -1562,49 +1577,3 @@ theme_override_font_sizes/font_size = 18
 text = "下一步"
 vertical_alignment = 1
 autowrap_mode = 2
-
-[node name="ThreeZoneLowContrastMats" type="Control" parent="." unique_id=2132146347]
-z_index = -60
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="FryerMat" type="TextureRect" parent="ThreeZoneLowContrastMats"]
-self_modulate = Color(1, 1, 1, 0.42)
-material = SubResource("ShaderMaterial_zone_mats")
-layout_mode = 0
-offset_left = -70.0
-offset_top = 480.0
-offset_right = 560.0
-offset_bottom = 1100.0
-mouse_filter = 2
-texture = ExtResource("82_fryer_zone_mat")
-expand_mode = 1
-
-[node name="GriddleMat" type="TextureRect" parent="ThreeZoneLowContrastMats"]
-self_modulate = Color(1, 1, 1, 0.42)
-material = SubResource("ShaderMaterial_zone_mats")
-layout_mode = 0
-offset_left = 490.0
-offset_top = 510.0
-offset_right = 1420.0
-offset_bottom = 1100.0
-mouse_filter = 2
-texture = ExtResource("83_griddle_zone_mat")
-expand_mode = 1
-
-[node name="DrinkMat" type="TextureRect" parent="ThreeZoneLowContrastMats"]
-self_modulate = Color(1, 1, 1, 0.42)
-material = SubResource("ShaderMaterial_zone_mats")
-layout_mode = 0
-offset_left = 1370.0
-offset_top = 480.0
-offset_right = 1970.0
-offset_bottom = 1100.0
-mouse_filter = 2
-texture = ExtResource("84_drink_zone_mat")
-expand_mode = 1

@@ -82,7 +82,6 @@ func _refresh_formal_state() -> void:
 		workstation.call("apply_progression_effects", Dictionary(session.call("five_area_progression_snapshot")))
 	_refresh_ingredient_trays()
 	_refresh_material_slot_locks()
-	_refresh_sauce_controls()
 	_sync_live_ingredient_stock()
 	_refresh_formal_five_area_state()
 	_refresh_refill_source_tooltips()
@@ -138,18 +137,6 @@ func _refresh_material_slot_locks() -> void:
 			locked_button.disabled = occupied
 			locked_button.mouse_filter = Control.MOUSE_FILTER_IGNORE if occupied else Control.MOUSE_FILTER_STOP
 			locked_button.tooltip_text = "新小料解锁后会按 Slot10 → Slot11 → Slot12 → Slot13 → Slot14 的顺序放入。"
-
-
-func _refresh_sauce_controls() -> void:
-	var session := _session()
-	if session == null:
-		return
-	var formal_snapshot: Dictionary = session.call("five_area_progression_snapshot")
-	var unlocked_stock_ids := Array(formal_snapshot.get("unlocked_stock_ids", []))
-	var chili_unlocked := unlocked_stock_ids.has(&"stock.pancake.sauce.red_chili") or unlocked_stock_ids.has("stock.pancake.sauce.red_chili")
-	var workstation := _workstation()
-	if workstation != null and workstation.has_method("set_sauce_unlocked"):
-		workstation.call("set_sauce_unlocked", &"red_chili", chili_unlocked)
 
 
 func _sync_live_ingredient_stock() -> void:

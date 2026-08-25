@@ -399,7 +399,7 @@ func next_ingredient_id() -> StringName:
 func apply_sauce(stock_id: StringName) -> void:
 	if stock_id.is_empty() or _applied_stock_portion_count(applied_sauce_ids, stock_id) >= IngredientModel.MAX_PORTIONS_PER_TYPE:
 		return
-	var sauce_type := &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var sauce_type := &"sweet_flour"
 	var stroke_id := pancake_model.begin_sauce_stroke()
 	var center := Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5
 	for offset in [-0.22, -0.08, 0.08, 0.22]:
@@ -409,7 +409,7 @@ func apply_sauce(stock_id: StringName) -> void:
 
 
 func validate_sauce_prime(stock_id: StringName) -> Dictionary:
-	if stock_id not in [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili", &"stock.pancake.sauce.tomato"]:
+	if stock_id != &"stock.pancake.sauce.sweet_flour":
 		return {"success": false, "reason": &"not_pancake_sauce"}
 	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
@@ -434,7 +434,7 @@ func prime_sauce(stock_id: StringName, validation: Dictionary = {}) -> Dictionar
 	# Sauce remains available during either cooking side and does not confirm
 	# the fire level or stop the cooking timer.
 	var grid_position := Vector2(checked.get("grid_position", Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5))
-	var sauce_type: StringName = &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var sauce_type: StringName = &"sweet_flour"
 	var stroke_id := pancake_model.begin_sauce_stroke()
 	var result := Dictionary(pancake_model.apply_sauce_sample(grid_position, 0.38, 6.0, stroke_id, 2147483647, sauce_type))
 	if int(result.get("changed_cells", 0)) <= 0:
@@ -457,7 +457,7 @@ func apply_sauce_automatically(stock_id: StringName, validation: Dictionary = {}
 	if not bool(checked.get("success", false)):
 		return checked
 	# Automatic sauce follows the same rule as manual sauce during cooking.
-	var sauce_type: StringName = &"red_chili" if stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var sauce_type: StringName = &"sweet_flour"
 	var result := Dictionary(pancake_model.apply_uniform_sauce(pancake_model.parameters.sauce_target_concentration, sauce_type))
 	if int(result.get("covered_cells", 0)) <= 0:
 		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
@@ -1110,7 +1110,7 @@ func _process_sauce_brush() -> void:
 func _apply_sauce_sample(grid_position: Vector2) -> bool:
 	if _sauce_stroke_id < 0 or _surface_stock_id.is_empty():
 		return false
-	var sauce_type: StringName = &"red_chili" if _surface_stock_id == &"stock.pancake.sauce.red_chili" else &"sweet_flour"
+	var sauce_type: StringName = &"sweet_flour"
 	var result := Dictionary(pancake_model.apply_sauce_sample(grid_position, 0.18, 3.8, _sauce_stroke_id, 2147483647, sauce_type))
 	var changed := bool(result.get("success", false)) or int(result.get("changed_cells", 0)) > 0
 	return changed
@@ -1270,7 +1270,7 @@ func _refresh_surface_cursor() -> void:
 	pancake_surface.cursor_is_t_spreader = _surface_action in [SURFACE_ACTION_SPREAD_BATTER, SURFACE_ACTION_SPREAD_EGG]
 	pancake_surface.cursor_is_sauce_brush = _surface_action == SURFACE_ACTION_BRUSH_SAUCE
 	pancake_surface.cursor_radius_pixels = 16.0 * _surface_width_multiplier
-	pancake_surface.cursor_sauce_color = Color(0.82, 0.10, 0.04, 0.98) if _surface_stock_id == &"stock.pancake.sauce.red_chili" else Color(0.34, 0.08, 0.035, 0.98)
+	pancake_surface.cursor_sauce_color = Color(0.34, 0.08, 0.035, 0.98)
 	pancake_surface.queue_redraw()
 
 

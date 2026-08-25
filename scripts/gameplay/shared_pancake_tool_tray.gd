@@ -22,7 +22,6 @@ const SLOT_DEFINITIONS := [
 	{ "name": "FlossSlot", "label": "肉松", "stock_id": &"stock.pancake.meat_floss", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1_five_area_v2.png")},
 	{ "name": "CorianderSlot", "label": "香菜", "stock_id": &"stock.pancake.coriander", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/coriander/coriander_pile_five_area_v2.png")},
 	{ "name": "MustardSlot", "label": "榨菜", "stock_id": &"stock.pancake.preserved_mustard", "source_kind": &"pancake_shared_ingredient", "texture": preload("res://resources/art/ingredients/preserved_mustard/preserved_mustard_pile_five_area_v2.png")},
-	{ "name": "ChiliSauceSlot", "label": "辣酱", "stock_id": &"stock.pancake.sauce.red_chili", "source_kind": &"pancake_shared_sauce", "texture": preload("res://resources/art/workstation/textures/red_chili_sauce_texture_v1_five_area_v2.png"), "native_drag": false},
 ]
 
 var _session: Node

@@ -623,10 +623,10 @@ theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("Style_pill")
 theme_override_styles/pressed = SubResource("Style_station_selected")
 theme_override_styles/hover = SubResource("Style_station_hover")
-text = "甜面酱刷
+text = "秘制酱料刷
 刷酱"
-metadata/tool_id = &"sweet_sauce_brush"
-metadata/display_name = "甜面酱刷"
+metadata/tool_id = &"secret_sauce_brush"
+metadata/display_name = "秘制酱料刷"
 
 [node name="FoldSpatulaToolButton" type="Button" parent="Worktop" unique_id=977436987 groups=["main_page_pancake_tool"]]
 unique_name_in_owner = true
@@ -829,23 +829,6 @@ metadata/station_name = "煎饼"
 metadata/station_id = &"pancake"
 metadata/grid_column = 7
 metadata/grid_row = 1
-
-[node name="ChiliSauce" type="Button" parent="MaterialDock/Slots" unique_id=1495037408 groups=["main_page_material_slot"]]
-custom_minimum_size = Vector2(95, 164)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
-theme_override_font_sizes/font_size = 15
-theme_override_styles/normal = SubResource("Style_material_locked")
-theme_override_styles/hover = SubResource("Style_station_hover")
-text = "辣椒酱
-待解锁"
-metadata/slot_id = &"chili_sauce"
-metadata/display_name = "辣椒酱"
-metadata/station_name = "煎饼"
-metadata/station_id = &"pancake"
-metadata/grid_column = 8
-metadata/grid_row = 1
-metadata/locked = true
 
 [node name="YoutiaoForPancake" type="Button" parent="MaterialDock/Slots" unique_id=785044079 groups=["main_page_material_slot"]]
 custom_minimum_size = Vector2(95, 164)

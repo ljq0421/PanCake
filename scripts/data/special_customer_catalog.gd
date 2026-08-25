@@ -5,14 +5,12 @@ extends RefCounted
 ## deliberately separate from the ordinary customer_01..customer_20 rotation.
 const GLUTTON := &"special.glutton"
 const STUDENT := &"special.student"
-const SPICY_FAN := &"special.spicy_fan"
 const BLOGGER := &"special.blogger"
 
-const SPECIAL_CUSTOMER_IDS: Array[StringName] = [GLUTTON, STUDENT, SPICY_FAN, BLOGGER]
+const SPECIAL_CUSTOMER_IDS: Array[StringName] = [GLUTTON, STUDENT, BLOGGER]
 const SPECIAL_ROLE_IDS: Array[StringName] = [
 	&"customer_special_glutton",
 	&"customer_special_student",
-	&"customer_special_spicy_fan",
 	&"customer_special_blogger",
 ]
 
@@ -32,14 +30,6 @@ const DEFINITIONS := {
 		"rule_text": "最低价经典简餐 · 成功额外口碑+2",
 		"patience_seconds": 90.0,
 		"unlock_completed_area_ids": [&"area.pancake"],
-	},
-	SPICY_FAN: {
-		"customer_id": &"customer_special_spicy_fan",
-		"title": "爆辣爱好者",
-		"customer_line": "只刷辣酱，辣度再往上提一档，还要刷得均匀！",
-		"rule_text": "只用辣酱 · 目标辣度×1.35 · 达标金币+35%",
-		"patience_seconds": 80.0,
-		"unlock_stock_ids": [&"stock.pancake.sauce.red_chili"],
 	},
 	BLOGGER: {
 		"customer_id": &"customer_special_blogger",

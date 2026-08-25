@@ -17,7 +17,7 @@ var unlocked_recipe_ids: Dictionary = {&"recipe.pancake.base": true}
 var unlocked_product_ids: Dictionary = {&"product.pancake.custom": true}
 var unlocked_stock_ids: Dictionary = {
 	&"stock.pancake.batter": true,
-	&"stock.pancake.egg": true,
+	&"stock.pancake.sauce.sweet_flour": true,
 }
 var unlocked_automation_ids: Dictionary = {}
 var owned_assist_ids: Dictionary = {}
@@ -316,9 +316,13 @@ func load_snapshot(value: Dictionary) -> void:
 	unlocked_product_ids = _load_id_set(value.get("unlocked_product_ids", [&"product.pancake.custom"]))
 	unlocked_product_ids[&"product.pancake.custom"] = true
 	unlocked_stock_ids = _load_id_set(value.get("unlocked_stock_ids", []))
+	# The three historic sauce stocks now resolve to one player-facing secret
+	# sauce. Preserve access for an existing save before retired IDs are pruned.
+	if bool(unlocked_stock_ids.get(&"stock.pancake.sauce.red_chili", false)) or bool(unlocked_stock_ids.get(&"stock.pancake.sauce.tomato", false)):
+		unlocked_stock_ids[&"stock.pancake.sauce.sweet_flour"] = true
 	for starter_stock_id in [
 		&"stock.pancake.batter",
-		&"stock.pancake.egg",
+		&"stock.pancake.sauce.sweet_flour",
 	]:
 		unlocked_stock_ids[starter_stock_id] = true
 	unlocked_automation_ids = _load_id_set(value.get("unlocked_automation_ids", []))
@@ -366,7 +370,7 @@ func _normalize_three_area_state() -> void:
 	for starter_recipe in [&"recipe.pancake.base"]:
 		unlocked_recipe_ids[starter_recipe] = true
 	unlocked_product_ids[&"product.pancake.custom"] = true
-	for starter_stock in [&"stock.pancake.batter", &"stock.pancake.egg"]:
+	for starter_stock in [&"stock.pancake.batter", &"stock.pancake.sauce.sweet_flour"]:
 		unlocked_stock_ids[starter_stock] = true
 
 

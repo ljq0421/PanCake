@@ -270,7 +270,13 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	if hotspot.has_method("set_filled_slot_count"):
 		hotspot.call("set_filled_slot_count", count)
 	var label := _stock_label(stock_id)
-	var hint := "%s：拖到鏊面；原地长按补货" % label if source_kind == &"pancake_shared_ingredient" else "%s：点击后在鏊面拖刷；原地长按补货" % label
+	var one_click_enabled := source_kind == &"pancake_shared_ingredient" and _one_click_ingredient_enabled(stock_id)
+	var click_action := "点击打蛋" if stock_id == EGG_STOCK_ID else "点击加入煎饼"
+	var hint := (
+		"%s：%s；拖到鏊面；原地长按补货" % [label, click_action]
+		if one_click_enabled
+		else "%s：拖到鏊面；原地长按补货" % label
+	) if source_kind == &"pancake_shared_ingredient" else "%s：点击后在鏊面拖刷；原地长按补货" % label
 	if not unlocked:
 		hint = "%s尚未解锁" % label
 	elif count <= 0:
@@ -356,6 +362,13 @@ func _on_material_short_clicked(source_ref: Dictionary, hotspot: ProductDragSour
 	if stock_id.is_empty():
 		return
 	if source_kind == &"pancake_shared_ingredient":
+		var station := _griddle_station()
+		if station != null and station.has_method("one_click_ingredient_enabled") and bool(station.call("one_click_ingredient_enabled", stock_id)):
+			var result := Dictionary(station.call("apply_one_click_ingredient", stock_id))
+			if not bool(result.get("success", false)):
+				hotspot.release_focus()
+			call_deferred("refresh_from_session")
+			return
 		status_message.emit("拖动%s到鏊面；原地长按可补货" % _stock_label(stock_id))
 		return
 	var station := _griddle_station()
@@ -386,6 +399,11 @@ func _on_material_drag_ended(source_ref: Dictionary, successful: bool, _hotspot:
 	if station != null and station.has_method("finish_ingredient_drag"):
 		station.call("finish_ingredient_drag", source_ref, successful)
 	call_deferred("refresh_from_session")
+
+
+func _one_click_ingredient_enabled(stock_id: StringName) -> bool:
+	var station := _griddle_station()
+	return station != null and station.has_method("one_click_ingredient_enabled") and bool(station.call("one_click_ingredient_enabled", stock_id))
 
 
 func _on_material_hold_requested(source_ref: Dictionary, hotspot: ProductDragSource) -> void:

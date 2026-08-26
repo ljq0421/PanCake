@@ -83,6 +83,7 @@ func _run() -> void:
 	_test_sauce_selection_and_first_stroke(station, unit, session)
 	_test_automatic_sauce_brush(station, unit, session)
 	_test_sauce_guards_second_side_and_restore(station, unit, session)
+	_test_one_click_ingredient_upgrades(station, unit, session)
 	await _test_worktop_hotspot_mapping(session)
 	station.queue_free()
 	session.queue_free()
@@ -219,6 +220,36 @@ func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, sessi
 	_check(not bool(wrong_stage.get("success", false)) and int(session.inventory[str(sauce_id)]) == before_wrong_stage, "wrong-stage sauce click does not consume inventory")
 
 
+func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: FakeSession) -> void:
+	var stock_ids: Array[StringName] = [
+		&"stock.pancake.egg",
+		&"stock.pancake.baocui",
+		&"stock.pancake.scallion",
+		&"stock.pancake.ham_sausage",
+		&"stock.pancake.coriander",
+		&"stock.pancake.meat_floss",
+	]
+	for stock_id in stock_ids:
+		var growth_id := StringName(MultiGriddleStation.ONE_CLICK_INGREDIENT_GROWTH_IDS.get(stock_id, &""))
+		session.progression.owned_growth[growth_id] = true
+		session.inventory[str(stock_id)] = 2
+		unit.begin_order({})
+		var pressed := Dictionary(unit.use_press_spreader())
+		_check(bool(pressed.get("success", false)), "%s test pancake reaches the first cooking side" % stock_id)
+		var before := int(session.inventory[str(stock_id)])
+		var added := Dictionary(station.apply_one_click_ingredient(stock_id))
+		_check(
+			bool(added.get("success", false)) and bool(added.get("automated", false)) and int(session.inventory[str(stock_id)]) == before - 1,
+			"%s one-click upgrade adds exactly one inventory-backed portion" % stock_id
+		)
+		var ingredient_type := StringName(added.get("ingredient_type", &""))
+		_check(unit.ingredient_model.count_type(ingredient_type) == 1, "%s one-click upgrade creates one pancake placement" % stock_id)
+		if stock_id == &"stock.pancake.egg":
+			_check(unit.pancake_model.has_egg(), "one-click egg upgrade cracks an egg onto the pancake")
+		session.progression.owned_growth.erase(growth_id)
+		unit.reset_unit()
+
+
 func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	_check(HOTSPOTS_SCRIPT.SAUCE_HOTSPOT_IDS.size() == 1, "the physical worktop exposes exactly one secret-sauce source")
 	_check(HOTSPOTS_SCRIPT.SAUCE_HOTSPOT_IDS.get(&"SecretSauceSource/Hotspot", &"") == &"stock.pancake.sauce.sweet_flour", "the secret-sauce component maps to sweet-flour sauce stock")
@@ -287,6 +318,19 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var egg_preview := egg_source.drag_preview_texture
 	_check(egg_preview != null and egg_preview.resource_path.ends_with("egg_whole_v1_five_area_v2.png"), "egg drag shows a whole egg before release")
 	_check(egg_source.drag_preview_offset == Vector2(0.0, -60.0), "egg drag preview stays 60px above the release point")
+	var scallion_click_source := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
+	session.progression.owned_growth[&"growth.automation.pancake.one_click_scallion"] = true
+	unit.begin_order({})
+	var click_pancake_pressed := Dictionary(unit.use_press_spreader())
+	_check(bool(click_pancake_pressed.get("success", false)), "one-click hotspot test pancake reaches the first cooking side")
+	var scallion_before_click := int(session.inventory["stock.pancake.scallion"])
+	hotspots.call("_on_material_short_clicked", scallion_click_source.source_ref(), scallion_click_source)
+	_check(
+		unit.ingredient_model.count_type(IngredientModel.SCALLION) == 1 and int(session.inventory["stock.pancake.scallion"]) == scallion_before_click - 1,
+		"an upgraded scallion hotspot click adds one portion without starting a drag"
+	)
+	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_scallion")
+	unit.reset_unit()
 	var secret_sauce := hotspots.get_node("SecretSauceSource/Hotspot") as ProductDragSource
 	_check(not secret_sauce.native_drag_enabled and not secret_sauce.disabled, "secret sauce selects direct brushing on its own component-local input surface")
 	_check(batter_ladle.tooltip_text == "点击拿起面糊勺，在空鏊子上按住并拖动调整落点", "basic batter ladle explains the movable pour interaction")

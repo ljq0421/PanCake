@@ -530,6 +530,162 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="WorkshopProp_growth_automation_pancake_one_click_scallion" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 0
+offset_left = 610.0
+offset_top = 405.0
+offset_right = 738.0
+offset_bottom = 443.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.one_click_scallion"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_scallion"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "一键撒葱\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_one_click_baocui" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 0
+offset_left = 762.0
+offset_top = 405.0
+offset_right = 890.0
+offset_bottom = 443.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.one_click_baocui"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_baocui"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "一键加薄脆\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_one_click_egg" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 0
+offset_left = 1010.0
+offset_top = 705.0
+offset_right = 1138.0
+offset_bottom = 743.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.one_click_egg"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_egg"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "一键打蛋\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_one_click_ham_sausage" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 0
+offset_left = 1310.0
+offset_top = 425.0
+offset_right = 1438.0
+offset_bottom = 463.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.one_click_ham_sausage"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_ham_sausage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "一键加火腿\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_one_click_coriander" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 0
+offset_left = 465.0
+offset_top = 425.0
+offset_right = 593.0
+offset_bottom = 463.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.one_click_coriander"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_coriander"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "一键撒香菜\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_automation_pancake_one_click_meat_floss" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(128, 38)
+layout_mode = 0
+offset_left = 1132.0
+offset_top = 425.0
+offset_right = 1260.0
+offset_bottom = 463.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.automation.pancake.one_click_meat_floss"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_meat_floss"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "一键加肉松\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 [node name="WorkshopProp_growth_capacity_youtiao_finished_tray" type="Button" parent="UpgradeProps" unique_id=1756423729]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0

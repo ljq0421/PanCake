@@ -10,6 +10,14 @@ const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
 const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain", &"product.youtiao.sesame"]
+const ONE_CLICK_INGREDIENT_GROWTH_IDS: Dictionary = {
+	&"stock.pancake.egg": &"growth.automation.pancake.one_click_egg",
+	&"stock.pancake.baocui": &"growth.automation.pancake.one_click_baocui",
+	&"stock.pancake.scallion": &"growth.automation.pancake.one_click_scallion",
+	&"stock.pancake.ham_sausage": &"growth.automation.pancake.one_click_ham_sausage",
+	&"stock.pancake.coriander": &"growth.automation.pancake.one_click_coriander",
+	&"stock.pancake.meat_floss": &"growth.automation.pancake.one_click_meat_floss",
+}
 
 @onready var units: Array[Node] = [%Griddle01]
 
@@ -390,6 +398,36 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 		else "%s已放到%s%s" % [placed_label, unit.display_name(), "；未翻面交付会额外扣12分" if not unit.pancake_model.is_flipped else ""]
 	)
 	return placed
+
+
+func one_click_ingredient_enabled(stock_id: StringName) -> bool:
+	var growth_id := StringName(ONE_CLICK_INGREDIENT_GROWTH_IDS.get(stock_id, &""))
+	if growth_id.is_empty() or _session == null or not _session.has_method("progression_service"):
+		return false
+	var progression: RefCounted = _session.call("progression_service")
+	return progression != null and bool(progression.call("owns_growth", growth_id))
+
+
+func apply_one_click_ingredient(stock_id: StringName) -> Dictionary:
+	if not one_click_ingredient_enabled(stock_id):
+		return {"success": false, "reason": &"automation_locked", "stock_id": stock_id}
+	var unit := _unit(_active_index)
+	if unit == null:
+		return {"success": false, "reason": &"griddle_locked", "stock_id": stock_id}
+	var source_ref := {"source_kind": &"pancake_shared_ingredient", "stock_id": stock_id}
+	var result := Dictionary(drop_on_unit(_active_index, source_ref, unit.pancake_surface.size * 0.5))
+	if bool(result.get("success", false)):
+		return result.merged({"automated": true}, true)
+	match StringName(result.get("reason", &"")):
+		&"insufficient_stock", &"source_unavailable":
+			status_message.emit("%s库存不足；请长按小料补货" % _stock_label(stock_id))
+		&"portion_limit":
+			status_message.emit("同一种小料最多加2份")
+		&"outside_pancake":
+			status_message.emit("当前饼面没有可添加%s的位置" % _stock_label(stock_id))
+		&"wrong_stage":
+			status_message.emit("摊开面饼后才能点击%s" % _stock_label(stock_id))
+	return result
 
 
 func _source_matches_reserved_ingredient_drag(source_ref: Dictionary) -> bool:

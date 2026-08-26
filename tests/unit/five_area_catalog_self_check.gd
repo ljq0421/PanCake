@@ -10,7 +10,7 @@ func _run() -> void:
 	var catalog_errors := CATALOG.validate_catalog()
 	_check(catalog_errors.is_empty(), "catalog validation: %s" % ", ".join(catalog_errors))
 	_check(CATALOG.AREA_IDS == [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "only pancake, youtiao and fresh soy remain active")
-	_check(CATALOG.growth_ids().size() == 21, "growth route includes the three staged pancake ingredients and the oil-strip finished-product tray")
+	_check(CATALOG.growth_ids().size() == 25, "growth route includes the six independent one-click pancake ingredient upgrades")
 	var sweet_flour_unlock := CATALOG.growth_definition(&"growth.add_on.pancake.sweet_flour")
 	var baocui_unlock := CATALOG.growth_definition(&"growth.add_on.pancake.baocui")
 	var scallion_unlock := CATALOG.growth_definition(&"growth.add_on.pancake.scallion")

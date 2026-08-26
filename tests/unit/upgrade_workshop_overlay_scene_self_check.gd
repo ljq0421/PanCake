@@ -47,6 +47,7 @@ func _run() -> void:
 		var sesame_prop := props.get_node_or_null("WorkshopProp_growth_flavor_youtiao_sesame") as Button
 		var baocui_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_baocui") as Button
 		var scallion_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_scallion") as Button
+		var one_click_egg_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_one_click_egg") as Button
 		_check(press_prop != null and not press_prop.visible, "press is hidden until the wide spreader is installed")
 		_check(initial_soy_prop != null and initial_soy_prop.visible, "initial soy machine is the only soy machine label before the soy area is unlocked")
 		_check(intermediate_soy_prop != null and not intermediate_soy_prop.visible, "intermediate soy machine is hidden until the initial machine is installed")
@@ -58,6 +59,7 @@ func _run() -> void:
 		_check(finished_tray_prop != null and finished_tray_prop.tooltip_text.contains("先解锁油条区域"), "finished-youtiao tray hover explains its reservation prerequisite")
 		_check(baocui_prop != null and baocui_prop.visible and baocui_prop.tooltip_text.contains("煎饼合格 4 次"), "baocui tag remains visible and explains its qualification requirement")
 		_check(scallion_prop != null and scallion_prop.visible and scallion_prop.tooltip_text.contains("煎饼合格 6 次"), "scallion tag remains visible and explains its qualification requirement")
+		_check(one_click_egg_prop != null and one_click_egg_prop.visible and one_click_egg_prop.tooltip_text.contains("拥有鸡蛋"), "one-click egg remains visible and explains that eggs must be unlocked first")
 		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true})
 		progression.set("owned_growth_ids", {&"growth.area.youtiao": true})
 		overlay.refresh()

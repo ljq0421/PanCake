@@ -69,6 +69,12 @@ func refresh() -> void:
 			&"growth.add_on.pancake.egg",
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",
+			&"growth.automation.pancake.one_click_egg",
+			&"growth.automation.pancake.one_click_baocui",
+			&"growth.automation.pancake.one_click_scallion",
+			&"growth.automation.pancake.one_click_ham_sausage",
+			&"growth.automation.pancake.one_click_coriander",
+			&"growth.automation.pancake.one_click_meat_floss",
 		]
 		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"]
 		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]

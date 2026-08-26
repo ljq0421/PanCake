@@ -151,6 +151,12 @@ const AUTOMATION_DEFINITIONS := {
 	&"automation.pancake.auto_batter_ladle": {"area_id": &"area.pancake"},
 	&"automation.pancake.press_once": {"area_id": &"area.pancake"},
 	&"automation.pancake.auto_sauce_brush": {"area_id": &"area.pancake"},
+	&"automation.pancake.one_click_egg": {"area_id": &"area.pancake"},
+	&"automation.pancake.one_click_baocui": {"area_id": &"area.pancake"},
+	&"automation.pancake.one_click_scallion": {"area_id": &"area.pancake"},
+	&"automation.pancake.one_click_ham_sausage": {"area_id": &"area.pancake"},
+	&"automation.pancake.one_click_coriander": {"area_id": &"area.pancake"},
+	&"automation.pancake.one_click_meat_floss": {"area_id": &"area.pancake"},
 	&"automation.youtiao.auto_lift": {"area_id": &"area.youtiao"},
 	&"automation.fresh_soy_milk.auto_fill": {"area_id": &"area.fresh_soy_milk"},
 	&"automation.fresh_soy_milk.double_fill": {"area_id": &"area.fresh_soy_milk"},
@@ -158,12 +164,18 @@ const AUTOMATION_DEFINITIONS := {
 const RESTOCK_DEFINITIONS := {"stock_definition_is_source": true}
 const GROWTH_DEFINITIONS := {
 	&"growth.add_on.pancake.egg": {"label":"鸡蛋", "kind":&"stock_unlock", "price":4, "requires_area_id":&"area.pancake", "requires_tutorial_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.egg"], "anchor_id":&"pancake.egg"},
+	&"growth.automation.pancake.one_click_egg": {"label":"一键打蛋", "kind":&"automation", "price":16, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg"], "requires_mastery":{&"area.pancake":{"a_grade":2}}, "automation_id":&"automation.pancake.one_click_egg", "anchor_id":&"pancake.egg"},
 	&"growth.add_on.pancake.baocui": {"label":"薄脆", "kind":&"stock_unlock", "price":8, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":4}}, "unlock_stock_ids":[&"stock.pancake.baocui"], "anchor_id":&"pancake.baocui"},
+	&"growth.automation.pancake.one_click_baocui": {"label":"一键加薄脆", "kind":&"automation", "price":20, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.baocui"], "requires_mastery":{&"area.pancake":{"a_grade":3}}, "automation_id":&"automation.pancake.one_click_baocui", "anchor_id":&"pancake.baocui"},
 	&"growth.add_on.pancake.scallion": {"label":"香葱罐", "kind":&"stock_unlock", "price":8, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":6}}, "unlock_stock_ids":[&"stock.pancake.scallion"], "anchor_id":&"pancake.scallion"},
+	&"growth.automation.pancake.one_click_scallion": {"label":"一键撒葱", "kind":&"automation", "price":24, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.scallion"], "requires_mastery":{&"area.pancake":{"a_grade":4}}, "automation_id":&"automation.pancake.one_click_scallion", "anchor_id":&"pancake.scallion"},
 	&"growth.tool.pancake.wide_spreader": {"label":"宽幅摊饼器", "kind":&"tool", "price":12, "min_day":2, "requires_area_id":&"area.pancake", "anchor_id":&"pancake.spreader"},
 	&"growth.add_on.pancake.ham_sausage": {"label":"火腿", "kind":&"stock_unlock", "price":12, "min_day":4, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.ham_sausage"], "anchor_id":&"pancake.ham"},
+	&"growth.automation.pancake.one_click_ham_sausage": {"label":"一键加火腿", "kind":&"automation", "price":28, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.ham_sausage"], "requires_mastery":{&"area.pancake":{"a_grade":5}}, "automation_id":&"automation.pancake.one_click_ham_sausage", "anchor_id":&"pancake.ham"},
 	&"growth.add_on.pancake.coriander": {"label":"香菜", "kind":&"stock_unlock", "price":10, "min_day":6, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.coriander"], "anchor_id":&"pancake.coriander"},
+	&"growth.automation.pancake.one_click_coriander": {"label":"一键撒香菜", "kind":&"automation", "price":32, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.coriander"], "requires_mastery":{&"area.pancake":{"a_grade":6}}, "automation_id":&"automation.pancake.one_click_coriander", "anchor_id":&"pancake.coriander"},
 	&"growth.add_on.pancake.meat_floss": {"label":"肉松", "kind":&"stock_unlock", "price":18, "min_reputation":45, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.meat_floss"], "anchor_id":&"pancake.meat_floss"},
+	&"growth.automation.pancake.one_click_meat_floss": {"label":"一键加肉松", "kind":&"automation", "price":40, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.meat_floss"], "requires_mastery":{&"area.pancake":{"a_grade":7}}, "automation_id":&"automation.pancake.one_click_meat_floss", "anchor_id":&"pancake.meat_floss"},
 	&"growth.automation.pancake.auto_batter_ladle": {"label":"定量面糊勺", "kind":&"automation", "price":20, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":3}}, "automation_id":&"automation.pancake.auto_batter_ladle", "anchor_id":&"pancake.ladle"},
 	&"growth.automation.pancake.press_once": {"label":"压饼器", "kind":&"automation", "price":36, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":5}}, "requires_growth_ids":[&"growth.tool.pancake.wide_spreader"], "automation_id":&"automation.pancake.press_once", "anchor_id":&"pancake.press"},
 	&"growth.automation.pancake.auto_sauce_brush": {"label":"自动刷酱", "kind":&"automation", "price":48, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":8}}, "automation_id":&"automation.pancake.auto_sauce_brush", "anchor_id":&"pancake.brush"},
@@ -179,7 +191,7 @@ const GROWTH_DEFINITIONS := {
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
-	&"growth.add_on.pancake.egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.tool.pancake.wide_spreader", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
+	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.automation.pancake.one_click_baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.one_click_scallion", &"growth.tool.pancake.wide_spreader", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.ham_sausage", &"growth.automation.pancake.one_click_ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.one_click_coriander", &"growth.add_on.pancake.meat_floss", &"growth.automation.pancake.one_click_meat_floss", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
 	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.flavor.youtiao.sesame", &"growth.equipment.youtiao.advanced",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.assist.fresh_soy_milk.ice", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
 ]

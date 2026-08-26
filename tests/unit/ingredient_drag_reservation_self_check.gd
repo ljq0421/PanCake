@@ -75,7 +75,7 @@ func _run() -> void:
 	source.size = Vector2(100.0, 100.0)
 	basket.add_child(source)
 	hotspots.add_child(basket)
-	hotspots.baocui_basket_textures = [_solid_texture(Color.ORANGE)]
+	hotspots.baocui_tray_textures = [_solid_texture(Color.ORANGE)]
 	root.add_child(hotspots)
 	await process_frame
 	hotspots.bind_session(session)
@@ -83,12 +83,12 @@ func _run() -> void:
 	_start_drag(source)
 	await process_frame
 	_check(int(session.inventory.get(str(STOCK_ID), -1)) == 0, "drag start immediately removes one crisp from inventory")
-	_check(visual.texture == HOTSPOTS_SCRIPT.BAOCUI_EMPTY_BASKET, "drag start immediately shows one fewer crisp in the basket")
+	_check(visual.texture == HOTSPOTS_SCRIPT.BAOCUI_EMPTY_TRAY, "drag start immediately shows one fewer crisp in the tray")
 
 	source.drag_ended.emit(source.source_ref(), false)
 	await process_frame
 	_check(int(session.inventory.get(str(STOCK_ID), -1)) == 1, "an unsuccessful drag restores its reserved crisp")
-	_check(visual.texture == hotspots.baocui_basket_textures.front(), "an unsuccessful drag restores the basket artwork")
+	_check(visual.texture == hotspots.baocui_tray_textures.front(), "an unsuccessful drag restores the tray artwork")
 
 	var unit: CompactGriddleUnit = station.units[0]
 	unit.begin_order({})

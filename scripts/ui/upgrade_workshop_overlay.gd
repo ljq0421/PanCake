@@ -5,6 +5,9 @@ extends Control
 signal begin_next_day_requested
 signal closed
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const PRESS_SPREADER_PROP_PATH := NodePath("UpgradeProps/WorkshopProp_growth_automation_pancake_press_once")
+const RUNTIME_PRESS_VISUAL_PATH := NodePath("JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
+const EDITOR_PRESS_VISUAL_PATH := NodePath("SyncedWorkstationPreview/SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
 const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
 	NodePath("SafeArea/ServiceCustomer1"),
 	NodePath("SafeArea/ServiceCustomer2"),
@@ -56,6 +59,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		_editor_preview.visible = true
 		_configure_editor_workstation_preview()
+		call_deferred("_sync_press_spreader_layout")
 		return
 	_editor_preview.visible = false
 	_buy.pressed.connect(_on_buy)
@@ -94,9 +98,8 @@ func refresh() -> void:
 	var owned_growth_ids := Array(progression.get("owned_growth_ids", []))
 	var youtiao_upgrade_id := _next_youtiao_fryer_upgrade(owned_growth_ids)
 	var soy_milk_machine_upgrade_id := _next_soy_milk_machine_upgrade(owned_growth_ids)
-	var wide_spreader_owned := owned_growth_ids.has("growth.tool.pancake.wide_spreader")
 	var press_spreader_owned := owned_growth_ids.has("growth.automation.pancake.press_once")
-	_press_preview.visible = wide_spreader_owned
+	_press_preview.visible = true
 	_press_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if press_spreader_owned else 0.42)
 	var queued_labels := PackedStringArray()
 	for raw_id in Array(Dictionary(session.call("five_area_progression_snapshot")).get("pending_growth_ids", [])):
@@ -144,6 +147,38 @@ func refresh() -> void:
 	elif not _selected_id.is_empty():
 		_selected_id = &""
 		_detail_panel.visible = false
+	_sync_press_spreader_layout()
+
+
+func _sync_press_spreader_layout() -> void:
+	var source := _preview_spreader_source()
+	if source == null or _press_preview == null:
+		return
+	var source_rect := _rect_in_overlay_space(source.get_global_rect())
+	if source_rect.size.x <= 0.0 or source_rect.size.y <= 0.0:
+		return
+	_press_preview.position = source_rect.position
+	_press_preview.size = source_rect.size
+	var press_prop := get_node_or_null(PRESS_SPREADER_PROP_PATH) as Control
+	if press_prop != null:
+		press_prop.position = Vector2(
+			source_rect.get_center().x - press_prop.size.x * 0.5,
+			source_rect.end.y - press_prop.size.y
+		)
+
+
+func _preview_spreader_source() -> Control:
+	if Engine.is_editor_hint():
+		return _editor_preview.get_node_or_null(EDITOR_PRESS_VISUAL_PATH) as Control if _editor_preview != null else null
+	var workstation_safe_area := get_parent()
+	return workstation_safe_area.get_node_or_null(RUNTIME_PRESS_VISUAL_PATH) as Control if workstation_safe_area != null else null
+
+
+func _rect_in_overlay_space(global_rect: Rect2) -> Rect2:
+	var inverse_transform := get_global_transform_with_canvas().affine_inverse()
+	var local_position := inverse_transform * global_rect.position
+	var local_end := inverse_transform * global_rect.end
+	return Rect2(local_position, local_end - local_position)
 
 
 func _has_owned_growth_prerequisites(growth_id: StringName, owned_growth_ids: Array) -> bool:

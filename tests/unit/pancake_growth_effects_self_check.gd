@@ -1,7 +1,6 @@
 extends SceneTree
 
 const MODEL = preload("res://scripts/simulation/pancake_model.gd")
-const CATALOG = preload("res://scripts/data/workstation_expansion_catalog.gd")
 
 var _failures: Array[String] = []
 
@@ -39,14 +38,6 @@ func _run() -> void:
 	_check(is_equal_approx(mass_before, mass_after), "press automation preserves the poured batter mass")
 	_check(max_thickness - min_thickness <= 0.00001, "press automation produces uniform thickness")
 	_check(max_damage <= 0.0 and press_model.call("validate").is_empty(), "press automation removes holes and damage without corrupting simulation fields")
-	_check(is_equal_approx(float(CATALOG.item_effect(CATALOG.TOOL_SPREADER_WIDE).get("width_multiplier", 0.0)), 1.65), "wide spreader catalog grants a clearly larger 65% coverage width")
-	var basic_model: RefCounted = MODEL.new(128)
-	var wide_model: RefCounted = MODEL.new(128)
-	for model in [basic_model, wide_model]:
-		model.call("add_batter", Vector2(63, 63), 3.0, 36.0)
-	var basic_result: Dictionary = basic_model.call("apply_scraper_sample", Vector2(63, 63), Vector2.RIGHT, 72.0, 1.0)
-	var wide_result: Dictionary = wide_model.call("apply_scraper_sample", Vector2(63, 63), Vector2.RIGHT, 72.0, CATALOG.WIDE_SPREADER_WIDTH_MULTIPLIER)
-	_check(int(wide_result.get("changed_cells", 0)) > int(basic_result.get("changed_cells", 0)), "wide spreader affects more batter cells than the base tool with one matching stroke")
 	_finish()
 
 

@@ -559,10 +559,7 @@ func _set_selected_tool(tool_id: StringName) -> void:
 
 
 func _spreader_width_multiplier() -> float:
-	if _session == null or not _session.has_method("progression_service"):
-		return 1.0
-	var progression: RefCounted = _session.call("progression_service")
-	return 1.65 if bool(progression.call("owns_growth", &"growth.tool.pancake.wide_spreader")) else 1.0
+	return 1.0
 
 
 func _consume_ingredient(stock_id: StringName) -> Dictionary:

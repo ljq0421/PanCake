@@ -38,7 +38,6 @@ var fill_guide_enabled := false
 var auto_fill_enabled := false
 var double_fill_enabled := false
 var sugar_enabled := false
-var ice_enabled := false
 
 
 func _init(next_tier: int = 0, is_owned: bool = false) -> void:
@@ -54,12 +53,11 @@ func configure_owned(next_tier: int) -> Dictionary:
 	return _success()
 
 
-func configure_upgrades(has_fill_guide: bool, has_auto_fill: bool, has_sugar: bool = false, has_ice: bool = false, has_double_fill: bool = false) -> void:
+func configure_upgrades(has_fill_guide: bool, has_auto_fill: bool, has_sugar: bool = false, has_double_fill: bool = false) -> void:
 	fill_guide_enabled = has_fill_guide
 	auto_fill_enabled = has_auto_fill
 	double_fill_enabled = has_auto_fill and has_double_fill
 	sugar_enabled = has_sugar
-	ice_enabled = has_ice
 
 
 func configure_available_recipes(next_recipe_ids: Array) -> void:
@@ -226,21 +224,6 @@ func add_sugar(cup_index: int = 0) -> Dictionary:
 	return _success({"cup": selected_cup.duplicate(true), "cup_index": cup_index, "sugar_servings": sugar_servings + 1})
 
 
-func add_ice(cup_index: int = 0) -> Dictionary:
-	if not ice_enabled:
-		return _failure(&"ice_locked")
-	if cup_state != CUP_FILLED:
-		return _failure(&"filled_cup_required")
-	var selected_cup := _cup_for_index(cup_index)
-	if selected_cup.is_empty():
-		return _failure(&"invalid_cup_index")
-	if StringName(selected_cup.get("temperature_mode", &"room_temperature")) == &"iced":
-		return _failure(&"ice_already_added")
-	selected_cup["temperature_mode"] = &"iced"
-	_replace_cup(cup_index, selected_cup)
-	return _success({"cup": selected_cup.duplicate(true), "cup_index": cup_index, "temperature_mode": &"iced"})
-
-
 # Retired production-loop entry points are retained as explicit failures so
 # legacy callers cannot silently recreate the bean/water workflow.
 func add_ingredient(_stock_id: StringName) -> Dictionary:
@@ -364,7 +347,6 @@ func snapshot() -> Dictionary:
 		"auto_fill_enabled": auto_fill_enabled,
 		"double_fill_enabled": double_fill_enabled,
 		"sugar_enabled": sugar_enabled,
-		"ice_enabled": ice_enabled,
 		# This station's queue is served through the same foreground cup source;
 		# it is not the retired output-rack mechanic.
 		"output_rack": [],

@@ -31,7 +31,6 @@ func _run() -> void:
 	var unit: Node = station.units[0]
 	var progression: RefCounted = session.call("progression_service")
 	var owned_growth: Dictionary = Dictionary(progression.get("owned_growth_ids")).duplicate(true)
-	owned_growth[&"growth.tool.pancake.wide_spreader"] = true
 	owned_growth[&"growth.automation.pancake.press_once"] = true
 	progression.set("owned_growth_ids", owned_growth)
 	var worktop := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots

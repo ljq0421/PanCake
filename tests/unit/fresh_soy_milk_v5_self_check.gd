@@ -29,7 +29,7 @@ func _initialize() -> void:
 	_check(bool(auto_fill.get("success", false)) and is_equal_approx(float(auto_fill.get("fill_ratio", 0.0)), 1.0), "the current auto-fill upgrade fills one foreground cup")
 
 	var advanced: RefCounted = MODEL.new(0, true)
-	advanced.call("configure_upgrades", true, true, true, true, true)
+	advanced.call("configure_upgrades", true, true, true, true)
 	advanced.call("take_empty_cup")
 	advanced.call("take_empty_cup")
 	var double_fill := Dictionary(advanced.call("fill_held_cup", 0.01, 2))

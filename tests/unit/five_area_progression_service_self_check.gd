@@ -19,10 +19,10 @@ func _run() -> void:
 	_check(not starter.owns_stock(&"stock.pancake.egg") and not starter.owns_stock(&"stock.pancake.baocui") and not starter.owns_stock(&"stock.pancake.scallion") and starter.owns_stock(&"stock.pancake.sauce.sweet_flour"), "new game starts without pancake toppings; egg unlock follows the pancake tutorial")
 	var route_ids := PackedStringArray(CATALOG.growth_ids())
 	_check(route_ids == PackedStringArray([
-		"growth.add_on.pancake.sweet_flour", "growth.add_on.pancake.baocui", "growth.add_on.pancake.scallion", "growth.tool.pancake.wide_spreader", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
+		"growth.add_on.pancake.sweet_flour", "growth.add_on.pancake.baocui", "growth.add_on.pancake.scallion", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
 		"growth.add_on.pancake.meat_floss", "growth.add_on.pancake.tomato", "growth.automation.pancake.press_once", "growth.automation.pancake.auto_sauce_brush",
 		"growth.area.youtiao", "growth.capacity.youtiao_finished_tray", "growth.flavor.youtiao.sesame", "growth.equipment.youtiao.advanced",
-		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.sugar", "growth.assist.fresh_soy_milk.ice", "growth.automation.fresh_soy_milk.auto_fill", "growth.automation.fresh_soy_milk.advanced",
+		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.sugar", "growth.automation.fresh_soy_milk.auto_fill", "growth.automation.fresh_soy_milk.advanced",
 	]), "growth route contains only active upgrades in display order")
 	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake"), "retired fryer recipes are absent from growth")
 	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 4, "automatic filling requires four A-grade soy orders")
@@ -37,21 +37,21 @@ func _run() -> void:
 		"tutorial": {"completed_area_ids": [], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
 	})
 	var early_cards: Array = Array(early.growth_recommendations(4).get("recommended", []))
-	_check(_growth_ids(early_cards) == [&"growth.tool.pancake.wide_spreader", &"growth.add_on.pancake.red_chili", &"growth.add_on.pancake.ham_sausage", &"growth.area.youtiao"], "early route leads from pancake improvements into youtiao")
-	var wide_only := SERVICE.new({
+	_check(not _growth_ids(early_cards).has(&"growth.tool.pancake.wide_spreader"), "early growth route no longer offers the retired wide spreader")
+	var press_direct := SERVICE.new({
 		"coins": 200,
 		"reputation": 30,
 		"current_day": 4,
 		"unlocked_area_ids": [&"area.pancake"],
-		"area_mastery_details": {&"area.pancake": {"qualified": 6, "a_grade": 4}},
+		"area_mastery_details": {&"area.pancake": {"qualified": 6, "a_grade": 5}},
 		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
 	})
-	_check(bool(wide_only.purchase(&"growth.tool.pancake.wide_spreader").get("success", false)), "wide spreader can be reserved through the normal growth route")
-	wide_only.set_day_open(false)
-	wide_only.begin_next_business_day()
-	wide_only.advance_tutorial_for_new_business_day()
-	var wide_tutorial := wide_only.tutorial_snapshot()
-	_check(wide_only.owns_growth(&"growth.tool.pancake.wide_spreader") and StringName(wide_tutorial.get("active_id", &"")).is_empty() and PackedStringArray(wide_tutorial.get("queue_area_ids", [])).is_empty() and PackedStringArray(wide_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(wide_tutorial.get("queue_device_ids", [])).is_empty(), "wide spreader activation never creates a tutorial and legacy device tutorial fields remain empty")
+	_check(bool(press_direct.purchase(&"growth.automation.pancake.press_once").get("success", false)), "press can be reserved directly from the base spreader route")
+	press_direct.set_day_open(false)
+	press_direct.begin_next_business_day()
+	press_direct.advance_tutorial_for_new_business_day()
+	var press_tutorial := press_direct.tutorial_snapshot()
+	_check(press_direct.owns_growth(&"growth.automation.pancake.press_once") and StringName(press_tutorial.get("active_id", &"")).is_empty() and PackedStringArray(press_tutorial.get("queue_area_ids", [])).is_empty() and PackedStringArray(press_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(press_tutorial.get("queue_device_ids", [])).is_empty(), "press activation creates no tutorial and legacy device tutorial fields remain empty")
 	var youtiao_purchase := Dictionary(early.purchase(&"growth.area.youtiao"))
 	_check(bool(youtiao_purchase.get("success", false)) and early.pending_install_purchase == &"growth.area.youtiao", "qualified pancake play can reserve the 30-coin youtiao unlock without completing teaching")
 	early.set_day_open(false)

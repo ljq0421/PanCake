@@ -16,8 +16,6 @@ const CUP_SIDE_SAMPLES := 12
 const SURFACE_SAMPLES := 18
 const SUGAR_PARTICLE_COUNT := 11
 const SUGAR_ANIMATION_SECONDS := 0.30
-const ICE_CUBE_COUNT := 5
-const ICE_ANIMATION_SECONDS := 0.30
 const CUP_RIM_Y_RATIO := 0.21
 const CUP_BOTTOM_Y_RATIO := 0.84
 const CUP_TOP_HALF_WIDTH_RATIO := 0.39
@@ -36,8 +34,6 @@ var _cup_top_half_width := 26.0
 var _cup_bottom_half_width := 18.0
 var _sugar_animation_time := -1.0
 var _sugar_source := Vector2.ZERO
-var _ice_animation_time := -1.0
-var _ice_source := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -59,14 +55,6 @@ func play_sugar_add(source: Vector2) -> void:
 	# change legible: the sugar leaves the jar and lands on this cup.
 	_sugar_source = source
 	_sugar_animation_time = 0.0
-	queue_redraw()
-
-
-func play_ice_add(source: Vector2) -> void:
-	# The ice tray is spatially separate from the cup, so a visible scoop-to-cup
-	# trail confirms both the action and its destination.
-	_ice_source = source
-	_ice_animation_time = 0.0
 	queue_redraw()
 
 
@@ -110,11 +98,6 @@ func _process(delta: float) -> void:
 		if _sugar_animation_time >= SUGAR_ANIMATION_SECONDS:
 			_sugar_animation_time = -1.0
 		should_redraw = true
-	if _ice_animation_time >= 0.0:
-		_ice_animation_time += maxf(delta, 0.0)
-		if _ice_animation_time >= ICE_ANIMATION_SECONDS:
-			_ice_animation_time = -1.0
-		should_redraw = true
 	if not should_redraw:
 		return
 	queue_redraw()
@@ -130,8 +113,6 @@ func _draw() -> void:
 		_draw_overflow()
 	if _sugar_animation_time >= 0.0:
 		_draw_sugar_add()
-	if _ice_animation_time >= 0.0:
-		_draw_ice_add()
 
 
 func _draw_stream() -> void:
@@ -218,36 +199,6 @@ func _draw_sugar_add() -> void:
 		var radius := 4.6 + float(index % 3) * 0.7
 		draw_circle(position, radius + 1.8, Color(1.0, 0.78, 0.24, alpha * 0.22))
 		draw_circle(position, radius, Color(1.0, 0.92, 0.60, alpha))
-
-
-func _draw_ice_add() -> void:
-	var progress := clampf(_ice_animation_time / ICE_ANIMATION_SECONDS, 0.0, 1.0)
-	var target := Vector2(_cup_center_x, _surface_y() + 3.0)
-	if _reduced_motion:
-		for index in range(ICE_CUBE_COUNT):
-			var position := target + Vector2((float(index) - 2.0) * 7.0, -3.0 - float(index % 2) * 6.0)
-			_draw_ice_cube(position, 6.0, 0.0, 0.92)
-		return
-	for index in range(ICE_CUBE_COUNT):
-		var stagger := float(index) * 0.09
-		var cube_progress := clampf((progress - stagger) / (1.0 - stagger), 0.0, 1.0)
-		if cube_progress <= 0.0:
-			continue
-		var start := _ice_source + Vector2((float(index) - 2.0) * 7.0, float(index % 2) * 4.0)
-		var end := target + Vector2((float(index) - 2.0) * 8.0, -4.0 - float(index % 2) * 5.0)
-		var control := start.lerp(end, 0.5) + Vector2(0.0, -24.0)
-		var position := _quadratic_bezier(start, control, end, cube_progress)
-		var alpha := 1.0 - maxf(0.0, (cube_progress - 0.88) / 0.12) * 0.18
-		_draw_ice_cube(position, 6.8, cube_progress * 1.8 + float(index) * 0.35, alpha)
-
-
-func _draw_ice_cube(position: Vector2, half_size: float, rotation: float, alpha: float) -> void:
-	var points := PackedVector2Array()
-	for corner in [Vector2(-1.0, -1.0), Vector2(1.0, -1.0), Vector2(1.0, 1.0), Vector2(-1.0, 1.0)]:
-		points.append(position + corner.rotated(rotation) * half_size)
-	draw_colored_polygon(points, Color(0.70, 0.93, 1.0, alpha * 0.92))
-	draw_polyline(PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]), Color(0.93, 1.0, 1.0, alpha), 1.7, true)
-	draw_circle(position + Vector2(-half_size * 0.22, -half_size * 0.25).rotated(rotation), half_size * 0.22, Color(1.0, 1.0, 1.0, alpha * 0.72))
 
 
 static func _quadratic_bezier(start: Vector2, control: Vector2, end: Vector2, progress: float) -> Vector2:

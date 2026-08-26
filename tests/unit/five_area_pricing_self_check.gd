@@ -31,12 +31,8 @@ func _run() -> void:
 	_check(CATALOG.soy_milk_sell_price(0, &"room_temperature") == 3, "plain soy milk costs 3", failures)
 	_check(CATALOG.soy_milk_sell_price(1, &"room_temperature") == 4, "sugared soy milk costs 4", failures)
 	_check(CATALOG.soy_milk_sell_price(2, &"room_temperature") == 4, "two-sugar soy milk still costs 4", failures)
-	_check(CATALOG.soy_milk_sell_price(0, &"iced") == 4, "iced soy milk costs 4", failures)
-	_check(CATALOG.soy_milk_sell_price(1, &"iced") == 5, "sugared iced soy milk costs 5", failures)
 	_check(_soy_order_price(1, &"room_temperature") == 4, "generator prices sugared soy milk at 4", failures)
 	_check(_soy_order_price(2, &"room_temperature") == 4, "generator prices two-sugar soy milk at 4", failures)
-	_check(_soy_order_price(0, &"iced") == 4, "generator prices iced soy milk at 4", failures)
-	_check(_soy_order_price(1, &"iced") == 5, "generator prices sugared iced soy milk at 5", failures)
 	_check(CATALOG.validate_catalog().is_empty(), "catalog price rules validate", failures)
 	if failures.is_empty():
 		print("FIVE_AREA_PRICING_SELF_CHECK_PASS")

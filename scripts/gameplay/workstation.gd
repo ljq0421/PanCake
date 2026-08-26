@@ -21,7 +21,6 @@ const BASIC_GRIDDLE_TEXTURE := preload("res://resources/art/workstation/griddle/
 const INTERMEDIATE_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_1_v1_chinese.png"
 const ADVANCED_GRIDDLE_TEXTURE_PATH := "res://resources/art/workstation/griddle/griddle_base_angled_ellipse_tier_2_v1_chinese.png"
 const BASIC_SPREADER_TEXTURE := preload("res://resources/art/workstation/tools/batter_spreader_v1.png")
-const WIDE_SPREADER_TEXTURE_PATH := "res://resources/art/workstation/tools/batter_spreader_upgrade_v1.png"
 const CUSTOMER_PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
 const PATIENCE_BAR_STYLE := preload("res://scripts/ui/patience_bar_style.gd")
 const ORDER_CARD_COIN_TEXTURE_PATH := "res://resources/art/ui/economy/currency_coin_v2_chinese_ui.png"
@@ -62,9 +61,7 @@ const ORDER_REQUIREMENT_INGREDIENT := &"ingredient"
 const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
 const ORDER_REQUIREMENT_SUGAR := &"sugar"
-const ORDER_REQUIREMENT_ICE := &"ice"
 const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
-const ORDER_CARD_ICE_TEXTURE_PATH := "res://resources/art/ui/order/ice_cube_requirement_v2.png"
 const DAILY_BILL_FIXED_SIZE := Vector2(1260.0, 820.0)
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SPREADER_SPEED_SLOW := -1
@@ -211,7 +208,6 @@ var _upgrade_workshop: UpgradeWorkshopOverlay
 var _workshop_customer_visibility: Dictionary = {}
 var _workshop_runtime_visibility: Dictionary = {}
 var _spreader_width_multiplier := 1.0
-var _wide_spreader_owned := false
 var _press_spreader_owned := false
 var _automatic_brush_owned := false
 var _chili_sauce_unlocked := false
@@ -773,8 +769,7 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	var owned_items := Array(snapshot.get("owned_items", []))
 	var owned_growth_ids := Array(snapshot.get("owned_growth_ids", []))
 	var unlocked_stock_ids := Array(snapshot.get("unlocked_stock_ids", []))
-	_wide_spreader_owned = owned_items.has("tool.spreader.wide") or owned_growth_ids.has("growth.tool.pancake.wide_spreader")
-	_spreader_width_multiplier = FIVE_AREA_CATALOG.PANCAKE_WIDE_SPREADER_WIDTH_MULTIPLIER if _wide_spreader_owned else 1.0
+	_spreader_width_multiplier = 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
 	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
 	_chili_sauce_unlocked = false
@@ -817,7 +812,7 @@ func _refresh_griddle_upgrade_presentation() -> void:
 
 
 func _refresh_spreader_upgrade_presentation() -> void:
-	var texture: Texture2D = load(WIDE_SPREADER_TEXTURE_PATH) as Texture2D if _wide_spreader_owned else BASIC_SPREADER_TEXTURE
+	var texture: Texture2D = BASIC_SPREADER_TEXTURE
 	if spreader_artwork != null:
 		spreader_artwork.texture = texture
 	if scraper_button == null:
@@ -827,10 +822,10 @@ func _refresh_spreader_upgrade_presentation() -> void:
 		rack_artwork.texture = texture
 	var label := scraper_button.get_node_or_null("Label") as Label
 	if label != null:
-		label.text = "宽头摊饼器" if _wide_spreader_owned else "摊饼器"
+		label.text = "摊饼器"
 	scraper_button.toggle_mode = true
 	scraper_button.button_pressed = false
-	scraper_button.tooltip_text = "宽头 T 形摊饼器：有效宽度 +65%，可连续摊面和摊鸡蛋" if _wide_spreader_owned else "拿起 T 形摊饼器；用于摊面和摊鸡蛋"
+	scraper_button.tooltip_text = "拿起 T 形摊饼器；用于摊面和摊鸡蛋"
 
 
 func _refresh_sauce_brush_upgrade_presentation() -> void:
@@ -1570,8 +1565,6 @@ func _on_tool_changed(tool: ToolController.Tool) -> void:
 		ToolController.Tool.SCRAPER:
 			pancake_surface.cursor_radius_pixels = parameters.scraper_width * _spreader_width_multiplier * 0.5 / float(parameters.grid_size) * pancake_surface.size.x
 			pancake_surface.cursor_is_t_spreader = true
-			if _wide_spreader_owned:
-				tool_status_label.text = "当前工具：宽头摊饼器 · 有效宽度 +65%"
 		ToolController.Tool.SAUCE_BRUSH:
 			pancake_surface.cursor_radius_pixels = parameters.sauce_brush_radius / float(parameters.grid_size) * pancake_surface.size.x
 			pancake_surface.cursor_is_t_spreader = false
@@ -2921,7 +2914,6 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 	if not str(catalog_definition.get("label", "")).is_empty():
 		return str(catalog_definition.get("label"))
 	var names := {
-		&"growth.tool.pancake.wide_spreader": "宽刮板",
 		&"growth.add_on.pancake.ham_sausage": "火腿肠",
 		&"growth.add_on.pancake.meat_floss": "肉松",
 		&"growth.capacity.pancake_holding_tray.two_slots": "双格暂存托盘",
@@ -3157,12 +3149,6 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 				"kind": ORDER_REQUIREMENT_SUGAR,
 				"texture": load(ORDER_CARD_SUGAR_TEXTURE_PATH) as Texture2D,
 				"display_name": sugar_text,
-			})
-		if StringName(item.get("temperature_mode", &"room_temperature")) == &"iced":
-			requirements.append({
-				"kind": ORDER_REQUIREMENT_ICE,
-				"texture": load(ORDER_CARD_ICE_TEXTURE_PATH) as Texture2D,
-				"display_name": "加冰",
 			})
 	var requirement_capacity := order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8
 	if requirements.size() > requirement_capacity:

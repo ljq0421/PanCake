@@ -100,13 +100,6 @@ func add_soy_sugar(cup_index: int = 0) -> Dictionary:
 	return result
 
 
-func add_soy_ice(cup_index: int = 0) -> Dictionary:
-	var result: Dictionary = _soy.call("add_ice", cup_index)
-	if bool(result.get("success", false)):
-		machine_changed.emit(SOY_DEVICE, machine_snapshot(SOY_DEVICE))
-	return result
-
-
 func preview_soy_cup(cup_index: int = 0) -> Dictionary:
 	var result: Dictionary = _soy.call("preview_cup", cup_index)
 	if not bool(result.get("success", false)):
@@ -702,7 +695,6 @@ func _configure_soy_serving_upgrades() -> void:
 		false,
 		_owns_automation(&"automation.fresh_soy_milk.auto_fill"),
 		_owns_assist(&"assist.fresh_soy_milk.sugar"),
-		_owns_assist(&"assist.fresh_soy_milk.ice"),
 		_owns_automation(&"automation.fresh_soy_milk.double_fill")
 	)
 

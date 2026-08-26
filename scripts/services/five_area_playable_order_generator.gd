@@ -586,8 +586,6 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 		var assists := _id_set(progression.get("owned_assist_ids", []))
 		if assists.has(&"assist.fresh_soy_milk.sugar"):
 			sugar_servings = 1 if teaching else _roll(seed, sequence, 137, 3)
-		if assists.has(&"assist.fresh_soy_milk.ice") and not teaching and _roll(seed, sequence, 149, 100) < 35:
-			temperature_mode = &"iced"
 	var unit_price := _product_item_unit_price({
 		"product_id": product_id,
 		"sugar_servings": sugar_servings,

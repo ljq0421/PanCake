@@ -4,13 +4,12 @@ extends Control
 signal status_message(message: String)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const SPREADER_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_spreader_holder_empty_v1.png")
-const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_filled_v1.png")
-const WIDE_SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_wide_filled_v1.png")
+const SPREADER_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
+const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_wide_filled_v2.png")
 const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png")
 const BATTER_LADLE_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
 const BATTER_LADLE_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png")
-const BAOCUI_EMPTY_BASKET := preload("res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png")
+const BAOCUI_EMPTY_TRAY := preload("res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png")
 const DRAG_PREVIEW_TEXTURES: Dictionary = {
 	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png"),
 	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
@@ -29,7 +28,6 @@ const DRAG_PREVIEW_INGREDIENT_TYPES: Dictionary = {
 	&"stock.pancake.meat_floss": IngredientModel.MEAT_FLOSS,
 	&"stock.pancake.coriander": IngredientModel.CORIANDER,
 }
-const WIDE_SPREADER_GROWTH_ID := &"growth.tool.pancake.wide_spreader"
 const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_ladle"
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
 
@@ -86,8 +84,8 @@ const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 ## are authored.
 @export var egg_content_textures: Array[Texture2D] = []
 ## Ordered from one to the maximum visible crisp count. Each texture is a
-## complete bamboo basket, so inventory changes replace the basket artwork.
-@export var baocui_basket_textures: Array[Texture2D] = []
+## complete ingredient tray, so inventory changes replace the tray artwork.
+@export var baocui_tray_textures: Array[Texture2D] = []
 
 var _session: Node
 var _refresh_elapsed := 0.0
@@ -466,40 +464,30 @@ func _update_baocui_inventory_visual(stock: int) -> void:
 	var visual := basket.get_node_or_null("Visual") as TextureRect
 	if visual == null:
 		return
-	var display_stock := baocui_basket_textures.size() if _workshop_preview else stock
-	var texture_index := clampi(display_stock, 0, baocui_basket_textures.size()) - 1
-	visual.texture = baocui_basket_textures[texture_index] if texture_index >= 0 else BAOCUI_EMPTY_BASKET
+	var display_stock := baocui_tray_textures.size() if _workshop_preview else stock
+	var texture_index := clampi(display_stock, 0, baocui_tray_textures.size()) - 1
+	visual.texture = baocui_tray_textures[texture_index] if texture_index >= 0 else BAOCUI_EMPTY_TRAY
 
 
 func _update_spreader_holder_visual() -> void:
 	var holder_visual := get_node_or_null("SpreaderSource/Visual") as TextureRect
+	var press_visual := get_node_or_null("SpreaderSource/PressVisual") as TextureRect
 	var hit_button := get_node_or_null("SpreaderSource/HitButton") as AlphaTextureHitButton
-	if holder_visual == null or hit_button == null:
+	if holder_visual == null or press_visual == null or hit_button == null:
 		return
 	var station := _griddle_station()
 	var spreader_selected := station != null and station.has_method("is_spreader_selected") and bool(station.call("is_spreader_selected"))
 	var progression: RefCounted = _session.call("progression_service") if _session != null and _session.has_method("progression_service") else null
-	var wide_spreader_owned := progression != null and bool(progression.call("owns_growth", WIDE_SPREADER_GROWTH_ID))
 	var press_spreader_owned := progression != null and bool(progression.call("owns_growth", PRESS_SPREADER_GROWTH_ID))
-	var show_wide_preview := _workshop_preview and not wide_spreader_owned
-	# Once the wide spreader is owned, the workshop uses the same artwork slot
-	# for the press-spreader preview. Keep the runtime holder out of that slot;
-	# the overlay supplies the translucent (locked) or opaque (owned) press.
-	var replace_with_press_preview := _workshop_preview and wide_spreader_owned
-	var filled_texture: Texture2D = (
-		PRESS_SPREADER
-		if press_spreader_owned and not _workshop_preview
-		else WIDE_SPREADER_HOLDER_FILLED
-		if wide_spreader_owned or _workshop_preview
-		else SPREADER_HOLDER_FILLED
-	)
-	var display_texture := SPREADER_HOLDER_EMPTY if spreader_selected and not _workshop_preview and not press_spreader_owned else filled_texture
+	# The workshop overlays the sole upgrade target at the press node's position.
+	# Runtime play switches between the base-holder and the scene-authored press.
+	var replace_with_press_preview := _workshop_preview
+	var display_texture := SPREADER_HOLDER_EMPTY if spreader_selected and not _workshop_preview else SPREADER_HOLDER_FILLED
 	holder_visual.texture = display_texture
-	hit_button.hit_texture = display_texture
-	holder_visual.modulate = Color(1.0, 1.0, 1.0, 0.42) if show_wide_preview else Color.WHITE
-	# The workshop must consistently show the upgrade target instead of the
-	# runtime's temporarily selected/empty holder state.
-	holder_visual.visible = not replace_with_press_preview
+	hit_button.hit_texture = PRESS_SPREADER if press_spreader_owned else display_texture
+	holder_visual.modulate = Color.WHITE
+	holder_visual.visible = not replace_with_press_preview and not press_spreader_owned
+	press_visual.visible = not replace_with_press_preview and press_spreader_owned
 	hit_button.disabled = _workshop_preview
 
 

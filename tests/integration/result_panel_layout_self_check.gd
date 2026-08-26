@@ -91,8 +91,8 @@ func _run() -> void:
 		"product_id": &"product.fresh_soy_milk.yellow_bean",
 		"score": 90.0,
 		"feedback": "豆浆已送达",
-		"display_product": {"fill_ratio": 0.9, "sugar_servings": 1, "temperature_mode": &"iced"},
-		"display_item": {"mismatch_reasons": PackedStringArray(), "requested_sugar_servings": 1, "requested_temperature_mode": &"iced"},
+		"display_product": {"fill_ratio": 0.9, "sugar_servings": 1, "temperature_mode": &"room_temperature"},
+		"display_item": {"mismatch_reasons": PackedStringArray(), "requested_sugar_servings": 1, "requested_temperature_mode": &"room_temperature"},
 	})
 	_check(workstation.integrity_score_label.text == "满杯度  90", "soy result shows its fill score")
 	_check(workstation.thickness_score_label.text == "糖度  100", "soy result shows its sugar score")

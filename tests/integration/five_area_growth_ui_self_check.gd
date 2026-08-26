@@ -29,18 +29,19 @@ func _run() -> void:
 	starter_station.call("end_business_day")
 	var starter_tickets := _growth_tickets(starter_station)
 	_check(starter_tickets.size() == 3, "day-end growth panel keeps a focused three-card window")
-	_check(_ticket_ids(starter_tickets) == [
-		&"growth.tool.pancake.wide_spreader",
-		&"growth.add_on.pancake.red_chili",
-		&"growth.add_on.pancake.ham_sausage",
-	], "opening route focuses on pancake handling and add-ons before another area")
-	_check(starter_tickets[0].disabled and not starter_tickets[1].disabled and starter_tickets[2].disabled, "each opening growth card reflects its own day and reputation gates")
+	var starter_ticket_ids := _ticket_ids(starter_tickets)
+	_check(not starter_ticket_ids.has(&"growth.tool.pancake.wide_spreader"), "opening route no longer offers the retired wide spreader")
+	_check(starter_ticket_ids.has(&"growth.add_on.pancake.red_chili"), "opening route still offers the first pancake add-on")
 	_check(_all_active_text(starter_tickets), "opening growth cards contain no retired drink or steamer copy")
-	starter_tickets[1].emit_signal("pressed")
+	var red_chili_index := starter_ticket_ids.find(&"growth.add_on.pancake.red_chili")
+	var red_chili_ticket := starter_tickets[red_chili_index] if red_chili_index >= 0 else null
+	_check(red_chili_ticket != null and not red_chili_ticket.disabled, "the first pancake add-on remains purchasable when its conditions are met")
+	if red_chili_ticket != null:
+		red_chili_ticket.emit_signal("pressed")
 	await process_frame
 	var pending: Dictionary = session.call("five_area_progression_snapshot")
 	_check(StringName(pending.get("pending_content_purchase", &"")) == &"growth.add_on.pancake.red_chili", "purchasing a pancake add-on reserves the content slot")
-	_check(starter_tickets[1].disabled, "pending add-on remains visible and cannot be charged twice")
+	_check(red_chili_ticket != null and red_chili_ticket.disabled, "pending add-on remains visible and cannot be charged twice")
 	starter_station.queue_free()
 	await process_frame
 
@@ -71,9 +72,8 @@ func _run() -> void:
 	_check(_ticket_ids(soy_tickets) == [
 		&"growth.area.fresh_soy_milk",
 		&"growth.assist.fresh_soy_milk.sugar",
-		&"growth.assist.fresh_soy_milk.ice",
-	], "mid-route window unlocks soy and its remaining serving assists")
-	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled and soy_tickets[2].disabled, "soy serving upgrades wait until the soy area is actually installed")
+	], "mid-route window unlocks soy and its remaining serving assist")
+	_check(not soy_tickets[0].disabled and soy_tickets[1].disabled, "soy serving upgrade waits until the soy area is actually installed")
 	_check(_all_active_text(soy_tickets), "soy growth window contains only active three-area content")
 	soy_station.call("_open_upgrade_workshop")
 	await process_frame

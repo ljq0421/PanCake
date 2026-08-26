@@ -46,7 +46,6 @@ func _run() -> void:
 	_check(props != null and props.get_node_or_null("PressSpreaderPreview") is TextureRect, "press preview is an authored workshop-scene node")
 	if session != null and props != null:
 		var progression: RefCounted = session.call("progression_service")
-		var wide_spreader_prop := props.get_node_or_null("WorkshopProp_growth_tool_pancake_wide_spreader") as Button
 		var press_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_press_once") as Button
 		var initial_soy_prop := props.get_node_or_null("WorkshopProp_growth_area_fresh_soy_milk") as Button
 		var intermediate_soy_prop := props.get_node_or_null("WorkshopProp_growth_automation_fresh_soy_milk_auto_fill") as Button
@@ -56,7 +55,7 @@ func _run() -> void:
 		var baocui_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_baocui") as Button
 		var scallion_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_scallion") as Button
 		var one_click_egg_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_one_click_egg") as Button
-		_check(press_prop != null and not press_prop.visible, "press is hidden until the wide spreader is installed")
+		_check(press_prop != null and press_prop.visible, "press is the direct upgrade from the base spreader")
 		_check(initial_soy_prop != null and initial_soy_prop.visible, "initial soy machine is the only soy machine label before the soy area is unlocked")
 		_check(intermediate_soy_prop != null and not intermediate_soy_prop.visible, "intermediate soy machine is hidden until the initial machine is installed")
 		_check(advanced_soy_prop != null and not advanced_soy_prop.visible, "advanced soy machine is hidden until the intermediate machine is installed")
@@ -79,21 +78,17 @@ func _run() -> void:
 		overlay.refresh()
 		_check(initial_soy_prop != null and not initial_soy_prop.visible, "initial soy machine label is replaced after it is installed")
 		_check(intermediate_soy_prop != null and intermediate_soy_prop.visible, "intermediate soy machine label appears after the initial machine is installed")
-		progression.set("pending_growth_ids", [&"growth.tool.pancake.wide_spreader"])
-		overlay.refresh()
-		_check(press_prop != null and not press_prop.visible, "press remains hidden while the wide spreader is only reserved")
-		progression.set("pending_growth_ids", [])
 		progression.set("owned_growth_ids", {
-			&"growth.tool.pancake.wide_spreader": true,
+			&"growth.automation.pancake.press_once": true,
 			&"growth.area.fresh_soy_milk": true,
 			&"growth.automation.fresh_soy_milk.auto_fill": true,
 		})
 		overlay.refresh()
-		_check(press_prop != null and press_prop.visible, "press appears after the wide spreader is installed")
+		_check(press_prop != null and press_prop.visible, "owned press remains visible in the workshop")
 		_check(advanced_soy_prop != null and advanced_soy_prop.visible, "advanced soy machine appears after the intermediate machine is installed")
-		_check((wide_spreader_prop.get_node_or_null("ConditionTag") as Label).text.contains("已解锁"), "owned workshop upgrades use the unlocked label")
-		_check((wide_spreader_prop.get_node_or_null("ConditionTag") as Label).text.contains("解锁条件：解锁煎饼区、第2天起"), "owned workshop upgrades retain their original unlock conditions")
-		_check((wide_spreader_prop.get_node_or_null("ConditionTag") as Label).text.contains("价格：12 金币"), "owned workshop upgrades retain their original coin price")
+		var press_tag := press_prop.get_node_or_null("ConditionTag") as Label if press_prop != null else null
+		_check(press_tag != null and press_tag.text.contains("已解锁"), "owned press uses the unlocked workshop label")
+		_check(press_tag != null and press_tag.text.contains("价格：36 金币"), "press workshop label retains its coin price")
 	overlay.queue_free()
 	_finish()
 

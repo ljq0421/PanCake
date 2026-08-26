@@ -50,11 +50,11 @@ func _run() -> void:
 	soy_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao"], "active_kind": &"area", "active_id": &"area.fresh_soy_milk"}
 	var soy_teaching := Dictionary(GENERATOR.generate(soy_tutorial, {}, 3, 1, 8, 0))
 	_check(_single_area(soy_teaching) == &"area.fresh_soy_milk" and bool(Dictionary(soy_teaching.get("metadata", {})).get("tutorial_no_countdown", false)), "soy unlock creates one unlimited teaching order even at zero stock")
-	var wide_spreader_growth := _fully_playable_progression()
-	wide_spreader_growth["owned_growth_ids"] = PackedStringArray(["growth.tool.pancake.wide_spreader"])
-	wide_spreader_growth["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "completed_device_ids": [], "queue_area_ids": [], "queue_device_ids": [], "active_kind": &"", "active_id": &""}
-	var promoted_wide_spreader_order := Dictionary(GENERATOR.generate(wide_spreader_growth, inventory, 3, 1, 9, 0))
-	_check(bool(promoted_wide_spreader_order.get("success", false)) and not bool(Dictionary(promoted_wide_spreader_order.get("metadata", {})).get("tutorial_no_countdown", false)), "wide spreader ownership produces only an ordinary timed content order, never a teaching order")
+	var press_spreader_growth := _fully_playable_progression()
+	press_spreader_growth["owned_growth_ids"] = PackedStringArray(["growth.automation.pancake.press_once"])
+	press_spreader_growth["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "completed_device_ids": [], "queue_area_ids": [], "queue_device_ids": [], "active_kind": &"", "active_id": &""}
+	var promoted_press_spreader_order := Dictionary(GENERATOR.generate(press_spreader_growth, inventory, 3, 1, 9, 0))
+	_check(bool(promoted_press_spreader_order.get("success", false)) and not bool(Dictionary(promoted_press_spreader_order.get("metadata", {})).get("tutorial_no_countdown", false)), "press ownership produces only an ordinary timed content order, never a teaching order")
 	var retired_tutorial := _fully_playable_progression()
 	retired_tutorial["tutorial"] = {"completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"], "active_kind": &"area", "active_id": &"area.steamer"}
 	var fallback := Dictionary(GENERATOR.generate(retired_tutorial, {}, 9, 2, 9, 0))

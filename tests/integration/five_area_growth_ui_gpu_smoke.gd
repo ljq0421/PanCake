@@ -52,9 +52,9 @@ func _run() -> void:
 	var five_area_infrastructure := station.get_node("FiveAreaInfrastructure") as Control
 	var youtiao_station := station.get_node("FiveAreaInfrastructure/Stations/YoutiaoStation") as Control
 	_check(station.get_node_or_null("SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets/GrowthTicket4") == null, "GPU day-end scene has exactly three growth cards")
-	_check("宽幅摊饼器" in ticket_1.text and "辣椒酱" in ticket_2.text and "成品饮品柜" in ticket_3.text, "GPU day-end scene renders the intended first-day growth path")
+	_check(not "宽幅摊饼器" in (ticket_1.text + ticket_2.text + ticket_3.text), "GPU day-end scene no longer renders the retired wide spreader")
 	_check(not ticket_1.disabled and not ticket_2.disabled and not ticket_3.disabled, "GPU day-end scene reflects the real ready state of all three cards")
-	_check("[安装位]" in ticket_1.text and "可预订，明日生效" in ticket_1.text and ticket_1.tooltip_text == "可预订，明日生效", "GPU growth card uses the ordinary strict purchase presentation")
+	_check("可预订，明日生效" in ticket_1.text and ticket_1.tooltip_text == "可预订，明日生效", "GPU growth card uses the ordinary strict purchase presentation")
 	_check(five_area_infrastructure.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED and youtiao_station.get_mouse_filter_with_override() == Control.MOUSE_FILTER_IGNORE, "daily bill recursively disables five-area workstation mouse input")
 	var output_paths := PackedStringArray()
 	var daily_bill := station.get_node("SafeArea/DailyBillPanel") as Control
@@ -93,7 +93,7 @@ func _run() -> void:
 		await process_frame
 	await _click_control(ticket_1)
 	var pending: Dictionary = session.call("five_area_progression_snapshot")
-	_check(str(pending.get("pending_install_purchase", "")) == "growth.tool.pancake.wide_spreader" and int(pending.get("coins", 0)) == 88, "real GPU pointer click charges and reserves a strictly eligible install")
+	_check(not Array(pending.get("pending_growth_ids", [])).has("growth.tool.pancake.wide_spreader"), "real GPU pointer click cannot reserve the retired wide spreader")
 	station.daily_bill_closed.connect(_on_daily_bill_closed)
 	await _click_control(daily_bill_close_button)
 	_check(_daily_bill_closed_count == 1 and not daily_bill.visible, "return-to-start button receives the real pointer click above the youtiao station")

@@ -13,7 +13,6 @@
 [ext_resource type="Texture2D" uid="uid://c3o7k4ht4ff1g" path="res://resources/art/new/面糊筒.png" id="12_batter_can"]
 [ext_resource type="Texture2D" uid="uid://bdl8uo2t2h5dd" path="res://resources/art/new/火腿6.png" id="14_ham"]
 [ext_resource type="Texture2D" uid="uid://cjhl4othwl4da" path="res://resources/art/new/肉松6.png" id="15_pork_floss"]
-[ext_resource type="Texture2D" uid="uid://dc3nhxlu05bmu" path="res://resources/art/new/冰块盒.png" id="16_ice"]
 [ext_resource type="Texture2D" uid="uid://byjhyd8t23mba" path="res://resources/art/new/糖罐.png" id="17_sugar"]
 [ext_resource type="Texture2D" uid="uid://dglvxibakg2ce" path="res://resources/art/new/油条面坯.png" id="18_youtiao_dough"]
 [ext_resource type="Texture2D" uid="uid://blkay5p3p087g" path="res://resources/art/new/原味油条.png" id="19_youtiao_plain"]
@@ -367,18 +366,6 @@ offset_right = 1685.0
 offset_bottom = 690.0
 mouse_filter = 2
 texture = ExtResource("5_soy_advanced")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="IceBox" type="TextureRect" parent="." unique_id=309586626]
-z_index = 5
-layout_mode = 0
-offset_left = 1646.0
-offset_top = 634.0
-offset_right = 1845.0
-offset_bottom = 767.0
-mouse_filter = 2
-texture = ExtResource("16_ice")
 expand_mode = 1
 stretch_mode = 5
 

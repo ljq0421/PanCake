@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://d0se1e6c7txsd" path="res://scripts/ui/direct_soy_station.gd" id="1_root"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
-[ext_resource type="Script" path="res://scripts/ui/alpha_texture_button.gd" id="10_texture_hit"]
+[ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="10_texture_hit"]
 [ext_resource type="Script" uid="uid://cutcx46klm5cc" path="res://scripts/ui/direct_soy_station_editor_preview.gd" id="11_editor_preview"]
 
 [sub_resource type="StyleBoxFlat" id="Style_nozzle_action"]
@@ -67,13 +67,14 @@ corner_radius_bottom_left = 14
 custom_minimum_size = Vector2(410, 496)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 410.0
+offset_left = 2.0
+offset_right = 412.0
 offset_bottom = 496.0
 script = ExtResource("1_root")
 
-[node name="MachineAssembly" type="Control" parent="."]
+[node name="MachineAssembly" type="Control" parent="." unique_id=2096551069]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_right = 410.0
 offset_bottom = 426.0
 mouse_filter = 1
@@ -82,7 +83,8 @@ mouse_filter = 1
 unique_name_in_owner = true
 z_index = -2
 layout_mode = 0
-offset_right = 343.2
+offset_left = -1.0
+offset_right = 342.2
 offset_bottom = 358.4
 mouse_filter = 2
 expand_mode = 1
@@ -91,9 +93,9 @@ stretch_mode = 5
 [node name="NozzleButton" type="Button" parent="MachineAssembly" unique_id=361857652]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 128.0
+offset_left = 205.0
 offset_top = 174.0
-offset_right = 240.0
+offset_right = 296.0
 offset_bottom = 274.0
 tooltip_text = "按住出浆口接浆"
 mouse_default_cursor_shape = 2
@@ -154,14 +156,14 @@ theme_override_styles/hover = SubResource("Style_nozzle_action_hover")
 theme_override_styles/focus = SubResource("Style_nozzle_action_hover")
 text = "双口出浆"
 
-[node name="LeftCupSlot" type="Control" parent="MachineAssembly"]
+[node name="LeftCupSlot" type="Control" parent="MachineAssembly" unique_id=316523741]
 unique_name_in_owner = true
 z_index = 1
-layout_mode = 0
-offset_left = 158.0
-offset_top = 284.0
-offset_right = 218.0
-offset_bottom = 353.0
+anchors_preset = 0
+offset_left = 140.0
+offset_top = 288.0
+offset_right = 200.0
+offset_bottom = 357.0
 mouse_filter = 2
 
 [node name="MachineOutput" type="TextureButton" parent="MachineAssembly/LeftCupSlot" unique_id=1233758645]
@@ -188,7 +190,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_effect")
 
-[node name="LeftSelectionFrame" type="Panel" parent="MachineAssembly/LeftCupSlot"]
+[node name="LeftSelectionFrame" type="Panel" parent="MachineAssembly/LeftCupSlot" unique_id=86201631]
 unique_name_in_owner = true
 visible = false
 z_index = 2
@@ -200,17 +202,17 @@ offset_bottom = 73.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("Style_cup_selected")
 
-[node name="RightCupSlot" type="Control" parent="MachineAssembly"]
+[node name="RightCupSlot" type="Control" parent="MachineAssembly" unique_id=1501336900]
 unique_name_in_owner = true
 z_index = 1
-layout_mode = 0
+anchors_preset = 0
 offset_left = 218.0
 offset_top = 284.0
 offset_right = 278.0
 offset_bottom = 353.0
 mouse_filter = 2
 
-[node name="QueuedCupOutput" type="TextureButton" parent="MachineAssembly/RightCupSlot"]
+[node name="QueuedCupOutput" type="TextureButton" parent="MachineAssembly/RightCupSlot" unique_id=801211257]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -234,7 +236,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_effect")
 
-[node name="RightSelectionFrame" type="Panel" parent="MachineAssembly/RightCupSlot"]
+[node name="RightSelectionFrame" type="Panel" parent="MachineAssembly/RightCupSlot" unique_id=1183403878]
 unique_name_in_owner = true
 visible = false
 z_index = 2
@@ -250,10 +252,10 @@ theme_override_styles/panel = SubResource("Style_cup_selected")
 unique_name_in_owner = true
 z_index = 3
 layout_mode = 0
-offset_left = 292.0
-offset_top = 118.0
-offset_right = 402.0
-offset_bottom = 308.0
+offset_left = -31.0
+offset_top = 163.0
+offset_right = 79.0
+offset_bottom = 353.0
 ignore_texture_size = true
 stretch_mode = 4
 script = ExtResource("2_source")
@@ -264,16 +266,16 @@ hold_threshold_seconds = 0.5
 unique_name_in_owner = true
 z_index = 3
 layout_mode = 0
-offset_left = 326.0
-offset_top = 342.0
-offset_right = 402.0
-offset_bottom = 418.0
+offset_left = -250.0
+offset_top = 242.0
+offset_right = -93.0
+offset_bottom = 367.0
 tooltip_text = "成品杯加糖（最多两份）"
 ignore_texture_size = true
 stretch_mode = 4
 script = ExtResource("10_texture_hit")
 
-[node name="AnimationOrigin" type="Control" parent="SugarJar"]
+[node name="AnimationOrigin" type="Control" parent="SugarJar" unique_id=941771361]
 layout_mode = 1
 anchor_left = 0.82
 anchor_top = 0.22
@@ -293,7 +295,6 @@ anchor_bottom = 1.0
 offset_top = -22.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.22, 0.11, 0.03, 1)
 theme_override_colors/font_outline_color = Color(1, 0.96, 0.82, 0.92)
 theme_override_constants/outline_size = 2
@@ -301,46 +302,6 @@ theme_override_font_sizes/font_size = 10
 text = "糖：无糖"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="IceButton" type="TextureButton" parent="." unique_id=985603011]
-unique_name_in_owner = true
-z_index = 3
-layout_mode = 0
-offset_left = 218.0
-offset_top = 354.0
-offset_right = 314.0
-offset_bottom = 418.0
-tooltip_text = "成品杯加冰"
-ignore_texture_size = true
-stretch_mode = 4
-script = ExtResource("10_texture_hit")
-
-[node name="AnimationOrigin" type="Control" parent="IceButton"]
-layout_mode = 1
-anchor_left = 0.72
-anchor_top = 0.52
-anchor_right = 0.72
-anchor_bottom = 0.52
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="IceLabel" type="Label" parent="IceButton" unique_id=1549235280]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 17.0
-offset_bottom = 17.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(0.12, 0.24, 0.34, 1)
-theme_override_colors/font_outline_color = Color(0.92, 0.98, 1, 0.92)
-theme_override_constants/outline_size = 2
-theme_override_font_sizes/font_size = 13
-text = "加冰"
-horizontal_alignment = 1
-vertical_alignment = 2
 
 [node name="CupDetailLabel" type="Label" parent="." unique_id=1522849159]
 unique_name_in_owner = true
@@ -375,5 +336,5 @@ offset_right = 280.0
 offset_bottom = 492.0
 show_percentage = false
 
-[node name="EditorPreviewHelper" type="Node" parent="."]
+[node name="EditorPreviewHelper" type="Node" parent="." unique_id=1603679655]
 script = ExtResource("11_editor_preview")

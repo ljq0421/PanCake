@@ -23,10 +23,7 @@ func _initialize() -> void:
 	full_machine.call("take_empty_cup")
 	var full := Dictionary(full_machine.call("fill_held_cup", 0.8))
 	_check(bool(full.get("is_full", false)) and is_equal_approx(float(full.get("fill_ratio", 0.0)), 1.0), "holding the spout for 0.8 seconds fills the cup")
-	full_machine.call("configure_upgrades", false, false, false, true)
-	_check(bool(full_machine.call("add_ice").get("success", false)), "filled soy cup can be iced after the ice-box upgrade")
-	_check(StringName(Dictionary(full_machine.call("preview_cup").get("product", {})).get("temperature_mode", &"")) == &"iced", "iced soy cup preserves its temperature for delivery")
-	_check(StringName(full_machine.call("add_ice").get("reason", &"")) == &"ice_already_added", "a soy cup cannot receive ice twice")
+	_check(StringName(Dictionary(full_machine.call("preview_cup").get("product", {})).get("temperature_mode", &"")) == &"room_temperature", "filled soy cup remains room temperature")
 
 	var assisted_machine: RefCounted = MODEL.new(0, true)
 	assisted_machine.call("configure_upgrades", true, false, true)
@@ -35,7 +32,7 @@ func _initialize() -> void:
 	_check(is_equal_approx(float(assisted_cup.get("fill_ratio", 0.0)), 0.125) and float(assisted_cup.get("quality", 0.0)) < 100.0, "fill guide keeps a manual release at its exact pour level")
 
 	var advanced_machine: RefCounted = MODEL.new(0, true)
-	advanced_machine.call("configure_upgrades", false, true, false, false, true)
+	advanced_machine.call("configure_upgrades", false, true, false, true)
 	var first_advanced_cup := Dictionary(advanced_machine.call("take_empty_cup"))
 	var second_advanced_cup := Dictionary(advanced_machine.call("take_empty_cup"))
 	_check(int(first_advanced_cup.get("held_empty_cup_count", 0)) == 1 and int(second_advanced_cup.get("held_empty_cup_count", 0)) == 2, "advanced soy machine places one empty cup per take action")
@@ -50,18 +47,18 @@ func _initialize() -> void:
 	_check(bool(advanced_machine.call("preview_cup", 1).get("success", false)) and bool(advanced_machine.call("take_filled_cup", 1).get("success", false)) and StringName(Dictionary(advanced_machine.call("snapshot")).get("cup_state", &"")) == &"ready", "the right cup remains deliverable from the right outlet")
 
 	var selectable_machine: RefCounted = MODEL.new(0, true)
-	selectable_machine.call("configure_upgrades", false, true, true, true, true)
+	selectable_machine.call("configure_upgrades", false, true, true, true)
 	selectable_machine.call("take_empty_cup")
 	selectable_machine.call("take_empty_cup")
 	selectable_machine.call("fill_held_cup", 0.1, 2)
-	_check(bool(selectable_machine.call("add_sugar", 1).get("success", false)) and bool(selectable_machine.call("add_ice", 1).get("success", false)), "selected queued cup accepts sugar and ice")
+	_check(bool(selectable_machine.call("add_sugar", 1).get("success", false)), "selected queued cup accepts sugar")
 	var selectable_snapshot := Dictionary(selectable_machine.call("snapshot"))
 	var active_cup := Dictionary(selectable_snapshot.get("cup", {}))
 	var queued_cup := Dictionary(Array(selectable_snapshot.get("queued_cups", [])).front())
 	_check(int(active_cup.get("sugar_servings", 0)) == 0 and StringName(active_cup.get("temperature_mode", &"")) == &"room_temperature", "adding to the queued cup leaves the active cup unchanged")
-	_check(int(queued_cup.get("sugar_servings", 0)) == 1 and StringName(queued_cup.get("temperature_mode", &"")) == &"iced", "selected queued cup retains its own sugar and ice state")
+	_check(int(queued_cup.get("sugar_servings", 0)) == 1 and StringName(queued_cup.get("temperature_mode", &"")) == &"room_temperature", "selected queued cup retains its sugar state")
 	var queued_preview := Dictionary(selectable_machine.call("preview_cup", 1).get("product", {}))
-	_check(int(queued_preview.get("sugar_servings", 0)) == 1 and StringName(queued_preview.get("temperature_mode", &"")) == &"iced", "previewing the selected queued cup keeps its sugar and ice requirements")
+	_check(int(queued_preview.get("sugar_servings", 0)) == 1 and StringName(queued_preview.get("temperature_mode", &"")) == &"room_temperature", "previewing the selected queued cup keeps its sugar requirement")
 	var queued_taken := Dictionary(selectable_machine.call("take_filled_cup", 1))
 	var after_queued_take := Dictionary(selectable_machine.call("snapshot"))
 	_check(bool(queued_taken.get("success", false)) and int(Dictionary(queued_taken.get("product", {})).get("sugar_servings", 0)) == 1 and int(after_queued_take.get("ready_cup_count", 0)) == 1 and int(Dictionary(after_queued_take.get("cup", {})).get("sugar_servings", 0)) == 0, "collecting the selected queued cup preserves the unselected active cup")
@@ -82,11 +79,9 @@ func _initialize() -> void:
 		"product_id": &"product.fresh_soy_milk.yellow_bean",
 		"temperature_mode": &"iced",
 	}]))
-	var iced_order_id := StringName(Dictionary(iced_opened.get("order", {})).get("order_id", &""))
+	var legacy_iced_order_id := StringName(Dictionary(iced_opened.get("order", {})).get("order_id", &""))
 	var room_temperature_cup := {"product_instance_id": &"soy.room", "product_id": &"product.fresh_soy_milk.yellow_bean", "temperature_mode": &"room_temperature"}
-	var iced_cup := {"product_instance_id": &"soy.iced", "product_id": &"product.fresh_soy_milk.yellow_bean", "temperature_mode": &"iced"}
-	_check(PackedStringArray(orders.call("preview_attach_product", iced_order_id, 0, room_temperature_cup).get("mismatch_reasons", [])).has("temperature_mode"), "room-temperature soy milk does not satisfy an iced order")
-	_check(bool(orders.call("preview_attach_product", iced_order_id, 0, iced_cup).get("will_match", false)), "iced soy milk satisfies an iced order")
+	_check(bool(orders.call("preview_attach_product", legacy_iced_order_id, 0, room_temperature_cup).get("will_match", false)), "legacy iced soy order is normalized to room temperature")
 
 	if failures.is_empty():
 		print("SOY_CUP_SERVICE_SELF_CHECK_PASS")

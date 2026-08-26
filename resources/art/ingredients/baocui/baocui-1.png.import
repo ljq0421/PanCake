@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cwk2ap6fmtqt4"
-path="res://.godot/imported/ice-tray-with-scoop.png-6f260aadc7ca2ecf0dacbfe12fb65d1c.ctex"
+uid="uid://56k80qcd1bpf"
+path="res://.godot/imported/baocui-1.png-80f52e142040b96e3d4a5f7cdda5909f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/workstation/machines/soy_milk/ice-tray-with-scoop.png"
-dest_files=["res://.godot/imported/ice-tray-with-scoop.png-6f260aadc7ca2ecf0dacbfe12fb65d1c.ctex"]
+source_file="res://resources/art/ingredients/baocui/baocui-1.png"
+dest_files=["res://.godot/imported/baocui-1.png-80f52e142040b96e3d4a5f7cdda5909f.ctex"]
 
 [params]
 

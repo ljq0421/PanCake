@@ -49,11 +49,11 @@ const ROOM_TEMPERATURE_SOY_ITEM := {
 	"temperature_mode": &"room_temperature",
 	"ingredient_ids": [],
 }
-const MULTI_SUGAR_ICE_SOY_ITEM := {
+const MULTI_SUGAR_SOY_ITEM := {
 	"area_id": &"area.fresh_soy_milk",
 	"product_id": &"product.fresh_soy_milk.yellow_bean",
 	"quantity": 1,
-	"temperature_mode": &"iced",
+	"temperature_mode": &"room_temperature",
 	"sugar_servings": 2,
 }
 const NORMAL_SUGAR_SOY_ITEM := {
@@ -142,18 +142,13 @@ func _run() -> void:
 	for slot_index in range(4, 8):
 		_assert_empty_slot(workstation, slot_index, "room-temperature two-item order leaves later requirement slots empty")
 
-	var soy_requirements_by_item := Array(workstation.call("_order_requirements_by_item_for_customer_card", {"items": [MULTI_SUGAR_ICE_SOY_ITEM]}))
+	var soy_requirements_by_item := Array(workstation.call("_order_requirements_by_item_for_customer_card", {"items": [MULTI_SUGAR_SOY_ITEM]}))
 	var soy_requirements := Array(soy_requirements_by_item.front()) if not soy_requirements_by_item.is_empty() else []
-	var ice_requirement := Dictionary(soy_requirements[2]) if soy_requirements.size() > 2 else {}
-	var ice_texture := ice_requirement.get("texture") as Texture2D
 	_check(
-		soy_requirements.size() == 3
+		soy_requirements.size() == 2
 		and StringName(Dictionary(soy_requirements[0]).get("kind", &"")) == &"sugar"
-		and StringName(Dictionary(soy_requirements[1]).get("kind", &"")) == &"sugar"
-		and StringName(Dictionary(soy_requirements[2]).get("kind", &"")) == &"ice"
-		and ice_texture != null
-		and ice_texture.resource_path.ends_with("ice_cube_requirement_v2.png"),
-		"fresh soy order exposes two sugar jars and an ice-cube requirement to the customer card",
+		and StringName(Dictionary(soy_requirements[1]).get("kind", &"")) == &"sugar",
+		"fresh soy order exposes one sugar-jar icon for each requested sugar serving",
 	)
 	var normal_sugar_requirements_by_item := Array(workstation.call("_order_requirements_by_item_for_customer_card", {"items": [NORMAL_SUGAR_SOY_ITEM]}))
 	var normal_sugar_requirements := Array(normal_sugar_requirements_by_item.front()) if not normal_sugar_requirements_by_item.is_empty() else []

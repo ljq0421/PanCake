@@ -18,8 +18,6 @@ const ACTION_ADD_WATER: StringName = &"add_water"
 const ACTION_DRAIN_OIL: StringName = &"drain_oil"
 
 const TOOL_SPREADER_BASIC: StringName = &"tool.spreader.basic"
-const TOOL_SPREADER_WIDE: StringName = &"tool.spreader.wide"
-const WIDE_SPREADER_WIDTH_MULTIPLIER := 1.65
 const TOOL_PRESS: StringName = &"tool.spreader.press_once"
 const TOOL_SAUCE_BRUSH_MANUAL: StringName = &"tool.sauce_brush.manual"
 const TOOL_SAUCE_BRUSH_AUTO: StringName = &"tool.sauce_brush.automatic"
@@ -91,7 +89,6 @@ const RECIPE_DEFINITIONS := {
 
 const ITEM_EFFECTS := {
 	TOOL_SPREADER_BASIC: {"manual": true, "width_multiplier": 1.0},
-	TOOL_SPREADER_WIDE: {"manual": true, "width_multiplier": WIDE_SPREADER_WIDTH_MULTIPLIER},
 	TOOL_PRESS: {"automatic_standard_spread": true, "uses_per_pancake": 1, "consumable": false},
 	TOOL_SAUCE_BRUSH_MANUAL: {"manual": true},
 	TOOL_SAUCE_BRUSH_AUTO: {"automatic_order_sauce": true, "still_consumes_sauce": true, "still_uses_time": true},
@@ -103,7 +100,6 @@ const ITEM_EFFECTS := {
 }
 
 const PURCHASE_DEFINITIONS := {
-	TOOL_SPREADER_WIDE: {"kind": &"owned_item", "price": 12, "requires_owned": TOOL_SPREADER_BASIC, "min_day": 2, "min_reputation": 10, "metric": &"lifetime_orders", "metric_value": 4},
 	TOOL_PRESS: {"kind": &"owned_item", "price": 80, "requires_owned": TOOL_SPREADER_BASIC, "min_day": 15, "min_reputation": 240, "metric": &"manual_spread_good", "metric_value": 30},
 	TOOL_SAUCE_BRUSH_AUTO: {"kind": &"owned_item", "price": 48, "requires_owned": TOOL_SAUCE_BRUSH_MANUAL, "min_day": 9, "min_reputation": 120, "metric": &"expanded_good", "metric_value": 14},
 	INGREDIENT_BOX_INTERMEDIATE: {"kind": &"ingredient_box", "price": 30, "target_tier": TIER_INTERMEDIATE, "requires_owned": INGREDIENT_BOX_BASIC, "min_day": 6, "min_reputation": 70},
@@ -125,7 +121,6 @@ const PURCHASE_DEFINITIONS := {
 }
 
 const PURCHASE_PRESENTATION := {
-	TOOL_SPREADER_WIDE: {"label": "宽头摊饼器", "category": "工具", "description": "手动摊面有效宽度 +65%；仍需连续绕圈摊开。"},
 	TOOL_PRESS: {"label": "单次压饼器", "category": "工具", "description": "倒入面糊后，每张饼可点击一次形成完整饼皮并进入放鸡蛋步骤。"},
 	TOOL_SAUCE_BRUSH_AUTO: {"label": "自动刷酱", "category": "工具", "description": "点击酱料后自动均匀刷好。"},
 	UPGRADE_SOY_BASIC: {"label": "现磨豆浆机", "category": "设备", "description": "解锁豆浆区。"},

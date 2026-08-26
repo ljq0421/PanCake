@@ -265,6 +265,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var unit := station.units[0] as CompactGriddleUnit
 	var spreader_hit_button := hotspots.get_node("SpreaderSource/HitButton") as AlphaTextureHitButton
 	var spreader_visual := hotspots.get_node("SpreaderSource/Visual") as TextureRect
+	var press_visual := hotspots.get_node("SpreaderSource/PressVisual") as TextureRect
 	var batter_ladle := hotspots.get_node("BatterLadleSource/HitButton") as AlphaTextureHitButton
 	var batter_ladle_visual := hotspots.get_node("BatterLadleSource/Visual") as TextureRect
 	_check(spreader_hit_button != null, "spreader uses its component-local alpha hit target")
@@ -389,24 +390,20 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	_check(hotspots.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "workshop preview disables all worktop interaction")
 	_check(bool(hotspots.get_node("ScallionTray/Hotspot").disabled), "workshop preview disables unlocked ingredient interaction")
 	_check(bool(secret_sauce.disabled), "workshop preview disables unlocked sauce interaction")
-	_check(spreader_visual.texture.resource_path.ends_with("batter_spreader_holder_wide_filled_v1.png"), "workshop preview shows the wide spreader upgrade target")
-	_check(is_equal_approx(spreader_visual.modulate.a, 0.42), "locked wide spreader target is translucent in workshop preview")
-	session.progression.owned_growth[&"growth.tool.pancake.wide_spreader"] = true
-	hotspots.refresh_from_session()
-	_check(not spreader_visual.visible, "owned wide spreader is hidden in workshop so the press preview can replace it")
+	_check(not spreader_visual.visible, "workshop preview reserves the holder position for the press upgrade")
 	hotspots.set_workshop_preview(false)
 	_check(hotspots.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_INHERITED, "closing workshop preview restores worktop input behavior")
 	_check(not bool(hotspots.get_node("ScallionTray/Hotspot").disabled), "closing workshop preview restores owned ingredient interaction")
 	_check(not secret_sauce.disabled, "closing workshop preview restores owned sauce interaction")
 	_check(spreader_visual.visible, "closing workshop preview restores the runtime spreader holder")
-	_check(spreader_visual.texture.resource_path.ends_with("batter_spreader_holder_wide_filled_v1.png"), "closing workshop preview restores the owned wide spreader artwork")
+	_check(spreader_visual.texture.resource_path.ends_with("batter_spreader_holder_wide_filled_v2.png"), "closing workshop preview restores the base spreader artwork")
 	session.progression.owned_growth[&"growth.automation.pancake.press_once"] = true
 	hotspots.refresh_from_session()
-	_check(spreader_visual.visible, "owned press replaces the wide spreader in the normal worktop")
-	_check(spreader_visual.texture.resource_path.ends_with("pancake-press-wide-upgrade-v1.png"), "owned press uses the wide spreader holder position")
+	_check(not spreader_visual.visible and press_visual.visible, "owned press replaces the base holder in the normal worktop")
+	_check(press_visual.texture.resource_path.ends_with("pancake-press-wide-upgrade-v1.png"), "owned press uses its scene-authored visual")
 	station.select_worktop_tool(&"tool.pancake.spreader")
 	hotspots.refresh_from_session()
-	_check(spreader_visual.visible, "held spreader state does not hide the installed press")
+	_check(press_visual.visible, "held spreader state does not hide the installed press")
 	unit.reset_unit()
 	var batter_started := Dictionary(station.take_batter_from_ladle())
 	spreader_hit_button.pressed.emit()

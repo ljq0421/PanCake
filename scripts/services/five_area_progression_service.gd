@@ -355,6 +355,12 @@ func _normalize_three_area_state() -> void:
 		if bool(owned_growth_ids[growth_id]) and CATALOG.GROWTH_DISPLAY_ORDER.has(StringName(growth_id)):
 			active_growth[StringName(growth_id)] = true
 	owned_growth_ids = active_growth
+	var active_assists := {}
+	for growth_id in CATALOG.GROWTH_DEFINITIONS:
+		var assist_id := StringName(Dictionary(CATALOG.GROWTH_DEFINITIONS[growth_id]).get("assist_id", &""))
+		if not assist_id.is_empty() and bool(owned_assist_ids.get(assist_id, false)):
+			active_assists[assist_id] = true
+	owned_assist_ids = active_assists
 	area_mastery = _active_area_dictionary(area_mastery)
 	area_mastery_details = _active_area_dictionary(area_mastery_details)
 	tutorial_completed_area_ids = _active_area_set(tutorial_completed_area_ids)

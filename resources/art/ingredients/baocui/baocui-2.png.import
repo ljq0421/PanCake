@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dc3nhxlu05bmu"
-path="res://.godot/imported/冰块盒.png-f7905f686c5c6d5a929c43d46258204e.ctex"
+uid="uid://co10gcputrbg5"
+path="res://.godot/imported/baocui-2.png-a2cd0779cbef9a278125267a8c9f6ac1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/new/冰块盒.png"
-dest_files=["res://.godot/imported/冰块盒.png-f7905f686c5c6d5a929c43d46258204e.ctex"]
+source_file="res://resources/art/ingredients/baocui/baocui-2.png"
+dest_files=["res://.godot/imported/baocui-2.png-a2cd0779cbef9a278125267a8c9f6ac1.ctex"]
 
 [params]
 

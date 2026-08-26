@@ -665,7 +665,9 @@ static func normalized_temperature_mode(value: Variant) -> StringName:
 	if normalized == &"heated":
 		return &"heated"
 	if normalized == &"iced":
-		return &"iced"
+		# Older saves may contain soy orders generated before iced soy was retired.
+		# Serve them as room-temperature orders rather than leaving them impossible.
+		return &"room_temperature"
 	return &""
 
 
@@ -730,6 +732,7 @@ func _restore(source: Dictionary) -> void:
 		var restored_items: Array = Array(order.get("items", [])).duplicate(true)
 		for item_index in range(restored_items.size()):
 			var item := Dictionary(restored_items[item_index]).duplicate(true)
+			item["temperature_mode"] = normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))
 			var restored_products := _item_products(item)
 			var restored_ids := PackedStringArray()
 			for product_index in range(restored_products.size()):

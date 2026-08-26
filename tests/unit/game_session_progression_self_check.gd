@@ -15,9 +15,6 @@ func _run() -> void:
 		return
 	var new_game: Dictionary = session.call("begin_new_game")
 	_check(bool(new_game.get("success", false)) and session.call("has_save"), "new game creates a formal save")
-	var promotion_state_before := Array(Dictionary(session.get("_save_data")).get("pending_order_promotions", [])).duplicate(true)
-	session.call("_enqueue_growth_order_promotions", [&"growth.tool.pancake.wide_spreader"])
-	_check(Array(Dictionary(session.get("_save_data")).get("pending_order_promotions", [])) == promotion_state_before, "wide spreader activation creates no tutorial order or promotion order")
 	var progression: RefCounted = session.call("progression_service")
 	_check(progression.call("owns_area", &"area.pancake") and not progression.call("owns_area", &"area.packaged_drink"), "new game only unlocks pancake")
 	progression.set("coins", 100)

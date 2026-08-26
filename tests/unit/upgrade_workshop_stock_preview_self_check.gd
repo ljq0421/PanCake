@@ -28,8 +28,8 @@ func _run() -> void:
 		"workshop preview shows a full egg carton"
 	)
 	_check(
-		(artwork.get_node("PancakeWorktopHotspots/BaocuiBasket/Visual") as TextureRect).texture == worktop.baocui_basket_textures.back(),
-		"workshop preview shows a full crisp basket"
+		(artwork.get_node("PancakeWorktopHotspots/BaocuiBasket/Visual") as TextureRect).texture == worktop.baocui_tray_textures.back(),
+		"workshop preview shows a full crisp tray"
 	)
 	worktop.set_workshop_preview(false)
 	artwork.queue_free()

@@ -1503,16 +1503,6 @@ func add_f4_soy_sugar(cup_index: int = 0) -> Dictionary:
 	return result
 
 
-func add_f4_soy_ice(cup_index: int = 0) -> Dictionary:
-	if not has_save():
-		return {"success": false, "reason": &"no_active_save"}
-	_ensure_production_service()
-	var result: Dictionary = _production_service.call("add_soy_ice", cup_index)
-	if bool(result.get("success", false)):
-		_persist_production_change()
-	return result
-
-
 func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
 	var preview: Dictionary = Dictionary(_production_service.call("preview_soy_cup", output_slot_index)) if output_slot_index >= 0 else Dictionary(_production_service.call("preview_soy_cup"))

@@ -286,7 +286,7 @@ func finish_payment() -> Dictionary:
 func phase_label() -> String:
 	match phase:
 		Phase.SPREAD:
-			return "摊开面糊"
+			return "拿摊饼器绕一圈摊开面糊"
 		Phase.FIRST_SIDE:
 			return "打蛋、摊蛋并观察第一面火候"
 		Phase.SECOND_SIDE:

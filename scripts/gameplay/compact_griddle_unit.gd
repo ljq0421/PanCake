@@ -56,6 +56,12 @@ const SPREADER_ROTATION_DEAD_ZONE := 0.06
 const SPREADER_SPEED_SLOW := -1
 const SPREADER_SPEED_MEDIUM := 0
 const SPREADER_SPEED_FAST := 1
+## Manual batter spreading is intentionally a gesture check, not a precision
+## simulation challenge. Once the held spreader travels almost one complete
+## revolution in either direction, the batter is normalized into the standard
+## pancake shape. The small tolerance keeps players from having to land on the
+## exact pixel where the circle began.
+const SPREADER_CIRCLE_REQUIRED_ANGLE := TAU * 0.90
 const EGG_CRACK_EFFECT_BASE_SCALE := Vector2(0.45, 0.45)
 const EGG_SHELL_CLEARANCE := 60.0
 ## EggShellVisual crops a 128 px-tall texture and renders at 0.45 scale. Move
@@ -134,6 +140,10 @@ var _spreader_speed_initialized := false
 var _spreader_speed_band := SPREADER_SPEED_MEDIUM
 var _spreader_smoothed_angle := 0.0
 var _spreader_angle_initialized := false
+var _spreader_circle_progress := 0.0
+var _spreader_circle_direction := 0.0
+var _spreader_circle_previous_angle := 0.0
+var _spreader_circle_has_previous := false
 var _egg_crack_tween: Tween
 var _egg_liquid_falling := false
 var _intact_egg_local_override := Vector2.ZERO
@@ -353,7 +363,7 @@ func use_press_spreader() -> Dictionary:
 func advance_main() -> Dictionary:
 	match state:
 		State.BATTER:
-			return {"success": false, "message": "按住鏊面画圈摊开；覆盖成形后松开"}
+			return {"success": false, "message": "拿着摊饼器绕鏊面转一圈即可摊好"}
 		State.FIRST_SIDE:
 			if pancake_model.covered_cell_count() <= 0:
 				return {"success": false, "message": "鏊面还没有完整饼皮"}
@@ -707,6 +717,8 @@ func _on_surface_pointer_started(local_position: Vector2) -> void:
 		_spreader_direction_grace_remaining = 0
 		_spreader_speed_initialized = false
 		_spreader_speed_band = SPREADER_SPEED_MEDIUM
+		if _surface_action == SURFACE_ACTION_SPREAD_BATTER:
+			_begin_spreader_circle_tracking(grid_position)
 		pancake_surface.spreader_motion_valid = false
 	elif _surface_action == SURFACE_ACTION_POUR_BATTER:
 		_set_batter_pour_center(local_position)
@@ -735,10 +747,7 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 			pancake_model.reset()
 			_refresh_ui()
 	elif _surface_action == SURFACE_ACTION_SPREAD_BATTER and state == State.BATTER:
-		var confirmed := p1_session.confirm_spread(pancake_model)
-		if bool(confirmed.get("success", false)):
-			state = State.FIRST_SIDE
-			_refresh_ui()
+		status_message_requested.emit("还没转满一圈，再拿起摊饼器绕鏊面转一圈")
 	elif _surface_action == SURFACE_ACTION_FOLD and fold_model.active_region != PancakeFoldModel.REGION_NONE:
 		var grid_position := _fold_grid_position(_local_position)
 		var fold_result := Dictionary(fold_model.release_drag(grid_position))
@@ -790,7 +799,10 @@ func _set_batter_pour_center(local_position: Vector2) -> void:
 
 
 func _process_manual_spread(delta: float) -> void:
+	if state != State.BATTER:
+		return
 	var current := Vector2(PancakeSpace.local_to_grid(pancake_surface.pointer_local_position, pancake_surface.size, pancake_model.grid_size))
+	var circle_completed := _track_spreader_circle(current)
 	var samples := _limit_spread_samples(_scrape_sampler.sample_to(current))
 	var previous_polar := _pan_polar_offset(_last_process_grid_position)
 	var current_polar := _pan_polar_offset(current)
@@ -831,6 +843,62 @@ func _process_manual_spread(delta: float) -> void:
 	_last_process_grid_position = current
 	pancake_surface.spreader_motion_valid = applied_sample
 	pancake_surface.queue_redraw()
+	if circle_completed:
+		_complete_manual_spread_circle()
+	elif is_node_ready():
+		var progress_percent := roundi(clampf(_spreader_circle_progress / SPREADER_CIRCLE_REQUIRED_ANGLE, 0.0, 1.0) * 100.0)
+		state_label.text = "拿着摊饼器绕一圈 %d%%" % progress_percent
+
+
+func _begin_spreader_circle_tracking(grid_position: Vector2) -> void:
+	_spreader_circle_progress = 0.0
+	_spreader_circle_direction = 0.0
+	var polar := _pan_polar_offset(grid_position)
+	_spreader_circle_has_previous = polar.length() > SPREADER_CENTER_DEAD_ZONE
+	if _spreader_circle_has_previous:
+		_spreader_circle_previous_angle = polar.angle()
+
+
+func _track_spreader_circle(grid_position: Vector2) -> bool:
+	var polar := _pan_polar_offset(grid_position)
+	if polar.length() <= SPREADER_CENTER_DEAD_ZONE:
+		_spreader_circle_has_previous = false
+		return false
+	var current_angle := polar.angle()
+	if not _spreader_circle_has_previous:
+		_spreader_circle_previous_angle = current_angle
+		_spreader_circle_has_previous = true
+		return false
+	var angle_delta := wrapf(current_angle - _spreader_circle_previous_angle, -PI, PI)
+	_spreader_circle_previous_angle = current_angle
+	if absf(angle_delta) <= 0.001:
+		return false
+	var movement_direction := signf(angle_delta)
+	if is_zero_approx(_spreader_circle_direction):
+		_spreader_circle_direction = movement_direction
+	if movement_direction == _spreader_circle_direction:
+		_spreader_circle_progress += absf(angle_delta)
+	else:
+		# Small corrections are harmless, but moving back and forth cannot be
+		# mistaken for completing a circle.
+		_spreader_circle_progress = maxf(_spreader_circle_progress - absf(angle_delta), 0.0)
+		if is_zero_approx(_spreader_circle_progress):
+			_spreader_circle_direction = movement_direction
+	return _spreader_circle_progress >= SPREADER_CIRCLE_REQUIRED_ANGLE
+
+
+func _complete_manual_spread_circle() -> void:
+	var spread_result := Dictionary(pancake_model.apply_standard_press_spread())
+	if not bool(spread_result.get("success", false)):
+		return
+	var confirmed := Dictionary(p1_session.confirm_spread(pancake_model))
+	if not bool(confirmed.get("success", false)):
+		return
+	_surface_changed = true
+	state = State.FIRST_SIDE
+	pancake_surface.force_texture_upload()
+	status_message_requested.emit("鏊子%d已摊成完整饼皮，开始煎第一面" % (unit_index + 1))
+	_refresh_ui()
 
 
 func _limit_spread_samples(raw_samples: PackedVector2Array) -> PackedVector2Array:
@@ -1254,6 +1322,9 @@ func _reset_surface_action() -> void:
 	_egg_sampler.reset()
 	_spreader_angle_initialized = false
 	_spreader_speed_initialized = false
+	_spreader_circle_progress = 0.0
+	_spreader_circle_direction = 0.0
+	_spreader_circle_has_previous = false
 	pancake_surface.spreader_motion_valid = false
 	_refresh_surface_cursor()
 	_refresh_tool_artwork_visibility()
@@ -1350,7 +1421,7 @@ func _refresh_ui() -> void:
 		State.IDLE:
 			state_label.text = "长按鏊面倒入面糊" if _batter_ladle_armed else "空闲 · 使用面糊勺加面糊"
 		State.BATTER:
-			state_label.text = "按住鏊面画圈摊开"
+			state_label.text = "拿着摊饼器绕鏊面转一圈"
 			main_action.text = "手动摊面中"
 		State.FIRST_SIDE:
 			state_label.text = "第一面 %.1f秒 · 可直接加料或折叠（交付-12分）" % first_side_seconds

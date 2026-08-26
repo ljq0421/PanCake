@@ -35,7 +35,7 @@ func _run() -> void:
 			continue
 		min_thickness = minf(min_thickness, pressed_thickness[index])
 		max_thickness = maxf(max_thickness, pressed_thickness[index])
-	_check(bool(pressed.get("success", false)) and float(pressed.get("coverage_ratio", 0.0)) >= 0.79, "press automation creates a complete centered pancake skin")
+	_check(bool(pressed.get("success", false)) and float(pressed.get("coverage_ratio", 0.0)) >= 0.99, "press automation fills the entire usable griddle with pancake skin")
 	_check(is_equal_approx(mass_before, mass_after), "press automation preserves the poured batter mass")
 	_check(max_thickness - min_thickness <= 0.00001, "press automation produces uniform thickness")
 	_check(max_damage <= 0.0 and press_model.call("validate").is_empty(), "press automation removes holes and damage without corrupting simulation fields")

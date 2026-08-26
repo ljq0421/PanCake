@@ -172,7 +172,7 @@ func _run() -> void:
 		workstation.p1_session.phase == P1Session.Phase.FIRST_SIDE and bool(workstation.get("_spread_shape_locked")),
 		"one real independent-press click completes the pancake skin and enters the egg stage; visible=%s disabled=%s phase=%s status=%s" % [press_spreader.visible, press_spreader.disabled, workstation.p1_session.phase, (workstation.get_node("SafeArea/BottomStrip/ToolStatusLabel") as Label).text],
 	)
-	_check(float(workstation.pancake_model.calculate_summary().coverage_ratio) >= 0.79, "the real independent-press click creates complete standard coverage")
+	_check(float(workstation.pancake_model.calculate_summary().coverage_ratio) >= 0.99, "the real independent-press click fills the entire usable griddle")
 	var edge_global := surface.global_position + Vector2(surface.size.x * 0.10, surface.size.y * 0.50)
 	var inner_global := surface.global_position + Vector2(surface.size.x * 0.22, surface.size.y * 0.50)
 	await _slow_drag(edge_global, inner_global, 18)

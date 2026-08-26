@@ -169,7 +169,7 @@ func _on_main_action(unit_index: int) -> void:
 		unit.begin_order(_unbound_production_context())
 		_set_selected_tool(&"tool.pancake.spreader")
 		_sync_snapshot_to_session()
-		status_message.emit("鏊子%d开始制作：摊饼器已自动拿起，按住鏊面画圈摊开" % (unit_index + 1))
+		status_message.emit("鏊子%d开始制作：摊饼器已自动拿起，绕鏊面转一圈即可" % (unit_index + 1))
 		return
 	var result: Dictionary = Dictionary(unit.advance_main())
 	_sync_snapshot_to_session()
@@ -194,7 +194,7 @@ func take_batter_from_ladle(batter_amount: float = UNIT_SCRIPT.STANDARD_BATTER_A
 	unit.begin_order(_unbound_production_context(), actual_amount)
 	_set_selected_tool(&"tool.pancake.spreader")
 	_sync_snapshot_to_session()
-	status_message.emit("面糊已倒入：摊饼器已自动拿起，按住鏊面画圈摊开")
+	status_message.emit("面糊已倒入：摊饼器已自动拿起，绕鏊面转一圈即可")
 	return {"success": true, "unit_index": _active_index, "batter_amount": actual_amount}
 
 
@@ -462,7 +462,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 	if tool_id == &"tool.pancake.spreader":
 		clear_held_tool()
 		_set_selected_tool(tool_id)
-		status_message.emit("已拿起摊饼器；在鏊面按住画圈摊面或摊蛋")
+		status_message.emit("已拿起摊饼器；摊面糊时绕鏊面转一圈即可，也可用来摊蛋")
 		return {"success": true, "tool_id": tool_id}
 	if tool_id != &"stock.pancake.sauce.sweet_flour":
 		return {"success": false, "reason": &"unknown_tool"}

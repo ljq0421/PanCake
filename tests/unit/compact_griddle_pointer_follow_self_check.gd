@@ -53,6 +53,7 @@ func _run() -> void:
 	var revision_before_hidden_spread := unit.pancake_model.revision
 	var hidden_spread_changed := bool(unit.call("_apply_radial_batter_sweep", Vector2(48.0, 32.0), Vector2.RIGHT, 70.0))
 	_check(hidden_spread_changed and unit.pancake_model.revision > revision_before_hidden_spread, "no-visual test mode keeps the spread simulation functional")
+	_test_one_circle_batter_spread(unit)
 	_test_movable_batter_pour(unit)
 	_test_fold_pointer_precision(unit)
 	_test_dropped_ingredient_orientation(unit)
@@ -64,6 +65,35 @@ func _run() -> void:
 	unit.queue_free()
 	await process_frame
 	_finish()
+
+
+func _test_one_circle_batter_spread(unit: CompactGriddleUnit) -> void:
+	unit.reset_unit()
+	unit.begin_order({})
+	unit._surface_action = CompactGriddleUnit.SURFACE_ACTION_SPREAD_BATTER
+	var center := Vector2.ONE * 31.5
+	var radius := 15.0
+	var start := center + Vector2.RIGHT * radius
+	unit._scrape_sampler.begin(start)
+	unit._previous_scrape_sample = start
+	unit._last_process_grid_position = start
+	unit._spreader_max_radius = radius
+	unit.call("_begin_spreader_circle_tracking", start)
+	for step in range(1, 17):
+		var grid_position := center + Vector2.from_angle(TAU * float(step) / 16.0) * radius
+		unit.pancake_surface.pointer_local_position = (grid_position + Vector2.ONE * 0.5) / float(unit.pancake_model.grid_size) * unit.pancake_surface.size
+		unit.call("_process_manual_spread", 1.0 / 60.0)
+		if step == 8:
+			_check(unit.state == CompactGriddleUnit.State.BATTER, "half a turn does not finish batter spreading")
+	_check(unit.state == CompactGriddleUnit.State.FIRST_SIDE, "one continuous turn finishes manual batter spreading")
+	_check(unit.p1_session.phase == P1Session.Phase.FIRST_SIDE, "the completed circle immediately starts first-side cooking")
+	_check(float(unit.pancake_model.calculate_summary().get("coverage_ratio", 0.0)) >= 0.99, "one turn fills the entire usable griddle with pancake skin")
+
+	unit.reset_unit()
+	unit.begin_order({})
+	unit._surface_action = CompactGriddleUnit.SURFACE_ACTION_SPREAD_BATTER
+	unit.call("_on_surface_pointer_ended", Vector2.ZERO)
+	_check(unit.state == CompactGriddleUnit.State.BATTER, "releasing before a full turn keeps the batter ready for another attempt")
 
 
 func _test_fold_pointer_precision(unit: CompactGriddleUnit) -> void:

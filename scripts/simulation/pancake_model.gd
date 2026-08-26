@@ -28,7 +28,9 @@ const FIELD_NAMES: Array[StringName] = [
 const SCRAPER_FAN_ANGLES: Array[float] = [-0.55, -0.28, 0.0, 0.0, 0.0, 0.28, 0.55]
 const SCRAPER_PUSH_FRACTIONS: Array[float] = [0.78, 0.88, 0.42, 0.70, 1.0, 0.88, 0.78]
 const SCRAPER_PUSH_WEIGHTS: Array[float] = [0.10, 0.13, 0.12, 0.17, 0.25, 0.13, 0.10]
-const STANDARD_PRESS_TARGET_COVERAGE := 0.80
+## A completed manual circle and the press automation both produce a full-size
+## pancake skin that reaches the edge of the usable griddle surface.
+const STANDARD_PRESS_TARGET_COVERAGE := 1.0
 
 enum EggState {
 	NONE,

@@ -1814,7 +1814,7 @@ func _auto_pour_center() -> void:
 	_spread_shape_locked = false
 	ladle_button.disabled = true
 	tool_controller.select_tool(ToolController.Tool.SCRAPER)
-	tool_status_label.text = "面糊已自动定量倒在鏊心；请直接画圈摊开"
+	tool_status_label.text = "面糊已自动定量倒在鏊心；拿摊饼器绕鏊面转一圈即可"
 	kitchen_audio.call("play_cue", &"pour")
 	_refresh_p1_ui()
 

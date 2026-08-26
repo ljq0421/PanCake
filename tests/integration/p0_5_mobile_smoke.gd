@@ -47,7 +47,7 @@ func _run() -> void:
 	_drag_surface(workstation, surface, Vector2(490, 300), Vector2(300, 300), 90)
 	drag_usec += Time.get_ticks_usec() - drag_started
 	await create_timer(0.60).timeout
-	if workstation.fold_model.completed_fold_count() != 2 or workstation.paper_sleeve_button.disabled or workstation.tray_button.disabled:
+	if workstation.fold_model.completed_fold_count() != 2 or workstation.fold_model.package_result != PancakeFoldModel.PACKAGE_BAG:
 		push_error("P0.5 intact fold smoke-check FAIL")
 		quit(1)
 		return
@@ -56,37 +56,22 @@ func _run() -> void:
 		push_error("Failed to save P0.5 folded capture")
 		quit(1)
 		return
-	workstation.paper_sleeve_button.pressed.emit()
-	await create_timer(0.32).timeout
-	var sleeve_path := capture_directory.path_join("p0_5_sleeve.png")
-	if root.get_texture().get_image().save_png(sleeve_path) != OK:
-		push_error("Failed to save P0.5 reinforced-sleeve capture")
-		quit(1)
-		return
-
 	workstation.reset_pancake()
 	_fill_uniform_pancake(workstation.pancake_model)
 	workstation.pour_used = true
 	_set_hole(workstation.pancake_model, Vector2i(25, 64))
 	workstation.fold_button.pressed.emit()
 	_drag_surface(workstation, surface, Vector2(110, 300), Vector2(300, 300), 90)
-	await process_frame
-	await process_frame
-	if workstation.fold_model.maximum_severity() != 2 or not workstation.paper_sleeve_button.disabled or workstation.tray_button.disabled:
-		push_error("P0.5 severe fold rescue smoke-check FAIL")
+	await create_timer(0.60).timeout
+	_drag_surface(workstation, surface, Vector2(490, 300), Vector2(300, 300), 90)
+	await create_timer(0.60).timeout
+	if workstation.fold_model.maximum_severity() != 2 or workstation.fold_model.package_result != PancakeFoldModel.PACKAGE_BAG:
+		push_error("P0.5 damaged paper-bag smoke-check FAIL")
 		quit(1)
 		return
 	var torn_path := capture_directory.path_join("p0_5_torn.png")
 	if root.get_texture().get_image().save_png(torn_path) != OK:
 		push_error("Failed to save P0.5 torn capture")
-		quit(1)
-		return
-
-	workstation.tray_button.pressed.emit()
-	await create_timer(0.32).timeout
-	var tray_path := capture_directory.path_join("p0_5_tray.png")
-	if root.get_texture().get_image().save_png(tray_path) != OK:
-		push_error("Failed to save P0.5 tray capture")
 		quit(1)
 		return
 

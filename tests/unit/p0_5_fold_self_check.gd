@@ -18,7 +18,7 @@ func _run() -> void:
 	_test_right_then_left_uses_the_mirrored_clip()
 	_test_material_conditions_create_distinct_results()
 	_test_damage_keeps_its_regional_effect()
-	_test_rescue_paths_never_dead_end()
+	_test_all_completed_folds_use_paper_bags()
 	_finish()
 
 
@@ -142,22 +142,23 @@ func _test_damage_keeps_its_regional_effect() -> void:
 	_check(right_result.outcome == FOLD_MODEL_SCRIPT.OUTCOME_TORN, "the same hole is retained when its right-side region folds")
 
 
-func _test_rescue_paths_never_dead_end() -> void:
+func _test_all_completed_folds_use_paper_bags() -> void:
 	var minor_model := _uniform_pancake(64, 0.55, 0.95)
 	var minor_fold: RefCounted = FOLD_MODEL_SCRIPT.new(minor_model)
 	_fold_left(minor_fold)
 	_fold_right(minor_fold)
-	_check(minor_fold.can_use_sleeve(), "two minor cracked folds can be rescued with a paper sleeve")
-	var sleeve: Dictionary = minor_fold.package_with(FOLD_MODEL_SCRIPT.PACKAGE_SLEEVE)
-	_check(bool(sleeve.success) and float(sleeve.structure_penalty) > 0.0, "paper sleeve rescue records a permanent structure penalty")
+	_check(minor_fold.can_use_bag(), "two completed folds can use the single paper-bag path despite minor cracking")
+	var minor_bag: Dictionary = minor_fold.package_with(FOLD_MODEL_SCRIPT.PACKAGE_BAG)
+	_check(bool(minor_bag.success) and is_zero_approx(float(minor_bag.structure_penalty)), "paper-bag packaging adds no repair penalty")
 
 	var severe_model := _uniform_pancake(64, 0.55, 0.55)
 	_set_hole(severe_model, Vector2i(12, 32))
 	var severe_fold: RefCounted = FOLD_MODEL_SCRIPT.new(severe_model)
 	_fold_left(severe_fold)
-	_check(not severe_fold.can_use_sleeve() and severe_fold.can_use_tray(), "a severe first-fold tear exposes the tray rescue without requiring another fold")
-	var tray: Dictionary = severe_fold.package_with(FOLD_MODEL_SCRIPT.PACKAGE_TRAY)
-	_check(bool(tray.success) and float(tray.portability_penalty) >= 0.70, "tray rescue completes with a large portability penalty")
+	_check(not severe_fold.can_use_bag(), "paper-bag packaging still waits for both fold gestures")
+	_fold_right(severe_fold)
+	var severe_bag: Dictionary = severe_fold.package_with(FOLD_MODEL_SCRIPT.PACKAGE_BAG)
+	_check(bool(severe_bag.success), "a severely damaged but fully folded pancake also uses the paper bag")
 	severe_fold.reset()
 	_check(severe_fold.completed_fold_count() == 0 and severe_fold.package_result == FOLD_MODEL_SCRIPT.PACKAGE_NONE, "reset always escapes a completed or failed fold state")
 

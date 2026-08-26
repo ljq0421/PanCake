@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
 [ext_resource type="Script" path="res://scripts/ui/alpha_texture_button.gd" id="10_texture_hit"]
+[ext_resource type="Script" uid="uid://cutcx46klm5cc" path="res://scripts/ui/direct_soy_station_editor_preview.gd" id="11_editor_preview"]
 
 [sub_resource type="StyleBoxFlat" id="Style_nozzle_action"]
 bg_color = Color(1, 0.71, 0.2, 0.18)
@@ -373,3 +374,6 @@ offset_top = 478.0
 offset_right = 280.0
 offset_bottom = 492.0
 show_percentage = false
+
+[node name="EditorPreviewHelper" type="Node" parent="."]
+script = ExtResource("11_editor_preview")

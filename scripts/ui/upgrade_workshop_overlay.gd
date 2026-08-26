@@ -5,6 +5,26 @@ extends Control
 signal begin_next_day_requested
 signal closed
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
+	NodePath("SafeArea/ServiceCustomer1"),
+	NodePath("SafeArea/ServiceCustomer2"),
+	NodePath("SafeArea/ServiceCustomer3"),
+	NodePath("SafeArea/CustomerStrip"),
+	NodePath("SafeArea/CustomerPortrait"),
+	NodePath("SafeArea/BottomStrip"),
+	NodePath("SafeArea/BusinessDayTimerLabel"),
+	NodePath("SafeArea/GlobalStatusLabel"),
+	NodePath("SafeArea/PaymentSprite"),
+	NodePath("SafeArea/PaymentCoinLayer"),
+	NodePath("SafeArea/P1ControlBar"),
+	NodePath("SafeArea/IngredientRack"),
+	NodePath("SafeArea/RestockRack"),
+	NodePath("SafeArea/LeftRack"),
+	NodePath("SafeArea/RightRack"),
+	NodePath("SafeArea/SurfaceReadoutLabel"),
+	NodePath("SafeArea/IngredientDragPreview"),
+	NodePath("FiveAreaInfrastructure/PendingPaymentButton"),
+]
 @onready var _detail := %DetailText as RichTextLabel
 @onready var _queue := %QueueLabel as Label
 @onready var _buy := %BuyButton as Button
@@ -17,9 +37,25 @@ var _selected_id: StringName = &""
 var _anchors: Dictionary = {}
 var _tag_layouts: Dictionary = {}
 
+
+func _enter_tree() -> void:
+	if Engine.is_editor_hint():
+		return
+	# The formal workstation is authored as an external scene instance so Godot
+	# keeps the editor preview synchronized automatically. Remove it before its
+	# runtime callbacks can enter the tree; the real workstation behind this
+	# overlay is the only gameplay instance that should run.
+	var synced_preview := get_node_or_null("EditorPreview/SyncedWorkstationPreview")
+	if synced_preview != null:
+		var preview_parent := synced_preview.get_parent()
+		if preview_parent != null:
+			preview_parent.remove_child(synced_preview)
+		synced_preview.free()
+
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		_editor_preview.visible = true
+		_configure_editor_workstation_preview()
 		return
 	_editor_preview.visible = false
 	_buy.pressed.connect(_on_buy)
@@ -36,6 +72,19 @@ func _ready() -> void:
 		_anchors[growth_id] = prop
 		_tag_layouts[growth_id] = {"position": prop.position, "size": prop.size}
 	refresh()
+
+
+func _configure_editor_workstation_preview() -> void:
+	if not Engine.is_editor_hint() or _editor_preview == null:
+		return
+	var synced_preview := _editor_preview.get_node_or_null("SyncedWorkstationPreview") as Control
+	if synced_preview == null:
+		push_error("Workshop editor preview is missing its formal workstation instance")
+		return
+	for scene_path in EDITOR_PREVIEW_HIDDEN_PATHS:
+		var preview_node := synced_preview.get_node_or_null(scene_path) as CanvasItem
+		if preview_node != null:
+			preview_node.visible = false
 
 func refresh() -> void:
 	var session := get_node_or_null("/root/GameSession")

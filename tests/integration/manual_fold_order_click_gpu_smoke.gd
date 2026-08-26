@@ -52,6 +52,7 @@ func _run() -> void:
 	await _drag(surface_rect.position + Vector2(24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(224.0, surface_rect.size.y * 0.5))
 	_check(fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT) and fold_unit.fold_steps == 1, "real pointer drag commits the left fold")
 	await _drag(surface_rect.position + Vector2(surface_rect.size.x - 24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(54.0, surface_rect.size.y * 0.5))
+	await create_timer(1.0).timeout
 	_check(fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_RIGHT) and fold_unit.state == CompactGriddleUnit.State.READY, "real pointer drag commits the right fold and packages")
 	_press_and_release_r()
 	await process_frame

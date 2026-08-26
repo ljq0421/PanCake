@@ -186,16 +186,6 @@ static func evaluate_order(
 	var fold_score := 100.0 - float(fold_model.maximum_severity()) * 28.0
 	var repair_tags := PackedStringArray()
 	var score_caps := {"fold": 100.0}
-	if fold_model.package_result == PancakeFoldModel.PACKAGE_SLEEVE:
-		fold_score -= 18.0
-		score_caps.fold = 90.0
-		fold_score = minf(fold_score, float(score_caps.fold))
-		repair_tags.append("纸套加固")
-	elif fold_model.package_result == PancakeFoldModel.PACKAGE_TRAY:
-		fold_score -= 42.0
-		score_caps.fold = 55.0
-		fold_score = minf(fold_score, float(score_caps.fold))
-		repair_tags.append("托盘挽救")
 	fold_score = clampf(fold_score, 0.0, 100.0)
 	var order_score := 100.0
 	order_score -= float(missing_ingredients.size()) * 22.0

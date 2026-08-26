@@ -22,6 +22,14 @@ func _run() -> void:
 	_check(overlay.get_node_or_null("DetailPanel/DetailText") is RichTextLabel, "detail content is authored in the workshop scene")
 	_check(overlay.get_node_or_null("DetailPanel/BuyButton") is Button, "reservation button is authored in the workshop scene")
 	_check(overlay.get_node_or_null("HoverHint/HintLabel") is Label, "hover hint is authored in the workshop scene")
+	var editor_preview := overlay.get_node_or_null("EditorPreview") as Control
+	_check(editor_preview != null, "workshop scene keeps an editor-preview host")
+	_check(editor_preview != null and editor_preview.get_child_count() == 0, "runtime workshop does not instantiate a duplicate workstation")
+	var overlay_scene_source := FileAccess.get_file_as_string("res://scenes/ui/upgrade_workshop_overlay.tscn")
+	var overlay_script_source := FileAccess.get_file_as_string("res://scripts/ui/upgrade_workshop_overlay.gd")
+	_check(overlay_scene_source.contains("path=\"res://scenes/gameplay/five_area_workstation.tscn\""), "editor preview reads from the formal workstation scene")
+	_check(overlay_scene_source.contains("name=\"SyncedWorkstationPreview\" parent=\"EditorPreview\" instance="), "workshop scene authors one synchronized external workstation instance")
+	_check(overlay_script_source.contains("func _enter_tree()"), "runtime removes the editor-only workstation before child callbacks run")
 	var props := overlay.get_node_or_null("UpgradeProps") as Control
 	var scene_growth_ids := {}
 	if props != null:

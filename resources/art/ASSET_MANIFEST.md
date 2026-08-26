@@ -2262,8 +2262,8 @@ Avoid: photorealism, 3D gloss, thin linework, extra props, extra customers, new 
 
 ## reinforced_paper_sleeve_package_v1
 
-- `status`: runtime-integrated-human-review-pending
-- `purpose`: Finished reinforced-sleeve rescue state, replacing the generated rectangle placeholder.
+- `status`: retired-unused
+- `purpose`: Historical reinforced-sleeve rescue artwork; retained as an archived source asset only.
 - `final_file`: `res://resources/art/workstation/packaging/reinforced_paper_sleeve_package_v1.png`
 - `source_file`: `tmp/imagegen/package_serving_v1/reinforced_paper_sleeve_package_v1_chromakey.png`
 - `prompt_file`: `res://resources/art/prompts/reinforced_paper_sleeve_package_v1.md`
@@ -2272,13 +2272,13 @@ Avoid: photorealism, 3D gloss, thin linework, extra props, extra customers, new 
 - `size`: 1254 x 1254 px RGBA
 - `sha256`: `206e01425f7ab7f42c9335d630f011e04aef4647a80f28aa797d9c76bf12b0e0`
 - `alpha_check`: passed; transparent corner pixels and zero green fringe pixels
-- `runtime_integration`: `PancakeFoldOverlay.current_package_texture()` maps `PACKAGE_SLEEVE` to this asset
+- `runtime_integration`: retired 2026-08-26; the game now uses paper-bag packaging only
 - `human_review`: pending
 
 ## serving_tray_package_v1
 
-- `status`: runtime-integrated-human-review-pending
-- `purpose`: Finished tray rescue state for a severely torn fold, replacing the generated rectangle placeholder.
+- `status`: retired-unused
+- `purpose`: Historical tray-rescue artwork; retained as an archived source asset only.
 - `final_file`: `res://resources/art/workstation/packaging/serving_tray_package_v1.png`
 - `source_file`: `tmp/imagegen/package_serving_v1/serving_tray_package_v1_chromakey.png`
 - `prompt_file`: `res://resources/art/prompts/serving_tray_package_v1.md`
@@ -2287,7 +2287,7 @@ Avoid: photorealism, 3D gloss, thin linework, extra props, extra customers, new 
 - `size`: 1254 x 1254 px RGBA
 - `sha256`: `607ceb3d4bb646612068491e9758769c8a6807477eef61e28c22ef5c96e8fe24`
 - `alpha_check`: passed; transparent corner pixels and zero green fringe pixels
-- `runtime_integration`: `PancakeFoldOverlay.current_package_texture()` maps `PACKAGE_TRAY` to this asset
+- `runtime_integration`: retired 2026-08-26; the game now uses paper-bag packaging only
 - `human_review`: pending
 
 ## customer_01_accepting_bag_v1

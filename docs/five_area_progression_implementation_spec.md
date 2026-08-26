@@ -1471,8 +1471,7 @@ func set_interaction_enabled(enabled: bool) -> void
 - 保留 `PancakeModel`、`PancakeScorer`、`IngredientModel`、`PancakeFoldModel` 和输入采样器；
 - 从 `workstation.gd` 提取站点绑定，不重写摊面模拟和评分；
 - 煎饼完成时产出结构化成品快照，交给订单或托盘；
-- 当前包装用“托盘”与“成品暂存托盘”必须使用不同节点名、ID和文案，避免语义冲突；
-- 暂存托盘节点不得复用 `PancakeFoldModel.can_use_tray()` 的包装托盘含义。
+- 两侧折叠完成后统一自动装入纸袋；成品暂存托盘只负责暂存，不承担包装选择或破损补救语义。
 
 ### 14.5 输入和可访问性
 

@@ -15,8 +15,6 @@ const OUTCOME_TORN: StringName = &"torn"
 
 const PACKAGE_NONE: StringName = &"none"
 const PACKAGE_BAG: StringName = &"paper_bag"
-const PACKAGE_SLEEVE: StringName = &"paper_sleeve"
-const PACKAGE_TRAY: StringName = &"tray"
 
 var pancake_model: PancakeModel
 var ingredient_model: IngredientModel
@@ -77,7 +75,11 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	drag_progress = clampf(float(value.get("drag_progress", 0.0)), 0.0, 1.0)
 	crossed_fold_line = bool(value.get("crossed_fold_line", false))
 	package_result = StringName(value.get("package_result", PACKAGE_NONE))
-	if package_result not in [PACKAGE_NONE, PACKAGE_BAG, PACKAGE_SLEEVE, PACKAGE_TRAY]:
+	# Normalize removed rescue-package values from older saves to the single
+	# supported paper-bag result.
+	if package_result in [&"paper_sleeve", &"tray"]:
+		package_result = PACKAGE_BAG
+	elif package_result not in [PACKAGE_NONE, PACKAGE_BAG]:
 		package_result = PACKAGE_NONE
 	var drag_values := Array(value.get("drag_start", []))
 	_drag_start = Vector2(float(drag_values[0]), float(drag_values[1])) if drag_values.size() == 2 else Vector2.ZERO
@@ -173,16 +175,8 @@ func maximum_severity() -> int:
 	return severity
 
 
-func can_use_sleeve() -> bool:
-	return package_result == PACKAGE_NONE and completed_fold_count() == 2 and maximum_severity() <= 1
-
-
 func can_use_bag() -> bool:
-	return package_result == PACKAGE_NONE and completed_fold_count() == 2 and maximum_severity() == 0
-
-
-func can_use_tray() -> bool:
-	return package_result == PACKAGE_NONE and (completed_fold_count() == 2 or maximum_severity() >= 2)
+	return package_result == PACKAGE_NONE and completed_fold_count() == 2
 
 
 func package_with(method: StringName) -> Dictionary:
@@ -190,15 +184,7 @@ func package_with(method: StringName) -> Dictionary:
 		package_result = PACKAGE_BAG
 		changed.emit()
 		return {"success": true, "method": method, "structure_penalty": 0.0, "portability_penalty": 0.0}
-	if method == PACKAGE_SLEEVE and can_use_sleeve():
-		package_result = PACKAGE_SLEEVE
-		changed.emit()
-		return {"success": true, "method": method, "structure_penalty": 0.18, "portability_penalty": 0.08}
-	if method == PACKAGE_TRAY and can_use_tray():
-		package_result = PACKAGE_TRAY
-		changed.emit()
-		return {"success": true, "method": method, "structure_penalty": 0.42, "portability_penalty": 0.70}
-	return {"success": false, "method": method, "reason": "当前折叠状态不适用该包装"}
+	return {"success": false, "method": method, "reason": "完成两侧折叠后会自动装入纸袋"}
 
 
 func result_label(result: Dictionary) -> String:

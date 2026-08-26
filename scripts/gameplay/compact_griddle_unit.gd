@@ -4,6 +4,7 @@ extends Control
 signal main_action_requested(unit_index: int)
 signal status_message_requested(message: String)
 signal transient_warning_requested(message: String)
+signal packaging_finished(unit_index: int)
 
 const GRID_SIZE := 64
 const REFERENCE_GRID_SIZE := 128.0
@@ -154,6 +155,7 @@ var _hardware_spreader_cursor_wide: Texture2D
 var _hardware_spreader_cursor_hotspot := Vector2.ZERO
 var _hardware_spreader_cursor_active := false
 var _hardware_spreader_cursor_is_wide := false
+var _packaging_pending := false
 
 
 static func _compact_pancake_parameters() -> PancakeSimulationParameters:
@@ -178,6 +180,8 @@ func _ready() -> void:
 		pancake_surface.fold_chili_sauce_texture(),
 	)
 	fold_model.changed.connect(_refresh_fold_visual)
+	fold_overlay.fold_landing_finished.connect(_on_fold_landing_finished)
+	fold_overlay.package_reveal_finished.connect(_on_package_reveal_finished)
 	pancake_surface.pointer_started.connect(_on_surface_pointer_started)
 	pancake_surface.pointer_ended.connect(_on_surface_pointer_ended)
 	pancake_surface.cancel_requested.connect(_cancel_surface_action)
@@ -550,8 +554,45 @@ func _fold_grid_position(local_position: Vector2) -> Vector2:
 
 func mark_ready(product: Dictionary) -> void:
 	ready_product = product.duplicate(true)
+	_packaging_pending = false
 	state = State.READY
 	_refresh_ui()
+
+
+func _on_fold_landing_finished() -> void:
+	if not _packaging_pending or fold_model.completed_fold_count() < 2:
+		return
+	_begin_paper_bag_packaging()
+
+
+func _begin_paper_bag_packaging() -> void:
+	if not _packaging_pending or fold_model.package_result == PancakeFoldModel.PACKAGE_BAG:
+		return
+	var package_result := Dictionary(fold_model.package_with(PancakeFoldModel.PACKAGE_BAG))
+	if not bool(package_result.get("success", false)):
+		_packaging_pending = false
+		status_message_requested.emit(str(package_result.get("reason", "纸袋包装失败")))
+		_refresh_ui()
+		return
+	p1_session.mark_packaged()
+	status_message_requested.emit("鏊子%d正在装入纸袋" % (unit_index + 1))
+	_refresh_ui()
+
+
+func _on_package_reveal_finished() -> void:
+	if not _packaging_pending or fold_model.package_result != PancakeFoldModel.PACKAGE_BAG:
+		return
+	_packaging_pending = false
+	packaging_finished.emit(unit_index)
+
+
+func _resume_loaded_packaging() -> void:
+	if not _packaging_pending:
+		return
+	if fold_model.package_result == PancakeFoldModel.PACKAGE_BAG:
+		_on_package_reveal_finished()
+	else:
+		_begin_paper_bag_packaging()
 
 
 func is_reserving_batter() -> bool:
@@ -619,6 +660,7 @@ func snapshot() -> Dictionary:
 		"applied_sauce_ids": applied_sauce_ids.duplicate(),
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
 		"ready_product": ready_product.duplicate(true),
+		"packaging_pending": _packaging_pending,
 		"pancake_model": pancake_model.snapshot(),
 		"ingredient_model": ingredient_model.snapshot(),
 		"fold_model": fold_model.snapshot(),
@@ -648,6 +690,9 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	applied_sauce_ids = PackedStringArray(Array(value.get("applied_sauce_ids", [])))
 	applied_ingredient_ids = PackedStringArray(Array(value.get("applied_ingredient_ids", [])))
 	ready_product = Dictionary(value.get("ready_product", {})).duplicate(true)
+	_packaging_pending = bool(value.get("packaging_pending", false))
+	if state == State.FOLDING and fold_model.completed_fold_count() >= 2 and ready_product.is_empty():
+		_packaging_pending = true
 	if is_node_ready():
 		pancake_surface.set_model(pancake_model)
 		ingredient_layer.set_model(ingredient_model)
@@ -658,6 +703,8 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		_restore_intact_egg_visuals_from_snapshot()
 		_refresh_intact_egg_visual()
 		_refresh_ui()
+		if _packaging_pending:
+			call_deferred("_resume_loaded_packaging")
 	return {"success": true}
 
 
@@ -670,6 +717,7 @@ func reset_unit() -> void:
 	applied_sauce_ids = PackedStringArray()
 	applied_ingredient_ids = PackedStringArray()
 	ready_product.clear()
+	_packaging_pending = false
 	pancake_model.reset()
 	ingredient_model.reset()
 	fold_model.reset()
@@ -756,9 +804,8 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 			fold_steps = fold_model.completed_fold_count()
 			if fold_steps >= 2:
 				p1_session.mark_ready_for_package()
-				fold_model.package_with(PancakeFoldModel.PACKAGE_BAG)
-				p1_session.mark_packaged()
-				status_message_requested.emit("鏊子%d两面折叠完成，纸袋包装就绪" % (unit_index + 1))
+				_packaging_pending = true
+				status_message_requested.emit("鏊子%d两面折叠完成，正在装入纸袋" % (unit_index + 1))
 			else:
 				status_message_requested.emit("鏊子%d%s；再折另一侧" % [unit_index + 1, fold_model.result_label(fold_result)])
 		else:
@@ -1432,7 +1479,7 @@ func _refresh_ui() -> void:
 			state_label.text = "未翻面备料 · 可加料折叠，交付-12分" if not pancake_model.is_flipped else "可继续加料，也可直接抓边折叠"
 			main_action.text = "等待备料"
 		State.FOLDING:
-			state_label.text = "手动折叠 %d/2 · 抓另一侧饼边" % fold_steps
+			state_label.text = "折叠完成 · 正在装入纸袋" if _packaging_pending else "手动折叠 %d/2 · 抓另一侧饼边" % fold_steps
 		State.READY:
 			state_label.text = "成品待自由交付"
 			main_action.text = "拖到匹配订单"
@@ -1452,7 +1499,11 @@ func _refresh_fold_visual() -> void:
 		left_progress = float(fold_model.drag_progress)
 	elif fold_model.active_region == PancakeFoldModel.REGION_RIGHT:
 		right_progress = float(fold_model.drag_progress)
-	pancake_surface.set_fold_visual_state(left_progress, right_progress, fold_model.package_result != PancakeFoldModel.PACKAGE_NONE)
+	pancake_surface.set_fold_visual_state(
+		left_progress,
+		right_progress,
+		fold_model.package_result != PancakeFoldModel.PACKAGE_NONE,
+	)
 
 
 func _refresh_heat_visual() -> void:

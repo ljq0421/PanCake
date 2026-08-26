@@ -159,6 +159,40 @@ func _run() -> void:
 	var saved := Dictionary(production.call("set_pancake_griddles_snapshot", legacy_snapshot))
 	var normalized := Dictionary(production.call("pancake_griddles_snapshot"))
 	_check(bool(saved.get("success", false)) and int(normalized.get("griddle_count", 0)) == 1 and Array(normalized.get("slots", [])).size() == 1 and int(normalized.get("active_index", -1)) == 0, "production persistence normalizes old multi-griddle snapshots")
+
+	unit.begin_order({"time_limit": 72.0})
+	unit.pancake_model.coverage.fill(1.0)
+	unit.pancake_model.thickness.fill(0.55)
+	unit.pancake_model.doneness.fill(0.62)
+	unit.state = CompactGriddleUnit.State.GARNISH
+	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
+	unit.call("_refresh_ui")
+	unit.call("_on_surface_pointer_started", unit.pancake_surface.size * Vector2(0.12, 0.50))
+	unit.call("_on_surface_pointer_ended", unit.pancake_surface.size * Vector2(0.54, 0.50))
+	await create_timer(0.70).timeout
+	unit.call("_on_surface_pointer_started", unit.pancake_surface.size * Vector2(0.88, 0.50))
+	unit.call("_on_surface_pointer_ended", unit.pancake_surface.size * Vector2(0.46, 0.50))
+	var pending_snapshot := Dictionary(unit.snapshot())
+	_check(
+		unit.state == CompactGriddleUnit.State.FOLDING
+		and bool(pending_snapshot.get("packaging_pending", false))
+		and unit.fold_model.package_result == PancakeFoldModel.PACKAGE_NONE,
+		"the final fold remains visible while its landing animation finishes",
+	)
+	await create_timer(0.70).timeout
+	var packaging_material := unit.pancake_visual.material as ShaderMaterial
+	_check(
+		unit.fold_model.package_result == PancakeFoldModel.PACKAGE_BAG
+		and is_equal_approx(float(packaging_material.get_shader_parameter(&"package_hidden")), 1.0),
+		"the entering paper bag fully replaces the folded-pancake artwork instead of layering over it",
+	)
+	await create_timer(0.45).timeout
+	_check(
+		unit.state == CompactGriddleUnit.State.READY
+		and unit.fold_model.package_result == PancakeFoldModel.PACKAGE_BAG
+		and not unit.ready_product.is_empty(),
+		"the settled fold automatically completes the single paper-bag transition before delivery unlocks",
+	)
 	station.queue_free()
 	session.queue_free()
 	_finish()

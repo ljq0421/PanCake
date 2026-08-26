@@ -21,7 +21,7 @@ func _run() -> void:
 	_test_every_order_combination()
 	_test_double_portion_order_scoring()
 	_test_ingredients_affect_fold_and_score()
-	_test_repair_tags_and_score_caps()
+	_test_damage_score_uses_the_single_paper_bag_path()
 	_finish()
 
 
@@ -530,7 +530,7 @@ func _test_ingredients_affect_fold_and_score() -> void:
 	_check(loaded_result.outcome == PancakeFoldModel.OUTCOME_THICK, "heavy fillings in a flap create a visible bulged-fold outcome")
 
 
-func _test_repair_tags_and_score_caps() -> void:
+func _test_damage_score_uses_the_single_paper_bag_path() -> void:
 	var order := OrderService.new().order_at(0)
 	var sleeve_model := _uniform_pancake(64, 0.42)
 	_seed_even_egg(sleeve_model)
@@ -543,9 +543,9 @@ func _test_repair_tags_and_score_caps() -> void:
 	sleeve_ingredients.place(IngredientModel.SCALLION, Vector2(34, 35), 0.0, sleeve_model)
 	var sleeve_fold := PancakeFoldModel.new(sleeve_model, sleeve_ingredients)
 	_fold_both(sleeve_fold)
-	_check(bool(sleeve_fold.package_with(PancakeFoldModel.PACKAGE_SLEEVE).success), "a minor fold issue can select the paper-sleeve repair")
+	_check(bool(sleeve_fold.package_with(PancakeFoldModel.PACKAGE_BAG).success), "a minor fold issue still uses the paper bag")
 	var sleeve_result := PancakeScorer.evaluate_order(sleeve_model, sleeve_ingredients, sleeve_fold, order, 48.0, 0.6)
-	_check(float(sleeve_result.score_caps.fold) == 90.0 and float(sleeve_result.dimensions.fold) <= 90.0 and sleeve_result.tags.has("纸套加固"), "paper-sleeve repair saves its label and 90-point structure cap")
+	_check(float(sleeve_result.score_caps.fold) == 100.0 and Array(sleeve_result.serving_score_basis.repair_tags).is_empty(), "paper-bag packaging adds no repair tag or artificial score cap")
 
 	var tray_model := _uniform_pancake(64, 0.42)
 	_seed_even_egg(tray_model)
@@ -556,9 +556,10 @@ func _test_repair_tags_and_score_caps() -> void:
 	var tray_ingredients := IngredientModel.new()
 	var tray_fold := PancakeFoldModel.new(tray_model, tray_ingredients)
 	var torn := _fold_left(tray_fold)
-	_check(torn.outcome == PancakeFoldModel.OUTCOME_TORN and bool(tray_fold.package_with(PancakeFoldModel.PACKAGE_TRAY).success), "a severe tear can select the tray rescue")
+	_fold_right(tray_fold)
+	_check(torn.outcome == PancakeFoldModel.OUTCOME_TORN and bool(tray_fold.package_with(PancakeFoldModel.PACKAGE_BAG).success), "a severe tear still completes through the paper-bag path")
 	var tray_result := PancakeScorer.evaluate_order(tray_model, tray_ingredients, tray_fold, order, 48.0, 0.6)
-	_check(float(tray_result.score_caps.fold) == 55.0 and float(tray_result.dimensions.fold) <= 55.0 and tray_result.tags.has("托盘挽救"), "tray rescue saves its label and 55-point structure cap")
+	_check(float(tray_result.score_caps.fold) == 100.0 and Array(tray_result.serving_score_basis.repair_tags).is_empty() and float(tray_result.dimensions.fold) < float(sleeve_result.dimensions.fold), "damage itself lowers fold quality without a rescue-package penalty")
 
 
 func _target_doneness(preference: StringName) -> float:
@@ -626,6 +627,12 @@ func _fold_left(fold: PancakeFoldModel) -> Dictionary:
 	var size := fold.pancake_model.grid_size
 	fold.begin_drag(Vector2(size * 0.12, size * 0.5))
 	return fold.release_drag(Vector2(size * 0.54, size * 0.5))
+
+
+func _fold_right(fold: PancakeFoldModel) -> Dictionary:
+	var size := fold.pancake_model.grid_size
+	fold.begin_drag(Vector2(size * 0.88, size * 0.5))
+	return fold.release_drag(Vector2(size * 0.46, size * 0.5))
 
 
 func _fold_both(fold: PancakeFoldModel) -> void:

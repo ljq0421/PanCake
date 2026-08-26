@@ -86,8 +86,6 @@ const EGG_CRACK_EFFECT_STAGE_Y := 0.0
 @onready var sauce_refill_button: Button = get_node_or_null("SafeArea/RightRack/SauceRefillButton") as Button
 @onready var sauce_status_label: Label = get_node_or_null("SafeArea/RightRack/SauceStatusLabel") as Label
 @onready var fold_button: Button = get_node_or_null("SafeArea/LeftRack/FoldButton") as Button
-@onready var paper_sleeve_button: Button = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices/PaperSleeveButton") as Button
-@onready var tray_button: Button = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices/TrayButton") as Button
 @onready var fold_status_label: Label = get_node_or_null("SafeArea/RightRack/FoldStatusLabel") as Label
 @onready var fold_overlay: Control = get_node_or_null("SafeArea/PanBase/PancakeSurface/PancakeFoldOverlay") as Control
 @onready var spreader_artwork: Sprite2D = get_node_or_null("SafeArea/PanBase/PancakeSurface/SpreaderArtwork") as Sprite2D
@@ -150,8 +148,6 @@ var _order_patience_tier := -1
 @onready var heat_label: Label = get_node_or_null("SafeArea/P1ControlBar/HeatLabel") as Label
 @onready var step_action_button: Button = get_node_or_null("SafeArea/P1ControlBar/StepActionButton") as Button
 @onready var discard_current_pancake_button: Button = get_node_or_null("SafeArea/DiscardCurrentPancakeButton") as Button
-@onready var packaging_choices: Control = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices") as Control
-@onready var bag_button: Button = get_node_or_null("SafeArea/P1ControlBar/PackagingChoices/BagButton") as Button
 @onready var serve_button: Button = get_node_or_null("SafeArea/P1ControlBar/ServeButton") as Button
 @onready var result_panel: PanelContainer = %ResultPanel
 @onready var result_title_label: Label = %ResultTitleLabel
@@ -382,9 +378,6 @@ func _ready() -> void:
 	chili_sauce_refill_button.button_up.connect(_on_sauce_squeeze_ended)
 	egg_crack_effect.animation_finished.connect(_on_egg_crack_animation_finished)
 	fold_button.pressed.connect(_select_fold)
-	paper_sleeve_button.pressed.connect(_use_paper_sleeve)
-	tray_button.pressed.connect(_use_tray)
-	bag_button.pressed.connect(_use_bag)
 	store_pancake_button.pressed.connect(_store_current_pancake)
 	if customer_service_slots.is_empty():
 		for slot_index in customer_slot_buttons.size():
@@ -1683,36 +1676,6 @@ func _spreader_thickness_label() -> String:
 			return "标准厚度"
 
 
-func _use_paper_sleeve() -> void:
-	var result: Dictionary = fold_model.package_with(FOLD_MODEL_SCRIPT.PACKAGE_SLEEVE)
-	if bool(result.get("success", false)):
-		tool_controller.clear_tool()
-		tool_status_label.text = "纸套挽救完成：结构轻度降分"
-		p1_session.mark_packaged()
-	else:
-		tool_status_label.text = str(result.get("reason", "纸套当前不可用"))
-
-
-func _use_tray() -> void:
-	var result: Dictionary = fold_model.package_with(FOLD_MODEL_SCRIPT.PACKAGE_TRAY)
-	if bool(result.get("success", false)):
-		tool_controller.clear_tool()
-		tool_status_label.text = "托盘挽救完成：结构与便携性大幅降分"
-		p1_session.mark_packaged()
-	else:
-		tool_status_label.text = str(result.get("reason", "托盘当前不可用"))
-
-
-func _use_bag() -> void:
-	var result: Dictionary = fold_model.package_with(FOLD_MODEL_SCRIPT.PACKAGE_BAG)
-	if bool(result.get("success", false)):
-		tool_controller.clear_tool()
-		tool_status_label.text = "纸袋包装完成：可以出餐"
-		p1_session.mark_packaged()
-	else:
-		tool_status_label.text = str(result.get("reason", "纸袋只适用于完整折叠"))
-
-
 func _refresh_fold_ui() -> void:
 	if not is_instance_valid(fold_status_label):
 		return
@@ -1736,16 +1699,10 @@ func _refresh_fold_ui() -> void:
 	var right: Dictionary = fold_model.get_region_result(FOLD_MODEL_SCRIPT.REGION_RIGHT)
 	var left_text: String = fold_model.result_label(left) if bool(left.get("folded", false)) else "待折"
 	var right_text: String = fold_model.result_label(right) if bool(right.get("folded", false)) else "待折"
-	if fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_SLEEVE:
-		fold_status_label.text = "折叠完成 · 已用纸套挽救"
-	elif fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_TRAY:
-		fold_status_label.text = "折叠失败 · 已改用托盘出餐"
-	elif fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_BAG:
+	if fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_BAG:
 		fold_status_label.text = "折叠完整 · 已装入纸袋"
 	else:
 		fold_status_label.text = "左：%s · 右：%s" % [left_text, right_text]
-	paper_sleeve_button.disabled = not fold_model.can_use_sleeve()
-	tray_button.disabled = not fold_model.can_use_tray()
 	var preparation_locked := _folding_locks_preparation()
 	ladle_button.disabled = pour_used or preparation_locked
 	scraper_button.disabled = preparation_locked or not _scraper_can_act()
@@ -1754,9 +1711,13 @@ func _refresh_fold_ui() -> void:
 	sauce_brush_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_refresh_sauce_button_states()
 	fold_button.disabled = fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE or fold_model.completed_fold_count() >= 2
-	bag_button.disabled = not fold_model.can_use_bag()
 	if fold_model.completed_fold_count() >= 2 and fold_model.package_result == FOLD_MODEL_SCRIPT.PACKAGE_NONE and p1_session.phase == P1Session.Phase.FOLD:
 		p1_session.mark_ready_for_package()
+		var package_result := Dictionary(fold_model.package_with(FOLD_MODEL_SCRIPT.PACKAGE_BAG))
+		if bool(package_result.get("success", false)):
+			tool_controller.clear_tool()
+			tool_status_label.text = "折叠完成，已自动装入纸袋"
+			p1_session.mark_packaged()
 	fold_overlay.queue_redraw()
 
 
@@ -1991,7 +1952,7 @@ func _advance_p1_step() -> void:
 			if bool(action_result.success):
 				_select_fold()
 		P1Session.Phase.FOLD, P1Session.Phase.PACKAGE:
-			tool_status_label.text = "先完成两侧折叠，再选择纸袋、纸套或托盘"
+			tool_status_label.text = "先完成两侧折叠，完成后会自动装入纸袋"
 		P1Session.Phase.READY_TO_SERVE:
 			tool_status_label.text = "点击鏊子上的包装成品，把餐递给顾客"
 			return
@@ -3405,7 +3366,6 @@ func _refresh_p1_ui() -> void:
 			step_action_button.text = ""
 	serve_button.visible = false
 	var packaging_phase := p1_session.phase == P1Session.Phase.PACKAGE
-	packaging_choices.visible = packaging_phase
 	heat_label.visible = not packaging_phase
 	heat_slider.visible = false
 	var blocked_unflipped_topping := (

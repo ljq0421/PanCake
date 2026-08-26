@@ -1,6 +1,9 @@
 class_name PancakeFoldOverlay
 extends Control
 
+signal fold_landing_finished
+signal package_reveal_finished
+
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const FOLD_COMPLETION_MIN_DURATION := 0.14
 const FOLD_COMPLETION_MAX_DURATION := 0.30
@@ -17,8 +20,6 @@ const FOLD_VISIBLE_DAMAGE_MAX := 0.98
 @export var pancake_back_texture: Texture2D
 @export var pancake_edge_texture: Texture2D
 @export var paper_bag_package_texture: Texture2D
-@export var reinforced_sleeve_package_texture: Texture2D
-@export var serving_tray_package_texture: Texture2D
 
 var fold_model: RefCounted
 var guides_visible := false
@@ -34,6 +35,7 @@ var _animated_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
 var _animated_progress := 0.0
 var _settle_phase := 1.0
 var _fold_tween: Tween
+var _package_tween: Tween
 var _fold_sweet_sauce_texture: Texture2D
 var _fold_chili_sauce_texture: Texture2D
 var _last_sauce_front_strip_count := 0
@@ -119,13 +121,16 @@ func _on_fold_changed() -> void:
 	var package_result: StringName = fold_model.package_result if fold_model != null else FOLD_MODEL_SCRIPT.PACKAGE_NONE
 	if package_result != _last_package_result:
 		_last_package_result = package_result
+		if _package_tween != null and _package_tween.is_running():
+			_package_tween.kill()
 		if package_result == FOLD_MODEL_SCRIPT.PACKAGE_NONE:
 			_package_reveal = 0.0
 		else:
 			_package_reveal = 0.0
-			var tween := create_tween()
-			tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tween.tween_method(_set_package_reveal, 0.0, 1.0, 0.28)
+			_package_tween = create_tween()
+			_package_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			_package_tween.tween_method(_set_package_reveal, 0.0, 1.0, 0.38)
+			_package_tween.finished.connect(_on_package_reveal_finished)
 	queue_redraw()
 
 
@@ -161,6 +166,7 @@ func _finish_fold_landing() -> void:
 	_animated_progress = 0.0
 	_settle_phase = 1.0
 	queue_redraw()
+	fold_landing_finished.emit()
 
 
 func is_fold_animation_active() -> bool:
@@ -172,6 +178,12 @@ func _set_package_reveal(value: float) -> void:
 	queue_redraw()
 
 
+func _on_package_reveal_finished() -> void:
+	_package_reveal = 1.0
+	queue_redraw()
+	package_reveal_finished.emit()
+
+
 func _draw() -> void:
 	_last_sauce_front_strip_count = 0
 	_last_sauce_hidden_back_strip_count = 0
@@ -179,6 +191,8 @@ func _draw() -> void:
 	if fold_model == null or fold_model.pancake_model == null:
 		return
 	if fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE:
+		# Packaging is a strict visual handoff: once the bag enters, none of the
+		# folded-pancake artwork is drawn behind it.
 		_draw_package()
 		return
 	if guides_visible:
@@ -876,11 +890,14 @@ func _draw_package() -> void:
 	var texture := current_package_texture()
 	if texture == null:
 		return
-	var reveal_scale := lerpf(0.72, 1.0, _package_reveal)
+	var eased_reveal := 1.0 - pow(1.0 - _package_reveal, 3.0)
+	var reveal_scale := lerpf(0.84, 1.0, eased_reveal)
 	var side := minf(size.x, size.y) * 0.82 * reveal_scale
-	var rect := Rect2(size * 0.5 - Vector2.ONE * side * 0.5, Vector2.ONE * side)
-	var opacity := smoothstep(0.0, 0.35, _package_reveal)
-	draw_texture_rect(texture, rect, false, Color(1.0, 1.0, 1.0, opacity))
+	var downward_entry := Vector2(0.0, lerpf(24.0, 0.0, eased_reveal))
+	var rect := Rect2(size * 0.5 - Vector2.ONE * side * 0.5 + downward_entry, Vector2.ONE * side)
+	# Start fully opaque so the retired pancake state cannot show through while
+	# the bag moves and scales into its resting position.
+	draw_texture_rect(texture, rect, false, Color.WHITE)
 
 
 func current_package_texture() -> Texture2D:
@@ -892,10 +909,6 @@ func package_texture_for(package_result: StringName) -> Texture2D:
 	match package_result:
 		FOLD_MODEL_SCRIPT.PACKAGE_BAG:
 			return paper_bag_package_texture
-		FOLD_MODEL_SCRIPT.PACKAGE_SLEEVE:
-			return reinforced_sleeve_package_texture
-		FOLD_MODEL_SCRIPT.PACKAGE_TRAY:
-			return serving_tray_package_texture
 		_:
 			return null
 

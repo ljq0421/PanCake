@@ -109,8 +109,6 @@ func _run() -> void:
 	if root.get_texture().get_image().save_png(folded_path) != OK:
 		_fail("Failed to save P1 folded-product capture")
 		return
-	workstation.bag_button.pressed.emit()
-	await create_timer(0.32).timeout
 	var paper_bag_path := capture_directory.path_join("p1_paper_bag_latest.png")
 	if root.get_texture().get_image().save_png(paper_bag_path) != OK:
 		_fail("Failed to save P1 paper-bag capture")

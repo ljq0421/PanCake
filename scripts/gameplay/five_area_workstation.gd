@@ -33,8 +33,6 @@ const PAYMENT_COIN_TEXTURES := {
 	10: preload("res://resources/art/payments/coin_10_v2_chinese_ui.png"),
 	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
 }
-const RIGHT_SOY_STATION_POSITION := Vector2(1500.0, 480.0)
-const RIGHT_SOY_STATION_SIZE := Vector2(410.0, 496.0)
 const FORMAL_PAYMENT_COIN_SIZE := Vector2(44.0, 44.0)
 const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(842.0, 526.0)
 const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 38.0
@@ -104,12 +102,6 @@ func _ready() -> void:
 	# but below modal result panels.
 	payment_coin_layer.z_index = 30
 	_formal_payment_total_rest_modulate = global_status_label.modulate
-	# DirectSoyStation owns both the right-side dispenser artwork and its serving
-	# interactions. Normalize its instance offsets so the retired left-side
-	# placement cannot resurface.
-	fresh_soy_station.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	fresh_soy_station.position = RIGHT_SOY_STATION_POSITION
-	fresh_soy_station.size = RIGHT_SOY_STATION_SIZE
 	for station in [fresh_soy_station, cartoon_youtiao_fryer]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
@@ -582,7 +574,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				P1Session.Phase.FIRST_SIDE, P1Session.Phase.SECOND_SIDE: return {"target": step_action_button, "message": "观察火候并在合适时机翻面或确认"}
 				P1Session.Phase.SAUCE_AND_FILLINGS: return {"target": sauce_brush_button, "message": "刷酱并按订单加入配料"}
 				P1Session.Phase.FOLD: return {"target": fold_button, "message": "选择折叠工具并完成折叠"}
-				P1Session.Phase.PACKAGE: return {"target": paper_sleeve_button, "message": "选择可用包装完成打包"}
+				P1Session.Phase.PACKAGE: return {"target": fold_button, "message": "折叠完成后会自动装入纸袋"}
 				P1Session.Phase.READY_TO_SERVE: return {"target": _tutorial_delivery_target(session, area_id), "message": "点击订单商品交付经典煎饼"}
 	return {}
 

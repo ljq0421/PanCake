@@ -2,18 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cnpgrfexl1hdy" path="res://scripts/ui/upgrade_workshop_overlay.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://b7hh75ge4rl1u" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png" id="2_press_spreader"]
-[ext_resource type="Texture2D" uid="uid://da8bphae6srtv" path="res://resources/art/workstation/background/empty-workbench.png" id="3_editor_background"]
-[ext_resource type="PackedScene" uid="uid://dngeu6txsruyi" path="res://scenes/gameplay/jianbing_stall_artwork.tscn" id="4_editor_jianbing"]
-[ext_resource type="PackedScene" uid="uid://bgfmpn1k6dtn5" path="res://scenes/gameplay/direct_soy_station.tscn" id="5_editor_soy"]
-[ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="6_editor_youtiao"]
-[ext_resource type="Texture2D" uid="uid://d3r50b1mpjkww" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-full.png" id="7_editor_coriander"]
-[ext_resource type="Texture2D" uid="uid://ckmdjtq575161" path="res://resources/art/ingredients/inventory_containers/scallion/crock_states/scallion-crock-full.png" id="8_editor_scallion"]
-[ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="9_editor_baocui_basket"]
-[ext_resource type="Texture2D" uid="uid://dwl4y0ubm5aid" path="res://resources/art/ingredients/baocui/baocui_crisps_06.png" id="10_editor_baocui_contents"]
-[ext_resource type="Texture2D" uid="uid://cu2vspaobypqo" path="res://resources/art/ingredients/inventory_containers/egg/egg-carton-base-empty-2x3-lidless-cartoon-bold-outline-v4-512.png" id="11_editor_egg_carton"]
-[ext_resource type="Texture2D" uid="uid://d0gefpovfiack" path="res://resources/art/ingredients/inventory_containers/egg/overlays/egg-carton-overlay-6-egg-512.png" id="12_editor_egg_contents"]
-[ext_resource type="PackedScene" uid="uid://c027y2f04nop8" path="res://scenes/gameplay/multi_griddle_station.tscn" id="13_editor_griddle"]
-[ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="14_editor_ladle"]
+[ext_resource type="PackedScene" uid="uid://x84wsqbvl1do" path="res://scenes/gameplay/five_area_workstation.tscn" id="3_workstation_preview"]
 
 [node name="UpgradeWorkshopOverlay" type="Control" unique_id=73984800]
 z_index = 1100
@@ -46,128 +35,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Background" type="TextureRect" parent="EditorPreview" unique_id=886540538]
-z_index = -200
+[node name="SyncedWorkstationPreview" parent="EditorPreview" instance=ExtResource("3_workstation_preview")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("3_editor_background")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="JianbingStallArtwork" parent="EditorPreview" unique_id=2069592076 instance=ExtResource("4_editor_jianbing")]
-layout_mode = 1
-
-[node name="CartoonYoutiaoFryer" parent="EditorPreview" unique_id=1412988571 instance=ExtResource("6_editor_youtiao")]
-layout_mode = 0
-offset_left = -5.0
-offset_top = 422.0
-offset_right = 595.0
-offset_bottom = 1065.0
-
-[node name="FreshSoyMilkStation" parent="EditorPreview" unique_id=498412243 instance=ExtResource("5_editor_soy")]
-layout_mode = 0
-offset_left = 1500.0
-offset_top = 480.0
-offset_right = 1910.0
-offset_bottom = 976.0
-
-[node name="MultiGriddleStation" parent="EditorPreview" unique_id=1016960154 instance=ExtResource("13_editor_griddle")]
-layout_mode = 0
-offset_left = 370.0
-offset_top = 618.0
-offset_right = 1540.0
-offset_bottom = 1062.0
-
-[node name="StockPreview" type="Control" parent="EditorPreview" unique_id=699764199]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="CorianderJar" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=1445006441]
-layout_mode = 0
-offset_left = 471.0
-offset_top = 555.0
-offset_right = 631.0
-offset_bottom = 715.0
-mouse_filter = 2
-texture = ExtResource("7_editor_coriander")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ScallionCrock" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=786151445]
-layout_mode = 0
-offset_left = 590.0
-offset_top = 555.0
-offset_right = 750.0
-offset_bottom = 715.0
-mouse_filter = 2
-texture = ExtResource("8_editor_scallion")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BaocuiBasket" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=169422181]
-layout_mode = 0
-offset_left = 693.8
-offset_top = 544.5
-offset_right = 951.2
-offset_bottom = 739.5
-mouse_filter = 2
-texture = ExtResource("9_editor_baocui_basket")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BaocuiContents" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=1639999019]
-layout_mode = 0
-offset_left = 722.75
-offset_top = 586.1
-offset_right = 924.25
-offset_bottom = 671.9
-mouse_filter = 2
-texture = ExtResource("10_editor_baocui_contents")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="EggCarton" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=904206208]
-layout_mode = 0
-offset_left = 900.0
-offset_top = 520.0
-offset_right = 1116.0
-offset_bottom = 754.0
-mouse_filter = 2
-texture = ExtResource("11_editor_egg_carton")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="EggContents" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=1734015444]
-layout_mode = 0
-offset_left = 900.0
-offset_top = 520.0
-offset_right = 1116.0
-offset_bottom = 754.0
-mouse_filter = 2
-texture = ExtResource("12_editor_egg_contents")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="BatterLadleHolder" type="TextureRect" parent="EditorPreview/StockPreview" unique_id=845232602]
-layout_mode = 0
-offset_left = 1320.0
-offset_top = 685.0
-offset_right = 1479.0
-offset_bottom = 830.0
-mouse_filter = 2
-texture = ExtResource("14_editor_ladle")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="QueueLabel" type="Label" parent="." unique_id=1984833927]
 unique_name_in_owner = true

@@ -228,11 +228,11 @@ offset = Vector2(0, 120)
 [node name="PackageVisual" type="TextureRect" parent="."]
 unique_name_in_owner = true
 visible = false
-offset_left = 116.0
-offset_top = 56.0
-offset_right = 244.0
-offset_bottom = 174.0
-pivot_offset = Vector2(64, 59)
+offset_left = 128.0
+offset_top = 69.0
+offset_right = 292.0
+offset_bottom = 233.0
+pivot_offset = Vector2(82, 82)
 scale = Vector2(2, 2)
 mouse_filter = 2
 texture = ExtResource("4_bag")

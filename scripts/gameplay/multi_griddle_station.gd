@@ -46,6 +46,7 @@ func _ready() -> void:
 		unit.main_action_requested.connect(_on_main_action)
 		unit.status_message_requested.connect(status_message.emit)
 		unit.transient_warning_requested.connect(transient_warning_requested.emit)
+		unit.packaging_finished.connect(_on_unit_packaging_finished)
 	_apply_count_layout()
 
 
@@ -281,11 +282,16 @@ func complete_surface_action(unit_index: int, action: StringName, changed: bool)
 		return
 	if action == UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE:
 		status_message.emit("酱料已完成一次连续刷涂" if changed else "酱刷没有接触到有效饼面")
-	elif action == UNIT_SCRIPT.SURFACE_ACTION_FOLD:
-		var unit := _unit(unit_index)
-		if changed and unit != null and unit.fold_model.completed_fold_count() >= 2 and unit.state == UNIT_SCRIPT.State.FOLDING:
-			unit.mark_ready(_build_product(unit))
 	clear_held_tool()
+	_sync_snapshot_to_session()
+
+
+func _on_unit_packaging_finished(unit_index: int) -> void:
+	var unit := _unit(unit_index)
+	if unit == null or unit.state != UNIT_SCRIPT.State.FOLDING or unit.fold_model.package_result != &"paper_bag":
+		return
+	unit.mark_ready(_build_product(unit))
+	status_message.emit("鏊子%d纸袋包装完成，可拖到匹配订单" % (unit_index + 1))
 	_sync_snapshot_to_session()
 
 

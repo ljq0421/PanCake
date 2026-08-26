@@ -238,14 +238,7 @@ func _run() -> void:
 	)
 	var enclosed_fold_diagnostics: Dictionary = workstation.fold_overlay.get_renderer_diagnostics()
 	_check(bool(enclosed_fold_diagnostics.get("sauce_hidden_enclosed", false)) and int(enclosed_fold_diagnostics.get("sauce_front_strip_count", -1)) == 0, "fully folded pancake hides both sauce textures inside the finished shape")
-	_check(workstation.p1_session.phase == P1Session.Phase.PACKAGE and not workstation.bag_button.disabled, "intact folds unlock normal packaging")
-	_check(
-		workstation.packaging_choices.visible
-		and not workstation.bag_button.get_global_rect().intersects(workstation.get_node("SafeArea/IngredientRack").get_global_rect()),
-		"contextual packaging choices stay off the right-hand ingredient trays"
-	)
-	workstation.bag_button.pressed.emit()
-	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE, "paper bag completes packaging without a rescue penalty")
+	_check(workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE, "completed folds automatically enter the ready-to-serve paper-bag state")
 	_check(
 		workstation.fold_overlay.current_package_texture().resource_path.ends_with("paper_bag_package_v1.png"),
 		"paper-bag completion renders its dedicated finished-product artwork"

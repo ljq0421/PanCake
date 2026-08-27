@@ -330,12 +330,10 @@ func _ready() -> void:
 		formal_active = Dictionary(game_session.call("active_formal_order"))
 	if game_session != null and game_session.has_method("ensure_active_playable_order") and bool(game_session.call("is_five_area_save_active")):
 		# The formal service owns the deterministic stream. The legacy queue is
-		# retained only as a one-customer adapter for the pancake simulator.
+		# retained only as a one-customer adapter for the pancake simulator. The
+		# opening scheduler, rather than scene setup, creates the first order.
 		order_service = ORDER_SERVICE_SCRIPT.new(unlocked_ingredient_ids)
 		customer_queue = CUSTOMER_QUEUE_SERVICE_SCRIPT.new(order_service, 1)
-		var ensured: Dictionary = game_session.call("ensure_active_playable_order")
-		if bool(ensured.get("success", false)):
-			formal_active = Dictionary(ensured.get("order", {}))
 		var restored_legacy: Dictionary = Dictionary(Dictionary(formal_active.get("metadata", {})).get("legacy_order", {}))
 		if not restored_legacy.is_empty():
 			customer_queue.call("restore_active_customer", restored_legacy)
@@ -488,21 +486,23 @@ func _uses_playable_formal_orders() -> bool:
 
 func _route_active_playable_order(restart_pancake: bool = true) -> void:
 	var game_session := get_node_or_null("/root/GameSession")
-	if game_session == null or not game_session.has_method("ensure_active_playable_order"):
+	if game_session == null or not game_session.has_method("active_formal_orders"):
 		return
-	var ensured: Dictionary = game_session.call("ensure_active_playable_order")
-	if not bool(ensured.get("success", false)):
+	var active_orders: Array = Array(game_session.call("active_formal_orders"))
+	if active_orders.is_empty():
 		_formal_order_id = &""
 		_refresh_main_order_controls({})
+		if game_session.has_method("is_opening_restock_active") and bool(game_session.call("is_opening_restock_active")):
+			tool_status_label.text = "备货中：顾客将在稍后到场"
 		return
 	var chosen := {}
-	for order_variant in Array(ensured.get("active_orders", [])):
+	for order_variant in active_orders:
 		var candidate := Dictionary(order_variant)
 		if StringName(candidate.get("order_id", &"")) == _formal_order_id:
 			chosen = candidate
 			break
 	if chosen.is_empty():
-		chosen = Dictionary(ensured.get("order", {}))
+		chosen = Dictionary(active_orders.front())
 	_focus_formal_order(chosen, restart_pancake)
 
 
@@ -597,7 +597,7 @@ func _on_formal_order_expired(result: Dictionary) -> void:
 	if expired_order_id == _formal_order_id:
 		_formal_order_id = &""
 	_pending_delivery_item_index = -1
-	tool_status_label.text = "顾客耐心耗尽，口碑 -2；店内已补入新顾客"
+	tool_status_label.text = "顾客耐心耗尽，口碑 -2；下一位顾客将稍后到场"
 	_route_active_playable_order(false)
 
 
@@ -953,11 +953,18 @@ func _process(delta: float) -> void:
 		_refresh_customer_queue()
 		if not _customer_visual_state.is_empty():
 			_set_customer_portrait_state(_customer_visual_state)
+	var game_session := get_node_or_null("/root/GameSession")
+	var formal_time_paused := _formal_order_time_paused()
+	if game_session != null and game_session.has_method("advance_customer_arrivals") and not formal_time_paused:
+		var arrival_result: Dictionary = game_session.call("advance_customer_arrivals", delta)
+		if bool(arrival_result.get("changed", false)):
+			_refresh_customer_queue()
+		var entered_orders: Array = Array(arrival_result.get("entered_orders", []))
+		if not entered_orders.is_empty() and _formal_order_id.is_empty():
+			_focus_formal_order(Dictionary(entered_orders.front()), true)
 	_advance_business_day_timer(delta)
 	if _business_day_closed:
 		return
-	var game_session := get_node_or_null("/root/GameSession")
-	var formal_time_paused := _formal_order_time_paused()
 	var active_formal_order: Dictionary = {}
 	var current_formal_orders: Variant = null
 	var mirrors_formal_pancake_patience := false
@@ -1035,6 +1042,14 @@ func _formal_order_time_paused() -> bool:
 func _advance_business_day_timer(delta: float) -> void:
 	if business_day_timer == null or _business_day_closed:
 		return
+	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("customer_arrival_snapshot"):
+		var arrival_state: Dictionary = game_session.call("customer_arrival_snapshot")
+		if StringName(arrival_state.get("phase", &"")) == &"restocking":
+			if business_day_timer_label != null:
+				business_day_timer_label.text = "备货中 %d秒" % ceili(float(arrival_state.get("restock_remaining_seconds", 0.0)))
+				business_day_timer_label.add_theme_color_override("font_color", Color(0.54, 0.90, 0.75, 1))
+			return
 	if _active_formal_order_is_tutorial():
 		if business_day_timer_label != null:
 			business_day_timer_label.text = "教学中"
@@ -1048,7 +1063,6 @@ func _advance_business_day_timer(delta: float) -> void:
 		business_day_timer_label.add_theme_color_override("font_color", Color(1, 0.36, 0.24, 1) if warning_active else Color(1, 0.82, 0.34, 1))
 	if remaining != _last_persisted_business_second:
 		_last_persisted_business_second = remaining
-		var game_session := get_node_or_null("/root/GameSession")
 		if game_session != null and game_session.has_method("set_business_day_remaining_seconds"):
 			game_session.call("set_business_day_remaining_seconds", float(timer_state.get("remaining_seconds", 0.0)))
 	if bool(timer_state.get("expired_now", false)):
@@ -2970,7 +2984,7 @@ func _close_upgrade_workshop() -> void:
 
 
 func _set_upgrade_workshop_preview(enabled: bool) -> void:
-	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3", &"CustomerStrip", &"CustomerPortrait"]:
+	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3", &"ServiceCustomer4", &"ServiceCustomer5", &"CustomerStrip", &"CustomerPortrait"]:
 		var customer_node := get_node_or_null("SafeArea/%s" % node_name) as CanvasItem
 		if customer_node == null:
 			continue
@@ -3092,13 +3106,10 @@ func _raw_order_items_for_card(order: Dictionary) -> Array[Dictionary]:
 
 
 func _order_items_for_card(order: Dictionary) -> Array[Dictionary]:
-	var items := _raw_order_items_for_card(order)
-	if items.size() > 3:
-		items.resize(3)
-	return items
+	return _raw_order_items_for_card(order)
 
 
-func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
+func _order_requirements_for_card(order: Dictionary, maximum_count: int = -1) -> Array[Dictionary]:
 	var requirements: Array[Dictionary] = []
 	var items := _raw_order_items_for_card(order)
 	# Ingredient hints always occupy the first row-major slots, independent of
@@ -3158,8 +3169,8 @@ func _order_requirements_for_card(order: Dictionary) -> Array[Dictionary]:
 				"texture": load(ORDER_CARD_SUGAR_TEXTURE_PATH) as Texture2D,
 				"display_name": sugar_text,
 			})
-	var requirement_capacity := order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8
-	if requirements.size() > requirement_capacity:
+	var requirement_capacity := maximum_count if maximum_count >= 0 else (order_ingredient_icons.size() if not order_ingredient_icons.is_empty() else 8)
+	if requirement_capacity >= 0 and requirements.size() > requirement_capacity:
 		requirements.resize(requirement_capacity)
 	return requirements
 
@@ -3169,9 +3180,7 @@ func _order_requirements_by_item_for_customer_card(order: Dictionary) -> Array:
 	for item in _order_items_for_card(order):
 		var item_order := order.duplicate(true)
 		item_order["items"] = [item]
-		var item_requirements: Array = _order_requirements_for_card(item_order)
-		if item_requirements.size() > 8:
-			item_requirements.resize(8)
+		var item_requirements: Array = _order_requirements_for_card(item_order, -1)
 		grouped_requirements.append(item_requirements)
 	return grouped_requirements
 
@@ -3446,41 +3455,26 @@ func _set_customer_portrait_state(state: StringName) -> void:
 
 func _refresh_customer_queue() -> void:
 	var orders: Array = []
-	var waiting: Array = []
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session != null and game_session.has_method("active_formal_orders"):
 		orders = Array(game_session.call("active_formal_orders"))
-	if game_session != null and game_session.has_method("waiting_formal_orders"):
-		waiting = Array(game_session.call("waiting_formal_orders"))
 	var visible_customer_ids: Array[StringName] = []
-	for visible_order_variant in orders + waiting:
+	for visible_order_variant in orders:
 		var visible_order := Dictionary(visible_order_variant)
 		visible_customer_ids.append(StringName(visible_order.get("customer_id", &"customer_01")))
 	_customer_portraits.call("set_visible_customers", visible_customer_ids)
-	queue_status_label.text = "排队\n%d/3" % mini(waiting.size(), 3)
+	queue_status_label.text = "在场\n%d/5" % mini(orders.size(), 5)
 	for slot_index in customer_slot_buttons.size():
 		var button := customer_slot_buttons[slot_index]
 		var bar := customer_slot_patience_bars[slot_index]
-		var order := Dictionary(waiting[slot_index]) if slot_index < waiting.size() else {}
-		button.visible = not order.is_empty()
+		button.visible = false
 		bar.visible = false
-		if order.is_empty():
-			continue
-		var customer_id := StringName(order.get("customer_id", CUSTOMER_QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS[slot_index]))
-		button.icon = _customer_portraits.call("texture_for", customer_id, &"neutral") as Texture2D
-		var special_title_text := str(order.get("special_title", Dictionary(order.get("metadata", {})).get("special_title", "")))
-		button.text = special_title_text if not special_title_text.is_empty() else "等候 %d" % (slot_index + 1)
-		var special_rule_text := str(order.get("special_rule_text", Dictionary(order.get("metadata", {})).get("special_rule_text", "")))
-		button.tooltip_text = "%s；等候期间不扣耐心" % special_rule_text if not special_rule_text.is_empty() else "等候期间不扣耐心"
-		button.toggle_mode = false
-		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.set_pressed_no_signal(false)
 	_refresh_customer_service_slots(orders)
 
 
 func _resolve_customer_service_slots() -> Array[Control]:
 	var result: Array[Control] = []
-	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3"]:
+	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3", &"ServiceCustomer4", &"ServiceCustomer5"]:
 		var node := get_node_or_null("SafeArea/%s" % node_name) as Control
 		if node != null:
 			result.append(node)
@@ -3500,7 +3494,7 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 	for service_slot_index in range(customer_service_slots.size()):
 		var order: Dictionary = {}
 		if not centered_tutorial.is_empty():
-			if service_slot_index == 1:
+			if service_slot_index == customer_service_slots.size() / 2:
 				order = centered_tutorial
 		else:
 			for order_variant in orders:
@@ -3525,8 +3519,6 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 			continue
 		var item_textures: Array = []
 		var items := Array(order.get("items", []))
-		if items.size() > 3:
-			items.resize(3)
 		for item_variant in items:
 			var item := Dictionary(item_variant)
 			item_textures.append(FIVE_AREA_PRODUCT_VISUALS.texture_for(StringName(item.get("product_id", &"")), StringName(item.get("temperature_mode", &"room_temperature"))))

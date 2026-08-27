@@ -12,6 +12,8 @@ const PANCAKE_MODEL_SCRIPT := preload("res://scripts/simulation/pancake_model.gd
 const INGREDIENT_MODEL_SCRIPT := preload("res://scripts/gameplay/ingredient_model.gd")
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
+const PANCAKE_SCORER_SCRIPT := preload("res://scripts/gameplay/pancake_scorer.gd")
+const COOKING_STAGE_BAR_SCRIPT := preload("res://scripts/ui/cooking_stage_bar.gd")
 const READY_DRAG_TEXTURE := preload("res://resources/art/workstation/packaging/paper_bag_package_v1.png")
 const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
 const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
@@ -31,10 +33,9 @@ const SPREADER_SAMPLE_SPACING := 2.5
 ## turn a single fast move into a 40+ ms feedback loop, so only the newest path
 ## representative is simulated; pointer sampling remains fully event-driven.
 const MAX_SPREAD_SIMULATION_SAMPLES_PER_FRAME := 1
-## Standard batter at the fixed default heat reaches about 0.84 doneness in
-## eight seconds. The griddle bar maps that point to full, not to the model's
-## absolute 1.0 maximum.
-const HEAT_BAR_FULL_DONENESS := 0.84
+## The order-specific green band is deliberately narrow enough to communicate
+## an excellent heat result without turning the bar into a precision gate.
+const HEAT_GREEN_TOLERANCE := 0.08
 ## Keep this aligned with pancake_surface.gdshader: a side begins to show
 ## char marks only after it has stayed on the griddle for eight seconds and is
 ## sufficiently cooked.  The score system already deducts heat quality for
@@ -100,7 +101,7 @@ enum State { IDLE, BATTER, FIRST_SIDE, SECOND_SIDE, GARNISH, FOLDING, READY }
 @onready var sauce_brush_artwork: Sprite2D = %SauceBrushArtwork
 @onready var package_visual: TextureRect = %PackageVisual
 @onready var main_action: Button = %MainAction
-@onready var heat_bar: ProgressBar = %HeatBar
+@onready var heat_bar = %HeatBar
 @onready var heat_status_label: Label = %HeatStatusLabel
 
 var unit_index := 0
@@ -1344,7 +1345,7 @@ func accept_pancake_surface_drop(source_ref: Dictionary, local_position: Vector2
 
 
 func _stock_id_from_source(source_ref: Dictionary) -> StringName:
-	if StringName(source_ref.get("product_id", &"")) in [&"product.youtiao.plain", &"product.youtiao.sesame"]:
+	if StringName(source_ref.get("product_id", &"")) == &"product.youtiao.plain":
 		return &"stock.pancake.youtiao"
 	return StringName(source_ref.get("stock_id", &""))
 
@@ -1451,7 +1452,8 @@ func _refresh_ui() -> void:
 		pancake_surface.visible = false
 		package_visual.visible = false
 		main_action.visible = false
-		heat_bar.value = 0.0
+		heat_bar.visible = false
+		heat_status_label.visible = false
 		return
 	# Batter is now added by the ladle holder on the main worktop. This button
 	# remains only for the later flip action.
@@ -1511,17 +1513,28 @@ func _refresh_heat_visual() -> void:
 		return
 	var heat_status := cooking_heat_status()
 	var cooking := bool(heat_status.get("cooking", false))
-	heat_bar.visible = cooking
-	heat_status_label.visible = cooking
+	heat_bar.visible = true
+	heat_status_label.visible = true
+	var heat_window := heat_window_for_preference(StringName(order.get("heat_preference", &"golden")))
 	if not cooking:
-		heat_bar.value = 0.0
+		var inactive_text := "火候 · 已结束" if state in [State.GARNISH, State.FOLDING, State.READY] else "火候 · 未开始"
+		heat_bar.configure(0.0, heat_window.x, heat_window.y, false, &"", inactive_text)
+		heat_status_label.modulate = Color.WHITE
+		heat_status_label.text = inactive_text
 		return
 	var visible_side_doneness := float(heat_status.get("doneness", 0.0))
-	heat_bar.value = clampf(visible_side_doneness / HEAT_BAR_FULL_DONENESS * 100.0, 0.0, 100.0)
 	var charred := bool(heat_status.get("charred", false))
-	heat_bar.modulate = Color(1.0, 0.48, 0.34, 1.0) if charred else Color.WHITE
+	var status_text := _heat_status_text(heat_status)
+	heat_bar.configure(
+		visible_side_doneness,
+		heat_window.x,
+		heat_window.y,
+		true,
+		COOKING_STAGE_BAR_SCRIPT.STAGE_RED if charred else &"",
+		status_text,
+	)
 	heat_status_label.modulate = Color(1.0, 0.50, 0.32, 1.0) if charred else Color.WHITE
-	heat_status_label.text = _heat_status_text(heat_status)
+	heat_status_label.text = status_text
 
 
 func cooking_heat_status() -> Dictionary:
@@ -1531,6 +1544,7 @@ func cooking_heat_status() -> Dictionary:
 	var first_side := state == State.FIRST_SIDE
 	var visible_side_doneness := pancake_model.mean_side_doneness(pancake_model.is_flipped)
 	var charred_ratio := _visible_side_charred_ratio()
+	var heat_window := heat_window_for_preference(StringName(order.get("heat_preference", &"golden")))
 	return {
 		"cooking": true,
 		"phase": &"first_side" if first_side else &"second_side",
@@ -1539,6 +1553,10 @@ func cooking_heat_status() -> Dictionary:
 		"flip_ready": first_side and visible_side_doneness >= P1Session.RECOMMENDED_FLIP_DONENESS,
 		"charred": charred_ratio >= CHARRED_RATIO_WARNING,
 		"charred_ratio": charred_ratio,
+		"target": (heat_window.x + heat_window.y) * 0.5,
+		"green_start": heat_window.x,
+		"green_end": heat_window.y,
+		"heat_stage": heat_stage_for_doneness(visible_side_doneness, heat_window),
 	}
 
 
@@ -1562,10 +1580,31 @@ func _heat_status_text(heat_status: Dictionary) -> String:
 	var seconds := float(heat_status.get("seconds", 0.0))
 	var doneness_percent := roundi(float(heat_status.get("doneness", 0.0)) * 100.0)
 	if bool(heat_status.get("charred", false)):
-		return "%s火候计时 %.1f秒 · 已焦糊，火候分下降" % [side_label, seconds]
+		return "%s %.1f秒 · 已焦糊 · %d%%" % [side_label, seconds, doneness_percent]
+	var stage_text: String = str({
+		COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW: "偏生",
+		COOKING_STAGE_BAR_SCRIPT.STAGE_GREEN: "火候正好",
+		COOKING_STAGE_BAR_SCRIPT.STAGE_RED: "过火风险",
+	}.get(StringName(heat_status.get("heat_stage", COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW)), "偏生"))
 	if is_first_side and bool(heat_status.get("flip_ready", false)):
-		return "%s火候计时 %.1f秒 · 现在可翻面" % [side_label, seconds]
-	return "%s火候计时 %.1f秒 · 火候 %d%%" % [side_label, seconds, doneness_percent]
+		return "%s %.1f秒 · %s %d%% · 可翻面" % [side_label, seconds, stage_text, doneness_percent]
+	return "%s %.1f秒 · %s · %d%%" % [side_label, seconds, stage_text, doneness_percent]
+
+
+static func heat_window_for_preference(preference: StringName) -> Vector2:
+	var target := float(PANCAKE_SCORER_SCRIPT.heat_target_for(preference))
+	return Vector2(
+		clampf(target - HEAT_GREEN_TOLERANCE, 0.02, 0.96),
+		clampf(target + HEAT_GREEN_TOLERANCE, 0.04, 0.98),
+	)
+
+
+static func heat_stage_for_doneness(doneness: float, heat_window: Vector2) -> StringName:
+	if doneness < heat_window.x:
+		return COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW
+	if doneness <= heat_window.y:
+		return COOKING_STAGE_BAR_SCRIPT.STAGE_GREEN
+	return COOKING_STAGE_BAR_SCRIPT.STAGE_RED
 
 
 static func _ingredient_type_for_stock(stock_id: StringName) -> StringName:

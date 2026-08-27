@@ -16,7 +16,7 @@ func _run() -> void:
 	session.call("begin_new_game")
 	var opening_inventory: Dictionary = session.call("inventory_snapshot")
 	for stock_id in [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"]:
-		_check(int(opening_inventory.get(stock_id, 0)) == 6, "new business starts with %s fully stocked" % stock_id)
+		_check(int(opening_inventory.get(stock_id, 0)) == 0, "new business starts with %s empty" % stock_id)
 	var inventory: Dictionary = session.call("inventory_snapshot")
 	inventory["stock.pancake.batter"] = 0
 	inventory["stock.pancake.sauce.sweet_flour"] = 0
@@ -30,9 +30,9 @@ func _run() -> void:
 	_check(int(next_inventory.get("stock.pancake.batter", 0)) == 0, "unlimited batter remains outside daily inventory replenishment")
 	var batter_restock := Dictionary(session.call("five_area_restock_status", &"stock.pancake.batter"))
 	_check(not bool(batter_restock.get("success", false)) and StringName(batter_restock.get("reason", &"")) == &"restock_unnecessary", "unlimited batter rejects the paid restock path")
-	_check(int(next_inventory.get("stock.pancake.sauce.sweet_flour", 0)) == 6, "new business day replenishes non-restockable base sauce")
+	_check(int(next_inventory.get("stock.pancake.sauce.sweet_flour", 0)) == 0, "new business day keeps base sauce empty")
 	for stock_id in [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"]:
-		_check(int(next_inventory.get(stock_id, 0)) == 6, "new business day fully replenishes %s" % stock_id)
+		_check(int(next_inventory.get(stock_id, 0)) == 0, "new business day keeps %s empty" % stock_id)
 	var progression: RefCounted = session.call("progression_service")
 	progression.unlocked_stock_ids[&"stock.pancake.coriander"] = true
 	progression.unlocked_stock_ids[&"stock.pancake.meat_floss"] = true
@@ -42,7 +42,7 @@ func _run() -> void:
 	_check(bool(session.call("begin_next_business_day").get("success", false)), "business day opens after add-on fixtures unlock")
 	var unlocked_inventory: Dictionary = session.call("inventory_snapshot")
 	for stock_id in [&"stock.pancake.coriander", &"stock.pancake.scallion", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.meat_floss", &"stock.pancake.ham_sausage"]:
-		_check(int(unlocked_inventory.get(stock_id, 0)) == 8, "opened business fully replenishes unlocked %s to current capacity" % stock_id)
+		_check(int(unlocked_inventory.get(stock_id, 0)) == 0, "opened business keeps unlocked %s empty" % stock_id)
 	_finish()
 
 

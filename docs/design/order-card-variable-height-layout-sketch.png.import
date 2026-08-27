@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bweure772c5ie"
-path="res://.godot/imported/youtiao_chicken_dual_fryer_v2_both_raised.png-b94efd5d656857961c3187cc9af2cf41.ctex"
+uid="uid://bat61sh0dev5p"
+path="res://.godot/imported/order-card-variable-height-layout-sketch.png-fab11740220cfb0238a74e73c4741e55.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/workstation/machines/youtiao_fryer/youtiao_chicken_dual_fryer_v2_both_raised.png"
-dest_files=["res://.godot/imported/youtiao_chicken_dual_fryer_v2_both_raised.png-b94efd5d656857961c3187cc9af2cf41.ctex"]
+source_file="res://docs/design/order-card-variable-height-layout-sketch.png"
+dest_files=["res://.godot/imported/order-card-variable-height-layout-sketch.png-fab11740220cfb0238a74e73c4741e55.ctex"]
 
 [params]
 

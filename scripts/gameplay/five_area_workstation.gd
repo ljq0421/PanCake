@@ -60,7 +60,7 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var pending_payment_button: Button = %PendingPaymentButton
-@onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
+@onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain, cartoon_youtiao_fryer.chicken_material_slot]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var top_warning_label: Label = %TopWarningLabel
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
@@ -200,7 +200,7 @@ static func _non_pancake_result_metric_profile(score_result: Dictionary, product
 	var mismatch_reasons := PackedStringArray(displayed_item.get("mismatch_reasons", PackedStringArray()))
 	var order_score := 100.0 if mismatch_reasons.is_empty() else 0.0
 	match product_id:
-		&"product.youtiao.plain", &"product.youtiao.sesame":
+		&"product.youtiao.plain":
 			return [
 				{"metric": &"IntegrityMetric", "label": "火候", "score": float(product.get("quality", 0.0))},
 				# A youtiao can only become a deliverable product after its draining
@@ -385,20 +385,27 @@ func _refresh_material_slots() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
 	var unlocked_recipes := Array(progression.get("unlocked_recipe_ids", []))
+	var owned_growth_ids := Array(progression.get("owned_growth_ids", []))
 	for slot in _all_material_slots():
-		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
+		var area_id := &"area.youtiao" if slot.source_kind in [&"youtiao_dough", &"chicken_cutlet_raw"] else &"area.fresh_soy_milk"
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and (slot.recipe_id.is_empty() or _id_in(unlocked_recipes, slot.recipe_id))
+		if slot.source_kind == &"chicken_cutlet_raw":
+			unlocked = unlocked and _id_in(owned_growth_ids, &"growth.equipment.youtiao.dual_basket")
 		var status := Dictionary(session.call("five_area_restock_status", slot.stock_id)) if not slot.stock_id.is_empty() else {}
 		slot.apply_state(int(inventory.get(str(slot.stock_id), 0)), unlocked, int(status.get("capacity", 6)))
 	var fixed_slots: Array[Node] = youtiao_dough_slots
 	for index in fixed_slots.size():
 		var slot := fixed_slots[index]
-		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
+		var area_id := &"area.youtiao" if slot.source_kind in [&"youtiao_dough", &"chicken_cutlet_raw"] else &"area.fresh_soy_milk"
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and _id_in(unlocked_recipes, slot.recipe_id)
-		# The countertop art contains the physical ingredients.  These former
-		# bottom-dock controls are intentionally removed from the workbench view.
-		slot.visible = false
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if slot.source_kind == &"chicken_cutlet_raw":
+			unlocked = unlocked and _id_in(owned_growth_ids, &"growth.equipment.youtiao.dual_basket")
+		# The original oil-dough image is painted into the countertop artwork.
+		# Chicken is an advanced-only addition, so its authored raw-cutlet slot is
+		# shown as a real interactive input once its recipe unlocks.
+		var show_slot: bool = slot.source_kind == &"chicken_cutlet_raw" and unlocked
+		slot.visible = show_slot
+		slot.mouse_filter = Control.MOUSE_FILTER_STOP if show_slot else Control.MOUSE_FILTER_IGNORE
 		if index < fixed_material_lock_buttons.size():
 			fixed_material_lock_buttons[index].visible = false
 			fixed_material_lock_buttons[index].mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -469,13 +476,13 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, slot: Node
 
 
 func _on_material_short_clicked(source_ref: Dictionary) -> void:
-	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
+	if StringName(source_ref.get("source_kind", &"")) in [&"youtiao_dough", &"chicken_cutlet_raw"]:
 		cartoon_youtiao_fryer.select_recipe(StringName(source_ref.get("recipe_id", &"")))
 
 
 func place_youtiao_source_on_pancake(source_ref: Dictionary, viewport_position: Vector2) -> void:
 	var source_kind := StringName(source_ref.get("source_kind", &""))
-	if StringName(source_ref.get("product_id", &"")) not in [&"product.youtiao.plain", &"product.youtiao.sesame"] or source_kind not in [&"prepared_product_slot", &"youtiao_fryer_slot"]:
+	if StringName(source_ref.get("product_id", &"")) != &"product.youtiao.plain" or source_kind not in [&"prepared_product_slot", &"youtiao_fryer_slot"]:
 		tool_status_label.text = "请将炸好的油条拖到煎饼上"
 		return
 	_pending_youtiao_ingredient_source_ref = source_ref.duplicate(true)
@@ -926,11 +933,10 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 			result.append(source_ref)
 	var session := get_node_or_null("/root/GameSession")
 	if session != null and session.has_method("prepared_product_slot_status"):
-		for slot_id in [&"slot.04"]:
+		for slot_id in [&"slot.04", &"slot.chicken"]:
 			var status := Dictionary(session.call("prepared_product_slot_status", slot_id))
 			if bool(status.get("success", false)) and int(status.get("count", 0)) > 0:
-				# A finished tray can contain both plain and sesame youtiao.  Each
-				# stored product needs its own source index; using the legacy -1
+				# Each stored product needs its own source index; using the legacy -1
 				# shortcut always previews index 0 and makes later matching products
 				# invisible to click delivery.
 				var products := Array(status.get("products", []))

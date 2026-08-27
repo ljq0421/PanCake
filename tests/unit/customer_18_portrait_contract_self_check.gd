@@ -36,8 +36,8 @@ func _initialize() -> void:
 			continue
 		_check(texture.region == EXPECTED_REGIONS[state], "%s preserves its verified crop" % state)
 		_check(texture.atlas != null and texture.atlas.resource_path.ends_with(String(EXPECTED_FILES[state])), "%s resolves its selected action PNG" % state)
-	_check(ORDER_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order customer pool includes customer_18")
-	_check(QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "legacy queue customer pool includes customer_18")
+	_check(not ORDER_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order customer pool excludes disabled customer_18")
+	_check(not QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "legacy queue customer pool excludes disabled customer_18")
 	_check(ORDER_SERVICE_SCRIPT.legacy_customer_id_for_sequence(11) == &"customer_01", "pre-expansion saves retain the original ten-customer modulo")
 	var image := Image.load_from_file(NEUTRAL_PNG_PATH)
 	_check(not image.is_empty() and image.get_size() == Vector2i(1536, 1024), "neutral PNG imports at the expected canvas size")

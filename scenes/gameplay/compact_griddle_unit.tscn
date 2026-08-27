@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/jianbing-griddle.png" id="2_griddle"]
@@ -23,6 +23,7 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/egg/egg_intact_raw_v1_five_area_v2.png" id="26_egg_intact"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham-sausage-1.png" id="27_ham_portion"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png" id="28_pork_floss_portion"]
+[ext_resource type="Script" path="res://scripts/ui/cooking_stage_bar.gd" id="29_cooking_bar"]
 
 [sub_resource type="StyleBoxFlat" id="ActionStyle"]
 bg_color = Color(0.88, 0.47, 0.13, 0.94)
@@ -243,9 +244,9 @@ stretch_mode = 5
 unique_name_in_owner = true
 z_index = 1
 offset_left = 98.0
-offset_top = 318.0
+offset_top = 314.0
 offset_right = 322.0
-offset_bottom = 344.0
+offset_bottom = 340.0
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("ActionStyle")
@@ -253,29 +254,28 @@ theme_override_styles/hover = SubResource("ActionStyle")
 theme_override_styles/pressed = SubResource("SecondaryStyle")
 text = "添面糊"
 
-[node name="HeatBar" type="ProgressBar" parent="."]
+[node name="HeatBar" type="Control" parent="."]
 unique_name_in_owner = true
-visible = false
 z_index = 2
-offset_left = 55.0
-offset_top = 356.0
-offset_right = 365.0
-offset_bottom = 370.0
+offset_left = 45.0
+offset_top = 350.0
+offset_right = 375.0
+offset_bottom = 376.0
 mouse_filter = 2
-show_percentage = false
+script = ExtResource("29_cooking_bar")
 
 [node name="HeatStatusLabel" type="Label" parent="."]
 unique_name_in_owner = true
-visible = false
 z_index = 2
 offset_left = 38.0
-offset_top = 334.0
+offset_top = 286.0
 offset_right = 420.0
-offset_bottom = 354.0
+offset_bottom = 310.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.93, 0.78, 1)
 theme_override_colors/font_outline_color = Color(0.12, 0.055, 0.02, 0.96)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 14
-text = "第一面火候计时 0.0秒 · 火候 0%"
+text = "火候 · 未开始"
 horizontal_alignment = 1
+vertical_alignment = 1

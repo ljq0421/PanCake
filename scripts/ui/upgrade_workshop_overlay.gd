@@ -125,7 +125,6 @@ func refresh() -> void:
 		# then the completed-state feedback.
 		var show_prerequisite_locked_visual := growth_id in [
 			&"growth.capacity.youtiao_finished_tray",
-			&"growth.flavor.youtiao.sesame",
 			&"growth.add_on.pancake.egg",
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",
@@ -136,7 +135,7 @@ func refresh() -> void:
 			&"growth.automation.pancake.one_click_coriander",
 			&"growth.automation.pancake.one_click_meat_floss",
 		]
-		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"]
+		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket"]
 		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]
 		prop.visible = not bool(status.get("already_owned", false)) \
 			and (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) \
@@ -259,6 +258,8 @@ func _next_youtiao_fryer_upgrade(owned_growth_ids: Array) -> StringName:
 		return &"growth.area.youtiao"
 	if not owned_growth_ids.has("growth.equipment.youtiao.advanced"):
 		return &"growth.equipment.youtiao.advanced"
+	if not owned_growth_ids.has("growth.equipment.youtiao.dual_basket"):
+		return &"growth.equipment.youtiao.dual_basket"
 	return &""
 
 
@@ -327,9 +328,11 @@ func _requirements_text(status: Dictionary) -> String:
 
 
 func _tag_text(growth_id: StringName, status: Dictionary) -> String:
+	var definition := CATALOG.growth_definition(growth_id)
+	var growth_name := str(definition.get("label", "升级"))
 	if bool(status.get("can_purchase", false)):
-		return "价格：%d 金币" % int(status.get("price", 0))
-	return "不可预订"
+		return "名称：%s，价格：%d金币" % [growth_name, int(status.get("price", 0))]
+	return "名称：%s，不可预订" % growth_name
 
 
 func _tag_tooltip_text(growth_id: StringName, status: Dictionary) -> String:

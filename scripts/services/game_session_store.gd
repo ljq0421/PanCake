@@ -23,6 +23,9 @@ const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
 const PACKAGED_DRINK_V2_MIGRATION_KEY := "packaged_drink_juice_v2_migrated"
 const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
+const OPENING_RESTOCK_SECONDS := 3.0
+const CUSTOMER_ARRIVAL_MIN_SECONDS := 2.0
+const CUSTOMER_ARRIVAL_MAX_SECONDS := 5.0
 const CONSOLATION_PAYMENT_COINS := 1
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
@@ -42,7 +45,13 @@ const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 		"product_id": &"product.youtiao.plain",
 		"recipe_id": &"recipe.youtiao.plain",
 		"requires_growth_id": &"growth.capacity.youtiao_finished_tray",
-		"accepted_product_ids": [&"product.youtiao.plain", &"product.youtiao.sesame"],
+		"accepted_product_ids": [&"product.youtiao.plain"],
+	},
+	&"slot.chicken": {
+		"product_id": &"product.chicken.cutlet",
+		"recipe_id": &"recipe.chicken.cutlet",
+		"requires_growth_id": &"growth.equipment.youtiao.dual_basket",
+		"accepted_product_ids": [&"product.chicken.cutlet"],
 	},
 }
 const DEBUG_TIER_GROWTH_IDS := {
@@ -74,17 +83,6 @@ const PANCAKE_LEGACY_TO_STABLE_STOCK_IDS := {
 	&"preserved_mustard": &"stock.pancake.preserved_mustard",
 	&"youtiao": &"stock.pancake.youtiao",
 }
-const DAILY_PANCAKE_CONSUMABLE_STOCK := {
-	&"stock.pancake.sauce.sweet_flour": 6,
-}
-const DAILY_PANCAKE_TOPPING_STOCK: Array[StringName] = [
-	&"stock.pancake.coriander",
-	&"stock.pancake.scallion",
-	&"stock.pancake.egg",
-	&"stock.pancake.baocui",
-	&"stock.pancake.meat_floss",
-	&"stock.pancake.ham_sausage",
-]
 const RECONCILED_FORMAL_ORDER_IDS_KEY := "reconciled_formal_order_ids"
 const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
@@ -112,10 +110,9 @@ func _ready() -> void:
 	_load_save()
 	_restore_progression()
 	_reconcile_unrecorded_settled_orders()
-	# An interrupted UI callback used to leave an open business day with every
-	# formal order terminal. Restore the storefront invariant on load as well,
-	# so existing affected saves recover without requiring another checkout.
-	_replenish_playable_order_queue()
+	# Customer arrivals are durable state and resume from the saved countdown.
+	# Do not synthesize a queue while loading a scene: a newly opened shop must
+	# remain empty through its opening restock window.
 	_load_settings()
 	apply_settings()
 
@@ -197,6 +194,7 @@ func begin_new_game() -> Dictionary:
 		"day_open": true,
 		"business_paused": false,
 		"business_day_remaining_seconds": FIRST_BUSINESS_DAY_DURATION_SECONDS,
+		"customer_arrival": _new_customer_arrival_state(now),
 		"orders_completed": 0,
 		"today_orders": [],
 		"today_reputation_delta": 0,
@@ -222,8 +220,6 @@ func begin_new_game() -> Dictionary:
 		ORDER_PROMOTIONS_KEY: [],
 		SPECIAL_CUSTOMER_STATE_KEY: SPECIAL_CUSTOMER_CATALOG.default_state(1),
 	}
-	_replenish_daily_pancake_consumables()
-	_replenish_daily_pancake_toppings()
 	_configure_service_connections()
 	_write_save()
 	progression_changed.emit(five_area_progression_snapshot())
@@ -358,6 +354,98 @@ func set_business_paused(paused: bool) -> void:
 	_touch_and_write()
 
 
+## The opening window and the next independent walk-in are durable business
+## state.  Keeping this outside the order service prevents scene reloads from
+## silently filling the storefront.
+func customer_arrival_snapshot() -> Dictionary:
+	if not has_save():
+		return _new_customer_arrival_state(1)
+	return _normalized_customer_arrival_state(Dictionary(_save_data.get("customer_arrival", {})))
+
+
+func is_opening_restock_active() -> bool:
+	return StringName(customer_arrival_snapshot().get("phase", &"")) == &"restocking"
+
+
+func advance_customer_arrivals(delta: float) -> Dictionary:
+	if not has_save() or delta <= 0.0 or get_tree().paused or is_business_paused():
+		return {"success": true, "changed": false, "state": customer_arrival_snapshot(), "entered_orders": []}
+	_ensure_progression()
+	if not bool(_progression.get("day_open")):
+		return {"success": true, "changed": false, "state": customer_arrival_snapshot(), "entered_orders": []}
+	_ensure_order_service()
+	var before := customer_arrival_snapshot()
+	var state := before.duplicate(true)
+	var entered_orders: Array[Dictionary] = []
+	var changed := false
+	if StringName(state.get("phase", &"restocking")) == &"restocking":
+		state["restock_remaining_seconds"] = maxf(float(state.get("restock_remaining_seconds", OPENING_RESTOCK_SECONDS)) - delta, 0.0)
+		changed = not is_equal_approx(float(state["restock_remaining_seconds"]), float(before.get("restock_remaining_seconds", OPENING_RESTOCK_SECONDS)))
+		if float(state["restock_remaining_seconds"]) <= 0.0:
+			state["phase"] = &"open"
+			state["next_arrival_remaining_seconds"] = -1.0
+			changed = true
+			var first_arrival := ensure_active_playable_order(1)
+			for order_variant in Array(first_arrival.get("created_orders", [])):
+				entered_orders.append(Dictionary(order_variant).duplicate(true))
+			_schedule_next_customer_arrival(state)
+	else:
+		var active_count := active_formal_orders().size()
+		if active_count >= FIVE_AREA_ORDER_SERVICE.MAX_ACTIVE_CUSTOMERS:
+			if float(state.get("next_arrival_remaining_seconds", -1.0)) >= 0.0:
+				state["next_arrival_remaining_seconds"] = -1.0
+				changed = true
+		else:
+			if float(state.get("next_arrival_remaining_seconds", -1.0)) < 0.0:
+				_schedule_next_customer_arrival(state)
+				changed = true
+			else:
+				state["next_arrival_remaining_seconds"] = maxf(float(state["next_arrival_remaining_seconds"]) - delta, 0.0)
+				changed = true
+				if float(state["next_arrival_remaining_seconds"]) <= 0.0:
+					var arrival := ensure_active_playable_order(active_count + 1)
+					for order_variant in Array(arrival.get("created_orders", [])):
+						entered_orders.append(Dictionary(order_variant).duplicate(true))
+					_schedule_next_customer_arrival(state)
+	if changed:
+		_save_data["customer_arrival"] = _normalized_customer_arrival_state(state)
+		# Persist at visible whole-second boundaries and all phase transitions.
+		var phase_changed := StringName(before.get("phase", &"")) != StringName(state.get("phase", &""))
+		var before_remaining := float(before.get("restock_remaining_seconds", before.get("next_arrival_remaining_seconds", 0.0))) if StringName(before.get("phase", &"")) == &"restocking" else float(before.get("next_arrival_remaining_seconds", 0.0))
+		var after_remaining := float(state.get("restock_remaining_seconds", state.get("next_arrival_remaining_seconds", 0.0))) if StringName(state.get("phase", &"")) == &"restocking" else float(state.get("next_arrival_remaining_seconds", 0.0))
+		if phase_changed or ceili(before_remaining) != ceili(after_remaining) or not entered_orders.is_empty():
+			_touch_and_write()
+	return {"success": true, "changed": changed, "state": customer_arrival_snapshot(), "entered_orders": entered_orders}
+
+
+func _new_customer_arrival_state(seed: int) -> Dictionary:
+	return {
+		"phase": &"restocking",
+		"restock_remaining_seconds": OPENING_RESTOCK_SECONDS,
+		"next_arrival_remaining_seconds": -1.0,
+		"rng_state": maxi(abs(seed), 1),
+	}
+
+
+func _normalized_customer_arrival_state(source: Dictionary) -> Dictionary:
+	var phase := StringName(source.get("phase", &"restocking"))
+	if phase not in [&"restocking", &"open"]:
+		phase = &"restocking"
+	return {
+		"phase": phase,
+		"restock_remaining_seconds": clampf(float(source.get("restock_remaining_seconds", OPENING_RESTOCK_SECONDS)), 0.0, OPENING_RESTOCK_SECONDS),
+		"next_arrival_remaining_seconds": maxf(float(source.get("next_arrival_remaining_seconds", -1.0)), -1.0),
+		"rng_state": maxi(abs(int(source.get("rng_state", _save_data.get("order_rng_seed", 1)))), 1),
+	}
+
+
+func _schedule_next_customer_arrival(state: Dictionary) -> void:
+	var rng_state := maxi(abs(int(state.get("rng_state", 1))), 1)
+	rng_state = int((rng_state * 1103515245 + 12345) & 0x7fffffff)
+	state["rng_state"] = maxi(rng_state, 1)
+	state["next_arrival_remaining_seconds"] = CUSTOMER_ARRIVAL_MIN_SECONDS + float(rng_state % 3001) / 1000.0
+
+
 func mark_session_left() -> void:
 	if not has_save():
 		return
@@ -409,7 +497,7 @@ func next_filtered_pancake_order() -> Dictionary:
 	return Dictionary(generated.get("order", {})).duplicate(true)
 
 
-func ensure_active_playable_order() -> Dictionary:
+func ensure_active_playable_order(target_size: int = FIVE_AREA_ORDER_SERVICE.MAX_ACTIVE_CUSTOMERS) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
@@ -444,7 +532,9 @@ func ensure_active_playable_order() -> Dictionary:
 		_touch_and_write()
 		queue.clear()
 	var tutorial_owns_storefront := (not tutorial_id.is_empty() and not tutorial_generated_today) or _queue_contains_tutorial(queue)
-	var queue_target := 4 if tutorial_owns_storefront else FIVE_AREA_ORDER_SERVICE.MAX_OPEN_ORDERS
+	# A tutorial is the sole customer. Normal walk-ins are scheduled one at a
+	# time, never pre-created as a hidden waiting queue.
+	var queue_target := 1 if tutorial_owns_storefront else clampi(target_size, 1, FIVE_AREA_ORDER_SERVICE.MAX_OPEN_ORDERS)
 	var needed := maxi(queue_target - queue.size(), 0)
 	if needed <= 0:
 		return {"success": true, "created": false, "order": active_formal_order(), "active_orders": active_formal_orders(), "queue": queue}
@@ -506,7 +596,16 @@ func _replenish_playable_order_queue() -> Dictionary:
 	_ensure_progression()
 	if not bool(_progression.get("day_open")):
 		return {"success": false, "reason": &"business_day_closed"}
-	return ensure_active_playable_order()
+	var state := customer_arrival_snapshot()
+	if StringName(state.get("phase", &"")) != &"open":
+		return {"success": true, "scheduled": false, "state": state}
+	if active_formal_orders().size() >= FIVE_AREA_ORDER_SERVICE.MAX_ACTIVE_CUSTOMERS:
+		return {"success": true, "scheduled": false, "state": state}
+	if float(state.get("next_arrival_remaining_seconds", -1.0)) < 0.0:
+		_schedule_next_customer_arrival(state)
+		_save_data["customer_arrival"] = _normalized_customer_arrival_state(state)
+		_touch_and_write()
+	return {"success": true, "scheduled": true, "state": customer_arrival_snapshot()}
 
 
 func _queue_contains_tutorial(queue: Array) -> bool:
@@ -603,9 +702,14 @@ func _enqueue_growth_order_promotions(activated_growth_ids: Array) -> void:
 		# Area/device teaching owns its own three-order follow-up window. Keeping
 		# it out of the content queue prevents the tutorial product from jumping
 		# ahead of an independently unlocked recipe or topping on the same day.
-		if str(growth_id).begins_with("growth.area.") or str(growth_id).begins_with("growth.equipment."):
+		if str(growth_id).begins_with("growth.area."):
 			continue
 		var definition := CATALOG.growth_definition(growth_id)
+		# The dual-basket fryer is both an equipment upgrade and a chicken-cutlet
+		# content unlock. It still skips the old equipment tutorial, but its newly
+		# unlocked product must receive the regular three-order introduction.
+		if str(growth_id).begins_with("growth.equipment.") and Array(definition.get("unlock_product_ids", [])).is_empty():
+			continue
 		var product_ids := Array(definition.get("unlock_product_ids", []))
 		if not product_ids.is_empty():
 			_enqueue_order_promotion({"kind": &"product", "target_id": StringName(product_ids[0]), "source_growth_id": growth_id, "remaining_orders": 3})
@@ -662,8 +766,8 @@ func _tutorial_promotion_context(
 
 
 func waiting_formal_orders() -> Array[Dictionary]:
-	_ensure_order_service()
-	return Array(_order_service.call("waiting_orders")).duplicate(true)
+	# New customers are never generated ahead of their visual arrival.
+	return []
 
 
 func advance_formal_order_patience(delta: float) -> Dictionary:
@@ -682,7 +786,7 @@ func advance_formal_order_patience(delta: float) -> Dictionary:
 		if not bool(expired.get("already_settled", false)):
 			_finalize_failed_formal_order(expired)
 	if not expired_results.is_empty():
-		var refill := ensure_active_playable_order()
+		var refill := _replenish_playable_order_queue()
 		result["refill"] = refill
 		# Expiration/refill changes the active set after OrderService produced its
 		# result, so only that rare path needs a fresh snapshot. On normal timer
@@ -1120,6 +1224,10 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 			if source_index < 0:
 				return {"success": false, "reason": &"invalid_youtiao_fryer_slot"}
 			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
+		&"fryer_slot":
+			if source_index < 0:
+				return {"success": false, "reason": &"invalid_fryer_slot"}
+			return Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index, StringName(source_ref.get("lane_id", &"left"))))
 		&"soy_output":
 			return Dictionary(_production_service.call("preview_collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("preview_collect_soy", 1))
 		&"soy_cup":
@@ -1149,6 +1257,10 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 			if source_index < 0:
 				return {"success": false, "reason": &"invalid_youtiao_fryer_slot"}
 			return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
+		&"fryer_slot":
+			if source_index < 0:
+				return {"success": false, "reason": &"invalid_fryer_slot"}
+			return Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index, StringName(source_ref.get("lane_id", &"left"))))
 		&"soy_output": return Dictionary(_production_service.call("collect_soy_output", source_index)) if source_index >= 0 else Dictionary(_production_service.call("collect_soy", 1))
 		&"soy_cup": return Dictionary(_production_service.call("take_soy_cup", source_index)) if source_index >= 0 else Dictionary(_production_service.call("take_soy_cup"))
 		&"pancake_holding":
@@ -1316,6 +1428,8 @@ func discard_product_source(source_ref: Dictionary) -> Dictionary:
 			return discard_f3_youtiao()
 		&"youtiao_fryer_slot":
 			return discard_f3_youtiao_slot(int(source_ref.get("source_index", -1)))
+		&"fryer_slot":
+			return discard_fryer_slot(StringName(source_ref.get("lane_id", &"left")), int(source_ref.get("source_index", -1)))
 		&"prepared_product_slot":
 			return discard_prepared_product(StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))
 		&"pancake_holding":
@@ -1388,9 +1502,32 @@ func load_f3_youtiao(recipe_id: StringName, quantity: int, order_id: StringName 
 	return result
 
 
+func load_f3_chicken(quantity: int, order_id: StringName = &"") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("load_batch", &"device.youtiao_fryer", &"recipe.chicken.cutlet", quantity, &"right")
+	if bool(result.get("success", false)):
+		_mark_f3_order_started(order_id, &"device.youtiao_fryer")
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
 func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("perform_action", &"device.youtiao_fryer", action_id)
+	if bool(result.get("success", false)):
+		_sync_production_to_save()
+		_touch_and_write()
+		production_changed.emit(five_area_production_snapshot())
+	return result
+
+
+func perform_f3_chicken_action(action_id: StringName) -> Dictionary:
+	_ensure_production_service()
+	var result: Dictionary = _production_service.call("perform_action", &"device.youtiao_fryer", action_id, &"right")
 	if bool(result.get("success", false)):
 		_sync_production_to_save()
 		_touch_and_write()
@@ -1464,8 +1601,12 @@ func discard_f3_youtiao() -> Dictionary:
 
 
 func discard_f3_youtiao_slot(slot_index: int) -> Dictionary:
+	return discard_fryer_slot(&"left", slot_index)
+
+
+func discard_fryer_slot(lane_id: StringName, slot_index: int) -> Dictionary:
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("discard_youtiao_slot", slot_index)
+	var result: Dictionary = _production_service.call("discard_youtiao_slot", slot_index, lane_id)
 	if bool(result.get("success", false)):
 		_sync_production_to_save()
 		_touch_and_write()
@@ -1997,22 +2138,22 @@ func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size()}
 
 
-func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int, seasoned_product_id: StringName = &"") -> Dictionary:
+func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:
+	return preview_store_ready_fryer_slot(slot_id, &"left", source_index)
+
+
+func preview_store_ready_fryer_slot(slot_id: StringName, lane_id: StringName, source_index: int) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
 	var status := prepared_product_slot_status(slot_id)
 	if not bool(status.get("success", false)):
 		return status
-	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index))
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, source_index, lane_id))
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := Dictionary(preview.get("product", {}))
-	var final_product_id := seasoned_product_id if not seasoned_product_id.is_empty() else StringName(product.get("product_id", &""))
-	if not seasoned_product_id.is_empty():
-		var seasoned_definition := CATALOG.product_definition(seasoned_product_id)
-		if seasoned_definition.is_empty() or not bool(_progression.call("owns_product", seasoned_product_id)):
-			return {"success": false, "reason": &"youtiao_seasoning_locked"}
+	var final_product_id := StringName(product.get("product_id", &""))
 	if not _prepared_product_slot_accepts_product(slot_id, final_product_id):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
 	var products: Array = Array(status.get("products", []))
@@ -2022,21 +2163,21 @@ func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int, se
 	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index, "final_product_id": final_product_id}
 
 
-func store_ready_youtiao_slot(slot_id: StringName, source_index: int, seasoned_product_id: StringName = &"") -> Dictionary:
-	var preview := preview_store_ready_youtiao_slot(slot_id, source_index, seasoned_product_id)
+func store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:
+	return store_ready_fryer_slot(slot_id, &"left", source_index)
+
+
+func store_ready_fryer_slot(slot_id: StringName, lane_id: StringName, source_index: int) -> Dictionary:
+	var preview := preview_store_ready_fryer_slot(slot_id, lane_id, source_index)
 	if not bool(preview.get("success", false)):
 		return preview
 	var final_product_id := StringName(preview.get("final_product_id", &""))
 	var production_rollback := five_area_production_snapshot()
 	var slots_rollback := prepared_product_slots_snapshot()
-	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index))
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", 1, source_index, lane_id))
 	if not bool(collected.get("success", false)):
 		return collected
 	var product := Dictionary(collected.get("product", {}))
-	if not seasoned_product_id.is_empty():
-		var seasoned_definition := CATALOG.product_definition(seasoned_product_id)
-		product["product_id"] = seasoned_product_id
-		product["recipe_id"] = StringName(seasoned_definition.get("recipe_id", &""))
 	if StringName(product.get("product_id", &"")) != final_product_id:
 		_production_service.call("load_snapshot", production_rollback)
 		return {"success": false, "reason": &"prepared_product_changed"}
@@ -2923,8 +3064,16 @@ func begin_next_business_day() -> Dictionary:
 	var result: Dictionary = _progression.call("begin_next_business_day")
 	if not bool(result.get("success", false)):
 		return result
+	_ensure_order_service()
+	# A day boundary cannot carry visible customers into the next opening window.
+	if not Array(_order_service.call("queue_snapshot")).is_empty():
+		_order_service.call("abandon_all_open_orders", &"new_business_day_reset")
+		_sync_formal_orders_to_save()
 	_save_data["day_open"] = true
 	_save_data["business_day_remaining_seconds"] = business_day_duration_seconds()
+	_save_data["customer_arrival"] = _new_customer_arrival_state(
+		maxi(int(_save_data.get("order_rng_seed", 1)) + int(_progression.get("current_day")), 1)
+	)
 	_save_data["today_orders"] = []
 	_save_data["today_reputation_delta"] = 0
 	_save_data["today_cutoff"] = {}
@@ -2935,8 +3084,6 @@ func begin_next_business_day() -> Dictionary:
 		Dictionary(_save_data.get(SPECIAL_CUSTOMER_STATE_KEY, {})),
 		int(_progression.get("current_day")),
 	)
-	_replenish_daily_pancake_consumables()
-	_replenish_daily_pancake_toppings()
 	result["restock_required_ids"] = _provision_activated_stock(Array(result.get("activated_growth_ids", [])))
 	_enqueue_growth_order_promotions(Array(result.get("activated_growth_ids", [])))
 	_sync_progression_to_save()
@@ -2947,36 +3094,11 @@ func begin_next_business_day() -> Dictionary:
 	_daily_goal_service.call("begin_day", _daily_goal_context())
 	_sync_business_services_to_save()
 	_touch_and_write()
-	# Starting a business day must also populate the storefront.  The gameplay
-	# scene is reloaded immediately after this method returns, so relying on a
-	# later scene callback left the shop with no visible customers until another
-	# order-related action happened.
-	result["customer_queue"] = ensure_active_playable_order()
+	result["customer_arrival"] = customer_arrival_snapshot()
 	inventory_changed.emit(inventory_snapshot())
 	progression_changed.emit(five_area_progression_snapshot())
 	daily_goal_changed.emit(current_daily_goal())
 	return result
-
-
-func _replenish_daily_pancake_consumables() -> void:
-	var inventory := inventory_snapshot()
-	for stock_id in DAILY_PANCAKE_CONSUMABLE_STOCK:
-		if not bool(_progression.call("owns_stock", stock_id)):
-			continue
-		var key := str(stock_id)
-		inventory[key] = maxi(int(inventory.get(key, 0)), int(DAILY_PANCAKE_CONSUMABLE_STOCK[stock_id]))
-	_save_data["inventory"] = _normalize_inventory(inventory)
-
-
-func _replenish_daily_pancake_toppings() -> void:
-	var inventory := inventory_snapshot()
-	for stock_id in DAILY_PANCAKE_TOPPING_STOCK:
-		if not bool(_progression.call("owns_stock", stock_id)):
-			continue
-		var capacity := _restock_capacity(stock_id, CATALOG.stock_definition(stock_id))
-		if capacity > 0:
-			inventory[str(stock_id)] = capacity
-	_save_data["inventory"] = _normalize_inventory(inventory)
 
 
 func _provision_activated_stock(activated_growth_ids: Array) -> PackedStringArray:
@@ -3329,6 +3451,7 @@ func _ensure_save_shape() -> void:
 		_save_data["pancake_holding_tray"] = PANCAKE_HOLDING_TRAY_MODEL.new().snapshot()
 	if not _save_data.has("formal_orders"):
 		_save_data["formal_orders"] = FIVE_AREA_ORDER_SERVICE.new().snapshot()
+	_save_data["formal_orders"] = _normalize_formal_orders_for_active_catalog(Dictionary(_save_data.get("formal_orders", {})))
 	if not _save_data.has("production"):
 		_save_data["production"] = FIVE_AREA_PRODUCTION_SERVICE.new().snapshot()
 	if not _save_data.has("today_ledger"):
@@ -3347,18 +3470,79 @@ func _ensure_save_shape() -> void:
 		_save_data["pancake_orders_issued_today"] = 0
 	if not _save_data.has("order_rng_seed"):
 		_save_data["order_rng_seed"] = maxi(int(_save_data.get("started_at_unix", 1)), 1)
+	if not _save_data.has("customer_arrival"):
+		var existing_queue_size := Array(Dictionary(_save_data.get("formal_orders", {})).get("queue_order_ids", [])).size()
+		var arrival_state := _new_customer_arrival_state(int(_save_data.get("order_rng_seed", 1)))
+		# Preserve an already-running legacy day rather than deleting its visible
+		# customers during migration. New business days always start in restocking.
+		if existing_queue_size > 0:
+			arrival_state["phase"] = &"open"
+			arrival_state["restock_remaining_seconds"] = 0.0
+		_save_data["customer_arrival"] = arrival_state
 	if not _save_data.has("order_sequence"):
 		_save_data["order_sequence"] = maxi(int(Dictionary(_save_data.get("formal_orders", {})).get("sequence", 0)), 0)
 	if not _save_data.has("tutorial_order_generated_day"):
 		_save_data["tutorial_order_generated_day"] = 0
 	if not _save_data.has(ORDER_PROMOTIONS_KEY):
 		_save_data[ORDER_PROMOTIONS_KEY] = []
+	_save_data[ORDER_PROMOTIONS_KEY] = _normalize_order_promotions(Array(_save_data.get(ORDER_PROMOTIONS_KEY, [])))
 	_save_data[SPECIAL_CUSTOMER_STATE_KEY] = SPECIAL_CUSTOMER_CATALOG.normalize_state(
 		Dictionary(_save_data.get(SPECIAL_CUSTOMER_STATE_KEY, {})),
 		int(Dictionary(_save_data.get("progression", {})).get("current_day", 1)),
 	)
 	if not _save_data.has(RECONCILED_FORMAL_ORDER_IDS_KEY):
 		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = []
+
+
+func _normalize_formal_orders_for_active_catalog(value: Dictionary) -> Dictionary:
+	var normalized := value.duplicate(true)
+	var orders := Dictionary(normalized.get("orders", {})).duplicate(true)
+	var retired_order_ids := {}
+	for raw_order_id in orders:
+		var order := Dictionary(orders[raw_order_id]).duplicate(true)
+		var contains_retired_product := false
+		for item_variant in Array(order.get("items", [])):
+			var product_id := StringName(Dictionary(item_variant).get("product_id", &""))
+			if not product_id.is_empty() and CATALOG.product_definition(product_id).is_empty():
+				contains_retired_product = true
+				break
+		if not contains_retired_product:
+			continue
+		retired_order_ids[str(raw_order_id)] = true
+		order["state"] = &"abandoned"
+		order["status"] = &"failed"
+		order["abandon_reason"] = &"retired_content"
+		orders[raw_order_id] = order
+	normalized["orders"] = orders
+	normalized["active_order_ids"] = _without_retired_order_ids(normalized.get("active_order_ids", []), retired_order_ids)
+	normalized["queue_order_ids"] = _without_retired_order_ids(normalized.get("queue_order_ids", []), retired_order_ids)
+	var active_ids := Array(normalized.get("active_order_ids", []))
+	normalized["active_order_id"] = str(active_ids[0]) if not active_ids.is_empty() else ""
+	return normalized
+
+
+static func _without_retired_order_ids(values: Variant, retired_order_ids: Dictionary) -> PackedStringArray:
+	var kept := PackedStringArray()
+	for value in Array(values):
+		if not retired_order_ids.has(str(value)):
+			kept.append(str(value))
+	return kept
+
+
+static func _normalize_order_promotions(values: Array) -> Array:
+	var normalized: Array = []
+	for value in values:
+		var promotion := Dictionary(value).duplicate(true)
+		var kind := StringName(promotion.get("kind", &""))
+		var target_id := StringName(promotion.get("target_id", &""))
+		var target_exists := (
+			(kind == &"product" and not CATALOG.product_definition(target_id).is_empty())
+			or (kind == &"pancake_stock" and not CATALOG.stock_definition(target_id).is_empty())
+			or (kind == &"area" and not CATALOG.area_definition(target_id).is_empty())
+		)
+		if target_exists and int(promotion.get("remaining_orders", 0)) > 0:
+			normalized.append(promotion)
+	return normalized
 
 
 func _migrate_retired_packaged_drink_state() -> void:
@@ -3407,6 +3591,7 @@ static func _without_retired_packaged_drink_ids(value: Variant) -> Array:
 static func _empty_prepared_product_slots() -> Dictionary:
 	return {
 		"slot.04": [],
+		"slot.chicken": [],
 	}
 
 

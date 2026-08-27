@@ -42,6 +42,17 @@ func _run() -> void:
 	session.call("_ensure_save_shape")
 	_check(Dictionary(session.get("_save_data")).has("special_customer_state") and int(Dictionary(session.get("_save_data")).get("version", 0)) == session.SAVE_VERSION, "current save shape restores optional special state without changing identity")
 	_check(session.SAVE_VERSION >= 5 and session.SAVE_KIND == "breakfast_stall_v1", "save identity marks the current three-area breakfast-stall model")
+	var retired_order_snapshot := {
+		"version": 7,
+		"active_order_id": "legacy.sesame",
+		"active_order_ids": ["legacy.sesame"],
+		"queue_order_ids": ["legacy.sesame"],
+		"orders": {"legacy.sesame": {"state": &"active", "items": [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.sesame"}]}},
+	}
+	var normalized_retired_orders := Dictionary(session.call("_normalize_formal_orders_for_active_catalog", retired_order_snapshot))
+	var normalized_retired_promotions := Array(session.call("_normalize_order_promotions", [{"kind": &"product", "target_id": &"product.youtiao.sesame", "remaining_orders": 3}]))
+	_check(Array(normalized_retired_orders.get("active_order_ids", [])).is_empty() and StringName(Dictionary(Dictionary(normalized_retired_orders.get("orders", {})).get("legacy.sesame", {})).get("state", &"")) == &"abandoned", "save normalization retires an active sesame-youtiao order")
+	_check(normalized_retired_promotions.is_empty(), "save normalization removes pending sesame-youtiao promotions")
 	var progression: RefCounted = session.call("progression_service")
 	_check(bool(progression.call("owns_area", &"area.pancake")) and not bool(progression.call("owns_area", &"area.youtiao")) and not bool(progression.call("owns_area", &"area.fresh_soy_milk")), "new save opens only pancake area")
 	var inventory := Dictionary(session.call("inventory_snapshot"))

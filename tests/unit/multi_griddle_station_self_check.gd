@@ -22,7 +22,6 @@ class FakeSession:
 	var saved_griddles: Dictionary = {}
 	var griddle_save_calls := 0
 	var fryer_slot_available := true
-	var sesame_youtiao_available := true
 
 	func progression_service() -> RefCounted:
 		return progression
@@ -57,16 +56,6 @@ class FakeSession:
 			fryer_slot_available = false
 		return preview
 
-	func preview_take_prepared_product(slot_id: StringName, source_index: int) -> Dictionary:
-		return {"success": sesame_youtiao_available and slot_id == &"slot.04" and source_index == 1}
-
-	func take_prepared_product(slot_id: StringName, source_index: int) -> Dictionary:
-		var preview := preview_take_prepared_product(slot_id, source_index)
-		if bool(preview.get("success", false)):
-			sesame_youtiao_available = false
-		return preview
-
-
 var failures := PackedStringArray()
 
 
@@ -98,22 +87,15 @@ func _run() -> void:
 	var pancake_center := unit.pancake_surface.size * 0.5
 	var fryer_youtiao_preview: bool = station.can_preview_drop_on_unit(0, fryer_youtiao_source, pancake_center)
 	var direct_youtiao_drop := Dictionary(station.drop_on_unit(0, fryer_youtiao_source, pancake_center))
-	var sesame_youtiao_source := {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 1, "product_id": &"product.youtiao.sesame"}
-	var sesame_youtiao_preview: bool = station.can_preview_drop_on_unit(0, sesame_youtiao_source, pancake_center)
-	var sesame_youtiao_drop := Dictionary(station.drop_on_unit(0, sesame_youtiao_source, pancake_center))
+	var retired_sesame_source := {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 1, "product_id": &"product.youtiao.sesame"}
+	var retired_sesame_preview: bool = station.can_preview_drop_on_unit(0, retired_sesame_source, pancake_center)
 	_check(
 		fryer_youtiao_preview
 		and bool(direct_youtiao_drop.get("success", false))
 		and not session.fryer_slot_available
-		and sesame_youtiao_preview
-		and bool(sesame_youtiao_drop.get("success", false))
-		and not session.sesame_youtiao_available
-		and unit.ingredient_model.count_type(IngredientModel.YOUTIAO) == 2,
-		"ready fryer and sesame-tray youtiao can each be dragged onto the pancake and are consumed once"
-	)
-	_check(
-		StringName(unit.ingredient_model.placements[1].get("product_id", &"")) == &"product.youtiao.sesame",
-		"the sesame-tray youtiao retains its sesame product identity for pancake rendering"
+		and not retired_sesame_preview
+		and unit.ingredient_model.count_type(IngredientModel.YOUTIAO) == 1,
+		"only a plain ready fryer youtiao can be dragged onto the pancake"
 	)
 	unit.reset_unit()
 	_check(

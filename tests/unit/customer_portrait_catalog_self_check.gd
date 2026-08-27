@@ -27,10 +27,10 @@ func _run() -> void:
 			"gameplay startup does not eagerly preload customer portraits"
 		)
 
-	var visible_ids: Array[StringName] = [&"customer_01", &"customer_20"]
+	var visible_ids: Array[StringName] = [&"customer_01", &"customer_10"]
 	catalog.call("set_visible_customers", visible_ids)
 	var first_neutral := catalog.call("texture_for", &"customer_01", &"neutral") as Texture2D
-	var last_neutral := catalog.call("texture_for", &"customer_20", &"neutral") as Texture2D
+	var last_neutral := catalog.call("texture_for", &"customer_10", &"neutral") as Texture2D
 	var fallback := catalog.call("texture_for", &"customer_unknown", &"unknown_state") as Texture2D
 	_check(first_neutral != null and last_neutral != null, "visible neutral portraits load synchronously")
 	_check(fallback == first_neutral, "unknown customer and state fall back to customer_01 neutral")
@@ -39,13 +39,13 @@ func _run() -> void:
 	catalog.call("enable_reaction_prewarm")
 	for _frame in 600:
 		catalog.call("poll")
-		if bool(catalog.call("has_cached", &"customer_20", &"paying_coins")):
+		if bool(catalog.call("has_cached", &"customer_10", &"paying_coins")):
 			break
 		await process_frame
-	_check(bool(catalog.call("has_cached", &"customer_20", &"paying_coins")), "visible reaction portraits finish threaded prewarming")
+	_check(bool(catalog.call("has_cached", &"customer_10", &"paying_coins")), "visible reaction portraits finish threaded prewarming")
 
 	catalog.call("set_visible_customers", [&"customer_01"] as Array[StringName])
-	_check(not bool(catalog.call("has_cached", &"customer_20", &"neutral")), "customer cache releases portraits that leave the visible queue")
+	_check(not bool(catalog.call("has_cached", &"customer_10", &"neutral")), "customer cache releases portraits that leave the visible queue")
 	catalog.call("set_visible_customers", [] as Array[StringName])
 	catalog.call("finish_pending")
 	catalog = null

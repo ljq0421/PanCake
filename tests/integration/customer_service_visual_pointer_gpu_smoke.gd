@@ -47,11 +47,7 @@ func _run() -> void:
 		and not right.visible,
 		"the semantic slot-zero tutorial renders only in the center service slot",
 	)
-	_check(
-		card_background.texture != null
-		and card_background.texture.resource_path.ends_with("order_card_background_rows_1_v1.png"),
-		"the centered tutorial uses the compact one-row order-card texture",
-	)
+	_check(card_background.has_method("set_card_layout") and card_background.size == Vector2(176.0, 124.0), "the centered tutorial uses the variable-height one-block order card")
 	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "the tutorial customer and order card have no frame or selection tint")
 	_check(center.get_node_or_null("PortraitButton") == null, "the portrait has no click target")
 	await _move_at(_screen_point(card_focus_button))

@@ -60,9 +60,8 @@ func _run() -> void:
 	patience.call("open_order", [{"area_id": &"area.steamer", "product_id": &"product.steamer.bun"}], {"patience_seconds": 40.0})
 	patience.call("advance_patience", 2.0)
 	var active_patience: Array = Array(patience.call("active_orders"))
-	_check(active_patience.size() == 3 and Array(patience.call("waiting_orders")).size() == 1, "formal queue exposes three active customers and one hidden candidate")
-	_check(is_equal_approx(float(Dictionary(active_patience[0]).get("remaining_patience_seconds", 0.0)), 8.0) and is_equal_approx(float(Dictionary(active_patience[1]).get("remaining_patience_seconds", 0.0)), 22.0) and is_equal_approx(float(Dictionary(active_patience[2]).get("remaining_patience_seconds", 0.0)), 28.0), "all three active customer patience timers advance together")
-	_check(is_equal_approx(float(Dictionary(Array(patience.call("waiting_orders"))[0]).get("remaining_patience_seconds", 0.0)), 40.0), "hidden candidate remains frozen until activation")
+	_check(active_patience.size() == 4 and Array(patience.call("waiting_orders")).is_empty(), "formal service activates every on-floor customer without a hidden candidate")
+	_check(is_equal_approx(float(Dictionary(active_patience[0]).get("remaining_patience_seconds", 0.0)), 8.0) and is_equal_approx(float(Dictionary(active_patience[1]).get("remaining_patience_seconds", 0.0)), 22.0) and is_equal_approx(float(Dictionary(active_patience[2]).get("remaining_patience_seconds", 0.0)), 28.0) and is_equal_approx(float(Dictionary(active_patience[3]).get("remaining_patience_seconds", 0.0)), 38.0), "all active customer patience timers advance together")
 	for fps in [30, 60, 144]:
 		var frame_service: RefCounted = ORDERS.new()
 		frame_service.call("open_order", [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom"}], {"patience_seconds": 10.0})
@@ -78,9 +77,9 @@ func _run() -> void:
 	patience.call("begin_serving", serving_id)
 	patience.call("advance_patience", 3.0)
 	var after_serving: Array = Array(patience.call("active_orders"))
-	_check(is_equal_approx(float(Dictionary(after_serving[0]).get("remaining_patience_seconds", 0.0)), 5.0) and is_equal_approx(float(Dictionary(after_serving[1]).get("remaining_patience_seconds", 0.0)), 22.0) and is_equal_approx(float(Dictionary(after_serving[2]).get("remaining_patience_seconds", 0.0)), 25.0), "serving freezes only the accepting customer")
+	_check(is_equal_approx(float(Dictionary(after_serving[0]).get("remaining_patience_seconds", 0.0)), 5.0) and is_equal_approx(float(Dictionary(after_serving[1]).get("remaining_patience_seconds", 0.0)), 22.0) and is_equal_approx(float(Dictionary(after_serving[2]).get("remaining_patience_seconds", 0.0)), 25.0) and is_equal_approx(float(Dictionary(after_serving[3]).get("remaining_patience_seconds", 0.0)), 35.0), "serving freezes only the accepting customer")
 	var expiry: Dictionary = patience.call("advance_patience", 6.0)
-	_check(Array(expiry.get("expired_results", [])).size() == 1 and Array(patience.call("active_orders")).size() == 3 and Array(patience.call("waiting_orders")).is_empty(), "one expired customer is replaced in the same service capacity without interrupting the others")
+	_check(Array(expiry.get("expired_results", [])).size() == 1 and Array(patience.call("active_orders")).size() == 3 and Array(patience.call("waiting_orders")).is_empty(), "an expired customer leaves a vacant service position for the arrival scheduler")
 	var patience_restored: RefCounted = ORDERS.new(patience.call("snapshot"))
 	_check(Array(patience_restored.call("active_orders")).size() == 3 and Array(patience_restored.call("active_orders")).all(func(order): return int(Dictionary(order).get("service_slot", -1)) >= 0 and not StringName(Dictionary(order).get("customer_id", &"")).is_empty()), "three service slots, customer identities, and serving state survive snapshot restore")
 	var tutorial: RefCounted = ORDERS.new()
@@ -128,11 +127,11 @@ func _run() -> void:
 	version_three["active_order_id"] = str(legacy_active_ids[0])
 	version_three.erase("active_order_ids")
 	var migrated: RefCounted = ORDERS.new(version_three)
-	_check(Array(migrated.call("active_orders")).size() == 3 and Array(migrated.call("waiting_orders")).size() == 1, "version-three single-active snapshot migrates in queue order to three active slots plus one candidate")
+	_check(Array(migrated.call("active_orders")).size() == 4 and Array(migrated.call("waiting_orders")).is_empty(), "version-three single-active snapshot migrates all four orders to on-floor service slots")
 	var rotation_ids := PackedStringArray()
-	for sequence in range(1, 22):
+	for sequence in range(1, 12):
 		rotation_ids.append(str(ORDERS.customer_id_for_sequence(sequence)))
-	_check(rotation_ids.slice(0, 20) == PackedStringArray(["customer_01", "customer_02", "customer_03", "customer_04", "customer_05", "customer_06", "customer_07", "customer_08", "customer_09", "customer_10", "customer_11", "customer_12", "customer_13", "customer_14", "customer_15", "customer_16", "customer_17", "customer_18", "customer_19", "customer_20"]) and rotation_ids[20] == "customer_01", "customer identity rotates deterministically across all twenty included portraits")
+	_check(rotation_ids.slice(0, 10) == PackedStringArray(["customer_01", "customer_02", "customer_03", "customer_04", "customer_05", "customer_06", "customer_07", "customer_08", "customer_09", "customer_10"]) and rotation_ids[10] == "customer_01", "customer identity rotates deterministically across the ten enabled portraits")
 	_check(ORDERS.legacy_customer_id_for_sequence(11) == &"customer_01", "pre-expansion snapshots keep the original ten-customer modulo during identity migration")
 	var refill: RefCounted = ORDERS.new()
 	var refill_orders: Array[Dictionary] = []
@@ -142,13 +141,7 @@ func _run() -> void:
 	var first_refill_id := StringName(refill_orders[0].get("order_id", &""))
 	refill.call("attach_product", first_refill_id, 0, {"product_instance_id": &"rotation.product.1", "product_id": &"product.pancake.custom"})
 	refill.call("settle_order", first_refill_id)
-	var refilled_customer := {}
-	for active_variant in Array(refill.call("active_orders")):
-		var active_candidate := Dictionary(active_variant)
-		if int(active_candidate.get("service_slot", -1)) == 0:
-			refilled_customer = active_candidate
-			break
-	_check(StringName(refilled_customer.get("customer_id", &"")) == &"customer_04", "a customer filling service slot zero keeps its own identity instead of becoming customer one")
+	_check(Array(refill.call("active_orders")).size() == 3 and Array(refill.call("waiting_orders")).is_empty(), "settling a customer leaves the vacant service position for delayed walk-in scheduling")
 	var version_four: Dictionary = Dictionary(refill.call("snapshot"))
 	_check(int(version_four.get("version", 0)) == 7, "formal order snapshots now write version seven for the six-order queue")
 	version_four["version"] = 4
@@ -178,32 +171,7 @@ func _run() -> void:
 	preserved_orders[preserved_order_id] = preserved_order
 	preserved_snapshot["orders"] = preserved_orders
 	var expanded_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(expanded_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_15", "current snapshots preserve customer_15 while pre-expansion snapshots keep the old ten-customer mapping")
-	preserved_order["customer_id"] = &"customer_16"
-	preserved_orders[preserved_order_id] = preserved_order
-	preserved_snapshot["orders"] = preserved_orders
-	var customer_16_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(customer_16_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_16", "current snapshots preserve customer_16 while pre-expansion snapshots keep the old ten-customer mapping")
-	preserved_order["customer_id"] = &"customer_17"
-	preserved_orders[preserved_order_id] = preserved_order
-	preserved_snapshot["orders"] = preserved_orders
-	var customer_17_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(customer_17_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_17", "current snapshots preserve customer_17 while pre-expansion snapshots keep the old ten-customer mapping")
-	preserved_order["customer_id"] = &"customer_18"
-	preserved_orders[preserved_order_id] = preserved_order
-	preserved_snapshot["orders"] = preserved_orders
-	var customer_18_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(customer_18_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_18", "current snapshots preserve customer_18 while pre-expansion snapshots keep the old ten-customer mapping")
-	preserved_order["customer_id"] = &"customer_19"
-	preserved_orders[preserved_order_id] = preserved_order
-	preserved_snapshot["orders"] = preserved_orders
-	var customer_19_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(customer_19_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_19", "current snapshots preserve customer_19 while pre-expansion snapshots keep the old ten-customer mapping")
-	preserved_order["customer_id"] = &"customer_20"
-	preserved_orders[preserved_order_id] = preserved_order
-	preserved_snapshot["orders"] = preserved_orders
-	var customer_20_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(customer_20_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_20", "current snapshots preserve customer_20 while pre-expansion snapshots keep the old ten-customer mapping")
+	_check(StringName(Dictionary(expanded_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == ORDERS.customer_id_for_sequence(int(preserved_order.get("sequence", 1))), "current snapshots remap disabled customer portraits by their stable order sequence")
 	var stacked: RefCounted = ORDERS.new()
 	var stacked_open: Dictionary = stacked.call("open_order", [{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 2, "temperature_mode": &"room_temperature"}])
 	var stacked_id := StringName(Dictionary(stacked_open.get("order", {})).get("order_id", &""))

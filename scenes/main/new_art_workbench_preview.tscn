@@ -16,7 +16,6 @@
 [ext_resource type="Texture2D" uid="uid://byjhyd8t23mba" path="res://resources/art/new/糖罐.png" id="17_sugar"]
 [ext_resource type="Texture2D" uid="uid://dglvxibakg2ce" path="res://resources/art/new/油条面坯.png" id="18_youtiao_dough"]
 [ext_resource type="Texture2D" uid="uid://blkay5p3p087g" path="res://resources/art/new/原味油条.png" id="19_youtiao_plain"]
-[ext_resource type="Texture2D" uid="uid://bm3vuerjmykfg" path="res://resources/art/new/芝麻油条.png" id="20_youtiao_sesame"]
 [ext_resource type="Texture2D" uid="uid://brxykvu7og0jy" path="res://resources/art/new/烧焦油条.png" id="21_youtiao_burnt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_top_panel"]
@@ -253,19 +252,6 @@ offset_right = 490.0
 offset_bottom = 640.0
 mouse_filter = 2
 texture = ExtResource("19_youtiao_plain")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="YoutiaoSesame" type="TextureRect" parent="." unique_id=2089097475]
-unique_name_in_owner = true
-z_index = 6
-layout_mode = 0
-offset_left = 390.0
-offset_top = 486.0
-offset_right = 490.0
-offset_bottom = 640.0
-mouse_filter = 2
-texture = ExtResource("20_youtiao_sesame")
 expand_mode = 1
 stretch_mode = 5
 

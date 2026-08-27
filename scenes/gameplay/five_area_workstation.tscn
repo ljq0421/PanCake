@@ -1184,28 +1184,51 @@ text = "返回成长选择"
 [node name="ServiceCustomer1" parent="SafeArea" unique_id=560930553 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 100.0
-offset_top = 150.0
-offset_right = 640.0
-offset_bottom = 640.0
+offset_left = 28.0
+offset_top = 130.0
+offset_right = 568.0
+offset_bottom = 620.0
+scale = Vector2(0.68, 0.68)
 product_icon_offset = Vector2(20, 10)
 
 [node name="ServiceCustomer2" parent="SafeArea" unique_id=2033337310 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 690.0
-offset_top = 150.0
-offset_right = 1230.0
-offset_bottom = 640.0
+offset_left = 402.0
+offset_top = 130.0
+offset_right = 942.0
+offset_bottom = 620.0
+scale = Vector2(0.68, 0.68)
 product_icon_offset = Vector2(20, 10)
 
 [node name="ServiceCustomer3" parent="SafeArea" unique_id=1323426398 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1280.0
-offset_top = 150.0
-offset_right = 1820.0
-offset_bottom = 640.0
+offset_left = 776.0
+offset_top = 130.0
+offset_right = 1316.0
+offset_bottom = 620.0
+scale = Vector2(0.68, 0.68)
+product_icon_offset = Vector2(20, 10)
+
+[node name="ServiceCustomer4" parent="SafeArea" instance=ExtResource("27_rkfb0")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1150.0
+offset_top = 130.0
+offset_right = 1690.0
+offset_bottom = 620.0
+scale = Vector2(0.68, 0.68)
+product_icon_offset = Vector2(20, 10)
+
+[node name="ServiceCustomer5" parent="SafeArea" instance=ExtResource("27_rkfb0")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1524.0
+offset_top = 130.0
+offset_right = 2064.0
+offset_bottom = 620.0
+scale = Vector2(0.68, 0.68)
 product_icon_offset = Vector2(20, 10)
 
 [node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea" unique_id=757275453]

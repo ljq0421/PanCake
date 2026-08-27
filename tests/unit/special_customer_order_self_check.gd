@@ -183,7 +183,7 @@ func _check_order_round_trip() -> void:
 	var restored_order := Dictionary(restored.order_by_id(StringName(order.get("order_id", &""))))
 	_check(StringName(order.get("customer_id", &"")) == &"customer_special_glutton" and StringName(restored_order.get("customer_id", &"")) == &"customer_special_glutton", "special role ID survives formal-order snapshot restore without entering ordinary rotation")
 	_check(int(restored_order.get("perfect_quote_coins", 0)) == 18 and str(restored_order.get("special_title", "")) == "超能吃大胃王", "optional special order fields survive snapshot restore")
-	_check(ORDERS.customer_id_for_sequence(1) == &"customer_01" and ORDERS.customer_id_for_sequence(21) == &"customer_01", "ordinary twenty-customer rotation remains unchanged")
+	_check(ORDERS.customer_id_for_sequence(1) == &"customer_01" and ORDERS.customer_id_for_sequence(11) == &"customer_01", "ordinary customer rotation uses only the ten enabled portraits")
 
 
 func _check_formal_settlement_transaction() -> void:

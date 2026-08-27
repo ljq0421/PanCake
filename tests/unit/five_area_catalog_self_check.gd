@@ -67,6 +67,7 @@ func _run() -> void:
 	_check(CATALOG.product_definition(&"product.youtiao.oil_cake").is_empty() and CATALOG.product_definition(&"product.youtiao.sugar_oil_cake").is_empty(), "retired fryer products are absent")
 	_check(Array(CATALOG.recipe_definition(&"recipe.fresh_soy_milk.yellow_bean").get("stock_ids", [])).is_empty(), "yellow soy is ready-made and never creates bean inventory")
 	for retired_id in [
+		&"recipe.youtiao.sesame", &"product.youtiao.sesame", &"growth.flavor.youtiao.sesame",
 		&"recipe.youtiao.sugar", &"product.youtiao.sugar", &"growth.flavor.youtiao.sugar", &"growth.assist.youtiao.temperature_indicator",
 		&"recipe.fresh_soy_milk.black_bean", &"product.fresh_soy_milk.black_bean", &"growth.flavor.fresh_soy_milk.black_bean",
 		&"recipe.fresh_soy_milk.red_bean", &"product.fresh_soy_milk.red_bean", &"growth.flavor.fresh_soy_milk.red_bean",

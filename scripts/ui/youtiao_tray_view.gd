@@ -6,6 +6,9 @@ signal fryer_slot_drop_requested(source_index: int, destination_product_id: Stri
 signal product_drag_ended(source_ref: Dictionary, successful: bool)
 
 @export var destination_product_id: StringName
+@export var prepared_slot_id: StringName = &"slot.04"
+@export var accepted_fryer_lane_id: StringName = &"left"
+@export var product_hint := "从成品盘拖成品到出餐位"
 @export var slot_origin := Vector2(48.0, 62.0)
 @export var slot_step := Vector2(44.0, 0.0)
 @export var slot_size := Vector2(48.0, 104.0)
@@ -82,11 +85,11 @@ func configure_products(entries: Array[Dictionary], product_texture: Texture2D, 
 		source.self_modulate = Color.WHITE
 		source.configure({
 			"source_kind": &"prepared_product_slot",
-			"source_slot_id": &"slot.04",
+			"source_slot_id": prepared_slot_id,
 			"source_index": source_index,
 			"product_id": product_id,
 			"discardable": true,
-		}, product_texture, interaction_enabled, "从成品盘拖这一根油条到出餐位")
+		}, product_texture, interaction_enabled, product_hint)
 		source.set_alpha_hit_regions([{"texture": product_texture, "rect": Rect2(Vector2.ZERO, source.size)}])
 		source.mouse_filter = Control.MOUSE_FILTER_STOP if interaction_enabled else Control.MOUSE_FILTER_IGNORE
 		source.visible = true
@@ -104,7 +107,10 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	if StringName(payload.get("kind", &"")) != &"product_source":
 		return false
 	var source_ref := Dictionary(payload.get("source_ref", {}))
-	return StringName(source_ref.get("source_kind", &"")) == &"youtiao_fryer_slot"
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	if source_kind == &"youtiao_fryer_slot":
+		return accepted_fryer_lane_id == &"left"
+	return source_kind == &"fryer_slot" and StringName(source_ref.get("lane_id", &"")) == accepted_fryer_lane_id
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:

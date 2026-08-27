@@ -5,17 +5,17 @@ extends Control
 ## isolation before the production workstation is migrated.
 
 const TIER_NAMES := ["初级豆浆机", "中级豆浆机", "高级豆浆机"]
-const YOUTIAO_NAMES := ["油条面坯", "原味油条", "芝麻油条", "烧焦油条"]
+const YOUTIAO_NAMES := ["油条面坯", "原味油条", "烧焦油条"]
 
 @onready var tier_label: Label = %TierLabel
 @onready var food_label: Label = %FoodLabel
 @onready var hint_label: Label = %HintLabel
 @onready var machines: Array[TextureRect] = [%SoyMilkBasic, %SoyMilkMid, %SoyMilkAdvanced]
 @onready var fryers: Array[TextureRect] = [%FryerBasicRaised, %FryerBasicLowered, %FryerAdvancedRaised, %FryerAdvancedLowered]
-@onready var youtiao_variants: Array[TextureRect] = [%YoutiaoDough, %YoutiaoPlain, %YoutiaoSesame, %YoutiaoBurnt]
+@onready var youtiao_variants: Array[TextureRect] = [%YoutiaoDough, %YoutiaoPlain, %YoutiaoBurnt]
 
 var _machine_tier := 2
-var _youtiao_variant := 2
+var _youtiao_variant := 1
 var _advanced_fryer := true
 var _fryer_lowered := false
 

@@ -4,7 +4,7 @@ extends RefCounted
 const PRODUCT_TEXTURES := {
 	&"product.pancake.custom": preload("res://resources/art/workstation/packaging/serving_tray_package_v1_five_area_v2.png"),
 	&"product.youtiao.plain": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png"),
-	&"product.youtiao.sesame": preload("res://resources/art/products/youtiao/sesame_youtiao_single_v3.png"),
+	&"product.chicken.cutlet": preload("res://resources/art/products/chicken/chicken_cutlet_golden_v1.png"),
 	&"product.fresh_soy_milk.yellow_bean": preload("res://resources/art/products/soy_milk/yellow_soy_milk_cup_order_icon_v1.tres"),
 	&"product.packaged_drink.juice": preload("res://resources/art/products/orange_juice/boxed_orange_juice_v1.png"),
 }

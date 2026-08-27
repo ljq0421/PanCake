@@ -3,7 +3,6 @@ extends Control
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png")
-const SESAME_YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/sesame_youtiao_single_v3.png")
 const SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER := 0.8
 
 @export var egg_texture: Texture2D
@@ -164,8 +163,6 @@ func texture_for(ingredient_type: StringName) -> Texture2D:
 
 
 func texture_for_placement(placement: Dictionary) -> Texture2D:
-	if StringName(placement.get("type", &"")) == IngredientModel.YOUTIAO and StringName(placement.get("product_id", &"")) == &"product.youtiao.sesame":
-		return SESAME_YOUTIAO_TEXTURE
 	return texture_for(StringName(placement.get("type", &"")))
 
 

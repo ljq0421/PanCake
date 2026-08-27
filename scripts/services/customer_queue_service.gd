@@ -3,6 +3,8 @@ extends RefCounted
 
 const ORDER_SERVICE_SCRIPT := preload("res://scripts/services/order_service.gd")
 const DEFAULT_QUEUE_SIZE := 3
+# customer_11 through customer_20 remain in the project as source art, but are
+# temporarily excluded from every playable queue until their style is aligned.
 const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01",
 	&"customer_02",
@@ -14,16 +16,6 @@ const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_08",
 	&"customer_09",
 	&"customer_10",
-	&"customer_11",
-	&"customer_12",
-	&"customer_13",
-	&"customer_14",
-	&"customer_15",
-	&"customer_16",
-	&"customer_17",
-	&"customer_18",
-	&"customer_19",
-	&"customer_20",
 ]
 
 var _order_service: RefCounted
@@ -67,7 +59,8 @@ func queue_snapshot() -> Array[Dictionary]:
 ## counter, so scene loading never advances the deterministic order stream.
 func restore_active_customer(order: Dictionary, customer_id: StringName = &"customer_01") -> void:
 	_queue.clear()
-	_queue.append({"id": customer_id, "order": order.duplicate(true)})
+	var available_customer_id: StringName = customer_id if CUSTOMER_IDS.has(customer_id) else StringName(CUSTOMER_IDS.front())
+	_queue.append({"id": available_customer_id, "order": order.duplicate(true)})
 
 
 func set_order_provider(next_order_service: RefCounted) -> void:

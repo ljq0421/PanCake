@@ -47,6 +47,7 @@ const DEVICE_DEFINITIONS := {
 		"tiers": [
 			{"tier": 0, "label": "四格油条炸锅", "capacity": 4, "duration_seconds": 10.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
 			{"tier": 1, "label": "高级油条机", "capacity": 4, "duration_seconds": 10.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
+			{"tier": 2, "label": "双篮炸锅", "capacity": 4, "duration_seconds": 10.0, "safe_seconds": 5.0, "decay_seconds": 10.0, "drain_seconds": 2.0},
 		],
 	},
 	&"device.fresh_soy_milk_machine": {
@@ -111,6 +112,7 @@ const STOCK_DEFINITIONS := {
 	# The physical board has four authored dough positions. Keep its stock cap
 	# fixed at four even after the shared pantry-capacity growth upgrades.
 	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
+	&"stock.chicken.cutlet_raw": {"label": "鸡排", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 4, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &""},
 	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.20, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 }
 
@@ -125,7 +127,7 @@ const SAUCE_DEFINITIONS := {
 const RECIPE_DEFINITIONS := {
 	&"recipe.pancake.base": {"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "stock_ids": [&"stock.pancake.batter", &"stock.pancake.egg"]},
 	&"recipe.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "stock_ids": [&"stock.youtiao.plain_dough"]},
-	&"recipe.youtiao.sesame": {"label": "芝麻油条", "area_id": &"area.youtiao", "product_id": &"product.youtiao.sesame", "stock_ids": [&"stock.youtiao.plain_dough"]},
+	&"recipe.chicken.cutlet": {"label": "炸鸡排", "area_id": &"area.youtiao", "product_id": &"product.chicken.cutlet", "stock_ids": [&"stock.chicken.cutlet_raw"], "duration_seconds": 12.0},
 	# Soy milk is ready-made at the serving station.  Flavour buttons unlock
 	# recipes, not managed beans, so none of them may enter restock or slots.
 	&"recipe.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "stock_ids": []},
@@ -135,7 +137,7 @@ const RECIPE_DEFINITIONS := {
 const PRODUCT_DEFINITIONS := {
 	&"product.pancake.custom": {"area_id": &"area.pancake", "recipe_id": &"recipe.pancake.base"},
 	&"product.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.plain", "base_sell_price": 3, "order_weight": 60},
-	&"product.youtiao.sesame": {"label": "芝麻油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.sesame", "base_sell_price": 4, "order_weight": 25},
+	&"product.chicken.cutlet": {"label": "炸鸡排", "area_id": &"area.youtiao", "recipe_id": &"recipe.chicken.cutlet", "base_sell_price": 8, "order_weight": 25},
 	&"product.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "base_sell_price": 3, "material_cost": 2, "order_weight": 60},
 	&"product.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "recipe_id": &"recipe.packaged_drink.juice", "base_sell_price": 3, "material_cost": 1, "order_weight": 60},
 }
@@ -190,8 +192,8 @@ const GROWTH_DEFINITIONS := {
 	&"growth.automation.pancake.auto_sauce_brush": {"label":"自动刷酱", "kind":&"automation", "price":48, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":8}}, "automation_id":&"automation.pancake.auto_sauce_brush", "anchor_id":&"pancake.brush"},
 	&"growth.area.youtiao": {"label":"油条炸锅", "kind":&"area_unlock", "price":30, "min_reputation":20, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":6}}, "area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":0, "unlock_recipe_ids":[&"recipe.youtiao.plain"], "unlock_product_ids":[&"product.youtiao.plain"], "unlock_stock_ids":[&"stock.youtiao.plain_dough"], "anchor_id":&"youtiao.fryer"},
 	&"growth.capacity.youtiao_finished_tray": {"label":"油条成品盘", "kind":&"storage", "price":12, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.area.youtiao"], "anchor_id":&"youtiao.finished_tray"},
-	&"growth.flavor.youtiao.sesame": {"label":"芝麻油条", "kind":&"recipe_unlock", "price":12, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.capacity.youtiao_finished_tray"], "requires_mastery":{&"area.youtiao":{"qualified":2}}, "unlock_recipe_ids":[&"recipe.youtiao.sesame"], "unlock_product_ids":[&"product.youtiao.sesame"], "anchor_id":&"youtiao.sesame"},
 	&"growth.equipment.youtiao.advanced": {"label":"高级油条机", "kind":&"device_tier", "price":36, "requires_area_id":&"area.youtiao", "requires_mastery":{&"area.youtiao":{"qualified":6}}, "device_id":&"device.youtiao_fryer", "target_tier":1, "automation_id":&"automation.youtiao.auto_lift", "anchor_id":&"youtiao.advanced"},
+	&"growth.equipment.youtiao.dual_basket": {"label":"双篮炸锅", "kind":&"device_tier", "price":72, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.equipment.youtiao.advanced"], "requires_mastery":{&"area.youtiao":{"qualified":12}}, "device_id":&"device.youtiao_fryer", "target_tier":2, "unlock_recipe_ids":[&"recipe.chicken.cutlet"], "unlock_product_ids":[&"product.chicken.cutlet"], "unlock_stock_ids":[&"stock.chicken.cutlet_raw"], "anchor_id":&"youtiao.dual_basket"},
 	&"growth.area.fresh_soy_milk": {"label":"初级豆浆机", "kind":&"area_unlock", "price":60, "min_day":7, "min_reputation":60, "requires_area_id":&"area.youtiao", "requires_mastery":{&"area.youtiao":{"qualified":4}}, "area_id":&"area.fresh_soy_milk", "device_id":&"device.fresh_soy_milk_machine", "target_tier":0, "unlock_recipe_ids":[&"recipe.fresh_soy_milk.yellow_bean"], "unlock_product_ids":[&"product.fresh_soy_milk.yellow_bean"], "anchor_id":&"soy.machine"},
 	&"growth.assist.fresh_soy_milk.sugar": {"label":"加糖罐", "kind":&"assist", "price":12, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"qualified":2}}, "assist_id":&"assist.fresh_soy_milk.sugar", "anchor_id":&"soy.sugar"},
 	&"growth.automation.fresh_soy_milk.auto_fill": {"label":"中级豆浆机", "kind":&"automation", "price":64, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"a_grade":4}}, "automation_id":&"automation.fresh_soy_milk.auto_fill", "anchor_id":&"soy.auto_fill"},
@@ -201,7 +203,7 @@ const GROWTH_DEFINITIONS := {
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
 	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.automation.pancake.one_click_baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.one_click_scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.ham_sausage", &"growth.automation.pancake.one_click_ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.one_click_coriander", &"growth.add_on.pancake.meat_floss", &"growth.automation.pancake.one_click_meat_floss", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
-	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.flavor.youtiao.sesame", &"growth.equipment.youtiao.advanced",
+	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
 	&"growth.area.packaged_drink",
 ]
@@ -388,7 +390,7 @@ static func validate_catalog() -> PackedStringArray:
 			if seen_tiers.has(tier):
 				errors.append("Device has duplicate tier: %s/%d" % [device_id, tier])
 			seen_tiers.append(tier)
-		var required_tiers := [0] if device_id in [&"device.pancake_griddle", &"device.fresh_soy_milk_machine", &"device.packaged_drink_rack"] else [0, 1]
+		var required_tiers := [0] if device_id in [&"device.pancake_griddle", &"device.fresh_soy_milk_machine", &"device.packaged_drink_rack"] else [0, 1, 2]
 		for required_tier in required_tiers:
 			if not seen_tiers.has(required_tier):
 				errors.append("Device is missing tier: %s/%d" % [device_id, required_tier])

@@ -21,10 +21,10 @@ func _run() -> void:
 	_check(route_ids == PackedStringArray([
 		"growth.add_on.pancake.sweet_flour", "growth.add_on.pancake.baocui", "growth.add_on.pancake.scallion", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
 		"growth.add_on.pancake.meat_floss", "growth.add_on.pancake.tomato", "growth.automation.pancake.press_once", "growth.automation.pancake.auto_sauce_brush",
-		"growth.area.youtiao", "growth.capacity.youtiao_finished_tray", "growth.flavor.youtiao.sesame", "growth.equipment.youtiao.advanced",
+		"growth.area.youtiao", "growth.capacity.youtiao_finished_tray", "growth.equipment.youtiao.advanced",
 		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.sugar", "growth.automation.fresh_soy_milk.auto_fill", "growth.automation.fresh_soy_milk.advanced",
 	]), "growth route contains only active upgrades in display order")
-	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake"), "retired fryer recipes are absent from growth")
+	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake") and not route_ids.has("growth.flavor.youtiao.sesame"), "retired fryer recipes are absent from growth")
 	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 4, "automatic filling requires four A-grade soy orders")
 	for retired_growth in [&"growth.area.packaged_drink", &"growth.area.steamer", &"growth.equipment.packaged_drink.advanced"]:
 		_check(not route_ids.has(str(retired_growth)), "%s is absent from active growth" % retired_growth)

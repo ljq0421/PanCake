@@ -51,7 +51,7 @@ func advance_time(delta: float) -> bool:
 	# stable until the next player action.  Reporting a change for those states
 	# made GameSession clone and broadcast the complete production snapshot every
 	# frame, even while a finished stick was following the pointer.
-	if StringName(_youtiao.get("state")) not in TIME_DRIVEN_YOUTIAO_STATES:
+	if not _fryer_has_time_driven_lane():
 		return false
 	_youtiao.call("advance_time", step, youtiao_auto_lift_enabled())
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
@@ -210,7 +210,7 @@ func take_pancake_griddle_ready(source_index: int) -> Dictionary:
 	return _success({"source_index": source_index, "product": Dictionary(preview.get("product", {})).duplicate(true)})
 
 
-func load_batch(device_id: StringName, recipe_id: StringName, quantity: int) -> Dictionary:
+func load_batch(device_id: StringName, recipe_id: StringName, quantity: int, lane_id: StringName = &"left") -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return load_soy_batch(recipe_id, quantity)
 	if device_id != YOUTIAO_DEVICE:
@@ -228,7 +228,7 @@ func load_batch(device_id: StringName, recipe_id: StringName, quantity: int) -> 
 	for _unit in range(quantity):
 		stock_ids.append(StringName(source_stock_ids[0]))
 	var rollback := Dictionary(_youtiao.call("snapshot")).duplicate(true)
-	var loaded: Dictionary = _youtiao.call("load_recipe", recipe_id, quantity)
+	var loaded: Dictionary = _youtiao.call("load_lane_recipe", lane_id, recipe_id, quantity)
 	if not bool(loaded.get("success", false)):
 		return loaded
 	var consumed := _consume(stock_ids)
@@ -236,12 +236,13 @@ func load_batch(device_id: StringName, recipe_id: StringName, quantity: int) -> 
 		_youtiao.call("load_snapshot", rollback)
 		return consumed
 	loaded["consumed_stock_ids"] = PackedStringArray(stock_ids.map(func(value): return str(value)))
+	loaded["lane_id"] = lane_id
 	_emit_stock(stock_ids[0])
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
 	return loaded
 
 
-func perform_action(device_id: StringName, action_id: StringName) -> Dictionary:
+func perform_action(device_id: StringName, action_id: StringName, lane_id: StringName = &"left") -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return perform_soy_action(action_id)
 	if device_id != YOUTIAO_DEVICE:
@@ -249,35 +250,36 @@ func perform_action(device_id: StringName, action_id: StringName) -> Dictionary:
 	var result: Dictionary
 	match action_id:
 		&"start":
-			result = _youtiao.call("start")
+			result = _youtiao.call("start_lane", lane_id)
 		&"lift":
-			result = _youtiao.call("lift")
+			result = _youtiao.call("lift_lane", lane_id)
 		_:
 			return _failure(&"unsupported_action", {"action_id": action_id})
 	if bool(result.get("success", false)):
+		result["lane_id"] = lane_id
 		machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
 	return result
 
 
-func preview_collect_batch(device_id: StringName, quantity: int = 1, source_index: int = -1) -> Dictionary:
+func preview_collect_batch(device_id: StringName, quantity: int = 1, source_index: int = -1, lane_id: StringName = &"left") -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return preview_collect_soy(quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
-	var preview: Dictionary = _youtiao.call("preview_collect_slot", source_index) if source_index >= 0 else _youtiao.call("preview_collect", quantity)
+	var preview: Dictionary = _youtiao.call("preview_collect_lane_slot", lane_id, source_index) if source_index >= 0 else _youtiao.call("preview_collect_lane", lane_id, quantity)
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := _new_product(StringName(preview.get("product_id", &"")), &"area.youtiao", &"room_temperature", float(preview.get("quality", 0.0)), StringName(preview.get("grade", &"waste")), false)
 	product["material_cost"] = _youtiao_material_cost(StringName(product.get("product_id", &"")))
-	return _success({"product": product, "quantity": quantity, "source_index": source_index})
+	return _success({"product": product, "quantity": quantity, "source_index": source_index, "lane_id": lane_id})
 
 
-func collect_batch(device_id: StringName, quantity: int = 1, source_index: int = -1) -> Dictionary:
+func collect_batch(device_id: StringName, quantity: int = 1, source_index: int = -1, lane_id: StringName = &"left") -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return collect_soy(quantity)
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
-	var result: Dictionary = _youtiao.call("collect_slot", source_index) if source_index >= 0 else _youtiao.call("collect", quantity)
+	var result: Dictionary = _youtiao.call("collect_lane_slot", lane_id, source_index) if source_index >= 0 else _youtiao.call("collect_lane", lane_id, quantity)
 	if not bool(result.get("success", false)):
 		return result
 	var products: Array[Dictionary] = []
@@ -287,16 +289,16 @@ func collect_batch(device_id: StringName, quantity: int = 1, source_index: int =
 		products.append(product)
 		product_created.emit(product.duplicate(true))
 	machine_changed.emit(YOUTIAO_DEVICE, machine_snapshot(YOUTIAO_DEVICE))
-	return _success({"products": products, "product": products[0] if not products.is_empty() else {}, "remaining_quantity": result.get("remaining_quantity", 0), "source_index": source_index, "occupied_slot_indices": result.get("occupied_slot_indices", [])})
+	return _success({"products": products, "product": products[0] if not products.is_empty() else {}, "remaining_quantity": result.get("remaining_quantity", 0), "source_index": source_index, "occupied_slot_indices": result.get("occupied_slot_indices", []), "lane_id": lane_id})
 
 
-func discard_batch(device_id: StringName) -> Dictionary:
+func discard_batch(device_id: StringName, lane_id: StringName = &"left") -> Dictionary:
 	if device_id == SOY_DEVICE:
 		return discard_soy()
 	if device_id != YOUTIAO_DEVICE:
 		return _failure(&"unsupported_device", {"device_id": device_id})
 	var before := machine_snapshot(YOUTIAO_DEVICE)
-	var result: Dictionary = _youtiao.call("discard")
+	var result: Dictionary = _youtiao.call("discard_lane", lane_id)
 	if not bool(result.get("success", false)):
 		return result
 	var recipe_id := StringName(result.get("recipe_id", &""))
@@ -313,11 +315,11 @@ func discard_batch(device_id: StringName) -> Dictionary:
 	return _success({"waste": entry})
 
 
-func discard_youtiao_slot(slot_index: int) -> Dictionary:
+func discard_youtiao_slot(slot_index: int, lane_id: StringName = &"left") -> Dictionary:
 	if slot_index < 0:
 		return _failure(&"invalid_source_index")
 	var before := machine_snapshot(YOUTIAO_DEVICE)
-	var result: Dictionary = _youtiao.call("discard_slot", slot_index)
+	var result: Dictionary = _youtiao.call("discard_lane_slot", lane_id, slot_index)
 	if not bool(result.get("success", false)):
 		return result
 	var recipe := CATALOG.recipe_definition(StringName(result.get("recipe_id", &"")))
@@ -788,6 +790,14 @@ func _record_waste(area_id: StringName, source_id: StringName, product_id: Strin
 
 static func _stock_cost(stock_id: StringName) -> int:
 	return maxi(int(CATALOG.stock_definition(stock_id).get("restock_unit_cost", 0)), 0)
+
+
+func _fryer_has_time_driven_lane() -> bool:
+	for lane_id in [&"left", &"right"]:
+		var lane := Dictionary(_youtiao.call("lane_snapshot", lane_id))
+		if StringName(lane.get("state", &"")) in TIME_DRIVEN_YOUTIAO_STATES:
+			return true
+	return false
 
 
 static func _youtiao_material_cost(product_id: StringName) -> int:

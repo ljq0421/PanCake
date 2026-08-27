@@ -593,33 +593,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_flavor_youtiao_sesame" type="Button" parent="UpgradeProps" unique_id=306160546]
-custom_minimum_size = Vector2(120, 38)
-layout_mode = 0
-offset_left = 340.0
-offset_top = 820.0
-offset_right = 460.0
-offset_bottom = 858.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.flavor.youtiao.sesame"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_flavor_youtiao_sesame" unique_id=681523927]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "芝麻油条
-可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
 [node name="WorkshopProp_growth_equipment_youtiao_advanced" type="Button" parent="UpgradeProps" unique_id=1304254307]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
@@ -643,6 +616,32 @@ theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
 text = "高级油条机
 可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_equipment_youtiao_dual_basket" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_left = 176.0
+offset_top = 396.0
+offset_right = 296.0
+offset_bottom = 434.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.equipment.youtiao.dual_basket"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_equipment_youtiao_dual_basket"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "双篮炸锅\n可预订"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2

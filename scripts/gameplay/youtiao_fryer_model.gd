@@ -1,30 +1,38 @@
 class_name YoutiaoFryerModel
 extends RefCounted
 
+## Compatibility façade for the fryer. Legacy members and methods address the
+## left/youtiao basket; new callers select an explicit lane.
+
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const LANE_MODEL := preload("res://scripts/gameplay/fryer_lane_model.gd")
 const DEVICE_ID := &"device.youtiao_fryer"
 const AREA_ID := &"area.youtiao"
-
-const STATE_UNOWNED := &"unowned"
-const STATE_IDLE := &"idle"
-const STATE_LOADED := &"loaded"
-const STATE_FRYING := &"frying"
-const STATE_READY_SAFE := &"ready_safe"
-const STATE_OVERCOOKING := &"overcooking"
-const STATE_DRAINING := &"draining"
-const STATE_READY_TO_COLLECT := &"ready_to_collect"
-const STATE_BURNT := &"burnt"
+const LANE_YOUTIAO := &"left"
+const LANE_CHICKEN := &"right"
+const CHICKEN_RECIPE_ID := &"recipe.chicken.cutlet"
 
 var owned := false
 var tier := 0
-var state: StringName = STATE_UNOWNED
-var recipe_id: StringName = &""
-var quantity := 0
-var occupied_slot_indices: Array[int] = []
-var cooking_elapsed_seconds := 0.0
-var completed_elapsed_seconds := 0.0
-var draining_elapsed_seconds := 0.0
-var quality := 100.0
+var _left = LANE_MODEL.new()
+var _right = LANE_MODEL.new()
+
+var state: StringName:
+	get: return _left.state
+var recipe_id: StringName:
+	get: return _left.recipe_id
+var quantity: int:
+	get: return _left.quantity
+var occupied_slot_indices: Array[int]:
+	get: return _left.occupied_slot_indices
+var cooking_elapsed_seconds: float:
+	get: return _left.cooking_elapsed_seconds
+var completed_elapsed_seconds: float:
+	get: return _left.completed_elapsed_seconds
+var draining_elapsed_seconds: float:
+	get: return _left.draining_elapsed_seconds
+var quality: float:
+	get: return _left.quality
 
 
 func _init(next_tier: int = 0, is_owned: bool = false) -> void:
@@ -33,283 +41,163 @@ func _init(next_tier: int = 0, is_owned: bool = false) -> void:
 
 
 func configure_owned(next_tier: int) -> Dictionary:
-	if CATALOG.device_tier(DEVICE_ID, next_tier).is_empty():
+	var definition := CATALOG.device_tier(DEVICE_ID, next_tier)
+	if definition.is_empty():
 		return _failure(&"invalid_device_tier")
 	owned = true
 	tier = next_tier
-	if state == STATE_UNOWNED:
-		state = STATE_IDLE
+	_left.configure_owned(definition)
+	if tier >= 2:
+		_right.configure_owned(definition)
+	else:
+		_right.configure_unowned()
 	return _success({"tier": tier, "capacity": capacity()})
 
 
 func capacity() -> int:
-	return int(_tier_definition().get("capacity", 0)) if owned else 0
+	return _left.capacity()
 
 
-func load_recipe(next_recipe_id: StringName, next_quantity: int) -> Dictionary:
+func lane_enabled(lane_id: StringName) -> bool:
+	return _lane(lane_id).owned if _is_lane_id(lane_id) else false
+
+
+func lane_snapshot(lane_id: StringName) -> Dictionary:
+	if not _is_lane_id(lane_id):
+		return {"lane_id": lane_id, "owned": false, "state": &"unsupported"}
+	var value: Dictionary = _lane(lane_id).snapshot()
+	value["lane_id"] = lane_id
+	return value
+
+
+func load_lane_recipe(lane_id: StringName, next_recipe_id: StringName, next_quantity: int) -> Dictionary:
 	if not owned:
 		return _failure(&"equipment_not_owned")
-	if state not in [STATE_IDLE, STATE_LOADED]:
-		return _failure(&"invalid_equipment_state")
-	if next_quantity <= 0:
-		return _failure(&"invalid_quantity")
+	if not lane_enabled(lane_id):
+		return _failure(&"lane_not_unlocked", {"lane_id": lane_id})
 	var recipe := CATALOG.recipe_definition(next_recipe_id)
-	if recipe.is_empty() or recipe.get("area_id", &"") != AREA_ID:
-		return _failure(&"invalid_recipe")
-	if state == STATE_LOADED and recipe_id != next_recipe_id:
-		return _failure(&"mixed_recipe")
-	if quantity + next_quantity > capacity():
-		return _failure(&"capacity_exceeded", {"capacity": capacity(), "loaded_quantity": quantity})
-	recipe_id = next_recipe_id
-	for slot_index in range(capacity()):
-		if occupied_slot_indices.has(slot_index):
-			continue
-		occupied_slot_indices.append(slot_index)
-		if occupied_slot_indices.size() >= quantity + next_quantity:
-			break
-	occupied_slot_indices.sort()
-	quantity = occupied_slot_indices.size()
-	state = STATE_LOADED
-	return _success({"recipe_id": recipe_id, "loaded_quantity": quantity, "remaining_capacity": capacity() - quantity, "occupied_slot_indices": occupied_slot_indices.duplicate()})
+	if recipe.is_empty() or StringName(recipe.get("area_id", &"")) != AREA_ID or not _recipe_allowed_in_lane(lane_id, next_recipe_id):
+		return _failure(&"invalid_recipe", {"lane_id": lane_id, "recipe_id": next_recipe_id})
+	return _lane(lane_id).load_recipe(next_recipe_id, next_quantity)
 
+
+func start_lane(lane_id: StringName) -> Dictionary:
+	if not lane_enabled(lane_id):
+		return _failure(&"lane_not_unlocked", {"lane_id": lane_id})
+	return _lane(lane_id).start()
+
+
+func advance_lanes(delta: float, auto_lift: bool = false) -> void:
+	for lane_id in [LANE_YOUTIAO, LANE_CHICKEN]:
+		if lane_enabled(lane_id):
+			_lane(lane_id).advance_time(delta, auto_lift)
+
+
+func lift_lane(lane_id: StringName) -> Dictionary:
+	if not lane_enabled(lane_id):
+		return _failure(&"lane_not_unlocked", {"lane_id": lane_id})
+	return _lane(lane_id).lift()
+
+
+func preview_collect_lane(lane_id: StringName, collect_quantity: int = 1) -> Dictionary:
+	return _lane_result(lane_id, "preview_collect", [collect_quantity])
+
+
+func preview_collect_lane_slot(lane_id: StringName, slot_index: int) -> Dictionary:
+	return _lane_result(lane_id, "preview_collect_slot", [slot_index])
+
+
+func collect_lane(lane_id: StringName, collect_quantity: int = 1) -> Dictionary:
+	return _lane_result(lane_id, "collect", [collect_quantity])
+
+
+func collect_lane_slot(lane_id: StringName, slot_index: int) -> Dictionary:
+	return _lane_result(lane_id, "collect_slot", [slot_index])
+
+
+func discard_lane(lane_id: StringName) -> Dictionary:
+	return _lane_result(lane_id, "discard", [])
+
+
+func discard_lane_slot(lane_id: StringName, slot_index: int) -> Dictionary:
+	return _lane_result(lane_id, "discard_slot", [slot_index])
+
+
+# Legacy left-lane surface.
+func load_recipe(next_recipe_id: StringName, next_quantity: int) -> Dictionary:
+	return load_lane_recipe(LANE_YOUTIAO, next_recipe_id, next_quantity)
 
 func start() -> Dictionary:
-	if not owned:
-		return _failure(&"equipment_not_owned")
-	if state != STATE_LOADED or quantity <= 0:
-		return _failure(&"batch_not_loaded")
-	state = STATE_FRYING
-	cooking_elapsed_seconds = 0.0
-	completed_elapsed_seconds = 0.0
-	draining_elapsed_seconds = 0.0
-	quality = 100.0
-	return _success({"duration_seconds": float(_tier_definition().get("duration_seconds", 0.0)), "quantity": quantity})
-
+	return start_lane(LANE_YOUTIAO)
 
 func advance_time(delta: float, auto_lift: bool = false) -> void:
-	var remaining := maxf(delta, 0.0)
-	if not owned or remaining <= 0.0:
-		return
-	var definition := _tier_definition()
-	var duration := float(definition.get("duration_seconds", 0.0))
-	var safe_seconds := float(definition.get("safe_seconds", 0.0))
-	var decay_seconds := float(definition.get("decay_seconds", 10.0))
-	var drain_seconds := float(definition.get("drain_seconds", 2.0))
-	if state == STATE_FRYING:
-		var until_ready := maxf(duration - cooking_elapsed_seconds, 0.0)
-		var applied := minf(remaining, until_ready)
-		cooking_elapsed_seconds += applied
-		remaining -= applied
-		if cooking_elapsed_seconds + 0.000001 >= duration:
-			cooking_elapsed_seconds = duration
-			state = STATE_READY_SAFE
-			completed_elapsed_seconds = 0.0
-			if auto_lift:
-				lift()
-	if state == STATE_READY_SAFE and remaining > 0.0:
-		if auto_lift:
-			lift()
-		else:
-			var until_decay := maxf(safe_seconds - completed_elapsed_seconds, 0.0)
-			var applied := minf(remaining, until_decay)
-			completed_elapsed_seconds += applied
-			remaining -= applied
-			if completed_elapsed_seconds + 0.000001 >= safe_seconds and remaining > 0.0:
-				state = STATE_OVERCOOKING
-	if state == STATE_OVERCOOKING and remaining > 0.0:
-		var decay_elapsed := maxf(completed_elapsed_seconds - safe_seconds, 0.0)
-		var until_burnt := maxf(decay_seconds - decay_elapsed, 0.0)
-		var applied := minf(remaining, until_burnt)
-		completed_elapsed_seconds += applied
-		remaining -= applied
-		decay_elapsed = maxf(completed_elapsed_seconds - safe_seconds, 0.0)
-		quality = clampf(100.0 - 40.0 * decay_elapsed / maxf(decay_seconds, 0.001), 60.0, 100.0)
-		if decay_elapsed + 0.000001 >= decay_seconds:
-			state = STATE_BURNT
-			quality = 0.0
-	if state == STATE_DRAINING and remaining > 0.0:
-		var until_collected := maxf(drain_seconds - draining_elapsed_seconds, 0.0)
-		var applied := minf(remaining, until_collected)
-		draining_elapsed_seconds += applied
-		if draining_elapsed_seconds + 0.000001 >= drain_seconds:
-			draining_elapsed_seconds = drain_seconds
-			state = STATE_READY_TO_COLLECT
-
+	advance_lanes(delta, auto_lift)
 
 func lift() -> Dictionary:
-	if state != STATE_READY_SAFE and state != STATE_OVERCOOKING:
-		return _failure(&"lift_not_available")
-	state = STATE_DRAINING
-	draining_elapsed_seconds = 0.0
-	return _success({"quality": quality})
-
+	return lift_lane(LANE_YOUTIAO)
 
 func preview_collect(collect_quantity: int = 1) -> Dictionary:
-	if state != STATE_READY_TO_COLLECT:
-		return _failure(&"product_not_ready")
-	if collect_quantity <= 0 or collect_quantity > quantity:
-		return _failure(&"invalid_quantity", {"available_quantity": quantity})
-	return _success({
-		"recipe_id": recipe_id,
-		"product_id": CATALOG.recipe_definition(recipe_id).get("product_id", &""),
-		"quantity": collect_quantity,
-		"quality": quality,
-		"grade": _grade_for_quality(quality),
-		"temperature_mode": &"room_temperature",
-	})
-
+	return preview_collect_lane(LANE_YOUTIAO, collect_quantity)
 
 func preview_collect_slot(slot_index: int) -> Dictionary:
-	if not occupied_slot_indices.has(slot_index):
-		return _failure(&"output_slot_empty", {"source_index": slot_index})
-	var result := preview_collect(1)
-	if bool(result.get("success", false)):
-		result["source_index"] = slot_index
-	return result
-
+	return preview_collect_lane_slot(LANE_YOUTIAO, slot_index)
 
 func collect(collect_quantity: int = 1) -> Dictionary:
-	var preview := preview_collect(collect_quantity)
-	if not bool(preview.get("success", false)):
-		return preview
-	for slot_index in occupied_slot_indices.duplicate().slice(0, collect_quantity):
-		occupied_slot_indices.erase(slot_index)
-	quantity = occupied_slot_indices.size()
-	preview["remaining_quantity"] = quantity
-	preview["occupied_slot_indices"] = occupied_slot_indices.duplicate()
-	if quantity <= 0:
-		_reset_idle()
-	return preview
-
+	return collect_lane(LANE_YOUTIAO, collect_quantity)
 
 func collect_slot(slot_index: int) -> Dictionary:
-	var result := preview_collect_slot(slot_index)
-	if not bool(result.get("success", false)):
-		return result
-	occupied_slot_indices.erase(slot_index)
-	quantity = occupied_slot_indices.size()
-	result["remaining_quantity"] = quantity
-	result["occupied_slot_indices"] = occupied_slot_indices.duplicate()
-	if quantity <= 0:
-		_reset_idle()
-	return result
-
+	return collect_lane_slot(LANE_YOUTIAO, slot_index)
 
 func discard() -> Dictionary:
-	if state in [STATE_UNOWNED, STATE_IDLE] or quantity <= 0:
-		return _failure(&"discard_not_available")
-	var discarded_state := state
-	var discarded_recipe := recipe_id
-	var discarded_quantity := quantity
-	_reset_idle()
-	return _success({
-		"recipe_id": discarded_recipe,
-		"quantity": discarded_quantity,
-		"discarded_state": discarded_state,
-		"waste_reason": &"burnt_batch" if discarded_state == STATE_BURNT else &"youtiao_batch_discarded",
-	})
-
+	return discard_lane(LANE_YOUTIAO)
 
 func discard_slot(slot_index: int) -> Dictionary:
-	if state in [STATE_UNOWNED, STATE_IDLE] or not occupied_slot_indices.has(slot_index):
-		return _failure(&"discard_not_available", {"source_index": slot_index})
-	var discarded_state := state
-	var discarded_recipe := recipe_id
-	occupied_slot_indices.erase(slot_index)
-	quantity = occupied_slot_indices.size()
-	var result := _success({
-		"recipe_id": discarded_recipe,
-		"quantity": 1,
-		"source_index": slot_index,
-		"remaining_quantity": quantity,
-		"occupied_slot_indices": occupied_slot_indices.duplicate(),
-		"discarded_state": discarded_state,
-		"waste_reason": &"burnt_batch" if discarded_state == STATE_BURNT else &"youtiao_slot_discarded",
-	})
-	if quantity <= 0:
-		_reset_idle()
-	return result
+	return discard_lane_slot(LANE_YOUTIAO, slot_index)
 
 
 func snapshot() -> Dictionary:
-	return {
-		"device_id": DEVICE_ID,
-		"owned": owned,
-		"tier": tier,
-		"capacity": capacity(),
-		"state": state,
-		"recipe_id": recipe_id,
-		"quantity": quantity,
-		"occupied_slot_indices": occupied_slot_indices.duplicate(),
-		"cooking_elapsed_seconds": cooking_elapsed_seconds,
-		"completed_elapsed_seconds": completed_elapsed_seconds,
-		"draining_elapsed_seconds": draining_elapsed_seconds,
-		"quality": quality,
-	}
+	var left := lane_snapshot(LANE_YOUTIAO)
+	# Preserve top-level fields so current saves/tests and legacy consumers remain
+	# valid while lanes are adopted incrementally.
+	left.merge({"device_id": DEVICE_ID, "owned": owned, "tier": tier, "lanes": {LANE_YOUTIAO: left.duplicate(true), LANE_CHICKEN: lane_snapshot(LANE_CHICKEN)}}, true)
+	return left
 
 
 func load_snapshot(value: Dictionary) -> Dictionary:
 	owned = false
-	state = STATE_UNOWNED
-	_reset_values()
+	tier = 0
+	_left.configure_unowned()
+	_right.configure_unowned()
 	if value.is_empty() or not bool(value.get("owned", false)):
 		return _success()
 	var configured := configure_owned(int(value.get("tier", 0)))
 	if not bool(configured.get("success", false)):
 		return configured
-	var restored_state := StringName(value.get("state", STATE_IDLE))
-	if restored_state not in [STATE_IDLE, STATE_LOADED, STATE_FRYING, STATE_READY_SAFE, STATE_OVERCOOKING, STATE_DRAINING, STATE_READY_TO_COLLECT, STATE_BURNT]:
-		restored_state = STATE_IDLE
-	state = restored_state
-	recipe_id = StringName(value.get("recipe_id", &""))
-	var restored_quantity := clampi(int(value.get("quantity", 0)), 0, capacity())
-	occupied_slot_indices.clear()
-	if value.has("occupied_slot_indices"):
-		for slot_value in Array(value.get("occupied_slot_indices", [])):
-			var slot_index := int(slot_value)
-			if slot_index >= 0 and slot_index < capacity() and not occupied_slot_indices.has(slot_index):
-				occupied_slot_indices.append(slot_index)
-	else:
-		for slot_index in range(restored_quantity):
-			occupied_slot_indices.append(slot_index)
-	occupied_slot_indices.sort()
-	quantity = occupied_slot_indices.size()
-	cooking_elapsed_seconds = maxf(float(value.get("cooking_elapsed_seconds", 0.0)), 0.0)
-	completed_elapsed_seconds = maxf(float(value.get("completed_elapsed_seconds", 0.0)), 0.0)
-	draining_elapsed_seconds = maxf(float(value.get("draining_elapsed_seconds", 0.0)), 0.0)
-	quality = clampf(float(value.get("quality", 100.0)), 0.0, 100.0)
-	if state != STATE_IDLE and (quantity <= 0 or CATALOG.recipe_definition(recipe_id).is_empty()):
-		_reset_idle()
+	var saved_lanes := Dictionary(value.get("lanes", {}))
+	_left.load_snapshot(Dictionary(saved_lanes.get(LANE_YOUTIAO, value)))
+	if lane_enabled(LANE_CHICKEN):
+		_right.load_snapshot(Dictionary(saved_lanes.get(LANE_CHICKEN, {})))
 	return _success()
 
 
-func _tier_definition() -> Dictionary:
-	return CATALOG.device_tier(DEVICE_ID, tier)
+func _lane_result(lane_id: StringName, method: String, arguments: Array) -> Dictionary:
+	if not lane_enabled(lane_id):
+		return _failure(&"lane_not_unlocked", {"lane_id": lane_id})
+	var result: Dictionary = _lane(lane_id).callv(method, arguments)
+	result["lane_id"] = lane_id
+	return result
 
 
-func _reset_idle() -> void:
-	state = STATE_IDLE
-	_reset_values()
+func _lane(lane_id: StringName) -> RefCounted:
+	return _right if lane_id == LANE_CHICKEN else _left
 
 
-func _reset_values() -> void:
-	recipe_id = &""
-	quantity = 0
-	occupied_slot_indices.clear()
-	cooking_elapsed_seconds = 0.0
-	completed_elapsed_seconds = 0.0
-	draining_elapsed_seconds = 0.0
-	quality = 100.0
+static func _is_lane_id(lane_id: StringName) -> bool:
+	return lane_id in [LANE_YOUTIAO, LANE_CHICKEN]
 
 
-static func _grade_for_quality(value: float) -> StringName:
-	if value >= 90.0:
-		return &"A"
-	if value >= 75.0:
-		return &"B"
-	if value >= 60.0:
-		return &"C"
-	return &"waste"
+static func _recipe_allowed_in_lane(lane_id: StringName, candidate_recipe_id: StringName) -> bool:
+	return candidate_recipe_id == CHICKEN_RECIPE_ID if lane_id == LANE_CHICKEN else candidate_recipe_id != CHICKEN_RECIPE_ID
 
 
 static func _success(extra: Dictionary = {}) -> Dictionary:

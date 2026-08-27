@@ -14,8 +14,12 @@ const SPECIALS := preload("res://scripts/data/special_customer_catalog.gd")
 ## never introduce a third sauce when more sauce content is added later.
 const MAX_SAUCE_TYPES_PER_ITEM := 2
 const MAX_PORTIONS_PER_REQUIREMENT := 2
-const MAX_OPEN_ORDERS := 6
-const MAX_ACTIVE_CUSTOMERS := 3
+## The storefront has five physical service positions.  Orders are created
+## only as a customer walks in, so there is no hidden waiting queue.
+const MAX_OPEN_ORDERS := 5
+const MAX_ACTIVE_CUSTOMERS := 5
+# customer_11 through customer_20 remain in the project as source art, but are
+# temporarily excluded from every playable queue until their style is aligned.
 const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01",
 	&"customer_02",
@@ -27,16 +31,6 @@ const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_08",
 	&"customer_09",
 	&"customer_10",
-	&"customer_11",
-	&"customer_12",
-	&"customer_13",
-	&"customer_14",
-	&"customer_15",
-	&"customer_16",
-	&"customer_17",
-	&"customer_18",
-	&"customer_19",
-	&"customer_20",
 ]
 const LEGACY_CUSTOMER_COUNT_BEFORE_POOL_EXPANSION := 10
 

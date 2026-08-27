@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bcgkauxm4opdi"]
 
 [ext_resource type="Script" uid="uid://bx27p8vbu7lxg" path="res://scripts/ui/customer_service_slot.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bv7l61doyv7q7" path="res://resources/art/ui/order/order_card_background_rows_1_v1.png" id="2_order_card"]
 [ext_resource type="Script" uid="uid://c46h1inlchljr" path="res://scripts/ui/order_item_drop_button.gd" id="3_drop_button"]
+[ext_resource type="Script" path="res://scripts/ui/order_card_background.gd" id="4_card_background"]
 
 [node name="CustomerServiceSlot" type="Control" unique_id=894083715]
 custom_minimum_size = Vector2(540, 490)
@@ -12,27 +12,16 @@ offset_right = 540.0
 offset_bottom = 490.0
 mouse_filter = 2
 script = ExtResource("1_script")
-card_width = 250.0
-card_height_one_item = 160.0
-card_height_two_items = 240.0
-card_height_three_items = 320.0
-row_top = 38.0
-row_height = 72.0
-row_gap = 8.0
-product_icon_offset = Vector2(20, 0)
-product_icon_size = Vector2(64, 64)
-ingredient_grid_offset = Vector2(82, 7)
-ingredient_grid_spacing = Vector2(36, 31)
-ingredient_icon_size = Vector2(39, 39)
+card_width = 176.0
 
 [node name="Portrait" type="TextureRect" parent="." unique_id=175191323]
 unique_name_in_owner = true
 z_index = -20
 layout_mode = 0
 offset_left = 12.0
-offset_top = 140.0
-offset_right = 162.0
-offset_bottom = 385.0
+offset_top = 220.0
+offset_right = 240.0
+offset_bottom = 592.4
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
@@ -55,9 +44,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_order_card")
-expand_mode = 1
-stretch_mode = 5
+script = ExtResource("4_card_background")
 
 [node name="CardFocusButton" type="Button" parent="OrderPanel" unique_id=482252945]
 unique_name_in_owner = true
@@ -78,8 +65,8 @@ offset_left = 16.0
 offset_top = 12.0
 offset_right = 284.0
 offset_bottom = 38.0
-theme_override_colors/font_color = Color(0.74, 0.18, 0.08, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(1, 0.968627, 0.87451, 1)
+theme_override_font_sizes/font_size = 11
 text = "特殊顾客"
 horizontal_alignment = 1
 
@@ -90,8 +77,8 @@ offset_left = 16.0
 offset_top = 40.0
 offset_right = 284.0
 offset_bottom = 72.0
-theme_override_colors/font_color = Color(0.28, 0.12, 0.04, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 0.968627, 0.87451, 1)
+theme_override_font_sizes/font_size = 11
 horizontal_alignment = 1
 
 [node name="ItemButton1" type="Button" parent="OrderPanel" unique_id=438054590]
@@ -232,3 +219,27 @@ offset_top = 135.0
 offset_right = 217.0
 offset_bottom = 147.0
 show_percentage = false
+
+[node name="HeaderTitle" type="Label" parent="OrderPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = 110.0
+offset_bottom = 24.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.968627, 0.87451, 1)
+theme_override_font_sizes/font_size = 14
+text = "顾客订单"
+
+[node name="ProgressTitle" type="Label" parent="OrderPanel"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 8.0
+offset_top = 0.0
+offset_right = 42.0
+offset_bottom = 20.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.36, 0.203922, 0.105882, 1)
+theme_override_font_sizes/font_size = 9
+text = "制作进度"

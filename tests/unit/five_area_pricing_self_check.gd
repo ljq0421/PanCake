@@ -26,7 +26,7 @@ func _run() -> void:
 	_check(_payment(&"order.pancake.meat_floss_sweet") == 10, "meat floss pancake costs 10", failures)
 	_check(_payment(&"order.pancake.youtiao_scallion") == 8, "youtiao pancake costs 8", failures)
 	_check(int(CATALOG.product_definition(&"product.youtiao.plain").get("base_sell_price", 0)) == 3, "plain youtiao costs 3", failures)
-	_check(int(CATALOG.product_definition(&"product.youtiao.sesame").get("base_sell_price", 0)) == 4, "sesame youtiao costs 4", failures)
+	_check(CATALOG.product_definition(&"product.youtiao.sesame").is_empty(), "retired sesame youtiao has no sell price", failures)
 	_check(int(CATALOG.product_definition(&"product.fresh_soy_milk.yellow_bean").get("base_sell_price", 0)) == 3, "soy milk costs 3", failures)
 	_check(CATALOG.soy_milk_sell_price(0, &"room_temperature") == 3, "plain soy milk costs 3", failures)
 	_check(CATALOG.soy_milk_sell_price(1, &"room_temperature") == 4, "sugared soy milk costs 4", failures)

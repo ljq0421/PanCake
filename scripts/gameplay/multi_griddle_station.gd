@@ -9,7 +9,7 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
-const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain", &"product.youtiao.sesame"]
+const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain"]
 const ONE_CLICK_INGREDIENT_GROWTH_IDS: Dictionary = {
 	&"stock.pancake.egg": &"growth.automation.pancake.one_click_egg",
 	&"stock.pancake.baocui": &"growth.automation.pancake.one_click_baocui",

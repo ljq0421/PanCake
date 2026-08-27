@@ -3,11 +3,11 @@ extends RefCounted
 
 const DEFAULT_CUSTOMER_ID := &"customer_01"
 const NEUTRAL_STATE := &"neutral"
+# Keep portrait loading in sync with the playable pool so saved games that
+# reference disabled customer_11 through customer_20 fall back safely.
 const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01", &"customer_02", &"customer_03", &"customer_04", &"customer_05",
 	&"customer_06", &"customer_07", &"customer_08", &"customer_09", &"customer_10",
-	&"customer_11", &"customer_12", &"customer_13", &"customer_14", &"customer_15",
-	&"customer_16", &"customer_17", &"customer_18", &"customer_19", &"customer_20",
 ]
 const STATES: Array[StringName] = [
 	NEUTRAL_STATE,

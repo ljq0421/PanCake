@@ -36,10 +36,9 @@ func _initialize() -> void:
 	for state in EXPECTED_STATE_PNGS:
 		var state_texture := state_textures.get(state) as AtlasTexture
 		_check(state_texture != null and state_texture.atlas != null and state_texture.atlas.resource_path.ends_with(String(EXPECTED_STATE_PNGS[state])), "%s AtlasTexture resolves its selected PNG" % state)
-	_check(CUSTOMER_QUEUE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "customer queue includes customer_19")
-	_check(FORMAL_ORDER_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order pool includes customer_19")
-	var sequence := FORMAL_ORDER_SCRIPT.CUSTOMER_IDS.find(CUSTOMER_ID) + 1
-	_check(FORMAL_ORDER_SCRIPT.customer_id_for_sequence(sequence) == CUSTOMER_ID, "current rotation resolves customer_19 by its appended sequence")
+	_check(not CUSTOMER_QUEUE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "customer queue excludes disabled customer_19")
+	_check(not FORMAL_ORDER_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order pool excludes disabled customer_19")
+	_check(FORMAL_ORDER_SCRIPT.customer_id_for_sequence(11) == &"customer_01", "current rotation wraps after the ten enabled customers")
 	_check(FORMAL_ORDER_SCRIPT.legacy_customer_id_for_sequence(11) == &"customer_01", "pre-expansion snapshots keep the original ten-customer modulo")
 	_finish()
 

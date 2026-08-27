@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#5d3b20" flood-opacity="0.18"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#93552b"/>
+    </marker>
+    <style>
+      .title { font: 700 38px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #3b291d; }
+      .subtitle { font: 400 18px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #745b49; }
+      .section { font: 700 23px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #4b3424; }
+      .body { font: 400 17px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #4b3a2f; }
+      .bold { font: 700 17px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #4b3424; }
+      .small { font: 400 14px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #725844; }
+      .tiny { font: 700 9px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #5c3d27; }
+      .dim { font: 700 16px 'Microsoft YaHei', 'Noto Sans SC', sans-serif; fill: #93552b; }
+      .mono { font: 600 16px Consolas, 'Microsoft YaHei', sans-serif; fill: #563d2c; }
+      .hairline { stroke: #b1764b; stroke-width: 2; fill: none; }
+      .dash { stroke: #b1764b; stroke-width: 2; stroke-dasharray: 7 7; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="1000" fill="#f7f1e6"/>
+  <circle cx="1260" cy="80" r="180" fill="#f4d994" opacity="0.32"/>
+  <circle cx="80" cy="920" r="220" fill="#9fcaa3" opacity="0.18"/>
+
+  <text x="76" y="70" class="title">顾客订单卡片 · 普通商品三槽布局</text>
+  <text x="76" y="106" class="subtitle">普通商品每行 1–3 个，配料缩成角标叠在商品图标上；煎饼继续使用独立配料块。</text>
+
+  <!-- 176 × 252 logical px, rendered at 2.6× -->
+  <g transform="translate(90 180) scale(2.6)" filter="url(#shadow)">
+    <rect x="0" y="0" width="176" height="252" rx="7" fill="#f8e3ae" stroke="#87501f" stroke-width="2"/>
+    <path d="M7 0 H169 Q176 0 176 7 V28 H0 V7 Q0 0 7 0Z" fill="#dfa040"/>
+    <line x1="0" y1="28" x2="176" y2="28" stroke="#87501f" stroke-width="1.3"/>
+    <text x="8" y="19" class="tiny" style="font-size:10px;fill:#fff7df">顾客订单</text>
+    <text x="167" y="19" text-anchor="end" class="tiny" style="font-size:8px;fill:#fff7df">#0261</text>
+
+    <!-- Ordinary row: 1–3 products, each ingredient as an overlay badge -->
+    <rect x="6" y="34" width="164" height="60" rx="4" fill="#fff4d6" stroke="#d5aa63" stroke-width="1"/>
+
+    <!-- Product 1: zero ingredient badges -->
+    <rect x="12" y="43" width="42" height="42" rx="5" fill="#fffaf0" stroke="#b77838" stroke-width="1"/>
+    <rect x="24" y="49" width="18" height="29" rx="4" fill="#f39a27"/>
+    <path d="M27 55 H39 M27 61 H39 M27 67 H39" stroke="#fff0bd" stroke-width="1"/>
+
+    <!-- Product 2: one ingredient badge -->
+    <rect x="67" y="43" width="42" height="42" rx="5" fill="#fffaf0" stroke="#b77838" stroke-width="1"/>
+    <path d="M78 52 H99 L96 78 H81 Z" fill="#ddecf2" stroke="#82a8b6" stroke-width="1"/>
+    <circle cx="103" cy="79" r="6" fill="#e68f5b" stroke="#9b542f" stroke-width="1.2"/>
+
+    <!-- Product 3: two ingredient badges -->
+    <rect x="122" y="43" width="42" height="42" rx="5" fill="#fffaf0" stroke="#b77838" stroke-width="1"/>
+    <ellipse cx="143" cy="64" rx="13" ry="9" fill="#e8a53d" stroke="#9c5a27" stroke-width="1"/>
+    <circle cx="151" cy="77" r="6" fill="#8fc46e" stroke="#568948" stroke-width="1.2"/>
+    <circle cx="160" cy="81" r="6" fill="#7f3d28" stroke="#522619" stroke-width="1.2"/>
+
+    <!-- Pancake A -->
+    <rect x="6" y="98" width="164" height="60" rx="4" fill="#fff4d6" stroke="#c87b35" stroke-width="1.2"/>
+    <rect x="12" y="108" width="40" height="40" rx="4" fill="#fffaf0" stroke="#b77838" stroke-width="1"/>
+    <ellipse cx="32" cy="128" rx="15" ry="10" fill="#e8a53d" stroke="#9c5a27" stroke-width="1"/>
+    <path d="M20 125 Q32 133 44 125" fill="none" stroke="#fff0bd" stroke-width="2"/>
+    <g>
+      <circle cx="70" cy="114" r="9" fill="#f3c451" stroke="#b77838"/>
+      <circle cx="94" cy="114" r="9" fill="#e68f5b" stroke="#b77838"/>
+      <circle cx="118" cy="114" r="9" fill="#d77748" stroke="#b77838"/>
+      <circle cx="142" cy="114" r="9" fill="#8fc46e" stroke="#568948"/>
+      <circle cx="70" cy="138" r="9" fill="#7f3d28" stroke="#522619"/>
+      <circle cx="94" cy="138" r="9" fill="#f0d46e" stroke="#b77838"/>
+    </g>
+
+    <!-- Pancake B -->
+    <rect x="6" y="162" width="164" height="60" rx="4" fill="#fff4d6" stroke="#c87b35" stroke-width="1.2"/>
+    <rect x="12" y="172" width="40" height="40" rx="4" fill="#fffaf0" stroke="#b77838" stroke-width="1"/>
+    <ellipse cx="32" cy="192" rx="15" ry="10" fill="#e8a53d" stroke="#9c5a27" stroke-width="1"/>
+    <path d="M20 189 Q32 197 44 189" fill="none" stroke="#fff0bd" stroke-width="2"/>
+    <g>
+      <circle cx="70" cy="178" r="9" fill="#e9bc4f" stroke="#b77838"/>
+      <circle cx="94" cy="178" r="9" fill="#e68f5b" stroke="#b77838"/>
+      <circle cx="118" cy="178" r="9" fill="#8fc46e" stroke="#568948"/>
+      <circle cx="142" cy="178" r="9" fill="#d77748" stroke="#b77838"/>
+      <circle cx="70" cy="202" r="9" fill="#7f3d28" stroke="#522619"/>
+      <circle cx="94" cy="202" r="9" fill="#f0d46e" stroke="#b77838"/>
+      <circle cx="118" cy="202" r="9" fill="#e4a94d" stroke="#b77838"/>
+      <circle cx="142" cy="202" r="9" fill="#97c975" stroke="#568948"/>
+    </g>
+
+    <!-- Fixed footer -->
+    <path d="M0 228 H176 V245 Q176 252 169 252 H7 Q0 252 0 245Z" fill="#efc979"/>
+    <line x1="0" y1="228" x2="176" y2="228" stroke="#87501f" stroke-width="1.2"/>
+    <text x="8" y="242" class="tiny" style="font-size:7px">制作进度</text>
+    <rect x="43" y="235" width="125" height="9" rx="4.5" fill="#d38a51"/>
+    <rect x="43" y="235" width="82" height="9" rx="4.5" fill="#55ad76"/>
+  </g>
+
+  <!-- Overall dimensions -->
+  <line x1="90" y1="152" x2="548" y2="152" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <line x1="90" y1="156" x2="90" y2="178" class="dash"/>
+  <line x1="548" y1="156" x2="548" y2="178" class="dash"/>
+  <rect x="270" y="134" width="98" height="30" rx="15" fill="#f7f1e6"/>
+  <text x="319" y="156" text-anchor="middle" class="dim">176 px</text>
+
+  <line x1="54" y1="180" x2="54" y2="835" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <line x1="58" y1="180" x2="88" y2="180" class="dash"/>
+  <line x1="58" y1="835" x2="88" y2="835" class="dash"/>
+  <text x="36" y="515" text-anchor="middle" class="dim" transform="rotate(-90 36 515)">252 px</text>
+
+  <!-- Row callouts -->
+  <g>
+    <line x1="566" y1="180" x2="594" y2="180" class="hairline"/>
+    <line x1="566" y1="253" x2="594" y2="253" class="hairline"/>
+    <line x1="580" y1="180" x2="580" y2="253" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="608" y="222" class="dim">页头 28 px</text>
+
+    <line x1="566" y1="268" x2="594" y2="268" class="hairline"/>
+    <line x1="566" y1="424" x2="594" y2="424" class="hairline"/>
+    <line x1="580" y1="268" x2="580" y2="424" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="608" y="342" class="dim">普通行 60 px</text>
+    <text x="608" y="366" class="small">1–3 个商品</text>
+
+    <line x1="566" y1="435" x2="594" y2="435" class="hairline"/>
+    <line x1="566" y1="591" x2="594" y2="591" class="hairline"/>
+    <line x1="580" y1="435" x2="580" y2="591" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="608" y="518" class="dim">煎饼块 60 px</text>
+
+    <line x1="566" y1="601" x2="594" y2="601" class="hairline"/>
+    <line x1="566" y1="757" x2="594" y2="757" class="hairline"/>
+    <line x1="580" y1="601" x2="580" y2="757" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="608" y="684" class="dim">煎饼块 60 px</text>
+
+    <line x1="566" y1="773" x2="594" y2="773" class="hairline"/>
+    <line x1="566" y1="835" x2="594" y2="835" class="hairline"/>
+    <line x1="580" y1="773" x2="580" y2="835" class="hairline" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="608" y="810" class="dim">页脚 24 px</text>
+  </g>
+
+  <!-- Specifications -->
+  <g transform="translate(790 160)">
+    <rect x="0" y="0" width="540" height="710" rx="24" fill="#fffaf0" stroke="#dac6a9" stroke-width="2"/>
+    <text x="32" y="52" class="section">尺寸与自适应规则</text>
+    <line x1="32" y1="72" x2="508" y2="72" stroke="#eadbc4" stroke-width="2"/>
+
+    <text x="32" y="112" class="bold">普通商品行</text>
+    <text x="166" y="112" class="mono">60 px / 行；最多 3 个</text>
+    <text x="166" y="142" class="small">商品主图 42 px；槽间距 13 px。</text>
+    <text x="166" y="170" class="small">配料角标 12 px，最多 2 个，叠在主图右下角。</text>
+    <text x="166" y="198" class="small">普通商品超过 3 个时，自动新增一行。</text>
+
+    <rect x="28" y="226" width="484" height="76" rx="12" fill="#f6ead6"/>
+    <text x="48" y="258" class="bold" style="fill:#81451f">普通商品行数</text>
+    <text x="196" y="258" class="mono">ceil(普通商品数量 ÷ 3)</text>
+    <text x="48" y="286" class="small">不再为每个普通商品单独占一整行。</text>
+
+    <text x="32" y="346" class="bold">单个煎饼</text>
+    <text x="166" y="346" class="mono">min 60 px</text>
+    <text x="166" y="376" class="small">配料图标 20 px；间距 4 px；每行最多 4 个。</text>
+    <text x="166" y="404" class="small">第 3 行配料出现时，煎饼块增高到 80 px。</text>
+
+    <rect x="28" y="430" width="484" height="76" rx="12" fill="#f6ead6"/>
+    <text x="48" y="462" class="bold" style="fill:#81451f">煎饼块高度</text>
+    <text x="180" y="462" class="mono">max(60, 8 + 24 × ceil(配料数 ÷ 4))</text>
+    <text x="48" y="490" class="small">多个煎饼分别计算并各占一行。</text>
+
+    <text x="32" y="550" class="bold">通用尺寸</text>
+    <text x="166" y="550" class="mono">卡片宽 176 px</text>
+    <text x="166" y="580" class="mono">块间距 4 px / 内容内边距 6 px</text>
+    <text x="166" y="610" class="mono">页头 28 px / 页脚 24 px</text>
+
+    <line x1="32" y1="636" x2="508" y2="636" stroke="#eadbc4" stroke-width="2"/>
+    <text x="32" y="672" class="bold">图中示例</text>
+    <text x="166" y="672" class="mono">3 个普通商品 + 2 个煎饼</text>
+    <text x="166" y="700" class="mono">28 + 6 + 60 + 4 + 60 + 4 + 60 + 6 + 24 = 252 px</text>
+  </g>
+
+  <rect x="78" y="908" width="1244" height="52" rx="14" fill="#e6f0df"/>
+  <text x="104" y="940" class="bold" style="fill:#426146">关键规则：</text>
+  <text x="208" y="940" class="body" style="fill:#426146">普通商品按 3 个一组；配料只作为小角标；煎饼配料保持完整展示；进度区固定在最底部。</text>
+</svg>

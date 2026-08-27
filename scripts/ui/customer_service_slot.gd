@@ -12,22 +12,22 @@ const PANCAKE_INGREDIENT_COLUMNS := 4
 const NORMAL_PRODUCTS_PER_ROW := 3
 const NORMAL_PRODUCT_SIZE := Vector2(81.9, 81.9)
 const PANCAKE_PRODUCT_SIZE := Vector2(78.0, 78.0)
+const FRESH_SOY_MILK_ICON_SCALE := Vector2(0.72, 0.72)
 const NORMAL_INGREDIENT_SIZE := Vector2(25.2, 25.2)
 const PANCAKE_INGREDIENT_SIZE := Vector2(42.0, 42.0)
 const NORMAL_REQUIREMENT_LIMIT := 2
 const PATIENCE_FILL_POSITION_X := 64.5
 const PATIENCE_FILL_BOTTOM_INSET := 25.5
 const PATIENCE_FILL_SIZE := Vector2(187.5, 13.5)
-const PORTRAIT_OFFSCREEN_LEFT_MARGIN := 16.0
-const PORTRAIT_ENTER_SECONDS := 1.10
+const PORTRAIT_ENTER_SECONDS := 0.80
 const PORTRAIT_EXIT_SECONDS := 0.80
-const REDUCED_PORTRAIT_SECONDS := 0.60
-const REDUCED_ORDER_PANEL_DELAY_SECONDS := 0.20
-const REDUCED_ORDER_PANEL_SECONDS := 0.50
-const PORTRAIT_WALK_PIXELS_PER_SECOND := 250.0
-const WALK_STEP_COUNT := 3.0
-const WALK_BOB_PIXELS := 8.0
-const WALK_SWAY_RADIANS := 0.025
+const PORTRAIT_FADE_SECONDS := 0.20
+const ORDER_PANEL_ENTER_DELAY_SECONDS := 0.30
+const ORDER_PANEL_ENTER_SECONDS := 0.40
+const ORDER_PANEL_EXIT_SECONDS := 0.40
+const REDUCED_PRESENTATION_SECONDS := 0.20
+const PORTRAIT_APPROACH_OFFSET := Vector2(0.0, 56.0)
+const PRESENTATION_START_SCALE := Vector2(0.96, 0.96)
 
 @export_category("Order Card Layout")
 @export_range(1.0, 1000.0, 1.0, "suffix:px") var card_width := 0.0
@@ -56,7 +56,6 @@ var _ingredient_icons_by_item: Array = []
 var _presentation_tween: Tween
 var _pending_presentation: Dictionary = {}
 var _portrait_rest_position := Vector2.ZERO
-var _portrait_rest_global_position := Vector2.ZERO
 var _order_panel_rest_position := Vector2.ZERO
 var _transition_phase: StringName = &"idle"
 
@@ -66,9 +65,9 @@ func _ready() -> void:
 	_ensure_item_control_count(item_buttons.size())
 	card_focus_button.pressed.connect(_request_focus)
 	_portrait_rest_position = portrait.position
-	_portrait_rest_global_position = portrait.global_position
 	_order_panel_rest_position = order_panel.position
 	portrait.pivot_offset = Vector2(portrait.size.x * 0.5, portrait.size.y)
+	order_panel.pivot_offset = order_panel.size * 0.5
 	_reset_presentation_transforms()
 	visible = false
 
@@ -104,7 +103,6 @@ func present_order(
 		return
 	if _transition_phase == &"entering":
 		_cancel_presentation_tween()
-		_reset_presentation_transforms()
 		_transition_phase = &"idle"
 	if _order_id.is_empty() or not visible:
 		_present_pending_customer()
@@ -167,8 +165,9 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 		item_buttons[item_index].disabled = completed
 		item_buttons[item_index].tooltip_text = "该商品已交付" if completed else "把匹配成品拖到这里交付"
 		item_icons[item_index].texture = item_textures[item_index] as Texture2D
+		_apply_product_icon_scale(item_icons[item_index], item)
 		item_icons[item_index].modulate = Color(0.55, 0.55, 0.55, 0.72) if completed else Color.WHITE
-		quantity_labels[item_index].visible = required_count > 1
+		quantity_labels[item_index].visible = completed or required_count > 1
 		quantity_labels[item_index].text = "✓" if completed else "%d/%d" % [mini(attached_count, required_count), required_count]
 	_bind_requirements_by_item(requirements_by_item)
 	update_patience(order)
@@ -189,26 +188,25 @@ func update_patience(order: Dictionary) -> void:
 func _play_customer_exit(reduce_motion: bool) -> void:
 	_transition_phase = &"exiting"
 	_set_order_interaction_enabled(false)
-	# An order card belongs to the customer currently being served.  Hide it as
-	# soon as that customer starts leaving so a completed or expired order never
-	# appears to remain available at an empty service position.
-	order_panel.visible = false
+	# The card stops accepting input immediately, then visually retires with its
+	# customer so the service position changes state without a one-frame pop.
+	order_panel.visible = true
 	_cancel_presentation_tween()
 	_presentation_tween = create_tween()
 	_presentation_tween.set_parallel(true)
 	if reduce_motion:
 		portrait.position = _portrait_rest_position
 		order_panel.position = _order_panel_rest_position
-		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, REDUCED_PORTRAIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		portrait.scale = Vector2.ONE
+		order_panel.scale = Vector2.ONE
+		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, REDUCED_PRESENTATION_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "modulate:a", 0.0, REDUCED_PRESENTATION_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	else:
-		# Normal motion is deliberately walk-only; fades and card translation read as drifting.
-		portrait.modulate.a = 1.0
-		order_panel.position = _order_panel_rest_position
-		order_panel.modulate.a = 1.0
-		var exit_start := _portrait_rest_global_position
-		var exit_end := _portrait_offscreen_left_global_position()
-		var portrait_exit_seconds := _walk_duration_seconds(exit_start, exit_end, PORTRAIT_EXIT_SECONDS)
-		_presentation_tween.tween_method(_apply_portrait_walk_progress.bind(exit_start, exit_end), 0.0, 1.0, portrait_exit_seconds).set_trans(Tween.TRANS_LINEAR)
+		_presentation_tween.tween_property(portrait, "position", _portrait_rest_position + PORTRAIT_APPROACH_OFFSET, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "scale", PRESENTATION_START_SCALE, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "scale", PRESENTATION_START_SCALE, ORDER_PANEL_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "modulate:a", 0.0, ORDER_PANEL_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	_presentation_tween.chain().tween_callback(_on_customer_exit_finished)
 
 
@@ -240,27 +238,35 @@ func _present_pending_customer() -> void:
 		entrance_delay_seconds = maxf(float(entrance_delay_reserver.call(entrance_delay_seconds)), 0.0)
 	_transition_phase = &"entering"
 	_set_order_interaction_enabled(false)
-	order_panel.visible = false
+	order_panel.visible = true
 	_cancel_presentation_tween()
 	if reduce_motion:
 		portrait.position = _portrait_rest_position
 		order_panel.position = _order_panel_rest_position
+		portrait.scale = Vector2.ONE
+		order_panel.scale = Vector2.ONE
 		portrait.modulate.a = 0.0
-		order_panel.modulate.a = 1.0
+		order_panel.modulate.a = 0.0
 	else:
-		portrait.global_position = _portrait_offscreen_left_global_position()
-		portrait.modulate.a = 1.0
+		portrait.position = _portrait_rest_position + PORTRAIT_APPROACH_OFFSET
+		portrait.scale = PRESENTATION_START_SCALE
+		portrait.modulate.a = 0.0
 		order_panel.position = _order_panel_rest_position
-		order_panel.modulate.a = 1.0
+		order_panel.scale = PRESENTATION_START_SCALE
+		order_panel.modulate.a = 0.0
 	_presentation_tween = create_tween()
 	_presentation_tween.set_parallel(true)
 	if reduce_motion:
-		_presentation_tween.tween_property(portrait, "modulate:a", 1.0, REDUCED_PORTRAIT_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "modulate:a", 1.0, REDUCED_PRESENTATION_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "modulate:a", 1.0, REDUCED_PRESENTATION_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	else:
-		# Linear progress keeps the configured pixels-per-second speed perceptually constant.
-		var entry_start := _portrait_offscreen_left_global_position()
-		var portrait_enter_seconds := _walk_duration_seconds(entry_start, _portrait_rest_global_position, PORTRAIT_ENTER_SECONDS)
-		_presentation_tween.tween_method(_apply_portrait_walk_progress.bind(entry_start, _portrait_rest_global_position), 0.0, 1.0, portrait_enter_seconds).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_LINEAR)
+		# The frontal half-body artwork approaches from behind the counter instead
+		# of pretending to walk laterally across the whole viewport.
+		_presentation_tween.tween_property(portrait, "position", _portrait_rest_position, PORTRAIT_ENTER_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "scale", Vector2.ONE, PORTRAIT_ENTER_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "modulate:a", 1.0, PORTRAIT_FADE_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "scale", Vector2.ONE, ORDER_PANEL_ENTER_SECONDS).set_delay(entrance_delay_seconds + ORDER_PANEL_ENTER_DELAY_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "modulate:a", 1.0, ORDER_PANEL_ENTER_SECONDS).set_delay(entrance_delay_seconds + ORDER_PANEL_ENTER_DELAY_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	_presentation_tween.chain().tween_callback(_on_customer_enter_finished)
 
 
@@ -282,6 +288,8 @@ func _reset_presentation_transforms() -> void:
 	portrait.position = _portrait_rest_position
 	order_panel.position = _order_panel_rest_position
 	portrait.rotation = 0.0
+	portrait.scale = Vector2.ONE
+	order_panel.scale = Vector2.ONE
 	portrait.modulate.a = 1.0
 	order_panel.modulate.a = 1.0
 
@@ -290,22 +298,6 @@ func _set_order_interaction_enabled(enabled: bool) -> void:
 	card_focus_button.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
 	for item_button in item_buttons:
 		item_button.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
-
-
-func _portrait_offscreen_left_global_position() -> Vector2:
-	var viewport := get_viewport()
-	var viewport_left := viewport.get_visible_rect().position.x if viewport != null else 0.0
-	return Vector2(viewport_left - portrait.size.x - PORTRAIT_OFFSCREEN_LEFT_MARGIN, _portrait_rest_global_position.y)
-
-
-func _walk_duration_seconds(start_position: Vector2, end_position: Vector2, minimum_seconds: float) -> float:
-	return maxf(minimum_seconds, start_position.distance_to(end_position) / PORTRAIT_WALK_PIXELS_PER_SECOND)
-
-
-func _apply_portrait_walk_progress(progress: float, start_position: Vector2, end_position: Vector2) -> void:
-	var step_wave := sin(progress * PI * WALK_STEP_COUNT)
-	portrait.global_position = start_position.lerp(end_position, progress) + Vector2(0.0, -absf(step_wave) * WALK_BOB_PIXELS)
-	portrait.rotation = step_wave * WALK_SWAY_RADIANS
 
 
 func _register_authored_item_controls() -> void:
@@ -424,6 +416,11 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 
 func _is_pancake_item(item: Dictionary) -> bool:
 	return StringName(item.get("area_id", &"")) == &"area.pancake" or StringName(item.get("product_id", &"")) == &"product.pancake.custom"
+
+
+func _apply_product_icon_scale(icon: TextureRect, item: Dictionary) -> void:
+	icon.pivot_offset = icon.size * 0.5
+	icon.scale = FRESH_SOY_MILK_ICON_SCALE if StringName(item.get("product_id", &"")) == &"product.fresh_soy_milk.yellow_bean" else Vector2.ONE
 
 
 func _layout_normal_item(item_index: int, position_in_row: int, block_top: float, requirements: Array) -> void:

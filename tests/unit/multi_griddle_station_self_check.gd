@@ -22,6 +22,7 @@ class FakeSession:
 	var saved_griddles: Dictionary = {}
 	var griddle_save_calls := 0
 	var fryer_slot_available := true
+	var prepared_youtiao_available := true
 
 	func progression_service() -> RefCounted:
 		return progression
@@ -56,6 +57,15 @@ class FakeSession:
 			fryer_slot_available = false
 		return preview
 
+	func preview_take_prepared_product(slot_id: StringName, source_index: int = 0) -> Dictionary:
+		return {"success": prepared_youtiao_available and slot_id == &"slot.04" and source_index == 0}
+
+	func take_prepared_product(slot_id: StringName, source_index: int = 0) -> Dictionary:
+		var preview := preview_take_prepared_product(slot_id, source_index)
+		if bool(preview.get("success", false)):
+			prepared_youtiao_available = false
+		return preview
+
 var failures := PackedStringArray()
 
 
@@ -82,7 +92,9 @@ func _run() -> void:
 	_check(unit.position.is_equal_approx(Vector2(380.0, 105.0)), "the sole griddle retains the scene-authored single-stall position")
 	for coverage_index in unit.pancake_model.coverage.size():
 		unit.pancake_model.coverage[coverage_index] = 1.0
+	unit.pancake_model.flip(true)
 	unit.state = CompactGriddleUnit.State.GARNISH
+	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	var fryer_youtiao_source := {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}
 	var pancake_center := unit.pancake_surface.size * 0.5
 	var fryer_youtiao_preview: bool = station.can_preview_drop_on_unit(0, fryer_youtiao_source, pancake_center)
@@ -97,7 +109,24 @@ func _run() -> void:
 		and unit.ingredient_model.count_type(IngredientModel.YOUTIAO) == 1,
 		"only a plain ready fryer youtiao can be dragged onto the pancake"
 	)
+	var tray_youtiao_source := {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 0, "product_id": &"product.youtiao.plain"}
+	var clicked_youtiao := Dictionary(station.apply_clicked_youtiao(tray_youtiao_source))
+	_check(
+		bool(clicked_youtiao.get("success", false))
+		and bool(clicked_youtiao.get("one_click", false))
+		and not session.prepared_youtiao_available
+		and unit.ingredient_model.count_type(IngredientModel.YOUTIAO) == 2,
+		"clicking a prepared youtiao adds one portion to the active pancake and consumes only that source"
+	)
 	unit.reset_unit()
+	session.prepared_youtiao_available = true
+	var rejected_click := Dictionary(station.apply_clicked_youtiao(tray_youtiao_source))
+	_check(
+		not bool(rejected_click.get("success", false))
+		and StringName(rejected_click.get("reason", &"")) == &"wrong_stage"
+		and session.prepared_youtiao_available,
+		"a click outside the garnish stages leaves the prepared youtiao untouched"
+	)
 	_check(
 		unit.package_visual.scale.is_equal_approx(Vector2(2.0, 2.0))
 		and unit.package_visual.pivot_offset.is_equal_approx(unit.package_visual.size * 0.5)
@@ -114,21 +143,13 @@ func _run() -> void:
 	session.progression.owned_growth_ids.append("growth.automation.pancake.press_once")
 	var press_result := Dictionary(station.select_worktop_tool(&"tool.pancake.press_once"))
 	_check(bool(press_result.get("success", false)) and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "the unlocked press tool converts batter into a ready first-side pancake")
-	_check(unit.state_label.text.contains("折叠") and unit.state_label.text.contains("-12"), "the first-side hint exposes direct folding and its score cost")
-	var unflipped_fold := Dictionary(station.begin_surface_action(0, unit.pancake_surface.size * Vector2(0.12, 0.5)))
-	var unflipped_product: Dictionary = station.call("_build_product", unit)
-	var unflipped_production := Dictionary(Dictionary(unflipped_product.get("serving_score_basis", {})).get("production", {}))
+	_check(unit.state_label.text.contains("加鸡蛋") and unit.main_action.text == "翻面", "the first-side hint allows eggs and presents flip as the only completion action")
+	var rejected_edge := Dictionary(station.begin_surface_action(0, unit.pancake_surface.size * Vector2(0.12, 0.5)))
 	_check(
-		bool(unflipped_fold.get("success", false))
-		and StringName(unflipped_fold.get("action", &"")) == CompactGriddleUnit.SURFACE_ACTION_FOLD
-		and unit.state == CompactGriddleUnit.State.FOLDING
-		and unit.p1_session.phase == P1Session.Phase.FOLD
+		not bool(rejected_edge.get("success", false))
+		and unit.state == CompactGriddleUnit.State.FIRST_SIDE
 		and not unit.pancake_model.is_flipped,
-		"grabbing the first-side edge starts folding without forcing a flip",
-	)
-	_check(
-		is_equal_approx(float(unflipped_production.get("unflipped_delivery_penalty", 0.0)), 12.0),
-		"an unflipped direct-fold product preserves the 12-point delivery penalty",
+		"touching the first-side edge cannot start folding or delivery",
 	)
 	unit.reset_unit()
 	station.call("_on_main_action", 0)
@@ -146,20 +167,23 @@ func _run() -> void:
 	unit.pancake_model.coverage.fill(1.0)
 	unit.pancake_model.thickness.fill(0.55)
 	unit.pancake_model.doneness.fill(0.62)
-	unit.state = CompactGriddleUnit.State.GARNISH
-	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
+	unit.pancake_model.flip(true)
+	unit.state = CompactGriddleUnit.State.SECOND_SIDE
+	unit.p1_session.phase = P1Session.Phase.SECOND_SIDE
 	unit.call("_refresh_ui")
 	var fold_feedbacks := PackedStringArray()
 	unit.fold_feedback_requested.connect(func(_unit_index: int, feedback_kind: StringName) -> void: fold_feedbacks.append(str(feedback_kind)))
-	unit.call("_on_surface_pointer_started", unit.pancake_surface.size * Vector2(0.12, 0.50))
-	unit.call("_on_surface_pointer_ended", unit.pancake_surface.size * Vector2(0.54, 0.50))
+	_check(unit.main_action.visible and unit.main_action.text == "打包", "the flipped pancake exposes the packaging action")
+	var rejected_postflip_edge := Dictionary(station.begin_surface_action(0, unit.pancake_surface.size * Vector2(0.12, 0.5)))
+	_check(not bool(rejected_postflip_edge.get("success", false)) and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "the flipped pancake edge cannot start a manual fold")
+	station.call("_on_main_action", 0)
 	_check(
 		unit.fold_steps == 1
 		and StringName(unit.get("_automatic_fold_pending_region")) == PancakeFoldModel.REGION_RIGHT,
-		"one manual fold arms the opposite side for automatic continuation",
+		"the packaging action automatically folds the first side and arms the second",
 	)
 	var automatic_pending_snapshot := Dictionary(unit.snapshot())
-	await create_timer(0.58).timeout
+	await create_timer(0.30).timeout
 	var pending_snapshot := Dictionary(unit.snapshot())
 	_check(
 		unit.state == CompactGriddleUnit.State.FOLDING
@@ -169,10 +193,10 @@ func _run() -> void:
 		"the automatic second fold commits and remains visible while its landing animation finishes",
 	)
 	_check(
-		fold_feedbacks.has("snap_threshold") and fold_feedbacks.has("automatic_fold"),
-		"the snap threshold and automatic continuation expose distinct feedback events",
+		fold_feedbacks.has("automatic_fold") and not fold_feedbacks.has("snap_threshold"),
+		"button packaging uses automatic fold feedback without a manual snap threshold",
 	)
-	await create_timer(0.55).timeout
+	await create_timer(0.85).timeout
 	var packaging_material := unit.pancake_visual.material as ShaderMaterial
 	_check(
 		unit.fold_model.package_result == PancakeFoldModel.PACKAGE_BAG
@@ -184,7 +208,7 @@ func _run() -> void:
 		unit.state == CompactGriddleUnit.State.READY
 		and unit.fold_model.package_result == PancakeFoldModel.PACKAGE_BAG
 		and not unit.ready_product.is_empty(),
-		"one manual gesture automatically completes the opposite fold and paper-bag transition before delivery unlocks",
+		"one packaging click completes both folds and the paper-bag transition before delivery unlocks",
 	)
 	unit.reset_unit()
 	var resumed := Dictionary(unit.load_snapshot(automatic_pending_snapshot))
@@ -193,7 +217,7 @@ func _run() -> void:
 		bool(resumed.get("success", false))
 		and unit.state == CompactGriddleUnit.State.READY
 		and unit.fold_model.completed_fold_count() == 2,
-		"loading a save between the manual and automatic folds resumes the automatic continuation",
+		"loading a save between the two automatic folds resumes packaging",
 	)
 	station.queue_free()
 	session.queue_free()

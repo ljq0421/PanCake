@@ -48,7 +48,7 @@ func _run() -> void:
 		_check(portrait.texture.resource_path.ends_with("customer_12_neutral_cropped.tres"), "runtime uses the customer_12 neutral AtlasTexture")
 		var atlas := portrait.texture.get("atlas") as Texture2D
 		_check(atlas != null and atlas.resource_path.ends_with("customer_12_neutral_v1.png"), "AtlasTexture resolves the customer_12 neutral PNG")
-		_check(portrait.texture.get("region") == Rect2(474, 26, 577, 998), "customer_12 crop contains full hair, hands, and below-waist anchor")
+		_check(portrait.texture.get("region") == Rect2(530, 96, 468, 849), "customer_12 uses the tight half-body crop")
 	await RenderingServer.frame_post_draw
 	var path := ProjectSettings.globalize_path(SCREENSHOT_PATH)
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())

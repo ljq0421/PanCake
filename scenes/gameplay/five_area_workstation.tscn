@@ -22,6 +22,7 @@
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="60_ikhp0"]
 [ext_resource type="Script" uid="uid://3dm4r8fyaulo" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
 [ext_resource type="PackedScene" uid="uid://dngeu6txsruyi" path="res://scenes/gameplay/jianbing_stall_artwork.tscn" id="62_stall"]
+[ext_resource type="Script" path="res://scripts/ui/tutorial_guide_arrow.gd" id="63_guide_arrow"]
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
@@ -29,10 +30,39 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.67, 0.64, 0.58)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_top_status"]
+bg_color = Color(0.045, 0.09, 0.1, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.85, 0.68, 0.68)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_top_hud"]
+bg_color = Color(0.045, 0.09, 0.1, 0.86)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.82, 0.44, 0.72)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [sub_resource type="LabelSettings" id="LabelSettings_title"]
 font_size = 30
@@ -57,60 +87,104 @@ atlas = ExtResource("24_174he")
 region = Rect2(281, 390, 1020, 259)
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_ui_button"]
-content_margin_top = 10.0
-content_margin_bottom = 10.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
 bg_color = Color(0.1, 0.36, 0.31, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.45, 0.85, 0.68, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_pressed"]
-content_margin_top = 10.0
-content_margin_bottom = 10.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
 bg_color = Color(0.075, 0.28, 0.24, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 0.82, 0.44, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_hover"]
-content_margin_top = 10.0
-content_margin_bottom = 10.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
 bg_color = Color(0.14, 0.46, 0.38, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 0.82, 0.44, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_disabled"]
-content_margin_top = 10.0
-content_margin_bottom = 10.0
+content_margin_top = 12.0
+content_margin_bottom = 12.0
 bg_color = Color(0.13, 0.16, 0.16, 0.88)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.32, 0.38, 0.37, 0.76)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_secondary"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.075, 0.14, 0.15, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.67, 0.64, 0.76)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_secondary_hover"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.22, 0.22, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.78, 0.7, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
 
 [sub_resource type="StyleBoxFlat" id="TutorialBubbleStyle"]
 content_margin_left = 16.0
@@ -129,6 +203,20 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 shadow_color = Color(0.34, 0.16, 0.04, 0.3)
 shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="TutorialTargetHighlightStyle"]
+bg_color = Color(1, 0.82, 0.25, 0.08)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.72, 0.16, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 0.58, 0.08, 0.45)
+shadow_size = 10
 
 [node name="Workstation" type="Control" unique_id=54162380]
 process_mode = 1
@@ -205,33 +293,55 @@ stretch_mode = 5
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1
 
-[node name="BusinessDayTimerLabel" type="Label" parent="SafeArea" unique_id=1531366971]
-z_index = 20
+[node name="GlobalStatusBackground" type="Panel" parent="SafeArea"]
+z_index = 140
 layout_mode = 0
-offset_left = 720.0
-offset_top = 86.0
-offset_right = 1200.0
-offset_bottom = 124.0
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 660.0
+offset_bottom = 72.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_top_status")
+
+[node name="BusinessDayTimerBackground" type="Panel" parent="SafeArea"]
+z_index = 140
+layout_mode = 0
+offset_left = 700.0
+offset_top = 16.0
+offset_right = 1220.0
+offset_bottom = 72.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_top_hud")
+
+[node name="BusinessDayTimerLabel" type="Label" parent="SafeArea" unique_id=1531366971]
+z_index = 150
+layout_mode = 0
+offset_left = 716.0
+offset_top = 16.0
+offset_right = 1204.0
+offset_bottom = 72.0
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
 theme_override_colors/font_outline_color = Color(0.13, 0.08, 0.04, 1)
 theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 24
 text = "营业倒计时 02:00"
+horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="GlobalStatusLabel" type="Label" parent="SafeArea" unique_id=1290960937]
 unique_name_in_owner = true
 z_index = 150
 layout_mode = 0
-offset_left = 100.0
-offset_top = 136.0
-offset_right = 1080.0
-offset_bottom = 170.0
+offset_left = 40.0
+offset_top = 16.0
+offset_right = 640.0
+offset_bottom = 72.0
 theme_override_colors/font_color = Color(1, 0.9, 0.62, 1)
 theme_override_colors/font_outline_color = Color(0.15, 0.07, 0.02, 0.92)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 24
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 22
 text = "金币 0  ·  营业日 1  ·  口碑 0"
+horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TopWarningLabel" type="Label" parent="SafeArea" unique_id=558428810]
@@ -239,14 +349,14 @@ unique_name_in_owner = true
 visible = false
 z_index = 250
 layout_mode = 0
-offset_left = 580.0
-offset_top = 36.0
-offset_right = 1340.0
-offset_bottom = 76.0
+offset_left = 710.0
+offset_top = 82.0
+offset_right = 1250.0
+offset_bottom = 122.0
 theme_override_colors/font_color = Color(1, 0.84, 0.36, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.06, 0.015, 0.96)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 26
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -389,21 +499,22 @@ offset_bottom = 69.0
 text = "婉拒订单"
 
 [node name="BottomStrip" type="Panel" parent="SafeArea" unique_id=438973155]
-z_index = 7
+z_index = 150
 layout_mode = 0
 offset_left = 20.0
-offset_top = 150.0
-offset_right = 452.0
-offset_bottom = 254.0
+offset_top = 82.0
+offset_right = 700.0
+offset_bottom = 122.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBox_strip")
+theme_override_styles/panel = SubResource("StyleBox_top_status")
 
 [node name="Instructions" type="Label" parent="SafeArea/BottomStrip" unique_id=137339466]
+visible = false
 layout_mode = 0
-offset_left = 14.0
-offset_top = 80.0
-offset_right = 418.0
-offset_bottom = 98.0
+offset_left = 12.0
+offset_top = 4.0
+offset_right = 668.0
+offset_bottom = 36.0
 theme_override_colors/font_color = Color(0.94, 0.89, 0.78, 1)
 theme_override_font_sizes/font_size = 11
 text = "左键拖动制作 · 右键取消工具 · R 重置"
@@ -415,11 +526,11 @@ clip_text = true
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 14.0
-offset_top = 6.0
-offset_right = 418.0
-offset_bottom = 34.0
+offset_top = 4.0
+offset_right = 454.0
+offset_bottom = 36.0
 theme_override_colors/font_color = Color(0.5, 0.94, 0.94, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 17
 text = "当前工具：未拿工具"
 vertical_alignment = 1
 clip_text = true
@@ -442,9 +553,9 @@ vertical_alignment = 1
 visible = false
 layout_mode = 0
 offset_left = 14.0
-offset_top = 56.0
-offset_right = 418.0
-offset_bottom = 78.0
+offset_top = 4.0
+offset_right = 666.0
+offset_bottom = 36.0
 theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
@@ -453,12 +564,12 @@ clip_text = true
 [node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1009949277]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 14.0
-offset_top = 34.0
-offset_right = 418.0
-offset_bottom = 56.0
+offset_left = 462.0
+offset_top = 4.0
+offset_right = 666.0
+offset_bottom = 36.0
 theme_override_colors/font_color = Color(0.76, 0.92, 0.76, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 15
 text = "当前无破洞风险"
 vertical_alignment = 1
 clip_text = true
@@ -749,10 +860,10 @@ text = "关闭本单详情"
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 1090.0
-offset_top = 136.0
-offset_right = 1820.0
-offset_bottom = 194.0
+offset_left = 1240.0
+offset_top = 12.0
+offset_right = 1900.0
+offset_bottom = 76.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="Margin" type="MarginContainer" parent="SafeArea/OrderSummaryCard" unique_id=1923869061]
@@ -890,7 +1001,7 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BusinessDayClosedShield" type="Control" parent="SafeArea" unique_id=1199885720]
+[node name="BusinessDayClosedShield" type="ColorRect" parent="SafeArea" unique_id=1199885720]
 unique_name_in_owner = true
 visible = false
 z_index = 999
@@ -900,6 +1011,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0.015, 0.04, 0.045, 0.7)
 script = ExtResource("26_wxlxi")
 excluded_control_path = NodePath("../DailyBillPanel")
 
@@ -909,10 +1021,10 @@ process_mode = 3
 visible = false
 z_index = 1000
 layout_mode = 0
-offset_left = 330.0
-offset_top = 80.0
-offset_right = 1590.0
-offset_bottom = 900.0
+offset_left = 310.0
+offset_top = 150.0
+offset_right = 1610.0
+offset_bottom = 870.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
@@ -924,9 +1036,9 @@ mouse_filter = 2
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 42
-theme_override_constants/margin_top = 30
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 42
-theme_override_constants/margin_bottom = 30
+theme_override_constants/margin_bottom = 24
 
 [node name="VBox" type="VBoxContainer" parent="SafeArea/DailyBillPanel/Margin" unique_id=456859976]
 layout_mode = 2
@@ -943,11 +1055,14 @@ horizontal_alignment = 1
 
 [node name="DailyBillStatsLabel" type="Label" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1639705512]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "完成 0 单 · 收入 0 金币 · 平均 0分"
 horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="HeaderGrid" type="GridContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=897849002]
 layout_mode = 2
@@ -987,7 +1102,7 @@ text = "收入"
 horizontal_alignment = 2
 
 [node name="RowsScroll" type="ScrollContainer" parent="SafeArea/DailyBillPanel/Margin/VBox" unique_id=1663704251]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
@@ -1026,7 +1141,7 @@ theme_override_constants/separation = 14
 
 [node name="GrowthTicket1" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=1745941365]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 136)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
@@ -1036,14 +1151,14 @@ theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_ui_focus")
 text = "成长票 1"
 autowrap_mode = 2
 clip_text = true
 
 [node name="GrowthTicket2" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=822612009]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 136)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
@@ -1053,14 +1168,14 @@ theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_ui_focus")
 text = "成长票 2"
 autowrap_mode = 2
 clip_text = true
 
 [node name="GrowthTicket3" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthTickets" unique_id=489839711]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 136)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.92, 0.72, 1)
@@ -1070,7 +1185,7 @@ theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_ui_focus")
 text = "成长票 3"
 autowrap_mode = 2
 clip_text = true
@@ -1082,26 +1197,26 @@ theme_override_constants/separation = 14
 
 [node name="DailyBillCloseButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=148562824]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(210, 58)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBox_ui_button")
-theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
-theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBox_ui_button_secondary")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_secondary_hover")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_secondary_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_ui_focus")
 text = "返回开始页"
 
 [node name="UnlockProgressButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=1548126579]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(210, 58)
+custom_minimum_size = Vector2(250, 58)
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
-theme_override_styles/normal = SubResource("StyleBox_ui_button")
-theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
-theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBox_ui_button_secondary")
+theme_override_styles/pressed = SubResource("StyleBox_ui_button_secondary_hover")
+theme_override_styles/hover = SubResource("StyleBox_ui_button_secondary_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_ui_focus")
 text = "打开升级工坊"
 
 [node name="BeginNextDayButton" type="Button" parent="SafeArea/DailyBillPanel/Margin/VBox/GrowthActions" unique_id=1176729823]
@@ -1114,7 +1229,7 @@ theme_override_styles/normal = SubResource("StyleBox_ui_button")
 theme_override_styles/pressed = SubResource("StyleBox_ui_button_pressed")
 theme_override_styles/hover = SubResource("StyleBox_ui_button_hover")
 theme_override_styles/disabled = SubResource("StyleBox_ui_button_disabled")
-theme_override_styles/focus = SubResource("StyleBox_ui_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_ui_focus")
 text = "不购买，直接开始下一天"
 
 [node name="UnlockProgressPanel" type="PanelContainer" parent="SafeArea" unique_id=1753901486]
@@ -1305,7 +1420,7 @@ offset_left = 667.0
 offset_top = 961.0
 offset_right = 799.0
 offset_bottom = 1076.0
-tooltip_text = "将成品拖入废弃篓报废"
+tooltip_text = "拖入成品可报废；长按可清空当前鏊面"
 mouse_default_cursor_shape = 2
 script = ExtResource("80_waste_target")
 
@@ -1333,15 +1448,16 @@ text = "废弃篓"
 horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket" unique_id=836822811]
+visible = false
 layout_mode = 0
-offset_left = -90.0
-offset_top = 37.0
-offset_right = 42.0
-offset_bottom = 76.0
-theme_override_colors/font_color = Color(0.37, 0.18, 0.06, 1)
-theme_override_colors/font_outline_color = Color(1, 0.82, 0.42, 0.9)
-theme_override_constants/outline_size = 2
-theme_override_font_sizes/font_size = 13
+offset_left = -42.0
+offset_top = -52.0
+offset_right = 174.0
+offset_bottom = -8.0
+theme_override_colors/font_color = Color(1, 0.88, 0.56, 1)
+theme_override_colors/font_outline_color = Color(0.015, 0.07, 0.065, 0.98)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = "拖入报废
 长按清空鏊面"
 horizontal_alignment = 1
@@ -1388,17 +1504,23 @@ text = "金币 ×0
 点击收币"
 
 [node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure" unique_id=1664686673]
+z_index = 150
 layout_mode = 0
-offset_left = 1420.0
-offset_top = 145.0
+offset_left = 1260.0
+offset_top = 82.0
 offset_right = 1890.0
-offset_bottom = 235.0
+offset_bottom = 122.0
 mouse_filter = 2
 theme_override_constants/separation = 2
 
 [node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=806710644]
 layout_mode = 2
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.8, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 17
 horizontal_alignment = 2
+text_overrun_behavior = 3
+clip_text = true
 
 [node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=1799233558]
 layout_mode = 2
@@ -1421,17 +1543,19 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("61_oefc1")
 
-[node name="GuideArrow" type="Label" parent="TutorialGuideOverlay" unique_id=1457040386]
+[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay"]
 layout_mode = 0
-offset_right = 36.0
-offset_bottom = 42.0
-theme_override_colors/font_color = Color(0.96, 0.66, 0.18, 1)
-theme_override_colors/font_outline_color = Color(0.38, 0.17, 0.04, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 32
-text = "▼"
-horizontal_alignment = 1
-vertical_alignment = 1
+offset_right = 64.0
+offset_bottom = 64.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("TutorialTargetHighlightStyle")
+
+[node name="GuideArrow" type="Control" parent="TutorialGuideOverlay" unique_id=1457040386]
+layout_mode = 0
+offset_right = 28.0
+offset_bottom = 28.0
+mouse_filter = 2
+script = ExtResource("63_guide_arrow")
 
 [node name="GuideBubble" type="PanelContainer" parent="TutorialGuideOverlay" unique_id=276540577]
 layout_mode = 0

@@ -15,6 +15,16 @@ func _run() -> void:
 	_check(bool(starter.purchase(&"growth.add_on.pancake.egg").get("success", false)), "egg can be reserved with 10 coins without completing tutorial")
 	starter.set_day_open(false)
 	_check(bool(starter.begin_next_business_day().get("success", false)) and starter.owns_stock(&"stock.pancake.egg"), "egg activates on the next business day")
+	var topping_chain := SERVICE.new({
+		"coins": 160,
+		"unlocked_area_ids": [&"area.pancake"],
+		"owned_growth_ids": ["growth.add_on.pancake.baocui"],
+	})
+	_check(bool(topping_chain.purchase(&"growth.add_on.pancake.meat_floss").get("success", false)), "meat floss can be reserved after baocui")
+	_check(not bool(topping_chain.purchase_status(&"growth.add_on.pancake.ham_sausage").get("can_purchase", false)), "ham cannot be reserved while its meat-floss prerequisite is only pending")
+	topping_chain.set_day_open(false)
+	topping_chain.begin_next_business_day()
+	_check(bool(topping_chain.purchase(&"growth.add_on.pancake.ham_sausage").get("success", false)), "ham becomes reservable after meat floss activates")
 
 	var all_toppings := SERVICE.new({
 		"coins": 400,
@@ -33,8 +43,10 @@ func _run() -> void:
 	_check(bool(youtiao_status.get("can_purchase", false)), "all six toppings and 200 coins unlock youtiao without mastery or reputation")
 	_check(bool(soy_status.get("can_purchase", false)), "all six toppings and 200 coins unlock soy without youtiao")
 	_check(bool(all_toppings.purchase(&"growth.area.fresh_soy_milk").get("success", false)), "soy can be reserved before youtiao")
+	_check(not bool(all_toppings.purchase_status(&"growth.area.packaged_drink").get("can_purchase", false)), "drink rack cannot be reserved while soy is only pending")
 	all_toppings.set_day_open(false)
 	_check(bool(all_toppings.begin_next_business_day().get("success", false)) and all_toppings.owns_area(&"area.fresh_soy_milk") and not all_toppings.owns_area(&"area.youtiao"), "soy activation does not unlock youtiao")
+	_check(bool(all_toppings.purchase(&"growth.area.packaged_drink").get("success", false)), "drink rack becomes reservable after soy activates")
 
 	var youtiao_route := SERVICE.new({
 		"coins": 660,

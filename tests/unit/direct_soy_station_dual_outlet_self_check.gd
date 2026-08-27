@@ -4,6 +4,7 @@ const STATION_SCENE := preload("res://scenes/gameplay/direct_soy_station.tscn")
 const MANUAL_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png"
 const AUTO_FILL_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png"
 const DUAL_OUTLET_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png"
+const FILLED_CUP_TEXTURE_PATH := "res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png"
 
 var failures := PackedStringArray()
 
@@ -28,6 +29,8 @@ func _run() -> void:
 		_check(locked_dispenser != null, "direct soy station includes the dispenser visual")
 		_check(locked_dispenser != null and locked_dispenser.texture != null and locked_dispenser.texture.resource_path == MANUAL_TEXTURE_PATH, "locked soy area previews the basic soy machine")
 		_check(locked_station.visible and is_equal_approx(locked_station.modulate.a, 0.42), "locked basic soy machine is translucent in the workshop")
+		_check(locked_station.cup_stack.visible and locked_station.cup_stack.texture_normal != null and locked_station.cup_stack.texture_normal.resource_path.ends_with("soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png"), "workshop preview shows a full transparent stack of soy cups")
+		_check(locked_station.cup_stack.disabled and not locked_station.cup_stack.native_drag_enabled, "workshop cup stack remains non-interactive")
 		locked_station.queue_free()
 		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.fresh_soy_milk": true})
 		production.call("_sync_ownership")
@@ -99,6 +102,9 @@ func _run() -> void:
 		refill_station._on_cup_stack_short_clicked({})
 		refill_station._on_nozzle_pressed()
 		_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("cup_state", &"")) == &"filled", "the first outlet can remain filled before adding a second cup")
+		var filled_cup_texture := refill_station.machine_output.texture_normal as AtlasTexture
+		_check(filled_cup_texture != null and filled_cup_texture.atlas != null and filled_cup_texture.atlas.resource_path == FILLED_CUP_TEXTURE_PATH, "a completed full cup switches to the authored yellow-soy milk artwork")
+		_check(not refill_station.dispense_effect.visible, "a completed full cup hides the procedural liquid layer")
 		interaction_progression.set("unlocked_automation_ids", {&"automation.fresh_soy_milk.auto_fill": true, &"automation.fresh_soy_milk.double_fill": true})
 		refill_station.refresh_from_session()
 		refill_station._on_cup_stack_short_clicked({})

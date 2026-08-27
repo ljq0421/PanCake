@@ -2,7 +2,7 @@ class_name SpecialCustomerCatalog
 extends RefCounted
 
 ## Central, data-only contract for special storefront customers.  These IDs are
-## deliberately separate from the ordinary customer_01..customer_10 rotation.
+## deliberately separate from the ordinary customer_01..customer_20 rotation.
 const GLUTTON := &"special.glutton"
 const STUDENT := &"special.student"
 const BLOGGER := &"special.blogger"

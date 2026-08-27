@@ -137,7 +137,9 @@ func _test_movable_batter_pour(unit: CompactGriddleUnit) -> void:
 func _test_dropped_ingredient_orientation(unit: CompactGriddleUnit) -> void:
 	unit.reset_unit()
 	unit.begin_order({})
-	unit.state = CompactGriddleUnit.State.FIRST_SIDE
+	unit.pancake_model.flip(true)
+	unit.state = CompactGriddleUnit.State.SECOND_SIDE
+	unit.p1_session.phase = P1Session.Phase.SECOND_SIDE
 	# Reproduce the old failure: any previously applied ingredient made the next
 	# manually dropped topping rotate by 0.35 radians when it landed.
 	unit.applied_ingredient_ids.append("stock.pancake.egg")

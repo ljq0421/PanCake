@@ -1,5 +1,6 @@
 extends Control
 
+@onready var pause_dim: ColorRect = %PauseDim
 @onready var pause_panel: PanelContainer = %PausePanel
 @onready var resume_button: Button = %ResumeButton
 @onready var end_business_button: Button = %EndBusinessButton
@@ -23,15 +24,31 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"pause_game"):
+		if not get_tree().paused and _workstation_has_blocking_modal():
+			get_viewport().set_input_as_handled()
+			return
 		_set_paused(not get_tree().paused)
 		get_viewport().set_input_as_handled()
 
 
 func _set_paused(paused: bool) -> void:
+	if paused and _workstation_has_blocking_modal():
+		return
 	get_tree().paused = paused
+	pause_dim.visible = paused
 	pause_panel.visible = paused
 	if paused:
 		resume_button.grab_focus()
+	else:
+		get_viewport().gui_release_focus()
+
+
+func _workstation_has_blocking_modal() -> bool:
+	return (
+		workstation != null
+		and workstation.has_method(&"is_blocking_modal_open")
+		and bool(workstation.call(&"is_blocking_modal_open"))
+	)
 
 
 func _resume_game() -> void:

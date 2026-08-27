@@ -1,8 +1,8 @@
 [gd_resource type="AtlasTexture" load_steps=2 format=3]
 
-[ext_resource type="Texture2D" path="res://resources/art/customers/customer_06/customer_06_impatient_v1.png" id="1_customer"]
+[ext_resource type="Texture2D" path="res://resources/art/customers/customer_06/customer_06_impatient_v2_qstyle.png" id="1_customer"]
 
 [resource]
 atlas = ExtResource("1_customer")
-region = Rect2(529, 57, 468, 917)
+region = Rect2(271, 136, 478, 984)
 filter_clip = true

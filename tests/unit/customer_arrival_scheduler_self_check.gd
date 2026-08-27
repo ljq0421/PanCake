@@ -13,6 +13,7 @@ func _run() -> void:
 	if session == null:
 		_finish()
 		return
+	_check_completed_delivery_ends_tutorial(session)
 	session.call("begin_new_game")
 	var opening_inventory: Dictionary = session.call("inventory_snapshot")
 	for quantity in opening_inventory.values():
@@ -20,8 +21,8 @@ func _run() -> void:
 	var progression: RefCounted = session.call("progression_service")
 	progression.call("complete_tutorial", &"area", &"area.pancake")
 	var opening := Dictionary(session.call("customer_arrival_snapshot"))
-	_check(StringName(opening.get("phase", &"")) == &"restocking" and is_equal_approx(float(opening.get("restock_remaining_seconds", 0.0)), 3.0), "new business opens with a three-second restock window")
-	session.call("advance_customer_arrivals", 2.5)
+	_check(StringName(opening.get("phase", &"")) == &"restocking" and is_equal_approx(float(opening.get("restock_remaining_seconds", 0.0)), 5.0), "new business opens with a five-second restock window")
+	session.call("advance_customer_arrivals", 4.5)
 	_check(Array(session.call("active_formal_orders")).is_empty(), "no customer appears before the restock window ends")
 	var before_open := Dictionary(session.call("customer_arrival_snapshot"))
 	_check(is_equal_approx(float(before_open.get("restock_remaining_seconds", 0.0)), 0.5), "restock countdown advances precisely")
@@ -48,6 +49,62 @@ func _run() -> void:
 		_check(int(quantity) == 0, "next business day does not automatically refill inventory")
 	_check(Array(session.call("active_formal_orders")).is_empty(), "next business day starts with no visible customer")
 	_finish()
+
+
+func _check_completed_delivery_ends_tutorial(session: Node) -> void:
+	session.call("begin_new_game")
+	session.call("advance_customer_arrivals", 5.0)
+	var tutorial_order := Dictionary(session.call("active_formal_order"))
+	var tutorial_order_id := StringName(tutorial_order.get("order_id", &""))
+	_check(not tutorial_order_id.is_empty() and bool(tutorial_order.get("tutorial_no_countdown", false)), "opening arrival is the unlimited pancake tutorial")
+	var refusal_preview := Dictionary(session.call("preview_formal_order_refusal", tutorial_order_id))
+	var refused := Dictionary(session.call("refuse_formal_order", tutorial_order_id))
+	_check(
+		not bool(refusal_preview.get("success", false))
+		and StringName(refusal_preview.get("reason", &"")) == &"tutorial_order_cannot_be_refused"
+		and not bool(refused.get("success", false))
+		and StringName(refused.get("reason", &"")) == &"tutorial_order_cannot_be_refused",
+		"tutorial customer cannot be previewed or submitted as a refused order"
+	)
+	var attached := Dictionary(session.call("attach_formal_order_product", tutorial_order_id, 0, {
+		"product_instance_id": &"test.wrong_tutorial_pancake",
+		"product_id": &"product.pancake.custom",
+		"area_id": &"area.pancake",
+		"heat_preference": &"charred",
+		"ingredient_ids": [],
+		"sauce_ids": [],
+		"score": 1.0,
+		"grade": &"C",
+	}))
+	_check(bool(attached.get("success", false)) and not bool(attached.get("will_match", true)), "test delivers a completed pancake that does not match the teaching order")
+	var settlement := Dictionary(session.call("settle_f3_order", tutorial_order_id))
+	var tutorial := Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
+	_check(
+		bool(settlement.get("success", false))
+		and not bool(settlement.get("order_success", true))
+		and bool(Dictionary(settlement.get("tutorial_completion", {})).get("success", false))
+		and StringName(tutorial.get("active_id", &"")).is_empty()
+		and PackedStringArray(tutorial.get("completed_area_ids", PackedStringArray())).has("area.pancake"),
+		"any completed tutorial delivery ends teaching even when the product and score are wrong"
+	)
+	var progression: RefCounted = session.call("progression_service")
+	progression.set("tutorial_completed_area_ids", {})
+	progression.set("tutorial_active_kind", &"area")
+	progression.set("tutorial_active_id", &"area.pancake")
+	session.call("_sync_progression_to_save")
+	session.call("_reconcile_completed_tutorial_order")
+	var reconciled_tutorial := Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
+	_check(
+		StringName(reconciled_tutorial.get("active_id", &"")).is_empty()
+		and PackedStringArray(reconciled_tutorial.get("completed_area_ids", PackedStringArray())).has("area.pancake"),
+		"a legacy save with a settled tutorial order repairs itself to completed on load"
+	)
+	var arrival := Dictionary(session.call("customer_arrival_snapshot"))
+	var delay := float(arrival.get("next_arrival_remaining_seconds", -1.0))
+	_check(delay >= 2.0 and delay <= 5.0, "completed tutorial schedules the first ordinary customer")
+	session.call("advance_customer_arrivals", delay + 0.01)
+	var ordinary_orders := Array(session.call("active_formal_orders"))
+	_check(ordinary_orders.size() == 1 and not bool(Dictionary(ordinary_orders.front()).get("tutorial_no_countdown", true)), "ordinary customer arrives after the completed tutorial")
 
 
 func _check(condition: bool, message: String) -> void:

@@ -57,6 +57,19 @@ class FakeGameSession extends Node:
 		prepared_product_slots_changed.emit({})
 		return {"success": true, "reason": &"", "product_id": product_id}
 
+	func store_ready_youtiao_batch(_slot_id: StringName) -> Dictionary:
+		var occupied := Array(machine.get("occupied_slot_indices", []))
+		if StringName(machine.get("state", &"")) != &"ready_to_collect" or occupied.is_empty():
+			return {"success": false, "reason": &"invalid_equipment_state"}
+		for _source_index in occupied:
+			prepared_products.append({"product_id": &"product.youtiao.plain"})
+		var stored_quantity := occupied.size()
+		machine["occupied_slot_indices"] = []
+		machine["quantity"] = 0
+		machine["state"] = &"idle"
+		prepared_product_slots_changed.emit({})
+		return {"success": true, "reason": &"", "stored_quantity": stored_quantity}
+
 	func five_area_restock_status(_stock_id: StringName) -> Dictionary:
 		return {
 			"success": true,
@@ -111,17 +124,22 @@ func _run() -> void:
 	session.machine["occupied_slot_indices"] = [0]
 	session.finished_tray_unlocked = false
 	fryer.call("refresh_from_session")
-	var finished_stick := {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}
+	var finished_stick := {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}
 	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.plain_tray.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
 	session.finished_tray_unlocked = true
 	fryer.call("refresh_from_session")
-	var plain_tray_drop_point: Vector2 = fryer.plain_tray.position + fryer.plain_tray.size * fryer.plain_tray.scale * 0.5
-	_check(bool(fryer.call("_can_drop_data", plain_tray_drop_point, finished_stick)), "the visible upper-left portion of the serving plate accepts a finished youtiao")
+	_check(bool(fryer.plain_tray.call("_can_drop_data", fryer.plain_tray.size * 0.5, finished_stick)), "the visible serving plate accepts a finished youtiao")
 	_check(not fryer.call("_requires_timed_session_refresh"), "a ready fryer stops rebuilding drag sources before a serving-tray drag")
 	var ready_snapshot_calls := session.machine_snapshot_calls
 	for _tick in 8:
 		fryer.call("_process", 0.11)
 	_check(session.machine_snapshot_calls == ready_snapshot_calls, "a ready fryer performs no periodic session snapshots while its output is draggable")
+
+	# A short click on any collectible youtiao uses the batch storage transaction.
+	# This is distinct from dragging one stick to a pancake or customer.
+	fryer.call("_on_fryer_product_short_clicked", {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"})
+	_check(session.prepared_products.size() == 1 and int(session.machine.get("quantity", -1)) == 0, "clicking a collectible youtiao moves the ready batch into the finished tray")
+	session.prepared_products.clear()
 
 	# Prepared products may be consumed by the pancake station rather than by the
 	# fryer itself. Keep that presentation event-driven without touching a live
@@ -150,29 +168,40 @@ func _run() -> void:
 	session.machine["tier"] = 0
 	fryer.call("refresh_from_session")
 	var basic_raised_position: Vector2 = fryer.basket_products.position
-	session.machine["tier"] = 1
-	fryer.call("refresh_from_session")
-	_check(fryer.fryer_layout_player.current_animation == &"advanced_raised" and fryer.basket_products.position == Vector2(55.0, 152.0) and fryer.basket_products.position != basic_raised_position, "advanced raised fryer selects its authored scene layout")
+	_check(fryer.fryer_layout_player.current_animation == &"basic_raised" and basic_raised_position == Vector2(23.0, 137.0) and fryer.basket_products.scale == Vector2(0.65, 0.65) and fryer.fryer_slot_sources[0].texture_normal == fryer.raw_youtiao_texture, "basic loaded dough is enlarged, visually centered, and shifted down in the raised filter basket")
 	session.machine["state"] = &"frying"
 	fryer.call("refresh_from_session")
-	_check(fryer.fryer_layout_player.current_animation == &"advanced_lowered" and fryer.basket_products.position == Vector2(55.0, 205.0) and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products), "advanced lowered fryer selects the authored four-slot basket layout")
+	_check(fryer.fryer_layout_player.current_animation == &"basic_lowered" and fryer.basket_products.position == Vector2(23.0, 201.0) and fryer.basket_products.scale == Vector2(0.65, 0.65) and fryer.fryer_slot_sources[0].texture_normal == fryer.raw_youtiao_texture, "basic frying dough keeps its size and shifts farther down near the lowered filter bottom")
+	session.machine["state"] = &"loaded"
+	session.machine["tier"] = 1
+	fryer.call("refresh_from_session")
+	_check(fryer.fryer_layout_player.current_animation == &"advanced_raised" and fryer.basket_products.position == Vector2(23.0, 162.0) and fryer.basket_products.scale == Vector2(0.65, 0.65) and fryer.basket_products.position != basic_raised_position, "advanced dough is enlarged and shifted left-down in the raised filter basket")
+	session.machine["state"] = &"frying"
+	fryer.call("refresh_from_session")
+	_check(fryer.fryer_layout_player.current_animation == &"advanced_lowered" and fryer.basket_products.position == Vector2(23.0, 217.0) and fryer.basket_products.scale == Vector2(0.65, 0.65) and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products), "advanced frying dough is enlarged and shifted left-down in the lowered filter basket")
+	session.machine["state"] = &"ready_safe"
+	fryer.call("refresh_from_session")
+	_check(fryer.fryer_layout_player.current_animation == &"advanced_lowered" and fryer.basket_products.position == Vector2(23.0, 211.0) and fryer.basket_products.scale == Vector2(0.82, 0.82) and fryer.fryer_slot_sources.map(func(source: ProductDragSource) -> float: return source.position.x) == [0.0, 27.0, 54.0, 81.0] and fryer.fryer_slot_sources[0].texture_normal == fryer.golden_youtiao_texture, "advanced fried youtiao is enlarged, tightly spaced and raised inside the lowered basket")
+	session.machine["state"] = &"draining"
+	fryer.call("refresh_from_session")
+	_check(fryer.fryer_layout_player.current_animation == &"advanced_raised" and fryer.basket_products.position == Vector2(23.0, 156.0) and fryer.basket_products.scale == Vector2(0.82, 0.82) and fryer.fryer_slot_sources.map(func(source: ProductDragSource) -> float: return source.position.x) == [0.0, 27.0, 54.0, 81.0] and fryer.fryer_slot_sources[0].texture_normal == fryer.golden_youtiao_texture, "advanced lifted finished youtiao keeps the larger tightly spaced raised position in the lifted basket")
 	session.machine["state"] = &"ready_safe"
 	session.machine["tier"] = 0
 	fryer.call("refresh_from_session")
-	_check(fryer.fryer_visual.texture == fryer.lowered_machine_texture and fryer.fryer_layout_player.current_animation == &"basic_lowered" and fryer.basket_products.position == Vector2(55.0, 190.0), "basic fryer stays in its authored lowered layout while waiting for the player to lift its finished batch")
+	_check(fryer.fryer_visual.texture == fryer.lowered_machine_texture and fryer.fryer_layout_player.current_animation == &"basic_lowered" and fryer.basket_products.position == Vector2(14.0, 201.0) and fryer.basket_products.scale == Vector2(0.75, 0.75) and fryer.fryer_slot_sources[0].texture_normal == fryer.golden_youtiao_texture, "basic finished youtiao is enlarged again, re-centered, and shifted farther down near the lowered filter bottom until lifted")
 	session.machine["state"] = &"draining"
 	fryer.call("refresh_from_session")
-	_check(fryer.fryer_visual.texture == fryer.raised_machine_texture and fryer.fryer_layout_player.current_animation == &"basic_raised" and fryer.basket_products.position == Vector2(55.0, 136.0) and fryer.fryer_visual.scale == Vector2.ONE, "basic fryer selects its authored raised layout only after lifting")
+	_check(fryer.fryer_visual.texture == fryer.raised_machine_texture and fryer.fryer_layout_player.current_animation == &"basic_raised" and fryer.basket_products.position == Vector2(14.0, 147.0) and fryer.basket_products.scale == Vector2(0.75, 0.75) and fryer.fryer_slot_sources[0].texture_normal == fryer.golden_youtiao_texture and fryer.fryer_visual.scale == Vector2.ONE, "basic lifted filter keeps the additionally enlarged finished youtiao centered and lower in the raised basket")
 	var authored_left_slot_rect: Rect2 = fryer.fryer_slot_sources[0].get_rect()
 	var authored_right_slot_rect: Rect2 = fryer.chicken_slot_sources[0].get_rect()
 	fryer.call("_apply_fryer_layout", true, false, true, false)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_both_raised" and fryer.basket_products.position == Vector2(5.0, 126.0) and fryer.chicken_basket_products.position == Vector2(128.0, 126.0), "dual fryer selects the scene-authored both-raised layout")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_both_raised" and fryer.basket_products.position == Vector2(5.0, 148.0) and fryer.basket_products.scale == Vector2(0.5, 0.5) and fryer.chicken_basket_products.position == Vector2(128.0, 148.0), "dual fryer selects the unchanged scene-authored both-raised layout")
 	fryer.call("_apply_fryer_layout", true, true, true, false)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_left_lowered" and fryer.basket_products.position == Vector2(3.0, 168.0) and fryer.chicken_basket_products.position == Vector2(127.0, 126.0), "dual fryer lowers only the left authored basket group")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_left_lowered" and fryer.basket_products.position == Vector2(3.0, 184.0) and fryer.chicken_basket_products.position == Vector2(127.0, 148.0), "dual fryer lowers only the left authored basket group")
 	fryer.call("_apply_fryer_layout", true, false, true, true)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_right_lowered" and fryer.basket_products.position == Vector2(-1.0, 126.0) and fryer.chicken_basket_products.position == Vector2(133.0, 168.0), "dual fryer lowers only the right authored basket group")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_right_lowered" and fryer.basket_products.position == Vector2(-1.0, 148.0) and fryer.chicken_basket_products.position == Vector2(133.0, 184.0), "dual fryer lowers only the right authored basket group")
 	fryer.call("_apply_fryer_layout", true, true, true, true)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_both_lowered" and fryer.basket_products.position == Vector2(3.0, 168.0) and fryer.chicken_basket_products.position == Vector2(133.0, 168.0), "dual fryer selects the scene-authored both-lowered layout")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_both_lowered" and fryer.basket_products.position == Vector2(3.0, 184.0) and fryer.chicken_basket_products.position == Vector2(133.0, 184.0), "dual fryer selects the scene-authored both-lowered layout")
 	_check(fryer.fryer_slot_sources[0].get_rect() == authored_left_slot_rect and fryer.chicken_slot_sources[0].get_rect() == authored_right_slot_rect, "layout state changes preserve per-item size and position authored in the scene")
 	session.machine["state"] = &"ready_to_collect"
 	session.machine["quantity"] = 1
@@ -186,7 +215,7 @@ func _run() -> void:
 	fryer.editor_preview_state = 3
 	fryer.editor_preview_trays = true
 	fryer.call("_apply_editor_preview")
-	_check(fryer.fryer_visual.texture == fryer.advanced_lowered_machine_texture and fryer.fryer_layout_player.current_animation == &"advanced_lowered" and fryer.basket_products.position == Vector2(55.0, 205.0) and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview exposes the authored advanced lowered alignment without running production")
+	_check(fryer.fryer_visual.texture == fryer.advanced_lowered_machine_texture and fryer.fryer_layout_player.current_animation == &"advanced_lowered" and fryer.basket_products.position == Vector2(23.0, 211.0) and fryer.basket_products.scale == Vector2(0.82, 0.82) and fryer.fryer_slot_sources.map(func(source: ProductDragSource) -> float: return source.position.x) == [0.0, 27.0, 54.0, 81.0] and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview exposes the raised, larger and tightly spaced advanced fried-youtiao layout without running production")
 	_check(fryer.plain_tray.visible and fryer.plain_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview displays the reusable plain serving tray and all authored slots")
 
 	fryer.queue_free()

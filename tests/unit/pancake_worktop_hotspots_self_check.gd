@@ -79,9 +79,8 @@ func _run() -> void:
 	await process_frame
 	station.bind_session(session)
 	var unit: Node = station.units[0]
-	_test_egg_on_both_sides(station, unit, session)
-	_test_sauce_selection_and_first_stroke(station, unit, session)
-	_test_automatic_sauce_brush(station, unit, session)
+	_test_egg_on_first_side(station, unit, session)
+	_test_default_automatic_sauce_after_flip(station, unit, session)
 	_test_sauce_guards_second_side_and_restore(station, unit, session)
 	_test_one_click_ingredient_upgrades(station, unit, session)
 	await _test_worktop_hotspot_mapping(session)
@@ -90,21 +89,15 @@ func _run() -> void:
 	_finish()
 
 
-func _test_egg_on_both_sides(station: Node, unit: Node, session: FakeSession) -> void:
+func _test_egg_on_first_side(station: Node, unit: Node, session: FakeSession) -> void:
 	var source := {"source_kind": &"pancake_shared_ingredient", "stock_id": &"stock.pancake.egg"}
 	var center: Vector2 = unit.pancake_surface.size * 0.5
 	unit.begin_order({})
 	unit.state = CompactGriddleUnit.State.FIRST_SIDE
 	var first_validation := Dictionary(unit.validate_ingredient_drop(source, center))
 	_check(bool(first_validation.get("success", false)), "egg can be dropped on the first side")
-	unit.reset_unit()
-	unit.begin_order({})
-	unit.pancake_model.flip(true)
-	unit.state = CompactGriddleUnit.State.SECOND_SIDE
-	var second_validation := Dictionary(unit.validate_ingredient_drop(source, center))
-	_check(bool(second_validation.get("success", false)), "egg can be dropped on the second side")
 	var placed := Dictionary(station.drop_on_unit(0, source, center))
-	_check(bool(placed.get("success", false)) and unit.pancake_model.has_egg(), "second-side egg placement records the egg")
+	_check(bool(placed.get("success", false)) and unit.pancake_model.has_egg(), "first-side egg placement records the egg")
 	_check(unit.egg_shell_visual.visible and unit.egg_shell_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg shell bottom stays 60px above the pancake while liquid falls")
 	_check(unit.egg_intact_visual.visible and unit.egg_intact_visual.position.is_equal_approx(center + Vector2(0.0, -88.8)), "egg liquid begins at the opened shell position")
 	_check(int(session.inventory["stock.pancake.egg"]) == 1, "egg placement consumes exactly one inventory unit")
@@ -144,47 +137,38 @@ func _test_egg_on_both_sides(station: Node, unit: Node, session: FakeSession) ->
 	)
 	var third_validation := Dictionary(unit.validate_ingredient_drop(source, center + Vector2(-20.0, 0.0)))
 	_check(not bool(third_validation.get("success", false)) and StringName(third_validation.get("reason", &"")) == &"portion_limit", "a third egg is rejected at the two-portion limit")
-
-
-func _test_sauce_selection_and_first_stroke(station: Node, unit: Node, session: FakeSession) -> void:
 	unit.reset_unit()
 	unit.begin_order({})
-	unit.state = CompactGriddleUnit.State.FIRST_SIDE
-	unit.p1_session.phase = P1Session.Phase.FIRST_SIDE
-	var center: Vector2 = unit.pancake_surface.size * 0.5
-	var before := int(session.inventory["stock.pancake.sauce.sweet_flour"])
-	var selected := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
-	var primed_total := float(unit.pancake_model.total_sauce())
-	_check(bool(selected.get("success", false)), "sweet sauce jar primes the direct-brush tool")
-	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "unlimited sauce jar click does not consume inventory")
-	_check(primed_total > 0.0 and unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour"), "sauce jar click places a central dollop and records its recipe identifier")
-	_check(unit.pancake_surface.cursor_is_sauce_brush and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "sauce jar click stays available during first-side cooking and automatically arms the brush")
-	unit._on_surface_pointer_started(center)
-	unit._on_surface_pointer_ended(center)
-	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "drag brushing does not consume inventory")
-	_check(float(unit.pancake_model.total_sauce()) >= primed_total, "drag brushing preserves and spreads the primed sauce")
-	var second_portion := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
-	_check(bool(second_portion.get("success", false)) and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2 and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "a second unlimited sauce portion is accepted and recorded separately")
-	var before_limit := int(session.inventory["stock.pancake.sauce.sweet_flour"])
-	var over_limit := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
-	_check(not bool(over_limit.get("success", false)) and StringName(over_limit.get("reason", &"")) == &"portion_limit" and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before_limit, "a third sauce portion is rejected without consuming inventory")
+	unit.pancake_model.flip(true)
+	unit.state = CompactGriddleUnit.State.SECOND_SIDE
+	unit.p1_session.phase = P1Session.Phase.SECOND_SIDE
+	var post_flip_validation := Dictionary(unit.validate_ingredient_drop(source, center))
+	_check(not bool(post_flip_validation.get("success", false)) and StringName(post_flip_validation.get("reason", &"")) == &"wrong_stage", "egg cannot be added after flipping")
 
 
-func _test_automatic_sauce_brush(station: Node, unit: Node, session: FakeSession) -> void:
+func _test_default_automatic_sauce_after_flip(station: Node, unit: Node, session: FakeSession) -> void:
 	station.clear_held_tool()
 	unit.reset_unit()
 	unit.begin_order({})
 	unit.state = CompactGriddleUnit.State.FIRST_SIDE
 	unit.p1_session.phase = P1Session.Phase.FIRST_SIDE
-	session.progression.owned_growth[&"growth.automation.pancake.auto_sauce_brush"] = true
 	var before := int(session.inventory["stock.pancake.sauce.sweet_flour"])
+	var rejected := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
+	_check(not bool(rejected.get("success", false)) and StringName(rejected.get("reason", &"")) == &"wrong_stage", "sauce is rejected before the pancake is flipped")
+	unit.pancake_model.flip(true)
+	unit.state = CompactGriddleUnit.State.SECOND_SIDE
+	unit.p1_session.phase = P1Session.Phase.SECOND_SIDE
 	var selected := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
 	var sauce_quality := PancakeScorer.evaluate_sauce(unit.pancake_model)
-	_check(bool(selected.get("success", false)) and bool(selected.get("automated", false)), "automatic sauce brush applies sauce from a jar click")
-	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "automatic sauce brush does not consume unlimited sauce")
-	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour") and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "automatic sauce brush records the sauce without ending first-side cooking")
-	_check(not unit.pancake_surface.cursor_is_sauce_brush and float(sauce_quality.get("coverage_ratio", 0.0)) >= 0.99 and float(sauce_quality.get("uniformity", 0.0)) >= 0.99, "automatic sauce brush completes a uniform layer without arming manual brushing")
-	session.progression.owned_growth.erase(&"growth.automation.pancake.auto_sauce_brush")
+	_check(bool(selected.get("success", false)) and bool(selected.get("automated", false)), "a post-flip sauce click applies sauce automatically")
+	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "automatic unlimited sauce does not consume inventory")
+	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour") and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "automatic sauce records its recipe identifier without ending second-side cooking")
+	_check(not unit.pancake_surface.cursor_is_sauce_brush and float(sauce_quality.get("coverage_ratio", 0.0)) >= 0.99 and float(sauce_quality.get("uniformity", 0.0)) >= 0.99, "default sauce completes a uniform layer without arming a manual brush")
+	var second_portion := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
+	_check(bool(second_portion.get("success", false)) and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2 and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "a second unlimited sauce portion is accepted and recorded separately")
+	var before_limit := int(session.inventory["stock.pancake.sauce.sweet_flour"])
+	var over_limit := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
+	_check(not bool(over_limit.get("success", false)) and StringName(over_limit.get("reason", &"")) == &"portion_limit" and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before_limit, "a third sauce portion is rejected without consuming inventory")
 
 
 func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, session: FakeSession) -> void:
@@ -230,6 +214,9 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		unit.begin_order({})
 		var pressed := Dictionary(unit.use_press_spreader())
 		_check(bool(pressed.get("success", false)), "%s test pancake reaches the first cooking side" % stock_id)
+		var preflip_rejected := Dictionary(station.apply_one_click_ingredient(stock_id))
+		_check(not bool(preflip_rejected.get("success", false)) and StringName(preflip_rejected.get("reason", &"")) == &"wrong_stage", "%s is rejected before flipping" % stock_id)
+		unit.advance_main()
 		var before := int(session.inventory[str(stock_id)])
 		var added := Dictionary(station.apply_one_click_ingredient(stock_id))
 		_check(
@@ -315,6 +302,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	unit.begin_order({})
 	var click_pancake_pressed := Dictionary(unit.use_press_spreader())
 	_check(bool(click_pancake_pressed.get("success", false)), "click hotspot test pancake reaches the first cooking side")
+	unit.advance_main()
 	var scallion_before_click := int(session.inventory["stock.pancake.scallion"])
 	hotspots.call("_on_material_short_clicked", scallion_click_source.source_ref(), scallion_click_source)
 	_check(
@@ -418,10 +406,11 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	unit.begin_order({})
 	unit.state = CompactGriddleUnit.State.FIRST_SIDE
 	unit.p1_session.phase = P1Session.Phase.FIRST_SIDE
+	unit.pancake_model.coverage.fill(1.0)
+	unit.advance_main()
 	secret_sauce.begin_gesture(Vector2.ZERO)
 	secret_sauce.end_gesture()
-	var brush_start := Dictionary(station.begin_surface_action(0, unit.pancake_surface.size * 0.5))
-	_check(bool(brush_start.get("success", false)) and StringName(brush_start.get("action", &"")) == CompactGriddleUnit.SURFACE_ACTION_BRUSH_SAUCE, "secret-sauce hotspot short click routes to direct brushing")
+	_check(unit.pancake_model.total_sauce() > 0.0 and not unit.pancake_surface.cursor_is_sauce_brush, "post-flip secret-sauce click applies sauce automatically without a manual brush")
 	artwork.queue_free()
 
 

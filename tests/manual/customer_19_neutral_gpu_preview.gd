@@ -2,7 +2,7 @@ extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
 const OUTPUT_PATH := "res://tmp/validation/customer_19_neutral_v1_chinese_gpu_clear_1920x1080.png"
-const EXPECTED_REGION := Rect2(486, 28, 565, 996)
+const EXPECTED_REGION := Rect2(533, 89, 459, 851)
 
 var _failures: Array[String] = []
 

@@ -158,20 +158,21 @@ func fold_automatically(region: StringName) -> Dictionary:
 		return {"committed": false, "reason": "当前无法自动折叠"}
 	if region not in [REGION_LEFT, REGION_RIGHT] or is_region_folded(region):
 		return {"committed": false, "reason": "自动折叠区域不可用"}
-	# Emit one active frame at the snap threshold before committing. The overlay
-	# uses it as the spatial starting point for the system-controlled landing.
+	# Emit one active frame at rest before committing so the system-controlled
+	# fold animates continuously instead of appearing halfway across the griddle.
 	active_region = region
-	drag_progress = pancake_model.parameters.fold_snap_commit_progress
+	drag_progress = 0.0
 	crossed_fold_line = true
 	changed.emit()
 	var result := _evaluate_region(region)
 	result["folded"] = true
+	result["automatic"] = true
 	_fold_results[region] = result
 	active_region = REGION_NONE
 	drag_progress = 0.0
 	crossed_fold_line = false
 	changed.emit()
-	return result.merged({"committed": true, "region": region, "automatic": true})
+	return result.merged({"committed": true, "region": region})
 
 
 func cancel_drag() -> void:

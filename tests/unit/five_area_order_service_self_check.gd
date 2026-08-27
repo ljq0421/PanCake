@@ -129,9 +129,9 @@ func _run() -> void:
 	var migrated: RefCounted = ORDERS.new(version_three)
 	_check(Array(migrated.call("active_orders")).size() == 4 and Array(migrated.call("waiting_orders")).is_empty(), "version-three single-active snapshot migrates all four orders to on-floor service slots")
 	var rotation_ids := PackedStringArray()
-	for sequence in range(1, 12):
+	for sequence in range(1, 22):
 		rotation_ids.append(str(ORDERS.customer_id_for_sequence(sequence)))
-	_check(rotation_ids.slice(0, 10) == PackedStringArray(["customer_01", "customer_02", "customer_03", "customer_04", "customer_05", "customer_06", "customer_07", "customer_08", "customer_09", "customer_10"]) and rotation_ids[10] == "customer_01", "customer identity rotates deterministically across the ten enabled portraits")
+	_check(rotation_ids.slice(0, 20) == PackedStringArray(["customer_01", "customer_02", "customer_03", "customer_04", "customer_05", "customer_06", "customer_07", "customer_08", "customer_09", "customer_10", "customer_11", "customer_12", "customer_13", "customer_14", "customer_15", "customer_16", "customer_17", "customer_18", "customer_19", "customer_20"]) and rotation_ids[20] == "customer_01", "customer identity rotates deterministically across all twenty portraits")
 	_check(ORDERS.legacy_customer_id_for_sequence(11) == &"customer_01", "pre-expansion snapshots keep the original ten-customer modulo during identity migration")
 	var refill: RefCounted = ORDERS.new()
 	var refill_orders: Array[Dictionary] = []
@@ -171,7 +171,12 @@ func _run() -> void:
 	preserved_orders[preserved_order_id] = preserved_order
 	preserved_snapshot["orders"] = preserved_orders
 	var expanded_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(expanded_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == ORDERS.customer_id_for_sequence(int(preserved_order.get("sequence", 1))), "current snapshots remap disabled customer portraits by their stable order sequence")
+	_check(StringName(Dictionary(expanded_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_15", "current snapshots preserve newly enabled customer portraits")
+	preserved_order["customer_id"] = &"customer_99"
+	preserved_orders[preserved_order_id] = preserved_order
+	preserved_snapshot["orders"] = preserved_orders
+	var invalid_restore: RefCounted = ORDERS.new(preserved_snapshot)
+	_check(StringName(Dictionary(invalid_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == ORDERS.customer_id_for_sequence(int(preserved_order.get("sequence", 1))), "current snapshots remap unknown customer portraits by their stable order sequence")
 	var stacked: RefCounted = ORDERS.new()
 	var stacked_open: Dictionary = stacked.call("open_order", [{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 2, "temperature_mode": &"room_temperature"}])
 	var stacked_id := StringName(Dictionary(stacked_open.get("order", {})).get("order_id", &""))

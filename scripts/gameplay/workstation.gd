@@ -62,7 +62,8 @@ const ORDER_REQUIREMENT_SAUCE := &"sauce"
 const ORDER_REQUIREMENT_HEATED := &"heated"
 const ORDER_REQUIREMENT_SUGAR := &"sugar"
 const ORDER_CARD_SUGAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
-const DAILY_BILL_FIXED_SIZE := Vector2(1260.0, 820.0)
+const DAILY_BILL_FIXED_POSITION := Vector2(310.0, 150.0)
+const DAILY_BILL_FIXED_SIZE := Vector2(1300.0, 720.0)
 const SPREADER_ART_ROTATION_OFFSET := 1.124
 const SPREADER_SPEED_SLOW := -1
 const SPREADER_SPEED_MEDIUM := 0
@@ -127,7 +128,7 @@ var _customer_slot_patience_tiers := [-1, -1, -1]
 var _customer_service_slot_signatures: Dictionary = {}
 var _next_customer_entrance_msec := 0
 var _restore_customer_layout_without_entrance := false
-const CUSTOMER_SERVICE_MIN_ENTRANCE_INTERVAL_SECONDS := 1.0
+const CUSTOMER_SERVICE_MIN_ENTRANCE_INTERVAL_SECONDS := 0.08
 var _order_patience_tier := -1
 @onready var customer_service_slots: Array[Control] = _resolve_customer_service_slots()
 @onready var customer_line_label: Label = get_node_or_null("SafeArea/CustomerLineLabel") as Label
@@ -764,7 +765,8 @@ func _refresh_main_order_controls(order: Dictionary) -> void:
 		_refusal_confirmation_order_id = &""
 		refuse_active_order_button.text = "婉拒订单"
 	var teaching_area_id := StringName(order.get("teaching_area_id", &""))
-	refuse_active_order_button.disabled = order_id.is_empty()
+	refuse_active_order_button.visible = teaching_area_id.is_empty()
+	refuse_active_order_button.disabled = order_id.is_empty() or not teaching_area_id.is_empty()
 	skip_active_tutorial_button.visible = not teaching_area_id.is_empty()
 	skip_active_tutorial_button.disabled = teaching_area_id.is_empty()
 	if teaching_area_id.is_empty():
@@ -778,7 +780,7 @@ func apply_progression_effects(snapshot: Dictionary) -> void:
 	var unlocked_stock_ids := Array(snapshot.get("unlocked_stock_ids", []))
 	_spreader_width_multiplier = 1.0
 	_press_spreader_owned = owned_items.has("tool.spreader.press_once") or owned_growth_ids.has("growth.automation.pancake.press_once")
-	_automatic_brush_owned = owned_items.has("tool.sauce_brush.automatic") or owned_growth_ids.has("growth.automation.pancake.auto_sauce_brush")
+	_automatic_brush_owned = true
 	_chili_sauce_unlocked = false
 	var griddle_tier := int(Dictionary(snapshot.get("device_tiers", {})).get("device.pancake_griddle", 0))
 	_intermediate_griddle_owned = griddle_tier >= 1
@@ -961,7 +963,11 @@ func _process(delta: float) -> void:
 			_refresh_customer_queue()
 		var entered_orders: Array = Array(arrival_result.get("entered_orders", []))
 		if not entered_orders.is_empty() and _formal_order_id.is_empty():
-			_focus_formal_order(Dictionary(entered_orders.front()), true)
+			# Production is independent of customer arrival. During the opening
+			# restock window the player may already have a pancake (or another
+			# product) in progress, so focusing the first order must not invoke the
+			# workstation's restart path and discard that preparation.
+			_focus_formal_order(Dictionary(entered_orders.front()), false)
 	_advance_business_day_timer(delta)
 	if _business_day_closed:
 		return
@@ -2712,6 +2718,7 @@ func end_business_day(cutoff: Dictionary = {}) -> void:
 	business_day_closed_shield.move_to_front()
 	daily_bill_panel.move_to_front()
 	daily_bill_panel.visible = true
+	call_deferred("_reset_daily_bill_layout")
 
 
 func _populate_daily_bill(bill: Dictionary) -> void:
@@ -2797,9 +2804,17 @@ func _refresh_growth_section(message: String = "") -> void:
 	begin_next_day_button.text = "确认预订并开始下一天" if not pending_growth_ids.is_empty() else "不购买，直接开始下一天"
 	if unlock_progress_panel.visible:
 		_refresh_unlock_progress()
-	daily_bill_panel.size = DAILY_BILL_FIXED_SIZE
+	call_deferred("_reset_daily_bill_layout")
 	if _upgrade_workshop != null and _upgrade_workshop.visible:
 		_upgrade_workshop.refresh()
+
+
+func _reset_daily_bill_layout() -> void:
+	if daily_bill_panel == null:
+		return
+	await get_tree().process_frame
+	daily_bill_panel.position = DAILY_BILL_FIXED_POSITION
+	daily_bill_panel.size = DAILY_BILL_FIXED_SIZE
 
 
 func _on_growth_ticket_pressed(ticket_index: int) -> void:
@@ -2942,7 +2957,6 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 		&"growth.add_on.pancake.coriander": "香菜",
 		&"growth.add_on.pancake.preserved_mustard": "榨菜",
 		&"growth.add_on.pancake.pork_tenderloin": "里脊肉",
-		&"growth.automation.pancake.auto_sauce_brush": "自动刷酱",
 		&"growth.automation.pancake.press_once": "一键压饼",
 		&"growth.area.youtiao": "油条档口",
 		&"growth.area.fresh_soy_milk": "现磨豆浆档口",
@@ -2997,8 +3011,12 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		_workshop_customer_visibility.clear()
 	for scene_path in [
 		"SafeArea/BottomStrip",
+		"SafeArea/GlobalStatusBackground",
+		"SafeArea/BusinessDayTimerBackground",
 		"SafeArea/BusinessDayTimerLabel",
 		"SafeArea/GlobalStatusLabel",
+		"SafeArea/TopWarningLabel",
+		"SafeArea/OrderSummaryCard",
 		"SafeArea/PaymentSprite",
 		"SafeArea/PaymentCoinLayer",
 		"SafeArea/P1ControlBar",
@@ -3009,6 +3027,7 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		"SafeArea/SurfaceReadoutLabel",
 		"SafeArea/IngredientDragPreview",
 		"FiveAreaInfrastructure/PendingPaymentButton",
+		"FiveAreaInfrastructure/AttentionRail",
 	]:
 		var runtime_node := get_node_or_null(scene_path) as CanvasItem
 		if runtime_node == null:
@@ -3084,13 +3103,12 @@ func _refresh_global_status() -> void:
 	var snapshot: Dictionary = {}
 	if game_session != null and game_session.has_method("five_area_progression_snapshot"):
 		snapshot = Dictionary(game_session.call("five_area_progression_snapshot"))
-	var mastery_by_area: Dictionary = Dictionary(snapshot.get("area_mastery", {}))
-	var pancake_mastery := int(mastery_by_area.get(&"area.pancake", mastery_by_area.get("area.pancake", 0)))
-	global_status_label.text = "金币 %d  ·  营业日 %d  ·  口碑 %d  ·  熟练度（煎饼）%d" % [
+	# Mastery is reviewed in the day-end/workshop flow. Keeping only the three
+	# live business values prevents this label from spanning the customer cards.
+	global_status_label.text = "金币 %d  ·  营业日 %d  ·  口碑 %d" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("current_day", 1)),
 		int(snapshot.get("reputation", 0)),
-		pancake_mastery,
 	]
 
 
@@ -3334,6 +3352,8 @@ func _refresh_p1_ui() -> void:
 	patience_text_label.visible = false
 	patience_text_label.text = "耐心 %d秒" % ceili(p1_session.patience_seconds) if p1_session.has_patience_countdown else "教学单·不限时"
 	tutorial_guide_label.visible = not p1_session.has_patience_countdown
+	tool_status_label.visible = not tutorial_guide_label.visible
+	warning_label.visible = not tutorial_guide_label.visible
 	if tutorial_guide_label.visible:
 		get_node("SafeArea/BottomStrip").visible = true
 		tutorial_guide_label.text = str(p1_session.order.get("tutorial_guide", "新手指引：本单不计倒计时。"))

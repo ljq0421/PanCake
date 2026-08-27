@@ -9,7 +9,6 @@ signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
-const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
 const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain"]
 const EGG_STOCK_ID := &"stock.pancake.egg"
 const ONE_CLICK_EGG_GROWTH_ID := &"growth.automation.pancake.one_click_egg"
@@ -33,8 +32,6 @@ var _save_elapsed := 0.0
 var _last_tree_paused := false
 var _last_synced_snapshot: Dictionary = {}
 var _selected_tool: StringName = &""
-var _primed_sauce_stock_id: StringName = &""
-var _primed_sauce_unit_index := -1
 var _reserved_ingredient_drag_stock_id: StringName = &""
 
 
@@ -225,26 +222,6 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 		if not bool(pour_result.get("success", false)):
 			return pour_result
 		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_POUR_BATTER}
-	if (
-		unit_index == _primed_sauce_unit_index
-		and _selected_tool == _primed_sauce_stock_id
-		and not _primed_sauce_stock_id.is_empty()
-	):
-		if not unit.can_apply_sauce_at(local_position):
-			status_message.emit("酱刷必须先接触有效饼面")
-			return {"success": false, "reason": &"outside_pancake"}
-		return {"success": true, "action": UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE, "stock_id": _primed_sauce_stock_id}
-	if unit.state in [UNIT_SCRIPT.State.FIRST_SIDE, UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH, UNIT_SCRIPT.State.FOLDING]:
-		var fold_result := Dictionary(unit.begin_manual_fold(local_position))
-		if bool(fold_result.get("success", false)):
-			_selected_tool = &""
-			for other_unit in units:
-				if other_unit != unit:
-					other_unit.cancel_held_tool()
-			return fold_result
-		if StringName(fold_result.get("reason", &"")) == &"automatic_fold_pending":
-			status_message.emit("另一侧正在自动接力折叠，请稍候")
-			return fold_result
 	var contextual_spreader_action := _contextual_spreader_action(unit)
 	if not contextual_spreader_action.is_empty():
 		_set_selected_tool(&"tool.pancake.spreader")
@@ -288,8 +265,6 @@ func complete_surface_action(unit_index: int, action: StringName, changed: bool)
 			clear_held_tool()
 		_sync_snapshot_to_session()
 		return
-	if action == UNIT_SCRIPT.SURFACE_ACTION_BRUSH_SAUCE:
-		status_message.emit("酱料已完成一次连续刷涂" if changed else "酱刷没有接触到有效饼面")
 	clear_held_tool()
 	_sync_snapshot_to_session()
 
@@ -409,7 +384,7 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 	status_message.emit(
 		"%s已放到%s；摊饼器已自动拿起" % [placed_label, unit.display_name()]
 		if StringName(validation.get("ingredient_type", &"")) == IngredientModel.EGG
-		else "%s已放到%s%s" % [placed_label, unit.display_name(), "；未翻面交付会额外扣12分" if not unit.pancake_model.is_flipped else ""]
+		else "%s已放到%s" % [placed_label, unit.display_name()]
 	)
 	return placed
 
@@ -447,8 +422,32 @@ func apply_one_click_ingredient(stock_id: StringName) -> Dictionary:
 		&"outside_pancake":
 			status_message.emit("当前饼面没有可添加%s的位置" % _stock_label(stock_id))
 		&"wrong_stage":
-			status_message.emit("摊开面饼后才能点击%s" % _stock_label(stock_id))
+			status_message.emit("鸡蛋需在第一面加入；其他小料需翻面后加入")
 	return result
+
+
+func apply_clicked_youtiao(source_ref: Dictionary) -> Dictionary:
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	if (
+		StringName(source_ref.get("product_id", &"")) not in PANCAKE_YOUTIAO_PRODUCT_IDS
+		or source_kind not in [&"prepared_product_slot", &"youtiao_fryer_slot"]
+	):
+		return {"success": false, "reason": &"unsupported_source", "message": "只有炸制完成的油条才能加入煎饼"}
+	var unit := _unit(_active_index)
+	if unit == null:
+		return {"success": false, "reason": &"griddle_locked", "message": "当前没有可用的煎饼鏊子"}
+	var result := Dictionary(drop_on_unit(_active_index, source_ref, unit.pancake_surface.size * 0.5))
+	if bool(result.get("success", false)):
+		return result.merged({"one_click": true}, true)
+	var message := "当前不能把油条加到煎饼上"
+	match StringName(result.get("reason", &"")):
+		&"wrong_stage": message = "面饼翻面后才能点击加入油条"
+		&"portion_limit": message = "同一种小料最多加2份"
+		&"outside_pancake": message = "当前饼面没有可添加油条的位置"
+		&"source_unavailable": message = "这根油条已被取走"
+		&"griddle_locked": message = "当前没有可用的煎饼鏊子"
+	status_message.emit(message)
+	return result.merged({"message": message}, true)
 
 
 func _source_matches_reserved_ingredient_drag(source_ref: Dictionary) -> bool:
@@ -473,8 +472,6 @@ func _restore_reserved_ingredient_drag() -> Dictionary:
 
 func clear_held_tool() -> void:
 	_selected_tool = &""
-	_primed_sauce_stock_id = &""
-	_primed_sauce_unit_index = -1
 	for unit in units:
 		unit.cancel_held_tool()
 	held_tool_changed.emit(&"")
@@ -543,29 +540,19 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 		match reason:
 			&"portion_limit": status_message.emit("同一种小料最多加2份")
 			&"outside_pancake": status_message.emit("当前饼面没有可落酱的位置")
-			_: status_message.emit("摊开面饼后才能点击酱罐落酱")
+			_: status_message.emit("面饼翻面后才能点击酱料")
 		return validation
 	var consumed := _consume_inventory_stock(tool_id)
 	if not bool(consumed.get("success", false)):
 		status_message.emit("%s库存不足" % _stock_label(tool_id))
 		return consumed
-	if _auto_sauce_brush_owned():
-		var automated := Dictionary(unit.call("apply_sauce_automatically", tool_id, validation))
-		if not bool(automated.get("success", false)):
-			return automated
-		clear_held_tool()
-		_sync_snapshot_to_session()
-		status_message.emit("%s已自动刷好" % _stock_label(tool_id))
-		return automated.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
-	var primed := Dictionary(unit.call("prime_sauce", tool_id, validation))
-	if not bool(primed.get("success", false)):
-		return primed
-	_set_selected_tool(tool_id)
-	_primed_sauce_stock_id = tool_id
-	_primed_sauce_unit_index = _active_index
+	var automated := Dictionary(unit.call("apply_sauce_automatically", tool_id, validation))
+	if not bool(automated.get("success", false)):
+		return automated
+	clear_held_tool()
 	_sync_snapshot_to_session()
-	status_message.emit("%s已落到饼面；酱刷已拿起，按住鏊面拖动刷开" % _stock_label(tool_id))
-	return primed.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
+	status_message.emit("%s已自动刷好" % _stock_label(tool_id))
+	return automated.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
 
 
 func _set_selected_tool(tool_id: StringName) -> void:
@@ -601,13 +588,6 @@ func _consume_inventory_stock(stock_id: StringName) -> Dictionary:
 
 func _stock_is_unlimited(stock_id: StringName) -> bool:
 	return bool(CATALOG.stock_definition(stock_id).get("unlimited", false))
-
-
-func _auto_sauce_brush_owned() -> bool:
-	if _session == null or not _session.has_method("progression_service"):
-		return false
-	var progression: RefCounted = _session.call("progression_service")
-	return progression != null and bool(progression.call("owns_growth", AUTO_SAUCE_BRUSH_GROWTH_ID))
 
 
 func _build_product(unit: Node) -> Dictionary:

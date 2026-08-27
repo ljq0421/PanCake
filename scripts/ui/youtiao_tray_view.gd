@@ -5,13 +5,14 @@ extends Control
 signal fryer_slot_drop_requested(source_index: int, destination_product_id: StringName)
 signal product_drag_ended(source_ref: Dictionary, successful: bool)
 
-@export var destination_product_id: StringName
+@export var destination_product_id: StringName = &"product.youtiao.plain"
 @export var prepared_slot_id: StringName = &"slot.04"
 @export var accepted_fryer_lane_id: StringName = &"left"
 @export var product_hint := "从成品盘拖成品到出餐位"
 @export var slot_origin := Vector2(48.0, 62.0)
 @export var slot_step := Vector2(44.0, 0.0)
 @export var slot_size := Vector2(48.0, 104.0)
+@export_range(1, 4, 1) var slot_columns := 4
 
 @onready var artwork: TextureRect = %Artwork
 @onready var product_sources: Array[ProductDragSource] = [
@@ -101,7 +102,21 @@ func contains_canvas_point(canvas_point: Vector2) -> bool:
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-	return false
+	if not _drop_enabled or not (data is Dictionary):
+		return false
+	var payload := Dictionary(data)
+	if StringName(payload.get("kind", &"")) != &"product_source":
+		return false
+	var source_ref := Dictionary(payload.get("source_ref", {}))
+	if StringName(source_ref.get("product_id", &"")) != destination_product_id:
+		return false
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	if source_kind == &"youtiao_fryer_slot":
+		return accepted_fryer_lane_id == &"left"
+	return (
+		source_kind == &"fryer_slot"
+		and StringName(source_ref.get("lane_id", &"")) == accepted_fryer_lane_id
+	)
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
@@ -110,14 +125,17 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 
 
 func _apply_slot_layout() -> void:
+	var columns := maxi(slot_columns, 1)
 	for slot_index in range(product_sources.size()):
 		var source := product_sources[slot_index]
-		source.position = slot_origin + slot_step * float(slot_index)
+		var column := slot_index % columns
+		var row := slot_index / columns
+		source.position = slot_origin + Vector2(slot_step.x * float(column), slot_step.y * float(row))
 		source.size = slot_size
 
 
 func _layout_signature() -> int:
-	return [slot_origin, slot_step, slot_size].hash()
+	return [slot_origin, slot_step, slot_size, slot_columns].hash()
 
 
 func _hide_source(source: ProductDragSource) -> void:

@@ -31,13 +31,19 @@ func _run() -> void:
 		await process_frame
 	var basket_component := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BaocuiBasket") as Control
 	var basket := basket_component.get_node_or_null("Hotspot") as ProductDragSource if basket_component != null else null
+	var visual := basket_component.get_node_or_null("Visual") as TextureRect if basket_component != null else null
 	_check(basket_component != null and basket != null, "BaocuiBasket owns the shared worktop source")
 	var hotspot_controller := basket_component.get_parent() as PancakeWorktopHotspots if basket_component != null else null
 	_check(hotspot_controller != null and hotspot_controller.baocui_tray_textures.size() == 6, "the crisp tray has one complete-tray texture for each of the six stock states")
+	var empty_texture_size := visual.texture.get_size() if visual != null and visual.texture != null else Vector2.ZERO
+	_check(empty_texture_size == Vector2(512, 512), "the empty crisp tray uses the same canvas size as the meat-floss and ham trays")
 	if hotspot_controller != null:
 		for texture_index in range(hotspot_controller.baocui_tray_textures.size()):
 			var expected_path := "res://resources/art/ingredients/baocui/baocui-%d.png" % (texture_index + 1)
-			_check(hotspot_controller.baocui_tray_textures[texture_index].resource_path == expected_path, "crisp tray state %d uses its matching baocui artwork" % (texture_index + 1))
+			var normalized_texture := hotspot_controller.baocui_tray_textures[texture_index] as AtlasTexture
+			_check(normalized_texture != null and normalized_texture.atlas.resource_path == expected_path, "crisp tray state %d uses its matching baocui artwork" % (texture_index + 1))
+			_check(normalized_texture != null and normalized_texture.region == Rect2(0, 0, 512, 512), "crisp tray state %d crops only the extra transparent canvas" % (texture_index + 1))
+			_check(hotspot_controller.baocui_tray_textures[texture_index].get_size() == empty_texture_size, "crisp tray state %d matches the meat-floss and ham tray canvas size" % (texture_index + 1))
 	if basket != null:
 		_check(not basket.disabled, "an empty unlocked basket remains clickable for restocking")
 		_check(not basket._has_point(Vector2.ZERO), "transparent margin outside the crisp-basket artwork is not clickable")
@@ -45,7 +51,6 @@ func _run() -> void:
 		await process_frame
 		var replenished := Dictionary(session.call("inventory_snapshot"))
 		_check(int(replenished.get(str(STOCK_ID), 0)) == 1, "holding an empty basket replenishes one crisp through real pointer input")
-		var visual := basket_component.get_node_or_null("Visual") as TextureRect
 		_check(visual != null and hotspot_controller != null and visual.texture == hotspot_controller.baocui_tray_textures.front(), "one-crisp tray artwork appears after restocking")
 	workstation.queue_free()
 	await process_frame

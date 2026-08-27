@@ -499,11 +499,11 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 		status["pending_activation"] = true
 		status["reason"] = &"pending_activation"
 		return status
-	if not required_area.is_empty() and not _will_own_area_after_pending(required_area):
+	if not required_area.is_empty() and not owns_area(required_area):
 		missing_requirements.append({"reason": &"area_locked", "required_area_id": required_area})
 	for required_growth_variant in Array(definition.get("requires_growth_ids", [])):
 		var required_growth_id := StringName(required_growth_variant)
-		if not owns_growth(required_growth_id) and not pending_growth_ids.has(required_growth_id):
+		if not owns_growth(required_growth_id):
 			missing_requirements.append({"reason": &"growth_requirement", "required_growth_id": required_growth_id})
 	if current_day < min_day:
 		missing_requirements.append({"reason": &"day_requirement", "min_day": min_day, "current_day": current_day})
@@ -515,10 +515,10 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 	if bool(definition.get("requires_all_areas", false)):
 		var current_area_count := 0
 		for area_id in CATALOG.UNLOCK_AREA_IDS:
-			if _will_own_area_after_pending(area_id):
+			if owns_area(area_id):
 				current_area_count += 1
 		for area_id in CATALOG.UNLOCK_AREA_IDS:
-			if not _will_own_area_after_pending(area_id):
+			if not owns_area(area_id):
 				missing_requirements.append({"reason": &"all_areas_requirement", "required_area_id": area_id, "current_area_count": current_area_count, "required_area_count": CATALOG.UNLOCK_AREA_IDS.size()})
 				break
 	var mastery_requirements: Dictionary = Dictionary(definition.get("requires_mastery", {}))
@@ -572,18 +572,8 @@ func _apply_growth(growth_id: StringName, definition: Dictionary) -> void:
 	if definition.get("kind", &"") == &"stock_capacity":
 		stock_capacity = maxi(stock_capacity, int(definition.get("target_capacity", 6)))
 
-func _will_own_area_after_pending(area_id: StringName) -> bool:
-	if owns_area(area_id):
-		return true
-	for pending_id in pending_growth_ids:
-		var pending_definition := CATALOG.growth_definition(pending_id)
-		if StringName(pending_definition.get("area_id", &"")) == area_id:
-			return true
-	return false
-
-
-## Activation rechecks only structural facts. Day, reputation, mastery and coin
-## were already real at booking time; queued prerequisites are applied in order.
+## Booking requires all prerequisites to be active already. Activation only
+## rechecks the structural facts that were true at the time of booking.
 func _evaluate_activation(growth_id: StringName) -> Dictionary:
 	var definition := CATALOG.growth_definition(growth_id)
 	if definition.is_empty() or owns_growth(growth_id):

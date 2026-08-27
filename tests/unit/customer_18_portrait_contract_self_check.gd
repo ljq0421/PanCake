@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCRIPT := preload("res://scripts/gameplay/workstation.gd")
+const PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
 const ORDER_SERVICE_SCRIPT := preload("res://scripts/services/five_area_order_service.gd")
 const QUEUE_SERVICE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
 const CUSTOMER_ID := &"customer_18"
@@ -13,11 +13,11 @@ const EXPECTED_FILES := {
 	&"paying_coins": "customer_18_paying_coins_v1.png",
 }
 const EXPECTED_REGIONS := {
-	&"neutral": Rect2(473, 24, 583, 1000),
-	&"impatient": Rect2(492, 25, 546, 999),
-	&"satisfied": Rect2(493, 25, 542, 999),
-	&"accepting_bag": Rect2(487, 28, 563, 996),
-	&"paying_coins": Rect2(416, 26, 677, 998),
+	&"neutral": Rect2(536, 80, 453, 876),
+	&"impatient": Rect2(556, 78, 426, 866),
+	&"satisfied": Rect2(558, 78, 430, 842),
+	&"accepting_bag": Rect2(531, 96, 458, 861),
+	&"paying_coins": Rect2(472, 81, 575, 885),
 }
 const NEUTRAL_PNG_PATH := "res://resources/art/customers/customer_18/customer_18_neutral_v1_keyclean.png"
 
@@ -25,19 +25,18 @@ var _failures: Array[String] = []
 
 
 func _initialize() -> void:
-	var customer_textures: Dictionary = WORKSTATION_SCRIPT.CUSTOMER_TEXTURES
-	_check(customer_textures.has(CUSTOMER_ID), "workstation exposes customer_18")
-	var state_textures := Dictionary(customer_textures.get(CUSTOMER_ID, {}))
-	_check(state_textures.keys().size() == STATES.size(), "customer_18 exposes exactly five portrait state keys")
+	var catalog: RefCounted = PORTRAIT_CATALOG_SCRIPT.new()
+	_check(PORTRAIT_CATALOG_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "portrait catalog exposes customer_18")
 	for state in STATES:
-		_check(state_textures.has(state), "customer_18 exposes %s" % state)
-		var texture := state_textures.get(state) as AtlasTexture
+		var path := str(catalog.call("resource_path_for", CUSTOMER_ID, state))
+		_check(ResourceLoader.exists(path, "Texture2D"), "customer_18 exposes %s" % state)
+		var texture := load(path) as AtlasTexture
 		if texture == null:
 			continue
 		_check(texture.region == EXPECTED_REGIONS[state], "%s preserves its verified crop" % state)
 		_check(texture.atlas != null and texture.atlas.resource_path.ends_with(String(EXPECTED_FILES[state])), "%s resolves its selected action PNG" % state)
-	_check(not ORDER_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order customer pool excludes disabled customer_18")
-	_check(not QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "legacy queue customer pool excludes disabled customer_18")
+	_check(ORDER_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order customer pool includes customer_18")
+	_check(QUEUE_SERVICE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "legacy queue customer pool includes customer_18")
 	_check(ORDER_SERVICE_SCRIPT.legacy_customer_id_for_sequence(11) == &"customer_01", "pre-expansion saves retain the original ten-customer modulo")
 	var image := Image.load_from_file(NEUTRAL_PNG_PATH)
 	_check(not image.is_empty() and image.get_size() == Vector2i(1536, 1024), "neutral PNG imports at the expected canvas size")

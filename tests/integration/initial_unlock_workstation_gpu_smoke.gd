@@ -85,11 +85,10 @@ func _run() -> void:
 	_check(
 		chili_hovered == chili_sauce_button
 		and workstation.current_sauce_type == &"red_chili"
-		and float(workstation.sauce_tool_states[&"red_chili"].load) > 0.0
-		and workstation.tool_controller.current_tool == ToolController.Tool.SAUCE_BRUSH
-		and workstation.pancake_surface.cursor_is_sauce_brush
-		and workstation.pancake_surface.cursor_sauce_color.is_equal_approx(Color(0.82, 0.055, 0.025, 0.98)),
-		"without the automatic brush, real chili pointer release loads and equips the red manual brush; hovered=%s sauce=%s tool=%s load=%s squeezing=%s" % [
+		and workstation.pancake_model.total_sauce(&"red_chili") > 0.0
+		and workstation.tool_controller.current_tool != ToolController.Tool.SAUCE_BRUSH
+		and not workstation.pancake_surface.cursor_is_sauce_brush,
+		"real chili pointer release applies sauce automatically without equipping a manual brush; hovered=%s sauce=%s tool=%s load=%s squeezing=%s" % [
 			str(chili_hovered.get_path() if chili_hovered != null else "none"),
 			str(workstation.pancake_model.total_sauce(&"red_chili")),
 			str(workstation.tool_controller.current_tool),
@@ -97,13 +96,6 @@ func _run() -> void:
 			str(workstation.get("_squeezing_sauce")),
 		]
 	)
-	var sauce_surface_center: Vector2 = workstation.pancake_surface.get_global_rect().get_center()
-	await _slow_drag(sauce_surface_center - Vector2(35.0, 0.0), sauce_surface_center + Vector2(35.0, 0.0), 12)
-	await process_frame
-	_check(workstation.pancake_model.total_sauce(&"red_chili") > 0.0, "real pointer dragging the equipped red brush writes chili concentration into the pancake model")
-	feedback_owned_growth[&"growth.automation.pancake.auto_sauce_brush"] = true
-	feedback_progression.set("owned_growth_ids", feedback_owned_growth)
-	workstation.call("apply_progression_effects", game_session.call("five_area_progression_snapshot"))
 	var sweet_center := sweet_sauce_button.get_global_rect().get_center()
 	_move_at(sweet_center)
 	await process_frame
@@ -213,7 +205,7 @@ func _run() -> void:
 	_check(workstation.get_node_or_null("SafeArea/ExpansionLayout/RightZone/RefillDrawer") == null, "the real main-game workstation has no refill drawer")
 	var egg_stock := &"stock.pancake.egg"
 	var egg_unit_seconds := float(controller.get("_restock").call("status", egg_stock).unit_seconds)
-	_check(is_equal_approx(egg_unit_seconds, 0.20), "real main-game egg refill uses the six-times-speed 0.20-second per-unit duration")
+	_check(is_equal_approx(egg_unit_seconds, 0.15), "real main-game egg refill uses the unified 0.15-second per-unit duration")
 	var refill_service: RefCounted = controller.get("_restock")
 	var egg_tray_center := egg.get_global_rect().get_center()
 	_press_at(egg_tray_center)

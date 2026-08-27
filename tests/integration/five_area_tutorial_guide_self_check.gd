@@ -59,19 +59,18 @@ func _run() -> void:
 	stub.prepared_counts[&"slot.04"] = 1
 	guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao"))
 	_check(guide.get("target") == youtiao_target, "stored youtiao points to the real centered customer-card delivery target")
-	workstation.customer_service_slots[1].call("bind_order", {}, null, [], [], 0)
+	workstation.customer_service_slots[2].call("bind_order", {}, null, [], [], 0)
 	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == null, "tutorial delivery safely waits while the customer card is not bound")
 
-	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"loaded"}
+	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"ready"}
 	stub.prepared_counts.clear()
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.water_button, "loaded soy points to add water")
-	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"water_added"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.start_button, "water_added soy points to start")
-	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"grinding"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.state_label, "grinding wait points to soy state")
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.cup_stack, "ready soy points to the physical cup stack")
+	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"held_empty"}
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.nozzle_button, "placed soy cup points to the real dispenser nozzle")
+	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"filled"}
+	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == workstation.fresh_soy_station.sugar_jar, "filled soy points to the sugar-selection control")
 	var soy_target := _bind_centered_tutorial_order(workstation, stub, &"area.fresh_soy_milk", &"product.fresh_soy_milk.yellow_bean")
-	stub.machines[&"device.fresh_soy_milk_machine"] = {"state": &"ready_safe"}
-	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.fresh_soy_milk")).get("target") == soy_target, "ready soy points to the real centered customer-card delivery target")
+	_check(workstation.call("_tutorial_delivery_target", stub, &"area.fresh_soy_milk") == soy_target, "finished soy resolves to the real centered customer-card delivery target")
 	var pancake_target := _bind_centered_tutorial_order(workstation, stub, &"area.pancake", &"product.pancake.custom")
 	_check(workstation.call("_tutorial_delivery_target", stub, &"area.pancake") == pancake_target, "ready pancake resolves through the same real customer-card target")
 	var griddle := workstation.multi_griddle_station.units[0] as CompactGriddleUnit
@@ -94,26 +93,31 @@ func _run() -> void:
 	_check(bool(Dictionary(griddle.cooking_heat_status()).get("charred", false)) and str(pancake_guide.get("message", "")).contains("焦糊"), "overcooked first side visibly warns of charring and reduced heat score")
 	var overlay := workstation.tutorial_guide_overlay as Control
 	workstation.set_process(false)
-	overlay.call("show_guide", workstation.cartoon_youtiao_fryer.start_button, "点击启动")
+	var guide_target := griddle.main_action as Control
+	overlay.call("show_guide", guide_target, "点击打包")
 	await process_frame
 	var guide_arrow := overlay.get_node("GuideArrow") as Control
+	var target_highlight := overlay.get_node("TargetHighlight") as Control
 	var guide_bubble := overlay.get_node("GuideBubble") as Control
 	var guide_label := overlay.get_node("GuideBubble/GuideLabel") as Control
-	_check(overlay.get_node_or_null("TargetHighlight") == null, "tutorial guide does not draw a tinting target highlight")
 	_check(
 		overlay.visible
+		and target_highlight.visible
 		and guide_arrow.visible
 		and guide_bubble.visible
+		and target_highlight.size.x > guide_target.size.x
+		and target_highlight.size.y > guide_target.size.y
 		and guide_arrow.size.x > 0.0
 		and guide_bubble.size.x > 0.0,
-		"guide keeps the arrow and text callout positioned for the active target",
+		"guide keeps the highlight, arrow, and text callout positioned for the active target",
 	)
 	_check(
 		overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and target_highlight.mouse_filter == Control.MOUSE_FILTER_IGNORE
 		and guide_arrow.mouse_filter == Control.MOUSE_FILTER_IGNORE
 		and guide_bubble.mouse_filter == Control.MOUSE_FILTER_IGNORE
 		and guide_label.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"guide arrow and callout never intercept input",
+		"guide highlight, arrow, and callout never intercept input",
 	)
 
 	stub.queue_free()
@@ -133,7 +137,7 @@ func _bind_centered_tutorial_order(workstation: Node, stub: StubSession, area_id
 			"prepared_product_instance_ids": [],
 		}],
 	}
-	var centered_slot: Control = workstation.customer_service_slots[1]
+	var centered_slot: Control = workstation.customer_service_slots[2]
 	centered_slot.call("bind_order", stub.active_order, null, [null], [], 0)
 	return centered_slot.item_buttons[0] as Control
 

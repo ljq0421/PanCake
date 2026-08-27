@@ -20,7 +20,7 @@ func _run() -> void:
 	var tutorial_workstation: Workstation = WORKSTATION_SCENE.instantiate()
 	root.add_child(tutorial_workstation)
 	await process_frame
-	tutorial_workstation._process(3.0)
+	tutorial_workstation._process(5.0)
 	var tutorial_order := Dictionary(game_session.call("active_formal_order"))
 	_check(bool(tutorial_order.get("tutorial_no_countdown", false)), "new game opens with a restock window before the unlimited tutorial arrives")
 	_check(is_equal_approx(float(tutorial_workstation.business_day_timer.get("remaining_seconds")), 60.0), "first business day starts with a one-minute countdown held for the unlimited tutorial")
@@ -97,7 +97,7 @@ func _run() -> void:
 func _prepare_six_normal_orders(game_session: Node) -> void:
 	var progression: RefCounted = game_session.call("progression_service")
 	progression.call("complete_tutorial", &"area", &"area.pancake")
-	game_session.call("advance_customer_arrivals", 3.0)
+	game_session.call("advance_customer_arrivals", 5.0)
 	for _arrival in 4:
 		game_session.call("advance_customer_arrivals", 5.1)
 

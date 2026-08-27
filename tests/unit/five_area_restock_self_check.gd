@@ -1,6 +1,7 @@
 extends SceneTree
 
 const SERVICE := preload("res://scripts/services/five_area_restock_service.gd")
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const EGG_STOCK := &"stock.pancake.egg"
 const YOUTIAO_STOCK := &"stock.youtiao.plain_dough"
 
@@ -12,12 +13,21 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	for stock_id in CATALOG.stock_ids():
+		var definition := CATALOG.stock_definition(stock_id)
+		if definition.has("refill_seconds"):
+			_check(is_equal_approx(float(definition.get("refill_seconds", 0.0)), 0.15), "%s uses the unified 0.15-second refill duration" % stock_id)
 	var session := root.get_node_or_null("GameSession")
 	_check(session != null, "GameSession autoload is available")
 	if session == null:
 		_finish()
 		return
 	session.call("begin_new_game")
+	var progression: RefCounted = session.call("progression_service")
+	var unlocked_stock_ids := Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
+	unlocked_stock_ids[EGG_STOCK] = true
+	progression.set("unlocked_stock_ids", unlocked_stock_ids)
+	session.call("_sync_progression_to_save")
 	var service: RefCounted = SERVICE.new(session)
 	var inventory: Dictionary = session.call("inventory_snapshot")
 	inventory[str(EGG_STOCK)] = 0
@@ -35,8 +45,7 @@ func _run() -> void:
 	var completed: Dictionary = service.call("advance_hold", EGG_STOCK, unit_seconds * 0.60)
 	_check(int(completed.get("completed_units", 0)) == 1 and int(session.call("inventory_snapshot").get(str(EGG_STOCK), 0)) == 1, "segmented hold completes exactly one formal stock unit")
 	_check(int(session.call("five_area_progression_snapshot").get("coins", 0)) == 2, "a completed formal restock deducts one formal coin")
-	var progression: RefCounted = session.call("progression_service")
-	var unlocked_stock_ids := Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
+	unlocked_stock_ids = Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
 	unlocked_stock_ids[YOUTIAO_STOCK] = true
 	progression.set("unlocked_stock_ids", unlocked_stock_ids)
 	session.call("_sync_progression_to_save")
@@ -44,11 +53,11 @@ func _run() -> void:
 	inventory[str(YOUTIAO_STOCK)] = 0
 	session.call("save_inventory", inventory)
 	var youtiao_status := Dictionary(service.call("status", YOUTIAO_STOCK))
-	_check(is_equal_approx(float(youtiao_status.get("unit_seconds", 0.0)), 0.25), "plain youtiao dough uses the confirmed 0.25-second unit duration")
+	_check(is_equal_approx(float(youtiao_status.get("unit_seconds", 0.0)), 0.15), "plain youtiao dough uses the unified 0.15-second unit duration")
 	_check(int(youtiao_status.get("capacity", 0)) == 4, "plain youtiao dough is limited to the four physical board slots")
-	service.call("advance_hold", YOUTIAO_STOCK, 0.10)
+	service.call("advance_hold", YOUTIAO_STOCK, 0.06)
 	service.call("release", YOUTIAO_STOCK)
-	var youtiao_completed := Dictionary(service.call("advance_hold", YOUTIAO_STOCK, 0.15))
+	var youtiao_completed := Dictionary(service.call("advance_hold", YOUTIAO_STOCK, 0.09))
 	_check(int(youtiao_completed.get("completed_units", 0)) == 1 and int(session.call("inventory_snapshot").get(str(YOUTIAO_STOCK), 0)) == 1, "segmented youtiao hold completes one unit at the faster rate")
 	_check(int(session.call("five_area_progression_snapshot").get("coins", -1)) == 0, "faster youtiao restock keeps its two-coin unit cost")
 	session.call("continue_game")

@@ -83,7 +83,7 @@ func _set_cup_state(dispensing: bool, fill_ratio: float, liquid_color: Color) ->
 	_dispensing = dispensing
 	_fill_ratio = next_ratio
 	_liquid_color = liquid_color
-	visible = _dispensing or _fill_ratio > 0.0
+	visible = _dispensing or _fill_ratio > 0.0 or _sugar_animation_time >= 0.0
 	if changed:
 		queue_redraw()
 
@@ -97,6 +97,7 @@ func _process(delta: float) -> void:
 		_sugar_animation_time += maxf(delta, 0.0)
 		if _sugar_animation_time >= SUGAR_ANIMATION_SECONDS:
 			_sugar_animation_time = -1.0
+			visible = _dispensing or _fill_ratio > 0.0
 		should_redraw = true
 	if not should_redraw:
 		return

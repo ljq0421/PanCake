@@ -1,28 +1,28 @@
 extends SceneTree
 
-const WORKSTATION_SCRIPT := preload("res://scripts/gameplay/workstation.gd")
+const PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
 const CUSTOMER_ID := &"customer_15"
 const STATES := [&"neutral", &"impatient", &"satisfied", &"accepting_bag", &"paying_coins"]
 const EXPECTED_STATES := {
 	&"neutral": {
 		"png": "res://resources/art/customers/customer_15/customer_15_neutral_v1.png",
-		"region": Rect2(498, 35, 531, 989),
+		"region": Rect2(545, 92, 444, 855),
 	},
 	&"impatient": {
 		"png": "res://resources/art/customers/customer_15/customer_15_impatient_v6.png",
-		"region": Rect2(443, 38, 586, 986),
+		"region": Rect2(566, 80, 421, 815),
 	},
 	&"satisfied": {
 		"png": "res://resources/art/customers/customer_15/customer_15_satisfied_v7.png",
-		"region": Rect2(516, 37, 492, 987),
+		"region": Rect2(561, 77, 416, 807),
 	},
 	&"accepting_bag": {
 		"png": "res://resources/art/customers/customer_15/customer_15_accepting_bag_v6.png",
-		"region": Rect2(513, 38, 495, 986),
+		"region": Rect2(543, 74, 457, 872),
 	},
 	&"paying_coins": {
 		"png": "res://resources/art/customers/customer_15/customer_15_paying_coins_v6.png",
-		"region": Rect2(518, 29, 506, 995),
+		"region": Rect2(487, 71, 559, 871),
 	},
 }
 
@@ -30,13 +30,12 @@ var _failures: Array[String] = []
 
 
 func _initialize() -> void:
-	var customer_textures: Dictionary = WORKSTATION_SCRIPT.CUSTOMER_TEXTURES
-	_check(customer_textures.has(CUSTOMER_ID), "workstation exposes customer_15")
-	var state_textures := Dictionary(customer_textures.get(CUSTOMER_ID, {}))
-	_check(state_textures.keys().size() == STATES.size(), "customer_15 exposes exactly five portrait state keys")
+	var catalog: RefCounted = PORTRAIT_CATALOG_SCRIPT.new()
+	_check(PORTRAIT_CATALOG_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "portrait catalog exposes customer_15")
 	for state in STATES:
-		_check(state_textures.has(state), "customer_15 exposes %s" % state)
-		var texture := state_textures.get(state) as AtlasTexture
+		var path := str(catalog.call("resource_path_for", CUSTOMER_ID, state))
+		_check(ResourceLoader.exists(path, "Texture2D"), "customer_15 exposes %s" % state)
+		var texture := load(path) as AtlasTexture
 		if texture == null:
 			continue
 		var expected: Dictionary = EXPECTED_STATES[state]

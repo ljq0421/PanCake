@@ -1,10 +1,10 @@
 extends SceneTree
 
-const WORKSTATION_SCRIPT := preload("res://scripts/gameplay/workstation.gd")
+const PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
 const CUSTOMER_QUEUE_SCRIPT := preload("res://scripts/services/customer_queue_service.gd")
 const FORMAL_ORDER_SCRIPT := preload("res://scripts/services/five_area_order_service.gd")
 const CUSTOMER_ID := &"customer_19"
-const EXPECTED_REGION := Rect2(486, 28, 565, 996)
+const EXPECTED_REGION := Rect2(533, 89, 459, 851)
 const EXPECTED_PNG_PATH := "res://resources/art/customers/customer_19/customer_19_neutral_v1_keyclean.png"
 const EXPECTED_STATE_PNGS := {
 	&"neutral": "customer_19_neutral_v1_keyclean.png",
@@ -18,11 +18,9 @@ var _failures: Array[String] = []
 
 
 func _initialize() -> void:
-	var customer_textures: Dictionary = WORKSTATION_SCRIPT.CUSTOMER_TEXTURES
-	_check(customer_textures.has(CUSTOMER_ID), "workstation exposes customer_19")
-	var state_textures := Dictionary(customer_textures.get(CUSTOMER_ID, {}))
-	_check(state_textures.keys() == [&"neutral", &"impatient", &"satisfied", &"accepting_bag", &"paying_coins"], "customer_19 exposes all five approved state keys")
-	var texture := state_textures.get(&"neutral") as AtlasTexture
+	var catalog: RefCounted = PORTRAIT_CATALOG_SCRIPT.new()
+	_check(PORTRAIT_CATALOG_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "portrait catalog exposes customer_19")
+	var texture := load(str(catalog.call("resource_path_for", CUSTOMER_ID, &"neutral"))) as AtlasTexture
 	_check(texture != null and texture.region == EXPECTED_REGION, "neutral AtlasTexture preserves complete hair, hands, and bottom anchor")
 	_check(texture != null and texture.atlas != null and texture.atlas.resource_path == EXPECTED_PNG_PATH, "neutral AtlasTexture resolves the selected PNG")
 	var image := Image.load_from_file(EXPECTED_PNG_PATH)
@@ -34,11 +32,11 @@ func _initialize() -> void:
 			transparent_corners = transparent_corners and image.get_pixelv(corner).a == 0.0
 		_check(transparent_corners, "neutral PNG keeps all four corners transparent")
 	for state in EXPECTED_STATE_PNGS:
-		var state_texture := state_textures.get(state) as AtlasTexture
+		var state_texture := load(str(catalog.call("resource_path_for", CUSTOMER_ID, state))) as AtlasTexture
 		_check(state_texture != null and state_texture.atlas != null and state_texture.atlas.resource_path.ends_with(String(EXPECTED_STATE_PNGS[state])), "%s AtlasTexture resolves its selected PNG" % state)
-	_check(not CUSTOMER_QUEUE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "customer queue excludes disabled customer_19")
-	_check(not FORMAL_ORDER_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order pool excludes disabled customer_19")
-	_check(FORMAL_ORDER_SCRIPT.customer_id_for_sequence(11) == &"customer_01", "current rotation wraps after the ten enabled customers")
+	_check(CUSTOMER_QUEUE_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "customer queue includes customer_19")
+	_check(FORMAL_ORDER_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "formal order pool includes customer_19")
+	_check(FORMAL_ORDER_SCRIPT.customer_id_for_sequence(11) == &"customer_11" and FORMAL_ORDER_SCRIPT.customer_id_for_sequence(21) == &"customer_01", "current rotation includes twenty customers before wrapping")
 	_check(FORMAL_ORDER_SCRIPT.legacy_customer_id_for_sequence(11) == &"customer_01", "pre-expansion snapshots keep the original ten-customer modulo")
 	_finish()
 

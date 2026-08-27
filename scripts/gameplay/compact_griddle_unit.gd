@@ -79,8 +79,7 @@ const SURFACE_ACTION_POUR_BATTER: StringName = &"pour_batter"
 const SURFACE_ACTION_SPREAD_BATTER: StringName = &"spread_batter"
 const SURFACE_ACTION_SPREAD_EGG: StringName = &"spread_egg"
 const SURFACE_ACTION_BRUSH_SAUCE: StringName = &"brush_sauce"
-const SURFACE_ACTION_FOLD: StringName = &"fold"
-const AUTO_FOLD_PAUSE_DURATION := 0.05
+const AUTO_FOLD_PAUSE_DURATION := 0.03
 const BATTER_POUR_RATE := 5.0
 const MIN_BATTER_POUR_AMOUNT := 1.5
 const MIN_BATTER_POUR_RADIUS := 4.0
@@ -187,6 +186,7 @@ func _ready() -> void:
 		pancake_surface.fold_chili_sauce_texture(),
 	)
 	fold_model.changed.connect(_refresh_fold_visual)
+	fold_overlay.fold_completion_finished.connect(_on_fold_completion_finished)
 	fold_overlay.fold_landing_finished.connect(_on_fold_landing_finished)
 	fold_overlay.package_reveal_finished.connect(_on_package_reveal_finished)
 	pancake_surface.pointer_started.connect(_on_surface_pointer_started)
@@ -219,8 +219,6 @@ func _process(delta: float) -> void:
 				_process_egg_spread(step)
 			SURFACE_ACTION_BRUSH_SAUCE:
 				_process_sauce_brush()
-			SURFACE_ACTION_FOLD:
-				fold_model.update_drag(_fold_grid_position(pancake_surface.pointer_local_position))
 	if state == State.FIRST_SIDE:
 		first_side_seconds += step
 		pancake_model.advance_cooking(step, p1_session.heat_level)
@@ -393,11 +391,11 @@ func advance_main() -> Dictionary:
 				result_message = "鏊子%d在建议火候翻面，继续观察第二面" % (unit_index + 1)
 			return {"success": true, "message": result_message}
 		State.SECOND_SIDE:
-			return {"success": false, "message": "第二面继续受热；火候仅影响评分，可随时刷酱、放料或折叠"}
+			return begin_automatic_pack()
 		State.GARNISH:
-			return {"success": false, "message": "可继续加酱加料，也可直接抓住饼边折叠"}
+			return begin_automatic_pack()
 		State.FOLDING:
-			return {"success": false, "message": "抓住另一侧饼边，拖过折线后松开"}
+			return {"success": false, "message": "正在自动折叠并装入纸袋"}
 		State.READY:
 			return {"success": false, "message": "成品已在鏊子上，可拖到任意匹配订单"}
 	return {"success": false, "message": "先给空鏊子添面糊"}
@@ -434,9 +432,7 @@ func apply_sauce(stock_id: StringName) -> void:
 func validate_sauce_prime(stock_id: StringName) -> Dictionary:
 	if stock_id != &"stock.pancake.sauce.sweet_flour":
 		return {"success": false, "reason": &"not_pancake_sauce"}
-	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
-		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
-	if state == State.FIRST_SIDE and p1_session.phase != P1Session.Phase.FIRST_SIDE:
+	if not pancake_model.is_flipped or state not in [State.SECOND_SIDE, State.GARNISH]:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	if state == State.SECOND_SIDE and p1_session.phase != P1Session.Phase.SECOND_SIDE:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
@@ -523,34 +519,39 @@ func confirm_second_side_for_followup() -> Dictionary:
 
 
 func begin_garnish_without_flip() -> Dictionary:
-	if state == State.GARNISH:
-		return {"success": true, "without_flip": true, "already_active": true}
-	if state != State.FIRST_SIDE:
-		return {"success": false, "reason": &"wrong_stage"}
-	var preparation := Dictionary(p1_session.begin_sauce_and_fillings_without_flip())
-	if not bool(preparation.get("success", false)):
-		return preparation
-	state = State.GARNISH
-	_refresh_ui()
-	return preparation
+	return {"success": false, "reason": &"must_flip_first"}
 
 
-func begin_manual_fold(local_position: Vector2) -> Dictionary:
-	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH, State.FOLDING]:
-		return {"success": false, "reason": &"wrong_stage"}
-	if _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE or fold_overlay.is_fold_animation_active():
-		return {"success": false, "reason": &"automatic_fold_pending"}
-	var grid_position := _fold_grid_position(local_position)
-	if not fold_model.begin_drag(grid_position):
-		return {"success": false, "reason": &"not_fold_edge"}
+func begin_automatic_pack() -> Dictionary:
+	if not pancake_model.is_flipped or state not in [State.SECOND_SIDE, State.GARNISH]:
+		return {"success": false, "reason": &"must_flip_first", "message": "面饼翻面后才能打包"}
+	if _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE or fold_overlay.is_fold_animation_active() or _packaging_pending:
+		return {"success": false, "reason": &"packaging_pending", "message": "正在自动折叠并装入纸袋"}
+	var previous_state := state
+	var previous_phase := p1_session.phase
+	if state == State.SECOND_SIDE:
+		var cooking_result := Dictionary(p1_session.finish_cooking(pancake_model))
+		if not bool(cooking_result.get("success", false)):
+			return cooking_result.merged({"message": str(cooking_result.get("reason", "当前无法打包"))}, true)
 	var phase_result := Dictionary(p1_session.begin_folding())
 	if not bool(phase_result.get("success", false)):
-		fold_model.cancel_drag()
-		return phase_result
+		p1_session.phase = previous_phase
+		return phase_result.merged({"message": str(phase_result.get("reason", "当前无法打包"))}, true)
 	state = State.FOLDING
-	_surface_action = SURFACE_ACTION_FOLD
+	_automatic_fold_pending_region = FOLD_MODEL_SCRIPT.REGION_RIGHT
+	_suppress_fold_threshold_feedback = true
+	var fold_result := Dictionary(fold_model.fold_automatically(FOLD_MODEL_SCRIPT.REGION_LEFT))
+	_suppress_fold_threshold_feedback = false
+	if not bool(fold_result.get("committed", false)):
+		_automatic_fold_pending_region = FOLD_MODEL_SCRIPT.REGION_NONE
+		state = previous_state
+		p1_session.phase = previous_phase
+		_refresh_ui()
+		return fold_result.merged({"message": str(fold_result.get("reason", "自动折叠未完成"))}, true)
+	fold_steps = fold_model.completed_fold_count()
+	fold_feedback_requested.emit(unit_index, &"automatic_fold")
 	_refresh_ui()
-	return {"success": true, "action": SURFACE_ACTION_FOLD}
+	return {"success": true, "action": &"pack", "message": "鏊子%d正在自动折叠并打包" % (unit_index + 1)}
 
 
 func _fold_grid_position(local_position: Vector2) -> Vector2:
@@ -570,10 +571,12 @@ func mark_ready(product: Dictionary) -> void:
 	_refresh_ui()
 
 
-func _on_fold_landing_finished() -> void:
+func _on_fold_completion_finished() -> void:
 	if _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE and fold_model.completed_fold_count() == 1:
 		_schedule_automatic_fold()
-		return
+
+
+func _on_fold_landing_finished() -> void:
 	if not _packaging_pending or fold_model.completed_fold_count() < 2:
 		return
 	_begin_paper_bag_packaging()
@@ -625,24 +628,8 @@ func _remaining_unfolded_region() -> StringName:
 
 
 func _update_fold_hover_affordance() -> void:
-	var hovered := FOLD_MODEL_SCRIPT.REGION_NONE
-	var can_hover := (
-		state in [State.GARNISH, State.FOLDING]
-		and _automatic_fold_pending_region == FOLD_MODEL_SCRIPT.REGION_NONE
-		and not fold_overlay.is_fold_animation_active()
-		and not _packaging_pending
-	)
-	if can_hover:
-		var local_position := pancake_surface.get_local_mouse_position()
-		if pancake_surface._has_point(local_position):
-			var ratio := local_position.x / maxf(pancake_surface.size.x, 1.0)
-			var edge_ratio := pancake_model.parameters.fold_grab_edge_ratio
-			if ratio <= edge_ratio and not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
-				hovered = FOLD_MODEL_SCRIPT.REGION_LEFT
-			elif ratio >= 1.0 - edge_ratio and not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
-				hovered = FOLD_MODEL_SCRIPT.REGION_RIGHT
-	fold_overlay.set_hovered_region(hovered)
-	pancake_surface.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hovered != FOLD_MODEL_SCRIPT.REGION_NONE else Control.CURSOR_ARROW
+	fold_overlay.set_hovered_region(FOLD_MODEL_SCRIPT.REGION_NONE)
+	pancake_surface.mouse_default_cursor_shape = Control.CURSOR_ARROW
 
 
 func _begin_paper_bag_packaging() -> void:
@@ -887,22 +874,6 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 			_refresh_ui()
 	elif _surface_action == SURFACE_ACTION_SPREAD_BATTER and state == State.BATTER:
 		status_message_requested.emit("还没转满一圈，再拿起摊饼器绕鏊面转一圈")
-	elif _surface_action == SURFACE_ACTION_FOLD and fold_model.active_region != PancakeFoldModel.REGION_NONE:
-		var grid_position := _fold_grid_position(_local_position)
-		var fold_result := Dictionary(fold_model.release_drag(grid_position))
-		_surface_changed = bool(fold_result.get("committed", false))
-		if _surface_changed:
-			fold_steps = fold_model.completed_fold_count()
-			if fold_steps >= 2:
-				p1_session.mark_ready_for_package()
-				_packaging_pending = true
-				status_message_requested.emit("鏊子%d两面折叠完成，正在装入纸袋" % (unit_index + 1))
-			else:
-				_automatic_fold_pending_region = _remaining_unfolded_region()
-				status_message_requested.emit("鏊子%d%s；另一侧将自动接力" % [unit_index + 1, fold_model.result_label(fold_result)])
-		else:
-			status_message_requested.emit(str(fold_result.get("reason", "折叠未完成")))
-		_refresh_ui()
 	var station := get_parent()
 	if station != null and station.has_method("complete_surface_action"):
 		station.call("complete_surface_action", unit_index, _surface_action, _surface_changed)
@@ -1353,9 +1324,9 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 		return {"success": false, "reason": &"not_pancake_ingredient"}
 	if ingredient_model.count_type(ingredient_type) >= IngredientModel.MAX_PORTIONS_PER_TYPE:
 		return {"success": false, "reason": &"portion_limit", "stock_id": stock_id}
-	if ingredient_type == IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE]:
+	if ingredient_type == IngredientModel.EGG and state != State.FIRST_SIDE:
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
-	if ingredient_type != IngredientModel.EGG and state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
+	if ingredient_type != IngredientModel.EGG and (not pancake_model.is_flipped or state not in [State.SECOND_SIDE, State.GARNISH]):
 		return {"success": false, "reason": &"wrong_stage", "stock_id": stock_id}
 	# Keep the continuous cursor position for the visual placement.  The
 	# ingredient layer maps grid coordinates from 0..grid_size - 1 back to the
@@ -1399,7 +1370,7 @@ func place_validated_ingredient(validation: Dictionary) -> Dictionary:
 
 
 func can_apply_sauce_at(local_position: Vector2) -> bool:
-	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]:
+	if not pancake_model.is_flipped or state not in [State.SECOND_SIDE, State.GARNISH]:
 		return false
 	var grid_position := Vector2(PancakeSpace.local_to_grid(local_position, pancake_surface.size, pancake_model.grid_size))
 	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
@@ -1548,7 +1519,7 @@ func _refresh_ui() -> void:
 		return
 	# Batter is now added by the ladle holder on the main worktop. This button
 	# remains only for the later flip action.
-	main_action.visible = state == State.FIRST_SIDE
+	main_action.visible = state in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]
 	var active := state != State.IDLE or _batter_ladle_armed
 	pancake_surface.visible = active and state != State.READY
 	pancake_surface.batter_pour_guide_visible = _batter_ladle_armed
@@ -1564,26 +1535,27 @@ func _refresh_ui() -> void:
 			state_label.text = "拿着摊饼器绕鏊面转一圈"
 			main_action.text = "手动摊面中"
 		State.FIRST_SIDE:
-			state_label.text = "第一面 %.1f秒 · 可直接加料或折叠（交付-12分）" % first_side_seconds
+			state_label.text = "第一面 %.1f秒 · 可加鸡蛋，完成后翻面" % first_side_seconds
 			main_action.text = "翻面"
 		State.SECOND_SIDE:
-			state_label.text = "第二面 %.1f秒 · 火候仅影响评分" % second_side_seconds
+			state_label.text = "第二面 %.1f秒 · 可加酱加料，完成后打包" % second_side_seconds
+			main_action.text = "打包"
 		State.GARNISH:
-			state_label.text = "未翻面备料 · 可加料折叠，交付-12分" if not pancake_model.is_flipped else "可继续加料，也可直接抓边折叠"
-			main_action.text = "等待备料"
+			state_label.text = "可继续加酱加料，完成后打包"
+			main_action.text = "打包"
 		State.FOLDING:
 			if _packaging_pending:
 				state_label.text = "折叠完成 · 正在装入纸袋"
 			elif _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE:
-				state_label.text = "第一侧已折好 · 另一侧自动接力"
+				state_label.text = "正在自动折叠煎饼"
 			else:
-				state_label.text = "抓住任意一侧饼边向内折叠"
+				state_label.text = "正在自动折叠并打包"
 		State.READY:
 			state_label.text = "成品待自由交付"
 			main_action.text = "拖到匹配订单"
-	main_action.disabled = state not in [State.IDLE, State.FIRST_SIDE]
+	main_action.disabled = state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]
 	main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE if main_action.disabled else Control.MOUSE_FILTER_STOP
-	fold_overlay.set_guides_visible(state in [State.GARNISH, State.FOLDING] and not _packaging_pending)
+	fold_overlay.set_guides_visible(false)
 	fold_overlay.set_automatic_pending_region(_automatic_fold_pending_region)
 	_refresh_intact_egg_visual()
 	_refresh_heat_visual()

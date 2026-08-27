@@ -60,7 +60,7 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var pending_payment_button: Button = %PendingPaymentButton
-@onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain, cartoon_youtiao_fryer.chicken_material_slot]
+@onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var top_warning_label: Label = %TopWarningLabel
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
@@ -111,6 +111,8 @@ func _ready() -> void:
 		station.mouse_filter = Control.MOUSE_FILTER_STOP
 		if station.lock_cover != null:
 			station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not cartoon_youtiao_fryer.youtiao_add_to_pancake_requested.is_connected(_on_youtiao_add_to_pancake_requested):
+		cartoon_youtiao_fryer.youtiao_add_to_pancake_requested.connect(_on_youtiao_add_to_pancake_requested)
 	packaged_drink_station.connect("status_message", _show_station_status)
 	multi_griddle_station.status_message.connect(_show_station_status)
 	multi_griddle_station.transient_warning_requested.connect(_show_top_warning)
@@ -276,6 +278,15 @@ func _set_daily_bill_modal_input(_active: bool) -> void:
 	_refresh_five_area_modal_input()
 
 
+func is_blocking_modal_open() -> bool:
+	return (
+		(daily_bill_panel != null and daily_bill_panel.visible)
+		or (unlock_progress_panel != null and unlock_progress_panel.visible)
+		or (result_panel != null and result_panel.visible)
+		or (_upgrade_workshop != null and _upgrade_workshop.visible)
+	)
+
+
 func _refresh_five_area_modal_input() -> void:
 	# Only full-screen/modal presentations block the workbench. The compact order
 	# summary intentionally stays visible while the next customer is being served,
@@ -395,25 +406,18 @@ func _refresh_material_slots() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
 	var unlocked_recipes := Array(progression.get("unlocked_recipe_ids", []))
-	var owned_growth_ids := Array(progression.get("owned_growth_ids", []))
 	for slot in _all_material_slots():
-		var area_id := &"area.youtiao" if slot.source_kind in [&"youtiao_dough", &"chicken_cutlet_raw"] else &"area.fresh_soy_milk"
+		var area_id := &"area.youtiao" if slot.source_kind == &"youtiao_dough" else &"area.fresh_soy_milk"
 		var unlocked: bool = _id_in(unlocked_areas, area_id) and (slot.recipe_id.is_empty() or _id_in(unlocked_recipes, slot.recipe_id))
-		if slot.source_kind == &"chicken_cutlet_raw":
-			unlocked = unlocked and _id_in(owned_growth_ids, &"growth.equipment.youtiao.dual_basket")
 		var status := Dictionary(session.call("five_area_restock_status", slot.stock_id)) if not slot.stock_id.is_empty() else {}
 		slot.apply_state(int(inventory.get(str(slot.stock_id), 0)), unlocked, int(status.get("capacity", 6)))
 	var fixed_slots: Array[Node] = youtiao_dough_slots
 	for index in fixed_slots.size():
 		var slot := fixed_slots[index]
-		var area_id := &"area.youtiao" if slot.source_kind in [&"youtiao_dough", &"chicken_cutlet_raw"] else &"area.fresh_soy_milk"
-		var unlocked: bool = _id_in(unlocked_areas, area_id) and _id_in(unlocked_recipes, slot.recipe_id)
-		if slot.source_kind == &"chicken_cutlet_raw":
-			unlocked = unlocked and _id_in(owned_growth_ids, &"growth.equipment.youtiao.dual_basket")
 		# The original oil-dough image is painted into the countertop artwork.
-		# Chicken is an advanced-only addition, so its authored raw-cutlet slot is
-		# shown as a real interactive input once its recipe unlocks.
-		var show_slot: bool = slot.source_kind == &"chicken_cutlet_raw" and unlocked
+		# Its visible restock control is the fryer itself, so this source remains
+		# painted artwork rather than a second interactive restock region.
+		var show_slot := false
 		slot.visible = show_slot
 		slot.mouse_filter = Control.MOUSE_FILTER_STOP if show_slot else Control.MOUSE_FILTER_IGNORE
 		if index < fixed_material_lock_buttons.size():
@@ -486,8 +490,15 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, slot: Node
 
 
 func _on_material_short_clicked(source_ref: Dictionary) -> void:
-	if StringName(source_ref.get("source_kind", &"")) in [&"youtiao_dough", &"chicken_cutlet_raw"]:
+	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		cartoon_youtiao_fryer.select_recipe(StringName(source_ref.get("recipe_id", &"")))
+
+
+func _on_youtiao_add_to_pancake_requested(source_ref: Dictionary) -> void:
+	var result := Dictionary(multi_griddle_station.apply_clicked_youtiao(source_ref))
+	if not bool(result.get("success", false)):
+		tool_status_label.text = str(result.get("message", "当前不能把油条加到煎饼上"))
+	cartoon_youtiao_fryer.refresh_from_session()
 
 
 func place_youtiao_source_on_pancake(source_ref: Dictionary, viewport_position: Vector2) -> void:
@@ -584,7 +595,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"burnt": return {"target": cartoon_youtiao_fryer.waste_source, "message": "把整锅焦糊油条拖到废弃区"}
 				&"draining": return {"target": cartoon_youtiao_fryer.state_label, "message": "等待沥油完成"}
 				&"ready_to_collect":
-					return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "把炸篮中的油条逐根拖到顾客订单或成品盘"}
+					return {"target": cartoon_youtiao_fryer.output_sources[0], "message": "点击任意油条将整篮放入成品盘，或拖到煎饼与顾客订单"}
 		&"area.fresh_soy_milk":
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine"))
 			match StringName(machine.get("state", &"idle")):
@@ -638,13 +649,38 @@ func _tutorial_pancake_griddle_guide(session: Node, area_id: StringName) -> Dict
 		CompactGriddleUnit.State.SECOND_SIDE:
 			var second_side_heat := Dictionary(griddle.cooking_heat_status())
 			if bool(second_side_heat.get("charred", false)):
-				return {"target": griddle.heat_status_label, "message": "第二面已焦糊：立即从饼边开始折叠，火候分已下降"}
-			return {"target": griddle.pancake_surface, "message": "第5步：第二面继续受热；从饼边向内拖动，完成两次折叠"}
-		CompactGriddleUnit.State.GARNISH, CompactGriddleUnit.State.FOLDING:
-			return {"target": griddle.pancake_surface, "message": "第5步：从饼边向内拖动，完成两次折叠并装袋"}
+				return {"target": griddle.main_action, "message": "第二面已焦糊：完成加料后请尽快点击“打包”"}
+			return _tutorial_pancake_garnish_or_pack(griddle)
+		CompactGriddleUnit.State.GARNISH:
+			return _tutorial_pancake_garnish_or_pack(griddle)
+		CompactGriddleUnit.State.FOLDING:
+			return {"target": griddle.pancake_surface, "message": "第6步：正在自动折叠并装入纸袋"}
 		CompactGriddleUnit.State.READY:
 			return {"target": _tutorial_delivery_target(session, area_id), "message": "第6步：把完成的煎饼拖到订单商品上交付"}
 	return {}
+
+
+func _tutorial_pancake_garnish_or_pack(griddle: CompactGriddleUnit) -> Dictionary:
+	var sauce_id := griddle.next_sauce_id()
+	if not sauce_id.is_empty():
+		return {
+			"target": _pancake_worktop_target("SecretSauceSource/Hotspot", griddle.pancake_surface),
+			"message": "第5步：点击秘制酱料，自动均匀刷到翻面后的饼面",
+		}
+	var ingredient_id := griddle.next_ingredient_id()
+	if not ingredient_id.is_empty():
+		var hotspot_paths := {
+			&"stock.pancake.baocui": "BaocuiBasket/Hotspot",
+			&"stock.pancake.scallion": "ScallionTray/Hotspot",
+			&"stock.pancake.ham_sausage": "HamSource/Hotspot",
+			&"stock.pancake.coriander": "CorianderTray/Hotspot",
+			&"stock.pancake.meat_floss": "PorkFlossSource/Hotspot",
+		}
+		return {
+			"target": _pancake_worktop_target(str(hotspot_paths.get(ingredient_id, "")), griddle.pancake_surface),
+			"message": "第5步：按订单加入%s" % str(multi_griddle_station.call("_stock_label", ingredient_id)),
+		}
+	return {"target": griddle.main_action, "message": "第6步：配料完成，点击“打包”自动折叠并装袋"}
 
 
 func _pancake_worktop_target(path: String, fallback: Control) -> Control:
@@ -753,16 +789,23 @@ func _refresh_attention_rail() -> void:
 		return
 	var entries: Array = Array(session.call("five_area_attention"))
 	var rail := $FiveAreaInfrastructure/AttentionRail
+	var summary_parts := PackedStringArray()
+	var has_red_entry := false
+	for entry_value in entries:
+		var entry := Dictionary(entry_value)
+		has_red_entry = has_red_entry or StringName(entry.get("severity", &"yellow")) == &"red"
+		summary_parts.append("%s %.1f秒" % [
+			_attention_label(StringName(entry.get("status_key", &"attention"))),
+			float(entry.get("seconds_to_irreversible_loss", 0.0)),
+		])
 	for index in range(rail.get_child_count()):
 		var label := rail.get_child(index) as Label
-		if index < entries.size():
-			var entry := Dictionary(entries[index])
-			var severity := StringName(entry.get("severity", &"yellow"))
-			label.text = "%s · %.1f秒" % [_attention_label(StringName(entry.get("status_key", &"attention"))), float(entry.get("seconds_to_irreversible_loss", 0.0))]
-			label.add_theme_color_override("font_color", Color("d94732") if severity == &"red" else Color("b97813"))
-			label.visible = true
-		else:
-			label.visible = false
+		label.visible = index == 0 and not summary_parts.is_empty()
+		if index != 0:
+			continue
+		label.text = "需处理：%s" % "  ·  ".join(summary_parts)
+		label.tooltip_text = "\n".join(summary_parts)
+		label.add_theme_color_override("font_color", Color("d94732") if has_red_entry else Color("b97813"))
 
 
 func _refresh_pancake_drag_sources() -> void:

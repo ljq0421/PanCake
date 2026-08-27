@@ -5,16 +5,23 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="3_debug"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_pause"]
+content_margin_left = 36.0
+content_margin_top = 30.0
+content_margin_right = 36.0
+content_margin_bottom = 30.0
 bg_color = Color(0.045, 0.09, 0.1, 0.98)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
 border_color = Color(1, 0.82, 0.44, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.01, 0.025, 0.03, 0.62)
+shadow_size = 20
+shadow_offset = Vector2(0, 6)
 
 [sub_resource type="LabelSettings" id="LabelSettings_pause"]
 font_size = 42
@@ -29,10 +36,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.45, 0.85, 0.68, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_pause_button_hover"]
 content_margin_top = 12.0
@@ -43,10 +50,82 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(1, 0.82, 0.44, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pause_button_secondary"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.075, 0.14, 0.15, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.67, 0.64, 0.82)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pause_button_secondary_hover"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.22, 0.22, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.78, 0.7, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pause_button_warning"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.38, 0.18, 0.09, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.53, 0.24, 0.92)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pause_button_warning_hover"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.52, 0.24, 0.1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.7, 0.34, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_pause_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
 
 [node name="Main" type="Control" unique_id=2022929695]
 layout_mode = 3
@@ -60,6 +139,20 @@ script = ExtResource("1_main")
 [node name="Workstation" parent="." unique_id=1302757268 instance=ExtResource("2_workstation")]
 layout_mode = 1
 
+[node name="PauseDim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 1290
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.04, 0.045, 0.76)
+
 [node name="PausePanel" type="PanelContainer" parent="." unique_id=2120767147]
 unique_name_in_owner = true
 process_mode = 3
@@ -71,17 +164,17 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -210.0
-offset_top = -215.0
-offset_right = 210.0
-offset_bottom = 215.0
+offset_left = -250.0
+offset_top = -220.0
+offset_right = 250.0
+offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBox_pause")
 
 [node name="Content" type="VBoxContainer" parent="PausePanel" unique_id=180588640]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 20
 
 [node name="Title" type="Label" parent="PausePanel/Content" unique_id=1209828531]
 layout_mode = 2
@@ -92,8 +185,8 @@ vertical_alignment = 1
 
 [node name="Hint" type="Label" parent="PausePanel/Content" unique_id=173755525]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.72, 0.62, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.88, 0.81, 0.7, 1)
+theme_override_font_sizes/font_size = 19
 text = "炉火与顾客耐心均已暂停"
 horizontal_alignment = 1
 
@@ -101,36 +194,40 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
+focus_neighbor_bottom = NodePath("../MainMenuButton")
 theme_override_colors/font_color = Color(0.96, 0.88, 0.76, 1)
 theme_override_font_sizes/font_size = 23
 theme_override_styles/normal = SubResource("StyleBox_pause_button")
 theme_override_styles/pressed = SubResource("StyleBox_pause_button_hover")
 theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_pause_button_hover")
+theme_override_styles/focus = SubResource("StyleBox_pause_focus")
 text = "继续游戏"
 
 [node name="MainMenuButton" type="Button" parent="PausePanel/Content" unique_id=1286864271]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
+focus_neighbor_top = NodePath("../ResumeButton")
+focus_neighbor_bottom = NodePath("../EndBusinessButton")
 theme_override_colors/font_color = Color(0.96, 0.88, 0.76, 1)
 theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("StyleBox_pause_button")
-theme_override_styles/pressed = SubResource("StyleBox_pause_button_hover")
-theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_pause_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_pause_button_secondary")
+theme_override_styles/pressed = SubResource("StyleBox_pause_button_secondary_hover")
+theme_override_styles/hover = SubResource("StyleBox_pause_button_secondary_hover")
+theme_override_styles/focus = SubResource("StyleBox_pause_focus")
 text = "返回开始页"
 
 [node name="EndBusinessButton" type="Button" parent="PausePanel/Content" unique_id=1589439124]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
+focus_neighbor_top = NodePath("../MainMenuButton")
 theme_override_colors/font_color = Color(1, 0.94, 0.78, 1)
 theme_override_font_sizes/font_size = 21
-theme_override_styles/normal = SubResource("StyleBox_pause_button")
-theme_override_styles/pressed = SubResource("StyleBox_pause_button_hover")
-theme_override_styles/hover = SubResource("StyleBox_pause_button_hover")
-theme_override_styles/focus = SubResource("StyleBox_pause_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_pause_button_warning")
+theme_override_styles/pressed = SubResource("StyleBox_pause_button_warning_hover")
+theme_override_styles/hover = SubResource("StyleBox_pause_button_warning_hover")
+theme_override_styles/focus = SubResource("StyleBox_pause_focus")
 text = "结束营业并查看今日账单"
 
 [node name="DebugOverlay" parent="." unique_id=1098079469 instance=ExtResource("3_debug")]

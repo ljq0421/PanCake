@@ -43,6 +43,19 @@ func _run() -> void:
 	if item_icon == null or not item_icon.visible or item_icon.texture != soy_texture:
 		_fail("the live customer order card renders the filled yellow-soy cup")
 		return
+	if item_icon.scale != Vector2(0.72, 0.72) or item_icon.pivot_offset != item_icon.size * 0.5:
+		_fail("the live customer order card renders the yellow-soy cup at the reduced centered scale")
+		return
+	var ordinary_order := {
+		"order_id": &"ordinary-order",
+		"items": [{"product_id": &"product.youtiao.plain", "quantity": 1}],
+		"patience_seconds": 30.0,
+		"remaining_patience_seconds": 30.0,
+	}
+	slot.call("bind_order", ordinary_order, null, [soy_texture], [[]], 7)
+	if item_icon.scale != Vector2.ONE:
+		_fail("rebinding an ordinary product restores the customer-order icon scale")
+		return
 	slot.queue_free()
 	print("FIVE_AREA_PRODUCT_VISUALS_SELF_CHECK_PASS")
 	quit(0)

@@ -11,11 +11,11 @@ const EXPECTED_FILES := {
 	&"paying_coins": "customer_13_paying_coins_v1.png",
 }
 const EXPECTED_REGIONS := {
-	&"neutral": Rect2(495, 33, 541, 991),
-	&"impatient": Rect2(473, 33, 558, 991),
-	&"satisfied": Rect2(496, 37, 538, 987),
-	&"accepting_bag": Rect2(528, 39, 476, 985),
-	&"paying_coins": Rect2(544, 35, 482, 989),
+	&"neutral": Rect2(545, 98, 436, 859),
+	&"impatient": Rect2(562, 90, 417, 830),
+	&"satisfied": Rect2(566, 97, 414, 826),
+	&"accepting_bag": Rect2(548, 98, 421, 823),
+	&"paying_coins": Rect2(486, 82, 553, 866),
 }
 
 var _failures: Array[String] = []

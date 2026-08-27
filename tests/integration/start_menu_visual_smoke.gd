@@ -41,6 +41,9 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
+	var game_session := root.get_node_or_null("GameSession")
+	if game_session != null and game_session.has_method("begin_new_game"):
+		game_session.call("begin_new_game")
 	var gameplay := GAME_SCENE.instantiate()
 	root.add_child(gameplay)
 	await process_frame

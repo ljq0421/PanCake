@@ -243,9 +243,9 @@ stretch_mode = 5
 [node name="MainAction" type="Button" parent="."]
 unique_name_in_owner = true
 z_index = 1
-offset_left = 98.0
+offset_left = 220.0
 offset_top = 314.0
-offset_right = 322.0
+offset_right = 455.0
 offset_bottom = 340.0
 theme_override_colors/font_color = Color(1, 0.98, 0.92, 1)
 theme_override_font_sizes/font_size = 17
@@ -257,9 +257,9 @@ text = "添面糊"
 [node name="HeatBar" type="Control" parent="."]
 unique_name_in_owner = true
 z_index = 2
-offset_left = 45.0
+offset_left = 220.0
 offset_top = 350.0
-offset_right = 375.0
+offset_right = 455.0
 offset_bottom = 376.0
 mouse_filter = 2
 script = ExtResource("29_cooking_bar")
@@ -267,9 +267,9 @@ script = ExtResource("29_cooking_bar")
 [node name="HeatStatusLabel" type="Label" parent="."]
 unique_name_in_owner = true
 z_index = 2
-offset_left = 38.0
+offset_left = 220.0
 offset_top = 286.0
-offset_right = 420.0
+offset_right = 455.0
 offset_bottom = 310.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.93, 0.78, 1)

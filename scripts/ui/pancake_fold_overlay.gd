@@ -1,13 +1,15 @@
 class_name PancakeFoldOverlay
 extends Control
 
+signal fold_completion_finished
 signal fold_landing_finished
 signal package_reveal_finished
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
-const FOLD_COMPLETION_MIN_DURATION := 0.16
+const FOLD_COMPLETION_MIN_DURATION := 0.06
 const FOLD_COMPLETION_MAX_DURATION := 0.24
-const FOLD_SETTLE_DURATION := 0.18
+const AUTOMATIC_FOLD_COMPLETION_DURATION := 0.18
+const FOLD_SETTLE_DURATION := 0.12
 const PACKAGE_REVEAL_DURATION := 0.24
 const FOLD_MESH_COLUMNS := 28
 const FOLD_PROFILE_STEPS := 56
@@ -165,13 +167,19 @@ func _start_fold_landing(region: StringName, from_progress: float) -> void:
 	_animated_progress = clampf(from_progress, 0.0, 1.0)
 	_settle_phase = 0.0
 	var reduce_motion := _should_reduce_motion()
-	var completion_duration := FOLD_COMPLETION_MIN_DURATION if reduce_motion else lerpf(
-		FOLD_COMPLETION_MAX_DURATION,
+	var remaining_progress := 1.0 - _animated_progress
+	var fold_result: Dictionary = fold_model.get_region_result(region) if fold_model != null else {}
+	var maximum_duration: float = AUTOMATIC_FOLD_COMPLETION_DURATION if bool(fold_result.get("automatic", false)) else FOLD_COMPLETION_MAX_DURATION
+	var completion_duration := 0.0 if is_zero_approx(remaining_progress) else lerpf(
 		FOLD_COMPLETION_MIN_DURATION,
-		_animated_progress
+		maximum_duration,
+		remaining_progress
 	)
+	if reduce_motion:
+		completion_duration = minf(completion_duration, FOLD_COMPLETION_MIN_DURATION)
 	_fold_tween = create_tween()
 	_fold_tween.tween_method(_set_animated_progress, _animated_progress, 1.0, completion_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_fold_tween.tween_callback(fold_completion_finished.emit)
 	if reduce_motion:
 		_fold_tween.tween_callback(_set_settle_phase.bind(1.0))
 	else:

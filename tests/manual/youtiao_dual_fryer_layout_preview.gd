@@ -26,15 +26,15 @@ func _run() -> void:
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(background)
 	var fryer := FRYER_SCENE.instantiate() as CartoonYoutiaoFryerToggle
-	fryer.position = Vector2(125.0, 15.0)
+	fryer.position = Vector2(40.0, 15.0)
+	fryer.scale = Vector2(2.0, 2.0)
 	root.add_child(fryer)
 	await process_frame
 	fryer.call("_ensure_visual_resources")
 	fryer.plain_tray.visible = true
 	fryer.chicken_tray.visible = true
-	for source in fryer.plain_tray.product_sources + fryer.chicken_tray.product_sources:
-		source.visible = false
-	fryer.chicken_material_slot.visible = false
+	fryer.plain_tray.preview_products(fryer.call("_plate_youtiao_texture"), 4)
+	fryer.chicken_tray.preview_products(fryer.chicken_golden_texture, 4)
 	fryer.status_label.visible = false
 	if fryer.youtiao_progress_bar != null:
 		fryer.youtiao_progress_bar.visible = false

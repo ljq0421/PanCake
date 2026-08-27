@@ -14,6 +14,7 @@ const CUP_STACK_TEXTURE_PATHS := [
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_7_v3_bold_cartoon_transparent.png",
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png",
 ]
+const FILLED_CUP_TEXTURE_PATH := "res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png"
 const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-open-for-soy-milk.png"
 const MACHINE_TIER_LAYOUTS: Array[Dictionary] = [
 	{
@@ -27,6 +28,7 @@ const MACHINE_TIER_LAYOUTS: Array[Dictionary] = [
 	},
 ]
 const OUTLET_CUP_REGION := Rect2(261.0, 1125.0, 430.0, 488.0)
+const FILLED_CUP_REGION := Rect2(256.0, 1079.0, 435.0, 498.0)
 const FULL_CUP_SECONDS := 0.8
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 
@@ -36,7 +38,7 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 @export_group("Machine geometry")
 @export_subgroup("Basic")
 @export var basic_machine_rect := Rect2(0.0, 0.0, 343.2, 358.4)
-@export var basic_left_nozzle_texture_position := Vector2(615.0, 1000.0)
+@export var basic_left_nozzle_texture_position := Vector2(575.0, 1000.0)
 @export var basic_left_cup_offset := Vector2(0.0, 8.0)
 @export_subgroup("Intermediate")
 @export var intermediate_machine_rect := Rect2(0.0, 0.0, 343.2, 358.4)
@@ -44,8 +46,8 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 @export var intermediate_left_cup_offset := Vector2(0.0, 8.0)
 @export_subgroup("Advanced")
 @export var advanced_machine_rect := Rect2(0.0, 0.0, 343.2, 358.4)
-@export var advanced_left_nozzle_texture_position := Vector2(488.0, 980.0)
-@export var advanced_right_nozzle_texture_position := Vector2(730.0, 980.0)
+@export var advanced_left_nozzle_texture_position := Vector2(452.0, 980.0)
+@export var advanced_right_nozzle_texture_position := Vector2(689.0, 980.0)
 @export var advanced_left_cup_offset := Vector2(0.0, 8.0)
 @export var advanced_right_cup_offset := Vector2(0.0, 8.0)
 
@@ -77,6 +79,7 @@ var _selected_cup_index := 0
 var _displayed_machine_tier := 0
 var _cup_stack_count := CUP_STACK_CAPACITY
 var _outlet_cup_texture: Texture2D
+var _filled_cup_texture: Texture2D
 var _texture_cache: Dictionary = {}
 
 
@@ -154,10 +157,14 @@ func refresh_from_session() -> void:
 	_filling = _filling and cup_state == &"held_empty"
 	if not _filling:
 		if cup_state == &"filled":
-			dispense_effect.set_filled_cup(fill_ratio, _liquid_color_for_recipe(StringName(cup.get("recipe_id", selected_recipe_id))))
+			# A completed full cup owns its authored liquid artwork. Keep the
+			# procedural layer only for an underfilled cup so the two visuals never
+			# overlap or produce a broken seam at the rim.
+			dispense_effect.set_filled_cup(0.0 if _is_full_cup(cup) else fill_ratio, _liquid_color_for_recipe(StringName(cup.get("recipe_id", selected_recipe_id))))
 		else:
 			dispense_effect.set_filled_cup(0.0, _liquid_color_for_recipe(selected_recipe_id))
-	queued_cup_effect.set_filled_cup(float(queued_cup.get("fill_ratio", 0.0)) if cup_state == &"filled" and has_right_cup else 0.0, _liquid_color_for_recipe(StringName(queued_cup.get("recipe_id", selected_recipe_id))))
+	var queued_fill_ratio := float(queued_cup.get("fill_ratio", 0.0)) if cup_state == &"filled" and has_right_cup else 0.0
+	queued_cup_effect.set_filled_cup(0.0 if _is_full_cup(queued_cup) else queued_fill_ratio, _liquid_color_for_recipe(StringName(queued_cup.get("recipe_id", selected_recipe_id))))
 	_refresh_cup_stack()
 	var left_empty_visible := false
 	var right_empty_visible := false
@@ -268,16 +275,21 @@ func _on_cup_stack_hold_requested(_source_ref: Dictionary) -> void:
 
 
 func _refresh_cup_stack() -> void:
-	var display_count := clampi(_cup_stack_count, 1, CUP_STACK_CAPACITY)
+	# The workshop is a visual catalogue, so it always shows a full, transparent
+	# stack of cups.  The preview remains non-interactive and does not consume
+	# the live station's cup inventory.
+	var preview_stack_count := CUP_STACK_CAPACITY if _workshop_preview else _cup_stack_count
+	var display_count := clampi(preview_stack_count, 1, CUP_STACK_CAPACITY)
 	var stack_texture := _cup_stack_texture(display_count)
-	var has_stock := _cup_stack_count > 0
-	cup_stack.visible = not _workshop_preview
+	var has_stock := preview_stack_count > 0
+	cup_stack.visible = true
 	cup_stack.configure(
-		{"source_kind": &"soy_cup_stack", "cup_count": _cup_stack_count},
+		{"source_kind": &"soy_cup_stack", "cup_count": preview_stack_count},
 		stack_texture,
 		not _workshop_preview,
-		"点击取空杯（剩余 %d 个）" % _cup_stack_count if has_stock else "空杯已用完，长按此处补货"
+		"工坊预览：一摞空杯" if _workshop_preview else "点击取空杯（剩余 %d 个）" % _cup_stack_count if has_stock else "空杯已用完，长按此处补货"
 	)
+	cup_stack.native_drag_enabled = not _workshop_preview
 	cup_stack.set_drag_available(false)
 	cup_stack.self_modulate = Color.WHITE if has_stock else Color(1.0, 1.0, 1.0, 0.0)
 	if has_stock:
@@ -313,6 +325,11 @@ func _ensure_visual_resources() -> bool:
 	if _outlet_cup_texture == null:
 		_outlet_cup_texture = _create_outlet_cup_texture(source_texture)
 		_sync_outlet_cup_size_to_stack()
+	if _filled_cup_texture == null:
+		var filled_source_texture := _load_texture(FILLED_CUP_TEXTURE_PATH)
+		if filled_source_texture == null:
+			return false
+		_filled_cup_texture = _create_filled_cup_texture(filled_source_texture)
 	var sugar_texture := _load_texture(SUGAR_JAR_TEXTURE_PATH)
 	if sugar_texture != null:
 		sugar_jar.call("configure_texture", sugar_texture)
@@ -345,6 +362,16 @@ static func _create_outlet_cup_texture(source_texture: Texture2D) -> Texture2D:
 	return outlet_texture
 
 
+static func _create_filled_cup_texture(source_texture: Texture2D) -> Texture2D:
+	if source_texture == null:
+		return null
+	var filled_texture := AtlasTexture.new()
+	filled_texture.atlas = source_texture
+	filled_texture.region = FILLED_CUP_REGION
+	filled_texture.filter_clip = true
+	return filled_texture
+
+
 func product_sources() -> Array[ProductDragSource]:
 	return [machine_output, queued_cup_output]
 
@@ -359,11 +386,12 @@ func _configure_cup_source(source: ProductDragSource, cup_index: int, cup_payloa
 		source.configure({"source_kind": &"soy_empty_cup"}, _outlet_cup_texture, false, "")
 		source.set_drag_available(false)
 		return
+	var displayed_cup_texture := _filled_cup_texture if filled_visible and _is_full_cup(cup_payload) else _outlet_cup_texture
 	if filled_visible:
 		var product_id := StringName(cup_payload.get("product_id", &"product.fresh_soy_milk.yellow_bean"))
 		source.configure(
 			{"source_kind": &"soy_cup", "source_index": cup_index, "product_id": product_id, "discardable": true},
-			_outlet_cup_texture,
+			displayed_cup_texture,
 			not _workshop_preview,
 			"点击选择第%d杯；拖动可交付或报废" % (cup_index + 1),
 		)
@@ -372,7 +400,7 @@ func _configure_cup_source(source: ProductDragSource, cup_index: int, cup_payloa
 		source.configure({"source_kind": &"soy_empty_cup", "source_index": cup_index}, _outlet_cup_texture, false, "空杯已在第%d个出浆口就位" % (cup_index + 1))
 		source.set_drag_available(false)
 	source.set_drag_preview_size(source.size)
-	source.set_alpha_hit_regions([{"texture": _outlet_cup_texture, "rect": Rect2(Vector2.ZERO, source.size)}])
+	source.set_alpha_hit_regions([{"texture": displayed_cup_texture, "rect": Rect2(Vector2.ZERO, source.size)}])
 
 
 func _select_cup(cup_index: int) -> void:
@@ -593,6 +621,10 @@ static func _cup_at_index(active_cup: Dictionary, queued_cups: Array, cup_index:
 	if queued_index < 0 or queued_index >= queued_cups.size():
 		return {}
 	return Dictionary(queued_cups[queued_index])
+
+
+static func _is_full_cup(cup: Dictionary) -> bool:
+	return not cup.is_empty() and float(cup.get("fill_ratio", 0.0)) >= 0.999
 
 
 static func _owned_machine_tier(auto_fill_owned: bool, double_fill_owned: bool) -> int:

@@ -102,11 +102,20 @@ func _ready() -> void:
 			prop.pressed.connect(_on_packaged_drink_tag_pressed)
 		else:
 			prop.pressed.connect(_select.bind(growth_id))
+		prop.focus_mode = Control.FOCUS_ALL
 		prop.mouse_entered.connect(_show_hint.bind(growth_id, prop))
 		prop.mouse_exited.connect(func() -> void: _hint.visible = false)
+		prop.focus_entered.connect(_show_hint.bind(growth_id, prop))
+		prop.focus_exited.connect(func() -> void: _hint.visible = false)
+		var condition_tag := prop.get_node_or_null("ConditionTag") as Label
+		if condition_tag != null:
+			condition_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			condition_tag.add_theme_font_size_override("font_size", 16)
+			condition_tag.add_theme_constant_override("outline_size", 2)
 		_anchors[growth_id] = prop
 		_tag_layouts[growth_id] = {"position": prop.position, "size": prop.size}
 	refresh()
+	call_deferred("_focus_first_available_prop")
 
 
 func _process(_delta: float) -> void:
@@ -199,7 +208,7 @@ func refresh() -> void:
 	var queued_labels := PackedStringArray()
 	for raw_id in Array(Dictionary(session.call("five_area_progression_snapshot")).get("pending_growth_ids", [])):
 		queued_labels.append(str(CATALOG.growth_definition(StringName(raw_id)).get("label", raw_id)))
-	_queue.text = "升级工作台总览 · 预订清单：%s" % ("、".join(queued_labels) if not queued_labels.is_empty() else "空")
+	_queue.text = "升级工坊 · 待生效：%s" % ("、".join(queued_labels) if not queued_labels.is_empty() else "无")
 	var selected_prop_is_visible := false
 	for raw_status in overview:
 		var status := Dictionary(raw_status)
@@ -216,12 +225,21 @@ func refresh() -> void:
 			&"growth.add_on.pancake.egg",
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",
-			&"growth.automation.pancake.one_click_egg",
+			&"growth.add_on.pancake.meat_floss",
+			&"growth.add_on.pancake.ham_sausage",
+			&"growth.add_on.pancake.coriander",
 		]
 		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket"]
 		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]
+		# The basic fryer is also a discoverable physical workshop preview before
+		# every pancake prerequisite has been installed.
+		var show_locked_youtiao_machine_tag := growth_id == &"growth.area.youtiao" and growth_id == youtiao_upgrade_id
+		# The basic soy machine is a physical workshop preview even before all of
+		# its pancake prerequisites are met.  Keep its unavailable tag visible so
+		# players can discover the next area and inspect its requirements.
+		var show_locked_soy_machine_tag := growth_id == &"growth.area.fresh_soy_milk" and growth_id == soy_milk_machine_upgrade_id
 		prop.visible = not bool(status.get("already_owned", false)) \
-			and (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) \
+			and (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual or show_locked_youtiao_machine_tag or show_locked_soy_machine_tag) \
 			and (not is_youtiao_machine_upgrade or growth_id == youtiao_upgrade_id) \
 			and (not is_soy_milk_machine_upgrade or growth_id == soy_milk_machine_upgrade_id)
 		if growth_id == &"growth.area.packaged_drink":
@@ -237,12 +255,13 @@ func refresh() -> void:
 			condition_tag.text = _tag_text(growth_id, status)
 			_fit_tag_to_content(growth_id, prop, condition_tag)
 		_apply_upgrade_tag_style(prop, status)
-		prop.modulate = Color.WHITE if _state_text(status) != "条件不足" and _state_text(status) != "金币不足" else Color(0.62, 0.62, 0.62, 1.0)
+		prop.modulate = Color.WHITE if _state_text(status) != "条件不足" and _state_text(status) != "金币不足" else Color(0.78, 0.78, 0.78, 1.0)
 	if not _selected_id.is_empty() and selected_prop_is_visible:
 		_show_detail(_selected_id)
-	elif not _selected_id.is_empty():
-		_selected_id = &""
-		_detail_panel.visible = false
+	else:
+		if not _selected_id.is_empty():
+			_selected_id = &""
+		_show_default_detail()
 	_sync_press_spreader_layout()
 
 
@@ -293,32 +312,37 @@ func _apply_upgrade_tag_style(prop: Button, status: Dictionary) -> void:
 	# the workstation artwork. Colour distinguishes the actionable state at a
 	# glance without changing the label copy.
 	prop.flat = false
-	var normal_background := Color(0.15, 0.17, 0.20, 0.94)
-	var normal_border := Color(0.54, 0.58, 0.63, 0.94)
-	var hover_background := Color(0.20, 0.23, 0.27, 0.98)
-	var hover_border := Color(0.72, 0.76, 0.81, 1.0)
+	var normal_background := Color(0.035, 0.12, 0.12, 0.97)
+	var normal_border := Color(0.31, 0.53, 0.5, 0.98)
+	var hover_background := Color(0.055, 0.19, 0.18, 0.99)
+	var hover_border := Color(0.48, 0.76, 0.69, 1.0)
 	if bool(status.get("already_owned", false)):
-		normal_background = Color(0.08, 0.20, 0.30, 0.96)
-		normal_border = Color(0.42, 0.75, 0.94, 1.0)
-		hover_background = Color(0.11, 0.28, 0.40, 0.98)
-		hover_border = Color(0.67, 0.88, 1.0, 1.0)
+		normal_background = Color(0.045, 0.22, 0.2, 0.97)
+		normal_border = Color(0.36, 0.78, 0.68, 1.0)
+		hover_background = Color(0.065, 0.3, 0.27, 0.99)
+		hover_border = Color(0.58, 0.94, 0.82, 1.0)
 	elif bool(status.get("pending_activation", false)):
-		normal_background = Color(0.31, 0.20, 0.06, 0.96)
-		normal_border = Color(1.0, 0.75, 0.32, 1.0)
-		hover_background = Color(0.40, 0.27, 0.08, 0.98)
-		hover_border = Color(1.0, 0.89, 0.56, 1.0)
+		normal_background = Color(0.31, 0.18, 0.045, 0.97)
+		normal_border = Color(1.0, 0.72, 0.25, 1.0)
+		hover_background = Color(0.4, 0.25, 0.065, 0.99)
+		hover_border = Color(1.0, 0.88, 0.52, 1.0)
 	elif bool(status.get("can_purchase", false)):
-		normal_background = Color(0.07, 0.27, 0.16, 0.96)
-		normal_border = Color(0.47, 0.91, 0.60, 1.0)
-		hover_background = Color(0.10, 0.36, 0.21, 0.98)
-		hover_border = Color(0.78, 1.0, 0.72, 1.0)
+		normal_background = Color(0.055, 0.31, 0.24, 0.98)
+		normal_border = Color(0.35, 0.9, 0.7, 1.0)
+		hover_background = Color(0.08, 0.42, 0.32, 0.99)
+		hover_border = Color(0.65, 1.0, 0.84, 1.0)
+	if StringName(prop.get_meta("growth_id", &"")) == _selected_id:
+		normal_border = Color(1.0, 0.79, 0.32, 1.0)
+		hover_border = Color(1.0, 0.9, 0.6, 1.0)
 	var normal := _upgrade_tag_box(normal_background, normal_border)
 	var hover := _upgrade_tag_box(hover_background, hover_border)
 	prop.add_theme_stylebox_override("normal", normal)
 	prop.add_theme_stylebox_override("hover", hover)
 	prop.add_theme_stylebox_override("pressed", hover)
+	prop.add_theme_stylebox_override("focus", _upgrade_tag_focus_box())
 	prop.add_theme_color_override("font_color", Color(1.0, 0.98, 0.84, 1.0))
 	prop.add_theme_color_override("font_hover_color", Color.WHITE)
+	prop.add_theme_color_override("font_focus_color", Color.WHITE)
 
 
 func _upgrade_tag_box(background: Color, border: Color) -> StyleBoxFlat:
@@ -333,6 +357,19 @@ func _upgrade_tag_box(background: Color, border: Color) -> StyleBoxFlat:
 	box.shadow_color = Color(0.02, 0.08, 0.04, 0.55)
 	box.shadow_size = 3
 	box.shadow_offset = Vector2(0, 2)
+	return box
+
+
+func _upgrade_tag_focus_box() -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	box.border_color = Color(1.0, 0.79, 0.32, 1.0)
+	box.set_border_width_all(3)
+	box.set_corner_radius_all(9)
+	box.expand_margin_left = 3.0
+	box.expand_margin_top = 3.0
+	box.expand_margin_right = 3.0
+	box.expand_margin_bottom = 3.0
 	return box
 
 
@@ -357,7 +394,7 @@ func _next_soy_milk_machine_upgrade(owned_growth_ids: Array) -> StringName:
 
 func _select(growth_id: StringName) -> void:
 	_selected_id = growth_id
-	_show_detail(growth_id)
+	refresh()
 
 
 func _on_packaged_drink_tag_pressed() -> void:
@@ -376,9 +413,16 @@ func _show_detail(growth_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var status := Dictionary(session.call("growth_purchase_status", growth_id)) if session else {}
 	var definition := CATALOG.growth_definition(growth_id)
-	_detail.text = "[b]%s[/b]\n价格：%d 金币\n状态：%s\n%s" % [definition.get("label", "升级"), int(status.get("price", 0)), _state_text(status), _requirements_text(status)]
+	_detail.text = "[b]%s[/b]\n[color=#72d9c0]%s[/color]\n\n价格：[b]%d 金币[/b]\n%s" % [definition.get("label", "升级"), _state_text(status), int(status.get("price", 0)), _requirements_text(status)]
 	_buy.disabled = not bool(status.get("can_purchase", false))
-	_buy.text = "预订（次日生效）" if not _buy.disabled else "当前不可预订"
+	_buy.text = "预订升级 · 次日生效" if not _buy.disabled else "当前不可预订"
+	_detail_panel.visible = true
+
+
+func _show_default_detail() -> void:
+	_detail.text = "[b]选择一个升级[/b]\n[color=#72d9c0]查看设备升级条件[/color]\n\n点击设备旁的标签，查看价格、前置条件和生效时间。"
+	_buy.disabled = true
+	_buy.text = "选择升级后可预订"
 	_detail_panel.visible = true
 
 func _show_hint(growth_id: StringName, prop: Control) -> void:
@@ -386,7 +430,16 @@ func _show_hint(growth_id: StringName, prop: Control) -> void:
 	if session == null: return
 	var status := Dictionary(session.call("growth_purchase_status", growth_id))
 	_hint_label.text = _tag_tooltip_text(growth_id, status)
-	_hint.position = prop.position + Vector2(0, 42)
+	var hint_size := Vector2(
+		maxf(_hint.size.x, _hint.custom_minimum_size.x),
+		maxf(_hint.size.y, _hint.custom_minimum_size.y)
+	)
+	var desired := prop.position + Vector2(0.0, prop.size.y + 10.0)
+	if desired.y + hint_size.y > size.y - 20.0:
+		desired.y = prop.position.y - hint_size.y - 10.0
+	desired.x = clampf(desired.x, 20.0, maxf(20.0, size.x - hint_size.x - 20.0))
+	desired.y = clampf(desired.y, 20.0, maxf(20.0, size.y - hint_size.y - 20.0))
+	_hint.position = desired
 	_hint.visible = true
 
 func _on_buy() -> void:
@@ -414,8 +467,8 @@ func _tag_text(growth_id: StringName, status: Dictionary) -> String:
 	var definition := CATALOG.growth_definition(growth_id)
 	var growth_name := str(definition.get("label", "升级"))
 	if bool(status.get("can_purchase", false)):
-		return "名称：%s，价格：%d金币" % [growth_name, int(status.get("price", 0))]
-	return "名称：%s，不可预订" % growth_name
+		return "%s\n%d 金币" % [growth_name, int(status.get("price", 0))]
+	return "%s\n%s" % [growth_name, _state_text(status)]
 
 
 func _tag_tooltip_text(growth_id: StringName, status: Dictionary) -> String:
@@ -462,13 +515,22 @@ func _fit_tag_to_content(growth_id: StringName, prop: Button, tag: Label) -> voi
 		return
 	var authored_position: Vector2 = authored_layout.get("position", prop.position)
 	var authored_size: Vector2 = authored_layout.get("size", prop.size)
-	var characters_per_line := 15
+	var characters_per_line := 10
 	var line_count := 0
 	for line in tag.text.split("\n"):
 		line_count += maxi(1, ceili(float(line.length()) / characters_per_line))
-	var target_height := maxf(authored_size.y, 10.0 + float(line_count) * 15.0)
+	var target_height := maxf(authored_size.y, 12.0 + float(line_count) * 18.0)
 	prop.size = Vector2(authored_size.x, target_height)
 	prop.position = authored_position + Vector2(0.0, authored_size.y - target_height)
+
+
+func _focus_first_available_prop() -> void:
+	for raw_growth_id in CATALOG.GROWTH_DISPLAY_ORDER:
+		var prop := _anchors.get(StringName(raw_growth_id)) as Button
+		if prop != null and prop.visible:
+			prop.grab_focus()
+			return
+	%BackButton.grab_focus()
 
 
 func _inline_requirement(status: Dictionary) -> String:

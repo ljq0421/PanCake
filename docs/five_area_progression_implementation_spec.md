@@ -186,7 +186,6 @@ FiveAreaWorkstationController
 | `automation.youtiao.auto_load` | 油条 | 按玩家已确认的配方和数量自动装载 |
 | `automation.fresh_soy_milk.auto_water_start` | 豆浆 | 选豆后自动加水并启动 |
 | `automation.fresh_soy_milk.auto_cup_rack` | 豆浆 | 完成后自动接杯到有限输出架 |
-| `automation.pancake.auto_sauce_brush` | 煎饼 | 按当前订单完成标准刷酱 |
 | `automation.pancake.press_once` | 煎饼 | 每张饼允许一次标准摊面 |
 | `capacity.pancake_holding_tray.two_slots` | 煎饼 | 开放固定两格成品暂存 |
 | `capacity.stock.intermediate` | 店铺 | 每种库存上限 6→10 |
@@ -386,9 +385,8 @@ static func validate_catalog() -> PackedStringArray
 | `growth.add_on.pancake.coriander` | 内容 | 10 | D8 | 解锁香菜 |
 | `growth.add_on.pancake.preserved_mustard` | 内容 | 12 | R100 | 解锁榨菜 |
 | `growth.add_on.pancake.pork_tenderloin` | 内容 | 28 | D10 | 解锁里脊肉 |
-| `growth.automation.pancake.auto_sauce_brush` | 安装 | 36 | A(pancake)5 | 开放自动酱刷 |
 | `growth.equipment.pancake.advanced` | 安装 | 48 | ALL，A(pancake)10 | 快速回温 |
-| `growth.automation.pancake.press_once` | 安装 | 60 | ALL，A(pancake)20，需宽幅摊饼器/中级鏊子/自动酱刷 | 每张饼一次标准摊面 |
+| `growth.automation.pancake.press_once` | 安装 | 60 | ALL，A(pancake)20，需宽幅摊饼器/中级鏊子 | 每张饼一次标准摊面 |
 | `growth.capacity.stock.intermediate` | 内容 | 20 | R80 | 库存上限提升到10 |
 | `growth.capacity.stock.advanced` | 内容 | 40 | ALL，R200，需中级容量 | 库存上限提升到14 |
 
@@ -700,7 +698,7 @@ func begin_next_business_day() -> Dictionary
 7. 榨菜、核桃乳、多层蒸笼；
 8. 菜包、快速双层蒸笼、里脊肉；
 9. 糖油饼、红豆豆浆、黑芝麻乳；
-10. 肉包、五谷豆浆、自动酱刷。
+10. 肉包、五谷豆浆。
 
 满台后依次为：高级鏊子、单次压饼、库存容量 14、高级饮品加热器、自动升篮、高级油条锅、自动投胚、自动加水、高级豆浆机、自动接杯、高级蒸笼。
 
@@ -1403,7 +1401,7 @@ FiveAreaWorkstation
 
 油条成品沥油后留在炸篮，订单商品点击可直接取用；仅原味油条可从炸篮拖入煎饼。旧存档的 `prepared_product_slots` 只作为不可见兼容交付来源，交付或日结后清空，不再接收新成品。
 
-正式场景预置 `TutorialGuideOverlay`。暖金箭头、浅米提示牌和深棕文字只读取输入，永不拦截鼠标；引导层不得绘制目标边框、填充或阴影，不得覆盖或改变工作台原有颜色。它根据订单、库存和设备状态指向唯一下一步，等待阶段指向设备状态区。
+正式场景预置 `TutorialGuideOverlay`。暖金箭头、浅米提示牌、深棕文字和目标高亮只读取输入，永不拦截鼠标；目标高亮使用半透明暖金描边与轻微呼吸效果，不改变目标素材本身的颜色。它根据订单、库存和设备状态指向唯一下一步，等待阶段指向设备状态区。
 
 预先创建最大数量的稳定槽位：材料18格、饮品4位、蒸笼4层、托盘2格、提醒3条、订单4张。未开放项隐藏或锁定，不在运行时创建/销毁结构。
 

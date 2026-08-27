@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCRIPT := preload("res://scripts/gameplay/workstation.gd")
+const PORTRAIT_CATALOG_SCRIPT := preload("res://scripts/ui/customer_portrait_catalog.gd")
 const CUSTOMER_ID := &"customer_17"
 const STATES := [&"neutral", &"impatient", &"satisfied", &"accepting_bag", &"paying_coins"]
 const EXPECTED_FILES := {
@@ -11,24 +11,23 @@ const EXPECTED_FILES := {
 	&"paying_coins": "customer_17_paying_coins_v1_keyclean.png",
 }
 const EXPECTED_REGIONS := {
-	&"neutral": Rect2(516, 39, 505, 985),
-	&"impatient": Rect2(531, 42, 468, 982),
-	&"satisfied": Rect2(533, 40, 469, 984),
-	&"accepting_bag": Rect2(516, 41, 510, 983),
-	&"paying_coins": Rect2(480, 43, 577, 981),
+	&"neutral": Rect2(535, 122, 459, 834),
+	&"impatient": Rect2(533, 114, 448, 853),
+	&"satisfied": Rect2(544, 113, 446, 814),
+	&"accepting_bag": Rect2(529, 111, 463, 847),
+	&"paying_coins": Rect2(489, 77, 546, 872),
 }
 
 var _failures: Array[String] = []
 
 
 func _initialize() -> void:
-	var customer_textures: Dictionary = WORKSTATION_SCRIPT.CUSTOMER_TEXTURES
-	_check(customer_textures.has(CUSTOMER_ID), "workstation exposes customer_17")
-	var state_textures := Dictionary(customer_textures.get(CUSTOMER_ID, {}))
-	_check(state_textures.keys().size() == STATES.size(), "customer_17 exposes exactly five action-state keys")
+	var catalog: RefCounted = PORTRAIT_CATALOG_SCRIPT.new()
+	_check(PORTRAIT_CATALOG_SCRIPT.CUSTOMER_IDS.has(CUSTOMER_ID), "portrait catalog exposes customer_17")
 	for state in STATES:
-		_check(state_textures.has(state), "customer_17 exposes %s" % state)
-		var texture := state_textures.get(state) as AtlasTexture
+		var path := str(catalog.call("resource_path_for", CUSTOMER_ID, state))
+		_check(ResourceLoader.exists(path, "Texture2D"), "customer_17 exposes %s" % state)
+		var texture := load(path) as AtlasTexture
 		_check(texture != null and texture.region == EXPECTED_REGIONS[state], "%s preserves complete hair, hands, and bottom anchor" % state)
 		_check(texture != null and texture.atlas != null and texture.atlas.resource_path.ends_with(String(EXPECTED_FILES[state])), "%s AtlasTexture resolves its selected PNG" % state)
 		var png_path := "res://resources/art/customers/customer_17/customer_17_%s_v1_keyclean.png" % state

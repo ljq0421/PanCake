@@ -15,7 +15,10 @@ var _clear_hint: Label
 
 func _ready() -> void:
 	_clear_hint = get_node_or_null("Hint") as Label
-	mouse_exited.connect(_cancel_clear_hold)
+	if _clear_hint != null:
+		_clear_hint.visible = false
+	mouse_entered.connect(_show_idle_hint)
+	mouse_exited.connect(_on_mouse_exited)
 	set_process(false)
 
 
@@ -55,6 +58,17 @@ func _process(delta: float) -> void:
 func _set_clear_hint(value: String) -> void:
 	if _clear_hint != null:
 		_clear_hint.text = value
+		_clear_hint.visible = true
+
+
+func _show_idle_hint() -> void:
+	_set_clear_hint("拖入报废\n长按清空鏊面")
+
+
+func _on_mouse_exited() -> void:
+	_cancel_clear_hold()
+	if _clear_hint != null:
+		_clear_hint.visible = false
 
 
 func _cancel_clear_hold() -> void:

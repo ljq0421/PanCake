@@ -57,6 +57,9 @@ func _run() -> void:
 		station.call("refresh_from_session")
 		var tray_source := lane_sources[0] as ProductDragSource if not lane_sources.is_empty() else null
 		_check(tray_source != null and tray_source.texture_normal != null and tray_source.texture_normal.resource_path.ends_with("empty-shallow-ingredient-tray-wide-v2-512.png"), "zero juice stock displays the authored empty physical tray")
+		var empty_tray_bounds := (load("res://resources/art/workstation/material_slots/empty-shallow-ingredient-tray-wide-v2-512.png") as Texture2D).get_image().get_used_rect()
+		var filled_tray_bounds := (load("res://resources/art/products/orange_juice/juice-1.png") as Texture2D).get_image().get_used_rect()
+		_check(empty_tray_bounds == filled_tray_bounds, "empty and filled juice trays keep the same authored plate bounds")
 		station_inventory[str(STOCK_ID)] = 6
 		session.call("save_inventory", station_inventory)
 		station.call("refresh_from_session")

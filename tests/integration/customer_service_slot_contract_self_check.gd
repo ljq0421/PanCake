@@ -86,6 +86,15 @@ func _run() -> void:
 	)
 	_check(slot.portrait.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("PortraitButton") == null and slot.get_node_or_null("FocusFrame") == null, "portrait renders behind the order-card controls without an unused portrait click target")
 	_check(slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "the order card retains its explicit focus click target")
+	var item_hover_style := slot.item_buttons[0].get_theme_stylebox(&"hover") as StyleBoxFlat
+	var item_focus_style := slot.item_buttons[0].get_theme_stylebox(&"focus") as StyleBoxFlat
+	_check(
+		not slot.item_buttons[0].flat
+		and slot.item_buttons[0].focus_mode == Control.FOCUS_ALL
+		and item_hover_style != null and item_hover_style.border_width_left == 3
+		and item_focus_style != null and item_focus_style.border_color == Color("ffd166"),
+		"each order item exposes a visible hover and keyboard-focus delivery target",
+	)
 	var patience_fill := slot.patience_bar.get_theme_stylebox(&"fill") as StyleBoxFlat
 	_check(slot.patience_bar.position == Vector2(64.5, 160.5) and slot.patience_bar.size == Vector2(187.5, 13.5) and is_equal_approx(slot.patience_bar.value, 100.0) and patience_fill != null and patience_fill.corner_radius_top_left == 5 and patience_fill.corner_radius_bottom_right == 5, "a full one-item order uses a pill-shaped fill inside the drawn card footer")
 	var expanded_order := order.duplicate(true)
@@ -127,6 +136,10 @@ func _run() -> void:
 		slot.bind_order(special_order, null, [null], [], 18)
 		var expected := "✓" if delivered_count == 3 else "%d/3" % delivered_count
 		_check(slot.quantity_labels[0].text == expected, "quantity progress renders %s" % expected)
+	var completed_single_order := order.duplicate(true)
+	completed_single_order["items"] = [{"product_id": &"product.packaged_drink.milk", "quantity": 1, "prepared_product_instance_ids": [&"product.single.done"]}]
+	slot.bind_order(completed_single_order, null, [null], [], 17)
+	_check(slot.quantity_labels[0].visible and slot.quantity_labels[0].text == "✓" and slot.item_buttons[0].disabled, "a completed single-quantity item keeps an explicit completion mark")
 	var requested: Array = []
 	slot.delivery_requested.connect(func(order_id: StringName, item_index: int): requested.append([order_id, item_index]))
 	special_order["items"][0]["prepared_product_instance_ids"] = []

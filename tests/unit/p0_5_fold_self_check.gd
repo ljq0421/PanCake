@@ -13,6 +13,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_drag_uses_snap_tolerance()
+	_test_automatic_fold_starts_from_rest()
 	_test_fold_profile_reuses_static_geometry()
 	_test_fold_occludes_landing_area_fillings()
 	_test_right_then_left_uses_the_mirrored_clip()
@@ -65,6 +66,25 @@ func _test_drag_uses_snap_tolerance() -> void:
 	_check(
 		bool(committed.committed) and committed.outcome == FOLD_MODEL_SCRIPT.OUTCOME_INTACT,
 		"reaching the 45 percent snap range commits without requiring an exact fold-line crossing",
+	)
+
+
+func _test_automatic_fold_starts_from_rest() -> void:
+	var model := _uniform_pancake(64, 0.55, 0.55)
+	var fold: RefCounted = FOLD_MODEL_SCRIPT.new(model)
+	_fold_left(fold)
+	var automatic_start_progresses := PackedFloat32Array()
+	fold.changed.connect(func() -> void:
+		if fold.active_region == FOLD_MODEL_SCRIPT.REGION_RIGHT:
+			automatic_start_progresses.append(float(fold.drag_progress))
+	)
+	var result: Dictionary = fold.fold_automatically(FOLD_MODEL_SCRIPT.REGION_RIGHT)
+	_check(
+		bool(result.get("committed", false))
+		and bool(fold.get_region_result(FOLD_MODEL_SCRIPT.REGION_RIGHT).get("automatic", false))
+		and automatic_start_progresses.size() == 1
+		and is_zero_approx(automatic_start_progresses[0]),
+		"the automatic fold is marked for fast timing and begins at rest without jumping to the snap threshold",
 	)
 
 

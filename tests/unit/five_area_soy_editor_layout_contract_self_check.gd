@@ -24,6 +24,9 @@ func _initialize() -> void:
 	_check(preview_script_source.begins_with("@tool"), "soy preview helper runs in the editor")
 	_check(preview_script_source.contains("if not Engine.is_editor_hint():"), "soy preview helper exits outside the editor")
 	var soy_station := SOY_SCENE.instantiate() as DirectSoyStation
+	_check(soy_station.basic_left_nozzle_texture_position == Vector2(575.0, 1000.0), "basic cup anchor stays centered under the artwork's dispensing spout")
+	_check(soy_station.advanced_left_nozzle_texture_position == Vector2(452.0, 980.0), "advanced left cup anchor stays centered under the artwork's left dispensing spout")
+	_check(soy_station.advanced_right_nozzle_texture_position == Vector2(689.0, 980.0), "advanced right cup anchor stays centered under the artwork's right dispensing spout")
 	soy_station._displayed_machine_tier = 2
 	soy_station.advanced_left_nozzle_texture_position = Vector2(512.0, 990.0)
 	soy_station.advanced_right_nozzle_texture_position = Vector2(752.0, 990.0)

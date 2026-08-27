@@ -97,25 +97,25 @@ const STOCK_DEFINITIONS := {
 	# Batter is always available at the pancake station. Keep its stable ID and
 	# unit cost for recipes/accounting, but never expose it as managed inventory.
 	&"stock.pancake.batter": {"label": "面糊", "area_id": &"area.pancake", "category": &"base", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &""},
-	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.20, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.07"},
-	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.225, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.08"},
-	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.1666667, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.09"},
+	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.07"},
+	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.08"},
+	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.09"},
 	# Keep this stable ID so existing runtime save and order contracts continue to
 	# resolve, while all player-facing text identifies the single shared sauce.
 	# The shared sauce jar is a station fixture: it never needs stocking and does
 	# not add a replenishment cost to the finished pancake.
 	&"stock.pancake.sauce.sweet_flour": {"label": "秘制酱料", "area_id": &"area.pancake", "category": &"sauce", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &"", "surface_input_id": &"ui.pancake.secret_sauce_brush"},
-	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 	# A stable order/simulation identifier for the processed plain youtiao.
 	# Capacity stays zero so it can never enter the paid ordinary-restock path.
 	&"stock.pancake.youtiao": {"label": "油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &""},
 	# The physical board has four authored dough positions. Keep its stock cap
 	# fixed at four even after the shared pantry-capacity growth upgrades.
-	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
-	&"stock.chicken.cutlet_raw": {"label": "鸡排", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 4, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &""},
-	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.20, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
+	&"stock.chicken.cutlet_raw": {"label": "鸡排", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.15, "restock_unit_cost": 4, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &""},
+	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 }
 
 const ADD_ON_DEFINITIONS := {
@@ -164,7 +164,6 @@ const SOY_MILK_SELL_PRICES := {
 const AUTOMATION_DEFINITIONS := {
 	&"automation.pancake.auto_batter_ladle": {"area_id": &"area.pancake"},
 	&"automation.pancake.press_once": {"area_id": &"area.pancake"},
-	&"automation.pancake.auto_sauce_brush": {"area_id": &"area.pancake"},
 	&"automation.pancake.one_click_egg": {"area_id": &"area.pancake"},
 	&"automation.youtiao.auto_lift": {"area_id": &"area.youtiao"},
 	&"automation.fresh_soy_milk.auto_fill": {"area_id": &"area.fresh_soy_milk"},
@@ -181,7 +180,6 @@ const GROWTH_DEFINITIONS := {
 	&"growth.add_on.pancake.meat_floss": {"label":"肉松", "kind":&"stock_unlock", "price":80, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.baocui"], "unlock_stock_ids":[&"stock.pancake.meat_floss"], "anchor_id":&"pancake.meat_floss"},
 	&"growth.automation.pancake.auto_batter_ladle": {"label":"定量面糊勺", "kind":&"automation", "price":120, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.auto_batter_ladle", "anchor_id":&"pancake.ladle"},
 	&"growth.automation.pancake.press_once": {"label":"压饼器", "kind":&"automation", "price":120, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.press_once", "anchor_id":&"pancake.press"},
-	&"growth.automation.pancake.auto_sauce_brush": {"label":"自动刷酱", "kind":&"automation", "price":180, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.auto_sauce_brush", "anchor_id":&"pancake.brush"},
 	&"growth.area.youtiao": {"label":"油条炸锅", "kind":&"area_unlock", "price":200, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss"], "area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":0, "unlock_recipe_ids":[&"recipe.youtiao.plain"], "unlock_product_ids":[&"product.youtiao.plain"], "unlock_stock_ids":[&"stock.youtiao.plain_dough"], "anchor_id":&"youtiao.fryer"},
 	&"growth.capacity.youtiao_finished_tray": {"label":"油条成品盘", "kind":&"storage", "price":50, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.area.youtiao"], "anchor_id":&"youtiao.finished_tray"},
 	&"growth.equipment.youtiao.advanced": {"label":"高级油条机", "kind":&"device_tier", "price":250, "requires_area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":1, "automation_id":&"automation.youtiao.auto_lift", "anchor_id":&"youtiao.advanced"},
@@ -195,7 +193,7 @@ const GROWTH_DEFINITIONS := {
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
-	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
+	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.press_once",
 	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket", &"growth.capacity.chicken_finished_tray",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
 	&"growth.area.packaged_drink",

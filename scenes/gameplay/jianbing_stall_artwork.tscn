@@ -43,6 +43,30 @@
 [ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="57_alpha_hit"]
 [ext_resource type="Texture2D" uid="uid://ts4hjs0b17qb" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png" id="58_press_spreader"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_baocui_01"]
+atlas = ExtResource("12_baocui_01")
+region = Rect2(0, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_baocui_02"]
+atlas = ExtResource("13_baocui_02")
+region = Rect2(0, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_baocui_03"]
+atlas = ExtResource("14_baocui_03")
+region = Rect2(0, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_baocui_04"]
+atlas = ExtResource("15_baocui_04")
+region = Rect2(0, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_baocui_05"]
+atlas = ExtResource("16_baocui_05")
+region = Rect2(0, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_baocui_06"]
+atlas = ExtResource("17_baocui_06")
+region = Rect2(0, 0, 512, 512)
+
 [node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90
 layout_mode = 3
@@ -82,7 +106,7 @@ mouse_filter = 2
 script = ExtResource("30_worktop_hotspots")
 griddle_station_path = NodePath("../MultiGriddleStation")
 egg_content_textures = Array[Texture2D]([null, ExtResource("33_egg_01"), ExtResource("34_egg_02"), ExtResource("35_egg_03"), ExtResource("36_egg_04"), ExtResource("37_egg_05"), ExtResource("38_egg_06")])
-baocui_tray_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResource("13_baocui_02"), ExtResource("14_baocui_03"), ExtResource("15_baocui_04"), ExtResource("16_baocui_05"), ExtResource("17_baocui_06")])
+baocui_tray_textures = Array[Texture2D]([SubResource("AtlasTexture_baocui_01"), SubResource("AtlasTexture_baocui_02"), SubResource("AtlasTexture_baocui_03"), SubResource("AtlasTexture_baocui_04"), SubResource("AtlasTexture_baocui_05"), SubResource("AtlasTexture_baocui_06")])
 
 [node name="BaocuiBasket" type="Control" parent="PancakeWorktopHotspots" unique_id=1496909340]
 z_index = 120
@@ -101,7 +125,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("17_baocui_06")
+texture = SubResource("AtlasTexture_baocui_06")
 expand_mode = 1
 stretch_mode = 5
 

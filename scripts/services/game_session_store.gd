@@ -23,7 +23,7 @@ const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
 const PACKAGED_DRINK_V2_MIGRATION_KEY := "packaged_drink_juice_v2_migrated"
 const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
-const OPENING_RESTOCK_SECONDS := 3.0
+const OPENING_RESTOCK_SECONDS := 5.0
 const CUSTOMER_ARRIVAL_MIN_SECONDS := 2.0
 const CUSTOMER_ARRIVAL_MAX_SECONDS := 5.0
 const CONSOLATION_PAYMENT_COINS := 1
@@ -109,6 +109,7 @@ var _scene_binding_save_snapshot: Dictionary = {}
 func _ready() -> void:
 	_load_save()
 	_restore_progression()
+	_reconcile_completed_tutorial_order()
 	_reconcile_unrecorded_settled_orders()
 	# Customer arrivals are durable state and resume from the saved countdown.
 	# Do not synthesize a queue while loading a scene: a newly opened shop must
@@ -502,6 +503,7 @@ func ensure_active_playable_order(target_size: int = FIVE_AREA_ORDER_SERVICE.MAX
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
 	_ensure_order_service()
+	_reconcile_completed_tutorial_order()
 	if not bool(_progression.get("day_open")):
 		return {"success": false, "reason": &"business_day_closed"}
 	var queue: Array = Array(_order_service.call("queue_snapshot"))
@@ -798,6 +800,9 @@ func advance_formal_order_patience(delta: float) -> Dictionary:
 
 func preview_formal_order_refusal(order_id: StringName) -> Dictionary:
 	_ensure_order_service()
+	var order := formal_order(order_id)
+	if not StringName(_tutorial_identity_for_order(order).get("tutorial_id", &"")).is_empty():
+		return {"success": false, "reason": &"tutorial_order_cannot_be_refused"}
 	return Dictionary(_order_service.call("preview_refusal", order_id)).duplicate(true)
 
 
@@ -805,6 +810,9 @@ func refuse_formal_order(order_id: StringName) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
+	var order := formal_order(order_id)
+	if not StringName(_tutorial_identity_for_order(order).get("tutorial_id", &"")).is_empty():
+		return {"success": false, "reason": &"tutorial_order_cannot_be_refused"}
 	var result: Dictionary = _order_service.call("refuse_order", order_id)
 	if bool(result.get("success", false)) and not bool(result.get("already_settled", false)):
 		_finalize_failed_formal_order(result)
@@ -1823,11 +1831,10 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	var tutorial_kind := StringName(tutorial_identity.get("kind", &""))
 	var tutorial_id := StringName(tutorial_identity.get("tutorial_id", &""))
 	var tutorial_completion := {}
-	var tutorial_failure := {}
-	if bool(settlement.get("order_success", false)) and not tutorial_id.is_empty():
+	# Teaching measures whether the player completed the interaction, not whether
+	# the delivered product matched the requested recipe or earned a passing score.
+	if not tutorial_id.is_empty():
 		tutorial_completion = _progression.call("complete_tutorial", tutorial_kind, tutorial_id)
-	elif not bool(settlement.get("order_success", false)) and not tutorial_id.is_empty():
-		tutorial_failure = _progression.call("record_tutorial_failure", tutorial_kind, tutorial_id)
 	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
 	var primary_item: Dictionary = Dictionary(items[0]) if not items.is_empty() else {}
 	var reported_grade := _worst_grade(all_grades) if bool(settlement.get("order_success", false)) else &"C"
@@ -1869,7 +1876,6 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	_save_data["pending_tray_payments"] = pending_payments
 	settlement["reputation_delta"] = reputation_delta
 	settlement["tutorial_completion"] = tutorial_completion
-	settlement["tutorial_failure"] = tutorial_failure
 	_record_business_event({
 		"event_id": StringName("%s.sale" % settlement_id),
 		"kind": &"sale" if bool(settlement.get("order_success", false)) else &"order_failure",
@@ -3709,6 +3715,40 @@ func _reconcile_unrecorded_settled_orders() -> void:
 	if reconciliation_changed:
 		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = reconciled_ids
 		_touch_and_write()
+
+
+## Saves created before tutorial completion became outcome-independent can
+## contain a settled teaching order while the same tutorial remains active.
+## Treat the durable completed interaction as authoritative on load.
+func _reconcile_completed_tutorial_order() -> void:
+	if not has_save():
+		return
+	_ensure_progression()
+	_ensure_order_service()
+	var tutorial := Dictionary(_progression.call("tutorial_snapshot"))
+	var tutorial_kind := StringName(tutorial.get("active_kind", &""))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	if tutorial_id.is_empty():
+		return
+	var formal_orders := Dictionary(Dictionary(_order_service.call("snapshot")).get("orders", {}))
+	for order_variant in formal_orders.values():
+		var order := Dictionary(order_variant)
+		var identity := _tutorial_identity_for_order(order)
+		if (
+			StringName(order.get("state", &"")) != &"settled"
+			or StringName(identity.get("kind", &"")) != tutorial_kind
+			or StringName(identity.get("tutorial_id", &"")) != tutorial_id
+		):
+			continue
+		var completed := Dictionary(_progression.call("complete_tutorial", tutorial_kind, tutorial_id))
+		if bool(completed.get("success", false)):
+			_sync_progression_to_save()
+			var arrival_state := customer_arrival_snapshot()
+			if StringName(arrival_state.get("phase", &"")) == &"open" and float(arrival_state.get("next_arrival_remaining_seconds", -1.0)) < 0.0:
+				_schedule_next_customer_arrival(arrival_state)
+				_save_data["customer_arrival"] = _normalized_customer_arrival_state(arrival_state)
+			_touch_and_write()
+		return
 
 
 func _new_inventory_snapshot() -> Dictionary:

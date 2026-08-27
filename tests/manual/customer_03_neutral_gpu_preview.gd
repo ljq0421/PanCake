@@ -1,7 +1,8 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const SCREENSHOT_PATH := "res://tmp/validation/customer_03_neutral_v4_chinese_gpu_1920x1080.png"
+const SCREENSHOT_PATH := "res://tmp/validation/customer_03_neutral_v2_qstyle_cropped_gpu_1920x1080.png"
+const EXPECTED_REGION := Rect2(296, 194, 432, 938)
 
 var _failures: Array[String] = []
 
@@ -35,16 +36,30 @@ func _run() -> void:
 		return
 	workstation.set_process(false)
 	workstation._formal_order_id = &""
-	workstation.customer_queue.call("restore_active_customer", {}, &"customer_03")
-	workstation.call("_set_customer_portrait_state", &"neutral")
+	var service_slot := workstation.get_node_or_null("SafeArea/ServiceCustomer1") as Control
+	var portrait := service_slot.get_node_or_null("Portrait") as TextureRect if service_slot != null else null
+	if portrait == null:
+		_failures.append("ServiceCustomer1/Portrait is missing")
+		_finish()
+		return
+	for service_slot_name in [&"ServiceCustomer2", &"ServiceCustomer3", &"ServiceCustomer4", &"ServiceCustomer5"]:
+		var other_slot := workstation.get_node_or_null("SafeArea/%s" % service_slot_name) as CanvasItem
+		if other_slot != null:
+			other_slot.visible = false
+	service_slot.visible = true
+	portrait.visible = true
+	portrait.texture = load("res://resources/art/customers/customer_03/customer_03_neutral_cropped.tres") as Texture2D
+	var order_panel := service_slot.get_node_or_null("OrderPanel") as CanvasItem
+	if order_panel != null:
+		order_panel.visible = false
 	for _frame in 3:
 		await process_frame
-	var portrait := workstation.get_node_or_null("SafeArea/CustomerPortrait") as TextureRect
 	_check(portrait != null and portrait.texture != null, "customer_03 neutral portrait loads in the real workstation")
 	if portrait != null and portrait.texture != null:
 		_check(portrait.texture.resource_path.ends_with("customer_03_neutral_cropped.tres"), "runtime uses the customer_03 neutral AtlasTexture")
 		var atlas := portrait.texture.get("atlas") as Texture2D
-		_check(atlas != null and atlas.resource_path.ends_with("customer_03_neutral_v4_chinese.png"), "AtlasTexture resolves the new v4 neutral PNG")
+		_check(atlas != null and atlas.resource_path.ends_with("customer_03_neutral_v2_qstyle.png"), "AtlasTexture resolves the selected v2 qstyle PNG")
+		_check(portrait.texture.get("region") == EXPECTED_REGION, "AtlasTexture uses the approved half-body crop")
 	await RenderingServer.frame_post_draw
 	var path := ProjectSettings.globalize_path(SCREENSHOT_PATH)
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())

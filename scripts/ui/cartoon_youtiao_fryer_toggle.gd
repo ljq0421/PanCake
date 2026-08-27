@@ -5,6 +5,7 @@ extends Control
 ## The cartoon fryer is the production UI for device.youtiao_fryer. GameSession
 ## remains the authority for stock, production time, quality, waste and storage.
 signal status_message(message: String)
+signal youtiao_add_to_pancake_requested(source_ref: Dictionary)
 
 const DEVICE_ID := &"device.youtiao_fryer"
 const RECIPE_ID := &"recipe.youtiao.plain"
@@ -24,6 +25,16 @@ const PLATE_VISUAL_CAPACITY := TRAY_VISUAL_CAPACITY * 2
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 const PLATE_YOUTIAO_REGION := Rect2(174.0, 8.0, 677.0, 1500.0)
 const RAW_YOUTIAO_REGION := Rect2(97.0, 53.0, 321.0, 403.0)
+const BASIC_EXTRA_DOWN_OFFSET := Vector2(0.0, 10.0)
+const BASIC_FINISHED_OFFSET := Vector2(-9.0, 10.0)
+const BASIC_FINISHED_SCALE := Vector2(0.75, 0.75)
+const ADVANCED_PRODUCT_SCALE := Vector2(0.65, 0.65)
+const ADVANCED_FINISHED_PRODUCT_SCALE := Vector2(0.82, 0.82)
+const ADVANCED_RAISED_PRODUCT_OFFSET := Vector2(-32.0, 10.0)
+const ADVANCED_LOWERED_PRODUCT_OFFSET := Vector2(-32.0, 12.0)
+const ADVANCED_FINISHED_UP_OFFSET := Vector2(0.0, -6.0)
+const YOUTIAO_SLOT_X_POSITIONS := [0.0, 39.0, 78.0, 117.0]
+const ADVANCED_FINISHED_SLOT_X_POSITIONS := [0.0, 27.0, 54.0, 81.0]
 @export var reduce_motion := false
 
 @export_group("Editor preview")
@@ -54,7 +65,6 @@ const RAW_YOUTIAO_REGION := Rect2(97.0, 53.0, 321.0, 403.0)
 @onready var fryer_assembly: Control = %FryerAssembly
 @onready var fryer_visual: TextureRect = %FryerVisual
 @onready var fryer_layout_player: AnimationPlayer = %FryerLayoutPlayer
-@onready var chicken_material_slot: FiveAreaMaterialSlot = %ChickenCutletRaw
 @onready var basket_products: Control = %LeftBasket
 @onready var chicken_basket_products: Control = %RightBasket
 @onready var fryer_slot_sources: Array[ProductDragSource] = [%ProductSource1, %ProductSource2, %ProductSource3, %ProductSource4]
@@ -176,7 +186,7 @@ func _has_point(point: Vector2) -> bool:
 		return true
 	if chicken_tray != null and chicken_tray.visible and _control_contains_local_point(chicken_tray, point):
 		return true
-	return chicken_material_slot != null and chicken_material_slot.visible and _control_contains_local_point(chicken_material_slot, point)
+	return false
 
 
 func _input(event: InputEvent) -> void:
@@ -193,7 +203,7 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	if not data is Dictionary or StringName(Dictionary(data).get("kind", &"")) != &"product_source":
 		return false
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
-	if StringName(source_ref.get("source_kind", &"")) in [&"youtiao_dough", &"chicken_cutlet_raw"]:
+	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		return true
 	return false
 
@@ -202,9 +212,6 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		_load_dough(StringName(source_ref.get("recipe_id", RECIPE_ID)))
-		return
-	if StringName(source_ref.get("source_kind", &"")) == &"chicken_cutlet_raw":
-		_load_chicken()
 		return
 	if StringName(source_ref.get("source_kind", &"")) != &"youtiao_fryer_slot":
 		return
@@ -249,8 +256,6 @@ func refresh_from_session() -> void:
 	plain_tray.visible = _finished_tray_unlocked or _workshop_preview
 	plain_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not _finished_tray_unlocked else Color.WHITE
 	plain_tray.set_drop_enabled(_finished_tray_unlocked and not _workshop_preview)
-	chicken_material_slot.visible = _chicken_unlocked
-	chicken_material_slot.mouse_filter = Control.MOUSE_FILTER_STOP if _chicken_unlocked else Control.MOUSE_FILTER_IGNORE
 	# Chicken belongs exclusively to the third-tier dual-basket fryer.  Unlike
 	# the legacy trays, do not reveal it just because the workshop is previewing
 	# an earlier youtiao upgrade.
@@ -303,7 +308,7 @@ func _advance_machine_hold(delta: float) -> void:
 		return
 	if not _can_load_selected_lane():
 		_end_machine_gesture()
-		status_message.emit("右侧鸡排炸篮已满，点击右篮开始炸制" if _machine_lane == &"right" else "炸篮已满，点击油条机开始炸制")
+		status_message.emit("右侧鸡排滤网已满，点击右篮开始炸制" if _machine_lane == &"right" else "炸篮已满，点击油条机开始炸制")
 		return
 	if _selected_input_stock() > 0:
 		_machine_add_elapsed += maxf(delta, 0.0)
@@ -329,11 +334,11 @@ func _start_machine_input_hold() -> void:
 	var can_restock := bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)) and int(status.get("coins", 0)) >= int(status.get("unit_cost", 0))
 	if _can_load_selected_lane() and (_selected_input_stock() > 0 or can_restock):
 		_machine_hold_active = true
-		status_message.emit("持续长按右侧炸篮补货并加入鸡排；每完成一份才扣金币" if _machine_lane == &"right" else "持续长按油条机添加油条面胚；每完成一份才扣金币")
+		status_message.emit("持续长按右侧滤网补货并加入鸡排；每完成一份才扣金币" if _machine_lane == &"right" else "持续长按油条机添加油条面胚；每完成一份才扣金币")
 		return
 	_end_machine_gesture()
 	if not _can_load_selected_lane():
-		status_message.emit("右侧鸡排炸篮已满，点击右篮开始炸制" if _machine_lane == &"right" else "炸篮已满，点击油条机开始炸制")
+		status_message.emit("右侧鸡排滤网已满，点击右篮开始炸制" if _machine_lane == &"right" else "炸篮已满，点击油条机开始炸制")
 		return
 	if not bool(status.get("success", false)):
 		status_message.emit(_restock_failure_text(StringName(status.get("reason", &"")), status))
@@ -422,7 +427,7 @@ func _perform_machine_click() -> void:
 	var state := StringName(lane.get("state", &"idle"))
 	var action := &"start" if state == &"loaded" else &"lift" if state in [&"ready_safe", &"overcooking"] else &""
 	if action.is_empty():
-		status_message.emit("拖鸡排到右篮上料" if _machine_lane == &"right" and state == &"idle" else "长按油条机添加面胚" if state == &"idle" else _state_text(state))
+		status_message.emit("长按右侧滤网补货并加入鸡排" if _machine_lane == &"right" and state == &"idle" else "长按油条机添加面胚" if state == &"idle" else _state_text(state))
 		return
 	var session := get_node_or_null("/root/GameSession")
 	var result := Dictionary(session.call("perform_f3_chicken_action", action)) if session != null and _machine_lane == &"right" else Dictionary(session.call("perform_f3_youtiao_action", action)) if session != null else {"success": false, "reason": &"no_game_session"}
@@ -444,7 +449,7 @@ func _apply_snapshot() -> void:
 	var right_lane := Dictionary(Dictionary(_machine.get("lanes", {})).get(&"right", {}))
 	var right_state := StringName(right_lane.get("state", &"idle"))
 	var right_lowered := right_state in [&"frying", &"ready_safe", &"overcooking"]
-	_apply_fryer_layout(use_advanced_art, basket_lowered, use_dual_art, right_lowered)
+	_apply_fryer_layout(use_advanced_art, basket_lowered, use_dual_art, right_lowered, state)
 	if use_dual_art and dual_lowered_machine_texture != null and dual_raised_machine_texture != null:
 		if not basket_lowered and not right_lowered:
 			fryer_visual.texture = dual_raised_machine_texture
@@ -574,7 +579,14 @@ func _apply_editor_preview() -> void:
 	var use_advanced_art := editor_preview_tier >= 1
 	var use_dual_art := editor_preview_tier >= 2
 	var basket_lowered := editor_preview_state in [2, 3]
-	_apply_fryer_layout(use_advanced_art, basket_lowered, use_dual_art, basket_lowered)
+	var product_preview_state := {
+		1: &"loaded",
+		2: &"frying",
+		3: &"ready_safe",
+		4: &"draining",
+		5: &"burnt",
+	}.get(editor_preview_state, &"") as StringName
+	_apply_fryer_layout(use_advanced_art, basket_lowered, use_dual_art, basket_lowered, product_preview_state)
 	if use_dual_art:
 		fryer_visual.texture = dual_lowered_machine_texture if basket_lowered else dual_raised_machine_texture
 	elif use_advanced_art:
@@ -597,8 +609,6 @@ func _apply_editor_preview() -> void:
 	burnt_batch_source.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plain_tray.visible = editor_preview_trays
 	chicken_tray.visible = use_dual_art and editor_preview_trays
-	chicken_material_slot.visible = use_dual_art
-	chicken_material_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plain_tray.self_modulate = Color.WHITE
 	plain_tray.preview_products(_plate_youtiao_texture(), 4 if editor_preview_trays else 0)
 	status_label.visible = true
@@ -630,7 +640,13 @@ func _preview_signature() -> int:
 	].hash()
 
 
-func _apply_fryer_layout(use_advanced_art: bool, basket_lowered: bool, use_dual_art: bool = false, right_basket_lowered: bool = false) -> void:
+func _apply_fryer_layout(
+	use_advanced_art: bool,
+	basket_lowered: bool,
+	use_dual_art: bool = false,
+	right_basket_lowered: bool = false,
+	product_state: StringName = &""
+) -> void:
 	var layout_name := _fryer_layout_animation(use_advanced_art, basket_lowered, use_dual_art, right_basket_lowered)
 	if not fryer_layout_player.has_animation(layout_name):
 		push_error("Missing authored fryer layout animation: %s" % layout_name)
@@ -639,6 +655,49 @@ func _apply_fryer_layout(use_advanced_art: bool, basket_lowered: bool, use_dual_
 	# The script only selects the layout state required by the machine model.
 	fryer_layout_player.play(layout_name)
 	fryer_layout_player.seek(0.0, true)
+	_apply_youtiao_slot_x_positions(YOUTIAO_SLOT_X_POSITIONS)
+	if use_advanced_art and not use_dual_art:
+		_apply_advanced_product_state_adjustment(product_state)
+	elif not use_dual_art:
+		_apply_basic_product_state_adjustment(product_state)
+
+
+func _apply_advanced_product_state_adjustment(state: StringName) -> void:
+	# Advanced-only offsets keep the four product presentations independent of
+	# the scene-authored basic and dual-basket layouts.
+	match state:
+		&"loaded":
+			basket_products.position += ADVANCED_RAISED_PRODUCT_OFFSET
+			basket_products.scale = ADVANCED_PRODUCT_SCALE
+		&"frying":
+			basket_products.position += ADVANCED_LOWERED_PRODUCT_OFFSET
+			basket_products.scale = ADVANCED_PRODUCT_SCALE
+		&"ready_safe", &"overcooking":
+			basket_products.position += ADVANCED_LOWERED_PRODUCT_OFFSET + ADVANCED_FINISHED_UP_OFFSET
+			basket_products.scale = ADVANCED_FINISHED_PRODUCT_SCALE
+			_apply_youtiao_slot_x_positions(ADVANCED_FINISHED_SLOT_X_POSITIONS)
+		&"draining", &"ready_to_collect":
+			basket_products.position += ADVANCED_RAISED_PRODUCT_OFFSET + ADVANCED_FINISHED_UP_OFFSET
+			basket_products.scale = ADVANCED_FINISHED_PRODUCT_SCALE
+			_apply_youtiao_slot_x_positions(ADVANCED_FINISHED_SLOT_X_POSITIONS)
+
+
+func _apply_youtiao_slot_x_positions(x_positions: Array) -> void:
+	for source_index in range(mini(fryer_slot_sources.size(), x_positions.size())):
+		var source := fryer_slot_sources[source_index]
+		source.position.x = float(x_positions[source_index])
+
+
+func _apply_basic_product_state_adjustment(state: StringName) -> void:
+	match state:
+		&"frying":
+			basket_products.position += BASIC_EXTRA_DOWN_OFFSET
+		&"ready_safe", &"overcooking":
+			basket_products.position += BASIC_FINISHED_OFFSET
+			basket_products.scale = BASIC_FINISHED_SCALE
+		&"draining", &"ready_to_collect":
+			basket_products.position += BASIC_FINISHED_OFFSET
+			basket_products.scale = BASIC_FINISHED_SCALE
 
 
 func _fryer_layout_animation(use_advanced_art: bool, basket_lowered: bool, use_dual_art: bool, right_basket_lowered: bool) -> StringName:
@@ -668,7 +727,7 @@ func _refresh_output_sources(state: StringName, occupied: Array[int], capacity: 
 			"source_index": source_index,
 			"product_id": PRODUCT_ID,
 			"discardable": ready_slot,
-		}, product_texture, ready_slot, "点击任意油条，将整篮油条放入成品盘")
+		}, product_texture, ready_slot, "点击任意油条，将整篮油条放入成品盘；也可拖到煎饼或顾客")
 		# The four visual sticks overlap for depth, but their transparent padding
 		# must not overlap as hit areas.  Alpha hit testing keeps each visible stick
 		# independently draggable while the same node remains the visible artwork.
@@ -753,9 +812,9 @@ func _configure_component_controls() -> void:
 	plate_sources.append_array(chicken_tray.product_sources)
 	waste_source = burnt_batch_source
 	for source in output_sources:
-		# Finished fryer portions are collected with a short click. Product trays
-		# remain the fryer-product drag sources used for customer delivery.
-		source.native_drag_enabled = false
+		# Plain youtiao supports click-to-collect plus precise dragging to a
+		# pancake, tray or customer. Chicken keeps click-to-collect only.
+		source.native_drag_enabled = source in fryer_slot_sources
 		source.drag_threshold_pixels = 4.0
 		source.drag_ended.connect(_on_product_drag_ended)
 		source.short_clicked.connect(_on_fryer_product_short_clicked)
@@ -766,6 +825,8 @@ func _configure_component_controls() -> void:
 	chicken_tray.fryer_slot_drop_requested.connect(_on_chicken_tray_fryer_slot_drop_requested)
 	plain_tray.product_drag_ended.connect(_on_product_drag_ended)
 	chicken_tray.product_drag_ended.connect(_on_product_drag_ended)
+	for source in plain_tray.product_sources:
+		source.short_clicked.connect(_on_plain_tray_product_short_clicked)
 
 
 func _on_tray_fryer_slot_drop_requested(source_index: int, destination_product_id: StringName) -> void:
@@ -783,6 +844,14 @@ func _on_fryer_product_short_clicked(source_ref: Dictionary) -> void:
 		return
 	if source_kind == &"fryer_slot" and StringName(source_ref.get("lane_id", &"")) == &"right":
 		_store_ready_fryer_batch_on_plate(CHICKEN_PRODUCT_ID)
+
+
+func _on_plain_tray_product_short_clicked(source_ref: Dictionary) -> void:
+	if (
+		StringName(source_ref.get("source_kind", &"")) == &"prepared_product_slot"
+		and StringName(source_ref.get("product_id", &"")) == PRODUCT_ID
+	):
+		youtiao_add_to_pancake_requested.emit(source_ref.duplicate(true))
 
 
 func _plate_youtiao_texture() -> Texture2D:
@@ -911,19 +980,25 @@ func _flush_pending_session_refresh() -> void:
 
 
 func _requires_timed_session_refresh() -> bool:
-	return StringName(_machine.get("state", &"")) in [
-		&"frying",
-		&"ready_safe",
-		&"overcooking",
-		&"draining",
-	]
+	var lanes := Dictionary(_machine.get("lanes", {}))
+	for lane_id in [&"left", &"right"]:
+		var fallback := _machine if lane_id == &"left" else {}
+		var lane := Dictionary(lanes.get(lane_id, fallback))
+		if StringName(lane.get("state", &"")) in [
+			&"frying",
+			&"ready_safe",
+			&"overcooking",
+			&"draining",
+		]:
+			return true
+	return false
 
 
 func _state_text(state: StringName) -> String:
 	return {
 		&"unowned": "油条机未解锁", &"idle": "长按油条机添加面胚", &"loaded": "点击油条机开始炸制",
 		&"frying": "炸制中", &"ready_safe": "点击油条机抬起沥网", &"overcooking": "油条即将炸糊",
-		&"draining": "正在沥油", &"ready_to_collect": "点击任意成品，整篮放入对应成品盘" if _finished_tray_unlocked else "成品盘尚未解锁，炸好的油条请暂存在滤网中", &"burnt": "油条已炸糊，拖去废弃",
+		&"draining": "正在沥油", &"ready_to_collect": "点击任意油条，整篮放入成品盘" if _finished_tray_unlocked else "成品盘尚未解锁，炸好的油条请暂存在滤网中", &"burnt": "油条已炸糊，拖去废弃",
 	}.get(state, "油条机")
 
 

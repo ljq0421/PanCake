@@ -3,28 +3,33 @@ extends SceneTree
 const STATES := {
 	&"neutral": [
 		"res://resources/art/customers/customer_08/customer_08_neutral_cropped.tres",
-		"customer_08_neutral_v4_chinese.png",
-		Rect2(556, 84, 403, 884),
+		"customer_08_neutral_v2_qstyle.png",
+		Rect2(465, 77, 466, 966),
+		Vector2(1413, 1113),
 	],
 	&"impatient": [
 		"res://resources/art/customers/customer_08/customer_08_impatient_cropped.tres",
-		"customer_08_impatient_v4_colorlocked.png",
-		Rect2(556, 85, 402, 883),
+		"customer_08_impatient_v2_qstyle.png",
+		Rect2(470, 74, 475, 983),
+		Vector2(1411, 1114),
 	],
 	&"satisfied": [
 		"res://resources/art/customers/customer_08/customer_08_satisfied_cropped.tres",
-		"customer_08_satisfied_v4_colorlocked.png",
-		Rect2(556, 86, 402, 884),
+		"customer_08_satisfied_v2_qstyle.png",
+		Rect2(460, 73, 466, 975),
+		Vector2(1411, 1114),
 	],
 	&"accepting_bag": [
 		"res://resources/art/customers/customer_08/customer_08_accepting_bag_cropped.tres",
-		"customer_08_accepting_bag_v4_colorlocked.png",
-		Rect2(578, 89, 375, 774),
+		"customer_08_accepting_bag_v2_qstyle.png",
+		Rect2(457, 70, 490, 992),
+		Vector2(1411, 1114),
 	],
 	&"paying_coins": [
 		"res://resources/art/customers/customer_08/customer_08_paying_coins_cropped.tres",
-		"customer_08_paying_coins_v4_colorlocked.png",
-		Rect2(423, 59, 657, 928),
+		"customer_08_paying_coins_v2_qstyle.png",
+		Rect2(351, 78, 656, 999),
+		Vector2(1412, 1114),
 	],
 }
 
@@ -38,11 +43,11 @@ func _initialize() -> void:
 		_check(texture != null, "%s AtlasTexture loads" % state)
 		if texture == null:
 			continue
-		_check(texture.region == expected[2], "%s preserves legacy Atlas region" % state)
+		_check(texture.region == expected[2], "%s uses the approved qstyle Atlas region" % state)
 		var atlas := texture.atlas as Texture2D
-		_check(atlas != null and atlas.resource_path.ends_with(expected[1]), "%s resolves expected v4 PNG" % state)
+		_check(atlas != null and atlas.resource_path.ends_with(expected[1]), "%s resolves expected qstyle PNG" % state)
 		if atlas != null:
-			_check(atlas.get_size() == Vector2(1536, 1024), "%s PNG preserves the 1536x1024 canvas" % state)
+			_check(atlas.get_size() == expected[3], "%s PNG preserves its approved canvas" % state)
 	if _failures.is_empty():
 		print("CUSTOMER_08_STATE_RESOURCE_CHECK_PASS")
 		quit(0)

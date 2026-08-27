@@ -101,16 +101,7 @@ func contains_canvas_point(canvas_point: Vector2) -> bool:
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-	if not _drop_enabled or not data is Dictionary:
-		return false
-	var payload := Dictionary(data)
-	if StringName(payload.get("kind", &"")) != &"product_source":
-		return false
-	var source_ref := Dictionary(payload.get("source_ref", {}))
-	var source_kind := StringName(source_ref.get("source_kind", &""))
-	if source_kind == &"youtiao_fryer_slot":
-		return accepted_fryer_lane_id == &"left"
-	return source_kind == &"fryer_slot" and StringName(source_ref.get("lane_id", &"")) == accepted_fryer_lane_id
+	return false
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:

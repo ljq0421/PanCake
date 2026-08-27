@@ -1,9 +1,8 @@
 extends SceneTree
 
-const SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
-const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const SERVICE = preload("res://scripts/services/five_area_progression_service.gd")
 
-var failures := PackedStringArray()
+var _failures: Array[String] = []
 
 
 func _initialize() -> void:
@@ -11,110 +10,65 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var starter := SERVICE.new()
-	_check(starter.owns_area(&"area.pancake") and not starter.owns_area(&"area.youtiao") and not starter.owns_area(&"area.fresh_soy_milk"), "new game starts with only pancake area")
-	_check(starter.device_tier(&"device.pancake_griddle") == 0, "new game starts with one griddle")
-	var starter_tutorial := starter.tutorial_snapshot()
-	_check(StringName(starter_tutorial.get("active_id", &"")) == &"area.pancake", "pancake is the first tutorial")
-	_check(not starter.owns_stock(&"stock.pancake.egg") and not starter.owns_stock(&"stock.pancake.baocui") and not starter.owns_stock(&"stock.pancake.scallion") and starter.owns_stock(&"stock.pancake.sauce.sweet_flour"), "new game starts without pancake toppings; egg unlock follows the pancake tutorial")
-	var route_ids := PackedStringArray(CATALOG.growth_ids())
-	_check(route_ids == PackedStringArray([
-		"growth.add_on.pancake.sweet_flour", "growth.add_on.pancake.baocui", "growth.add_on.pancake.scallion", "growth.automation.pancake.auto_batter_ladle", "growth.add_on.pancake.red_chili", "growth.add_on.pancake.ham_sausage", "growth.add_on.pancake.coriander",
-		"growth.add_on.pancake.meat_floss", "growth.add_on.pancake.tomato", "growth.automation.pancake.press_once", "growth.automation.pancake.auto_sauce_brush",
-		"growth.area.youtiao", "growth.capacity.youtiao_finished_tray", "growth.equipment.youtiao.advanced",
-		"growth.area.fresh_soy_milk", "growth.assist.fresh_soy_milk.sugar", "growth.automation.fresh_soy_milk.auto_fill", "growth.automation.fresh_soy_milk.advanced",
-	]), "growth route contains only active upgrades in display order")
-	_check(not route_ids.has("growth.recipe.youtiao.oil_cake") and not route_ids.has("growth.recipe.youtiao.sugar_oil_cake") and not route_ids.has("growth.flavor.youtiao.sesame"), "retired fryer recipes are absent from growth")
-	_check(int(Dictionary(CATALOG.growth_definition(&"growth.automation.fresh_soy_milk.auto_fill").get("requires_mastery", {})).get(&"area.fresh_soy_milk", {}).get("a_grade", 0)) == 4, "automatic filling requires four A-grade soy orders")
-	for retired_growth in [&"growth.area.packaged_drink", &"growth.area.steamer", &"growth.equipment.packaged_drink.advanced"]:
-		_check(not route_ids.has(str(retired_growth)), "%s is absent from active growth" % retired_growth)
-	var early := SERVICE.new({
-		"coins": 200,
-		"reputation": 30,
-		"current_day": 4,
+	var starter := SERVICE.new({"coins": 10})
+	_check(starter.owns_area(&"area.pancake") and not starter.owns_stock(&"stock.pancake.egg"), "new game starts with pancake only and no egg")
+	_check(bool(starter.purchase(&"growth.add_on.pancake.egg").get("success", false)), "egg can be reserved with 10 coins without completing tutorial")
+	starter.set_day_open(false)
+	_check(bool(starter.begin_next_business_day().get("success", false)) and starter.owns_stock(&"stock.pancake.egg"), "egg activates on the next business day")
+
+	var all_toppings := SERVICE.new({
+		"coins": 400,
 		"unlocked_area_ids": [&"area.pancake"],
-		"area_mastery_details": {&"area.pancake": {"qualified": 6, "a_grade": 4}},
-		"tutorial": {"completed_area_ids": [], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+		"owned_growth_ids": [
+			"growth.add_on.pancake.egg",
+			"growth.add_on.pancake.baocui",
+			"growth.add_on.pancake.scallion",
+			"growth.add_on.pancake.ham_sausage",
+			"growth.add_on.pancake.coriander",
+			"growth.add_on.pancake.meat_floss",
+		],
 	})
-	var early_cards: Array = Array(early.growth_recommendations(4).get("recommended", []))
-	_check(not _growth_ids(early_cards).has(&"growth.tool.pancake.wide_spreader"), "early growth route no longer offers the retired wide spreader")
-	var press_direct := SERVICE.new({
-		"coins": 200,
-		"reputation": 30,
-		"current_day": 4,
-		"unlocked_area_ids": [&"area.pancake"],
-		"area_mastery_details": {&"area.pancake": {"qualified": 6, "a_grade": 5}},
-		"tutorial": {"completed_area_ids": [&"area.pancake"], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
-	})
-	_check(bool(press_direct.purchase(&"growth.automation.pancake.press_once").get("success", false)), "press can be reserved directly from the base spreader route")
-	press_direct.set_day_open(false)
-	press_direct.begin_next_business_day()
-	press_direct.advance_tutorial_for_new_business_day()
-	var press_tutorial := press_direct.tutorial_snapshot()
-	_check(press_direct.owns_growth(&"growth.automation.pancake.press_once") and StringName(press_tutorial.get("active_id", &"")).is_empty() and PackedStringArray(press_tutorial.get("queue_area_ids", [])).is_empty() and PackedStringArray(press_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(press_tutorial.get("queue_device_ids", [])).is_empty(), "press activation creates no tutorial and legacy device tutorial fields remain empty")
-	var youtiao_purchase := Dictionary(early.purchase(&"growth.area.youtiao"))
-	_check(bool(youtiao_purchase.get("success", false)) and early.pending_install_purchase == &"growth.area.youtiao", "qualified pancake play can reserve the 30-coin youtiao unlock without completing teaching")
-	early.set_day_open(false)
-	var youtiao_activation := Dictionary(early.begin_next_business_day())
-	_check(bool(youtiao_activation.get("success", false)) and early.owns_area(&"area.youtiao"), "youtiao unlock activates next business day")
-	_check(bool(early.purchase(&"growth.capacity.youtiao_finished_tray").get("success", false)), "finished youtiao tray is separately purchasable after the fryer")
-	early.set_day_open(false)
-	var tray_activation := Dictionary(early.begin_next_business_day())
-	_check(bool(tray_activation.get("success", false)) and early.owns_growth(&"growth.capacity.youtiao_finished_tray"), "finished youtiao tray activates independently of the fryer")
-	early.advance_tutorial_for_new_business_day()
-	_check(StringName(early.tutorial_snapshot().get("active_id", &"")) == &"area.youtiao", "youtiao tutorial follows pancake")
-	_check(CATALOG.growth_definition(&"growth.equipment.pancake.intermediate").is_empty() and CATALOG.growth_definition(&"growth.equipment.pancake.advanced").is_empty(), "pancake capacity upgrades cannot be purchased")
-	_check(CATALOG.growth_definition(&"growth.equipment.youtiao.intermediate").is_empty() and CATALOG.growth_definition(&"growth.equipment.youtiao.advanced").is_empty(), "youtiao capacity upgrades cannot be purchased")
-	var soy_gate := SERVICE.new({
-		"coins": 100,
-		"current_day": 7,
-		"reputation": 60,
+	var youtiao_status := all_toppings.purchase_status(&"growth.area.youtiao")
+	var soy_status := all_toppings.purchase_status(&"growth.area.fresh_soy_milk")
+	_check(bool(youtiao_status.get("can_purchase", false)), "all six toppings and 200 coins unlock youtiao without mastery or reputation")
+	_check(bool(soy_status.get("can_purchase", false)), "all six toppings and 200 coins unlock soy without youtiao")
+	_check(bool(all_toppings.purchase(&"growth.area.fresh_soy_milk").get("success", false)), "soy can be reserved before youtiao")
+	all_toppings.set_day_open(false)
+	_check(bool(all_toppings.begin_next_business_day().get("success", false)) and all_toppings.owns_area(&"area.fresh_soy_milk") and not all_toppings.owns_area(&"area.youtiao"), "soy activation does not unlock youtiao")
+
+	var youtiao_route := SERVICE.new({
+		"coins": 660,
 		"unlocked_area_ids": [&"area.pancake", &"area.youtiao"],
-		"device_tiers": {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0},
-		"area_mastery_details": {&"area.youtiao": {"qualified": 4, "a_grade": 0}},
-		"tutorial": {"completed_area_ids": [], "queue_area_ids": [], "active_kind": &"", "active_id": &""},
+		"owned_growth_ids": ["growth.area.youtiao", "growth.equipment.youtiao.advanced"],
 	})
-	_check(bool(soy_gate.purchase(&"growth.area.fresh_soy_milk").get("success", false)), "four qualified youtiao orders can reserve the 60-coin soy unlock without completing teaching")
-	soy_gate.set_day_open(false)
-	soy_gate.begin_next_business_day()
-	soy_gate.advance_tutorial_for_new_business_day()
-	_check(soy_gate.owns_area(&"area.fresh_soy_milk") and StringName(soy_gate.tutorial_snapshot().get("active_id", &"")) == &"area.fresh_soy_milk", "soy is the third and final area tutorial")
-	var legacy := SERVICE.new({
-		"coins": 77,
-		"unlocked_area_ids": [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"],
-		"device_tiers": {&"device.pancake_griddle": 9, &"device.packaged_drink_heater": 2, &"device.youtiao_fryer": 1, &"device.fresh_soy_milk_machine": 1, &"device.steamer": 2},
-		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.packaged_drink.milk", &"stock.steamer.mantou", &"stock.youtiao.plain_dough"],
-		"owned_growth_ids": [&"growth.area.packaged_drink", &"growth.area.youtiao", &"growth.area.steamer"],
-		"tutorial": {"completed_area_ids": [&"area.pancake", &"area.packaged_drink"], "completed_device_ids": [&"device.pancake_spreader"], "queue_area_ids": [&"area.steamer"], "queue_device_ids": [&"device.pancake_spreader"], "active_kind": &"device", "active_id": &"device.pancake_spreader"},
+	_check(bool(youtiao_route.purchase(&"growth.equipment.youtiao.dual_basket").get("success", false)), "dual basket needs only advanced fryer and 350 coins")
+	youtiao_route.set_day_open(false)
+	youtiao_route.begin_next_business_day()
+	_check(youtiao_route.owns_growth(&"growth.equipment.youtiao.dual_basket") and youtiao_route.owns_recipe(&"recipe.chicken.cutlet"), "dual basket unlocks chicken on the next business day")
+	_check(bool(youtiao_route.purchase(&"growth.capacity.chicken_finished_tray").get("success", false)), "chicken tray is purchasable after dual basket")
+
+	var soy_route := SERVICE.new({
+		"coins": 600,
+		"unlocked_area_ids": [&"area.pancake", &"area.fresh_soy_milk"],
+		"owned_growth_ids": ["growth.area.fresh_soy_milk", "growth.automation.fresh_soy_milk.auto_fill"],
 	})
-	var legacy_snapshot := legacy.snapshot()
-	_check(PackedStringArray(legacy_snapshot.get("unlocked_area_ids", [])) == PackedStringArray(["area.pancake", "area.youtiao", "area.fresh_soy_milk"]), "legacy save strips retired areas while preserving active ones")
-	_check(not legacy.owns_device(&"device.packaged_drink_heater") and not legacy.owns_device(&"device.steamer"), "legacy save strips retired devices")
-	_check(not legacy.owns_stock(&"stock.packaged_drink.milk") and not legacy.owns_stock(&"stock.steamer.mantou"), "legacy save strips retired stock")
-	_check(legacy.device_tier(&"device.pancake_griddle") == 0, "legacy griddle tier normalizes to the permanent single-stall tier")
-	_check(legacy.device_tier(&"device.youtiao_fryer") == 0, "legacy youtiao tier normalizes to the permanent four-slot tier")
-	var normalized_tutorial := legacy.tutorial_snapshot()
-	_check(StringName(normalized_tutorial.get("active_id", &"")) == &"" and PackedStringArray(normalized_tutorial.get("completed_device_ids", [])).is_empty() and PackedStringArray(normalized_tutorial.get("queue_device_ids", [])).is_empty(), "legacy device tutorial activity is cleared while compatibility fields remain empty")
-	_check(legacy.coins == 77, "legacy normalization preserves economy")
+	_check(bool(soy_route.purchase(&"growth.automation.fresh_soy_milk.advanced").get("success", false)), "advanced soy machine needs only intermediate machine and 350 coins")
+	_check(bool(soy_route.purchase(&"growth.area.packaged_drink").get("success", false)), "drink rack can be reserved after soy with 200 coins")
+	soy_route.set_day_open(false)
+	soy_route.begin_next_business_day()
+	_check(soy_route.owns_growth(&"growth.automation.fresh_soy_milk.advanced") and soy_route.owns_area(&"area.packaged_drink"), "parallel soy upgrade and drink rack activate together next day")
 	_finish()
-
-
-func _growth_ids(entries: Array) -> Array[StringName]:
-	var result: Array[StringName] = []
-	for value in entries:
-		result.append(StringName(Dictionary(value).get("growth_id", &"")))
-	return result
 
 
 func _check(condition: bool, message: String) -> void:
 	if not condition:
-		failures.append(message)
+		_failures.append(message)
 
 
 func _finish() -> void:
-	if failures.is_empty():
-		print("THREE_AREA_PROGRESSION_SERVICE_SELF_CHECK_PASS")
+	if _failures.is_empty():
+		print("FIVE_AREA_PROGRESSION_SERVICE_SELF_CHECK_PASS")
 		quit(0)
 		return
-	printerr("THREE_AREA_PROGRESSION_SERVICE_SELF_CHECK_FAIL\n" + "\n".join(failures))
+	printerr("FIVE_AREA_PROGRESSION_SERVICE_SELF_CHECK_FAIL\n" + "\n".join(_failures))
 	quit(1)

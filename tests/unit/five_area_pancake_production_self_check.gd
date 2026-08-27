@@ -18,12 +18,15 @@ func _run() -> void:
 	var batter_ids: Array[StringName] = [&"stock.pancake.batter"]
 	var unlimited_consume := Dictionary(session.call("consume_inventory_stock_ids", batter_ids))
 	_check(bool(unlimited_consume.get("success", false)) and Array(unlimited_consume.get("consumed_stock_ids", [])).is_empty(), "generic inventory consumption skips the unlimited batter source")
+	var sauce_ids: Array[StringName] = [&"stock.pancake.sauce.sweet_flour"]
+	var unlimited_sauce_consume := Dictionary(session.call("consume_inventory_stock_ids", sauce_ids))
+	_check(bool(unlimited_sauce_consume.get("success", false)) and Array(unlimited_sauce_consume.get("consumed_stock_ids", [])).is_empty(), "generic inventory consumption skips the unlimited sauce source")
 	var result: Dictionary = service.call("settle_completed_pancake", {"applied_sauce_ids": [&"sweet_flour"], "applied_ingredient_ids": [&"egg", &"baocui"]}, {"id": &"order.pancake.classic", "heat_preference": &"golden"})
 	_check(bool(result.get("success", false)) and result.get("product_id") == &"product.pancake.custom", "pancake completion creates the stable pancake product")
 	var after: Dictionary = session.call("inventory_snapshot")
 	_check(int(after.get("stock.pancake.batter", 0)) == int(before.get("stock.pancake.batter", 0)), "pancake completion leaves the unlimited batter source unchanged")
-	_check(int(after.get("stock.pancake.sauce.sweet_flour", 0)) == int(before.get("stock.pancake.sauce.sweet_flour", 0)) - 1, "pancake completion consumes sweet flour sauce inventory without a material slot")
-	_check(int(result.get("material_cost", 0)) == 4, "pancake completion reports batter, filling, and sauce material cost for billing")
+	_check(int(after.get("stock.pancake.sauce.sweet_flour", 0)) == int(before.get("stock.pancake.sauce.sweet_flour", 0)), "pancake completion leaves the unlimited sauce source unchanged")
+	_check(int(result.get("material_cost", 0)) == 3, "pancake completion excludes unlimited sauce from material cost")
 	var legacy: Dictionary = session.call("pancake_legacy_inventory_snapshot")
 	_check(int(legacy.get("egg", 0)) == int(after.get("stock.pancake.egg", 0)), "legacy pancake interaction inventory maps to stable stock IDs")
 	var product: Dictionary = result.get("product", {})

@@ -40,9 +40,9 @@ func _run() -> void:
 	]
 	slot.bind_order(two_item_order, null, [null, null], [[], []], 17)
 	_check(
-		slot.get_node("OrderPanel").size == Vector2(176.0, 188.0)
-		and slot.patience_bar.position == Vector2(43.0, 171.0)
-		and slot.patience_bar.size == Vector2(125.0, 9.0)
+		slot.get_node("OrderPanel").size == Vector2(264.0, 282.0)
+		and slot.patience_bar.position == Vector2(64.5, 256.5)
+		and slot.patience_bar.size == Vector2(187.5, 13.5)
 		and is_equal_approx(slot.patience_bar.value, 100.0),
 		"a normal item and a pancake each receive their own 60-pixel block above the fixed progress footer",
 	)
@@ -57,20 +57,20 @@ func _run() -> void:
 		eight_ingredients.append({"display_name": "配料%d" % ingredient_index})
 	slot.bind_order(multi_item_order, null, [null, null, null], [eight_ingredients, [], []], 17)
 	_check(
-		slot.get_node("OrderPanel").size == Vector2(176.0, 188.0)
+		slot.get_node("OrderPanel").size == Vector2(264.0, 287.0)
 		and slot.item_buttons[0].visible
 		and slot.item_buttons[1].visible
 		and slot.item_buttons[2].visible
-		and slot.patience_bar.position == Vector2(43.0, 171.0)
-		and slot.patience_bar.size == Vector2(125.0, 9.0)
+		and slot.patience_bar.position == Vector2(64.5, 261.5)
+		and slot.patience_bar.size == Vector2(187.5, 13.5)
 		and is_equal_approx(slot.patience_bar.value, 100.0)
 		and slot.get_node("OrderPanel/IngredientSlot1_8").visible,
 		"two ordinary products share one row while the pancake keeps its eight requirements in a dedicated block",
 	)
 	_check(
-		slot.item_buttons[0].position == Vector2(12.0, 108.0)
-		and slot.item_buttons[1].position == Vector2(12.0, 43.0)
-		and slot.item_buttons[2].position == Vector2(67.0, 43.0)
+		slot.item_buttons[0].position == Vector2(9.0, 153.0)
+		and slot.item_buttons[1].position == Vector2(17.1, 55.05)
+		and slot.item_buttons[2].position == Vector2(99.6, 55.05)
 		and slot.item_icons[0].position == Vector2.ZERO and slot.item_icons[0].size == slot.item_buttons[0].size
 		and slot.item_icons[1].position == Vector2.ZERO and slot.item_icons[1].size == slot.item_buttons[1].size
 		and slot.item_icons[2].position == Vector2.ZERO and slot.item_icons[2].size == slot.item_buttons[2].size,
@@ -78,7 +78,7 @@ func _run() -> void:
 	)
 	slot.bind_order(order, null, [null], [[]], 17)
 	_check(
-		slot.get_node("OrderPanel").size == Vector2(176.0, 124.0)
+		slot.get_node("OrderPanel").size == Vector2(264.0, 186.0)
 		and slot.item_buttons[0].visible
 		and not slot.item_buttons[1].visible
 		and not slot.item_buttons[2].visible,
@@ -87,7 +87,7 @@ func _run() -> void:
 	_check(slot.portrait.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("PortraitButton") == null and slot.get_node_or_null("FocusFrame") == null, "portrait renders behind the order-card controls without an unused portrait click target")
 	_check(slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "the order card retains its explicit focus click target")
 	var patience_fill := slot.patience_bar.get_theme_stylebox(&"fill") as StyleBoxFlat
-	_check(slot.patience_bar.position == Vector2(43.0, 107.0) and slot.patience_bar.size == Vector2(125.0, 9.0) and is_equal_approx(slot.patience_bar.value, 100.0) and patience_fill != null and patience_fill.corner_radius_top_left == 5 and patience_fill.corner_radius_bottom_right == 5, "a full one-item order uses a pill-shaped fill inside the drawn card footer")
+	_check(slot.patience_bar.position == Vector2(64.5, 160.5) and slot.patience_bar.size == Vector2(187.5, 13.5) and is_equal_approx(slot.patience_bar.value, 100.0) and patience_fill != null and patience_fill.corner_radius_top_left == 5 and patience_fill.corner_radius_bottom_right == 5, "a full one-item order uses a pill-shaped fill inside the drawn card footer")
 	var expanded_order := order.duplicate(true)
 	expanded_order["items"] = [
 		{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 1, "prepared_product_instance_ids": []},
@@ -96,7 +96,7 @@ func _run() -> void:
 		{"area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "quantity": 1, "prepared_product_instance_ids": []},
 	]
 	slot.bind_order(expanded_order, null, [null, null, null, null], [[], [], [], []], 17)
-	_check(slot.item_buttons.size() == 4 and slot.get_node("OrderPanel").size == Vector2(176.0, 188.0) and slot.item_buttons[3].position == Vector2(12.0, 107.0), "four ordinary products add a second three-slot row instead of dropping the fourth item")
+	_check(slot.item_buttons.size() == 4 and slot.get_node("OrderPanel").size == Vector2(264.0, 282.0) and slot.item_buttons[3].position == Vector2(17.1, 151.05), "four ordinary products add a second three-slot row instead of dropping the fourth item")
 	var nine_requirements: Array = []
 	for ingredient_index in 9:
 		nine_requirements.append({"display_name": "配料%d" % ingredient_index})
@@ -106,7 +106,7 @@ func _run() -> void:
 		"remaining_patience_seconds": 60.0,
 		"items": [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "prepared_product_instance_ids": []}],
 	}, null, [null], [nine_requirements], 17)
-	_check(slot.get_node("OrderPanel").size == Vector2(176.0, 144.0) and slot.get_node("OrderPanel/IngredientSlot1_9").visible, "a third pancake ingredient row expands its dedicated block to 80 pixels")
+	_check(slot.get_node("OrderPanel").size == Vector2(264.0, 232.0) and slot.get_node("OrderPanel/IngredientSlot1_9").visible, "a third pancake ingredient row expands its dedicated block to 136 pixels")
 	_check(slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "customer slot shell cannot cover unrelated foreground controls")
 	var special_order := {
 		"order_id": &"order.special.ui",

@@ -114,6 +114,7 @@ func _ready() -> void:
 	packaged_drink_station.connect("status_message", _show_station_status)
 	multi_griddle_station.status_message.connect(_show_station_status)
 	multi_griddle_station.transient_warning_requested.connect(_show_top_warning)
+	multi_griddle_station.fold_feedback_requested.connect(_on_pancake_fold_feedback)
 	if pancake_worktop_hotspots != null:
 		pancake_worktop_hotspots.status_message.connect(_show_station_status)
 	for service_slot in customer_service_slots:
@@ -129,8 +130,6 @@ func _ready() -> void:
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
 		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
 		material_slot.short_clicked.connect(_on_material_short_clicked)
-	for source in cartoon_youtiao_fryer.output_sources:
-		source.native_drag_enabled = true
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
 		multi_griddle_station.bind_session(session)
@@ -155,6 +154,17 @@ func _refresh_result_presentation() -> void:
 	super._refresh_result_presentation()
 	if result_panel != null and result_panel.visible:
 		_load_result_quality_icons()
+
+
+func _on_pancake_fold_feedback(_unit_index: int, feedback_kind: StringName) -> void:
+	kitchen_audio.call("play_cue", &"fold")
+	if DisplayServer.get_name() == "headless":
+		return
+	var weak_strength := 0.12 if feedback_kind == &"snap_threshold" else 0.08
+	var strong_strength := 0.28 if feedback_kind == &"snap_threshold" else 0.18
+	var duration := 0.08 if feedback_kind == &"snap_threshold" else 0.06
+	for device_id in Input.get_connected_joypads():
+		Input.start_joy_vibration(device_id, weak_strength, strong_strength, duration)
 
 
 func _populate_result(score_result: Dictionary) -> void:

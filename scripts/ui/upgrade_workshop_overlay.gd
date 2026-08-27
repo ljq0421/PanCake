@@ -8,6 +8,23 @@ const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PRESS_SPREADER_PROP_PATH := NodePath("UpgradeProps/WorkshopProp_growth_automation_pancake_press_once")
 const RUNTIME_PRESS_VISUAL_PATH := NodePath("JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
 const EDITOR_PRESS_VISUAL_PATH := NodePath("SyncedWorkstationPreview/SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
+const EDITOR_PANCAKE_WORKTOP_PATH := NodePath("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots")
+const EDITOR_PANCAKE_CONTAINER_PATHS: Array[NodePath] = [
+	NodePath("EggCarton"),
+	NodePath("BaocuiBasket"),
+	NodePath("ScallionTray"),
+	NodePath("CorianderTray"),
+	NodePath("HamSource"),
+	NodePath("PorkFlossSource"),
+	NodePath("SecretSauceSource"),
+	NodePath("BatterLadleSource"),
+]
+const EDITOR_FULL_CONTAINER_VISUAL_PATHS: Array[NodePath] = [
+	NodePath("ScallionTray/Visual"),
+	NodePath("CorianderTray/Visual"),
+	NodePath("HamSource/Visual"),
+	NodePath("PorkFlossSource/Visual"),
+]
 const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
 	NodePath("SafeArea/ServiceCustomer1"),
 	NodePath("SafeArea/ServiceCustomer2"),
@@ -45,6 +62,9 @@ var _tag_layouts: Dictionary = {}
 func _enter_tree() -> void:
 	if Engine.is_editor_hint():
 		return
+	var material_previews := get_node_or_null("EditorMaterialPreviews") as CanvasItem
+	if material_previews != null:
+		material_previews.visible = false
 	# The formal workstation is authored as an external scene instance so Godot
 	# keeps the editor preview synchronized automatically. Remove it before its
 	# runtime callbacks can enter the tree; the real workstation behind this
@@ -58,7 +78,14 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
+		# The scene editor can restore properties from the nested workstation after
+		# this tool script's _ready() has run. Keep editor processing enabled so the
+		# catalogue artwork remains synchronized instead of disappearing again.
+		set_process(true)
 		_editor_preview.visible = true
+		var material_previews := get_node_or_null("EditorMaterialPreviews") as CanvasItem
+		if material_previews != null:
+			material_previews.visible = true
 		_configure_editor_workstation_preview()
 		call_deferred("_sync_press_spreader_layout")
 		return
@@ -82,6 +109,13 @@ func _ready() -> void:
 	refresh()
 
 
+func _process(_delta: float) -> void:
+	if not Engine.is_editor_hint():
+		return
+	_configure_editor_workstation_preview()
+	_sync_press_spreader_layout()
+
+
 func _configure_editor_workstation_preview() -> void:
 	if not Engine.is_editor_hint() or _editor_preview == null:
 		return
@@ -93,6 +127,59 @@ func _configure_editor_workstation_preview() -> void:
 		var preview_node := synced_preview.get_node_or_null(scene_path) as CanvasItem
 		if preview_node != null:
 			preview_node.visible = false
+	_configure_editor_pancake_preview(synced_preview)
+
+
+func _configure_editor_pancake_preview(synced_preview: Control) -> void:
+	# The pancake worktop normally fills and reveals these containers from the
+	# live GameSession. That gameplay script is intentionally not a @tool script,
+	# so an editor-only workshop instance would otherwise show empty or missing
+	# artwork behind its independently authored upgrade tags.
+	var worktop := synced_preview.get_node_or_null(EDITOR_PANCAKE_WORKTOP_PATH) as Control
+	if worktop == null:
+		push_error("Workshop editor preview is missing the pancake worktop")
+		return
+	worktop.visible = true
+	for container_path in EDITOR_PANCAKE_CONTAINER_PATHS:
+		var container := worktop.get_node_or_null(container_path) as CanvasItem
+		if container != null:
+			container.visible = true
+			container.modulate = Color.WHITE
+	_set_editor_preview_texture_from_last_export(
+		worktop,
+		NodePath("EggCarton/Visual/Contents"),
+		worktop,
+		&"egg_content_textures"
+	)
+	_set_editor_preview_texture_from_last_export(
+		worktop,
+		NodePath("BaocuiBasket/Visual"),
+		worktop,
+		&"baocui_tray_textures"
+	)
+	for visual_path in EDITOR_FULL_CONTAINER_VISUAL_PATHS:
+		var visual := worktop.get_node_or_null(visual_path) as TextureRect
+		_set_editor_preview_texture_from_last_export(worktop, visual_path, visual, &"state_textures")
+
+
+func _set_editor_preview_texture_from_last_export(
+	root: Node,
+	visual_path: NodePath,
+	texture_source: Object,
+	property_name: StringName
+) -> void:
+	var visual := root.get_node_or_null(visual_path) as TextureRect
+	if visual == null or texture_source == null:
+		return
+	var exported_textures: Variant = texture_source.get(property_name)
+	if not exported_textures is Array or Array(exported_textures).is_empty():
+		return
+	var preview_texture := Array(exported_textures).back() as Texture2D
+	if preview_texture == null:
+		return
+	visual.texture = preview_texture
+	visual.visible = true
+	visual.self_modulate = Color.WHITE
 
 func refresh() -> void:
 	var session := get_node_or_null("/root/GameSession")
@@ -125,15 +212,11 @@ func refresh() -> void:
 		# then the completed-state feedback.
 		var show_prerequisite_locked_visual := growth_id in [
 			&"growth.capacity.youtiao_finished_tray",
+			&"growth.capacity.chicken_finished_tray",
 			&"growth.add_on.pancake.egg",
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",
 			&"growth.automation.pancake.one_click_egg",
-			&"growth.automation.pancake.one_click_baocui",
-			&"growth.automation.pancake.one_click_scallion",
-			&"growth.automation.pancake.one_click_ham_sausage",
-			&"growth.automation.pancake.one_click_coriander",
-			&"growth.automation.pancake.one_click_meat_floss",
 		]
 		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket"]
 		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]

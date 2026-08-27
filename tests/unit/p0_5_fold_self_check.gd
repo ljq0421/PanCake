@@ -12,7 +12,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	_test_drag_must_cross_fold_line()
+	_test_drag_uses_snap_tolerance()
 	_test_fold_profile_reuses_static_geometry()
 	_test_fold_occludes_landing_area_fillings()
 	_test_right_then_left_uses_the_mirrored_clip()
@@ -47,7 +47,7 @@ func _test_fold_profile_reuses_static_geometry() -> void:
 	overlay.free()
 
 
-func _test_drag_must_cross_fold_line() -> void:
+func _test_drag_uses_snap_tolerance() -> void:
 	var model := _uniform_pancake(64, 0.55, 0.55)
 	var fold: RefCounted = FOLD_MODEL_SCRIPT.new(model)
 	var change_events := []
@@ -61,8 +61,11 @@ func _test_drag_must_cross_fold_line() -> void:
 	var change_count_after_move := change_events.size()
 	fold.update_drag(Vector2(18, 32))
 	_check(change_events.size() == change_count_after_move, "an unchanged fold pointer does not request another redraw")
-	var committed: Dictionary = fold.release_drag(Vector2(34, 32))
-	_check(bool(committed.committed) and committed.outcome == FOLD_MODEL_SCRIPT.OUTCOME_INTACT, "crossing the line and releasing commits an intact fold")
+	var committed: Dictionary = fold.release_drag(Vector2(23, 32))
+	_check(
+		bool(committed.committed) and committed.outcome == FOLD_MODEL_SCRIPT.OUTCOME_INTACT,
+		"reaching the 45 percent snap range commits without requiring an exact fold-line crossing",
+	)
 
 
 func _test_fold_occludes_landing_area_fillings() -> void:
@@ -155,7 +158,7 @@ func _test_all_completed_folds_use_paper_bags() -> void:
 	_set_hole(severe_model, Vector2i(12, 32))
 	var severe_fold: RefCounted = FOLD_MODEL_SCRIPT.new(severe_model)
 	_fold_left(severe_fold)
-	_check(not severe_fold.can_use_bag(), "paper-bag packaging still waits for both fold gestures")
+	_check(not severe_fold.can_use_bag(), "paper-bag packaging still waits for both folded sides")
 	_fold_right(severe_fold)
 	var severe_bag: Dictionary = severe_fold.package_with(FOLD_MODEL_SCRIPT.PACKAGE_BAG)
 	_check(bool(severe_bag.success), "a severely damaged but fully folded pancake also uses the paper bag")

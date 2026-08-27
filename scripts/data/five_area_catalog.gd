@@ -102,7 +102,9 @@ const STOCK_DEFINITIONS := {
 	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.1666667, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.09"},
 	# Keep this stable ID so existing runtime save and order contracts continue to
 	# resolve, while all player-facing text identifies the single shared sauce.
-	&"stock.pancake.sauce.sweet_flour": {"label": "秘制酱料", "area_id": &"area.pancake", "category": &"sauce", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"", "surface_input_id": &"ui.pancake.secret_sauce_brush"},
+	# The shared sauce jar is a station fixture: it never needs stocking and does
+	# not add a replenishment cost to the finished pancake.
+	&"stock.pancake.sauce.sweet_flour": {"label": "秘制酱料", "area_id": &"area.pancake", "category": &"sauce", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &"", "surface_input_id": &"ui.pancake.secret_sauce_brush"},
 	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
 	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.25, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
@@ -136,27 +138,27 @@ const RECIPE_DEFINITIONS := {
 
 const PRODUCT_DEFINITIONS := {
 	&"product.pancake.custom": {"area_id": &"area.pancake", "recipe_id": &"recipe.pancake.base"},
-	&"product.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.plain", "base_sell_price": 3, "order_weight": 60},
-	&"product.chicken.cutlet": {"label": "炸鸡排", "area_id": &"area.youtiao", "recipe_id": &"recipe.chicken.cutlet", "base_sell_price": 8, "order_weight": 25},
-	&"product.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "base_sell_price": 3, "material_cost": 2, "order_weight": 60},
-	&"product.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "recipe_id": &"recipe.packaged_drink.juice", "base_sell_price": 3, "material_cost": 1, "order_weight": 60},
+	&"product.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.plain", "base_sell_price": 9, "order_weight": 60},
+	&"product.chicken.cutlet": {"label": "炸鸡排", "area_id": &"area.youtiao", "recipe_id": &"recipe.chicken.cutlet", "base_sell_price": 24, "order_weight": 25},
+	&"product.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "base_sell_price": 9, "material_cost": 2, "order_weight": 60},
+	&"product.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "recipe_id": &"recipe.packaged_drink.juice", "base_sell_price": 9, "material_cost": 1, "order_weight": 60},
 }
 
 ## Customer-facing prices. Pancakes always start with a 2-coin plain pancake;
 ## listed add-ons are charged per portion, while the shared secret sauce is free.
-const PANCAKE_BASE_SELL_PRICE := 2
+const PANCAKE_BASE_SELL_PRICE := 6
 const PANCAKE_ADD_ON_SELL_PRICES := {
-	&"stock.pancake.egg": 2,
-	&"stock.pancake.baocui": 1,
-	&"stock.pancake.scallion": 1,
-	&"stock.pancake.coriander": 1,
-	&"stock.pancake.ham_sausage": 4,
-	&"stock.pancake.meat_floss": 4,
-	&"stock.pancake.youtiao": 3,
+	&"stock.pancake.egg": 6,
+	&"stock.pancake.baocui": 3,
+	&"stock.pancake.scallion": 3,
+	&"stock.pancake.coriander": 3,
+	&"stock.pancake.ham_sausage": 12,
+	&"stock.pancake.meat_floss": 12,
+	&"stock.pancake.youtiao": 9,
 }
 const SOY_MILK_SELL_PRICES := {
-	&"plain": 3,
-	&"sugared": 4,
+	&"plain": 9,
+	&"sugared": 12,
 }
 
 const AUTOMATION_DEFINITIONS := {
@@ -164,46 +166,37 @@ const AUTOMATION_DEFINITIONS := {
 	&"automation.pancake.press_once": {"area_id": &"area.pancake"},
 	&"automation.pancake.auto_sauce_brush": {"area_id": &"area.pancake"},
 	&"automation.pancake.one_click_egg": {"area_id": &"area.pancake"},
-	&"automation.pancake.one_click_baocui": {"area_id": &"area.pancake"},
-	&"automation.pancake.one_click_scallion": {"area_id": &"area.pancake"},
-	&"automation.pancake.one_click_ham_sausage": {"area_id": &"area.pancake"},
-	&"automation.pancake.one_click_coriander": {"area_id": &"area.pancake"},
-	&"automation.pancake.one_click_meat_floss": {"area_id": &"area.pancake"},
 	&"automation.youtiao.auto_lift": {"area_id": &"area.youtiao"},
 	&"automation.fresh_soy_milk.auto_fill": {"area_id": &"area.fresh_soy_milk"},
 	&"automation.fresh_soy_milk.double_fill": {"area_id": &"area.fresh_soy_milk"},
 }
 const RESTOCK_DEFINITIONS := {"stock_definition_is_source": true}
 const GROWTH_DEFINITIONS := {
-	&"growth.add_on.pancake.egg": {"label":"鸡蛋", "kind":&"stock_unlock", "price":4, "requires_area_id":&"area.pancake", "requires_tutorial_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.egg"], "anchor_id":&"pancake.egg"},
-	&"growth.automation.pancake.one_click_egg": {"label":"一键打蛋", "kind":&"automation", "price":16, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg"], "requires_mastery":{&"area.pancake":{"a_grade":2}}, "automation_id":&"automation.pancake.one_click_egg", "anchor_id":&"pancake.egg"},
-	&"growth.add_on.pancake.baocui": {"label":"薄脆", "kind":&"stock_unlock", "price":8, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":4}}, "unlock_stock_ids":[&"stock.pancake.baocui"], "anchor_id":&"pancake.baocui"},
-	&"growth.automation.pancake.one_click_baocui": {"label":"一键加薄脆", "kind":&"automation", "price":20, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.baocui"], "requires_mastery":{&"area.pancake":{"a_grade":3}}, "automation_id":&"automation.pancake.one_click_baocui", "anchor_id":&"pancake.baocui"},
-	&"growth.add_on.pancake.scallion": {"label":"香葱罐", "kind":&"stock_unlock", "price":8, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":6}}, "unlock_stock_ids":[&"stock.pancake.scallion"], "anchor_id":&"pancake.scallion"},
-	&"growth.automation.pancake.one_click_scallion": {"label":"一键撒葱", "kind":&"automation", "price":24, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.scallion"], "requires_mastery":{&"area.pancake":{"a_grade":4}}, "automation_id":&"automation.pancake.one_click_scallion", "anchor_id":&"pancake.scallion"},
-	&"growth.add_on.pancake.ham_sausage": {"label":"火腿", "kind":&"stock_unlock", "price":12, "min_day":4, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.ham_sausage"], "anchor_id":&"pancake.ham"},
-	&"growth.automation.pancake.one_click_ham_sausage": {"label":"一键加火腿", "kind":&"automation", "price":28, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.ham_sausage"], "requires_mastery":{&"area.pancake":{"a_grade":5}}, "automation_id":&"automation.pancake.one_click_ham_sausage", "anchor_id":&"pancake.ham"},
-	&"growth.add_on.pancake.coriander": {"label":"香菜", "kind":&"stock_unlock", "price":10, "min_day":6, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.coriander"], "anchor_id":&"pancake.coriander"},
-	&"growth.automation.pancake.one_click_coriander": {"label":"一键撒香菜", "kind":&"automation", "price":32, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.coriander"], "requires_mastery":{&"area.pancake":{"a_grade":6}}, "automation_id":&"automation.pancake.one_click_coriander", "anchor_id":&"pancake.coriander"},
-	&"growth.add_on.pancake.meat_floss": {"label":"肉松", "kind":&"stock_unlock", "price":18, "min_reputation":45, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.meat_floss"], "anchor_id":&"pancake.meat_floss"},
-	&"growth.automation.pancake.one_click_meat_floss": {"label":"一键加肉松", "kind":&"automation", "price":40, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.meat_floss"], "requires_mastery":{&"area.pancake":{"a_grade":7}}, "automation_id":&"automation.pancake.one_click_meat_floss", "anchor_id":&"pancake.meat_floss"},
-	&"growth.automation.pancake.auto_batter_ladle": {"label":"定量面糊勺", "kind":&"automation", "price":20, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":3}}, "automation_id":&"automation.pancake.auto_batter_ladle", "anchor_id":&"pancake.ladle"},
-	&"growth.automation.pancake.press_once": {"label":"压饼器", "kind":&"automation", "price":36, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":5}}, "automation_id":&"automation.pancake.press_once", "anchor_id":&"pancake.press"},
-	&"growth.automation.pancake.auto_sauce_brush": {"label":"自动刷酱", "kind":&"automation", "price":48, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"a_grade":8}}, "automation_id":&"automation.pancake.auto_sauce_brush", "anchor_id":&"pancake.brush"},
-	&"growth.area.youtiao": {"label":"油条炸锅", "kind":&"area_unlock", "price":30, "min_reputation":20, "requires_area_id":&"area.pancake", "requires_mastery":{&"area.pancake":{"qualified":6}}, "area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":0, "unlock_recipe_ids":[&"recipe.youtiao.plain"], "unlock_product_ids":[&"product.youtiao.plain"], "unlock_stock_ids":[&"stock.youtiao.plain_dough"], "anchor_id":&"youtiao.fryer"},
-	&"growth.capacity.youtiao_finished_tray": {"label":"油条成品盘", "kind":&"storage", "price":12, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.area.youtiao"], "anchor_id":&"youtiao.finished_tray"},
-	&"growth.equipment.youtiao.advanced": {"label":"高级油条机", "kind":&"device_tier", "price":36, "requires_area_id":&"area.youtiao", "requires_mastery":{&"area.youtiao":{"qualified":6}}, "device_id":&"device.youtiao_fryer", "target_tier":1, "automation_id":&"automation.youtiao.auto_lift", "anchor_id":&"youtiao.advanced"},
-	&"growth.equipment.youtiao.dual_basket": {"label":"双篮炸锅", "kind":&"device_tier", "price":72, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.equipment.youtiao.advanced"], "requires_mastery":{&"area.youtiao":{"qualified":12}}, "device_id":&"device.youtiao_fryer", "target_tier":2, "unlock_recipe_ids":[&"recipe.chicken.cutlet"], "unlock_product_ids":[&"product.chicken.cutlet"], "unlock_stock_ids":[&"stock.chicken.cutlet_raw"], "anchor_id":&"youtiao.dual_basket"},
-	&"growth.area.fresh_soy_milk": {"label":"初级豆浆机", "kind":&"area_unlock", "price":60, "min_day":7, "min_reputation":60, "requires_area_id":&"area.youtiao", "requires_mastery":{&"area.youtiao":{"qualified":4}}, "area_id":&"area.fresh_soy_milk", "device_id":&"device.fresh_soy_milk_machine", "target_tier":0, "unlock_recipe_ids":[&"recipe.fresh_soy_milk.yellow_bean"], "unlock_product_ids":[&"product.fresh_soy_milk.yellow_bean"], "anchor_id":&"soy.machine"},
-	&"growth.assist.fresh_soy_milk.sugar": {"label":"加糖罐", "kind":&"assist", "price":12, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"qualified":2}}, "assist_id":&"assist.fresh_soy_milk.sugar", "anchor_id":&"soy.sugar"},
-	&"growth.automation.fresh_soy_milk.auto_fill": {"label":"中级豆浆机", "kind":&"automation", "price":64, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"a_grade":4}}, "automation_id":&"automation.fresh_soy_milk.auto_fill", "anchor_id":&"soy.auto_fill"},
-	&"growth.automation.fresh_soy_milk.advanced": {"label":"高级豆浆机", "kind":&"automation", "price":80, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"a_grade":10}}, "requires_growth_ids":[&"growth.automation.fresh_soy_milk.auto_fill"], "automation_id":&"automation.fresh_soy_milk.double_fill", "anchor_id":&"soy.advanced"},
-	&"growth.area.packaged_drink": {"label":"成品饮品架", "kind":&"area_unlock", "price":80, "requires_area_id":&"area.fresh_soy_milk", "area_id":&"area.packaged_drink", "device_id":&"device.packaged_drink_rack", "target_tier":0, "unlock_recipe_ids":[&"recipe.packaged_drink.juice"], "unlock_product_ids":[&"product.packaged_drink.juice"], "unlock_stock_ids":[&"stock.packaged_drink.juice"], "anchor_id":&"packaged_drink.rack"},
+	&"growth.add_on.pancake.egg": {"label":"鸡蛋", "kind":&"stock_unlock", "price":10, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.egg"], "anchor_id":&"pancake.egg"},
+	&"growth.automation.pancake.one_click_egg": {"label":"一键打蛋", "kind":&"automation", "price":60, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg"], "automation_id":&"automation.pancake.one_click_egg", "anchor_id":&"pancake.egg"},
+	&"growth.add_on.pancake.baocui": {"label":"薄脆", "kind":&"stock_unlock", "price":30, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.baocui"], "anchor_id":&"pancake.baocui"},
+	&"growth.add_on.pancake.scallion": {"label":"香葱罐", "kind":&"stock_unlock", "price":50, "requires_area_id":&"area.pancake", "unlock_stock_ids":[&"stock.pancake.scallion"], "anchor_id":&"pancake.scallion"},
+	&"growth.add_on.pancake.ham_sausage": {"label":"火腿", "kind":&"stock_unlock", "price":80, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.meat_floss"], "unlock_stock_ids":[&"stock.pancake.ham_sausage"], "anchor_id":&"pancake.ham"},
+	&"growth.add_on.pancake.coriander": {"label":"香菜", "kind":&"stock_unlock", "price":50, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.scallion"], "unlock_stock_ids":[&"stock.pancake.coriander"], "anchor_id":&"pancake.coriander"},
+	&"growth.add_on.pancake.meat_floss": {"label":"肉松", "kind":&"stock_unlock", "price":80, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.baocui"], "unlock_stock_ids":[&"stock.pancake.meat_floss"], "anchor_id":&"pancake.meat_floss"},
+	&"growth.automation.pancake.auto_batter_ladle": {"label":"定量面糊勺", "kind":&"automation", "price":120, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.auto_batter_ladle", "anchor_id":&"pancake.ladle"},
+	&"growth.automation.pancake.press_once": {"label":"压饼器", "kind":&"automation", "price":120, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.press_once", "anchor_id":&"pancake.press"},
+	&"growth.automation.pancake.auto_sauce_brush": {"label":"自动刷酱", "kind":&"automation", "price":180, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.auto_sauce_brush", "anchor_id":&"pancake.brush"},
+	&"growth.area.youtiao": {"label":"油条炸锅", "kind":&"area_unlock", "price":200, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss"], "area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":0, "unlock_recipe_ids":[&"recipe.youtiao.plain"], "unlock_product_ids":[&"product.youtiao.plain"], "unlock_stock_ids":[&"stock.youtiao.plain_dough"], "anchor_id":&"youtiao.fryer"},
+	&"growth.capacity.youtiao_finished_tray": {"label":"油条成品盘", "kind":&"storage", "price":50, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.area.youtiao"], "anchor_id":&"youtiao.finished_tray"},
+	&"growth.equipment.youtiao.advanced": {"label":"高级油条机", "kind":&"device_tier", "price":250, "requires_area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":1, "automation_id":&"automation.youtiao.auto_lift", "anchor_id":&"youtiao.advanced"},
+	&"growth.equipment.youtiao.dual_basket": {"label":"双篮炸锅", "kind":&"device_tier", "price":350, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.equipment.youtiao.advanced"], "device_id":&"device.youtiao_fryer", "target_tier":2, "unlock_recipe_ids":[&"recipe.chicken.cutlet"], "unlock_product_ids":[&"product.chicken.cutlet"], "unlock_stock_ids":[&"stock.chicken.cutlet_raw"], "anchor_id":&"youtiao.dual_basket"},
+	&"growth.capacity.chicken_finished_tray": {"label":"鸡排成品盘", "kind":&"storage", "price":60, "requires_area_id":&"area.youtiao", "requires_growth_ids":[&"growth.equipment.youtiao.dual_basket"], "anchor_id":&"youtiao.chicken_finished_tray"},
+	&"growth.area.fresh_soy_milk": {"label":"初级豆浆机", "kind":&"area_unlock", "price":200, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss"], "area_id":&"area.fresh_soy_milk", "device_id":&"device.fresh_soy_milk_machine", "target_tier":0, "unlock_recipe_ids":[&"recipe.fresh_soy_milk.yellow_bean"], "unlock_product_ids":[&"product.fresh_soy_milk.yellow_bean"], "anchor_id":&"soy.machine"},
+	&"growth.assist.fresh_soy_milk.sugar": {"label":"加糖罐", "kind":&"assist", "price":50, "requires_area_id":&"area.fresh_soy_milk", "assist_id":&"assist.fresh_soy_milk.sugar", "anchor_id":&"soy.sugar"},
+	&"growth.automation.fresh_soy_milk.auto_fill": {"label":"中级豆浆机", "kind":&"automation", "price":250, "requires_area_id":&"area.fresh_soy_milk", "automation_id":&"automation.fresh_soy_milk.auto_fill", "anchor_id":&"soy.auto_fill"},
+	&"growth.automation.fresh_soy_milk.advanced": {"label":"高级豆浆机", "kind":&"automation", "price":350, "requires_area_id":&"area.fresh_soy_milk", "requires_growth_ids":[&"growth.automation.fresh_soy_milk.auto_fill"], "automation_id":&"automation.fresh_soy_milk.double_fill", "anchor_id":&"soy.advanced"},
+	&"growth.area.packaged_drink": {"label":"成品饮品架", "kind":&"area_unlock", "price":200, "requires_area_id":&"area.fresh_soy_milk", "area_id":&"area.packaged_drink", "device_id":&"device.packaged_drink_rack", "target_tier":0, "unlock_recipe_ids":[&"recipe.packaged_drink.juice"], "unlock_product_ids":[&"product.packaged_drink.juice"], "unlock_stock_ids":[&"stock.packaged_drink.juice"], "anchor_id":&"packaged_drink.rack"},
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
-	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.automation.pancake.one_click_baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.one_click_scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.ham_sausage", &"growth.automation.pancake.one_click_ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.one_click_coriander", &"growth.add_on.pancake.meat_floss", &"growth.automation.pancake.one_click_meat_floss", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
-	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket",
+	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
+	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket", &"growth.capacity.chicken_finished_tray",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
 	&"growth.area.packaged_drink",
 ]
@@ -230,24 +223,24 @@ const DAILY_GOAL_DEFINITIONS := {
 ## them to the legacy pancake simulation IDs, but eligibility never comes from
 ## visible material slots or widget state.
 const PANCAKE_ORDER_TEMPLATES := {
-	&"order.pancake.egg": {"title": "鸡蛋煎饼", "ingredient_stock_ids": [&"stock.pancake.egg"], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 68.0, "payment_coins": 4, "customer_line": "来一份鸡蛋煎饼，不加其他小料。"},
-	&"order.pancake.double_egg_plain": {"title": "双蛋煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.egg"], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 6, "customer_line": "来一份双蛋煎饼，别加其他小料。"},
-	&"order.pancake.no_egg_plain": {"title": "无蛋煎饼", "ingredient_stock_ids": [], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 64.0, "payment_coins": 2, "customer_line": "来一份无蛋煎饼，什么小料和酱都不加。"},
-	&"order.pancake.no_egg_secret": {"title": "秘制酱料煎饼", "ingredient_stock_ids": [], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 66.0, "payment_coins": 2, "customer_line": "先来一份刷秘制酱料的无蛋煎饼。"},
-	&"order.pancake.egg_sweet": {"title": "鸡蛋秘制酱料煎饼", "ingredient_stock_ids": [&"stock.pancake.egg"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 70.0, "payment_coins": 4, "customer_line": "鸡蛋煎饼刷秘制酱料就好。"},
-	&"order.pancake.crisp": {"title": "薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 5, "customer_line": "加薄脆，刷秘制酱料，不要葱。"},
-	&"order.pancake.classic": {"title": "经典杂粮煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 6, "customer_line": "来一份经典的，薄脆和葱花都要。"},
-	&"order.pancake.double_egg": {"title": "双蛋薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 8, "customer_line": "鸡蛋加双份，薄脆和葱花照常。"},
-	&"order.pancake.chili_simple": {"title": "葱香薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 74.0, "payment_coins": 6, "customer_line": "薄脆和葱花都要，刷秘制酱料。"},
-	&"order.pancake.chili_ham": {"title": "火腿薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.ham_sausage"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"well_done", "time_limit": 76.0, "payment_coins": 9, "customer_line": "火腿薄脆，刷秘制酱料，边缘煎香一点。"},
-	&"order.pancake.double_sauce": {"title": "全料秘制煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.ham_sausage", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 82.0, "payment_coins": 10, "customer_line": "刷秘制酱料，配料给我放匀。"},
-	&"order.pancake.scallion_light": {"title": "葱香少料煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"light", "time_limit": 68.0, "payment_coins": 5, "customer_line": "这份不加薄脆，饼皮嫩一点就好。"},
-	&"order.pancake.meat_floss_sweet": {"title": "秘制肉松煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.meat_floss", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 84.0, "payment_coins": 10, "customer_line": "肉松铺匀些，秘制酱料和葱花都要。"},
-	&"order.pancake.double_meat_floss": {"title": "双份肉松煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.meat_floss", &"stock.pancake.meat_floss", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 86.0, "payment_coins": 14, "customer_line": "肉松请给我加两份，秘制酱料和葱花都要。"},
-	&"order.pancake.extra_sweet_sauce": {"title": "多秘制酱料煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 76.0, "payment_coins": 6, "customer_line": "秘制酱料加双份，薄脆和葱花都要。"},
-	&"order.pancake.coriander": {"title": "香菜薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.coriander"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 6, "customer_line": "薄脆和香菜都要，刷秘制酱料。"},
-	&"order.pancake.tomato_ham": {"title": "火腿薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.ham_sausage"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 9, "customer_line": "火腿薄脆，刷秘制酱料。"},
-	&"order.pancake.youtiao_scallion": {"title": "油条葱香煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.youtiao", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "requires_recipe_ids": [&"recipe.youtiao.plain"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 8, "customer_line": "加一根油条、葱花和秘制酱料。"},
+	&"order.pancake.egg": {"title": "鸡蛋煎饼", "ingredient_stock_ids": [&"stock.pancake.egg"], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 68.0, "payment_coins": 12, "customer_line": "来一份鸡蛋煎饼，不加其他小料。"},
+	&"order.pancake.double_egg_plain": {"title": "双蛋煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.egg"], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 18, "customer_line": "来一份双蛋煎饼，别加其他小料。"},
+	&"order.pancake.no_egg_plain": {"title": "无蛋煎饼", "ingredient_stock_ids": [], "sauce_stock_ids": [], "heat_preference": &"golden", "time_limit": 64.0, "payment_coins": 6, "customer_line": "来一份无蛋煎饼，什么小料和酱都不加。"},
+	&"order.pancake.no_egg_secret": {"title": "秘制酱料煎饼", "ingredient_stock_ids": [], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 66.0, "payment_coins": 6, "customer_line": "先来一份刷秘制酱料的无蛋煎饼。"},
+	&"order.pancake.egg_sweet": {"title": "鸡蛋秘制酱料煎饼", "ingredient_stock_ids": [&"stock.pancake.egg"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 70.0, "payment_coins": 12, "customer_line": "鸡蛋煎饼刷秘制酱料就好。"},
+	&"order.pancake.crisp": {"title": "薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 15, "customer_line": "加薄脆，刷秘制酱料，不要葱。"},
+	&"order.pancake.classic": {"title": "经典杂粮煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 18, "customer_line": "来一份经典的，薄脆和葱花都要。"},
+	&"order.pancake.double_egg": {"title": "双蛋薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 24, "customer_line": "鸡蛋加双份，薄脆和葱花照常。"},
+	&"order.pancake.chili_simple": {"title": "葱香薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 74.0, "payment_coins": 18, "customer_line": "薄脆和葱花都要，刷秘制酱料。"},
+	&"order.pancake.chili_ham": {"title": "火腿薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.ham_sausage"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"well_done", "time_limit": 76.0, "payment_coins": 27, "customer_line": "火腿薄脆，刷秘制酱料，边缘煎香一点。"},
+	&"order.pancake.double_sauce": {"title": "全料秘制煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.ham_sausage", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 82.0, "payment_coins": 30, "customer_line": "刷秘制酱料，配料给我放匀。"},
+	&"order.pancake.scallion_light": {"title": "葱香少料煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"light", "time_limit": 68.0, "payment_coins": 15, "customer_line": "这份不加薄脆，饼皮嫩一点就好。"},
+	&"order.pancake.meat_floss_sweet": {"title": "秘制肉松煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.meat_floss", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 84.0, "payment_coins": 30, "customer_line": "肉松铺匀些，秘制酱料和葱花都要。"},
+	&"order.pancake.double_meat_floss": {"title": "双份肉松煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.meat_floss", &"stock.pancake.meat_floss", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 86.0, "payment_coins": 42, "customer_line": "肉松请给我加两份，秘制酱料和葱花都要。"},
+	&"order.pancake.extra_sweet_sauce": {"title": "多秘制酱料煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 76.0, "payment_coins": 18, "customer_line": "秘制酱料加双份，薄脆和葱花都要。"},
+	&"order.pancake.coriander": {"title": "香菜薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.coriander"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 18, "customer_line": "薄脆和香菜都要，刷秘制酱料。"},
+	&"order.pancake.tomato_ham": {"title": "火腿薄脆煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.ham_sausage"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "heat_preference": &"golden", "time_limit": 78.0, "payment_coins": 27, "customer_line": "火腿薄脆，刷秘制酱料。"},
+	&"order.pancake.youtiao_scallion": {"title": "油条葱香煎饼", "ingredient_stock_ids": [&"stock.pancake.egg", &"stock.pancake.youtiao", &"stock.pancake.scallion"], "sauce_stock_ids": [&"stock.pancake.sauce.sweet_flour"], "requires_recipe_ids": [&"recipe.youtiao.plain"], "heat_preference": &"golden", "time_limit": 72.0, "payment_coins": 24, "customer_line": "加一根油条、葱花和秘制酱料。"},
 }
 
 static func area_definition(area_id: StringName) -> Dictionary:

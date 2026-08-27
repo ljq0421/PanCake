@@ -2,21 +2,22 @@ class_name CustomerServiceSlot
 extends Control
 
 const PATIENCE_BAR_STYLE := preload("res://scripts/ui/patience_bar_style.gd")
-const CARD_HEADER_HEIGHT := 28.0
-const CARD_FOOTER_HEIGHT := 24.0
-const CARD_CONTENT_INSET := 6.0
-const CARD_BLOCK_GAP := 4.0
-const CARD_BLOCK_HEIGHT := 60.0
+const CARD_SCALE := 1.5
+const CARD_HEADER_HEIGHT := 42.0
+const CARD_FOOTER_HEIGHT := 36.0
+const CARD_CONTENT_INSET := 9.0
+const CARD_BLOCK_GAP := 6.0
+const CARD_BLOCK_HEIGHT := 90.0
 const PANCAKE_INGREDIENT_COLUMNS := 4
 const NORMAL_PRODUCTS_PER_ROW := 3
-const NORMAL_PRODUCT_SIZE := Vector2(42.0, 42.0)
-const PANCAKE_PRODUCT_SIZE := Vector2(40.0, 40.0)
-const NORMAL_INGREDIENT_SIZE := Vector2(12.0, 12.0)
-const PANCAKE_INGREDIENT_SIZE := Vector2(20.0, 20.0)
+const NORMAL_PRODUCT_SIZE := Vector2(81.9, 81.9)
+const PANCAKE_PRODUCT_SIZE := Vector2(78.0, 78.0)
+const NORMAL_INGREDIENT_SIZE := Vector2(25.2, 25.2)
+const PANCAKE_INGREDIENT_SIZE := Vector2(42.0, 42.0)
 const NORMAL_REQUIREMENT_LIMIT := 2
-const PATIENCE_FILL_POSITION_X := 43.0
-const PATIENCE_FILL_BOTTOM_INSET := 17.0
-const PATIENCE_FILL_SIZE := Vector2(125.0, 9.0)
+const PATIENCE_FILL_POSITION_X := 64.5
+const PATIENCE_FILL_BOTTOM_INSET := 25.5
+const PATIENCE_FILL_SIZE := Vector2(187.5, 13.5)
 const PORTRAIT_OFFSCREEN_LEFT_MARGIN := 16.0
 const PORTRAIT_ENTER_SECONDS := 1.10
 const PORTRAIT_EXIT_SECONDS := 0.80
@@ -188,6 +189,10 @@ func update_patience(order: Dictionary) -> void:
 func _play_customer_exit(reduce_motion: bool) -> void:
 	_transition_phase = &"exiting"
 	_set_order_interaction_enabled(false)
+	# An order card belongs to the customer currently being served.  Hide it as
+	# soon as that customer starts leaving so a completed or expired order never
+	# appears to remain available at an empty service position.
+	order_panel.visible = false
 	_cancel_presentation_tween()
 	_presentation_tween = create_tween()
 	_presentation_tween.set_parallel(true)
@@ -195,7 +200,6 @@ func _play_customer_exit(reduce_motion: bool) -> void:
 		portrait.position = _portrait_rest_position
 		order_panel.position = _order_panel_rest_position
 		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, REDUCED_PORTRAIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		_presentation_tween.tween_property(order_panel, "modulate:a", 0.0, REDUCED_ORDER_PANEL_SECONDS).set_delay(REDUCED_ORDER_PANEL_DELAY_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	else:
 		# Normal motion is deliberately walk-only; fades and card translation read as drifting.
 		portrait.modulate.a = 1.0
@@ -335,8 +339,8 @@ func _ensure_item_control_count(count: int) -> void:
 		quantity.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		quantity.add_theme_color_override("font_color", Color("fff0bd"))
 		quantity.add_theme_color_override("font_outline_color", Color("2e1005"))
-		quantity.add_theme_constant_override("outline_size", 2)
-		quantity.add_theme_font_size_override("font_size", 10)
+		quantity.add_theme_constant_override("outline_size", 3)
+		quantity.add_theme_font_size_override("font_size", 15)
 		quantity.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		button.add_child(quantity)
 		order_panel.add_child(button)
@@ -395,25 +399,25 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 		row_top += CARD_BLOCK_HEIGHT + CARD_BLOCK_GAP
 	for item_index in pancake_indexes:
 		var requirements: Array = Array(requirements_by_item[item_index]) if item_index < requirements_by_item.size() else []
-		var pancake_height := maxf(CARD_BLOCK_HEIGHT, 8.0 + 24.0 * ceil(float(requirements.size()) / float(PANCAKE_INGREDIENT_COLUMNS)))
+		var pancake_height := maxf(CARD_BLOCK_HEIGHT, 13.0 + 41.0 * ceil(float(requirements.size()) / float(PANCAKE_INGREDIENT_COLUMNS)))
 		blocks.append({"top": row_top, "height": pancake_height})
 		_layout_pancake_item(item_index, row_top, requirements)
 		row_top += pancake_height + CARD_BLOCK_GAP
 	if special_rule.visible:
-		blocks.append({"top": row_top, "height": 20.0})
-		special_rule.position = Vector2(10.0, row_top + 2.0)
-		special_rule.size = Vector2(card_width - 20.0, 16.0)
-		row_top += 20.0 + CARD_BLOCK_GAP
+		blocks.append({"top": row_top, "height": 30.0})
+		special_rule.position = Vector2(15.0, row_top + 3.0)
+		special_rule.size = Vector2(card_width - 30.0, 24.0)
+		row_top += 30.0 + CARD_BLOCK_GAP
 	var card_height := CARD_HEADER_HEIGHT + CARD_CONTENT_INSET + CARD_FOOTER_HEIGHT if blocks.is_empty() else row_top + CARD_CONTENT_INSET + CARD_FOOTER_HEIGHT - CARD_BLOCK_GAP
 	order_panel.size = Vector2(card_width, card_height)
 	card_background.set_card_layout(blocks)
 	header_title.visible = not special_title.visible
-	order_title.position = Vector2(card_width - 48.0, 5.0)
-	order_title.size = Vector2(40.0, 18.0)
-	special_title.position = Vector2(8.0, 5.0)
-	special_title.size = Vector2(card_width - 60.0, 18.0)
-	progress_title.position = Vector2(8.0, card_height - 20.0)
-	progress_title.size = Vector2(34.0, 14.0)
+	order_title.position = Vector2(card_width - 72.0, 7.5)
+	order_title.size = Vector2(60.0, 27.0)
+	special_title.position = Vector2(12.0, 7.5)
+	special_title.size = Vector2(card_width - 90.0, 27.0)
+	progress_title.position = Vector2(12.0, card_height - 30.0)
+	progress_title.size = Vector2(51.0, 21.0)
 	patience_bar.position = Vector2(PATIENCE_FILL_POSITION_X, card_height - PATIENCE_FILL_BOTTOM_INSET)
 	patience_bar.size = PATIENCE_FILL_SIZE
 
@@ -424,21 +428,21 @@ func _is_pancake_item(item: Dictionary) -> bool:
 
 func _layout_normal_item(item_index: int, position_in_row: int, block_top: float, requirements: Array) -> void:
 	var button := item_buttons[item_index]
-	button.position = Vector2(12.0 + position_in_row * 55.0, block_top + 9.0)
+	button.position = Vector2(17.1 + position_in_row * 82.5, block_top + 4.05)
 	button.size = NORMAL_PRODUCT_SIZE
-	quantity_labels[item_index].position = Vector2(14.0, 26.0)
-	quantity_labels[item_index].size = Vector2(28.0, 14.0)
-	var badge_origin := button.position + Vector2(30.0, 30.0) if requirements.size() <= 1 else button.position + Vector2(23.0, 30.0)
-	_layout_ingredient_slots(item_index, requirements, NORMAL_REQUIREMENT_LIMIT, badge_origin, NORMAL_INGREDIENT_SIZE, Vector2(7.0, 4.0), false)
+	quantity_labels[item_index].position = Vector2(27.3, 50.4)
+	quantity_labels[item_index].size = Vector2(54.6, 27.3)
+	var badge_origin := button.position + Vector2(56.7, 36.0) if requirements.size() <= 1 else button.position + Vector2(42.0, 36.0)
+	_layout_ingredient_slots(item_index, requirements, NORMAL_REQUIREMENT_LIMIT, badge_origin, NORMAL_INGREDIENT_SIZE, Vector2(14.7, 8.0), false)
 
 
 func _layout_pancake_item(item_index: int, block_top: float, requirements: Array) -> void:
 	var button := item_buttons[item_index]
-	button.position = Vector2(12.0, block_top + 10.0)
+	button.position = Vector2(9.0, block_top + 6.0)
 	button.size = PANCAKE_PRODUCT_SIZE
-	quantity_labels[item_index].position = Vector2(12.0, 25.0)
-	quantity_labels[item_index].size = Vector2(28.0, 14.0)
-	_layout_ingredient_slots(item_index, requirements, requirements.size(), Vector2(60.0, block_top + 8.0), PANCAKE_INGREDIENT_SIZE, Vector2(24.0, 24.0), true)
+	quantity_labels[item_index].position = Vector2(24.0, 48.75)
+	quantity_labels[item_index].size = Vector2(54.6, 27.3)
+	_layout_ingredient_slots(item_index, requirements, requirements.size(), Vector2(88.0, block_top + 12.0), PANCAKE_INGREDIENT_SIZE, Vector2(41.0, 41.0), true)
 
 
 func _layout_ingredient_slots(item_index: int, requirements: Array, visible_count: int, origin: Vector2, icon_size: Vector2, spacing: Vector2, grid: bool) -> void:

@@ -21,7 +21,7 @@ func _run() -> void:
 	var spreader_source := hotspots.get_node_or_null("SpreaderSource/HitButton") as AlphaTextureHitButton if hotspots != null else null
 	var spreader_holder := hotspots.get_node_or_null("SpreaderSource/Visual") as TextureRect if hotspots != null else null
 	_check(crock != null, "the workbench includes a dedicated scallion crock visual")
-	_check(source != null and source.hold_enabled and source.native_drag_enabled, "the crock keeps shared drag-to-griddle and hold-to-restock gestures")
+	_check(source != null and source.hold_enabled and not source.native_drag_enabled, "the crock uses click-to-add and hold-to-restock gestures")
 	if crock != null:
 		_check(crock.state_textures.size() == 3, "the crock has empty, half-full, and full state textures")
 		_check(crock._state_texture_for_quantity(0).resource_path.ends_with("scallion-crock-empty.png"), "zero scallion stock shows the empty crock")

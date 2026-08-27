@@ -6,6 +6,10 @@ extends TextureRect
 
 @export var stock_id: StringName
 @export var stock_textures: Array[Texture2D] = []
+## Optional runtime empty state. This lets the authored scene use a full
+## container texture for editor layout while service gameplay still starts
+## from the correct empty artwork before inventory is applied.
+@export var empty_texture: Texture2D
 ## Optional complete-container states ordered as empty, partial, and full.
 ## When these are supplied, this node itself swaps texture rather than using a
 ## separate contents layer inside a fixed tray.
@@ -19,7 +23,7 @@ var _workshop_preview := false
 
 
 func _ready() -> void:
-	_base_texture = texture
+	_base_texture = empty_texture if empty_texture != null else texture
 	call_deferred("_bind_session")
 
 

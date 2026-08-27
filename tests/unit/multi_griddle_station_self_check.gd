@@ -149,31 +149,51 @@ func _run() -> void:
 	unit.state = CompactGriddleUnit.State.GARNISH
 	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	unit.call("_refresh_ui")
+	var fold_feedbacks := PackedStringArray()
+	unit.fold_feedback_requested.connect(func(_unit_index: int, feedback_kind: StringName) -> void: fold_feedbacks.append(str(feedback_kind)))
 	unit.call("_on_surface_pointer_started", unit.pancake_surface.size * Vector2(0.12, 0.50))
 	unit.call("_on_surface_pointer_ended", unit.pancake_surface.size * Vector2(0.54, 0.50))
-	await create_timer(0.70).timeout
-	unit.call("_on_surface_pointer_started", unit.pancake_surface.size * Vector2(0.88, 0.50))
-	unit.call("_on_surface_pointer_ended", unit.pancake_surface.size * Vector2(0.46, 0.50))
+	_check(
+		unit.fold_steps == 1
+		and StringName(unit.get("_automatic_fold_pending_region")) == PancakeFoldModel.REGION_RIGHT,
+		"one manual fold arms the opposite side for automatic continuation",
+	)
+	var automatic_pending_snapshot := Dictionary(unit.snapshot())
+	await create_timer(0.58).timeout
 	var pending_snapshot := Dictionary(unit.snapshot())
 	_check(
 		unit.state == CompactGriddleUnit.State.FOLDING
 		and bool(pending_snapshot.get("packaging_pending", false))
+		and unit.fold_model.completed_fold_count() == 2
 		and unit.fold_model.package_result == PancakeFoldModel.PACKAGE_NONE,
-		"the final fold remains visible while its landing animation finishes",
+		"the automatic second fold commits and remains visible while its landing animation finishes",
 	)
-	await create_timer(0.70).timeout
+	_check(
+		fold_feedbacks.has("snap_threshold") and fold_feedbacks.has("automatic_fold"),
+		"the snap threshold and automatic continuation expose distinct feedback events",
+	)
+	await create_timer(0.55).timeout
 	var packaging_material := unit.pancake_visual.material as ShaderMaterial
 	_check(
 		unit.fold_model.package_result == PancakeFoldModel.PACKAGE_BAG
 		and is_equal_approx(float(packaging_material.get_shader_parameter(&"package_hidden")), 1.0),
 		"the entering paper bag fully replaces the folded-pancake artwork instead of layering over it",
 	)
-	await create_timer(0.45).timeout
+	await create_timer(0.30).timeout
 	_check(
 		unit.state == CompactGriddleUnit.State.READY
 		and unit.fold_model.package_result == PancakeFoldModel.PACKAGE_BAG
 		and not unit.ready_product.is_empty(),
-		"the settled fold automatically completes the single paper-bag transition before delivery unlocks",
+		"one manual gesture automatically completes the opposite fold and paper-bag transition before delivery unlocks",
+	)
+	unit.reset_unit()
+	var resumed := Dictionary(unit.load_snapshot(automatic_pending_snapshot))
+	await create_timer(0.85).timeout
+	_check(
+		bool(resumed.get("success", false))
+		and unit.state == CompactGriddleUnit.State.READY
+		and unit.fold_model.completed_fold_count() == 2,
+		"loading a save between the manual and automatic folds resumes the automatic continuation",
 	)
 	station.queue_free()
 	session.queue_free()

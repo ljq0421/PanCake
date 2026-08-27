@@ -6,116 +6,428 @@
 [ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png" id="3_t355c"]
 [ext_resource type="PackedScene" uid="uid://ctm07paqtlqsu" path="res://scenes/gameplay/youtiao_tray_view.tscn" id="3_tray"]
 [ext_resource type="Script" uid="uid://c0knmwo6mgf78" path="res://scripts/ui/five_area_material_slot.gd" id="4_chicken_slot"]
-[ext_resource type="Texture2D" path="res://resources/art/products/chicken/chicken_cutlet_raw_breaded_v1.png" id="5_chicken_raw"]
-[ext_resource type="Script" path="res://scripts/ui/cooking_stage_bar.gd" id="6_cooking_bar"]
+[ext_resource type="Texture2D" uid="uid://hp60op6rjrtx" path="res://resources/art/products/chicken/chicken_cutlet_raw_breaded_v1.png" id="5_chicken_raw"]
+[ext_resource type="Script" uid="uid://b0wj33mr1emti" path="res://scripts/ui/cooking_stage_bar.gd" id="6_cooking_bar"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_t355c"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_oakxp"]
 atlas = ExtResource("3_t355c")
 region = Rect2(97, 53, 321, 403)
-
-[sub_resource type="Animation" id="Animation_basic_raised"]
-resource_name = "basic_raised"
-length = 0.1
-tracks/0/type = "value"
-tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(256, 341)]}
-tracks/1/type = "value"
-tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(55, 136)]}
-tracks/2/type = "value"
-tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(191, 136)]}
-
-[sub_resource type="Animation" id="Animation_basic_lowered"]
-resource_name = "basic_lowered"
-length = 0.1
-tracks/0/type = "value"
-tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(256, 341)]}
-tracks/1/type = "value"
-tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(55, 190)]}
-tracks/2/type = "value"
-tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(191, 190)]}
-
-[sub_resource type="Animation" id="Animation_advanced_raised"]
-resource_name = "advanced_raised"
-length = 0.1
-tracks/0/type = "value"
-tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(256, 341)]}
-tracks/1/type = "value"
-tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(55, 152)]}
-tracks/2/type = "value"
-tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(191, 152)]}
 
 [sub_resource type="Animation" id="Animation_advanced_lowered"]
 resource_name = "advanced_lowered"
 length = 0.1
 tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
 tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(256, 341)]}
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(256, 341)]
+}
 tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
 tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(55, 205)]}
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(55, 205)]
+}
 tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
 tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(191, 205)]}
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(191, 205)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.1, 1.1)]
+}
 
-[sub_resource type="Animation" id="Animation_dual_both_raised"]
-resource_name = "dual_both_raised"
+[sub_resource type="Animation" id="Animation_advanced_raised"]
+resource_name = "advanced_raised"
 length = 0.1
 tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
 tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(320, 270)]}
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(256, 341)]
+}
 tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
 tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(42, 126)]}
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(55, 152)]
+}
 tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
 tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(178, 126)]}
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(191, 152)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.1, 1.1)]
+}
 
-[sub_resource type="Animation" id="Animation_dual_left_lowered"]
-resource_name = "dual_left_lowered"
+[sub_resource type="Animation" id="Animation_basic_lowered"]
+resource_name = "basic_lowered"
 length = 0.1
 tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
 tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(320, 270)]}
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(256, 341)]
+}
 tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
 tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(42, 168)]}
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(55, 190)]
+}
 tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
 tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(178, 126)]}
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(191, 190)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.1, 1.1)]
+}
 
-[sub_resource type="Animation" id="Animation_dual_right_lowered"]
-resource_name = "dual_right_lowered"
+[sub_resource type="Animation" id="Animation_basic_raised"]
+resource_name = "basic_raised"
 length = 0.1
 tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
 tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(320, 270)]}
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(256, 341)]
+}
 tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
 tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(42, 126)]}
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(55, 136)]
+}
 tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
 tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(178, 168)]}
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(191, 136)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.1, 1.1)]
+}
 
 [sub_resource type="Animation" id="Animation_dual_both_lowered"]
 resource_name = "dual_both_lowered"
 length = 0.1
 tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
 tracks/0/path = NodePath("FryerVisual:size")
-tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(320, 270)]}
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(320, 270)]
+}
 tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
 tracks/1/path = NodePath("LeftBasket:position")
-tracks/1/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(42, 168)]}
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(3, 168)]
+}
 tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
 tracks/2/path = NodePath("RightBasket:position")
-tracks/2/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [Vector2(178, 168)]}
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(133, 168)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.5, 1.5)]
+}
+
+[sub_resource type="Animation" id="Animation_dual_both_raised"]
+resource_name = "dual_both_raised"
+length = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("FryerVisual:size")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(320, 270)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("LeftBasket:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(5, 126)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("RightBasket:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(128, 126)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.5, 1.5)]
+}
+
+[sub_resource type="Animation" id="Animation_dual_left_lowered"]
+resource_name = "dual_left_lowered"
+length = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("FryerVisual:size")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(320, 270)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("LeftBasket:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(3, 168)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("RightBasket:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(127, 126)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.5, 1.5)]
+}
+
+[sub_resource type="Animation" id="Animation_dual_right_lowered"]
+resource_name = "dual_right_lowered"
+length = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("FryerVisual:size")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(320, 270)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("LeftBasket:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(-1, 126)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("RightBasket:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(133, 168)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath(".:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.5, 1.5)]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_fryer_layout"]
 _data = {
@@ -139,20 +451,14 @@ mouse_default_cursor_shape = 2
 script = ExtResource("1_script")
 editor_preview_tier = 2
 editor_preview_state = 2
-advanced_lowered_machine_texture_path = "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png"
-advanced_raised_machine_texture_path = "res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-raised.png"
-dual_lowered_machine_texture_path = "res://resources/art/workstation/machines/youtiao_fryer/youtiao_chicken_dual_fryer_v2.png"
-dual_raised_machine_texture_path = "res://resources/art/workstation/machines/youtiao_fryer/youtiao_chicken_dual_fryer_v2_drain_raised.png"
-dual_left_raised_machine_texture_path = "res://resources/art/workstation/machines/youtiao_fryer/youtiao_chicken_dual_fryer_v2_left_raised.png"
-dual_right_raised_machine_texture_path = "res://resources/art/workstation/machines/youtiao_fryer/youtiao_chicken_dual_fryer_v2_right_raised.png"
 
 [node name="FryerAssembly" type="Control" parent="." unique_id=714480439]
 unique_name_in_owner = true
 editor_description = "整台炸锅的共同布局根节点。在这里调整位置或缩放，会同步影响炸锅、左篮油条、右篮鸡排和鸡排原料入口。"
 anchors_preset = 0
-offset_left = 30.0
+offset_left = 80.0
 offset_top = -10.0
-offset_right = 350.0
+offset_right = 400.0
 offset_bottom = 496.0
 scale = Vector2(1.1, 1.1)
 mouse_filter = 2
@@ -160,169 +466,14 @@ mouse_filter = 2
 [node name="FryerVisual" type="TextureRect" parent="FryerAssembly" unique_id=714480438]
 unique_name_in_owner = true
 layout_mode = 0
+offset_left = -47.27272
 offset_top = 80.0
-offset_right = 320.0
-offset_bottom = 350.0
+offset_right = 770.0
+offset_bottom = 666.36365
 mouse_filter = 2
 texture = ExtResource("2_4ayyu")
 expand_mode = 1
 stretch_mode = 5
-
-[node name="ChickenCutletRaw" type="TextureButton" parent="FryerAssembly" unique_id=1974400160]
-unique_name_in_owner = true
-z_index = 5
-layout_mode = 0
-offset_left = 205.0
-offset_top = 355.0
-offset_right = 301.0
-offset_bottom = 427.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("4_chicken_slot")
-stock_id = &"stock.chicken.cutlet_raw"
-recipe_id = &"recipe.chicken.cutlet"
-product_id = &"product.chicken.cutlet"
-source_kind = &"chicken_cutlet_raw"
-material_texture = ExtResource("5_chicken_raw")
-material_label = "鸡排"
-
-[node name="LeftBasket" type="Control" parent="FryerAssembly" unique_id=714480440]
-unique_name_in_owner = true
-editor_description = "左侧油条篮。篮内四份油条的位置、大小和缩放全部在本场景中编辑；升降位置在 FryerLayoutPlayer 动画轨道中编辑。"
-z_index = 2
-anchors_preset = 0
-offset_left = 42.0
-offset_top = 168.0
-offset_right = 234.0
-offset_bottom = 245.0
-scale = Vector2(0.8, 0.8)
-mouse_filter = 2
-
-[node name="ProductSource1" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=279161112]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_right = 75.0
-offset_bottom = 77.0
-scale = Vector2(0.8, 0.8)
-mouse_filter = 2
-disabled = true
-texture_normal = SubResource("AtlasTexture_t355c")
-texture_disabled = SubResource("AtlasTexture_t355c")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="ProductSource2" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=138441394]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 39.0
-offset_right = 114.0
-offset_bottom = 77.0
-scale = Vector2(0.8, 0.8)
-mouse_filter = 2
-disabled = true
-texture_normal = SubResource("AtlasTexture_t355c")
-texture_disabled = SubResource("AtlasTexture_t355c")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="ProductSource3" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=172802687]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 78.0
-offset_right = 153.0
-offset_bottom = 77.0
-scale = Vector2(0.8, 0.8)
-mouse_filter = 2
-disabled = true
-texture_normal = SubResource("AtlasTexture_t355c")
-texture_disabled = SubResource("AtlasTexture_t355c")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="ProductSource4" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=1817747762]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 117.0
-offset_right = 192.0
-offset_bottom = 77.0
-scale = Vector2(0.8, 0.8)
-mouse_filter = 2
-disabled = true
-texture_normal = SubResource("AtlasTexture_t355c")
-texture_disabled = SubResource("AtlasTexture_t355c")
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="RightBasket" type="Control" parent="FryerAssembly" unique_id=220303124]
-unique_name_in_owner = true
-editor_description = "右侧鸡排篮。篮内四份鸡排的位置、大小和缩放全部在本场景中编辑；升降位置在 FryerLayoutPlayer 动画轨道中编辑。"
-z_index = 2
-anchors_preset = 0
-offset_left = 178.0
-offset_top = 168.0
-offset_right = 370.0
-offset_bottom = 245.0
-scale = Vector2(0.8, 0.8)
-mouse_filter = 2
-
-[node name="ChickenProductSource1" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=1731146491]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_right = 75.0
-offset_bottom = 77.0
-mouse_filter = 2
-disabled = true
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="ChickenProductSource2" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=862947847]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 39.0
-offset_right = 114.0
-offset_bottom = 77.0
-mouse_filter = 2
-disabled = true
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="ChickenProductSource3" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=398604707]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 78.0
-offset_right = 153.0
-offset_bottom = 77.0
-mouse_filter = 2
-disabled = true
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
-
-[node name="ChickenProductSource4" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=2013916576]
-unique_name_in_owner = true
-z_index = 2
-layout_mode = 0
-offset_left = 117.0
-offset_right = 192.0
-offset_bottom = 77.0
-mouse_filter = 2
-disabled = true
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("2_source")
 
 [node name="BurntBatchSource" type="TextureButton" parent="FryerAssembly/FryerVisual" unique_id=714480441]
 unique_name_in_owner = true
@@ -339,14 +490,173 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("2_source")
 
+[node name="ChickenCutletRaw" type="TextureButton" parent="FryerAssembly" unique_id=1974400160]
+unique_name_in_owner = true
+z_index = 5
+layout_mode = 0
+offset_left = 205.0
+offset_top = 355.0
+offset_right = 301.0
+offset_bottom = 427.0
+mouse_filter = 2
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("4_chicken_slot")
+stock_id = &"stock.chicken.cutlet_raw"
+recipe_id = &"recipe.chicken.cutlet"
+product_id = &"product.chicken.cutlet"
+source_kind = &"chicken_cutlet_raw"
+material_texture = ExtResource("5_chicken_raw")
+material_label = "鸡排"
+
+[node name="LeftBasket" type="Control" parent="FryerAssembly" unique_id=714480440]
+unique_name_in_owner = true
+editor_description = "左侧油条篮。篮内四份油条的位置、大小和缩放全部在本场景中编辑；升降位置在 FryerLayoutPlayer 动画轨道中编辑。"
+z_index = 2
+anchors_preset = 0
+offset_left = 3.0
+offset_top = 168.0
+offset_right = 195.00002
+offset_bottom = 245.0
+scale = Vector2(0.5, 0.5)
+mouse_filter = 2
+
+[node name="ProductSource1" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=279161112]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 75.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_oakxp")
+texture_disabled = SubResource("AtlasTexture_oakxp")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ProductSource2" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=138441394]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 39.0
+offset_right = 114.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_oakxp")
+texture_disabled = SubResource("AtlasTexture_oakxp")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ProductSource3" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=172802687]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 78.0
+offset_right = 153.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_oakxp")
+texture_disabled = SubResource("AtlasTexture_oakxp")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ProductSource4" type="TextureButton" parent="FryerAssembly/LeftBasket" unique_id=1817747762]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 117.0
+offset_right = 192.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+texture_normal = SubResource("AtlasTexture_oakxp")
+texture_disabled = SubResource("AtlasTexture_oakxp")
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="RightBasket" type="Control" parent="FryerAssembly" unique_id=220303124]
+unique_name_in_owner = true
+editor_description = "右侧鸡排篮。篮内四份鸡排的位置、大小和缩放全部在本场景中编辑；升降位置在 FryerLayoutPlayer 动画轨道中编辑。"
+z_index = 2
+anchors_preset = 0
+offset_left = 133.0
+offset_top = 168.0
+offset_right = 325.0
+offset_bottom = 245.0
+scale = Vector2(0.5, 0.5)
+mouse_filter = 2
+
+[node name="ChickenProductSource1" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=1731146491]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_right = 75.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ChickenProductSource2" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=862947847]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 39.0
+offset_right = 114.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ChickenProductSource3" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=398604707]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 78.0
+offset_right = 153.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
+[node name="ChickenProductSource4" type="TextureButton" parent="FryerAssembly/RightBasket" unique_id=2013916576]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 0
+offset_left = 117.0
+offset_right = 192.0
+offset_bottom = 77.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+disabled = true
+ignore_texture_size = true
+stretch_mode = 5
+script = ExtResource("2_source")
+
 [node name="FryerLayoutPlayer" type="AnimationPlayer" parent="FryerAssembly" unique_id=1832741920]
 unique_name_in_owner = true
-editor_description = "炸锅布局的唯一状态来源。basic/advanced 控制单篮升降，dual_* 控制双篮四种独立升降组合；脚本只选择动画，不写位置和大小。"
-libraries = {
-&"": SubResource("AnimationLibrary_fryer_layout")
-}
+editor_description = "炸锅布局的唯一状态来源。basic/advanced 控制单篮升降，dual_* 控制双篮四种独立升降组合；只修改四个 dual_* 动画中的 .:scale 轨道即可单独调整双篮炸锅整体大小。"
+libraries/ = SubResource("AnimationLibrary_fryer_layout")
 
-[node name="YoutiaoProgressLabel" type="Label" parent="."]
+[node name="YoutiaoProgressLabel" type="Label" parent="." unique_id=1396029348]
 unique_name_in_owner = true
 z_index = 6
 layout_mode = 0
@@ -354,20 +664,19 @@ offset_left = 30.0
 offset_top = 10.0
 offset_right = 188.0
 offset_bottom = 34.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.96, 0.88, 0.76, 1)
 theme_override_colors/font_outline_color = Color(0.045, 0.09, 0.1, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 20
-text = "油条 · 未开始"
+text = "油条 · 布局预览"
 horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="YoutiaoProgressBar" type="Control" parent="."]
+[node name="YoutiaoProgressBar" type="Control" parent="." unique_id=602581035]
 unique_name_in_owner = true
 z_index = 6
-layout_mode = 0
+anchors_preset = 0
 offset_left = 30.0
 offset_top = 46.0
 offset_right = 188.0
@@ -375,7 +684,7 @@ offset_bottom = 70.0
 mouse_filter = 2
 script = ExtResource("6_cooking_bar")
 
-[node name="ChickenProgressLabel" type="Label" parent="."]
+[node name="ChickenProgressLabel" type="Label" parent="." unique_id=1597067744]
 unique_name_in_owner = true
 visible = false
 z_index = 6
@@ -384,7 +693,6 @@ offset_left = 192.0
 offset_top = 10.0
 offset_right = 350.0
 offset_bottom = 34.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.96, 0.88, 0.76, 1)
 theme_override_colors/font_outline_color = Color(0.045, 0.09, 0.1, 1)
 theme_override_constants/outline_size = 3
@@ -394,11 +702,11 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 
-[node name="ChickenProgressBar" type="Control" parent="."]
+[node name="ChickenProgressBar" type="Control" parent="." unique_id=1556387388]
 unique_name_in_owner = true
 visible = false
 z_index = 6
-layout_mode = 0
+anchors_preset = 0
 offset_left = 192.0
 offset_top = 46.0
 offset_right = 350.0
@@ -409,25 +717,25 @@ script = ExtResource("6_cooking_bar")
 [node name="PlainTray" parent="." unique_id=686091902 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
 z_index = 1
-custom_minimum_size = Vector2(278, 237)
+custom_minimum_size = Vector2(219, 170)
 layout_mode = 0
-offset_left = 297.0
-offset_top = 158.0
-offset_right = 575.0
-offset_bottom = 395.0
-scale = Vector2(0.75, 0.75)
+offset_left = 60.0
+offset_top = 420.0
+offset_right = 279.0
+offset_bottom = 590.0
+scale = Vector2(0.85, 0.85)
 slot_origin = Vector2(48, 48)
 
 [node name="ChickenTray" parent="." unique_id=1169360273 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
 z_index = 1
-custom_minimum_size = Vector2(219, 156)
+custom_minimum_size = Vector2(219, 170)
 layout_mode = 0
-offset_left = 340.0
-offset_top = 430.0
-offset_right = 559.0
-offset_bottom = 586.0
-scale = Vector2(0.72, 0.72)
+offset_left = 240.0
+offset_top = 420.0
+offset_right = 459.0
+offset_bottom = 590.0
+scale = Vector2(0.85, 0.85)
 destination_product_id = &"product.chicken.cutlet"
 prepared_slot_id = &"slot.chicken"
 accepted_fryer_lane_id = &"right"
@@ -447,7 +755,7 @@ theme_override_colors/font_color = Color(1, 0.93, 0.73, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.08, 0.03, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 30
-text = "布局预览 · 高级 · 落下面坯"
+text = "布局预览 · 双篮 · 落下面坯"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2

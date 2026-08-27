@@ -166,13 +166,13 @@ func _run() -> void:
 	var authored_left_slot_rect: Rect2 = fryer.fryer_slot_sources[0].get_rect()
 	var authored_right_slot_rect: Rect2 = fryer.chicken_slot_sources[0].get_rect()
 	fryer.call("_apply_fryer_layout", true, false, true, false)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_both_raised" and fryer.basket_products.position == Vector2(42.0, 126.0) and fryer.chicken_basket_products.position == Vector2(178.0, 126.0), "dual fryer selects the scene-authored both-raised layout")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_both_raised" and fryer.basket_products.position == Vector2(5.0, 126.0) and fryer.chicken_basket_products.position == Vector2(128.0, 126.0), "dual fryer selects the scene-authored both-raised layout")
 	fryer.call("_apply_fryer_layout", true, true, true, false)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_left_lowered" and fryer.basket_products.position == Vector2(42.0, 168.0) and fryer.chicken_basket_products.position == Vector2(178.0, 126.0), "dual fryer lowers only the left authored basket group")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_left_lowered" and fryer.basket_products.position == Vector2(3.0, 168.0) and fryer.chicken_basket_products.position == Vector2(127.0, 126.0), "dual fryer lowers only the left authored basket group")
 	fryer.call("_apply_fryer_layout", true, false, true, true)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_right_lowered" and fryer.basket_products.position == Vector2(42.0, 126.0) and fryer.chicken_basket_products.position == Vector2(178.0, 168.0), "dual fryer lowers only the right authored basket group")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_right_lowered" and fryer.basket_products.position == Vector2(-1.0, 126.0) and fryer.chicken_basket_products.position == Vector2(133.0, 168.0), "dual fryer lowers only the right authored basket group")
 	fryer.call("_apply_fryer_layout", true, true, true, true)
-	_check(fryer.fryer_layout_player.current_animation == &"dual_both_lowered" and fryer.basket_products.position == Vector2(42.0, 168.0) and fryer.chicken_basket_products.position == Vector2(178.0, 168.0), "dual fryer selects the scene-authored both-lowered layout")
+	_check(fryer.fryer_layout_player.current_animation == &"dual_both_lowered" and fryer.basket_products.position == Vector2(3.0, 168.0) and fryer.chicken_basket_products.position == Vector2(133.0, 168.0), "dual fryer selects the scene-authored both-lowered layout")
 	_check(fryer.fryer_slot_sources[0].get_rect() == authored_left_slot_rect and fryer.chicken_slot_sources[0].get_rect() == authored_right_slot_rect, "layout state changes preserve per-item size and position authored in the scene")
 	session.machine["state"] = &"ready_to_collect"
 	session.machine["quantity"] = 1

@@ -10,24 +10,7 @@ const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-p
 const BATTER_LADLE_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
 const BATTER_LADLE_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png")
 const BAOCUI_EMPTY_TRAY := preload("res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png")
-const DRAG_PREVIEW_TEXTURES: Dictionary = {
-	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png"),
-	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_broken_v1.png"),
-	&"stock.pancake.ham_sausage": preload("res://resources/art/ingredients/ham_sausage/ham-sausage-1.png"),
-	&"stock.pancake.scallion": preload("res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png"),
-	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png"),
-	&"stock.pancake.coriander": preload("res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png"),
-}
-## A source's drag image and its pancake sprite deliberately share both texture
-## and scale. Keeping this mapping beside the drag source prevents a later
-## visual tweak from making the held item a different physical size again.
-const DRAG_PREVIEW_INGREDIENT_TYPES: Dictionary = {
-	&"stock.pancake.baocui": IngredientModel.BAOCUI,
-	&"stock.pancake.ham_sausage": IngredientModel.HAM_SAUSAGE,
-	&"stock.pancake.scallion": IngredientModel.SCALLION,
-	&"stock.pancake.meat_floss": IngredientModel.MEAT_FLOSS,
-	&"stock.pancake.coriander": IngredientModel.CORIANDER,
-}
+const EGG_DRAG_PREVIEW := preload("res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png")
 const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_ladle"
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
 
@@ -171,6 +154,7 @@ func refresh_from_session() -> void:
 func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringName, source_kind: StringName) -> void:
 	if hotspot == null:
 		return
+	var unlimited := bool(CATALOG.stock_definition(stock_id).get("unlimited", false))
 	# A TextureButton without a texture can be returned as the hovered Control,
 	# but Godot does not reliably route button presses to it. Give every authored
 	# transparent hotspot a real (still invisible) texture-backed hit surface.
@@ -180,17 +164,17 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 		hit_image.fill(Color.TRANSPARENT)
 		hit_texture = ImageTexture.create_from_image(hit_image)
 	hotspot.ignore_texture_size = true
-	hotspot.hold_enabled = true
+	hotspot.hold_enabled = not unlimited
 	# Sauce selection must win for a normal click; use a deliberate hold for
 	# restocking so a slightly slow click cannot be mistaken for replenishment.
 	hotspot.hold_threshold_seconds = 0.50 if source_kind == &"pancake_shared_sauce" else 0.20
 	hotspot.cancel_pending_on_mouse_exit = false
-	hotspot.native_drag_enabled = source_kind == &"pancake_shared_ingredient"
-	# Worktop ingredient hotspots use an invisible hit texture, so give their
-	# native drag a real portion image instead of an empty cursor.
-	var drag_texture := DRAG_PREVIEW_TEXTURES.get(stock_id) as Texture2D
+	hotspot.native_drag_enabled = source_kind == &"pancake_shared_ingredient" and stock_id == EGG_STOCK_ID
+	# Only the basic egg interaction is drag-based; the small toppings are
+	# intentionally click-only and therefore have no drag preview.
+	var drag_texture: Texture2D = EGG_DRAG_PREVIEW if stock_id == EGG_STOCK_ID else null
 	hotspot.set_drag_preview_texture(drag_texture)
-	var drag_preview_size := _drag_preview_size(stock_id, drag_texture)
+	var drag_preview_size := Vector2(72.0, 72.0)
 	hotspot.set_drag_preview_size(drag_preview_size)
 	# Keep the whole egg above the pointer while dragging. The visual offset does
 	# not affect the release coordinate used to crack it onto the pancake.
@@ -214,15 +198,6 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 		if not hotspot.drag_ended.is_connected(_on_material_drag_ended):
 			hotspot.drag_ended.connect(_on_material_drag_ended.bind(hotspot))
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hit_texture, false)
-
-
-func _drag_preview_size(stock_id: StringName, texture: Texture2D) -> Vector2:
-	if texture == null:
-		return Vector2(72.0, 72.0)
-	var ingredient_type := StringName(DRAG_PREVIEW_INGREDIENT_TYPES.get(stock_id, &""))
-	if ingredient_type.is_empty():
-		return Vector2(72.0, 72.0)
-	return texture.get_size() * IngredientLayer.visual_scale_for(ingredient_type)
 
 
 func _sync_material_alpha_hit_regions() -> void:
@@ -264,20 +239,26 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 		return
 	var unlocked := progression != null and bool(progression.call("owns_stock", stock_id))
 	var interactive := unlocked and not _workshop_preview
+	var unlimited := bool(CATALOG.stock_definition(stock_id).get("unlimited", false))
 	var count := maxi(int(inventory.get(str(stock_id), 0)), 0)
 	if hotspot.has_method("set_filled_slot_count"):
 		hotspot.call("set_filled_slot_count", count)
 	var label := _stock_label(stock_id)
 	var one_click_enabled := source_kind == &"pancake_shared_ingredient" and _one_click_ingredient_enabled(stock_id)
+	var drag_enabled := source_kind == &"pancake_shared_ingredient" and _ingredient_drag_enabled(stock_id)
 	var click_action := "点击打蛋" if stock_id == EGG_STOCK_ID else "点击加入煎饼"
 	var hint := (
-		"%s：%s；拖到鏊面；原地长按补货" % [label, click_action]
+		"%s：%s；原地长按补货" % [label, click_action]
 		if one_click_enabled
 		else "%s：拖到鏊面；原地长按补货" % label
-	) if source_kind == &"pancake_shared_ingredient" else "%s：点击后在鏊面拖刷；原地长按补货" % label
+	) if source_kind == &"pancake_shared_ingredient" else (
+		"%s：点击后在鏊面拖刷" % label
+		if unlimited
+		else "%s：点击后在鏊面拖刷；原地长按补货" % label
+	)
 	if not unlocked:
 		hint = "%s尚未解锁" % label
-	elif count <= 0:
+	elif count <= 0 and not unlimited:
 		hint = "%s库存不足；原地长按补货" % label
 	# Always reconfigure after the session state is available. The sources start
 	# disabled in _ready(), so only refreshing the empty/locked branches leaves
@@ -285,7 +266,8 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	# Empty but unlocked materials remain clickable for the hold-to-restock
 	# gesture, while dragging is available only when stock exists.
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, interactive, hint)
-	hotspot.set_drag_available(interactive and count > 0 and source_kind == &"pancake_shared_ingredient")
+	hotspot.native_drag_enabled = drag_enabled
+	hotspot.set_drag_available(interactive and count > 0 and drag_enabled)
 	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if interactive else Control.CURSOR_FORBIDDEN
 
 
@@ -402,6 +384,11 @@ func _on_material_drag_ended(source_ref: Dictionary, successful: bool, _hotspot:
 func _one_click_ingredient_enabled(stock_id: StringName) -> bool:
 	var station := _griddle_station()
 	return station != null and station.has_method("one_click_ingredient_enabled") and bool(station.call("one_click_ingredient_enabled", stock_id))
+
+
+func _ingredient_drag_enabled(stock_id: StringName) -> bool:
+	var station := _griddle_station()
+	return station != null and station.has_method("ingredient_drag_enabled") and bool(station.call("ingredient_drag_enabled", stock_id))
 
 
 func _on_material_hold_requested(source_ref: Dictionary, hotspot: ProductDragSource) -> void:

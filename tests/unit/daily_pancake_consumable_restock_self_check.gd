@@ -30,7 +30,9 @@ func _run() -> void:
 	_check(int(next_inventory.get("stock.pancake.batter", 0)) == 0, "unlimited batter remains outside daily inventory replenishment")
 	var batter_restock := Dictionary(session.call("five_area_restock_status", &"stock.pancake.batter"))
 	_check(not bool(batter_restock.get("success", false)) and StringName(batter_restock.get("reason", &"")) == &"restock_unnecessary", "unlimited batter rejects the paid restock path")
-	_check(int(next_inventory.get("stock.pancake.sauce.sweet_flour", 0)) == 0, "new business day keeps base sauce empty")
+	var sauce_restock := Dictionary(session.call("five_area_restock_status", &"stock.pancake.sauce.sweet_flour"))
+	_check(not bool(sauce_restock.get("success", false)) and StringName(sauce_restock.get("reason", &"")) == &"restock_unnecessary", "unlimited sauce rejects the paid restock path")
+	_check(int(next_inventory.get("stock.pancake.sauce.sweet_flour", 0)) == 0, "unlimited sauce remains outside daily inventory replenishment")
 	for stock_id in [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"]:
 		_check(int(next_inventory.get(stock_id, 0)) == 0, "new business day keeps %s empty" % stock_id)
 	var progression: RefCounted = session.call("progression_service")

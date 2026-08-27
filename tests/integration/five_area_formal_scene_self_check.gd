@@ -41,9 +41,9 @@ func _run() -> void:
 	_check(fryer != null and fryer.plain_tray.size == Vector2(278.0, 237.0), "the reusable plain tray preserves its authored size")
 	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.plate_sources.size() == 8 and fryer.waste_source != null and fryer.get_node_or_null("PreparedPlain") == null and fryer.get_node_or_null("WasteTarget") == null, "cartoon fryer exposes both independently authored fryer lanes and serving trays")
 	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.plain_tray.artwork.z_index), "finished youtiao drag sources render above serving-tray artwork")
-	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return is_equal_approx(source.drag_threshold_pixels, 4.0)), "oil-strip sources start dragging with a short movement")
+	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return not source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)), "fryer products are click-to-collect while tray products remain draggable")
 	_check(fryer != null and fryer.plain_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source._drop_forward_target == fryer.plain_tray), "stored oil strips forward drops to the plain serving-tray component")
-	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.chicken_basket_products), "two basket-product groups each own four visible-and-draggable fryer slots")
+	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.chicken_basket_products), "two basket-product groups each own four visible click targets")
 	_check(fryer != null and fryer.plain_tray.product_sources.size() == 4, "the reusable plain tray exposes four oil-stick positions")
 	if fryer != null:
 		var session: Node = root.get_node_or_null("GameSession")
@@ -63,13 +63,13 @@ func _run() -> void:
 		fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 4, "occupied_slot_indices": [0, 1, 2, 3]}
 		fryer._plate_count = 0
 		fryer._apply_snapshot()
-		_check(_visible_count(fryer.plate_sources) == 0, "finished youtiao remains in the basket until each stick is dragged to the plate")
-		_check(fryer._can_drop_data(fryer.plain_tray.position + fryer.plain_tray.size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a single finished fryer slot can be dropped on the serving plate")
+		_check(_visible_count(fryer.plate_sources) == 0, "finished youtiao remains in the basket until a batch click collects it")
+		_check(not fryer._can_drop_data(fryer.plain_tray.position + fryer.plain_tray.size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "finished fryer products cannot be dragged to the serving plate")
 		fryer._plate_products = [{"product_id": &"product.youtiao.plain"}]
 		fryer._plate_count = 1
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_sources) == 1 and fryer.plain_tray.product_sources[0].visible and fryer.plain_tray.product_sources[0].position == fryer.plain_tray.slot_origin, "storing one fried youtiao displays one draggable product in the reusable plain tray")
-		_check(fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a stored oil strip does not block dropping another fryer stick on the serving plate")
+		_check(not fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "a stored oil strip does not re-enable fryer-product dragging")
 	var game_session := root.get_node_or_null("GameSession")
 	var griddle := workstation.multi_griddle_station as MultiGriddleStation
 	var top_warning := workstation.get_node_or_null("SafeArea/TopWarningLabel") as Label

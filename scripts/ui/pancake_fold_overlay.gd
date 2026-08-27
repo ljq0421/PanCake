@@ -5,9 +5,10 @@ signal fold_landing_finished
 signal package_reveal_finished
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
-const FOLD_COMPLETION_MIN_DURATION := 0.14
-const FOLD_COMPLETION_MAX_DURATION := 0.30
-const FOLD_SETTLE_DURATION := 0.42
+const FOLD_COMPLETION_MIN_DURATION := 0.16
+const FOLD_COMPLETION_MAX_DURATION := 0.24
+const FOLD_SETTLE_DURATION := 0.18
+const PACKAGE_REVEAL_DURATION := 0.24
 const FOLD_MESH_COLUMNS := 28
 const FOLD_PROFILE_STEPS := 56
 const FOLD_EARLY_BEND_RATIO := 0.58
@@ -23,6 +24,8 @@ const FOLD_VISIBLE_DAMAGE_MAX := 0.98
 
 var fold_model: RefCounted
 var guides_visible := false
+var hovered_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
+var automatic_pending_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
 var _last_package_result: StringName = FOLD_MODEL_SCRIPT.PACKAGE_NONE
 var _package_reveal := 0.0
 var _last_active_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
@@ -60,6 +63,13 @@ func _ready() -> void:
 func set_fold_model(value: RefCounted) -> void:
 	if fold_model != null and fold_model.changed.is_connected(_on_fold_changed):
 		fold_model.changed.disconnect(_on_fold_changed)
+	if _fold_tween != null and _fold_tween.is_running():
+		_fold_tween.kill()
+	if _package_tween != null and _package_tween.is_running():
+		_package_tween.kill()
+	_animated_region = FOLD_MODEL_SCRIPT.REGION_NONE
+	_animated_progress = 0.0
+	_settle_phase = 1.0
 	fold_model = value
 	_invalidate_fold_geometry_cache()
 	if fold_model != null:
@@ -75,6 +85,20 @@ func set_fold_model(value: RefCounted) -> void:
 
 func set_guides_visible(value: bool) -> void:
 	guides_visible = value
+	queue_redraw()
+
+
+func set_hovered_region(value: StringName) -> void:
+	if value == hovered_region:
+		return
+	hovered_region = value
+	queue_redraw()
+
+
+func set_automatic_pending_region(value: StringName) -> void:
+	if value == automatic_pending_region:
+		return
+	automatic_pending_region = value
 	queue_redraw()
 
 
@@ -129,7 +153,7 @@ func _on_fold_changed() -> void:
 			_package_reveal = 0.0
 			_package_tween = create_tween()
 			_package_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			_package_tween.tween_method(_set_package_reveal, 0.0, 1.0, 0.38)
+			_package_tween.tween_method(_set_package_reveal, 0.0, 1.0, PACKAGE_REVEAL_DURATION)
 			_package_tween.finished.connect(_on_package_reveal_finished)
 	queue_redraw()
 
@@ -140,14 +164,18 @@ func _start_fold_landing(region: StringName, from_progress: float) -> void:
 	_animated_region = region
 	_animated_progress = clampf(from_progress, 0.0, 1.0)
 	_settle_phase = 0.0
-	var completion_duration := lerpf(
+	var reduce_motion := _should_reduce_motion()
+	var completion_duration := FOLD_COMPLETION_MIN_DURATION if reduce_motion else lerpf(
 		FOLD_COMPLETION_MAX_DURATION,
 		FOLD_COMPLETION_MIN_DURATION,
 		_animated_progress
 	)
 	_fold_tween = create_tween()
 	_fold_tween.tween_method(_set_animated_progress, _animated_progress, 1.0, completion_duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_fold_tween.tween_method(_set_settle_phase, 0.0, 1.0, FOLD_SETTLE_DURATION).set_trans(Tween.TRANS_LINEAR)
+	if reduce_motion:
+		_fold_tween.tween_callback(_set_settle_phase.bind(1.0))
+	else:
+		_fold_tween.tween_method(_set_settle_phase, 0.0, 1.0, FOLD_SETTLE_DURATION).set_trans(Tween.TRANS_LINEAR)
 	_fold_tween.finished.connect(_finish_fold_landing)
 
 
@@ -195,12 +223,14 @@ func _draw() -> void:
 		# folded-pancake artwork is drawn behind it.
 		_draw_package()
 		return
-	if guides_visible:
-		_draw_guides()
 	# Whichever flap landed first remains visible until the opposite flap reaches
 	# its tail. Each tail is clipped against that moving opposite outer edge.
 	_draw_region(FOLD_MODEL_SCRIPT.REGION_LEFT, -INF, left_fold_clip_max_x())
 	_draw_region(FOLD_MODEL_SCRIPT.REGION_RIGHT, right_fold_clip_min_x(), INF)
+	# Keep threshold and hand-off feedback above the moving flap so the green
+	# armed line and orange automatic target cannot disappear under the mesh.
+	if guides_visible:
+		_draw_guides()
 
 
 func left_fold_clip_max_x() -> float:
@@ -268,15 +298,50 @@ func _draw_guides() -> void:
 	var right_x: float = size.x * float(fold_model.pancake_model.parameters.fold_right_line_ratio)
 	var left_span := _guide_span(left_x, geometry)
 	var right_span := _guide_span(right_x, geometry)
-	var guide_color := Color(0.98, 0.91, 0.42, 0.90)
-	_draw_dashed_line(Vector2(left_x, left_span.x), Vector2(left_x, left_span.y), guide_color)
-	_draw_dashed_line(Vector2(right_x, right_span.x), Vector2(right_x, right_span.y), guide_color)
+	if not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
+		_draw_fold_line(FOLD_MODEL_SCRIPT.REGION_LEFT, left_x, left_span)
+	if not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
+		_draw_fold_line(FOLD_MODEL_SCRIPT.REGION_RIGHT, right_x, right_span)
 	var center: Vector2 = geometry.center
 	var radii: Vector2 = geometry.radii
 	if not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
-		draw_arc(center - Vector2(radii.x * 0.92, 0.0), size.x * 0.040, -1.2, 1.2, 20, Color(0.45, 0.94, 0.94, 0.95), 5.0, true)
+		_draw_grab_affordance(FOLD_MODEL_SCRIPT.REGION_LEFT, center, radii)
 	if not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
-		draw_arc(center + Vector2(radii.x * 0.92, 0.0), size.x * 0.040, PI - 1.2, PI + 1.2, 20, Color(0.45, 0.94, 0.94, 0.95), 5.0, true)
+		_draw_grab_affordance(FOLD_MODEL_SCRIPT.REGION_RIGHT, center, radii)
+
+
+func _draw_fold_line(region: StringName, line_x: float, span: Vector2) -> void:
+	var active: bool = fold_model.active_region == region
+	var armed: bool = active and bool(fold_model.crossed_fold_line)
+	var automatic: bool = automatic_pending_region == region
+	var color := Color(0.98, 0.91, 0.42, 0.90)
+	var width := 4.0
+	if armed:
+		color = Color(0.42, 1.0, 0.60, 1.0)
+		width = 8.0
+	elif automatic:
+		color = Color(1.0, 0.70, 0.24, 1.0)
+		width = 6.0
+	elif active:
+		width = 6.0
+	_draw_dashed_line(Vector2(line_x, span.x), Vector2(line_x, span.y), color, width)
+
+
+func _draw_grab_affordance(region: StringName, center: Vector2, radii: Vector2) -> void:
+	var left := region == FOLD_MODEL_SCRIPT.REGION_LEFT
+	var anchor := center + Vector2((-1.0 if left else 1.0) * radii.x * 0.90, 0.0)
+	var hovered: bool = hovered_region == region
+	var automatic: bool = automatic_pending_region == region
+	var color := Color(0.45, 0.94, 0.94, 0.98)
+	if automatic:
+		color = Color(1.0, 0.70, 0.24, 1.0)
+	var radius := size.x * (0.060 if hovered or automatic else 0.052)
+	var from_angle := -1.38 if left else PI - 1.38
+	var to_angle := 1.38 if left else PI + 1.38
+	var halo := color
+	halo.a = 0.20
+	draw_arc(anchor, radius, from_angle, to_angle, 28, halo, 20.0, true)
+	draw_arc(anchor, radius, from_angle, to_angle, 28, color, 13.0 if hovered or automatic else 9.0, true)
 
 
 func _draw_region(region: StringName, clip_min_x: float = -INF, clip_max_x: float = INF) -> void:
@@ -891,9 +956,10 @@ func _draw_package() -> void:
 	if texture == null:
 		return
 	var eased_reveal := 1.0 - pow(1.0 - _package_reveal, 3.0)
-	var reveal_scale := lerpf(0.84, 1.0, eased_reveal)
+	var reduce_motion := _should_reduce_motion()
+	var reveal_scale := lerpf(0.96 if reduce_motion else 0.84, 1.0, eased_reveal)
 	var side := minf(size.x, size.y) * 0.82 * reveal_scale
-	var downward_entry := Vector2(0.0, lerpf(24.0, 0.0, eased_reveal))
+	var downward_entry := Vector2(0.0, lerpf(4.0 if reduce_motion else 24.0, 0.0, eased_reveal))
 	var rect := Rect2(size * 0.5 - Vector2.ONE * side * 0.5 + downward_entry, Vector2.ONE * side)
 	# Start fully opaque so the retired pancake state cannot show through while
 	# the bag moves and scales into its resting position.
@@ -913,14 +979,19 @@ func package_texture_for(package_result: StringName) -> Texture2D:
 			return null
 
 
-func _draw_dashed_line(from: Vector2, to: Vector2, color: Color) -> void:
+func _draw_dashed_line(from: Vector2, to: Vector2, color: Color, width: float = 4.0) -> void:
 	var length := from.distance_to(to)
 	var direction := from.direction_to(to)
 	var cursor := 0.0
 	while cursor < length:
 		var segment_end := minf(cursor + 14.0, length)
-		draw_line(from + direction * cursor, from + direction * segment_end, color, 4.0, true)
+		draw_line(from + direction * cursor, from + direction * segment_end, color, width, true)
 		cursor += 25.0
+
+
+func _should_reduce_motion() -> bool:
+	return DisplayServer.has_method(&"accessibility_should_reduce_motion") \
+		and bool(DisplayServer.call(&"accessibility_should_reduce_motion"))
 
 
 func _closed(points: PackedVector2Array) -> PackedVector2Array:

@@ -49,7 +49,7 @@ func _run() -> void:
 	await _click_control(hit)
 	_check(short_clicks[0] == 1, "a real pointer click on the rendered sweet-sauce jar routes one short click")
 	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour"), "the sauce click places sweet sauce on the pancake")
-	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.sauce.sweet_flour", 0)) == before - 1, "the sauce click consumes one sweet-sauce unit")
+	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.sauce.sweet_flour", 0)) == before, "the sauce click does not consume unlimited sweet sauce")
 	_check(unit.pancake_surface.cursor_is_sauce_brush, "the sauce click arms the sauce brush")
 	game.queue_free()
 	await process_frame

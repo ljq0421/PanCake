@@ -154,9 +154,9 @@ func _service_slot_scene_contract(workstation: Node) -> bool:
 			return false
 		if card_focus_button.mouse_filter != Control.MOUSE_FILTER_STOP:
 			return false
-		if not card_background.has_method("set_card_layout") or card_background.size.x != 176.0:
+		if not card_background.has_method("set_card_layout") or card_background.size.x != 264.0:
 			return false
-		if not _rect_matches(first_item, Rect2(12.0, 43.0, 42.0, 42.0)):
+		if not _rect_matches(first_item, Rect2(18.0, 64.5, 63.0, 63.0)):
 			return false
 		if order_panel.has_node("Requirement8") or last_dynamic_requirement == null:
 			return false

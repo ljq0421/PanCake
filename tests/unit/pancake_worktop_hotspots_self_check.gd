@@ -156,15 +156,15 @@ func _test_sauce_selection_and_first_stroke(station: Node, unit: Node, session: 
 	var selected := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
 	var primed_total := float(unit.pancake_model.total_sauce())
 	_check(bool(selected.get("success", false)), "sweet sauce jar primes the direct-brush tool")
-	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "sauce jar click consumes exactly one inventory unit")
+	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "unlimited sauce jar click does not consume inventory")
 	_check(primed_total > 0.0 and unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour"), "sauce jar click places a central dollop and records its recipe identifier")
 	_check(unit.pancake_surface.cursor_is_sauce_brush and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "sauce jar click stays available during first-side cooking and automatically arms the brush")
 	unit._on_surface_pointer_started(center)
 	unit._on_surface_pointer_ended(center)
-	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "drag brushing does not consume a second inventory unit")
+	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "drag brushing does not consume inventory")
 	_check(float(unit.pancake_model.total_sauce()) >= primed_total, "drag brushing preserves and spreads the primed sauce")
 	var second_portion := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
-	_check(bool(second_portion.get("success", false)) and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2 and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 2, "a second sauce portion is accepted and recorded separately")
+	_check(bool(second_portion.get("success", false)) and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2 and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "a second unlimited sauce portion is accepted and recorded separately")
 	var before_limit := int(session.inventory["stock.pancake.sauce.sweet_flour"])
 	var over_limit := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
 	_check(not bool(over_limit.get("success", false)) and StringName(over_limit.get("reason", &"")) == &"portion_limit" and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before_limit, "a third sauce portion is rejected without consuming inventory")
@@ -181,7 +181,7 @@ func _test_automatic_sauce_brush(station: Node, unit: Node, session: FakeSession
 	var selected := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
 	var sauce_quality := PancakeScorer.evaluate_sauce(unit.pancake_model)
 	_check(bool(selected.get("success", false)) and bool(selected.get("automated", false)), "automatic sauce brush applies sauce from a jar click")
-	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before - 1, "automatic sauce brush consumes exactly one sauce unit")
+	_check(int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "automatic sauce brush does not consume unlimited sauce")
 	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour") and unit.state == CompactGriddleUnit.State.FIRST_SIDE, "automatic sauce brush records the sauce without ending first-side cooking")
 	_check(not unit.pancake_surface.cursor_is_sauce_brush and float(sauce_quality.get("coverage_ratio", 0.0)) >= 0.99 and float(sauce_quality.get("uniformity", 0.0)) >= 0.99, "automatic sauce brush completes a uniform layer without arming manual brushing")
 	session.progression.owned_growth.erase(&"growth.automation.pancake.auto_sauce_brush")
@@ -201,12 +201,9 @@ func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, sessi
 	_check(not bool(locked.get("success", false)) and int(session.inventory[str(sauce_id)]) == initial_sauce, "locked secret sauce cannot prime or consume inventory")
 	session.progression.locked.erase(sauce_id)
 	session.inventory[str(sauce_id)] = 0
-	var depleted := Dictionary(station.select_worktop_tool(sauce_id))
-	_check(not bool(depleted.get("success", false)) and is_zero_approx(float(unit.pancake_model.total_sauce())), "depleted secret sauce cannot create a dollop")
-	session.inventory[str(sauce_id)] = initial_sauce
 	var primed := Dictionary(station.select_worktop_tool(sauce_id))
-	_check(bool(primed.get("success", false)) and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "secret sauce can prime without ending second-side cooking")
-	_check(int(session.inventory[str(sauce_id)]) == initial_sauce - 1 and unit.applied_sauce_ids.has(str(sauce_id)), "second-side secret-sauce prime consumes and records exactly once")
+	_check(bool(primed.get("success", false)) and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "unlimited secret sauce can prime without ending second-side cooking")
+	_check(int(session.inventory[str(sauce_id)]) == 0 and unit.applied_sauce_ids.has(str(sauce_id)), "empty unlimited sauce inventory still primes without consumption")
 	var saved := Dictionary(unit.snapshot())
 	var saved_sauce_total := float(unit.pancake_model.total_sauce())
 	unit.reset_unit()
@@ -221,17 +218,14 @@ func _test_sauce_guards_second_side_and_restore(station: Node, unit: Node, sessi
 
 
 func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: FakeSession) -> void:
-	var stock_ids: Array[StringName] = [
-		&"stock.pancake.egg",
+	var default_click_stock_ids: Array[StringName] = [
 		&"stock.pancake.baocui",
 		&"stock.pancake.scallion",
 		&"stock.pancake.ham_sausage",
 		&"stock.pancake.coriander",
 		&"stock.pancake.meat_floss",
 	]
-	for stock_id in stock_ids:
-		var growth_id := StringName(MultiGriddleStation.ONE_CLICK_INGREDIENT_GROWTH_IDS.get(stock_id, &""))
-		session.progression.owned_growth[growth_id] = true
+	for stock_id in default_click_stock_ids:
 		session.inventory[str(stock_id)] = 2
 		unit.begin_order({})
 		var pressed := Dictionary(unit.use_press_spreader())
@@ -239,15 +233,28 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		var before := int(session.inventory[str(stock_id)])
 		var added := Dictionary(station.apply_one_click_ingredient(stock_id))
 		_check(
-			bool(added.get("success", false)) and bool(added.get("automated", false)) and int(session.inventory[str(stock_id)]) == before - 1,
-			"%s one-click upgrade adds exactly one inventory-backed portion" % stock_id
+			bool(added.get("success", false)) and bool(added.get("one_click", false)) and int(session.inventory[str(stock_id)]) == before - 1,
+			"%s click adds exactly one inventory-backed portion without an upgrade" % stock_id
 		)
 		var ingredient_type := StringName(added.get("ingredient_type", &""))
-		_check(unit.ingredient_model.count_type(ingredient_type) == 1, "%s one-click upgrade creates one pancake placement" % stock_id)
-		if stock_id == &"stock.pancake.egg":
-			_check(unit.pancake_model.has_egg(), "one-click egg upgrade cracks an egg onto the pancake")
-		session.progression.owned_growth.erase(growth_id)
+		_check(unit.ingredient_model.count_type(ingredient_type) == 1, "%s click creates one pancake placement" % stock_id)
 		unit.reset_unit()
+	var egg_stock_id := &"stock.pancake.egg"
+	session.inventory[str(egg_stock_id)] = 2
+	_check(not station.one_click_ingredient_enabled(egg_stock_id) and station.ingredient_drag_enabled(egg_stock_id), "basic egg interaction remains precise drag-to-crack")
+	session.progression.owned_growth[&"growth.automation.pancake.one_click_egg"] = true
+	unit.begin_order({})
+	var egg_pressed := Dictionary(unit.use_press_spreader())
+	_check(bool(egg_pressed.get("success", false)), "one-click egg test pancake reaches the first cooking side")
+	var egg_before := int(session.inventory[str(egg_stock_id)])
+	var egg_added := Dictionary(station.apply_one_click_ingredient(egg_stock_id))
+	_check(
+		bool(egg_added.get("success", false)) and bool(egg_added.get("one_click", false)) and int(session.inventory[str(egg_stock_id)]) == egg_before - 1,
+		"one-click egg upgrade adds exactly one inventory-backed egg"
+	)
+	_check(unit.pancake_model.has_egg() and not station.ingredient_drag_enabled(egg_stock_id), "one-click egg upgrade changes drag-to-crack into click-to-crack")
+	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_egg")
+	unit.reset_unit()
 
 
 func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
@@ -294,44 +301,43 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	_check(StringName(hotspots.get_node("BaocuiBasket/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")
 	_check(StringName(hotspots.get_node("EggCarton/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.egg", "right worktop basket maps to egg stock")
 	_check(StringName(hotspots.get_node("PorkFlossSource/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.meat_floss", "pork-floss tray maps to meat-floss stock")
-	_check(not bool(hotspots.get_node("ScallionTray/Hotspot").disabled), "owned scallion stock is enabled for drag and hold input")
-	_check(not bool(hotspots.get_node("CorianderTray/Hotspot").disabled), "owned coriander stock is enabled for drag and hold input")
-	_check(not bool(hotspots.get_node("PorkFlossSource/Hotspot").disabled), "owned pork-floss tray is enabled for drag and hold input")
-	_check(bool(hotspots.get_node("ScallionTray/Hotspot").native_drag_enabled), "ingredient bowls use drag placement")
-	_check(bool(hotspots.get_node("CorianderTray/Hotspot").native_drag_enabled), "coriander tray uses drag placement")
-	_check((hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource).drag_preview_texture != null, "scallion drag shows a visible portion under the pointer")
-	_check((hotspots.get_node("PorkFlossSource/Hotspot") as ProductDragSource).drag_preview_texture != null, "pork-floss drag shows a visible portion under the pointer")
-	for stock_id_variant in HOTSPOTS_SCRIPT.DRAG_PREVIEW_INGREDIENT_TYPES:
-		var stock_id := StringName(stock_id_variant)
-		var texture := HOTSPOTS_SCRIPT.DRAG_PREVIEW_TEXTURES.get(stock_id) as Texture2D
-		var ingredient_type := StringName(HOTSPOTS_SCRIPT.DRAG_PREVIEW_INGREDIENT_TYPES[stock_id_variant])
-		var expected_size := texture.get_size() * IngredientLayer.visual_scale_for(ingredient_type)
-		_check(
-			hotspots.call("_drag_preview_size", stock_id, texture).is_equal_approx(expected_size),
-			"%s drag preview uses the pancake sprite's texture scale" % stock_id
-		)
-	var scallion_source := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
-	_check(
-		scallion_source.drag_preview_offset.is_equal_approx(-scallion_source.drag_preview_size * 0.5),
-		"small-ingredient drag previews stay centered under the release point"
-	)
+	_check(not bool(hotspots.get_node("ScallionTray/Hotspot").disabled), "owned scallion stock is enabled for click and hold input")
+	_check(not bool(hotspots.get_node("CorianderTray/Hotspot").disabled), "owned coriander stock is enabled for click and hold input")
+	_check(not bool(hotspots.get_node("PorkFlossSource/Hotspot").disabled), "owned pork-floss tray is enabled for click and hold input")
+	_check(not bool(hotspots.get_node("ScallionTray/Hotspot").native_drag_enabled), "ingredient bowls use click placement")
+	_check(not bool(hotspots.get_node("CorianderTray/Hotspot").native_drag_enabled), "coriander tray uses click placement")
+	_check(not bool(hotspots.get_node("PorkFlossSource/Hotspot").native_drag_enabled), "pork-floss tray uses click placement")
 	var egg_source := hotspots.get_node("EggCarton/Hotspot") as ProductDragSource
 	var egg_preview := egg_source.drag_preview_texture
 	_check(egg_preview != null and egg_preview.resource_path.ends_with("egg_whole_v1_five_area_v2.png"), "egg drag shows a whole egg before release")
 	_check(egg_source.drag_preview_offset == Vector2(0.0, -60.0), "egg drag preview stays 60px above the release point")
 	var scallion_click_source := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
-	session.progression.owned_growth[&"growth.automation.pancake.one_click_scallion"] = true
 	unit.begin_order({})
 	var click_pancake_pressed := Dictionary(unit.use_press_spreader())
-	_check(bool(click_pancake_pressed.get("success", false)), "one-click hotspot test pancake reaches the first cooking side")
+	_check(bool(click_pancake_pressed.get("success", false)), "click hotspot test pancake reaches the first cooking side")
 	var scallion_before_click := int(session.inventory["stock.pancake.scallion"])
 	hotspots.call("_on_material_short_clicked", scallion_click_source.source_ref(), scallion_click_source)
 	_check(
 		unit.ingredient_model.count_type(IngredientModel.SCALLION) == 1 and int(session.inventory["stock.pancake.scallion"]) == scallion_before_click - 1,
-		"an upgraded scallion hotspot click adds one portion without starting a drag"
+		"a scallion hotspot click adds one portion without starting a drag"
 	)
-	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_scallion")
 	unit.reset_unit()
+	session.progression.owned_growth[&"growth.automation.pancake.one_click_egg"] = true
+	hotspots.refresh_from_session()
+	_check(not egg_source.native_drag_enabled, "one-click egg upgrade disables the egg drag gesture")
+	unit.begin_order({})
+	var egg_click_pancake_pressed := Dictionary(unit.use_press_spreader())
+	_check(bool(egg_click_pancake_pressed.get("success", false)), "upgraded egg hotspot test pancake reaches the first cooking side")
+	var egg_before_click := int(session.inventory["stock.pancake.egg"])
+	hotspots.call("_on_material_short_clicked", egg_source.source_ref(), egg_source)
+	_check(
+		unit.pancake_model.has_egg() and int(session.inventory["stock.pancake.egg"]) == egg_before_click - 1,
+		"an upgraded egg hotspot click cracks one egg at the standard position"
+	)
+	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_egg")
+	unit.reset_unit()
+	hotspots.refresh_from_session()
+	_check(egg_source.native_drag_enabled, "without the upgrade, egg returns to the drag-to-crack gesture")
 	var secret_sauce := hotspots.get_node("SecretSauceSource/Hotspot") as ProductDragSource
 	_check(not secret_sauce.native_drag_enabled and not secret_sauce.disabled, "secret sauce selects direct brushing on its own component-local input surface")
 	_check(batter_ladle.tooltip_text == "点击拿起面糊勺，在空鏊子上按住并拖动调整落点", "basic batter ladle explains the movable pour interaction")

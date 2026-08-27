@@ -50,10 +50,18 @@ func _run() -> void:
 	_prepare_fold_surface(fold_unit, item)
 	var surface_rect: Rect2 = fold_unit.pancake_surface.get_global_rect()
 	await _drag(surface_rect.position + Vector2(24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(224.0, surface_rect.size.y * 0.5))
-	_check(fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT) and fold_unit.fold_steps == 1, "real pointer drag commits the left fold")
-	await _drag(surface_rect.position + Vector2(surface_rect.size.x - 24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(54.0, surface_rect.size.y * 0.5))
-	await create_timer(1.0).timeout
-	_check(fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_RIGHT) and fold_unit.state == CompactGriddleUnit.State.READY, "real pointer drag commits the right fold and packages")
+	_check(
+		fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT)
+		and fold_unit.fold_steps == 1
+		and StringName(fold_unit.get("_automatic_fold_pending_region")) == PancakeFoldModel.REGION_RIGHT,
+		"one real pointer drag commits the first fold and arms automatic continuation",
+	)
+	await create_timer(1.25).timeout
+	_check(
+		fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_RIGHT)
+		and fold_unit.state == CompactGriddleUnit.State.READY,
+		"the opposite side folds automatically and packages after one real pointer drag",
+	)
 	_press_and_release_r()
 	await process_frame
 	_check(fold_unit.state == CompactGriddleUnit.State.IDLE, "real R key clears the single active griddle")

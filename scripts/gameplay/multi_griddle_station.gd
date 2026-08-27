@@ -4,20 +4,24 @@ extends Control
 signal status_message(message: String)
 signal transient_warning_requested(message: String)
 signal held_tool_changed(tool_id: StringName)
+signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const AUTO_SAUCE_BRUSH_GROWTH_ID := &"growth.automation.pancake.auto_sauce_brush"
 const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain"]
-const ONE_CLICK_INGREDIENT_GROWTH_IDS: Dictionary = {
-	&"stock.pancake.egg": &"growth.automation.pancake.one_click_egg",
-	&"stock.pancake.baocui": &"growth.automation.pancake.one_click_baocui",
-	&"stock.pancake.scallion": &"growth.automation.pancake.one_click_scallion",
-	&"stock.pancake.ham_sausage": &"growth.automation.pancake.one_click_ham_sausage",
-	&"stock.pancake.coriander": &"growth.automation.pancake.one_click_coriander",
-	&"stock.pancake.meat_floss": &"growth.automation.pancake.one_click_meat_floss",
-}
+const EGG_STOCK_ID := &"stock.pancake.egg"
+const ONE_CLICK_EGG_GROWTH_ID := &"growth.automation.pancake.one_click_egg"
+## Small toppings have no placement precision requirement, so clicking their
+## worktop source always places a portion at the authored centre position.
+const CLICK_INGREDIENT_STOCK_IDS: Array[StringName] = [
+	&"stock.pancake.baocui",
+	&"stock.pancake.scallion",
+	&"stock.pancake.ham_sausage",
+	&"stock.pancake.coriander",
+	&"stock.pancake.meat_floss",
+]
 
 @onready var units: Array[Node] = [%Griddle01]
 
@@ -46,6 +50,7 @@ func _ready() -> void:
 		unit.main_action_requested.connect(_on_main_action)
 		unit.status_message_requested.connect(status_message.emit)
 		unit.transient_warning_requested.connect(transient_warning_requested.emit)
+		unit.fold_feedback_requested.connect(fold_feedback_requested.emit)
 		unit.packaging_finished.connect(_on_unit_packaging_finished)
 	_apply_count_layout()
 
@@ -237,6 +242,9 @@ func begin_surface_action(unit_index: int, local_position: Vector2) -> Dictionar
 				if other_unit != unit:
 					other_unit.cancel_held_tool()
 			return fold_result
+		if StringName(fold_result.get("reason", &"")) == &"automatic_fold_pending":
+			status_message.emit("另一侧正在自动接力折叠，请稍候")
+			return fold_result
 	var contextual_spreader_action := _contextual_spreader_action(unit)
 	if not contextual_spreader_action.is_empty():
 		_set_selected_tool(&"tool.pancake.spreader")
@@ -407,11 +415,18 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 
 
 func one_click_ingredient_enabled(stock_id: StringName) -> bool:
-	var growth_id := StringName(ONE_CLICK_INGREDIENT_GROWTH_IDS.get(stock_id, &""))
-	if growth_id.is_empty() or _session == null or not _session.has_method("progression_service"):
+	if CLICK_INGREDIENT_STOCK_IDS.has(stock_id):
+		return true
+	if stock_id != EGG_STOCK_ID or _session == null or not _session.has_method("progression_service"):
 		return false
 	var progression: RefCounted = _session.call("progression_service")
-	return progression != null and bool(progression.call("owns_growth", growth_id))
+	return progression != null and bool(progression.call("owns_growth", ONE_CLICK_EGG_GROWTH_ID))
+
+
+func ingredient_drag_enabled(stock_id: StringName) -> bool:
+	# Eggs retain their precise drop position until the click-to-crack upgrade is
+	# purchased. All other worktop toppings are click-only.
+	return stock_id == EGG_STOCK_ID and not one_click_ingredient_enabled(stock_id)
 
 
 func apply_one_click_ingredient(stock_id: StringName) -> Dictionary:
@@ -423,7 +438,7 @@ func apply_one_click_ingredient(stock_id: StringName) -> Dictionary:
 	var source_ref := {"source_kind": &"pancake_shared_ingredient", "stock_id": stock_id}
 	var result := Dictionary(drop_on_unit(_active_index, source_ref, unit.pancake_surface.size * 0.5))
 	if bool(result.get("success", false)):
-		return result.merged({"automated": true}, true)
+		return result.merged({"one_click": true}, true)
 	match StringName(result.get("reason", &"")):
 		&"insufficient_stock", &"source_unavailable":
 			status_message.emit("%s库存不足；请长按小料补货" % _stock_label(stock_id))
@@ -516,7 +531,7 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 	if progression == null or not bool(progression.call("owns_stock", tool_id)):
 		status_message.emit("%s尚未解锁" % _stock_label(tool_id))
 		return {"success": false, "reason": &"stock_locked"}
-	if int(Dictionary(_session.call("inventory_snapshot")).get(str(tool_id), 0)) <= 0:
+	if not _stock_is_unlimited(tool_id) and int(Dictionary(_session.call("inventory_snapshot")).get(str(tool_id), 0)) <= 0:
 		status_message.emit("%s库存不足；请长按酱罐补货" % _stock_label(tool_id))
 		return {"success": false, "reason": &"insufficient_stock"}
 	var unit := _unit(_active_index)
@@ -576,10 +591,16 @@ func _consume_ingredient(stock_id: StringName) -> Dictionary:
 
 
 func _consume_inventory_stock(stock_id: StringName) -> Dictionary:
+	if _stock_is_unlimited(stock_id):
+		return {"success": true, "consumed_stock_ids": []}
 	if _session == null or not _session.has_method("consume_inventory_stock_ids"):
 		return {"success": false, "reason": &"no_inventory"}
 	var stock_ids: Array[StringName] = [stock_id]
 	return Dictionary(_session.call("consume_inventory_stock_ids", stock_ids))
+
+
+func _stock_is_unlimited(stock_id: StringName) -> bool:
+	return bool(CATALOG.stock_definition(stock_id).get("unlimited", false))
 
 
 func _auto_sauce_brush_owned() -> bool:

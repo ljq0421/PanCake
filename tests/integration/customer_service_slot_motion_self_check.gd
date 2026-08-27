@@ -78,7 +78,7 @@ func _run() -> void:
 	await process_frame
 	_check(slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_IGNORE and slot.item_buttons[0].mouse_filter == Control.MOUSE_FILTER_IGNORE, "outgoing customer cards ignore input immediately")
 	_check(is_equal_approx(slot.portrait.modulate.a, 1.0), "normal-motion exit keeps the walking portrait fully opaque")
-	_check(slot.get_node("OrderPanel").position == Vector2(155.0, -2.0) and is_equal_approx(slot.get_node("OrderPanel").modulate.a, 1.0), "the order card does not drift with the departing customer")
+	_check(not slot.get_node("OrderPanel").visible, "the outgoing customer's order card clears as soon as the customer starts leaving")
 	await _wait(1.20)
 	_check(StringName(slot.get("_order_id")) == &"order.motion.second", "the next customer binds only after the previous customer exits")
 	await _wait(1.30)

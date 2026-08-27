@@ -3,7 +3,16 @@
 [ext_resource type="Script" uid="uid://cnpgrfexl1hdy" path="res://scripts/ui/upgrade_workshop_overlay.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://ts4hjs0b17qb" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png" id="2_press_spreader"]
 [ext_resource type="PackedScene" uid="uid://x84wsqbvl1do" path="res://scenes/gameplay/five_area_workstation.tscn" id="3_workstation_preview"]
-[ext_resource type="Texture2D" path="res://resources/art/products/orange_juice/juice-6.png" id="4_juice_tray"]
+[ext_resource type="Texture2D" uid="uid://b0yyyh7rvfcqc" path="res://resources/art/products/orange_juice/juice-6.png" id="4_juice_tray"]
+[ext_resource type="Texture2D" uid="uid://cu2vspaobypqo" path="res://resources/art/ingredients/inventory_containers/egg/egg-carton-base-empty-2x3-lidless-cartoon-bold-outline-v4-512.png" id="5_egg_carton"]
+[ext_resource type="Texture2D" uid="uid://d0gefpovfiack" path="res://resources/art/ingredients/inventory_containers/egg/overlays/egg-carton-overlay-6-egg-512.png" id="6_egg_full"]
+[ext_resource type="Texture2D" uid="uid://su1trjva6qt6" path="res://resources/art/ingredients/baocui/baocui-6.png" id="7_baocui_full"]
+[ext_resource type="Texture2D" uid="uid://ckmdjtq575161" path="res://resources/art/ingredients/inventory_containers/scallion/crock_states/scallion-crock-full.png" id="8_scallion_full"]
+[ext_resource type="Texture2D" uid="uid://d3r50b1mpjkww" path="res://resources/art/ingredients/coriander/jar_states/cilantro-jar-full.png" id="9_coriander_full"]
+[ext_resource type="Texture2D" uid="uid://oqdkwlo8wcdf" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-ham-6.png" id="10_ham_full"]
+[ext_resource type="Texture2D" uid="uid://b7dijr1i4xnu7" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-6.png" id="11_pork_floss_full"]
+[ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="12_sauce_jar"]
+[ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="13_batter_ladle"]
 
 [node name="UpgradeWorkshopOverlay" type="Control" unique_id=73984800]
 z_index = 1100
@@ -36,9 +45,121 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SyncedWorkstationPreview" parent="EditorPreview" instance=ExtResource("3_workstation_preview")]
+[node name="SyncedWorkstationPreview" parent="EditorPreview" unique_id=162668428 instance=ExtResource("3_workstation_preview")]
 layout_mode = 1
 mouse_filter = 2
+
+[node name="EditorMaterialPreviews" type="Control" parent="." unique_id=158109339]
+unique_name_in_owner = true
+editor_description = "仅供 upgrade_workshop_overlay 编辑器定位使用，坐标复制自正式煎饼工作台；运行游戏时整组自动隐藏。请移动 UpgradeProps 下对应的 WorkshopProp_* 标签，不要移动本组参考图。"
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+metadata/_edit_lock_ = true
+
+[node name="BaocuiBasket" type="TextureRect" parent="EditorMaterialPreviews" unique_id=1909695018]
+layout_mode = 0
+offset_left = 954.0
+offset_top = 578.0
+offset_right = 1168.0
+offset_bottom = 758.0
+mouse_filter = 2
+texture = ExtResource("7_baocui_full")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PorkFlossTray" type="TextureRect" parent="EditorMaterialPreviews" unique_id=504262442]
+layout_mode = 0
+offset_left = 1137.0
+offset_top = 578.0
+offset_right = 1351.0
+offset_bottom = 758.0
+mouse_filter = 2
+texture = ExtResource("11_pork_floss_full")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HamTray" type="TextureRect" parent="EditorMaterialPreviews" unique_id=1299533779]
+layout_mode = 0
+offset_left = 1319.0
+offset_top = 578.0
+offset_right = 1533.0
+offset_bottom = 758.0
+mouse_filter = 2
+texture = ExtResource("10_ham_full")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SweetSauceJar" type="TextureRect" parent="EditorMaterialPreviews" unique_id=1604387205]
+layout_mode = 0
+offset_left = 1034.0
+offset_top = 717.0
+offset_right = 1157.0
+offset_bottom = 851.4
+mouse_filter = 2
+texture = ExtResource("12_sauce_jar")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScallionCrock" type="TextureRect" parent="EditorMaterialPreviews" unique_id=1861271994]
+layout_mode = 0
+offset_left = 1128.0
+offset_top = 709.0
+offset_right = 1274.0
+offset_bottom = 856.0
+mouse_filter = 2
+texture = ExtResource("8_scallion_full")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CorianderCrock" type="TextureRect" parent="EditorMaterialPreviews" unique_id=385990342]
+layout_mode = 0
+offset_left = 1233.0
+offset_top = 709.0
+offset_right = 1382.0
+offset_bottom = 858.0
+mouse_filter = 2
+texture = ExtResource("9_coriander_full")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EggCarton" type="TextureRect" parent="EditorMaterialPreviews" unique_id=743997164]
+layout_mode = 0
+offset_left = 1269.0
+offset_top = 795.0
+offset_right = 1485.0
+offset_bottom = 1029.0
+mouse_filter = 2
+texture = ExtResource("5_egg_carton")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Contents" type="TextureRect" parent="EditorMaterialPreviews/EggCarton" unique_id=12454729]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_egg_full")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BatterLadle" type="TextureRect" parent="EditorMaterialPreviews" unique_id=638237238]
+layout_mode = 0
+offset_left = 1013.0
+offset_top = 821.0
+offset_right = 1219.0
+offset_bottom = 992.0
+mouse_filter = 2
+texture = ExtResource("13_batter_ladle")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="QueueLabel" type="Label" parent="." unique_id=1984833927]
 unique_name_in_owner = true
@@ -110,6 +231,7 @@ theme_override_font_sizes/font_size = 16
 autowrap_mode = 2
 
 [node name="UpgradeProps" type="Control" parent="." unique_id=330733207]
+editor_description = "升级标签布局根节点。调整位置时请选择对应 WorkshopProp_* Button（不要选择它下面的 ConditionTag），再使用移动工具 W 拖动。"
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -122,13 +244,18 @@ mouse_filter = 2
 unique_name_in_owner = true
 z_index = 1
 layout_mode = 0
+offset_left = 1162.0
+offset_top = 833.0
+offset_right = 1287.0
+offset_bottom = 978.0
 mouse_filter = 2
 texture = ExtResource("2_press_spreader")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FilledOrangeJuiceTrayPreview" type="TextureRect" parent="UpgradeProps"]
+[node name="FilledOrangeJuiceTrayPreview" type="TextureRect" parent="UpgradeProps" unique_id=119818877]
 unique_name_in_owner = true
+self_modulate = Color(1, 1, 1, 0.42)
 z_index = 1
 layout_mode = 0
 offset_left = 1630.0
@@ -139,34 +266,33 @@ mouse_filter = 2
 texture = ExtResource("4_juice_tray")
 expand_mode = 1
 stretch_mode = 5
-self_modulate = Color(1, 1, 1, 0.42)
 
-[node name="WorkshopProp_growth_area_packaged_drink" type="Button" parent="UpgradeProps"]
+[node name="WorkshopProp_growth_area_packaged_drink" type="Button" parent="UpgradeProps" unique_id=578231561]
 unique_name_in_owner = true
 z_index = 2
-custom_minimum_size = Vector2(330, 74)
+custom_minimum_size = Vector2(143, 74)
 layout_mode = 0
-offset_left = 1580.0
-offset_top = 736.0
-offset_right = 1910.0
-offset_bottom = 810.0
+offset_left = 1721.0
+offset_top = 972.0
+offset_right = 1864.0
+offset_bottom = 1046.0
 focus_mode = 0
-flat = false
+flat = true
 metadata/growth_id = "growth.area.packaged_drink"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_packaged_drink"]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_packaged_drink" unique_id=1508837322]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.98, 0.84, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 14
-text = "成品饮品架\n解锁条件：解锁豆浆区，金币80"
+text = "成品饮品架
+解锁条件：解锁豆浆区，金币80"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -174,10 +300,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_add_on_pancake_scallion" type="Button" parent="UpgradeProps" unique_id=624804946]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 610.0
-offset_top = 514.0
-offset_right = 730.0
-offset_bottom = 552.0
+offset_left = 1142.0
+offset_top = 697.0
+offset_right = 1262.0
+offset_bottom = 735.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.add_on.pancake.scallion"
@@ -201,10 +327,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_add_on_pancake_baocui" type="Button" parent="UpgradeProps" unique_id=1557615106]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 762.0
-offset_top = 504.0
-offset_right = 882.0
-offset_bottom = 542.0
+offset_left = 997.0
+offset_top = 564.0
+offset_right = 1117.0
+offset_bottom = 602.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.add_on.pancake.baocui"
@@ -228,10 +354,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_add_on_pancake_egg" type="Button" parent="UpgradeProps" unique_id=951810376]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1120.0
-offset_top = 798.0
-offset_right = 1240.0
-offset_bottom = 836.0
+offset_left = 1439.0
+offset_top = 864.0
+offset_right = 1559.0
+offset_bottom = 902.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.add_on.pancake.egg"
@@ -255,10 +381,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_automation_pancake_auto_batter_ladle" type="Button" parent="UpgradeProps" unique_id=1963294192]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1341.0
-offset_top = 807.0
-offset_right = 1461.0
-offset_bottom = 845.0
+offset_left = 971.0
+offset_top = 863.0
+offset_right = 1091.0
+offset_bottom = 901.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.automation.pancake.auto_batter_ladle"
@@ -282,10 +408,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_add_on_pancake_ham_sausage" type="Button" parent="UpgradeProps" unique_id=361921089]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1310.0
-offset_top = 537.0
-offset_right = 1430.0
-offset_bottom = 575.0
+offset_left = 1366.0
+offset_top = 565.0
+offset_right = 1486.0
+offset_bottom = 603.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.add_on.pancake.ham_sausage"
@@ -309,10 +435,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_add_on_pancake_coriander" type="Button" parent="UpgradeProps" unique_id=1073138523]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 491.0
-offset_top = 534.0
-offset_right = 611.0
-offset_bottom = 572.0
+offset_left = 1249.0
+offset_top = 695.0
+offset_right = 1369.0
+offset_bottom = 733.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.add_on.pancake.coriander"
@@ -336,10 +462,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_add_on_pancake_meat_floss" type="Button" parent="UpgradeProps" unique_id=885670596]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1132.0
-offset_top = 540.0
-offset_right = 1252.0
-offset_bottom = 578.0
+offset_left = 1184.0
+offset_top = 566.0
+offset_right = 1304.0
+offset_bottom = 604.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.add_on.pancake.meat_floss"
@@ -363,6 +489,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_automation_pancake_press_once" type="Button" parent="UpgradeProps" unique_id=1673754009]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
+offset_left = 1164.5
+offset_top = 940.0
+offset_right = 1284.5
+offset_bottom = 978.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.automation.pancake.press_once"
@@ -386,10 +516,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_automation_pancake_auto_sauce_brush" type="Button" parent="UpgradeProps" unique_id=1387020756]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1408.0
-offset_top = 697.0
-offset_right = 1528.0
-offset_bottom = 735.0
+offset_left = 1035.0
+offset_top = 693.0
+offset_right = 1155.0
+offset_bottom = 731.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.automation.pancake.auto_sauce_brush"
@@ -410,70 +540,18 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_automation_pancake_one_click_scallion" type="Button" parent="UpgradeProps"]
+[node name="WorkshopProp_growth_automation_pancake_one_click_egg" type="Button" parent="UpgradeProps" unique_id=142495401]
 custom_minimum_size = Vector2(128, 38)
 layout_mode = 0
-offset_left = 610.0
-offset_top = 405.0
-offset_right = 738.0
-offset_bottom = 443.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.automation.pancake.one_click_scallion"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_scallion"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "一键撒葱\n可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="WorkshopProp_growth_automation_pancake_one_click_baocui" type="Button" parent="UpgradeProps"]
-custom_minimum_size = Vector2(128, 38)
-layout_mode = 0
-offset_left = 762.0
-offset_top = 405.0
-offset_right = 890.0
-offset_bottom = 443.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.automation.pancake.one_click_baocui"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_baocui"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "一键加薄脆\n可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="WorkshopProp_growth_automation_pancake_one_click_egg" type="Button" parent="UpgradeProps"]
-custom_minimum_size = Vector2(128, 38)
-layout_mode = 0
-offset_left = 1010.0
-offset_top = 705.0
-offset_right = 1138.0
-offset_bottom = 743.0
+offset_left = 1435.0
+offset_top = 864.0
+offset_right = 1563.0
+offset_bottom = 902.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.automation.pancake.one_click_egg"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_egg"]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_egg" unique_id=566792956]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -483,85 +561,8 @@ grow_vertical = 2
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
-text = "一键打蛋\n可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="WorkshopProp_growth_automation_pancake_one_click_ham_sausage" type="Button" parent="UpgradeProps"]
-custom_minimum_size = Vector2(128, 38)
-layout_mode = 0
-offset_left = 1310.0
-offset_top = 425.0
-offset_right = 1438.0
-offset_bottom = 463.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.automation.pancake.one_click_ham_sausage"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_ham_sausage"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "一键加火腿\n可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="WorkshopProp_growth_automation_pancake_one_click_coriander" type="Button" parent="UpgradeProps"]
-custom_minimum_size = Vector2(128, 38)
-layout_mode = 0
-offset_left = 465.0
-offset_top = 425.0
-offset_right = 593.0
-offset_bottom = 463.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.automation.pancake.one_click_coriander"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_coriander"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "一键撒香菜\n可预订"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
-
-[node name="WorkshopProp_growth_automation_pancake_one_click_meat_floss" type="Button" parent="UpgradeProps"]
-custom_minimum_size = Vector2(128, 38)
-layout_mode = 0
-offset_left = 1132.0
-offset_top = 425.0
-offset_right = 1260.0
-offset_bottom = 463.0
-focus_mode = 0
-flat = true
-metadata/growth_id = "growth.automation.pancake.one_click_meat_floss"
-
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_automation_pancake_one_click_meat_floss"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 13
-text = "一键加肉松\n可预订"
+text = "一键打蛋
+可预订"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -569,10 +570,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_capacity_youtiao_finished_tray" type="Button" parent="UpgradeProps" unique_id=1756423729]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 94.0
-offset_top = 816.0
-offset_right = 214.0
-offset_bottom = 854.0
+offset_left = 107.0
+offset_top = 823.0
+offset_right = 227.0
+offset_bottom = 861.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.capacity.youtiao_finished_tray"
@@ -596,10 +597,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_equipment_youtiao_advanced" type="Button" parent="UpgradeProps" unique_id=1304254307]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 176.0
-offset_top = 396.0
-offset_right = 296.0
-offset_bottom = 434.0
+offset_left = 181.0
+offset_top = 549.0
+offset_right = 301.0
+offset_bottom = 587.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.equipment.youtiao.advanced"
@@ -620,18 +621,18 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_equipment_youtiao_dual_basket" type="Button" parent="UpgradeProps"]
+[node name="WorkshopProp_growth_equipment_youtiao_dual_basket" type="Button" parent="UpgradeProps" unique_id=1764012903]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 176.0
-offset_top = 396.0
-offset_right = 296.0
-offset_bottom = 434.0
+offset_left = 181.0
+offset_top = 549.0
+offset_right = 301.0
+offset_bottom = 587.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.equipment.youtiao.dual_basket"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_equipment_youtiao_dual_basket"]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_equipment_youtiao_dual_basket" unique_id=681633037]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -641,7 +642,35 @@ grow_vertical = 2
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
-text = "双篮炸锅\n可预订"
+text = "双篮炸锅
+可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_capacity_chicken_finished_tray" type="Button" parent="UpgradeProps" unique_id=1394720772]
+custom_minimum_size = Vector2(120, 38)
+layout_mode = 0
+offset_left = 284.0
+offset_top = 822.0
+offset_right = 404.0
+offset_bottom = 860.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.capacity.chicken_finished_tray"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_capacity_chicken_finished_tray" unique_id=1366464030]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "鸡排成品盘
+可预订"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -649,10 +678,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_area_youtiao" type="Button" parent="UpgradeProps" unique_id=1458882523]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 176.0
-offset_top = 396.0
-offset_right = 296.0
-offset_bottom = 434.0
+offset_left = 181.0
+offset_top = 549.0
+offset_right = 301.0
+offset_bottom = 587.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.area.youtiao"
@@ -676,10 +705,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_assist_fresh_soy_milk_sugar" type="Button" parent="UpgradeProps" unique_id=1912690860]
 custom_minimum_size = Vector2(120, 38)
 layout_mode = 0
-offset_left = 1805.0
-offset_top = 1032.0
-offset_right = 1925.0
-offset_bottom = 1070.0
+offset_left = 1350.0
+offset_top = 698.0
+offset_right = 1470.0
+offset_bottom = 736.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.assist.fresh_soy_milk.sugar"

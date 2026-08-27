@@ -67,6 +67,7 @@ extends Resource
 @export_range(0.20, 0.48, 0.01) var fold_left_line_ratio: float = 0.38
 @export_range(0.52, 0.80, 0.01) var fold_right_line_ratio: float = 0.62
 @export_range(0.10, 0.40, 0.01) var fold_grab_edge_ratio: float = 0.28
+@export_range(0.35, 0.60, 0.01) var fold_snap_commit_progress: float = 0.45
 @export_range(0.01, 0.50, 0.01) var fold_thin_threshold: float = 0.10
 @export_range(0.10, 4.0, 0.05) var fold_thick_threshold: float = 1.40
 @export_range(0.10, 1.0, 0.01) var fold_brittle_doneness: float = 0.86

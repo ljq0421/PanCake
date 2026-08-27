@@ -8,6 +8,8 @@ const CONTENT_FILL := Color("fff4d6")
 const CONTENT_BORDER := Color("c87b35")
 const FOOTER_FILL := Color("efc979")
 
+@export_range(0.5, 3.0, 0.1) var scale_factor := 1.0
+
 var _blocks: Array[Dictionary] = []
 
 
@@ -24,20 +26,20 @@ func _notification(what: int) -> void:
 func _draw() -> void:
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
-	_draw_box(Rect2(Vector2.ZERO, size), CARD_FILL, CARD_BORDER, 7.0, 2)
+	_draw_box(Rect2(Vector2.ZERO, size), CARD_FILL, CARD_BORDER, 7.0 * scale_factor, roundi(2.0 * scale_factor))
 	# The outer shell owns the rounded top corners; the header intentionally
 	# meets it flush so its baseline stays perfectly straight.
-	draw_rect(Rect2(2.0, 2.0, size.x - 4.0, 26.0), HEADER_FILL)
-	draw_line(Vector2(1.0, 28.0), Vector2(size.x - 1.0, 28.0), CARD_BORDER, 1.3, true)
+	draw_rect(Rect2(2.0 * scale_factor, 2.0 * scale_factor, size.x - 4.0 * scale_factor, 26.0 * scale_factor), HEADER_FILL)
+	draw_line(Vector2(1.0 * scale_factor, 28.0 * scale_factor), Vector2(size.x - 1.0 * scale_factor, 28.0 * scale_factor), CARD_BORDER, 1.3 * scale_factor, true)
 	for block in _blocks:
 		var top := float(block.get("top", 0.0))
 		var height := float(block.get("height", 0.0))
 		if height > 0.0:
-			_draw_box(Rect2(6.0, top, size.x - 12.0, height), CONTENT_FILL, CONTENT_BORDER, 4.0, 1)
-	var footer_top := size.y - 24.0
-	draw_rect(Rect2(2.0, footer_top, size.x - 4.0, 15.0), FOOTER_FILL)
-	draw_rect(Rect2(7.0, size.y - 9.0, size.x - 14.0, 2.0), FOOTER_FILL)
-	draw_line(Vector2(1.0, footer_top), Vector2(size.x - 1.0, footer_top), CARD_BORDER, 1.2, true)
+			_draw_box(Rect2(6.0 * scale_factor, top, size.x - 12.0 * scale_factor, height), CONTENT_FILL, CONTENT_BORDER, 4.0 * scale_factor, roundi(scale_factor))
+	var footer_top := size.y - 24.0 * scale_factor
+	draw_rect(Rect2(2.0 * scale_factor, footer_top, size.x - 4.0 * scale_factor, 15.0 * scale_factor), FOOTER_FILL)
+	draw_rect(Rect2(7.0 * scale_factor, size.y - 9.0 * scale_factor, size.x - 14.0 * scale_factor, 2.0 * scale_factor), FOOTER_FILL)
+	draw_line(Vector2(1.0 * scale_factor, footer_top), Vector2(size.x - 1.0 * scale_factor, footer_top), CARD_BORDER, 1.2 * scale_factor, true)
 
 
 func _draw_box(rect: Rect2, fill: Color, border: Color, radius: float, border_width: int) -> void:

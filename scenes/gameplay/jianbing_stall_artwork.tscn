@@ -101,7 +101,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("29_topping_tray")
+texture = ExtResource("17_baocui_06")
 expand_mode = 1
 stretch_mode = 5
 
@@ -134,11 +134,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("29_topping_tray")
+texture = ExtResource("47_pork_floss_06")
 expand_mode = 1
 stretch_mode = 5
 script = ExtResource("23_scallion_tray")
 stock_id = &"stock.pancake.meat_floss"
+empty_texture = ExtResource("29_topping_tray")
 state_textures = Array[Texture2D]([ExtResource("42_pork_floss_01"), ExtResource("43_pork_floss_02"), ExtResource("44_pork_floss_03"), ExtResource("45_pork_floss_04"), ExtResource("46_pork_floss_05"), ExtResource("47_pork_floss_06")])
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/PorkFlossSource" unique_id=910270213]
@@ -170,11 +171,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("29_topping_tray")
+texture = ExtResource("55_ham_tray_06")
 expand_mode = 1
 stretch_mode = 5
 script = ExtResource("23_scallion_tray")
 stock_id = &"stock.pancake.ham_sausage"
+empty_texture = ExtResource("29_topping_tray")
 state_textures = Array[Texture2D]([ExtResource("50_ham_tray_01"), ExtResource("51_ham_tray_02"), ExtResource("52_ham_tray_03"), ExtResource("53_ham_tray_04"), ExtResource("54_ham_tray_05"), ExtResource("55_ham_tray_06")])
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/HamSource" unique_id=1764209521]
@@ -251,6 +253,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("38_egg_06")
 expand_mode = 1
 stretch_mode = 5
 
@@ -283,7 +286,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("24_scallion_empty")
+texture = ExtResource("26_scallion_full")
 expand_mode = 1
 stretch_mode = 5
 script = ExtResource("23_scallion_tray")
@@ -319,7 +322,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("19_coriander_empty")
+texture = ExtResource("21_coriander_full")
 expand_mode = 1
 stretch_mode = 5
 script = ExtResource("23_scallion_tray")

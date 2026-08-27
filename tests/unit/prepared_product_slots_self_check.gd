@@ -27,6 +27,10 @@ func _run() -> void:
 	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true})
 	var initial_slot_status := Dictionary(session.call("prepared_product_slot_status", &"slot.04"))
 	_check(int(initial_slot_status.get("capacity", 0)) == 4 and int(initial_slot_status.get("capacity_per_product", 0)) == 4, "the plain serving tray retains four prepared-product spaces")
+	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.chicken.cutlet": true})
+	_check(StringName(Dictionary(session.call("prepared_product_slot_status", &"slot.chicken")).get("reason", &"")) == &"finished_tray_locked", "finished chicken stays in the right basket until the chicken tray is unlocked")
+	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true, &"growth.capacity.chicken_finished_tray": true})
+	_check(bool(Dictionary(session.call("prepared_product_slot_status", &"slot.chicken")).get("success", false)), "chicken finished tray accepts chicken after its separate unlock")
 
 	var fryer_inventory := Dictionary(session.call("inventory_snapshot"))
 	fryer_inventory["stock.youtiao.plain_dough"] = 8
@@ -187,6 +191,31 @@ func _run() -> void:
 		"a completed fryer slot previews and stages directly to an order while preserving the other basket slot",
 	)
 	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
+	session.call("clear_prepared_product_slots")
+	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 2})
+	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.chicken.cutlet": true})
+	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.chicken.cutlet": true})
+	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true, &"stock.chicken.cutlet_raw": true})
+	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true, &"growth.equipment.youtiao.dual_basket": true, &"growth.capacity.chicken_finished_tray": true})
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.chicken.cutlet_raw"] = 2
+	session.call("save_inventory", fryer_inventory)
+	var loaded_chicken_batch := Dictionary(session.call("load_f3_chicken", 2))
+	session.call("perform_f3_chicken_action", &"start")
+	session.call("advance_f3_production", 12.0)
+	session.call("perform_f3_chicken_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var stored_chicken_batch := Dictionary(session.call("store_ready_fryer_batch", &"slot.chicken", &"right"))
+	var chicken_status := Dictionary(session.call("prepared_product_slot_status", &"slot.chicken"))
+	var chicken_lane := Dictionary(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("lanes", {}).get(&"right", {}))
+	_check(
+		bool(loaded_chicken_batch.get("success", false))
+		and int(stored_chicken_batch.get("stored_quantity", 0)) == 2
+		and int(chicken_status.get("count", 0)) == 2
+		and Array(chicken_status.get("products", [])).all(func(product: Dictionary) -> bool: return StringName(product.get("product_id", &"")) == &"product.chicken.cutlet")
+		and StringName(chicken_lane.get("state", &"")) == &"idle",
+		"one right-lane batch action stores every ready chicken cutlet in the chicken tray",
+	)
 
 	var save_data := Dictionary(session.get("_save_data")).duplicate(true)
 	save_data.erase("prepared_product_slots")

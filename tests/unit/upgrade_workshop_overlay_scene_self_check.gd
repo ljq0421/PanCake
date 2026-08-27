@@ -25,6 +25,8 @@ func _run() -> void:
 	var editor_preview := overlay.get_node_or_null("EditorPreview") as Control
 	_check(editor_preview != null, "workshop scene keeps an editor-preview host")
 	_check(editor_preview != null and editor_preview.get_child_count() == 0, "runtime workshop does not instantiate a duplicate workstation")
+	var editor_material_previews := overlay.get_node_or_null("EditorMaterialPreviews") as Control
+	_check(editor_material_previews != null and not editor_material_previews.visible, "runtime hides the scene-authored editor material guides")
 	var overlay_scene_source := FileAccess.get_file_as_string("res://scenes/ui/upgrade_workshop_overlay.tscn")
 	var overlay_script_source := FileAccess.get_file_as_string("res://scripts/ui/upgrade_workshop_overlay.gd")
 	_check(overlay_scene_source.contains("path=\"res://scenes/gameplay/five_area_workstation.tscn\""), "editor preview reads from the formal workstation scene")
@@ -58,6 +60,7 @@ func _run() -> void:
 		var intermediate_soy_prop := props.get_node_or_null("WorkshopProp_growth_automation_fresh_soy_milk_auto_fill") as Button
 		var advanced_soy_prop := props.get_node_or_null("WorkshopProp_growth_automation_fresh_soy_milk_advanced") as Button
 		var finished_tray_prop := props.get_node_or_null("WorkshopProp_growth_capacity_youtiao_finished_tray") as Button
+		var chicken_tray_prop := props.get_node_or_null("WorkshopProp_growth_capacity_chicken_finished_tray") as Button
 		var baocui_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_baocui") as Button
 		var scallion_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_scallion") as Button
 		var one_click_egg_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_one_click_egg") as Button
@@ -69,6 +72,7 @@ func _run() -> void:
 		_check(finished_tray_prop != null and finished_tray_prop.visible, "finished-youtiao tray remains labelled before the fryer is installed")
 		_check(finished_tray_tag != null and finished_tray_tag.text == "名称：油条成品盘，不可预订", "unavailable workshop tags show their name and concise copy")
 		_check(finished_tray_prop != null and finished_tray_prop.tooltip_text.contains("先解锁油条区域"), "finished-youtiao tray hover explains its reservation prerequisite")
+		_check(chicken_tray_prop != null and chicken_tray_prop.visible and chicken_tray_prop.tooltip_text.contains("先预订双篮炸锅"), "chicken tray is visible in the workshop and explains its dual-fryer prerequisite")
 		_check(baocui_prop != null and baocui_prop.visible and baocui_prop.tooltip_text.contains("煎饼合格 4 次"), "baocui tag remains visible and explains its qualification requirement")
 		_check(scallion_prop != null and scallion_prop.visible and scallion_prop.tooltip_text.contains("煎饼合格 6 次"), "scallion tag remains visible and explains its qualification requirement")
 		var one_click_egg_tag := one_click_egg_prop.get_node_or_null("ConditionTag") as Label if one_click_egg_prop != null else null

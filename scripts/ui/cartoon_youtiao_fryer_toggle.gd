@@ -14,6 +14,7 @@ const CHICKEN_PRODUCT_ID := &"product.chicken.cutlet"
 const DOUGH_STOCK_ID := &"stock.youtiao.plain_dough"
 const CHICKEN_STOCK_ID := &"stock.chicken.cutlet_raw"
 const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
+const CHICKEN_FINISHED_TRAY_GROWTH_ID := &"growth.capacity.chicken_finished_tray"
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const COOKING_STAGE_BAR_SCRIPT := preload("res://scripts/ui/cooking_stage_bar.gd")
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
@@ -81,6 +82,7 @@ var _dough_stock := 0
 var _chicken_stock := 0
 var _chicken_unlocked := false
 var _finished_tray_unlocked := false
+var _chicken_finished_tray_unlocked := false
 var _plate_count := 0
 var _plate_products: Array[Dictionary] = []
 var _chicken_plate_products: Array[Dictionary] = []
@@ -193,11 +195,7 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	if StringName(source_ref.get("source_kind", &"")) in [&"youtiao_dough", &"chicken_cutlet_raw"]:
 		return true
-	var can_store_finished_youtiao := _finished_tray_unlocked and (
-		StringName(source_ref.get("source_kind", &"")) == &"youtiao_fryer_slot"
-		and StringName(_machine.get("state", &"")) == &"ready_to_collect"
-	)
-	return can_store_finished_youtiao and _is_plate_point(_at_position)
+	return false
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
@@ -241,6 +239,7 @@ func refresh_from_session() -> void:
 	var progression := Dictionary(session.call("five_area_progression_snapshot")) if session.has_method("five_area_progression_snapshot") else {}
 	var area_unlocked := Array(progression.get("unlocked_area_ids", [])).has("area.youtiao")
 	_finished_tray_unlocked = Array(progression.get("owned_growth_ids", [])).has(FINISHED_TRAY_GROWTH_ID)
+	_chicken_finished_tray_unlocked = Array(progression.get("owned_growth_ids", [])).has(CHICKEN_FINISHED_TRAY_GROWTH_ID)
 	_workshop_advanced_preview = _workshop_preview and area_unlocked
 	if area_unlocked or _workshop_preview:
 		_ensure_visual_resources()
@@ -255,9 +254,9 @@ func refresh_from_session() -> void:
 	# Chicken belongs exclusively to the third-tier dual-basket fryer.  Unlike
 	# the legacy trays, do not reveal it just because the workshop is previewing
 	# an earlier youtiao upgrade.
-	chicken_tray.visible = _chicken_unlocked
-	chicken_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not _chicken_unlocked else Color.WHITE
-	chicken_tray.set_drop_enabled(_chicken_unlocked and not _workshop_preview)
+	chicken_tray.visible = _chicken_unlocked and (_chicken_finished_tray_unlocked or _workshop_preview)
+	chicken_tray.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and not _chicken_finished_tray_unlocked else Color.WHITE
+	chicken_tray.set_drop_enabled(_chicken_finished_tray_unlocked and not _workshop_preview)
 	if _workshop_preview:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
@@ -397,6 +396,22 @@ func _store_fryer_slot_on_plate(source_index: int, product_id: StringName = PROD
 		result = Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index))
 	if bool(result.get("success", false)):
 		status_message.emit("鸡排已放入鸡排盘" if is_chicken else "油条已放入成品盘")
+	else:
+		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
+	_request_session_refresh()
+
+
+func _store_ready_fryer_batch_on_plate(product_id: StringName) -> void:
+	var session := get_node_or_null("/root/GameSession")
+	var is_chicken := product_id == CHICKEN_PRODUCT_ID
+	var result := {"success": false, "reason": &"no_game_session"}
+	if session != null and session.has_method("store_ready_fryer_batch"):
+		result = Dictionary(session.call("store_ready_fryer_batch", &"slot.chicken" if is_chicken else &"slot.04", &"right" if is_chicken else &"left"))
+	elif session != null and not is_chicken and session.has_method("store_ready_youtiao_batch"):
+		result = Dictionary(session.call("store_ready_youtiao_batch", &"slot.04"))
+	if bool(result.get("success", false)):
+		var quantity := int(result.get("stored_quantity", 0))
+		status_message.emit("%d份鸡排已放入鸡排盘" % quantity if is_chicken else "%d根油条已放入成品盘" % quantity)
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	_request_session_refresh()
@@ -592,12 +607,19 @@ func _apply_editor_preview() -> void:
 	youtiao_progress_label.visible = true
 	youtiao_progress_bar.visible = true
 	youtiao_progress_label.text = "油条 · 布局预览"
-	youtiao_progress_bar.configure(0.0, 0.40, 0.60, false, &"", youtiao_progress_label.text)
+	if _editor_control_has_tool_script(youtiao_progress_bar):
+		youtiao_progress_bar.configure(0.0, 0.40, 0.60, false, &"", youtiao_progress_label.text)
 	chicken_progress_label.visible = use_dual_art
 	chicken_progress_bar.visible = use_dual_art
 	if use_dual_art:
 		chicken_progress_label.text = "鸡排 · 布局预览"
-		chicken_progress_bar.configure(0.0, 12.0 / 27.0, 17.0 / 27.0, false, &"", chicken_progress_label.text)
+		if _editor_control_has_tool_script(chicken_progress_bar):
+			chicken_progress_bar.configure(0.0, 12.0 / 27.0, 17.0 / 27.0, false, &"", chicken_progress_label.text)
+
+
+func _editor_control_has_tool_script(control: Control) -> bool:
+	var control_script := control.get_script() as Script if control != null else null
+	return control_script != null and control_script.is_tool()
 
 
 func _preview_signature() -> int:
@@ -646,7 +668,7 @@ func _refresh_output_sources(state: StringName, occupied: Array[int], capacity: 
 			"source_index": source_index,
 			"product_id": PRODUCT_ID,
 			"discardable": ready_slot,
-		}, product_texture, ready_slot, "拖这一根油条到顾客订单或成品盘")
+		}, product_texture, ready_slot, "点击任意油条，将整篮油条放入成品盘")
 		# The four visual sticks overlap for depth, but their transparent padding
 		# must not overlap as hit areas.  Alpha hit testing keeps each visible stick
 		# independently draggable while the same node remains the visible artwork.
@@ -678,7 +700,7 @@ func _refresh_chicken_output_sources(lane: Dictionary) -> void:
 		var source := chicken_slot_sources[source_index]
 		var occupied_slot := source_index < capacity and occupied.has(source_index)
 		var ready_slot := state == &"ready_to_collect" and occupied.has(source_index)
-		source.configure({"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": source_index, "product_id": CHICKEN_PRODUCT_ID, "discardable": ready_slot}, texture, ready_slot, "拖这一份鸡排到顾客订单或鸡排盘")
+		source.configure({"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": source_index, "product_id": CHICKEN_PRODUCT_ID, "discardable": ready_slot}, texture, ready_slot, "点击任意鸡排，将整篮鸡排放入鸡排盘")
 		var regions: Array[Dictionary] = []
 		if ready_slot:
 			regions.append({"texture": texture, "rect": Rect2(Vector2.ZERO, source.size)})
@@ -709,7 +731,7 @@ func _refresh_plate_sources() -> void:
 	var chicken_entries: Array[Dictionary] = []
 	for source_index in range(mini(_chicken_plate_products.size(), 4)):
 		chicken_entries.append({"source_index": source_index, "product_id": CHICKEN_PRODUCT_ID})
-	chicken_tray.configure_products(chicken_entries, chicken_golden_texture, _chicken_unlocked and not _workshop_preview)
+	chicken_tray.configure_products(chicken_entries, chicken_golden_texture, _chicken_finished_tray_unlocked and not _workshop_preview)
 
 
 func _set_youtiao_alpha_hit_region(source: ProductDragSource, product_texture: Texture2D, enabled: bool) -> void:
@@ -731,9 +753,12 @@ func _configure_component_controls() -> void:
 	plate_sources.append_array(chicken_tray.product_sources)
 	waste_source = burnt_batch_source
 	for source in output_sources:
-		source.native_drag_enabled = true
+		# Finished fryer portions are collected with a short click. Product trays
+		# remain the fryer-product drag sources used for customer delivery.
+		source.native_drag_enabled = false
 		source.drag_threshold_pixels = 4.0
 		source.drag_ended.connect(_on_product_drag_ended)
+		source.short_clicked.connect(_on_fryer_product_short_clicked)
 	burnt_batch_source.native_drag_enabled = true
 	burnt_batch_source.drag_threshold_pixels = 4.0
 	burnt_batch_source.drag_ended.connect(_on_product_drag_ended)
@@ -749,6 +774,15 @@ func _on_tray_fryer_slot_drop_requested(source_index: int, destination_product_i
 
 func _on_chicken_tray_fryer_slot_drop_requested(source_index: int, _destination_product_id: StringName) -> void:
 	_store_fryer_slot_on_plate(source_index, CHICKEN_PRODUCT_ID)
+
+
+func _on_fryer_product_short_clicked(source_ref: Dictionary) -> void:
+	var source_kind := StringName(source_ref.get("source_kind", &""))
+	if source_kind == &"youtiao_fryer_slot":
+		_store_ready_fryer_batch_on_plate(PRODUCT_ID)
+		return
+	if source_kind == &"fryer_slot" and StringName(source_ref.get("lane_id", &"")) == &"right":
+		_store_ready_fryer_batch_on_plate(CHICKEN_PRODUCT_ID)
 
 
 func _plate_youtiao_texture() -> Texture2D:
@@ -889,7 +923,7 @@ func _state_text(state: StringName) -> String:
 	return {
 		&"unowned": "油条机未解锁", &"idle": "长按油条机添加面胚", &"loaded": "点击油条机开始炸制",
 		&"frying": "炸制中", &"ready_safe": "点击油条机抬起沥网", &"overcooking": "油条即将炸糊",
-		&"draining": "正在沥油", &"ready_to_collect": "逐根拖油条到顾客订单或成品盘" if _finished_tray_unlocked else "逐根拖油条到顾客订单；成品盘尚未解锁", &"burnt": "油条已炸糊，拖去废弃",
+		&"draining": "正在沥油", &"ready_to_collect": "点击任意成品，整篮放入对应成品盘" if _finished_tray_unlocked else "成品盘尚未解锁，炸好的油条请暂存在滤网中", &"burnt": "油条已炸糊，拖去废弃",
 	}.get(state, "油条机")
 
 
@@ -897,7 +931,7 @@ static func _failure_text(reason: StringName) -> String:
 	return {
 		&"capacity_exceeded": "炸篮已满", &"insufficient_stock": "油条面胚不足", &"recipe_locked": "油条配方尚未解锁",
 		&"equipment_not_owned": "油条机尚未解锁", &"invalid_equipment_state": "当前不能放入面胚",
-		&"finished_tray_locked": "成品盘尚未解锁，炸好的油条请暂存在滤网中",
+		&"finished_tray_locked": "对应成品盘尚未解锁，炸好的成品请暂存在炸篮中",
 		&"prepared_product_slot_full": "成品盘已满，请先出餐或废弃盘内油条",
 	}.get(reason, "操作未完成：%s" % str(reason))
 

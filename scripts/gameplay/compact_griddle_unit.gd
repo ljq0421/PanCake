@@ -5,6 +5,7 @@ signal main_action_requested(unit_index: int)
 signal status_message_requested(message: String)
 signal transient_warning_requested(message: String)
 signal packaging_finished(unit_index: int)
+signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
 
 const GRID_SIZE := 64
 const REFERENCE_GRID_SIZE := 128.0
@@ -79,6 +80,7 @@ const SURFACE_ACTION_SPREAD_BATTER: StringName = &"spread_batter"
 const SURFACE_ACTION_SPREAD_EGG: StringName = &"spread_egg"
 const SURFACE_ACTION_BRUSH_SAUCE: StringName = &"brush_sauce"
 const SURFACE_ACTION_FOLD: StringName = &"fold"
+const AUTO_FOLD_PAUSE_DURATION := 0.05
 const BATTER_POUR_RATE := 5.0
 const MIN_BATTER_POUR_AMOUNT := 1.5
 const MIN_BATTER_POUR_RADIUS := 4.0
@@ -157,6 +159,10 @@ var _hardware_spreader_cursor_hotspot := Vector2.ZERO
 var _hardware_spreader_cursor_active := false
 var _hardware_spreader_cursor_is_wide := false
 var _packaging_pending := false
+var _automatic_fold_pending_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
+var _automatic_fold_tween: Tween
+var _fold_threshold_feedback_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
+var _suppress_fold_threshold_feedback := false
 
 
 static func _compact_pancake_parameters() -> PancakeSimulationParameters:
@@ -195,6 +201,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var step := maxf(delta, 0.0)
+	_update_fold_hover_affordance()
 	if _batter_ladle_armed:
 		_process_batter_ladle_drag(step)
 	elif pancake_surface.pointer_pressed:
@@ -227,6 +234,7 @@ func _process(delta: float) -> void:
 
 
 func _exit_tree() -> void:
+	_cancel_automatic_fold()
 	_deactivate_hardware_spreader_cursor()
 
 
@@ -530,6 +538,8 @@ func begin_garnish_without_flip() -> Dictionary:
 func begin_manual_fold(local_position: Vector2) -> Dictionary:
 	if state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH, State.FOLDING]:
 		return {"success": false, "reason": &"wrong_stage"}
+	if _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE or fold_overlay.is_fold_animation_active():
+		return {"success": false, "reason": &"automatic_fold_pending"}
 	var grid_position := _fold_grid_position(local_position)
 	if not fold_model.begin_drag(grid_position):
 		return {"success": false, "reason": &"not_fold_edge"}
@@ -561,9 +571,78 @@ func mark_ready(product: Dictionary) -> void:
 
 
 func _on_fold_landing_finished() -> void:
+	if _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE and fold_model.completed_fold_count() == 1:
+		_schedule_automatic_fold()
+		return
 	if not _packaging_pending or fold_model.completed_fold_count() < 2:
 		return
 	_begin_paper_bag_packaging()
+
+
+func _schedule_automatic_fold() -> void:
+	if _automatic_fold_pending_region == FOLD_MODEL_SCRIPT.REGION_NONE:
+		return
+	if _automatic_fold_tween != null and _automatic_fold_tween.is_running():
+		_automatic_fold_tween.kill()
+	_automatic_fold_tween = create_tween()
+	_automatic_fold_tween.tween_interval(AUTO_FOLD_PAUSE_DURATION)
+	_automatic_fold_tween.tween_callback(_perform_automatic_fold)
+
+
+func _perform_automatic_fold() -> void:
+	var region := _automatic_fold_pending_region
+	if region == FOLD_MODEL_SCRIPT.REGION_NONE or state != State.FOLDING:
+		return
+	_automatic_fold_pending_region = FOLD_MODEL_SCRIPT.REGION_NONE
+	_suppress_fold_threshold_feedback = true
+	var result := Dictionary(fold_model.fold_automatically(region))
+	_suppress_fold_threshold_feedback = false
+	if not bool(result.get("committed", false)):
+		status_message_requested.emit(str(result.get("reason", "自动折叠未完成")))
+		_refresh_ui()
+		return
+	fold_steps = fold_model.completed_fold_count()
+	p1_session.mark_ready_for_package()
+	_packaging_pending = true
+	fold_feedback_requested.emit(unit_index, &"automatic_fold")
+	status_message_requested.emit("鏊子%d另一侧已自动接力折叠，正在落稳" % (unit_index + 1))
+	_refresh_ui()
+
+
+func _cancel_automatic_fold() -> void:
+	if _automatic_fold_tween != null and _automatic_fold_tween.is_running():
+		_automatic_fold_tween.kill()
+	_automatic_fold_tween = null
+	_automatic_fold_pending_region = FOLD_MODEL_SCRIPT.REGION_NONE
+
+
+func _remaining_unfolded_region() -> StringName:
+	if not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
+		return FOLD_MODEL_SCRIPT.REGION_LEFT
+	if not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
+		return FOLD_MODEL_SCRIPT.REGION_RIGHT
+	return FOLD_MODEL_SCRIPT.REGION_NONE
+
+
+func _update_fold_hover_affordance() -> void:
+	var hovered := FOLD_MODEL_SCRIPT.REGION_NONE
+	var can_hover := (
+		state in [State.GARNISH, State.FOLDING]
+		and _automatic_fold_pending_region == FOLD_MODEL_SCRIPT.REGION_NONE
+		and not fold_overlay.is_fold_animation_active()
+		and not _packaging_pending
+	)
+	if can_hover:
+		var local_position := pancake_surface.get_local_mouse_position()
+		if pancake_surface._has_point(local_position):
+			var ratio := local_position.x / maxf(pancake_surface.size.x, 1.0)
+			var edge_ratio := pancake_model.parameters.fold_grab_edge_ratio
+			if ratio <= edge_ratio and not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_LEFT):
+				hovered = FOLD_MODEL_SCRIPT.REGION_LEFT
+			elif ratio >= 1.0 - edge_ratio and not fold_model.is_region_folded(FOLD_MODEL_SCRIPT.REGION_RIGHT):
+				hovered = FOLD_MODEL_SCRIPT.REGION_RIGHT
+	fold_overlay.set_hovered_region(hovered)
+	pancake_surface.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hovered != FOLD_MODEL_SCRIPT.REGION_NONE else Control.CURSOR_ARROW
 
 
 func _begin_paper_bag_packaging() -> void:
@@ -651,7 +730,7 @@ func total_cook_seconds() -> float:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 1,
+		"version": 2,
 		"source_index": unit_index,
 		"state": int(state),
 		"order": order.duplicate(true),
@@ -662,6 +741,7 @@ func snapshot() -> Dictionary:
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
 		"ready_product": ready_product.duplicate(true),
 		"packaging_pending": _packaging_pending,
+		"automatic_fold_pending_region": _automatic_fold_pending_region,
 		"pancake_model": pancake_model.snapshot(),
 		"ingredient_model": ingredient_model.snapshot(),
 		"fold_model": fold_model.snapshot(),
@@ -670,6 +750,7 @@ func snapshot() -> Dictionary:
 
 
 func load_snapshot(value: Dictionary) -> Dictionary:
+	_cancel_automatic_fold()
 	_clear_intact_egg_visuals()
 	var pancake_result: Dictionary = pancake_model.load_snapshot(Dictionary(value.get("pancake_model", {})))
 	if not bool(pancake_result.get("success", false)):
@@ -692,6 +773,11 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	applied_ingredient_ids = PackedStringArray(Array(value.get("applied_ingredient_ids", [])))
 	ready_product = Dictionary(value.get("ready_product", {})).duplicate(true)
 	_packaging_pending = bool(value.get("packaging_pending", false))
+	_automatic_fold_pending_region = StringName(value.get("automatic_fold_pending_region", FOLD_MODEL_SCRIPT.REGION_NONE))
+	if _automatic_fold_pending_region not in [FOLD_MODEL_SCRIPT.REGION_NONE, FOLD_MODEL_SCRIPT.REGION_LEFT, FOLD_MODEL_SCRIPT.REGION_RIGHT]:
+		_automatic_fold_pending_region = FOLD_MODEL_SCRIPT.REGION_NONE
+	if state == State.FOLDING and fold_model.completed_fold_count() == 1 and _automatic_fold_pending_region == FOLD_MODEL_SCRIPT.REGION_NONE:
+		_automatic_fold_pending_region = _remaining_unfolded_region()
 	if state == State.FOLDING and fold_model.completed_fold_count() >= 2 and ready_product.is_empty():
 		_packaging_pending = true
 	if is_node_ready():
@@ -706,10 +792,13 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 		_refresh_ui()
 		if _packaging_pending:
 			call_deferred("_resume_loaded_packaging")
+		elif _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE:
+			call_deferred("_schedule_automatic_fold")
 	return {"success": true}
 
 
 func reset_unit() -> void:
+	_cancel_automatic_fold()
 	state = State.IDLE
 	order.clear()
 	first_side_seconds = 0.0
@@ -719,6 +808,7 @@ func reset_unit() -> void:
 	applied_ingredient_ids = PackedStringArray()
 	ready_product.clear()
 	_packaging_pending = false
+	_fold_threshold_feedback_region = FOLD_MODEL_SCRIPT.REGION_NONE
 	pancake_model.reset()
 	ingredient_model.reset()
 	fold_model.reset()
@@ -808,7 +898,8 @@ func _on_surface_pointer_ended(_local_position: Vector2) -> void:
 				_packaging_pending = true
 				status_message_requested.emit("鏊子%d两面折叠完成，正在装入纸袋" % (unit_index + 1))
 			else:
-				status_message_requested.emit("鏊子%d%s；再折另一侧" % [unit_index + 1, fold_model.result_label(fold_result)])
+				_automatic_fold_pending_region = _remaining_unfolded_region()
+				status_message_requested.emit("鏊子%d%s；另一侧将自动接力" % [unit_index + 1, fold_model.result_label(fold_result)])
 		else:
 			status_message_requested.emit(str(fold_result.get("reason", "折叠未完成")))
 		_refresh_ui()
@@ -1481,13 +1572,19 @@ func _refresh_ui() -> void:
 			state_label.text = "未翻面备料 · 可加料折叠，交付-12分" if not pancake_model.is_flipped else "可继续加料，也可直接抓边折叠"
 			main_action.text = "等待备料"
 		State.FOLDING:
-			state_label.text = "折叠完成 · 正在装入纸袋" if _packaging_pending else "手动折叠 %d/2 · 抓另一侧饼边" % fold_steps
+			if _packaging_pending:
+				state_label.text = "折叠完成 · 正在装入纸袋"
+			elif _automatic_fold_pending_region != FOLD_MODEL_SCRIPT.REGION_NONE:
+				state_label.text = "第一侧已折好 · 另一侧自动接力"
+			else:
+				state_label.text = "抓住任意一侧饼边向内折叠"
 		State.READY:
 			state_label.text = "成品待自由交付"
 			main_action.text = "拖到匹配订单"
 	main_action.disabled = state not in [State.IDLE, State.FIRST_SIDE]
 	main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE if main_action.disabled else Control.MOUSE_FILTER_STOP
-	fold_overlay.set_guides_visible(state in [State.GARNISH, State.FOLDING])
+	fold_overlay.set_guides_visible(state in [State.GARNISH, State.FOLDING] and not _packaging_pending)
+	fold_overlay.set_automatic_pending_region(_automatic_fold_pending_region)
 	_refresh_intact_egg_visual()
 	_refresh_heat_visual()
 
@@ -1495,6 +1592,16 @@ func _refresh_ui() -> void:
 func _refresh_fold_visual() -> void:
 	if not is_node_ready():
 		return
+	var active_region: StringName = fold_model.active_region
+	if active_region == FOLD_MODEL_SCRIPT.REGION_NONE:
+		_fold_threshold_feedback_region = FOLD_MODEL_SCRIPT.REGION_NONE
+	elif (
+		fold_model.crossed_fold_line
+		and _fold_threshold_feedback_region != active_region
+		and not _suppress_fold_threshold_feedback
+	):
+		_fold_threshold_feedback_region = active_region
+		fold_feedback_requested.emit(unit_index, &"snap_threshold")
 	var left_progress := 1.0 if fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT) else 0.0
 	var right_progress := 1.0 if fold_model.is_region_folded(PancakeFoldModel.REGION_RIGHT) else 0.0
 	if fold_model.active_region == PancakeFoldModel.REGION_LEFT:

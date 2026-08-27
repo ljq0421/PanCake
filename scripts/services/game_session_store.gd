@@ -50,7 +50,7 @@ const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.chicken": {
 		"product_id": &"product.chicken.cutlet",
 		"recipe_id": &"recipe.chicken.cutlet",
-		"requires_growth_id": &"growth.equipment.youtiao.dual_basket",
+		"requires_growth_id": &"growth.capacity.chicken_finished_tray",
 		"accepted_product_ids": [&"product.chicken.cutlet"],
 	},
 }
@@ -2073,7 +2073,7 @@ func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
 	}
 
 
-func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
+func preview_store_ready_fryer_batch(slot_id: StringName, lane_id: StringName = &"left") -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_production_service()
@@ -2081,10 +2081,12 @@ func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	if not bool(status.get("success", false)):
 		return status
 	var machine := Dictionary(_production_service.call("machine_snapshot", &"device.youtiao_fryer"))
-	var quantity := maxi(int(machine.get("quantity", 0)), 0)
+	var lanes := Dictionary(machine.get("lanes", {}))
+	var lane := Dictionary(lanes.get(lane_id, machine))
+	var quantity := maxi(int(lane.get("quantity", 0)), 0)
 	if quantity <= 0:
-		return {"success": false, "reason": &"product_not_ready", "slot_id": slot_id}
-	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", quantity))
+		return {"success": false, "reason": &"product_not_ready", "slot_id": slot_id, "lane_id": lane_id}
+	var preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", quantity, -1, lane_id))
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := Dictionary(preview.get("product", {})).duplicate(true)
@@ -2104,17 +2106,17 @@ func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 			"available_capacity": available_capacity,
 			"missing_capacity": quantity - available_capacity,
 		}
-	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "quantity": quantity}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "quantity": quantity, "lane_id": lane_id}
 
 
-func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
-	var preview := preview_store_ready_youtiao_batch(slot_id)
+func store_ready_fryer_batch(slot_id: StringName, lane_id: StringName = &"left") -> Dictionary:
+	var preview := preview_store_ready_fryer_batch(slot_id, lane_id)
 	if not bool(preview.get("success", false)):
 		return preview
 	var production_rollback := five_area_production_snapshot()
 	var slots_rollback := prepared_product_slots_snapshot()
 	var quantity := int(preview.get("quantity", 0))
-	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", quantity))
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", quantity, -1, lane_id))
 	if not bool(collected.get("success", false)):
 		return collected
 	var expected_product_id := StringName(Dictionary(preview.get("product", {})).get("product_id", &""))
@@ -2135,7 +2137,15 @@ func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	_touch_and_write()
 	production_changed.emit(five_area_production_snapshot())
 	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
-	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size()}
+	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size(), "lane_id": lane_id}
+
+
+func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
+	return preview_store_ready_fryer_batch(slot_id, &"left")
+
+
+func store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
+	return store_ready_fryer_batch(slot_id, &"left")
 
 
 func preview_store_ready_youtiao_slot(slot_id: StringName, source_index: int) -> Dictionary:

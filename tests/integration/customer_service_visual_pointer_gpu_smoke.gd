@@ -47,7 +47,7 @@ func _run() -> void:
 		and not right.visible,
 		"the semantic slot-zero tutorial renders only in the center service slot",
 	)
-	_check(card_background.has_method("set_card_layout") and card_background.size == Vector2(176.0, 124.0), "the centered tutorial uses the variable-height one-block order card")
+	_check(card_background.has_method("set_card_layout") and card_background.size == Vector2(264.0, 186.0), "the centered tutorial uses the 1.5× variable-height order card")
 	_check(center.get_node_or_null("FocusFrame") == null and portrait.modulate == Color.WHITE and card_background.modulate == Color.WHITE, "the tutorial customer and order card have no frame or selection tint")
 	_check(center.get_node_or_null("PortraitButton") == null, "the portrait has no click target")
 	await _move_at(_screen_point(card_focus_button))

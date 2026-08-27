@@ -119,11 +119,15 @@ func update_drag(grid_position: Vector2) -> void:
 	if active_region == REGION_LEFT:
 		var destination_x := 2.0 * line_x - _drag_start.x
 		next_progress = clampf(inverse_lerp(_drag_start.x, maxf(destination_x, line_x + 1.0), grid_position.x), 0.0, 1.0)
-		next_crossed_fold_line = grid_position.x >= line_x
 	else:
 		var destination_x := 2.0 * line_x - _drag_start.x
 		next_progress = clampf(inverse_lerp(_drag_start.x, minf(destination_x, line_x - 1.0), grid_position.x), 0.0, 1.0)
-		next_crossed_fold_line = grid_position.x <= line_x
+	# Once the flap enters the magnetic snap range, keep the commit armed even
+	# if a small hand tremor moves the pointer back before release.
+	next_crossed_fold_line = (
+		crossed_fold_line
+		or next_progress >= pancake_model.parameters.fold_snap_commit_progress
+	)
 	if is_equal_approx(next_progress, drag_progress) and next_crossed_fold_line == crossed_fold_line:
 		return
 	drag_progress = next_progress
@@ -138,7 +142,7 @@ func release_drag(grid_position: Vector2) -> Dictionary:
 	var region := active_region
 	if not crossed_fold_line:
 		cancel_drag()
-		return {"committed": false, "reason": "需要拖过折线后再松开"}
+		return {"committed": false, "reason": "拖到折线附近后再松开"}
 	var result := _evaluate_region(region)
 	result["folded"] = true
 	_fold_results[region] = result
@@ -147,6 +151,27 @@ func release_drag(grid_position: Vector2) -> Dictionary:
 	crossed_fold_line = false
 	changed.emit()
 	return result.merged({"committed": true, "region": region})
+
+
+func fold_automatically(region: StringName) -> Dictionary:
+	if pancake_model == null or package_result != PACKAGE_NONE:
+		return {"committed": false, "reason": "当前无法自动折叠"}
+	if region not in [REGION_LEFT, REGION_RIGHT] or is_region_folded(region):
+		return {"committed": false, "reason": "自动折叠区域不可用"}
+	# Emit one active frame at the snap threshold before committing. The overlay
+	# uses it as the spatial starting point for the system-controlled landing.
+	active_region = region
+	drag_progress = pancake_model.parameters.fold_snap_commit_progress
+	crossed_fold_line = true
+	changed.emit()
+	var result := _evaluate_region(region)
+	result["folded"] = true
+	_fold_results[region] = result
+	active_region = REGION_NONE
+	drag_progress = 0.0
+	crossed_fold_line = false
+	changed.emit()
+	return result.merged({"committed": true, "region": region, "automatic": true})
 
 
 func cancel_drag() -> void:

@@ -148,12 +148,12 @@ slot_origin = Vector2(48, 48)
 [node name="SesameTray" parent="." unique_id=993540118 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
 z_index = 1
-custom_minimum_size = Vector2(278, 237)
+custom_minimum_size = Vector2(219, 206)
 layout_mode = 0
 offset_left = 290.99997
 offset_top = 269.0
-offset_right = 569.0
-offset_bottom = 506.0
+offset_right = 509.99997
+offset_bottom = 475.0
 scale = Vector2(0.8, 0.8)
 destination_product_id = &"product.youtiao.sesame"
 slot_origin = Vector2(46, 48)

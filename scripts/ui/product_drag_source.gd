@@ -25,6 +25,9 @@ signal hold_released(source_ref: Dictionary)
 ## Visual-only offset for the native drag preview, relative to the pointer.
 ## This lets a source remain visible without moving the actual drop position.
 @export var drag_preview_offset := Vector2.ZERO
+## Text shown in a native UI preview when the product deliberately has no art
+## asset yet. This keeps placeholder-only products recognizable while dragging.
+@export var drag_preview_text := ""
 
 var _source_ref: Dictionary = {}
 var _press_position := Vector2.ZERO
@@ -70,6 +73,10 @@ func set_drag_available(value: bool) -> void:
 
 func set_drag_preview_texture(value: Texture2D) -> void:
 	drag_preview_texture = value
+
+
+func set_drag_preview_text(value: String) -> void:
+	drag_preview_text = value
 
 
 func set_drag_preview_size(value: Vector2) -> void:
@@ -192,19 +199,53 @@ func update_gesture(viewport_position: Vector2, perform_native_drag: bool = true
 		if not perform_native_drag or not native_drag_enabled:
 			return
 		_native_drag_in_progress = true
-		var preview := TextureRect.new()
-		preview.texture = drag_preview_texture if drag_preview_texture != null else texture_normal
-		preview.offset_transform_enabled = drag_preview_offset != Vector2.ZERO
-		preview.offset_transform_visual_only = true
-		preview.offset_transform_position = drag_preview_offset
-		# Drag previews must stay above decorative drop targets (for example, the
-		# black-sesame tray), otherwise the product appears to slip underneath it.
-		preview.z_index = z_index + 1
-		preview.custom_minimum_size = drag_preview_size
-		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		preview.modulate = Color(1.0, 1.0, 1.0, 0.92)
+		var preview := _new_drag_preview()
 		force_drag({"kind": &"product_source", "source_ref": _source_ref.duplicate(true)}, preview)
+
+
+func _new_drag_preview() -> Control:
+	var preview_texture := drag_preview_texture if drag_preview_texture != null else texture_normal
+	if preview_texture != null:
+		var texture_preview := TextureRect.new()
+		texture_preview.texture = preview_texture
+		texture_preview.offset_transform_enabled = drag_preview_offset != Vector2.ZERO
+		texture_preview.offset_transform_visual_only = true
+		texture_preview.offset_transform_position = drag_preview_offset
+		texture_preview.custom_minimum_size = drag_preview_size
+		texture_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		texture_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		texture_preview.modulate = Color(1.0, 1.0, 1.0, 0.92)
+		texture_preview.z_index = z_index + 1
+		return texture_preview
+	var text_preview := Panel.new()
+	text_preview.custom_minimum_size = drag_preview_size
+	text_preview.size = drag_preview_size
+	text_preview.modulate = Color(1.0, 1.0, 1.0, 0.92)
+	text_preview.z_index = z_index + 1
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#e86b28")
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color("#fff0b6")
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 10
+	style.corner_radius_bottom_right = 10
+	text_preview.add_theme_stylebox_override("panel", style)
+	var label := Label.new()
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.text = drag_preview_text if not drag_preview_text.is_empty() else tooltip_text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_color_override("font_color", Color("#fff7ce"))
+	label.add_theme_color_override("font_outline_color", Color("#722506"))
+	label.add_theme_constant_override("outline_size", 3)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	text_preview.add_child(label)
+	return text_preview
 
 
 func advance_gesture(delta: float) -> void:

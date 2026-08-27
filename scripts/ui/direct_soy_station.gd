@@ -14,7 +14,7 @@ const CUP_STACK_TEXTURE_PATHS := [
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_7_v3_bold_cartoon_transparent.png",
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png",
 ]
-const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-for-soy-milk.png"
+const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-open-for-soy-milk.png"
 const MACHINE_TIER_LAYOUTS: Array[Dictionary] = [
 	{
 		"texture_path": "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png",
@@ -63,9 +63,6 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 @onready var sugar_jar: TextureButton = %SugarJar
 @onready var sugar_animation_origin: Control = $SugarJar/AnimationOrigin
 @onready var soy_milk_dispenser: TextureRect = %SoyMilkDispenser
-@onready var state_label: Label = %StateLabel
-@onready var cup_detail_label: Label = %CupDetailLabel
-@onready var dispense_progress: ProgressBar = %DispenseProgress
 @onready var dispense_effect: SoyDispenseEffect = %DispenseEffect
 @onready var queued_cup_effect: SoyDispenseEffect = %QueuedCupEffect
 @onready var sugar_label: Label = %SugarLabel
@@ -73,7 +70,6 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 var lock_cover: Control = null
 var _filling := false
 var _held_seconds := 0.0
-var _fill_guide_enabled := false
 var _auto_fill_enabled := false
 var _double_fill_enabled := false
 var _workshop_preview := false
@@ -102,12 +98,8 @@ func _process(delta: float) -> void:
 	if not _filling:
 		return
 	_held_seconds += maxf(delta, 0.0)
-	dispense_progress.value = clampf(_held_seconds / FULL_CUP_SECONDS * 100.0, 0.0, 100.0)
-	dispense_effect.set_dispense_state(true, dispense_progress.value / 100.0, _liquid_color_for_recipe(_selected_recipe_id()))
-	if dispense_progress.value >= 100.0:
-		state_label.text = "已满杯 · 继续按住会溢出"
-	else:
-		state_label.text = "接浆中 · %d%%" % roundi(dispense_progress.value) if _fill_guide_enabled else "接浆中"
+	var fill_ratio := clampf(_held_seconds / FULL_CUP_SECONDS, 0.0, 1.0)
+	dispense_effect.set_dispense_state(true, fill_ratio, _liquid_color_for_recipe(_selected_recipe_id()))
 
 
 func refresh_from_session() -> void:
@@ -133,11 +125,9 @@ func refresh_from_session() -> void:
 		machine["sugar_enabled"] = true
 		machine["auto_fill_enabled"] = true
 		machine["double_fill_enabled"] = true
-		machine["fill_guide_enabled"] = true
 	var cup_state := StringName(machine.get("cup_state", &"ready"))
 	var cup := Dictionary(machine.get("cup", {}))
 	var queued_cups := Array(machine.get("queued_cups", []))
-	var ready_cup_count := int(machine.get("ready_cup_count", 0))
 	var held_empty_cup_count := int(machine.get("held_empty_cup_count", 0))
 	var primary_empty_cup_placed := bool(machine.get("primary_empty_cup_placed", false))
 	var secondary_empty_cup_placed := bool(machine.get("secondary_empty_cup_placed", false))
@@ -148,10 +138,8 @@ func refresh_from_session() -> void:
 		_selected_cup_index = 0 if has_left_cup else 1 if has_right_cup else 0
 	var selected_cup := _cup_at_index(cup, queued_cups, _selected_cup_index)
 	var fill_ratio := float(cup.get("fill_ratio", 0.0))
-	var selected_fill_ratio := float(selected_cup.get("fill_ratio", 0.0))
 	var sugar_servings := int(selected_cup.get("sugar_servings", 0))
 	var sugar_enabled := bool(machine.get("sugar_enabled", false))
-	_fill_guide_enabled = bool(machine.get("fill_guide_enabled", false))
 	_auto_fill_enabled = bool(machine.get("auto_fill_enabled", false))
 	_double_fill_enabled = bool(machine.get("double_fill_enabled", false))
 	soy_milk_dispenser.texture = _texture_for_machine_tier(_displayed_machine_tier)
@@ -162,11 +150,9 @@ func refresh_from_session() -> void:
 	# installed, fade only the next machine tier being previewed.
 	soy_milk_dispenser.self_modulate = WORKSHOP_LOCKED_AREA_MODULATE if _workshop_preview and area_unlocked and not double_fill_owned else Color.WHITE
 	_refresh_machine_geometry()
-	dispense_progress.visible = _fill_guide_enabled and not _workshop_preview
 	var selected_recipe_id := StringName(machine.get("recipe_id", &"recipe.fresh_soy_milk.yellow_bean"))
 	_filling = _filling and cup_state == &"held_empty"
 	if not _filling:
-		dispense_progress.value = 0.0
 		if cup_state == &"filled":
 			dispense_effect.set_filled_cup(fill_ratio, _liquid_color_for_recipe(StringName(cup.get("recipe_id", selected_recipe_id))))
 		else:
@@ -175,25 +161,13 @@ func refresh_from_session() -> void:
 	_refresh_cup_stack()
 	var left_empty_visible := false
 	var right_empty_visible := false
-	if cup_state == &"ready":
-		state_label.text = "① 点击杯堆取空杯 · 剩余 %d 个" % _cup_stack_count if _cup_stack_count > 0 else "空杯已用完 · 长按杯堆位置补货"
-		cup_detail_label.text = "%s · 0 / 1 / 2 份糖" % _recipe_label(selected_recipe_id)
-	elif cup_state == &"held_empty":
+	if cup_state == &"held_empty":
 		var right_empty_cup_only := _double_fill_enabled and secondary_empty_cup_placed and held_empty_cup_count == 1
 		left_empty_visible = not right_empty_cup_only
 		right_empty_visible = right_empty_cup_only or (_double_fill_enabled and held_empty_cup_count >= 2)
-		if _double_fill_enabled:
-			state_label.text = "② 右侧空杯已就位，点击右口出浆" if right_empty_cup_only else "② 可点左口出浆，或再点击杯堆放置右杯" if held_empty_cup_count < 2 else "③ 可点左口、右口；或点双口同时出浆"
-			cup_detail_label.text = "右侧空杯待接浆" if right_empty_cup_only else "已放置 %d / 2 个空杯" % held_empty_cup_count
-		else:
-			state_label.text = "② 点击出浆口自动满杯" if _auto_fill_enabled else "② 按住出浆口接豆浆" if not _filling else state_label.text
-			cup_detail_label.text = "自动接满一杯豆浆" if _auto_fill_enabled else "松开即出杯；满杯需要 0.8 秒"
-	else:
+	elif cup_state == &"filled":
 		left_empty_visible = primary_empty_cup_placed
 		right_empty_visible = secondary_empty_cup_placed
-		var fill_percent := roundi(selected_fill_ratio * 100.0)
-		state_label.text = "第1杯已满；右侧空杯已就位，点击右口出浆" if secondary_empty_cup_placed else "第2杯已满；左侧空杯已就位，点击左口出浆" if primary_empty_cup_placed else "③ 已选第%d杯；点击糖罐加料" % (_selected_cup_index + 1) if ready_cup_count > 1 else "③ 已选豆浆；点击糖罐加料"
-		cup_detail_label.text = "第1杯 · %s · 常温 · %d%% 满杯；第2杯空杯待接浆" % [_recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), fill_percent] if secondary_empty_cup_placed else "第%d杯 · %s · 常温 · %d%% 满杯" % [_selected_cup_index + 1, _recipe_label(StringName(selected_cup.get("recipe_id", selected_recipe_id))), fill_percent]
 	_configure_cup_source(machine_output, 0, cup, left_empty_visible, has_left_cup)
 	_configure_cup_source(queued_cup_output, 1, queued_cup, right_empty_visible, has_right_cup)
 	_update_cup_selection_frames(cup_state == &"filled")
@@ -214,10 +188,7 @@ func refresh_from_session() -> void:
 	dual_nozzle_button.disabled = not dual_outlets_ready
 	dual_nozzle_button.tooltip_text = "同时接满左右两杯豆浆"
 	if _workshop_preview:
-		# The workshop is the canonical 410×496 authoring view. It shows the next
-		# machine and merged accessories without exposing live operating controls.
-		state_label.visible = false
-		cup_detail_label.visible = false
+		# The workshop previews the compact station without exposing live controls.
 		sugar_label.visible = false
 		nozzle_button.disabled = true
 		second_nozzle_button.visible = false
@@ -226,8 +197,6 @@ func refresh_from_session() -> void:
 		queued_cup_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
-		state_label.visible = true
-		cup_detail_label.visible = true
 		sugar_label.visible = sugar_enabled
 		machine_output.mouse_filter = Control.MOUSE_FILTER_STOP if machine_output.visible else Control.MOUSE_FILTER_IGNORE
 		queued_cup_output.mouse_filter = Control.MOUSE_FILTER_STOP if queued_cup_output.visible else Control.MOUSE_FILTER_IGNORE
@@ -426,7 +395,6 @@ func _on_nozzle_down() -> void:
 		return
 	_filling = true
 	_held_seconds = 0.0
-	dispense_progress.value = 0.0
 	dispense_effect.set_dispense_state(true, 0.0, _liquid_color_for_recipe(_selected_recipe_id()))
 
 
@@ -479,12 +447,6 @@ func _on_sugar_jar_pressed() -> void:
 	else:
 		status_message.emit("无法加糖：%s" % str(result.get("reason", &"unknown")))
 	refresh_from_session()
-
-
-static func _recipe_label(recipe_id: StringName) -> String:
-	return {
-		&"recipe.fresh_soy_milk.yellow_bean": "黄豆豆浆",
-	}.get(recipe_id, "黄豆豆浆")
 
 
 func _selected_recipe_id() -> StringName:

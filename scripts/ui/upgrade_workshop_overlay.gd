@@ -35,6 +35,7 @@ const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
 @onready var _hint_label := %HintLabel as Label
 @onready var _detail_panel := %DetailPanel as Panel
 @onready var _press_preview := %PressSpreaderPreview as TextureRect
+@onready var _juice_tray_preview := %FilledOrangeJuiceTrayPreview as TextureRect
 @onready var _editor_preview := %EditorPreview as Control
 var _selected_id: StringName = &""
 var _anchors: Dictionary = {}
@@ -70,7 +71,10 @@ func _ready() -> void:
 		if prop == null:
 			push_error("Upgrade workshop scene is missing its prop node: %s" % growth_id)
 			continue
-		prop.pressed.connect(_select.bind(growth_id))
+		if growth_id == &"growth.area.packaged_drink":
+			prop.pressed.connect(_on_packaged_drink_tag_pressed)
+		else:
+			prop.pressed.connect(_select.bind(growth_id))
 		prop.mouse_entered.connect(_show_hint.bind(growth_id, prop))
 		prop.mouse_exited.connect(func() -> void: _hint.visible = false)
 		_anchors[growth_id] = prop
@@ -96,11 +100,15 @@ func refresh() -> void:
 	var overview: Array = session.call("growth_overview")
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var owned_growth_ids := Array(progression.get("owned_growth_ids", []))
+	var packaged_drinks_unlocked := _contains_id(Array(progression.get("unlocked_area_ids", [])), &"area.packaged_drink")
 	var youtiao_upgrade_id := _next_youtiao_fryer_upgrade(owned_growth_ids)
 	var soy_milk_machine_upgrade_id := _next_soy_milk_machine_upgrade(owned_growth_ids)
 	var press_spreader_owned := owned_growth_ids.has("growth.automation.pancake.press_once")
 	_press_preview.visible = true
 	_press_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if press_spreader_owned else 0.42)
+	# A future drink rack is still readable in the workshop, but remains clearly
+	# a preview until the area is active on the next business day.
+	_juice_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if packaged_drinks_unlocked else 0.42)
 	var queued_labels := PackedStringArray()
 	for raw_id in Array(Dictionary(session.call("five_area_progression_snapshot")).get("pending_growth_ids", [])):
 		queued_labels.append(str(CATALOG.growth_definition(StringName(raw_id)).get("label", raw_id)))
@@ -112,9 +120,9 @@ func refresh() -> void:
 		var prop := _anchors.get(growth_id) as Button
 		if prop == null: continue
 		# These physical props are visible in the workshop preview before their
-		# prerequisites are installed. Keep their tags visible too, so the
-		# otherwise unexplained artwork tells the player what can be reserved and
-		# which condition is still missing.
+		# prerequisites are installed. Keep a concise reservation tag on them, but
+		# remove the tag once the upgrade has been installed: the artwork itself is
+		# then the completed-state feedback.
 		var show_prerequisite_locked_visual := growth_id in [
 			&"growth.capacity.youtiao_finished_tray",
 			&"growth.flavor.youtiao.sesame",
@@ -130,9 +138,15 @@ func refresh() -> void:
 		]
 		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced"]
 		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]
-		prop.visible = (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) \
+		prop.visible = not bool(status.get("already_owned", false)) \
+			and (_has_owned_growth_prerequisites(growth_id, owned_growth_ids) or show_prerequisite_locked_visual) \
 			and (not is_youtiao_machine_upgrade or growth_id == youtiao_upgrade_id) \
 			and (not is_soy_milk_machine_upgrade or growth_id == soy_milk_machine_upgrade_id)
+		if growth_id == &"growth.area.packaged_drink":
+			# This label is both the condition readout and the reservation button.
+			# Once the rack is active, neither the locked tag nor its preview action
+			# should remain over the completed workstation.
+			prop.visible = not packaged_drinks_unlocked
 		if growth_id == _selected_id:
 			selected_prop_is_visible = prop.visible
 		prop.tooltip_text = _tag_tooltip_text(growth_id, status)
@@ -186,6 +200,10 @@ func _has_owned_growth_prerequisites(growth_id: StringName, owned_growth_ids: Ar
 		if not owned_growth_ids.has(StringName(raw_required_growth_id)):
 			return false
 	return true
+
+
+static func _contains_id(values: Array, expected: StringName) -> bool:
+	return values.has(expected) or values.has(str(expected))
 
 
 func _apply_upgrade_tag_style(prop: Button, status: Dictionary) -> void:
@@ -257,6 +275,19 @@ func _select(growth_id: StringName) -> void:
 	_selected_id = growth_id
 	_show_detail(growth_id)
 
+
+func _on_packaged_drink_tag_pressed() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		return
+	var growth_id := &"growth.area.packaged_drink"
+	var status := Dictionary(session.call("growth_purchase_status", growth_id))
+	if bool(status.get("can_purchase", false)):
+		session.call("purchase_growth", growth_id)
+		refresh()
+		return
+	_select(growth_id)
+
 func _show_detail(growth_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var status := Dictionary(session.call("growth_purchase_status", growth_id)) if session else {}
@@ -296,17 +327,15 @@ func _requirements_text(status: Dictionary) -> String:
 
 
 func _tag_text(growth_id: StringName, status: Dictionary) -> String:
-	var definition := CATALOG.growth_definition(growth_id)
-	return "%s\n解锁条件：%s\n价格：%d 金币 · %s" % [
-		definition.get("label", "升级"),
-		"、".join(_unlock_condition_labels(definition)),
-		int(definition.get("price", 0)),
-		_state_text(status),
-	]
+	if bool(status.get("can_purchase", false)):
+		return "价格：%d 金币" % int(status.get("price", 0))
+	return "不可预订"
 
 
 func _tag_tooltip_text(growth_id: StringName, status: Dictionary) -> String:
-	return "%s\n%s" % [_tag_text(growth_id, status), _requirements_text(status)]
+	if bool(status.get("can_purchase", false)):
+		return _tag_text(growth_id, status)
+	return _requirements_text(status)
 
 
 func _unlock_condition_labels(definition: Dictionary) -> PackedStringArray:

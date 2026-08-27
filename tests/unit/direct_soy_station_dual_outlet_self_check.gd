@@ -79,8 +79,8 @@ func _run() -> void:
 		var stack_scale := minf(advanced_station.cup_stack.size.x / stack_texture.get_size().x, advanced_station.cup_stack.size.y / stack_texture.get_size().y)
 		var expected_outlet_size := outlet_texture.get_size() * stack_scale
 		_check(advanced_station.left_cup_slot.size.is_equal_approx(expected_outlet_size) and advanced_station.right_cup_slot.size.is_equal_approx(expected_outlet_size), "both outlet slots use the exact single-cup size shown in the cup stack")
-		_check(advanced_station.scale.is_equal_approx(Vector2.ONE) and advanced_station.soy_milk_dispenser.scale.is_equal_approx(Vector2.ONE) and advanced_station.cup_stack.scale.is_equal_approx(Vector2.ONE), "the canonical 410x496 soy layout has no independent visual scales")
-		_check(advanced_station.size.is_equal_approx(Vector2(410.0, 496.0)), "the workshop's 410x496 canvas is the soy station size authority")
+		_check(advanced_station.scale.is_equal_approx(Vector2.ONE) and advanced_station.soy_milk_dispenser.scale.is_equal_approx(Vector2.ONE) and advanced_station.cup_stack.scale.is_equal_approx(Vector2.ONE), "the compact soy layout has no independent visual scales")
+		_check(advanced_station.size.is_equal_approx(Vector2(410.0, 380.0)), "the compact 410x380 canvas is the soy station size authority")
 		var left_outlet := advanced_station._nozzle_outlet_position()
 		_check(advanced_station.left_cup_slot.position.y >= left_outlet.y + 8.0, "the cup rim keeps a visible gap below the dispensing outlet")
 		_check(is_equal_approx(advanced_station.left_cup_slot.position.x + advanced_station.left_cup_slot.size.x * 0.5, left_outlet.x), "the left cup is centered directly under its configured nozzle anchor")

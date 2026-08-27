@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b01g1n5eo6tqf"
-path="res://.godot/imported/ice_cube_requirement_v2.png-5640fee88c80cd54e77c9f1bf546d936.ctex"
+uid="uid://ts4hjs0b17qb"
+path="res://.godot/imported/pancake-press-wide-upgrade-v2-base.png-42cfd6fe74699a96efa8f29ba630f260.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/art/ui/order/ice_cube_requirement_v2.png"
-dest_files=["res://.godot/imported/ice_cube_requirement_v2.png-5640fee88c80cd54e77c9f1bf546d936.ctex"]
+source_file="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png"
+dest_files=["res://.godot/imported/pancake-press-wide-upgrade-v2-base.png-42cfd6fe74699a96efa8f29ba630f260.ctex"]
 
 [params]
 

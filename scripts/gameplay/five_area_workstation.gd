@@ -53,6 +53,7 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 
 @onready var five_area_infrastructure: Control = $FiveAreaInfrastructure
 @onready var fresh_soy_station: DirectSoyStation = $FiveAreaInfrastructure/Stations/FreshSoyMilkStation
+@onready var packaged_drink_station: Control = $FiveAreaInfrastructure/Stations/PackagedDrinkStation
 @onready var cartoon_youtiao_fryer: CartoonYoutiaoFryerToggle = $FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer
 @onready var pancake_station_view: Control = $SafeArea/JianbingStallArtwork
 @onready var multi_griddle_station: Control = $SafeArea/JianbingStallArtwork/MultiGriddleStation
@@ -110,6 +111,7 @@ func _ready() -> void:
 		station.mouse_filter = Control.MOUSE_FILTER_STOP
 		if station.lock_cover != null:
 			station.lock_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	packaged_drink_station.connect("status_message", _show_station_status)
 	multi_griddle_station.status_message.connect(_show_station_status)
 	multi_griddle_station.transient_warning_requested.connect(_show_top_warning)
 	if pancake_worktop_hotspots != null:
@@ -413,11 +415,17 @@ func _refresh_formal_area_visibility() -> void:
 	if _upgrade_workshop != null and _upgrade_workshop.visible:
 		fresh_soy_station.set_workshop_preview(true)
 		cartoon_youtiao_fryer.set_workshop_preview(true)
+		# The workshop owns its own filled-juice-tray preview.  Do not leave the
+		# live, interactive drink tray underneath it as a duplicate.
+		_set_formal_area_visible(packaged_drink_station, false)
 		return
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
 	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
 	_set_formal_area_visible(cartoon_youtiao_fryer, _id_in(unlocked_areas, &"area.youtiao"))
 	_set_formal_area_visible(fresh_soy_station, _id_in(unlocked_areas, &"area.fresh_soy_milk"))
+	var packaged_drinks_unlocked := _id_in(unlocked_areas, &"area.packaged_drink")
+	_set_formal_area_visible(packaged_drink_station, packaged_drinks_unlocked)
+	packaged_drink_station.call("refresh_from_session")
 
 
 static func _set_formal_area_visible(area_node: Control, unlocked: bool) -> void:
@@ -566,6 +574,8 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 				&"ready": return {"target": fresh_soy_station.cup_stack, "message": "点击杯堆，拿一个空杯放到出浆口"}
 				&"held_empty": return {"target": fresh_soy_station.nozzle_button, "message": "按住出浆口 0.8 秒接满豆浆"}
 				&"filled": return {"target": fresh_soy_station.sugar_jar, "message": "按订单选择无糖、正常糖或多糖，再拖杯交付"}
+		&"area.packaged_drink":
+			return {"target": packaged_drink_station, "message": "长按果汁货位补货，再把果汁拖到订单商品上交付"}
 		&"area.pancake":
 			if _multi_griddle_mode_active:
 				return _tutorial_pancake_griddle_guide(session, area_id)
@@ -769,6 +779,8 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 		var product_texture := PRODUCT_VISUALS.texture_for(product_id, temperature_mode)
 		if product_texture != null:
 			icon.texture = product_texture
+		icon.visible = product_texture != null
+		_set_order_product_text_fallback(button, str(CATALOG.product_definition(product_id).get("label", "成品")), product_texture == null)
 		var completed := Array(item.get("prepared_product_instance_ids", [])).size() >= maxi(int(item.get("quantity", 1)), 1)
 		var should_disable := completed or not order_active or _delivery_click_in_progress
 		if button.disabled != should_disable:
@@ -778,6 +790,43 @@ func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
 			button.mouse_filter = target_mouse_filter
 		button.mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN if should_disable else Control.CURSOR_POINTING_HAND
 		button.tooltip_text = "该订单商品已交付" if completed else "点击交付对应成品"
+
+
+func _set_order_product_text_fallback(button: Button, product_label: String, show_fallback: bool) -> void:
+	var fallback := button.get_node_or_null("ProductTextFallback") as Panel
+	if fallback == null:
+		fallback = Panel.new()
+		fallback.name = "ProductTextFallback"
+		fallback.set_anchors_preset(Control.PRESET_FULL_RECT)
+		fallback.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("#e86b28")
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color("#fff0b6")
+		style.corner_radius_top_left = 8
+		style.corner_radius_top_right = 8
+		style.corner_radius_bottom_left = 8
+		style.corner_radius_bottom_right = 8
+		fallback.add_theme_stylebox_override("panel", style)
+		var label := Label.new()
+		label.name = "Label"
+		label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.add_theme_font_size_override("font_size", 16)
+		label.add_theme_color_override("font_color", Color("#fff7ce"))
+		label.add_theme_color_override("font_outline_color", Color("#722506"))
+		label.add_theme_constant_override("outline_size", 3)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fallback.add_child(label)
+		button.add_child(fallback)
+	var fallback_label := fallback.get_node("Label") as Label
+	fallback_label.text = product_label
+	fallback.visible = show_fallback
 
 
 func _order_card_uses_click_delivery() -> bool:
@@ -868,6 +917,7 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 	sources.append_array(pancake_holding_sources)
 	sources.append_array(cartoon_youtiao_fryer.output_sources)
 	sources.append_array(fresh_soy_station.product_sources())
+	sources.append_array(packaged_drink_station.call("product_sources"))
 	for source in sources:
 		if source == null or source.disabled or not source.visible:
 			continue
@@ -901,6 +951,7 @@ func _on_clicked_product_consumed(source_ref: Dictionary) -> void:
 	_refresh_pancake_drag_sources()
 	cartoon_youtiao_fryer.refresh_from_session()
 	fresh_soy_station.refresh_from_session()
+	packaged_drink_station.call("refresh_from_session")
 
 
 func _on_customer_service_product_dropped(order_id: StringName, item_index: int, source_ref: Dictionary) -> void:
@@ -1351,6 +1402,12 @@ func _refresh_pending_payment_button() -> void:
 func _set_upgrade_workshop_preview(enabled: bool) -> void:
 	_workshop_payment_display_hidden = enabled
 	super._set_upgrade_workshop_preview(enabled)
+	if enabled:
+		# The workshop overlay supplies a non-interactive filled juice tray, so
+		# never expose the live station UI while the overlay is open.
+		_set_formal_area_visible(packaged_drink_station, false)
+	else:
+		_refresh_formal_area_visibility()
 	_refresh_pending_payment_button()
 
 
@@ -1469,6 +1526,7 @@ static func _missing_delivery_source_text(area_id: StringName) -> String:
 		&"area.pancake": "没有可交付的煎饼；请先完成包装或从成品暂存托盘取用",
 		&"area.youtiao": "没有可交付的油条；请先完成炸制并升篮沥油",
 		&"area.fresh_soy_milk": "请先点击豆浆机的“接杯”，再交付当前这杯豆浆",
+		&"area.packaged_drink": "请先长按果汁货位补货，再拖动果汁交付",
 	}.get(area_id, "该区域没有可交付的成品")
 
 
@@ -1477,6 +1535,7 @@ static func _area_label(area_id: StringName) -> String:
 		&"area.pancake": "煎饼鏊台",
 		&"area.youtiao": "油条炸锅",
 		&"area.fresh_soy_milk": "现磨豆浆机",
+		&"area.packaged_drink": "成品饮品区",
 	}.get(area_id, "该设备")
 
 

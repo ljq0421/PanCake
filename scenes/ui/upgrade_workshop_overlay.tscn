@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://bykh0r1vfsv8t"]
 
 [ext_resource type="Script" uid="uid://cnpgrfexl1hdy" path="res://scripts/ui/upgrade_workshop_overlay.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://b7hh75ge4rl1u" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png" id="2_press_spreader"]
+[ext_resource type="Texture2D" uid="uid://ts4hjs0b17qb" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png" id="2_press_spreader"]
 [ext_resource type="PackedScene" uid="uid://x84wsqbvl1do" path="res://scenes/gameplay/five_area_workstation.tscn" id="3_workstation_preview"]
+[ext_resource type="Texture2D" path="res://resources/art/products/orange_juice/juice-6.png" id="4_juice_tray"]
 
 [node name="UpgradeWorkshopOverlay" type="Control" unique_id=73984800]
 z_index = 1100
@@ -125,6 +126,50 @@ mouse_filter = 2
 texture = ExtResource("2_press_spreader")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="FilledOrangeJuiceTrayPreview" type="TextureRect" parent="UpgradeProps"]
+unique_name_in_owner = true
+z_index = 1
+layout_mode = 0
+offset_left = 1630.0
+offset_top = 824.0
+offset_right = 1950.0
+offset_bottom = 1016.0
+mouse_filter = 2
+texture = ExtResource("4_juice_tray")
+expand_mode = 1
+stretch_mode = 5
+self_modulate = Color(1, 1, 1, 0.42)
+
+[node name="WorkshopProp_growth_area_packaged_drink" type="Button" parent="UpgradeProps"]
+unique_name_in_owner = true
+z_index = 2
+custom_minimum_size = Vector2(330, 74)
+layout_mode = 0
+offset_left = 1580.0
+offset_top = 736.0
+offset_right = 1910.0
+offset_bottom = 810.0
+focus_mode = 0
+flat = false
+metadata/growth_id = "growth.area.packaged_drink"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_area_packaged_drink"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.98, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
+text = "成品饮品架\n解锁条件：解锁豆浆区，金币80"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="WorkshopProp_growth_add_on_pancake_scallion" type="Button" parent="UpgradeProps" unique_id=624804946]
 custom_minimum_size = Vector2(120, 38)

@@ -95,6 +95,18 @@ func _run() -> void:
 	gameplay.call("_set_paused", true)
 	var pause_panel := gameplay.get_node("PausePanel") as Control
 	var workstation := gameplay.get_node("Workstation") as Control
+	var restored_customer_count := 0
+	var all_restored_customers_standing := true
+	for service_slot_variant in Array(workstation.get("customer_service_slots")):
+		var service_slot := service_slot_variant as Control
+		if service_slot == null or not service_slot.visible:
+			continue
+		restored_customer_count += 1
+		all_restored_customers_standing = all_restored_customers_standing \
+			and not bool(service_slot.call("is_presentation_transitioning")) \
+			and service_slot.portrait.position == Vector2(12.0, 140.0) \
+			and service_slot.get_node("OrderPanel").visible
+	_check(restored_customer_count > 0 and all_restored_customers_standing, "continue restores saved customers and orders in place without replaying arrival")
 	_check(paused and pause_panel.visible, "gameplay pause exposes navigation controls")
 	_check(
 		pause_panel.z_index > _maximum_effective_z_index(workstation),

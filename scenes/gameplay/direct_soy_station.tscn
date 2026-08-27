@@ -64,12 +64,12 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
 [node name="DirectSoyStation" type="Control" unique_id=1720502831]
-custom_minimum_size = Vector2(410, 496)
+custom_minimum_size = Vector2(410, 380)
 layout_mode = 3
 anchors_preset = 0
 offset_left = 2.0
 offset_right = 412.0
-offset_bottom = 496.0
+offset_bottom = 380.0
 script = ExtResource("1_root")
 
 [node name="MachineAssembly" type="Control" parent="." unique_id=2096551069]
@@ -302,39 +302,6 @@ theme_override_font_sizes/font_size = 10
 text = "糖：无糖"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[node name="CupDetailLabel" type="Label" parent="." unique_id=1522849159]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 4.0
-offset_top = 430.0
-offset_right = 280.0
-offset_bottom = 450.0
-theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
-theme_override_font_sizes/font_size = 12
-text = "黄豆豆浆 · 0 / 1 / 2 份糖"
-horizontal_alignment = 1
-
-[node name="StateLabel" type="Label" parent="." unique_id=1720869228]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 4.0
-offset_top = 452.0
-offset_right = 280.0
-offset_bottom = 474.0
-theme_override_colors/font_color = Color(0.26, 0.14, 0.06, 1)
-theme_override_font_sizes/font_size = 13
-text = "① 点击取空杯"
-horizontal_alignment = 1
-
-[node name="DispenseProgress" type="ProgressBar" parent="." unique_id=858592131]
-unique_name_in_owner = true
-layout_mode = 0
-offset_left = 4.0
-offset_top = 478.0
-offset_right = 280.0
-offset_bottom = 492.0
-show_percentage = false
 
 [node name="EditorPreviewHelper" type="Node" parent="." unique_id=1603679655]
 script = ExtResource("11_editor_preview")

@@ -44,6 +44,13 @@ func _run() -> void:
 	_check(scene_growth_ids.size() == CATALOG.GROWTH_DISPLAY_ORDER.size(), "workshop hotspots exactly match the active growth catalog")
 	_check(props != null and props.get_node_or_null("WorkshopProp_growth_add_on_pancake_sweet_flour") == null, "baseline secret sauce is not presented as a purchasable upgrade")
 	_check(props != null and props.get_node_or_null("PressSpreaderPreview") is TextureRect, "press preview is an authored workshop-scene node")
+	var juice_tray_preview := props.get_node_or_null("FilledOrangeJuiceTrayPreview") as TextureRect if props != null else null
+	_check(juice_tray_preview != null and juice_tray_preview.texture != null and juice_tray_preview.texture.resource_path.ends_with("juice-6.png"), "workshop shows the authored transparent six-bottle orange-juice tray preview")
+	var juice_unlock_tag := props.get_node_or_null("WorkshopProp_growth_area_packaged_drink") as Button if props != null else null
+	_check(juice_unlock_tag != null and juice_unlock_tag.visible and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "不可预订", "locked juice-tray preview uses the concise unavailable-reservation tag")
+	_check(juice_unlock_tag != null and juice_unlock_tag.tooltip_text.contains("先解锁豆浆区域"), "locked juice-tray hover explains why it cannot be reserved")
+	_check(juice_unlock_tag != null and juice_tray_preview != null and not juice_unlock_tag.get_global_rect().intersects(juice_tray_preview.get_global_rect()), "juice reservation tag is separate from the drink-tray artwork")
+	_check(juice_tray_preview != null and is_equal_approx(juice_tray_preview.self_modulate.a, 0.42), "locked juice-tray preview is translucent")
 	if session != null and props != null:
 		var progression: RefCounted = session.call("progression_service")
 		var press_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_press_once") as Button
@@ -61,18 +68,18 @@ func _run() -> void:
 		_check(advanced_soy_prop != null and not advanced_soy_prop.visible, "advanced soy machine is hidden until the intermediate machine is installed")
 		var finished_tray_tag := finished_tray_prop.get_node_or_null("ConditionTag") as Label if finished_tray_prop != null else null
 		_check(finished_tray_prop != null and finished_tray_prop.visible, "finished-youtiao tray remains labelled before the fryer is installed")
-		_check(finished_tray_tag != null and finished_tray_tag.text.contains("解锁条件：解锁油条区、拥有油条炸锅"), "workshop tags retain every unlock condition")
-		_check(finished_tray_tag != null and finished_tray_tag.text.contains("价格：12 金币"), "workshop tags show the coin price")
+		_check(finished_tray_tag != null and finished_tray_tag.text == "不可预订", "unavailable workshop tags use concise copy")
 		_check(finished_tray_prop != null and finished_tray_prop.tooltip_text.contains("先解锁油条区域"), "finished-youtiao tray hover explains its reservation prerequisite")
 		_check(baocui_prop != null and baocui_prop.visible and baocui_prop.tooltip_text.contains("煎饼合格 4 次"), "baocui tag remains visible and explains its qualification requirement")
 		_check(scallion_prop != null and scallion_prop.visible and scallion_prop.tooltip_text.contains("煎饼合格 6 次"), "scallion tag remains visible and explains its qualification requirement")
-		_check(one_click_egg_prop != null and one_click_egg_prop.visible and one_click_egg_prop.tooltip_text.contains("拥有鸡蛋"), "one-click egg remains visible and explains that eggs must be unlocked first")
+		var one_click_egg_tag := one_click_egg_prop.get_node_or_null("ConditionTag") as Label if one_click_egg_prop != null else null
+		_check(one_click_egg_prop != null and one_click_egg_prop.visible and one_click_egg_tag != null and one_click_egg_tag.text == "不可预订" and not one_click_egg_prop.tooltip_text.is_empty(), "unavailable one-click egg keeps its reason in the hover hint only")
 		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true})
 		progression.set("owned_growth_ids", {&"growth.area.youtiao": true})
 		overlay.refresh()
 		var sesame_tag := sesame_prop.get_node_or_null("ConditionTag") as Label if sesame_prop != null else null
 		_check(sesame_prop != null and sesame_prop.visible, "sesame-youtiao tray remains labelled before its prerequisite is installed")
-		_check(sesame_tag != null and sesame_tag.text.contains("解锁条件：解锁油条区、拥有油条成品盘、油条合格2次"), "sesame-youtiao tray label states every reservation prerequisite")
+		_check(sesame_tag != null and sesame_tag.text == "不可预订", "unavailable sesame-youtiao tag uses concise copy")
 		_check(sesame_prop != null and sesame_prop.tooltip_text.contains("先预订油条成品盘"), "sesame-youtiao tray hover explains its reservation prerequisite")
 		progression.set("owned_growth_ids", {&"growth.area.youtiao": true, &"growth.area.fresh_soy_milk": true})
 		overlay.refresh()
@@ -84,11 +91,19 @@ func _run() -> void:
 			&"growth.automation.fresh_soy_milk.auto_fill": true,
 		})
 		overlay.refresh()
-		_check(press_prop != null and press_prop.visible, "owned press remains visible in the workshop")
+		_check(press_prop != null and not press_prop.visible, "owned press hides its workshop tag")
 		_check(advanced_soy_prop != null and advanced_soy_prop.visible, "advanced soy machine appears after the intermediate machine is installed")
-		var press_tag := press_prop.get_node_or_null("ConditionTag") as Label if press_prop != null else null
-		_check(press_tag != null and press_tag.text.contains("已解锁"), "owned press uses the unlocked workshop label")
-		_check(press_tag != null and press_tag.text.contains("价格：36 金币"), "press workshop label retains its coin price")
+		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
+		progression.set("coins", 80)
+		overlay.refresh()
+		_check(juice_unlock_tag != null and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "价格：80 金币", "available reservations show only their price")
+		if juice_unlock_tag != null:
+			juice_unlock_tag.emit_signal("pressed")
+		await process_frame
+		_check(bool(Dictionary(session.call("growth_purchase_status", &"growth.area.packaged_drink")).get("pending_activation", false)), "pressing the reservation tag books the drink rack directly")
+		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.packaged_drink": true})
+		overlay.refresh()
+		_check(juice_tray_preview != null and is_equal_approx(juice_tray_preview.self_modulate.a, 1.0) and juice_unlock_tag != null and not juice_unlock_tag.visible, "unlocked juice-tray preview becomes fully opaque and hides its condition tag")
 	overlay.queue_free()
 	_finish()
 

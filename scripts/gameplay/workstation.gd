@@ -125,6 +125,9 @@ var _customer_slot_patience_tiers := [-1, -1, -1]
 ## subtree, so doing that every frame makes every native drag compete with GUI
 ## hit-test invalidation.
 var _customer_service_slot_signatures: Dictionary = {}
+var _next_customer_entrance_msec := 0
+var _restore_customer_layout_without_entrance := false
+const CUSTOMER_SERVICE_MIN_ENTRANCE_INTERVAL_SECONDS := 1.0
 var _order_patience_tier := -1
 @onready var customer_service_slots: Array[Control] = _resolve_customer_service_slots()
 @onready var customer_line_label: Label = get_node_or_null("SafeArea/CustomerLineLabel") as Label
@@ -313,6 +316,10 @@ func _ready() -> void:
 		for ingredient_id in Array(get_meta(&"unlocked_ingredient_ids")):
 			unlocked_ingredient_ids.append(StringName(ingredient_id))
 	var game_session := get_node_or_null("/root/GameSession")
+	if game_session != null and game_session.has_method("is_business_paused"):
+		# The start menu keeps a continued business paused until Main finishes
+		# binding the restored scene. A new game starts unpaused.
+		_restore_customer_layout_without_entrance = bool(game_session.call("is_business_paused"))
 	if game_session != null and game_session.has_method("uses_five_area_progression") and bool(game_session.call("uses_five_area_progression")):
 		five_area_pancake_production = FIVE_AREA_PANCAKE_PRODUCTION_SERVICE.new(game_session)
 	if game_session != null and game_session.has_method("unlocked_ingredient_ids"):
@@ -461,7 +468,7 @@ func _ready_formal_shop_shell(game_session: Node, formal_active: Dictionary) -> 
 	_refresh_customer_queue()
 	_refresh_formal_patience_ui(game_session)
 	_refresh_global_status()
-	_log_info(&"workstation", "Three-area shop shell ready")
+	_log_info(&"workstation", "Four-area shop shell ready")
 
 
 func _open_f3_station(_area_id: StringName) -> void:
@@ -2906,6 +2913,7 @@ func _tutorial_area_label(area_id: StringName) -> String:
 		&"area.pancake": return "煎饼"
 		&"area.youtiao": return "油条"
 		&"area.fresh_soy_milk": return "现磨豆浆"
+		&"area.packaged_drink": return "成品饮品"
 	return "前一区域"
 
 
@@ -3482,6 +3490,8 @@ func _resolve_customer_service_slots() -> Array[Control]:
 func _refresh_customer_service_slots(orders: Array) -> void:
 	if customer_service_slots.is_empty():
 		return
+	var restore_existing_layout := _restore_customer_layout_without_entrance
+	var reduce_motion := _customer_service_slot_should_reduce_motion()
 	var centered_tutorial: Dictionary = {}
 	if orders.size() == 1:
 		var only_order := Dictionary(orders[0])
@@ -3501,7 +3511,10 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		if order.is_empty():
 			# Empty slots must be cleared even on the first tutorial refresh, when they
 			# have no cached signature yet. Otherwise their scene-default card remains visible.
-			customer_service_slots[service_slot_index].call("bind_order", {}, null, [], [], 0)
+			if restore_existing_layout:
+				customer_service_slots[service_slot_index].call("restore_order", {}, null, [], [], 0)
+			else:
+				customer_service_slots[service_slot_index].call("present_order", {}, null, [], [], 0, reduce_motion)
 			_customer_service_slot_signatures.erase(service_slot_index)
 			continue
 		var ratio := _formal_order_patience_ratio(order)
@@ -3521,15 +3534,44 @@ func _refresh_customer_service_slots(orders: Array) -> void:
 		var metadata := Dictionary(order.get("metadata", {}))
 		var coin_total := int(order.get("perfect_quote_coins", metadata.get("perfect_quote_coins", order.get("base_coins", metadata.get("base_coins", 0)))))
 		var customer_id := StringName(order.get("customer_id", &"customer_01"))
-		customer_service_slots[service_slot_index].call(
-			"bind_order",
-			order,
-			_customer_portraits.call("texture_for", customer_id, reaction) as Texture2D,
-			item_textures,
-			requirements_by_item,
-			coin_total,
-		)
+		var customer_texture := _customer_portraits.call("texture_for", customer_id, reaction) as Texture2D
+		if restore_existing_layout:
+			customer_service_slots[service_slot_index].call(
+				"restore_order",
+				order,
+				customer_texture,
+				item_textures,
+				requirements_by_item,
+				coin_total,
+			)
+		else:
+			customer_service_slots[service_slot_index].call(
+				"present_order",
+				order,
+				customer_texture,
+				item_textures,
+				requirements_by_item,
+				coin_total,
+				reduce_motion,
+				0.0,
+				Callable(self, "_reserve_customer_entrance_delay_seconds"),
+			)
 		_customer_service_slot_signatures[service_slot_index] = signature
+	if restore_existing_layout:
+		_restore_customer_layout_without_entrance = false
+
+
+func _reserve_customer_entrance_delay_seconds(requested_delay_seconds: float = 0.0) -> float:
+	var now_msec := Time.get_ticks_msec()
+	var requested_entrance_msec := now_msec + int(ceil(maxf(requested_delay_seconds, 0.0) * 1000.0))
+	var reserved_entrance_msec := maxi(requested_entrance_msec, _next_customer_entrance_msec)
+	_next_customer_entrance_msec = reserved_entrance_msec + int(CUSTOMER_SERVICE_MIN_ENTRANCE_INTERVAL_SECONDS * 1000.0)
+	return float(reserved_entrance_msec - now_msec) / 1000.0
+
+
+func _customer_service_slot_should_reduce_motion() -> bool:
+	return DisplayServer.has_method(&"accessibility_should_reduce_motion") \
+		and bool(DisplayServer.call(&"accessibility_should_reduce_motion"))
 
 
 static func _customer_service_slot_signature(order: Dictionary, reaction: StringName) -> Dictionary:

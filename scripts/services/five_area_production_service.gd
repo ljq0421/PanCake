@@ -747,6 +747,18 @@ func _new_product(product_id: StringName, area_id: StringName, temperature_mode:
 	}
 
 
+## Packaged drinks are sold directly from managed stock rather than produced by
+## a timed machine. Keep their runtime-product identity in this service so the
+## normal order and ledger transaction paths remain authoritative.
+func packaged_drink_product(product_id: StringName, commit_sequence: bool = true) -> Dictionary:
+	var definition := CATALOG.product_definition(product_id)
+	if definition.is_empty() or StringName(definition.get("area_id", &"")) != &"area.packaged_drink":
+		return _failure(&"invalid_packaged_drink_product")
+	var product := _new_product(product_id, &"area.packaged_drink", &"room_temperature", 100.0, &"A", commit_sequence)
+	product["material_cost"] = maxi(int(definition.get("material_cost", 0)), 0)
+	return _success({"product": product})
+
+
 func _commit_products_from_result(result: Dictionary, area_id: StringName, quantity: int, source_device_id: StringName) -> Dictionary:
 	var products: Array[Dictionary] = []
 	for _unit in range(maxi(quantity, 0)):

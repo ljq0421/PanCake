@@ -17,14 +17,16 @@ func _run() -> void:
 	await process_frame
 	var stations := workstation.get_node_or_null("FiveAreaInfrastructure/Stations") as Control
 	_check(stations != null, "live shop exposes its station container")
-	for station_name in [&"CartoonYoutiaoFryer", &"FreshSoyMilkStation"]:
+	for station_name in [&"CartoonYoutiaoFryer", &"FreshSoyMilkStation", &"PackagedDrinkStation"]:
 		_check(stations != null and stations.get_node_or_null(NodePath(str(station_name))) != null, "%s is present" % station_name)
 	var pancake_station := workstation.get_node_or_null("SafeArea/JianbingStallArtwork") as Control
 	_check(pancake_station != null and pancake_station.get_node_or_null("MultiGriddleStation") != null, "the unified pancake station owns its physical griddle")
 	_check(stations != null and stations.get_node_or_null("PancakeStation") == null, "the former split pancake station wrapper is absent")
 	_check(stations != null and stations.get_node_or_null("WasteBasket") != null, "the shared waste basket may coexist with production workstations")
-	for retired_name in [&"YoutiaoStation", &"SteamerStation", &"PackagedDrinkStation"]:
+	for retired_name in [&"YoutiaoStation", &"SteamerStation"]:
 		_check(stations != null and stations.get_node_or_null(NodePath(str(retired_name))) == null, "%s is absent" % retired_name)
+	var drinks := stations.get_node_or_null("PackagedDrinkStation") as Control if stations != null else null
+	_check(drinks != null and drinks.has_signal("status_message") and drinks.call("product_sources").size() == 1, "visible packaged-drink station exposes one future-extensible juice lane")
 	var fryer := stations.get_node_or_null("CartoonYoutiaoFryer") as CartoonYoutiaoFryerToggle if stations != null else null
 	_check(fryer != null and fryer.has_signal("status_message"), "cartoon fryer exposes workstation status messages")
 	_check(fryer != null and fryer.plain_tray != null and fryer.sesame_tray != null, "plain and sesame serving trays are reusable authored components beside the fryer")

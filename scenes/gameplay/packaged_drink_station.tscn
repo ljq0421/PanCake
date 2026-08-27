@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/packaged_drink_station.gd" id="1_packaged_drink_station"]
+
+[node name="PackagedDrinkStation" type="Control"]
+custom_minimum_size = Vector2(290, 175)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 290.0
+offset_bottom = 175.0
+script = ExtResource("1_packaged_drink_station")

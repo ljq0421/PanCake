@@ -400,7 +400,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	session.progression.owned_growth[&"growth.automation.pancake.press_once"] = true
 	hotspots.refresh_from_session()
 	_check(not spreader_visual.visible and press_visual.visible, "owned press replaces the base holder in the normal worktop")
-	_check(press_visual.texture.resource_path.ends_with("pancake-press-wide-upgrade-v1.png"), "owned press uses its scene-authored visual")
+	_check(press_visual.texture.resource_path.ends_with("pancake-press-wide-upgrade-v2-base.png"), "owned press uses its scene-authored visual")
 	station.select_worktop_tool(&"tool.pancake.spreader")
 	hotspots.refresh_from_session()
 	_check(press_visual.visible, "held spreader state does not hide the installed press")

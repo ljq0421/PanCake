@@ -12,6 +12,16 @@ const INGREDIENTS_PER_ITEM := 8
 const PATIENCE_FILL_POSITION_X := 52.0
 const PATIENCE_FILL_BOTTOM_INSET := 26.0
 const PATIENCE_FILL_SIZE := Vector2(168.0, 10.0)
+const PORTRAIT_OFFSCREEN_LEFT_MARGIN := 16.0
+const PORTRAIT_ENTER_SECONDS := 1.10
+const PORTRAIT_EXIT_SECONDS := 0.80
+const REDUCED_PORTRAIT_SECONDS := 0.60
+const REDUCED_ORDER_PANEL_DELAY_SECONDS := 0.20
+const REDUCED_ORDER_PANEL_SECONDS := 0.50
+const PORTRAIT_WALK_PIXELS_PER_SECOND := 250.0
+const WALK_STEP_COUNT := 3.0
+const WALK_BOB_PIXELS := 8.0
+const WALK_SWAY_RADIANS := 0.025
 
 @export_category("Order Card Layout")
 @export_range(1.0, 1000.0, 1.0, "suffix:px") var card_width := 0.0
@@ -46,6 +56,12 @@ signal product_dropped(order_id: StringName, item_index: int, source_ref: Dictio
 var _order_id: StringName = &""
 var _patience_bar_tier := -1
 var _ingredient_icons_by_item: Array = []
+var _presentation_tween: Tween
+var _pending_presentation: Dictionary = {}
+var _portrait_rest_position := Vector2.ZERO
+var _portrait_rest_global_position := Vector2.ZERO
+var _order_panel_rest_position := Vector2.ZERO
+var _transition_phase: StringName = &"idle"
 
 
 func _ready() -> void:
@@ -55,6 +71,74 @@ func _ready() -> void:
 		item_buttons[item_index].pressed.connect(_request_delivery.bind(item_index))
 		if item_buttons[item_index].has_signal("product_source_dropped"):
 			item_buttons[item_index].connect("product_source_dropped", _on_product_source_dropped)
+	_portrait_rest_position = portrait.position
+	_portrait_rest_global_position = portrait.global_position
+	_order_panel_rest_position = order_panel.position
+	portrait.pivot_offset = Vector2(portrait.size.x * 0.5, portrait.size.y)
+	_reset_presentation_transforms()
+	visible = false
+
+
+## Queues a customer presentation without changing the synchronous bind_order()
+## contract used by card rendering and tests. Repeated refreshes always retain
+## only the latest requested customer while an outgoing customer is leaving.
+func present_order(
+	order: Dictionary,
+	customer_texture: Texture2D,
+	item_textures: Array,
+	requirements_by_item: Array,
+	perfect_quote: int,
+	reduce_motion: bool = false,
+	entrance_delay_seconds: float = 0.0,
+	entrance_delay_reserver: Callable = Callable(),
+) -> void:
+	var requested_order_id := StringName(order.get("order_id", &""))
+	_pending_presentation = {
+		"order": order.duplicate(true),
+		"customer_texture": customer_texture,
+		"item_textures": item_textures.duplicate(true),
+		"requirements_by_item": requirements_by_item.duplicate(true),
+		"perfect_quote": perfect_quote,
+		"reduce_motion": reduce_motion,
+		"entrance_delay_seconds": maxf(entrance_delay_seconds, 0.0),
+		"entrance_delay_reserver": entrance_delay_reserver,
+	}
+	if requested_order_id == _order_id and _transition_phase != &"exiting":
+		bind_order(order, customer_texture, item_textures, requirements_by_item, perfect_quote)
+		return
+	if _transition_phase == &"exiting":
+		return
+	if _transition_phase == &"entering":
+		_cancel_presentation_tween()
+		_reset_presentation_transforms()
+		_transition_phase = &"idle"
+	if _order_id.is_empty() or not visible:
+		_present_pending_customer()
+		return
+	_play_customer_exit(reduce_motion)
+
+
+func is_presentation_transitioning() -> bool:
+	return _transition_phase != &"idle"
+
+
+## Restores a persisted customer exactly at the authored service position.
+## Continue-game scene binding uses this path so saved customers do not replay
+## an arrival that already happened before the player left.
+func restore_order(
+	order: Dictionary,
+	customer_texture: Texture2D,
+	item_textures: Array,
+	requirements_by_item: Array,
+	perfect_quote: int,
+) -> void:
+	_pending_presentation.clear()
+	_cancel_presentation_tween()
+	_transition_phase = &"idle"
+	_reset_presentation_transforms()
+	bind_order(order, customer_texture, item_textures, requirements_by_item, perfect_quote)
+	order_panel.visible = visible
+	_set_order_interaction_enabled(visible)
 
 
 func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: Array, requirements_by_item: Array, perfect_quote: int) -> void:
@@ -107,6 +191,125 @@ func update_patience(order: Dictionary) -> void:
 	patience_bar.visible = not unlimited
 	patience_bar.value = ratio * 100.0
 	_patience_bar_tier = PATIENCE_BAR_STYLE.apply(patience_bar, ratio, _patience_bar_tier)
+
+
+func _play_customer_exit(reduce_motion: bool) -> void:
+	_transition_phase = &"exiting"
+	_set_order_interaction_enabled(false)
+	_cancel_presentation_tween()
+	_presentation_tween = create_tween()
+	_presentation_tween.set_parallel(true)
+	if reduce_motion:
+		portrait.position = _portrait_rest_position
+		order_panel.position = _order_panel_rest_position
+		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, REDUCED_PORTRAIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(order_panel, "modulate:a", 0.0, REDUCED_ORDER_PANEL_SECONDS).set_delay(REDUCED_ORDER_PANEL_DELAY_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	else:
+		# Normal motion is deliberately walk-only; fades and card translation read as drifting.
+		portrait.modulate.a = 1.0
+		order_panel.position = _order_panel_rest_position
+		order_panel.modulate.a = 1.0
+		var exit_start := _portrait_rest_global_position
+		var exit_end := _portrait_offscreen_left_global_position()
+		var portrait_exit_seconds := _walk_duration_seconds(exit_start, exit_end, PORTRAIT_EXIT_SECONDS)
+		_presentation_tween.tween_method(_apply_portrait_walk_progress.bind(exit_start, exit_end), 0.0, 1.0, portrait_exit_seconds).set_trans(Tween.TRANS_LINEAR)
+	_presentation_tween.chain().tween_callback(_on_customer_exit_finished)
+
+
+func _on_customer_exit_finished() -> void:
+	_presentation_tween = null
+	_transition_phase = &"idle"
+	_present_pending_customer()
+
+
+func _present_pending_customer() -> void:
+	var presentation := _pending_presentation.duplicate(true)
+	_pending_presentation.clear()
+	var next_order := Dictionary(presentation.get("order", {}))
+	bind_order(
+		next_order,
+		presentation.get("customer_texture") as Texture2D,
+		Array(presentation.get("item_textures", [])),
+		Array(presentation.get("requirements_by_item", [])),
+		int(presentation.get("perfect_quote", 0)),
+	)
+	if _order_id.is_empty():
+		_reset_presentation_transforms()
+		_transition_phase = &"idle"
+		return
+	var reduce_motion := bool(presentation.get("reduce_motion", false))
+	var entrance_delay_seconds := float(presentation.get("entrance_delay_seconds", 0.0))
+	var entrance_delay_reserver: Callable = presentation.get("entrance_delay_reserver", Callable())
+	if entrance_delay_reserver.is_valid():
+		entrance_delay_seconds = maxf(float(entrance_delay_reserver.call(entrance_delay_seconds)), 0.0)
+	_transition_phase = &"entering"
+	_set_order_interaction_enabled(false)
+	order_panel.visible = false
+	_cancel_presentation_tween()
+	if reduce_motion:
+		portrait.position = _portrait_rest_position
+		order_panel.position = _order_panel_rest_position
+		portrait.modulate.a = 0.0
+		order_panel.modulate.a = 1.0
+	else:
+		portrait.global_position = _portrait_offscreen_left_global_position()
+		portrait.modulate.a = 1.0
+		order_panel.position = _order_panel_rest_position
+		order_panel.modulate.a = 1.0
+	_presentation_tween = create_tween()
+	_presentation_tween.set_parallel(true)
+	if reduce_motion:
+		_presentation_tween.tween_property(portrait, "modulate:a", 1.0, REDUCED_PORTRAIT_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	else:
+		# Linear progress keeps the configured pixels-per-second speed perceptually constant.
+		var entry_start := _portrait_offscreen_left_global_position()
+		var portrait_enter_seconds := _walk_duration_seconds(entry_start, _portrait_rest_global_position, PORTRAIT_ENTER_SECONDS)
+		_presentation_tween.tween_method(_apply_portrait_walk_progress.bind(entry_start, _portrait_rest_global_position), 0.0, 1.0, portrait_enter_seconds).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_LINEAR)
+	_presentation_tween.chain().tween_callback(_on_customer_enter_finished)
+
+
+func _on_customer_enter_finished() -> void:
+	_presentation_tween = null
+	_transition_phase = &"idle"
+	_reset_presentation_transforms()
+	order_panel.visible = true
+	_set_order_interaction_enabled(true)
+
+
+func _cancel_presentation_tween() -> void:
+	if _presentation_tween != null and _presentation_tween.is_valid():
+		_presentation_tween.kill()
+	_presentation_tween = null
+
+
+func _reset_presentation_transforms() -> void:
+	portrait.position = _portrait_rest_position
+	order_panel.position = _order_panel_rest_position
+	portrait.rotation = 0.0
+	portrait.modulate.a = 1.0
+	order_panel.modulate.a = 1.0
+
+
+func _set_order_interaction_enabled(enabled: bool) -> void:
+	card_focus_button.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+	for item_button in item_buttons:
+		item_button.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+
+
+func _portrait_offscreen_left_global_position() -> Vector2:
+	var viewport := get_viewport()
+	var viewport_left := viewport.get_visible_rect().position.x if viewport != null else 0.0
+	return Vector2(viewport_left - portrait.size.x - PORTRAIT_OFFSCREEN_LEFT_MARGIN, _portrait_rest_global_position.y)
+
+
+func _walk_duration_seconds(start_position: Vector2, end_position: Vector2, minimum_seconds: float) -> float:
+	return maxf(minimum_seconds, start_position.distance_to(end_position) / PORTRAIT_WALK_PIXELS_PER_SECOND)
+
+
+func _apply_portrait_walk_progress(progress: float, start_position: Vector2, end_position: Vector2) -> void:
+	var step_wave := sin(progress * PI * WALK_STEP_COUNT)
+	portrait.global_position = start_position.lerp(end_position, progress) + Vector2(0.0, -absf(step_wave) * WALK_BOB_PIXELS)
+	portrait.rotation = step_wave * WALK_SWAY_RADIANS
 
 
 func _create_simple_card_controls() -> void:

@@ -1,16 +1,17 @@
 class_name FiveAreaCatalog
 extends RefCounted
 
-## Static three-area source of truth. Runtime services own availability, stock
+## Static four-area source of truth. Runtime services own availability, stock
 ## counts and pending purchases; this catalog intentionally contains no save/UI
 ## state.
 
-const BALANCE_VERSION := 9
+const BALANCE_VERSION := 10
 
 const AREA_IDS: Array[StringName] = [
 	&"area.pancake",
 	&"area.youtiao",
 	&"area.fresh_soy_milk",
+	&"area.packaged_drink",
 ]
 
 ## Physical counter order is deliberately different from the progression order.
@@ -18,17 +19,20 @@ const PHYSICAL_AREA_IDS: Array[StringName] = [
 	&"area.fresh_soy_milk",
 	&"area.pancake",
 	&"area.youtiao",
+	&"area.packaged_drink",
 ]
 const UNLOCK_AREA_IDS: Array[StringName] = [
 	&"area.pancake",
 	&"area.youtiao",
 	&"area.fresh_soy_milk",
+	&"area.packaged_drink",
 ]
 
 const AREA_DEFINITIONS := {
 	&"area.pancake": {"label": "煎饼", "physical_index": 1, "unlock_index": 0, "device_id": &"device.pancake_griddle"},
 	&"area.youtiao": {"label": "油条", "physical_index": 2, "unlock_index": 1, "device_id": &"device.youtiao_fryer"},
 	&"area.fresh_soy_milk": {"label": "现磨豆浆", "physical_index": 0, "unlock_index": 2, "device_id": &"device.fresh_soy_milk_machine"},
+	&"area.packaged_drink": {"label": "成品饮品", "physical_index": 3, "unlock_index": 3, "device_id": &"device.packaged_drink_rack"},
 }
 
 const DEVICE_DEFINITIONS := {
@@ -49,6 +53,12 @@ const DEVICE_DEFINITIONS := {
 		"area_id": &"area.fresh_soy_milk",
 		"tiers": [
 			{"tier": 0, "label": "初级豆浆机", "soy_reservoir_capacity": 2, "full_cup_seconds": 0.8},
+		],
+	},
+	&"device.packaged_drink_rack": {
+		"area_id": &"area.packaged_drink",
+		"tiers": [
+			{"tier": 0, "label": "成品饮品架", "capacity": 6},
 		],
 	},
 }
@@ -101,6 +111,7 @@ const STOCK_DEFINITIONS := {
 	# The physical board has four authored dough positions. Keep its stock cap
 	# fixed at four even after the shared pantry-capacity growth upgrades.
 	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.25, "restock_unit_cost": 2, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
+	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.20, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 }
 
 const ADD_ON_DEFINITIONS := {
@@ -118,6 +129,7 @@ const RECIPE_DEFINITIONS := {
 	# Soy milk is ready-made at the serving station.  Flavour buttons unlock
 	# recipes, not managed beans, so none of them may enter restock or slots.
 	&"recipe.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "stock_ids": []},
+	&"recipe.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.juice", "stock_ids": [&"stock.packaged_drink.juice"]},
 }
 
 const PRODUCT_DEFINITIONS := {
@@ -125,6 +137,7 @@ const PRODUCT_DEFINITIONS := {
 	&"product.youtiao.plain": {"label": "油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.plain", "base_sell_price": 3, "order_weight": 60},
 	&"product.youtiao.sesame": {"label": "芝麻油条", "area_id": &"area.youtiao", "recipe_id": &"recipe.youtiao.sesame", "base_sell_price": 4, "order_weight": 25},
 	&"product.fresh_soy_milk.yellow_bean": {"label": "黄豆豆浆", "area_id": &"area.fresh_soy_milk", "recipe_id": &"recipe.fresh_soy_milk.yellow_bean", "base_sell_price": 3, "material_cost": 2, "order_weight": 60},
+	&"product.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "recipe_id": &"recipe.packaged_drink.juice", "base_sell_price": 3, "material_cost": 1, "order_weight": 60},
 }
 
 ## Customer-facing prices. Pancakes always start with a 2-coin plain pancake;
@@ -183,17 +196,20 @@ const GROWTH_DEFINITIONS := {
 	&"growth.assist.fresh_soy_milk.sugar": {"label":"加糖罐", "kind":&"assist", "price":12, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"qualified":2}}, "assist_id":&"assist.fresh_soy_milk.sugar", "anchor_id":&"soy.sugar"},
 	&"growth.automation.fresh_soy_milk.auto_fill": {"label":"中级豆浆机", "kind":&"automation", "price":64, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"a_grade":4}}, "automation_id":&"automation.fresh_soy_milk.auto_fill", "anchor_id":&"soy.auto_fill"},
 	&"growth.automation.fresh_soy_milk.advanced": {"label":"高级豆浆机", "kind":&"automation", "price":80, "requires_area_id":&"area.fresh_soy_milk", "requires_mastery":{&"area.fresh_soy_milk":{"a_grade":10}}, "requires_growth_ids":[&"growth.automation.fresh_soy_milk.auto_fill"], "automation_id":&"automation.fresh_soy_milk.double_fill", "anchor_id":&"soy.advanced"},
+	&"growth.area.packaged_drink": {"label":"成品饮品架", "kind":&"area_unlock", "price":80, "requires_area_id":&"area.fresh_soy_milk", "area_id":&"area.packaged_drink", "device_id":&"device.packaged_drink_rack", "target_tier":0, "unlock_recipe_ids":[&"recipe.packaged_drink.juice"], "unlock_product_ids":[&"product.packaged_drink.juice"], "unlock_stock_ids":[&"stock.packaged_drink.juice"], "anchor_id":&"packaged_drink.rack"},
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
 	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.automation.pancake.one_click_baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.one_click_scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.ham_sausage", &"growth.automation.pancake.one_click_ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.one_click_coriander", &"growth.add_on.pancake.meat_floss", &"growth.automation.pancake.one_click_meat_floss", &"growth.automation.pancake.press_once", &"growth.automation.pancake.auto_sauce_brush",
 	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.flavor.youtiao.sesame", &"growth.equipment.youtiao.advanced",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
+	&"growth.area.packaged_drink",
 ]
 const MASTERY_DEFINITIONS := {
 	&"area.pancake": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 8, "a_grade": 2}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
 	&"area.youtiao": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 4, "a_grade": 1}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
 	&"area.fresh_soy_milk": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 4, "a_grade": 1}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
+	&"area.packaged_drink": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 4, "a_grade": 1}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
 }
 const ORDER_BALANCE := {
 	"youtiao_stage": {"pancake_main_percent": 75, "youtiao_single_percent": 25, "pancake_adds_youtiao_percent": 30},
@@ -205,6 +221,7 @@ const DAILY_GOAL_DEFINITIONS := {
 	&"goal.signature.pancake_three_a": {"area_id": &"area.pancake", "target": 3, "event_kind": &"sale", "requires_grade": &"A", "reward_coins": 18, "reward_reputation": 2},
 	&"goal.signature.youtiao_four_no_burn": {"area_id": &"area.youtiao", "target": 4, "event_kind": &"sale", "requires_min_grade": &"B", "fails_on": &"waste", "reward_coins": 22, "reward_reputation": 2},
 	&"goal.signature.fresh_soy_milk_four_no_spoil": {"area_id": &"area.fresh_soy_milk", "target": 4, "event_kind": &"sale", "requires_min_grade": &"B", "fails_on": &"waste", "reward_coins": 24, "reward_reputation": 2},
+	&"goal.signature.packaged_drink_four": {"area_id": &"area.packaged_drink", "target": 4, "event_kind": &"sale", "requires_min_grade": &"B", "reward_coins": 20, "reward_reputation": 2},
 	&"goal.signature.combo_two_no_failure": {"area_id": &"", "target": 2, "event_kind": &"sale", "requires_complexity": &"double", "fails_on": &"order_failure", "reward_coins": 20, "reward_reputation": 2},
 }
 ## Orders are authored with stable inventory IDs.  UI adapters may translate
@@ -303,8 +320,8 @@ static func growth_ids() -> Array[StringName]:
 
 static func validate_catalog() -> PackedStringArray:
 	var errors := PackedStringArray()
-	if AREA_IDS.size() != 3 or PHYSICAL_AREA_IDS.size() != 3 or UNLOCK_AREA_IDS.size() != 3:
-		errors.append("Three-area orders must each contain exactly three areas.")
+	if AREA_IDS.size() != 4 or PHYSICAL_AREA_IDS.size() != 4 or UNLOCK_AREA_IDS.size() != 4:
+		errors.append("Four-area orders must each contain exactly four areas.")
 	for area_id in AREA_IDS:
 		if not AREA_DEFINITIONS.has(area_id):
 			errors.append("Missing area definition: %s" % area_id)
@@ -371,7 +388,7 @@ static func validate_catalog() -> PackedStringArray:
 			if seen_tiers.has(tier):
 				errors.append("Device has duplicate tier: %s/%d" % [device_id, tier])
 			seen_tiers.append(tier)
-		var required_tiers := [0] if device_id in [&"device.pancake_griddle", &"device.fresh_soy_milk_machine"] else [0, 1]
+		var required_tiers := [0] if device_id in [&"device.pancake_griddle", &"device.fresh_soy_milk_machine", &"device.packaged_drink_rack"] else [0, 1]
 		for required_tier in required_tiers:
 			if not seen_tiers.has(required_tier):
 				errors.append("Device is missing tier: %s/%d" % [device_id, required_tier])
@@ -412,7 +429,7 @@ static func validate_catalog() -> PackedStringArray:
 		if not target_device_id.is_empty() and growth.has("target_tier") and device_tier(target_device_id, int(growth.get("target_tier", 0))).is_empty():
 			errors.append("Growth targets unknown device tier: %s" % growth_id)
 	if DAILY_GOAL_DEFINITIONS.is_empty() or ORDER_BALANCE.is_empty() or REPUTATION_BALANCE.is_empty():
-		errors.append("Three-area balance and daily goal definitions must not be empty.")
+		errors.append("Four-area balance and daily goal definitions must not be empty.")
 	for template_id in PANCAKE_ORDER_TEMPLATES:
 		var template: Dictionary = PANCAKE_ORDER_TEMPLATES[template_id]
 		var sauce_ids: Array = Array(template.get("sauce_stock_ids", []))

@@ -41,7 +41,7 @@
 [ext_resource type="Texture2D" uid="uid://oqdkwlo8wcdf" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-ham-6.png" id="55_ham_tray_06"]
 [ext_resource type="PackedScene" uid="uid://c027y2f04nop8" path="res://scenes/gameplay/multi_griddle_station.tscn" id="56_multi_griddle"]
 [ext_resource type="Script" uid="uid://bf3weirsew70j" path="res://scripts/ui/alpha_texture_hit_button.gd" id="57_alpha_hit"]
-[ext_resource type="Texture2D" uid="uid://b7hh75ge4rl1u" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v1.png" id="58_press_spreader"]
+[ext_resource type="Texture2D" uid="uid://ts4hjs0b17qb" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png" id="58_press_spreader"]
 
 [node name="JianbingStallArtwork" type="Control" unique_id=1877982743]
 z_index = -90

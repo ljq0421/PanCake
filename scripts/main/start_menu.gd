@@ -168,6 +168,9 @@ func _process(_delta: float) -> void:
 	elif not bool(_session.call("has_save")):
 		_fail_game_load("没有可继续的营业记录。")
 		return
+	elif not bool(_session.call("continue_game")):
+		_fail_game_load("无法恢复营业记录，请重试。")
+		return
 	loading_progress.value = 100.0
 	loading_detail_label.text = "准备完成"
 	var error := get_tree().change_scene_to_packed(packed_scene)

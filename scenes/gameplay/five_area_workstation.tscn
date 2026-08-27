@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -1255,7 +1256,16 @@ layout_mode = 0
 offset_left = 1586.0
 offset_top = 480.0
 offset_right = 1996.0
-offset_bottom = 976.0
+offset_bottom = 860.0
+
+[node name="PackagedDrinkStation" parent="FiveAreaInfrastructure/Stations" unique_id=1263986130 instance=ExtResource("82_packaged_drink")]
+z_index = 19
+layout_mode = 0
+offset_left = 1540.0
+offset_top = 830.0
+offset_right = 1830.0
+offset_bottom = 1005.0
+scale = Vector2(1.5, 1.5)
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0

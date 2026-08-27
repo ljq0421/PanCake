@@ -1,7 +1,7 @@
 class_name FiveAreaPlayableOrderGenerator
 extends RefCounted
 
-## Pure deterministic candidate generation for the three formal shop areas.
+## Pure deterministic candidate generation for the four formal shop areas.
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_GENERATOR := preload("res://scripts/services/five_area_pancake_order_generator.gd")
 const SPECIALS := preload("res://scripts/data/special_customer_catalog.gd")
@@ -10,15 +10,18 @@ const PLAYABLE_AREA_IDS: Array[StringName] = [
 	&"area.pancake",
 	&"area.youtiao",
 	&"area.fresh_soy_milk",
+	&"area.packaged_drink",
 ]
 const BASE_PATIENCE_SECONDS := {
 	&"area.pancake": 72.0,
 	&"area.youtiao": 36.0,
 	&"area.fresh_soy_milk": 32.0,
+	&"area.packaged_drink": 24.0,
 }
 const TUTORIAL_PRODUCT_IDS := {
 	&"area.youtiao": &"product.youtiao.plain",
 	&"area.fresh_soy_milk": &"product.fresh_soy_milk.yellow_bean",
+	&"area.packaged_drink": &"product.packaged_drink.juice",
 }
 
 
@@ -225,6 +228,7 @@ static func _normal_candidate(eligible_areas: Array[StringName], progression: Di
 	var has_pancake := eligible_areas.has(&"area.pancake")
 	var has_youtiao := eligible_areas.has(&"area.youtiao")
 	var has_soy := eligible_areas.has(&"area.fresh_soy_milk")
+	var has_packaged_drink := eligible_areas.has(&"area.packaged_drink")
 	if eligible_areas.size() == 1:
 		return _candidate_for_area(eligible_areas[0], progression, seed, sequence)
 	var candidates: Array[Dictionary] = []
@@ -235,7 +239,7 @@ static func _normal_candidate(eligible_areas: Array[StringName], progression: Di
 				candidates.append(_candidate_for_area(&"area.youtiao", progression, seed + 7919, sequence))
 		else:
 			candidates.append(_candidate_for_area(&"area.youtiao", progression, seed, sequence))
-	elif has_pancake and has_youtiao and has_soy:
+	elif has_pancake and has_youtiao and has_soy and not has_packaged_drink:
 		var main_roll := _roll(seed, sequence, 23, 100)
 		if main_roll < 70:
 			candidates.append(_candidate_for_area(&"area.pancake", progression, seed, sequence))
@@ -250,6 +254,15 @@ static func _normal_candidate(eligible_areas: Array[StringName], progression: Di
 			candidates.append(_candidate_for_area(&"area.youtiao", progression, seed, sequence))
 		else:
 			candidates.append(_candidate_for_area(&"area.fresh_soy_milk", progression, seed, sequence))
+	elif has_packaged_drink:
+		var drink_roll := _roll(seed, sequence, 41, 100)
+		var primary_area := &"area.pancake" if drink_roll < 60 else (&"area.youtiao" if drink_roll < 75 else (&"area.fresh_soy_milk" if drink_roll < 88 else &"area.packaged_drink"))
+		candidates.append(_candidate_for_area(primary_area, progression, seed, sequence))
+		if _roll(seed, sequence, 43, 100) >= 72:
+			var companions := eligible_areas.duplicate()
+			companions.erase(primary_area)
+			if not companions.is_empty():
+				candidates.append(_candidate_for_area(companions[_roll(seed, sequence, 47, companions.size())], progression, seed + 7919, sequence))
 	else:
 		var fallback_area := &"area.pancake" if has_pancake else eligible_areas[_roll(seed, sequence, 37, eligible_areas.size())]
 		candidates.append(_candidate_for_area(fallback_area, progression, seed, sequence))

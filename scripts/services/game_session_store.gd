@@ -20,6 +20,7 @@ const SAVE_VERSION := 9
 const SAVE_KIND := "breakfast_stall_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
+const PACKAGED_DRINK_V2_MIGRATION_KEY := "packaged_drink_juice_v2_migrated"
 const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const CONSOLATION_PAYMENT_COINS := 1
@@ -190,6 +191,7 @@ func begin_new_game() -> Dictionary:
 	_save_data = {
 		"version": SAVE_VERSION,
 		"save_kind": SAVE_KIND,
+		PACKAGED_DRINK_V2_MIGRATION_KEY: true,
 		"started_at_unix": now,
 		"last_played_at_unix": now,
 		"day_open": true,
@@ -851,6 +853,39 @@ func preview_stage_product_to_order(source_ref: Dictionary, order_id: StringName
 	}
 
 
+func preview_packaged_drink_inventory(stock_id: StringName, product_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	_ensure_production_service()
+	var definition := CATALOG.product_definition(product_id)
+	var recipe := CATALOG.recipe_definition(StringName(definition.get("recipe_id", &"")))
+	if definition.is_empty() or recipe.is_empty() or StringName(definition.get("area_id", &"")) != &"area.packaged_drink" or not Array(recipe.get("stock_ids", [])).has(stock_id):
+		return {"success": false, "reason": &"invalid_packaged_drink_source"}
+	if not bool(_progression.call("owns_area", &"area.packaged_drink")) or not bool(_progression.call("owns_product", product_id)) or not bool(_progression.call("owns_stock", stock_id)):
+		return {"success": false, "reason": &"stock_locked", "stock_id": stock_id}
+	var inventory := inventory_snapshot()
+	if int(inventory.get(str(stock_id), 0)) <= 0:
+		return {"success": false, "reason": &"insufficient_stock", "stock_id": stock_id}
+	var generated := Dictionary(_production_service.call("packaged_drink_product", product_id, false))
+	return generated if bool(generated.get("success", false)) else {"success": false, "reason": generated.get("reason", &"packaged_drink_unavailable")}
+
+
+func take_packaged_drink_inventory(stock_id: StringName, product_id: StringName) -> Dictionary:
+	var preview := preview_packaged_drink_inventory(stock_id, product_id)
+	if not bool(preview.get("success", false)):
+		return preview
+	var consumed := consume_inventory_stock_ids([stock_id])
+	if not bool(consumed.get("success", false)):
+		return consumed
+	var generated := Dictionary(_production_service.call("packaged_drink_product", product_id, true))
+	if not bool(generated.get("success", false)):
+		restore_inventory_stock_ids([stock_id])
+		return {"success": false, "reason": generated.get("reason", &"packaged_drink_unavailable")}
+	var product := Dictionary(generated.get("product", {})).duplicate(true)
+	return {"success": true, "product": product, "consumed_stock_ids": PackedStringArray([str(stock_id)])}
+
+
 ## Moves exactly one available product into the requested order-card item.
 ## Product mismatches are intentionally reported but never used as blockers.
 func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
@@ -1099,6 +1134,8 @@ func _preview_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 			return {"success": not ready_product.is_empty(), "reason": &"" if not ready_product.is_empty() else &"pancake_not_ready", "product": ready_product}
 		&"pancake_griddle_ready":
 			return preview_pancake_griddle_ready(source_index)
+		&"packaged_drink_inventory":
+			return preview_packaged_drink_inventory(StringName(source_ref.get("stock_id", &"")), StringName(source_ref.get("product_id", &"")))
 		_:
 			return {"success": false, "reason": &"unsupported_product_source", "source_kind": source_kind}
 
@@ -1131,6 +1168,7 @@ func _collect_product_source(source_ref: Dictionary, order_item: Dictionary) -> 
 				return consumed
 			return {"success": true, "product": product, "consumed_stock_ids": consumed_stock_ids}
 		&"pancake_griddle_ready": return take_pancake_griddle_ready(source_index)
+		&"packaged_drink_inventory": return take_packaged_drink_inventory(StringName(source_ref.get("stock_id", &"")), StringName(source_ref.get("product_id", &"")))
 		_: return {"success": false, "reason": &"unsupported_product_source", "source_kind": source_kind}
 
 
@@ -3261,6 +3299,7 @@ func _mark_f3_order_started(order_id: StringName, source_id: StringName) -> void
 
 
 func _ensure_save_shape() -> void:
+	_migrate_retired_packaged_drink_state()
 	var inventory_source := Dictionary(_save_data.get("inventory", {})).duplicate(true)
 	var retired_sauce_stock := maxi(
 		int(inventory_source.get("stock.pancake.sauce.red_chili", 0)),
@@ -3320,6 +3359,49 @@ func _ensure_save_shape() -> void:
 	)
 	if not _save_data.has(RECONCILED_FORMAL_ORDER_IDS_KEY):
 		_save_data[RECONCILED_FORMAL_ORDER_IDS_KEY] = []
+
+
+func _migrate_retired_packaged_drink_state() -> void:
+	if bool(_save_data.get(PACKAGED_DRINK_V2_MIGRATION_KEY, false)):
+		return
+	var progression := Dictionary(_save_data.get("progression", {})).duplicate(true)
+	for key in ["unlocked_area_ids", "unlocked_recipe_ids", "unlocked_product_ids", "unlocked_stock_ids", "owned_growth_ids", "pending_growth_ids"]:
+		progression[key] = _without_retired_packaged_drink_ids(progression.get(key, []))
+	var tiers := Dictionary(progression.get("device_tiers", {})).duplicate(true)
+	tiers.erase("device.packaged_drink_heater")
+	tiers.erase(&"device.packaged_drink_heater")
+	progression["device_tiers"] = tiers
+	var mastery := Dictionary(progression.get("area_mastery", {})).duplicate(true)
+	mastery.erase("area.packaged_drink")
+	mastery.erase(&"area.packaged_drink")
+	progression["area_mastery"] = mastery
+	var mastery_details := Dictionary(progression.get("area_mastery_details", {})).duplicate(true)
+	mastery_details.erase("area.packaged_drink")
+	mastery_details.erase(&"area.packaged_drink")
+	progression["area_mastery_details"] = mastery_details
+	var tutorial := Dictionary(progression.get("tutorial", {})).duplicate(true)
+	for key in ["completed_area_ids", "queue_area_ids"]:
+		tutorial[key] = _without_retired_packaged_drink_ids(tutorial.get(key, []))
+	if StringName(tutorial.get("active_id", &"")) == &"area.packaged_drink":
+		tutorial["active_kind"] = &""
+		tutorial["active_id"] = &""
+	progression["tutorial"] = tutorial
+	_save_data["progression"] = progression
+	var inventory := Dictionary(_save_data.get("inventory", {})).duplicate(true)
+	for key in ["stock.packaged_drink.milk", "stock.packaged_drink.soy_milk", "stock.packaged_drink.walnut", "stock.packaged_drink.black_sesame"]:
+		inventory.erase(key)
+	_save_data["inventory"] = inventory
+	_save_data[PACKAGED_DRINK_V2_MIGRATION_KEY] = true
+
+
+static func _without_retired_packaged_drink_ids(value: Variant) -> Array:
+	var kept: Array = []
+	for raw_value in Array(value):
+		var id := str(raw_value)
+		if id == "area.packaged_drink" or id.begins_with("recipe.packaged_drink.") or id.begins_with("product.packaged_drink.") or id.begins_with("stock.packaged_drink.") or (id.begins_with("growth.") and id.contains("packaged_drink")):
+			continue
+		kept.append(raw_value)
+	return kept
 
 
 static func _empty_prepared_product_slots() -> Dictionary:

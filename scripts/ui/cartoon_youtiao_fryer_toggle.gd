@@ -6,6 +6,7 @@ extends Control
 ## remains the authority for stock, production time, quality, waste and storage.
 signal status_message(message: String)
 signal youtiao_add_to_pancake_requested(source_ref: Dictionary)
+signal raw_input_feedback_requested(success: bool)
 
 const DEVICE_ID := &"device.youtiao_fryer"
 const RECIPE_ID := &"recipe.youtiao.plain"
@@ -18,6 +19,7 @@ const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
 const CHICKEN_FINISHED_TRAY_GROWTH_ID := &"growth.capacity.chicken_finished_tray"
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const COOKING_STAGE_BAR_SCRIPT := preload("res://scripts/ui/cooking_stage_bar.gd")
+const HOLD_PROGRESS_RING_SCRIPT := preload("res://scripts/ui/hold_progress_ring.gd")
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
 const TRAY_VISUAL_CAPACITY := 4
@@ -122,6 +124,9 @@ var burnt_youtiao_texture: Texture2D
 var chicken_raw_texture: Texture2D
 var chicken_golden_texture: Texture2D
 var chicken_burnt_texture: Texture2D
+var _machine_cancel_tolerance_pixels := 8.0
+var _machine_hold_ring: HoldProgressRing
+var _machine_feedback_tween: Tween
 
 
 func _ready() -> void:
@@ -134,7 +139,15 @@ func _ready() -> void:
 		_apply_editor_preview()
 		return
 	_configure_component_controls()
+	_create_machine_hold_ring()
+	mouse_exited.connect(_clear_machine_hover_preview)
 	_connect_session_signals()
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("get_settings"):
+		_apply_interaction_settings(Dictionary(session.call("get_settings")))
+		var settings_signal := Signal(session, &"settings_changed")
+		if not settings_signal.is_connected(_apply_interaction_settings):
+			settings_signal.connect(_apply_interaction_settings)
 	refresh_from_session()
 
 
@@ -148,6 +161,8 @@ func _process(delta: float) -> void:
 	_refresh_elapsed += maxf(delta, 0.0)
 	if _refresh_elapsed >= 0.10:
 		_refresh_elapsed = 0.0
+		if _machine_press_active:
+			return
 		# Once a batch is ready to collect, only a player action can change its
 		# state. Do not keep rebuilding the draggable sticks and their alpha hit
 		# regions every 100 ms while the player moves one to either serving tray.
@@ -171,6 +186,8 @@ func _gui_input(event: InputEvent) -> void:
 		else:
 			_finish_drag_or_click(event.position)
 		accept_event()
+	elif event is InputEventMouseMotion and not _machine_press_active:
+		_update_machine_hover_preview(event.position)
 
 
 func _has_point(point: Vector2) -> bool:
@@ -196,6 +213,10 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_finish_drag_or_click(get_local_mouse_position())
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion and not _control_contains_local_point(fryer_visual, event.position, _machine_cancel_tolerance_pixels):
+		_cancel_machine_gesture()
+		status_message.emit("已取消长按，未完成的补货不会扣费")
 		get_viewport().set_input_as_handled()
 
 
@@ -281,10 +302,51 @@ func _begin_drag_or_click(point: Vector2) -> void:
 		_begin_machine_gesture()
 
 
+func _update_machine_hover_preview(point: Vector2) -> void:
+	if not _control_contains_local_point(fryer_visual, point):
+		_clear_machine_hover_preview()
+		return
+	var visual_point := fryer_visual.get_global_transform_with_canvas().affine_inverse() * (get_global_transform_with_canvas() * point)
+	var lane_id := &"right" if _chicken_unlocked and visual_point.x >= fryer_visual.size.x * 0.5 else &"left"
+	var lane := Dictionary(Dictionary(_machine.get("lanes", {})).get(lane_id, _machine))
+	var state := StringName(lane.get("state", &"idle"))
+	var stock := _chicken_stock if lane_id == &"right" else _dough_stock
+	var valid := false
+	var message := ""
+	match state:
+		&"idle":
+			valid = stock > 0
+			message = ("点击加入鸡排生料" if lane_id == &"right" else "点击加入油条面胚") if valid else "原料库存不足；长按当前炸篮补货"
+		&"loaded":
+			valid = true
+			message = "点击开始炸制"
+		&"ready_safe", &"overcooking":
+			valid = true
+			message = "点击抬起炸篮并沥油"
+		&"cooking":
+			message = "正在炸制，暂时不能投料"
+		&"burnt":
+			message = "本批已焦糊，请先处理成品"
+		_:
+			message = "当前设备不可用"
+	fryer_visual.self_modulate = Color(0.82, 1.0, 0.82, 1.0) if valid else Color(1.0, 0.72, 0.68, 1.0)
+	tooltip_text = message
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if valid else Control.CURSOR_FORBIDDEN
+
+
+func _clear_machine_hover_preview() -> void:
+	if fryer_visual != null:
+		fryer_visual.self_modulate = Color.WHITE
+	tooltip_text = ""
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+
 func _finish_drag_or_click(point: Vector2) -> void:
 	if not _machine_press_active:
 		return
 	var was_hold := _machine_hold_active
+	if was_hold:
+		_cancel_machine_restock_progress()
 	_end_machine_gesture()
 	if not was_hold:
 		_perform_machine_click()
@@ -302,6 +364,7 @@ func _advance_machine_hold(delta: float) -> void:
 		return
 	if not _machine_hold_active:
 		_machine_hold_elapsed += maxf(delta, 0.0)
+		_show_machine_hold_progress(_machine_hold_elapsed / maxf(MACHINE_HOLD_THRESHOLD_SECONDS, 0.001), "长按投料")
 		if _machine_hold_elapsed + 0.000001 < MACHINE_HOLD_THRESHOLD_SECONDS:
 			return
 		_start_machine_input_hold()
@@ -312,6 +375,7 @@ func _advance_machine_hold(delta: float) -> void:
 		return
 	if _selected_input_stock() > 0:
 		_machine_add_elapsed += maxf(delta, 0.0)
+		_show_machine_hold_progress(_machine_add_elapsed / MACHINE_ADD_INTERVAL_SECONDS, "连续投料")
 		if _machine_add_elapsed + 0.000001 >= MACHINE_ADD_INTERVAL_SECONDS:
 			_machine_add_elapsed = 0.0
 			_load_selected_input()
@@ -319,6 +383,7 @@ func _advance_machine_hold(delta: float) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var stock_id := _selected_stock_id()
 	var result := Dictionary(session.call("advance_five_area_restock_hold", stock_id, delta)) if session != null else {"success": false, "reason": &"no_game_session"}
+	_show_machine_hold_progress(float(result.get("progress_ratio", 0.0)), "补货并投料")
 	if int(result.get("completed_units", 0)) > 0:
 		for _unit in int(result.get("completed_units", 0)):
 			_load_selected_input()
@@ -351,6 +416,8 @@ func _end_machine_gesture() -> void:
 	_machine_hold_active = false
 	_machine_hold_elapsed = 0.0
 	_machine_add_elapsed = 0.0
+	if _machine_hold_ring != null:
+		_machine_hold_ring.visible = false
 
 
 func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
@@ -361,6 +428,7 @@ func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
+	_play_machine_input_feedback(bool(result.get("success", false)))
 
 
 func _load_chicken() -> void:
@@ -371,6 +439,7 @@ func _load_chicken() -> void:
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
+	_play_machine_input_feedback(bool(result.get("success", false)))
 
 
 func _selected_stock_id() -> StringName:
@@ -425,6 +494,12 @@ func _store_ready_fryer_batch_on_plate(product_id: StringName) -> void:
 func _perform_machine_click() -> void:
 	var lane := Dictionary(Dictionary(_machine.get("lanes", {})).get(_machine_lane, _machine))
 	var state := StringName(lane.get("state", &"idle"))
+	if state == &"idle":
+		if _selected_input_stock() > 0:
+			_load_selected_input()
+		else:
+			status_message.emit("原料库存不足；长按当前炸篮补货")
+		return
 	var action := &"start" if state == &"loaded" else &"lift" if state in [&"ready_safe", &"overcooking"] else &""
 	if action.is_empty():
 		status_message.emit("长按右侧滤网补货并加入鸡排" if _machine_lane == &"right" and state == &"idle" else "长按油条机添加面胚" if state == &"idle" else _state_text(state))
@@ -433,6 +508,66 @@ func _perform_machine_click() -> void:
 	var result := Dictionary(session.call("perform_f3_chicken_action", action)) if session != null and _machine_lane == &"right" else Dictionary(session.call("perform_f3_youtiao_action", action)) if session != null else {"success": false, "reason": &"no_game_session"}
 	status_message.emit("鸡排开始炸制" if _machine_lane == &"right" and action == &"start" and bool(result.get("success", false)) else "油条开始炸制" if action == &"start" and bool(result.get("success", false)) else "炸篮已抬起，正在沥油" if bool(result.get("success", false)) else _failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
+
+
+func _show_machine_hold_progress(ratio: float, caption: String) -> void:
+	var label := chicken_progress_label if _machine_lane == &"right" else youtiao_progress_label
+	var bar = chicken_progress_bar if _machine_lane == &"right" else youtiao_progress_bar
+	var percent := clampf(ratio, 0.0, 1.0)
+	label.text = "%s %d%%" % [caption, roundi(percent * 100.0)]
+	bar.configure(percent, 1.0, 1.0, true, &"", "松开或移开可取消")
+	if _machine_hold_ring != null:
+		_machine_hold_ring.set_progress_ratio(percent)
+		_machine_hold_ring.visible = true
+
+
+func _create_machine_hold_ring() -> void:
+	_machine_hold_ring = HOLD_PROGRESS_RING_SCRIPT.new()
+	_machine_hold_ring.name = "MachineHoldProgress"
+	_machine_hold_ring.z_index = 200
+	_machine_hold_ring.set_anchors_preset(Control.PRESET_CENTER)
+	_machine_hold_ring.position = Vector2(-38.0, -38.0)
+	_machine_hold_ring.size = Vector2(76.0, 76.0)
+	_machine_hold_ring.visible = false
+	fryer_visual.add_child(_machine_hold_ring)
+
+
+func _play_machine_input_feedback(success: bool) -> void:
+	raw_input_feedback_requested.emit(success)
+	if _machine_feedback_tween != null and _machine_feedback_tween.is_valid():
+		_machine_feedback_tween.kill()
+	fryer_visual.pivot_offset = fryer_visual.size * 0.5
+	fryer_visual.scale = Vector2.ONE
+	var reduce_motion := DisplayServer.has_method(&"accessibility_should_reduce_motion") and bool(DisplayServer.call(&"accessibility_should_reduce_motion"))
+	var feedback_color := Color(0.72, 1.0, 0.72, 1.0) if success else Color(1.0, 0.52, 0.48, 1.0)
+	_machine_feedback_tween = create_tween()
+	_machine_feedback_tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_machine_feedback_tween.tween_property(fryer_visual, "self_modulate", feedback_color, 0.06)
+	if not reduce_motion:
+		_machine_feedback_tween.parallel().tween_property(fryer_visual, "scale", Vector2.ONE * (1.015 if success else 0.985), 0.06)
+	_machine_feedback_tween.tween_property(fryer_visual, "self_modulate", Color.WHITE, 0.08)
+	if not reduce_motion:
+		_machine_feedback_tween.parallel().tween_property(fryer_visual, "scale", Vector2.ONE, 0.08)
+
+
+func _cancel_machine_gesture() -> void:
+	if not _machine_press_active:
+		return
+	if _machine_hold_active:
+		_cancel_machine_restock_progress()
+	_end_machine_gesture()
+	refresh_from_session()
+
+
+func _cancel_machine_restock_progress() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("cancel_five_area_restock_hold"):
+		session.call("cancel_five_area_restock_hold", _selected_stock_id())
+
+
+func _apply_interaction_settings(settings: Dictionary) -> void:
+	var sensitivity := clampf(float(settings.get("drag_sensitivity", 100.0)), 50.0, 150.0)
+	_machine_cancel_tolerance_pixels = lerpf(4.0, 12.0, (sensitivity - 50.0) / 100.0)
 
 
 func _apply_snapshot() -> void:
@@ -927,12 +1062,12 @@ func _is_plate_point(point: Vector2) -> bool:
 	return _finished_tray_unlocked and plain_tray != null and plain_tray.visible and _control_contains_local_point(plain_tray, point)
 
 
-func _control_contains_local_point(control: Control, point: Vector2) -> bool:
+func _control_contains_local_point(control: Control, point: Vector2, margin: float = 0.0) -> bool:
 	if control == null or not control.visible:
 		return false
 	var canvas_point := get_global_transform_with_canvas() * point
 	var control_point := control.get_global_transform_with_canvas().affine_inverse() * canvas_point
-	return Rect2(Vector2.ZERO, control.size).has_point(control_point)
+	return Rect2(Vector2.ZERO, control.size).grow(maxf(margin, 0.0)).has_point(control_point)
 
 
 func _has_active_product_drag() -> bool:

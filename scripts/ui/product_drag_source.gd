@@ -1,12 +1,15 @@
 class_name ProductDragSource
 extends TextureButton
 
+const HOLD_PROGRESS_RING_SCRIPT := preload("res://scripts/ui/hold_progress_ring.gd")
+
 signal short_clicked(source_ref: Dictionary)
 signal drag_started(source_ref: Dictionary)
 signal drag_ended(source_ref: Dictionary, successful: bool)
 signal hold_requested(source_ref: Dictionary)
 signal hold_advanced(source_ref: Dictionary, delta: float)
 signal hold_released(source_ref: Dictionary)
+signal hover_changed(source_ref: Dictionary, hovering: bool)
 
 ## Keep the drag threshold low enough that a deliberate drag starts immediately,
 ## without turning a normal click into a drag.
@@ -15,6 +18,7 @@ signal hold_released(source_ref: Dictionary)
 @export var hold_threshold_seconds := 0.1
 @export var native_drag_enabled := true
 @export var cancel_pending_on_mouse_exit := true
+@export var drag_cancel_tolerance_pixels := 8.0
 ## Visual used under the pointer during native dragging. This remains separate
 ## from texture_normal because some sources deliberately use an invisible
 ## texture solely as a reliable hit target.
@@ -37,6 +41,12 @@ var _holding := false
 var _hold_elapsed := 0.0
 var _native_drag_in_progress := false
 var _drop_forward_target: Control
+var _hold_progress_ring: HoldProgressRing
+var _hover_rest_modulate := Color.WHITE
+var _hovered := false
+var _base_drag_threshold_pixels := 4.0
+var _effective_cancel_tolerance_pixels := 8.0
+var _result_feedback_tween: Tween
 ## Optional alpha-tested layers that define the clickable silhouette.  A source
 ## without these layers keeps the regular rectangular hit area.
 var _alpha_hit_regions: Array[Dictionary] = []
@@ -44,7 +54,17 @@ var _alpha_hit_images: Dictionary = {}
 
 
 func _ready() -> void:
+	_base_drag_threshold_pixels = maxf(drag_threshold_pixels, 1.0)
+	_effective_cancel_tolerance_pixels = maxf(drag_cancel_tolerance_pixels, 0.0)
+	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
+	_create_hold_progress_ring()
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("get_settings"):
+		_apply_interaction_settings(Dictionary(session.call("get_settings")))
+		var settings_signal := Signal(session, &"settings_changed")
+		if not settings_signal.is_connected(_apply_interaction_settings):
+			settings_signal.connect(_apply_interaction_settings)
 	set_process(false)
 
 
@@ -64,11 +84,32 @@ func configure(source_ref: Dictionary, product_texture: Texture2D, available: bo
 	disabled = not available
 	_drag_available = available
 	tooltip_text = hint
-	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if available else Control.CURSOR_FORBIDDEN
+	_refresh_cursor()
+	if not available:
+		_set_hold_progress_visible(false)
 
 
 func set_drag_available(value: bool) -> void:
 	_drag_available = value
+	_refresh_cursor()
+
+
+func set_hold_progress(progress_ratio: float) -> void:
+	if _hold_progress_ring == null:
+		return
+	_hold_progress_ring.set_progress_ratio(progress_ratio)
+	_set_hold_progress_visible(_pressed_for_drag or _holding)
+
+
+func play_result_feedback(success: bool) -> void:
+	if _result_feedback_tween != null and _result_feedback_tween.is_valid():
+		_result_feedback_tween.kill()
+	var rest_color := _hover_rest_modulate * Color(1.06, 1.04, 0.94, 1.0) if _hovered else _hover_rest_modulate
+	var feedback_color := Color(0.72, 1.0, 0.72, rest_color.a) if success else Color(1.0, 0.48, 0.44, rest_color.a)
+	_result_feedback_tween = create_tween()
+	_result_feedback_tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_result_feedback_tween.tween_property(self, "self_modulate", feedback_color, 0.06)
+	_result_feedback_tween.tween_property(self, "self_modulate", rest_color, 0.08)
 
 
 func set_drag_preview_texture(value: Texture2D) -> void:
@@ -147,6 +188,12 @@ func _has_point(point: Vector2) -> bool:
 
 
 func _process(delta: float) -> void:
+	if (_pressed_for_drag or _holding) and cancel_pending_on_mouse_exit:
+		var viewport := get_viewport()
+		var local_pointer := get_global_transform_with_canvas().affine_inverse() * viewport.get_mouse_position() if viewport != null else Vector2.ZERO
+		if viewport != null and not Rect2(Vector2.ZERO, size).grow(_effective_cancel_tolerance_pixels).has_point(local_pointer):
+			_cancel_gesture_from_exit()
+			return
 	advance_gesture(delta)
 
 
@@ -173,6 +220,7 @@ func begin_gesture(viewport_position: Vector2) -> void:
 	_holding = false
 	_press_position = viewport_position
 	_hold_elapsed = 0.0
+	set_hold_progress(0.0)
 	set_process(hold_enabled)
 
 
@@ -255,6 +303,7 @@ func advance_gesture(delta: float) -> void:
 	if not hold_enabled or not _pressed_for_drag:
 		return
 	_hold_elapsed += maxf(delta, 0.0)
+	set_hold_progress(_hold_elapsed / maxf(hold_threshold_seconds, 0.001))
 	if _hold_elapsed + 0.000001 < hold_threshold_seconds:
 		return
 	set_process(false)
@@ -265,6 +314,7 @@ func accept_hold() -> void:
 	if not _pressed_for_drag:
 		return
 	_holding = true
+	set_hold_progress(0.0)
 	set_process(true)
 
 
@@ -287,15 +337,69 @@ func is_hold_active() -> bool:
 
 
 func _on_mouse_exited() -> void:
-	# Leaving a hold-enabled drink lane cancels restocking as authored. Ordinary
-	# product sources, however, must remain pending long enough for the outgoing
-	# motion event to start their native drag.
-	if hold_enabled and (_holding or (_pressed_for_drag and cancel_pending_on_mouse_exit)):
-		end_gesture()
+	if _hovered:
+		_hovered = false
+		self_modulate = _hover_rest_modulate
+		hover_changed.emit(_source_ref.duplicate(true), false)
+	# The process loop applies the configured tolerance.  A zero-tolerance hold
+	# cancels immediately without turning the exit into a short click.
+	if hold_enabled and (_holding or _pressed_for_drag) and cancel_pending_on_mouse_exit and _effective_cancel_tolerance_pixels <= 0.0:
+		_cancel_gesture_from_exit()
 
 
 func _reset_gesture() -> void:
 	_pressed_for_drag = false
 	_holding = false
 	_hold_elapsed = 0.0
+	_set_hold_progress_visible(false)
 	set_process(false)
+
+
+func _on_mouse_entered() -> void:
+	if disabled:
+		return
+	_hovered = true
+	_hover_rest_modulate = self_modulate
+	# This high-frequency affordance is intentionally instantaneous; motion here
+	# would make repeated ingredient selection feel slower.
+	self_modulate = _hover_rest_modulate * Color(1.06, 1.04, 0.94, 1.0)
+	hover_changed.emit(_source_ref.duplicate(true), true)
+
+
+func _cancel_gesture_from_exit() -> void:
+	var was_holding := _holding
+	_reset_gesture()
+	if was_holding:
+		hold_released.emit(_source_ref.duplicate(true))
+
+
+func _create_hold_progress_ring() -> void:
+	_hold_progress_ring = HOLD_PROGRESS_RING_SCRIPT.new()
+	_hold_progress_ring.name = "HoldProgress"
+	_hold_progress_ring.z_index = 200
+	_hold_progress_ring.set_anchors_preset(Control.PRESET_CENTER)
+	_hold_progress_ring.position = Vector2(-38.0, -38.0)
+	_hold_progress_ring.size = Vector2(76.0, 76.0)
+	_hold_progress_ring.visible = false
+	add_child(_hold_progress_ring)
+
+
+func _set_hold_progress_visible(value: bool) -> void:
+	if _hold_progress_ring != null:
+		_hold_progress_ring.visible = value and hold_enabled
+
+
+func _refresh_cursor() -> void:
+	if disabled:
+		mouse_default_cursor_shape = Control.CURSOR_FORBIDDEN
+	elif native_drag_enabled and _drag_available:
+		mouse_default_cursor_shape = Control.CURSOR_DRAG
+	else:
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+
+func _apply_interaction_settings(settings: Dictionary) -> void:
+	var sensitivity := clampf(float(settings.get("drag_sensitivity", 100.0)), 50.0, 150.0)
+	var normalized := (sensitivity - 50.0) / 100.0
+	drag_threshold_pixels = _base_drag_threshold_pixels * lerpf(1.5, 0.5, normalized)
+	_effective_cancel_tolerance_pixels = lerpf(4.0, 12.0, normalized)

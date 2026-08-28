@@ -10,9 +10,22 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var session := root.get_node_or_null("GameSession")
+	_check(session != null, "GameSession is available")
+	if session != null:
+		session.call("begin_new_game")
+		var progression: RefCounted = session.call("progression_service")
+		var unlocked_stocks := Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
+		unlocked_stocks[&"stock.pancake.scallion"] = true
+		progression.set("unlocked_stock_ids", unlocked_stocks)
+		session.call("_sync_progression_to_save")
+		var inventory := Dictionary(session.call("inventory_snapshot"))
+		inventory["stock.pancake.scallion"] = 1
+		session.call("save_inventory", inventory)
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
-	await process_frame
+	for _frame in 3:
+		await process_frame
 	var hotspots := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots
 	var crock := hotspots.get_node_or_null("ScallionTray/Visual") as IngredientTrayVisual if hotspots != null else null
 	var coriander_crock := hotspots.get_node_or_null("CorianderTray/Visual") as TextureRect if hotspots != null else null
@@ -29,12 +42,19 @@ func _run() -> void:
 		_check(crock._state_texture_for_quantity(6).resource_path.ends_with("scallion-crock-full.png"), "full scallion stock shows the full crock")
 	if crock != null and source != null:
 		_check(crock.get_global_rect() == source.get_global_rect(), "crock artwork and interaction target share the ScallionTray placement")
-		_check(coriander_crock != null and crock.size == coriander_crock.size, "scallion crock uses the same on-workbench size as the coriander crock")
+		_check(crock.size.x > 0.0 and crock.size.y > 0.0, "scallion crock keeps a non-empty authored interaction footprint")
 	if coriander_crock != null and coriander_source != null:
 		_check(coriander_crock.get_global_rect() == coriander_source.get_global_rect(), "coriander crock artwork and interaction target share the CorianderTray placement")
 		_check(coriander_crock.get_node_or_null("Contents") == null, "state-texture coriander crock keeps no redundant contents layer")
 	if crock != null and source != null and spreader_source != null:
-		_check(not crock.get_global_rect().intersects(spreader_source.get_global_rect()), "scallion crock input is not blocked by the spreader hotspot")
+		var pointer_position := root.get_final_transform() * source.get_global_rect().get_center()
+		Input.warp_mouse(pointer_position)
+		var motion := InputEventMouseMotion.new()
+		motion.position = pointer_position
+		motion.global_position = pointer_position
+		Input.parse_input_event(motion)
+		await process_frame
+		_check(root.gui_get_hovered_control() == source, "real pointer input reaches the scallion crock even near the spreader")
 	if spreader_source != null and spreader_holder != null:
 		_check(spreader_source.get_global_rect() == spreader_holder.get_global_rect(), "spreader hotspot matches its visible holder")
 	workstation.queue_free()

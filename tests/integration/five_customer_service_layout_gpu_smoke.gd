@@ -1,10 +1,13 @@
 extends SceneTree
 
 const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const SETTINGS_PANEL_SCRIPT := preload("res://scripts/ui/game_settings_panel.gd")
 const CAPTURES := [
-	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/five_customer_service_layout_gpu_1920x1080.png"},
-	{"size": Vector2i(1366, 768), "path": "res://tmp/validation/five_customer_service_layout_gpu_1366x768.png"},
 	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/five_customer_service_layout_gpu_1280x720.png"},
+	{"size": Vector2i(1280, 800), "path": "res://tmp/validation/five_customer_service_layout_gpu_1280x800.png"},
+	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/five_customer_service_layout_gpu_1920x1080.png"},
+	{"size": Vector2i(2560, 1080), "path": "res://tmp/validation/five_customer_service_layout_gpu_2560x1080.png"},
+	{"size": Vector2i(3440, 1440), "path": "res://tmp/validation/five_customer_service_layout_gpu_3440x1440.png"},
 ]
 
 var _failures: Array[String] = []
@@ -27,6 +30,7 @@ func _run() -> void:
 	if session == null:
 		_finish()
 		return
+	session.set("_active_save_path", "res://tmp/validation/five_customer_layout_save.json")
 	session.call("begin_new_game")
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
@@ -46,9 +50,30 @@ func _run() -> void:
 		card_rects.append(order_panel.get_global_rect())
 	for left_index in 4:
 		_check(not card_rects[left_index].intersects(card_rects[left_index + 1]), "adjacent order cards %d and %d do not overlap" % [left_index + 1, left_index + 2])
+	for critical_label_path in [
+		"SafeArea/GlobalStatusLabel",
+		"SafeArea/BusinessDayTimerLabel",
+		"SafeArea/BottomStrip/ToolStatusLabel",
+		"TutorialGuideOverlay/GuideBubble/GuideLabel",
+	]:
+		var label := workstation.get_node(critical_label_path) as Label
+		_check(label.get_theme_font_size(&"font_size") >= 24, "%s keeps the 24 px design minimum" % critical_label_path)
 	for capture in CAPTURES:
 		await _capture(workstation, Vector2i(capture["size"]), str(capture["path"]))
 	workstation.queue_free()
+	await process_frame
+	var preview_settings := Dictionary(session.call("get_settings"))
+	preview_settings["ui_scale"] = 150.0
+	session.set("_settings", preview_settings)
+	var settings_panel := SETTINGS_PANEL_SCRIPT.new() as GameSettingsPanel
+	root.add_child(settings_panel)
+	await process_frame
+	settings_panel.open_with_session(session)
+	for capture in CAPTURES:
+		var size := Vector2i(capture["size"])
+		var settings_path := "res://tmp/validation/p1_settings_layout_gpu_%dx%d.png" % [size.x, size.y]
+		await _capture_settings(settings_panel, size, settings_path)
+	settings_panel.queue_free()
 	await process_frame
 	_finish()
 
@@ -92,6 +117,10 @@ func _capture(workstation: Control, window_size: Vector2i, path: String) -> void
 	for _frame in 8:
 		await process_frame
 	var viewport_rect := Rect2(Vector2.ZERO, Vector2(window_size))
+	var safe_area := workstation.get_node("SafeArea") as Control
+	var safe_rect: Rect2 = root.get_screen_transform() * safe_area.get_global_rect()
+	_check(viewport_rect.encloses(safe_rect), "worktable safe area stays on-screen at %s" % window_size)
+	_check(is_equal_approx(safe_rect.get_center().x, viewport_rect.get_center().x), "worktable remains horizontally centered at %s" % window_size)
 	for slot_index in 5:
 		var panel := workstation.get_node("SafeArea/ServiceCustomer%d/OrderPanel" % (slot_index + 1)) as Control
 		var screen_rect := root.get_screen_transform() * panel.get_global_rect()
@@ -101,6 +130,31 @@ func _capture(workstation: Control, window_size: Vector2i, path: String) -> void
 	var absolute_path := ProjectSettings.globalize_path(path)
 	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
 	_check(image.save_png(absolute_path) == OK and image.get_size() == window_size, "captured five-customer layout at %s" % window_size)
+
+
+func _capture_settings(settings_panel: GameSettingsPanel, window_size: Vector2i, path: String) -> void:
+	DisplayServer.window_set_size(window_size)
+	for _frame in 8:
+		await process_frame
+	var viewport_rect := Rect2(Vector2.ZERO, Vector2(window_size))
+	var screen_transform: Transform2D = root.get_screen_transform()
+	var panel := settings_panel.get("_panel") as PanelContainer
+	var scroll := settings_panel.get("_scroll") as ScrollContainer
+	var panel_rect: Rect2 = screen_transform * panel.get_global_rect()
+	var scroll_rect: Rect2 = screen_transform * scroll.get_global_rect()
+	_check(viewport_rect.encloses(panel_rect), "150%% settings panel stays inside the safe viewport at %s" % window_size)
+	_check(viewport_rect.encloses(scroll_rect), "settings scroll viewport is not clipped at %s" % window_size)
+	_check(is_equal_approx(panel_rect.get_center().x, viewport_rect.get_center().x), "settings panel remains centered at %s" % window_size)
+	if window_size.y <= 800:
+		_check(scroll.get_v_scroll_bar().visible, "low-height settings panel exposes vertical scrolling at %s" % window_size)
+	for action_id in GameSettingsPanel.ACTION_IDS:
+		var key_button := Dictionary(settings_panel.get("_key_buttons")).get(action_id) as Button
+		_check(key_button != null and key_button.get_theme_font_size(&"font_size") >= 36, "%s remap control respects 150%% text scaling at %s" % [action_id, window_size])
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	_check(image.save_png(absolute_path) == OK and image.get_size() == window_size, "captured settings layout at %s" % window_size)
 
 
 func _check(condition: bool, message: String) -> void:

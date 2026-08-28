@@ -4,6 +4,8 @@ extends "res://scripts/gameplay/workstation.gd"
 const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
+const OPENING_RESTOCK_CHECKLIST_SCRIPT := preload("res://scripts/ui/opening_restock_checklist.gd")
+const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
 const RESULT_QUALITY_ICON_PATHS := {
 	&"IntegrityMetric": "res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png",
 	&"ThicknessMetric": "res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png",
@@ -34,7 +36,7 @@ const PAYMENT_COIN_TEXTURES := {
 	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
 }
 const FORMAL_PAYMENT_COIN_SIZE := Vector2(44.0, 44.0)
-const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(842.0, 526.0)
+const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(770.0, 558.0)
 const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 38.0
 const FORMAL_PAYMENT_COIN_ROW_SPACING := 24.0
 const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 6
@@ -85,6 +87,7 @@ var _workshop_payment_display_hidden := false
 var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
 var _top_warning_tween: Tween
+var _opening_restock_checklist: OpeningRestockChecklist
 
 
 func _ready() -> void:
@@ -103,6 +106,8 @@ func _ready() -> void:
 	# but below modal result panels.
 	payment_coin_layer.z_index = 30
 	_formal_payment_total_rest_modulate = global_status_label.modulate
+	_opening_restock_checklist = OPENING_RESTOCK_CHECKLIST_SCRIPT.new()
+	$SafeArea.add_child(_opening_restock_checklist)
 	for station in [fresh_soy_station, cartoon_youtiao_fryer]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
@@ -117,6 +122,9 @@ func _ready() -> void:
 	multi_griddle_station.status_message.connect(_show_station_status)
 	multi_griddle_station.transient_warning_requested.connect(_show_top_warning)
 	multi_griddle_station.fold_feedback_requested.connect(_on_pancake_fold_feedback)
+	multi_griddle_station.ingredient_feedback_requested.connect(_on_ingredient_feedback)
+	if not cartoon_youtiao_fryer.raw_input_feedback_requested.is_connected(_on_ingredient_feedback):
+		cartoon_youtiao_fryer.raw_input_feedback_requested.connect(_on_ingredient_feedback)
 	if pancake_worktop_hotspots != null:
 		pancake_worktop_hotspots.status_message.connect(_show_station_status)
 	for service_slot in customer_service_slots:
@@ -131,6 +139,7 @@ func _ready() -> void:
 	for material_slot in _all_material_slots():
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
 		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
+		material_slot.hold_released.connect(_on_material_hold_released.bind(material_slot))
 		material_slot.short_clicked.connect(_on_material_short_clicked)
 	var session := get_node_or_null("/root/GameSession")
 	if session != null:
@@ -143,12 +152,17 @@ func _ready() -> void:
 		var production_signal := Signal(session, &"production_changed")
 		if not production_signal.is_connected(_on_production_shell_changed):
 			production_signal.connect(_on_production_shell_changed)
+		var settings_signal := Signal(session, &"settings_changed")
+		if not settings_signal.is_connected(_apply_gameplay_ui_settings):
+			settings_signal.connect(_apply_gameplay_ui_settings)
+		_apply_gameplay_ui_settings(Dictionary(session.call("get_settings")))
 	_restore_pending_payment()
 	_refresh_formal_shell()
 	_refresh_formal_area_visibility()
 	_refresh_material_slots()
 	_refresh_multi_griddle_mode()
 	_refresh_pancake_drag_sources()
+	_apply_pointer_cursors(self)
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
 
 
@@ -167,6 +181,18 @@ func _on_pancake_fold_feedback(_unit_index: int, feedback_kind: StringName) -> v
 	var duration := 0.08 if feedback_kind == &"snap_threshold" else 0.06
 	for device_id in Input.get_connected_joypads():
 		Input.start_joy_vibration(device_id, weak_strength, strong_strength, duration)
+
+
+func _on_ingredient_feedback(success: bool) -> void:
+	if success:
+		kitchen_audio.call("play_cue", &"pour")
+
+
+func _apply_pointer_cursors(root_node: Node) -> void:
+	if root_node is BaseButton and not root_node is ProductDragSource:
+		(root_node as BaseButton).mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	for child in root_node.get_children():
+		_apply_pointer_cursors(child)
 
 
 func _populate_result(score_result: Dictionary) -> void:
@@ -247,7 +273,59 @@ func _input(event: InputEvent) -> void:
 		reset_pancake()
 		get_viewport().set_input_as_handled()
 		return
+	if event is InputEventKey and event.pressed and not event.echo and not get_tree().paused and not is_blocking_modal_open():
+		for action_id in [&"tool_ladle", &"tool_spreader", &"tool_sauce_brush", &"tool_fold_package"]:
+			if event.is_action(action_id):
+				_activate_tool_shortcut(action_id)
+				get_viewport().set_input_as_handled()
+				return
 	super._input(event)
+
+
+func _activate_tool_shortcut(action_id: StringName) -> Dictionary:
+	var result: Dictionary
+	match action_id:
+		&"tool_ladle":
+			result = Dictionary(multi_griddle_station.call("select_worktop_tool", &"tool.pancake.ladle"))
+		&"tool_spreader":
+			var session := get_node_or_null("/root/GameSession")
+			var progression: RefCounted = session.call("progression_service") if session != null and session.has_method("progression_service") else null
+			var tool_id := &"tool.pancake.press_once" if progression != null and bool(progression.call("owns_growth", &"growth.automation.pancake.press_once")) else &"tool.pancake.spreader"
+			result = Dictionary(multi_griddle_station.call("select_worktop_tool", tool_id))
+		&"tool_sauce_brush":
+			result = Dictionary(multi_griddle_station.call("select_worktop_tool", &"stock.pancake.sauce.sweet_flour"))
+		&"tool_fold_package":
+			result = Dictionary(multi_griddle_station.call("trigger_fold_package"))
+		_:
+			return {"success": false, "reason": &"unknown_shortcut", "target": action_id}
+	if bool(result.get("success", false)):
+		var session := get_node_or_null("/root/GameSession")
+		if session != null and session.has_method("record_active_tutorial_action"):
+			session.call("record_active_tutorial_action", action_id)
+		return result
+	var message := str(result.get("message", _tool_shortcut_failure_message(StringName(result.get("reason", &"unknown")))))
+	tool_status_label.text = message
+	return result
+
+
+static func _tool_shortcut_failure_message(reason: StringName) -> String:
+	return {
+		&"griddle_busy": "当前鏊面制作中，不能使用面糊勺",
+		&"griddle_locked": "当前没有可用的煎饼鏊子",
+		&"tool_locked": "该工具尚未解锁",
+		&"stock_locked": "秘制酱料尚未解锁",
+		&"insufficient_stock": "秘制酱料库存不足",
+		&"wrong_stage": "当前制作阶段不能使用该工具",
+	}.get(reason, "当前无法使用该工具")
+
+
+func _apply_gameplay_ui_settings(settings: Dictionary) -> void:
+	var ui_scale := float(settings.get("ui_scale", 100.0))
+	# Gameplay controls use authored absolute hit rectangles. Scale text only so
+	# accessibility settings never move the griddle, ingredients, or drop zones.
+	UI_SCALE_APPLIER.apply_to($SafeArea, ui_scale, 24, false)
+	UI_SCALE_APPLIER.apply_to(five_area_infrastructure, ui_scale, 24, false)
+	UI_SCALE_APPLIER.apply_to(tutorial_guide_overlay, ui_scale, 24, false)
 
 
 func reset_pancake() -> void:
@@ -319,6 +397,7 @@ func _raise_result_presentation_input() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	_refresh_opening_restock_checklist()
 	_refresh_elapsed += delta
 	if _refresh_elapsed >= 0.10:
 		# Native dragging already performs synchronous Control hit testing for each
@@ -334,6 +413,19 @@ func _process(delta: float) -> void:
 			_refresh_multi_griddle_mode()
 	if serve_product_button != null:
 		serve_product_button.visible = false
+
+
+func _refresh_opening_restock_checklist() -> void:
+	if _opening_restock_checklist == null:
+		return
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or not session.has_method("customer_arrival_snapshot"):
+		_opening_restock_checklist.present([], 0.0, false)
+		return
+	var arrival := Dictionary(session.call("customer_arrival_snapshot"))
+	var active := StringName(arrival.get("phase", &"")) == &"restocking"
+	var tasks: Array = Array(session.call("opening_restock_tasks")) if active and session.has_method("opening_restock_tasks") else []
+	_opening_restock_checklist.present(tasks, float(arrival.get("restock_remaining_seconds", 0.0)), active)
 
 
 func _should_defer_business_day_expiration() -> bool:
@@ -481,12 +573,21 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, slot: Node
 		slot.reject_hold()
 		return
 	var result := Dictionary(session.call("advance_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")), delta))
+	slot.set_hold_progress(float(result.get("progress_ratio", 0.0)))
 	if int(result.get("completed_units", 0)) > 0:
 		tool_status_label.text = "%s补货 +%d" % [slot.material_label, int(result.get("completed_units", 0))]
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):
 		slot.reject_hold()
 		tool_status_label.text = _restock_failure_text(StringName(result.get("reason", &"")), result)
 	_refresh_material_slots()
+
+
+func _on_material_hold_released(source_ref: Dictionary, slot: Node) -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method("cancel_five_area_restock_hold"):
+		session.call("cancel_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")))
+	if slot != null and slot.has_method("set_hold_progress"):
+		slot.call("set_hold_progress", 0.0)
 
 
 func _on_material_short_clicked(source_ref: Dictionary) -> void:
@@ -627,7 +728,7 @@ func _tutorial_pancake_griddle_guide(session: Node, area_id: StringName) -> Dict
 		CompactGriddleUnit.State.IDLE:
 			return {
 				"target": _pancake_worktop_target("BatterLadleSource/HitButton", griddle),
-				"message": "第1步：按住面糊勺，拖到空鏊子倒入面糊",
+				"message": "第1步：单击拿起面糊勺，再在空鏊面按住倒入面糊",
 			}
 		CompactGriddleUnit.State.BATTER:
 			return {
@@ -638,7 +739,7 @@ func _tutorial_pancake_griddle_guide(session: Node, area_id: StringName) -> Dict
 			if not griddle.pancake_model.has_egg():
 				return {
 					"target": _pancake_worktop_target("EggCarton/Hotspot", griddle.pancake_surface),
-					"message": "第3步：把鸡蛋拖到饼面，再用摊饼器把蛋液摊开",
+					"message": "第3步：单击鸡蛋直接打到当前饼面，再用摊饼器摊开蛋液",
 				}
 			var first_side_heat := Dictionary(griddle.cooking_heat_status())
 			if bool(first_side_heat.get("charred", false)):
@@ -656,7 +757,7 @@ func _tutorial_pancake_griddle_guide(session: Node, area_id: StringName) -> Dict
 		CompactGriddleUnit.State.FOLDING:
 			return {"target": griddle.pancake_surface, "message": "第6步：正在自动折叠并装入纸袋"}
 		CompactGriddleUnit.State.READY:
-			return {"target": _tutorial_delivery_target(session, area_id), "message": "第6步：把完成的煎饼拖到订单商品上交付"}
+			return {"target": _tutorial_delivery_target(session, area_id), "message": "第6步：点击订单商品，交付完成的煎饼"}
 	return {}
 
 
@@ -788,24 +889,35 @@ func _refresh_attention_rail() -> void:
 	if session == null or not session.has_method("five_area_attention"):
 		return
 	var entries: Array = Array(session.call("five_area_attention"))
+	_apply_attention_entries(entries)
+
+
+func _apply_attention_entries(entries: Array) -> void:
 	var rail := $FiveAreaInfrastructure/AttentionRail
-	var summary_parts := PackedStringArray()
+	var all_parts := PackedStringArray()
 	var has_red_entry := false
 	for entry_value in entries:
 		var entry := Dictionary(entry_value)
 		has_red_entry = has_red_entry or StringName(entry.get("severity", &"yellow")) == &"red"
-		summary_parts.append("%s %.1f秒" % [
+		all_parts.append("%s %d秒" % [
 			_attention_label(StringName(entry.get("status_key", &"attention"))),
-			float(entry.get("seconds_to_irreversible_loss", 0.0)),
+			maxi(ceili(float(entry.get("seconds_to_irreversible_loss", 0.0))), 0),
 		])
+	var visible_parts := PackedStringArray()
+	for part_index in mini(all_parts.size(), 2):
+		visible_parts.append(all_parts[part_index])
+	if all_parts.size() > visible_parts.size():
+		visible_parts.append("另有%d项" % (all_parts.size() - visible_parts.size()))
 	for index in range(rail.get_child_count()):
 		var label := rail.get_child(index) as Label
-		label.visible = index == 0 and not summary_parts.is_empty()
+		if label == null:
+			continue
+		label.visible = index == 0 and not all_parts.is_empty()
 		if index != 0:
 			continue
-		label.text = "需处理：%s" % "  ·  ".join(summary_parts)
-		label.tooltip_text = "\n".join(summary_parts)
-		label.add_theme_color_override("font_color", Color("d94732") if has_red_entry else Color("b97813"))
+		label.text = "%s  ·  %s" % ["紧急" if has_red_entry else "注意", "  ·  ".join(visible_parts)]
+		label.tooltip_text = "待处理事项\n%s" % "\n".join(all_parts)
+		label.add_theme_color_override("font_color", Color("ff8f78") if has_red_entry else Color("ffd06a"))
 
 
 func _refresh_pancake_drag_sources() -> void:
@@ -925,10 +1037,15 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 	var source_ref := Dictionary(chosen.get("source_ref", {}))
 	var staged := Dictionary(session.call("stage_product_to_order", source_ref, order_id, item_index))
 	if not bool(staged.get("success", false)):
-		tool_status_label.text = "交付失败，成品未被消耗：%s" % str(staged.get("reason", &"unknown"))
+		var failure_message := str(staged.get("message", "交付失败，成品未被消耗：%s" % str(staged.get("reason", &"unknown"))))
+		tool_status_label.text = failure_message
+		if StringName(staged.get("reason", &"")) == &"tutorial_order_mismatch":
+			_show_top_warning(failure_message)
 		_refresh_formal_shell()
 		return
 	_on_clicked_product_consumed(source_ref)
+	if not bool(staged.get("will_match", false)):
+		_show_top_warning("订单内容不匹配；本单仍会结算并按现有规则扣分")
 	var refreshed := Dictionary(session.call("formal_order", order_id))
 	if not _formal_order_items_complete(refreshed):
 		var suffix := "（餐品与要求不符，结算时会扣分）" if not bool(staged.get("will_match", false)) else ""
@@ -1020,20 +1137,25 @@ func _on_customer_service_product_dropped(order_id: StringName, item_index: int,
 	_on_customer_service_focus_requested(order_id)
 	var staged := Dictionary(session.call("stage_product_to_order", source_ref, order_id, item_index))
 	if not bool(staged.get("success", false)):
-		tool_status_label.text = "鎷栨斁浜や粯澶辫触锛屽師閺婃垚鍝佷繚鐣欙細%s" % str(staged.get("reason", &"unknown"))
+		var failure_message := str(staged.get("message", "拖放交付失败，原成品保留：%s" % str(staged.get("reason", &"unknown"))))
+		tool_status_label.text = failure_message
+		if StringName(staged.get("reason", &"")) == &"tutorial_order_mismatch":
+			_show_top_warning(failure_message)
 		_refresh_formal_shell()
 		return
 	_on_clicked_product_consumed(source_ref)
+	if not bool(staged.get("will_match", false)):
+		_show_top_warning("订单内容不匹配；本单仍会结算并按现有规则扣分")
 	var refreshed := Dictionary(session.call("formal_order", order_id))
 	if not _formal_order_items_complete(refreshed):
-		tool_status_label.text = "宸叉嫋鏀句氦浠樼 %d 椤癸紱缁х画瀹屾垚鍏朵綑椁愬搧" % (item_index + 1)
+		tool_status_label.text = "已拖放交付第 %d 项；继续完成其余餐品" % (item_index + 1)
 		_refresh_formal_shell()
 		return
 	var completed := Dictionary(session.call("complete_order_delivery", order_id))
 	if bool(completed.get("success", false)):
 		_finish_clicked_order(completed)
 	else:
-		tool_status_label.text = "璁㈠崟瀹屾垚澶辫触锛?s" % str(completed.get("reason", &"unknown"))
+		tool_status_label.text = str(completed.get("message", "订单完成失败：%s" % str(completed.get("reason", &"unknown"))))
 
 
 func _finish_clicked_order(result: Dictionary) -> void:
@@ -1454,7 +1576,7 @@ func _refresh_pending_payment_button() -> void:
 	pending_payment_button.visible = has_pending_payment
 	pending_payment_button.disabled = not can_collect
 	pending_payment_button.mouse_filter = Control.MOUSE_FILTER_STOP if can_collect else Control.MOUSE_FILTER_IGNORE
-	pending_payment_button.text = "金币 ×%d\n点击全部收取" % pending_total
+	pending_payment_button.text = "待收款  %d 金币\n点击全部收取" % pending_total
 	pending_payment_button.tooltip_text = "收取所有尚未领取的顾客付款" if pending_total > 0 else "当前没有待收金币"
 
 

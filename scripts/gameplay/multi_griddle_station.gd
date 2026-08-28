@@ -5,6 +5,7 @@ signal status_message(message: String)
 signal transient_warning_requested(message: String)
 signal held_tool_changed(tool_id: StringName)
 signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
+signal ingredient_feedback_requested(success: bool)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
@@ -33,6 +34,8 @@ var _last_tree_paused := false
 var _last_synced_snapshot: Dictionary = {}
 var _selected_tool: StringName = &""
 var _reserved_ingredient_drag_stock_id: StringName = &""
+var _ingredient_feedback_tween: Tween
+var _target_preview_visible := false
 
 
 func _ready() -> void:
@@ -185,6 +188,28 @@ func _on_main_action(unit_index: int) -> void:
 	var result: Dictionary = Dictionary(unit.advance_main())
 	_sync_snapshot_to_session()
 	status_message.emit(str(result.get("message", "继续操作鏊子")))
+
+
+func trigger_fold_package() -> Dictionary:
+	var unit := _unit(_active_index)
+	if unit == null:
+		var unavailable := _tool_interaction_result(false, &"griddle_locked", "当前没有可用的煎饼鏊子", &"tool.pancake.fold_package")
+		status_message.emit(str(unavailable.message))
+		return unavailable
+	if unit.state not in [UNIT_SCRIPT.State.SECOND_SIDE, UNIT_SCRIPT.State.GARNISH]:
+		var wrong_stage := _tool_interaction_result(false, &"wrong_stage", "翻面并完成加料后才能折叠包装", &"tool.pancake.fold_package")
+		status_message.emit(str(wrong_stage.message))
+		return wrong_stage
+	var advanced := Dictionary(unit.advance_main())
+	_sync_snapshot_to_session()
+	var result := _tool_interaction_result(
+		bool(advanced.get("success", false)),
+		StringName(advanced.get("reason", &"" if bool(advanced.get("success", false)) else &"action_failed")),
+		str(advanced.get("message", "正在折叠并包装")),
+		&"tool.pancake.fold_package",
+	).merged(advanced, true)
+	status_message.emit(str(result.message))
+	return result
 
 
 func can_take_batter_from_ladle() -> bool:
@@ -390,40 +415,105 @@ func drop_on_unit(unit_index: int, source_ref: Dictionary, local_position: Vecto
 
 
 func one_click_ingredient_enabled(stock_id: StringName) -> bool:
-	if CLICK_INGREDIENT_STOCK_IDS.has(stock_id):
-		return true
-	if stock_id != EGG_STOCK_ID or _session == null or not _session.has_method("progression_service"):
+	return not _ingredient_type_for_stock(stock_id).is_empty()
+
+
+func ingredient_drag_enabled(stock_id: StringName) -> bool:
+	return false
+
+
+func auto_spread_egg_enabled() -> bool:
+	if _session == null or not _session.has_method("progression_service"):
 		return false
 	var progression: RefCounted = _session.call("progression_service")
 	return progression != null and bool(progression.call("owns_growth", ONE_CLICK_EGG_GROWTH_ID))
 
 
-func ingredient_drag_enabled(stock_id: StringName) -> bool:
-	# Eggs retain their precise drop position until the click-to-crack upgrade is
-	# purchased. All other worktop toppings are click-only.
-	return stock_id == EGG_STOCK_ID and not one_click_ingredient_enabled(stock_id)
+func preview_one_click_ingredient(stock_id: StringName) -> Dictionary:
+	var unit := _unit(_active_index)
+	if unit == null:
+		return _ingredient_result(false, &"griddle_locked", stock_id, "当前没有可用的煎饼鏊子")
+	var source_ref := {"source_kind": &"pancake_shared_ingredient", "stock_id": stock_id}
+	var local_position: Vector2 = unit.pancake_surface.size * 0.5
+	var validation := Dictionary(unit.validate_ingredient_drop(source_ref, local_position))
+	if not bool(validation.get("success", false)):
+		return _ingredient_result(false, StringName(validation.get("reason", &"invalid_target")), stock_id, _ingredient_failure_message(stock_id, validation))
+	if not _source_is_available_for_drop(source_ref, validation):
+		return _ingredient_result(false, &"source_unavailable", stock_id, "%s库存不足；请长按补货" % _stock_label(stock_id))
+	return _ingredient_result(true, &"", stock_id, "%s将加入%s" % [_stock_label(stock_id), unit.display_name()])
 
 
 func apply_one_click_ingredient(stock_id: StringName) -> Dictionary:
 	if not one_click_ingredient_enabled(stock_id):
-		return {"success": false, "reason": &"automation_locked", "stock_id": stock_id}
+		return _ingredient_result(false, &"not_pancake_ingredient", stock_id, "该物品不能直接加入煎饼")
 	var unit := _unit(_active_index)
 	if unit == null:
-		return {"success": false, "reason": &"griddle_locked", "stock_id": stock_id}
+		return _ingredient_result(false, &"griddle_locked", stock_id, "当前没有可用的煎饼鏊子")
 	var source_ref := {"source_kind": &"pancake_shared_ingredient", "stock_id": stock_id}
 	var result := Dictionary(drop_on_unit(_active_index, source_ref, unit.pancake_surface.size * 0.5))
 	if bool(result.get("success", false)):
-		return result.merged({"one_click": true}, true)
+		var automated_spread := {}
+		if stock_id == EGG_STOCK_ID and auto_spread_egg_enabled() and unit.has_method("auto_spread_egg"):
+			automated_spread = Dictionary(unit.call("auto_spread_egg"))
+			clear_held_tool()
+			_sync_snapshot_to_session()
+			status_message.emit("鸡蛋已自动摊匀")
+		var auto_spread_succeeded := bool(automated_spread.get("success", false))
+		var message := "鸡蛋已自动打入并摊匀" if auto_spread_succeeded else "%s已加入%s" % [_stock_label(stock_id), unit.display_name()]
+		return result.merged(_ingredient_result(true, &"", stock_id, message), true).merged({"one_click": true, "auto_spread": automated_spread}, true)
+	var message := _ingredient_failure_message(stock_id, result)
+	status_message.emit(message)
+	return result.merged({"success": false, "message": message, "target": _active_index}, true)
+
+
+func set_ingredient_target_preview(result: Dictionary, visible: bool) -> void:
+	var unit := _unit(_active_index)
+	if unit == null or unit.pancake_surface == null:
+		return
+	_target_preview_visible = visible
+	if not visible:
+		unit.pancake_surface.self_modulate = Color.WHITE
+		unit.pancake_surface.tooltip_text = ""
+		return
+	var valid := bool(result.get("success", false))
+	unit.pancake_surface.self_modulate = Color(0.82, 1.0, 0.82, 1.0) if valid else Color(1.0, 0.72, 0.68, 1.0)
+	unit.pancake_surface.tooltip_text = str(result.get("message", ""))
+
+
+func play_ingredient_feedback(success: bool) -> void:
+	var unit := _unit(_active_index)
+	if unit == null or unit.pancake_surface == null:
+		return
+	ingredient_feedback_requested.emit(success)
+	if _ingredient_feedback_tween != null and _ingredient_feedback_tween.is_valid():
+		_ingredient_feedback_tween.kill()
+	var surface: Control = unit.pancake_surface
+	surface.pivot_offset = surface.size * 0.5
+	surface.scale = Vector2.ONE
+	var reduce_motion := DisplayServer.has_method(&"accessibility_should_reduce_motion") and bool(DisplayServer.call(&"accessibility_should_reduce_motion"))
+	var feedback_color := Color(0.72, 1.0, 0.72, 1.0) if success else Color(1.0, 0.58, 0.54, 1.0)
+	_ingredient_feedback_tween = create_tween()
+	_ingredient_feedback_tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_ingredient_feedback_tween.tween_property(surface, "self_modulate", feedback_color, 0.06)
+	if not reduce_motion:
+		_ingredient_feedback_tween.parallel().tween_property(surface, "scale", Vector2.ONE * (1.015 if success else 0.985), 0.06)
+	_ingredient_feedback_tween.tween_property(surface, "self_modulate", Color.WHITE, 0.08)
+	if not reduce_motion:
+		_ingredient_feedback_tween.parallel().tween_property(surface, "scale", Vector2.ONE, 0.08)
+
+
+func _ingredient_result(success: bool, reason: StringName, stock_id: StringName, message: String) -> Dictionary:
+	return {"success": success, "reason": reason, "stock_id": stock_id, "message": message, "target": _active_index}
+
+
+func _ingredient_failure_message(stock_id: StringName, result: Dictionary) -> String:
 	match StringName(result.get("reason", &"")):
-		&"insufficient_stock", &"source_unavailable":
-			status_message.emit("%s库存不足；请长按小料补货" % _stock_label(stock_id))
-		&"portion_limit":
-			status_message.emit("同一种小料最多加2份")
-		&"outside_pancake":
-			status_message.emit("当前饼面没有可添加%s的位置" % _stock_label(stock_id))
-		&"wrong_stage":
-			status_message.emit("鸡蛋需在第一面加入；其他小料需翻面后加入")
-	return result
+		&"insufficient_stock", &"source_unavailable": return "%s库存不足；请长按补货" % _stock_label(stock_id)
+		&"portion_limit": return "同一种小料最多加2份"
+		&"outside_pancake": return "当前饼面没有可添加%s的位置" % _stock_label(stock_id)
+		&"wrong_stage": return "鸡蛋需在第一面加入；其他小料需翻面后加入"
+		&"griddle_locked": return "当前没有可用的煎饼鏊子"
+		_: return "当前不能添加%s：%s" % [_stock_label(stock_id), str(result.get("reason", &"unknown"))]
 
 
 func apply_clicked_youtiao(source_ref: Dictionary) -> Dictionary:
@@ -486,6 +576,16 @@ func is_batter_ladle_selected() -> bool:
 
 
 func select_worktop_tool(tool_id: StringName) -> Dictionary:
+	var result := _select_worktop_tool_impl(tool_id)
+	var success := bool(result.get("success", false))
+	result["success"] = success
+	result["reason"] = &"" if success else StringName(result.get("reason", &"action_failed"))
+	result["message"] = str(result.get("message", _tool_result_message(tool_id, result)))
+	result["target"] = tool_id
+	return result
+
+
+func _select_worktop_tool_impl(tool_id: StringName) -> Dictionary:
 	if tool_id == &"tool.pancake.ladle":
 		if not can_take_batter_from_ladle():
 			status_message.emit("鏊面制作中，暂时不能添加面糊")
@@ -553,6 +653,37 @@ func select_worktop_tool(tool_id: StringName) -> Dictionary:
 	_sync_snapshot_to_session()
 	status_message.emit("%s已自动刷好" % _stock_label(tool_id))
 	return automated.merged({"tool_id": tool_id, "unit_index": _active_index}, true)
+
+
+func _tool_result_message(tool_id: StringName, result: Dictionary) -> String:
+	if bool(result.get("success", false)):
+		return {
+			&"tool.pancake.ladle": "已拿起面糊勺",
+			&"tool.pancake.spreader": "已拿起摊饼器",
+			&"tool.pancake.press_once": "压饼器操作完成",
+			&"stock.pancake.sauce.sweet_flour": "秘制酱料已刷好",
+		}.get(tool_id, "工具已就绪")
+	return {
+		&"griddle_busy": "当前鏊面制作中，不能使用面糊勺",
+		&"griddle_locked": "当前没有可用的煎饼鏊子",
+		&"tool_locked": "该工具尚未解锁",
+		&"stock_locked": "秘制酱料尚未解锁",
+		&"insufficient_stock": "秘制酱料库存不足",
+		&"portion_limit": "同一种酱料最多加2份",
+		&"outside_pancake": "当前饼面没有可落酱的位置",
+		&"wrong_stage": "当前制作阶段不能使用该工具",
+		&"no_session": "当前游戏会话不可用",
+		&"unknown_tool": "未知工具",
+	}.get(StringName(result.get("reason", &"action_failed")), "当前无法使用该工具")
+
+
+static func _tool_interaction_result(success: bool, reason: StringName, message: String, target: StringName) -> Dictionary:
+	return {
+		"success": success,
+		"reason": reason,
+		"message": message,
+		"target": target,
+	}
 
 
 func _set_selected_tool(tool_id: StringName) -> void:

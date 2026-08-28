@@ -168,12 +168,11 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	# Sauce selection must win for a normal click; use a deliberate hold for
 	# restocking so a slightly slow click cannot be mistaken for replenishment.
 	hotspot.hold_threshold_seconds = 0.50 if source_kind == &"pancake_shared_sauce" else 0.20
-	hotspot.cancel_pending_on_mouse_exit = false
-	hotspot.native_drag_enabled = source_kind == &"pancake_shared_ingredient" and stock_id == EGG_STOCK_ID
-	# Only the basic egg interaction is drag-based; the small toppings are
-	# intentionally click-only and therefore have no drag preview.
-	var drag_texture: Texture2D = EGG_DRAG_PREVIEW if stock_id == EGG_STOCK_ID else null
-	hotspot.set_drag_preview_texture(drag_texture)
+	hotspot.cancel_pending_on_mouse_exit = true
+	# All raw pancake ingredients share one responsive click grammar. Finished
+	# products keep their existing native drag behaviour elsewhere.
+	hotspot.native_drag_enabled = false
+	hotspot.set_drag_preview_texture(null)
 	var drag_preview_size := Vector2(72.0, 72.0)
 	hotspot.set_drag_preview_size(drag_preview_size)
 	# Keep the whole egg above the pointer while dragging. The visual offset does
@@ -193,10 +192,8 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 	if not hotspot.hold_released.is_connected(_on_material_hold_released):
 		hotspot.hold_released.connect(_on_material_hold_released.bind(hotspot))
 	if source_kind == &"pancake_shared_ingredient":
-		if not hotspot.drag_started.is_connected(_on_material_drag_started):
-			hotspot.drag_started.connect(_on_material_drag_started.bind(hotspot))
-		if not hotspot.drag_ended.is_connected(_on_material_drag_ended):
-			hotspot.drag_ended.connect(_on_material_drag_ended.bind(hotspot))
+		if not hotspot.hover_changed.is_connected(_on_material_hover_changed):
+			hotspot.hover_changed.connect(_on_material_hover_changed.bind(hotspot))
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hit_texture, false)
 
 
@@ -244,13 +241,9 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	if hotspot.has_method("set_filled_slot_count"):
 		hotspot.call("set_filled_slot_count", count)
 	var label := _stock_label(stock_id)
-	var one_click_enabled := source_kind == &"pancake_shared_ingredient" and _one_click_ingredient_enabled(stock_id)
-	var drag_enabled := source_kind == &"pancake_shared_ingredient" and _ingredient_drag_enabled(stock_id)
 	var click_action := "点击打蛋" if stock_id == EGG_STOCK_ID else "点击加入煎饼"
 	var hint := (
 		"%s：%s；原地长按补货" % [label, click_action]
-		if one_click_enabled
-		else "%s：拖到鏊面；原地长按补货" % label
 	) if source_kind == &"pancake_shared_ingredient" else (
 		"%s：点击后在鏊面拖刷" % label
 		if unlimited
@@ -266,8 +259,8 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	# Empty but unlocked materials remain clickable for the hold-to-restock
 	# gesture, while dragging is available only when stock exists.
 	hotspot.configure({"source_kind": source_kind, "source_index": -1, "stock_id": stock_id}, hotspot.texture_normal, interactive, hint)
-	hotspot.native_drag_enabled = drag_enabled
-	hotspot.set_drag_available(interactive and count > 0 and drag_enabled)
+	hotspot.native_drag_enabled = false
+	hotspot.set_drag_available(false)
 	hotspot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if interactive else Control.CURSOR_FORBIDDEN
 
 
@@ -305,6 +298,8 @@ func _on_spreader_pressed() -> void:
 	var result := Dictionary(station.call("select_worktop_tool", tool_id))
 	if not bool(result.get("success", false)):
 		status_message.emit("当前无法使用压饼器" if tool_id == &"tool.pancake.press_once" else "当前无法使用摊饼器")
+	else:
+		_record_tutorial_action(&"tool_spreader")
 
 
 func _on_batter_ladle_button_down() -> void:
@@ -318,6 +313,8 @@ func _on_batter_ladle_button_down() -> void:
 	var result := Dictionary(station.call("select_worktop_tool", &"tool.pancake.ladle"))
 	if not bool(result.get("success", false)):
 		status_message.emit("当前鏊面无法添加面糊")
+	else:
+		_record_tutorial_action(&"tool_ladle")
 	_update_batter_ladle_holder_visual()
 
 
@@ -333,6 +330,8 @@ func _pour_batter(batter_amount: float) -> void:
 	var result := Dictionary(station.call("take_batter_from_ladle", batter_amount))
 	if not bool(result.get("success", false)):
 		status_message.emit("当前鏊面无法添加面糊")
+	else:
+		_record_tutorial_action(&"batter_added")
 	_update_batter_ladle_holder_visual()
 
 
@@ -343,20 +342,30 @@ func _on_material_short_clicked(source_ref: Dictionary, hotspot: ProductDragSour
 		return
 	if source_kind == &"pancake_shared_ingredient":
 		var station := _griddle_station()
-		if station != null and station.has_method("one_click_ingredient_enabled") and bool(station.call("one_click_ingredient_enabled", stock_id)):
+		if station != null and station.has_method("apply_one_click_ingredient"):
 			var result := Dictionary(station.call("apply_one_click_ingredient", stock_id))
+			hotspot.play_result_feedback(bool(result.get("success", false)))
+			if station.has_method("play_ingredient_feedback"):
+				station.call("play_ingredient_feedback", bool(result.get("success", false)))
+			if bool(result.get("success", false)):
+				_record_tutorial_action(&"ingredient_%s" % stock_id)
 			if not bool(result.get("success", false)):
 				hotspot.release_focus()
 			call_deferred("refresh_from_session")
 			return
-		status_message.emit("拖动%s到鏊面；原地长按可补货" % _stock_label(stock_id))
-		return
 	var station := _griddle_station()
 	if station == null or not station.has_method("select_worktop_tool"):
 		return
 	var result := Dictionary(station.call("select_worktop_tool", stock_id))
 	if not bool(result.get("success", false)):
 		hotspot.release_focus()
+	else:
+		_record_tutorial_action(&"tool_sauce_brush")
+
+
+func _record_tutorial_action(action_id: StringName) -> void:
+	if _session != null and _session.has_method("record_active_tutorial_action"):
+		_session.call("record_active_tutorial_action", action_id)
 
 
 func _on_material_drag_started(source_ref: Dictionary, hotspot: ProductDragSource) -> void:
@@ -411,6 +420,7 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, hotspot: P
 		return
 	var stock_id := StringName(source_ref.get("stock_id", &""))
 	var result := Dictionary(_session.call("advance_five_area_restock_hold", stock_id, delta))
+	hotspot.set_hold_progress(float(result.get("progress_ratio", 0.0)))
 	if int(result.get("completed_units", 0)) > 0:
 		status_message.emit("%s补货 +%d" % [_stock_label(stock_id), int(result.get("completed_units", 0))])
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):
@@ -419,8 +429,24 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, hotspot: P
 	refresh_from_session()
 
 
-func _on_material_hold_released(_source_ref: Dictionary, _hotspot: ProductDragSource) -> void:
+func _on_material_hold_released(source_ref: Dictionary, hotspot: ProductDragSource) -> void:
+	if _session != null and _session.has_method("cancel_five_area_restock_hold"):
+		_session.call("cancel_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")))
+	hotspot.set_hold_progress(0.0)
 	refresh_from_session()
+
+
+func _on_material_hover_changed(source_ref: Dictionary, hovering: bool, _hotspot: ProductDragSource) -> void:
+	var station := _griddle_station()
+	if station == null or not station.has_method("set_ingredient_target_preview"):
+		return
+	if not hovering:
+		station.call("set_ingredient_target_preview", {}, false)
+		return
+	var preview := Dictionary(station.call("preview_one_click_ingredient", StringName(source_ref.get("stock_id", &""))))
+	station.call("set_ingredient_target_preview", preview, true)
+	if not bool(preview.get("success", false)):
+		status_message.emit(str(preview.get("message", "当前不能投放该原料")))
 
 
 func _material_hotspot(hotspot_name: StringName) -> ProductDragSource:

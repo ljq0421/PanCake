@@ -73,9 +73,9 @@ func _hold_control(control: Control) -> void:
 	press.position = position
 	press.global_position = position
 	root.push_input(press)
-	# 0.2 seconds enters restock mode, then the configured 0.225-second
-	# per-crisp restock duration completes the first unit.
-	await create_timer(0.52).timeout
+	# 0.2 seconds enters restock mode, then the current 0.15-second per-crisp
+	# duration completes exactly one committed unit; the remainder is cancelled.
+	await create_timer(0.42).timeout
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.pressed = false

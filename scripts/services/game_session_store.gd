@@ -88,10 +88,19 @@ const DEFAULT_SETTINGS := {
 	"master_volume": 80.0,
 	"sfx_volume": 85.0,
 	"fullscreen": false,
+	"ui_scale": 100.0,
+	"drag_sensitivity": 100.0,
+	"key_bindings": {
+		"tool_ladle": KEY_1,
+		"tool_spreader": KEY_2,
+		"tool_sauce_brush": KEY_3,
+		"tool_fold_package": KEY_4,
+	},
 }
 
 var _save_data: Dictionary = {}
 var _active_save_path := SAVE_PATH
+var _active_settings_path := SETTINGS_PATH
 var _settings: Dictionary = DEFAULT_SETTINGS.duplicate(true)
 var _progression: RefCounted
 var _pancake_holding_tray: RefCounted
@@ -838,8 +847,26 @@ func skip_active_area_tutorial() -> Dictionary:
 	if bool(result.get("success", false)):
 		_sync_progression_to_save()
 		_touch_and_write()
+		result["refill"] = _replenish_playable_order_queue()
 		progression_changed.emit(five_area_progression_snapshot())
 		order_changed.emit({})
+	return result
+
+
+func record_active_tutorial_action(action_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	var tutorial := Dictionary(_progression.call("tutorial_snapshot"))
+	var kind := StringName(tutorial.get("active_kind", &""))
+	var tutorial_id := StringName(tutorial.get("active_id", &""))
+	if tutorial_id.is_empty():
+		return {"success": false, "reason": &"tutorial_not_active"}
+	var result := Dictionary(_progression.call("record_tutorial_action", kind, tutorial_id, action_id))
+	if bool(result.get("success", false)):
+		_sync_progression_to_save()
+		_touch_and_write()
+		progression_changed.emit(five_area_progression_snapshot())
 	return result
 
 
@@ -895,6 +922,72 @@ func _tutorial_identity_for_order(order: Dictionary) -> Dictionary:
 	return {"kind": kind, "tutorial_id": tutorial_id, "teaching_area_id": legacy_area_id}
 
 
+func _order_is_tutorial(order: Dictionary) -> bool:
+	return not StringName(_tutorial_identity_for_order(order).get("tutorial_id", &"")).is_empty()
+
+
+func _validate_attached_tutorial_order(order: Dictionary) -> Dictionary:
+	if not _order_is_tutorial(order):
+		return {"success": true, "will_match": true}
+	var order_id := StringName(order.get("order_id", &""))
+	var preview := Dictionary(_order_service.call("preview_order_match", order_id))
+	if not bool(preview.get("success", false)):
+		return preview
+	return preview if bool(preview.get("will_match", false)) else _tutorial_mismatch_result(preview)
+
+
+func _record_tutorial_delivery_failure(order: Dictionary, validation: Dictionary = {}) -> void:
+	_ensure_progression()
+	var identity := _tutorial_identity_for_order(order)
+	var kind := StringName(identity.get("kind", &""))
+	var tutorial_id := StringName(identity.get("tutorial_id", &""))
+	if tutorial_id.is_empty():
+		return
+	_progression.call("record_tutorial_action", kind, tutorial_id, &"delivery_attempted")
+	_progression.call("record_tutorial_order_validation", kind, tutorial_id, false, Array(validation.get("mismatch_reasons", [])))
+	_progression.call("record_tutorial_failure", kind, tutorial_id)
+	_sync_progression_to_save()
+	_touch_and_write()
+	progression_changed.emit(five_area_progression_snapshot())
+
+
+static func _tutorial_mismatch_result(preview: Dictionary) -> Dictionary:
+	var reasons := PackedStringArray(preview.get("mismatch_reasons", PackedStringArray()))
+	var labels := PackedStringArray()
+	for reason_value in reasons:
+		match StringName(reason_value):
+			&"product_id": labels.append("餐品种类")
+			&"heat_preference": labels.append("火候")
+			&"temperature_mode": labels.append("温度")
+			&"ingredient_ids": labels.append("配料")
+			&"sauce_ids": labels.append("酱料")
+			&"sugar_servings": labels.append("糖量")
+			&"missing_order_item", &"incomplete_quantity": labels.append("数量")
+			_: labels.append("订单要求")
+	var detail := "、".join(labels) if not labels.is_empty() else "订单要求"
+	return {
+		"success": false,
+		"reason": &"tutorial_order_mismatch",
+		"message": "教学订单尚未正确：%s不符。成品已保留，请修正后重试。" % detail,
+		"mismatch_reasons": reasons,
+		"target": &"order",
+		"product_retained": true,
+	}
+
+
+func _record_tutorial_delivery_success(order: Dictionary) -> void:
+	if not _order_is_tutorial(order):
+		return
+	_ensure_progression()
+	var identity := _tutorial_identity_for_order(order)
+	var kind := StringName(identity.get("kind", &""))
+	var tutorial_id := StringName(identity.get("tutorial_id", &""))
+	if tutorial_id.is_empty():
+		return
+	_progression.call("record_tutorial_action", kind, tutorial_id, &"delivery_attempted")
+	_progression.call("record_tutorial_order_validation", kind, tutorial_id, true, [])
+
+
 func begin_formal_order_serving(order_id: StringName) -> Dictionary:
 	_ensure_order_service()
 	var result: Dictionary = _order_service.call("begin_serving", order_id)
@@ -919,6 +1012,13 @@ func attach_formal_order_product(order_id: StringName, item_index: int, product:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
+	var order := formal_order(order_id)
+	var preview := Dictionary(_order_service.call("preview_attach_product", order_id, item_index, product))
+	if not bool(preview.get("success", false)):
+		return preview
+	if _order_is_tutorial(order) and not bool(preview.get("will_match", false)):
+		_record_tutorial_delivery_failure(order, preview)
+		return _tutorial_mismatch_result(preview)
 	var result: Dictionary = _order_service.call("attach_product", order_id, item_index, product)
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
@@ -956,11 +1056,14 @@ func preview_stage_product_to_order(source_ref: Dictionary, order_id: StringName
 	var order_preview := Dictionary(_order_service.call("preview_attach_product", order_id, item_index, preview_product))
 	if not bool(order_preview.get("success", false)):
 		return order_preview
+	var tutorial_order := _order_is_tutorial(order)
 	return {
 		"success": true,
 		"product": preview_product,
 		"will_match": bool(order_preview.get("will_match", false)),
 		"mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray()),
+		"tutorial_order": tutorial_order,
+		"tutorial_allowed": not tutorial_order or bool(order_preview.get("will_match", false)),
 		"source_ref": _normalized_product_source_ref(source_ref),
 	}
 
@@ -999,11 +1102,15 @@ func take_packaged_drink_inventory(stock_id: StringName, product_id: StringName)
 
 
 ## Moves exactly one available product into the requested order-card item.
-## Product mismatches are intentionally reported but never used as blockers.
+## Ordinary mismatches remain deliverable. Tutorial mismatches stop before the
+## source transaction removes or reserves the player's product.
 func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
 	var source_preview := preview_stage_product_to_order(source_ref, order_id, item_index)
 	if not bool(source_preview.get("success", false)):
 		return source_preview
+	if bool(source_preview.get("tutorial_order", false)) and not bool(source_preview.get("tutorial_allowed", false)):
+		_record_tutorial_delivery_failure(formal_order(order_id), source_preview)
+		return _tutorial_mismatch_result(source_preview)
 	_ensure_order_service()
 	_ensure_production_service()
 	_ensure_pancake_holding_tray()
@@ -1135,6 +1242,11 @@ func complete_order_delivery(order_id: StringName) -> Dictionary:
 			missing_items.append({"item_index": item_index, "product_id": StringName(item.get("product_id", &"")), "missing_quantity": required - placed})
 	if not missing_items.is_empty():
 		return {"success": false, "reason": &"tray_incomplete", "missing_items": missing_items}
+	var tutorial_validation := _validate_attached_tutorial_order(order)
+	if not bool(tutorial_validation.get("success", false)):
+		_record_tutorial_delivery_failure(order, tutorial_validation)
+		return tutorial_validation
+	_record_tutorial_delivery_success(order)
 	return settle_f3_order(order_id, false)
 
 
@@ -1746,6 +1858,9 @@ func settle_formal_order(order_id: StringName) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
+	var order := formal_order(order_id)
+	if _order_is_tutorial(order):
+		return settle_f3_order(order_id, false)
 	var result: Dictionary = _order_service.call("settle_order", order_id)
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
@@ -1763,6 +1878,11 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	var order := formal_order(order_id)
 	if StringName(order.get("order_id", &"")) != order_id:
 		return {"success": false, "reason": &"order_not_active"}
+	var tutorial_validation := _validate_attached_tutorial_order(order)
+	if not bool(tutorial_validation.get("success", false)):
+		_record_tutorial_delivery_failure(order, tutorial_validation)
+		return tutorial_validation
+	_record_tutorial_delivery_success(order)
 	var settlement: Dictionary = _order_service.call("settle_order", order_id, submit_incomplete)
 	if not bool(settlement.get("success", false)):
 		return settlement
@@ -1831,9 +1951,9 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	var tutorial_kind := StringName(tutorial_identity.get("kind", &""))
 	var tutorial_id := StringName(tutorial_identity.get("tutorial_id", &""))
 	var tutorial_completion := {}
-	# Teaching measures whether the player completed the interaction, not whether
-	# the delivered product matched the requested recipe or earned a passing score.
-	if not tutorial_id.is_empty():
+	# Tutorial gestures are tracked independently.  Only a recipe-correct order
+	# can resolve the tutorial as completed.
+	if not tutorial_id.is_empty() and bool(settlement.get("order_success", false)):
 		tutorial_completion = _progression.call("complete_tutorial", tutorial_kind, tutorial_id)
 	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
 	var primary_item: Dictionary = Dictionary(items[0]) if not items.is_empty() else {}
@@ -2318,6 +2438,7 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 	if capacity <= 0:
 		return {"success": false, "reason": &"restock_unavailable", "stock_id": stock_id}
 	var unit_seconds := maxf(float(definition.get("refill_seconds", 0.0)), 0.001)
+	var progress_seconds := maxf(float(Dictionary(_save_data.get("restock_progress", {})).get(key, 0.0)), 0.0)
 	return {
 		"success": true,
 		"reason": &"",
@@ -2327,9 +2448,59 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 		"unit_seconds": unit_seconds,
 		"current_stock": maxi(int(inventory.get(key, 0)), 0),
 		"capacity": capacity,
-		"progress_seconds": maxf(float(Dictionary(_save_data.get("restock_progress", {})).get(key, 0.0)), 0.0),
+		"progress_seconds": progress_seconds,
+		"progress_ratio": clampf(progress_seconds / unit_seconds, 0.0, 1.0),
 		"coins": maxi(int(_progression.get("coins")), 0),
 	}
+
+
+func cancel_five_area_restock_hold(stock_id: StringName) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save", "stock_id": stock_id}
+	var key := str(stock_id)
+	var progress_by_stock := Dictionary(_save_data.get("restock_progress", {})).duplicate(true)
+	var cancelled_seconds := maxf(float(progress_by_stock.get(key, 0.0)), 0.0)
+	if cancelled_seconds <= 0.0:
+		return {"success": true, "stock_id": stock_id, "cancelled_seconds": 0.0}
+	progress_by_stock[key] = 0.0
+	_save_data["restock_progress"] = progress_by_stock
+	_touch_and_write()
+	return {"success": true, "stock_id": stock_id, "cancelled_seconds": cancelled_seconds}
+
+
+func opening_restock_tasks() -> Array[Dictionary]:
+	var tasks: Array[Dictionary] = []
+	if not has_save():
+		return tasks
+	_ensure_progression()
+	var inventory := inventory_snapshot()
+	for stock_id in CATALOG.OPENING_RESTOCK_DISPLAY_ORDER:
+		if not bool(_progression.call("owns_stock", stock_id)):
+			continue
+		var definition := CATALOG.stock_definition(stock_id)
+		if definition.is_empty() or StringName(definition.get("category", &"")) == &"prepared_add_on":
+			continue
+		var unlimited := bool(definition.get("unlimited", false))
+		var capacity := 0 if unlimited else _restock_capacity(stock_id, definition)
+		if not unlimited and capacity <= 0:
+			continue
+		var target := 0 if unlimited else mini(capacity, 3)
+		var current := 0 if unlimited else maxi(int(inventory.get(str(stock_id), 0)), 0)
+		tasks.append({
+			"id": stock_id,
+			"label": str(definition.get("label", str(stock_id))),
+			"current": current,
+			"target": target,
+			"completed": unlimited or current >= target,
+			"is_next": false,
+			"is_unlimited": unlimited,
+		})
+	var next_assigned := false
+	for task in tasks:
+		if not next_assigned and not bool(task.get("completed", false)):
+			task["is_next"] = true
+			next_assigned = true
+	return tasks
 
 
 func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dictionary:
@@ -2374,9 +2545,8 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 	progress_by_stock[stock_key] = progress
 	_save_data["inventory"] = _normalize_inventory(inventory)
 	_save_data["restock_progress"] = progress_by_stock
-	_sync_progression_to_save()
-	_touch_and_write()
 	if completed_units > 0:
+		_sync_progression_to_save()
 		_record_business_event({
 			"event_id": _next_ledger_event_id(&"restock"),
 			"kind": &"stock_cost",
@@ -2387,6 +2557,8 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 			"details": {"unit_cost": unit_cost, "counts_cash_cost": true},
 		})
 		_sync_business_services_to_save()
+		# Gesture progress is transient. Persist once per completed unit batch,
+		# never once per frame while the progress ring is still filling.
 		_touch_and_write()
 		coins_changed.emit(int(_progression.get("coins")))
 		inventory_changed.emit(inventory_snapshot())
@@ -2913,7 +3085,7 @@ func abandon_formal_order(order_id: StringName, reason: StringName = &"refused")
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
 		_touch_and_write()
-		if reason not in [&"business_day_expired", &"timer_expired"]:
+		if reason not in [&"business_day_expired", &"timer_expired", &"tutorial_skipped"]:
 			result["refill"] = _replenish_playable_order_queue()
 	return result
 
@@ -3149,17 +3321,24 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 		settled_result["grade"] = _grade_for_score(float(settled_result.get("score", 0.0)))
 	var mastery_result: Dictionary = _progression.call("record_area_result", area_id, settled_result)
 	var tutorial_completion := {}
-	# Tutorial completion is about finishing the guided interaction path.  Its
-	# score still enters mastery/billing, but it is not a pass/fail gate.
+	# Legacy callers may still report an order here, but a tutorial can only
+	# complete when the stored formal order is recipe-correct (or the caller
+	# supplies an explicit successful validation result).
 	var formal_teaching_area_id: StringName = &""
+	var formal_tutorial_order_correct := false
 	if not formal_order_id.is_empty():
 		var formal_orders := Dictionary(formal_order_snapshot().get("orders", {}))
 		var formal_order := Dictionary(formal_orders.get(formal_order_id, formal_orders.get(str(formal_order_id), {})))
 		formal_teaching_area_id = StringName(formal_order.get("teaching_area_id", Dictionary(formal_order.get("metadata", {})).get("teaching_area_id", &"")))
-	if not formal_teaching_area_id.is_empty():
+		formal_tutorial_order_correct = StringName(formal_order.get("status", &"")) == &"completed"
+	if not formal_teaching_area_id.is_empty() and formal_tutorial_order_correct:
+		_progression.call("record_tutorial_order_validation", &"area", formal_teaching_area_id, true, [])
 		tutorial_completion = _progression.call("complete_tutorial", &"area", formal_teaching_area_id)
-	elif bool(order.get("tutorial_no_countdown", false)):
-		tutorial_completion = _progression.call("complete_tutorial", StringName(order.get("tutorial_kind", &"")), StringName(order.get("tutorial_id", &"")))
+	elif bool(order.get("tutorial_no_countdown", false)) and bool(result.get("order_success", false)):
+		var legacy_kind := StringName(order.get("tutorial_kind", &""))
+		var legacy_id := StringName(order.get("tutorial_id", &""))
+		_progression.call("record_tutorial_order_validation", legacy_kind, legacy_id, true, [])
+		tutorial_completion = _progression.call("complete_tutorial", legacy_kind, legacy_id)
 	var payment_coins := maxi(earned_coins, 0)
 	var material_cost := maxi(int(settled_result.get("material_cost", 0)), 0)
 	var reputation_delta := _reputation_delta_for_result(settled_result)
@@ -3250,14 +3429,56 @@ func get_settings() -> Dictionary:
 	return _settings.duplicate(true)
 
 
-func save_settings(master_volume: float, sfx_volume: float, fullscreen: bool) -> void:
-	_settings = {"master_volume": clampf(master_volume, 0.0, 100.0), "sfx_volume": clampf(sfx_volume, 0.0, 100.0), "fullscreen": fullscreen}
+func save_settings(
+	master_volume: float,
+	sfx_volume: float,
+	fullscreen: bool,
+	ui_scale: float = -1.0,
+	drag_sensitivity: float = -1.0,
+	key_bindings: Dictionary = {},
+) -> Dictionary:
+	var next_bindings := _normalized_key_bindings(
+		key_bindings if not key_bindings.is_empty() else Dictionary(_settings.get("key_bindings", DEFAULT_SETTINGS.key_bindings))
+	)
+	var conflict := _key_binding_conflict(next_bindings)
+	if not conflict.is_empty():
+		return {"success": false, "reason": &"key_binding_conflict", "actions": conflict}
+	var next_ui_scale := float(_settings.get("ui_scale", 100.0)) if ui_scale < 0.0 else _normalized_ui_scale(ui_scale)
+	var next_drag_sensitivity := float(_settings.get("drag_sensitivity", 100.0)) if drag_sensitivity < 0.0 else clampf(drag_sensitivity, 50.0, 150.0)
+	var next_settings := {
+		"master_volume": clampf(master_volume, 0.0, 100.0),
+		"sfx_volume": clampf(sfx_volume, 0.0, 100.0),
+		"fullscreen": fullscreen,
+		"ui_scale": next_ui_scale,
+		"drag_sensitivity": next_drag_sensitivity,
+		"key_bindings": next_bindings,
+	}
 	var config := ConfigFile.new()
-	config.set_value("audio", "master_volume", _settings.master_volume)
-	config.set_value("audio", "sfx_volume", _settings.sfx_volume)
-	config.set_value("display", "fullscreen", _settings.fullscreen)
-	config.save(SETTINGS_PATH)
+	config.set_value("audio", "master_volume", next_settings.master_volume)
+	config.set_value("audio", "sfx_volume", next_settings.sfx_volume)
+	config.set_value("display", "fullscreen", next_settings.fullscreen)
+	config.set_value("display", "ui_scale", next_settings.ui_scale)
+	config.set_value("input", "drag_sensitivity", next_settings.drag_sensitivity)
+	config.set_value("input", "key_bindings", next_settings.key_bindings)
+	var save_error := config.save(_active_settings_path)
+	if save_error != OK:
+		return {"success": false, "reason": &"settings_write_failed", "error": save_error}
+	_settings = next_settings
 	apply_settings()
+	return {"success": true, "settings": get_settings()}
+
+
+func default_key_bindings() -> Dictionary:
+	return Dictionary(DEFAULT_SETTINGS.key_bindings).duplicate(true)
+
+
+func key_binding_display_name(action_id: StringName) -> String:
+	return {
+		&"tool_ladle": "面糊勺",
+		&"tool_spreader": "摊饼器/压饼器",
+		&"tool_sauce_brush": "酱刷",
+		&"tool_fold_package": "折叠/包装",
+	}.get(action_id, str(action_id))
 
 
 func apply_settings() -> void:
@@ -3265,6 +3486,7 @@ func apply_settings() -> void:
 	_set_bus_volume(&"SFX", float(_settings.sfx_volume))
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if bool(_settings.fullscreen) else DisplayServer.WINDOW_MODE_WINDOWED)
+	_apply_key_bindings(Dictionary(_settings.get("key_bindings", DEFAULT_SETTINGS.key_bindings)))
 	settings_changed.emit(get_settings())
 
 
@@ -3717,9 +3939,8 @@ func _reconcile_unrecorded_settled_orders() -> void:
 		_touch_and_write()
 
 
-## Saves created before tutorial completion became outcome-independent can
-## contain a settled teaching order while the same tutorial remains active.
-## Treat the durable completed interaction as authoritative on load.
+## Repair only a recipe-correct settled tutorial.  A failed legacy settlement
+## is not evidence of tutorial success and must never be promoted to completed.
 func _reconcile_completed_tutorial_order() -> void:
 	if not has_save():
 		return
@@ -3736,6 +3957,7 @@ func _reconcile_completed_tutorial_order() -> void:
 		var identity := _tutorial_identity_for_order(order)
 		if (
 			StringName(order.get("state", &"")) != &"settled"
+			or StringName(order.get("status", &"")) != &"completed"
 			or StringName(identity.get("kind", &"")) != tutorial_kind
 			or StringName(identity.get("tutorial_id", &"")) != tutorial_id
 		):
@@ -3810,11 +4032,57 @@ func _write_save() -> void:
 func _load_settings() -> void:
 	_settings = DEFAULT_SETTINGS.duplicate(true)
 	var config := ConfigFile.new()
-	if config.load(SETTINGS_PATH) != OK:
+	if config.load(_active_settings_path) != OK:
 		return
 	_settings.master_volume = clampf(float(config.get_value("audio", "master_volume", DEFAULT_SETTINGS.master_volume)), 0.0, 100.0)
 	_settings.sfx_volume = clampf(float(config.get_value("audio", "sfx_volume", DEFAULT_SETTINGS.sfx_volume)), 0.0, 100.0)
 	_settings.fullscreen = bool(config.get_value("display", "fullscreen", DEFAULT_SETTINGS.fullscreen))
+	_settings.ui_scale = _normalized_ui_scale(float(config.get_value("display", "ui_scale", DEFAULT_SETTINGS.ui_scale)))
+	_settings.drag_sensitivity = clampf(float(config.get_value("input", "drag_sensitivity", DEFAULT_SETTINGS.drag_sensitivity)), 50.0, 150.0)
+	_settings.key_bindings = _normalized_key_bindings(Dictionary(config.get_value("input", "key_bindings", DEFAULT_SETTINGS.key_bindings)))
+	if not _key_binding_conflict(Dictionary(_settings.key_bindings)).is_empty():
+		_settings.key_bindings = Dictionary(DEFAULT_SETTINGS.key_bindings).duplicate(true)
+
+
+static func _normalized_ui_scale(value: float) -> float:
+	var choices: Array[float] = [100.0, 125.0, 150.0]
+	var closest: float = choices[0]
+	for choice: float in choices:
+		if absf(value - choice) < absf(value - closest):
+			closest = choice
+	return closest
+
+
+static func _normalized_key_bindings(value: Dictionary) -> Dictionary:
+	var result := Dictionary(DEFAULT_SETTINGS.key_bindings).duplicate(true)
+	for action_value in result.keys():
+		var action := str(action_value)
+		var requested := int(value.get(action, value.get(StringName(action), result[action_value])))
+		if requested > 0:
+			result[action] = requested
+	return result
+
+
+static func _key_binding_conflict(bindings: Dictionary) -> PackedStringArray:
+	var by_key := {}
+	for action_value in bindings:
+		var action := str(action_value)
+		var keycode := int(bindings[action_value])
+		if by_key.has(keycode):
+			return PackedStringArray([str(by_key[keycode]), action])
+		by_key[keycode] = action
+	return PackedStringArray()
+
+
+static func _apply_key_bindings(bindings: Dictionary) -> void:
+	for action_value in bindings:
+		var action := StringName(action_value)
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+		InputMap.action_erase_events(action)
+		var event := InputEventKey.new()
+		event.physical_keycode = int(bindings[action_value])
+		InputMap.action_add_event(action, event)
 
 
 func _set_bus_volume(bus_name: StringName, percent: float) -> void:

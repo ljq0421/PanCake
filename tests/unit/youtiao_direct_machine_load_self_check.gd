@@ -6,9 +6,12 @@ const FRYER_SCENE := preload("res://scenes/gameplay/cartoon_youtiao_fryer_toggle
 class FakeGameSession extends Node:
 	signal prepared_product_slots_changed(snapshot: Dictionary)
 
-	var inventory := {"stock.youtiao.plain_dough": 2}
+	var inventory := {"stock.youtiao.plain_dough": 2, "stock.chicken.cutlet_raw": 1}
 	var coins := 10
 	var finished_tray_unlocked := true
+	var chicken_unlocked := false
+	var chicken_loaded_count := 0
+	var restock_cancel_calls := 0
 	var machine_snapshot_calls := 0
 	var prepared_products: Array[Dictionary] = []
 	var machine := {
@@ -26,7 +29,7 @@ class FakeGameSession extends Node:
 	func five_area_progression_snapshot() -> Dictionary:
 		return {
 			"unlocked_area_ids": [&"area.youtiao"],
-			"unlocked_product_ids": [&"product.youtiao.plain"],
+			"unlocked_product_ids": [&"product.youtiao.plain", &"product.chicken.cutlet"] if chicken_unlocked else [&"product.youtiao.plain"],
 			"owned_growth_ids": [&"growth.capacity.youtiao_finished_tray"] if finished_tray_unlocked else [],
 		}
 
@@ -43,6 +46,13 @@ class FakeGameSession extends Node:
 		machine["quantity"] = int(machine.get("quantity", 0)) + quantity
 		machine["state"] = &"loaded"
 		machine["occupied_slot_indices"] = range(int(machine.get("quantity", 0)))
+		return {"success": true, "reason": &""}
+
+	func load_f3_chicken(quantity: int) -> Dictionary:
+		if int(inventory.get("stock.chicken.cutlet_raw", 0)) < quantity:
+			return {"success": false, "reason": &"insufficient_stock"}
+		inventory["stock.chicken.cutlet_raw"] = int(inventory.get("stock.chicken.cutlet_raw", 0)) - quantity
+		chicken_loaded_count += quantity
 		return {"success": true, "reason": &""}
 
 	func store_ready_youtiao_slot(_slot_id: StringName, source_index: int) -> Dictionary:
@@ -87,6 +97,10 @@ class FakeGameSession extends Node:
 		coins -= 2
 		return {"success": true, "reason": &"", "completed_units": 1, "auto_stopped": false}
 
+	func cancel_five_area_restock_hold(_stock_id: StringName) -> Dictionary:
+		restock_cancel_calls += 1
+		return {"success": true, "reason": &"", "completed_units": 0}
+
 
 var failures := PackedStringArray()
 
@@ -105,6 +119,23 @@ func _run() -> void:
 	var fryer := FRYER_SCENE.instantiate()
 	root.add_child(fryer)
 
+	fryer.call("_perform_machine_click")
+	_check(int(session.machine.get("quantity", 0)) == 1 and int(session.inventory.get("stock.youtiao.plain_dough", 0)) == 1, "a short click directly loads one raw youtiao into the current fryer")
+	session.machine["state"] = &"idle"
+	session.machine["quantity"] = 0
+	session.machine["occupied_slot_indices"] = []
+	session.inventory["stock.youtiao.plain_dough"] = 2
+	session.chicken_unlocked = true
+	session.machine["tier"] = 2
+	fryer.call("refresh_from_session")
+	fryer.set("_machine_lane", &"right")
+	fryer.call("_perform_machine_click")
+	_check(session.chicken_loaded_count == 1 and int(session.inventory.get("stock.chicken.cutlet_raw", 0)) == 0, "the same short-click grammar directly loads one raw chicken cutlet into the current fryer lane")
+	session.chicken_unlocked = false
+	session.machine["tier"] = 0
+	fryer.set("_machine_lane", &"left")
+	fryer.call("refresh_from_session")
+
 	fryer.call("_begin_machine_gesture")
 	fryer.call("_advance_machine_hold", 0.20)
 	fryer.call("_advance_machine_hold", 0.25)
@@ -118,6 +149,14 @@ func _run() -> void:
 	fryer.call("_advance_machine_hold", 0.25)
 	_check(int(session.machine.get("quantity", 0)) == 2, "holding the fryer restocks and loads a dough blank when stock is empty")
 	_check(int(session.inventory.get("stock.youtiao.plain_dough", 0)) == 0 and session.coins == 8, "automatic restock charges once and leaves no board inventory behind")
+	fryer.set("_machine_press_active", true)
+	fryer.set("_machine_hold_active", true)
+	fryer.call("_cancel_machine_gesture")
+	_check(session.restock_cancel_calls == 1, "moving out during a long press cancels the unfinished restock cycle")
+	fryer.call("_apply_interaction_settings", {"drag_sensitivity": 50.0})
+	_check(is_equal_approx(float(fryer.get("_machine_cancel_tolerance_pixels")), 4.0), "minimum drag sensitivity uses the tight long-press cancel tolerance")
+	fryer.call("_apply_interaction_settings", {"drag_sensitivity": 150.0})
+	_check(is_equal_approx(float(fryer.get("_machine_cancel_tolerance_pixels")), 12.0), "maximum drag sensitivity uses the relaxed long-press cancel tolerance")
 
 	session.machine["state"] = &"ready_to_collect"
 	session.machine["quantity"] = 1

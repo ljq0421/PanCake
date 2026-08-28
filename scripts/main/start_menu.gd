@@ -1,6 +1,8 @@
 extends Control
 
 const GAME_SCENE := "res://scenes/main/main.tscn"
+const SETTINGS_PANEL_SCRIPT := preload("res://scripts/ui/game_settings_panel.gd")
+const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
 
 @onready var continue_button: Button = %ContinueButton
 @onready var new_game_button: Button = %NewGameButton
@@ -28,6 +30,7 @@ var _loading := false
 var _load_request_started := false
 var _pending_new_game := false
 var _loading_path := GAME_SCENE
+var _shared_settings_panel: GameSettingsPanel
 
 
 func _ready() -> void:
@@ -41,12 +44,16 @@ func _ready() -> void:
 	new_game_button.pressed.connect(_request_new_game)
 	settings_button.pressed.connect(_open_settings)
 	quit_button.pressed.connect(_quit_game)
-	settings_cancel_button.pressed.connect(_close_settings)
-	settings_save_button.pressed.connect(_save_settings)
 	new_game_cancel_button.pressed.connect(_close_new_game_confirmation)
 	new_game_confirm_button.pressed.connect(_start_new_game)
-	master_slider.value_changed.connect(_on_master_volume_changed)
-	sfx_slider.value_changed.connect(_on_sfx_volume_changed)
+	settings_overlay.visible = false
+	_shared_settings_panel = SETTINGS_PANEL_SCRIPT.new()
+	add_child(_shared_settings_panel)
+	_shared_settings_panel.closed.connect(_on_shared_settings_closed)
+	var settings_signal := Signal(_session, &"settings_changed")
+	if not settings_signal.is_connected(_apply_ui_settings):
+		settings_signal.connect(_apply_ui_settings)
+	_apply_ui_settings(Dictionary(_session.call("get_settings")))
 	_refresh_save_state()
 	call_deferred("_focus_primary_action")
 
@@ -68,7 +75,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _loading:
 		get_viewport().set_input_as_handled()
 		return
-	if settings_overlay.visible:
+	if _shared_settings_panel != null and _shared_settings_panel.is_open():
 		_close_settings()
 	elif new_game_overlay.visible:
 		_close_new_game_confirmation()
@@ -202,23 +209,27 @@ func _set_menu_actions_disabled(disabled: bool) -> void:
 
 
 func _open_settings() -> void:
-	var current: Dictionary = _session.call("get_settings")
-	master_slider.value = float(current.master_volume)
-	sfx_slider.value = float(current.sfx_volume)
-	fullscreen_check.button_pressed = bool(current.fullscreen)
-	_update_volume_labels()
-	settings_overlay.visible = true
-	master_slider.grab_focus()
+	_shared_settings_panel.open_with_session(_session)
 
 
 func _close_settings() -> void:
-	settings_overlay.visible = false
-	settings_button.grab_focus()
+	if _shared_settings_panel != null and _shared_settings_panel.is_open():
+		_shared_settings_panel.close_without_saving()
+	else:
+		settings_button.grab_focus()
 
 
 func _save_settings() -> void:
 	_session.call("save_settings", master_slider.value, sfx_slider.value, fullscreen_check.button_pressed)
 	_close_settings()
+
+
+func _on_shared_settings_closed(_saved: bool) -> void:
+	settings_button.grab_focus()
+
+
+func _apply_ui_settings(settings: Dictionary) -> void:
+	UI_SCALE_APPLIER.apply_to(self, float(settings.get("ui_scale", 100.0)))
 
 
 func _on_master_volume_changed(_value: float) -> void:

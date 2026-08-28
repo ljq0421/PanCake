@@ -18,7 +18,7 @@ var _display_unlocked := false
 func _ready() -> void:
 	hold_enabled = not unlimited
 	hold_threshold_seconds = 0.2
-	cancel_pending_on_mouse_exit = false
+	cancel_pending_on_mouse_exit = true
 	super._ready()
 
 
@@ -63,5 +63,5 @@ func _hint_text(count: int, capacity: int, unlocked: bool) -> String:
 	if count <= 0:
 		return "%s：长按 0.2 秒补货" % material_label
 	if count >= capacity:
-		return "%s：库存已满；拖入设备，短按可选择自动投料配方" % material_label
-	return "%s：拖入设备；原地长按补货，短按选择自动投料配方" % material_label
+		return "%s：库存已满；点击直接投入当前设备" % material_label
+	return "%s：点击直接投入当前设备；原地长按补货" % material_label

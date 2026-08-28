@@ -80,34 +80,38 @@ func _run() -> void:
 	await process_frame
 	hotspots.bind_session(session)
 
-	_start_drag(source)
-	await process_frame
-	_check(int(session.inventory.get(str(STOCK_ID), -1)) == 0, "drag start immediately removes one crisp from inventory")
-	_check(visual.texture == HOTSPOTS_SCRIPT.BAOCUI_EMPTY_TRAY, "drag start immediately shows one fewer crisp in the tray")
-
-	source.drag_ended.emit(source.source_ref(), false)
-	await process_frame
-	_check(int(session.inventory.get(str(STOCK_ID), -1)) == 1, "an unsuccessful drag restores its reserved crisp")
-	_check(visual.texture == hotspots.baocui_tray_textures.front(), "an unsuccessful drag restores the tray artwork")
-
 	var unit: CompactGriddleUnit = station.units[0]
 	unit.begin_order({})
-	unit.state = CompactGriddleUnit.State.FIRST_SIDE
-	_start_drag(source)
-	var placed := Dictionary(station.drop_on_unit(0, source.source_ref(), unit.pancake_surface.size * 0.5))
-	_check(bool(placed.get("success", false)), "the last reserved crisp can still be placed after visible inventory reaches zero")
-	_check(int(session.inventory.get(str(STOCK_ID), -1)) == 0, "a successful drop does not consume the reserved crisp twice")
-	_check(unit.ingredient_model.count_type(IngredientModel.BAOCUI) == 1, "the reserved crisp reaches the pancake model")
+	var pressed := Dictionary(unit.use_press_spreader())
+	unit.advance_main()
+	_check(bool(pressed.get("success", false)) and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "direct-click test pancake reaches a legal filling stage")
+	_check(not source.native_drag_enabled, "raw ingredient source never starts a native drag reservation")
+	var preview := Dictionary(station.preview_one_click_ingredient(STOCK_ID))
+	_check(
+		bool(preview.get("success", false))
+		and preview.has("reason")
+		and preview.has("message")
+		and preview.has("target"),
+		"ingredient target preview exposes the shared interaction-result contract"
+	)
+	hotspots.call("_on_material_short_clicked", source.source_ref(), source)
+	await process_frame
+	_check(int(session.inventory.get(str(STOCK_ID), -1)) == 0, "one ingredient click commits exactly one inventory unit")
+	_check(visual.texture == HOTSPOTS_SCRIPT.BAOCUI_EMPTY_TRAY, "successful click immediately refreshes the tray artwork")
+	_check(unit.ingredient_model.count_type(IngredientModel.BAOCUI) == 1, "clicked crisp reaches the current griddle at its default point")
+	var rejected := Dictionary(station.apply_one_click_ingredient(STOCK_ID))
+	_check(
+		not bool(rejected.get("success", false))
+		and StringName(rejected.get("reason", &"")) == &"source_unavailable"
+		and int(session.inventory.get(str(STOCK_ID), -1)) == 0
+		and unit.ingredient_model.count_type(IngredientModel.BAOCUI) == 1,
+		"illegal click reports stock shortage without changing inventory or the griddle"
+	)
 
 	hotspots.queue_free()
 	station.queue_free()
 	session.queue_free()
 	_finish()
-
-
-func _start_drag(source: ProductDragSource) -> void:
-	source.begin_gesture(Vector2.ZERO)
-	source.update_gesture(Vector2(source.drag_threshold_pixels + 1.0, 0.0), false)
 
 
 func _solid_texture(color: Color) -> Texture2D:

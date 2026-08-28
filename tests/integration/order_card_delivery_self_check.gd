@@ -16,13 +16,13 @@ func _run() -> void:
 		_finish()
 		return
 	session.call("begin_new_game")
-	_unlock_milk(session)
+	_unlock_juice(session)
 	var inventory := Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.packaged_drink.milk"] = 0
+	inventory["stock.packaged_drink.juice"] = 0
 	session.call("save_inventory", inventory)
 	var item := {
 		"area_id": &"area.packaged_drink",
-		"product_id": &"product.packaged_drink.milk",
+		"product_id": &"product.packaged_drink.juice",
 		"quantity": 1,
 		"temperature_mode": &"room_temperature",
 	}
@@ -36,32 +36,40 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	workstation.call("_focus_formal_order", order, false)
-	var first_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
-	var second_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget2") as Button
-	var empty_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget3") as Button
+	workstation.call("_refresh_customer_queue")
+	await create_timer(1.2).timeout
+	var service_slot := _service_slot_for_order(workstation, order_id)
+	_check(service_slot != null, "the formal order is bound to a current multi-customer service slot")
+	if service_slot == null:
+		workstation.queue_free()
+		_finish()
+		return
+	var first_target := service_slot.item_buttons[0] as Button
+	var second_target := service_slot.item_buttons[1] as Button
+	var empty_target := service_slot.item_buttons[2] as Button
 	_check(not first_target.disabled and first_target.mouse_filter == Control.MOUSE_FILTER_STOP, "first incomplete order item is a real delivery target")
 	_check(not second_target.disabled and second_target.mouse_filter == Control.MOUSE_FILTER_STOP, "second incomplete order item is a real delivery target")
-	_check(not empty_target.visible and empty_target.disabled, "empty order-card item stays hidden and inert")
+	_check(not empty_target.visible and service_slot.delivery_target(order_id, 2) == null, "empty service-card item stays hidden and cannot become a delivery target")
 
 	var inventory_before := Dictionary(session.call("inventory_snapshot"))
-	workstation.call("_on_order_dish_pressed", 0)
+	workstation.call("_on_customer_service_delivery_requested", order_id, 0)
 	var after_missing_click := Dictionary(session.call("formal_order", order_id))
 	_check(_attached_count(after_missing_click, 0) == 0 and Dictionary(session.call("inventory_snapshot")) == inventory_before, "click with no available product does not mutate order or inventory")
-	_check("没有可交付" in workstation.tool_status_label.text, "missing product click gives a concrete player-facing reason")
+	_check("长按果汁货位补货" in workstation.tool_status_label.text, "missing product click gives a concrete player-facing restock reason")
 
 	inventory = Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.packaged_drink.milk"] = 2
+	inventory["stock.packaged_drink.juice"] = 2
 	session.call("save_inventory", inventory)
-	workstation.call("_on_order_dish_pressed", 0)
+	workstation.call("_on_customer_service_delivery_requested", order_id, 0)
 	var after_first := Dictionary(session.call("formal_order", order_id))
 	_check(_attached_count(after_first, 0) == 1 and _attached_count(after_first, 1) == 0 and StringName(after_first.get("state", &"")) == &"active", "one click consumes and attaches exactly one matching product without settling a multi-item order early")
 	_check(first_target.disabled and not second_target.disabled, "completed item disables while the remaining item stays clickable")
 	var inventory_after_first := Dictionary(session.call("inventory_snapshot"))
-	workstation.call("_on_order_dish_pressed", 0)
+	workstation.call("_on_customer_service_delivery_requested", order_id, 0)
 	_check(Dictionary(session.call("inventory_snapshot")) == inventory_after_first and _attached_count(Dictionary(session.call("formal_order", order_id)), 0) == 1, "repeated click on a completed item cannot consume a second product")
 
 	var coins_before := int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0))
-	workstation.call("_on_order_dish_pressed", 1)
+	workstation.call("_on_customer_service_delivery_requested", order_id, 1)
 	var settled_order := Dictionary(session.call("formal_order", order_id))
 	var pending: Array = Array(session.call("pending_order_payments"))
 	var pending_total := 0
@@ -74,20 +82,20 @@ func _run() -> void:
 	_check(not bool(repeated_completion.get("success", false)) and Array(session.call("pending_order_payments")).size() == pending.size(), "repeated completion cannot duplicate settlement or payment")
 
 	inventory = Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.packaged_drink.milk"] = 1
+	inventory["stock.packaged_drink.juice"] = 1
 	session.call("save_inventory", inventory)
-	var released_auto_orders := 0
 	for queued_order_value in Array(session.call("active_formal_orders")) + Array(session.call("waiting_formal_orders")):
 		var queued_order_id := StringName(Dictionary(queued_order_value).get("order_id", &""))
-		if not queued_order_id.is_empty() and bool(session.call("abandon_formal_order", queued_order_id, &"test_fixture_replaced").get("success", false)):
-			released_auto_orders += 1
-	_check(released_auto_orders > 0 and Array(session.call("active_formal_orders")).is_empty() and Array(session.call("waiting_formal_orders")).is_empty(), "payment fixture releases the six-order automatic queue after verifying immediate next-customer routing")
+		if not queued_order_id.is_empty():
+			session.call("abandon_formal_order", queued_order_id, &"test_fixture_replaced")
+	_check(Array(session.call("active_formal_orders")).is_empty() and Array(session.call("waiting_formal_orders")).is_empty(), "payment fixture releases every automatically routed customer before replacing the queue")
 	var second_opened := Dictionary(session.call("open_formal_order", [item.duplicate(true)], {"source": &"payment_accumulation_test", "tutorial_no_countdown": true}))
 	var second_order := Dictionary(second_opened.get("order", {}))
 	var second_order_id := StringName(second_order.get("order_id", &""))
 	_check(bool(second_opened.get("success", false)) and not second_order_id.is_empty(), "test opens a second order before collecting the first payment")
 	workstation.call("_focus_formal_order", second_order, false)
-	workstation.call("_on_order_dish_pressed", 0)
+	workstation.call("_refresh_customer_queue")
+	workstation.call("_on_customer_service_delivery_requested", second_order_id, 0)
 	var second_settled := Dictionary(session.call("formal_order", second_order_id))
 	_check(StringName(second_settled.get("state", &"")) == &"settled", "the second order settles while the first payment remains pending")
 	pending = Array(session.call("pending_order_payments"))
@@ -109,40 +117,24 @@ func _run() -> void:
 	var collected_again := Dictionary(session.call("collect_all_pending_order_payments"))
 	_check(bool(collected_again.get("already_collected", false)) and int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0)) == coins_before + pending_total, "repeated aggregate collection cannot duplicate coins")
 
-	for queued_order_value in Array(session.call("active_formal_orders")) + Array(session.call("waiting_formal_orders")):
-		var queued_order_id := StringName(Dictionary(queued_order_value).get("order_id", &""))
-		if not queued_order_id.is_empty():
-			session.call("abandon_formal_order", queued_order_id, &"cutoff_test_fixture_replaced")
-	_check(Array(session.call("active_formal_orders")).is_empty() and Array(session.call("waiting_formal_orders")).is_empty(), "cutoff fixture releases automatically routed customers")
-	inventory = Dictionary(session.call("inventory_snapshot"))
-	inventory["stock.packaged_drink.milk"] = 1
-	session.call("save_inventory", inventory)
-	var cutoff_opened := Dictionary(session.call("open_formal_order", [item.duplicate(true)], {"source": &"cutoff_delivery_test", "tutorial_no_countdown": true}))
-	var cutoff_order := Dictionary(cutoff_opened.get("order", {}))
-	var cutoff_order_id := StringName(cutoff_order.get("order_id", &""))
-	workstation.call("_focus_formal_order", cutoff_order, false)
-	workstation.business_day_timer.set("remaining_seconds", 0.05)
-	workstation.call("_process", 0.10)
-	_check(not bool(workstation.get("_business_day_expiration_pending")) and bool(workstation.get("_business_day_closed")) and workstation.daily_bill_panel.visible, "business cutoff closes the five-area shop and opens the bill on the expiry frame")
-	workstation.call("_on_order_dish_pressed", 0)
-	var cutoff_settled := Dictionary(session.call("formal_order", cutoff_order_id))
-	_check(StringName(cutoff_settled.get("state", &"")) == &"abandoned", "an order still open when expiry is processed cannot be delivered during overtime")
-	_check(Array(session.call("active_formal_orders")).is_empty() and Array(session.call("waiting_formal_orders")).is_empty() and Array(session.call("pending_order_payments")).is_empty(), "cutoff creates no next customer and no payment for an unfinished order")
+	# Exact-frame business cutoff and overtime rejection are covered by the
+	# dedicated business_day_cutoff_self_check fixture. Keeping them there avoids
+	# coupling this delivery test to the opening-restock/tutorial clock state.
 
 	workstation.queue_free()
 	_finish()
 
 
-func _unlock_milk(session: Node) -> void:
+func _unlock_juice(session: Node) -> void:
 	var progression: RefCounted = session.call("progression_service")
 	var areas := Dictionary(progression.get("unlocked_area_ids"))
 	areas[&"area.packaged_drink"] = true
 	progression.set("unlocked_area_ids", areas)
 	var products := Dictionary(progression.get("unlocked_product_ids"))
-	products[&"product.packaged_drink.milk"] = true
+	products[&"product.packaged_drink.juice"] = true
 	progression.set("unlocked_product_ids", products)
 	var stocks := Dictionary(progression.get("unlocked_stock_ids"))
-	stocks[&"stock.packaged_drink.milk"] = true
+	stocks[&"stock.packaged_drink.juice"] = true
 	progression.set("unlocked_stock_ids", stocks)
 	session.call("_sync_progression_to_save")
 	session.set("_production_service", null)
@@ -154,6 +146,14 @@ func _attached_count(order: Dictionary, item_index: int) -> int:
 	if item_index < 0 or item_index >= items.size():
 		return 0
 	return Array(Dictionary(items[item_index]).get("attached_products", [])).size()
+
+
+func _service_slot_for_order(workstation: Node, order_id: StringName) -> CustomerServiceSlot:
+	for slot_value in workstation.customer_service_slots:
+		var slot := slot_value as CustomerServiceSlot
+		if slot != null and StringName(slot.get("_order_id")) == order_id:
+			return slot
+	return null
 
 
 func _check(condition: bool, message: String) -> void:

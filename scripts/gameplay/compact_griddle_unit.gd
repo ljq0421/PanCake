@@ -1223,6 +1223,26 @@ func _finish_egg_spread_visuals() -> void:
 	_refresh_intact_egg_visual()
 
 
+func auto_spread_egg() -> Dictionary:
+	if not pancake_model.has_egg() or not pancake_model.egg_is_on_visible_side():
+		return {"success": false, "reason": &"egg_unavailable"}
+	var center := Vector2(pancake_model.grid_size - 1, pancake_model.grid_size - 1) * 0.5
+	var maximum_radius := float(pancake_model.grid_size) * 0.34
+	var samples := PackedVector2Array()
+	for ring_ratio in [0.16, 0.30, 0.46, 0.62, 0.78]:
+		for step in 24:
+			var angle := TAU * float(step) / 24.0
+			var radial := Vector2.from_angle(angle)
+			samples.append(center + radial * maximum_radius * float(ring_ratio))
+	var result := Dictionary(pancake_model.apply_egg_spreader_path(samples, pancake_model.parameters.spreader_medium_effect_speed, 1.0))
+	if int(result.get("changed_cells", 0)) <= 0:
+		return result.merged({"success": false, "reason": &"egg_spread_unchanged"}, true)
+	_finish_egg_spread_visuals()
+	pancake_surface.queue_redraw()
+	_refresh_ui()
+	return result.merged({"success": true}, true)
+
+
 func _refresh_intact_egg_visual() -> void:
 	if not is_node_ready():
 		return

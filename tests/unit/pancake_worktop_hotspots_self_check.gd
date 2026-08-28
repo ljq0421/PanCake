@@ -228,7 +228,21 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		unit.reset_unit()
 	var egg_stock_id := &"stock.pancake.egg"
 	session.inventory[str(egg_stock_id)] = 2
-	_check(not station.one_click_ingredient_enabled(egg_stock_id) and station.ingredient_drag_enabled(egg_stock_id), "basic egg interaction remains precise drag-to-crack")
+	_check(station.one_click_ingredient_enabled(egg_stock_id) and not station.ingredient_drag_enabled(egg_stock_id), "basic egg uses the same click-to-place grammar as every raw pancake ingredient")
+	unit.begin_order({})
+	var basic_egg_pressed := Dictionary(unit.use_press_spreader())
+	_check(bool(basic_egg_pressed.get("success", false)), "basic click egg test pancake reaches the first cooking side")
+	var basic_egg_before := int(session.inventory[str(egg_stock_id)])
+	var basic_egg_added := Dictionary(station.apply_one_click_ingredient(egg_stock_id))
+	_check(
+		bool(basic_egg_added.get("success", false))
+		and unit.pancake_model.has_egg()
+		and not unit.pancake_model.yolk_broken
+		and int(session.inventory[str(egg_stock_id)]) == basic_egg_before - 1,
+		"base egg click cracks one egg but leaves spreading as the next tool action"
+	)
+	unit.reset_unit()
+	session.inventory[str(egg_stock_id)] = 2
 	session.progression.owned_growth[&"growth.automation.pancake.one_click_egg"] = true
 	unit.begin_order({})
 	var egg_pressed := Dictionary(unit.use_press_spreader())
@@ -236,10 +250,13 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 	var egg_before := int(session.inventory[str(egg_stock_id)])
 	var egg_added := Dictionary(station.apply_one_click_ingredient(egg_stock_id))
 	_check(
-		bool(egg_added.get("success", false)) and bool(egg_added.get("one_click", false)) and int(session.inventory[str(egg_stock_id)]) == egg_before - 1,
-		"one-click egg upgrade adds exactly one inventory-backed egg"
+		bool(egg_added.get("success", false))
+		and bool(egg_added.get("one_click", false))
+		and bool(Dictionary(egg_added.get("auto_spread", {})).get("success", false))
+		and int(session.inventory[str(egg_stock_id)]) == egg_before - 1,
+		"egg automation upgrade keeps the click gesture and additionally spreads the egg"
 	)
-	_check(unit.pancake_model.has_egg() and not station.ingredient_drag_enabled(egg_stock_id), "one-click egg upgrade changes drag-to-crack into click-to-crack")
+	_check(unit.pancake_model.has_egg() and unit.pancake_model.yolk_broken and not station.ingredient_drag_enabled(egg_stock_id), "egg automation changes the result, not the input gesture")
 	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_egg")
 	unit.reset_unit()
 
@@ -264,13 +281,13 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var batter_ladle_visual := hotspots.get_node("BatterLadleSource/Visual") as TextureRect
 	_check(spreader_hit_button != null, "spreader uses its component-local alpha hit target")
 	var expected_component_rects := {
-		&"PorkFlossSource": Rect2(1087.0, 551.0, 210.0, 176.0),
-		&"HamSource": Rect2(1267.0, 551.0, 210.0, 176.0),
-		&"EggCarton": Rect2(900.0, 520.0, 216.0, 234.0),
-		&"ScallionTray": Rect2(590.0, 555.0, 160.0, 160.0),
-		&"CorianderTray": Rect2(471.0, 555.0, 160.0, 160.0),
-		&"BaocuiBasket": Rect2(693.8, 544.5, 257.4, 195.0),
-		&"SecretSauceSource": Rect2(1120.0, 686.0, 123.0, 134.4),
+		&"PorkFlossSource": Rect2(1137.0, 578.0, 214.0, 180.0),
+		&"HamSource": Rect2(1319.0, 578.0, 214.0, 180.0),
+		&"EggCarton": Rect2(1269.0, 795.0, 216.0, 234.0),
+		&"ScallionTray": Rect2(1128.0, 709.0, 146.0, 147.0),
+		&"CorianderTray": Rect2(1233.0, 709.0, 149.0, 149.0),
+		&"BaocuiBasket": Rect2(954.0, 578.0, 214.0, 180.0),
+		&"SecretSauceSource": Rect2(1034.0, 717.0, 123.0, 134.4),
 	}
 	for component_path in expected_component_rects:
 		var component := hotspots.get_node(NodePath(str(component_path))) as Control
@@ -280,9 +297,9 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 		_check(visual.get_global_rect().is_equal_approx(component.get_global_rect()), "%s visual follows its single component rectangle" % component_path)
 		_check(source.get_global_rect().is_equal_approx(component.get_global_rect()), "%s hotspot follows its single component rectangle" % component_path)
 		_check(not source._alpha_hit_regions.is_empty(), "%s derives its clickable silhouette from its visible artwork" % component_path)
-	_check(Rect2(station.position, station.size).is_equal_approx(Rect2(370.0, 618.0, 1170.0, 444.0)), "the unified pancake station preserves the previous griddle-station rectangle")
+	_check(Rect2(station.position, station.size).is_equal_approx(Rect2(220.0, 566.0, 1170.0, 444.0)), "the unified pancake station preserves the authored griddle-station rectangle")
 	var surface_design_rect := Rect2(station.position + unit.position + unit.pancake_surface.position, unit.pancake_surface.size)
-	_check(surface_design_rect.is_equal_approx(Rect2(760.0, 674.0, 400.0, 400.0)), "the interactive griddle surface preserves its previous 1920x1080 design rectangle")
+	_check(surface_design_rect.is_equal_approx(Rect2(610.0, 622.0, 400.0, 400.0)), "the interactive griddle surface preserves its authored 1920x1080 design rectangle")
 	_check(StringName(hotspots.get_node("ScallionTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")
 	_check(StringName(hotspots.get_node("CorianderTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.coriander", "coriander tray maps to coriander stock")
 	_check(StringName(hotspots.get_node("BaocuiBasket/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")
@@ -295,9 +312,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	_check(not bool(hotspots.get_node("CorianderTray/Hotspot").native_drag_enabled), "coriander tray uses click placement")
 	_check(not bool(hotspots.get_node("PorkFlossSource/Hotspot").native_drag_enabled), "pork-floss tray uses click placement")
 	var egg_source := hotspots.get_node("EggCarton/Hotspot") as ProductDragSource
-	var egg_preview := egg_source.drag_preview_texture
-	_check(egg_preview != null and egg_preview.resource_path.ends_with("egg_whole_v1_five_area_v2.png"), "egg drag shows a whole egg before release")
-	_check(egg_source.drag_preview_offset == Vector2(0.0, -60.0), "egg drag preview stays 60px above the release point")
+	_check(not egg_source.native_drag_enabled and egg_source.drag_preview_texture == null, "egg source is click-only and does not create a native drag preview")
 	var scallion_click_source := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
 	unit.begin_order({})
 	var click_pancake_pressed := Dictionary(unit.use_press_spreader())
@@ -312,7 +327,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	unit.reset_unit()
 	session.progression.owned_growth[&"growth.automation.pancake.one_click_egg"] = true
 	hotspots.refresh_from_session()
-	_check(not egg_source.native_drag_enabled, "one-click egg upgrade disables the egg drag gesture")
+	_check(not egg_source.native_drag_enabled, "egg automation upgrade preserves the click-only input gesture")
 	unit.begin_order({})
 	var egg_click_pancake_pressed := Dictionary(unit.use_press_spreader())
 	_check(bool(egg_click_pancake_pressed.get("success", false)), "upgraded egg hotspot test pancake reaches the first cooking side")
@@ -325,7 +340,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_egg")
 	unit.reset_unit()
 	hotspots.refresh_from_session()
-	_check(egg_source.native_drag_enabled, "without the upgrade, egg returns to the drag-to-crack gesture")
+	_check(not egg_source.native_drag_enabled, "without the upgrade, egg remains click-to-crack")
 	var secret_sauce := hotspots.get_node("SecretSauceSource/Hotspot") as ProductDragSource
 	_check(not secret_sauce.native_drag_enabled and not secret_sauce.disabled, "secret sauce selects direct brushing on its own component-local input surface")
 	_check(batter_ladle.tooltip_text == "点击拿起面糊勺，在空鏊子上按住并拖动调整落点", "basic batter ladle explains the movable pour interaction")

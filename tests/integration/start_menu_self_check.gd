@@ -29,7 +29,7 @@ func _run() -> void:
 	var quit_button := menu.get_node("Content/Layout/MenuPanel/Menu/QuitButton") as Button
 	var loading_overlay := menu.get_node("LoadingOverlay") as Control
 	var loading_progress := menu.get_node("LoadingOverlay/Center/Dialog/Rows/LoadingProgress") as ProgressBar
-	_check(background.texture != null and background.texture.resource_path == "res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v3_chinese.png", "start menu uses the Chinese-style morning mobile-cart background")
+	_check(background.texture != null and background.texture.resource_path == "res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v4_bold_chinese.png", "start menu uses the current Chinese-style morning mobile-cart background")
 	_check(background.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED, "background covers wider and taller aspect ratios")
 	_check(continue_button.text == "继续游戏" and new_game_button.text == "新游戏", "primary start actions are present")
 	_check(settings_button.text == "设置" and quit_button.text == "退出游戏", "settings and desktop quit actions are present")
@@ -45,19 +45,20 @@ func _run() -> void:
 	_check(session.call("continue_game") and session.call("is_business_paused"), "continue keeps timers paused until the gameplay scene finishes binding")
 
 	menu.call("_open_settings")
-	var settings_overlay := menu.get_node("SettingsOverlay") as Control
-	_check(settings_overlay.visible, "settings opens as a modal overlay")
-	var master_slider := menu.get_node("SettingsOverlay/Center/Dialog/Rows/MasterRow/MasterSlider") as HSlider
-	var sfx_slider := menu.get_node("SettingsOverlay/Center/Dialog/Rows/SfxRow/SfxSlider") as HSlider
-	var fullscreen_check := menu.get_node("SettingsOverlay/Center/Dialog/Rows/FullscreenCheck") as CheckButton
+	var settings_overlay := menu.get("_shared_settings_panel") as GameSettingsPanel
+	_check(settings_overlay != null and settings_overlay.visible and settings_overlay.get("_scroll") is ScrollContainer, "shared settings opens as a scrollable modal overlay")
+	var master_slider := settings_overlay.get("_master_slider") as HSlider
+	var sfx_slider := settings_overlay.get("_sfx_slider") as HSlider
+	var fullscreen_check := settings_overlay.get("_fullscreen_check") as CheckButton
 	master_slider.value = 41.0
 	sfx_slider.value = 73.0
 	fullscreen_check.button_pressed = false
-	menu.call("_save_settings")
+	settings_overlay.call("_save")
 	var changed_settings: Dictionary = session.get_settings()
 	_check(is_equal_approx(float(changed_settings.master_volume), 41.0), "master volume persists from settings")
 	_check(is_equal_approx(float(changed_settings.sfx_volume), 73.0), "SFX volume persists from settings")
 	_check(AudioServer.get_bus_index(&"SFX") >= 0, "dedicated SFX audio bus is configured")
+	menu.call("_close_settings")
 
 	menu.call("_request_new_game")
 	_check((menu.get_node("NewGameOverlay") as Control).visible, "existing progress requires new-game confirmation")
@@ -147,7 +148,10 @@ func _run() -> void:
 	session.save_settings(
 		float(previous_settings.master_volume),
 		float(previous_settings.sfx_volume),
-		bool(previous_settings.fullscreen)
+		bool(previous_settings.fullscreen),
+		float(previous_settings.get("ui_scale", 100.0)),
+		float(previous_settings.get("drag_sensitivity", 100.0)),
+		Dictionary(previous_settings.get("key_bindings", session.call("default_key_bindings")))
 	)
 	_finish()
 

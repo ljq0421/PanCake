@@ -118,6 +118,22 @@ const STOCK_DEFINITIONS := {
 	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
 }
 
+## Stable left-to-right workbench order used by the opening checklist.  The
+## checklist filters this list against progression ownership at runtime.
+const OPENING_RESTOCK_DISPLAY_ORDER: Array[StringName] = [
+	&"stock.pancake.batter",
+	&"stock.pancake.sauce.sweet_flour",
+	&"stock.pancake.egg",
+	&"stock.pancake.baocui",
+	&"stock.pancake.scallion",
+	&"stock.pancake.ham_sausage",
+	&"stock.pancake.meat_floss",
+	&"stock.pancake.coriander",
+	&"stock.youtiao.plain_dough",
+	&"stock.chicken.cutlet_raw",
+	&"stock.packaged_drink.juice",
+]
+
 const ADD_ON_DEFINITIONS := {
 	&"stock.pancake.egg": {}, &"stock.pancake.baocui": {}, &"stock.pancake.scallion": {},
 	&"stock.pancake.ham_sausage": {}, &"stock.pancake.meat_floss": {}, &"stock.pancake.coriander": {}, &"stock.pancake.youtiao": {},

@@ -60,7 +60,9 @@ func _hold_control(control: Control) -> void:
 	press.position = position
 	press.global_position = position
 	root.push_input(press)
-	await create_timer(0.54).timeout
+	# Complete one 0.15-second unit after the 0.2-second hold threshold without
+	# crossing into a second replenishment cycle.
+	await create_timer(0.42).timeout
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.pressed = false

@@ -352,6 +352,26 @@ func attach_product(order_id: StringName, item_index: int, product: Dictionary) 
 	return {"success": true, "will_match": preview.get("will_match", false), "mismatch_reasons": preview.get("mismatch_reasons", PackedStringArray())}
 
 
+func preview_order_match(order_id: StringName) -> Dictionary:
+	if not _is_active_order(order_id):
+		return {"success": false, "reason": &"order_not_active"}
+	var order: Dictionary = _orders[order_id]
+	var all_reasons := PackedStringArray()
+	for item_value in Array(order.get("items", [])):
+		var item := Dictionary(item_value)
+		var products := _item_products(item)
+		var required := maxi(int(item.get("quantity", 1)), 1)
+		if products.size() < required:
+			all_reasons.append("missing_order_item")
+		for product_value in products:
+			all_reasons.append_array(_product_mismatch_reasons(item, Dictionary(product_value)))
+	return {
+		"success": true,
+		"will_match": all_reasons.is_empty(),
+		"mismatch_reasons": all_reasons,
+	}
+
+
 func remove_attached_product(order_id: StringName, item_index: int, product_instance_id: StringName = &"") -> Dictionary:
 	var item := _active_item(order_id, item_index)
 	if item.is_empty():

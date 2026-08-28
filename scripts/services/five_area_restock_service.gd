@@ -25,6 +25,8 @@ func advance_hold(stock_id: StringName, delta: float) -> Dictionary:
 
 
 func release(stock_id: StringName) -> Dictionary:
-	# Progress is persisted continuously by the formal transaction. Release only
-	# ends the UI gesture and intentionally keeps an unfinished unit resumable.
+	# A committed unit stays in inventory, but the unfinished cycle is gesture
+	# state. Releasing or moving away cancels that remainder without charging it.
+	if _session != null and _session.has_method("cancel_five_area_restock_hold"):
+		return Dictionary(_session.call("cancel_five_area_restock_hold", stock_id))
 	return status(stock_id)

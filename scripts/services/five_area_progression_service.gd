@@ -37,6 +37,12 @@ var tutorial_queue_device_ids: Array[StringName] = []
 var tutorial_active_kind: StringName = &"area"
 var tutorial_active_id: StringName = &"area.pancake"
 var tutorial_failure_count_by_id: Dictionary = {}
+## Action progress and final outcomes are deliberately separate.  Completing a
+## gesture can advance the guide, but only a correct delivery records
+## `completed`; an explicit opt-out records `skipped`.
+var tutorial_action_ids_by_id: Dictionary = {}
+var tutorial_order_validation_by_id: Dictionary = {}
+var tutorial_final_outcome_by_id: Dictionary = {}
 
 
 func _init(snapshot: Dictionary = {}) -> void:
@@ -189,6 +195,50 @@ func tutorial_snapshot() -> Dictionary:
 		"active_kind": tutorial_active_kind,
 		"active_id": tutorial_active_id,
 		"failure_count_by_id": tutorial_failure_count_by_id.duplicate(true),
+		"action_ids_by_id": tutorial_action_ids_by_id.duplicate(true),
+		"order_validation_by_id": tutorial_order_validation_by_id.duplicate(true),
+		"final_outcome_by_id": tutorial_final_outcome_by_id.duplicate(true),
+	}
+
+
+func record_tutorial_action(kind: StringName, tutorial_id: StringName, action_id: StringName) -> Dictionary:
+	if kind != &"area":
+		return {"success": false, "reason": &"tutorial_kind_invalid"}
+	if tutorial_active_kind != kind or tutorial_active_id != tutorial_id:
+		return {"success": false, "reason": &"tutorial_not_active"}
+	if action_id.is_empty():
+		return {"success": false, "reason": &"tutorial_action_invalid"}
+	var key := str(tutorial_id)
+	var actions := PackedStringArray(tutorial_action_ids_by_id.get(key, PackedStringArray()))
+	if not actions.has(str(action_id)):
+		actions.append(str(action_id))
+	tutorial_action_ids_by_id[key] = actions
+	return {
+		"success": true,
+		"kind": kind,
+		"tutorial_id": tutorial_id,
+		"action_id": action_id,
+		"final_outcome": &"pending",
+		"actions": actions.duplicate(),
+	}
+
+
+func record_tutorial_order_validation(kind: StringName, tutorial_id: StringName, correct: bool, mismatch_reasons: Array = []) -> Dictionary:
+	if kind != &"area":
+		return {"success": false, "reason": &"tutorial_kind_invalid"}
+	if tutorial_active_kind != kind or tutorial_active_id != tutorial_id:
+		return {"success": false, "reason": &"tutorial_not_active"}
+	var value := {
+		"result": &"correct" if correct else &"incorrect",
+		"mismatch_reasons": PackedStringArray(mismatch_reasons),
+	}
+	tutorial_order_validation_by_id[str(tutorial_id)] = value
+	return {
+		"success": true,
+		"kind": kind,
+		"tutorial_id": tutorial_id,
+		"order_validation": value.duplicate(true),
+		"final_outcome": &"pending",
 	}
 
 
@@ -203,7 +253,8 @@ func complete_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
 	tutorial_active_id = &""
 	tutorial_failure_count_by_id.erase(tutorial_id)
 	tutorial_failure_count_by_id.erase(str(tutorial_id))
-	return {"success": true, "kind": kind, "tutorial_id": tutorial_id}
+	tutorial_final_outcome_by_id[str(tutorial_id)] = &"completed"
+	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "final_outcome": &"completed"}
 
 
 func record_tutorial_failure(kind: StringName, tutorial_id: StringName) -> Dictionary:
@@ -213,10 +264,7 @@ func record_tutorial_failure(kind: StringName, tutorial_id: StringName) -> Dicti
 		return {"success": false, "reason": &"tutorial_not_active"}
 	var failures := int(tutorial_failure_count_by_id.get(tutorial_id, tutorial_failure_count_by_id.get(str(tutorial_id), 0))) + 1
 	tutorial_failure_count_by_id[tutorial_id] = failures
-	var ended := failures >= 2
-	if ended:
-		_end_tutorial_without_mastery(kind, tutorial_id)
-	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "failure_count": failures, "tutorial_ended": ended}
+	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "failure_count": failures, "tutorial_ended": false, "final_outcome": &"pending"}
 
 
 func skip_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
@@ -225,7 +273,8 @@ func skip_tutorial(kind: StringName, tutorial_id: StringName) -> Dictionary:
 	if tutorial_active_kind != kind or tutorial_active_id != tutorial_id:
 		return {"success": false, "reason": &"tutorial_not_active"}
 	_end_tutorial_without_mastery(kind, tutorial_id)
-	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "tutorial_ended": true, "skipped": true}
+	tutorial_final_outcome_by_id[str(tutorial_id)] = &"skipped"
+	return {"success": true, "kind": kind, "tutorial_id": tutorial_id, "tutorial_ended": true, "skipped": true, "final_outcome": &"skipped"}
 
 
 func _end_tutorial_without_mastery(kind: StringName, tutorial_id: StringName) -> void:
@@ -341,6 +390,9 @@ func load_snapshot(value: Dictionary) -> void:
 	tutorial_active_kind = StringName(tutorial.get("active_kind", &"area"))
 	tutorial_active_id = StringName(tutorial.get("active_id", &"area.pancake"))
 	tutorial_failure_count_by_id = Dictionary(tutorial.get("failure_count_by_id", {})).duplicate(true)
+	tutorial_action_ids_by_id = Dictionary(tutorial.get("action_ids_by_id", {})).duplicate(true)
+	tutorial_order_validation_by_id = Dictionary(tutorial.get("order_validation_by_id", {})).duplicate(true)
+	tutorial_final_outcome_by_id = Dictionary(tutorial.get("final_outcome_by_id", {})).duplicate(true)
 	_normalize_three_area_state()
 
 

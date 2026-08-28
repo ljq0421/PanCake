@@ -41,7 +41,7 @@ func _run() -> void:
 	_check(fryer != null and fryer.plain_tray.size == Vector2(235.0, 185.0), "the reusable plain tray preserves its live authored size")
 	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.plate_sources.size() == 8 and fryer.waste_source != null and fryer.get_node_or_null("PreparedPlain") == null and fryer.get_node_or_null("WasteTarget") == null, "cartoon fryer exposes both independently authored fryer lanes and serving trays")
 	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.plain_tray.artwork.z_index), "finished youtiao drag sources render above serving-tray artwork")
-	_check(fryer != null and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return not source.native_drag_enabled) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)), "finished youtiao supports click-to-collect and dragging while chicken keeps click-to-collect")
+	_check(fryer != null and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return not source.native_drag_enabled) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)), "inactive chicken slots stay click-only until a finished batch enables its discard drag")
 	_check(fryer != null and fryer.plain_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source._drop_forward_target == fryer.plain_tray), "stored oil strips forward drops to the plain serving-tray component")
 	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.chicken_basket_products), "two basket-product groups each own four visible click targets")
 	_check(fryer != null and fryer.plain_tray.product_sources.size() == 4, "the reusable plain tray exposes four oil-stick positions")
@@ -78,6 +78,28 @@ func _run() -> void:
 		_check(_visible_count(fryer.plate_sources) == 1 and fryer.plain_tray.product_sources[0].visible and fryer.plain_tray.product_sources[0].position == fryer.plain_tray.slot_origin, "storing one fried youtiao displays one draggable product in the reusable plain tray")
 		_check(fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "dropping onto a stored oil strip forwards to the reusable serving tray")
 		fryer._chicken_unlocked = true
+		fryer._machine = {
+			"state": &"idle",
+			"capacity": 4,
+			"quantity": 0,
+			"tier": 2,
+			"occupied_slot_indices": [],
+			"lanes": {
+				&"right": {"state": &"ready_to_collect", "capacity": 4, "quantity": 2, "occupied_slot_indices": [0, 1]},
+			},
+		}
+		fryer._apply_snapshot()
+		var ready_chicken_source := fryer.chicken_slot_sources[0]
+		var ready_chicken_ref := ready_chicken_source.source_ref()
+		_check(
+			ready_chicken_source.visible
+			and not ready_chicken_source.disabled
+			and ready_chicken_source.native_drag_enabled
+			and ready_chicken_source.mouse_filter == Control.MOUSE_FILTER_STOP
+			and bool(ready_chicken_ref.get("discardable", false))
+			and workstation.waste_area._can_drop_data(workstation.waste_area.size * 0.5, {"kind": &"product_source", "source_ref": ready_chicken_ref}),
+			"a finished, unburnt chicken cutlet can be dragged from the right filter to discard its entire batch",
+		)
 		fryer._machine = {
 			"state": &"idle",
 			"capacity": 4,

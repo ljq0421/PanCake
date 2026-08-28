@@ -1,6 +1,7 @@
 extends SceneTree
 
 const WORKSTATION := preload("res://scripts/gameplay/five_area_workstation.gd")
+const GAME_SESSION_STORE := preload("res://scripts/services/game_session_store.gd")
 
 var _failures := PackedStringArray()
 
@@ -55,6 +56,22 @@ func _run() -> void:
 	_check(
 		str(quality_summary.get("feedback", "")) == "顾客指出：煎饼配料靠边易漏",
 		"a sub-80 ingredient quality problem outranks a higher-scoring heat mismatch"
+	)
+	_check(
+		is_zero_approx(float(Dictionary(quality_summary.get("dimensions", {})).get("order", 100.0))),
+		"a delivery mismatch changes the displayed pancake compliance score to zero"
+	)
+	var detailed_feedback := GAME_SESSION_STORE._formal_review_feedback(
+		&"product.pancake.custom",
+		&"product.pancake.custom",
+		{"heat_preference": &"golden", "ingredient_ids": PackedStringArray(["stock.pancake.egg"]), "sauce_ids": PackedStringArray(["stock.pancake.sauce.sweet_flour"])},
+		{"heat_feedback": "正面偏生、反面偏焦", "ingredient_ids": PackedStringArray(["stock.pancake.baocui"]), "sauce_ids": PackedStringArray()},
+		PackedStringArray(["heat_preference", "ingredient_ids", "sauce_ids"]),
+		0.0,
+	)
+	_check(
+		detailed_feedback == "煎饼不符合订单要求：火候订单要金黄，实际正面偏生、反面偏焦；配料订单要鸡蛋，实际薄脆；酱料订单要秘制酱料，实际不加",
+		"formal review spells out each pancake requirement and the delivered result"
 	)
 	if _failures.is_empty():
 		print("CUSTOMER_FEEDBACK_TEXT_SELF_CHECK PASS")

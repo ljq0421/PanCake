@@ -456,25 +456,30 @@ unique_name_in_owner = true
 self_modulate = Color(1, 1, 1, 0.42)
 z_index = 1
 layout_mode = 0
-offset_left = 1084.0
-offset_top = 760.0
-offset_right = 1256.0
-offset_bottom = 838.0
+offset_left = 1059.0
+offset_top = 991.0
+offset_right = 1231.0
+offset_bottom = 1057.0
 mouse_filter = 2
 
 [node name="Slot01" type="TextureRect" parent="UpgradeProps/PancakeHoldingTrayPreview" unique_id=336337034]
 layout_mode = 0
-offset_right = 78.0
-offset_bottom = 78.0
+offset_left = -32.0
+offset_top = -56.0
+offset_right = 46.0
+offset_bottom = 22.0
+scale = Vector2(2.3, 2.3)
 texture = ExtResource("14_pancake_holding_tray")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Slot02" type="TextureRect" parent="UpgradeProps/PancakeHoldingTrayPreview" unique_id=1409814944]
 layout_mode = 0
-offset_left = 88.0
-offset_right = 166.0
-offset_bottom = 78.0
+offset_left = 153.0
+offset_top = -56.0
+offset_right = 231.0
+offset_bottom = 22.0
+scale = Vector2(2.3, 2.3)
 texture = ExtResource("14_pancake_holding_tray")
 expand_mode = 1
 stretch_mode = 5
@@ -757,10 +762,10 @@ autowrap_mode = 2
 [node name="WorkshopProp_growth_capacity_pancake_holding_tray_two_slots" type="Button" parent="UpgradeProps" unique_id=176328406]
 custom_minimum_size = Vector2(132, 42)
 layout_mode = 0
-offset_left = 1104.0
-offset_top = 780.0
-offset_right = 1236.0
-offset_bottom = 822.0
+offset_left = 1079.0
+offset_top = 1003.0
+offset_right = 1211.0
+offset_bottom = 1045.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.capacity.pancake_holding_tray.two_slots"

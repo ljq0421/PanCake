@@ -18,6 +18,11 @@ uniform sampler2D egg_surface_texture : repeat_enable, filter_linear;
 uniform sampler2D sweet_sauce_texture : repeat_enable, filter_linear;
 uniform sampler2D chili_sauce_texture : repeat_enable, filter_linear;
 uniform vec2 field_texel_size = vec2(0.0078125);
+// The heatmap sends the normalized concentration of one requested sauce
+// portion.  It keeps a second pass visibly richer instead of saturating at
+// the same color as the first pass.
+uniform float sauce_single_portion_normalized = 0.175;
+uniform float egg_portion_count = 1.0;
 uniform float pan_height_ratio = 0.694;
 uniform float fold_left_line_ratio = 0.38;
 uniform float fold_right_line_ratio = 0.62;
@@ -140,6 +145,7 @@ void fragment() {
 		vec3 raw_egg_color = mix(vec3(1.0, 0.53, 0.02), vec3(1.0, 0.95, 0.73), egg_white_ratio);
 		vec3 set_egg_color = mix(vec3(0.94, 0.39, 0.015), vec3(1.0, 0.88, 0.57), egg_white_ratio);
 		vec3 egg_color = mix(raw_egg_color, set_egg_color, smoothstep(0.18, 0.78, egg_fields.b));
+		float extra_egg_portion = smoothstep(1.1, 2.0, egg_portion_count);
 		vec3 egg_material = texture(egg_surface_texture, detail_uv * 1.18 + vec2(0.07, 0.03)).rgb;
 		float egg_material_warmth = clamp(egg_material.r - egg_material.b, 0.0, 1.0);
 		float yolk_streak = smoothstep(0.07, 0.19, egg_material_warmth);
@@ -147,14 +153,15 @@ void fragment() {
 		vec3 egg_material_boosted = mix(vec3(1.0, 0.92, 0.67), vec3(1.0, 0.58, 0.035), yolk_streak * 0.68);
 		egg_material_boosted = mix(egg_material_boosted, vec3(1.0, 0.98, 0.84), white_gloss * 0.42);
 		egg_color = mix(egg_color, egg_material_boosted, 0.88);
+		egg_color = mix(egg_color, vec3(1.0, 0.56, 0.055), extra_egg_portion * 0.38);
 		float egg_visibility = smoothstep(0.0005, 0.022, egg_visual_amount) * coverage;
 		float left_landing_edge = mix(fold_left_line_ratio, min(1.0, fold_left_line_ratio * 2.0), clamp(fold_left_progress, 0.0, 1.0));
 		float right_landing_edge = mix(fold_right_line_ratio, max(0.0, fold_right_line_ratio * 2.0 - 1.0), clamp(fold_right_progress, 0.0, 1.0));
 		float left_filling_occlusion = (1.0 - step(max(fold_left_line_ratio, left_landing_edge), UV.x)) * clamp(fold_left_progress, 0.0, 1.0);
 		float right_filling_occlusion = step(min(fold_right_line_ratio, right_landing_edge), UV.x) * clamp(fold_right_progress, 0.0, 1.0);
 		float filling_visibility = (1.0 - max(left_filling_occlusion, right_filling_occlusion)) * (1.0 - clamp(fillings_enclosed, 0.0, 1.0));
-		egg_visibility *= filling_visibility;
-		float egg_opacity = mix(0.64, 0.94, egg_fields.b);
+		egg_visibility *= filling_visibility * mix(0.74, 1.0, extra_egg_portion);
+		float egg_opacity = clamp(mix(0.64, 0.94, egg_fields.b) + extra_egg_portion * 0.14, 0.0, 1.0);
 		float egg_edge = clamp((egg_neighbor_amount - egg_fields.a) * 5.0, 0.0, 1.0);
 		egg_color = mix(egg_color, vec3(1.0, 0.96, 0.77), egg_edge * 0.32);
 		pancake_color = mix(pancake_color, egg_color, egg_visibility * egg_opacity);
@@ -165,9 +172,13 @@ void fragment() {
 		float sauce_visibility = smoothstep(0.015, 0.32, sauce) * stationary_sauce_visibility;
 		vec3 sweet_color = texture(sweet_sauce_texture, detail_uv).rgb;
 		vec3 chili_color = texture(chili_sauce_texture, detail_uv).rgb;
-		pancake_color = mix(pancake_color, sweet_color, sauce_visibility * 0.82);
+		float sweet_portions = sauce / max(sauce_single_portion_normalized, 0.001);
+		float sweet_extra_portion = smoothstep(0.85, 1.65, sweet_portions);
+		pancake_color = mix(pancake_color, sweet_color, sauce_visibility * mix(0.82, 0.54, sweet_extra_portion));
 		float chili_visibility = smoothstep(0.015, 0.32, chili_sauce) * stationary_sauce_visibility;
-		pancake_color = mix(pancake_color, chili_color, chili_visibility * 0.80);
+		float chili_portions = chili_sauce / max(sauce_single_portion_normalized, 0.001);
+		float chili_extra_portion = smoothstep(0.85, 1.65, chili_portions);
+		pancake_color = mix(pancake_color, chili_color, chili_visibility * mix(0.80, 0.62, chili_extra_portion));
 
 		// Keep the physical coverage above untouched.  A short, filtered alpha
 		// transition rounds off grid corners without extending the playable pan.

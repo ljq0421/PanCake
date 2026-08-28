@@ -80,6 +80,15 @@ func _run() -> void:
 	})
 	multi.call("_sync_snapshot_to_session")
 	workstation.call("_on_customer_service_focus_requested", first_id)
+	var package_click_position: Vector2 = ready_unit.package_visual.get_global_rect().get_center()
+	_move_at(package_click_position)
+	_press_at(package_click_position)
+	_release_at(package_click_position)
+	await process_frame
+	_check(
+		StringName(Dictionary(workstation.get("_selected_pancake_delivery_source_ref")).get("source_kind", &"")) == &"pancake_griddle_ready",
+		"real packaged-pancake click selects the exact griddle product before delivery"
+	)
 	var target_slot := _service_slot_for_order(workstation, second_id)
 	var item_button := target_slot.get_node("OrderPanel/ItemButton1") as Button if target_slot != null else null
 	_check(item_button != null and item_button.visible and not item_button.disabled, "non-focused customer item has a real pointer target")
@@ -89,7 +98,7 @@ func _run() -> void:
 		_press_at(click_position)
 		_release_at(click_position)
 		await process_frame
-	_check(StringName(Dictionary(session.call("formal_order", second_id)).get("state", &"")) == &"settled", "real item-icon click settles its own order without dragging")
+	_check(StringName(Dictionary(session.call("formal_order", second_id)).get("state", &"")) == &"settled", "real selected-pancake then item-icon clicks settle their own order without dragging")
 	_check(StringName(Dictionary(session.call("formal_order", first_id)).get("state", &"")) in [&"active", &"serving"], "real click does not deliver to the previously focused customer")
 
 	await RenderingServer.frame_post_draw

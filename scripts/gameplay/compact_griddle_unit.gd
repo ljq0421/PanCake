@@ -6,6 +6,7 @@ signal status_message_requested(message: String)
 signal transient_warning_requested(message: String)
 signal packaging_finished(unit_index: int)
 signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
+signal ready_product_clicked(source_ref: Dictionary)
 
 const GRID_SIZE := 64
 const REFERENCE_GRID_SIZE := 128.0
@@ -130,6 +131,7 @@ var p1_session: P1Session = P1_SESSION_SCRIPT.new()
 var _spread_previous_grid := Vector2.ZERO
 var _spread_has_previous := false
 var _display_name := "主鏊"
+var _package_selection_outline: Panel
 var _surface_action: StringName = SURFACE_ACTION_NONE
 var _surface_stock_id: StringName = &""
 var _surface_changed := false
@@ -185,6 +187,7 @@ static func _compact_pancake_parameters() -> PancakeSimulationParameters:
 
 func _ready() -> void:
 	main_action.pressed.connect(func() -> void: main_action_requested.emit(unit_index))
+	_create_package_selection_outline()
 	pancake_surface.set_model(pancake_model)
 	ingredient_layer.set_model(ingredient_model)
 	ingredient_layer.set_fold_model(fold_model)
@@ -513,7 +516,13 @@ func apply_sauce_automatically(stock_id: StringName, validation: Dictionary = {}
 		return checked
 	# Automatic sauce follows the same rule as manual sauce during cooking.
 	var sauce_type: StringName = &"sweet_flour"
-	var result := Dictionary(pancake_model.apply_uniform_sauce(pancake_model.parameters.sauce_target_concentration, sauce_type))
+	# Each accepted portion is another full pass.  Reapplying the single-portion
+	# target made a double-sauce order score as two portions while looking exactly
+	# like one; retain both portions in the concentration field for rendering and
+	# scoring alike.
+	var requested_portions := _applied_stock_portion_count(applied_sauce_ids, stock_id) + 1
+	var target_concentration := pancake_model.parameters.sauce_target_concentration * float(requested_portions)
+	var result := Dictionary(pancake_model.apply_uniform_sauce(target_concentration, sauce_type))
 	if int(result.get("covered_cells", 0)) <= 0:
 		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
 	applied_sauce_ids.append(str(stock_id))
@@ -733,6 +742,43 @@ func source_ref() -> Dictionary:
 		"product": ready_product.duplicate(true),
 		"discardable": true,
 	}
+
+
+func set_ready_product_selected(value: bool) -> void:
+	if _package_selection_outline != null:
+		_package_selection_outline.visible = value and state == State.READY
+
+
+func _gui_input(event: InputEvent) -> void:
+	if state != State.READY or ready_product.is_empty():
+		return
+	if not event is InputEventMouseButton or event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+		return
+	var local_position: Vector2 = package_visual.get_global_transform_with_canvas().affine_inverse() * event.global_position
+	if not Rect2(Vector2.ZERO, package_visual.size).has_point(local_position):
+		return
+	ready_product_clicked.emit(source_ref())
+	accept_event()
+
+
+func _create_package_selection_outline() -> void:
+	_package_selection_outline = Panel.new()
+	_package_selection_outline.name = "SelectionOutline"
+	_package_selection_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_package_selection_outline.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+	_package_selection_outline.z_index = 1
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.76, 0.18, 0.12)
+	style.border_color = Color("ffe17a")
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(12)
+	style.expand_margin_left = 5.0
+	style.expand_margin_top = 5.0
+	style.expand_margin_right = 5.0
+	style.expand_margin_bottom = 5.0
+	_package_selection_outline.add_theme_stylebox_override("panel", style)
+	_package_selection_outline.visible = false
+	package_visual.add_child(_package_selection_outline)
 
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
@@ -1398,6 +1444,11 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 	# visibly snap a few pixels away from its drag preview.
 	var grid_maximum := float(pancake_model.grid_size - 1)
 	var grid_position := local_position / pancake_surface.size * grid_maximum
+	# Worktop taps deliberately target the middle of the pancake.  Without a
+	# repeat offset, a second portion would be added successfully but render
+	# exactly on top of the first one.  Preserve a precise drag location, while
+	# giving a centre-tapped repeat portion its own authored, visible spot.
+	grid_position = _resolve_repeat_portion_position(ingredient_type, grid_position)
 	var cell := Vector2i(roundi(grid_position.x), roundi(grid_position.y))
 	var cell_index := pancake_model.index_of(cell)
 	if cell_index < 0 or not pancake_model.is_inside_pan(grid_position):
@@ -1408,7 +1459,51 @@ func validate_ingredient_drop(source_ref: Dictionary, local_position: Vector2) -
 		var crack_preview := Dictionary(pancake_model.can_crack_egg(grid_position))
 		if not bool(crack_preview.get("success", false)):
 			return crack_preview.merged({"stock_id": stock_id, "grid_position": grid_position}, true)
-	return {"success": true, "stock_id": stock_id, "ingredient_type": ingredient_type, "product_id": StringName(source_ref.get("product_id", &"")), "grid_position": grid_position, "local_position": local_position}
+	var resolved_local_position := grid_position / maxf(grid_maximum, 1.0) * pancake_surface.size
+	return {"success": true, "stock_id": stock_id, "ingredient_type": ingredient_type, "product_id": StringName(source_ref.get("product_id", &"")), "grid_position": grid_position, "local_position": resolved_local_position}
+
+
+func _resolve_repeat_portion_position(ingredient_type: StringName, requested_position: Vector2) -> Vector2:
+	var portion_index := ingredient_model.count_type(ingredient_type)
+	if portion_index <= 0:
+		return requested_position
+	var center := Vector2.ONE * float(pancake_model.grid_size - 1) * 0.5
+	# A manually placed repeat portion should remain exactly where the player
+	# dropped it. Only the centre tap used by the shared ingredient sources is
+	# fanned out for readability.
+	if requested_position.distance_to(center) > 1.0:
+		return requested_position
+	# Use different, ingredient-aware directions. Large artwork such as crisp and
+	# pork floss stays near the middle; compact garnish and the second egg can be
+	# moved farther without extending beyond the elliptical pancake.
+	var repeat_offset := _repeat_portion_offset(ingredient_type)
+	var candidate := center + repeat_offset
+	var cell_index := pancake_model.index_of(Vector2i(roundi(candidate.x), roundi(candidate.y)))
+	if (
+		cell_index >= 0
+		and pancake_model.is_inside_pan(candidate)
+		and pancake_model.coverage[cell_index] > 0.0
+		and pancake_model.damage[cell_index] < pancake_model.parameters.hole_damage_threshold
+	):
+		return candidate
+	return requested_position
+
+
+func _repeat_portion_offset(ingredient_type: StringName) -> Vector2:
+	match ingredient_type:
+		IngredientModel.EGG:
+			return Vector2(18.0, -4.0)
+		IngredientModel.BAOCUI:
+			return Vector2(5.0, 0.0)
+		IngredientModel.MEAT_FLOSS:
+			return Vector2(6.0, 0.0)
+		IngredientModel.HAM_SAUSAGE:
+			return Vector2(-12.0, 0.0)
+		IngredientModel.SCALLION:
+			return Vector2(15.0, 0.0)
+		IngredientModel.CORIANDER:
+			return Vector2(-14.0, 0.0)
+	return Vector2(6.0, 0.0)
 
 
 func place_validated_ingredient(validation: Dictionary) -> Dictionary:
@@ -1592,6 +1687,8 @@ func _refresh_ui() -> void:
 	pancake_surface.batter_pour_guide_outer_radius_pixels = BEST_BATTER_OUTER_RADIUS / float(GRID_SIZE) * pancake_surface.size.x
 	pancake_surface.queue_redraw()
 	package_visual.visible = state == State.READY
+	if _package_selection_outline != null:
+		_package_selection_outline.visible = _package_selection_outline.visible and package_visual.visible
 	match state:
 		State.IDLE:
 			state_label.text = "长按鏊面倒入面糊" if _batter_ladle_armed else "空闲 · 使用面糊勺加面糊"
@@ -1615,8 +1712,8 @@ func _refresh_ui() -> void:
 			else:
 				state_label.text = "正在自动折叠并打包"
 		State.READY:
-			state_label.text = "成品待自由交付"
-			main_action.text = "拖到匹配订单"
+			state_label.text = "成品待交付 · 点击煎饼后点订单"
+			main_action.text = "点击纸袋煎饼交付"
 	main_action.disabled = state not in [State.FIRST_SIDE, State.SECOND_SIDE, State.GARNISH]
 	main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE if main_action.disabled else Control.MOUSE_FILTER_STOP
 	fold_overlay.set_guides_visible(false)

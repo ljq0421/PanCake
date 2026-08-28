@@ -131,6 +131,9 @@ func _run() -> void:
 	fryer.set("_machine_lane", &"right")
 	fryer.call("_perform_machine_click")
 	_check(session.chicken_loaded_count == 1 and int(session.inventory.get("stock.chicken.cutlet_raw", 0)) == 0, "the same short-click grammar directly loads one raw chicken cutlet into the current fryer lane")
+	_check(fryer.call("_machine_lane_from_visual_point", Vector2(30.0, 85.0)) == &"left", "the dual fryer accepts the visible left-basket rim, outside the food sprite hit rect")
+	_check(fryer.call("_machine_lane_from_visual_point", Vector2(290.0, 205.0)) == &"right", "the dual fryer accepts the visible right-basket handle, outside the food sprite hit rect")
+	_check(fryer.call("_machine_lane_from_visual_point", Vector2(160.0, 60.0)) == &"", "the gap above the dual baskets does not start a restock gesture")
 	session.chicken_unlocked = false
 	session.machine["tier"] = 0
 	fryer.set("_machine_lane", &"left")
@@ -154,9 +157,22 @@ func _run() -> void:
 	fryer.call("_cancel_machine_gesture")
 	_check(session.restock_cancel_calls == 1, "moving out during a long press cancels the unfinished restock cycle")
 	fryer.call("_apply_interaction_settings", {"drag_sensitivity": 50.0})
-	_check(is_equal_approx(float(fryer.get("_machine_cancel_tolerance_pixels")), 4.0), "minimum drag sensitivity uses the tight long-press cancel tolerance")
+	_check(is_equal_approx(float(fryer.get("_machine_cancel_tolerance_pixels")), 18.0), "minimum drag sensitivity retains a forgiving long-press cancel tolerance")
 	fryer.call("_apply_interaction_settings", {"drag_sensitivity": 150.0})
-	_check(is_equal_approx(float(fryer.get("_machine_cancel_tolerance_pixels")), 12.0), "maximum drag sensitivity uses the relaxed long-press cancel tolerance")
+	_check(is_equal_approx(float(fryer.get("_machine_cancel_tolerance_pixels")), 32.0), "maximum drag sensitivity uses the expanded long-press cancel tolerance")
+	# `_input` receives viewport-space pointer coordinates.  Movement inside an
+	# offset fryer must keep the long press active instead of applying the fryer
+	# transform twice and interpreting it as an exit.
+	fryer.position = Vector2(100.0, 200.0)
+	fryer.set("_machine_press_active", true)
+	fryer.set("_machine_hold_active", true)
+	var held_pointer: Vector2 = fryer.fryer_visual.get_global_transform_with_canvas() * (fryer.fryer_visual.size * 0.5)
+	var held_motion := InputEventMouseMotion.new()
+	held_motion.position = held_pointer
+	fryer.call("_input", held_motion)
+	_check(bool(fryer.get("_machine_press_active")), "pointer motion inside an offset fryer does not cancel the active long press")
+	fryer.call("_end_machine_gesture")
+	fryer.position = Vector2.ZERO
 
 	session.machine["state"] = &"ready_to_collect"
 	session.machine["quantity"] = 1

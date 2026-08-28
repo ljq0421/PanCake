@@ -6,6 +6,7 @@ signal transient_warning_requested(message: String)
 signal held_tool_changed(tool_id: StringName)
 signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
 signal ingredient_feedback_requested(success: bool)
+signal ready_product_clicked(source_ref: Dictionary)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
@@ -53,6 +54,7 @@ func _ready() -> void:
 		unit.transient_warning_requested.connect(transient_warning_requested.emit)
 		unit.fold_feedback_requested.connect(fold_feedback_requested.emit)
 		unit.packaging_finished.connect(_on_unit_packaging_finished)
+		unit.ready_product_clicked.connect(ready_product_clicked.emit)
 	_apply_count_layout()
 
 
@@ -124,6 +126,17 @@ func ready_source_refs() -> Array[Dictionary]:
 		if not source.is_empty():
 			result.append(source)
 	return result
+
+
+func set_ready_product_selected(source_ref: Dictionary) -> void:
+	for unit in units:
+		var unit_source := Dictionary(unit.source_ref())
+		var selected := (
+			not source_ref.is_empty()
+			and StringName(unit_source.get("source_kind", &"")) == StringName(source_ref.get("source_kind", &""))
+			and int(unit_source.get("source_index", -1)) == int(source_ref.get("source_index", -2))
+		)
+		unit.set_ready_product_selected(selected)
 
 
 func consume_ready(unit_index: int) -> bool:

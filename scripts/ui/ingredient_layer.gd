@@ -54,6 +54,7 @@ func _rebuild_sprites() -> void:
 		# Egg is rendered from PancakeModel's liquid layer so its spread shape and score share one source of truth.
 		if placement.type == IngredientModel.EGG:
 			continue
+		var ingredient_type := StringName(placement.get("type", &""))
 		var sprite := Sprite2D.new()
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		sprite.texture = texture_for_placement(placement)
@@ -62,7 +63,7 @@ func _rebuild_sprites() -> void:
 			grid_maximum = maxf(float(fold_model.pancake_model.grid_size - 1), 1.0)
 		sprite.position = (placement.position as Vector2) / grid_maximum * size
 		sprite.rotation = float(placement.rotation)
-		sprite.scale = Vector2.ONE * visual_scale_for(placement.type)
+		sprite.scale = Vector2.ONE * visual_scale_for(ingredient_type)
 		sprite.modulate = Color(0.90, 0.90, 0.90, 1.0) if bool(placement.damaged) else Color.WHITE
 		sprite.set_meta(&"ingredient_type", placement.type)
 		sprite.set_meta(&"grid_x", float((placement.position as Vector2).x))

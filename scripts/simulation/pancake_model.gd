@@ -63,6 +63,9 @@ var egg_white := PackedFloat32Array()
 var egg_yolk := PackedFloat32Array()
 var egg_doneness := PackedFloat32Array()
 var egg_state: EggState = EggState.NONE
+## Kept separately from the liquid field so a second egg remains visually
+## legible after automation has spread both portions across the same surface.
+var egg_portion_count := 0
 var yolk_broken := false
 ## Records which visible pancake side received the egg. This lets an egg added
 ## after the pancake is flipped remain visible while preparing, then be hidden
@@ -135,6 +138,7 @@ func reset() -> void:
 	egg_yolk.fill(0.0)
 	egg_doneness.fill(0.0)
 	egg_state = EggState.NONE
+	egg_portion_count = 0
 	yolk_broken = false
 	egg_surface_is_back = false
 	is_flipped = false
@@ -368,6 +372,7 @@ func crack_egg(center: Vector2) -> Dictionary:
 	# was broken, which made a double-egg pancake look as if its first egg vanished.
 	var had_spread_egg := yolk_broken
 	egg_state = EggState.CRACKED
+	egg_portion_count = mini(egg_portion_count + 1, 2)
 	yolk_broken = had_spread_egg
 	egg_surface_is_back = is_flipped
 	last_update_usec = Time.get_ticks_usec() - started
@@ -957,6 +962,7 @@ func snapshot() -> Dictionary:
 		"egg_yolk": egg_yolk.duplicate(),
 		"egg_doneness": egg_doneness.duplicate(),
 		"egg_state": egg_state,
+		"egg_portion_count": egg_portion_count,
 		"yolk_broken": yolk_broken,
 		"egg_surface_is_back": egg_surface_is_back,
 		"is_flipped": is_flipped,
@@ -991,6 +997,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 			return {"success": false, "reason": &"invalid_field_size", "field": field_name, "expected": cell_count, "actual": source.size()}
 		set(field_name, source.duplicate())
 	egg_state = clampi(int(value.get("egg_state", EggState.NONE)), EggState.NONE, EggState.SET)
+	egg_portion_count = clampi(int(value.get("egg_portion_count", 1 if egg_state != EggState.NONE else 0)), 0, 2)
 	yolk_broken = bool(value.get("yolk_broken", false))
 	egg_surface_is_back = bool(value.get("egg_surface_is_back", false))
 	is_flipped = bool(value.get("is_flipped", false))

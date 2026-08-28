@@ -9,6 +9,10 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var pancake_texture := PRODUCT_VISUALS.texture_for(&"product.pancake.custom")
+	if pancake_texture == null or not pancake_texture.resource_path.ends_with("serving_tray_package_v1_five_area_v2.png"):
+		_fail("pancake customer-order cards use the plated pancake artwork")
+		return
 	var soy_texture := PRODUCT_VISUALS.texture_for(&"product.fresh_soy_milk.yellow_bean")
 	if soy_texture == null:
 		_fail("yellow-soy milk owns a customer-order product texture")

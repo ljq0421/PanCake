@@ -15,6 +15,10 @@ func _run() -> void:
 	var tray := WORKSTATION_SCENE.instantiate()
 	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray") is TextureButton, "formal workstation authors a clickable pancake holding tray")
 	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01") is TextureRect and tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02") is TextureRect, "holding tray authors two visible slots")
+	var first_source := tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/PancakeHoldingSource01") as ProductDragSource
+	var second_source := tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/PancakeHoldingSource02") as ProductDragSource
+	_check(first_source != null and second_source != null and first_source.size == Vector2(114.0, 114.0) and second_source.size == Vector2(114.0, 114.0), "packaged pancakes fill each finished-tray slot at a readable size")
+	_check(WORKSTATION.PANCAKE_HOLDING_PACKAGE_TEXTURE.resource_path.ends_with("paper_bag_package_v1.png"), "finished-tray slots keep the packaged pancake artwork separate from order cards")
 	var egg_baocui := {
 		"ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.baocui"],
 		"sauce_ids": [&"stock.pancake.sauce.sweet_flour"],
@@ -26,6 +30,9 @@ func _run() -> void:
 	var egg_markers: Array = WORKSTATION._pancake_recipe_marker_entries(egg_baocui)
 	var herb_markers: Array = WORKSTATION._pancake_recipe_marker_entries(herb_pancake)
 	_check(egg_markers.size() == 3 and herb_markers.size() == 3 and egg_markers != herb_markers, "different pancake recipes produce different holding-tray icon sequences")
+	tray.call("_refresh_pancake_recipe_markers", first_source, egg_baocui)
+	var package_markers: Array[Node] = first_source.get_children().filter(func(child): return child.has_meta("pancake_recipe_marker"))
+	_check(package_markers.size() == 3 and package_markers.all(func(marker): return marker.position.y >= 57.0 and marker.position.y < 80.0), "recipe icons are arranged across the paper bag front")
 	_check(WORKSTATION._pancake_holding_tooltip(egg_baocui).contains("鸡蛋") and WORKSTATION._pancake_holding_tooltip(herb_pancake).contains("香菜"), "holding-tray tooltip names the complete stored recipe")
 	tray.free()
 	var workshop := WORKSHOP_SCENE.instantiate()

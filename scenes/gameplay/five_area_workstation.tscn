@@ -22,24 +22,12 @@
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="60_ikhp0"]
 [ext_resource type="Script" uid="uid://3dm4r8fyaulo" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
 [ext_resource type="PackedScene" uid="uid://dngeu6txsruyi" path="res://scenes/gameplay/jianbing_stall_artwork.tscn" id="62_stall"]
-[ext_resource type="Script" path="res://scripts/ui/tutorial_guide_arrow.gd" id="63_guide_arrow"]
+[ext_resource type="Script" uid="uid://dt6j7cu1bhqwo" path="res://scripts/ui/tutorial_guide_arrow.gd" id="63_guide_arrow"]
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="83_pancake_holding_tray"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
-bg_color = Color(0.045, 0.09, 0.1, 0.92)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.67, 0.64, 0.58)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+[ext_resource type="Texture2D" uid="uid://dhlixsd00feh7" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="83_pancake_holding_tray"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_top_status"]
 bg_color = Color(0.045, 0.09, 0.1, 0.88)
@@ -60,6 +48,18 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(1, 0.82, 0.44, 0.72)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
+bg_color = Color(0.045, 0.09, 0.1, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.67, 0.64, 0.58)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
@@ -159,6 +159,22 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_ui_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.44, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
+
 [sub_resource type="StyleBoxFlat" id="StyleBox_ui_button_secondary"]
 content_margin_top = 12.0
 content_margin_bottom = 12.0
@@ -187,22 +203,6 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_ui_focus"]
-bg_color = Color(0, 0, 0, 0)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.82, 0.44, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-expand_margin_left = 3.0
-expand_margin_top = 3.0
-expand_margin_right = 3.0
-expand_margin_bottom = 3.0
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_attention_chip"]
 content_margin_left = 16.0
 content_margin_top = 7.0
@@ -222,6 +222,20 @@ shadow_color = Color(0.04, 0.02, 0.01, 0.44)
 shadow_size = 7
 shadow_offset = Vector2(0, 3)
 
+[sub_resource type="StyleBoxFlat" id="TutorialTargetHighlightStyle"]
+bg_color = Color(1, 0.82, 0.25, 0.08)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.72, 0.16, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 0.58, 0.08, 0.45)
+shadow_size = 10
+
 [sub_resource type="StyleBoxFlat" id="TutorialBubbleStyle"]
 content_margin_left = 16.0
 content_margin_top = 10.0
@@ -239,20 +253,6 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 shadow_color = Color(0.34, 0.16, 0.04, 0.3)
 shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="TutorialTargetHighlightStyle"]
-bg_color = Color(1, 0.82, 0.25, 0.08)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(1, 0.72, 0.16, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(1, 0.58, 0.08, 0.45)
-shadow_size = 10
 
 [node name="Workstation" type="Control" unique_id=54162380]
 process_mode = 1
@@ -329,7 +329,7 @@ stretch_mode = 5
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1
 
-[node name="GlobalStatusBackground" type="Panel" parent="SafeArea"]
+[node name="GlobalStatusBackground" type="Panel" parent="SafeArea" unique_id=1595226911]
 z_index = 140
 layout_mode = 0
 offset_left = 20.0
@@ -339,7 +339,7 @@ offset_bottom = 72.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_top_status")
 
-[node name="BusinessDayTimerBackground" type="Panel" parent="SafeArea"]
+[node name="BusinessDayTimerBackground" type="Panel" parent="SafeArea" unique_id=1146547981]
 z_index = 140
 layout_mode = 0
 offset_left = 700.0
@@ -663,7 +663,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="ResultDivider" type="HSeparator" parent="SafeArea/ResultPanel/Margin/VBox"]
+[node name="ResultDivider" type="HSeparator" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=15995412]
 layout_mode = 2
 
 [node name="ResultReviewScroll" type="ScrollContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=1968747501]
@@ -877,7 +877,7 @@ theme_override_font_sizes/font_size = 21
 text = "时间  0"
 vertical_alignment = 1
 
-[node name="ResultTagsPanel" type="PanelContainer" parent="SafeArea/ResultPanel/Margin/VBox"]
+[node name="ResultTagsPanel" type="PanelContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=771652009]
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBox_result_tags")
@@ -892,7 +892,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="ResultFooter" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox"]
+[node name="ResultFooter" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=2141374335]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_constants/separation = 22
@@ -954,8 +954,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
 theme_override_font_sizes/font_size = 16
 text = "本单评价"
-clip_text = true
 autowrap_mode = 2
+clip_text = true
 
 [node name="Actions" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=2015235766]
 layout_mode = 2
@@ -1367,7 +1367,6 @@ offset_top = 130.0
 offset_right = 568.0
 offset_bottom = 620.0
 scale = Vector2(0.68, 0.68)
-product_icon_offset = Vector2(20, 10)
 
 [node name="ServiceCustomer2" parent="SafeArea" unique_id=2033337310 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
@@ -1377,7 +1376,6 @@ offset_top = 130.0
 offset_right = 942.0
 offset_bottom = 620.0
 scale = Vector2(0.68, 0.68)
-product_icon_offset = Vector2(20, 10)
 
 [node name="ServiceCustomer3" parent="SafeArea" unique_id=1323426398 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
@@ -1387,9 +1385,8 @@ offset_top = 130.0
 offset_right = 1316.0
 offset_bottom = 620.0
 scale = Vector2(0.68, 0.68)
-product_icon_offset = Vector2(20, 10)
 
-[node name="ServiceCustomer4" parent="SafeArea" instance=ExtResource("27_rkfb0")]
+[node name="ServiceCustomer4" parent="SafeArea" unique_id=1494847393 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 1150.0
@@ -1397,9 +1394,8 @@ offset_top = 130.0
 offset_right = 1690.0
 offset_bottom = 620.0
 scale = Vector2(0.68, 0.68)
-product_icon_offset = Vector2(20, 10)
 
-[node name="ServiceCustomer5" parent="SafeArea" instance=ExtResource("27_rkfb0")]
+[node name="ServiceCustomer5" parent="SafeArea" unique_id=1487904173 instance=ExtResource("27_rkfb0")]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 1524.0
@@ -1407,7 +1403,6 @@ offset_top = 130.0
 offset_right = 2064.0
 offset_bottom = 620.0
 scale = Vector2(0.68, 0.68)
-product_icon_offset = Vector2(20, 10)
 
 [node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea" unique_id=757275453]
 unique_name_in_owner = true
@@ -1528,35 +1523,21 @@ vertical_alignment = 1
 
 [node name="PancakeHoldingTray" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=1824711041]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
-offset_left = 1120.0
-offset_top = 782.0
-offset_right = 1292.0
-offset_bottom = 938.0
+offset_left = 1059.0
+offset_top = 991.0
+offset_right = 1231.0
+offset_bottom = 1057.0
 tooltip_text = "煎饼暂存盘：点击将唯一已打包煎饼存入空格"
 ignore_texture_size = true
 
-[node name="Title" type="Label" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=143806595]
-layout_mode = 0
-offset_left = 12.0
-offset_top = -23.0
-offset_right = 160.0
-offset_bottom = -1.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.3, 0.12, 0.035, 1)
-theme_override_colors/font_outline_color = Color(1, 0.91, 0.67, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 17
-text = "煎饼暂存盘"
-horizontal_alignment = 1
-
 [node name="SlotFrame01" type="TextureRect" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=865601448]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 78.0
-offset_bottom = 78.0
+offset_left = -32.0
+offset_top = -56.0
+offset_right = 46.0
+offset_bottom = 22.0
+scale = Vector2(2.3, 2.3)
 mouse_filter = 2
 texture = ExtResource("83_pancake_holding_tray")
 expand_mode = 1
@@ -1564,10 +1545,11 @@ stretch_mode = 5
 
 [node name="SlotFrame02" type="TextureRect" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=998052481]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 0.0
-offset_right = 166.0
-offset_bottom = 78.0
+offset_left = 153.0
+offset_top = -56.0
+offset_right = 231.0
+offset_bottom = 22.0
+scale = Vector2(2.3, 2.3)
 mouse_filter = 2
 texture = ExtResource("83_pancake_holding_tray")
 expand_mode = 1
@@ -1577,10 +1559,10 @@ stretch_mode = 5
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 7.0
-offset_top = 8.0
-offset_right = 71.0
-offset_bottom = 62.0
+offset_left = 0.0
+offset_top = -24.0
+offset_right = 114.0
+offset_bottom = 90.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
@@ -1589,10 +1571,10 @@ script = ExtResource("60_ikhp0")
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 95.0
-offset_top = 8.0
-offset_right = 159.0
-offset_bottom = 62.0
+offset_left = 185.0
+offset_top = -24.0
+offset_right = 299.0
+offset_bottom = 90.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
@@ -1611,9 +1593,6 @@ theme_override_constants/separation = 2
 visible = false
 custom_minimum_size = Vector2(630, 44)
 layout_mode = 2
-# The rail overlaps the compact order-summary actions at this viewport. It is
-# informational only, so it must not take pointer input away from those buttons.
-mouse_filter = 2
 mouse_default_cursor_shape = 16
 theme_override_colors/font_color = Color(1, 0.81, 0.4, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.025, 0.01, 0.95)
@@ -1622,8 +1601,8 @@ theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("StyleBox_attention_chip")
 horizontal_alignment = 2
 vertical_alignment = 1
-text_overrun_behavior = 3
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=1799233558]
 visible = false
@@ -1648,7 +1627,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("61_oefc1")
 
-[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay"]
+[node name="TargetHighlight" type="Panel" parent="TutorialGuideOverlay" unique_id=720163784]
 layout_mode = 0
 offset_right = 64.0
 offset_bottom = 64.0
@@ -1656,7 +1635,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("TutorialTargetHighlightStyle")
 
 [node name="GuideArrow" type="Control" parent="TutorialGuideOverlay" unique_id=1457040386]
-layout_mode = 0
+anchors_preset = 0
 offset_right = 28.0
 offset_bottom = 28.0
 mouse_filter = 2

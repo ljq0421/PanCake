@@ -165,7 +165,17 @@ func _test_default_automatic_sauce_after_flip(station: Node, unit: Node, session
 	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour") and unit.state == CompactGriddleUnit.State.SECOND_SIDE, "automatic sauce records its recipe identifier without ending second-side cooking")
 	_check(not unit.pancake_surface.cursor_is_sauce_brush and float(sauce_quality.get("coverage_ratio", 0.0)) >= 0.99 and float(sauce_quality.get("uniformity", 0.0)) >= 0.99, "default sauce completes a uniform layer without arming a manual brush")
 	var second_portion := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
-	_check(bool(second_portion.get("success", false)) and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2 and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before, "a second unlimited sauce portion is accepted and recorded separately")
+	var sauce_center := Vector2i(unit.pancake_model.grid_size / 2, unit.pancake_model.grid_size / 2)
+	_check(
+		bool(second_portion.get("success", false))
+		and unit.applied_sauce_ids.count("stock.pancake.sauce.sweet_flour") == 2
+		and is_equal_approx(
+			unit.pancake_model.get_field_value(PancakeModel.FIELD_SAUCE_CONCENTRATION, sauce_center),
+			unit.pancake_model.parameters.sauce_target_concentration * 2.0
+		)
+		and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before,
+		"a second unlimited sauce portion doubles the visible sauce concentration"
+	)
 	var before_limit := int(session.inventory["stock.pancake.sauce.sweet_flour"])
 	var over_limit := Dictionary(station.select_worktop_tool(&"stock.pancake.sauce.sweet_flour"))
 	_check(not bool(over_limit.get("success", false)) and StringName(over_limit.get("reason", &"")) == &"portion_limit" and int(session.inventory["stock.pancake.sauce.sweet_flour"]) == before_limit, "a third sauce portion is rejected without consuming inventory")
@@ -225,6 +235,22 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		)
 		var ingredient_type := StringName(added.get("ingredient_type", &""))
 		_check(unit.ingredient_model.count_type(ingredient_type) == 1, "%s click creates one pancake placement" % stock_id)
+		var first_position := Vector2(unit.ingredient_model.placements.back().get("position", Vector2.ZERO))
+		var added_second_portion := Dictionary(station.apply_one_click_ingredient(stock_id))
+		var second_position := Vector2(unit.ingredient_model.placements.back().get("position", Vector2.ZERO))
+		var second_visual := unit.ingredient_layer.get_children().back() as Sprite2D
+		_check(
+			bool(added_second_portion.get("success", false))
+			and unit.ingredient_model.count_type(ingredient_type) == 2
+			and first_position.distance_to(second_position) > 1.0,
+			"%s second click creates a separately visible second portion" % stock_id
+		)
+		_check(
+			_sprite_corners_stay_on_pancake(unit, second_visual),
+			"%s repeat portion and its full artwork remain inside the pancake" % stock_id
+		)
+		# Keep the later physical-hotspot test's original one-portion stock setup.
+		session.inventory[str(stock_id)] = 1
 		unit.reset_unit()
 	var egg_stock_id := &"stock.pancake.egg"
 	session.inventory[str(egg_stock_id)] = 2
@@ -240,6 +266,17 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		and not unit.pancake_model.yolk_broken
 		and int(session.inventory[str(egg_stock_id)]) == basic_egg_before - 1,
 		"base egg click cracks one egg but leaves spreading as the next tool action"
+	)
+	var first_egg_position := Vector2(unit.ingredient_model.placements.back().get("position", Vector2.ZERO))
+	var basic_second_egg_added := Dictionary(station.apply_one_click_ingredient(egg_stock_id))
+	var second_egg_position := Vector2(unit.ingredient_model.placements.back().get("position", Vector2.ZERO))
+	_check(
+		bool(basic_second_egg_added.get("success", false))
+		and unit.ingredient_model.count_type(IngredientModel.EGG) == 2
+		and first_egg_position.distance_to(second_egg_position) > 1.0
+		and first_egg_position.distance_to(second_egg_position) >= 17.0
+		and unit.pancake_model.egg_portion_count == 2,
+		"a second click egg keeps both eggs visibly separated before spreading"
 	)
 	unit.reset_unit()
 	session.inventory[str(egg_stock_id)] = 2
@@ -261,6 +298,21 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 	_check(unit.pancake_model.has_egg() and unit.pancake_model.yolk_broken and not station.ingredient_drag_enabled(egg_stock_id), "egg automation changes the result, not the input gesture")
 	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_egg")
 	unit.reset_unit()
+
+
+func _sprite_corners_stay_on_pancake(unit: Node, sprite: Sprite2D) -> bool:
+	if sprite == null or sprite.texture == null:
+		return false
+	var half_size := Vector2(sprite.texture.get_width(), sprite.texture.get_height()) * sprite.scale.abs() * 0.5
+	for corner in [
+		sprite.position + Vector2(-half_size.x, -half_size.y),
+		sprite.position + Vector2(half_size.x, -half_size.y),
+		sprite.position + Vector2(-half_size.x, half_size.y),
+		sprite.position + Vector2(half_size.x, half_size.y),
+	]:
+		if not PancakeSpace.is_inside_pan(corner, unit.pancake_surface.size, unit.pancake_model.parameters.pan_height_ratio):
+			return false
+	return true
 
 
 func _test_worktop_hotspot_mapping(session: FakeSession) -> void:

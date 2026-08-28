@@ -218,9 +218,9 @@ script = ExtResource("31_product_drag")
 [node name="SecretSauceSource" type="Control" parent="PancakeWorktopHotspots" unique_id=698685248]
 anchors_preset = 0
 offset_left = 1034.0
-offset_top = 717.0
+offset_top = 712.0
 offset_right = 1157.0
-offset_bottom = 851.4
+offset_bottom = 846.4
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/SecretSauceSource" unique_id=698685249]
@@ -251,9 +251,9 @@ script = ExtResource("31_product_drag")
 [node name="EggCarton" type="Control" parent="PancakeWorktopHotspots" unique_id=565590056]
 anchors_preset = 0
 offset_left = 1269.0
-offset_top = 795.0
+offset_top = 787.0
 offset_right = 1485.0
-offset_bottom = 1029.0
+offset_bottom = 1021.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/EggCarton" unique_id=326901718]
@@ -296,9 +296,9 @@ script = ExtResource("39_egg_carton_drag")
 [node name="ScallionTray" type="Control" parent="PancakeWorktopHotspots" unique_id=1021085658]
 anchors_preset = 0
 offset_left = 1128.0
-offset_top = 709.0
+offset_top = 704.0
 offset_right = 1274.0
-offset_bottom = 856.0
+offset_bottom = 851.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/ScallionTray" unique_id=1425551347]
@@ -332,9 +332,9 @@ script = ExtResource("31_product_drag")
 [node name="CorianderTray" type="Control" parent="PancakeWorktopHotspots" unique_id=817709265]
 anchors_preset = 0
 offset_left = 1233.0
-offset_top = 709.0
+offset_top = 704.0
 offset_right = 1382.0
-offset_bottom = 858.0
+offset_bottom = 853.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/CorianderTray" unique_id=1925334901]
@@ -368,9 +368,9 @@ script = ExtResource("31_product_drag")
 [node name="SpreaderSource" type="Control" parent="PancakeWorktopHotspots" unique_id=1478005217]
 anchors_preset = 0
 offset_left = 1144.0
-offset_top = 827.0
+offset_top = 819.0
 offset_right = 1304.0
-offset_bottom = 987.0
+offset_bottom = 979.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/SpreaderSource" unique_id=71572555]
@@ -422,9 +422,9 @@ hit_texture = ExtResource("41_spreader_holder_filled")
 [node name="BatterLadleSource" type="Control" parent="PancakeWorktopHotspots" unique_id=888931824]
 anchors_preset = 0
 offset_left = 1013.0
-offset_top = 821.0
+offset_top = 813.0
 offset_right = 1219.0
-offset_bottom = 992.0
+offset_bottom = 984.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/BatterLadleSource" unique_id=888931825]

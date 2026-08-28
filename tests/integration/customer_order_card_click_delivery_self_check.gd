@@ -52,6 +52,7 @@ func _run() -> void:
 	var second_button := second_slot.get_node("OrderPanel/ItemButton1") as Button if second_slot != null else null
 	_check(second_button != null and second_button.visible and not second_button.disabled, "the non-focused customer's real item button is clickable")
 	if second_button != null:
+		workstation.call("_on_pancake_delivery_source_clicked", Dictionary(workstation.multi_griddle_station.ready_source_refs()[0]))
 		second_button.pressed.emit()
 	var second_after := Dictionary(session.call("formal_order", second_order_id))
 	var first_after := Dictionary(session.call("formal_order", first_order_id))
@@ -68,8 +69,9 @@ func _run() -> void:
 	first_slot = _service_slot_for_order(workstation, first_order_id)
 	first_button = first_slot.get_node("OrderPanel/ItemButton1") as Button if first_slot != null else null
 	if first_button != null:
+		workstation.call("_on_pancake_delivery_source_clicked", Dictionary(workstation.multi_griddle_station.ready_source_refs()[0]))
 		first_button.pressed.emit()
-	_check(StringName(Dictionary(session.call("formal_order", first_order_id)).get("state", &"")) == &"settled", "the remaining customer is delivered by one item-icon click without dragging")
+	_check(StringName(Dictionary(session.call("formal_order", first_order_id)).get("state", &"")) == &"settled", "the remaining customer is delivered after selecting its packaged pancake and clicking the item icon")
 	var settled_first := Dictionary(session.call("formal_order", first_order_id))
 	var settled_second := Dictionary(session.call("formal_order", second_order_id))
 	var first_product := Dictionary(Array(Dictionary(Array(settled_first.get("items", []))[0]).get("attached_products", []))[0])

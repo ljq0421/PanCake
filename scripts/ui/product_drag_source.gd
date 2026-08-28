@@ -47,6 +47,7 @@ var _hovered := false
 var _base_drag_threshold_pixels := 4.0
 var _effective_cancel_tolerance_pixels := 8.0
 var _result_feedback_tween: Tween
+var _selection_outline: Panel
 ## Optional alpha-tested layers that define the clickable silhouette.  A source
 ## without these layers keeps the regular rectangular hit area.
 var _alpha_hit_regions: Array[Dictionary] = []
@@ -59,6 +60,7 @@ func _ready() -> void:
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	_create_hold_progress_ring()
+	_create_selection_outline()
 	var session := get_node_or_null("/root/GameSession")
 	if session != null and session.has_method("get_settings"):
 		_apply_interaction_settings(Dictionary(session.call("get_settings")))
@@ -110,6 +112,11 @@ func play_result_feedback(success: bool) -> void:
 	_result_feedback_tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	_result_feedback_tween.tween_property(self, "self_modulate", feedback_color, 0.06)
 	_result_feedback_tween.tween_property(self, "self_modulate", rest_color, 0.08)
+
+
+func set_selection_highlight(value: bool) -> void:
+	if _selection_outline != null:
+		_selection_outline.visible = value
 
 
 func set_drag_preview_texture(value: Texture2D) -> void:
@@ -383,6 +390,26 @@ func _create_hold_progress_ring() -> void:
 	_hold_progress_ring.size = Vector2(76.0, 76.0)
 	_hold_progress_ring.visible = false
 	add_child(_hold_progress_ring)
+
+
+func _create_selection_outline() -> void:
+	_selection_outline = Panel.new()
+	_selection_outline.name = "SelectionOutline"
+	_selection_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selection_outline.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+	_selection_outline.z_index = 100
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.76, 0.18, 0.12)
+	style.border_color = Color("ffe17a")
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(8)
+	style.expand_margin_left = 3.0
+	style.expand_margin_top = 3.0
+	style.expand_margin_right = 3.0
+	style.expand_margin_bottom = 3.0
+	_selection_outline.add_theme_stylebox_override("panel", style)
+	_selection_outline.visible = false
+	add_child(_selection_outline)
 
 
 func _set_hold_progress_visible(value: bool) -> void:

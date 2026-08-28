@@ -353,6 +353,7 @@ func _rebuild_heatmap_texture() -> void:
 	var pixel_count := texture_size * texture_size
 	var inverse_maximum_thickness := 1.0 / maxf(model.parameters.maximum_thickness, 0.001)
 	var inverse_maximum_sauce := 1.0 / maxf(model.parameters.sauce_maximum_concentration, 0.001)
+	var sauce_single_portion_normalized := clampf(model.parameters.sauce_target_concentration * inverse_maximum_sauce, 0.001, 1.0)
 	var inverse_maximum_egg := 1.0 / maxf(model.parameters.egg_maximum_concentration, 0.001)
 	var egg_visible := (model.yolk_broken or show_unbroken_egg_from_model) and model.egg_is_on_visible_side()
 	# Retain references to the simulation fields for the full upload. Apart from
@@ -406,14 +407,18 @@ func _rebuild_heatmap_texture() -> void:
 		if update_sweet_sauce:
 			var sweet_sauce_byte := roundi(clampf(sweet_sauce[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
 			sauce_pixels[target_index] = sweet_sauce_byte
-			var sweet_strength := smoothstep(0.015, 0.32, float(sweet_sauce_byte) / 255.0) * 0.82
+			var sweet_portions := (float(sweet_sauce_byte) / 255.0) / sauce_single_portion_normalized
+			var sweet_extra_portion := smoothstep(0.85, 1.65, sweet_portions)
+			var sweet_strength := smoothstep(0.015, 0.32, float(sweet_sauce_byte) / 255.0) * lerpf(0.82, 0.54, sweet_extra_portion)
 			var material_offset := target_index * 3
 			var sweet_alpha := roundi(clampf(sweet_strength, 0.0, 1.0) * 255.0)
 			fold_sweet_sauce_pixels.encode_u32(target_index * 4, _sweet_sauce_material_rgb[material_offset] | (_sweet_sauce_material_rgb[material_offset + 1] << 8) | (_sweet_sauce_material_rgb[material_offset + 2] << 16) | (sweet_alpha << 24))
 		if update_chili_sauce:
 			var chili_sauce_byte := roundi(clampf(chili_sauce[source_index] * inverse_maximum_sauce, 0.0, 1.0) * 255.0)
 			chili_sauce_pixels[target_index] = chili_sauce_byte
-			var chili_strength := smoothstep(0.015, 0.32, float(chili_sauce_byte) / 255.0) * 0.80
+			var chili_portions := (float(chili_sauce_byte) / 255.0) / sauce_single_portion_normalized
+			var chili_extra_portion := smoothstep(0.85, 1.65, chili_portions)
+			var chili_strength := smoothstep(0.015, 0.32, float(chili_sauce_byte) / 255.0) * lerpf(0.80, 0.62, chili_extra_portion)
 			var chili_alpha := roundi(clampf(chili_strength, 0.0, 1.0) * 255.0)
 			var chili_offset := target_index * 3
 			fold_chili_sauce_pixels.encode_u32(target_index * 4, _chili_sauce_material_rgb[chili_offset] | (_chili_sauce_material_rgb[chili_offset + 1] << 8) | (_chili_sauce_material_rgb[chili_offset + 2] << 16) | (chili_alpha << 24))
@@ -478,6 +483,8 @@ func _rebuild_heatmap_texture() -> void:
 		shader_material.set_shader_parameter(&"sauce_texture", _sauce_texture)
 		shader_material.set_shader_parameter(&"chili_sauce_field", _chili_sauce_texture)
 		shader_material.set_shader_parameter(&"egg_texture", _egg_texture)
+		shader_material.set_shader_parameter(&"egg_portion_count", float(maxi(model.egg_portion_count, 1)))
+		shader_material.set_shader_parameter(&"sauce_single_portion_normalized", sauce_single_portion_normalized)
 		shader_material.set_shader_parameter(&"field_texel_size", Vector2.ONE / float(texture_size))
 		shader_material.set_shader_parameter(&"pan_height_ratio", model.parameters.pan_height_ratio)
 		shader_material.set_shader_parameter(&"view_mode", int(VIEW_MODES.get(heatmap_field, 0)))

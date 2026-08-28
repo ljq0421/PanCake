@@ -2093,7 +2093,7 @@ func _formal_order_review_items(order: Dictionary, item_results: Array) -> Array
 				"score": score,
 				"qualified": qualified,
 				"payment_coins": unit_price if qualified else 0,
-				"feedback": _formal_review_feedback(expected_product_id, actual_product_id, mismatch_reasons, score),
+				"feedback": _formal_review_feedback(expected_product_id, actual_product_id, item, product, mismatch_reasons, score),
 			})
 	return review_items
 
@@ -2125,22 +2125,110 @@ static func _formal_review_score(product: Dictionary, mismatch_reasons: PackedSt
 	return 100.0
 
 
-static func _formal_review_feedback(expected_product_id: StringName, actual_product_id: StringName, mismatch_reasons: PackedStringArray, score: float) -> String:
+static func _formal_review_feedback(expected_product_id: StringName, actual_product_id: StringName, order_item: Dictionary, product: Dictionary, mismatch_reasons: PackedStringArray, score: float) -> String:
 	var expected_label := _formal_review_product_label(expected_product_id)
 	var actual_label := _formal_review_product_label(actual_product_id)
 	if mismatch_reasons.has("product_id"):
 		return "实送%s，与订单要求的%s不符" % [actual_label, expected_label]
 	if mismatch_reasons.has("incomplete_quantity") or mismatch_reasons.has("missing_order_item"):
-		return "%s未按订单交齐" % expected_label
+		return "%s未按订单交齐：订单要%s，实际未交付" % [expected_label, expected_label]
 	if not mismatch_reasons.is_empty():
-		return "%s不符合订单要求" % expected_label
+		return "%s不符合订单要求：%s" % [expected_label, "；".join(_formal_review_mismatch_details(order_item, product, mismatch_reasons))]
 	if score < 60.0:
 		return "%s评分未达60分，本份不付款" % expected_label
 	return "%s符合订单要求" % expected_label
 
 
+static func _formal_review_mismatch_details(order_item: Dictionary, product: Dictionary, mismatch_reasons: PackedStringArray) -> PackedStringArray:
+	var details := PackedStringArray()
+	if mismatch_reasons.has("heat_preference"):
+		var expected_heat := _formal_review_heat_label(StringName(order_item.get("heat_preference", &"golden")))
+		var actual_heat := str(product.get("heat_feedback", ""))
+		if actual_heat.is_empty() and product.has("heat_preference"):
+			actual_heat = _formal_review_heat_label(StringName(product.get("heat_preference", &"")))
+		if actual_heat.is_empty():
+			actual_heat = "未达到%s火候" % expected_heat
+		details.append("火候订单要%s，实际%s" % [expected_heat, actual_heat])
+	if mismatch_reasons.has("ingredient_ids"):
+		details.append("配料订单要%s，实际%s" % [
+			_formal_review_stock_list(order_item.get("ingredient_ids", [])),
+			_formal_review_stock_list(product.get("ingredient_ids", [])),
+		])
+	if mismatch_reasons.has("sauce_ids"):
+		details.append("酱料订单要%s，实际%s" % [
+			_formal_review_stock_list(order_item.get("sauce_ids", [])),
+			_formal_review_stock_list(product.get("sauce_ids", [])),
+		])
+	if mismatch_reasons.has("temperature_mode"):
+		details.append("温度订单要%s，实际%s" % [
+			_formal_review_temperature_label(StringName(order_item.get("temperature_mode", &"room_temperature"))),
+			_formal_review_temperature_label(StringName(product.get("temperature_mode", &"room_temperature"))),
+		])
+	if mismatch_reasons.has("sugar_servings"):
+		details.append("糖量订单要%s，实际%s" % [
+			_formal_review_sugar_label(int(order_item.get("sugar_servings", 0))),
+			_formal_review_sugar_label(int(product.get("sugar_servings", 0))),
+		])
+	if details.is_empty():
+		details.append("实际成品与订单配置不同")
+	return details
+
+
+static func _formal_review_stock_list(stock_values: Variant) -> String:
+	var ordered_labels := PackedStringArray()
+	var counts := {}
+	for stock_value in Array(stock_values):
+		var label := _formal_review_stock_label(StringName(stock_value))
+		if label.is_empty():
+			continue
+		if not counts.has(label):
+			ordered_labels.append(label)
+			counts[label] = 0
+		counts[label] = int(counts[label]) + 1
+	var display_labels := PackedStringArray()
+	for label in ordered_labels:
+		var count := int(counts[label])
+		display_labels.append(label if count == 1 else "%s×%d" % [label, count])
+	return "不加" if display_labels.is_empty() else "、".join(display_labels)
+
+
+static func _formal_review_stock_label(stock_id: StringName) -> String:
+	var catalog_label := str(CATALOG.stock_definition(stock_id).get("label", ""))
+	if not catalog_label.is_empty():
+		return catalog_label
+	return {
+		&"stock.pancake.egg": "鸡蛋",
+		&"stock.pancake.baocui": "薄脆",
+		&"stock.pancake.scallion": "葱花",
+		&"stock.pancake.ham_sausage": "火腿",
+		&"stock.pancake.meat_floss": "肉松",
+		&"stock.pancake.coriander": "香菜",
+	}.get(stock_id, "未知配料")
+
+
+static func _formal_review_heat_label(preference: StringName) -> String:
+	return {
+		&"light": "嫩一点",
+		&"golden": "金黄",
+		&"well_done": "焦香一点",
+	}.get(preference, "指定")
+
+
+static func _formal_review_temperature_label(temperature: StringName) -> String:
+	return {
+		&"heated": "热饮",
+		&"iced": "冰饮",
+		&"room_temperature": "常温",
+		&"normal": "常温",
+	}.get(temperature, "指定温度")
+
+
+static func _formal_review_sugar_label(servings: int) -> String:
+	return "不加糖" if servings <= 0 else "%d份糖" % servings
+
 static func _formal_review_product_label(product_id: StringName) -> String:
 	if product_id == &"product.pancake.custom":
+
 		return "煎饼"
 	return str(CATALOG.product_definition(product_id).get("label", "餐品"))
 

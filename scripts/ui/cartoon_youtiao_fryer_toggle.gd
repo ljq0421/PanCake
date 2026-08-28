@@ -26,6 +26,14 @@ const PLATE_VISUAL_CAPACITY := TRAY_VISUAL_CAPACITY * 2
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 const PLATE_YOUTIAO_REGION := Rect2(174.0, 8.0, 677.0, 1500.0)
 const RAW_YOUTIAO_REGION := Rect2(97.0, 53.0, 321.0, 403.0)
+# These regions are authored in the 320 x 270 FryerVisual coordinate space.
+# They cover the visible wire baskets (including their handles), rather than
+# the much smaller product-source rects laid over the food sprites.
+const SINGLE_BASKET_INPUT_REGION := Rect2(55.0, 70.0, 210.0, 145.0)
+const LEFT_BASKET_INPUT_REGION := Rect2(18.0, 72.0, 142.0, 150.0)
+const RIGHT_BASKET_INPUT_REGION := Rect2(160.0, 72.0, 142.0, 150.0)
+const MACHINE_HOLD_CANCEL_TOLERANCE_MIN_PIXELS := 18.0
+const MACHINE_HOLD_CANCEL_TOLERANCE_MAX_PIXELS := 32.0
 const BASIC_EXTRA_DOWN_OFFSET := Vector2(0.0, 10.0)
 const BASIC_FINISHED_OFFSET := Vector2(-9.0, 10.0)
 const BASIC_FINISHED_SCALE := Vector2(0.75, 0.75)
@@ -123,7 +131,7 @@ var burnt_youtiao_texture: Texture2D
 var chicken_raw_texture: Texture2D
 var chicken_golden_texture: Texture2D
 var chicken_burnt_texture: Texture2D
-var _machine_cancel_tolerance_pixels := 8.0
+var _machine_cancel_tolerance_pixels := 25.0
 var _machine_feedback_tween: Tween
 
 
@@ -194,7 +202,7 @@ func _has_point(point: Vector2) -> bool:
 	# A sibling hotspot can cause Godot to recalculate the hovered Control while
 	# this preview node is still entering the scene tree. @onready references are
 	# not assigned until this node's _ready(), so it cannot claim input yet.
-	if _control_contains_local_point(fryer_visual, point):
+	if _machine_lane_at_local_point(point) != &"":
 		return true
 	if plain_tray != null and plain_tray.visible and _control_contains_local_point(plain_tray, point):
 		return true
@@ -211,10 +219,16 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_finish_drag_or_click(get_local_mouse_position())
 		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseMotion and not _control_contains_local_point(fryer_visual, event.position, _machine_cancel_tolerance_pixels):
-		_cancel_machine_gesture()
-		status_message.emit("已取消长按，未完成的补货不会扣费")
-		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion:
+		# `_input` receives viewport coordinates, whereas the hotspot helper takes
+		# coordinates local to this fryer.  Converting the viewport point prevents
+		# the fryer transform from being applied twice and falsely cancelling a
+		# held restock as soon as the pointer moves.
+		var local_pointer: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+		if _machine_lane_at_local_point(local_pointer, _machine_cancel_tolerance_pixels) != _machine_lane:
+			_cancel_machine_gesture()
+			status_message.emit("已取消长按，未完成的补货不会扣费")
+			get_viewport().set_input_as_handled()
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
@@ -293,18 +307,17 @@ func refresh_from_session() -> void:
 
 
 func _begin_drag_or_click(point: Vector2) -> void:
-	if _control_contains_local_point(fryer_visual, point):
-		var visual_point := fryer_visual.get_global_transform_with_canvas().affine_inverse() * (get_global_transform_with_canvas() * point)
-		_machine_lane = &"right" if _chicken_unlocked and visual_point.x >= fryer_visual.size.x * 0.5 else &"left"
+	var lane_id := _machine_lane_at_local_point(point)
+	if lane_id != &"":
+		_machine_lane = lane_id
 		_begin_machine_gesture()
 
 
 func _update_machine_hover_preview(point: Vector2) -> void:
-	if not _control_contains_local_point(fryer_visual, point):
+	var lane_id := _machine_lane_at_local_point(point)
+	if lane_id == &"":
 		_clear_machine_hover_preview()
 		return
-	var visual_point := fryer_visual.get_global_transform_with_canvas().affine_inverse() * (get_global_transform_with_canvas() * point)
-	var lane_id := &"right" if _chicken_unlocked and visual_point.x >= fryer_visual.size.x * 0.5 else &"left"
 	var lane := Dictionary(Dictionary(_machine.get("lanes", {})).get(lane_id, _machine))
 	var state := StringName(lane.get("state", &"idle"))
 	var stock := _chicken_stock if lane_id == &"right" else _dough_stock
@@ -537,7 +550,7 @@ func _cancel_machine_restock_progress() -> void:
 
 func _apply_interaction_settings(settings: Dictionary) -> void:
 	var sensitivity := clampf(float(settings.get("drag_sensitivity", 100.0)), 50.0, 150.0)
-	_machine_cancel_tolerance_pixels = lerpf(4.0, 12.0, (sensitivity - 50.0) / 100.0)
+	_machine_cancel_tolerance_pixels = lerpf(MACHINE_HOLD_CANCEL_TOLERANCE_MIN_PIXELS, MACHINE_HOLD_CANCEL_TOLERANCE_MAX_PIXELS, (sensitivity - 50.0) / 100.0)
 
 
 func _apply_snapshot() -> void:
@@ -870,15 +883,16 @@ func _refresh_chicken_output_sources(lane: Dictionary) -> void:
 			{"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": source_index, "product_id": CHICKEN_PRODUCT_ID, "discardable": source_available},
 			texture,
 			source_available,
-			"拖到废弃区报废整篮焦糊鸡排" if burnt_slot else "点击任意鸡排，将整篮鸡排放入鸡排盘",
+			"拖到废弃区报废整篮%s" % ("焦糊鸡排" if burnt_slot else "鸡排") if source_available else "点击任意鸡排，将整篮鸡排放入鸡排盘",
 		)
 		var regions: Array[Dictionary] = []
 		if source_available:
 			regions.append({"texture": texture, "rect": Rect2(Vector2.ZERO, source.size)})
 		source.set_alpha_hit_regions(regions)
-		# Ready chicken is collected with a click. A burnt batch must instead be
-		# draggable from its visible filter slot to the shared waste basket.
-		source.native_drag_enabled = burnt_slot
+		# Clicking a ready chicken still collects the full basket. Dragging either
+		# a ready or burnt visible cutlet to the shared waste basket discards that
+		# entire right-filter batch.
+		source.native_drag_enabled = source_available
 		source.mouse_filter = Control.MOUSE_FILTER_STOP if source_available else Control.MOUSE_FILTER_IGNORE
 		source.visible = _chicken_unlocked and occupied_slot and not _workshop_preview
 
@@ -928,7 +942,8 @@ func _configure_component_controls() -> void:
 	waste_source = burnt_batch_source
 	for source in output_sources:
 		# Plain youtiao supports click-to-collect plus precise dragging to a
-		# pancake, tray or customer. Chicken keeps click-to-collect only.
+		# pancake, tray or customer. Chicken can be dragged to waste only after
+		# its batch has finished cooking; its refresh state enables that gesture.
 		source.native_drag_enabled = source in fryer_slot_sources
 		source.drag_threshold_pixels = 4.0
 		source.drag_ended.connect(_on_product_drag_ended)
@@ -1040,6 +1055,25 @@ func _occupied_slots() -> Array[int]:
 
 func _is_plate_point(point: Vector2) -> bool:
 	return _finished_tray_unlocked and plain_tray != null and plain_tray.visible and _control_contains_local_point(plain_tray, point)
+
+
+func _machine_lane_at_local_point(point: Vector2, margin: float = 0.0) -> StringName:
+	if fryer_visual == null or not fryer_visual.visible:
+		return &""
+	var canvas_point := get_global_transform_with_canvas() * point
+	var visual_point := fryer_visual.get_global_transform_with_canvas().affine_inverse() * canvas_point
+	return _machine_lane_from_visual_point(visual_point, margin)
+
+
+func _machine_lane_from_visual_point(visual_point: Vector2, margin: float = 0.0) -> StringName:
+	var expanded_margin := maxf(margin, 0.0)
+	if not _chicken_unlocked:
+		return &"left" if SINGLE_BASKET_INPUT_REGION.grow(expanded_margin).has_point(visual_point) else &""
+	if LEFT_BASKET_INPUT_REGION.grow(expanded_margin).has_point(visual_point):
+		return &"left"
+	if RIGHT_BASKET_INPUT_REGION.grow(expanded_margin).has_point(visual_point):
+		return &"right"
+	return &""
 
 
 func _control_contains_local_point(control: Control, point: Vector2, margin: float = 0.0) -> bool:

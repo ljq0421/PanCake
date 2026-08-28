@@ -83,8 +83,21 @@ func _run() -> void:
 	var workshop_header := workshop.get_node("HeaderPanel") as Control if workshop != null else null
 	var workshop_detail := workshop.get_node("DetailPanel") as Control if workshop != null else null
 	var baocui_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_add_on_pancake_baocui") as Button if workshop != null else null
+	var youtiao_fryer_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_area_youtiao") as Button if workshop != null else null
+	var youtiao_finished_tray_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_capacity_youtiao_finished_tray") as Button if workshop != null else null
+	var chicken_finished_tray_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_capacity_chicken_finished_tray") as Button if workshop != null else null
 	var baocui_tag := baocui_prop.get_node("ConditionTag") as Label if baocui_prop != null else null
 	_check(baocui_prop != null and baocui_prop.visible and baocui_tag != null and baocui_tag.text == "薄脆\n30 金币", "workshop renders concise equipment tags with name and price")
+	_check(
+		workshop_detail != null
+		and youtiao_fryer_prop != null
+		and youtiao_finished_tray_prop != null
+		and chicken_finished_tray_prop != null
+		and not workshop_detail.get_global_rect().intersects(youtiao_fryer_prop.get_global_rect())
+		and not workshop_detail.get_global_rect().intersects(youtiao_finished_tray_prop.get_global_rect())
+		and not workshop_detail.get_global_rect().intersects(chicken_finished_tray_prop.get_global_rect()),
+		"workshop detail bar leaves the lower-left fryer and finished-tray information unobstructed"
+	)
 	if baocui_prop != null:
 		var hovered := await _hover_control(baocui_prop, Vector2(0.5, 0.5))
 		_check(hovered == baocui_prop, "workshop tag owns its complete pointer target")

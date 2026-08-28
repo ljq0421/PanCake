@@ -110,6 +110,7 @@ func _on_lane_hold_requested(source_ref: Dictionary) -> void:
 	var status := Dictionary(session.call("five_area_restock_status", StringName(source_ref.get("stock_id", &""))))
 	if bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)) and int(status.get("coins", 0)) >= int(status.get("unit_cost", 0)):
 		source.accept_hold()
+		source.set_hold_progress(float(status.get("container_fill_ratio", 0.0)))
 		status_message.emit("持续长按补充果汁；每瓶消耗 1 金币")
 		return
 	source.reject_hold()
@@ -122,6 +123,7 @@ func _on_lane_hold_advanced(source_ref: Dictionary, delta: float) -> void:
 	if source == null or session == null:
 		return
 	var result := Dictionary(session.call("advance_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")), delta))
+	source.set_hold_progress(float(result.get("container_fill_ratio", 0.0)))
 	if int(result.get("completed_units", 0)) > 0:
 		status_message.emit("果汁补货 +%d" % int(result.get("completed_units", 0)))
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):

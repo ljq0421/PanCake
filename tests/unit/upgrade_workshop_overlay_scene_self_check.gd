@@ -70,6 +70,7 @@ func _run() -> void:
 		var coriander_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_coriander") as Button
 		var egg_prop := props.get_node_or_null("WorkshopProp_growth_add_on_pancake_egg") as Button
 		var one_click_egg_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_one_click_egg") as Button
+		var non_burning_griddle_prop := props.get_node_or_null("WorkshopProp_growth_automation_pancake_non_burning_griddle") as Button
 		_check(press_prop != null and press_prop.visible, "press is the direct upgrade from the base spreader")
 		_check(initial_youtiao_prop != null and initial_youtiao_prop.visible, "initial youtiao fryer tag remains visible before its pancake prerequisites are installed")
 		_check(initial_youtiao_prop != null and not initial_youtiao_prop.tooltip_text.is_empty(), "locked youtiao fryer tag explains its reservation prerequisites")
@@ -88,6 +89,7 @@ func _run() -> void:
 		_check(coriander_prop != null and coriander_prop.visible and coriander_prop.tooltip_text.contains("先预订香葱罐"), "coriander tag remains visible before its prerequisite is installed")
 		_check(egg_prop != null and egg_prop.visible, "egg reservation is visible before the egg add-on is installed")
 		_check(one_click_egg_prop != null and not one_click_egg_prop.visible, "one-click egg stays hidden before the egg add-on is installed")
+		_check(non_burning_griddle_prop != null and not non_burning_griddle_prop.visible, "non-burning griddle stays hidden until both prerequisite tools are installed")
 		_check(egg_prop != null and one_click_egg_prop != null and egg_prop.z_index > one_click_egg_prop.z_index, "egg reservation tag is drawn above the later one-click-egg upgrade at their shared anchor")
 		if egg_prop != null:
 			egg_prop.emit_signal("pressed")
@@ -107,12 +109,14 @@ func _run() -> void:
 		_check(initial_soy_prop != null and not initial_soy_prop.visible, "initial soy machine label is replaced after it is installed")
 		_check(intermediate_soy_prop != null and intermediate_soy_prop.visible, "intermediate soy machine label appears after the initial machine is installed")
 		progression.set("owned_growth_ids", {
+			&"growth.automation.pancake.auto_batter_ladle": true,
 			&"growth.automation.pancake.press_once": true,
 			&"growth.area.fresh_soy_milk": true,
 			&"growth.automation.fresh_soy_milk.auto_fill": true,
 		})
 		overlay.refresh()
 		_check(press_prop != null and not press_prop.visible, "owned press hides its workshop tag")
+		_check(non_burning_griddle_prop != null and non_burning_griddle_prop.visible and (non_burning_griddle_prop.get_node_or_null("ConditionTag") as Label).text.begins_with("不会糊的煎饼鏊子"), "non-burning griddle appears after its two prerequisite tools")
 		_check(advanced_soy_prop != null and advanced_soy_prop.visible, "advanced soy machine appears after the intermediate machine is installed")
 		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
 		progression.set("coins", 200)

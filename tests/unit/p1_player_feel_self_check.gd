@@ -28,7 +28,7 @@ func _run() -> void:
 		_finish()
 		return
 	_test_opening_restock_tasks(session)
-	_test_tutorial_retry_and_skip(session)
+	_test_tutorial_delivery_completes_without_recipe_gate(session)
 	await _test_tool_shortcuts(session)
 	await _test_settings_contract(session)
 	await _test_feedback_controls()
@@ -130,34 +130,29 @@ func _test_settings_contract(session: Node) -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(settings_path))
 
 
-func _test_tutorial_retry_and_skip(session: Node) -> void:
+func _test_tutorial_delivery_completes_without_recipe_gate(session: Node) -> void:
 	session.call("begin_new_game")
 	session.call("advance_customer_arrivals", 5.0)
 	var order := Dictionary(session.call("active_formal_order"))
 	var order_id := StringName(order.get("order_id", &""))
-	for attempt in 3:
-		var mismatch := Dictionary(session.call("attach_formal_order_product", order_id, 0, {
-			"product_instance_id": StringName("test.retry.%d" % attempt),
-			"product_id": &"product.pancake.custom",
-			"area_id": &"area.pancake",
-			"heat_preference": &"charred",
-			"ingredient_ids": [],
-			"sauce_ids": [],
-		}))
-		_check(StringName(mismatch.get("reason", &"")) == &"tutorial_order_mismatch", "tutorial mismatch attempt %d stays safely retryable" % (attempt + 1))
-	var before_skip_orders := int(Dictionary(session.get("_save_data")).get("orders_completed", -1))
-	var pending := Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
-	_check(StringName(pending.get("active_id", &"")) == &"area.pancake" and int(Dictionary(pending.get("failure_count_by_id", {})).get("area.pancake", 0)) == 3, "repeated tutorial mistakes never auto-end the lesson")
-	var skipped := Dictionary(session.call("skip_active_area_tutorial"))
+	var attached := Dictionary(session.call("attach_formal_order_product", order_id, 0, {
+		"product_instance_id": &"test.tutorial.step_complete",
+		"product_id": &"product.pancake.custom",
+		"area_id": &"area.pancake",
+		"heat_preference": &"charred",
+		"ingredient_ids": [],
+		"sauce_ids": [],
+	}))
+	var settled := Dictionary(session.call("settle_f3_order", order_id))
 	var tutorial := Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
-	var active_orders := Array(session.call("active_formal_orders"))
 	_check(
-		bool(skipped.get("success", false))
-		and StringName(Dictionary(tutorial.get("final_outcome_by_id", {})).get("area.pancake", &"")) == &"skipped"
-		and int(Dictionary(session.get("_save_data")).get("orders_completed", -1)) == before_skip_orders,
-		"explicit skip releases the progression gate without recording a successful order"
+		bool(attached.get("success", false))
+		and not bool(attached.get("will_match", true))
+		and bool(settled.get("success", false))
+		and bool(Dictionary(settled.get("tutorial_completion", {})).get("success", false))
+		and StringName(Dictionary(tutorial.get("final_outcome_by_id", {})).get("area.pancake", &"")) == &"completed",
+		"tutorial delivery has no recipe-match restriction and completes after its guided flow"
 	)
-	_check(active_orders.is_empty() or not bool(Dictionary(active_orders.front()).get("tutorial_no_countdown", false)), "skipping cannot leave a replacement tutorial order in the live queue")
 
 
 func _test_tool_shortcuts(session: Node) -> void:
@@ -212,9 +207,9 @@ func _test_feedback_controls() -> void:
 	source.begin_gesture(Vector2.ZERO)
 	source.advance_gesture(0.10)
 	var ring := source.get_node("HoldProgress") as HoldProgressRing
-	_check(ring.visible and is_equal_approx(ring.progress_ratio, 0.5), "long press exposes a circular percentage indicator before activation")
+	_check(not ring.visible, "the hold threshold stays visually silent so the ring is reserved for container stock progress")
 	source.advance_gesture(0.10)
-	_check(source.is_hold_active(), "long press activates only after its visible progress reaches the threshold")
+	_check(source.is_hold_active() and ring.visible and is_zero_approx(ring.progress_ratio), "an accepted empty container begins with 0% total stock progress")
 	source.call("_cancel_gesture_from_exit")
 	_check(not source.is_hold_active() and not ring.visible and hold_release_count == 1, "moving away cancels an active hold and hides its unfinished progress")
 	holder.queue_free()

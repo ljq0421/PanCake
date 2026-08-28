@@ -82,6 +82,22 @@ corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_result_tags"]
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+bg_color = Color(0.08, 0.17, 0.16, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.67, 0.64, 0.7)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_payment"]
 atlas = ExtResource("24_174he")
 region = Rect2(281, 390, 1020, 259)
@@ -696,10 +712,10 @@ excluded_control_path = NodePath("../ResultPanel")
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 430.0
-offset_top = 170.0
-offset_right = 1490.0
-offset_bottom = 880.0
+offset_left = 390.0
+offset_top = 136.0
+offset_right = 1530.0
+offset_bottom = 944.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="Margin" type="MarginContainer" parent="SafeArea/ResultPanel" unique_id=1872060282]
@@ -723,7 +739,7 @@ horizontal_alignment = 1
 
 [node name="ResultDetailLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=664037926]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
 theme_override_font_sizes/font_size = 21
@@ -731,6 +747,9 @@ text = "评价结果"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
+
+[node name="ResultDivider" type="HSeparator" parent="SafeArea/ResultPanel/Margin/VBox"]
+layout_mode = 2
 
 [node name="DimensionGrid" type="GridContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=322837851]
 unique_name_in_owner = true
@@ -929,9 +948,13 @@ theme_override_font_sizes/font_size = 21
 text = "时间  0"
 vertical_alignment = 1
 
-[node name="ResultTagsLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=1042763285]
+[node name="ResultTagsPanel" type="PanelContainer" parent="SafeArea/ResultPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBox_result_tags")
+
+[node name="ResultTagsLabel" type="Label" parent="SafeArea/ResultPanel/Margin/VBox/ResultTagsPanel" unique_id=1042763285]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.8, 0.68, 1)
 theme_override_font_sizes/font_size = 19
@@ -940,18 +963,24 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="PaymentDisplay" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=50352582]
-unique_name_in_owner = true
+[node name="ResultFooter" type="HBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox"]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="PaymentDisplay" type="TextureRect" parent="SafeArea/ResultPanel/Margin/VBox/ResultFooter" unique_id=50352582]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 2
 texture = SubResource("AtlasTexture_payment")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="NextOrderButton" type="Button" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=446753021]
+[node name="NextOrderButton" type="Button" parent="SafeArea/ResultPanel/Margin/VBox/ResultFooter" unique_id=446753021]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(300, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBox_ui_button")
@@ -965,38 +994,38 @@ text = "关闭本单详情"
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 1240.0
+offset_left = 1210.0
 offset_top = 12.0
 offset_right = 1900.0
-offset_bottom = 76.0
+offset_bottom = 146.0
 theme_override_styles/panel = SubResource("StyleBox_p1_card")
 
 [node name="Margin" type="MarginContainer" parent="SafeArea/OrderSummaryCard" unique_id=1923869061]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 10
 
-[node name="VBox" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin" unique_id=1865946492]
+[node name="VBox" type="VBoxContainer" parent="SafeArea/OrderSummaryCard/Margin" unique_id=1865946492]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
 [node name="SummaryScoreLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=1827762559]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.82, 0.34, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 20
 text = "本单 0分 · +0金币"
 vertical_alignment = 1
 
 [node name="SummaryFeedbackLabel" type="Label" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=1350807479]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.92, 0.79, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 16
 text = "本单评价"
+clip_text = true
 autowrap_mode = 2
 
 [node name="Actions" type="HBoxContainer" parent="SafeArea/OrderSummaryCard/Margin/VBox" unique_id=2015235766]

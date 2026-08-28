@@ -408,6 +408,7 @@ func _on_material_hold_requested(source_ref: Dictionary, hotspot: ProductDragSou
 	var status := Dictionary(_session.call("five_area_restock_status", stock_id))
 	if bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)):
 		hotspot.accept_hold()
+		hotspot.set_hold_progress(float(status.get("container_fill_ratio", 0.0)))
 		status_message.emit("持续按住补%s；每完成一份才扣金币" % _stock_label(stock_id))
 		return
 	hotspot.reject_hold()
@@ -420,7 +421,7 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, hotspot: P
 		return
 	var stock_id := StringName(source_ref.get("stock_id", &""))
 	var result := Dictionary(_session.call("advance_five_area_restock_hold", stock_id, delta))
-	hotspot.set_hold_progress(float(result.get("progress_ratio", 0.0)))
+	hotspot.set_hold_progress(float(result.get("container_fill_ratio", 0.0)))
 	if int(result.get("completed_units", 0)) > 0:
 		status_message.emit("%s补货 +%d" % [_stock_label(stock_id), int(result.get("completed_units", 0))])
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):

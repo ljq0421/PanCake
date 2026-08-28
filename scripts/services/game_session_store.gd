@@ -926,56 +926,7 @@ func _order_is_tutorial(order: Dictionary) -> bool:
 	return not StringName(_tutorial_identity_for_order(order).get("tutorial_id", &"")).is_empty()
 
 
-func _validate_attached_tutorial_order(order: Dictionary) -> Dictionary:
-	if not _order_is_tutorial(order):
-		return {"success": true, "will_match": true}
-	var order_id := StringName(order.get("order_id", &""))
-	var preview := Dictionary(_order_service.call("preview_order_match", order_id))
-	if not bool(preview.get("success", false)):
-		return preview
-	return preview if bool(preview.get("will_match", false)) else _tutorial_mismatch_result(preview)
-
-
-func _record_tutorial_delivery_failure(order: Dictionary, validation: Dictionary = {}) -> void:
-	_ensure_progression()
-	var identity := _tutorial_identity_for_order(order)
-	var kind := StringName(identity.get("kind", &""))
-	var tutorial_id := StringName(identity.get("tutorial_id", &""))
-	if tutorial_id.is_empty():
-		return
-	_progression.call("record_tutorial_action", kind, tutorial_id, &"delivery_attempted")
-	_progression.call("record_tutorial_order_validation", kind, tutorial_id, false, Array(validation.get("mismatch_reasons", [])))
-	_progression.call("record_tutorial_failure", kind, tutorial_id)
-	_sync_progression_to_save()
-	_touch_and_write()
-	progression_changed.emit(five_area_progression_snapshot())
-
-
-static func _tutorial_mismatch_result(preview: Dictionary) -> Dictionary:
-	var reasons := PackedStringArray(preview.get("mismatch_reasons", PackedStringArray()))
-	var labels := PackedStringArray()
-	for reason_value in reasons:
-		match StringName(reason_value):
-			&"product_id": labels.append("餐品种类")
-			&"heat_preference": labels.append("火候")
-			&"temperature_mode": labels.append("温度")
-			&"ingredient_ids": labels.append("配料")
-			&"sauce_ids": labels.append("酱料")
-			&"sugar_servings": labels.append("糖量")
-			&"missing_order_item", &"incomplete_quantity": labels.append("数量")
-			_: labels.append("订单要求")
-	var detail := "、".join(labels) if not labels.is_empty() else "订单要求"
-	return {
-		"success": false,
-		"reason": &"tutorial_order_mismatch",
-		"message": "教学订单尚未正确：%s不符。成品已保留，请修正后重试。" % detail,
-		"mismatch_reasons": reasons,
-		"target": &"order",
-		"product_retained": true,
-	}
-
-
-func _record_tutorial_delivery_success(order: Dictionary) -> void:
+func _record_tutorial_delivery_completed(order: Dictionary) -> void:
 	if not _order_is_tutorial(order):
 		return
 	_ensure_progression()
@@ -985,7 +936,6 @@ func _record_tutorial_delivery_success(order: Dictionary) -> void:
 	if tutorial_id.is_empty():
 		return
 	_progression.call("record_tutorial_action", kind, tutorial_id, &"delivery_attempted")
-	_progression.call("record_tutorial_order_validation", kind, tutorial_id, true, [])
 
 
 func begin_formal_order_serving(order_id: StringName) -> Dictionary:
@@ -1012,13 +962,9 @@ func attach_formal_order_product(order_id: StringName, item_index: int, product:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_order_service()
-	var order := formal_order(order_id)
 	var preview := Dictionary(_order_service.call("preview_attach_product", order_id, item_index, product))
 	if not bool(preview.get("success", false)):
 		return preview
-	if _order_is_tutorial(order) and not bool(preview.get("will_match", false)):
-		_record_tutorial_delivery_failure(order, preview)
-		return _tutorial_mismatch_result(preview)
 	var result: Dictionary = _order_service.call("attach_product", order_id, item_index, product)
 	if bool(result.get("success", false)):
 		_sync_formal_orders_to_save()
@@ -1056,14 +1002,11 @@ func preview_stage_product_to_order(source_ref: Dictionary, order_id: StringName
 	var order_preview := Dictionary(_order_service.call("preview_attach_product", order_id, item_index, preview_product))
 	if not bool(order_preview.get("success", false)):
 		return order_preview
-	var tutorial_order := _order_is_tutorial(order)
 	return {
 		"success": true,
 		"product": preview_product,
 		"will_match": bool(order_preview.get("will_match", false)),
 		"mismatch_reasons": order_preview.get("mismatch_reasons", PackedStringArray()),
-		"tutorial_order": tutorial_order,
-		"tutorial_allowed": not tutorial_order or bool(order_preview.get("will_match", false)),
 		"source_ref": _normalized_product_source_ref(source_ref),
 	}
 
@@ -1102,15 +1045,12 @@ func take_packaged_drink_inventory(stock_id: StringName, product_id: StringName)
 
 
 ## Moves exactly one available product into the requested order-card item.
-## Ordinary mismatches remain deliverable. Tutorial mismatches stop before the
-## source transaction removes or reserves the player's product.
+## Mismatches remain deliverable, including during tutorials: completing the
+## guided production and delivery steps is sufficient to finish a tutorial.
 func stage_product_to_order(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
 	var source_preview := preview_stage_product_to_order(source_ref, order_id, item_index)
 	if not bool(source_preview.get("success", false)):
 		return source_preview
-	if bool(source_preview.get("tutorial_order", false)) and not bool(source_preview.get("tutorial_allowed", false)):
-		_record_tutorial_delivery_failure(formal_order(order_id), source_preview)
-		return _tutorial_mismatch_result(source_preview)
 	_ensure_order_service()
 	_ensure_production_service()
 	_ensure_pancake_holding_tray()
@@ -1242,11 +1182,6 @@ func complete_order_delivery(order_id: StringName) -> Dictionary:
 			missing_items.append({"item_index": item_index, "product_id": StringName(item.get("product_id", &"")), "missing_quantity": required - placed})
 	if not missing_items.is_empty():
 		return {"success": false, "reason": &"tray_incomplete", "missing_items": missing_items}
-	var tutorial_validation := _validate_attached_tutorial_order(order)
-	if not bool(tutorial_validation.get("success", false)):
-		_record_tutorial_delivery_failure(order, tutorial_validation)
-		return tutorial_validation
-	_record_tutorial_delivery_success(order)
 	return settle_f3_order(order_id, false)
 
 
@@ -1878,11 +1813,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	var order := formal_order(order_id)
 	if StringName(order.get("order_id", &"")) != order_id:
 		return {"success": false, "reason": &"order_not_active"}
-	var tutorial_validation := _validate_attached_tutorial_order(order)
-	if not bool(tutorial_validation.get("success", false)):
-		_record_tutorial_delivery_failure(order, tutorial_validation)
-		return tutorial_validation
-	_record_tutorial_delivery_success(order)
+	_record_tutorial_delivery_completed(order)
 	var settlement: Dictionary = _order_service.call("settle_order", order_id, submit_incomplete)
 	if not bool(settlement.get("success", false)):
 		return settlement
@@ -1951,9 +1882,9 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	var tutorial_kind := StringName(tutorial_identity.get("kind", &""))
 	var tutorial_id := StringName(tutorial_identity.get("tutorial_id", &""))
 	var tutorial_completion := {}
-	# Tutorial gestures are tracked independently.  Only a recipe-correct order
-	# can resolve the tutorial as completed.
-	if not tutorial_id.is_empty() and bool(settlement.get("order_success", false)):
+	# A tutorial finishes once its guided delivery steps are complete. The
+	# tutorial does not impose a separate recipe-match gate on that progress.
+	if not tutorial_id.is_empty():
 		tutorial_completion = _progression.call("complete_tutorial", tutorial_kind, tutorial_id)
 	var today_orders: Array = Array(_save_data.get("today_orders", [])).duplicate(true)
 	var primary_item: Dictionary = Dictionary(items[0]) if not items.is_empty() else {}
@@ -2448,6 +2379,9 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 		"unit_seconds": unit_seconds,
 		"current_stock": maxi(int(inventory.get(key, 0)), 0),
 		"capacity": capacity,
+		# The hold indicator represents how full the physical stock container is,
+		# rather than the fraction of the next individual refill unit being held.
+		"container_fill_ratio": clampf(float(maxi(int(inventory.get(key, 0)), 0)) / float(capacity), 0.0, 1.0),
 		"progress_seconds": progress_seconds,
 		"progress_ratio": clampf(progress_seconds / unit_seconds, 0.0, 1.0),
 		"coins": maxi(int(_progression.get("coins")), 0),
@@ -3321,23 +3255,20 @@ func record_order_completed(order: Dictionary = {}, result: Dictionary = {}, ear
 		settled_result["grade"] = _grade_for_score(float(settled_result.get("score", 0.0)))
 	var mastery_result: Dictionary = _progression.call("record_area_result", area_id, settled_result)
 	var tutorial_completion := {}
-	# Legacy callers may still report an order here, but a tutorial can only
-	# complete when the stored formal order is recipe-correct (or the caller
-	# supplies an explicit successful validation result).
+	# Legacy callers can still report a tutorial outcome. Once the delivery flow
+	# is settled, recipe matching does not keep the tutorial open.
 	var formal_teaching_area_id: StringName = &""
-	var formal_tutorial_order_correct := false
+	var formal_tutorial_order_settled := false
 	if not formal_order_id.is_empty():
 		var formal_orders := Dictionary(formal_order_snapshot().get("orders", {}))
 		var formal_order := Dictionary(formal_orders.get(formal_order_id, formal_orders.get(str(formal_order_id), {})))
 		formal_teaching_area_id = StringName(formal_order.get("teaching_area_id", Dictionary(formal_order.get("metadata", {})).get("teaching_area_id", &"")))
-		formal_tutorial_order_correct = StringName(formal_order.get("status", &"")) == &"completed"
-	if not formal_teaching_area_id.is_empty() and formal_tutorial_order_correct:
-		_progression.call("record_tutorial_order_validation", &"area", formal_teaching_area_id, true, [])
+		formal_tutorial_order_settled = StringName(formal_order.get("state", &"")) == &"settled"
+	if not formal_teaching_area_id.is_empty() and formal_tutorial_order_settled:
 		tutorial_completion = _progression.call("complete_tutorial", &"area", formal_teaching_area_id)
-	elif bool(order.get("tutorial_no_countdown", false)) and bool(result.get("order_success", false)):
+	elif bool(order.get("tutorial_no_countdown", false)):
 		var legacy_kind := StringName(order.get("tutorial_kind", &""))
 		var legacy_id := StringName(order.get("tutorial_id", &""))
-		_progression.call("record_tutorial_order_validation", legacy_kind, legacy_id, true, [])
 		tutorial_completion = _progression.call("complete_tutorial", legacy_kind, legacy_id)
 	var payment_coins := maxi(earned_coins, 0)
 	var material_cost := maxi(int(settled_result.get("material_cost", 0)), 0)
@@ -3939,8 +3870,8 @@ func _reconcile_unrecorded_settled_orders() -> void:
 		_touch_and_write()
 
 
-## Repair only a recipe-correct settled tutorial.  A failed legacy settlement
-## is not evidence of tutorial success and must never be promoted to completed.
+## Repair a settled tutorial after an interrupted save. Tutorial completion is
+## based on completing the guided delivery flow, not recipe matching.
 func _reconcile_completed_tutorial_order() -> void:
 	if not has_save():
 		return
@@ -3957,7 +3888,7 @@ func _reconcile_completed_tutorial_order() -> void:
 		var identity := _tutorial_identity_for_order(order)
 		if (
 			StringName(order.get("state", &"")) != &"settled"
-			or StringName(order.get("status", &"")) != &"completed"
+			or StringName(order.get("status", &"")) not in [&"completed", &"failed"]
 			or StringName(identity.get("kind", &"")) != tutorial_kind
 			or StringName(identity.get("tutorial_id", &"")) != tutorial_id
 		):

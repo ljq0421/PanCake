@@ -413,14 +413,14 @@ func _show_detail(growth_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var status := Dictionary(session.call("growth_purchase_status", growth_id)) if session else {}
 	var definition := CATALOG.growth_definition(growth_id)
-	_detail.text = "[b]%s[/b]\n[color=#72d9c0]%s[/color]\n\n价格：[b]%d 金币[/b]\n%s" % [definition.get("label", "升级"), _state_text(status), int(status.get("price", 0)), _requirements_text(status)]
+	_detail.text = "[b]%s[/b]　[color=#72d9c0]%s[/color]　价格：[b]%d 金币[/b]\n%s" % [definition.get("label", "升级"), _state_text(status), int(status.get("price", 0)), _requirements_text(status)]
 	_buy.disabled = not bool(status.get("can_purchase", false))
 	_buy.text = "预订升级 · 次日生效" if not _buy.disabled else "当前不可预订"
 	_detail_panel.visible = true
 
 
 func _show_default_detail() -> void:
-	_detail.text = "[b]选择一个升级[/b]\n[color=#72d9c0]查看设备升级条件[/color]\n\n点击设备旁的标签，查看价格、前置条件和生效时间。"
+	_detail.text = "[b]选择一个升级[/b]　[color=#72d9c0]查看设备升级条件[/color]\n点击设备旁的标签，查看价格、前置条件和生效时间。"
 	_buy.disabled = true
 	_buy.text = "选择升级后可预订"
 	_detail_panel.visible = true

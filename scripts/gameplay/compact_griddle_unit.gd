@@ -44,6 +44,8 @@ const HEAT_GREEN_TOLERANCE := 0.08
 const CHARRED_EXPOSURE_SECONDS := 8.0
 const CHARRED_DONENESS := 0.92
 const CHARRED_RATIO_WARNING := 0.10
+## This remains overcooked for scoring, but stays below the charring threshold.
+const NON_BURNING_DONENESS_CAP := CHARRED_DONENESS - 0.001
 ## A single pointer sample used to invoke the full field simulation once per
 ## radial segment (up to fourteen times). Representative weighted anchors keep
 ## the same total spread force without stalling the input frame.
@@ -115,6 +117,7 @@ var applied_sauce_ids := PackedStringArray()
 var applied_ingredient_ids := PackedStringArray()
 var ready_product: Dictionary = {}
 var upgrade_locked := false
+var _non_burning_upgrade_enabled := false
 var pancake_model: PancakeModel = PANCAKE_MODEL_SCRIPT.new(GRID_SIZE, _compact_pancake_parameters())
 var ingredient_model: IngredientModel = INGREDIENT_MODEL_SCRIPT.new()
 var fold_model: PancakeFoldModel = FOLD_MODEL_SCRIPT.new(pancake_model, ingredient_model)
@@ -221,11 +224,13 @@ func _process(delta: float) -> void:
 				_process_sauce_brush()
 	if state == State.FIRST_SIDE:
 		first_side_seconds += step
+		_apply_cooking_doneness_cap()
 		pancake_model.advance_cooking(step, p1_session.heat_level)
 		p1_session.advance_elapsed_time(step)
 		_refresh_heat_visual()
 	elif state == State.SECOND_SIDE:
 		second_side_seconds += step
+		_apply_cooking_doneness_cap()
 		pancake_model.advance_cooking(step, p1_session.heat_level)
 		p1_session.advance_elapsed_time(step)
 		_refresh_heat_visual()
@@ -268,6 +273,32 @@ func set_upgrade_locked(value: bool) -> void:
 	process_mode = Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
 	if is_node_ready():
 		_refresh_ui()
+
+
+func set_non_burning_upgrade_enabled(value: bool) -> void:
+	_non_burning_upgrade_enabled = value
+	_apply_cooking_doneness_cap()
+	if value:
+		_cap_existing_doneness()
+	if is_node_ready():
+		_refresh_heat_visual()
+
+
+func _apply_cooking_doneness_cap() -> void:
+	pancake_model.cooking_doneness_cap = NON_BURNING_DONENESS_CAP if _non_burning_upgrade_enabled else 1.0
+
+
+func _cap_existing_doneness() -> void:
+	var changed := false
+	for index in pancake_model.cell_count:
+		if pancake_model.doneness[index] > NON_BURNING_DONENESS_CAP:
+			pancake_model.doneness[index] = NON_BURNING_DONENESS_CAP
+			changed = true
+		if pancake_model.back_doneness[index] > NON_BURNING_DONENESS_CAP:
+			pancake_model.back_doneness[index] = NON_BURNING_DONENESS_CAP
+			changed = true
+	if changed:
+		pancake_model.changed.emit()
 
 
 func set_spreader_visual_enabled(value: bool) -> void:

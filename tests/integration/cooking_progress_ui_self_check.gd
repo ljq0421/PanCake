@@ -34,6 +34,9 @@ func _run() -> void:
 	griddle.pancake_model.cooking_exposure_seconds.fill(8.0)
 	griddle.call("_refresh_heat_visual")
 	_check(griddle.heat_bar.current_stage() == BAR.STAGE_RED and griddle.heat_status_label.text.contains("已焦糊"), "visible charring forces the pancake bar and copy to red danger")
+	griddle.call("set_non_burning_upgrade_enabled", true)
+	griddle.call("_refresh_heat_visual")
+	_check(not bool(griddle.call("cooking_heat_status").get("charred", true)) and griddle.heat_status_label.text.contains("过火风险"), "non-burning griddle caps an overcooked pancake below the charred state")
 	griddle.state = CompactGriddleUnit.State.IDLE
 	griddle.call("_refresh_heat_visual")
 	_check(griddle.heat_bar.visible and griddle.heat_bar.current_stage() == BAR.STAGE_INACTIVE and griddle.heat_status_label.text.contains("未开始"), "an unlocked idle griddle keeps a grey progress bar in place")

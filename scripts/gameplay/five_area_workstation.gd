@@ -4,7 +4,6 @@ extends "res://scripts/gameplay/workstation.gd"
 const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
-const OPENING_RESTOCK_CHECKLIST_SCRIPT := preload("res://scripts/ui/opening_restock_checklist.gd")
 const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
 const RESULT_QUALITY_ICON_PATHS := {
 	&"IntegrityMetric": "res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png",
@@ -87,7 +86,6 @@ var _workshop_payment_display_hidden := false
 var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
 var _top_warning_tween: Tween
-var _opening_restock_checklist: OpeningRestockChecklist
 
 
 func _ready() -> void:
@@ -106,8 +104,9 @@ func _ready() -> void:
 	# but below modal result panels.
 	payment_coin_layer.z_index = 30
 	_formal_payment_total_rest_modulate = global_status_label.modulate
-	_opening_restock_checklist = OPENING_RESTOCK_CHECKLIST_SCRIPT.new()
-	$SafeArea.add_child(_opening_restock_checklist)
+	# Keep the opening restock interaction focused on the physical stock sources.
+	# The old upper-left checklist competed with the workbench and could surface
+	# instructional copy during restocking, so it is intentionally not displayed.
 	for station in [fresh_soy_station, cartoon_youtiao_fryer]:
 		station.status_message.connect(_show_station_status)
 		# The formal shell already owns tightly scoped locked-station click layers.
@@ -217,6 +216,7 @@ func _populate_result(score_result: Dictionary) -> void:
 	result_detail_label.text = str(score_result.get("feedback", "本单已完成"))
 	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
 	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
+	_apply_result_score_tones(float(score_result.get("score", 0.0)))
 
 
 func _set_result_metric_visibility(metric_names: Array, visible: bool, show_icons: bool) -> void:
@@ -397,7 +397,6 @@ func _raise_result_presentation_input() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	_refresh_opening_restock_checklist()
 	_refresh_elapsed += delta
 	if _refresh_elapsed >= 0.10:
 		# Native dragging already performs synchronous Control hit testing for each
@@ -413,19 +412,6 @@ func _process(delta: float) -> void:
 			_refresh_multi_griddle_mode()
 	if serve_product_button != null:
 		serve_product_button.visible = false
-
-
-func _refresh_opening_restock_checklist() -> void:
-	if _opening_restock_checklist == null:
-		return
-	var session := get_node_or_null("/root/GameSession")
-	if session == null or not session.has_method("customer_arrival_snapshot"):
-		_opening_restock_checklist.present([], 0.0, false)
-		return
-	var arrival := Dictionary(session.call("customer_arrival_snapshot"))
-	var active := StringName(arrival.get("phase", &"")) == &"restocking"
-	var tasks: Array = Array(session.call("opening_restock_tasks")) if active and session.has_method("opening_restock_tasks") else []
-	_opening_restock_checklist.present(tasks, float(arrival.get("restock_remaining_seconds", 0.0)), active)
 
 
 func _should_defer_business_day_expiration() -> bool:
@@ -561,6 +547,7 @@ func _on_material_hold_requested(source_ref: Dictionary, slot: Node) -> void:
 	var can_start := bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)) and int(status.get("coins", 0)) >= int(status.get("unit_cost", 0))
 	if can_start:
 		slot.accept_hold()
+		slot.set_hold_progress(float(status.get("container_fill_ratio", 0.0)))
 		tool_status_label.text = "持续长按补货；拖拽已经取消，不会误扣费用"
 		return
 	slot.reject_hold()
@@ -573,7 +560,7 @@ func _on_material_hold_advanced(source_ref: Dictionary, delta: float, slot: Node
 		slot.reject_hold()
 		return
 	var result := Dictionary(session.call("advance_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")), delta))
-	slot.set_hold_progress(float(result.get("progress_ratio", 0.0)))
+	slot.set_hold_progress(float(result.get("container_fill_ratio", 0.0)))
 	if int(result.get("completed_units", 0)) > 0:
 		tool_status_label.text = "%s补货 +%d" % [slot.material_label, int(result.get("completed_units", 0))]
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):
@@ -1021,6 +1008,7 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 		tool_status_label.text = "当前没有可交付的顾客订单"
 		return
 	var order := Dictionary(session.call("formal_order", order_id))
+	var tutorial_order := bool(order.get("tutorial_no_countdown", false))
 	var items := Array(order.get("items", []))
 	if item_index < 0 or item_index >= items.size():
 		tool_status_label.text = "该订单商品格为空"
@@ -1039,16 +1027,14 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 	if not bool(staged.get("success", false)):
 		var failure_message := str(staged.get("message", "交付失败，成品未被消耗：%s" % str(staged.get("reason", &"unknown"))))
 		tool_status_label.text = failure_message
-		if StringName(staged.get("reason", &"")) == &"tutorial_order_mismatch":
-			_show_top_warning(failure_message)
 		_refresh_formal_shell()
 		return
 	_on_clicked_product_consumed(source_ref)
-	if not bool(staged.get("will_match", false)):
+	if not tutorial_order and not bool(staged.get("will_match", false)):
 		_show_top_warning("订单内容不匹配；本单仍会结算并按现有规则扣分")
 	var refreshed := Dictionary(session.call("formal_order", order_id))
 	if not _formal_order_items_complete(refreshed):
-		var suffix := "（餐品与要求不符，结算时会扣分）" if not bool(staged.get("will_match", false)) else ""
+		var suffix := "（餐品与要求不符，结算时会扣分）" if not tutorial_order and not bool(staged.get("will_match", false)) else ""
 		tool_status_label.text = "已交付第 %d 项%s；请继续点击剩余商品" % [item_index + 1, suffix]
 		_refresh_order_card_ui(refreshed, _formal_order_patience_ratio(refreshed))
 		return
@@ -1139,14 +1125,12 @@ func _on_customer_service_product_dropped(order_id: StringName, item_index: int,
 	if not bool(staged.get("success", false)):
 		var failure_message := str(staged.get("message", "拖放交付失败，原成品保留：%s" % str(staged.get("reason", &"unknown"))))
 		tool_status_label.text = failure_message
-		if StringName(staged.get("reason", &"")) == &"tutorial_order_mismatch":
-			_show_top_warning(failure_message)
 		_refresh_formal_shell()
 		return
 	_on_clicked_product_consumed(source_ref)
-	if not bool(staged.get("will_match", false)):
-		_show_top_warning("订单内容不匹配；本单仍会结算并按现有规则扣分")
 	var refreshed := Dictionary(session.call("formal_order", order_id))
+	if not bool(refreshed.get("tutorial_no_countdown", false)) and not bool(staged.get("will_match", false)):
+		_show_top_warning("订单内容不匹配；本单仍会结算并按现有规则扣分")
 	if not _formal_order_items_complete(refreshed):
 		tool_status_label.text = "已拖放交付第 %d 项；继续完成其余餐品" % (item_index + 1)
 		_refresh_formal_shell()
@@ -1174,6 +1158,7 @@ func _finish_clicked_order(result: Dictionary) -> void:
 	_populate_result(finished)
 	summary_score_label.text = "本单 %d分 · +%d金币" % [roundi(float(finished.get("score", 0.0))), earned]
 	summary_feedback_label.text = str(finished.get("feedback", "本单已完成"))
+	summary_feedback_label.visible = not summary_feedback_label.text.strip_edges().is_empty()
 	_result_detail_open = false
 	_order_summary_visible = true
 	_refresh_pending_payment_button()

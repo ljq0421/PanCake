@@ -72,6 +72,7 @@ func _run() -> void:
 		)
 	var input_shield := workstation.get_node_or_null("SafeArea/ResultDetailInputShield") as Control
 	_check(input_shield != null and input_shield.is_visible_in_tree(), "result detail shows an outside-input shield")
+	await _capture_result_detail()
 
 	workstation._populate_result({
 		"product_id": &"product.youtiao.plain",
@@ -109,13 +110,6 @@ func _run() -> void:
 		"closing detail restores workbench input even while the order summary remains visible"
 	)
 
-	if DisplayServer.get_name() != "headless":
-		await RenderingServer.frame_post_draw
-		var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)
-		DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
-		var save_error := root.get_texture().get_image().save_png(output_absolute)
-		_check(save_error == OK, "GPU validation screenshot was saved")
-
 	game.queue_free()
 	await process_frame
 	if _failures.is_empty():
@@ -139,6 +133,16 @@ func _maximum_effective_z_index(item: CanvasItem, parent_z := 0) -> int:
 func _check(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+
+func _capture_result_detail() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)
+	DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
+	var save_error := root.get_texture().get_image().save_png(output_absolute)
+	_check(save_error == OK, "GPU result-detail screenshot was saved")
 
 
 func _click(control: Control) -> void:

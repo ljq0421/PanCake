@@ -33,7 +33,7 @@ func _run() -> void:
 	inventory[str(EGG_STOCK)] = 0
 	session.call("save_inventory", inventory)
 	var empty_status: Dictionary = service.call("status", EGG_STOCK)
-	_check(bool(empty_status.get("success", false)) and int(empty_status.get("current_stock", -1)) == 0, "formal service reads stable pancake stock IDs")
+	_check(bool(empty_status.get("success", false)) and int(empty_status.get("current_stock", -1)) == 0 and is_zero_approx(float(empty_status.get("container_fill_ratio", -1.0))), "formal service reads stable pancake stock IDs and exposes empty-container progress")
 	var no_money: Dictionary = service.call("advance_hold", EGG_STOCK, 1.0)
 	_check(no_money.get("reason", &"") == &"insufficient_coins" and int(session.call("inventory_snapshot").get(str(EGG_STOCK), -1)) == 0, "insufficient formal coins stop before inventory mutation")
 	session.call("credit_coins", 3)
@@ -47,6 +47,7 @@ func _run() -> void:
 	_check(int(still_partial.get("completed_units", 0)) == 0 and int(session.call("inventory_snapshot").get(str(EGG_STOCK), 0)) == 0, "cancelled progress cannot be resumed into an early charge")
 	var completed: Dictionary = service.call("advance_hold", EGG_STOCK, unit_seconds * 0.40)
 	_check(int(completed.get("completed_units", 0)) == 1 and int(session.call("inventory_snapshot").get(str(EGG_STOCK), 0)) == 1, "one fresh complete cycle commits exactly one formal stock unit")
+	_check(is_equal_approx(float(completed.get("container_fill_ratio", 0.0)), 1.0 / float(completed.get("capacity", 1))), "restock progress reports the full container's current fill ratio")
 	_check(int(session.call("five_area_progression_snapshot").get("coins", 0)) == 2, "a completed formal restock deducts one formal coin")
 	unlocked_stock_ids = Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
 	unlocked_stock_ids[YOUTIAO_STOCK] = true

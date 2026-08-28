@@ -90,6 +90,11 @@ func _run() -> void:
 	_check(session.griddle_save_calls == 0, "reapplying the single-griddle layout and its safety tick do not rewrite an unchanged save")
 	var unit := station.units[0] as CompactGriddleUnit
 	_check(unit.position.is_equal_approx(Vector2(380.0, 105.0)), "the sole griddle retains the scene-authored single-stall position")
+	session.progression.owned_growth_ids.append("growth.automation.pancake.non_burning_griddle")
+	station.call("_sync_growth_effects")
+	_check(is_equal_approx(unit.pancake_model.cooking_doneness_cap, CompactGriddleUnit.NON_BURNING_DONENESS_CAP), "owned non-burning griddle applies its safe cooking cap to the active griddle")
+	session.progression.owned_growth_ids.erase("growth.automation.pancake.non_burning_griddle")
+	station.call("_sync_growth_effects")
 	for coverage_index in unit.pancake_model.coverage.size():
 		unit.pancake_model.coverage[coverage_index] = 1.0
 	unit.pancake_model.flip(true)

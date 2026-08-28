@@ -70,6 +70,13 @@ const SPREADER_SPEED_MEDIUM := 0
 const SPREADER_SPEED_FAST := 1
 const EGG_CRACK_EFFECT_BASE_SCALE := Vector2(0.55, 0.55)
 const EGG_CRACK_EFFECT_STAGE_Y := 0.0
+const RESULT_METRIC_NAMES := [
+	&"IntegrityMetric", &"ThicknessMetric", &"HeatMetric", &"EggMetric", &"SauceMetric",
+	&"IngredientMetric", &"FoldMetric", &"OrderMetric", &"TimeMetric",
+]
+const RESULT_SCORE_EXCELLENT_COLOR := Color(0.45, 0.91, 0.82, 1.0)
+const RESULT_SCORE_STEADY_COLOR := Color(1.0, 0.82, 0.44, 1.0)
+const RESULT_SCORE_NEEDS_WORK_COLOR := Color(0.96, 0.53, 0.32, 1.0)
 
 @export var parameters: PancakeSimulationParameters
 
@@ -2543,7 +2550,8 @@ func _formal_pancake_order_is_settled() -> bool:
 
 
 func _populate_result(score_result: Dictionary) -> void:
-	result_title_label.text = "顾客评价 · %d分" % roundi(float(score_result.get("score", 0.0)))
+	var overall_score := float(score_result.get("score", 0.0))
+	result_title_label.text = "顾客评价 · %d分" % roundi(overall_score)
 	var dimensions: Dictionary = Dictionary(score_result.get("dimensions", {}))
 	result_detail_label.text = str(score_result.get("feedback", "本单已完成"))
 	integrity_score_label.text = "完整度  %d" % roundi(float(dimensions.get("integrity", 0.0)))
@@ -2557,6 +2565,33 @@ func _populate_result(score_result: Dictionary) -> void:
 	time_score_label.text = "时间  %d" % roundi(float(dimensions.get("time", 0.0)))
 	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
 	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
+	_apply_result_score_tones(overall_score)
+
+
+func _apply_result_score_tones(overall_score: float) -> void:
+	result_title_label.add_theme_color_override("font_color", _result_score_color(overall_score))
+	for metric_name in RESULT_METRIC_NAMES:
+		var metric_control := get_node_or_null("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
+		if metric_control == null or not metric_control.visible:
+			continue
+		var score_label := metric_control.get_node_or_null("%sScoreLabel" % str(metric_name).trim_suffix("Metric")) as Label
+		if score_label == null:
+			continue
+		var score_parts := score_label.text.strip_edges().split(" ", false)
+		var metric_score := float(score_parts[score_parts.size() - 1]) if not score_parts.is_empty() else 0.0
+		var tone := _result_score_color(metric_score)
+		score_label.add_theme_color_override("font_color", tone)
+		var icon := metric_control.get_node_or_null("Icon") as TextureRect
+		if icon != null:
+			icon.modulate = Color.WHITE.lerp(tone, 0.22)
+
+
+func _result_score_color(score: float) -> Color:
+	if score >= 85.0:
+		return RESULT_SCORE_EXCELLENT_COLOR
+	if score >= 60.0:
+		return RESULT_SCORE_STEADY_COLOR
+	return RESULT_SCORE_NEEDS_WORK_COLOR
 
 
 func _start_next_order() -> void:

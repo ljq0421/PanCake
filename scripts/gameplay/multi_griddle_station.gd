@@ -13,6 +13,7 @@ const UNIT_SCRIPT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain"]
 const EGG_STOCK_ID := &"stock.pancake.egg"
 const ONE_CLICK_EGG_GROWTH_ID := &"growth.automation.pancake.one_click_egg"
+const NON_BURNING_GRIDDLE_GROWTH_ID := &"growth.automation.pancake.non_burning_griddle"
 ## Small toppings have no placement precision requirement, so clicking their
 ## worktop source always places a portion at the authored centre position.
 const CLICK_INGREDIENT_STOCK_IDS: Array[StringName] = [
@@ -64,6 +65,7 @@ func bind_session(session: Node) -> void:
 			# The session already owns this state. Seed the comparison cache so the
 			# one-second safety sync cannot immediately rewrite an unchanged save.
 			_last_synced_snapshot = snapshot().duplicate(true)
+	_sync_growth_effects()
 
 
 func _process(delta: float) -> void:
@@ -75,6 +77,7 @@ func _process(delta: float) -> void:
 		_sync_snapshot_to_session()
 	_save_elapsed += maxf(delta, 0.0)
 	if _save_elapsed >= 1.0:
+		_sync_growth_effects()
 		# A cooking snapshot contains the complete simulation fields and is written
 		# as JSON. Defer this safety save while a native preview is following the
 		# pointer, then flush it immediately after the drag ends.
@@ -83,6 +86,16 @@ func _process(delta: float) -> void:
 			return
 		_save_elapsed = 0.0
 		_sync_snapshot_to_session()
+
+
+func _sync_growth_effects() -> void:
+	if _session == null or not _session.has_method("progression_service"):
+		return
+	var progression: RefCounted = _session.call("progression_service")
+	var non_burning_enabled := progression != null and bool(progression.call("owns_growth", NON_BURNING_GRIDDLE_GROWTH_ID))
+	for unit in units:
+		if unit != null and unit.has_method("set_non_burning_upgrade_enabled"):
+			unit.call("set_non_burning_upgrade_enabled", non_burning_enabled)
 
 
 func set_griddle_count(_value: int) -> void:

@@ -383,7 +383,7 @@ func _advance_machine_hold(delta: float) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var stock_id := _selected_stock_id()
 	var result := Dictionary(session.call("advance_five_area_restock_hold", stock_id, delta)) if session != null else {"success": false, "reason": &"no_game_session"}
-	_show_machine_hold_progress(float(result.get("progress_ratio", 0.0)), "补货并投料")
+	_show_machine_hold_progress(float(result.get("container_fill_ratio", 0.0)), "补货库存")
 	if int(result.get("completed_units", 0)) > 0:
 		for _unit in int(result.get("completed_units", 0)):
 			_load_selected_input()

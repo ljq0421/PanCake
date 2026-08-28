@@ -220,7 +220,9 @@ func begin_gesture(viewport_position: Vector2) -> void:
 	_holding = false
 	_press_position = viewport_position
 	_hold_elapsed = 0.0
-	set_hold_progress(0.0)
+	if _hold_progress_ring != null:
+		_hold_progress_ring.set_progress_ratio(0.0)
+	_set_hold_progress_visible(false)
 	set_process(hold_enabled)
 
 
@@ -303,7 +305,6 @@ func advance_gesture(delta: float) -> void:
 	if not hold_enabled or not _pressed_for_drag:
 		return
 	_hold_elapsed += maxf(delta, 0.0)
-	set_hold_progress(_hold_elapsed / maxf(hold_threshold_seconds, 0.001))
 	if _hold_elapsed + 0.000001 < hold_threshold_seconds:
 		return
 	set_process(false)

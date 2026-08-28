@@ -38,7 +38,7 @@ var tutorial_active_kind: StringName = &"area"
 var tutorial_active_id: StringName = &"area.pancake"
 var tutorial_failure_count_by_id: Dictionary = {}
 ## Action progress and final outcomes are deliberately separate.  Completing a
-## gesture can advance the guide, but only a correct delivery records
+## gesture can advance the guide, and completing the guided delivery records
 ## `completed`; an explicit opt-out records `skipped`.
 var tutorial_action_ids_by_id: Dictionary = {}
 var tutorial_order_validation_by_id: Dictionary = {}

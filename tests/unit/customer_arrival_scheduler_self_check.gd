@@ -77,45 +77,20 @@ func _check_completed_delivery_ends_tutorial(session: Node) -> void:
 		"grade": &"C",
 	}))
 	var after_wrong := Dictionary(session.call("formal_order", tutorial_order_id))
+	_check(
+		bool(attached.get("success", false))
+		and not bool(attached.get("will_match", true))
+		and Array(Dictionary(Array(after_wrong.get("items", []))[0]).get("prepared_product_instance_ids", [])).size() == 1,
+		"tutorial delivery accepts a completed guided product without recipe-match blocking"
+	)
+	var settlement := Dictionary(session.call("settle_f3_order", tutorial_order_id))
 	var tutorial := Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
 	_check(
-		not bool(attached.get("success", false))
-		and StringName(attached.get("reason", &"")) == &"tutorial_order_mismatch"
-		and bool(attached.get("product_retained", false))
-		and Array(Dictionary(Array(after_wrong.get("items", []))[0]).get("prepared_product_instance_ids", [])).is_empty(),
-		"wrong tutorial delivery is blocked before consuming or attaching the product"
-	)
-	var validation_by_id := Dictionary(tutorial.get("order_validation_by_id", {}))
-	_check(
-		StringName(tutorial.get("active_id", &"")) == &"area.pancake"
-		and StringName(Dictionary(validation_by_id.get("area.pancake", {})).get("result", &"")) == &"incorrect"
-		and StringName(Dictionary(tutorial.get("final_outcome_by_id", {})).get("area.pancake", &"pending")) == &"pending",
-		"wrong delivery records validation failure but does not complete the tutorial"
-	)
-	var item := Dictionary(Array(tutorial_order.get("items", []))[0])
-	var correct_product := {
-		"product_instance_id": &"test.correct_tutorial_pancake",
-		"product_id": StringName(item.get("product_id", &"product.pancake.custom")),
-		"area_id": StringName(item.get("area_id", &"area.pancake")),
-		"heat_preference": StringName(item.get("heat_preference", &"golden")),
-		"ingredient_ids": Array(item.get("ingredient_ids", [])).duplicate(),
-		"sauce_ids": Array(item.get("sauce_ids", [])).duplicate(),
-		"score": 90.0,
-		"grade": &"A",
-	}
-	var correct_attachment := Dictionary(session.call("attach_formal_order_product", tutorial_order_id, 0, correct_product))
-	_check(bool(correct_attachment.get("success", false)) and bool(correct_attachment.get("will_match", false)), "correct tutorial product can be attached after any number of safe retries")
-	var settlement := Dictionary(session.call("settle_f3_order", tutorial_order_id))
-	tutorial = Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
-	validation_by_id = Dictionary(tutorial.get("order_validation_by_id", {}))
-	_check(
 		bool(settlement.get("success", false))
-		and bool(settlement.get("order_success", false))
 		and bool(Dictionary(settlement.get("tutorial_completion", {})).get("success", false))
-		and StringName(Dictionary(validation_by_id.get("area.pancake", {})).get("result", &"")) == &"correct"
 		and StringName(Dictionary(tutorial.get("final_outcome_by_id", {})).get("area.pancake", &"")) == &"completed"
 		and StringName(tutorial.get("active_id", &"")).is_empty(),
-		"only a correct settled delivery validates and completes the tutorial"
+		"a settled guided delivery completes the tutorial without recipe validation"
 	)
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("tutorial_completed_area_ids", {})
@@ -127,7 +102,7 @@ func _check_completed_delivery_ends_tutorial(session: Node) -> void:
 	_check(
 		StringName(reconciled_tutorial.get("active_id", &"")).is_empty()
 		and PackedStringArray(reconciled_tutorial.get("completed_area_ids", PackedStringArray())).has("area.pancake"),
-		"a legacy save with a correctly settled tutorial order repairs itself to completed on load"
+		"a legacy save with a settled tutorial order repairs itself to completed on load"
 	)
 	var arrival := Dictionary(session.call("customer_arrival_snapshot"))
 	var delay := float(arrival.get("next_arrival_remaining_seconds", -1.0))

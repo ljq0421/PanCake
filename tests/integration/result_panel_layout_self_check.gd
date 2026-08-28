@@ -36,27 +36,32 @@ func _run() -> void:
 		},
 		"tags": ["鸡蛋偏厚", "摊制不均"],
 	})
-	_check(_metric_is_visible(workstation, "EggMetric"), "pancake result without order context retains egg metric")
-	_check(_metric_is_visible(workstation, "IngredientMetric"), "pancake result without order context retains ingredient metric")
-	_check(not _metric_is_visible(workstation, "IntegrityMetric"), "pancake result hides automatic integrity metric")
-	_check(not _metric_is_visible(workstation, "FoldMetric"), "pancake result hides automatic fold metric")
-	_check(workstation.order_score_label.text == "符合度  76", "pancake result names order-content scoring as compliance")
+	_check(workstation.result_review_scroll.visible and workstation.result_review_cards.get_child_count() == 1, "single-product result uses one review card")
+	_check(workstation.result_title_label.text == "顾客评价 · 1项" and not workstation.result_dimension_grid.visible, "single-product result uses the shared card format")
+	var pancake_card := _only_review_card(workstation)
+	_check(_review_metric_label(pancake_card, "egg") == "摊蛋 54", "pancake card retains egg scoring when no order context is available")
+	_check(_review_metric_label(pancake_card, "ingredients") == "配料 95", "pancake card retains ingredient scoring when no order context is available")
+	_check(_review_metric_has_icon(pancake_card, "thickness"), "pancake card places a quality icon before its metric label")
 
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray()))
-	_check(not _metric_is_visible(workstation, "EggMetric"), "eggless pancake hides egg metric")
-	_check(not _metric_is_visible(workstation, "IngredientMetric"), "plain pancake hides ingredient metric")
+	pancake_card = _only_review_card(workstation)
+	_check(_review_metric_label(pancake_card, "egg").is_empty(), "eggless pancake hides egg metric")
+	_check(_review_metric_label(pancake_card, "ingredients").is_empty(), "plain pancake hides ingredient metric")
 
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg"])))
-	_check(_metric_is_visible(workstation, "EggMetric"), "egg-only pancake shows egg metric")
-	_check(not _metric_is_visible(workstation, "IngredientMetric"), "egg-only pancake hides ingredient metric")
+	pancake_card = _only_review_card(workstation)
+	_check(not _review_metric_label(pancake_card, "egg").is_empty(), "egg-only pancake shows egg metric")
+	_check(_review_metric_label(pancake_card, "ingredients").is_empty(), "egg-only pancake hides ingredient metric")
 
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.baocui"])))
-	_check(not _metric_is_visible(workstation, "EggMetric"), "topping-only pancake hides egg metric")
-	_check(_metric_is_visible(workstation, "IngredientMetric"), "topping-only pancake shows ingredient metric")
+	pancake_card = _only_review_card(workstation)
+	_check(_review_metric_label(pancake_card, "egg").is_empty(), "topping-only pancake hides egg metric")
+	_check(not _review_metric_label(pancake_card, "ingredients").is_empty(), "topping-only pancake shows ingredient metric")
 
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])))
-	_check(_metric_is_visible(workstation, "EggMetric"), "pancake with egg and toppings shows egg metric")
-	_check(_metric_is_visible(workstation, "IngredientMetric"), "pancake with egg and toppings shows ingredient metric")
+	pancake_card = _only_review_card(workstation)
+	_check(not _review_metric_label(pancake_card, "egg").is_empty(), "pancake with egg and toppings shows egg metric")
+	_check(not _review_metric_label(pancake_card, "ingredients").is_empty(), "pancake with egg and toppings shows ingredient metric")
 	workstation._populate_result({
 		"review_items": [
 			{"expected_product_id": &"product.pancake.custom", "actual_product_id": &"product.pancake.custom", "product": {"product_id": &"product.pancake.custom", "dimension_scores": {"thickness": 58.0, "heat": 72.0, "order": 100.0}}, "order_item": {"ingredient_ids": []}, "score": 58.0, "qualified": false, "feedback": "煎饼评分未达60分，本份不付款"},
@@ -65,7 +70,9 @@ func _run() -> void:
 		],
 	})
 	_check(workstation.result_review_scroll.visible and workstation.result_review_cards.get_child_count() == 3, "multi-item result renders one scrollable review card per ordered product")
-	_check(workstation.result_title_label.text == "顾客评价 · 3项" and not workstation.result_dimension_grid.visible, "multi-item result replaces the first-item metric grid with per-product cards")
+	_check(workstation.result_title_label.text == "顾客评价 · 3项" and not workstation.result_dimension_grid.visible, "multi-item result uses the shared card format")
+	var multi_soy_card := workstation.result_review_cards.get_child(2) as Control
+	_check(_review_metric_has_icon(multi_soy_card, "IntegrityMetric"), "multi-product soy metric places an icon before its label")
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])))
 
 	workstation._order_summary_visible = true
@@ -81,10 +88,10 @@ func _run() -> void:
 	var viewport_rect := Rect2(Vector2.ZERO, root.get_visible_rect().size)
 	_check(panel.is_visible_in_tree(), "view-order action opens the result panel")
 	_check(viewport_rect.encloses(panel_rect), "the complete result panel remains inside the virtual viewport")
-	for metric_name in ["IntegrityMetric", "ThicknessMetric", "HeatMetric", "EggMetric", "SauceMetric", "IngredientMetric", "FoldMetric", "OrderMetric", "TimeMetric"]:
-		var icon := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s/Icon" % metric_name) as TextureRect
-		_check(icon != null and icon.texture != null, "%s loads its quality icon when the result panel opens" % metric_name)
-	for node_name in ["ResultTitleLabel", "ResultDetailLabel", "DimensionGrid", "ResultTagsLabel", "PaymentDisplay", "NextOrderButton"]:
+	pancake_card = _only_review_card(workstation)
+	for metric_name in ["thickness", "heat", "egg", "sauce", "ingredients", "order", "time"]:
+		_check(_review_metric_has_icon(pancake_card, metric_name), "%s loads a quality icon in the shared review card" % metric_name)
+	for node_name in ["ResultTitleLabel", "ResultDetailLabel", "ResultReviewScroll", "PaymentDisplay", "NextOrderButton"]:
 		var control := workstation.get_node("%" + node_name) as Control
 		_check(control.is_visible_in_tree(), "%s remains visible" % node_name)
 		_check(panel_rect.encloses(control.get_global_rect()), "%s remains inside the result panel" % node_name)
@@ -111,12 +118,11 @@ func _run() -> void:
 		"display_product": {"quality": 83.0},
 		"display_item": {"mismatch_reasons": PackedStringArray()},
 	})
-	_check(workstation.integrity_score_label.text == "火候  83", "youtiao result shows its cooking score")
-	_check(workstation.thickness_score_label.text == "沥油  100", "youtiao result shows its draining score")
-	_check(workstation.order_score_label.text == "订单  100", "youtiao result shows its order score")
-	for metric_name in ["EggMetric", "SauceMetric", "IngredientMetric", "FoldMetric", "TimeMetric"]:
-		var metric := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
-		_check(not metric.visible, "youtiao result hides pancake-only %s" % metric_name)
+	var youtiao_card := _only_review_card(workstation)
+	_check(_review_metric_label(youtiao_card, "IntegrityMetric") == "火候 83", "youtiao card shows its cooking score")
+	_check(_review_metric_label(youtiao_card, "ThicknessMetric") == "沥油 100", "youtiao card shows its draining score")
+	_check(_review_metric_label(youtiao_card, "OrderMetric") == "订单 100", "youtiao card shows its order score")
+	_check(_review_metric_has_icon(youtiao_card, "IntegrityMetric") and _review_metric_has_icon(youtiao_card, "ThicknessMetric"), "youtiao card uses its dedicated quality icons")
 
 	workstation._populate_result({
 		"product_id": &"product.fresh_soy_milk.yellow_bean",
@@ -125,10 +131,12 @@ func _run() -> void:
 		"display_product": {"fill_ratio": 0.9, "sugar_servings": 1, "temperature_mode": &"room_temperature"},
 		"display_item": {"mismatch_reasons": PackedStringArray(), "requested_sugar_servings": 1, "requested_temperature_mode": &"room_temperature"},
 	})
-	_check(workstation.integrity_score_label.text == "满杯度  90", "soy result shows its fill score")
-	_check(workstation.thickness_score_label.text == "糖度  100", "soy result shows its sugar score")
-	_check(workstation.heat_score_label.text == "温度  100", "soy result shows its temperature score")
-	_check(workstation.order_score_label.text == "订单  100", "soy result shows its order score")
+	var soy_card := _only_review_card(workstation)
+	_check(_review_metric_label(soy_card, "IntegrityMetric") == "满杯度 90", "soy card shows its fill score")
+	_check(_review_metric_label(soy_card, "ThicknessMetric") == "糖度 100", "soy card shows its sugar score")
+	_check(_review_metric_label(soy_card, "HeatMetric") == "温度 100", "soy card shows its temperature score")
+	_check(_review_metric_label(soy_card, "OrderMetric") == "订单 100", "soy card shows its order score")
+	_check(_review_metric_has_icon(soy_card, "IntegrityMetric") and _review_metric_has_icon(soy_card, "ThicknessMetric") and _review_metric_has_icon(soy_card, "HeatMetric"), "soy card uses its dedicated quality icons")
 
 	_click(workstation.next_order_button)
 	await process_frame
@@ -182,9 +190,31 @@ func _pancake_result_with_ingredients(ingredient_ids: PackedStringArray) -> Dict
 	}
 
 
-func _metric_is_visible(workstation: Node, metric_name: String) -> bool:
-	var metric := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
-	return metric != null and metric.visible
+func _only_review_card(workstation: Node) -> Control:
+	var cards := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/ResultReviewScroll/ResultReviewCards") as VBoxContainer
+	if cards == null:
+		return null
+	if cards.get_child_count() != 1:
+		return null
+	return cards.get_child(0) as Control
+
+
+func _review_metric_label(card: Control, metric_name: String) -> String:
+	if card == null:
+		return ""
+	var label := card.get_node_or_null("Content/Metrics/%sMetric/Label" % metric_name) as Label
+	return label.text if label != null else ""
+
+
+func _review_metric_icon(card: Control, metric_name: String) -> TextureRect:
+	if card == null:
+		return null
+	return card.get_node_or_null("Content/Metrics/%sMetric/Icon" % metric_name) as TextureRect
+
+
+func _review_metric_has_icon(card: Control, metric_name: String) -> bool:
+	var icon := _review_metric_icon(card, metric_name)
+	return icon != null and icon.texture != null
 
 
 func _capture_result_detail() -> void:

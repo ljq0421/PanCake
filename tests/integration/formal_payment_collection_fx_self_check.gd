@@ -18,7 +18,25 @@ func _run() -> void:
 	workstation.call("_show_formal_payment_coins", 22)
 	var coins := _valid_payment_coins(workstation)
 	_check(coins.size() == 2, "22 coins uses the two authored denomination sprites")
+	var one_coin_size: Vector2 = workstation.call("_formal_payment_coin_size", 1)
+	var two_coin_size: Vector2 = workstation.call("_formal_payment_coin_size", 2)
+	var five_coin_size: Vector2 = workstation.call("_formal_payment_coin_size", 5)
+	var ten_coin_size: Vector2 = workstation.call("_formal_payment_coin_size", 10)
+	var twenty_coin_size: Vector2 = workstation.call("_formal_payment_coin_size", 20)
+	_check(
+		one_coin_size.x < two_coin_size.x
+		and two_coin_size.x < five_coin_size.x
+		and five_coin_size.x < ten_coin_size.x
+		and ten_coin_size.x < twenty_coin_size.x,
+		"payment coin sizes increase strictly with denomination"
+	)
 	if coins.size() == 2:
+		_check(coins[0].size.x > coins[1].size.x, "the 20-value coin renders larger than the 2-value coin")
+		_check(
+			absf(coins[0].position.y - coins[1].position.y) > 1.0
+			and not is_equal_approx(coins[0].rotation, coins[1].rotation),
+			"payment coins use a scattered, individually tilted presentation instead of a rigid row"
+		)
 		_detach_live_payment_coins(workstation)
 		var first_start := coins[0].global_position
 		var second_start := coins[1].global_position

@@ -2,8 +2,8 @@
 class_name YoutiaoTrayView
 extends Control
 
-signal fryer_slot_drop_requested(source_index: int, destination_product_id: StringName)
 signal product_drag_ended(source_ref: Dictionary, successful: bool)
+signal tray_clicked
 
 @export var destination_product_id: StringName = &"product.youtiao.plain"
 @export var prepared_slot_id: StringName = &"slot.04"
@@ -24,6 +24,8 @@ signal product_drag_ended(source_ref: Dictionary, successful: bool)
 
 var _drop_enabled := false
 var _editor_layout_signature := 0
+var _tray_click_press_position := Vector2.ZERO
+var _tray_click_pending := false
 
 
 func _ready() -> void:
@@ -102,26 +104,26 @@ func contains_canvas_point(canvas_point: Vector2) -> bool:
 
 
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-	if not _drop_enabled or not (data is Dictionary):
-		return false
-	var payload := Dictionary(data)
-	if StringName(payload.get("kind", &"")) != &"product_source":
-		return false
-	var source_ref := Dictionary(payload.get("source_ref", {}))
-	if StringName(source_ref.get("product_id", &"")) != destination_product_id:
-		return false
-	var source_kind := StringName(source_ref.get("source_kind", &""))
-	if source_kind == &"youtiao_fryer_slot":
-		return accepted_fryer_lane_id == &"left"
-	return (
-		source_kind == &"fryer_slot"
-		and StringName(source_ref.get("lane_id", &"")) == accepted_fryer_lane_id
-	)
+	# Finished food is collected by clicking the matching tray, never by
+	# dragging it from the filter. Keeping this false also prevents a product
+	# source nested in the tray from forwarding a fryer drop back to the tray.
+	return false
 
 
-func _drop_data(_at_position: Vector2, data: Variant) -> void:
-	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
-	fryer_slot_drop_requested.emit(int(source_ref.get("source_index", -1)), destination_product_id)
+func _gui_input(event: InputEvent) -> void:
+	if not _drop_enabled:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_tray_click_pending = true
+			_tray_click_press_position = event.position
+		else:
+			if _tray_click_pending and event.position.distance_to(_tray_click_press_position) <= 4.0:
+				tray_clicked.emit()
+			accept_event()
+			_tray_click_pending = false
+	elif event is InputEventMouseMotion and _tray_click_pending and event.position.distance_to(_tray_click_press_position) > 4.0:
+		_tray_click_pending = false
 
 
 func _apply_slot_layout() -> void:

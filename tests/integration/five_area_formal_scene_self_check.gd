@@ -49,10 +49,10 @@ func _run() -> void:
 		var pancake_click_requests: Array[Dictionary] = []
 		var capture_pancake_click := func(source_ref: Dictionary) -> void: pancake_click_requests.append(source_ref.duplicate(true))
 		fryer.youtiao_add_to_pancake_requested.connect(capture_pancake_click)
-		fryer._on_fryer_product_short_clicked({"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"})
+		fryer._on_plain_tray_clicked()
 		fryer._on_plain_tray_product_short_clicked({"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 0, "product_id": &"product.youtiao.plain"})
 		fryer.youtiao_add_to_pancake_requested.disconnect(capture_pancake_click)
-		_check(pancake_click_requests.size() == 1, "prepared-tray youtiao clicks request one-click pancake placement while fryer clicks collect to the tray")
+		_check(pancake_click_requests.size() == 1, "prepared-tray youtiao clicks request one-click pancake placement while clicking the tray collects fryer output")
 		var session: Node = root.get_node_or_null("GameSession")
 		if session != null:
 			var progression: RefCounted = session.call("progression_service")
@@ -71,12 +71,12 @@ func _run() -> void:
 		fryer._plate_count = 0
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_sources) == 0, "finished youtiao remains in the basket until the player uses or stores it")
-		_check(fryer.plain_tray._can_drop_data(fryer.plain_tray.size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "finished fryer youtiao can still be dragged to the serving plate")
+		_check(not fryer.plain_tray._can_drop_data(fryer.plain_tray.size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "finished fryer youtiao cannot be dragged to the serving plate")
 		fryer._plate_products = [{"product_id": &"product.youtiao.plain"}]
 		fryer._plate_count = 1
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_sources) == 1 and fryer.plain_tray.product_sources[0].visible and fryer.plain_tray.product_sources[0].position == fryer.plain_tray.slot_origin, "storing one fried youtiao displays one draggable product in the reusable plain tray")
-		_check(fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "dropping onto a stored oil strip forwards to the reusable serving tray")
+		_check(not fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "stored oil strips do not forward fryer drops into the serving tray")
 		fryer._chicken_unlocked = true
 		fryer._machine = {
 			"state": &"idle",

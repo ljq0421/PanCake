@@ -181,6 +181,7 @@ const AUTOMATION_DEFINITIONS := {
 	&"automation.pancake.auto_batter_ladle": {"area_id": &"area.pancake"},
 	&"automation.pancake.press_once": {"area_id": &"area.pancake"},
 	&"automation.pancake.non_burning_griddle": {"area_id": &"area.pancake"},
+	&"automation.pancake.fast_cook_griddle": {"area_id": &"area.pancake"},
 	&"automation.pancake.one_click_egg": {"area_id": &"area.pancake"},
 	&"automation.youtiao.auto_lift": {"area_id": &"area.youtiao"},
 	&"automation.fresh_soy_milk.auto_fill": {"area_id": &"area.fresh_soy_milk"},
@@ -198,6 +199,7 @@ const GROWTH_DEFINITIONS := {
 	&"growth.automation.pancake.auto_batter_ladle": {"label":"定量面糊勺", "kind":&"automation", "price":120, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.auto_batter_ladle", "anchor_id":&"pancake.ladle"},
 	&"growth.automation.pancake.press_once": {"label":"压饼器", "kind":&"automation", "price":120, "requires_area_id":&"area.pancake", "automation_id":&"automation.pancake.press_once", "anchor_id":&"pancake.press"},
 	&"growth.automation.pancake.non_burning_griddle": {"label":"不会糊的煎饼鏊子", "kind":&"automation", "price":180, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.automation.pancake.auto_batter_ladle", &"growth.automation.pancake.press_once"], "automation_id":&"automation.pancake.non_burning_griddle", "anchor_id":&"pancake.griddle"},
+	&"growth.automation.pancake.fast_cook_griddle": {"label":"快熟煎饼鏊子", "kind":&"automation", "price":240, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.automation.pancake.non_burning_griddle"], "automation_id":&"automation.pancake.fast_cook_griddle", "anchor_id":&"pancake.griddle"},
 	&"growth.capacity.pancake_holding_tray.first_slot": {"label":"暂存盘 1", "kind":&"storage", "price":40, "requires_area_id":&"area.pancake", "anchor_id":&"pancake.holding_tray.first"},
 	&"growth.capacity.pancake_holding_tray.second_slot": {"label":"暂存盘 2", "kind":&"storage", "price":60, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.capacity.pancake_holding_tray.first_slot"], "anchor_id":&"pancake.holding_tray.second"},
 	&"growth.area.youtiao": {"label":"油条炸锅", "kind":&"area_unlock", "price":200, "requires_area_id":&"area.pancake", "requires_growth_ids":[&"growth.add_on.pancake.egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.add_on.pancake.meat_floss"], "area_id":&"area.youtiao", "device_id":&"device.youtiao_fryer", "target_tier":0, "unlock_recipe_ids":[&"recipe.youtiao.plain"], "unlock_product_ids":[&"product.youtiao.plain"], "unlock_stock_ids":[&"stock.youtiao.plain_dough"], "anchor_id":&"youtiao.fryer"},
@@ -213,7 +215,7 @@ const GROWTH_DEFINITIONS := {
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
-	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.press_once", &"growth.automation.pancake.non_burning_griddle", &"growth.capacity.pancake_holding_tray.first_slot", &"growth.capacity.pancake_holding_tray.second_slot",
+	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.press_once", &"growth.automation.pancake.non_burning_griddle", &"growth.automation.pancake.fast_cook_griddle", &"growth.capacity.pancake_holding_tray.first_slot", &"growth.capacity.pancake_holding_tray.second_slot",
 	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket", &"growth.capacity.chicken_finished_tray",
 	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
 	&"growth.area.packaged_drink",

@@ -244,12 +244,6 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	var source_ref := Dictionary(Dictionary(data).get("source_ref", {}))
 	if StringName(source_ref.get("source_kind", &"")) == &"youtiao_dough":
 		_load_dough(StringName(source_ref.get("recipe_id", RECIPE_ID)))
-		return
-	if StringName(source_ref.get("source_kind", &"")) != &"youtiao_fryer_slot":
-		return
-	var source_index := int(source_ref.get("source_index", -1))
-	if _is_plate_point(_at_position):
-		_store_fryer_slot_on_plate(source_index)
 
 
 func select_recipe(next_recipe_id: StringName) -> void:
@@ -462,35 +456,23 @@ func _load_selected_input() -> void:
 		_load_dough(RECIPE_ID)
 
 
-func _store_fryer_slot_on_plate(source_index: int, product_id: StringName = PRODUCT_ID) -> void:
-	var session := get_node_or_null("/root/GameSession")
-	var final_product_id := product_id
-	var is_chicken := final_product_id == CHICKEN_PRODUCT_ID
-	var result := {"success": false, "reason": &"no_game_session"}
-	if session != null and session.has_method("store_ready_fryer_slot"):
-		result = Dictionary(session.call("store_ready_fryer_slot", &"slot.chicken" if is_chicken else &"slot.04", &"right" if is_chicken else &"left", source_index))
-	elif session != null and not is_chicken and session.has_method("store_ready_youtiao_slot"):
-		# Keep authored/legacy session doubles working while the live session uses
-		# the lane-aware storage API.
-		result = Dictionary(session.call("store_ready_youtiao_slot", &"slot.04", source_index))
-	if bool(result.get("success", false)):
-		status_message.emit("鸡排已放入鸡排盘" if is_chicken else "油条已放入成品盘")
-	else:
-		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
-	_request_session_refresh()
-
-
 func _store_ready_fryer_batch_on_plate(product_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var is_chicken := product_id == CHICKEN_PRODUCT_ID
 	var result := {"success": false, "reason": &"no_game_session"}
-	if session != null and session.has_method("store_ready_fryer_batch"):
+	if session != null and session.has_method("store_ready_fryer_batch_to_available_capacity"):
+		result = Dictionary(session.call("store_ready_fryer_batch_to_available_capacity", &"slot.chicken" if is_chicken else &"slot.04", &"right" if is_chicken else &"left"))
+	elif session != null and session.has_method("store_ready_fryer_batch"):
 		result = Dictionary(session.call("store_ready_fryer_batch", &"slot.chicken" if is_chicken else &"slot.04", &"right" if is_chicken else &"left"))
 	elif session != null and not is_chicken and session.has_method("store_ready_youtiao_batch"):
 		result = Dictionary(session.call("store_ready_youtiao_batch", &"slot.04"))
 	if bool(result.get("success", false)):
 		var quantity := int(result.get("stored_quantity", 0))
-		status_message.emit("%d份鸡排已放入鸡排盘" % quantity if is_chicken else "%d根油条已放入成品盘" % quantity)
+		var remaining := int(result.get("remaining_quantity", 0))
+		var message := "%d份鸡排已放入鸡排盘" % quantity if is_chicken else "%d根油条已放入成品盘" % quantity
+		if remaining > 0:
+			message += "；成品盘已满，剩余%d份保留在滤网中" % remaining
+		status_message.emit(message)
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	_request_session_refresh()
@@ -845,7 +827,7 @@ func _refresh_output_sources(state: StringName, occupied: Array[int], capacity: 
 			"source_index": source_index,
 			"product_id": PRODUCT_ID,
 			"discardable": ready_slot,
-		}, product_texture, ready_slot, "点击任意油条，将整篮油条放入成品盘；也可拖到煎饼或顾客")
+		}, product_texture, ready_slot, "点击油条成品盘收取滤网中的油条；也可拖到煎饼或顾客")
 		# The four visual sticks overlap for depth, but their transparent padding
 		# must not overlap as hit areas.  Alpha hit testing keeps each visible stick
 		# independently draggable while the same node remains the visible artwork.
@@ -883,7 +865,7 @@ func _refresh_chicken_output_sources(lane: Dictionary) -> void:
 			{"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": source_index, "product_id": CHICKEN_PRODUCT_ID, "discardable": source_available},
 			texture,
 			source_available,
-			"拖到废弃区报废整篮%s" % ("焦糊鸡排" if burnt_slot else "鸡排") if source_available else "点击任意鸡排，将整篮鸡排放入鸡排盘",
+			"拖到废弃区报废整篮%s" % ("焦糊鸡排" if burnt_slot else "鸡排") if source_available else "点击鸡排成品盘收取滤网中的鸡排",
 		)
 		var regions: Array[Dictionary] = []
 		if source_available:
@@ -947,33 +929,23 @@ func _configure_component_controls() -> void:
 		source.native_drag_enabled = source in fryer_slot_sources
 		source.drag_threshold_pixels = 4.0
 		source.drag_ended.connect(_on_product_drag_ended)
-		source.short_clicked.connect(_on_fryer_product_short_clicked)
 	burnt_batch_source.native_drag_enabled = true
 	burnt_batch_source.drag_threshold_pixels = 4.0
 	burnt_batch_source.drag_ended.connect(_on_product_drag_ended)
-	plain_tray.fryer_slot_drop_requested.connect(_on_tray_fryer_slot_drop_requested)
-	chicken_tray.fryer_slot_drop_requested.connect(_on_chicken_tray_fryer_slot_drop_requested)
+	plain_tray.tray_clicked.connect(_on_plain_tray_clicked)
+	chicken_tray.tray_clicked.connect(_on_chicken_tray_clicked)
 	plain_tray.product_drag_ended.connect(_on_product_drag_ended)
 	chicken_tray.product_drag_ended.connect(_on_product_drag_ended)
 	for source in plain_tray.product_sources:
 		source.short_clicked.connect(_on_plain_tray_product_short_clicked)
 
 
-func _on_tray_fryer_slot_drop_requested(source_index: int, destination_product_id: StringName) -> void:
-	_store_fryer_slot_on_plate(source_index, destination_product_id)
+func _on_plain_tray_clicked() -> void:
+	_store_ready_fryer_batch_on_plate(PRODUCT_ID)
 
 
-func _on_chicken_tray_fryer_slot_drop_requested(source_index: int, _destination_product_id: StringName) -> void:
-	_store_fryer_slot_on_plate(source_index, CHICKEN_PRODUCT_ID)
-
-
-func _on_fryer_product_short_clicked(source_ref: Dictionary) -> void:
-	var source_kind := StringName(source_ref.get("source_kind", &""))
-	if source_kind == &"youtiao_fryer_slot":
-		_store_ready_fryer_batch_on_plate(PRODUCT_ID)
-		return
-	if source_kind == &"fryer_slot" and StringName(source_ref.get("lane_id", &"")) == &"right":
-		_store_ready_fryer_batch_on_plate(CHICKEN_PRODUCT_ID)
+func _on_chicken_tray_clicked() -> void:
+	_store_ready_fryer_batch_on_plate(CHICKEN_PRODUCT_ID)
 
 
 func _on_plain_tray_product_short_clicked(source_ref: Dictionary) -> void:
@@ -1051,10 +1023,6 @@ func _occupied_slots() -> Array[int]:
 	for value in Array(_machine.get("occupied_slot_indices", [])):
 		result.append(int(value))
 	return result
-
-
-func _is_plate_point(point: Vector2) -> bool:
-	return _finished_tray_unlocked and plain_tray != null and plain_tray.visible and _control_contains_local_point(plain_tray, point)
 
 
 func _machine_lane_at_local_point(point: Vector2, margin: float = 0.0) -> StringName:

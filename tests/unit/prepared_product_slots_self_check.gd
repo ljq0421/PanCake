@@ -154,6 +154,25 @@ func _run() -> void:
 	var blocked_machine := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	_check(blocked.get("reason") == &"prepared_product_slot_full" and int(blocked.get("missing_capacity", 0)) == 1 and int(blocked_machine.get("quantity", 0)) == 4 and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 1, "insufficient prepared space rejects the whole batch without partial movement")
 	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.youtiao.plain_dough"] = 4
+	session.call("save_inventory", fryer_inventory)
+	session.call("load_f3_youtiao", &"recipe.youtiao.plain", 4)
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 10.0)
+	session.call("perform_f3_youtiao_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var partially_stored := Dictionary(session.call("store_ready_fryer_batch_to_available_capacity", &"slot.04", &"left"))
+	var partially_stored_machine := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		bool(partially_stored.get("success", false))
+		and int(partially_stored.get("stored_quantity", 0)) == 3
+		and int(partially_stored.get("remaining_quantity", 0)) == 1
+		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 4
+		and int(partially_stored_machine.get("quantity", 0)) == 1,
+		"clicking a nearly full youtiao tray collects only its free spaces and leaves the remainder in the filter",
+	)
+	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
 
 	session.call("clear_prepared_product_slots")
 	var stored_product := plain_a.duplicate(true)
@@ -233,6 +252,27 @@ func _run() -> void:
 		and StringName(chicken_lane.get("state", &"")) == &"idle",
 		"one right-lane batch action stores every ready chicken cutlet in the chicken tray",
 	)
+	session.call("clear_prepared_product_slots")
+	session.call("_append_prepared_product", &"slot.chicken", _product(&"chicken.partial.seed", &"product.chicken.cutlet", 80.0, &"A", 3))
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.chicken.cutlet_raw"] = 4
+	session.call("save_inventory", fryer_inventory)
+	session.call("load_f3_chicken", 4)
+	session.call("perform_f3_chicken_action", &"start")
+	session.call("advance_f3_production", 12.0)
+	session.call("perform_f3_chicken_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var partially_stored_chicken := Dictionary(session.call("store_ready_fryer_batch_to_available_capacity", &"slot.chicken", &"right"))
+	chicken_lane = Dictionary(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("lanes", {}).get(&"right", {}))
+	_check(
+		bool(partially_stored_chicken.get("success", false))
+		and int(partially_stored_chicken.get("stored_quantity", 0)) == 3
+		and int(partially_stored_chicken.get("remaining_quantity", 0)) == 1
+		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.chicken")).get("count", 0)) == 4
+		and int(chicken_lane.get("quantity", 0)) == 1,
+		"clicking a nearly full chicken tray collects only its free spaces and leaves the remainder in the right filter",
+	)
+	session.call("discard_product_source", {"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": 0, "product_id": &"product.chicken.cutlet", "discardable": true})
 	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
 	fryer_inventory["stock.chicken.cutlet_raw"] = 2
 	session.call("save_inventory", fryer_inventory)

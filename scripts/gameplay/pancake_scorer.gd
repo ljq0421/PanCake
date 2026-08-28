@@ -7,6 +7,10 @@ const MAX_PORTIONS_PER_REQUIREMENT := 2
 ## player must be able to trust that a side shown as green is not later called
 ## under- or overcooked by the customer.
 const HEAT_GREEN_TOLERANCE := 0.08
+## A score below this threshold is a material quality failure even if the two
+## side averages happen to remain inside the green delivery window.  In that
+## case the result panel must explain the local heat variation to the player.
+const HEAT_FEEDBACK_SCORE_THRESHOLD := 60.0
 const SCORE_WEIGHT_THICKNESS := 0.16
 const SCORE_WEIGHT_HEAT := 0.20
 const SCORE_WEIGHT_EGG := 0.11
@@ -115,7 +119,8 @@ static func evaluate_order(
 	patience_ratio: float,
 	egg_automation_applied: bool = false,
 	sauce_automation_applied: bool = false,
-	thickness_automation_applied: bool = false
+	thickness_automation_applied: bool = false,
+	non_burning_griddle_applied: bool = false
 ) -> Dictionary:
 	var covered_indices := PackedInt32Array()
 	var thickness_total := 0.0
@@ -234,7 +239,7 @@ static func evaluate_order(
 	var tags := PackedStringArray()
 	if thickness_score < 58.0:
 		tags.append("厚薄不均")
-	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target):
+	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target, heat_score, non_burning_griddle_applied):
 		tags.append(heat_tag)
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
@@ -290,6 +295,7 @@ static func evaluate_order(
 			"egg_automation_applied": egg_automation_applied,
 			"sauce_automation_applied": sauce_automation_applied,
 			"thickness_automation_applied": thickness_automation_applied,
+			"non_burning_griddle_applied": non_burning_griddle_applied,
 		},
 		"intrinsic_dimensions": {
 			"thickness": thickness_score,
@@ -327,6 +333,7 @@ static func evaluate_order(
 			"mean_front_doneness": mean_front,
 			"mean_back_doneness": mean_back,
 			"heat_target": heat_target,
+			"non_burning_griddle_applied": non_burning_griddle_applied,
 			"egg_coverage_ratio": float(egg_result.coverage_ratio),
 			"egg_uniformity": float(egg_result.uniformity),
 			"mean_egg_doneness": float(egg_result.mean_doneness),
@@ -366,6 +373,7 @@ static func evaluate_stored_product(
 		thickness_score = 100.0
 	var egg_score := 100.0 if bool(production.get("egg_automation_applied", false)) else float(intrinsic.get("egg", 0.0))
 	var sauce_automation_applied := bool(production.get("sauce_automation_applied", false))
+	var non_burning_griddle_applied := bool(production.get("non_burning_griddle_applied", false))
 
 	var heat_target := _heat_target(StringName(order.get("heat_preference", &"golden")))
 	var heat_moments: Dictionary = Dictionary(basis.get("heat_moments", {}))
@@ -464,7 +472,7 @@ static func evaluate_stored_product(
 	var tags := PackedStringArray()
 	if thickness_score < 58.0:
 		tags.append("厚薄不均")
-	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target):
+	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target, heat_score, non_burning_griddle_applied):
 		tags.append(heat_tag)
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
@@ -499,6 +507,7 @@ static func evaluate_stored_product(
 			"mean_front_doneness": mean_front,
 			"mean_back_doneness": mean_back,
 			"heat_target": heat_target,
+			"non_burning_griddle_applied": non_burning_griddle_applied,
 		},
 		"tags": tags,
 		"feedback": _feedback_for(overall, tags, patience_ratio),
@@ -555,6 +564,8 @@ static func heat_feedback_for_metrics(metrics: Dictionary) -> String:
 		float(metrics.get("mean_front_doneness", 0.0)),
 		float(metrics.get("mean_back_doneness", 0.0)),
 		float(metrics.get("heat_target", 0.0)),
+		100.0,
+		bool(metrics.get("non_burning_griddle_applied", false)),
 	)
 
 
@@ -576,20 +587,34 @@ static func _heat_matches_target(mean_front: float, mean_back: float, heat_targe
 	)
 
 
-static func _heat_feedback_tags(mean_front: float, mean_back: float, heat_target: float) -> PackedStringArray:
+static func _heat_feedback_tags(
+	mean_front: float,
+	mean_back: float,
+	heat_target: float,
+	heat_score: float = 100.0,
+	non_burning_griddle_applied: bool = false
+) -> PackedStringArray:
 	var tags := PackedStringArray()
 	for side in [["正面", mean_front], ["反面", mean_back]]:
 		var side_name := str(side[0])
 		var side_doneness := float(side[1])
 		if side_doneness < heat_target - HEAT_GREEN_TOLERANCE:
-			tags.append("%s偏生" % side_name)
+			tags.append("%s火候不足" % side_name if non_burning_griddle_applied else "%s偏生" % side_name)
 		elif side_doneness > heat_target + HEAT_GREEN_TOLERANCE:
 			tags.append("%s偏焦" % side_name)
+	if tags.is_empty() and heat_score < HEAT_FEEDBACK_SCORE_THRESHOLD:
+		tags.append("火候不均")
 	return tags
 
 
-static func _heat_feedback_text(mean_front: float, mean_back: float, heat_target: float) -> String:
-	return "、".join(_heat_feedback_tags(mean_front, mean_back, heat_target))
+static func _heat_feedback_text(
+	mean_front: float,
+	mean_back: float,
+	heat_target: float,
+	heat_score: float = 100.0,
+	non_burning_griddle_applied: bool = false
+) -> String:
+	return "、".join(_heat_feedback_tags(mean_front, mean_back, heat_target, heat_score, non_burning_griddle_applied))
 
 
 static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio: float) -> String:
@@ -598,11 +623,13 @@ static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio:
 	if tags.has("鸡蛋厚薄不均") or tags.has("鸡蛋局部堆积"):
 		return "鸡蛋有些地方堆得太厚，画圈时再连续、均匀一些。"
 	var heat_feedback := PackedStringArray()
-	for heat_tag in ["正面偏生", "正面偏焦", "反面偏生", "反面偏焦"]:
+	for heat_tag in ["正面偏生", "正面偏焦", "反面偏生", "反面偏焦", "正面火候不足", "反面火候不足"]:
 		if tags.has(heat_tag):
 			heat_feedback.append(heat_tag)
 	if not heat_feedback.is_empty():
 		return "火候问题：%s。" % "、".join(heat_feedback)
+	if tags.has("火候不均"):
+		return "火候不够均匀，下次注意整张饼受热一致。"
 	if tags.has("厚薄不均"):
 		return "有些地方偏厚，不过整体还能吃得挺香。"
 	for tag in tags:

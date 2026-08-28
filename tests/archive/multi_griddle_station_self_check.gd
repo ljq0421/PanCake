@@ -92,9 +92,13 @@ func _run() -> void:
 	_check(unit.position.is_equal_approx(Vector2(380.0, 105.0)), "the sole griddle retains the scene-authored single-stall position")
 	session.progression.owned_growth_ids.append("growth.automation.pancake.non_burning_griddle")
 	station.call("_sync_growth_effects")
-	_check(is_equal_approx(unit.pancake_model.cooking_doneness_cap, CompactGriddleUnit.NON_BURNING_DONENESS_CAP), "owned non-burning griddle applies its safe cooking cap to the active griddle")
+	_check(is_equal_approx(unit.pancake_model.cooking_doneness_cap, CompactGriddleUnit.heat_window_for_preference(&"golden").y), "owned non-burning griddle applies the default order's green-ceiling cap to the active griddle")
+	session.progression.owned_growth_ids.append("growth.automation.pancake.fast_cook_griddle")
+	station.call("_sync_growth_effects")
+	_check(is_equal_approx(float(unit.call("_effective_cooking_heat")), unit.p1_session.heat_level * CompactGriddleUnit.FAST_COOK_HEAT_MULTIPLIER), "owned fast-cook griddle doubles the active griddle cooking heat")
 	session.progression.owned_growth_ids.erase("growth.automation.pancake.non_burning_griddle")
 	station.call("_sync_growth_effects")
+	_check(is_equal_approx(float(unit.call("_effective_cooking_heat")), unit.p1_session.heat_level), "fast-cook heat stays disabled when its non-burning prerequisite is absent")
 	for coverage_index in unit.pancake_model.coverage.size():
 		unit.pancake_model.coverage[coverage_index] = 1.0
 	unit.pancake_model.flip(true)

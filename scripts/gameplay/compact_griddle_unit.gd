@@ -45,8 +45,9 @@ const HEAT_GREEN_TOLERANCE := PANCAKE_SCORER_SCRIPT.HEAT_GREEN_TOLERANCE
 const CHARRED_EXPOSURE_SECONDS := 8.0
 const CHARRED_DONENESS := 0.92
 const CHARRED_RATIO_WARNING := 0.10
-## This remains overcooked for scoring, but stays below the charring threshold.
-const NON_BURNING_DONENESS_CAP := CHARRED_DONENESS - 0.001
+## The fast-cook griddle is intentionally a second-stage upgrade.  It halves
+## real-time cooking waits while the non-burning cap still protects the result.
+const FAST_COOK_HEAT_MULTIPLIER := 2.0
 ## A single pointer sample used to invoke the full field simulation once per
 ## radial segment (up to fourteen times). Representative weighted anchors keep
 ## the same total spread force without stalling the input frame.
@@ -127,6 +128,7 @@ var press_spreader_applied := false
 var ready_product: Dictionary = {}
 var upgrade_locked := false
 var _non_burning_upgrade_enabled := false
+var _fast_cook_upgrade_enabled := false
 var pancake_model: PancakeModel = PANCAKE_MODEL_SCRIPT.new(GRID_SIZE, _compact_pancake_parameters())
 var ingredient_model: IngredientModel = INGREDIENT_MODEL_SCRIPT.new()
 var fold_model: PancakeFoldModel = FOLD_MODEL_SCRIPT.new(pancake_model, ingredient_model)
@@ -236,13 +238,13 @@ func _process(delta: float) -> void:
 	if state == State.FIRST_SIDE:
 		first_side_seconds += step
 		_apply_cooking_doneness_cap()
-		pancake_model.advance_cooking(step, p1_session.heat_level)
+		pancake_model.advance_cooking(step, _effective_cooking_heat())
 		p1_session.advance_elapsed_time(step)
 		_refresh_heat_visual()
 	elif state == State.SECOND_SIDE:
 		second_side_seconds += step
 		_apply_cooking_doneness_cap()
-		pancake_model.advance_cooking(step, p1_session.heat_level)
+		pancake_model.advance_cooking(step, _effective_cooking_heat())
 		p1_session.advance_elapsed_time(step)
 		_refresh_heat_visual()
 
@@ -295,18 +297,35 @@ func set_non_burning_upgrade_enabled(value: bool) -> void:
 		_refresh_heat_visual()
 
 
+func non_burning_upgrade_enabled() -> bool:
+	return _non_burning_upgrade_enabled
+
+
+func set_fast_cook_upgrade_enabled(value: bool) -> void:
+	_fast_cook_upgrade_enabled = value
+
+
+func _effective_cooking_heat() -> float:
+	return p1_session.heat_level * (FAST_COOK_HEAT_MULTIPLIER if _fast_cook_upgrade_enabled else 1.0)
+
+
 func _apply_cooking_doneness_cap() -> void:
-	pancake_model.cooking_doneness_cap = NON_BURNING_DONENESS_CAP if _non_burning_upgrade_enabled else 1.0
+	# Protect the active order's full green range, rather than merely stopping
+	# short of the visual char threshold. A protected pancake can be undercooked,
+	# but cannot become overcooked for its order.
+	var heat_window := heat_window_for_preference(StringName(order.get("heat_preference", &"golden")))
+	pancake_model.cooking_doneness_cap = heat_window.y if _non_burning_upgrade_enabled else 1.0
 
 
 func _cap_existing_doneness() -> void:
+	var doneness_cap := pancake_model.cooking_doneness_cap
 	var changed := false
 	for index in pancake_model.cell_count:
-		if pancake_model.doneness[index] > NON_BURNING_DONENESS_CAP:
-			pancake_model.doneness[index] = NON_BURNING_DONENESS_CAP
+		if pancake_model.doneness[index] > doneness_cap:
+			pancake_model.doneness[index] = doneness_cap
 			changed = true
-		if pancake_model.back_doneness[index] > NON_BURNING_DONENESS_CAP:
-			pancake_model.back_doneness[index] = NON_BURNING_DONENESS_CAP
+		if pancake_model.back_doneness[index] > doneness_cap:
+			pancake_model.back_doneness[index] = doneness_cap
 			changed = true
 	if changed:
 		pancake_model.changed.emit()
@@ -372,6 +391,7 @@ func _deactivate_hardware_spreader_cursor() -> void:
 func begin_order(value: Dictionary, batter_amount: float = STANDARD_BATTER_AMOUNT, used_automatic_batter_ladle: bool = false) -> void:
 	reset_unit()
 	order = value.duplicate(true)
+	_apply_cooking_doneness_cap()
 	p1_session.start(order)
 	state = State.BATTER
 	automatic_batter_ladle_applied = used_automatic_batter_ladle
@@ -384,6 +404,7 @@ func begin_batter_pour(value: Dictionary) -> Dictionary:
 		return {"success": false, "reason": &"griddle_busy"}
 	reset_unit()
 	order = value.duplicate(true)
+	_apply_cooking_doneness_cap()
 	p1_session.start(order)
 	state = State.BATTER
 	_batter_ladle_armed = true
@@ -845,6 +866,9 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	p1_session.load_snapshot(Dictionary(value.get("p1_session", {})))
 	state = clampi(int(value.get("state", State.IDLE)), State.IDLE, State.READY)
 	order = Dictionary(value.get("order", {})).duplicate(true)
+	_apply_cooking_doneness_cap()
+	if _non_burning_upgrade_enabled:
+		_cap_existing_doneness()
 	first_side_seconds = maxf(float(value.get("first_side_seconds", 0.0)), 0.0)
 	second_side_seconds = maxf(float(value.get("second_side_seconds", 0.0)), 0.0)
 	fold_steps = clampi(int(value.get("fold_steps", 0)), 0, 2)
@@ -1762,6 +1786,9 @@ func _refresh_fold_visual() -> void:
 func _refresh_heat_visual() -> void:
 	if not is_node_ready():
 		return
+	if _non_burning_upgrade_enabled:
+		_apply_cooking_doneness_cap()
+		_cap_existing_doneness()
 	var heat_status := cooking_heat_status()
 	var cooking := bool(heat_status.get("cooking", false))
 	heat_bar.visible = true
@@ -1833,7 +1860,7 @@ func _heat_status_text(heat_status: Dictionary) -> String:
 	if bool(heat_status.get("charred", false)):
 		return "%s %.1f秒 · 已焦糊 · %d%%" % [side_label, seconds, doneness_percent]
 	var stage_text: String = str({
-		COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW: "偏生",
+		COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW: "火候不足" if _non_burning_upgrade_enabled else "偏生",
 		COOKING_STAGE_BAR_SCRIPT.STAGE_GREEN: "火候正好",
 		COOKING_STAGE_BAR_SCRIPT.STAGE_RED: "过火风险",
 	}.get(StringName(heat_status.get("heat_stage", COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW)), "偏生"))

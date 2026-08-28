@@ -2495,6 +2495,53 @@ func store_ready_fryer_batch(slot_id: StringName, lane_id: StringName = &"left")
 	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "count": stored_products.size(), "lane_id": lane_id}
 
 
+func store_ready_fryer_batch_to_available_capacity(slot_id: StringName, lane_id: StringName = &"left") -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_production_service()
+	var status := prepared_product_slot_status(slot_id)
+	if not bool(status.get("success", false)):
+		return status
+	var machine := Dictionary(_production_service.call("machine_snapshot", &"device.youtiao_fryer"))
+	var lanes := Dictionary(machine.get("lanes", {}))
+	var lane := Dictionary(lanes.get(lane_id, machine))
+	var ready_quantity := maxi(int(lane.get("quantity", 0)), 0)
+	if ready_quantity <= 0:
+		return {"success": false, "reason": &"product_not_ready", "slot_id": slot_id, "lane_id": lane_id}
+	var product_preview := Dictionary(_production_service.call("preview_collect_batch", &"device.youtiao_fryer", 1, -1, lane_id))
+	if not bool(product_preview.get("success", false)):
+		return product_preview
+	var expected_product := Dictionary(product_preview.get("product", {})).duplicate(true)
+	var product_id := StringName(expected_product.get("product_id", &""))
+	if not _prepared_product_slot_accepts_product(slot_id, product_id):
+		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": expected_product}
+	var stored_products: Array = Array(status.get("products", [])).duplicate(true)
+	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
+	var available_capacity := maxi(capacity_per_product - _prepared_product_count(stored_products, product_id), 0)
+	if available_capacity <= 0:
+		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id, "product_id": product_id, "available_capacity": 0}
+	var quantity := mini(ready_quantity, available_capacity)
+	var production_rollback := five_area_production_snapshot()
+	var slots_rollback := prepared_product_slots_snapshot()
+	var collected := Dictionary(_production_service.call("collect_batch", &"device.youtiao_fryer", quantity, -1, lane_id))
+	if not bool(collected.get("success", false)):
+		return collected
+	var products: Array = Array(collected.get("products", [])).duplicate(true)
+	if products.size() != quantity or not products.all(func(product: Dictionary) -> bool: return StringName(product.get("product_id", &"")) == product_id):
+		_production_service.call("load_snapshot", production_rollback)
+		return {"success": false, "reason": &"prepared_product_changed"}
+	var slots := slots_rollback.duplicate(true)
+	stored_products = Array(slots.get(str(slot_id), [])).duplicate(true)
+	stored_products.append_array(products)
+	slots[str(slot_id)] = stored_products
+	_save_data["prepared_product_slots"] = _normalize_prepared_product_slots(slots)
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	return {"success": true, "reason": &"", "slot_id": slot_id, "products": products, "stored_quantity": quantity, "remaining_quantity": ready_quantity - quantity, "count": stored_products.size(), "lane_id": lane_id}
+
+
 func preview_store_ready_youtiao_batch(slot_id: StringName) -> Dictionary:
 	return preview_store_ready_fryer_batch(slot_id, &"left")
 

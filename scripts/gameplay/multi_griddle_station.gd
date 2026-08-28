@@ -15,6 +15,7 @@ const PANCAKE_YOUTIAO_PRODUCT_IDS: Array[StringName] = [&"product.youtiao.plain"
 const EGG_STOCK_ID := &"stock.pancake.egg"
 const ONE_CLICK_EGG_GROWTH_ID := &"growth.automation.pancake.one_click_egg"
 const NON_BURNING_GRIDDLE_GROWTH_ID := &"growth.automation.pancake.non_burning_griddle"
+const FAST_COOK_GRIDDLE_GROWTH_ID := &"growth.automation.pancake.fast_cook_griddle"
 ## Small toppings have no placement precision requirement, so clicking their
 ## worktop source always places a portion at the authored centre position.
 const CLICK_INGREDIENT_STOCK_IDS: Array[StringName] = [
@@ -95,9 +96,14 @@ func _sync_growth_effects() -> void:
 		return
 	var progression: RefCounted = _session.call("progression_service")
 	var non_burning_enabled := progression != null and bool(progression.call("owns_growth", NON_BURNING_GRIDDLE_GROWTH_ID))
+	# The catalog requires the non-burning griddle first. Keep that safety
+	# invariant at runtime too, including for malformed or hand-edited saves.
+	var fast_cook_enabled := non_burning_enabled and progression != null and bool(progression.call("owns_growth", FAST_COOK_GRIDDLE_GROWTH_ID))
 	for unit in units:
 		if unit != null and unit.has_method("set_non_burning_upgrade_enabled"):
 			unit.call("set_non_burning_upgrade_enabled", non_burning_enabled)
+		if unit != null and unit.has_method("set_fast_cook_upgrade_enabled"):
+			unit.call("set_fast_cook_upgrade_enabled", fast_cook_enabled)
 
 
 func set_griddle_count(_value: int) -> void:
@@ -770,6 +776,7 @@ func _build_product(unit: Node) -> Dictionary:
 		bool(unit.get("egg_automation_applied")),
 		bool(unit.get("sauce_automation_applied")),
 		bool(unit.get("automatic_batter_ladle_applied")) and bool(unit.get("press_spreader_applied")),
+		bool(unit.call("non_burning_upgrade_enabled")),
 	)
 	var serving_score_basis := Dictionary(score_result.get("serving_score_basis", {})).duplicate(true)
 	var intrinsic_dimensions := Dictionary(serving_score_basis.get("intrinsic_dimensions", {})).duplicate(true)

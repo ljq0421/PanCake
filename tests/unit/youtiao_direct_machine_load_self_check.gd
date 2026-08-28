@@ -80,6 +80,23 @@ class FakeGameSession extends Node:
 		prepared_product_slots_changed.emit({})
 		return {"success": true, "reason": &"", "stored_quantity": stored_quantity}
 
+	func store_ready_fryer_batch_to_available_capacity(_slot_id: StringName, _lane_id: StringName) -> Dictionary:
+		var occupied := Array(machine.get("occupied_slot_indices", []))
+		if StringName(machine.get("state", &"")) != &"ready_to_collect" or occupied.is_empty():
+			return {"success": false, "reason": &"invalid_equipment_state"}
+		var quantity := mini(occupied.size(), 4 - prepared_products.size())
+		if quantity <= 0:
+			return {"success": false, "reason": &"prepared_product_slot_full"}
+		for _source_index in range(quantity):
+			prepared_products.append({"product_id": &"product.youtiao.plain"})
+		occupied = occupied.slice(quantity)
+		machine["occupied_slot_indices"] = occupied
+		machine["quantity"] = occupied.size()
+		if occupied.is_empty():
+			machine["state"] = &"idle"
+		prepared_product_slots_changed.emit({})
+		return {"success": true, "reason": &"", "stored_quantity": quantity, "remaining_quantity": occupied.size()}
+
 	func five_area_restock_status(_stock_id: StringName) -> Dictionary:
 		return {
 			"success": true,
@@ -183,17 +200,17 @@ func _run() -> void:
 	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.plain_tray.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
 	session.finished_tray_unlocked = true
 	fryer.call("refresh_from_session")
-	_check(bool(fryer.plain_tray.call("_can_drop_data", fryer.plain_tray.size * 0.5, finished_stick)), "the visible serving plate accepts a finished youtiao")
+	_check(not bool(fryer.plain_tray.call("_can_drop_data", fryer.plain_tray.size * 0.5, finished_stick)), "the visible serving plate does not accept dragged youtiao")
 	_check(not fryer.call("_requires_timed_session_refresh"), "a ready fryer stops rebuilding drag sources before a serving-tray drag")
 	var ready_snapshot_calls := session.machine_snapshot_calls
 	for _tick in 8:
 		fryer.call("_process", 0.11)
 	_check(session.machine_snapshot_calls == ready_snapshot_calls, "a ready fryer performs no periodic session snapshots while its output is draggable")
 
-	# A short click on any collectible youtiao uses the batch storage transaction.
-	# This is distinct from dragging one stick to a pancake or customer.
-	fryer.call("_on_fryer_product_short_clicked", {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"})
-	_check(session.prepared_products.size() == 1 and int(session.machine.get("quantity", -1)) == 0, "clicking a collectible youtiao moves the ready batch into the finished tray")
+	# Clicking the finished tray, rather than a collectible youtiao, uses the
+	# batch storage transaction. Dragging one stick remains for pancake/order use.
+	fryer.call("_on_plain_tray_clicked")
+	_check(session.prepared_products.size() == 1 and int(session.machine.get("quantity", -1)) == 0, "clicking the finished tray moves the ready batch into the finished tray")
 	session.prepared_products.clear()
 
 	# Prepared products may be consumed by the pancake station rather than by the
@@ -263,8 +280,12 @@ func _run() -> void:
 	session.machine["occupied_slot_indices"] = [0]
 	session.prepared_products.clear()
 	fryer.call("refresh_from_session")
-	fryer.plain_tray.call("_drop_data", Vector2.ZERO, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}})
-	_check(session.prepared_products.size() == 1 and StringName(session.prepared_products[0].get("product_id", &"")) == &"product.youtiao.plain", "the reusable plain tray routes a fryer-slot drop through the existing storage transaction")
+	_check(
+		not fryer.plain_tray.call("_can_drop_data", Vector2.ZERO, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}})
+		and session.prepared_products.is_empty()
+		and int(session.machine.get("quantity", 0)) == 1,
+		"the reusable plain tray ignores fryer-slot drops",
+	)
 	_check(fryer.get_node_or_null("SesameTray") == null, "the retired sesame serving tray is absent")
 	fryer.editor_preview_tier = 1
 	fryer.editor_preview_state = 3

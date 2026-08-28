@@ -32,7 +32,7 @@ const PANCAKE_RECIPE_MARKER_VISIBLE_LIMIT := 3
 const PANCAKE_PACKAGE_MARKER_SIZE := Vector2(21.0, 21.0)
 const PANCAKE_PACKAGE_MARKER_GAP := 2.0
 const PANCAKE_PACKAGE_MARKER_ROW_Y := 57.0
-const RESULT_QUALITY_ICON_PATHS := {
+const RESULT_METRIC_NODE_ICON_PATHS := {
 	&"IntegrityMetric": "res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png",
 	&"ThicknessMetric": "res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png",
 	&"HeatMetric": "res://resources/art/ui/quality/quality_heat_uniformity_v2_chinese_ui.png",
@@ -42,6 +42,21 @@ const RESULT_QUALITY_ICON_PATHS := {
 	&"FoldMetric": "res://resources/art/ui/quality/quality_fold_stability_v2_chinese_ui.png",
 	&"OrderMetric": "res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png",
 	&"TimeMetric": "res://resources/art/ui/quality/quality_preparation_time_v2_chinese_ui.png",
+}
+const RESULT_REVIEW_ICON_PATHS := {
+	&"pancake.thickness": "res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png",
+	&"pancake.heat": "res://resources/art/ui/quality/quality_heat_uniformity_v2_chinese_ui.png",
+	&"pancake.egg": "res://resources/art/ui/quality/quality_egg_spread_v2_chinese_ui.png",
+	&"pancake.sauce": "res://resources/art/ui/quality/quality_sauce_coverage_v2_chinese_ui.png",
+	&"pancake.ingredients": "res://resources/art/ui/quality/quality_ingredient_distribution_v2_chinese_ui.png",
+	&"pancake.order": "res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png",
+	&"pancake.time": "res://resources/art/ui/quality/quality_preparation_time_v2_chinese_ui.png",
+	&"soy.fill": "res://resources/art/ui/quality/quality_fill_level_v1_chinese_ui.png",
+	&"soy.sugar": "res://resources/art/ui/quality/quality_sugar_level_v1_chinese_ui.png",
+	&"soy.temperature": "res://resources/art/ui/quality/quality_serving_temperature_v1_chinese_ui.png",
+	&"youtiao.doneness": "res://resources/art/ui/quality/quality_youtiao_doneness_v1_chinese_ui.png",
+	&"youtiao.draining": "res://resources/art/ui/quality/quality_youtiao_draining_v1_chinese_ui.png",
+	&"order": "res://resources/art/ui/quality/quality_order_correctness_v2_chinese_ui.png",
 }
 const RESULT_METRIC_LABEL_NAMES := {
 	&"IntegrityMetric": &"IntegrityScoreLabel",
@@ -73,10 +88,35 @@ const PAYMENT_COIN_TEXTURES := {
 	20: preload("res://resources/art/payments/coin_20_v2_chinese_ui.png"),
 }
 const FORMAL_PAYMENT_COIN_SIZE := Vector2(44.0, 44.0)
+const FORMAL_PAYMENT_COIN_SIZES := {
+	1: Vector2(40.0, 40.0),
+	2: Vector2(46.0, 46.0),
+	5: Vector2(52.0, 52.0),
+	10: Vector2(62.0, 62.0),
+	20: Vector2(70.0, 70.0),
+}
 const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(770.0, 558.0)
 const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 38.0
 const FORMAL_PAYMENT_COIN_ROW_SPACING := 24.0
 const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 6
+const FORMAL_PAYMENT_COIN_SCATTER_OFFSETS := [
+	Vector2(-7.0, 8.0),
+	Vector2(8.0, -6.0),
+	Vector2(-3.0, 12.0),
+	Vector2(6.0, -10.0),
+	Vector2(-10.0, 3.0),
+	Vector2(5.0, 9.0),
+	Vector2(-6.0, -7.0),
+	Vector2(10.0, 5.0),
+	Vector2(-1.0, -12.0),
+	Vector2(7.0, 1.0),
+	Vector2(-9.0, 10.0),
+	Vector2(3.0, -4.0),
+]
+const FORMAL_PAYMENT_COIN_SCATTER_ROTATIONS := [
+	-0.18, 0.13, -0.10, 0.20, -0.15, 0.09,
+	0.17, -0.11, 0.08, -0.19, 0.14, -0.06,
+]
 const FORMAL_PAYMENT_COIN_STAGGER_SECONDS := 0.05
 const FORMAL_PAYMENT_COIN_LAUNCH_SECONDS := 0.12
 const FORMAL_PAYMENT_COIN_FLIGHT_SECONDS := 0.24
@@ -254,41 +294,18 @@ func _apply_pointer_cursors(root_node: Node) -> void:
 
 func _populate_result(score_result: Dictionary) -> void:
 	var review_items := Array(score_result.get("review_items", []))
-	if review_items.size() > 1:
-		_populate_multi_product_result(review_items)
-		return
-	_clear_multi_product_result()
-	var product_id := StringName(score_result.get("product_id", &"product.pancake.custom"))
-	if product_id == &"product.pancake.custom":
-		_set_pancake_result_metric_visibility(score_result)
-		super._populate_result(score_result)
-		order_score_label.text = "符合度  %d" % roundi(float(Dictionary(score_result.get("dimensions", {})).get("order", 0.0)))
-		return
-	var metric_profile := _non_pancake_result_metric_profile(score_result, product_id)
-	_set_result_metric_visibility(RESULT_METRIC_LABEL_NAMES.keys(), false, false)
-	for metric_value in metric_profile:
-		var metric := Dictionary(metric_value)
-		var metric_name := StringName(metric.get("metric", &""))
-		var metric_control := get_node_or_null("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
-		var score_label_name := StringName(RESULT_METRIC_LABEL_NAMES.get(metric_name, &""))
-		var score_label := get_node_or_null("%%%s" % score_label_name) as Label
-		if metric_control != null:
-			metric_control.visible = true
-		if score_label != null:
-			score_label.text = "%s  %d" % [str(metric.get("label", "评分")), roundi(float(metric.get("score", 0.0)))]
-	result_title_label.text = "顾客评价 · %d分" % roundi(float(score_result.get("score", 0.0)))
-	result_detail_label.text = str(score_result.get("feedback", "本单已完成"))
-	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
-	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
-	_apply_result_score_tones(float(score_result.get("score", 0.0)))
+	if review_items.is_empty():
+		review_items.append(_single_review_item_from_score_result(score_result))
+	_populate_review_cards(review_items)
 
 
-func _populate_multi_product_result(review_items: Array) -> void:
+func _populate_review_cards(review_items: Array) -> void:
 	result_review_scroll.visible = true
 	result_dimension_grid.visible = false
 	if result_tags_panel != null:
 		result_tags_panel.visible = false
 	for child in result_review_cards.get_children():
+		result_review_cards.remove_child(child)
 		child.queue_free()
 	for review_item_value in review_items:
 		var review_item := Dictionary(review_item_value)
@@ -298,13 +315,23 @@ func _populate_multi_product_result(review_items: Array) -> void:
 	result_title_label.add_theme_color_override("font_color", FORMAL_PAYMENT_GOLD)
 
 
-func _clear_multi_product_result() -> void:
-	result_review_scroll.visible = false
-	result_dimension_grid.visible = true
-	if result_tags_panel != null:
-		result_tags_panel.visible = true
-	for child in result_review_cards.get_children():
-		child.queue_free()
+func _single_review_item_from_score_result(score_result: Dictionary) -> Dictionary:
+	var product_id := StringName(score_result.get("product_id", &"product.pancake.custom"))
+	var product := Dictionary(score_result.get("display_product", {})).duplicate(true)
+	if product.is_empty():
+		product = {"product_id": product_id, "dimension_scores": Dictionary(score_result.get("dimensions", {})).duplicate(true)}
+	elif not product.has("product_id"):
+		product["product_id"] = product_id
+	var score := float(score_result.get("score", 0.0))
+	return {
+		"expected_product_id": product_id,
+		"actual_product_id": product_id,
+		"product": product,
+		"order_item": Dictionary(score_result.get("display_item", {})).duplicate(true),
+		"score": score,
+		"qualified": bool(score_result.get("qualified", score >= 60.0)),
+		"feedback": str(score_result.get("feedback", "本份已完成")),
+	}
 
 
 func _make_review_card(review_item: Dictionary) -> PanelContainer:
@@ -325,6 +352,7 @@ func _make_review_card(review_item: Dictionary) -> PanelContainer:
 	card_style.content_margin_bottom = 14.0
 	card.add_theme_stylebox_override("panel", card_style)
 	var content := VBoxContainer.new()
+	content.name = "Content"
 	content.add_theme_constant_override("separation", 8)
 	card.add_child(content)
 	var heading := HBoxContainer.new()
@@ -348,18 +376,39 @@ func _make_review_card(review_item: Dictionary) -> PanelContainer:
 	feedback_label.text = str(review_item.get("feedback", "本份已完成"))
 	content.add_child(feedback_label)
 	var metrics := GridContainer.new()
+	metrics.name = "Metrics"
 	metrics.columns = 3
 	metrics.add_theme_constant_override("h_separation", 18)
-	metrics.add_theme_constant_override("v_separation", 5)
+	metrics.add_theme_constant_override("v_separation", 6)
 	content.add_child(metrics)
 	for metric_value in _review_metric_profile(review_item):
-		var metric := Dictionary(metric_value)
-		var metric_label := Label.new()
-		metric_label.add_theme_font_size_override("font_size", 17)
-		metric_label.add_theme_color_override("font_color", _result_score_color(float(metric.get("score", 0.0))))
-		metric_label.text = "%s %d" % [str(metric.get("label", "评分")), roundi(float(metric.get("score", 0.0)))]
-		metrics.add_child(metric_label)
+		metrics.add_child(_make_review_metric(Dictionary(metric_value)))
 	return card
+
+
+func _make_review_metric(metric: Dictionary) -> HBoxContainer:
+	var metric_row := HBoxContainer.new()
+	metric_row.name = "%sMetric" % str(metric.get("metric", "Quality"))
+	metric_row.custom_minimum_size = Vector2(0, 32)
+	metric_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	metric_row.add_theme_constant_override("separation", 6)
+	metric_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.custom_minimum_size = Vector2(30, 30)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	var icon_key := StringName(metric.get("icon_key", &"order"))
+	icon.texture = load(str(RESULT_REVIEW_ICON_PATHS.get(icon_key, RESULT_REVIEW_ICON_PATHS[&"order"]))) as Texture2D
+	metric_row.add_child(icon)
+	var metric_label := Label.new()
+	metric_label.name = "Label"
+	metric_label.add_theme_font_size_override("font_size", 17)
+	metric_label.add_theme_color_override("font_color", _result_score_color(float(metric.get("score", 0.0))))
+	metric_label.text = "%s %d" % [str(metric.get("label", "评分")), roundi(float(metric.get("score", 0.0)))]
+	metric_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	metric_row.add_child(metric_label)
+	return metric_row
 
 
 func _review_item_title(review_item: Dictionary) -> String:
@@ -384,10 +433,24 @@ func _review_metric_profile(review_item: Dictionary) -> Array[Dictionary]:
 		var profile: Array[Dictionary] = []
 		for metric_value in [&"thickness", &"heat", &"egg", &"sauce", &"ingredients", &"order", &"time"]:
 			var metric := StringName(metric_value)
-			if dimensions.has(metric):
-				profile.append({"label": labels[metric], "score": float(dimensions.get(metric, 0.0))})
+			if dimensions.has(metric) and _pancake_review_metric_visible(displayed_item, metric):
+				profile.append({"metric": metric, "icon_key": StringName("pancake.%s" % metric), "label": labels[metric], "score": float(dimensions.get(metric, 0.0))})
 		return profile
 	return _non_pancake_result_metric_profile({"display_product": product, "display_item": displayed_item}, product_id)
+
+
+static func _pancake_review_metric_visible(order_item: Dictionary, metric: StringName) -> bool:
+	if metric not in [&"egg", &"ingredients"] or not order_item.has("ingredient_ids"):
+		return true
+	var requests_egg := false
+	var requests_other_ingredients := false
+	for stock_id_value in Array(order_item.get("ingredient_ids", [])):
+		var stock_id := StringName(stock_id_value)
+		if stock_id == PANCAKE_EGG_STOCK_ID:
+			requests_egg = true
+		elif not stock_id.is_empty():
+			requests_other_ingredients = true
+	return requests_egg if metric == &"egg" else requests_other_ingredients
 
 
 func _set_pancake_result_metric_visibility(score_result: Dictionary) -> void:
@@ -433,37 +496,37 @@ static func _non_pancake_result_metric_profile(score_result: Dictionary, product
 	match product_id:
 		&"product.youtiao.plain":
 			return [
-				{"metric": &"IntegrityMetric", "label": "火候", "score": float(product.get("quality", 0.0))},
+				{"metric": &"IntegrityMetric", "icon_key": &"youtiao.doneness", "label": "火候", "score": float(product.get("quality", 0.0))},
 				# A youtiao can only become a deliverable product after its draining
 				# phase has completed, so the delivered state represents full draining.
-				{"metric": &"ThicknessMetric", "label": "沥油", "score": 100.0},
-				{"metric": &"OrderMetric", "label": "订单", "score": order_score},
+				{"metric": &"ThicknessMetric", "icon_key": &"youtiao.draining", "label": "沥油", "score": 100.0},
+				{"metric": &"OrderMetric", "icon_key": &"order", "label": "订单", "score": order_score},
 			]
 		&"product.fresh_soy_milk.yellow_bean":
 			var requested_sugar := int(displayed_item.get("requested_sugar_servings", 0))
 			var requested_temperature := StringName(displayed_item.get("requested_temperature_mode", &"room_temperature"))
 			return [
-				{"metric": &"IntegrityMetric", "label": "满杯度", "score": float(product.get("fill_ratio", 0.0)) * 100.0},
-				{"metric": &"ThicknessMetric", "label": "糖度", "score": 100.0 if int(product.get("sugar_servings", 0)) == requested_sugar else 0.0},
-				{"metric": &"HeatMetric", "label": "温度", "score": 100.0 if StringName(product.get("temperature_mode", &"room_temperature")) == requested_temperature else 0.0},
-				{"metric": &"OrderMetric", "label": "订单", "score": order_score},
+				{"metric": &"IntegrityMetric", "icon_key": &"soy.fill", "label": "满杯度", "score": float(product.get("fill_ratio", 0.0)) * 100.0},
+				{"metric": &"ThicknessMetric", "icon_key": &"soy.sugar", "label": "糖度", "score": 100.0 if int(product.get("sugar_servings", 0)) == requested_sugar else 0.0},
+				{"metric": &"HeatMetric", "icon_key": &"soy.temperature", "label": "温度", "score": 100.0 if StringName(product.get("temperature_mode", &"room_temperature")) == requested_temperature else 0.0},
+				{"metric": &"OrderMetric", "icon_key": &"order", "label": "订单", "score": order_score},
 			]
-	return [{"metric": &"OrderMetric", "label": "订单", "score": order_score}]
+	return [{"metric": &"OrderMetric", "icon_key": &"order", "label": "订单", "score": order_score}]
 
 
 func _load_result_quality_icons() -> void:
 	if _result_quality_icons_loaded:
 		return
-	for metric_name in RESULT_QUALITY_ICON_PATHS:
+	for metric_name in RESULT_METRIC_NODE_ICON_PATHS:
 		var icon := get_node_or_null("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s/Icon" % metric_name) as TextureRect
 		if icon != null:
-			icon.texture = load(str(RESULT_QUALITY_ICON_PATHS[metric_name])) as Texture2D
+			icon.texture = load(str(RESULT_METRIC_NODE_ICON_PATHS[metric_name])) as Texture2D
 	_result_quality_icons_loaded = true
 
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"reset_pancake") and not (event is InputEventKey and event.echo):
-		reset_pancake()
+		_reset_active_pancake_from_shortcut()
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and not get_tree().paused and not is_blocking_modal_open():
@@ -522,6 +585,10 @@ func _apply_gameplay_ui_settings(settings: Dictionary) -> void:
 
 
 func reset_pancake() -> void:
+	super.reset_pancake()
+
+
+func _reset_active_pancake_from_shortcut() -> void:
 	if _multi_griddle_mode_active and is_instance_valid(multi_griddle_station):
 		multi_griddle_station.reset_active()
 		return
@@ -1560,18 +1627,23 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 		_refresh_selected_pancake_delivery_source()
 		_refresh_selected_pancake_order_target()
 		if _selected_pancake_delivery_source_ref.is_empty():
-			var requested_target := {"order_id": order_id, "item_index": item_index}
-			if _same_pancake_order_target(requested_target, _selected_pancake_order_target_ref):
-				_clear_selected_pancake_order_target()
-				tool_status_label.text = "已取消选择订单煎饼"
+			var automatic_griddle_source := _single_ready_griddle_pancake_when_holding_trays_empty(session)
+			if not automatic_griddle_source.is_empty():
+				chosen = {"source_ref": automatic_griddle_source}
+			else:
+				var requested_target := {"order_id": order_id, "item_index": item_index}
+				if _same_pancake_order_target(requested_target, _selected_pancake_order_target_ref):
+					_clear_selected_pancake_order_target()
+					tool_status_label.text = "已取消选择订单煎饼"
+					return
+				_selected_pancake_order_target_ref = requested_target
+				_refresh_pancake_selection_presentation()
+				tool_status_label.text = "已选择订单煎饼；请点击鏊子上或暂存盘中已打包的煎饼"
 				return
-			_selected_pancake_order_target_ref = requested_target
+		else:
+			_selected_pancake_order_target_ref = {"order_id": order_id, "item_index": item_index}
 			_refresh_pancake_selection_presentation()
-			tool_status_label.text = "已选择订单煎饼；请点击鏊子上或暂存盘中已打包的煎饼"
-			return
-		_selected_pancake_order_target_ref = {"order_id": order_id, "item_index": item_index}
-		_refresh_pancake_selection_presentation()
-		chosen = {"source_ref": _selected_pancake_delivery_source_ref.duplicate(true)}
+			chosen = {"source_ref": _selected_pancake_delivery_source_ref.duplicate(true)}
 	else:
 		chosen = _delivery_source_for_item(session, order_id, order, item_index)
 	if chosen.is_empty():
@@ -1598,6 +1670,21 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 		tool_status_label.text = "订单完成失败：%s" % str(completed.get("reason", &"unknown"))
 		return
 	_finish_clicked_order(completed)
+
+
+func _single_ready_griddle_pancake_when_holding_trays_empty(session: Node) -> Dictionary:
+	if multi_griddle_station == null or not session.has_method("pancake_holding_tray_snapshot"):
+		return {}
+	var holding_slots := Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
+	# The holding-tray model always has two physical slots.  Require both to be
+	# empty before bypassing the normal source-selection step.
+	if holding_slots.size() < pancake_holding_sources.size():
+		return {}
+	for slot_index in range(pancake_holding_sources.size()):
+		if not Dictionary(holding_slots[slot_index]).is_empty():
+			return {}
+	var ready_sources: Array = multi_griddle_station.ready_source_refs()
+	return Dictionary(ready_sources[0]).duplicate(true) if ready_sources.size() == 1 else {}
 
 
 func _delivery_source_for_item(session: Node, order_id: StringName, order: Dictionary, item_index: int) -> Dictionary:
@@ -2096,8 +2183,11 @@ func _show_formal_payment_coins(amount: int) -> void:
 		coin.name = "FormalPaymentCoin%d_%d" % [denomination, _formal_payment_coin_sprites.size()]
 		coin.unique_name_in_owner = false
 		coin.texture = texture
-		coin.position = _formal_payment_coin_target(_formal_payment_coin_sprites.size())
-		coin.size = FORMAL_PAYMENT_COIN_SIZE
+		coin.size = _formal_payment_coin_size(denomination)
+		coin.position = _formal_payment_coin_target(_formal_payment_coin_sprites.size()) \
+			+ (FORMAL_PAYMENT_COIN_SIZE - coin.size) * 0.5
+		coin.pivot_offset = coin.size * 0.5
+		coin.rotation = _formal_payment_coin_rotation(_formal_payment_coin_sprites.size())
 		coin.visible = true
 		coin.mouse_filter = Control.MOUSE_FILTER_STOP
 		coin.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -2120,7 +2210,19 @@ func _formal_payment_coin_target(index: int) -> Vector2:
 	return FORMAL_PAYMENT_COIN_ORIGIN + Vector2(
 		float(column) * FORMAL_PAYMENT_COIN_COLUMN_SPACING,
 		float(row) * FORMAL_PAYMENT_COIN_ROW_SPACING,
-	)
+	) + _formal_payment_coin_scatter_offset(index)
+
+
+func _formal_payment_coin_size(denomination: int) -> Vector2:
+	return FORMAL_PAYMENT_COIN_SIZES.get(denomination, FORMAL_PAYMENT_COIN_SIZE) as Vector2
+
+
+func _formal_payment_coin_scatter_offset(index: int) -> Vector2:
+	return FORMAL_PAYMENT_COIN_SCATTER_OFFSETS[index % FORMAL_PAYMENT_COIN_SCATTER_OFFSETS.size()]
+
+
+func _formal_payment_coin_rotation(index: int) -> float:
+	return float(FORMAL_PAYMENT_COIN_SCATTER_ROTATIONS[index % FORMAL_PAYMENT_COIN_SCATTER_ROTATIONS.size()])
 
 
 func _on_formal_payment_coin_gui_input(event: InputEvent) -> void:

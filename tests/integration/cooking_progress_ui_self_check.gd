@@ -3,6 +3,7 @@ extends SceneTree
 const GRIDDLE_SCENE := preload("res://scenes/gameplay/compact_griddle_unit.tscn")
 const FRYER_SCENE := preload("res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn")
 const BAR := preload("res://scripts/ui/cooking_stage_bar.gd")
+const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 
 var _failures: Array[String] = []
 
@@ -36,10 +37,46 @@ func _run() -> void:
 	_check(griddle.heat_bar.current_stage() == BAR.STAGE_RED and griddle.heat_status_label.text.contains("已焦糊"), "visible charring forces the pancake bar and copy to red danger")
 	griddle.call("set_non_burning_upgrade_enabled", true)
 	griddle.call("_refresh_heat_visual")
-	_check(not bool(griddle.call("cooking_heat_status").get("charred", true)) and griddle.heat_status_label.text.contains("过火风险"), "non-burning griddle caps an overcooked pancake below the charred state")
+	_check(
+		not bool(griddle.call("cooking_heat_status").get("charred", true))
+		and griddle.heat_bar.current_stage() == BAR.STAGE_GREEN
+		and griddle.heat_status_label.text.contains("火候正好")
+		and is_equal_approx(float(griddle.pancake_model.cooking_doneness_cap), 0.84),
+		"non-burning griddle caps an overcooked pancake at the active order's green ceiling",
+	)
+	griddle.order = {"heat_preference": &"light"}
+	griddle.pancake_model.doneness.fill(0.20)
+	griddle.call("_refresh_heat_visual")
+	_check(griddle.heat_status_label.text.contains("火候不足") and not griddle.heat_status_label.text.contains("偏焦"), "non-burning griddle describes a missed heat target only as insufficient")
+	_check(
+		PANCAKE_SCORER.heat_feedback_for_metrics({
+			"mean_front_doneness": 0.20,
+			"mean_back_doneness": 0.48,
+			"heat_target": 0.64,
+			"non_burning_griddle_applied": true,
+		}) == "正面火候不足、反面火候不足",
+		"protected pancake delivery feedback calls an unmet heat target insufficient instead of undercooked",
+	)
 	griddle.state = CompactGriddleUnit.State.IDLE
 	griddle.call("_refresh_heat_visual")
 	_check(griddle.heat_bar.visible and griddle.heat_bar.current_stage() == BAR.STAGE_INACTIVE and griddle.heat_status_label.text.contains("未开始"), "an unlocked idle griddle keeps a grey progress bar in place")
+
+	var basic_speed_griddle := GRIDDLE_SCENE.instantiate() as CompactGriddleUnit
+	var fast_speed_griddle := GRIDDLE_SCENE.instantiate() as CompactGriddleUnit
+	root.add_child(basic_speed_griddle)
+	root.add_child(fast_speed_griddle)
+	await process_frame
+	_prepare_cooking_speed_sample(basic_speed_griddle)
+	_prepare_cooking_speed_sample(fast_speed_griddle)
+	fast_speed_griddle.call("set_non_burning_upgrade_enabled", true)
+	fast_speed_griddle.call("set_fast_cook_upgrade_enabled", true)
+	basic_speed_griddle.call("_process", 0.5)
+	fast_speed_griddle.call("_process", 0.5)
+	var basic_doneness := float(basic_speed_griddle.pancake_model.mean_side_doneness(false))
+	var fast_doneness := float(fast_speed_griddle.pancake_model.mean_side_doneness(false))
+	_check(is_equal_approx(fast_doneness, basic_doneness * CompactGriddleUnit.FAST_COOK_HEAT_MULTIPLIER), "fast-cook griddle doubles cooking progress for the same real time")
+	fast_speed_griddle.call("_process", 60.0)
+	_check(float(fast_speed_griddle.pancake_model.mean_side_doneness(false)) <= CompactGriddleUnit.heat_window_for_preference(&"golden").y + 0.0001, "fast-cook griddle retains the non-burning order ceiling")
 
 	var fryer := FRYER_SCENE.instantiate() as CartoonYoutiaoFryerToggle
 	root.add_child(fryer)
@@ -72,6 +109,8 @@ func _run() -> void:
 	_check(griddle.heat_bar.size.y >= 20.0 and fryer.youtiao_progress_bar.size.y >= 20.0, "all cooking bars use a clearly readable authored height")
 
 	griddle.queue_free()
+	basic_speed_griddle.queue_free()
+	fast_speed_griddle.queue_free()
 	fryer.queue_free()
 	await process_frame
 	if _failures.is_empty():
@@ -80,6 +119,15 @@ func _run() -> void:
 	else:
 		printerr("COOKING_PROGRESS_UI_SELF_CHECK_FAIL\n" + "\n".join(_failures))
 		quit(1)
+
+
+func _prepare_cooking_speed_sample(griddle: CompactGriddleUnit) -> void:
+	griddle.pancake_model.coverage.fill(1.0)
+	griddle.pancake_model.thickness.fill(0.5)
+	griddle.pancake_model.doneness.fill(0.0)
+	griddle.pancake_model.back_doneness.fill(0.0)
+	griddle.state = CompactGriddleUnit.State.FIRST_SIDE
+	griddle.p1_session.heat_level = 0.5
 
 
 func _apply_fryer_lanes(fryer: CartoonYoutiaoFryerToggle, left: Dictionary, right: Dictionary, chicken_unlocked: bool) -> void:

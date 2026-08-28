@@ -26,7 +26,7 @@ func _run() -> void:
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.fresh_soy_milk.yellow_bean": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.fresh_soy_milk.yellow_bean": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true})
-	progression.set("owned_growth_ids", {&"growth.capacity.pancake_holding_tray.two_slots": true, &"growth.capacity.youtiao_finished_tray": true})
+	progression.set("owned_growth_ids", {&"growth.capacity.pancake_holding_tray.first_slot": true, &"growth.capacity.youtiao_finished_tray": true})
 
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	for stock_id in inventory.keys():

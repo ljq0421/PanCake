@@ -1,6 +1,6 @@
 extends SceneTree
 
-const SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 
 var failures := PackedStringArray()
 
@@ -10,7 +10,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var source := FileAccess.get_file_as_string("res://scenes/gameplay/five_area_workstation.tscn")
+	var source := FileAccess.get_file_as_string("res://scenes/gameplay/four_area_workstation.tscn")
 	var fryer_scene_source := FileAccess.get_file_as_string("res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn")
 	var fryer_script_source := FileAccess.get_file_as_string("res://scripts/ui/cartoon_youtiao_fryer_toggle.gd")
 	_check(not source.contains("direct_youtiao_station.tscn"), "retired direct fryer is not referenced by the live scene")

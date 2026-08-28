@@ -230,6 +230,7 @@ func refresh() -> void:
 		# remove the tag once the upgrade has been installed: the artwork itself is
 		# then the completed-state feedback.
 		var show_prerequisite_locked_visual := growth_id in [
+			&"growth.capacity.pancake_holding_tray.second_slot",
 			&"growth.capacity.youtiao_finished_tray",
 			&"growth.capacity.chicken_finished_tray",
 			&"growth.add_on.pancake.egg",

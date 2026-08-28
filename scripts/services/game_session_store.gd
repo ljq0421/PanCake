@@ -14,13 +14,13 @@ signal prepared_product_slots_changed(snapshot: Dictionary)
 const SAVE_PATH := "user://project_cake_save.json"
 const SOY_TEST_SAVE_PATH := "user://project_cake_soy_test_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
-## v9 intentionally starts a new ingredient-unlock economy. Older saves are
-## rejected by _load_save and therefore restart from the new opening state.
-const SAVE_VERSION := 9
-const SAVE_KIND := "breakfast_stall_v1"
+## The four-area/single-griddle contract intentionally starts a fresh
+## development save lineage.  Any earlier development save is discarded rather
+## than being partially migrated into a different economy.
+const SAVE_VERSION := 10
+const SAVE_KIND := "breakfast_stall_four_area_v1"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
-const PACKAGED_DRINK_V2_MIGRATION_KEY := "packaged_drink_juice_v2_migrated"
 const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const OPENING_RESTOCK_SECONDS := 5.0
@@ -135,6 +135,11 @@ func is_five_area_save_active() -> bool:
 	return has_save()
 
 
+## Canonical public name for the current four-area save contract.
+func is_four_area_save_active() -> bool:
+	return has_save()
+
+
 func open_soy_test_profile() -> Dictionary:
 	# Keep the developer-facing soy test save in a separate user:// file.  The
 	# normal save remains loaded at startup and is never overwritten by the
@@ -182,6 +187,11 @@ func uses_five_area_progression() -> bool:
 	return true
 
 
+## Canonical public name for the current four-area progression contract.
+func uses_four_area_progression() -> bool:
+	return true
+
+
 func incompatible_development_save_was_removed() -> bool:
 	return _incompatible_development_save_removed
 
@@ -198,7 +208,6 @@ func begin_new_game() -> Dictionary:
 	_save_data = {
 		"version": SAVE_VERSION,
 		"save_kind": SAVE_KIND,
-		PACKAGED_DRINK_V2_MIGRATION_KEY: true,
 		"started_at_unix": now,
 		"last_played_at_unix": now,
 		"day_open": true,
@@ -1416,9 +1425,17 @@ func five_area_production_snapshot() -> Dictionary:
 	return Dictionary(_production_service.call("snapshot")).duplicate(true)
 
 
+func four_area_production_snapshot() -> Dictionary:
+	return five_area_production_snapshot()
+
+
 func five_area_pancake_griddles_snapshot() -> Dictionary:
 	_ensure_production_service()
 	return Dictionary(_production_service.call("pancake_griddles_snapshot")).duplicate(true)
+
+
+func pancake_griddles_snapshot() -> Dictionary:
+	return five_area_pancake_griddles_snapshot()
 
 
 func save_five_area_pancake_griddles(value: Dictionary) -> Dictionary:
@@ -1429,6 +1446,10 @@ func save_five_area_pancake_griddles(value: Dictionary) -> Dictionary:
 		_touch_and_write()
 		production_changed.emit(five_area_production_snapshot())
 	return result
+
+
+func save_pancake_griddles(value: Dictionary) -> Dictionary:
+	return save_five_area_pancake_griddles(value)
 
 
 func preview_pancake_griddle_ready(source_index: int) -> Dictionary:
@@ -1447,6 +1468,10 @@ func take_pancake_griddle_ready(source_index: int) -> Dictionary:
 func f3_machine_snapshot(device_id: StringName) -> Dictionary:
 	_ensure_production_service()
 	return Dictionary(_production_service.call("machine_snapshot", device_id)).duplicate(true)
+
+
+func production_machine_snapshot(device_id: StringName) -> Dictionary:
+	return f3_machine_snapshot(device_id)
 
 
 func youtiao_auto_lift_enabled() -> bool:
@@ -1477,6 +1502,10 @@ func advance_f3_production(delta: float) -> void:
 		return
 	_sync_production_to_save()
 	production_changed.emit(five_area_production_snapshot())
+
+
+func advance_production(delta: float) -> void:
+	advance_f3_production(delta)
 
 
 func discard_product_source(source_ref: Dictionary) -> Dictionary:
@@ -1576,6 +1605,10 @@ func load_f3_chicken(quantity: int, order_id: StringName = &"") -> Dictionary:
 	return result
 
 
+func load_youtiao(recipe_id: StringName, quantity: int, order_id: StringName = &"") -> Dictionary:
+	return load_f3_youtiao(recipe_id, quantity, order_id)
+
+
 func perform_f3_youtiao_action(action_id: StringName) -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("perform_action", &"device.youtiao_fryer", action_id)
@@ -1596,6 +1629,10 @@ func perform_f3_chicken_action(action_id: StringName) -> Dictionary:
 	return result
 
 
+func perform_youtiao_action(action_id: StringName) -> Dictionary:
+	return perform_f3_youtiao_action(action_id)
+
+
 func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
 	var order := formal_order(order_id)
 	var items := Array(order.get("items", []))
@@ -1606,6 +1643,10 @@ func deliver_f3_youtiao(order_id: StringName, item_index: int) -> Dictionary:
 	if slot_id.is_empty():
 		return {"success": false, "reason": &"prepared_product_slot_missing", "product_id": product_id}
 	return stage_product_to_order({"source_kind": &"prepared_product_slot", "source_slot_id": slot_id, "source_index": -1, "product_id": product_id}, order_id, item_index)
+
+
+func deliver_youtiao(order_id: StringName, item_index: int) -> Dictionary:
+	return deliver_f3_youtiao(order_id, item_index)
 
 
 func preview_take_youtiao_fryer_slot(slot_index: int) -> Dictionary:
@@ -1699,6 +1740,10 @@ func add_f4_soy_ingredient(stock_id: StringName) -> Dictionary:
 	return result
 
 
+func load_fresh_soy_milk(recipe_id: StringName, quantity: int, order_id: StringName = &"") -> Dictionary:
+	return load_f4_soy(recipe_id, quantity, order_id)
+
+
 func perform_f4_soy_action(action_id: StringName) -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("perform_soy_action", action_id)
@@ -1715,6 +1760,10 @@ func take_f4_soy_empty_cup() -> Dictionary:
 	if bool(result.get("success", false)):
 		_persist_production_change()
 	return result
+
+
+func perform_fresh_soy_milk_action(action_id: StringName) -> Dictionary:
+	return perform_f4_soy_action(action_id)
 
 
 func select_f4_soy_flavor(recipe_id: StringName) -> Dictionary:
@@ -1755,6 +1804,10 @@ func deliver_f4_soy(order_id: StringName, item_index: int, output_slot_index: in
 	return stage_product_to_order({"source_kind": &"soy_cup", "source_index": output_slot_index, "product_id": StringName(Dictionary(preview.get("product", {})).get("product_id", &""))}, order_id, item_index)
 
 
+func deliver_fresh_soy_milk(order_id: StringName, item_index: int, output_slot_index: int = -1) -> Dictionary:
+	return deliver_f4_soy(order_id, item_index, output_slot_index)
+
+
 func discard_f4_soy(output_slot_index: int = -1) -> Dictionary:
 	_ensure_production_service()
 	var result: Dictionary = _production_service.call("discard_soy", output_slot_index)
@@ -1772,6 +1825,10 @@ func five_area_attention() -> Array[Dictionary]:
 		Array(soy_snapshot.get("output_rack", [])),
 		pancake_holding_tray_snapshot()
 	)
+
+
+func four_area_attention() -> Array[Dictionary]:
+	return five_area_attention()
 
 
 func _collect_and_attach_product(order_id: StringName, item_index: int, preview: Dictionary, collect_method: String, arguments: Array) -> Dictionary:
@@ -2333,6 +2390,10 @@ func five_area_progression_snapshot() -> Dictionary:
 	return Dictionary(_progression.call("snapshot")).duplicate(true)
 
 
+func four_area_progression_snapshot() -> Dictionary:
+	return five_area_progression_snapshot()
+
+
 func prepared_product_slots_snapshot() -> Dictionary:
 	if not has_save():
 		return _empty_prepared_product_slots()
@@ -2625,6 +2686,10 @@ func five_area_restock_status(stock_id: StringName) -> Dictionary:
 	}
 
 
+func restock_status(stock_id: StringName) -> Dictionary:
+	return five_area_restock_status(stock_id)
+
+
 func cancel_five_area_restock_hold(stock_id: StringName) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save", "stock_id": stock_id}
@@ -2637,6 +2702,10 @@ func cancel_five_area_restock_hold(stock_id: StringName) -> Dictionary:
 	_save_data["restock_progress"] = progress_by_stock
 	_touch_and_write()
 	return {"success": true, "stock_id": stock_id, "cancelled_seconds": cancelled_seconds}
+
+
+func cancel_restock_hold(stock_id: StringName) -> Dictionary:
+	return cancel_five_area_restock_hold(stock_id)
 
 
 func opening_restock_tasks() -> Array[Dictionary]:
@@ -2736,6 +2805,10 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 		progression_changed.emit(five_area_progression_snapshot())
 	var result_status := five_area_restock_status(stock_id)
 	return _five_area_restock_result(result_status, true, reason, completed_units, charged_coins)
+
+
+func advance_restock_hold(stock_id: StringName, delta: float) -> Dictionary:
+	return advance_five_area_restock_hold(stock_id, delta)
 
 
 func stable_pancake_stock_id(ingredient_id: StringName) -> StringName:
@@ -3677,7 +3750,8 @@ func _load_save() -> void:
 		_save_data = Dictionary(parsed).duplicate(true)
 		_ensure_save_shape()
 		return
-	# All prior five-area development saves are intentionally incompatible.
+	# All prior development saves are intentionally incompatible with the
+	# four-area/single-griddle economy.
 	# Resetting avoids ambiguous refunds and hidden retired content in snapshots.
 	reset_incompatible_development_save()
 
@@ -3832,7 +3906,6 @@ func _mark_f3_order_started(order_id: StringName, source_id: StringName) -> void
 
 
 func _ensure_save_shape() -> void:
-	_migrate_retired_packaged_drink_state()
 	var inventory_source := Dictionary(_save_data.get("inventory", {})).duplicate(true)
 	var retired_sauce_stock := maxi(
 		int(inventory_source.get("stock.pancake.sauce.red_chili", 0)),
@@ -3954,49 +4027,6 @@ static func _normalize_order_promotions(values: Array) -> Array:
 		if target_exists and int(promotion.get("remaining_orders", 0)) > 0:
 			normalized.append(promotion)
 	return normalized
-
-
-func _migrate_retired_packaged_drink_state() -> void:
-	if bool(_save_data.get(PACKAGED_DRINK_V2_MIGRATION_KEY, false)):
-		return
-	var progression := Dictionary(_save_data.get("progression", {})).duplicate(true)
-	for key in ["unlocked_area_ids", "unlocked_recipe_ids", "unlocked_product_ids", "unlocked_stock_ids", "owned_growth_ids", "pending_growth_ids"]:
-		progression[key] = _without_retired_packaged_drink_ids(progression.get(key, []))
-	var tiers := Dictionary(progression.get("device_tiers", {})).duplicate(true)
-	tiers.erase("device.packaged_drink_heater")
-	tiers.erase(&"device.packaged_drink_heater")
-	progression["device_tiers"] = tiers
-	var mastery := Dictionary(progression.get("area_mastery", {})).duplicate(true)
-	mastery.erase("area.packaged_drink")
-	mastery.erase(&"area.packaged_drink")
-	progression["area_mastery"] = mastery
-	var mastery_details := Dictionary(progression.get("area_mastery_details", {})).duplicate(true)
-	mastery_details.erase("area.packaged_drink")
-	mastery_details.erase(&"area.packaged_drink")
-	progression["area_mastery_details"] = mastery_details
-	var tutorial := Dictionary(progression.get("tutorial", {})).duplicate(true)
-	for key in ["completed_area_ids", "queue_area_ids"]:
-		tutorial[key] = _without_retired_packaged_drink_ids(tutorial.get(key, []))
-	if StringName(tutorial.get("active_id", &"")) == &"area.packaged_drink":
-		tutorial["active_kind"] = &""
-		tutorial["active_id"] = &""
-	progression["tutorial"] = tutorial
-	_save_data["progression"] = progression
-	var inventory := Dictionary(_save_data.get("inventory", {})).duplicate(true)
-	for key in ["stock.packaged_drink.milk", "stock.packaged_drink.soy_milk", "stock.packaged_drink.walnut", "stock.packaged_drink.black_sesame"]:
-		inventory.erase(key)
-	_save_data["inventory"] = inventory
-	_save_data[PACKAGED_DRINK_V2_MIGRATION_KEY] = true
-
-
-static func _without_retired_packaged_drink_ids(value: Variant) -> Array:
-	var kept: Array = []
-	for raw_value in Array(value):
-		var id := str(raw_value)
-		if id == "area.packaged_drink" or id.begins_with("recipe.packaged_drink.") or id.begins_with("product.packaged_drink.") or id.begins_with("stock.packaged_drink.") or (id.begins_with("growth.") and id.contains("packaged_drink")):
-			continue
-		kept.append(raw_value)
-	return kept
 
 
 static func _empty_prepared_product_slots() -> Dictionary:

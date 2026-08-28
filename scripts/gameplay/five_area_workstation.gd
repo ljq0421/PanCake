@@ -98,6 +98,10 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var multi_griddle_station: Control = $SafeArea/JianbingStallArtwork/MultiGriddleStation
 @onready var pancake_holding_tray_button: TextureButton = %PancakeHoldingTray
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
+@onready var pancake_holding_slot_frames: Array[TextureRect] = [
+	$FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01,
+	$FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02,
+]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var result_review_scroll: ScrollContainer = %ResultReviewScroll
 @onready var result_review_cards: VBoxContainer = %ResultReviewCards
@@ -1143,12 +1147,13 @@ func _refresh_pancake_drag_sources() -> void:
 	for slot_index in range(pancake_holding_sources.size()):
 		var product := Dictionary(holding_slots[slot_index]) if slot_index < holding_slots.size() else {}
 		var source := pancake_holding_sources[slot_index]
+		var slot_unlocked := slot_index < pancake_holding_slot_frames.size() and pancake_holding_slot_frames[slot_index].visible
 		# Pancakes are intentionally selected by click before delivery. Keeping the
 		# source clickable but disabling native dragging prevents bypassing that
 		# two-step flow while preserving its discard affordance elsewhere.
 		source.native_drag_enabled = false
-		source.configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "discardable": true}, PANCAKE_HOLDING_PACKAGE_TEXTURE, not product.is_empty(), _pancake_holding_tooltip(product))
-		source.visible = not product.is_empty()
+		source.configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "discardable": true}, PANCAKE_HOLDING_PACKAGE_TEXTURE, slot_unlocked and not product.is_empty(), _pancake_holding_tooltip(product))
+		source.visible = slot_unlocked and not product.is_empty()
 		source.set_selection_highlight(_same_pancake_delivery_source(source.source_ref(), _selected_pancake_delivery_source_ref))
 		_refresh_pancake_recipe_markers(source, product)
 
@@ -1157,12 +1162,17 @@ func _refresh_pancake_holding_tray() -> void:
 	if pancake_holding_tray_button == null:
 		return
 	var session := get_node_or_null("/root/GameSession")
-	var unlocked := false
+	var first_slot_unlocked := false
+	var second_slot_unlocked := false
 	if session != null and session.has_method("progression_service"):
-		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot"))
-	pancake_holding_tray_button.visible = unlocked
-	pancake_holding_tray_button.disabled = not unlocked
-	if unlocked:
+		var progression: RefCounted = session.call("progression_service")
+		first_slot_unlocked = progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot")
+		second_slot_unlocked = progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.second_slot")
+	pancake_holding_tray_button.visible = first_slot_unlocked
+	pancake_holding_tray_button.disabled = not first_slot_unlocked
+	for slot_index in range(pancake_holding_slot_frames.size()):
+		pancake_holding_slot_frames[slot_index].visible = first_slot_unlocked if slot_index == 0 else second_slot_unlocked
+	if first_slot_unlocked:
 		_refresh_pancake_drag_sources()
 
 

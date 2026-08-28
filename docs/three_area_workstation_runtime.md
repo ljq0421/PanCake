@@ -1,8 +1,10 @@
-# 三区域工作台运行时合同
+# 历史归档：三区域工作台运行时合同
 
-> 当前基线：2026-08-13，Godot 4.7.1。
+> 已退休：本文件只保留演进记录，不可作为当前实现依据。请使用 `docs/four_area_workstation_runtime.md`。
 
-## 正式入口与场景结构
+> 历史基线：2026-08-13，Godot 4.7.1。
+
+## 当时的入口与场景结构
 
 - 正式入口固定为 `res://scenes/gameplay/five_area_workstation.tscn`，根节点类型继续为 `Workstation`。
 - 该场景是独立场景，不继承历史工作台。`FiveAreaInfrastructure/Stations` 只包含现磨豆浆、煎饼和油条三个常驻区域。

@@ -1,73 +1,76 @@
+param([int]$TimeoutSeconds = 60)
+
 $ErrorActionPreference = 'Stop'
 $godot = 'D:\Godot\Godot_v4.7.1-stable_win64_console.exe'
 $project = Split-Path -Parent $PSScriptRoot
-$sandboxData = Join-Path $project '.godot-user'
-New-Item -ItemType Directory -Force -Path (Join-Path $sandboxData 'Roaming'), (Join-Path $sandboxData 'Local') | Out-Null
-$env:APPDATA = Join-Path $sandboxData 'Roaming'
-$env:LOCALAPPDATA = Join-Path $sandboxData 'Local'
-$checks = @(
-	'res://tests/integration/start_menu_self_check.gd',
-	'res://tests/integration/ui_color_style_self_check.gd',
-	'res://tests/unit/ingredient_stock_self_check.gd',
-	'res://tests/unit/payment_coin_model_self_check.gd',
-	'res://tests/unit/five_area_restock_self_check.gd',
-	'res://tests/unit/five_area_catalog_self_check.gd',
-	'res://tests/unit/five_area_pricing_self_check.gd',
-	'res://tests/unit/five_area_progression_service_self_check.gd',
-	'res://tests/unit/debug_progression_tools_self_check.gd',
-	'res://tests/unit/customer_portrait_catalog_self_check.gd',
-	'res://tests/unit/five_area_product_visuals_self_check.gd',
-	'res://tests/unit/five_area_game_session_store_self_check.gd',
-	'res://tests/unit/pancake_add_on_promotion_self_check.gd',
-	'res://tests/unit/five_area_order_service_self_check.gd',
-	'res://tests/unit/five_area_playable_order_self_check.gd',
-	'res://tests/unit/five_area_f4_services_self_check.gd',
-	'res://tests/unit/special_customer_order_self_check.gd',
-	'res://tests/unit/soy_cup_service_self_check.gd',
-	'res://tests/unit/multi_griddle_station_self_check.gd',
-	'res://tests/unit/compact_griddle_pointer_follow_self_check.gd',
-	'res://tests/unit/pancake_worktop_hotspots_self_check.gd',
-	'res://tests/unit/five_area_business_systems_self_check.gd',
-	'res://tests/unit/day_end_clearance_self_check.gd',
-	'res://tests/unit/product_drag_source_drag_end_self_check.gd',
-	'res://tests/unit/five_area_material_slot_self_check.gd',
-	'res://tests/unit/youtiao_fryer_self_check.gd',
-	'res://tests/unit/chicken_fryer_progress_refresh_self_check.gd',
-	'res://tests/unit/youtiao_direct_machine_load_self_check.gd',
-	'res://tests/unit/prepared_product_slots_self_check.gd',
-	'res://tests/unit/youtiao_pancake_add_on_self_check.gd',
-	'res://tests/unit/five_area_pancake_production_self_check.gd',
-    'res://tests/unit/pancake_model_self_check.gd',
-    'res://tests/unit/p0_2_simulation_self_check.gd',
-    'res://tests/unit/p0_4_sauce_self_check.gd',
-    'res://tests/unit/p0_5_fold_self_check.gd',
-    'res://tests/unit/p1_vertical_slice_self_check.gd',
-    'res://tests/integration/p0_3_renderer_self_check.gd',
-	'res://tests/integration/p1_audio_self_check.gd',
-	'res://tests/integration/business_day_cutoff_self_check.gd',
-	'res://tests/integration/five_area_formal_scene_self_check.gd',
-	'res://tests/integration/formal_payment_collection_fx_self_check.gd',
-	'res://tests/integration/five_area_tutorial_guide_self_check.gd',
-	'res://tests/integration/five_area_growth_ui_self_check.gd',
-	'res://tests/integration/result_panel_layout_self_check.gd',
-	'res://tests/integration/customer_service_slot_contract_self_check.gd',
-	'res://tests/integration/customer_order_card_click_delivery_self_check.gd'
-)
+$sandboxRoot = Join-Path $project '.godot-user-checks'
+$results = [System.Collections.Generic.List[object]]::new()
+$failurePattern = 'SCRIPT ERROR|Parse Error|Failed loading resource|Cannot open file|Parameter "t" is null|RID allocations|FAIL:|SELF[_-]?CHECK_FAIL|SELF-CHECK FAIL'
 
-foreach ($check in $checks) {
-    Write-Host "Running $check"
-    $logFile = Join-Path $env:TEMP ("projectcake-check-{0}.log" -f [Guid]::NewGuid().ToString('N'))
-    & $godot --headless --path $project --log-file $logFile -s $check
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Godot log: $logFile"
-        exit $LASTEXITCODE
+if (-not (Test-Path -LiteralPath $godot)) { throw "Godot executable not found: $godot" }
+if ($TimeoutSeconds -le 0) { throw 'TimeoutSeconds must be greater than zero.' }
+
+$sharedProfiles = @{
+    'res://tests/integration/four_area_first_day_e2e_self_check.gd' = @{ Name = 'four-area-e2e'; Priority = 0 }
+    'res://tests/integration/four_area_existing_save_e2e_self_check.gd' = @{ Name = 'four-area-e2e'; Priority = 1 }
+}
+$checks = foreach ($file in (Get-ChildItem -Path (Join-Path $project 'tests') -Recurse -File -Filter '*_self_check.gd' | Where-Object { $_.FullName -match '[\\/](unit|integration)[\\/]' } | Sort-Object FullName)) {
+    $relative = $file.FullName.Substring($project.Length).TrimStart('\', '/') -replace '\\', '/'
+    $path = "res://$relative"
+    $shared = $sharedProfiles[$path]
+    [pscustomobject]@{
+        Path = $path
+        Profile = if ($null -eq $shared) { "check-$($file.BaseName)" } else { $shared.Name }
+        Priority = if ($null -eq $shared) { 10 } else { [int]$shared.Priority }
     }
-	$badLogLines = Select-String -Path $logFile -Pattern 'SCRIPT ERROR|Parse Error|Failed loading resource|Cannot open file|Parameter "t" is null|RID allocations|FAIL:'
-	if ($badLogLines) {
-		$badLogLines | ForEach-Object { Write-Host $_.Line }
-		Write-Host "Godot log: $logFile"
-		exit 1
-	}
 }
 
-Write-Host 'All Project Cake checks passed.'
+foreach ($check in ($checks | Sort-Object Priority, Path)) {
+    $profileRoot = Join-Path $sandboxRoot $check.Profile
+    $roaming = Join-Path $profileRoot 'Roaming'
+    $local = Join-Path $profileRoot 'Local'
+    New-Item -ItemType Directory -Force -Path $roaming, $local | Out-Null
+    $token = [Guid]::NewGuid().ToString('N')
+    $log = Join-Path $env:TEMP "projectcake-check-$token.log"
+    $stdout = Join-Path $env:TEMP "projectcake-check-$token.out"
+    $stderr = Join-Path $env:TEMP "projectcake-check-$token.err"
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    # Windows PowerShell 5.1 has no Start-Process -Environment parameter.
+    # Processes are launched serially, so assigning the inherited variables here
+    # keeps every self-check isolated on both Windows PowerShell and pwsh.
+    $env:APPDATA = $roaming
+    $env:LOCALAPPDATA = $local
+    $process = Start-Process -FilePath $godot -ArgumentList @('--headless', '--path', $project, '--log-file', $log, '-s', $check.Path) -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    $finished = $process.WaitForExit($TimeoutSeconds * 1000)
+    $timer.Stop()
+    $status = 'passed'
+    $detail = ''
+    if (-not $finished) { Stop-Process -Id $process.Id -Force; $status = 'timed_out'; $detail = "exceeded $TimeoutSeconds seconds" }
+    else {
+        # WaitForExit(timeout) can expose a stale ExitCode through Windows
+        # PowerShell when output is redirected. A final unbounded wait and
+        # refresh guarantees that successful checks do not become false fails.
+        $process.WaitForExit()
+        $process.Refresh()
+        $exitCode = [int]$process.ExitCode
+        if ($exitCode -ne 0) { $status = 'failed'; $detail = "exit code $exitCode" }
+    }
+    $errors = @()
+    foreach ($candidate in @($log, $stdout, $stderr)) {
+        if (Test-Path -LiteralPath $candidate) { $errors += Select-String -Path $candidate -Pattern $failurePattern | ForEach-Object { $_.Line.Trim() } }
+    }
+    if ($status -eq 'passed' -and $errors.Count -gt 0) { $status = 'failed'; $detail = 'reported parse/runtime/assertion error' }
+    $results.Add([pscustomobject]@{ Check = $check.Path; Status = $status; Seconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2); Detail = $detail; Log = $log; Errors = @($errors | Select-Object -Unique) })
+}
+
+foreach ($result in $results) {
+    Write-Host ("{0,-10} {1,7:N2}s  {2}" -f $result.Status.ToUpperInvariant(), $result.Seconds, $result.Check)
+    if ($result.Detail) { Write-Host "           $($result.Detail)" }
+    foreach ($line in $result.Errors) { Write-Host "           $line" }
+    Write-Host "           log: $($result.Log)"
+}
+$passed = @($results | Where-Object Status -eq 'passed').Count
+$failed = @($results | Where-Object Status -eq 'failed').Count
+$timedOut = @($results | Where-Object Status -eq 'timed_out').Count
+Write-Host "Summary: total=$($results.Count) passed=$passed failed=$failed timed_out=$timedOut"
+if ($failed + $timedOut -gt 0) { exit ($failed + $timedOut) }

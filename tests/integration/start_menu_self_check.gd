@@ -107,7 +107,11 @@ func _run() -> void:
 			and not bool(service_slot.call("is_presentation_transitioning")) \
 			and service_slot.portrait.position == Vector2(12.0, 140.0) \
 			and service_slot.get_node("OrderPanel").visible
-	_check(restored_customer_count > 0 and all_restored_customers_standing, "continue restores saved customers and orders in place without replaying arrival")
+	_check(
+		(restored_customer_count > 0 and all_restored_customers_standing)
+		or (restored_customer_count == 0 and bool(session.call("is_opening_restock_active"))),
+		"continue preserves either saved customers in place or the saved opening-restock state without replaying arrival"
+	)
 	_check(paused and pause_panel.visible, "gameplay pause exposes navigation controls")
 	_check(
 		pause_panel.z_index > _maximum_effective_z_index(workstation),

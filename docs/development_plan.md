@@ -1,7 +1,7 @@
 # Project Cake 分阶段开发计划
 
 > 计划版本：0.2  
-> 对应设计文档：`docs/game_design.md` 0.3；五区成长详见 `docs/five_area_progression_redesign.md`  
+> 对应设计文档：`docs/game_design.md` 0.3；现行运行时合同见 `docs/four_area_workstation_runtime.md`。
 > 引擎：Godot 4.7.1  
 > 目标：先验证单张煎饼的操作手感，再构建最小经营循环
 

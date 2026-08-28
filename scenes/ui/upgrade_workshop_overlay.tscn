@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cnpgrfexl1hdy" path="res://scripts/ui/upgrade_workshop_overlay.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://ts4hjs0b17qb" path="res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png" id="2_press_spreader"]
-[ext_resource type="PackedScene" uid="uid://x84wsqbvl1do" path="res://scenes/gameplay/five_area_workstation.tscn" id="3_workstation_preview"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/four_area_workstation.tscn" id="3_workstation_preview"]
 [ext_resource type="Texture2D" uid="uid://b0yyyh7rvfcqc" path="res://resources/art/products/orange_juice/juice-6.png" id="4_juice_tray"]
 [ext_resource type="Texture2D" uid="uid://cu2vspaobypqo" path="res://resources/art/ingredients/inventory_containers/egg/egg-carton-base-empty-2x3-lidless-cartoon-bold-outline-v4-512.png" id="5_egg_carton"]
 [ext_resource type="Texture2D" uid="uid://d0gefpovfiack" path="res://resources/art/ingredients/inventory_containers/egg/overlays/egg-carton-overlay-6-egg-512.png" id="6_egg_full"]

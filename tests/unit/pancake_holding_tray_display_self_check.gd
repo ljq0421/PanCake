@@ -35,8 +35,25 @@ func _run() -> void:
 	_check(package_markers.size() == 3 and package_markers.all(func(marker): return marker.position.y >= 57.0 and marker.position.y < 80.0), "recipe icons are arranged across the paper bag front")
 	_check(WORKSTATION._pancake_holding_tooltip(egg_baocui).contains("鸡蛋") and WORKSTATION._pancake_holding_tooltip(herb_pancake).contains("香菜"), "holding-tray tooltip names the complete stored recipe")
 	tray.free()
+	var session := root.get_node_or_null("GameSession")
+	if session != null:
+		session.call("begin_new_game")
+		var progression: RefCounted = session.call("progression_service")
+		progression.set("owned_growth_ids", {&"growth.capacity.pancake_holding_tray.first_slot": true})
+		var formal_workstation := WORKSTATION_SCENE.instantiate()
+		root.add_child(formal_workstation)
+		await process_frame
+		var first_slot_frame := formal_workstation.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01") as TextureRect
+		var second_slot_frame := formal_workstation.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02") as TextureRect
+		_check(first_slot_frame != null and first_slot_frame.visible and second_slot_frame != null and not second_slot_frame.visible, "formal workstation shows only the first holding tray slot until the second slot is unlocked")
+		formal_workstation.queue_free()
+		await process_frame
 	var workshop := WORKSHOP_SCENE.instantiate()
+	root.add_child(workshop)
+	await process_frame
 	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_first_slot") is Button and workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") is Button, "workshop authors separate pancake holding-tray upgrade hotspots")
+	var second_slot_tag := workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") as Button
+	_check(second_slot_tag != null and second_slot_tag.visible, "second holding-tray reservation tag remains visible with its prerequisite unmet")
 	var preview_slot := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview/Slot01") as TextureRect
 	_check(preview_slot != null and preview_slot.texture != null and preview_slot.texture.resource_path.ends_with("empty-square-ingredient-tray.png"), "workshop preview uses the confirmed empty-square tray asset")
 	workshop.free()

@@ -253,8 +253,10 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		bool(egg_added.get("success", false))
 		and bool(egg_added.get("one_click", false))
 		and bool(Dictionary(egg_added.get("auto_spread", {})).get("success", false))
+		and bool(unit.get("egg_automation_applied"))
+		and bool(Dictionary(unit.snapshot()).get("egg_automation_applied", false))
 		and int(session.inventory[str(egg_stock_id)]) == egg_before - 1,
-		"egg automation upgrade keeps the click gesture and additionally spreads the egg"
+		"egg automation upgrade keeps the click gesture, spreads the egg, and persists its scoring guarantee"
 	)
 	_check(unit.pancake_model.has_egg() and unit.pancake_model.yolk_broken and not station.ingredient_drag_enabled(egg_stock_id), "egg automation changes the result, not the input gesture")
 	session.progression.owned_growth.erase(&"growth.automation.pancake.one_click_egg")

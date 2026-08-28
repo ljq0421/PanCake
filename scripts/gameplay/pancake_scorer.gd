@@ -3,6 +3,17 @@ extends RefCounted
 
 const UNFLIPPED_DELIVERY_PENALTY := 12.0
 const MAX_PORTIONS_PER_REQUIREMENT := 2
+## The progress-bar green band is also the delivery-contract tolerance.  A
+## player must be able to trust that a side shown as green is not later called
+## under- or overcooked by the customer.
+const HEAT_GREEN_TOLERANCE := 0.08
+const SCORE_WEIGHT_THICKNESS := 0.16
+const SCORE_WEIGHT_HEAT := 0.20
+const SCORE_WEIGHT_EGG := 0.11
+const SCORE_WEIGHT_SAUCE := 0.17
+const SCORE_WEIGHT_INGREDIENTS := 0.16
+const SCORE_WEIGHT_ORDER := 0.15
+const SCORE_WEIGHT_TIME := 0.05
 
 static func evaluate_sauce(model: PancakeModel) -> Dictionary:
 	return evaluate_sauce_type(model, &"sweet_flour")
@@ -89,10 +100,10 @@ static func evaluate_order(
 	fold_model: PancakeFoldModel,
 	order: Dictionary,
 	elapsed_seconds: float,
-	patience_ratio: float
+	patience_ratio: float,
+	egg_automation_applied: bool = false
 ) -> Dictionary:
 	var covered_indices := PackedInt32Array()
-	var damaged := 0
 	var thickness_total := 0.0
 	var thickness_squared_total := 0.0
 	var front_total := 0.0
@@ -115,13 +126,7 @@ static func evaluate_order(
 		var front_error := model.doneness[index] - heat_target
 		var back_error := model.back_doneness[index] - heat_target
 		heat_squared_error += (front_error * front_error + back_error * back_error) * 0.5
-		if model.damage[index] > 0.15:
-			damaged += 1
 	var divisor := maxf(float(covered_indices.size()), 1.0)
-	var pan_summary := model.calculate_summary()
-	var coverage_ratio := float(pan_summary.coverage_ratio)
-	var damage_ratio := float(damaged) / divisor
-	var integrity_score := 100.0 * clampf(minf(coverage_ratio / 0.78, 1.0) * 0.72 + (1.0 - damage_ratio) * 0.28, 0.0, 1.0)
 	var mean_thickness := thickness_total / divisor
 	var thickness_variance := maxf(thickness_squared_total / divisor - mean_thickness * mean_thickness, 0.0)
 	var thickness_score := 100.0 * clampf(1.0 - sqrt(thickness_variance) / 0.42 - absf(mean_thickness - 0.42) / 1.2, 0.0, 1.0)
@@ -130,7 +135,7 @@ static func evaluate_order(
 	var heat_rmse := sqrt(heat_squared_error / divisor)
 	var heat_score := 100.0 * clampf(1.0 - heat_rmse / 0.62, 0.0, 1.0)
 	var egg_result := model.calculate_egg_spread_summary()
-	var egg_score := float(egg_result.score)
+	var egg_score := 100.0 if egg_automation_applied else float(egg_result.score)
 
 	var sauce_intensity_multiplier := maxf(float(order.get("sauce_intensity_multiplier", 1.0)), 0.01)
 	var required_sauces: Array = order.get("sauces", [])
@@ -183,10 +188,6 @@ static func evaluate_order(
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
 	var ingredient_score := clampf(float(ingredient_distribution.score) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
 
-	var fold_score := 100.0 - float(fold_model.maximum_severity()) * 28.0
-	var repair_tags := PackedStringArray()
-	var score_caps := {"fold": 100.0}
-	fold_score = clampf(fold_score, 0.0, 100.0)
 	var order_score := 100.0
 	order_score -= float(missing_ingredients.size()) * 22.0
 	order_score -= float(unexpected_ingredients.size()) * 14.0
@@ -195,15 +196,13 @@ static func evaluate_order(
 	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
 	var time_score := 100.0 * clampf(1.0 - maxf(elapsed_seconds - time_limit * 0.55, 0.0) / (time_limit * 0.75), 0.0, 1.0)
 	var overall := (
-		integrity_score * 0.13
-		+ thickness_score * 0.12
-		+ heat_score * 0.15
-		+ egg_score * 0.08
-		+ sauce_score * 0.13
-		+ ingredient_score * 0.12
-		+ fold_score * 0.12
-		+ order_score * 0.11
-		+ time_score * 0.04
+		thickness_score * SCORE_WEIGHT_THICKNESS
+		+ heat_score * SCORE_WEIGHT_HEAT
+		+ egg_score * SCORE_WEIGHT_EGG
+		+ sauce_score * SCORE_WEIGHT_SAUCE
+		+ ingredient_score * SCORE_WEIGHT_INGREDIENTS
+		+ order_score * SCORE_WEIGHT_ORDER
+		+ time_score * SCORE_WEIGHT_TIME
 	)
 	var unflipped_delivery_penalty := UNFLIPPED_DELIVERY_PENALTY if not model.is_flipped else 0.0
 	overall = maxf(overall - unflipped_delivery_penalty, 0.0)
@@ -212,12 +211,10 @@ static func evaluate_order(
 		"total": -unflipped_delivery_penalty,
 	}
 	var tags := PackedStringArray()
-	if integrity_score >= 85.0:
-		tags.append("饼皮完整")
 	if thickness_score < 58.0:
 		tags.append("厚薄不均")
-	if heat_score < 58.0:
-		tags.append("两面火候有偏差")
+	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target):
+		tags.append(heat_tag)
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
 	if unflipped_delivery_penalty > 0.0:
@@ -232,8 +229,6 @@ static func evaluate_order(
 	for tag in ingredient_distribution.tags:
 		if not tags.has(tag):
 			tags.append(tag)
-	for tag in repair_tags:
-		tags.append(tag)
 	var feedback := _feedback_for(overall, tags, patience_ratio)
 	var applied_ingredient_ids: Array[StringName] = []
 	for ingredient_type in IngredientModel.ALL_TYPES:
@@ -267,16 +262,15 @@ static func evaluate_order(
 	var selected_chili := chili_special if is_equal_approx(sauce_intensity_multiplier, 1.35) else Dictionary(sauce_results.get(OrderService.SAUCE_CHILI, {}))
 	var spice_target_met := _spice_profile_meets_target(selected_chili)
 	var serving_score_basis := {
-		"version": 3,
+		"version": 5,
 		"production": {
 			"was_flipped": model.is_flipped,
 			"unflipped_delivery_penalty": unflipped_delivery_penalty,
+			"egg_automation_applied": egg_automation_applied,
 		},
 		"intrinsic_dimensions": {
-			"integrity": integrity_score,
 			"thickness": thickness_score,
 			"egg": egg_score,
-			"fold": fold_score,
 		},
 		"heat_moments": {
 			"mean_front": mean_front,
@@ -292,26 +286,20 @@ static func evaluate_order(
 		"applied_ingredient_quantities": applied_ingredient_quantities.duplicate(true),
 		"applied_sauce_ids": applied_sauce_ids.duplicate(),
 		"applied_sauce_quantities": applied_sauce_quantities.duplicate(true),
-		"repair_tags": Array(repair_tags).duplicate(),
-		"score_caps": score_caps.duplicate(true),
 	}
 	return {
 		"score": overall,
 		"score_adjustments": score_adjustments,
 		"dimensions": {
-			"integrity": integrity_score,
 			"thickness": thickness_score,
 			"heat": heat_score,
 			"egg": egg_score,
 			"sauce": sauce_score,
 			"ingredients": ingredient_score,
-			"fold": fold_score,
 			"order": order_score,
 			"time": time_score,
 		},
 		"metrics": {
-			"coverage_ratio": coverage_ratio,
-			"damage_ratio": damage_ratio,
 			"mean_thickness": mean_thickness,
 			"mean_front_doneness": mean_front,
 			"mean_back_doneness": mean_back,
@@ -328,7 +316,6 @@ static func evaluate_order(
 		"applied_ingredient_quantities": applied_ingredient_quantities,
 		"applied_sauce_ids": applied_sauce_ids,
 		"applied_sauce_quantities": applied_sauce_quantities,
-		"score_caps": score_caps,
 		"serving_score_basis": serving_score_basis,
 		"special_evaluation": {
 			"sauce_intensity_multiplier": sauce_intensity_multiplier,
@@ -350,10 +337,9 @@ static func evaluate_stored_product(
 	if basis.is_empty():
 		return {}
 	var intrinsic: Dictionary = Dictionary(basis.get("intrinsic_dimensions", {}))
-	var integrity_score := float(intrinsic.get("integrity", 0.0))
 	var thickness_score := float(intrinsic.get("thickness", 0.0))
-	var egg_score := float(intrinsic.get("egg", 0.0))
-	var fold_score := float(intrinsic.get("fold", 0.0))
+	var production: Dictionary = Dictionary(basis.get("production", {}))
+	var egg_score := 100.0 if bool(production.get("egg_automation_applied", false)) else float(intrinsic.get("egg", 0.0))
 
 	var heat_target := _heat_target(StringName(order.get("heat_preference", &"golden")))
 	var heat_moments: Dictionary = Dictionary(basis.get("heat_moments", {}))
@@ -437,19 +423,16 @@ static func evaluate_stored_product(
 	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
 	var time_score := 100.0 * clampf(1.0 - maxf(elapsed_seconds - time_limit * 0.55, 0.0) / (time_limit * 0.75), 0.0, 1.0)
 	var overall := (
-		integrity_score * 0.13
-		+ thickness_score * 0.12
-		+ heat_score * 0.15
-		+ egg_score * 0.08
-		+ sauce_score * 0.13
-		+ ingredient_score * 0.12
-		+ fold_score * 0.12
-		+ order_score * 0.11
-		+ time_score * 0.04
+		thickness_score * SCORE_WEIGHT_THICKNESS
+		+ heat_score * SCORE_WEIGHT_HEAT
+		+ egg_score * SCORE_WEIGHT_EGG
+		+ sauce_score * SCORE_WEIGHT_SAUCE
+		+ ingredient_score * SCORE_WEIGHT_INGREDIENTS
+		+ order_score * SCORE_WEIGHT_ORDER
+		+ time_score * SCORE_WEIGHT_TIME
 	)
 	# Older stored products do not contain production metadata, so their original
 	# score remains unchanged rather than retroactively receiving this penalty.
-	var production: Dictionary = Dictionary(basis.get("production", {}))
 	var unflipped_delivery_penalty := maxf(float(production.get("unflipped_delivery_penalty", 0.0)), 0.0)
 	overall = maxf(overall - unflipped_delivery_penalty, 0.0)
 	var score_adjustments := {
@@ -457,12 +440,10 @@ static func evaluate_stored_product(
 		"total": -unflipped_delivery_penalty,
 	}
 	var tags := PackedStringArray()
-	if integrity_score >= 85.0:
-		tags.append("饼皮完整")
 	if thickness_score < 58.0:
 		tags.append("厚薄不均")
-	if heat_score < 58.0:
-		tags.append("两面火候有偏差")
+	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target):
+		tags.append(heat_tag)
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
 	if unflipped_delivery_penalty > 0.0:
@@ -475,8 +456,6 @@ static func evaluate_stored_product(
 		var tag := str(tag_variant)
 		if not tags.has(tag):
 			tags.append(tag)
-	for tag_variant in Array(basis.get("repair_tags", [])):
-		tags.append(str(tag_variant))
 	var selected_chili_profile := Dictionary(sauce_results.get(str(OrderService.SAUCE_CHILI), {}))
 	var stored_chili_profiles := Dictionary(sauce_profiles.get(str(OrderService.SAUCE_CHILI), {}))
 	var stored_profile_key := "1.35" if is_equal_approx(sauce_intensity_multiplier, 1.35) else "1.00"
@@ -486,13 +465,11 @@ static func evaluate_stored_product(
 		"score": overall,
 		"score_adjustments": score_adjustments,
 		"dimensions": {
-			"integrity": integrity_score,
 			"thickness": thickness_score,
 			"heat": heat_score,
 			"egg": egg_score,
 			"sauce": sauce_score,
 			"ingredients": ingredient_score,
-			"fold": fold_score,
 			"order": order_score,
 			"time": time_score,
 		},
@@ -508,7 +485,6 @@ static func evaluate_stored_product(
 		"applied_ingredient_ids": applied_ingredients.duplicate(),
 		"applied_ingredient_quantities": Dictionary(basis.get("applied_ingredient_quantities", {})).duplicate(true),
 		"applied_sauce_ids": Array(basis.get("applied_sauce_ids", [])).duplicate(),
-		"score_caps": Dictionary(basis.get("score_caps", {})).duplicate(true),
 		"special_evaluation": {
 			"sauce_intensity_multiplier": sauce_intensity_multiplier,
 			"spice_target_met": _spice_profile_meets_target(selected_chili_profile),
@@ -552,13 +528,59 @@ static func heat_target_for(preference: StringName) -> float:
 	return _heat_target(preference)
 
 
+static func heat_feedback_for_metrics(metrics: Dictionary) -> String:
+	return _heat_feedback_text(
+		float(metrics.get("mean_front_doneness", 0.0)),
+		float(metrics.get("mean_back_doneness", 0.0)),
+		float(metrics.get("heat_target", 0.0)),
+	)
+
+
+static func heat_matches_preference_metrics(metrics: Dictionary) -> bool:
+	var target := float(metrics.get("heat_target", 0.0))
+	if target <= 0.0:
+		return false
+	return _heat_matches_target(
+		float(metrics.get("mean_front_doneness", 0.0)),
+		float(metrics.get("mean_back_doneness", 0.0)),
+		target,
+	)
+
+
+static func _heat_matches_target(mean_front: float, mean_back: float, heat_target: float) -> bool:
+	return (
+		absf(mean_front - heat_target) <= HEAT_GREEN_TOLERANCE
+		and absf(mean_back - heat_target) <= HEAT_GREEN_TOLERANCE
+	)
+
+
+static func _heat_feedback_tags(mean_front: float, mean_back: float, heat_target: float) -> PackedStringArray:
+	var tags := PackedStringArray()
+	for side in [["正面", mean_front], ["反面", mean_back]]:
+		var side_name := str(side[0])
+		var side_doneness := float(side[1])
+		if side_doneness < heat_target - HEAT_GREEN_TOLERANCE:
+			tags.append("%s偏生" % side_name)
+		elif side_doneness > heat_target + HEAT_GREEN_TOLERANCE:
+			tags.append("%s偏焦" % side_name)
+	return tags
+
+
+static func _heat_feedback_text(mean_front: float, mean_back: float, heat_target: float) -> String:
+	return "、".join(_heat_feedback_tags(mean_front, mean_back, heat_target))
+
+
 static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio: float) -> String:
 	if tags.has("蛋黄没有摊开") or tags.has("鸡蛋覆盖不足"):
 		return "鸡蛋还没摊开，翻面前要让蛋黄和蛋白铺到更大的饼面。"
 	if tags.has("鸡蛋厚薄不均") or tags.has("鸡蛋局部堆积"):
 		return "鸡蛋有些地方堆得太厚，画圈时再连续、均匀一些。"
-	if tags.has("两面火候有偏差"):
-		return "两面的火候差得有点多，下次翻面后再稳一会儿。"
+	var heat_feedback := PackedStringArray()
+	for heat_tag in ["正面偏生", "正面偏焦", "反面偏生", "反面偏焦"]:
+		if tags.has(heat_tag):
+			heat_feedback.append(heat_tag)
+	if not heat_feedback.is_empty():
+		return "火候问题：%s。" % "、".join(heat_feedback)
 	if tags.has("厚薄不均"):
 		return "有些地方偏厚，不过整体还能吃得挺香。"
 	for tag in tags:
@@ -570,4 +592,4 @@ static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio:
 		return "边缘脆、酱也匀，这张做得很稳。"
 	if score >= 70.0:
 		return "整体不错，再把细节收一收就更好了。"
-	return "能吃，但面饼、酱料和折叠都还有提升空间。"
+	return "能吃，但厚薄、酱料和火候都还有提升空间。"

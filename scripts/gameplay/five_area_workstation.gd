@@ -27,6 +27,17 @@ const RESULT_METRIC_LABEL_NAMES := {
 	&"OrderMetric": &"OrderScoreLabel",
 	&"TimeMetric": &"TimeScoreLabel",
 }
+const PANCAKE_EGG_STOCK_ID := &"stock.pancake.egg"
+const QUALITY_COMPLAINT_THRESHOLD := 80.0
+const FEEDBACK_METRIC_ORDER := {
+	&"thickness": 0,
+	&"heat": 1,
+	&"egg": 2,
+	&"sauce": 3,
+	&"ingredients": 4,
+	&"order": 5,
+	&"time": 6,
+}
 const PAYMENT_COIN_TEXTURES := {
 	1: preload("res://resources/art/payments/coin_1_v2_chinese_ui.png"),
 	2: preload("res://resources/art/payments/coin_2_v2_chinese_ui.png"),
@@ -197,8 +208,9 @@ func _apply_pointer_cursors(root_node: Node) -> void:
 func _populate_result(score_result: Dictionary) -> void:
 	var product_id := StringName(score_result.get("product_id", &"product.pancake.custom"))
 	if product_id == &"product.pancake.custom":
-		_set_result_metric_visibility(RESULT_METRIC_LABEL_NAMES.keys(), true, true)
+		_set_pancake_result_metric_visibility(score_result)
 		super._populate_result(score_result)
+		order_score_label.text = "符合度  %d" % roundi(float(Dictionary(score_result.get("dimensions", {})).get("order", 0.0)))
 		return
 	var metric_profile := _non_pancake_result_metric_profile(score_result, product_id)
 	_set_result_metric_visibility(RESULT_METRIC_LABEL_NAMES.keys(), false, false)
@@ -217,6 +229,28 @@ func _populate_result(score_result: Dictionary) -> void:
 	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
 	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
 	_apply_result_score_tones(float(score_result.get("score", 0.0)))
+
+
+func _set_pancake_result_metric_visibility(score_result: Dictionary) -> void:
+	_set_result_metric_visibility(RESULT_METRIC_LABEL_NAMES.keys(), true, true)
+	_set_result_metric_visibility([&"IntegrityMetric", &"FoldMetric"], false, false)
+	# Compatibility callers and older result snapshots do not include the order
+	# item. Keep the established complete metric list when requirements are unknown.
+	if not score_result.has("display_item"):
+		return
+	var displayed_item := Dictionary(score_result.get("display_item", {}))
+	if not displayed_item.has("ingredient_ids"):
+		return
+	var requests_egg := false
+	var requests_other_ingredients := false
+	for stock_id_value in Array(displayed_item.get("ingredient_ids", [])):
+		var stock_id := StringName(stock_id_value)
+		if stock_id == PANCAKE_EGG_STOCK_ID:
+			requests_egg = true
+		elif not stock_id.is_empty():
+			requests_other_ingredients = true
+	_set_result_metric_visibility([&"EggMetric"], requests_egg, requests_egg)
+	_set_result_metric_visibility([&"IngredientMetric"], requests_other_ingredients, requests_other_ingredients)
 
 
 func _set_result_metric_visibility(metric_names: Array, visible: bool, show_icons: bool) -> void:
@@ -1651,28 +1685,140 @@ static func _tray_result_summary(settlement: Dictionary) -> Dictionary:
 	if feedback_items.is_empty():
 		summary["feedback"] = "顾客已收到完整订单"
 	else:
-		summary["feedback"] = "顾客指出：%s" % "、".join(feedback_items)
+		summary["feedback"] = "顾客指出：%s" % str(feedback_items[0])
 	return summary
 
 
 static func _delivery_feedback_items(item_results: Array) -> PackedStringArray:
+	var candidates := _delivery_feedback_candidates(item_results)
 	var feedback_items := PackedStringArray()
-	for item_result_value in item_results:
-		var item_result := Dictionary(item_result_value)
-		var expected_product := _product_label(StringName(item_result.get("product_id", &"")))
-		var actual_product := _product_label(StringName(Dictionary(item_result.get("product", {})).get("product_id", &"")))
-		for reason_value in Array(item_result.get("mismatch_reasons", [])):
-			var feedback := _delivery_feedback_text(StringName(reason_value), expected_product, actual_product)
-			if not feedback.is_empty() and not feedback_items.has(feedback):
-				feedback_items.append(feedback)
+	for candidate_value in candidates:
+		feedback_items.append(str(Dictionary(candidate_value).get("text", "")))
 	return feedback_items
 
 
-static func _delivery_feedback_text(reason: StringName, expected_product: String, actual_product: String) -> String:
+static func _delivery_feedback_candidates(item_results: Array) -> Array[Dictionary]:
+	var candidates: Array[Dictionary] = []
+	for item_result_value in item_results:
+		var item_result := Dictionary(item_result_value)
+		var expected_product := _product_label(StringName(item_result.get("product_id", &"")))
+		var product := Dictionary(item_result.get("product", {}))
+		var actual_product := _product_label(StringName(product.get("product_id", &"")))
+		for reason_value in Array(item_result.get("mismatch_reasons", [])):
+			var reason := StringName(reason_value)
+			var feedback := _delivery_feedback_text(reason, expected_product, actual_product, product)
+			_add_delivery_feedback_candidate(candidates, feedback, _delivery_mismatch_score(reason, product), _delivery_mismatch_metric(reason))
+		for quality_candidate in _pancake_quality_feedback_candidates(item_result, product):
+			_add_delivery_feedback_candidate(
+				candidates,
+				str(quality_candidate.get("text", "")),
+				float(quality_candidate.get("score", 100.0)),
+				StringName(quality_candidate.get("metric", &"")),
+			)
+	candidates.sort_custom(func(left: Dictionary, right: Dictionary) -> bool:
+		var left_score := float(left.get("score", 100.0))
+		var right_score := float(right.get("score", 100.0))
+		if not is_equal_approx(left_score, right_score):
+			return left_score < right_score
+		return int(left.get("metric_order", 999)) < int(right.get("metric_order", 999))
+	)
+	return candidates
+
+
+static func _add_delivery_feedback_candidate(candidates: Array[Dictionary], text: String, score: float, metric: StringName) -> void:
+	if text.is_empty():
+		return
+	for existing in candidates:
+		if str(existing.get("text", "")) == text:
+			return
+	candidates.append({
+		"text": text,
+		"score": clampf(score, 0.0, 100.0),
+		"metric_order": int(FEEDBACK_METRIC_ORDER.get(metric, -1)),
+	})
+
+
+static func _delivery_mismatch_metric(reason: StringName) -> StringName:
+	match reason:
+		&"heat_preference": return &"heat"
+		&"ingredient_ids": return &"ingredients"
+		&"sauce_ids": return &"sauce"
+		&"missing_order_item", &"incomplete_quantity", &"product_id": return &"order"
+		_: return &"order"
+
+
+static func _delivery_mismatch_score(reason: StringName, product: Dictionary) -> float:
+	var dimensions := Dictionary(product.get("dimension_scores", {}))
+	match reason:
+		&"missing_order_item", &"incomplete_quantity", &"product_id": return 0.0
+		&"ingredient_ids": return minf(float(dimensions.get("ingredients", 100.0)), float(dimensions.get("order", 100.0)))
+		&"sauce_ids": return minf(float(dimensions.get("sauce", 100.0)), float(dimensions.get("order", 100.0)))
+		&"heat_preference": return float(dimensions.get("heat", 100.0))
+		_: return float(dimensions.get("order", 0.0))
+
+
+static func _pancake_quality_feedback_candidates(item_result: Dictionary, product: Dictionary) -> Array[Dictionary]:
+	if StringName(product.get("product_id", &"")) != &"product.pancake.custom":
+		return []
+	var dimensions := Dictionary(product.get("dimension_scores", {}))
+	var candidates: Array[Dictionary] = []
+	for metric_value in FEEDBACK_METRIC_ORDER:
+		var metric := StringName(metric_value)
+		if metric == &"order" or not _pancake_feedback_metric_visible(item_result, metric):
+			continue
+		var score := float(dimensions.get(metric, 100.0))
+		if score >= QUALITY_COMPLAINT_THRESHOLD:
+			continue
+		candidates.append({"metric": metric, "score": score, "text": _pancake_quality_feedback_text(metric, product)})
+	return candidates
+
+
+static func _pancake_feedback_metric_visible(item_result: Dictionary, metric: StringName) -> bool:
+	if metric not in [&"egg", &"ingredients"] or not item_result.has("ingredient_ids"):
+		return true
+	var requests_egg := false
+	var requests_other_ingredients := false
+	for stock_id_value in Array(item_result.get("ingredient_ids", [])):
+		var stock_id := StringName(stock_id_value)
+		if stock_id == PANCAKE_EGG_STOCK_ID:
+			requests_egg = true
+		elif not stock_id.is_empty():
+			requests_other_ingredients = true
+	return requests_egg if metric == &"egg" else requests_other_ingredients
+
+
+static func _pancake_quality_feedback_text(metric: StringName, product: Dictionary) -> String:
+	var tags := PackedStringArray(Array(product.get("tags", [])).map(func(tag): return str(tag)))
+	match metric:
+		&"thickness": return "煎饼厚薄不均"
+		&"heat":
+			var heat_feedback := str(product.get("heat_feedback", ""))
+			return "煎饼%s" % heat_feedback if not heat_feedback.is_empty() else "煎饼火候不够理想"
+		&"egg":
+			return _first_matching_tag(tags, ["蛋黄没有摊开", "鸡蛋覆盖不足", "鸡蛋厚薄不均", "鸡蛋局部堆积"], "煎饼鸡蛋没有摊匀")
+		&"sauce":
+			return _first_matching_tag(tags, ["局部缺酱", "酱料过量", "刷痕断续"], "煎饼酱料涂抹不均")
+		&"ingredients":
+			return _first_matching_tag(tags, ["配料靠边易漏", "配料堆在中央"], "煎饼配料摆放不理想")
+		&"time": return "顾客等待时间过长"
+		_: return "煎饼制作质量不够理想"
+
+
+static func _first_matching_tag(tags: PackedStringArray, preferred_tags: Array, fallback: String) -> String:
+	for preferred_tag_value in preferred_tags:
+		var preferred_tag := str(preferred_tag_value)
+		if tags.has(preferred_tag):
+			return "煎饼%s" % preferred_tag
+	return fallback
+
+
+static func _delivery_feedback_text(reason: StringName, expected_product: String, actual_product: String, product: Dictionary = {}) -> String:
 	match reason:
 		&"missing_order_item", &"incomplete_quantity": return "%s未按订单交齐" % expected_product
 		&"product_id": return "交付的%s与订单要求的%s不符" % [actual_product, expected_product]
-		&"heat_preference": return "%s火候不符合订单要求" % expected_product
+		&"heat_preference":
+			var heat_feedback := str(product.get("heat_feedback", ""))
+			return "%s%s" % [expected_product, heat_feedback] if not heat_feedback.is_empty() else "%s火候不符合订单要求" % expected_product
 		&"temperature_mode": return "%s温度不符合订单要求" % expected_product
 		&"ingredient_ids": return "%s配料与订单要求不符" % expected_product
 		&"sauce_ids": return "%s酱料与订单要求不符" % expected_product

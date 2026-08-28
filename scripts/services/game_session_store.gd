@@ -1124,6 +1124,12 @@ func _score_pancake_for_delivery(product: Dictionary, order: Dictionary, item: D
 	scored_product["dimension_scores"] = Dictionary(result.get("dimensions", {})).duplicate(true)
 	scored_product["feedback"] = str(result.get("feedback", product.get("feedback", "")))
 	scored_product["tags"] = Array(result.get("tags", [])).duplicate()
+	var heat_feedback := PANCAKE_SCORER.heat_feedback_for_metrics(Dictionary(result.get("metrics", {})))
+	scored_product["heat_matches_requested_preference"] = PANCAKE_SCORER.heat_matches_preference_metrics(Dictionary(result.get("metrics", {})))
+	if heat_feedback.is_empty():
+		scored_product.erase("heat_feedback")
+	else:
+		scored_product["heat_feedback"] = heat_feedback
 	scored_product["special_evaluation"] = Dictionary(result.get("special_evaluation", product.get("special_evaluation", {}))).duplicate(true)
 	return scored_product
 
@@ -3234,10 +3240,10 @@ func _provision_activated_stock(activated_growth_ids: Array) -> PackedStringArra
 			var capacity := maxi(int(stock_definition.get("restock_capacity", 0)), 0)
 			if capacity > 0:
 				var key := str(stock_id)
-				if stock_id == &"stock.pancake.egg":
-					inventory[key] = maxi(int(inventory.get(key, 0)), _restock_capacity(stock_id, stock_definition))
-				else:
-					inventory[key] = maxi(int(inventory.get(key, 0)), 0)
+				# Newly activated stock containers always begin empty.  Every
+				# ingredient, including eggs, follows the same player-driven
+				# restock flow at the start of its activation day.
+				inventory[key] = maxi(int(inventory.get(key, 0)), 0)
 				if int(inventory[key]) <= 0 and not restock_required.has(key):
 					restock_required.append(key)
 	_save_data["inventory"] = _normalize_inventory(inventory)

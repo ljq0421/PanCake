@@ -754,6 +754,7 @@ func _build_product(unit: Node) -> Dictionary:
 		scoring_order,
 		float(unit.p1_session.elapsed_seconds),
 		float(unit.p1_session.patience_ratio()),
+		bool(unit.get("egg_automation_applied")),
 	)
 	var serving_score_basis := Dictionary(score_result.get("serving_score_basis", {})).duplicate(true)
 	var intrinsic_dimensions := Dictionary(serving_score_basis.get("intrinsic_dimensions", {})).duplicate(true)
@@ -764,6 +765,8 @@ func _build_product(unit: Node) -> Dictionary:
 		intrinsic_score += float(value)
 	if not intrinsic_dimensions.is_empty():
 		intrinsic_score /= float(intrinsic_dimensions.size())
+	# Retain the legacy category for unscored previews and old integrations.  The
+	# formal delivery path uses per-side green-band matching instead.
 	var summary := Dictionary(unit.pancake_model.calculate_summary())
 	var mean_heat := (float(summary.get("mean_doneness", 0.0)) + float(summary.get("mean_back_doneness", 0.0))) * 0.5
 	var actual_heat: StringName = &"light" if mean_heat < 0.34 else (&"golden" if mean_heat < 0.62 else &"well_done")

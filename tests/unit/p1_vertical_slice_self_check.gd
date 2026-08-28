@@ -132,6 +132,39 @@ func _test_egg_spreading_and_score() -> void:
 	var poor_score := PancakeScorer.evaluate_order(poor_model, poor_ingredients, poor_fold, order, 48.0, 0.6)
 	_check(float(good_score.dimensions.egg) > float(poor_score.dimensions.egg), "egg coverage and uniformity produce an independent score dimension")
 	_check(float(good_score.score) > float(poor_score.score), "egg spreading quality changes the final customer score")
+	var dimensions := Dictionary(good_score.get("dimensions", {}))
+	var weighted_score := (
+		float(dimensions.get("thickness", 0.0)) * 0.16
+		+ float(dimensions.get("heat", 0.0)) * 0.20
+		+ float(dimensions.get("egg", 0.0)) * 0.11
+		+ float(dimensions.get("sauce", 0.0)) * 0.17
+		+ float(dimensions.get("ingredients", 0.0)) * 0.16
+		+ float(dimensions.get("order", 0.0)) * 0.15
+		+ float(dimensions.get("time", 0.0)) * 0.05
+	)
+	weighted_score += float(Dictionary(good_score.get("score_adjustments", {})).get("total", 0.0))
+	_check(
+		not dimensions.has("integrity") and not dimensions.has("fold") and is_equal_approx(float(good_score.get("score", 0.0)), weighted_score),
+		"pancake score uses only the seven visible, player-controlled metrics"
+	)
+	_check(
+		PancakeScorer.heat_feedback_for_metrics({"mean_front_doneness": 0.48, "mean_back_doneness": 0.80, "heat_target": 0.64}) == "正面偏生、反面偏焦"
+		and PancakeScorer.heat_feedback_for_metrics({"mean_front_doneness": 0.48, "mean_back_doneness": 0.50, "heat_target": 0.64}) == "正面偏生、反面偏生",
+		"heat feedback identifies which pancake sides are undercooked or overcooked"
+	)
+	_check(
+		PancakeScorer.heat_matches_preference_metrics({"mean_front_doneness": 0.70, "mean_back_doneness": 0.58, "heat_target": 0.64})
+		and PancakeScorer.heat_feedback_for_metrics({"mean_front_doneness": 0.70, "mean_back_doneness": 0.58, "heat_target": 0.64}).is_empty()
+		and not PancakeScorer.heat_matches_preference_metrics({"mean_front_doneness": 0.73, "mean_back_doneness": 0.58, "heat_target": 0.64}),
+		"the heat bar's green window is the same contract used for delivery matching and side feedback"
+	)
+	var automated_egg_score := PancakeScorer.evaluate_order(poor_model, poor_ingredients, poor_fold, order, 48.0, 0.6, true)
+	var automated_stored := PancakeScorer.evaluate_stored_product({"serving_score_basis": Dictionary(automated_egg_score.get("serving_score_basis", {})).duplicate(true)}, order, 48.0, 0.6)
+	_check(
+		is_equal_approx(float(Dictionary(automated_egg_score.get("dimensions", {})).get("egg", 0.0)), 100.0)
+		and is_equal_approx(float(Dictionary(automated_stored.get("dimensions", {})).get("egg", 0.0)), 100.0),
+		"successful one-click egg automation fixes egg quality at 100 for fresh and stored delivery scoring"
+	)
 	var stored_product := {"serving_score_basis": Dictionary(good_score.get("serving_score_basis", {})).duplicate(true)}
 	var same_order_score := PancakeScorer.evaluate_stored_product(stored_product, order, 48.0, 0.6)
 	_check(is_equal_approx(float(same_order_score.get("score", 0.0)), float(good_score.score)), "stored score basis reproduces the fresh-made score for the same order")
@@ -545,7 +578,7 @@ func _test_damage_score_uses_the_single_paper_bag_path() -> void:
 	_fold_both(sleeve_fold)
 	_check(bool(sleeve_fold.package_with(PancakeFoldModel.PACKAGE_BAG).success), "a minor fold issue still uses the paper bag")
 	var sleeve_result := PancakeScorer.evaluate_order(sleeve_model, sleeve_ingredients, sleeve_fold, order, 48.0, 0.6)
-	_check(float(sleeve_result.score_caps.fold) == 100.0 and Array(sleeve_result.serving_score_basis.repair_tags).is_empty(), "paper-bag packaging adds no repair tag or artificial score cap")
+	_check(not Dictionary(sleeve_result.get("dimensions", {})).has("fold"), "paper-bag packaging adds no fold score")
 
 	var tray_model := _uniform_pancake(64, 0.42)
 	_seed_even_egg(tray_model)
@@ -559,7 +592,11 @@ func _test_damage_score_uses_the_single_paper_bag_path() -> void:
 	_fold_right(tray_fold)
 	_check(torn.outcome == PancakeFoldModel.OUTCOME_TORN and bool(tray_fold.package_with(PancakeFoldModel.PACKAGE_BAG).success), "a severe tear still completes through the paper-bag path")
 	var tray_result := PancakeScorer.evaluate_order(tray_model, tray_ingredients, tray_fold, order, 48.0, 0.6)
-	_check(float(tray_result.score_caps.fold) == 100.0 and Array(tray_result.serving_score_basis.repair_tags).is_empty() and float(tray_result.dimensions.fold) < float(sleeve_result.dimensions.fold), "damage itself lowers fold quality without a rescue-package penalty")
+	_check(
+		not Dictionary(tray_result.get("dimensions", {})).has("fold")
+		and not Dictionary(sleeve_result.get("dimensions", {})).has("fold"),
+		"automatic paper-bag packaging no longer contributes a fold score"
+	)
 
 
 func _target_doneness(preference: StringName) -> float:

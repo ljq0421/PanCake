@@ -466,6 +466,7 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 		all_reasons.append_array(reasons)
 		item_results.append({
 			"product_id": item.get("product_id", &""),
+			"ingredient_ids": Array(item.get("ingredient_ids", [])).duplicate(),
 			"requested_sugar_servings": int(item.get("sugar_servings", 0)),
 			"requested_temperature_mode": item.get("temperature_mode", &"room_temperature"),
 			"success": reasons.is_empty(),
@@ -651,7 +652,9 @@ func _product_mismatch_reasons(item: Dictionary, product: Dictionary) -> PackedS
 		reasons.append("product_id")
 	var area_id := StringName(item.get("area_id", &""))
 	if area_id == &"area.pancake":
-		if StringName(product.get("heat_preference", &"")) != StringName(item.get("heat_preference", &"")):
+		var uses_green_band_match := product.has("heat_matches_requested_preference")
+		var heat_matches := bool(product.get("heat_matches_requested_preference", false)) if uses_green_band_match else StringName(product.get("heat_preference", &"")) == StringName(item.get("heat_preference", &""))
+		if not heat_matches:
 			reasons.append("heat_preference")
 	else:
 		var expected_temperature := normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))

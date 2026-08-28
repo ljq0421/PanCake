@@ -9,6 +9,16 @@ func _run() -> void:
 	var order_id: StringName = Dictionary(opened.get("order", {})).get("order_id", &"")
 	var product := {"product_instance_id": &"product.1", "product_id": &"product.pancake.custom", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour"]}
 	_check(bool(service.call("preview_attach_product", order_id, 0, product).get("will_match", false)), "formal order previews matching tray product")
+	var green_band_product := product.duplicate(true)
+	green_band_product["heat_preference"] = &"well_done"
+	green_band_product["heat_matches_requested_preference"] = true
+	var outside_green_band_product := product.duplicate(true)
+	outside_green_band_product["heat_matches_requested_preference"] = false
+	_check(
+		bool(service.call("preview_attach_product", order_id, 0, green_band_product).get("will_match", false))
+		and not bool(service.call("preview_attach_product", order_id, 0, outside_green_band_product).get("will_match", true)),
+		"pancake delivery uses the shared two-sided green-band result when it is available, while old products retain category fallback"
+	)
 	_check(bool(service.call("attach_product", order_id, 0, product).get("success", false)), "formal order reserves matched product")
 	var settled: Dictionary = service.call("settle_order", order_id)
 	var repeated_settlement: Dictionary = service.call("settle_order", order_id)

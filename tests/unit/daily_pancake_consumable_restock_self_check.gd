@@ -45,6 +45,18 @@ func _run() -> void:
 	var unlocked_inventory: Dictionary = session.call("inventory_snapshot")
 	for stock_id in [&"stock.pancake.coriander", &"stock.pancake.scallion", &"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.meat_floss", &"stock.pancake.ham_sausage"]:
 		_check(int(unlocked_inventory.get(stock_id, 0)) == 0, "opened business keeps unlocked %s empty" % stock_id)
+	session.call("begin_new_game")
+	progression = session.call("progression_service")
+	progression.set("coins", 10)
+	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.egg").get("success", false)), "egg unlock can be reserved for the next business day")
+	session.call("end_business_day")
+	var activated_egg_day := Dictionary(session.call("begin_next_business_day"))
+	var activated_egg_inventory := Dictionary(session.call("inventory_snapshot"))
+	_check(
+		int(activated_egg_inventory.get("stock.pancake.egg", -1)) == 0
+		and Array(activated_egg_day.get("restock_required_ids", [])).has("stock.pancake.egg"),
+		"egg activation opens an empty container that requires manual restocking"
+	)
 	_finish()
 
 

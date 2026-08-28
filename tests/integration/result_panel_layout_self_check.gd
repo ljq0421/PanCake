@@ -26,18 +26,38 @@ func _run() -> void:
 		"score": 51.0,
 		"feedback": "鸡蛋有些地方堆得太厚，画圈时再连续、均匀一些。",
 		"dimensions": {
-			"integrity": 100.0,
 			"thickness": 0.0,
 			"heat": 55.0,
 			"egg": 54.0,
 			"sauce": 10.0,
 			"ingredients": 95.0,
-			"fold": 2.0,
 			"order": 76.0,
 			"time": 100.0,
 		},
 		"tags": ["鸡蛋偏厚", "摊制不均"],
 	})
+	_check(_metric_is_visible(workstation, "EggMetric"), "pancake result without order context retains egg metric")
+	_check(_metric_is_visible(workstation, "IngredientMetric"), "pancake result without order context retains ingredient metric")
+	_check(not _metric_is_visible(workstation, "IntegrityMetric"), "pancake result hides automatic integrity metric")
+	_check(not _metric_is_visible(workstation, "FoldMetric"), "pancake result hides automatic fold metric")
+	_check(workstation.order_score_label.text == "符合度  76", "pancake result names order-content scoring as compliance")
+
+	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray()))
+	_check(not _metric_is_visible(workstation, "EggMetric"), "eggless pancake hides egg metric")
+	_check(not _metric_is_visible(workstation, "IngredientMetric"), "plain pancake hides ingredient metric")
+
+	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg"])))
+	_check(_metric_is_visible(workstation, "EggMetric"), "egg-only pancake shows egg metric")
+	_check(not _metric_is_visible(workstation, "IngredientMetric"), "egg-only pancake hides ingredient metric")
+
+	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.baocui"])))
+	_check(not _metric_is_visible(workstation, "EggMetric"), "topping-only pancake hides egg metric")
+	_check(_metric_is_visible(workstation, "IngredientMetric"), "topping-only pancake shows ingredient metric")
+
+	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])))
+	_check(_metric_is_visible(workstation, "EggMetric"), "pancake with egg and toppings shows egg metric")
+	_check(_metric_is_visible(workstation, "IngredientMetric"), "pancake with egg and toppings shows ingredient metric")
+
 	workstation._order_summary_visible = true
 	workstation._result_detail_open = false
 	workstation._refresh_p1_ui()
@@ -133,6 +153,28 @@ func _maximum_effective_z_index(item: CanvasItem, parent_z := 0) -> int:
 func _check(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+
+func _pancake_result_with_ingredients(ingredient_ids: PackedStringArray) -> Dictionary:
+	return {
+		"product_id": &"product.pancake.custom",
+		"score": 100.0,
+		"dimensions": {
+			"thickness": 100.0,
+			"heat": 100.0,
+			"egg": 100.0,
+			"sauce": 100.0,
+			"ingredients": 100.0,
+			"order": 100.0,
+			"time": 100.0,
+		},
+		"display_item": {"ingredient_ids": ingredient_ids},
+	}
+
+
+func _metric_is_visible(workstation: Node, metric_name: String) -> bool:
+	var metric := workstation.get_node("SafeArea/ResultPanel/Margin/VBox/DimensionGrid/%s" % metric_name) as Control
+	return metric != null and metric.visible
 
 
 func _capture_result_detail() -> void:

@@ -171,7 +171,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.015, 0.04, 0.04, 0.42)
+color = Color(0.015, 0.04, 0.04, 0)
 
 [node name="EditorPreview" type="Control" parent="." unique_id=1611924722]
 unique_name_in_owner = true

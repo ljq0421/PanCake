@@ -75,7 +75,11 @@ func _run() -> void:
 	var first_product := Dictionary(Array(Dictionary(Array(settled_first.get("items", []))[0]).get("attached_products", []))[0])
 	var second_product := Dictionary(Array(Dictionary(Array(settled_second.get("items", []))[0]).get("attached_products", []))[0])
 	_check(float(first_product.get("score", 0.0)) > float(second_product.get("score", 100.0)), "identical unbound pancakes are scored against the customer that actually receives them")
-	_check(StringName(first_product.get("grade", &"")) == &"A" and StringName(second_product.get("grade", &"")) != &"A", "delivery-time order differences flow into the final pancake grade")
+	_check(
+		not Dictionary(first_product.get("dimension_scores", {})).has("integrity")
+		and not Dictionary(first_product.get("dimension_scores", {})).has("fold"),
+		"delivery-time pancake scoring omits automatic integrity and fold metrics"
+	)
 
 	workstation.queue_free()
 	_finish()

@@ -36,7 +36,7 @@ const SPREADER_SAMPLE_SPACING := 2.5
 const MAX_SPREAD_SIMULATION_SAMPLES_PER_FRAME := 1
 ## The order-specific green band is deliberately narrow enough to communicate
 ## an excellent heat result without turning the bar into a precision gate.
-const HEAT_GREEN_TOLERANCE := 0.08
+const HEAT_GREEN_TOLERANCE := PANCAKE_SCORER_SCRIPT.HEAT_GREEN_TOLERANCE
 ## Keep this aligned with pancake_surface.gdshader: a side begins to show
 ## char marks only after it has stayed on the griddle for eight seconds and is
 ## sufficiently cooked.  The score system already deducts heat quality for
@@ -115,6 +115,9 @@ var second_side_seconds := 0.0
 var fold_steps := 0
 var applied_sauce_ids := PackedStringArray()
 var applied_ingredient_ids := PackedStringArray()
+## Set only after the automation has completed its physical spreading pass.
+## This persists so delayed delivery cannot lose the upgrade's quality benefit.
+var egg_automation_applied := false
 var ready_product: Dictionary = {}
 var upgrade_locked := false
 var _non_burning_upgrade_enabled := false
@@ -748,7 +751,7 @@ func total_cook_seconds() -> float:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 2,
+		"version": 3,
 		"source_index": unit_index,
 		"state": int(state),
 		"order": order.duplicate(true),
@@ -757,6 +760,7 @@ func snapshot() -> Dictionary:
 		"fold_steps": fold_steps,
 		"applied_sauce_ids": applied_sauce_ids.duplicate(),
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
+		"egg_automation_applied": egg_automation_applied,
 		"ready_product": ready_product.duplicate(true),
 		"packaging_pending": _packaging_pending,
 		"automatic_fold_pending_region": _automatic_fold_pending_region,
@@ -789,6 +793,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	fold_steps = clampi(int(value.get("fold_steps", 0)), 0, 2)
 	applied_sauce_ids = PackedStringArray(Array(value.get("applied_sauce_ids", [])))
 	applied_ingredient_ids = PackedStringArray(Array(value.get("applied_ingredient_ids", [])))
+	egg_automation_applied = bool(value.get("egg_automation_applied", false))
 	ready_product = Dictionary(value.get("ready_product", {})).duplicate(true)
 	_packaging_pending = bool(value.get("packaging_pending", false))
 	_automatic_fold_pending_region = StringName(value.get("automatic_fold_pending_region", FOLD_MODEL_SCRIPT.REGION_NONE))
@@ -824,6 +829,7 @@ func reset_unit() -> void:
 	fold_steps = 0
 	applied_sauce_ids = PackedStringArray()
 	applied_ingredient_ids = PackedStringArray()
+	egg_automation_applied = false
 	ready_product.clear()
 	_packaging_pending = false
 	_fold_threshold_feedback_region = FOLD_MODEL_SCRIPT.REGION_NONE
@@ -1269,6 +1275,7 @@ func auto_spread_egg() -> Dictionary:
 	if int(result.get("changed_cells", 0)) <= 0:
 		return result.merged({"success": false, "reason": &"egg_spread_unchanged"}, true)
 	_finish_egg_spread_visuals()
+	egg_automation_applied = true
 	pancake_surface.queue_redraw()
 	_refresh_ui()
 	return result.merged({"success": true}, true)

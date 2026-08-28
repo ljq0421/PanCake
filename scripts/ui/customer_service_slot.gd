@@ -484,6 +484,13 @@ func delivery_target(order_id: StringName, item_index: int) -> Control:
 	return target if target.visible and not target.disabled else null
 
 
+func set_pancake_order_item_selected(item_index: int, value: bool) -> void:
+	for index in item_buttons.size():
+		var target := item_buttons[index]
+		if target is OrderItemDropButton:
+			(target as OrderItemDropButton).set_selection_highlight(value and index == item_index)
+
+
 func _request_focus() -> void:
 	if not _order_id.is_empty():
 		focus_requested.emit(_order_id)

@@ -2079,7 +2079,8 @@ func _formal_order_review_items(order: Dictionary, item_results: Array) -> Array
 			var product := Dictionary(product_result.get("product", {})).duplicate(true)
 			var mismatch_reasons := PackedStringArray(product_result.get("mismatch_reasons", PackedStringArray()))
 			var score := _formal_review_score(product, mismatch_reasons)
-			var qualified := mismatch_reasons.is_empty() and score >= 60.0
+			var hard_failure := _formal_review_is_hard_failure(mismatch_reasons)
+			var qualified := not hard_failure and score >= 60.0
 			var expected_product_id := StringName(item.get("product_id", &""))
 			var actual_product_id := StringName(product.get("product_id", expected_product_id))
 			review_items.append({
@@ -2092,7 +2093,7 @@ func _formal_order_review_items(order: Dictionary, item_results: Array) -> Array
 				"mismatch_reasons": mismatch_reasons,
 				"score": score,
 				"qualified": qualified,
-				"payment_coins": unit_price if qualified else 0,
+				"payment_coins": floori(float(unit_price) * score / 100.0) if qualified else 0,
 				"feedback": _formal_review_feedback(expected_product_id, actual_product_id, item, product, mismatch_reasons, score),
 			})
 	return review_items
@@ -2116,7 +2117,7 @@ func _formal_item_unit_price(order: Dictionary, item: Dictionary) -> int:
 
 
 static func _formal_review_score(product: Dictionary, mismatch_reasons: PackedStringArray) -> float:
-	if not mismatch_reasons.is_empty():
+	if _formal_review_is_hard_failure(mismatch_reasons):
 		return 0.0
 	if product.has("score"):
 		return clampf(float(product.get("score", 0.0)), 0.0, 100.0)
@@ -2125,6 +2126,10 @@ static func _formal_review_score(product: Dictionary, mismatch_reasons: PackedSt
 	return 100.0
 
 
+static func _formal_review_is_hard_failure(mismatch_reasons: PackedStringArray) -> bool:
+	return mismatch_reasons.has("product_id") \
+		or mismatch_reasons.has("incomplete_quantity") \
+		or mismatch_reasons.has("missing_order_item")
 static func _formal_review_feedback(expected_product_id: StringName, actual_product_id: StringName, order_item: Dictionary, product: Dictionary, mismatch_reasons: PackedStringArray, score: float) -> String:
 	var expected_label := _formal_review_product_label(expected_product_id)
 	var actual_label := _formal_review_product_label(actual_product_id)
@@ -2238,14 +2243,24 @@ func pancake_holding_tray_snapshot() -> Dictionary:
 	return Dictionary(_pancake_holding_tray.call("snapshot")).duplicate(true)
 
 
+func pancake_holding_tray_slot_count() -> int:
+	_ensure_progression()
+	if bool(_progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.second_slot")):
+		return 2
+	if bool(_progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot")):
+		return 1
+	return 0
+
+
 func store_pancake_product(product: Dictionary) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
-	if not bool(_progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots")):
+	var unlocked_slot_count := pancake_holding_tray_slot_count()
+	if unlocked_slot_count == 0:
 		return {"success": false, "reason": &"tray_locked"}
 	_ensure_pancake_holding_tray()
-	var result: Dictionary = _pancake_holding_tray.call("store", product)
+	var result: Dictionary = _pancake_holding_tray.call("store", product, unlocked_slot_count)
 	if bool(result.get("success", false)):
 		_sync_pancake_holding_tray_to_save()
 		_touch_and_write()
@@ -2259,7 +2274,8 @@ func store_pancake_griddle_ready_in_holding_tray(source_index: int) -> Dictionar
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
-	if not bool(_progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots")):
+	var unlocked_slot_count := pancake_holding_tray_slot_count()
+	if unlocked_slot_count == 0:
 		return {"success": false, "reason": &"tray_locked"}
 	_ensure_pancake_holding_tray()
 	_ensure_production_service()
@@ -2268,7 +2284,7 @@ func store_pancake_griddle_ready_in_holding_tray(source_index: int) -> Dictionar
 		return preview
 	var tray_before := pancake_holding_tray_snapshot()
 	var production_before := five_area_production_snapshot()
-	var stored := Dictionary(_pancake_holding_tray.call("store", Dictionary(preview.get("product", {}))))
+	var stored := Dictionary(_pancake_holding_tray.call("store", Dictionary(preview.get("product", {})), unlocked_slot_count))
 	if not bool(stored.get("success", false)):
 		return stored
 	var taken := Dictionary(_production_service.call("take_pancake_griddle_ready", source_index))

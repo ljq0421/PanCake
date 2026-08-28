@@ -118,6 +118,7 @@ var _pending_tray_settlement: Dictionary = {}
 var _refresh_elapsed := 0.0
 var _delivery_click_in_progress := false
 var _selected_pancake_delivery_source_ref: Dictionary = {}
+var _selected_pancake_order_target_ref: Dictionary = {}
 var _pending_youtiao_ingredient_source_ref: Dictionary = {}
 var _five_area_mouse_behavior_before_daily_bill := Control.MOUSE_BEHAVIOR_INHERITED
 var _pancake_station_mouse_behavior_before_modal := Control.MOUSE_BEHAVIOR_INHERITED
@@ -213,6 +214,7 @@ func _ready() -> void:
 	_refresh_pancake_holding_tray()
 	_refresh_pancake_drag_sources()
 	_refresh_selected_pancake_delivery_source()
+	_refresh_selected_pancake_order_target()
 	_apply_pointer_cursors(self)
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
 
@@ -371,7 +373,6 @@ func _review_metric_profile(review_item: Dictionary) -> Array[Dictionary]:
 	var displayed_item := Dictionary(review_item.get("order_item", {}))
 	if product_id == &"product.pancake.custom":
 		var dimensions := Dictionary(product.get("dimension_scores", {}))
-		var mismatch_reasons := PackedStringArray(review_item.get("mismatch_reasons", PackedStringArray()))
 		var labels := {
 			&"thickness": "厚薄", &"heat": "火候", &"egg": "摊蛋", &"sauce": "酱料",
 			&"ingredients": "配料", &"order": "订单", &"time": "时间",
@@ -380,8 +381,7 @@ func _review_metric_profile(review_item: Dictionary) -> Array[Dictionary]:
 		for metric_value in [&"thickness", &"heat", &"egg", &"sauce", &"ingredients", &"order", &"time"]:
 			var metric := StringName(metric_value)
 			if dimensions.has(metric):
-				var displayed_score := 0.0 if metric == &"order" and not mismatch_reasons.is_empty() else float(dimensions.get(metric, 0.0))
-				profile.append({"label": labels[metric], "score": displayed_score})
+				profile.append({"label": labels[metric], "score": float(dimensions.get(metric, 0.0))})
 		return profile
 	return _non_pancake_result_metric_profile({"display_product": product, "display_item": displayed_item}, product_id)
 
@@ -687,6 +687,7 @@ func _on_formal_shell_changed(_snapshot: Dictionary = {}) -> void:
 	_refresh_pancake_holding_tray()
 	_refresh_pancake_drag_sources()
 	_refresh_selected_pancake_delivery_source()
+	_refresh_selected_pancake_order_target()
 
 
 func _on_production_shell_changed(_snapshot: Dictionary = {}) -> void:
@@ -1158,7 +1159,7 @@ func _refresh_pancake_holding_tray() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var unlocked := false
 	if session != null and session.has_method("progression_service"):
-		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots"))
+		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot"))
 	pancake_holding_tray_button.visible = unlocked
 	pancake_holding_tray_button.disabled = not unlocked
 	if unlocked:
@@ -1390,12 +1391,22 @@ func _on_pancake_delivery_source_clicked(source_ref: Dictionary) -> void:
 	if source_ref.is_empty():
 		return
 	_refresh_selected_pancake_delivery_source()
+	_refresh_selected_pancake_order_target()
 	if _same_pancake_delivery_source(source_ref, _selected_pancake_delivery_source_ref):
 		_clear_selected_pancake_delivery_source()
 		tool_status_label.text = "已取消选择煎饼"
 		return
 	_selected_pancake_delivery_source_ref = source_ref.duplicate(true)
 	_refresh_pancake_selection_presentation()
+	if not _selected_pancake_order_target_ref.is_empty():
+		_delivery_click_in_progress = true
+		_try_deliver_order_item(
+			StringName(_selected_pancake_order_target_ref.get("order_id", &"")),
+			int(_selected_pancake_order_target_ref.get("item_index", -1)),
+		)
+		_delivery_click_in_progress = false
+		_refresh_formal_shell()
+		return
 	tool_status_label.text = "已选择煎饼；请点击顾客订单卡上的煎饼图标交付"
 
 
@@ -1417,12 +1428,37 @@ func _refresh_selected_pancake_delivery_source() -> void:
 	_refresh_pancake_selection_presentation()
 
 
+func _clear_selected_pancake_order_target() -> void:
+	if _selected_pancake_order_target_ref.is_empty():
+		return
+	_selected_pancake_order_target_ref.clear()
+	_refresh_pancake_selection_presentation()
+
+
+func _refresh_selected_pancake_order_target() -> void:
+	if _selected_pancake_order_target_ref.is_empty():
+		_refresh_pancake_selection_presentation()
+		return
+	if _pancake_order_target_is_available(_selected_pancake_order_target_ref):
+		_refresh_pancake_selection_presentation()
+		return
+	_selected_pancake_order_target_ref.clear()
+	_refresh_pancake_selection_presentation()
+
+
 func _refresh_pancake_selection_presentation() -> void:
 	if multi_griddle_station != null:
 		multi_griddle_station.set_ready_product_selected(_selected_pancake_delivery_source_ref)
 	for source in pancake_holding_sources:
 		if source != null:
 			source.set_selection_highlight(_same_pancake_delivery_source(source.source_ref(), _selected_pancake_delivery_source_ref))
+	for service_slot in customer_service_slots:
+		if service_slot != null and service_slot.has_method("set_pancake_order_item_selected"):
+			var is_selected := (
+				not _selected_pancake_order_target_ref.is_empty()
+				and StringName(service_slot.get("_order_id")) == StringName(_selected_pancake_order_target_ref.get("order_id", &""))
+			)
+			service_slot.call("set_pancake_order_item_selected", int(_selected_pancake_order_target_ref.get("item_index", -1)), is_selected)
 
 
 func _pancake_delivery_source_is_available(source_ref: Dictionary) -> bool:
@@ -1440,6 +1476,31 @@ func _pancake_delivery_source_is_available(source_ref: Dictionary) -> bool:
 		return false
 	var slots: Array = Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
 	return source_index >= 0 and source_index < slots.size() and not Dictionary(slots[source_index]).is_empty()
+
+
+func _pancake_order_target_is_available(target_ref: Dictionary) -> bool:
+	var session := get_node_or_null("/root/GameSession")
+	var order_id := StringName(target_ref.get("order_id", &""))
+	var item_index := int(target_ref.get("item_index", -1))
+	if session == null or order_id.is_empty() or item_index < 0:
+		return false
+	var order := Dictionary(session.call("formal_order", order_id))
+	if StringName(order.get("state", &"")) not in [&"active", &"serving"]:
+		return false
+	var items := Array(order.get("items", []))
+	if item_index >= items.size():
+		return false
+	var item := Dictionary(items[item_index])
+	return _is_pancake_order_item(item) and Array(item.get("prepared_product_instance_ids", [])).size() < maxi(int(item.get("quantity", 1)), 1)
+
+
+func _same_pancake_order_target(left: Dictionary, right: Dictionary) -> bool:
+	return (
+		not left.is_empty()
+		and not right.is_empty()
+		and StringName(left.get("order_id", &"")) == StringName(right.get("order_id", &""))
+		and int(left.get("item_index", -1)) == int(right.get("item_index", -2))
+	)
 
 
 static func _same_pancake_delivery_source(left: Dictionary, right: Dictionary) -> bool:
@@ -1487,9 +1548,19 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 	var chosen: Dictionary
 	if _is_pancake_order_item(item):
 		_refresh_selected_pancake_delivery_source()
+		_refresh_selected_pancake_order_target()
 		if _selected_pancake_delivery_source_ref.is_empty():
-			tool_status_label.text = "请先点击鏊子上或暂存盘中已打包的煎饼，再点击订单图标"
+			var requested_target := {"order_id": order_id, "item_index": item_index}
+			if _same_pancake_order_target(requested_target, _selected_pancake_order_target_ref):
+				_clear_selected_pancake_order_target()
+				tool_status_label.text = "已取消选择订单煎饼"
+				return
+			_selected_pancake_order_target_ref = requested_target
+			_refresh_pancake_selection_presentation()
+			tool_status_label.text = "已选择订单煎饼；请点击鏊子上或暂存盘中已打包的煎饼"
 			return
+		_selected_pancake_order_target_ref = {"order_id": order_id, "item_index": item_index}
+		_refresh_pancake_selection_presentation()
 		chosen = {"source_ref": _selected_pancake_delivery_source_ref.duplicate(true)}
 	else:
 		chosen = _delivery_source_for_item(session, order_id, order, item_index)
@@ -1579,6 +1650,7 @@ func _on_clicked_product_consumed(source_ref: Dictionary) -> void:
 	var source_kind := StringName(source_ref.get("source_kind", &""))
 	if source_kind in [&"pancake_griddle_ready", &"pancake_holding"]:
 		_clear_selected_pancake_delivery_source()
+		_clear_selected_pancake_order_target()
 	if source_kind == &"pancake_griddle_ready":
 		multi_griddle_station.consume_ready(int(source_ref.get("source_index", -1)))
 	_refresh_pancake_drag_sources()
@@ -2149,15 +2221,7 @@ static func _tray_result_summary(settlement: Dictionary) -> Dictionary:
 	summary["review_items"] = review_items
 	summary["review_count"] = review_items.size()
 	summary["score"] = float(primary_review.get("score", product.get("score", 100.0 if bool(settlement.get("order_success", false)) else 0.0)))
-	var displayed_dimensions := Dictionary(product.get("dimension_scores", {})).duplicate(true)
-	var primary_mismatch_reasons := PackedStringArray(primary_review.get("mismatch_reasons", primary_result.get("mismatch_reasons", PackedStringArray())))
-	# Production scoring can give a pancake full recipe credit before formal order
-	# validation notices a delivery mismatch. The result panel must show the
-	# settlement outcome, otherwise a 0-point order can misleadingly display
-	# "符合度 100".
-	if not primary_mismatch_reasons.is_empty():
-		displayed_dimensions["order"] = 0.0
-	summary["dimensions"] = displayed_dimensions
+	summary["dimensions"] = Dictionary(product.get("dimension_scores", {})).duplicate(true)
 	summary["product_id"] = StringName(primary_review.get("actual_product_id", product.get("product_id", &"product.pancake.custom")))
 	summary["display_product"] = product.duplicate(true)
 	summary["display_item"] = Dictionary(primary_review.get("order_item", primary_result)).duplicate(true)

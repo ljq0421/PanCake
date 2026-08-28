@@ -528,8 +528,12 @@ func _test_double_portion_order_scoring() -> void:
 	_fold_both(single_fold)
 	single_fold.package_with(PancakeFoldModel.PACKAGE_BAG)
 	var incomplete := PancakeScorer.evaluate_order(model, single_ingredients, single_fold, order, 45.0, 0.8)
-	_check(float(incomplete.dimensions.order) < float(complete.dimensions.order) and not incomplete.missing_ingredients.is_empty() and not incomplete.missing_sauces.is_empty(), "one portion does not satisfy a two-portion order")
+	_check(is_equal_approx(float(incomplete.dimensions.order), 50.0) and not incomplete.missing_ingredients.is_empty() and not incomplete.missing_sauces.is_empty(), "one matching portion scores 50 even when the separate sauce requirement is also incomplete")
 
+	_check(is_equal_approx(PancakeScorer._ingredient_compliance_score({}, {}), 100.0), "a plain order served without small ingredients is fully compliant")
+	_check(is_zero_approx(PancakeScorer._ingredient_compliance_score({}, {IngredientModel.BAOCUI: 1})), "an unrequested small ingredient on a plain order has zero compliance")
+	_check(is_equal_approx(PancakeScorer._ingredient_compliance_score({IngredientModel.EGG: 1}, {IngredientModel.EGG: 1, IngredientModel.BAOCUI: 1}), 50.0), "an extra small ingredient lowers compliance by its unmatched portion")
+	_check(is_equal_approx(PancakeScorer._ingredient_compliance_score({IngredientModel.EGG: 1}, {IngredientModel.EGG: 1}), 100.0), "sauce requirements do not participate in small-ingredient compliance")
 
 func _test_ingredients_affect_fold_and_score() -> void:
 	var order := OrderService.new().order_at(0)

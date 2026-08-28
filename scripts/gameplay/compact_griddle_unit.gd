@@ -121,6 +121,9 @@ var applied_ingredient_ids := PackedStringArray()
 var egg_automation_applied := false
 ## Set when the automatic sauce pass completes; retained for customer review.
 var sauce_automation_applied := false
+## The measured ladle and press together guarantee the standard pancake thickness.
+var automatic_batter_ladle_applied := false
+var press_spreader_applied := false
 var ready_product: Dictionary = {}
 var upgrade_locked := false
 var _non_burning_upgrade_enabled := false
@@ -366,11 +369,12 @@ func _deactivate_hardware_spreader_cursor() -> void:
 	_hardware_spreader_cursor_is_wide = false
 
 
-func begin_order(value: Dictionary, batter_amount: float = STANDARD_BATTER_AMOUNT) -> void:
+func begin_order(value: Dictionary, batter_amount: float = STANDARD_BATTER_AMOUNT, used_automatic_batter_ladle: bool = false) -> void:
 	reset_unit()
 	order = value.duplicate(true)
 	p1_session.start(order)
 	state = State.BATTER
+	automatic_batter_ladle_applied = used_automatic_batter_ladle
 	_seed_initial_batter_if_needed(batter_amount)
 	_refresh_ui()
 
@@ -403,6 +407,7 @@ func use_press_spreader() -> Dictionary:
 	var confirmed := Dictionary(p1_session.confirm_spread(pancake_model))
 	if not bool(confirmed.get("success", false)):
 		return {"success": false, "reason": &"press_incomplete", "message": "压饼未能形成可煎制的完整饼皮"}
+	press_spreader_applied = true
 	state = State.FIRST_SIDE
 	if is_node_ready():
 		pancake_surface.force_texture_upload()
@@ -800,7 +805,7 @@ func total_cook_seconds() -> float:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 4,
+		"version": 5,
 		"source_index": unit_index,
 		"state": int(state),
 		"order": order.duplicate(true),
@@ -811,6 +816,8 @@ func snapshot() -> Dictionary:
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
 		"egg_automation_applied": egg_automation_applied,
 		"sauce_automation_applied": sauce_automation_applied,
+		"automatic_batter_ladle_applied": automatic_batter_ladle_applied,
+		"press_spreader_applied": press_spreader_applied,
 		"ready_product": ready_product.duplicate(true),
 		"packaging_pending": _packaging_pending,
 		"automatic_fold_pending_region": _automatic_fold_pending_region,
@@ -845,6 +852,8 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	applied_ingredient_ids = PackedStringArray(Array(value.get("applied_ingredient_ids", [])))
 	egg_automation_applied = bool(value.get("egg_automation_applied", false))
 	sauce_automation_applied = bool(value.get("sauce_automation_applied", false))
+	automatic_batter_ladle_applied = bool(value.get("automatic_batter_ladle_applied", false))
+	press_spreader_applied = bool(value.get("press_spreader_applied", false))
 	ready_product = Dictionary(value.get("ready_product", {})).duplicate(true)
 	_packaging_pending = bool(value.get("packaging_pending", false))
 	_automatic_fold_pending_region = StringName(value.get("automatic_fold_pending_region", FOLD_MODEL_SCRIPT.REGION_NONE))
@@ -882,6 +891,8 @@ func reset_unit() -> void:
 	applied_ingredient_ids = PackedStringArray()
 	egg_automation_applied = false
 	sauce_automation_applied = false
+	automatic_batter_ladle_applied = false
+	press_spreader_applied = false
 	ready_product.clear()
 	_packaging_pending = false
 	_fold_threshold_feedback_region = FOLD_MODEL_SCRIPT.REGION_NONE

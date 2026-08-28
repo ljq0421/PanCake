@@ -320,14 +320,14 @@ func _on_batter_ladle_button_down() -> void:
 
 func _on_batter_ladle_pressed() -> void:
 	if _auto_batter_ladle_owned():
-		_pour_batter(CompactGriddleUnit.STANDARD_BATTER_AMOUNT)
+		_pour_batter(CompactGriddleUnit.STANDARD_BATTER_AMOUNT, true)
 
 
-func _pour_batter(batter_amount: float) -> void:
+func _pour_batter(batter_amount: float, used_automatic_batter_ladle: bool = false) -> void:
 	var station := _griddle_station()
 	if station == null or not station.has_method("take_batter_from_ladle"):
 		return
-	var result := Dictionary(station.call("take_batter_from_ladle", batter_amount))
+	var result := Dictionary(station.call("take_batter_from_ladle", batter_amount, used_automatic_batter_ladle))
 	if not bool(result.get("success", false)):
 		status_message.emit("当前鏊面无法添加面糊")
 	else:

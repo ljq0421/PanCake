@@ -28,18 +28,29 @@ func _run() -> void:
 	var mixed_settlement := Dictionary(session.call("settle_f3_order", mixed))
 	var mixed_reviews := Array(mixed_settlement.get("review_items", []))
 	_check(mixed_reviews.size() == 3, "multi-item settlement creates one review record per delivered product")
-	_check(int(mixed_settlement.get("qualified_item_count", 0)) == 2 and int(mixed_settlement.get("earned_coins", -1)) == 18, "only the qualified youtiao and soy milk contribute their individual prices")
-	_check(not bool(mixed_settlement.get("payment_pending", true)) or int(mixed_settlement.get("earned_coins", 0)) == 18, "a partial order creates exactly its qualified pending payment")
+	_check(int(mixed_settlement.get("qualified_item_count", 0)) == 2 and int(mixed_settlement.get("earned_coins", -1)) == 16, "qualified products contribute their floor-rounded score-proportional payments")
+	_check(not bool(mixed_settlement.get("payment_pending", true)) or int(mixed_settlement.get("earned_coins", 0)) == 16, "a partial order creates its score-proportional pending payment")
 	_check(int(mixed_settlement.get("consolation_coins", -1)) == 0, "a sub-60 product never creates the retired consolation coin")
 	var mixed_payment := Dictionary(session.call("collect_tray_payment", mixed_settlement.get("settlement_id", &"")))
 	var repeated_mixed_payment := Dictionary(session.call("collect_tray_payment", mixed_settlement.get("settlement_id", &"")))
-	_check(int(mixed_payment.get("amount", 0)) == 18 and bool(repeated_mixed_payment.get("already_collected", false)), "qualified-product payment is collected exactly once")
+	_check(int(mixed_payment.get("amount", 0)) == 16 and bool(repeated_mixed_payment.get("already_collected", false)), "score-proportional payment is collected exactly once")
 
+	var soft_mismatch_order := _open_order(session, [{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "base_price_coins": 12, "heat_preference": &"golden", "ingredient_ids": [], "sauce_ids": []}])
+	_attach(session, soft_mismatch_order, 0, {"product_instance_id": &"review.pancake.heat_soft", "product_id": &"product.pancake.custom", "area_id": &"area.pancake", "heat_matches_requested_preference": false, "ingredient_ids": [], "sauce_ids": [], "score": 72.0, "grade": &"B"})
+	var soft_mismatch_settlement := Dictionary(session.call("settle_f3_order", soft_mismatch_order))
+	var soft_mismatch_review := Dictionary(Array(soft_mismatch_settlement.get("review_items", []))[0])
+	_check(
+		is_equal_approx(float(soft_mismatch_review.get("score", 0.0)), 72.0)
+		and bool(soft_mismatch_review.get("qualified", false))
+		and int(soft_mismatch_review.get("payment_coins", -1)) == 8
+		and int(soft_mismatch_settlement.get("earned_coins", -1)) == 8,
+		"a 72-point heat mismatch receives floor(12 × 72%) = 8 coins"
+	)
 	var quantity_order := _open_order(session, [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 2, "base_price_coins": 9}])
 	_attach(session, quantity_order, 0, {"product_instance_id": &"review.youtiao.first", "product_id": &"product.youtiao.plain", "area_id": &"area.youtiao", "temperature_mode": &"room_temperature", "ingredient_ids": [], "sauce_ids": [], "quality": 80.0, "grade": &"B"})
 	_attach(session, quantity_order, 0, {"product_instance_id": &"review.youtiao.second", "product_id": &"product.youtiao.plain", "area_id": &"area.youtiao", "temperature_mode": &"room_temperature", "ingredient_ids": [], "sauce_ids": [], "quality": 40.0, "grade": &"C"})
 	var quantity_settlement := Dictionary(session.call("settle_f3_order", quantity_order))
-	_check(Array(quantity_settlement.get("review_items", [])).size() == 2 and int(quantity_settlement.get("earned_coins", -1)) == 9, "two units in one order item retain independent scores and payment eligibility")
+	_check(Array(quantity_settlement.get("review_items", [])).size() == 2 and int(quantity_settlement.get("earned_coins", -1)) == 7, "two units in one order item retain independent score-proportional payments")
 
 	var wrong_order := _open_order(session, [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1, "base_price_coins": 9}])
 	_attach(session, wrong_order, 0, {"product_instance_id": &"review.youtiao.wrong", "product_id": &"product.fresh_soy_milk.yellow_bean", "area_id": &"area.fresh_soy_milk", "temperature_mode": &"room_temperature", "ingredient_ids": [], "sauce_ids": [], "quality": 100.0, "grade": &"A"})

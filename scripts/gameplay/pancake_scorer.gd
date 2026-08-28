@@ -83,6 +83,18 @@ static func _portion_counts(values: Array) -> Dictionary:
 		counts[id] = mini(int(counts.get(id, 0)) + 1, MAX_PORTIONS_PER_REQUIREMENT)
 	return counts
 
+static func _ingredient_compliance_score(required_quantities: Dictionary, applied_quantities: Dictionary) -> float:
+	var required_total := 0
+	var applied_total := 0
+	var matched_total := 0
+	for ingredient_type in IngredientModel.ALL_TYPES:
+		var required_count := int(required_quantities.get(ingredient_type, required_quantities.get(str(ingredient_type), 0)))
+		var applied_count := int(applied_quantities.get(ingredient_type, applied_quantities.get(str(ingredient_type), 0)))
+		required_total += required_count
+		applied_total += applied_count
+		matched_total += mini(required_count, applied_count)
+	var compared_total := maxi(required_total, applied_total)
+	return 100.0 if compared_total == 0 else 100.0 * float(matched_total) / float(compared_total)
 
 static func _sauce_portion_count(sauce_result: Dictionary, base_target: float) -> int:
 	if float(sauce_result.get("coverage_ratio", 0.0)) <= 0.08:
@@ -102,7 +114,8 @@ static func evaluate_order(
 	elapsed_seconds: float,
 	patience_ratio: float,
 	egg_automation_applied: bool = false,
-	sauce_automation_applied: bool = false
+	sauce_automation_applied: bool = false,
+	thickness_automation_applied: bool = false
 ) -> Dictionary:
 	var covered_indices := PackedInt32Array()
 	var thickness_total := 0.0
@@ -131,6 +144,11 @@ static func evaluate_order(
 	var mean_thickness := thickness_total / divisor
 	var thickness_variance := maxf(thickness_squared_total / divisor - mean_thickness * mean_thickness, 0.0)
 	var thickness_score := 100.0 * clampf(1.0 - sqrt(thickness_variance) / 0.42 - absf(mean_thickness - 0.42) / 1.2, 0.0, 1.0)
+	# The measured ladle fixes the batter amount and the press makes the spread
+	# uniform. Together they define the standard thickness, so this dimension
+	# must not be reduced by the raw simulation's absolute-thickness target.
+	if thickness_automation_applied:
+		thickness_score = 100.0
 	var mean_front := front_total / divisor
 	var mean_back := back_total / divisor
 	var heat_rmse := sqrt(heat_squared_error / divisor)
@@ -195,11 +213,7 @@ static func evaluate_order(
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
 	var ingredient_score := clampf(float(ingredient_distribution.score) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
 
-	var order_score := 100.0
-	order_score -= float(missing_ingredients.size()) * 22.0
-	order_score -= float(unexpected_ingredients.size()) * 14.0
-	order_score -= float(missing_sauces.size()) * 24.0
-	order_score = clampf(order_score, 0.0, 100.0)
+	var order_score := _ingredient_compliance_score(required_ingredient_quantities, applied_ingredient_quantities)
 	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
 	var time_score := 100.0 * clampf(1.0 - maxf(elapsed_seconds - time_limit * 0.55, 0.0) / (time_limit * 0.75), 0.0, 1.0)
 	var overall := (
@@ -275,6 +289,7 @@ static func evaluate_order(
 			"unflipped_delivery_penalty": unflipped_delivery_penalty,
 			"egg_automation_applied": egg_automation_applied,
 			"sauce_automation_applied": sauce_automation_applied,
+			"thickness_automation_applied": thickness_automation_applied,
 		},
 		"intrinsic_dimensions": {
 			"thickness": thickness_score,
@@ -347,6 +362,8 @@ static func evaluate_stored_product(
 	var intrinsic: Dictionary = Dictionary(basis.get("intrinsic_dimensions", {}))
 	var thickness_score := float(intrinsic.get("thickness", 0.0))
 	var production: Dictionary = Dictionary(basis.get("production", {}))
+	if bool(production.get("thickness_automation_applied", false)):
+		thickness_score = 100.0
 	var egg_score := 100.0 if bool(production.get("egg_automation_applied", false)) else float(intrinsic.get("egg", 0.0))
 	var sauce_automation_applied := bool(production.get("sauce_automation_applied", false))
 
@@ -424,14 +441,7 @@ static func evaluate_stored_product(
 			applied_ingredients.append(ingredient_type)
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
 	var ingredient_score := clampf(float(basis.get("ingredient_distribution_score", 0.0)) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
-	var order_score := clampf(
-		100.0
-		- float(missing_ingredients.size()) * 22.0
-		- float(unexpected_ingredients.size()) * 14.0
-		- float(missing_sauces.size()) * 24.0,
-		0.0,
-		100.0
-	)
+	var order_score := _ingredient_compliance_score(required_ingredient_quantities, applied_ingredient_quantities)
 	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
 	var time_score := 100.0 * clampf(1.0 - maxf(elapsed_seconds - time_limit * 0.55, 0.0) / (time_limit * 0.75), 0.0, 1.0)
 	var overall := (

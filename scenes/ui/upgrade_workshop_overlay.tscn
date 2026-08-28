@@ -759,18 +759,18 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_capacity_pancake_holding_tray_two_slots" type="Button" parent="UpgradeProps" unique_id=176328406]
+[node name="WorkshopProp_growth_capacity_pancake_holding_tray_first_slot" type="Button" parent="UpgradeProps" unique_id=176328406]
 custom_minimum_size = Vector2(132, 42)
 layout_mode = 0
-offset_left = 1079.0
-offset_top = 1003.0
-offset_right = 1211.0
-offset_bottom = 1045.0
+offset_left = 1040.0
+offset_top = 905.0
+offset_right = 1172.0
+offset_bottom = 933.0
 focus_mode = 0
 flat = true
-metadata/growth_id = "growth.capacity.pancake_holding_tray.two_slots"
+metadata/growth_id = "growth.capacity.pancake_holding_tray.first_slot"
 
-[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_two_slots" unique_id=1484423993]
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_first_slot" unique_id=1484423993]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -780,13 +780,39 @@ grow_vertical = 2
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
-text = "煎饼暂存盘\n可预订"
+text = "暂存盘 1\n可预订"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="WorkshopProp_growth_automation_pancake_one_click_egg" type="Button" parent="UpgradeProps" unique_id=142495401]
+[node name="WorkshopProp_growth_capacity_pancake_holding_tray_second_slot" type="Button" parent="UpgradeProps"]
+custom_minimum_size = Vector2(132, 28)
+layout_mode = 0
+offset_left = 1228.0
+offset_top = 905.0
+offset_right = 1360.0
+offset_bottom = 933.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.capacity.pancake_holding_tray.second_slot"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "暂存盘 2\n可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
 custom_minimum_size = Vector2(128, 38)
+[node name="WorkshopProp_growth_automation_pancake_one_click_egg" type="Button" parent="UpgradeProps" unique_id=142495401]
 layout_mode = 0
 offset_left = 1435.0
 offset_top = 864.0

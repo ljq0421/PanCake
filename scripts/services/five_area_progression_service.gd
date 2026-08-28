@@ -4,6 +4,9 @@ extends RefCounted
 ## Owns five-area progression state only.  It does not inspect scene nodes,
 ## manipulate stock quantities, or write save files; GameSessionStore becomes
 ## the persistence coordinator in phase 4.
+const LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID := &"growth.capacity.pancake_holding_tray.two_slots"
+const PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.first_slot"
+const PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.second_slot"
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
@@ -383,6 +386,7 @@ func load_snapshot(value: Dictionary) -> void:
 	applied_mastery_settlement_ids = _load_id_set(value.get("applied_mastery_settlement_ids", []))
 	pending_growth_ids = _load_id_array(value.get("pending_growth_ids", []))
 	var tutorial: Dictionary = Dictionary(value.get("tutorial", {}))
+	_migrate_legacy_pancake_holding_tray_growth()
 	tutorial_completed_area_ids = _load_id_set(tutorial.get("completed_area_ids", []))
 	tutorial_completed_device_ids = {}
 	tutorial_queue_area_ids = _load_id_array(tutorial.get("queue_area_ids", [&"area.pancake"]))
@@ -396,9 +400,22 @@ func load_snapshot(value: Dictionary) -> void:
 	_normalize_three_area_state()
 
 
+func _migrate_legacy_pancake_holding_tray_growth() -> void:
+	# The retired 40-coin upgrade unlocked both trays at once. Preserve that
+	# completed or already-paid purchase when saves are loaded under the new,
+	# independently unlockable tray progression.
+	if bool(owned_growth_ids.get(LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID, false)):
+		owned_growth_ids[PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID] = true
+		owned_growth_ids[PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID] = true
+	if pending_growth_ids.has(LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID):
+		for growth_id in [PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID, PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID]:
+			if not owns_growth(growth_id) and not pending_growth_ids.has(growth_id):
+				pending_growth_ids.append(growth_id)
+
+
 func _normalize_three_area_state() -> void:
-	unlocked_area_ids = _active_area_set(unlocked_area_ids)
 	device_tiers = _active_definition_dictionary(device_tiers, &"device")
+	unlocked_area_ids = _active_area_set(unlocked_area_ids)
 	unlocked_recipe_ids = _active_definition_set(unlocked_recipe_ids, &"recipe")
 	unlocked_product_ids = _active_definition_set(unlocked_product_ids, &"product")
 	unlocked_stock_ids = _active_definition_set(unlocked_stock_ids, &"stock")

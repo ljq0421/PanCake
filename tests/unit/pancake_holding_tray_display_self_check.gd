@@ -36,7 +36,7 @@ func _run() -> void:
 	_check(WORKSTATION._pancake_holding_tooltip(egg_baocui).contains("鸡蛋") and WORKSTATION._pancake_holding_tooltip(herb_pancake).contains("香菜"), "holding-tray tooltip names the complete stored recipe")
 	tray.free()
 	var workshop := WORKSHOP_SCENE.instantiate()
-	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_two_slots") is Button, "workshop authors the pancake holding-tray upgrade hotspot")
+	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_first_slot") is Button and workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") is Button, "workshop authors separate pancake holding-tray upgrade hotspots")
 	var preview_slot := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview/Slot01") as TextureRect
 	_check(preview_slot != null and preview_slot.texture != null and preview_slot.texture.resource_path.ends_with("empty-square-ingredient-tray.png"), "workshop preview uses the confirmed empty-square tray asset")
 	workshop.free()

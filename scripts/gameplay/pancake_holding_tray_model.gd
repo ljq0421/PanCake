@@ -38,13 +38,14 @@ func slot_snapshot(slot_index: int) -> Dictionary:
 	return _slot_presentation(_slots[slot_index])
 
 
-func store(product_snapshot: Dictionary) -> Dictionary:
+func store(product_snapshot: Dictionary, unlocked_slot_count: int = SLOT_COUNT) -> Dictionary:
 	if not _is_valid_product(product_snapshot):
 		return {"success": false, "reason": &"invalid_product_snapshot"}
+	var usable_slot_count := clampi(unlocked_slot_count, 0, SLOT_COUNT)
 	for slot in _slots:
 		if StringName(slot.get("product_instance_id", &"")) == StringName(product_snapshot.get("product_instance_id", &"")):
 			return {"success": false, "reason": &"duplicate_product_instance"}
-	for index in SLOT_COUNT:
+	for index in usable_slot_count:
 		if _slots[index].is_empty():
 			var stored := product_snapshot.duplicate(true)
 			stored["age_seconds"] = 0.0

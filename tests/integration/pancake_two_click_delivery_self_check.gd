@@ -33,11 +33,25 @@ func _run() -> void:
 	workstation.call("_on_customer_service_delivery_requested", first_order_id, 0)
 	_check(
 		StringName(Dictionary(session.call("formal_order", first_order_id)).get("state", &"")) in [&"active", &"serving"]
-		and not workstation.multi_griddle_station.ready_source_refs().is_empty(),
-		"an unselected griddle pancake is not auto-delivered by the order icon"
+		and StringName(Dictionary(workstation.get("_selected_pancake_order_target_ref")).get("order_id", &"")) == first_order_id,
+		"an unpaired pancake order icon selects its exact order target"
+	)
+	workstation.call("_on_customer_service_delivery_requested", first_order_id, 0)
+	_check(Dictionary(workstation.get("_selected_pancake_order_target_ref")).is_empty(), "clicking the same pancake order icon cancels selection")
+
+	workstation.call("_on_customer_service_delivery_requested", first_order_id, 0)
+	var griddle_source := Dictionary(workstation.multi_griddle_station.ready_source_refs()[0])
+	workstation.call("_on_pancake_delivery_source_clicked", griddle_source)
+	_check(
+		StringName(Dictionary(session.call("formal_order", first_order_id)).get("state", &"")) == &"settled"
+		and Dictionary(workstation.get("_selected_pancake_delivery_source_ref")).is_empty()
+		and Dictionary(workstation.get("_selected_pancake_order_target_ref")).is_empty(),
+		"order icon then packaged griddle pancake delivers immediately and clears both endpoints"
 	)
 
-	var griddle_source := Dictionary(workstation.multi_griddle_station.ready_source_refs()[0])
+	var source_order := _open_order(session, plain_item, &"two_click_source_first")
+	_prepare_ready_pancake(workstation, plain_item)
+	griddle_source = Dictionary(workstation.multi_griddle_station.ready_source_refs()[0])
 	workstation.call("_on_pancake_delivery_source_clicked", griddle_source)
 	_check(not Dictionary(workstation.get("_selected_pancake_delivery_source_ref")).is_empty(), "clicking a packaged griddle pancake selects it")
 	workstation.call("_on_pancake_delivery_source_clicked", griddle_source)
@@ -54,12 +68,11 @@ func _run() -> void:
 		"clicking another ready pancake switches the selected delivery source"
 	)
 	workstation.call("_on_pancake_delivery_source_clicked", griddle_source)
-	workstation.call("_on_customer_service_delivery_requested", first_order_id, 0)
+	workstation.call("_on_customer_service_delivery_requested", StringName(source_order.get("order_id", &"")), 0)
 	_check(
-		StringName(Dictionary(session.call("formal_order", first_order_id)).get("state", &"")) == &"settled"
-		and workstation.multi_griddle_station.ready_source_refs().is_empty()
+		StringName(Dictionary(session.call("formal_order", StringName(source_order.get("order_id", &"")))).get("state", &"")) == &"settled"
 		and Dictionary(workstation.get("_selected_pancake_delivery_source_ref")).is_empty(),
-		"the selected griddle pancake is delivered exactly once and selection clears"
+		"pancake then order icon delivery remains available"
 	)
 
 	var mismatch_item := _pancake_item(&"well_done")
@@ -90,6 +103,25 @@ func _run() -> void:
 		and Dictionary(Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))[0]).is_empty(),
 		"the selected mismatched holding-tray pancake still delivers and is consumed"
 	)
+
+	var holding_order := _open_order(session, mismatch_item, &"two_click_target_holding")
+	var holding_product := Dictionary(session.call("store_pancake_product", _pancake_product(&"golden")))
+	workstation.call("_refresh_pancake_holding_tray")
+	holding_ref = Dictionary(holding_source.source_ref())
+	workstation.call("_on_customer_service_delivery_requested", StringName(holding_order.get("order_id", &"")), 0)
+	_check(not Dictionary(workstation.get("_selected_pancake_order_target_ref")).is_empty(), "a pancake order target stays selected while waiting for a holding-tray pancake")
+	workstation.call("_on_pancake_delivery_source_clicked", holding_ref)
+	_check(
+		bool(holding_product.get("success", false))
+		and StringName(Dictionary(session.call("formal_order", StringName(holding_order.get("order_id", &"")))).get("state", &"")) == &"settled",
+		"order icon then holding-tray pancake delivers immediately"
+	)
+
+	var invalid_target_order := _open_order(session, mismatch_item, &"two_click_invalid_target")
+	workstation.call("_on_customer_service_delivery_requested", StringName(invalid_target_order.get("order_id", &"")), 0)
+	session.call("abandon_formal_order", StringName(invalid_target_order.get("order_id", &"")), &"two_click_invalid_target")
+	workstation.call("_refresh_selected_pancake_order_target")
+	_check(Dictionary(workstation.get("_selected_pancake_order_target_ref")).is_empty(), "selection clears when its order item is no longer available")
 
 	workstation.queue_free()
 	_finish()

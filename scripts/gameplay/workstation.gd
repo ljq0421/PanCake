@@ -694,6 +694,7 @@ func _current_ready_product_preview() -> Dictionary:
 		p1_session.patience_ratio(),
 		false,
 		_automatic_brush_owned,
+		pour_used and _press_spreader_used,
 	)
 	return Dictionary(five_area_pancake_production.call(
 		"create_product_snapshot",
@@ -2222,7 +2223,8 @@ func _deliver_direct_pancake_to_order(target_order: Dictionary, item_index: int)
 		p1_session.elapsed_seconds,
 		p1_session.patience_ratio(),
 		false,
-		_automatic_brush_owned
+		_automatic_brush_owned,
+		pour_used and _press_spreader_used
 	)
 	var preview_product: Dictionary = five_area_pancake_production.call(
 		"create_product_snapshot",
@@ -2292,7 +2294,8 @@ func _serve_order_legacy() -> void:
 		p1_session.elapsed_seconds,
 		p1_session.patience_ratio(),
 		false,
-		_automatic_brush_owned
+		_automatic_brush_owned,
+		pour_used and _press_spreader_used
 	)
 	var handoff_result := p1_session.begin_handoff(score_result)
 	if not bool(handoff_result.get("success", false)):
@@ -2332,7 +2335,7 @@ func _begin_pancake_handoff_visual(score_result: Dictionary, package_result: Str
 func _store_current_pancake() -> void:
 	if p1_session.phase != P1Session.Phase.READY_TO_SERVE or five_area_pancake_production == null:
 		return
-	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(pancake_model, ingredient_model, fold_model, p1_session.order, p1_session.elapsed_seconds, p1_session.patience_ratio(), false, _automatic_brush_owned)
+	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(pancake_model, ingredient_model, fold_model, p1_session.order, p1_session.elapsed_seconds, p1_session.patience_ratio(), false, _automatic_brush_owned, pour_used and _press_spreader_used)
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null:
 		return
@@ -2526,7 +2529,7 @@ func _refresh_pancake_holding_tray() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var unlocked := false
 	if session != null and session.has_method("progression_service"):
-		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots"))
+		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot"))
 	pancake_holding_tray.visible = unlocked
 	if not unlocked or session == null or not session.has_method("pancake_holding_tray_snapshot"):
 		return
@@ -2994,7 +2997,8 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 	var names := {
 		&"growth.add_on.pancake.ham_sausage": "火腿肠",
 		&"growth.add_on.pancake.meat_floss": "肉松",
-		&"growth.capacity.pancake_holding_tray.two_slots": "双格暂存托盘",
+		&"growth.capacity.pancake_holding_tray.first_slot": "暂存盘 1",
+		&"growth.capacity.pancake_holding_tray.second_slot": "暂存盘 2",
 		&"growth.add_on.pancake.coriander": "香菜",
 		&"growth.add_on.pancake.preserved_mustard": "榨菜",
 		&"growth.add_on.pancake.pork_tenderloin": "里脊肉",

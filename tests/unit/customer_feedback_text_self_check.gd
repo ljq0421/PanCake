@@ -58,8 +58,8 @@ func _run() -> void:
 		"a sub-80 ingredient quality problem outranks a higher-scoring heat mismatch"
 	)
 	_check(
-		is_zero_approx(float(Dictionary(quality_summary.get("dimensions", {})).get("order", 100.0))),
-		"a delivery mismatch changes the displayed pancake compliance score to zero"
+		is_zero_approx(float(quality_summary.get("score", 100.0))) and is_equal_approx(float(Dictionary(quality_summary.get("dimensions", {})).get("order", 0.0)), 100.0),
+		"a heat mismatch can reject the order while preserving full ingredient compliance"
 	)
 	var detailed_feedback := GAME_SESSION_STORE._formal_review_feedback(
 		&"product.pancake.custom",

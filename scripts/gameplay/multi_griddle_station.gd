@@ -245,7 +245,7 @@ func can_take_batter_from_ladle() -> bool:
 	return unit != null and unit.state == UNIT_SCRIPT.State.IDLE
 
 
-func take_batter_from_ladle(batter_amount: float = UNIT_SCRIPT.STANDARD_BATTER_AMOUNT) -> Dictionary:
+func take_batter_from_ladle(batter_amount: float = UNIT_SCRIPT.STANDARD_BATTER_AMOUNT, used_automatic_batter_ladle: bool = false) -> Dictionary:
 	if not can_take_batter_from_ladle():
 		status_message.emit("鏊面制作中，暂时不能再加面糊")
 		return {"success": false, "reason": &"griddle_busy"}
@@ -253,7 +253,7 @@ func take_batter_from_ladle(batter_amount: float = UNIT_SCRIPT.STANDARD_BATTER_A
 	if unit == null:
 		return {"success": false, "reason": &"griddle_locked"}
 	var actual_amount := clampf(batter_amount, UNIT_SCRIPT.MIN_BATTER_AMOUNT, UNIT_SCRIPT.MAX_BATTER_AMOUNT)
-	unit.begin_order(_unbound_production_context(), actual_amount)
+	unit.begin_order(_unbound_production_context(), actual_amount, used_automatic_batter_ladle)
 	_set_selected_tool(&"tool.pancake.spreader")
 	_sync_snapshot_to_session()
 	status_message.emit("面糊已倒入：摊饼器已自动拿起，绕鏊面转一圈即可")
@@ -769,6 +769,7 @@ func _build_product(unit: Node) -> Dictionary:
 		float(unit.p1_session.patience_ratio()),
 		bool(unit.get("egg_automation_applied")),
 		bool(unit.get("sauce_automation_applied")),
+		bool(unit.get("automatic_batter_ladle_applied")) and bool(unit.get("press_spreader_applied")),
 	)
 	var serving_score_basis := Dictionary(score_result.get("serving_score_basis", {})).duplicate(true)
 	var intrinsic_dimensions := Dictionary(serving_score_basis.get("intrinsic_dimensions", {})).duplicate(true)

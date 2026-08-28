@@ -1,0 +1,50 @@
+extends SceneTree
+
+const WORKSTATION := preload("res://scripts/gameplay/five_area_workstation.gd")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSHOP_SCENE := preload("res://scenes/ui/upgrade_workshop_overlay.tscn")
+
+var _failures: Array[String] = []
+
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var tray := WORKSTATION_SCENE.instantiate()
+	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray") is TextureButton, "formal workstation authors a clickable pancake holding tray")
+	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01") is TextureRect and tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02") is TextureRect, "holding tray authors two visible slots")
+	var egg_baocui := {
+		"ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.baocui"],
+		"sauce_ids": [&"stock.pancake.sauce.sweet_flour"],
+	}
+	var herb_pancake := {
+		"ingredient_ids": [&"stock.pancake.scallion", &"stock.pancake.coriander"],
+		"sauce_ids": [&"stock.pancake.sauce.sweet_flour"],
+	}
+	var egg_markers: Array = WORKSTATION._pancake_recipe_marker_entries(egg_baocui)
+	var herb_markers: Array = WORKSTATION._pancake_recipe_marker_entries(herb_pancake)
+	_check(egg_markers.size() == 3 and herb_markers.size() == 3 and egg_markers != herb_markers, "different pancake recipes produce different holding-tray icon sequences")
+	_check(WORKSTATION._pancake_holding_tooltip(egg_baocui).contains("鸡蛋") and WORKSTATION._pancake_holding_tooltip(herb_pancake).contains("香菜"), "holding-tray tooltip names the complete stored recipe")
+	tray.free()
+	var workshop := WORKSHOP_SCENE.instantiate()
+	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_two_slots") is Button, "workshop authors the pancake holding-tray upgrade hotspot")
+	var preview_slot := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview/Slot01") as TextureRect
+	_check(preview_slot != null and preview_slot.texture != null and preview_slot.texture.resource_path.ends_with("empty-square-ingredient-tray.png"), "workshop preview uses the confirmed empty-square tray asset")
+	workshop.free()
+	_finish()
+
+
+func _check(condition: bool, message: String) -> void:
+	if not condition:
+		_failures.append(message)
+
+
+func _finish() -> void:
+	if _failures.is_empty():
+		print("PANCAKE_HOLDING_TRAY_DISPLAY_SELF_CHECK_PASS")
+		quit(0)
+		return
+	printerr("PANCAKE_HOLDING_TRAY_DISPLAY_SELF_CHECK_FAIL\n" + "\n".join(_failures))
+	quit(1)

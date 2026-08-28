@@ -118,6 +118,8 @@ var applied_ingredient_ids := PackedStringArray()
 ## Set only after the automation has completed its physical spreading pass.
 ## This persists so delayed delivery cannot lose the upgrade's quality benefit.
 var egg_automation_applied := false
+## Set when the automatic sauce pass completes; retained for customer review.
+var sauce_automation_applied := false
 var ready_product: Dictionary = {}
 var upgrade_locked := false
 var _non_burning_upgrade_enabled := false
@@ -515,6 +517,7 @@ func apply_sauce_automatically(stock_id: StringName, validation: Dictionary = {}
 	if int(result.get("covered_cells", 0)) <= 0:
 		return {"success": false, "reason": &"outside_pancake", "stock_id": stock_id}
 	applied_sauce_ids.append(str(stock_id))
+	sauce_automation_applied = true
 	_reset_surface_action()
 	if is_node_ready():
 		pancake_surface.force_texture_upload()
@@ -751,7 +754,7 @@ func total_cook_seconds() -> float:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 3,
+		"version": 4,
 		"source_index": unit_index,
 		"state": int(state),
 		"order": order.duplicate(true),
@@ -761,6 +764,7 @@ func snapshot() -> Dictionary:
 		"applied_sauce_ids": applied_sauce_ids.duplicate(),
 		"applied_ingredient_ids": applied_ingredient_ids.duplicate(),
 		"egg_automation_applied": egg_automation_applied,
+		"sauce_automation_applied": sauce_automation_applied,
 		"ready_product": ready_product.duplicate(true),
 		"packaging_pending": _packaging_pending,
 		"automatic_fold_pending_region": _automatic_fold_pending_region,
@@ -794,6 +798,7 @@ func load_snapshot(value: Dictionary) -> Dictionary:
 	applied_sauce_ids = PackedStringArray(Array(value.get("applied_sauce_ids", [])))
 	applied_ingredient_ids = PackedStringArray(Array(value.get("applied_ingredient_ids", [])))
 	egg_automation_applied = bool(value.get("egg_automation_applied", false))
+	sauce_automation_applied = bool(value.get("sauce_automation_applied", false))
 	ready_product = Dictionary(value.get("ready_product", {})).duplicate(true)
 	_packaging_pending = bool(value.get("packaging_pending", false))
 	_automatic_fold_pending_region = StringName(value.get("automatic_fold_pending_region", FOLD_MODEL_SCRIPT.REGION_NONE))
@@ -830,6 +835,7 @@ func reset_unit() -> void:
 	applied_sauce_ids = PackedStringArray()
 	applied_ingredient_ids = PackedStringArray()
 	egg_automation_applied = false
+	sauce_automation_applied = false
 	ready_product.clear()
 	_packaging_pending = false
 	_fold_threshold_feedback_region = FOLD_MODEL_SCRIPT.REGION_NONE

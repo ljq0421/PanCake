@@ -2164,6 +2164,42 @@ func store_pancake_product(product: Dictionary) -> Dictionary:
 	return result
 
 
+## Moves a completed griddle pancake into the holding tray as one save-state
+## transaction.  The visual griddle is cleared by the caller only after this
+## returns success, so a full tray or stale source never loses the pancake.
+func store_pancake_griddle_ready_in_holding_tray(source_index: int) -> Dictionary:
+	if not has_save():
+		return {"success": false, "reason": &"no_active_save"}
+	_ensure_progression()
+	if not bool(_progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots")):
+		return {"success": false, "reason": &"tray_locked"}
+	_ensure_pancake_holding_tray()
+	_ensure_production_service()
+	var preview := Dictionary(_production_service.call("preview_pancake_griddle_ready", source_index))
+	if not bool(preview.get("success", false)):
+		return preview
+	var tray_before := pancake_holding_tray_snapshot()
+	var production_before := five_area_production_snapshot()
+	var stored := Dictionary(_pancake_holding_tray.call("store", Dictionary(preview.get("product", {}))))
+	if not bool(stored.get("success", false)):
+		return stored
+	var taken := Dictionary(_production_service.call("take_pancake_griddle_ready", source_index))
+	if not bool(taken.get("success", false)):
+		_pancake_holding_tray.call("load_snapshot", tray_before)
+		_production_service.call("load_snapshot", production_before)
+		return taken
+	_sync_pancake_holding_tray_to_save()
+	_sync_production_to_save()
+	_touch_and_write()
+	production_changed.emit(five_area_production_snapshot())
+	return {
+		"success": true,
+		"source_index": source_index,
+		"slot_index": int(stored.get("slot_index", -1)),
+		"product": Dictionary(taken.get("product", {})).duplicate(true),
+	}
+
+
 func preview_pancake_tray_delivery(slot_index: int, order: Dictionary) -> Dictionary:
 	_ensure_pancake_holding_tray()
 	return Dictionary(_pancake_holding_tray.call("preview_serve", slot_index, order)).duplicate(true)
@@ -3126,6 +3162,10 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 		return {"success": false, "reason": &"no_active_save"}
 	_ensure_progression()
 	_ensure_order_service()
+	# A collectible payment belongs to the business day that earned it.  Clear it
+	# at the persistence boundary as well as in the workstation UI, so a scene
+	# reload or a non-visual caller can never carry yesterday's coins forward.
+	var day_end_payment_collection := collect_all_pending_order_payments()
 	var day_was_open := bool(_progression.get("day_open"))
 	var normalized_cutoff := cutoff.duplicate(true)
 	var cutoff_reason := StringName(normalized_cutoff.get("reason", &"manual_early_end"))
@@ -3206,6 +3246,7 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	var inventory_waste := _clear_inventory_for_day_end()
 	_sync_progression_to_save()
 	var bill := today_bill()
+	bill["day_end_payment_collection"] = day_end_payment_collection.duplicate(true)
 	bill["tray_waste"] = tray_waste
 	bill["prepared_product_slot_waste"] = prepared_slot_waste
 	bill["abandoned_product_waste"] = abandoned_product_waste

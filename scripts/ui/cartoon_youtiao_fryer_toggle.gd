@@ -864,12 +864,22 @@ func _refresh_chicken_output_sources(lane: Dictionary) -> void:
 		var source := chicken_slot_sources[source_index]
 		var occupied_slot := source_index < capacity and occupied.has(source_index)
 		var ready_slot := state == &"ready_to_collect" and occupied.has(source_index)
-		source.configure({"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": source_index, "product_id": CHICKEN_PRODUCT_ID, "discardable": ready_slot}, texture, ready_slot, "点击任意鸡排，将整篮鸡排放入鸡排盘")
+		var burnt_slot := state == &"burnt" and occupied.has(source_index)
+		var source_available := ready_slot or burnt_slot
+		source.configure(
+			{"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": source_index, "product_id": CHICKEN_PRODUCT_ID, "discardable": source_available},
+			texture,
+			source_available,
+			"拖到废弃区报废整篮焦糊鸡排" if burnt_slot else "点击任意鸡排，将整篮鸡排放入鸡排盘",
+		)
 		var regions: Array[Dictionary] = []
-		if ready_slot:
+		if source_available:
 			regions.append({"texture": texture, "rect": Rect2(Vector2.ZERO, source.size)})
 		source.set_alpha_hit_regions(regions)
-		source.mouse_filter = Control.MOUSE_FILTER_STOP if ready_slot else Control.MOUSE_FILTER_IGNORE
+		# Ready chicken is collected with a click. A burnt batch must instead be
+		# draggable from its visible filter slot to the shared waste basket.
+		source.native_drag_enabled = burnt_slot
+		source.mouse_filter = Control.MOUSE_FILTER_STOP if source_available else Control.MOUSE_FILTER_IGNORE
 		source.visible = _chicken_unlocked and occupied_slot and not _workshop_preview
 
 

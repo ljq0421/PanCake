@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://b7dijr1i4xnu7" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-6.png" id="11_pork_floss_full"]
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="12_sauce_jar"]
 [ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="13_batter_ladle"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="14_pancake_holding_tray"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_workshop_header"]
 content_margin_left = 22.0
@@ -76,34 +77,6 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_workshop_secondary"]
-content_margin_top = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.035, 0.13, 0.13, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.29, 0.62, 0.58, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_workshop_secondary_hover"]
-content_margin_top = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.055, 0.2, 0.19, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.44, 0.82, 0.74, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_workshop_disabled"]
 content_margin_top = 12.0
 content_margin_bottom = 12.0
@@ -133,6 +106,34 @@ expand_margin_left = 3.0
 expand_margin_top = 3.0
 expand_margin_right = 3.0
 expand_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_workshop_secondary"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.035, 0.13, 0.13, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.29, 0.62, 0.58, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_workshop_secondary_hover"]
+content_margin_top = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.055, 0.2, 0.19, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.44, 0.82, 0.74, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_workshop_hint"]
 content_margin_left = 16.0
@@ -300,7 +301,7 @@ texture = ExtResource("13_batter_ladle")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="HeaderPanel" type="PanelContainer" parent="."]
+[node name="HeaderPanel" type="PanelContainer" parent="." unique_id=926975188]
 z_index = 4
 layout_mode = 0
 offset_left = 26.0
@@ -313,7 +314,6 @@ theme_override_styles/panel = SubResource("StyleBox_workshop_header")
 [node name="QueueLabel" type="Label" parent="HeaderPanel" unique_id=1984833927]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.96, 0.91, 0.75, 1)
 theme_override_font_sizes/font_size = 20
 text = "升级工坊 · 待生效：无"
@@ -340,8 +340,9 @@ offset_bottom = 126.0
 theme_override_colors/default_color = Color(0.96, 0.91, 0.78, 1)
 theme_override_font_sizes/normal_font_size = 17
 theme_override_font_sizes/bold_font_size = 23
-text = "[b]选择一个升级[/b]\n点击设备旁的标签，查看价格、条件和生效时间。"
 bbcode_enabled = true
+text = "[b]选择一个升级[/b]
+点击设备旁的标签，查看价格、条件和生效时间。"
 
 [node name="BuyButton" type="Button" parent="DetailPanel" unique_id=1877647080]
 unique_name_in_owner = true
@@ -355,8 +356,8 @@ theme_override_colors/font_color = Color(0.96, 0.95, 0.89, 1)
 theme_override_colors/font_disabled_color = Color(0.52, 0.61, 0.59, 1)
 theme_override_font_sizes/font_size = 19
 theme_override_styles/normal = SubResource("StyleBox_workshop_primary")
-theme_override_styles/hover = SubResource("StyleBox_workshop_primary_hover")
 theme_override_styles/pressed = SubResource("StyleBox_workshop_primary_hover")
+theme_override_styles/hover = SubResource("StyleBox_workshop_primary_hover")
 theme_override_styles/disabled = SubResource("StyleBox_workshop_disabled")
 theme_override_styles/focus = SubResource("StyleBox_workshop_focus")
 disabled = true
@@ -374,8 +375,8 @@ focus_neighbor_right = NodePath("../BackButton")
 theme_override_colors/font_color = Color(0.96, 0.95, 0.89, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_workshop_primary")
-theme_override_styles/hover = SubResource("StyleBox_workshop_primary_hover")
 theme_override_styles/pressed = SubResource("StyleBox_workshop_primary_hover")
+theme_override_styles/hover = SubResource("StyleBox_workshop_primary_hover")
 theme_override_styles/focus = SubResource("StyleBox_workshop_focus")
 text = "确认预订，开始下一天"
 
@@ -390,8 +391,8 @@ focus_neighbor_left = NodePath("../NextDayButton")
 theme_override_colors/font_color = Color(0.93, 0.9, 0.82, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_workshop_secondary")
-theme_override_styles/hover = SubResource("StyleBox_workshop_secondary_hover")
 theme_override_styles/pressed = SubResource("StyleBox_workshop_secondary_hover")
+theme_override_styles/hover = SubResource("StyleBox_workshop_secondary_hover")
 theme_override_styles/focus = SubResource("StyleBox_workshop_focus")
 text = "返回账单"
 
@@ -409,7 +410,6 @@ theme_override_styles/panel = SubResource("StyleBox_workshop_hint")
 [node name="HintLabel" type="Label" parent="HoverHint" unique_id=1558537490]
 unique_name_in_owner = true
 layout_mode = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.96, 0.91, 0.78, 1)
 theme_override_font_sizes/font_size = 16
 autowrap_mode = 2
@@ -451,15 +451,43 @@ texture = ExtResource("4_juice_tray")
 expand_mode = 1
 stretch_mode = 5
 
+[node name="PancakeHoldingTrayPreview" type="Control" parent="UpgradeProps" unique_id=1343708884]
+unique_name_in_owner = true
+self_modulate = Color(1, 1, 1, 0.42)
+z_index = 1
+layout_mode = 0
+offset_left = 1084.0
+offset_top = 760.0
+offset_right = 1256.0
+offset_bottom = 838.0
+mouse_filter = 2
+
+[node name="Slot01" type="TextureRect" parent="UpgradeProps/PancakeHoldingTrayPreview" unique_id=336337034]
+layout_mode = 0
+offset_right = 78.0
+offset_bottom = 78.0
+texture = ExtResource("14_pancake_holding_tray")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot02" type="TextureRect" parent="UpgradeProps/PancakeHoldingTrayPreview" unique_id=1409814944]
+layout_mode = 0
+offset_left = 88.0
+offset_right = 166.0
+offset_bottom = 78.0
+texture = ExtResource("14_pancake_holding_tray")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="WorkshopProp_growth_area_packaged_drink" type="Button" parent="UpgradeProps" unique_id=578231561]
 unique_name_in_owner = true
 z_index = 2
 custom_minimum_size = Vector2(143, 74)
 layout_mode = 0
-offset_left = 1721.0
-offset_top = 1024.0
-offset_right = 1864.0
-offset_bottom = 1076.0
+offset_left = 1720.0
+offset_top = 979.0
+offset_right = 1863.0
+offset_bottom = 1053.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.area.packaged_drink"
@@ -699,8 +727,8 @@ vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="WorkshopProp_growth_automation_pancake_non_burning_griddle" type="Button" parent="UpgradeProps" unique_id=1238716639]
-custom_minimum_size = Vector2(148, 38)
 z_index = 2
+custom_minimum_size = Vector2(148, 38)
 layout_mode = 0
 offset_left = 728.0
 offset_top = 610.0
@@ -722,6 +750,32 @@ theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 13
 text = "不会糊的煎饼鏊子
 可预订"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="WorkshopProp_growth_capacity_pancake_holding_tray_two_slots" type="Button" parent="UpgradeProps" unique_id=176328406]
+custom_minimum_size = Vector2(132, 42)
+layout_mode = 0
+offset_left = 1104.0
+offset_top = 780.0
+offset_right = 1236.0
+offset_bottom = 822.0
+focus_mode = 0
+flat = true
+metadata/growth_id = "growth.capacity.pancake_holding_tray.two_slots"
+
+[node name="ConditionTag" type="Label" parent="UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_two_slots" unique_id=1484423993]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.95)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "煎饼暂存盘\n可预订"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2

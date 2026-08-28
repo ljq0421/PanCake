@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_reentry_adds_layers_without_requiring_release()
 	_test_wide_brush_covers_pancake_quickly()
 	_test_scorer_distinguishes_sauce_results()
+	_test_customer_review_sauce_score_contract()
 	_finish()
 
 
@@ -101,6 +102,27 @@ func _test_scorer_distinguishes_sauce_results() -> void:
 	excessive.sauce_concentration = _filled_sauce(excessive, excessive.parameters.sauce_excess_threshold + 0.25, false)
 	var excessive_result: Dictionary = PANCAKE_SCORER_SCRIPT.evaluate_sauce(excessive)
 	_check((excessive_result.tags as PackedStringArray).has("酱料过量"), "repeated layers above the threshold receive the excessive-sauce result")
+
+
+func _test_customer_review_sauce_score_contract() -> void:
+	var plain_order := {"heat_preference": &"golden", "ingredients": [], "sauces": [], "time_limit": 72.0}
+	var plain_model := _covered_model(32)
+	plain_model.doneness.fill(0.50)
+	plain_model.back_doneness.fill(0.50)
+	var plain_ingredients := IngredientModel.new()
+	var plain_result := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_order(plain_model, plain_ingredients, PancakeFoldModel.new(plain_model, plain_ingredients), plain_order, 20.0, 1.0))
+	var plain_review := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_stored_product({"serving_score_basis": plain_result.get("serving_score_basis", {})}, plain_order, 20.0, 1.0))
+	_check(is_equal_approx(float(Dictionary(plain_result.get("dimensions", {})).get("sauce", 0.0)), 100.0) and is_equal_approx(float(Dictionary(plain_review.get("dimensions", {})).get("sauce", 0.0)), 100.0), "orders without sauce receive a 100 sauce score in both completion and customer review")
+
+	var automatic_order := {"heat_preference": &"golden", "ingredients": [], "sauces": [OrderService.SAUCE_SWEET], "time_limit": 72.0}
+	var automatic_model := _covered_model(32)
+	automatic_model.doneness.fill(0.50)
+	automatic_model.back_doneness.fill(0.50)
+	automatic_model.sauce_concentration.fill(automatic_model.parameters.sauce_target_concentration)
+	var automatic_ingredients := IngredientModel.new()
+	var automatic_result := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_order(automatic_model, automatic_ingredients, PancakeFoldModel.new(automatic_model, automatic_ingredients), automatic_order, 20.0, 1.0, false, true))
+	var automatic_review := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_stored_product({"serving_score_basis": automatic_result.get("serving_score_basis", {})}, automatic_order, 20.0, 1.0))
+	_check(is_equal_approx(float(Dictionary(automatic_result.get("dimensions", {})).get("sauce", 0.0)), 100.0) and is_equal_approx(float(Dictionary(automatic_review.get("dimensions", {})).get("sauce", 0.0)), 100.0), "automatic sauce receives a 100 sauce score in both completion and customer review")
 
 
 func _simulate_timed_brush(fps: int) -> PackedFloat32Array:

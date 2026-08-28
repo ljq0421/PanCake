@@ -29,6 +29,8 @@ func _run() -> void:
 	_check(_growth_price(&"growth.automation.pancake.one_click_egg") == 60 and _requires(&"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.egg"), "one-click egg follows egg")
 	_check(_growth_price(&"growth.automation.pancake.auto_batter_ladle") == 120 and _growth_price(&"growth.automation.pancake.press_once") == 120, "remaining pancake automation uses the approved prices")
 	_check(_growth_price(&"growth.automation.pancake.non_burning_griddle") == 180 and _requires(&"growth.automation.pancake.non_burning_griddle", &"growth.automation.pancake.auto_batter_ladle") and _requires(&"growth.automation.pancake.non_burning_griddle", &"growth.automation.pancake.press_once"), "non-burning griddle costs 180 and follows both pancake tools")
+	var pancake_holding_tray := CATALOG.growth_definition(&"growth.capacity.pancake_holding_tray.two_slots")
+	_check(_growth_price(&"growth.capacity.pancake_holding_tray.two_slots") == 40 and StringName(pancake_holding_tray.get("requires_area_id", &"")) == &"area.pancake" and StringName(pancake_holding_tray.get("kind", &"")) == &"storage", "pancake holding tray is a 40-coin pancake storage upgrade")
 	_check(CATALOG.growth_definition(&"growth.automation.pancake.auto_sauce_brush").is_empty(), "automatic sauce is baseline behavior instead of a purchasable growth")
 	_check(_matches_area_unlock(&"growth.area.youtiao"), "youtiao unlock requires all six pancake ingredients")
 	_check(_matches_area_unlock(&"growth.area.fresh_soy_milk"), "soy unlock requires all six pancake ingredients without requiring youtiao")

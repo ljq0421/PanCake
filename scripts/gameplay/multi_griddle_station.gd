@@ -755,6 +755,7 @@ func _build_product(unit: Node) -> Dictionary:
 		float(unit.p1_session.elapsed_seconds),
 		float(unit.p1_session.patience_ratio()),
 		bool(unit.get("egg_automation_applied")),
+		bool(unit.get("sauce_automation_applied")),
 	)
 	var serving_score_basis := Dictionary(score_result.get("serving_score_basis", {})).duplicate(true)
 	var intrinsic_dimensions := Dictionary(serving_score_basis.get("intrinsic_dimensions", {})).duplicate(true)

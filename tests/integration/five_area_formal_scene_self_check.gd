@@ -77,6 +77,29 @@ func _run() -> void:
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_sources) == 1 and fryer.plain_tray.product_sources[0].visible and fryer.plain_tray.product_sources[0].position == fryer.plain_tray.slot_origin, "storing one fried youtiao displays one draggable product in the reusable plain tray")
 		_check(fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "dropping onto a stored oil strip forwards to the reusable serving tray")
+		fryer._chicken_unlocked = true
+		fryer._machine = {
+			"state": &"idle",
+			"capacity": 4,
+			"quantity": 0,
+			"tier": 2,
+			"occupied_slot_indices": [],
+			"lanes": {
+				&"right": {"state": &"burnt", "capacity": 4, "quantity": 2, "occupied_slot_indices": [0, 1]},
+			},
+		}
+		fryer._apply_snapshot()
+		var burnt_chicken_source := fryer.chicken_slot_sources[0]
+		var burnt_chicken_ref := burnt_chicken_source.source_ref()
+		_check(
+			burnt_chicken_source.visible
+			and not burnt_chicken_source.disabled
+			and burnt_chicken_source.native_drag_enabled
+			and burnt_chicken_source.mouse_filter == Control.MOUSE_FILTER_STOP
+			and bool(burnt_chicken_ref.get("discardable", false))
+			and workstation.waste_area._can_drop_data(workstation.waste_area.size * 0.5, {"kind": &"product_source", "source_ref": burnt_chicken_ref}),
+			"a burnt chicken cutlet can be dragged from the right filter to discard its entire batch",
+		)
 	var game_session := root.get_node_or_null("GameSession")
 	var griddle := workstation.multi_griddle_station as MultiGriddleStation
 	var top_warning := workstation.get_node_or_null("SafeArea/TopWarningLabel") as Label

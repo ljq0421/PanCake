@@ -101,7 +101,8 @@ static func evaluate_order(
 	order: Dictionary,
 	elapsed_seconds: float,
 	patience_ratio: float,
-	egg_automation_applied: bool = false
+	egg_automation_applied: bool = false,
+	sauce_automation_applied: bool = false
 ) -> Dictionary:
 	var covered_indices := PackedInt32Array()
 	var thickness_total := 0.0
@@ -158,10 +159,16 @@ static func evaluate_order(
 		var applied_portions := int(applied_sauce_quantities.get(sauce_type, 0))
 		if applied_portions < required_portions:
 			missing_sauces.append(_portion_label(OrderService.sauce_display_name(sauce_type), required_portions - applied_portions))
-	var sauce_score := 0.0
+	# When no sauce was requested there is no sauce-quality requirement. It starts
+	# at full credit and can only lose points if an unrequested sauce was added.
+	var sauce_score := 100.0 if required_sauce_quantities.is_empty() else 0.0
 	for value in sauce_scores:
 		sauce_score += value
 	sauce_score /= maxf(float(sauce_scores.size()), 1.0)
+	# The automatic brush guarantees a uniform requested sauce pass. Do not grant
+	# that guarantee when a multi-portion request is still missing sauce.
+	if sauce_automation_applied and not required_sauce_quantities.is_empty() and missing_sauces.is_empty():
+		sauce_score = 100.0
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
 		if required_sauce_quantities.has(sauce_type):
 			continue
@@ -267,6 +274,7 @@ static func evaluate_order(
 			"was_flipped": model.is_flipped,
 			"unflipped_delivery_penalty": unflipped_delivery_penalty,
 			"egg_automation_applied": egg_automation_applied,
+			"sauce_automation_applied": sauce_automation_applied,
 		},
 		"intrinsic_dimensions": {
 			"thickness": thickness_score,
@@ -340,6 +348,7 @@ static func evaluate_stored_product(
 	var thickness_score := float(intrinsic.get("thickness", 0.0))
 	var production: Dictionary = Dictionary(basis.get("production", {}))
 	var egg_score := 100.0 if bool(production.get("egg_automation_applied", false)) else float(intrinsic.get("egg", 0.0))
+	var sauce_automation_applied := bool(production.get("sauce_automation_applied", false))
 
 	var heat_target := _heat_target(StringName(order.get("heat_preference", &"golden")))
 	var heat_moments: Dictionary = Dictionary(basis.get("heat_moments", {}))
@@ -361,7 +370,8 @@ static func evaluate_stored_product(
 	var applied_sauce_quantities: Dictionary = Dictionary(basis.get("applied_sauce_quantities", {}))
 	if applied_sauce_quantities.is_empty():
 		applied_sauce_quantities = _portion_counts(Array(basis.get("applied_sauce_ids", [])))
-	var sauce_score := 0.0
+	# Stored-product review must preserve the same no-sauce full-credit rule.
+	var sauce_score := 100.0 if required_sauce_quantities.is_empty() else 0.0
 	var sauce_score_count := 0
 	var missing_sauces := PackedStringArray()
 	for sauce_type_variant in required_sauce_quantities:
@@ -381,6 +391,8 @@ static func evaluate_stored_product(
 			missing_sauces.append(_portion_label(OrderService.sauce_display_name(sauce_type), required_portions - applied_portions))
 	if sauce_score_count > 0:
 		sauce_score /= float(sauce_score_count)
+	if sauce_automation_applied and not required_sauce_quantities.is_empty() and missing_sauces.is_empty():
+		sauce_score = 100.0
 	for sauce_type in [OrderService.SAUCE_SWEET, OrderService.SAUCE_CHILI]:
 		if required_sauce_quantities.has(sauce_type):
 			continue

@@ -52,6 +52,7 @@ const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
 @onready var _detail_panel := %DetailPanel as Panel
 @onready var _press_preview := %PressSpreaderPreview as TextureRect
 @onready var _juice_tray_preview := %FilledOrangeJuiceTrayPreview as TextureRect
+@onready var _pancake_holding_tray_preview := %PancakeHoldingTrayPreview as Control
 @onready var _editor_preview := %EditorPreview as Control
 var _selected_id: StringName = &""
 var _anchors: Dictionary = {}
@@ -199,8 +200,11 @@ func refresh() -> void:
 	var youtiao_upgrade_id := _next_youtiao_fryer_upgrade(owned_growth_ids)
 	var soy_milk_machine_upgrade_id := _next_soy_milk_machine_upgrade(owned_growth_ids)
 	var press_spreader_owned := owned_growth_ids.has("growth.automation.pancake.press_once")
+	var pancake_holding_tray_owned := owned_growth_ids.has("growth.capacity.pancake_holding_tray.two_slots")
 	_press_preview.visible = true
 	_press_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if press_spreader_owned else 0.42)
+	_pancake_holding_tray_preview.visible = true
+	_pancake_holding_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if pancake_holding_tray_owned else 0.42)
 	# A future drink rack is still readable in the workshop, but remains clearly
 	# a preview until the area is active on the next business day.
 	_juice_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if packaged_drinks_unlocked else 0.42)

@@ -95,8 +95,22 @@ func _run() -> void:
 		"material_cost": 3,
 	}, 8))
 	_check(bool(sold.get("success", false)), "fixture records one sold product with a non-zero material cost")
+	var coins_before_day_end := int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0))
+	var pending_payments_before_day_end := Array(session.call("pending_order_payments"))
+	var pending_payment_total := 0
+	for payment_value in pending_payments_before_day_end:
+		pending_payment_total += int(Dictionary(payment_value).get("amount", 0))
 
 	var bill := Dictionary(session.call("end_business_day"))
+	_check(
+		Array(session.call("pending_order_payments")).is_empty()
+		and int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0)) == coins_before_day_end + pending_payment_total,
+		"day end automatically collects every pending payment before the next business day",
+	)
+	_check(
+		int(Dictionary(bill.get("day_end_payment_collection", {})).get("amount", -1)) == pending_payment_total,
+		"day-end bill records the unified payment collection",
+	)
 	var cleared_inventory := Dictionary(session.call("inventory_snapshot"))
 	_check(cleared_inventory.values().all(func(value): return int(value) == 0), "day end clears every remaining stock lane")
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("state", &"")) == &"idle", "day end clears youtiao work in progress")

@@ -62,6 +62,42 @@ func _run() -> void:
 		await create_timer(0.38).timeout
 		_check(not bool(workstation.get("_formal_payment_collection_active")) and not is_instance_valid(reduced_coin), "reduced-motion feedback still completes and cleans up")
 
+	var session := root.get_node_or_null("GameSession")
+	_check(session != null, "GameSession exists for the day-end collection flow")
+	if session != null:
+		session.call("begin_new_game")
+		var coins_before_day_end := int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0))
+		var save_data := Dictionary(session.get("_save_data")).duplicate(true)
+		save_data["pending_tray_payments"] = {
+			"day.end.pending.payment": {
+				"settlement_id": &"day.end.pending.payment",
+				"order_id": &"day.end.order",
+				"amount": 22,
+				"collected": false,
+				"created_at_unix": 1,
+			},
+		}
+		session.set("_save_data", save_data)
+		_check(Array(session.call("pending_order_payments")).size() == 1, "fixture creates a pending payment for day-end collection")
+		workstation.call("_show_formal_payment_coins", 22)
+		workstation.call("end_business_day_early_for_testing")
+		await process_frame
+		_check(
+			bool(workstation.get("_formal_payment_collection_active"))
+			and not workstation.daily_bill_panel.visible
+			and Array(session.call("pending_order_payments")).is_empty(),
+			"day end clears pending coins and starts their collection animation before the daily bill",
+		)
+		_check(
+			int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0)) == coins_before_day_end + 22,
+			"day-end collection credits the pending payment exactly once",
+		)
+		await create_timer(0.85).timeout
+		_check(
+			not bool(workstation.get("_formal_payment_collection_active")) and workstation.daily_bill_panel.visible,
+			"daily bill opens only after the unified collection animation completes",
+		)
+
 	workstation.queue_free()
 	await process_frame
 	_finish()

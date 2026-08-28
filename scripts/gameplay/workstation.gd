@@ -692,6 +692,8 @@ func _current_ready_product_preview() -> Dictionary:
 		p1_session.order,
 		p1_session.elapsed_seconds,
 		p1_session.patience_ratio(),
+		false,
+		_automatic_brush_owned,
 	)
 	return Dictionary(five_area_pancake_production.call(
 		"create_product_snapshot",
@@ -2218,7 +2220,9 @@ func _deliver_direct_pancake_to_order(target_order: Dictionary, item_index: int)
 		fold_model,
 		p1_session.order,
 		p1_session.elapsed_seconds,
-		p1_session.patience_ratio()
+		p1_session.patience_ratio(),
+		false,
+		_automatic_brush_owned
 	)
 	var preview_product: Dictionary = five_area_pancake_production.call(
 		"create_product_snapshot",
@@ -2286,7 +2290,9 @@ func _serve_order_legacy() -> void:
 		fold_model,
 		p1_session.order,
 		p1_session.elapsed_seconds,
-		p1_session.patience_ratio()
+		p1_session.patience_ratio(),
+		false,
+		_automatic_brush_owned
 	)
 	var handoff_result := p1_session.begin_handoff(score_result)
 	if not bool(handoff_result.get("success", false)):
@@ -2326,7 +2332,7 @@ func _begin_pancake_handoff_visual(score_result: Dictionary, package_result: Str
 func _store_current_pancake() -> void:
 	if p1_session.phase != P1Session.Phase.READY_TO_SERVE or five_area_pancake_production == null:
 		return
-	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(pancake_model, ingredient_model, fold_model, p1_session.order, p1_session.elapsed_seconds, p1_session.patience_ratio())
+	var score_result := PANCAKE_SCORER_SCRIPT.evaluate_order(pancake_model, ingredient_model, fold_model, p1_session.order, p1_session.elapsed_seconds, p1_session.patience_ratio(), false, _automatic_brush_owned)
 	var game_session := get_node_or_null("/root/GameSession")
 	if game_session == null:
 		return

@@ -54,8 +54,20 @@ func _run() -> void:
 	_check(bool(session.call("begin_next_business_day").get("success", false)), "tray capacity activates on the following day")
 	_check(bool(session.call("store_pancake_product", product).get("success", false)), "structured pancake product enters the formal holding tray")
 	_check(not bool(session.call("store_pancake_product", product).get("success", false)), "holding tray rejects a duplicate structured product")
+	var griddle_product: Dictionary = service.call("create_product_snapshot", {"applied_ingredient_ids": [&"egg"], "applied_sauce_ids": [&"sweet_flour"]}, {"id": &"order.pancake.classic", "heat_preference": &"golden"}, {}, &"product_instance.pancake.griddle.transfer")
+	var griddle_snapshot := {
+		"slots": [{"state": 6, "order": {}, "ready_product": griddle_product}],
+	}
+	_check(bool(session.call("save_five_area_pancake_griddles", griddle_snapshot).get("success", false)), "ready griddle snapshot can be staged for holding-tray transfer")
+	var transferred: Dictionary = session.call("store_pancake_griddle_ready_in_holding_tray", 0)
+	_check(bool(transferred.get("success", false)) and int(transferred.get("slot_index", -1)) == 1, "ready griddle pancake atomically enters the remaining holding slot")
+	_check(not bool(session.call("preview_pancake_griddle_ready", 0).get("success", false)), "successful tray transfer clears the authoritative ready griddle")
+	var full_product: Dictionary = service.call("create_product_snapshot", {"applied_ingredient_ids": [&"baocui"], "applied_sauce_ids": [&"sweet_flour"]}, {"id": &"order.pancake.classic", "heat_preference": &"golden"}, {}, &"product_instance.pancake.griddle.full")
+	_check(bool(session.call("save_five_area_pancake_griddles", {"slots": [{"state": 6, "order": {}, "ready_product": full_product}]}).get("success", false)), "another ready pancake can be staged after a transfer")
+	var full_transfer: Dictionary = session.call("store_pancake_griddle_ready_in_holding_tray", 0)
+	_check(StringName(full_transfer.get("reason", &"")) == &"capacity_full" and bool(session.call("preview_pancake_griddle_ready", 0).get("success", false)), "a full tray leaves the packaged griddle pancake untouched")
 	var tray: Dictionary = session.call("pancake_holding_tray_snapshot")
-	_check(Array(tray.get("slots", [])).size() == 2 and not Dictionary(Array(tray.get("slots", []))[0]).is_empty(), "formal save snapshot keeps the fixed two-slot tray")
+	_check(Array(tray.get("slots", [])).size() == 2 and not Dictionary(Array(tray.get("slots", []))[0]).is_empty() and not Dictionary(Array(tray.get("slots", []))[1]).is_empty(), "formal save snapshot keeps the fixed two-slot tray")
 	_finish()
 
 func _check(condition: bool, message: String) -> void:

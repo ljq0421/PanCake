@@ -27,6 +27,7 @@
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="83_pancake_holding_tray"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_strip"]
 bg_color = Color(0.045, 0.09, 0.1, 0.92)
@@ -1525,26 +1526,73 @@ text = "拖入报废
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=843643587]
+[node name="PancakeHoldingTray" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=1824711041]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 1165.0
-offset_top = 790.0
-offset_right = 1275.0
-offset_bottom = 858.0
+offset_left = 1120.0
+offset_top = 782.0
+offset_right = 1292.0
+offset_bottom = 938.0
+tooltip_text = "煎饼暂存盘：点击将唯一已打包煎饼存入空格"
+ignore_texture_size = true
+
+[node name="Title" type="Label" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=143806595]
+layout_mode = 0
+offset_left = 12.0
+offset_top = -23.0
+offset_right = 160.0
+offset_bottom = -1.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.3, 0.12, 0.035, 1)
+theme_override_colors/font_outline_color = Color(1, 0.91, 0.67, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 17
+text = "煎饼暂存盘"
+horizontal_alignment = 1
+
+[node name="SlotFrame01" type="TextureRect" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=865601448]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 78.0
+offset_bottom = 78.0
+mouse_filter = 2
+texture = ExtResource("83_pancake_holding_tray")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SlotFrame02" type="TextureRect" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=998052481]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 0.0
+offset_right = 166.0
+offset_bottom = 78.0
+mouse_filter = 2
+texture = ExtResource("83_pancake_holding_tray")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=843643587]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 7.0
+offset_top = 8.0
+offset_right = 71.0
+offset_bottom = 62.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
 
-[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=1760000249]
+[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=1760000249]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 1165.0
-offset_top = 862.0
-offset_right = 1275.0
-offset_bottom = 930.0
+offset_left = 95.0
+offset_top = 8.0
+offset_right = 159.0
+offset_bottom = 62.0
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")

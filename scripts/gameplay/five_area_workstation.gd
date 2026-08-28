@@ -5,6 +5,29 @@ const PRODUCT_VISUALS := preload("res://scripts/ui/five_area_product_visuals.gd"
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
+const PANCAKE_RECIPE_MARKER_TEXTURES := {
+	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_intact_raw_v1_five_area_v2.png"),
+	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_intact_v1.png"),
+	&"stock.pancake.scallion": preload("res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png"),
+	&"stock.pancake.ham_sausage": preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
+	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
+	&"stock.pancake.coriander": preload("res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png"),
+	&"stock.pancake.youtiao": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png"),
+	&"stock.pancake.sauce.sweet_flour": preload("res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png"),
+}
+const PANCAKE_RECIPE_MARKER_LABELS := {
+	&"stock.pancake.egg": "鸡蛋",
+	&"stock.pancake.baocui": "薄脆",
+	&"stock.pancake.scallion": "葱花",
+	&"stock.pancake.ham_sausage": "火腿",
+	&"stock.pancake.meat_floss": "肉松",
+	&"stock.pancake.coriander": "香菜",
+	&"stock.pancake.youtiao": "油条",
+	&"stock.pancake.preserved_mustard": "榨菜",
+	&"stock.pancake.pork_tenderloin": "里脊",
+	&"stock.pancake.sauce.sweet_flour": "甜面酱",
+}
+const PANCAKE_RECIPE_MARKER_VISIBLE_LIMIT := 3
 const RESULT_QUALITY_ICON_PATHS := {
 	&"IntegrityMetric": "res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png",
 	&"ThicknessMetric": "res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png",
@@ -69,6 +92,7 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var cartoon_youtiao_fryer: CartoonYoutiaoFryerToggle = $FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer
 @onready var pancake_station_view: Control = $SafeArea/JianbingStallArtwork
 @onready var multi_griddle_station: Control = $SafeArea/JianbingStallArtwork/MultiGriddleStation
+@onready var pancake_holding_tray_button: TextureButton = %PancakeHoldingTray
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var result_review_scroll: ScrollContainer = %ResultReviewScroll
@@ -96,6 +120,8 @@ var _multi_griddle_mode_active := false
 var _formal_payment_coin_sprites: Array[TextureRect] = []
 var _formal_payment_total_pulse_tween: Tween
 var _formal_payment_collection_active := false
+var _day_end_payment_collection_pending := false
+var _deferred_day_end_cutoff: Dictionary = {}
 var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
 var _top_warning_tween: Tween
@@ -147,6 +173,8 @@ func _ready() -> void:
 		waste_area.disposition_completed.connect(_on_disposition_completed)
 		waste_area.product_source_discarded.connect(_on_waste_product_source_discarded)
 		waste_area.active_griddle_clear_requested.connect(_on_waste_active_griddle_clear_requested)
+	if pancake_holding_tray_button != null and not pancake_holding_tray_button.pressed.is_connected(_on_pancake_holding_tray_pressed):
+		pancake_holding_tray_button.pressed.connect(_on_pancake_holding_tray_pressed)
 	for material_slot in _all_material_slots():
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
 		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
@@ -172,6 +200,7 @@ func _ready() -> void:
 	_refresh_formal_area_visibility()
 	_refresh_material_slots()
 	_refresh_multi_griddle_mode()
+	_refresh_pancake_holding_tray()
 	_refresh_pancake_drag_sources()
 	_apply_pointer_cursors(self)
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
@@ -483,6 +512,14 @@ func reset_pancake() -> void:
 
 
 func end_business_day(cutoff: Dictionary = {}) -> void:
+	if daily_bill_panel.visible or _day_end_payment_collection_pending:
+		return
+	if _start_day_end_payment_collection(cutoff):
+		return
+	_complete_business_day_end(cutoff)
+
+
+func _complete_business_day_end(cutoff: Dictionary) -> void:
 	super.end_business_day(cutoff)
 	# GameSession has already attributed the unfinished pancake's consumed
 	# materials to today's waste. Clear the live griddle too: otherwise its
@@ -492,6 +529,34 @@ func end_business_day(cutoff: Dictionary = {}) -> void:
 		multi_griddle_station.reset_all()
 	if daily_bill_panel.visible:
 		_set_daily_bill_modal_input(true)
+
+
+func _start_day_end_payment_collection(cutoff: Dictionary) -> bool:
+	if _formal_payment_collection_active:
+		_day_end_payment_collection_pending = true
+		_deferred_day_end_cutoff = cutoff.duplicate(true)
+		return true
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or not session.has_method("pending_order_payments"):
+		return false
+	if Array(session.call("pending_order_payments")).is_empty():
+		return false
+	var collected := Dictionary(session.call("collect_all_pending_order_payments"))
+	if not bool(collected.get("success", false)):
+		return false
+	var collected_coins: Array[TextureRect] = []
+	for coin in _formal_payment_coin_sprites:
+		if is_instance_valid(coin):
+			collected_coins.append(coin)
+	_formal_payment_coin_sprites.clear()
+	_day_end_payment_collection_pending = true
+	_deferred_day_end_cutoff = cutoff.duplicate(true)
+	_play_formal_payment_collection_feedback(
+		int(collected.get("amount", 0)),
+		collected_coins,
+		_formal_payment_should_reduce_motion(),
+	)
+	return true
 
 
 func _close_daily_bill() -> void:
@@ -606,6 +671,7 @@ func _on_formal_shell_changed(_snapshot: Dictionary = {}) -> void:
 	# The service owns refill/promotion, so every durable order change must also
 	# rebuild the service slots instead of waiting for a legacy UI callback.
 	_refresh_customer_queue()
+	_refresh_pancake_holding_tray()
 	_refresh_pancake_drag_sources()
 
 
@@ -1061,8 +1127,156 @@ func _refresh_pancake_drag_sources() -> void:
 		holding_slots = Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
 	for slot_index in range(pancake_holding_sources.size()):
 		var product := Dictionary(holding_slots[slot_index]) if slot_index < holding_slots.size() else {}
-		pancake_holding_sources[slot_index].configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "discardable": true}, PRODUCT_VISUALS.texture_for(&"product.pancake.custom"), not product.is_empty(), "暂存煎饼可交付；点击订单商品图标取用，或拖入废弃篓")
-		pancake_holding_sources[slot_index].visible = not product.is_empty()
+		var source := pancake_holding_sources[slot_index]
+		source.configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "discardable": true}, PRODUCT_VISUALS.texture_for(&"product.pancake.custom"), not product.is_empty(), _pancake_holding_tooltip(product))
+		source.visible = not product.is_empty()
+		_refresh_pancake_recipe_markers(source, product)
+
+
+func _refresh_pancake_holding_tray() -> void:
+	if pancake_holding_tray_button == null:
+		return
+	var session := get_node_or_null("/root/GameSession")
+	var unlocked := false
+	if session != null and session.has_method("progression_service"):
+		unlocked = bool(session.call("progression_service").call("owns_growth", &"growth.capacity.pancake_holding_tray.two_slots"))
+	pancake_holding_tray_button.visible = unlocked
+	pancake_holding_tray_button.disabled = not unlocked
+	if unlocked:
+		_refresh_pancake_drag_sources()
+
+
+func _on_pancake_holding_tray_pressed() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session == null or multi_griddle_station == null:
+		return
+	var ready_sources: Array = multi_griddle_station.ready_source_refs()
+	if ready_sources.is_empty():
+		tool_status_label.text = "暂存盘内没有待存煎饼；请先完成纸袋包装。"
+		return
+	if ready_sources.size() != 1:
+		tool_status_label.text = "暂存盘暂不能自动选择多张已打包煎饼；请先处理鏊子上的成品。"
+		return
+	var source_ref := Dictionary(ready_sources[0])
+	var source_index := int(source_ref.get("source_index", -1))
+	var stored := Dictionary(session.call("store_pancake_griddle_ready_in_holding_tray", source_index))
+	if not bool(stored.get("success", false)):
+		tool_status_label.text = _pancake_holding_store_failure_text(StringName(stored.get("reason", &"unknown")))
+		_refresh_pancake_holding_tray()
+		return
+	# The session has already atomically cleared the authoritative griddle
+	# snapshot. Reset only the matching visual unit afterwards.
+	multi_griddle_station.consume_ready(source_index)
+	_refresh_pancake_holding_tray()
+	tool_status_label.text = "已放入煎饼暂存盘；可从盘中拖到顾客订单。"
+
+
+static func _pancake_holding_store_failure_text(reason: StringName) -> String:
+	match reason:
+		&"tray_locked": return "煎饼暂存盘尚未升级。"
+		&"capacity_full": return "煎饼暂存盘已满；请先交付或废弃盘内成品。"
+		&"pancake_not_ready": return "这张煎饼尚未完成纸袋包装。"
+		&"duplicate_product_instance": return "该煎饼已在暂存盘中。"
+		_: return "暂存失败：%s" % str(reason)
+
+
+func _refresh_pancake_recipe_markers(source: Control, product: Dictionary) -> void:
+	for child in source.get_children():
+		if child.has_meta("pancake_recipe_marker"):
+			child.queue_free()
+	if product.is_empty():
+		return
+	var marker_entries := _pancake_recipe_marker_entries(product)
+	var visible_count := mini(marker_entries.size(), PANCAKE_RECIPE_MARKER_VISIBLE_LIMIT)
+	for marker_index in visible_count:
+		var entry := Dictionary(marker_entries[marker_index])
+		var marker := TextureRect.new()
+		marker.set_meta("pancake_recipe_marker", true)
+		marker.z_index = 10
+		marker.position = Vector2(2.0 + float(marker_index) * 18.0, 34.0)
+		marker.size = Vector2(16.0, 16.0)
+		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		marker.texture = PANCAKE_RECIPE_MARKER_TEXTURES.get(StringName(entry.get("stock_id", &""))) as Texture2D
+		marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		source.add_child(marker)
+		var portions := int(entry.get("count", 1))
+		if portions > 1:
+			var count_label := Label.new()
+			count_label.set_meta("pancake_recipe_marker", true)
+			count_label.z_index = 11
+			count_label.position = marker.position + Vector2(10.0, 7.0)
+			count_label.size = Vector2(10.0, 10.0)
+			count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			count_label.text = str(portions)
+			count_label.add_theme_font_size_override("font_size", 10)
+			count_label.add_theme_color_override("font_color", Color.WHITE)
+			count_label.add_theme_color_override("font_outline_color", Color(0.16, 0.06, 0.02, 1.0))
+			count_label.add_theme_constant_override("outline_size", 2)
+			source.add_child(count_label)
+	if marker_entries.size() > visible_count:
+		var extra_label := Label.new()
+		extra_label.set_meta("pancake_recipe_marker", true)
+		extra_label.z_index = 11
+		extra_label.position = Vector2(2.0 + float(visible_count) * 18.0, 34.0)
+		extra_label.size = Vector2(22.0, 16.0)
+		extra_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		extra_label.text = "+%d" % (marker_entries.size() - visible_count)
+		extra_label.add_theme_font_size_override("font_size", 11)
+		extra_label.add_theme_color_override("font_color", Color.WHITE)
+		extra_label.add_theme_color_override("font_outline_color", Color(0.16, 0.06, 0.02, 1.0))
+		extra_label.add_theme_constant_override("outline_size", 2)
+		source.add_child(extra_label)
+
+
+static func _pancake_recipe_marker_entries(product: Dictionary) -> Array[Dictionary]:
+	var counts := {}
+	var order: Array[StringName] = []
+	for stock_group in [Array(product.get("ingredient_ids", [])), Array(product.get("sauce_ids", []))]:
+		for stock_value in stock_group:
+			var stock_id := StringName(stock_value)
+			if not PANCAKE_RECIPE_MARKER_TEXTURES.has(stock_id):
+				continue
+			if not counts.has(stock_id):
+				order.append(stock_id)
+				counts[stock_id] = 0
+			counts[stock_id] = int(counts[stock_id]) + 1
+	var entries: Array[Dictionary] = []
+	for stock_id in order:
+		entries.append({"stock_id": stock_id, "count": int(counts[stock_id])})
+	return entries
+
+
+static func _pancake_holding_tooltip(product: Dictionary) -> String:
+	if product.is_empty():
+		return "空格：点击暂存盘将唯一已打包煎饼放入这里。"
+	var names := PackedStringArray()
+	for entry in _pancake_recipe_label_entries(product):
+		var value := Dictionary(entry)
+		var name := str(PANCAKE_RECIPE_MARKER_LABELS.get(StringName(value.get("stock_id", &"")), "配料"))
+		var portions := int(value.get("count", 1))
+		names.append("%s×%d" % [name, portions] if portions > 1 else name)
+	var state := StringName(product.get("state", &"fresh"))
+	var freshness: String = str({&"fresh": "新鲜", &"aging": "正在变凉", &"stale": "已冷掉"}.get(state, "新鲜度未知"))
+	return "配方：%s\n新鲜度：%s\n可拖到顾客订单，或拖入废弃篓。" % ["、".join(names) if not names.is_empty() else "原味", freshness]
+
+
+static func _pancake_recipe_label_entries(product: Dictionary) -> Array[Dictionary]:
+	var counts := {}
+	var order: Array[StringName] = []
+	for stock_group in [Array(product.get("ingredient_ids", [])), Array(product.get("sauce_ids", []))]:
+		for stock_value in stock_group:
+			var stock_id := StringName(stock_value)
+			if stock_id.is_empty():
+				continue
+			if not counts.has(stock_id):
+				order.append(stock_id)
+				counts[stock_id] = 0
+			counts[stock_id] = int(counts[stock_id]) + 1
+	var entries: Array[Dictionary] = []
+	for stock_id in order:
+		entries.append({"stock_id": stock_id, "count": int(counts[stock_id])})
+	return entries
 
 
 func _refresh_order_card_ui(order: Dictionary, patience_ratio: float) -> void:
@@ -1196,23 +1410,17 @@ func _delivery_source_for_item(session: Node, order_id: StringName, order: Dicti
 	var items := Array(order.get("items", []))
 	if item_index < 0 or item_index >= items.size():
 		return {}
-	var target_area := StringName(Dictionary(items[item_index]).get("area_id", &""))
-	var fallback := {}
 	for source_ref in _available_delivery_source_refs():
 		var preview := Dictionary(session.call("preview_stage_product_to_order", source_ref, order_id, item_index))
 		if not bool(preview.get("success", false)):
 			continue
-		var product := Dictionary(preview.get("product", {}))
-		var product_id := StringName(product.get("product_id", &""))
-		var product_area := StringName(product.get("area_id", FIVE_AREA_CATALOG.product_definition(product_id).get("area_id", &"")))
-		if product_area != target_area:
-			continue
 		var candidate := {"source_ref": Dictionary(source_ref).duplicate(true), "preview": preview}
 		if bool(preview.get("will_match", false)):
 			return candidate
-		if fallback.is_empty():
-			fallback = candidate
-	return fallback
+	# An order-card click means “deliver this exact item”.  Do not silently use
+	# another product from the same area as a fallback: chicken cutlets and
+	# youtiao share the fryer area, but they are never interchangeable.
+	return {}
 
 
 func _available_delivery_source_refs() -> Array[Dictionary]:
@@ -1630,6 +1838,13 @@ func _complete_formal_payment_collection(amount: int, coins: Array[TextureRect],
 func _finish_formal_payment_collection(amount: int) -> void:
 	_formal_payment_collection_active = false
 	_refresh_pending_payment_display()
+	if _day_end_payment_collection_pending:
+		tool_status_label.text = "营业结束，已统一收取 %d 金币" % amount
+		var cutoff := _deferred_day_end_cutoff.duplicate(true)
+		_day_end_payment_collection_pending = false
+		_deferred_day_end_cutoff.clear()
+		call_deferred("_complete_business_day_end", cutoff)
+		return
 	tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % amount
 
 

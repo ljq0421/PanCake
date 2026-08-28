@@ -150,12 +150,12 @@ func _run() -> void:
 	_check(session != null, "GameSession is available for quote-to-settlement verification")
 	if session != null:
 		session.call("begin_new_game")
-		var opened := Dictionary(session.call("open_formal_order", [{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 1, "temperature_mode": &"room_temperature"}], {"base_coins": 17, "patience_seconds": 60.0}))
+		var opened := Dictionary(session.call("open_formal_order", [{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.juice", "quantity": 1, "temperature_mode": &"room_temperature"}], {"base_coins": 17, "patience_seconds": 60.0}))
 		var formal_order := Dictionary(opened.get("order", {}))
 		var formal_id := StringName(formal_order.get("order_id", &""))
-		var attached := Dictionary(session.call("attach_formal_order_product", formal_id, 0, {"product_instance_id": &"product.quote.contract", "product_id": &"product.packaged_drink.milk", "area_id": &"area.packaged_drink", "temperature_mode": &"room_temperature", "grade": &"A", "quality": 100.0}))
+		var attached := Dictionary(session.call("attach_formal_order_product", formal_id, 0, {"product_instance_id": &"product.quote.contract", "product_id": &"product.packaged_drink.juice", "area_id": &"area.packaged_drink", "temperature_mode": &"room_temperature", "grade": &"A", "quality": 100.0}))
 		var settlement := Dictionary(session.call("settle_f3_order", formal_id)) if bool(attached.get("success", false)) else {}
-		_check(bool(settlement.get("success", false)) and int(settlement.get("earned_coins", -1)) == 17, "the amount displayed as the perfect quote equals the pending amount created by successful settlement")
+		_check(bool(settlement.get("success", false)) and int(settlement.get("earned_coins", -1)) == 9, "the pending payment uses the qualified item's authored unit price instead of the old whole-order quote")
 	slot.queue_free()
 	await process_frame
 	_finish()

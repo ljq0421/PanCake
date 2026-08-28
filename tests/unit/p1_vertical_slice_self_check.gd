@@ -561,6 +561,14 @@ func _test_ingredients_affect_fold_and_score() -> void:
 	var loaded_fold := PancakeFoldModel.new(model, loaded_ingredients)
 	var loaded_result := _fold_left(loaded_fold)
 	_check(loaded_result.outcome == PancakeFoldModel.OUTCOME_THICK, "heavy fillings in a flap create a visible bulged-fold outcome")
+	var centered_ingredients := IngredientModel.new()
+	centered_ingredients.place(IngredientModel.BAOCUI, Vector2(32, 32), 0.0, model)
+	var centered_distribution := Dictionary(centered_ingredients.evaluate_distribution(model.grid_size))
+	_check(
+		is_equal_approx(float(centered_distribution.get("score", 0.0)), 100.0)
+		and not PackedStringArray(centered_distribution.get("tags", [])).has("配料堆在中央"),
+		"central click placement is not treated as a topping-quality defect"
+	)
 
 
 func _test_damage_score_uses_the_single_paper_bag_path() -> void:

@@ -49,6 +49,8 @@ func _run() -> void:
 	_apply_fryer_lanes(fryer, left, right, true)
 	_check(fryer.youtiao_progress_bar.current_stage() == BAR.STAGE_YELLOW, "youtiao remains yellow before ten seconds")
 	_check(fryer.chicken_progress_bar.current_stage() == BAR.STAGE_YELLOW, "chicken remains yellow before twelve seconds")
+	_check_frying_hover_copy(fryer, 0.25, "youtiao frying hover shows frying status")
+	_check_frying_hover_copy(fryer, 0.75, "chicken frying hover shows frying status")
 
 	left = _lane(&"recipe.youtiao.plain", &"ready_safe", 10.0, 0.0)
 	right = _lane(&"recipe.chicken.cutlet", &"ready_safe", 12.0, 4.5)
@@ -92,6 +94,13 @@ func _apply_fryer_lanes(fryer: CartoonYoutiaoFryerToggle, left: Dictionary, righ
 	fryer._chicken_unlocked = chicken_unlocked
 	fryer._workshop_preview = false
 	fryer.call("_apply_snapshot")
+
+
+func _check_frying_hover_copy(fryer: CartoonYoutiaoFryerToggle, horizontal_ratio: float, message: String) -> void:
+	var visual_point := Vector2(fryer.fryer_visual.size.x * horizontal_ratio, fryer.fryer_visual.size.y * 0.5)
+	var point := fryer.get_global_transform_with_canvas().affine_inverse() * (fryer.fryer_visual.get_global_transform_with_canvas() * visual_point)
+	fryer.call("_update_machine_hover_preview", point)
+	_check(fryer.tooltip_text == "炸制中", message)
 
 
 func _lane(recipe_id: StringName, state: StringName, cooking: float, completed: float, quality: float = 100.0) -> Dictionary:

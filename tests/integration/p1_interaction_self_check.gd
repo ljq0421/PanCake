@@ -270,7 +270,7 @@ func _run() -> void:
 	_check(
 		workstation.p1_session.phase == P1Session.Phase.SPREAD
 		and str(next_order_id).begins_with("order.pancake.")
-		and (workstation.pending_payment_button.visible == (tray_payment_amount > 0)),
+		and ((not Array(workstation.get("_formal_payment_coin_sprites")).is_empty()) == (tray_payment_amount > 0)),
 		"next customer is active while only positive payments remain available for click collection"
 	)
 	_check(workstation.customer_line_label.visible and workstation.phase_label.visible, "the next customer order stays actionable behind the optional previous-order summary")

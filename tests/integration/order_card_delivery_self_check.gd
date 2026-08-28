@@ -77,7 +77,7 @@ func _run() -> void:
 		pending_total += int(Dictionary(payment_value).get("amount", 0))
 	_check(StringName(settled_order.get("state", &"")) == &"settled" and _attached_count(settled_order, 1) == 1, "clicking the last item settles the complete order")
 	_check(StringName(workstation.get("_formal_order_id")) != order_id and workstation.p1_session.phase == P1Session.Phase.SPREAD, "next customer becomes actionable before payment collection")
-	_check(pending_total > 0 and workstation.pending_payment_button.visible, "successful order leaves a visible durable pending payment")
+	_check(pending_total > 0 and not Array(workstation.get("_formal_payment_coin_sprites")).is_empty(), "successful order leaves visible, clickable payment coins")
 	var repeated_completion := Dictionary(session.call("complete_order_delivery", order_id))
 	_check(not bool(repeated_completion.get("success", false)) and Array(session.call("pending_order_payments")).size() == pending.size(), "repeated completion cannot duplicate settlement or payment")
 
@@ -102,7 +102,7 @@ func _run() -> void:
 	pending_total = 0
 	for payment_value in pending:
 		pending_total += int(Dictionary(payment_value).get("amount", 0))
-	_check(pending.size() == 2 and pending_total > 0 and workstation.pending_payment_button.text.contains(str(pending_total)), "payments from consecutive orders accumulate before collection")
+	_check(pending.size() == 2 and pending_total > 0 and Array(workstation.get("_formal_payment_coin_sprites")).size() > 1, "payments from consecutive orders accumulate as clickable coin sprites")
 
 	workstation.queue_free()
 	await process_frame
@@ -110,10 +110,15 @@ func _run() -> void:
 	root.add_child(workstation)
 	await process_frame
 	await process_frame
-	_check(workstation.pending_payment_button.visible and workstation.pending_payment_button.text.contains(str(pending_total)), "reloading the workstation restores all durable pending payments")
+	_check(not Array(workstation.get("_formal_payment_coin_sprites")).is_empty(), "reloading the workstation restores all durable pending payment coins")
 
-	workstation.call("_collect_pending_payments")
-	_check(Array(session.call("pending_order_payments")).is_empty() and int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0)) == coins_before + pending_total and not workstation.pending_payment_button.visible, "one payment click collects all pending coins exactly once")
+	var payment_coins: Array = Array(workstation.get("_formal_payment_coin_sprites"))
+	var clicked_coin := payment_coins[0] as TextureRect
+	var click_event := InputEventMouseButton.new()
+	click_event.button_index = MOUSE_BUTTON_LEFT
+	click_event.pressed = true
+	clicked_coin.gui_input.emit(click_event)
+	_check(Array(session.call("pending_order_payments")).is_empty() and int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0)) == coins_before + pending_total and Array(workstation.get("_formal_payment_coin_sprites")).is_empty(), "one coin click collects all pending coins exactly once")
 	var collected_again := Dictionary(session.call("collect_all_pending_order_payments"))
 	_check(bool(collected_again.get("already_collected", false)) and int(Dictionary(session.call("five_area_progression_snapshot")).get("coins", 0)) == coins_before + pending_total, "repeated aggregate collection cannot duplicate coins")
 

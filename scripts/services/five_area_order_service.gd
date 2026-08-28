@@ -459,10 +459,28 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 			return {"success": false, "reason": &"missing_order_item"}
 		var products := _item_products(item)
 		var reasons := PackedStringArray(["missing_order_item"]) if products.is_empty() else PackedStringArray()
-		for product in products:
-			reasons.append_array(_product_mismatch_reasons(item, product))
+		var product_results: Array = []
+		for product_index in range(products.size()):
+			var product: Dictionary = Dictionary(products[product_index]).duplicate(true)
+			var product_reasons := _product_mismatch_reasons(item, product)
+			reasons.append_array(product_reasons)
+			product_results.append({
+				"product_index": product_index,
+				"product_id": item.get("product_id", &""),
+				"product": product,
+				"mismatch_reasons": product_reasons,
+				"success": product_reasons.is_empty(),
+			})
 		if attached.size() < int(item.get("quantity", 1)):
 			reasons.append("incomplete_quantity")
+			for missing_index in range(products.size(), maxi(int(item.get("quantity", 1)), 1)):
+				product_results.append({
+					"product_index": missing_index,
+					"product_id": item.get("product_id", &""),
+					"product": {},
+					"mismatch_reasons": PackedStringArray(["incomplete_quantity"]),
+					"success": false,
+				})
 		all_reasons.append_array(reasons)
 		item_results.append({
 			"product_id": item.get("product_id", &""),
@@ -473,6 +491,7 @@ func settle_order(order_id: StringName, submit_incomplete: bool = false) -> Dict
 			"mismatch_reasons": reasons,
 			"product": products.front().duplicate(true) if not products.is_empty() else {},
 			"products": products,
+			"product_results": product_results,
 		})
 	var success := all_reasons.is_empty()
 	for item_index in range(item_results.size()):

@@ -700,11 +700,12 @@ autowrap_mode = 2
 
 [node name="WorkshopProp_growth_automation_pancake_non_burning_griddle" type="Button" parent="UpgradeProps" unique_id=1238716639]
 custom_minimum_size = Vector2(148, 38)
+z_index = 2
 layout_mode = 0
 offset_left = 728.0
-offset_top = 1018.0
+offset_top = 610.0
 offset_right = 876.0
-offset_bottom = 1056.0
+offset_bottom = 648.0
 focus_mode = 0
 flat = true
 metadata/growth_id = "growth.automation.pancake.non_burning_griddle"

@@ -67,25 +67,25 @@ func _run() -> void:
 	var incomplete: Dictionary = session.call("handoff_order_tray", heated_order_id)
 	_check(StringName(incomplete.get("reason", &"")) == &"tray_incomplete" and int(Dictionary(Array(incomplete.get("missing_items", []))[0]).get("missing_quantity", 0)) == 1, "incomplete tray rebounds with an exact missing quantity")
 
-	var consolation_order: Dictionary = session.call("open_formal_order", [{
+	var unqualified_order: Dictionary = session.call("open_formal_order", [{
 		"area_id": &"area.packaged_drink",
 		"product_id": &"product.packaged_drink.milk",
 		"quantity": 1,
 		"temperature_mode": &"heated",
 	}], {"base_coins": 6})
-	var consolation_order_id := StringName(Dictionary(consolation_order.get("order", {})).get("order_id", &""))
-	var consolation_stage: Dictionary = session.call("stage_product_to_order", milk_source, consolation_order_id, 0)
-	var consolation_settlement: Dictionary = session.call("handoff_order_tray", consolation_order_id)
+	var unqualified_order_id := StringName(Dictionary(unqualified_order.get("order", {})).get("order_id", &""))
+	var unqualified_stage: Dictionary = session.call("stage_product_to_order", milk_source, unqualified_order_id, 0)
+	var unqualified_settlement: Dictionary = session.call("handoff_order_tray", unqualified_order_id)
 	_check(
-		bool(consolation_stage.get("success", false))
-		and not bool(consolation_settlement.get("order_success", true))
-		and int(consolation_settlement.get("earned_coins", 0)) == 1
-		and int(consolation_settlement.get("consolation_coins", 0)) == 1
-		and bool(consolation_settlement.get("payment_pending", false)),
-		"a delivered but low-scoring order creates one collectible consolation coin"
+		bool(unqualified_stage.get("success", false))
+		and not bool(unqualified_settlement.get("order_success", true))
+		and int(unqualified_settlement.get("earned_coins", -1)) == 0
+		and int(unqualified_settlement.get("consolation_coins", -1)) == 0
+		and not bool(unqualified_settlement.get("payment_pending", true)),
+		"a delivered but unqualified product receives no payment and no consolation coin"
 	)
-	var consolation_payment: Dictionary = session.call("collect_tray_payment", StringName(consolation_settlement.get("settlement_id", &"")))
-	_check(bool(consolation_payment.get("success", false)) and int(consolation_payment.get("amount", 0)) == 1, "the consolation coin can be collected exactly like an ordinary payment")
+	var unqualified_payment: Dictionary = session.call("collect_tray_payment", StringName(unqualified_settlement.get("settlement_id", &"")))
+	_check(bool(unqualified_payment.get("already_collected", false)) and int(unqualified_payment.get("amount", -1)) == 0, "a zero-value failed settlement stays non-collectible")
 
 	var pancake_order: Dictionary = session.call("open_formal_order", [{
 		"area_id": &"area.pancake",

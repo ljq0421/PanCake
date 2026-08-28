@@ -43,7 +43,6 @@ const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
 	NodePath("SafeArea/RightRack"),
 	NodePath("SafeArea/SurfaceReadoutLabel"),
 	NodePath("SafeArea/IngredientDragPreview"),
-	NodePath("FiveAreaInfrastructure/PendingPaymentButton"),
 ]
 @onready var _detail := %DetailText as RichTextLabel
 @onready var _queue := %QueueLabel as Label
@@ -228,6 +227,7 @@ func refresh() -> void:
 			&"growth.add_on.pancake.meat_floss",
 			&"growth.add_on.pancake.ham_sausage",
 			&"growth.add_on.pancake.coriander",
+			&"growth.automation.pancake.non_burning_griddle",
 		]
 		var is_youtiao_machine_upgrade := growth_id in [&"growth.area.youtiao", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket"]
 		var is_soy_milk_machine_upgrade := growth_id in [&"growth.area.fresh_soy_milk", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced"]

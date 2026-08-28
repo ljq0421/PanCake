@@ -3019,6 +3019,10 @@ func _open_upgrade_workshop() -> void:
 		$SafeArea.add_child(_upgrade_workshop)
 	_set_upgrade_workshop_preview(true)
 	daily_bill_panel.visible = false
+	# The day-close shield belongs to the bill modal. The workshop already owns
+	# its input surface, so leaving this dimmer visible would make the workshop
+	# look darker than the formal workstation it is previewing.
+	business_day_closed_shield.visible = false
 	_upgrade_workshop.move_to_front()
 	_upgrade_workshop.visible = true
 	_upgrade_workshop.refresh()
@@ -3028,6 +3032,9 @@ func _close_upgrade_workshop() -> void:
 	if _upgrade_workshop != null:
 		_upgrade_workshop.visible = false
 	_set_upgrade_workshop_preview(false)
+	# Returning to the bill restores its input shield and the original modal
+	# presentation state.
+	business_day_closed_shield.visible = true
 	daily_bill_panel.visible = true
 	daily_bill_panel.move_to_front()
 
@@ -3061,7 +3068,6 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		"SafeArea/RightRack",
 		"SafeArea/SurfaceReadoutLabel",
 		"SafeArea/IngredientDragPreview",
-		"FiveAreaInfrastructure/PendingPaymentButton",
 		"FiveAreaInfrastructure/AttentionRail",
 	]:
 		var runtime_node := get_node_or_null(scene_path) as CanvasItem

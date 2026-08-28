@@ -89,7 +89,7 @@ func _run() -> void:
 		_check(coriander_prop != null and coriander_prop.visible and coriander_prop.tooltip_text.contains("先预订香葱罐"), "coriander tag remains visible before its prerequisite is installed")
 		_check(egg_prop != null and egg_prop.visible, "egg reservation is visible before the egg add-on is installed")
 		_check(one_click_egg_prop != null and not one_click_egg_prop.visible, "one-click egg stays hidden before the egg add-on is installed")
-		_check(non_burning_griddle_prop != null and not non_burning_griddle_prop.visible, "non-burning griddle stays hidden until both prerequisite tools are installed")
+		_check(non_burning_griddle_prop != null and non_burning_griddle_prop.visible and non_burning_griddle_prop.tooltip_text.contains("先预订定量面糊勺"), "non-burning griddle remains discoverable and explains its first missing prerequisite")
 		_check(egg_prop != null and one_click_egg_prop != null and egg_prop.z_index > one_click_egg_prop.z_index, "egg reservation tag is drawn above the later one-click-egg upgrade at their shared anchor")
 		if egg_prop != null:
 			egg_prop.emit_signal("pressed")

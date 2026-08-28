@@ -19,7 +19,6 @@ const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
 const CHICKEN_FINISHED_TRAY_GROWTH_ID := &"growth.capacity.chicken_finished_tray"
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const COOKING_STAGE_BAR_SCRIPT := preload("res://scripts/ui/cooking_stage_bar.gd")
-const HOLD_PROGRESS_RING_SCRIPT := preload("res://scripts/ui/hold_progress_ring.gd")
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
 const TRAY_VISUAL_CAPACITY := 4
@@ -125,7 +124,6 @@ var chicken_raw_texture: Texture2D
 var chicken_golden_texture: Texture2D
 var chicken_burnt_texture: Texture2D
 var _machine_cancel_tolerance_pixels := 8.0
-var _machine_hold_ring: HoldProgressRing
 var _machine_feedback_tween: Tween
 
 
@@ -139,7 +137,6 @@ func _ready() -> void:
 		_apply_editor_preview()
 		return
 	_configure_component_controls()
-	_create_machine_hold_ring()
 	mouse_exited.connect(_clear_machine_hover_preview)
 	_connect_session_signals()
 	var session := get_node_or_null("/root/GameSession")
@@ -323,8 +320,8 @@ func _update_machine_hover_preview(point: Vector2) -> void:
 		&"ready_safe", &"overcooking":
 			valid = true
 			message = "点击抬起炸篮并沥油"
-		&"cooking":
-			message = "正在炸制，暂时不能投料"
+		&"frying":
+			message = "炸制中"
 		&"burnt":
 			message = "本批已焦糊，请先处理成品"
 		_:
@@ -364,7 +361,6 @@ func _advance_machine_hold(delta: float) -> void:
 		return
 	if not _machine_hold_active:
 		_machine_hold_elapsed += maxf(delta, 0.0)
-		_show_machine_hold_progress(_machine_hold_elapsed / maxf(MACHINE_HOLD_THRESHOLD_SECONDS, 0.001), "长按投料")
 		if _machine_hold_elapsed + 0.000001 < MACHINE_HOLD_THRESHOLD_SECONDS:
 			return
 		_start_machine_input_hold()
@@ -375,7 +371,6 @@ func _advance_machine_hold(delta: float) -> void:
 		return
 	if _selected_input_stock() > 0:
 		_machine_add_elapsed += maxf(delta, 0.0)
-		_show_machine_hold_progress(_machine_add_elapsed / MACHINE_ADD_INTERVAL_SECONDS, "连续投料")
 		if _machine_add_elapsed + 0.000001 >= MACHINE_ADD_INTERVAL_SECONDS:
 			_machine_add_elapsed = 0.0
 			_load_selected_input()
@@ -383,7 +378,6 @@ func _advance_machine_hold(delta: float) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var stock_id := _selected_stock_id()
 	var result := Dictionary(session.call("advance_five_area_restock_hold", stock_id, delta)) if session != null else {"success": false, "reason": &"no_game_session"}
-	_show_machine_hold_progress(float(result.get("container_fill_ratio", 0.0)), "补货库存")
 	if int(result.get("completed_units", 0)) > 0:
 		for _unit in int(result.get("completed_units", 0)):
 			_load_selected_input()
@@ -416,8 +410,6 @@ func _end_machine_gesture() -> void:
 	_machine_hold_active = false
 	_machine_hold_elapsed = 0.0
 	_machine_add_elapsed = 0.0
-	if _machine_hold_ring != null:
-		_machine_hold_ring.visible = false
 
 
 func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
@@ -508,28 +500,6 @@ func _perform_machine_click() -> void:
 	var result := Dictionary(session.call("perform_f3_chicken_action", action)) if session != null and _machine_lane == &"right" else Dictionary(session.call("perform_f3_youtiao_action", action)) if session != null else {"success": false, "reason": &"no_game_session"}
 	status_message.emit("鸡排开始炸制" if _machine_lane == &"right" and action == &"start" and bool(result.get("success", false)) else "油条开始炸制" if action == &"start" and bool(result.get("success", false)) else "炸篮已抬起，正在沥油" if bool(result.get("success", false)) else _failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
-
-
-func _show_machine_hold_progress(ratio: float, caption: String) -> void:
-	var label := chicken_progress_label if _machine_lane == &"right" else youtiao_progress_label
-	var bar = chicken_progress_bar if _machine_lane == &"right" else youtiao_progress_bar
-	var percent := clampf(ratio, 0.0, 1.0)
-	label.text = "%s %d%%" % [caption, roundi(percent * 100.0)]
-	bar.configure(percent, 1.0, 1.0, true, &"", "松开或移开可取消")
-	if _machine_hold_ring != null:
-		_machine_hold_ring.set_progress_ratio(percent)
-		_machine_hold_ring.visible = true
-
-
-func _create_machine_hold_ring() -> void:
-	_machine_hold_ring = HOLD_PROGRESS_RING_SCRIPT.new()
-	_machine_hold_ring.name = "MachineHoldProgress"
-	_machine_hold_ring.z_index = 200
-	_machine_hold_ring.set_anchors_preset(Control.PRESET_CENTER)
-	_machine_hold_ring.position = Vector2(-38.0, -38.0)
-	_machine_hold_ring.size = Vector2(76.0, 76.0)
-	_machine_hold_ring.visible = false
-	fryer_visual.add_child(_machine_hold_ring)
 
 
 func _play_machine_input_feedback(success: bool) -> void:

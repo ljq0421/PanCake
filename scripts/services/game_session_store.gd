@@ -1488,9 +1488,9 @@ func discard_product_source(source_ref: Dictionary) -> Dictionary:
 		&"youtiao_batch":
 			return discard_f3_youtiao()
 		&"youtiao_fryer_slot":
-			return discard_f3_youtiao_slot(int(source_ref.get("source_index", -1)))
+			return discard_f3_youtiao()
 		&"fryer_slot":
-			return discard_fryer_slot(StringName(source_ref.get("lane_id", &"left")), int(source_ref.get("source_index", -1)))
+			return discard_fryer_batch(StringName(source_ref.get("lane_id", &"left")))
 		&"prepared_product_slot":
 			return discard_prepared_product(StringName(source_ref.get("source_slot_id", &"")), int(source_ref.get("source_index", 0)))
 		&"pancake_holding":
@@ -1652,8 +1652,12 @@ func take_ready_youtiao_for_pancake() -> Dictionary:
 
 
 func discard_f3_youtiao() -> Dictionary:
+	return discard_fryer_batch(&"left")
+
+
+func discard_fryer_batch(lane_id: StringName) -> Dictionary:
 	_ensure_production_service()
-	var result: Dictionary = _production_service.call("discard_batch", &"device.youtiao_fryer")
+	var result: Dictionary = _production_service.call("discard_batch", &"device.youtiao_fryer", lane_id)
 	if bool(result.get("success", false)):
 		_sync_production_to_save()
 		_touch_and_write()
@@ -1829,6 +1833,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 	var mastery_results: Array[Dictionary] = []
 	var items: Array = Array(order.get("items", []))
 	var item_results: Array = Array(settlement.get("item_results", []))
+	var review_items := _formal_order_review_items(order, item_results)
 	var all_grades := PackedStringArray()
 	var base_coins := 0
 	for item_index in range(item_results.size()):
@@ -1848,41 +1853,40 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 			"grade": grade,
 		}
 		mastery_results.append(Dictionary(_progression.call("record_area_result", area_id, mastery_payload)))
-		if bool(settlement.get("order_success", false)):
-			var product_definition := CATALOG.product_definition(StringName(item.get("product_id", &"")))
-			base_coins += maxi(int(product_definition.get("base_sell_price", 0)), 0) * maxi(int(item.get("quantity", 1)), 1)
+	for review_item_value in review_items:
+		var review_item := Dictionary(review_item_value)
+		if bool(review_item.get("qualified", false)):
+			base_coins += maxi(int(review_item.get("payment_coins", 0)), 0)
 	all_grades = SPECIAL_CUSTOMER_SETTLEMENT.adjusted_grades(order, all_grades, item_results)
-	# The playable-order generator owns an explicit whole-order quote, including
-	# pancake prices and multi-item multipliers. Ad-hoc and restored orders that
-	# have no explicit quote keep the catalog-price compatibility path above.
-	if bool(settlement.get("order_success", false)):
-		var order_metadata := Dictionary(order.get("metadata", {}))
-		var legacy_order := Dictionary(order_metadata.get("legacy_order", {}))
-		if order_metadata.has("base_coins"):
-			base_coins = maxi(int(order_metadata.get("base_coins", base_coins)), 0)
-		elif legacy_order.has("payment_coins"):
-			base_coins = maxi(int(legacy_order.get("payment_coins", base_coins)), 0)
-		base_coins = _quality_adjusted_formal_quote(order, item_results, base_coins)
 	var normal_reputation_delta := _f3_reputation_delta(bool(settlement.get("order_success", false)), all_grades)
+	var all_review_items_qualified := not review_items.is_empty()
+	for review_item_value in review_items:
+		if not bool(Dictionary(review_item_value).get("qualified", false)):
+			all_review_items_qualified = false
+			break
+	# Special rewards remain a whole-order privilege. A mixed-quality order can
+	# still pay its qualified products, but never receives a perfect-order bonus.
 	var special_economics := SPECIAL_CUSTOMER_SETTLEMENT.calculate(
 		order,
-		bool(settlement.get("order_success", false)),
+		all_review_items_qualified,
 		all_grades,
 		base_coins,
 		normal_reputation_delta,
 		item_results,
 	)
 	base_coins = int(special_economics.get("earned_coins", base_coins))
-	var consolation_coins := 0
-	if base_coins <= 0 and _has_delivered_formal_product(item_results):
-		consolation_coins = CONSOLATION_PAYMENT_COINS
-		base_coins = consolation_coins
 	var reputation_delta := int(special_economics.get("reputation_delta", normal_reputation_delta))
+	settlement["review_items"] = review_items
+	var qualified_item_count := 0
+	for review_item_value in review_items:
+		if bool(Dictionary(review_item_value).get("qualified", false)):
+			qualified_item_count += 1
+	settlement["qualified_item_count"] = qualified_item_count
 	settlement["special_customer_id"] = special_economics.get("special_customer_id", &"")
 	settlement["special_outcome"] = special_economics.get("outcome", &"ordinary")
 	settlement["perfect_achieved"] = bool(special_economics.get("perfect_achieved", false))
 	settlement["perfect_bonus_coins"] = int(special_economics.get("perfect_bonus_coins", 0))
-	settlement["consolation_coins"] = consolation_coins
+	settlement["consolation_coins"] = 0
 	_progression.set("reputation", maxi(int(_progression.get("reputation")) + reputation_delta, 0))
 	var tutorial_identity := _tutorial_identity_for_order(order)
 	var tutorial_kind := StringName(tutorial_identity.get("kind", &""))
@@ -1948,7 +1952,7 @@ func settle_f3_order(order_id: StringName, submit_incomplete: bool = false) -> D
 			"special_customer_id": settlement.get("special_customer_id", &""),
 			"special_outcome": settlement.get("special_outcome", &"ordinary"),
 			"perfect_bonus_coins": settlement.get("perfect_bonus_coins", 0),
-			"consolation_coins": consolation_coins,
+			"consolation_coins": 0,
 		},
 	})
 	for item_index in range(mastery_results.size()):
@@ -2052,6 +2056,93 @@ func _formal_order_title(order: Dictionary) -> String:
 		return "正式订单"
 	var product := CATALOG.product_definition(StringName(Dictionary(items[0]).get("product_id", &"")))
 	return "%s订单" % str(product.get("label", "正式商品"))
+
+
+func _formal_order_review_items(order: Dictionary, item_results: Array) -> Array[Dictionary]:
+	var review_items: Array[Dictionary] = []
+	var items := Array(order.get("items", []))
+	for item_index in range(items.size()):
+		var item := Dictionary(items[item_index])
+		var item_result := Dictionary(item_results[item_index]) if item_index < item_results.size() else {}
+		var product_results := Array(item_result.get("product_results", []))
+		if product_results.is_empty():
+			for product_value in Array(item_result.get("products", [])):
+				product_results.append({
+					"product": Dictionary(product_value).duplicate(true),
+					"mismatch_reasons": Array(item_result.get("mismatch_reasons", [])).duplicate(),
+				})
+			if product_results.is_empty():
+				product_results.append({"product": {}, "mismatch_reasons": PackedStringArray(["missing_order_item"])})
+		var unit_price := _formal_item_unit_price(order, item)
+		for product_index in range(product_results.size()):
+			var product_result := Dictionary(product_results[product_index])
+			var product := Dictionary(product_result.get("product", {})).duplicate(true)
+			var mismatch_reasons := PackedStringArray(product_result.get("mismatch_reasons", PackedStringArray()))
+			var score := _formal_review_score(product, mismatch_reasons)
+			var qualified := mismatch_reasons.is_empty() and score >= 60.0
+			var expected_product_id := StringName(item.get("product_id", &""))
+			var actual_product_id := StringName(product.get("product_id", expected_product_id))
+			review_items.append({
+				"item_index": item_index,
+				"product_index": product_index,
+				"expected_product_id": expected_product_id,
+				"actual_product_id": actual_product_id,
+				"product": product,
+				"order_item": item.duplicate(true),
+				"mismatch_reasons": mismatch_reasons,
+				"score": score,
+				"qualified": qualified,
+				"payment_coins": unit_price if qualified else 0,
+				"feedback": _formal_review_feedback(expected_product_id, actual_product_id, mismatch_reasons, score),
+			})
+	return review_items
+
+
+func _formal_item_unit_price(order: Dictionary, item: Dictionary) -> int:
+	if item.has("base_price_coins"):
+		return maxi(int(item.get("base_price_coins", 0)), 0)
+	var product_id := StringName(item.get("product_id", &""))
+	var catalog_price := maxi(int(CATALOG.product_definition(product_id).get("base_sell_price", 0)), 0)
+	if catalog_price > 0:
+		return catalog_price
+	if product_id != &"product.pancake.custom":
+		return 0
+	var template_id := StringName(item.get("pancake_template_id", &""))
+	var template := CATALOG.pancake_order_template(template_id)
+	if not template.is_empty():
+		return maxi(int(template.get("payment_coins", 0)), 0)
+	var legacy_order := Dictionary(Dictionary(order.get("metadata", {})).get("legacy_order", {}))
+	return maxi(int(legacy_order.get("payment_coins", 0)), 0)
+
+
+static func _formal_review_score(product: Dictionary, mismatch_reasons: PackedStringArray) -> float:
+	if not mismatch_reasons.is_empty():
+		return 0.0
+	if product.has("score"):
+		return clampf(float(product.get("score", 0.0)), 0.0, 100.0)
+	if product.has("quality"):
+		return clampf(float(product.get("quality", 0.0)), 0.0, 100.0)
+	return 100.0
+
+
+static func _formal_review_feedback(expected_product_id: StringName, actual_product_id: StringName, mismatch_reasons: PackedStringArray, score: float) -> String:
+	var expected_label := _formal_review_product_label(expected_product_id)
+	var actual_label := _formal_review_product_label(actual_product_id)
+	if mismatch_reasons.has("product_id"):
+		return "实送%s，与订单要求的%s不符" % [actual_label, expected_label]
+	if mismatch_reasons.has("incomplete_quantity") or mismatch_reasons.has("missing_order_item"):
+		return "%s未按订单交齐" % expected_label
+	if not mismatch_reasons.is_empty():
+		return "%s不符合订单要求" % expected_label
+	if score < 60.0:
+		return "%s评分未达60分，本份不付款" % expected_label
+	return "%s符合订单要求" % expected_label
+
+
+static func _formal_review_product_label(product_id: StringName) -> String:
+	if product_id == &"product.pancake.custom":
+		return "煎饼"
+	return str(CATALOG.product_definition(product_id).get("label", "餐品"))
 
 
 func pancake_holding_tray_snapshot() -> Dictionary:

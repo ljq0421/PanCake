@@ -47,6 +47,11 @@ func _run() -> void:
 	var bill: Dictionary = game_session.call("today_bill")
 	var cutoff: Dictionary = Dictionary(bill.get("cutoff", {}))
 	_check(workstation.daily_bill_panel.visible and workstation.business_day_closed_shield.visible, "hard cutoff blocks workstation input and opens the daily bill")
+	workstation._open_upgrade_workshop()
+	await process_frame
+	_check(workstation._upgrade_workshop != null and workstation._upgrade_workshop.visible and not workstation.daily_bill_panel.visible and not workstation.business_day_closed_shield.visible, "upgrade workshop replaces the daily-bill shield instead of dimming the formal workstation preview")
+	workstation._close_upgrade_workshop()
+	_check(workstation.daily_bill_panel.visible and workstation.business_day_closed_shield.visible, "returning from the upgrade workshop restores the daily-bill shield")
 	_check(StringName(cutoff.get("reason", &"")) == &"timer_expired" and int(cutoff.get("unserved_customer_count", 0)) == 5, "hard cutoff records all five on-floor customers in the daily bill")
 	_check(Array(game_session.call("active_formal_orders")).is_empty() and Array(game_session.call("waiting_formal_orders")).is_empty(), "hard cutoff abandons every active and waiting formal order instead of allowing overtime settlement")
 	_check(is_zero_approx(float(game_session.call("business_day_remaining_seconds"))), "hard cutoff persists zero remaining business time")

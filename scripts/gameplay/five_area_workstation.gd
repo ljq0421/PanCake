@@ -71,7 +71,10 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var multi_griddle_station: Control = $SafeArea/JianbingStallArtwork/MultiGriddleStation
 @onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
-@onready var pending_payment_button: Button = %PendingPaymentButton
+@onready var result_review_scroll: ScrollContainer = %ResultReviewScroll
+@onready var result_review_cards: VBoxContainer = %ResultReviewCards
+@onready var result_dimension_grid: GridContainer = %DimensionGrid
+@onready var result_tags_panel: PanelContainer = get_node_or_null("SafeArea/ResultPanel/Margin/VBox/ResultTagsPanel") as PanelContainer
 @onready var youtiao_dough_slots: Array[Node] = [%YoutiaoDoughPlain]
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var top_warning_label: Label = %TopWarningLabel
@@ -93,7 +96,6 @@ var _multi_griddle_mode_active := false
 var _formal_payment_coin_sprites: Array[TextureRect] = []
 var _formal_payment_total_pulse_tween: Tween
 var _formal_payment_collection_active := false
-var _workshop_payment_display_hidden := false
 var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
 var _top_warning_tween: Tween
@@ -145,7 +147,6 @@ func _ready() -> void:
 		waste_area.disposition_completed.connect(_on_disposition_completed)
 		waste_area.product_source_discarded.connect(_on_waste_product_source_discarded)
 		waste_area.active_griddle_clear_requested.connect(_on_waste_active_griddle_clear_requested)
-	pending_payment_button.pressed.connect(_collect_pending_payments)
 	for material_slot in _all_material_slots():
 		material_slot.hold_requested.connect(_on_material_hold_requested.bind(material_slot))
 		material_slot.hold_advanced.connect(_on_material_hold_advanced.bind(material_slot))
@@ -206,6 +207,11 @@ func _apply_pointer_cursors(root_node: Node) -> void:
 
 
 func _populate_result(score_result: Dictionary) -> void:
+	var review_items := Array(score_result.get("review_items", []))
+	if review_items.size() > 1:
+		_populate_multi_product_result(review_items)
+		return
+	_clear_multi_product_result()
 	var product_id := StringName(score_result.get("product_id", &"product.pancake.custom"))
 	if product_id == &"product.pancake.custom":
 		_set_pancake_result_metric_visibility(score_result)
@@ -229,6 +235,113 @@ func _populate_result(score_result: Dictionary) -> void:
 	var result_tags: String = " · ".join(PackedStringArray(Array(score_result.get("tags", [])).map(func(tag): return str(tag))))
 	result_tags_label.text = "亮点与问题：%s" % (result_tags if not result_tags.is_empty() else "暂无")
 	_apply_result_score_tones(float(score_result.get("score", 0.0)))
+
+
+func _populate_multi_product_result(review_items: Array) -> void:
+	result_review_scroll.visible = true
+	result_dimension_grid.visible = false
+	if result_tags_panel != null:
+		result_tags_panel.visible = false
+	for child in result_review_cards.get_children():
+		child.queue_free()
+	for review_item_value in review_items:
+		var review_item := Dictionary(review_item_value)
+		result_review_cards.add_child(_make_review_card(review_item))
+	result_title_label.text = "顾客评价 · %d项" % review_items.size()
+	result_detail_label.text = "每件商品独立评价；达到60分的商品才会计入付款。"
+	result_title_label.add_theme_color_override("font_color", FORMAL_PAYMENT_GOLD)
+
+
+func _clear_multi_product_result() -> void:
+	result_review_scroll.visible = false
+	result_dimension_grid.visible = true
+	if result_tags_panel != null:
+		result_tags_panel.visible = true
+	for child in result_review_cards.get_children():
+		child.queue_free()
+
+
+func _make_review_card(review_item: Dictionary) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(0, 0)
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color(0.075, 0.16, 0.15, 0.96)
+	card_style.corner_radius_top_left = 12
+	card_style.corner_radius_top_right = 12
+	card_style.corner_radius_bottom_left = 12
+	card_style.corner_radius_bottom_right = 12
+	card_style.shadow_color = Color(0.015, 0.01, 0.005, 0.34)
+	card_style.shadow_size = 5
+	card_style.shadow_offset = Vector2(0, 3)
+	card_style.content_margin_left = 20.0
+	card_style.content_margin_top = 14.0
+	card_style.content_margin_right = 20.0
+	card_style.content_margin_bottom = 14.0
+	card.add_theme_stylebox_override("panel", card_style)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 8)
+	card.add_child(content)
+	var heading := HBoxContainer.new()
+	content.add_child(heading)
+	var product_label := Label.new()
+	product_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	product_label.add_theme_font_size_override("font_size", 24)
+	product_label.add_theme_color_override("font_color", Color(0.98, 0.92, 0.79, 1.0))
+	product_label.text = _review_item_title(review_item)
+	heading.add_child(product_label)
+	var score := float(review_item.get("score", 0.0))
+	var score_label := Label.new()
+	score_label.add_theme_font_size_override("font_size", 23)
+	score_label.add_theme_color_override("font_color", _result_score_color(score))
+	score_label.text = "%d分 · %s" % [roundi(score), "已计价" if bool(review_item.get("qualified", false)) else "未计价"]
+	heading.add_child(score_label)
+	var feedback_label := Label.new()
+	feedback_label.add_theme_font_size_override("font_size", 18)
+	feedback_label.add_theme_color_override("font_color", Color(0.84, 0.8, 0.68, 1.0))
+	feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	feedback_label.text = str(review_item.get("feedback", "本份已完成"))
+	content.add_child(feedback_label)
+	var metrics := GridContainer.new()
+	metrics.columns = 3
+	metrics.add_theme_constant_override("h_separation", 18)
+	metrics.add_theme_constant_override("v_separation", 5)
+	content.add_child(metrics)
+	for metric_value in _review_metric_profile(review_item):
+		var metric := Dictionary(metric_value)
+		var metric_label := Label.new()
+		metric_label.add_theme_font_size_override("font_size", 17)
+		metric_label.add_theme_color_override("font_color", _result_score_color(float(metric.get("score", 0.0))))
+		metric_label.text = "%s %d" % [str(metric.get("label", "评分")), roundi(float(metric.get("score", 0.0)))]
+		metrics.add_child(metric_label)
+	return card
+
+
+func _review_item_title(review_item: Dictionary) -> String:
+	var expected_product_id := StringName(review_item.get("expected_product_id", &""))
+	var actual_product_id := StringName(review_item.get("actual_product_id", expected_product_id))
+	var expected_label := _product_label(expected_product_id)
+	if actual_product_id.is_empty() or actual_product_id == expected_product_id:
+		return expected_label
+	return "%s（实送%s）" % [expected_label, _product_label(actual_product_id)]
+
+
+func _review_metric_profile(review_item: Dictionary) -> Array[Dictionary]:
+	var product := Dictionary(review_item.get("product", {}))
+	var product_id := StringName(review_item.get("actual_product_id", product.get("product_id", &"")))
+	var displayed_item := Dictionary(review_item.get("order_item", {}))
+	if product_id == &"product.pancake.custom":
+		var dimensions := Dictionary(product.get("dimension_scores", {}))
+		var labels := {
+			&"thickness": "厚薄", &"heat": "火候", &"egg": "摊蛋", &"sauce": "酱料",
+			&"ingredients": "配料", &"order": "订单", &"time": "时间",
+		}
+		var profile: Array[Dictionary] = []
+		for metric_value in [&"thickness", &"heat", &"egg", &"sauce", &"ingredients", &"order", &"time"]:
+			var metric := StringName(metric_value)
+			if dimensions.has(metric):
+				profile.append({"label": labels[metric], "score": float(dimensions.get(metric, 0.0))})
+		return profile
+	return _non_pancake_result_metric_profile({"display_product": product, "display_item": displayed_item}, product_id)
 
 
 func _set_pancake_result_metric_visibility(score_result: Dictionary) -> void:
@@ -499,7 +612,7 @@ func _on_formal_shell_changed(_snapshot: Dictionary = {}) -> void:
 func _on_production_shell_changed(_snapshot: Dictionary = {}) -> void:
 	# Production ticks can arrive every frame. They must not rebuild the order
 	# card/portrait tree; only the production-dependent shell is refreshed.
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 	_refresh_attention_rail()
 	_refresh_pancake_drag_sources()
 
@@ -846,7 +959,7 @@ func _refresh_formal_shell() -> void:
 		var focused := Dictionary(session.call("formal_order", _formal_order_id))
 		if StringName(focused.get("state", &"")) in [&"active", &"serving"]:
 			_refresh_order_card_ui(focused, _formal_order_patience_ratio(focused))
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 	_refresh_attention_rail()
 
 
@@ -1190,12 +1303,13 @@ func _finish_clicked_order(result: Dictionary) -> void:
 	else:
 		_on_playable_order_finished(finished)
 	_populate_result(finished)
-	summary_score_label.text = "本单 %d分 · +%d金币" % [roundi(float(finished.get("score", 0.0))), earned]
+	var review_count := int(finished.get("review_count", 1))
+	summary_score_label.text = "本单 %d项 · +%d金币" % [review_count, earned]
 	summary_feedback_label.text = str(finished.get("feedback", "本单已完成"))
 	summary_feedback_label.visible = not summary_feedback_label.text.strip_edges().is_empty()
 	_result_detail_open = false
 	_order_summary_visible = true
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 	if not _business_day_closed:
 		_refresh_p1_ui()
 		var pending_total := _pending_payment_total()
@@ -1227,7 +1341,7 @@ func _play_formal_payment_collection_feedback(
 	reduce_motion: bool
 ) -> void:
 	_formal_payment_collection_active = true
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 	var origin := _formal_payment_collection_origin(collected_coins)
 	var target := _formal_payment_collection_target()
 	_show_formal_payment_collection_burst(origin, reduce_motion)
@@ -1260,7 +1374,7 @@ func _formal_payment_collection_origin(coins: Array[TextureRect]) -> Vector2:
 		if is_instance_valid(coin):
 			total += coin.get_global_rect().get_center()
 			visible_coin_count += 1
-	return total / float(visible_coin_count) if visible_coin_count > 0 else pending_payment_button.get_global_rect().get_center()
+	return total / float(visible_coin_count) if visible_coin_count > 0 else FORMAL_PAYMENT_COIN_ORIGIN + FORMAL_PAYMENT_COIN_SIZE * 0.5
 
 
 func _formal_payment_collection_target() -> Vector2:
@@ -1515,7 +1629,7 @@ func _complete_formal_payment_collection(amount: int, coins: Array[TextureRect],
 
 func _finish_formal_payment_collection(amount: int) -> void:
 	_formal_payment_collection_active = false
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 	tool_status_label.text = "已收取 %d 金币；当前顾客订单继续" % amount
 
 
@@ -1551,7 +1665,7 @@ func _restore_pending_payment() -> void:
 	if session != null and session.has_method("pending_order_payments"):
 		for payment_value in Array(session.call("pending_order_payments")):
 			_show_formal_payment_coins(maxi(int(Dictionary(payment_value).get("amount", 0)), 0))
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 
 
 func _show_formal_payment_coins(amount: int) -> void:
@@ -1566,8 +1680,10 @@ func _show_formal_payment_coins(amount: int) -> void:
 		coin.position = _formal_payment_coin_target(_formal_payment_coin_sprites.size())
 		coin.size = FORMAL_PAYMENT_COIN_SIZE
 		coin.visible = true
-		coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		coin.tooltip_text = "%d 金币待收取" % denomination
+		coin.mouse_filter = Control.MOUSE_FILTER_STOP
+		coin.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		coin.tooltip_text = "点击收取 %d 金币" % denomination
+		coin.gui_input.connect(_on_formal_payment_coin_gui_input)
 		payment_coin_layer.add_child(coin)
 		_formal_payment_coin_sprites.append(coin)
 
@@ -1588,19 +1704,28 @@ func _formal_payment_coin_target(index: int) -> Vector2:
 	)
 
 
-func _refresh_pending_payment_button() -> void:
-	var pending_total := _pending_payment_total()
-	var has_pending_payment := pending_total > 0 and not _workshop_payment_display_hidden
-	var can_collect := has_pending_payment and not _formal_payment_collection_active
-	pending_payment_button.visible = has_pending_payment
-	pending_payment_button.disabled = not can_collect
-	pending_payment_button.mouse_filter = Control.MOUSE_FILTER_STOP if can_collect else Control.MOUSE_FILTER_IGNORE
-	pending_payment_button.text = "待收款  %d 金币\n点击全部收取" % pending_total
-	pending_payment_button.tooltip_text = "收取所有尚未领取的顾客付款" if pending_total > 0 else "当前没有待收金币"
+func _on_formal_payment_coin_gui_input(event: InputEvent) -> void:
+	if _formal_payment_collection_active:
+		return
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
+			get_viewport().set_input_as_handled()
+			_collect_pending_payments()
+	elif event is InputEventScreenTouch:
+		var touch_event := event as InputEventScreenTouch
+		if touch_event.pressed:
+			get_viewport().set_input_as_handled()
+			_collect_pending_payments()
+
+
+func _refresh_pending_payment_display() -> void:
+	# Coins are the sole visible payment interaction. This method remains as the
+	# refresh seam for settlement and workshop state changes.
+	pass
 
 
 func _set_upgrade_workshop_preview(enabled: bool) -> void:
-	_workshop_payment_display_hidden = enabled
 	super._set_upgrade_workshop_preview(enabled)
 	if enabled:
 		# The workshop overlay supplies a non-interactive filled juice tray, so
@@ -1608,7 +1733,7 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		_set_formal_area_visible(packaged_drink_station, false)
 	else:
 		_refresh_formal_area_visibility()
-	_refresh_pending_payment_button()
+	_refresh_pending_payment_display()
 
 
 func _pending_payment_total() -> int:
@@ -1673,20 +1798,61 @@ func _show_top_warning(message: String) -> void:
 static func _tray_result_summary(settlement: Dictionary) -> Dictionary:
 	var summary := settlement.duplicate(true)
 	var item_results := Array(settlement.get("item_results", []))
+	var review_items := Array(settlement.get("review_items", []))
+	var has_explicit_review_items := not review_items.is_empty()
+	if review_items.is_empty():
+		review_items = _legacy_review_items(item_results)
+	var primary_review := Dictionary(review_items[0]) if not review_items.is_empty() else {}
 	var primary_result := Dictionary(item_results[0]) if not item_results.is_empty() else {}
-	var product := Dictionary(primary_result.get("product", {}))
-	var feedback_items := _delivery_feedback_items(item_results)
-	summary["score"] = float(product.get("score", 100.0 if bool(settlement.get("order_success", false)) else 0.0))
+	var product := Dictionary(primary_review.get("product", primary_result.get("product", {})))
+	var feedback_items := _review_feedback_items(review_items) if has_explicit_review_items else _delivery_feedback_items(item_results)
+	summary["review_items"] = review_items
+	summary["review_count"] = review_items.size()
+	summary["score"] = float(primary_review.get("score", product.get("score", 100.0 if bool(settlement.get("order_success", false)) else 0.0)))
 	summary["dimensions"] = Dictionary(product.get("dimension_scores", {})).duplicate(true)
-	summary["product_id"] = StringName(product.get("product_id", &"product.pancake.custom"))
+	summary["product_id"] = StringName(primary_review.get("actual_product_id", product.get("product_id", &"product.pancake.custom")))
 	summary["display_product"] = product.duplicate(true)
-	summary["display_item"] = primary_result.duplicate(true)
+	summary["display_item"] = Dictionary(primary_review.get("order_item", primary_result)).duplicate(true)
 	summary["tags"] = feedback_items
 	if feedback_items.is_empty():
 		summary["feedback"] = "顾客已收到完整订单"
 	else:
 		summary["feedback"] = "顾客指出：%s" % str(feedback_items[0])
 	return summary
+
+
+static func _legacy_review_items(item_results: Array) -> Array[Dictionary]:
+	var review_items: Array[Dictionary] = []
+	for item_result_value in item_results:
+		var item_result := Dictionary(item_result_value)
+		for product_value in Array(item_result.get("products", [])):
+			var product := Dictionary(product_value)
+			var mismatch_reasons := PackedStringArray(item_result.get("mismatch_reasons", PackedStringArray()))
+			var score := 0.0 if not mismatch_reasons.is_empty() else float(product.get("score", product.get("quality", 100.0)))
+			review_items.append({
+				"expected_product_id": item_result.get("product_id", &""),
+				"actual_product_id": product.get("product_id", item_result.get("product_id", &"")),
+				"product": product.duplicate(true),
+				"order_item": item_result.duplicate(true),
+				"mismatch_reasons": mismatch_reasons,
+				"score": score,
+				"qualified": mismatch_reasons.is_empty() and score >= 60.0,
+			})
+	return review_items
+
+
+static func _review_feedback_items(review_items: Array) -> PackedStringArray:
+	var feedback_items := PackedStringArray()
+	for review_item_value in review_items:
+		var review_item := Dictionary(review_item_value)
+		if bool(review_item.get("qualified", false)):
+			continue
+		var feedback := str(review_item.get("feedback", ""))
+		if feedback.is_empty() and not bool(review_item.get("qualified", true)):
+			feedback = "%s未达到付款标准" % _product_label(StringName(review_item.get("expected_product_id", &"")))
+		if not feedback.is_empty() and not feedback_items.has(feedback):
+			feedback_items.append(feedback)
+	return feedback_items
 
 
 static func _delivery_feedback_items(item_results: Array) -> PackedStringArray:
@@ -1799,7 +1965,7 @@ static func _pancake_quality_feedback_text(metric: StringName, product: Dictiona
 		&"sauce":
 			return _first_matching_tag(tags, ["局部缺酱", "酱料过量", "刷痕断续"], "煎饼酱料涂抹不均")
 		&"ingredients":
-			return _first_matching_tag(tags, ["配料靠边易漏", "配料堆在中央"], "煎饼配料摆放不理想")
+			return _first_matching_tag(tags, ["配料靠边易漏"], "煎饼配料摆放不理想")
 		&"time": return "顾客等待时间过长"
 		_: return "煎饼制作质量不够理想"
 

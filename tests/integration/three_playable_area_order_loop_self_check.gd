@@ -37,7 +37,7 @@ func _run() -> void:
 	_check(StringName(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("state", &"")) == &"ready_safe", "base soy machine produces its cup automatically")
 	_check(bool(Dictionary(session.call("deliver_f4_soy", soy_id, 0)).get("success", false)), "fresh soy stages from its real output to the teaching order")
 	var soy_settlement: Dictionary = session.call("complete_order_delivery", soy_id)
-	_check(bool(soy_settlement.get("order_success", false)) and int(soy_settlement.get("earned_coins", 0)) == 8, "A-grade soy teaching applies its 1.2 quality multiplier")
+	_check(bool(soy_settlement.get("order_success", false)) and int(soy_settlement.get("earned_coins", 0)) == 7, "qualified soy teaching pays its authored unit price without a quality multiplier")
 	_check(int(progression.call("mastery_value", &"area.fresh_soy_milk")) == 1 and Array(Dictionary(progression.call("tutorial_snapshot")).get("completed_area_ids", [])).has("area.fresh_soy_milk"), "soy settlement advances mastery and completes teaching")
 
 	session.call("abandon_active_formal_order", &"business_day_expired")
@@ -55,7 +55,7 @@ func _run() -> void:
 	var stored_youtiao := Dictionary(session.call("store_ready_youtiao_batch", &"slot.04"))
 	_check(bool(stored_youtiao.get("success", false)) and bool(Dictionary(session.call("deliver_f3_youtiao", youtiao_id, 0)).get("success", false)), "finished youtiao is stored as a whole batch before one unit is staged to its teaching order")
 	var youtiao_settlement: Dictionary = session.call("complete_order_delivery", youtiao_id)
-	_check(bool(youtiao_settlement.get("order_success", false)) and int(youtiao_settlement.get("earned_coins", 0)) == 6, "youtiao teaching settles at its catalog revenue")
+	_check(bool(youtiao_settlement.get("order_success", false)) and int(youtiao_settlement.get("earned_coins", 0)) == 9, "qualified youtiao teaching pays its authored unit price")
 	_check(int(progression.call("mastery_value", &"area.youtiao")) == 1, "youtiao settlement advances qualified mastery")
 
 	var next_order_result: Dictionary = session.call("ensure_active_playable_order")

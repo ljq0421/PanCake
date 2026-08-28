@@ -21,6 +21,7 @@ func _run() -> void:
 	var compact_status := safe_area.get_node("BottomStrip") as Control
 	var top_warning := safe_area.get_node("TopWarningLabel") as Control
 	var attention_rail := workstation.get_node("FiveAreaInfrastructure/AttentionRail") as Control
+	var attention_label := attention_rail.get_node("Attention01") as Label
 	var first_order_panel := safe_area.get_node("ServiceCustomer1/OrderPanel") as Control
 	var instructions := compact_status.get_node("Instructions") as Label
 
@@ -31,6 +32,7 @@ func _run() -> void:
 	_check(compact_status.get_global_rect().end.y < first_order_panel.get_global_rect().position.y, "顶部状态栏不会压住顾客订单卡")
 	_check(top_warning.get_global_rect().end.y < first_order_panel.get_global_rect().position.y, "顶部警告不会压住顾客订单卡")
 	_check(attention_rail.get_global_rect().end.y < first_order_panel.get_global_rect().position.y, "设备告警不会压住顾客订单卡")
+	_check(attention_label.mouse_filter == Control.MOUSE_FILTER_IGNORE, "设备告警提示条不拦截右上角结算按钮的输入")
 	_check(not instructions.visible, "重复的常驻操作说明默认隐藏")
 	_check(not workstation.global_status_label.text.contains("熟练度"), "实时经营状态不再重复展示熟练度")
 	workstation.call("_set_upgrade_workshop_preview", true)

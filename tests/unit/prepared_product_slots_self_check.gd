@@ -192,6 +192,23 @@ func _run() -> void:
 	)
 	session.call("discard_product_source", {"source_kind": &"youtiao_batch", "product_id": &"product.youtiao.plain", "discardable": true})
 	session.call("clear_prepared_product_slots")
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.youtiao.plain_dough"] = 2
+	session.call("save_inventory", fryer_inventory)
+	var loaded_for_filter_discard := Dictionary(session.call("load_f3_youtiao", &"recipe.youtiao.plain", 2))
+	session.call("perform_f3_youtiao_action", &"start")
+	session.call("advance_f3_production", 10.0)
+	session.call("perform_f3_youtiao_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var discarded_youtiao_filter := Dictionary(session.call("discard_product_source", {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain", "discardable": true}))
+	var youtiao_after_filter_discard := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
+	_check(
+		bool(loaded_for_filter_discard.get("success", false))
+		and bool(discarded_youtiao_filter.get("success", false))
+		and int(Dictionary(discarded_youtiao_filter.get("waste", {})).get("quantity", 0)) == 2
+		and int(youtiao_after_filter_discard.get("quantity", -1)) == 0,
+		"drag-discarding one finished youtiao clears the entire filter batch"
+	)
 	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 2})
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.chicken.cutlet": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.chicken.cutlet": true})
@@ -215,6 +232,23 @@ func _run() -> void:
 		and Array(chicken_status.get("products", [])).all(func(product: Dictionary) -> bool: return StringName(product.get("product_id", &"")) == &"product.chicken.cutlet")
 		and StringName(chicken_lane.get("state", &"")) == &"idle",
 		"one right-lane batch action stores every ready chicken cutlet in the chicken tray",
+	)
+	fryer_inventory = Dictionary(session.call("inventory_snapshot"))
+	fryer_inventory["stock.chicken.cutlet_raw"] = 2
+	session.call("save_inventory", fryer_inventory)
+	var loaded_chicken_for_filter_discard := Dictionary(session.call("load_f3_chicken", 2))
+	session.call("perform_f3_chicken_action", &"start")
+	session.call("advance_f3_production", 12.0)
+	session.call("perform_f3_chicken_action", &"lift")
+	session.call("advance_f3_production", 2.0)
+	var discarded_chicken_filter := Dictionary(session.call("discard_product_source", {"source_kind": &"fryer_slot", "lane_id": &"right", "source_index": 0, "product_id": &"product.chicken.cutlet", "discardable": true}))
+	chicken_lane = Dictionary(Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer")).get("lanes", {}).get(&"right", {}))
+	_check(
+		bool(loaded_chicken_for_filter_discard.get("success", false))
+		and bool(discarded_chicken_filter.get("success", false))
+		and int(Dictionary(discarded_chicken_filter.get("waste", {})).get("quantity", 0)) == 2
+		and int(chicken_lane.get("quantity", -1)) == 0,
+		"drag-discarding one finished chicken cutlet clears the entire right filter batch"
 	)
 
 	var save_data := Dictionary(session.get("_save_data")).duplicate(true)

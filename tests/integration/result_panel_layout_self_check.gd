@@ -57,6 +57,16 @@ func _run() -> void:
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])))
 	_check(_metric_is_visible(workstation, "EggMetric"), "pancake with egg and toppings shows egg metric")
 	_check(_metric_is_visible(workstation, "IngredientMetric"), "pancake with egg and toppings shows ingredient metric")
+	workstation._populate_result({
+		"review_items": [
+			{"expected_product_id": &"product.pancake.custom", "actual_product_id": &"product.pancake.custom", "product": {"product_id": &"product.pancake.custom", "dimension_scores": {"thickness": 58.0, "heat": 72.0, "order": 100.0}}, "order_item": {"ingredient_ids": []}, "score": 58.0, "qualified": false, "feedback": "煎饼评分未达60分，本份不付款"},
+			{"expected_product_id": &"product.youtiao.plain", "actual_product_id": &"product.youtiao.plain", "product": {"product_id": &"product.youtiao.plain", "quality": 92.0}, "order_item": {"mismatch_reasons": PackedStringArray()}, "score": 92.0, "qualified": true, "feedback": "油条符合订单要求"},
+			{"expected_product_id": &"product.fresh_soy_milk.yellow_bean", "actual_product_id": &"product.fresh_soy_milk.yellow_bean", "product": {"product_id": &"product.fresh_soy_milk.yellow_bean", "fill_ratio": 0.96, "sugar_servings": 0, "temperature_mode": &"room_temperature"}, "order_item": {"requested_sugar_servings": 0, "requested_temperature_mode": &"room_temperature", "mismatch_reasons": PackedStringArray()}, "score": 96.0, "qualified": true, "feedback": "黄豆豆浆符合订单要求"},
+		],
+	})
+	_check(workstation.result_review_scroll.visible and workstation.result_review_cards.get_child_count() == 3, "multi-item result renders one scrollable review card per ordered product")
+	_check(workstation.result_title_label.text == "顾客评价 · 3项" and not workstation.result_dimension_grid.visible, "multi-item result replaces the first-item metric grid with per-product cards")
+	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])))
 
 	workstation._order_summary_visible = true
 	workstation._result_detail_open = false

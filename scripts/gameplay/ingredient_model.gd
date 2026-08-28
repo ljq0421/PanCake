@@ -161,14 +161,15 @@ func evaluate_distribution(grid_size: int) -> Dictionary:
 			edge_count += 1
 	var mean_distance := center_distance_total / float(placements.size())
 	var edge_ratio := float(edge_count) / float(placements.size())
-	var score := 100.0 * clampf(1.0 - absf(mean_distance - 0.34) * 1.35 - edge_ratio * 0.55, 0.0, 1.0)
+	# Ingredients are placed by clicking, so central placement is an expected
+	# interaction outcome rather than a quality defect. Only edge placement can
+	# make a finished pancake leak while being packed and served.
+	var score := 100.0 * clampf(1.0 - edge_ratio * 0.55, 0.0, 1.0)
 	var tags := PackedStringArray()
 	if score >= 82.0:
 		tags.append("配料分布稳妥")
 	if edge_ratio > 0.24:
 		tags.append("配料靠边易漏")
-	if mean_distance < 0.14:
-		tags.append("配料堆在中央")
 	return {"score": score, "center_distance": mean_distance, "edge_ratio": edge_ratio, "tags": tags}
 
 

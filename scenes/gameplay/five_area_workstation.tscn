@@ -202,92 +202,6 @@ expand_margin_top = 3.0
 expand_margin_right = 3.0
 expand_margin_bottom = 3.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBox_payment_cta"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.045, 0.12, 0.115, 0.97)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.76, 0.26, 0.94)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-shadow_color = Color(0.06, 0.025, 0.01, 0.52)
-shadow_size = 8
-shadow_offset = Vector2(0, 4)
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_payment_cta_hover"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.08, 0.25, 0.215, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.88, 0.48, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-shadow_color = Color(0.06, 0.025, 0.01, 0.58)
-shadow_size = 10
-shadow_offset = Vector2(0, 5)
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_payment_cta_pressed"]
-content_margin_left = 18.0
-content_margin_top = 10.0
-content_margin_right = 18.0
-content_margin_bottom = 6.0
-bg_color = Color(0.035, 0.095, 0.09, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.94, 0.65, 0.16, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_payment_cta_disabled"]
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.08, 0.11, 0.105, 0.92)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.38, 0.4, 0.34, 0.74)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_payment_cta_focus"]
-bg_color = Color(0, 0, 0, 0)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.94, 0.62, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-expand_margin_left = 3.0
-expand_margin_top = 3.0
-expand_margin_right = 3.0
-expand_margin_bottom = 3.0
-
 [sub_resource type="StyleBoxFlat" id="StyleBox_attention_chip"]
 content_margin_left = 16.0
 content_margin_top = 7.0
@@ -750,6 +664,20 @@ autowrap_mode = 2
 
 [node name="ResultDivider" type="HSeparator" parent="SafeArea/ResultPanel/Margin/VBox"]
 layout_mode = 2
+
+[node name="ResultReviewScroll" type="ScrollContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=1968747501]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 450)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ResultReviewCards" type="VBoxContainer" parent="SafeArea/ResultPanel/Margin/VBox/ResultReviewScroll" unique_id=423837581]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
 
 [node name="DimensionGrid" type="GridContainer" parent="SafeArea/ResultPanel/Margin/VBox" unique_id=322837851]
 unique_name_in_owner = true
@@ -1621,31 +1549,6 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
 
-[node name="PendingPaymentButton" type="Button" parent="FiveAreaInfrastructure" unique_id=390573099]
-unique_name_in_owner = true
-visible = false
-z_index = 7
-layout_mode = 0
-offset_left = 1012.0
-offset_top = 548.0
-offset_right = 1242.0
-offset_bottom = 620.0
-mouse_default_cursor_shape = 2
-theme_override_colors/font_color = Color(1, 0.91, 0.62, 1)
-theme_override_colors/font_hover_color = Color(1, 0.97, 0.8, 1)
-theme_override_colors/font_pressed_color = Color(1, 0.85, 0.38, 1)
-theme_override_colors/font_disabled_color = Color(0.66, 0.65, 0.55, 0.82)
-theme_override_colors/font_outline_color = Color(0.07, 0.025, 0.01, 0.96)
-theme_override_constants/outline_size = 2
-theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("StyleBox_payment_cta")
-theme_override_styles/hover = SubResource("StyleBox_payment_cta_hover")
-theme_override_styles/pressed = SubResource("StyleBox_payment_cta_pressed")
-theme_override_styles/disabled = SubResource("StyleBox_payment_cta_disabled")
-theme_override_styles/focus = SubResource("StyleBox_payment_cta_focus")
-text = "待收款  0 金币
-点击全部收取"
-
 [node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure" unique_id=1664686673]
 z_index = 150
 layout_mode = 0
@@ -1660,7 +1563,9 @@ theme_override_constants/separation = 2
 visible = false
 custom_minimum_size = Vector2(630, 44)
 layout_mode = 2
-mouse_filter = 1
+# The rail overlaps the compact order-summary actions at this viewport. It is
+# informational only, so it must not take pointer input away from those buttons.
+mouse_filter = 2
 mouse_default_cursor_shape = 16
 theme_override_colors/font_color = Color(1, 0.81, 0.4, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.025, 0.01, 0.95)

@@ -38,11 +38,6 @@ func _run() -> void:
 	workstation.set("_customer_service_slot_signatures", {})
 	workstation.call("_refresh_customer_service_slots", [_center_customer_order()])
 	workstation.call("_show_formal_payment_coins", 28)
-	workstation.pending_payment_button.visible = true
-	workstation.pending_payment_button.disabled = false
-	workstation.pending_payment_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	workstation.pending_payment_button.text = "待收款  28 金币\n点击全部收取"
-	workstation.pending_payment_button.tooltip_text = "收取所有尚未领取的顾客付款"
 	workstation.call("_apply_attention_entries", [
 		{"status_key": &"youtiao_overcooking", "severity": &"red", "seconds_to_irreversible_loss": 5.2},
 		{"status_key": &"fresh_soy_milk_ready", "severity": &"yellow", "seconds_to_irreversible_loss": 12.1},
@@ -56,8 +51,7 @@ func _run() -> void:
 		var coin := coin_value as TextureRect
 		if is_instance_valid(coin):
 			coins.append(coin)
-	_check(workstation.pending_payment_button.text.begins_with("待收款") and "点击全部收取" in workstation.pending_payment_button.text, "payment CTA states the amount and action separately")
-	_check(workstation.pending_payment_button.get_theme_stylebox("normal") is StyleBoxFlat and workstation.pending_payment_button.get_theme_stylebox("focus") is StyleBoxFlat, "payment CTA has authored normal and keyboard-focus states")
+	_check(workstation.get_node_or_null("FiveAreaInfrastructure/PendingPaymentButton") == null, "payment collection uses no separate CTA button")
 	_check(attention.visible and attention.text.begins_with("紧急") and "另有1项" in attention.text, "attention chip prioritizes urgency and caps the inline summary")
 	_check("煎饼暂存即将陈旧" in attention.tooltip_text, "attention tooltip preserves overflow details")
 	_check(coins.size() == 4, "payment preview renders the expected denomination cluster")
@@ -93,15 +87,13 @@ func _capture(workstation: Control, coins: Array[TextureRect], window_size: Vect
 		await process_frame
 	var viewport_rect := Rect2(Vector2.ZERO, Vector2(window_size))
 	var screen_transform: Transform2D = root.get_screen_transform()
-	var payment_rect: Rect2 = screen_transform * workstation.pending_payment_button.get_global_rect()
 	var attention := workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention01") as Label
 	var attention_rect: Rect2 = screen_transform * attention.get_global_rect()
-	_check(viewport_rect.encloses(payment_rect), "payment CTA stays on-screen at %s" % window_size)
 	_check(viewport_rect.encloses(attention_rect), "attention chip stays on-screen at %s" % window_size)
-	_check(payment_rect.size.y >= 44.0, "payment CTA retains a usable target height at %s" % window_size)
 	for coin in coins:
 		var coin_rect: Rect2 = screen_transform * coin.get_global_rect()
-		_check(not coin_rect.intersects(payment_rect), "payment denominations stay clear of the CTA at %s" % window_size)
+		_check(viewport_rect.encloses(coin_rect), "clickable payment coin stays on-screen at %s" % window_size)
+		_check(coin.mouse_filter == Control.MOUSE_FILTER_STOP and coin.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "payment coin exposes a direct click target")
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
 	var absolute_path := ProjectSettings.globalize_path(path)

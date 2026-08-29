@@ -45,7 +45,7 @@ func _run() -> void:
 	_check(_review_metric_has_icon(pancake_card, "thickness"), "pancake card places a quality icon before its metric label")
 	_check(_review_card_payment_text(pancake_card) == "51分 · 6金币", "single-product card displays the actual coins paid")
 	_check(_review_card_feedback_text(pancake_card) == "鸡蛋有些地方堆得太厚，画圈时再连续、均匀一些。", "feedback appears beside the product name")
-	_check(_review_metric_column(pancake_card, "sauce") == "Column01" and _review_metric_column(pancake_card, "ingredients") == "Column02", "review metrics fill each column with up to four items")
+	_check(_review_metric_grid_index(pancake_card, "sauce") == 3 and _review_metric_grid_index(pancake_card, "ingredients") == 4, "review metrics fill each row with up to four items")
 
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray()))
 	pancake_card = _only_review_card(workstation)
@@ -235,9 +235,9 @@ func _review_card_feedback_text(card: Control) -> String:
 	return label.text if label != null else ""
 
 
-func _review_metric_column(card: Control, metric_name: String) -> String:
+func _review_metric_grid_index(card: Control, metric_name: String) -> int:
 	var metric := _review_metric(card, metric_name)
-	return metric.get_parent().name if metric != null and metric.get_parent() != null else ""
+	return metric.get_index() if metric != null else -1
 
 
 func _review_metric(card: Control, metric_name: String) -> Control:

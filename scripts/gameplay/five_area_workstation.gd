@@ -381,21 +381,15 @@ func _make_review_card(review_item: Dictionary) -> PanelContainer:
 	score_label.add_theme_color_override("font_color", _result_score_color(score))
 	score_label.text = "%d分 · %d金币" % [roundi(score), maxi(int(review_item.get("payment_coins", 0)), 0)]
 	heading.add_child(score_label)
-	var metrics := HBoxContainer.new()
+	var metrics := GridContainer.new()
 	metrics.name = "Metrics"
+	metrics.columns = 4
 	metrics.add_theme_constant_override("h_separation", 18)
+	metrics.add_theme_constant_override("v_separation", 6)
 	content.add_child(metrics)
-	var metric_columns: Array[VBoxContainer] = []
-	for column_index in 2:
-		var metric_column := VBoxContainer.new()
-		metric_column.name = "Column%02d" % (column_index + 1)
-		metric_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		metric_column.add_theme_constant_override("separation", 6)
-		metrics.add_child(metric_column)
-		metric_columns.append(metric_column)
 	var metric_profile := _review_metric_profile(review_item)
-	for metric_index in metric_profile.size():
-		metric_columns[metric_index / 4].add_child(_make_review_metric(metric_profile[metric_index]))
+	for metric_value in metric_profile:
+		metrics.add_child(_make_review_metric(metric_value))
 	return card
 
 

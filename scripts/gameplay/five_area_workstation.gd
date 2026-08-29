@@ -330,6 +330,7 @@ func _single_review_item_from_score_result(score_result: Dictionary) -> Dictiona
 		"order_item": Dictionary(score_result.get("display_item", {})).duplicate(true),
 		"score": score,
 		"qualified": bool(score_result.get("qualified", score >= 60.0)),
+		"payment_coins": maxi(int(score_result.get("payment_coins", 0)), 0),
 		"feedback": str(score_result.get("feedback", "本份已完成")),
 	}
 
@@ -356,33 +357,45 @@ func _make_review_card(review_item: Dictionary) -> PanelContainer:
 	content.add_theme_constant_override("separation", 8)
 	card.add_child(content)
 	var heading := HBoxContainer.new()
+	heading.name = "Heading"
+	heading.add_theme_constant_override("separation", 12)
 	content.add_child(heading)
 	var product_label := Label.new()
-	product_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	product_label.name = "ProductLabel"
 	product_label.add_theme_font_size_override("font_size", 24)
 	product_label.add_theme_color_override("font_color", Color(0.98, 0.92, 0.79, 1.0))
 	product_label.text = _review_item_title(review_item)
 	heading.add_child(product_label)
-	var score := float(review_item.get("score", 0.0))
-	var score_label := Label.new()
-	score_label.add_theme_font_size_override("font_size", 23)
-	score_label.add_theme_color_override("font_color", _result_score_color(score))
-	score_label.text = "%d分 · %s" % [roundi(score), "已计价" if bool(review_item.get("qualified", false)) else "未计价"]
-	heading.add_child(score_label)
 	var feedback_label := Label.new()
+	feedback_label.name = "FeedbackLabel"
+	feedback_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	feedback_label.add_theme_font_size_override("font_size", 18)
 	feedback_label.add_theme_color_override("font_color", Color(0.84, 0.8, 0.68, 1.0))
 	feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	feedback_label.text = str(review_item.get("feedback", "本份已完成"))
-	content.add_child(feedback_label)
-	var metrics := GridContainer.new()
+	heading.add_child(feedback_label)
+	var score := float(review_item.get("score", 0.0))
+	var score_label := Label.new()
+	score_label.name = "ScoreLabel"
+	score_label.add_theme_font_size_override("font_size", 23)
+	score_label.add_theme_color_override("font_color", _result_score_color(score))
+	score_label.text = "%d分 · %d金币" % [roundi(score), maxi(int(review_item.get("payment_coins", 0)), 0)]
+	heading.add_child(score_label)
+	var metrics := HBoxContainer.new()
 	metrics.name = "Metrics"
-	metrics.columns = 3
 	metrics.add_theme_constant_override("h_separation", 18)
-	metrics.add_theme_constant_override("v_separation", 6)
 	content.add_child(metrics)
-	for metric_value in _review_metric_profile(review_item):
-		metrics.add_child(_make_review_metric(Dictionary(metric_value)))
+	var metric_columns: Array[VBoxContainer] = []
+	for column_index in 2:
+		var metric_column := VBoxContainer.new()
+		metric_column.name = "Column%02d" % (column_index + 1)
+		metric_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		metric_column.add_theme_constant_override("separation", 6)
+		metrics.add_child(metric_column)
+		metric_columns.append(metric_column)
+	var metric_profile := _review_metric_profile(review_item)
+	for metric_index in metric_profile.size():
+		metric_columns[metric_index / 4].add_child(_make_review_metric(metric_profile[metric_index]))
 	return card
 
 
@@ -2361,6 +2374,7 @@ static func _legacy_review_items(item_results: Array) -> Array[Dictionary]:
 				"mismatch_reasons": mismatch_reasons,
 				"score": score,
 				"qualified": mismatch_reasons.is_empty() and score >= 60.0,
+				"payment_coins": maxi(int(product.get("payment_coins", item_result.get("payment_coins", 0))), 0),
 			})
 	return review_items
 

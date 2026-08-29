@@ -35,6 +35,7 @@ func _run() -> void:
 			"time": 100.0,
 		},
 		"tags": ["鸡蛋偏厚", "摊制不均"],
+		"payment_coins": 6,
 	})
 	_check(workstation.result_review_scroll.visible and workstation.result_review_cards.get_child_count() == 1, "single-product result uses one review card")
 	_check(workstation.result_title_label.text == "顾客评价 · 1项" and not workstation.result_dimension_grid.visible, "single-product result uses the shared card format")
@@ -42,6 +43,9 @@ func _run() -> void:
 	_check(_review_metric_label(pancake_card, "egg") == "摊蛋 54", "pancake card retains egg scoring when no order context is available")
 	_check(_review_metric_label(pancake_card, "ingredients") == "配料 95", "pancake card retains ingredient scoring when no order context is available")
 	_check(_review_metric_has_icon(pancake_card, "thickness"), "pancake card places a quality icon before its metric label")
+	_check(_review_card_payment_text(pancake_card) == "51分 · 6金币", "single-product card displays the actual coins paid")
+	_check(_review_card_feedback_text(pancake_card) == "鸡蛋有些地方堆得太厚，画圈时再连续、均匀一些。", "feedback appears beside the product name")
+	_check(_review_metric_column(pancake_card, "sauce") == "Column01" and _review_metric_column(pancake_card, "ingredients") == "Column02", "review metrics fill each column with up to four items")
 
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray()))
 	pancake_card = _only_review_card(workstation)
@@ -64,15 +68,17 @@ func _run() -> void:
 	_check(not _review_metric_label(pancake_card, "ingredients").is_empty(), "pancake with egg and toppings shows ingredient metric")
 	workstation._populate_result({
 		"review_items": [
-			{"expected_product_id": &"product.pancake.custom", "actual_product_id": &"product.pancake.custom", "product": {"product_id": &"product.pancake.custom", "dimension_scores": {"thickness": 58.0, "heat": 72.0, "order": 100.0}}, "order_item": {"ingredient_ids": []}, "score": 58.0, "qualified": false, "feedback": "煎饼评分未达60分，本份不付款"},
-			{"expected_product_id": &"product.youtiao.plain", "actual_product_id": &"product.youtiao.plain", "product": {"product_id": &"product.youtiao.plain", "quality": 92.0}, "order_item": {"mismatch_reasons": PackedStringArray()}, "score": 92.0, "qualified": true, "feedback": "油条符合订单要求"},
-			{"expected_product_id": &"product.fresh_soy_milk.yellow_bean", "actual_product_id": &"product.fresh_soy_milk.yellow_bean", "product": {"product_id": &"product.fresh_soy_milk.yellow_bean", "fill_ratio": 0.96, "sugar_servings": 0, "temperature_mode": &"room_temperature"}, "order_item": {"requested_sugar_servings": 0, "requested_temperature_mode": &"room_temperature", "mismatch_reasons": PackedStringArray()}, "score": 96.0, "qualified": true, "feedback": "黄豆豆浆符合订单要求"},
+			{"expected_product_id": &"product.pancake.custom", "actual_product_id": &"product.pancake.custom", "product": {"product_id": &"product.pancake.custom", "dimension_scores": {"thickness": 58.0, "heat": 72.0, "order": 100.0}}, "order_item": {"ingredient_ids": []}, "score": 58.0, "qualified": false, "payment_coins": 0, "feedback": "煎饼评分未达60分，本份不付款"},
+			{"expected_product_id": &"product.youtiao.plain", "actual_product_id": &"product.youtiao.plain", "product": {"product_id": &"product.youtiao.plain", "quality": 92.0}, "order_item": {"mismatch_reasons": PackedStringArray()}, "score": 92.0, "qualified": true, "payment_coins": 8, "feedback": "油条符合订单要求"},
+			{"expected_product_id": &"product.fresh_soy_milk.yellow_bean", "actual_product_id": &"product.fresh_soy_milk.yellow_bean", "product": {"product_id": &"product.fresh_soy_milk.yellow_bean", "fill_ratio": 0.96, "sugar_servings": 0, "temperature_mode": &"room_temperature"}, "order_item": {"requested_sugar_servings": 0, "requested_temperature_mode": &"room_temperature", "mismatch_reasons": PackedStringArray()}, "score": 96.0, "qualified": true, "payment_coins": 8, "feedback": "黄豆豆浆符合订单要求"},
 		],
 	})
 	_check(workstation.result_review_scroll.visible and workstation.result_review_cards.get_child_count() == 3, "multi-item result renders one scrollable review card per ordered product")
 	_check(workstation.result_title_label.text == "顾客评价 · 3项" and not workstation.result_dimension_grid.visible, "multi-item result uses the shared card format")
 	var multi_soy_card := workstation.result_review_cards.get_child(2) as Control
 	_check(_review_metric_has_icon(multi_soy_card, "IntegrityMetric"), "multi-product soy metric places an icon before its label")
+	_check(_review_card_payment_text(workstation.result_review_cards.get_child(0) as Control) == "58分 · 0金币", "unqualified multi-product card displays zero coins")
+	_check(_review_card_payment_text(multi_soy_card) == "96分 · 8金币", "qualified multi-product card displays its actual coins")
 	workstation._populate_result(_pancake_result_with_ingredients(PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])))
 
 	workstation._order_summary_visible = true
@@ -200,21 +206,44 @@ func _only_review_card(workstation: Node) -> Control:
 
 
 func _review_metric_label(card: Control, metric_name: String) -> String:
-	if card == null:
-		return ""
-	var label := card.get_node_or_null("Content/Metrics/%sMetric/Label" % metric_name) as Label
+	var metric := _review_metric(card, metric_name)
+	var label := metric.get_node_or_null("Label") as Label if metric != null else null
 	return label.text if label != null else ""
 
 
 func _review_metric_icon(card: Control, metric_name: String) -> TextureRect:
-	if card == null:
-		return null
-	return card.get_node_or_null("Content/Metrics/%sMetric/Icon" % metric_name) as TextureRect
+	var metric := _review_metric(card, metric_name)
+	return metric.get_node_or_null("Icon") as TextureRect if metric != null else null
 
 
 func _review_metric_has_icon(card: Control, metric_name: String) -> bool:
 	var icon := _review_metric_icon(card, metric_name)
 	return icon != null and icon.texture != null
+
+
+func _review_card_payment_text(card: Control) -> String:
+	if card == null:
+		return ""
+	var label := card.get_node_or_null("Content/Heading/ScoreLabel") as Label
+	return label.text if label != null else ""
+
+
+func _review_card_feedback_text(card: Control) -> String:
+	if card == null:
+		return ""
+	var label := card.get_node_or_null("Content/Heading/FeedbackLabel") as Label
+	return label.text if label != null else ""
+
+
+func _review_metric_column(card: Control, metric_name: String) -> String:
+	var metric := _review_metric(card, metric_name)
+	return metric.get_parent().name if metric != null and metric.get_parent() != null else ""
+
+
+func _review_metric(card: Control, metric_name: String) -> Control:
+	if card == null:
+		return null
+	return card.find_child("%sMetric" % metric_name, true, false) as Control
 
 
 func _capture_result_detail() -> void:

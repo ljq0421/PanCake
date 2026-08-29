@@ -30,6 +30,7 @@ func _run() -> void:
 		"product_id": &"product.pancake.custom",
 		"score": 93.0,
 		"feedback": "煎饼符合订单要求",
+		"payment_coins": 11,
 		"dimensions": {"thickness": 100.0, "heat": 93.0, "egg": 100.0, "sauce": 100.0, "ingredients": 100.0, "order": 100.0, "time": 100.0},
 		"display_item": {"ingredient_ids": PackedStringArray(["stock.pancake.egg", "stock.pancake.baocui"])},
 	})
@@ -45,9 +46,9 @@ func _run() -> void:
 	await process_frame
 	workstation._populate_result({
 		"review_items": [
-			{"expected_product_id": &"product.pancake.custom", "actual_product_id": &"product.pancake.custom", "product": {"product_id": &"product.pancake.custom", "dimension_scores": {"thickness": 58.0, "heat": 72.0, "order": 100.0}}, "order_item": {"ingredient_ids": []}, "score": 58.0, "qualified": false, "feedback": "煎饼评分未达60分，本份不付款"},
-			{"expected_product_id": &"product.youtiao.plain", "actual_product_id": &"product.youtiao.plain", "product": {"product_id": &"product.youtiao.plain", "quality": 92.0}, "order_item": {"mismatch_reasons": PackedStringArray()}, "score": 92.0, "qualified": true, "feedback": "油条符合订单要求"},
-			{"expected_product_id": &"product.fresh_soy_milk.yellow_bean", "actual_product_id": &"product.fresh_soy_milk.yellow_bean", "product": {"product_id": &"product.fresh_soy_milk.yellow_bean", "fill_ratio": 0.96, "sugar_servings": 0, "temperature_mode": &"room_temperature"}, "order_item": {"requested_sugar_servings": 0, "requested_temperature_mode": &"room_temperature", "mismatch_reasons": PackedStringArray()}, "score": 96.0, "qualified": true, "feedback": "黄豆豆浆符合订单要求"},
+			{"expected_product_id": &"product.pancake.custom", "actual_product_id": &"product.pancake.custom", "product": {"product_id": &"product.pancake.custom", "dimension_scores": {"thickness": 58.0, "heat": 72.0, "order": 100.0}}, "order_item": {"ingredient_ids": []}, "score": 58.0, "qualified": false, "payment_coins": 0, "feedback": "煎饼评分未达60分，本份不付款"},
+			{"expected_product_id": &"product.youtiao.plain", "actual_product_id": &"product.youtiao.plain", "product": {"product_id": &"product.youtiao.plain", "quality": 92.0}, "order_item": {"mismatch_reasons": PackedStringArray()}, "score": 92.0, "qualified": true, "payment_coins": 8, "feedback": "油条符合订单要求"},
+			{"expected_product_id": &"product.fresh_soy_milk.yellow_bean", "actual_product_id": &"product.fresh_soy_milk.yellow_bean", "product": {"product_id": &"product.fresh_soy_milk.yellow_bean", "fill_ratio": 0.96, "sugar_servings": 0, "temperature_mode": &"room_temperature"}, "order_item": {"requested_sugar_servings": 0, "requested_temperature_mode": &"room_temperature", "mismatch_reasons": PackedStringArray()}, "score": 96.0, "qualified": true, "payment_coins": 8, "feedback": "黄豆豆浆符合订单要求"},
 		],
 	})
 	workstation._order_summary_visible = true

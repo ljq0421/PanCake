@@ -37,7 +37,7 @@ func _run() -> void:
 	tutorial_workstation.queue_free()
 	await process_frame
 	game_session.call("begin_new_game")
-	_prepare_six_normal_orders(game_session)
+	_prepare_five_normal_orders(game_session)
 	var workstation: Workstation = WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
@@ -60,7 +60,7 @@ func _run() -> void:
 	_check(StringName(repeated_cutoff.get("reason", &"")) == &"timer_expired" and int(repeated_cutoff.get("unserved_customer_count", 0)) == 5, "repeated day-end calls preserve the original cutoff reason and unserved count")
 	workstation.queue_free()
 	game_session.call("begin_new_game")
-	_prepare_six_normal_orders(game_session)
+	_prepare_five_normal_orders(game_session)
 	var main: Control = MAIN_SCENE.instantiate()
 	root.add_child(main)
 	await process_frame
@@ -78,7 +78,7 @@ func _run() -> void:
 	await process_frame
 
 	game_session.call("begin_new_game")
-	_prepare_six_normal_orders(game_session)
+	_prepare_five_normal_orders(game_session)
 	var manual_main: Control = MAIN_SCENE.instantiate()
 	root.add_child(manual_main)
 	await process_frame
@@ -99,12 +99,18 @@ func _run() -> void:
 	_finish()
 
 
-func _prepare_six_normal_orders(game_session: Node) -> void:
+func _prepare_five_normal_orders(game_session: Node) -> void:
 	var progression: RefCounted = game_session.call("progression_service")
 	progression.call("complete_tutorial", &"area", &"area.pancake")
+	# This cutoff fixture intentionally exercises the fully expanded storefront;
+	# first-day pressure is covered by customer_arrival_scheduler_self_check.
+	progression.set("current_day", 4)
+	progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
+	progression.set("tutorial_completed_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
 	game_session.call("advance_customer_arrivals", 5.0)
 	for _arrival in 4:
-		game_session.call("advance_customer_arrivals", 5.1)
+		var delay := float(Dictionary(game_session.call("customer_arrival_snapshot")).get("next_arrival_remaining_seconds", -1.0))
+		game_session.call("advance_customer_arrivals", delay + 0.01)
 
 
 func _check(condition: bool, message: String) -> void:

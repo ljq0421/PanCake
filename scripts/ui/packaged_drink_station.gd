@@ -2,6 +2,7 @@ class_name PackagedDrinkStation
 extends Control
 
 signal status_message(message: String)
+signal audio_cue_requested(cue: StringName)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const JUICE_STOCK_TEXTURES := {
@@ -80,6 +81,7 @@ func _build_surface() -> void:
 		source.cancel_pending_on_mouse_exit = false
 		source.hold_requested.connect(_on_lane_hold_requested)
 		source.hold_advanced.connect(_on_lane_hold_advanced)
+		source.drag_started.connect(_on_lane_drag_started)
 		add_child(source)
 		_sources.append(source)
 	_lock_cover = Button.new()
@@ -125,10 +127,15 @@ func _on_lane_hold_advanced(source_ref: Dictionary, delta: float) -> void:
 	var result := Dictionary(session.call("advance_five_area_restock_hold", StringName(source_ref.get("stock_id", &"")), delta))
 	source.set_hold_progress(float(result.get("container_fill_ratio", 0.0)))
 	if int(result.get("completed_units", 0)) > 0:
+		audio_cue_requested.emit(&"drink_restock")
 		status_message.emit("果汁补货 +%d" % int(result.get("completed_units", 0)))
 	if bool(result.get("auto_stopped", false)) or not bool(result.get("success", false)):
 		source.reject_hold()
 	refresh_from_session()
+
+
+func _on_lane_drag_started(_source_ref: Dictionary) -> void:
+	audio_cue_requested.emit(&"drink_pickup")
 
 
 func _on_lock_cover_pressed() -> void:

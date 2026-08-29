@@ -21,7 +21,22 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\run_checks.ps1
 ```
 
-`tools/run_checks.ps1` 会把测试进程的 `APPDATA` 和 `LOCALAPPDATA` 临时指向工程内已忽略的 `.godot-user/`。这是当前受限开发环境所需的隔离措施；不改变系统环境变量，也不改变发布版的 `user://` 语义。
+`tools/run_checks.ps1` 会把每项测试进程的 `APPDATA` 和 `LOCALAPPDATA` 指向工程内相互隔离的 `.godot-user-checks/`。这是当前受限开发环境所需的隔离措施；不改变发布版的 `user://` 语义。
+
+提交或发布前的正式检查入口：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\run_release_checks.ps1
+```
+
+正式入口依次运行全部无头自检、P0.2 CPU 基准和所有 `*_gpu_smoke.gd`。GPU 项使用真实 Mobile/D3D12 渲染器、独立用户目录和逐项超时；脚本出现致命错误时会立即终止该项并继续汇总。无图形设备的环境可显式传入 `-SkipGpu`，但该模式不属于完整发布验收。
+
+只运行 GPU 冒烟或定位单项时：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\run_gpu_smoke_checks.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\run_gpu_smoke_checks.ps1 -Filter pancake_press_pointer_gpu_smoke.gd
+```
 
 使用实际 Mobile/D3D12 设备创建并更新动态热力图纹理：
 

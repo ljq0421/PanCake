@@ -2,6 +2,7 @@ class_name DirectSoyStation
 extends Control
 
 signal status_message(message: String)
+signal audio_cue_requested(cue: StringName)
 
 const CUP_STACK_CAPACITY := 8
 const CUP_STACK_TEXTURE_PATHS := [
@@ -255,6 +256,7 @@ func _on_cup_stack_short_clicked(_source_ref: Dictionary) -> void:
 		status_message.emit("无法取杯：%s" % str(result.get("reason", &"unknown")))
 		return
 	_cup_stack_count -= 1
+	audio_cue_requested.emit(&"soy_cup_place")
 	var success_message := "第2个空杯已放到右出浆口，请单独点击右侧出浆口接浆" if bool(result.get("secondary_empty_cup_placed", false)) else "第一个空杯已放置，再点击杯堆放置第二个" if _double_fill_enabled and int(result.get("held_empty_cup_count", 0)) == 1 else "双杯已就位，点击双出浆口同时接满" if _double_fill_enabled else "空杯已拿起，点击自动豆浆机出浆口接浆" if _auto_fill_enabled else "空杯已拿起，按住豆浆机出浆口接浆"
 	status_message.emit("%s（杯堆剩余 %d 个）" % [success_message, _cup_stack_count])
 	refresh_from_session()
@@ -423,6 +425,7 @@ func _on_nozzle_down() -> void:
 		return
 	_filling = true
 	_held_seconds = 0.0
+	audio_cue_requested.emit(&"soy_dispense")
 	dispense_effect.set_dispense_state(true, 0.0, _liquid_color_for_recipe(_selected_recipe_id()))
 
 
@@ -449,6 +452,7 @@ func _on_nozzle_up() -> void:
 	var result: Dictionary = session.call("fill_f4_soy_empty_cup", _held_seconds) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
 		var ratio := float(result.get("fill_ratio", 0.0))
+		audio_cue_requested.emit(&"soy_ready")
 		status_message.emit("满杯黄豆豆浆" if ratio >= 0.999 else "未接满（%d%%），收益和口碑将降低" % roundi(ratio * 100.0))
 	else:
 		status_message.emit("接浆失败：%s" % str(result.get("reason", &"unknown")))
@@ -459,6 +463,8 @@ func _fill_cup_automatically(outlet_index: int = 0) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result: Dictionary = session.call("fill_f4_soy_empty_cup", FULL_CUP_SECONDS, outlet_index) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
+		audio_cue_requested.emit(&"soy_dispense")
+		audio_cue_requested.emit(&"soy_ready")
 		status_message.emit("双口豆浆已同时接满" if outlet_index == 2 else "右杯豆浆已接满" if outlet_index == 1 else "左杯豆浆已接满" if _double_fill_enabled else "自动豆浆机已接满一杯")
 	else:
 		status_message.emit("自动接浆失败：%s" % str(result.get("reason", &"unknown")))

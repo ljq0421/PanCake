@@ -14,6 +14,9 @@ signal prepared_product_slots_changed(snapshot: Dictionary)
 const SAVE_PATH := "user://project_cake_save.json"
 const SOY_TEST_SAVE_PATH := "user://project_cake_soy_test_save.json"
 const SETTINGS_PATH := "user://project_cake_settings.cfg"
+const SAVE_WRITE_MERGE_SECONDS := 2.0
+const SAVE_TEMP_SUFFIX := ".tmp"
+const SAVE_BACKUP_SUFFIX := ".bak"
 ## The four-area/single-griddle contract intentionally starts a fresh
 ## development save lineage.  Any earlier development save is discarded rather
 ## than being partially migrated into a different economy.
@@ -24,8 +27,24 @@ const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
 const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
 const BUSINESS_DAY_DURATION_SECONDS := 120.0
 const OPENING_RESTOCK_SECONDS := 5.0
-const CUSTOMER_ARRIVAL_MIN_SECONDS := 2.0
-const CUSTOMER_ARRIVAL_MAX_SECONDS := 5.0
+## Walk-in pressure grows only when both the calendar and the available
+## production footprint can support it.  The physical storefront still owns
+## five slots, but a new player is never asked to manage all five at once.
+const CUSTOMER_ARRIVAL_WINDOWS_BY_CAPACITY := {
+	2: Vector2(10.0, 14.0),
+	3: Vector2(8.0, 12.0),
+	4: Vector2(6.0, 9.0),
+	5: Vector2(4.5, 7.0),
+}
+const CUSTOMER_PATIENCE_BASE_GRACE_SECONDS := 16.0
+const CUSTOMER_PATIENCE_FIRST_DAY_BONUS_SECONDS := 8.0
+const CUSTOMER_PATIENCE_QUEUE_GRACE_SECONDS := 10.0
+const CUSTOMER_SERVICE_ESTIMATE_SECONDS := {
+	&"area.pancake": 66.0,
+	&"area.youtiao": 18.0,
+	&"area.fresh_soy_milk": 16.0,
+	&"area.packaged_drink": 8.0,
+}
 const CONSOLATION_PAYMENT_COINS := 1
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
@@ -110,12 +129,17 @@ var _business_report_service: RefCounted
 var _daily_goal_service: RefCounted
 var _incompatible_development_save_removed := false
 var _save_write_count := 0
+var _save_dirty := false
+var _save_flush_elapsed := 0.0
 var _scene_binding_save_batch_active := false
 var _scene_binding_save_pending := false
 var _scene_binding_save_snapshot: Dictionary = {}
+var _scene_binding_save_dirty_before_batch := false
+var _scene_binding_save_flush_elapsed_before_batch := 0.0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_save()
 	_restore_progression()
 	_reconcile_completed_tutorial_order()
@@ -125,6 +149,18 @@ func _ready() -> void:
 	# remain empty through its opening restock window.
 	_load_settings()
 	apply_settings()
+
+
+func _process(delta: float) -> void:
+	if not _save_dirty or _scene_binding_save_batch_active:
+		return
+	_save_flush_elapsed += maxf(delta, 0.0)
+	if _save_flush_elapsed >= SAVE_WRITE_MERGE_SECONDS:
+		_write_save()
+
+
+func _exit_tree() -> void:
+	flush_pending_save()
 
 
 func has_save() -> bool:
@@ -263,6 +299,8 @@ func begin_scene_binding_save_batch() -> bool:
 	_scene_binding_save_batch_active = true
 	_scene_binding_save_pending = false
 	_scene_binding_save_snapshot = _save_data.duplicate(true)
+	_scene_binding_save_dirty_before_batch = _save_dirty
+	_scene_binding_save_flush_elapsed_before_batch = _save_flush_elapsed
 	return true
 
 
@@ -280,6 +318,8 @@ func rollback_scene_binding_save_batch() -> void:
 		return
 	_save_data = _scene_binding_save_snapshot.duplicate(true)
 	_scene_binding_save_pending = false
+	_save_dirty = _scene_binding_save_dirty_before_batch
+	_save_flush_elapsed = _scene_binding_save_flush_elapsed_before_batch
 	_restore_progression()
 	_scene_binding_save_active_reset()
 
@@ -288,6 +328,8 @@ func _scene_binding_save_active_reset() -> void:
 	_scene_binding_save_batch_active = false
 	_scene_binding_save_pending = false
 	_scene_binding_save_snapshot.clear()
+	_scene_binding_save_dirty_before_batch = false
+	_scene_binding_save_flush_elapsed_before_batch = 0.0
 
 
 func business_day_remaining_seconds() -> float:
@@ -323,11 +365,15 @@ func resume_summary() -> String:
 
 func reset_incompatible_development_save() -> Dictionary:
 	_save_data.clear()
+	_save_dirty = false
+	_save_flush_elapsed = 0.0
 	_progression = PROGRESSION_SERVICE.new()
 	var absolute_path := ProjectSettings.globalize_path(_active_save_path)
 	var removed := false
 	if FileAccess.file_exists(_active_save_path):
 		removed = DirAccess.remove_absolute(absolute_path) == OK
+	_remove_file_if_present(absolute_path + SAVE_TEMP_SUFFIX)
+	_remove_file_if_present(absolute_path + SAVE_BACKUP_SUFFIX)
 	_incompatible_development_save_removed = removed
 	return {"success": removed or not FileAccess.file_exists(_active_save_path), "removed": removed}
 
@@ -386,6 +432,24 @@ func is_opening_restock_active() -> bool:
 	return StringName(customer_arrival_snapshot().get("phase", &"")) == &"restocking"
 
 
+func customer_pressure_snapshot() -> Dictionary:
+	_ensure_progression()
+	var progression_snapshot := five_area_progression_snapshot()
+	var current_day := maxi(int(progression_snapshot.get("current_day", 1)), 1)
+	var unlocked_area_count := maxi(Array(progression_snapshot.get("unlocked_area_ids", [])).size(), 1)
+	# Day 1 is capped at two. Each later day may add one position, while each
+	# unlocked production area after pancake permits one further position.
+	var capacity := clampi(mini(current_day + 1, unlocked_area_count + 2), 2, FIVE_AREA_ORDER_SERVICE.MAX_ACTIVE_CUSTOMERS)
+	var arrival_window: Vector2 = CUSTOMER_ARRIVAL_WINDOWS_BY_CAPACITY.get(capacity, Vector2(10.0, 14.0))
+	return {
+		"capacity": capacity,
+		"current_day": current_day,
+		"unlocked_area_count": unlocked_area_count,
+		"arrival_min_seconds": arrival_window.x,
+		"arrival_max_seconds": arrival_window.y,
+	}
+
+
 func advance_customer_arrivals(delta: float) -> Dictionary:
 	if not has_save() or delta <= 0.0 or get_tree().paused or is_business_paused():
 		return {"success": true, "changed": false, "state": customer_arrival_snapshot(), "entered_orders": []}
@@ -410,7 +474,8 @@ func advance_customer_arrivals(delta: float) -> Dictionary:
 			_schedule_next_customer_arrival(state)
 	else:
 		var active_count := active_formal_orders().size()
-		if active_count >= FIVE_AREA_ORDER_SERVICE.MAX_ACTIVE_CUSTOMERS:
+		var capacity := int(customer_pressure_snapshot().get("capacity", 2))
+		if active_count >= capacity:
 			if float(state.get("next_arrival_remaining_seconds", -1.0)) >= 0.0:
 				state["next_arrival_remaining_seconds"] = -1.0
 				changed = true
@@ -459,10 +524,17 @@ func _normalized_customer_arrival_state(source: Dictionary) -> Dictionary:
 
 
 func _schedule_next_customer_arrival(state: Dictionary) -> void:
+	var pressure := customer_pressure_snapshot()
+	if active_formal_orders().size() >= int(pressure.get("capacity", 2)):
+		state["next_arrival_remaining_seconds"] = -1.0
+		return
 	var rng_state := maxi(abs(int(state.get("rng_state", 1))), 1)
 	rng_state = int((rng_state * 1103515245 + 12345) & 0x7fffffff)
 	state["rng_state"] = maxi(rng_state, 1)
-	state["next_arrival_remaining_seconds"] = CUSTOMER_ARRIVAL_MIN_SECONDS + float(rng_state % 3001) / 1000.0
+	var minimum := float(pressure.get("arrival_min_seconds", 10.0))
+	var maximum := maxf(float(pressure.get("arrival_max_seconds", 14.0)), minimum)
+	var span_milliseconds := maxi(roundi((maximum - minimum) * 1000.0), 0)
+	state["next_arrival_remaining_seconds"] = minimum + float(rng_state % (span_milliseconds + 1)) / 1000.0
 
 
 func mark_session_left() -> void:
@@ -474,7 +546,7 @@ func mark_session_left() -> void:
 	_sync_formal_orders_to_save()
 	_sync_production_to_save()
 	_sync_business_services_to_save()
-	_touch_and_write()
+	_touch_and_write(true)
 
 
 func open_pancake_order(template: Dictionary) -> Dictionary:
@@ -554,7 +626,8 @@ func ensure_active_playable_order(target_size: int = FIVE_AREA_ORDER_SERVICE.MAX
 	var tutorial_owns_storefront := (not tutorial_id.is_empty() and not tutorial_generated_today) or _queue_contains_tutorial(queue)
 	# A tutorial is the sole customer. Normal walk-ins are scheduled one at a
 	# time, never pre-created as a hidden waiting queue.
-	var queue_target := 1 if tutorial_owns_storefront else clampi(target_size, 1, FIVE_AREA_ORDER_SERVICE.MAX_OPEN_ORDERS)
+	var pressure_capacity := int(customer_pressure_snapshot().get("capacity", 2))
+	var queue_target := 1 if tutorial_owns_storefront else clampi(target_size, 1, mini(FIVE_AREA_ORDER_SERVICE.MAX_OPEN_ORDERS, pressure_capacity))
 	var needed := maxi(queue_target - queue.size(), 0)
 	if needed <= 0:
 		return {"success": true, "created": false, "order": active_formal_order(), "active_orders": active_formal_orders(), "queue": queue}
@@ -587,6 +660,7 @@ func ensure_active_playable_order(target_size: int = FIVE_AREA_ORDER_SERVICE.MAX
 		var metadata := Dictionary(candidate.get("metadata", {})).duplicate(true)
 		metadata["generated_sequence"] = next_sequence + candidate_index
 		candidate["metadata"] = metadata
+		candidate = _apply_customer_patience_policy(candidate, queue.size() + candidate_index)
 		candidates[candidate_index] = candidate
 	var result: Dictionary = _order_service.call("ensure_queue", queue_target, candidates)
 	if not bool(result.get("success", false)):
@@ -607,6 +681,43 @@ func ensure_active_playable_order(target_size: int = FIVE_AREA_ORDER_SERVICE.MAX
 	return result
 
 
+func _apply_customer_patience_policy(candidate: Dictionary, queue_ahead: int) -> Dictionary:
+	var adjusted := candidate.duplicate(true)
+	var metadata := Dictionary(adjusted.get("metadata", {})).duplicate(true)
+	if bool(metadata.get("tutorial_no_countdown", false)):
+		return adjusted
+	var estimate := _estimated_order_service_seconds(Array(adjusted.get("items", [])))
+	var current_day := int(customer_pressure_snapshot().get("current_day", 1))
+	var first_day_bonus := CUSTOMER_PATIENCE_FIRST_DAY_BONUS_SECONDS if current_day == 1 else 0.0
+	var queue_grace := float(maxi(queue_ahead, 0)) * CUSTOMER_PATIENCE_QUEUE_GRACE_SECONDS
+	var policy_patience := estimate + CUSTOMER_PATIENCE_BASE_GRACE_SECONDS + first_day_bonus + queue_grace
+	metadata["estimated_service_seconds"] = estimate
+	metadata["queue_grace_seconds"] = queue_grace
+	metadata["patience_seconds"] = snappedf(maxf(float(metadata.get("patience_seconds", 0.0)), policy_patience), 0.1)
+	adjusted["metadata"] = metadata
+	return adjusted
+
+
+func _estimated_order_service_seconds(items: Array) -> float:
+	var area_totals := {}
+	for item_variant in items:
+		var item := Dictionary(item_variant)
+		var area_id := StringName(item.get("area_id", &""))
+		var unit_seconds := float(CUSTOMER_SERVICE_ESTIMATE_SECONDS.get(area_id, 12.0))
+		var quantity := maxi(int(item.get("quantity", 1)), 1)
+		# Additional portions share setup/cooking work, but still add handling time.
+		var item_seconds := unit_seconds * (1.0 + 0.35 * float(quantity - 1))
+		area_totals[area_id] = float(area_totals.get(area_id, 0.0)) + item_seconds
+	var serial_total := 0.0
+	var longest_area := 0.0
+	for area_seconds_variant in area_totals.values():
+		var area_seconds := float(area_seconds_variant)
+		serial_total += area_seconds
+		longest_area = maxf(longest_area, area_seconds)
+	# Different stations can overlap, while the longest lane remains critical.
+	return snappedf(longest_area + 0.4 * maxf(serial_total - longest_area, 0.0), 0.1)
+
+
 ## Keep the shop populated independently of whichever scene happened to
 ## settle, refuse, or expire the preceding order. This belongs to GameSession,
 ## not a workstation callback, because the queue is durable business state.
@@ -619,7 +730,7 @@ func _replenish_playable_order_queue() -> Dictionary:
 	var state := customer_arrival_snapshot()
 	if StringName(state.get("phase", &"")) != &"open":
 		return {"success": true, "scheduled": false, "state": state}
-	if active_formal_orders().size() >= FIVE_AREA_ORDER_SERVICE.MAX_ACTIVE_CUSTOMERS:
+	if active_formal_orders().size() >= int(customer_pressure_snapshot().get("capacity", 2)):
 		return {"success": true, "scheduled": false, "state": state}
 	if float(state.get("next_arrival_remaining_seconds", -1.0)) < 0.0:
 		_schedule_next_customer_arrival(state)
@@ -3785,6 +3896,7 @@ func apply_settings() -> void:
 
 func _load_save() -> void:
 	_save_data.clear()
+	_recover_interrupted_save_write()
 	if not FileAccess.file_exists(_active_save_path):
 		return
 	var file := FileAccess.open(_active_save_path, FileAccess.READ)
@@ -4262,21 +4374,90 @@ func _stable_pancake_stock_ids(source_ids: Array, mapping: Dictionary) -> Packed
 	return stable_ids
 
 
-func _touch_and_write() -> void:
+func _touch_and_write(immediate := false) -> void:
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
-	_write_save()
-
-
-func _write_save() -> void:
+	_save_dirty = true
+	_save_flush_elapsed = 0.0
 	if _scene_binding_save_batch_active:
 		_scene_binding_save_pending = true
-		return
-	var file := FileAccess.open(_active_save_path, FileAccess.WRITE)
-	if file == null:
-		push_warning("Could not write ProjectCake save data")
-		return
-	file.store_string(JSON.stringify(_save_data))
+	elif immediate:
+		_write_save()
+
+
+func flush_pending_save() -> bool:
+	if not _save_dirty:
+		return true
+	if _scene_binding_save_batch_active:
+		_scene_binding_save_pending = true
+		return false
+	return _write_save()
+
+
+func _write_save() -> bool:
+	if _scene_binding_save_batch_active:
+		_scene_binding_save_pending = true
+		_save_dirty = true
+		return false
+	var save_error := _atomic_store_text(_active_save_path, JSON.stringify(_save_data))
+	if save_error != OK:
+		_save_dirty = true
+		push_warning("Could not write ProjectCake save data: %s" % error_string(save_error))
+		return false
+	_save_dirty = false
+	_save_flush_elapsed = 0.0
 	_save_write_count += 1
+	return true
+
+
+func _atomic_store_text(path: String, contents: String) -> Error:
+	var absolute_path := ProjectSettings.globalize_path(path)
+	var temp_path := absolute_path + SAVE_TEMP_SUFFIX
+	var backup_path := absolute_path + SAVE_BACKUP_SUFFIX
+	_remove_file_if_present(temp_path)
+	var file := FileAccess.open(temp_path, FileAccess.WRITE)
+	if file == null:
+		return FileAccess.get_open_error()
+	file.store_string(contents)
+	file.flush()
+	file.close()
+
+	var had_previous := FileAccess.file_exists(path)
+	if had_previous:
+		_remove_file_if_present(backup_path)
+		var backup_error := DirAccess.rename_absolute(absolute_path, backup_path)
+		if backup_error != OK:
+			_remove_file_if_present(temp_path)
+			return backup_error
+
+	var replace_error := DirAccess.rename_absolute(temp_path, absolute_path)
+	if replace_error != OK:
+		if had_previous and FileAccess.file_exists(backup_path):
+			DirAccess.rename_absolute(backup_path, absolute_path)
+		_remove_file_if_present(temp_path)
+		return replace_error
+	_remove_file_if_present(backup_path)
+	return OK
+
+
+func _recover_interrupted_save_write() -> void:
+	var absolute_path := ProjectSettings.globalize_path(_active_save_path)
+	var temp_path := absolute_path + SAVE_TEMP_SUFFIX
+	var backup_path := absolute_path + SAVE_BACKUP_SUFFIX
+	if FileAccess.file_exists(_active_save_path):
+		_remove_file_if_present(temp_path)
+		_remove_file_if_present(backup_path)
+		return
+	if FileAccess.file_exists(temp_path):
+		if DirAccess.rename_absolute(temp_path, absolute_path) == OK:
+			_remove_file_if_present(backup_path)
+			return
+	if FileAccess.file_exists(backup_path):
+		DirAccess.rename_absolute(backup_path, absolute_path)
+
+
+func _remove_file_if_present(absolute_path: String) -> void:
+	if FileAccess.file_exists(absolute_path):
+		DirAccess.remove_absolute(absolute_path)
 
 
 func _load_settings() -> void:

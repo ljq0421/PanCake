@@ -11,6 +11,18 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="9_g8thx"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="10_t8d3v"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="11_3q22l"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/morning_ambience.wav" id="audio_ambience"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/customer_arrive.wav" id="audio_arrive"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/patience_warning.wav" id="audio_patience"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/payment_collect.wav" id="audio_payment"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/youtiao_load.wav" id="audio_youtiao_load"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/fryer_start.wav" id="audio_fryer_start"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/fryer_ready.wav" id="audio_fryer_ready"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/soy_cup_place.wav" id="audio_soy_cup"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/soy_dispense.wav" id="audio_soy_dispense"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/soy_ready.wav" id="audio_soy_ready"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/drink_restock.wav" id="audio_drink_restock"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/drink_pickup.wav" id="audio_drink_pickup"]
 [ext_resource type="Texture2D" uid="uid://da8bphae6srtv" path="res://resources/art/workstation/background/empty-workbench.png" id="12_whx3a"]
 [ext_resource type="Texture2D" uid="uid://c4kc7vci8tfog" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="13_wq4vo"]
 [ext_resource type="Texture2D" uid="uid://c20iol4qkhexk" path="res://resources/art/payments/payment_cash_small_v2_chinese_ui.png" id="24_174he"]
@@ -28,6 +40,11 @@
 [ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
 [ext_resource type="Texture2D" uid="uid://dhlixsd00feh7" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="83_pancake_holding_tray"]
+[ext_resource type="Shader" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_formal_polish"]
+shader = ExtResource("84_formal_polish")
+shader_parameter/intensity = 0.72
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_top_status"]
 bg_color = Color(0.045, 0.09, 0.1, 0.88)
@@ -281,6 +298,18 @@ flip_stream = ExtResource("7_b836k")
 sauce_stream = ExtResource("8_iidmo")
 fold_stream = ExtResource("9_g8thx")
 serve_stream = ExtResource("10_t8d3v")
+ambience_stream = ExtResource("audio_ambience")
+customer_arrive_stream = ExtResource("audio_arrive")
+patience_warning_stream = ExtResource("audio_patience")
+payment_collect_stream = ExtResource("audio_payment")
+youtiao_load_stream = ExtResource("audio_youtiao_load")
+fryer_start_stream = ExtResource("audio_fryer_start")
+fryer_ready_stream = ExtResource("audio_fryer_ready")
+soy_cup_place_stream = ExtResource("audio_soy_cup")
+soy_dispense_stream = ExtResource("audio_soy_dispense")
+soy_ready_stream = ExtResource("audio_soy_ready")
+drink_restock_stream = ExtResource("audio_drink_restock")
+drink_pickup_stream = ExtResource("audio_drink_pickup")
 
 [node name="CookingSizzle" type="AudioStreamPlayer" parent="KitchenAudio" unique_id=2106976027]
 stream = ExtResource("11_3q22l")
@@ -325,6 +354,18 @@ mouse_filter = 2
 texture = ExtResource("12_whx3a")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="FormalWorkbenchPolish" type="ColorRect" parent="SafeArea"]
+z_index = -95
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("ShaderMaterial_formal_polish")
+color = Color(1, 1, 1, 1)
 
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1

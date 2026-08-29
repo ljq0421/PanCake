@@ -17,6 +17,15 @@ func _run() -> void:
 	var workstation := SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
+	var formal_polish := workstation.get_node_or_null("SafeArea/FormalWorkbenchPolish") as ColorRect
+	_check(
+		formal_polish != null
+		and formal_polish.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and formal_polish.z_index > -100
+		and formal_polish.z_index < -90
+		and formal_polish.material is ShaderMaterial,
+		"formal shop authors a non-interactive ambient light and counter-depth layer behind all workstations",
+	)
 	var stations := workstation.get_node_or_null("FiveAreaInfrastructure/Stations") as Control
 	_check(stations != null, "live shop exposes its station container")
 	for station_name in [&"CartoonYoutiaoFryer", &"FreshSoyMilkStation", &"PackagedDrinkStation"]:

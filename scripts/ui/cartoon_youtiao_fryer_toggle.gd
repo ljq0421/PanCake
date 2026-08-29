@@ -7,6 +7,7 @@ extends Control
 signal status_message(message: String)
 signal youtiao_add_to_pancake_requested(source_ref: Dictionary)
 signal raw_input_feedback_requested(success: bool)
+signal audio_cue_requested(cue: StringName)
 
 const DEVICE_ID := &"device.youtiao_fryer"
 const RECIPE_ID := &"recipe.youtiao.plain"
@@ -424,6 +425,7 @@ func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
 	var result := Dictionary(session.call("load_f3_youtiao", recipe_id, 1)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
 		status_message.emit("油条面胚已加入炸篮")
+		audio_cue_requested.emit(&"youtiao_load")
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	refresh_from_session()
@@ -494,6 +496,8 @@ func _perform_machine_click() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var result := Dictionary(session.call("perform_f3_chicken_action", action)) if session != null and _machine_lane == &"right" else Dictionary(session.call("perform_f3_youtiao_action", action)) if session != null else {"success": false, "reason": &"no_game_session"}
 	status_message.emit("鸡排开始炸制" if _machine_lane == &"right" and action == &"start" and bool(result.get("success", false)) else "油条开始炸制" if action == &"start" and bool(result.get("success", false)) else "炸篮已抬起，正在沥油" if bool(result.get("success", false)) else _failure_text(StringName(result.get("reason", &""))))
+	if bool(result.get("success", false)):
+		audio_cue_requested.emit(&"fryer_start" if action == &"start" else &"fryer_ready")
 	refresh_from_session()
 
 

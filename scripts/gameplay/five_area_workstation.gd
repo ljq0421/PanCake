@@ -175,6 +175,9 @@ var _deferred_day_end_cutoff: Dictionary = {}
 var _result_quality_icons_loaded := false
 var _formal_payment_total_rest_modulate := Color.WHITE
 var _top_warning_tween: Tween
+var _audio_orders_seeded := false
+var _known_audio_order_ids: Dictionary = {}
+var _warned_audio_order_ids: Dictionary = {}
 
 
 func _ready() -> void:
@@ -198,6 +201,8 @@ func _ready() -> void:
 	# instructional copy during restocking, so it is intentionally not displayed.
 	for station in [fresh_soy_station, cartoon_youtiao_fryer]:
 		station.status_message.connect(_show_station_status)
+		if not station.audio_cue_requested.is_connected(_on_station_audio_cue_requested):
+			station.audio_cue_requested.connect(_on_station_audio_cue_requested)
 		# The formal shell already owns tightly scoped locked-station click layers.
 		# Full-station covers would otherwise steal pointer input from the pancake
 		# sauce rack and discard control where their authored rectangles overlap.
@@ -207,14 +212,14 @@ func _ready() -> void:
 	if not cartoon_youtiao_fryer.youtiao_add_to_pancake_requested.is_connected(_on_youtiao_add_to_pancake_requested):
 		cartoon_youtiao_fryer.youtiao_add_to_pancake_requested.connect(_on_youtiao_add_to_pancake_requested)
 	packaged_drink_station.connect("status_message", _show_station_status)
+	if packaged_drink_station.has_signal("audio_cue_requested") and not packaged_drink_station.is_connected("audio_cue_requested", _on_station_audio_cue_requested):
+		packaged_drink_station.connect("audio_cue_requested", _on_station_audio_cue_requested)
 	multi_griddle_station.status_message.connect(_show_station_status)
 	multi_griddle_station.transient_warning_requested.connect(_show_top_warning)
 	multi_griddle_station.fold_feedback_requested.connect(_on_pancake_fold_feedback)
 	multi_griddle_station.ingredient_feedback_requested.connect(_on_ingredient_feedback)
 	if not multi_griddle_station.ready_product_clicked.is_connected(_on_pancake_delivery_source_clicked):
 		multi_griddle_station.ready_product_clicked.connect(_on_pancake_delivery_source_clicked)
-	if not cartoon_youtiao_fryer.raw_input_feedback_requested.is_connected(_on_ingredient_feedback):
-		cartoon_youtiao_fryer.raw_input_feedback_requested.connect(_on_ingredient_feedback)
 	if pancake_worktop_hotspots != null:
 		pancake_worktop_hotspots.status_message.connect(_show_station_status)
 	for service_slot in customer_service_slots:
@@ -283,6 +288,10 @@ func _on_pancake_fold_feedback(_unit_index: int, feedback_kind: StringName) -> v
 func _on_ingredient_feedback(success: bool) -> void:
 	if success:
 		kitchen_audio.call("play_cue", &"pour")
+
+
+func _on_station_audio_cue_requested(cue: StringName) -> void:
+	kitchen_audio.call("play_cue", cue)
 
 
 func _apply_pointer_cursors(root_node: Node) -> void:
@@ -700,6 +709,7 @@ func _raise_result_presentation_input() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	kitchen_audio.call("set_ambience", not _formal_order_time_paused())
 	_refresh_elapsed += delta
 	if _refresh_elapsed >= 0.10:
 		# Native dragging already performs synchronous Control hit testing for each
@@ -774,6 +784,41 @@ func _on_production_shell_changed(_snapshot: Dictionary = {}) -> void:
 	_refresh_pending_payment_display()
 	_refresh_attention_rail()
 	_refresh_pancake_drag_sources()
+
+
+func _refresh_formal_patience_ui(game_session: Node, current_orders: Variant = null) -> void:
+	super._refresh_formal_patience_ui(game_session, current_orders)
+	if game_session == null or not game_session.has_method("active_formal_orders"):
+		return
+	var orders: Array = Array(current_orders) if current_orders is Array else Array(game_session.call("active_formal_orders"))
+	_update_order_audio_feedback(orders)
+
+
+func _update_order_audio_feedback(orders: Array) -> void:
+	var active_ids: Dictionary = {}
+	for order_variant in orders:
+		var order := Dictionary(order_variant)
+		var order_id := StringName(order.get("order_id", &""))
+		if order_id.is_empty():
+			continue
+		active_ids[order_id] = true
+		if not _audio_orders_seeded:
+			_known_audio_order_ids[order_id] = true
+			if not bool(order.get("tutorial_no_countdown", false)) and _formal_order_patience_ratio(order) <= P1Session.IMPATIENT_RATIO_THRESHOLD:
+				_warned_audio_order_ids[order_id] = true
+			continue
+		if not _known_audio_order_ids.has(order_id):
+			kitchen_audio.call("play_cue", &"customer_arrive")
+		if not bool(order.get("tutorial_no_countdown", false)) and not _warned_audio_order_ids.has(order_id) and _formal_order_patience_ratio(order) <= P1Session.IMPATIENT_RATIO_THRESHOLD:
+			_warned_audio_order_ids[order_id] = true
+			kitchen_audio.call("play_cue", &"patience_warning")
+	_known_audio_order_ids = active_ids
+	var still_warned: Dictionary = {}
+	for warned_id in _warned_audio_order_ids:
+		if active_ids.has(warned_id):
+			still_warned[warned_id] = true
+	_warned_audio_order_ids = still_warned
+	_audio_orders_seeded = true
 
 
 func _all_material_slots() -> Array[Node]:
@@ -1833,6 +1878,8 @@ func _collect_pending_payments() -> void:
 		tool_status_label.text = "收币失败：%s" % str(collected.get("reason", &"unknown"))
 		return
 	var amount := int(collected.get("amount", 0))
+	if amount > 0:
+		kitchen_audio.call("play_cue", &"payment_collect")
 	var collected_coins: Array[TextureRect] = []
 	for coin in _formal_payment_coin_sprites:
 		if is_instance_valid(coin):

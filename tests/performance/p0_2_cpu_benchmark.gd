@@ -1,6 +1,6 @@
 extends SceneTree
 
-const MAIN_SCENE := preload("res://scenes/main/main.tscn")
+const GRIDDLE_SCENE := preload("res://scenes/gameplay/compact_griddle_unit.tscn")
 
 
 func _initialize() -> void:
@@ -8,13 +8,21 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var main := MAIN_SCENE.instantiate()
-	root.add_child(main)
+	var unit := GRIDDLE_SCENE.instantiate() as CompactGriddleUnit
+	if unit == null:
+		push_error("P0.2 benchmark could not instantiate CompactGriddleUnit")
+		quit(1)
+		return
+	root.add_child(unit)
 	await process_frame
 	await process_frame
-	var workstation := main.get_node("Workstation") as Workstation
-	workstation.set_process(false)
-	var model := workstation.pancake_model
+	unit.set_process(false)
+	var model: PancakeModel = unit.pancake_model
+	if model == null or unit.pancake_surface == null:
+		push_error("P0.2 benchmark requires a live pancake model and heatmap surface")
+		unit.queue_free()
+		quit(1)
+		return
 	model.add_batter(Vector2(model.grid_size, model.grid_size) * 0.5, 3.0, 24.0)
 
 	var scraper_iterations := 40
@@ -27,22 +35,22 @@ func _run() -> void:
 	var solidification_iterations := 20
 	var solidification_started := Time.get_ticks_usec()
 	for index in solidification_iterations:
-		model.advance_solidification(workstation.parameters.simulation_step_seconds)
+		model.advance_solidification(model.parameters.simulation_step_seconds)
 	var solidification_usec := Time.get_ticks_usec() - solidification_started
 
 	var texture_iterations := 8
 	var texture_started := Time.get_ticks_usec()
 	for index in texture_iterations:
-		workstation.pancake_surface.call("_rebuild_heatmap_texture")
+		unit.pancake_surface.force_texture_upload()
 	var texture_usec := Time.get_ticks_usec() - texture_started
 
-	var effort_model := PancakeModel.new(workstation.parameters.grid_size, workstation.parameters)
+	var effort_model := PancakeModel.new(model.parameters.grid_size, model.parameters)
 	var effort_center := Vector2(effort_model.grid_size, effort_model.grid_size) * 0.5
 	for sample_index in 120:
 		effort_model.add_batter(
 			effort_center,
-			workstation.parameters.batter_flow_rate / 120.0,
-			workstation.parameters.pour_radius
+			model.parameters.batter_flow_rate / 120.0,
+			model.parameters.pour_radius
 		)
 	var coverage_before := float(effort_model.calculate_summary().coverage_ratio)
 	var endpoints := [
@@ -55,7 +63,7 @@ func _run() -> void:
 	var gesture_usec := PackedInt64Array()
 	var samples_by_pass := PackedInt32Array()
 	for endpoint in endpoints:
-		var sampler := StrokeSampler.new(workstation.parameters.scraper_sample_spacing)
+		var sampler := StrokeSampler.new(model.parameters.scraper_sample_spacing)
 		var previous := effort_center
 		sampler.begin(previous)
 		var samples := sampler.sample_to(endpoint)
@@ -88,7 +96,7 @@ func _run() -> void:
 		coverage_by_pass[3] * 100.0,
 	])
 
-	main.queue_free()
+	unit.queue_free()
 	await process_frame
 	await process_frame
 	quit(0)

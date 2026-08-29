@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generator": "project-cake-kitchen-sfx-v1",
-  "generated_on": "2026-08-02",
+  "generator": "project-cake-breakfast-shop-audio-v2",
+  "generated_on": "2026-08-29",
   "origin": "Original deterministic procedural synthesis; no third-party recordings, samples, or melodies.",
   "format": {
     "sample_rate_hz": 32000,
@@ -72,6 +72,114 @@
       "seed": 1107,
       "duration_seconds": 0.78,
       "sha256": "b6ea404f31187c51957b1a82e359f2a101fd3781ab80dbe703bfd96e29bcb105"
+    },
+    {
+      "cue": "morning_ambience",
+      "file": "morning_ambience.wav",
+      "description": "Seamless restrained breakfast-street bed: distant traffic air, room tone, and sparse birds.",
+      "trigger": "Loops while the live workstation scene is open.",
+      "seed": 1201,
+      "duration_seconds": 6.0,
+      "sha256": "e261439d2fec486538945cf441864157461108ef43617655a4be9c402b4375db"
+    },
+    {
+      "cue": "customer_arrive",
+      "file": "customer_arrive.wav",
+      "description": "Soft entrance step and a short two-tone counter chime.",
+      "trigger": "A new customer order enters an active service slot.",
+      "seed": 1202,
+      "duration_seconds": 0.64,
+      "sha256": "4b81485e8ecaad55511288c74f88d8de2925717687fde3b40e03a392c4e98d92"
+    },
+    {
+      "cue": "patience_warning",
+      "file": "patience_warning.wav",
+      "description": "Two dry counter taps with a muted warning tone; informative rather than alarming.",
+      "trigger": "An order crosses the critical patience threshold for the first time.",
+      "seed": 1203,
+      "duration_seconds": 0.54,
+      "sha256": "d237b4f9474b6ef83cc69e2824f590afa0332c369ae08232867945786831cf07"
+    },
+    {
+      "cue": "payment_collect",
+      "file": "payment_collect.wav",
+      "description": "Several small coins gathered from the counter with a restrained bright finish.",
+      "trigger": "Pending customer payment is successfully collected.",
+      "seed": 1204,
+      "duration_seconds": 0.76,
+      "sha256": "be2fe762c5c54070945e25d5a27cfa6f0d696d02812e82efeab75f3d74659363"
+    },
+    {
+      "cue": "youtiao_load",
+      "file": "youtiao_load.wav",
+      "description": "Soft dough pieces landing in a wire fryer basket.",
+      "trigger": "Youtiao dough is successfully loaded into the fryer.",
+      "seed": 1205,
+      "duration_seconds": 0.48,
+      "sha256": "8f3161b82fcf609f1cb4005f9a6f5969fea125078520ffd2ba1823eac7e6a820"
+    },
+    {
+      "cue": "fryer_start",
+      "file": "fryer_start.wav",
+      "description": "Fryer basket entering hot oil with a fast rising burst of bubbles.",
+      "trigger": "A loaded fryer lane successfully starts cooking.",
+      "seed": 1206,
+      "duration_seconds": 0.92,
+      "sha256": "422ae44a861d153e52fa3d0481432c2bfc31965d78e60579ac66adf0ccda014d"
+    },
+    {
+      "cue": "fryer_ready",
+      "file": "fryer_ready.wav",
+      "description": "Wire basket lift, oil drip, and a small readiness ping.",
+      "trigger": "A ready fryer basket is successfully lifted or stored.",
+      "seed": 1207,
+      "duration_seconds": 0.72,
+      "sha256": "182ae2f33a84af464a3783faeec952ae2260f3ff5c6320d66e75b8da4182eef1"
+    },
+    {
+      "cue": "soy_cup_place",
+      "file": "soy_cup_place.wav",
+      "description": "Paper cup lifted from its stack and placed beneath a nozzle.",
+      "trigger": "An empty soy-milk cup is successfully placed.",
+      "seed": 1208,
+      "duration_seconds": 0.38,
+      "sha256": "b1326789ae9c9226325a90469847fb9cbdf2e2ca21f290e604df95796224be63"
+    },
+    {
+      "cue": "soy_dispense",
+      "file": "soy_dispense.wav",
+      "description": "Warm soy milk flowing into a paper cup with a soft machine hum.",
+      "trigger": "A manual or automatic soy-milk dispense begins.",
+      "seed": 1209,
+      "duration_seconds": 0.86,
+      "sha256": "3636e2390794ae8b13d6cd34abef98a03f28955d857950d7bea1943e4bdc0d30"
+    },
+    {
+      "cue": "soy_ready",
+      "file": "soy_ready.wav",
+      "description": "Liquid flow stops, cup settles, and the machine gives a gentle ready click.",
+      "trigger": "A soy-milk fill completes successfully.",
+      "seed": 1210,
+      "duration_seconds": 0.52,
+      "sha256": "fdc5ca94978d3a4a7a3876d7ec5c820f3ec7ce98f451b42f326c31cc895998f3"
+    },
+    {
+      "cue": "drink_restock",
+      "file": "drink_restock.wav",
+      "description": "A packaged juice carton placed firmly into its display tray.",
+      "trigger": "At least one packaged drink restock unit completes.",
+      "seed": 1211,
+      "duration_seconds": 0.5,
+      "sha256": "9b3a313285e956d7e94bde6fa2bb8a400ed313465a32d7d2fc7c9a192f5af19c"
+    },
+    {
+      "cue": "drink_pickup",
+      "file": "drink_pickup.wav",
+      "description": "A carton slides free of the display tray with a light paper rustle.",
+      "trigger": "A stocked packaged drink begins a delivery drag.",
+      "seed": 1212,
+      "duration_seconds": 0.42,
+      "sha256": "9698a82c94d5f59589561baae67cfec298b3318314478765e7ddd003047aa80c"
     }
   ]
 }

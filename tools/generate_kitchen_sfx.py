@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Project Cake's original, deterministic P1 kitchen SFX pack."""
+"""Generate Project Cake's original, deterministic breakfast-shop audio pack."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from pathlib import Path
 
 
 MIX_RATE = 32_000
-GENERATOR_VERSION = "project-cake-kitchen-sfx-v1"
-GENERATED_ON = "2026-08-02"
+GENERATOR_VERSION = "project-cake-breakfast-shop-audio-v2"
+GENERATED_ON = "2026-08-29"
 TAU = math.tau
 
 CUE_SPECS = {
@@ -60,6 +60,78 @@ CUE_SPECS = {
         "duration": 0.78,
         "description": "Wrapped order slide, counter set-down, and restrained two-note service accent.",
         "trigger": "A valid serve action that opens the customer result.",
+    },
+    "morning_ambience": {
+        "seed": 1201,
+        "duration": 6.00,
+        "description": "Seamless restrained breakfast-street bed: distant traffic air, room tone, and sparse birds.",
+        "trigger": "Loops while the live workstation scene is open.",
+    },
+    "customer_arrive": {
+        "seed": 1202,
+        "duration": 0.64,
+        "description": "Soft entrance step and a short two-tone counter chime.",
+        "trigger": "A new customer order enters an active service slot.",
+    },
+    "patience_warning": {
+        "seed": 1203,
+        "duration": 0.54,
+        "description": "Two dry counter taps with a muted warning tone; informative rather than alarming.",
+        "trigger": "An order crosses the critical patience threshold for the first time.",
+    },
+    "payment_collect": {
+        "seed": 1204,
+        "duration": 0.76,
+        "description": "Several small coins gathered from the counter with a restrained bright finish.",
+        "trigger": "Pending customer payment is successfully collected.",
+    },
+    "youtiao_load": {
+        "seed": 1205,
+        "duration": 0.48,
+        "description": "Soft dough pieces landing in a wire fryer basket.",
+        "trigger": "Youtiao dough is successfully loaded into the fryer.",
+    },
+    "fryer_start": {
+        "seed": 1206,
+        "duration": 0.92,
+        "description": "Fryer basket entering hot oil with a fast rising burst of bubbles.",
+        "trigger": "A loaded fryer lane successfully starts cooking.",
+    },
+    "fryer_ready": {
+        "seed": 1207,
+        "duration": 0.72,
+        "description": "Wire basket lift, oil drip, and a small readiness ping.",
+        "trigger": "A ready fryer basket is successfully lifted or stored.",
+    },
+    "soy_cup_place": {
+        "seed": 1208,
+        "duration": 0.38,
+        "description": "Paper cup lifted from its stack and placed beneath a nozzle.",
+        "trigger": "An empty soy-milk cup is successfully placed.",
+    },
+    "soy_dispense": {
+        "seed": 1209,
+        "duration": 0.86,
+        "description": "Warm soy milk flowing into a paper cup with a soft machine hum.",
+        "trigger": "A manual or automatic soy-milk dispense begins.",
+    },
+    "soy_ready": {
+        "seed": 1210,
+        "duration": 0.52,
+        "description": "Liquid flow stops, cup settles, and the machine gives a gentle ready click.",
+        "trigger": "A soy-milk fill completes successfully.",
+    },
+    "drink_restock": {
+        "seed": 1211,
+        "duration": 0.50,
+        "description": "A packaged juice carton placed firmly into its display tray.",
+        "trigger": "At least one packaged drink restock unit completes.",
+    },
+    "drink_pickup": {
+        "seed": 1212,
+        "duration": 0.42,
+        "description": "A carton slides free of the display tray with a light paper rustle.",
+        "trigger": "A stocked packaged drink begins a delivery drag.",
     },
 }
 
@@ -254,6 +326,135 @@ def _order_serve(spec: dict) -> list[float]:
     return _soft_limit(output, 0.74)
 
 
+def _morning_ambience(spec: dict) -> list[float]:
+    rng = random.Random(spec["seed"])
+    count = round(spec["duration"] * MIX_RATE)
+    duration = spec["duration"]
+    air_components = [
+        (rng.randint(330, 8_400), rng.uniform(0.0, TAU), rng.uniform(0.55, 1.0))
+        for _ in range(48)
+    ]
+    hum_bins = ((6, 0.020), (11, 0.012), (19, 0.007), (31, 0.004))
+    bird_events = ((0.82, 1850.0), (2.73, 2210.0), (4.92, 1710.0))
+    output = [0.0] * count
+    for index in range(count):
+        t = index / MIX_RATE
+        sample = 0.0
+        for cycles, phase, strength in air_components:
+            sample += 0.0022 * strength * math.sin(TAU * (cycles / duration) * t + phase)
+        for cycles, strength in hum_bins:
+            sample += strength * math.sin(TAU * (cycles / duration) * t)
+        for start, frequency in bird_events:
+            local = t - start
+            if 0.0 <= local < 0.20:
+                env = math.sin(math.pi * local / 0.20) ** 2
+                chirp = frequency + 480.0 * local / 0.20
+                sample += 0.018 * env * math.sin(TAU * chirp * local)
+        output[index] = sample
+    return _soft_limit(output, 0.34)
+
+
+def _impact_cue(
+    spec: dict,
+    hits: tuple[tuple[float, float, float, float], ...],
+    noise_windows: tuple[tuple[float, float, float, float], ...] = (),
+    notes: tuple[tuple[float, float, float], ...] = (),
+    peak: float = 0.70,
+) -> list[float]:
+    rng = random.Random(spec["seed"])
+    count = round(spec["duration"] * MIX_RATE)
+    low_noise = _lowpass(_noise(count, rng), 900.0)
+    paper_noise = _bandpass(_noise(count, rng), 350.0, 5_600.0)
+    output = [0.0] * count
+    for index in range(count):
+        t = index / MIX_RATE
+        sample = 0.0
+        for start, frequency, strength, decay_rate in hits:
+            local = t - start
+            if 0.0 <= local < 0.24:
+                decay = math.exp(-local * decay_rate)
+                sample += strength * math.sin(TAU * frequency * local) * decay
+                sample += strength * 0.42 * low_noise[index] * decay
+        for start, length, strength, pulse_hz in noise_windows:
+            env = _envelope(t, start, length, 0.012, min(0.10, length * 0.35))
+            sample += strength * paper_noise[index] * env * (0.82 + 0.18 * math.sin(TAU * pulse_hz * t))
+        for start, frequency, strength in notes:
+            local = t - start
+            if 0.0 <= local < 0.28:
+                env = (1.0 - math.exp(-local * 100.0)) * math.exp(-local * 11.0)
+                sample += strength * env * (
+                    math.sin(TAU * frequency * local) + 0.24 * math.sin(TAU * frequency * 2.0 * local)
+                )
+        output[index] = sample
+    return _soft_limit(output, peak)
+
+
+def _customer_arrive(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.04, 92.0, 0.30, 24.0), (0.18, 112.0, 0.22, 28.0)), ((0.01, 0.28, 0.13, 6.0),), ((0.28, 659.25, 0.12), (0.40, 783.99, 0.10)), 0.66)
+
+
+def _patience_warning(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.05, 178.0, 0.52, 34.0), (0.24, 166.0, 0.45, 36.0)), notes=((0.09, 392.0, 0.055), (0.28, 349.23, 0.050)), peak=0.64)
+
+
+def _payment_collect(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.04, 1180.0, 0.22, 42.0), (0.13, 1470.0, 0.20, 44.0), (0.22, 980.0, 0.24, 40.0), (0.31, 1620.0, 0.18, 46.0)), ((0.02, 0.38, 0.10, 13.0),), ((0.40, 783.99, 0.08), (0.52, 1046.50, 0.07)), 0.72)
+
+
+def _youtiao_load(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.07, 84.0, 0.52, 25.0), (0.17, 73.0, 0.42, 27.0), (0.29, 620.0, 0.16, 38.0)), ((0.04, 0.33, 0.18, 10.0),), peak=0.70)
+
+
+def _fryer_start(spec: dict) -> list[float]:
+    rng = random.Random(spec["seed"])
+    count = round(spec["duration"] * MIX_RATE)
+    oil = _bandpass(_noise(count, rng), 950.0, 8_500.0)
+    basket = _bandpass(_noise(count, rng), 280.0, 3_400.0)
+    output = [0.0] * count
+    for index in range(count):
+        t = index / MIX_RATE
+        plunge = _envelope(t, 0.02, 0.30, 0.02, 0.12)
+        bubbles = _envelope(t, 0.10, 0.80, 0.10, 0.18)
+        rise = min(max((t - 0.08) / 0.22, 0.0), 1.0)
+        output[index] = 0.26 * basket[index] * plunge + 0.38 * oil[index] * bubbles * (0.45 + 0.55 * rise)
+    return _soft_limit(output, 0.72)
+
+
+def _fryer_ready(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.04, 510.0, 0.28, 35.0), (0.16, 770.0, 0.19, 42.0), (0.32, 118.0, 0.18, 30.0)), ((0.02, 0.32, 0.15, 12.0),), ((0.38, 880.0, 0.09),), 0.68)
+
+
+def _soy_cup_place(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.05, 146.0, 0.34, 31.0), (0.22, 224.0, 0.28, 39.0)), ((0.02, 0.26, 0.12, 9.0),), peak=0.58)
+
+
+def _soy_dispense(spec: dict) -> list[float]:
+    rng = random.Random(spec["seed"])
+    count = round(spec["duration"] * MIX_RATE)
+    liquid = _bandpass(_noise(count, rng), 180.0, 3_300.0)
+    machine = _lowpass(_noise(count, rng), 380.0)
+    output = [0.0] * count
+    for index in range(count):
+        t = index / MIX_RATE
+        env = _envelope(t, 0.0, spec["duration"], 0.05, 0.12)
+        stream_pulse = 0.78 + 0.14 * math.sin(TAU * 11.0 * t) + 0.08 * math.sin(TAU * 23.0 * t)
+        hum = math.sin(TAU * 96.0 * t) + 0.24 * math.sin(TAU * 192.0 * t)
+        output[index] = env * (0.34 * liquid[index] * stream_pulse + 0.08 * machine[index] + 0.045 * hum)
+    return _soft_limit(output, 0.64)
+
+
+def _soy_ready(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.04, 104.0, 0.24, 28.0), (0.18, 238.0, 0.32, 38.0)), ((0.01, 0.17, 0.13, 7.0),), ((0.27, 698.46, 0.075),), 0.60)
+
+
+def _drink_restock(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.08, 126.0, 0.40, 30.0), (0.26, 154.0, 0.34, 34.0)), ((0.02, 0.38, 0.22, 8.0),), peak=0.64)
+
+
+def _drink_pickup(spec: dict) -> list[float]:
+    return _impact_cue(spec, ((0.24, 188.0, 0.26, 36.0),), ((0.01, 0.34, 0.28, 12.0),), peak=0.58)
+
+
 GENERATORS = {
     "batter_drop": _batter_drop,
     "spreader_scrape": _spreader_scrape,
@@ -262,6 +463,18 @@ GENERATORS = {
     "sauce_brush": _sauce_brush,
     "pancake_fold": _pancake_fold,
     "order_serve": _order_serve,
+    "morning_ambience": _morning_ambience,
+    "customer_arrive": _customer_arrive,
+    "patience_warning": _patience_warning,
+    "payment_collect": _payment_collect,
+    "youtiao_load": _youtiao_load,
+    "fryer_start": _fryer_start,
+    "fryer_ready": _fryer_ready,
+    "soy_cup_place": _soy_cup_place,
+    "soy_dispense": _soy_dispense,
+    "soy_ready": _soy_ready,
+    "drink_restock": _drink_restock,
+    "drink_pickup": _drink_pickup,
 }
 
 

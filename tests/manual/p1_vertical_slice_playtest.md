@@ -1,5 +1,7 @@
 # P1 完整煎饼垂直切片真人验收单
 
+> 历史归档：本表包含配料拖拽、手动刷酱和手动折边等已退休交互，不再用于正式验收。当前清单为 `tests/manual/four_area_current_baseline_playtest.md`。
+
 > 引擎：Godot 4.7.1 stable  
 > 自动检查不能替代本表。每次验收记录实际完成时间、订单和主观问题。
 

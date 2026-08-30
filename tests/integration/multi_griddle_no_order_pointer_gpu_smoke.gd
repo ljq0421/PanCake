@@ -34,7 +34,11 @@ func _run() -> void:
 	station.set_griddle_count(3)
 	_check(station.griddle_count() == 1 and station.units.size() == 1, "runtime exposes one griddle even with legacy tier requests")
 	var unit: Control = station.units[0]
-	await _click_control(unit.main_action)
+	var worktop := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots
+	var ladle_hit := worktop.get_node("BatterLadleSource/HitButton") as Button
+	await _click_control(ladle_hit)
+	_check(station.is_batter_ladle_selected() and unit.pancake_surface.visible, "the rendered ladle click arms the empty griddle")
+	await _hold_control(unit.pancake_surface, 24)
 	_check(unit.state == CompactGriddleUnit.State.BATTER, "the sole visible pointer target starts a pancake without a customer order")
 	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.batter", 0)) == 0, "one pointer start uses the unlimited batter source without consuming inventory")
 	game.queue_free()
@@ -56,6 +60,27 @@ func _click_control(control: Control) -> void:
 	released.pressed = false
 	released.position = position
 	released.global_position = position
+	root.push_input(released)
+	await process_frame
+
+
+func _hold_control(control: Control, frame_count: int) -> void:
+	var position := control.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = position
+	motion.global_position = position
+	root.push_input(motion)
+	await process_frame
+	var pressed := InputEventMouseButton.new()
+	pressed.button_index = MOUSE_BUTTON_LEFT
+	pressed.pressed = true
+	pressed.position = position
+	pressed.global_position = position
+	root.push_input(pressed)
+	for _frame in frame_count:
+		await process_frame
+	var released := pressed.duplicate() as InputEventMouseButton
+	released.pressed = false
 	root.push_input(released)
 	await process_frame
 

@@ -35,7 +35,7 @@ func _run() -> void:
 	progression.set("owned_growth_ids", owned_growth)
 	var worktop := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots
 	worktop.refresh_from_session()
-	var press_hit := worktop._spreader_hit_button
+	var press_hit := worktop.get_node("SpreaderSource/HitButton") as Button
 	_check(press_hit != null, "the rendered press has a native button hit target")
 	station.clear_held_tool()
 	unit.reset_unit()

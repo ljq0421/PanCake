@@ -4376,8 +4376,12 @@ func _stable_pancake_stock_ids(source_ids: Array, mapping: Dictionary) -> Packed
 
 func _touch_and_write(immediate := false) -> void:
 	_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
+	# Start the merge window on the first dirty mutation only. Business time is
+	# persisted once per second, so resetting this timer for every later mutation
+	# would otherwise prevent the two-second safety write from ever firing.
+	if not _save_dirty:
+		_save_flush_elapsed = 0.0
 	_save_dirty = true
-	_save_flush_elapsed = 0.0
 	if _scene_binding_save_batch_active:
 		_scene_binding_save_pending = true
 	elif immediate:

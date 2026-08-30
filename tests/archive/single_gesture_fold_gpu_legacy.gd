@@ -1,7 +1,8 @@
+## Historical manual-fold component fixture. The current baseline uses one-click automatic packing.
 extends SceneTree
 
 const STATION_SCENE := preload("res://scenes/gameplay/multi_griddle_station.tscn")
-const SCREENSHOT_PATH := "res://tmp/validation/single_gesture_fold_gpu.png"
+const SCREENSHOT_PATH := "res://tmp/validation/automatic_pack_pointer_gpu.png"
 
 
 class FakeProgression:
@@ -62,6 +63,9 @@ func _run() -> void:
 	var station := STATION_SCENE.instantiate()
 	root.add_child(station)
 	await process_frame
+	# The formal workstation enables the component's recursive GUI branch after
+	# instancing it; reproduce that production binding in this isolated fixture.
+	station.mouse_filter = Control.MOUSE_FILTER_STOP
 	station.bind_session(session)
 	var unit := station.units[0] as CompactGriddleUnit
 	unit.position = Vector2(400.0, 150.0)
@@ -69,20 +73,13 @@ func _run() -> void:
 	var feedbacks := PackedStringArray()
 	unit.fold_feedback_requested.connect(func(_unit_index: int, feedback_kind: StringName) -> void: feedbacks.append(str(feedback_kind)))
 
-	var start := unit.pancake_surface.size * Vector2(0.12, 0.50)
-	var snap := unit.pancake_surface.size * Vector2(0.40, 0.50)
-	var finish := unit.pancake_surface.size * Vector2(0.54, 0.50)
-	_press_surface(unit.pancake_surface, start)
-	_move_surface(unit, unit.pancake_surface, snap)
-	await process_frame
-	_check(unit.fold_model.crossed_fold_line and feedbacks.has("snap_threshold"), "the 45 percent snap threshold emits non-color feedback")
-	_move_surface(unit, unit.pancake_surface, finish)
-	_release_surface(unit.pancake_surface, finish)
+	_check(unit.main_action.visible and not unit.main_action.disabled, "the current baseline exposes one explicit package action")
+	await _click_control(unit.main_action)
 	_check(
 		unit.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT)
 		and unit.fold_steps == 1
 		and StringName(unit.get("_automatic_fold_pending_region")) == PancakeFoldModel.REGION_RIGHT,
-		"one pointer release commits the first side and arms the opposite side",
+		"one pointer click commits the first automatic fold and arms the opposite side",
 	)
 	await create_timer(1.20).timeout
 	_check(
@@ -91,7 +88,7 @@ func _run() -> void:
 		and unit.state == CompactGriddleUnit.State.READY,
 		"the opposite side folds automatically and reaches the packaged ready state",
 	)
-	_check(feedbacks.has("automatic_fold"), "automatic continuation emits its own feedback cue")
+	_check(feedbacks.count("automatic_fold") >= 2, "both automatic folds emit non-color feedback cues")
 
 	await RenderingServer.frame_post_draw
 	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)
@@ -111,34 +108,36 @@ func _prepare_fold_surface(unit: CompactGriddleUnit) -> void:
 	unit.pancake_model.thickness.fill(0.55)
 	unit.pancake_model.wetness.fill(0.18)
 	unit.pancake_model.doneness.fill(0.62)
+	unit.pancake_model.flip(false)
 	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	unit.state = CompactGriddleUnit.State.GARNISH
 	unit.pancake_model.changed.emit()
 	unit.call("_refresh_ui")
 
 
-func _move_surface(unit: CompactGriddleUnit, surface: PancakeHeatmap, position: Vector2) -> void:
+func _click_control(control: Control) -> void:
+	var position := control.get_global_rect().get_center()
 	var motion := InputEventMouseMotion.new()
 	motion.position = position
-	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
-	surface._gui_input(motion)
-	unit._process(1.0 / 60.0)
-
-
-func _press_surface(surface: PancakeHeatmap, position: Vector2) -> void:
-	var event := InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = true
-	event.position = position
-	surface._gui_input(event)
-
-
-func _release_surface(surface: PancakeHeatmap, position: Vector2) -> void:
-	var event := InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = false
-	event.position = position
-	surface._gui_input(event)
+	motion.global_position = position
+	root.push_input(motion)
+	await process_frame
+	var hovered := root.gui_get_hovered_control()
+	_check(
+		hovered == control,
+		"the visible package button owns its pointer hit area (hovered=%s, rect=%s)" % [hovered.get_path() if hovered != null else "none", control.get_global_rect()],
+	)
+	var pressed := InputEventMouseButton.new()
+	pressed.button_index = MOUSE_BUTTON_LEFT
+	pressed.pressed = true
+	pressed.position = position
+	pressed.global_position = position
+	root.push_input(pressed)
+	await process_frame
+	var released := pressed.duplicate() as InputEventMouseButton
+	released.pressed = false
+	root.push_input(released)
+	await process_frame
 
 
 func _check(condition: bool, message: String) -> void:

@@ -1,7 +1,7 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const SCREENSHOT_PATH := "res://tmp/validation/manual_fold_order_click_gpu.png"
+const SCREENSHOT_PATH := "res://tmp/validation/automatic_pack_order_click_gpu.png"
 
 var failures := PackedStringArray()
 
@@ -12,7 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	if DisplayServer.get_name() == "headless":
-		printerr("MANUAL_FOLD_ORDER_CLICK_GPU_SMOKE_FAIL\nGPU smoke must run without --headless")
+		printerr("AUTOMATIC_PACK_ORDER_CLICK_GPU_SMOKE_FAIL\nGPU smoke must run without --headless")
 		quit(1)
 		return
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
@@ -48,19 +48,18 @@ func _run() -> void:
 	multi.set_griddle_count(1)
 	var fold_unit: Node = multi.units[0]
 	_prepare_fold_surface(fold_unit, item)
-	var surface_rect: Rect2 = fold_unit.pancake_surface.get_global_rect()
-	await _drag(surface_rect.position + Vector2(24.0, surface_rect.size.y * 0.5), surface_rect.position + Vector2(224.0, surface_rect.size.y * 0.5))
+	await _click_control(fold_unit.main_action)
 	_check(
 		fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_LEFT)
 		and fold_unit.fold_steps == 1
 		and StringName(fold_unit.get("_automatic_fold_pending_region")) == PancakeFoldModel.REGION_RIGHT,
-		"one real pointer drag commits the first fold and arms automatic continuation",
+		"one real package click commits the first fold and arms automatic continuation",
 	)
 	await create_timer(1.25).timeout
 	_check(
 		fold_unit.fold_model.is_region_folded(PancakeFoldModel.REGION_RIGHT)
 		and fold_unit.state == CompactGriddleUnit.State.READY,
-		"the opposite side folds automatically and packages after one real pointer drag",
+		"the opposite side folds automatically and packages after one real pointer click",
 	)
 	_press_and_release_r()
 	await process_frame
@@ -84,21 +83,9 @@ func _run() -> void:
 	var item_button := target_slot.get_node("OrderPanel/ItemButton1") as Button if target_slot != null else null
 	_check(item_button != null and item_button.visible and not item_button.disabled, "non-focused customer item has a real pointer target")
 	if item_button != null:
-		var click_position := item_button.get_global_rect().get_center()
-		_move_at(click_position)
-		_press_at(click_position)
-		_release_at(click_position)
-		await process_frame
-	_check(
-		StringName(Dictionary(workstation.get("_selected_pancake_order_target_ref")).get("order_id", &"")) == second_id,
-		"real order-icon click selects its exact pancake target before delivery"
-	)
-	var package_click_position: Vector2 = ready_unit.package_visual.get_global_rect().get_center()
-	_move_at(package_click_position)
-	_press_at(package_click_position)
-	_release_at(package_click_position)
+		await _click_control(item_button)
 	await process_frame
-	_check(StringName(Dictionary(session.call("formal_order", second_id)).get("state", &"")) == &"settled", "real item-icon then packaged-pancake clicks settle their own order without dragging")
+	_check(StringName(Dictionary(session.call("formal_order", second_id)).get("state", &"")) == &"settled", "one real order-item click delivers the sole ready pancake to that exact customer")
 	_check(StringName(Dictionary(session.call("formal_order", first_id)).get("state", &"")) in [&"active", &"serving"], "real click does not deliver to the previously focused customer")
 
 	await RenderingServer.frame_post_draw
@@ -117,18 +104,20 @@ func _prepare_fold_surface(unit: Node, order: Dictionary) -> void:
 	unit.pancake_model.coverage.fill(1.0)
 	unit.pancake_model.thickness.fill(0.55)
 	unit.pancake_model.wetness.fill(0.18)
+	unit.pancake_model.flip(false)
 	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	unit.state = CompactGriddleUnit.State.GARNISH
 	unit.pancake_model.changed.emit()
 	unit.call("_refresh_ui")
 
 
-func _drag(from_position: Vector2, to_position: Vector2) -> void:
-	_move_at(from_position)
-	_press_at(from_position)
-	_move_at(to_position, MOUSE_BUTTON_MASK_LEFT)
+func _click_control(control: Control) -> void:
+	var position := control.get_global_rect().get_center()
+	_move_at(position)
 	await process_frame
-	_release_at(to_position)
+	_press_at(position)
+	await process_frame
+	_release_at(position)
 	await process_frame
 
 
@@ -205,9 +194,9 @@ func _check(condition: bool, message: String) -> void:
 
 func _finish(output_absolute: String) -> void:
 	if failures.is_empty():
-		print("MANUAL_FOLD_ORDER_CLICK_GPU_SMOKE_PASS")
-		print("MANUAL_FOLD_ORDER_CLICK_SCREENSHOT=%s" % output_absolute)
+		print("AUTOMATIC_PACK_ORDER_CLICK_GPU_SMOKE_PASS")
+		print("AUTOMATIC_PACK_ORDER_CLICK_SCREENSHOT=%s" % output_absolute)
 		quit(0)
 		return
-	printerr("MANUAL_FOLD_ORDER_CLICK_GPU_SMOKE_FAIL\n" + "\n".join(failures))
+	printerr("AUTOMATIC_PACK_ORDER_CLICK_GPU_SMOKE_FAIL\n" + "\n".join(failures))
 	quit(1)

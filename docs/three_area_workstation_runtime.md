@@ -31,5 +31,5 @@
 - `five_area_*` 存档键、订单/进度接口、库存扣除次数、三鏊独立快照和交付评分规则不改名。
 - `tools/run_checks.ps1` 是完整 headless 清单；旧单鏊坐标/隐藏状态/预览入口测试不再属于当前合同。
 - `five_area_formal_scene_self_check.gd` 检查独立正式场景和已删除节点；`multi_griddle_station_self_check.gd` 检查布局、热区、首帧面糊、连续拖动和零覆盖存档恢复。
-- `three_area_multi_griddle_gpu_smoke.gd` 使用真实鼠标路径，在 1920×1080、1366×768、1280×720 下截图，并分别保留初始面糊、摊制中和成形状态。
+- 旧 `three_area_multi_griddle_gpu_smoke.gd` 已退休；当前单鏊 GPU 合同由 `single_griddle_workstation_gpu_smoke.gd` 覆盖。
 - 自动化与 GPU PASS 只证明对应工程合同；“是否清楚、是否足够紧贴、拖动手感是否自然”仍需人工验收。

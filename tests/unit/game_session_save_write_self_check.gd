@@ -35,12 +35,21 @@ func _run() -> void:
 	var persisted := _read_test_save()
 	_check(is_equal_approx(float(persisted.get("business_day_remaining_seconds", -1.0)), 54.0), "merged write persists the newest state")
 
+	var countdown_write_count := int(session.get("_save_write_count"))
 	session.call("set_business_day_remaining_seconds", 53.0)
+	session.call("_process", 1.0)
+	session.call("set_business_day_remaining_seconds", 52.0)
+	session.call("_process", 1.0)
+	_check(int(session.get("_save_write_count")) == countdown_write_count + 1, "continuous one-second countdown mutations cannot starve the safety write")
+	persisted = _read_test_save()
+	_check(is_equal_approx(float(persisted.get("business_day_remaining_seconds", -1.0)), 52.0), "countdown safety write persists the newest timer value")
+
+	session.call("set_business_day_remaining_seconds", 51.0)
 	var before_leave_count := int(session.get("_save_write_count"))
 	session.call("mark_session_left")
 	_check(int(session.get("_save_write_count")) == before_leave_count + 1, "leaving a session flushes pending state immediately")
 	persisted = _read_test_save()
-	_check(bool(persisted.get("business_paused", false)) and is_equal_approx(float(persisted.get("business_day_remaining_seconds", -1.0)), 53.0), "leave flush is durable and complete")
+	_check(bool(persisted.get("business_paused", false)) and is_equal_approx(float(persisted.get("business_day_remaining_seconds", -1.0)), 51.0), "leave flush is durable and complete")
 
 	session.queue_free()
 	await process_frame

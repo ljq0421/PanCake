@@ -1,8 +1,6 @@
 extends SceneTree
 
 const MAIN_SCENE := preload("res://scenes/main/main.tscn")
-const FOLD_MODEL := preload("res://scripts/gameplay/pancake_fold_model.gd")
-
 var _failures := PackedStringArray()
 
 
@@ -26,65 +24,84 @@ func _run() -> void:
 	for _frame in 12:
 		await process_frame
 	var workstation := game.get_node("Workstation")
+	workstation._process(5.0)
+	# Let the authored first-customer entrance finish so the item button is at
+	# its real resting hit rectangle before sending pointer input.
+	await create_timer(1.25).timeout
 	var order := Dictionary(session.call("active_formal_order"))
 	var order_id := StringName(order.get("order_id", &""))
 	var customer_id := StringName(order.get("customer_id", &""))
-	workstation.p1_session.phase = P1Session.Phase.FOLD
-	var package_ready := Dictionary(workstation.p1_session.mark_ready_for_package())
-	workstation.fold_model.package_result = FOLD_MODEL.PACKAGE_BAG
-	var packaged := Dictionary(workstation.p1_session.mark_packaged())
+	var station: Control = workstation.multi_griddle_station
+	var unit: Control = station.units[0]
+	var order_item := Dictionary(Array(order.get("items", []))[0])
+	var source_product := {
+		"product_instance_id": &"test.tutorial.ready.pointer",
+		"area_id": &"area.pancake",
+		"product_id": &"product.pancake.custom",
+		"temperature_mode": order_item.get("temperature_mode", &"hot"),
+		"heat_preference": order_item.get("heat_preference", &"golden"),
+		"ingredient_ids": Array(order_item.get("ingredient_ids", [])).duplicate(),
+		"sauce_ids": Array(order_item.get("sauce_ids", [])).duplicate(),
+		"score": 100.0,
+		"feedback": "current-baseline pointer delivery",
+		"status": &"available",
+	}
+	unit.mark_ready(source_product)
+	station.call("_sync_snapshot_to_session")
 	workstation.call("_refresh_pancake_drag_sources")
 	workstation.call("_refresh_formal_shell")
 	await process_frame
-	var source_ref := Dictionary(workstation.get("_ready_pancake_source_ref"))
-	var order_item := Dictionary(Array(order.get("items", []))[0])
-	var source_product := Dictionary(source_ref.get("product", {})).duplicate(true)
-	for field in [&"product_id", &"temperature_mode", &"heat_preference", &"ingredient_ids", &"sauce_ids"]:
-		if order_item.has(field):
-			source_product[field] = order_item[field]
-	source_ref["product"] = source_product
-	workstation.set("_ready_pancake_source_ref", source_ref)
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	inventory["stock.pancake.batter"] = 0
 	for sauce_id_variant in Array(source_product.get("sauce_ids", [])):
 		inventory[str(StringName(sauce_id_variant))] = 1
 	session.call("save_inventory", inventory)
 	var batter_before := int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.batter", 0))
-	var order_target := workstation.get_node("SafeArea/OrderCard/OrderDishTarget1") as Button
+	var target_slot := _service_slot_for_order(workstation, order_id)
+	var order_target := target_slot.get_node("OrderPanel/ItemButton1") as Button if target_slot != null else null
 	_check(
-		bool(package_ready.get("success", false))
-		and bool(packaged.get("success", false))
-		and workstation.p1_session.phase == P1Session.Phase.READY_TO_SERVE
-		and not source_ref.is_empty(),
+		unit.state == CompactGriddleUnit.State.READY
+		and station.ready_source_refs().size() == 1,
 		"finishing the package creates one authoritative ready-pancake source"
 	)
-	_check(not order_target.disabled and order_target.mouse_filter == Control.MOUSE_FILTER_STOP, "tutorial-highlighted order art remains a real pointer target")
-	await _click_control(order_target)
+	_check(order_target != null and not order_target.disabled and order_target.mouse_filter == Control.MOUSE_FILTER_STOP, "tutorial customer item remains a real pointer target")
+	if order_target != null:
+		await _click_control(order_target)
 	await process_frame
 	await process_frame
 	var settled := Dictionary(session.call("formal_order", order_id))
 	var next_order := Dictionary(session.call("active_formal_order"))
-	var settlement := Dictionary(workstation.get("_pending_tray_settlement"))
 	var tutorial := Dictionary(Dictionary(session.call("five_area_progression_snapshot")).get("tutorial", {}))
 	var batter_after := int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.batter", 0))
 	_check(
 		StringName(settled.get("state", &"")) == &"settled"
-		and bool(settlement.get("order_success", false))
 		and batter_after == batter_before
-		and workstation.p1_session.phase == P1Session.Phase.SPREAD
-		and Dictionary(workstation.get("_ready_pancake_source_ref")).is_empty(),
+		and unit.state == CompactGriddleUnit.State.IDLE
+		and station.ready_source_refs().is_empty(),
 		"one real pointer click consumes and clears exactly one packaged pancake"
 	)
 	_check(
-		not next_order.is_empty()
-		and StringName(next_order.get("order_id", &"")) != order_id
-		and StringName(next_order.get("customer_id", &"")) != customer_id
-		and Array(tutorial.get("completed_area_ids", [])).has("area.pancake"),
-		"tutorial settlement immediately focuses a different normal customer"
+		Array(tutorial.get("completed_area_ids", [])).has("area.pancake")
+		and (
+			next_order.is_empty()
+			or (
+				StringName(next_order.get("order_id", &"")) != order_id
+				and StringName(next_order.get("customer_id", &"")) != customer_id
+			)
+		),
+		"tutorial settlement clears its customer and returns control to the normal arrival scheduler"
 	)
 	game.queue_free()
 	await process_frame
 	_finish()
+
+
+func _service_slot_for_order(workstation: Node, order_id: StringName) -> Control:
+	for slot_index in 5:
+		var slot := workstation.get_node("SafeArea/ServiceCustomer%d" % (slot_index + 1)) as Control
+		if slot.visible and StringName(slot.get("_order_id")) == order_id:
+			return slot
+	return null
 
 
 func _click_control(control: Control) -> void:

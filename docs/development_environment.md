@@ -46,7 +46,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\run_mobile_smoke.ps1
 
 该命令会短暂打开游戏窗口并自动退出。
 
-P0.2 真人鼠标验收使用 `tests/manual/p0_2_mouse_playtest.md`，通过前不进入 P0.3。
+当前正式真人验收使用 `tests/manual/four_area_current_baseline_playtest.md`。历史 P0/P1 表只用于追溯旧原型，不再判定当前基线。
 
 P0.2 CPU 成本和四次大刮操作量基准：
 

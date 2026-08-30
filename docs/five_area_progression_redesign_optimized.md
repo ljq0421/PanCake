@@ -2,7 +2,7 @@
 
 > 已退休：本文件只保留演进记录，不可作为当前实现依据。请使用 `docs/four_area_workstation_runtime.md`。
 
-> 状态：已确认；替代 `five_area_progression_redesign.md`，作为五区域成长、设备升级、内容解锁和订单投放的现行设计基线。  
+> 历史状态：曾替代 `five_area_progression_redesign.md`，现已整体退休。
 > 日期：2026-08-05  
 > 输入：`five_area_progression_redesign.md`、`five_area_progression_redesign_pro.md`、当前成长/库存/订单实现。  
 > 目标解锁顺序：煎饼台 → 成品饮品柜 → 油条炸锅 → 现磨豆浆机 → 多层蒸笼。

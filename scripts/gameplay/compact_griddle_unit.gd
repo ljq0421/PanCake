@@ -256,7 +256,11 @@ func _exit_tree() -> void:
 
 func _process_batter_ladle_drag(delta: float) -> void:
 	var local_position := pancake_surface.get_local_mouse_position()
-	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+	# The surface's pointer state is authoritative once GUI input has started the
+	# pour. Keep the Input singleton as a release fallback for gestures that end
+	# over another control, but do not let a missed global button-state sample
+	# cancel a valid surface press before its first simulation frame.
+	if not pancake_surface.pointer_pressed and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if _surface_action == SURFACE_ACTION_POUR_BATTER:
 			_on_surface_pointer_ended(local_position)
 		# Picking up the basic ladle and pouring are two separate gestures. A

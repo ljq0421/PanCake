@@ -216,7 +216,10 @@ static func evaluate_order(
 			unexpected_ingredients.append(_portion_label(IngredientModel.display_name(ingredient_type), applied_portions - required_portions))
 	var ingredient_distribution := ingredients.evaluate_distribution(model.grid_size)
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
-	var ingredient_score := clampf(float(ingredient_distribution.score) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
+	# Raw ingredients use authored click placement in the formal baseline. Keep
+	# the distribution snapshot for diagnostics/save compatibility, but score only
+	# the recipe choices the player can actually control.
+	var ingredient_score := clampf(100.0 * ingredient_match, 0.0, 100.0)
 
 	var order_score := _ingredient_compliance_score(required_ingredient_quantities, applied_ingredient_quantities)
 	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
@@ -252,9 +255,6 @@ static func evaluate_order(
 		tags.append("缺少%s" % "、".join(missing_ingredients))
 	if not unexpected_ingredients.is_empty():
 		tags.append("多放%s" % "、".join(unexpected_ingredients))
-	for tag in ingredient_distribution.tags:
-		if not tags.has(tag):
-			tags.append(tag)
 	var feedback := _feedback_for(overall, tags, patience_ratio)
 	var applied_ingredient_ids: Array[StringName] = []
 	for ingredient_type in IngredientModel.ALL_TYPES:
@@ -448,7 +448,7 @@ static func evaluate_stored_product(
 		if int(applied_ingredient_quantities.get(ingredient_type, applied_ingredient_quantities.get(str(ingredient_type), 0))) > 0:
 			applied_ingredients.append(ingredient_type)
 	var ingredient_match := 1.0 - float(missing_ingredients.size() + unexpected_ingredients.size()) / maxf(float(required_ingredients.size() + 1), 1.0)
-	var ingredient_score := clampf(float(basis.get("ingredient_distribution_score", 0.0)) * 0.45 + 100.0 * ingredient_match * 0.55, 0.0, 100.0)
+	var ingredient_score := clampf(100.0 * ingredient_match, 0.0, 100.0)
 	var order_score := _ingredient_compliance_score(required_ingredient_quantities, applied_ingredient_quantities)
 	var time_limit := maxf(float(order.get("time_limit", 72.0)), 1.0)
 	var time_score := 100.0 * clampf(1.0 - maxf(elapsed_seconds - time_limit * 0.55, 0.0) / (time_limit * 0.75), 0.0, 1.0)
@@ -482,10 +482,6 @@ static func evaluate_stored_product(
 		tags.append("缺少%s" % "、".join(missing_ingredients))
 	if not unexpected_ingredients.is_empty():
 		tags.append("多放%s" % "、".join(unexpected_ingredients))
-	for tag_variant in Array(basis.get("ingredient_distribution_tags", [])):
-		var tag := str(tag_variant)
-		if not tags.has(tag):
-			tags.append(tag)
 	var selected_chili_profile := Dictionary(sauce_results.get(str(OrderService.SAUCE_CHILI), {}))
 	var stored_chili_profiles := Dictionary(sauce_profiles.get(str(OrderService.SAUCE_CHILI), {}))
 	var stored_profile_key := "1.35" if is_equal_approx(sauce_intensity_multiplier, 1.35) else "1.00"

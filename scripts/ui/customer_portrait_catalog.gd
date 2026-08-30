@@ -110,7 +110,12 @@ func finish_pending() -> void:
 	for path_variant in _pending_by_path.keys():
 		var path := str(path_variant)
 		var status := ResourceLoader.load_threaded_get_status(path)
-		if status in [ResourceLoader.THREAD_LOAD_IN_PROGRESS, ResourceLoader.THREAD_LOAD_LOADED]:
+		# Teardown must not synchronously drain an in-flight texture request. In
+		# headless/dummy rendering that blocking get can try to initialize a texture
+		# after the rendering storage is already shutting down, producing a null
+		# texture error. Loaded requests are safe to consume; in-flight requests are
+		# process-global and may simply be discarded with this catalog.
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
 			ResourceLoader.load_threaded_get(path)
 	_pending_by_path.clear()
 

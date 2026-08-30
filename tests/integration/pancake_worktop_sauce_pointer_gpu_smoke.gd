@@ -35,11 +35,13 @@ func _run() -> void:
 	station.clear_held_tool()
 	unit.reset_unit()
 	unit.begin_order({})
-	unit.state = CompactGriddleUnit.State.FIRST_SIDE
-	unit.p1_session.phase = P1Session.Phase.FIRST_SIDE
-	var sweet := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SweetSauceHotspot") as ProductDragSource
-	var hit := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SweetSauceHotspotHitButton") as Button
-	var hotspots := hit.get_parent()
+	unit.pancake_model.coverage.fill(1.0)
+	unit.pancake_model.flip(false)
+	unit.state = CompactGriddleUnit.State.GARNISH
+	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
+	unit.call("_refresh_ui")
+	var sweet := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SecretSauceSource/Hotspot") as ProductDragSource
+	var hit: Control = sweet
 	var short_clicks := [0]
 	sweet.short_clicked.connect(func(_source_ref: Dictionary) -> void: short_clicks[0] += 1)
 	var before := int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.sauce.sweet_flour", 0))
@@ -50,7 +52,7 @@ func _run() -> void:
 	_check(short_clicks[0] == 1, "a real pointer click on the rendered sweet-sauce jar routes one short click")
 	_check(unit.applied_sauce_ids.has("stock.pancake.sauce.sweet_flour"), "the sauce click places sweet sauce on the pancake")
 	_check(int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.sauce.sweet_flour", 0)) == before, "the sauce click does not consume unlimited sweet sauce")
-	_check(unit.pancake_surface.cursor_is_sauce_brush, "the sauce click arms the sauce brush")
+	_check(unit.sauce_automation_applied and not unit.pancake_surface.cursor_is_sauce_brush, "the current sauce click completes its automatic brush pass without leaving a held tool")
 	game.queue_free()
 	await process_frame
 	_finish()

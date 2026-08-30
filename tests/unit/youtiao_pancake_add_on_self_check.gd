@@ -51,6 +51,25 @@ func _run() -> void:
 		not product.has("fried_grade") and not product.has("fried_quality_score"),
 		"fryer grade is not copied into pancake quality for a second bonus or penalty"
 	)
+	var edge_model := _uniform_pancake(64)
+	var edge_ingredients := IngredientModel.new()
+	var edge_placement := Dictionary(edge_ingredients.place(IngredientModel.BAOCUI, Vector2(8.0, 32.0), 0.0, edge_model))
+	var edge_order := {"ingredients": [&"baocui"], "sauces": [], "heat_preference": &"golden", "time_limit": 72.0}
+	var edge_scored := Dictionary(PancakeScorer.evaluate_order(edge_model, edge_ingredients, PancakeFoldModel.new(edge_model, edge_ingredients), edge_order, 20.0, 1.0))
+	var edge_basis := Dictionary(edge_scored.get("serving_score_basis", {}))
+	var edge_stored := Dictionary(PancakeScorer.evaluate_stored_product({"serving_score_basis": edge_basis}, edge_order, 20.0, 1.0))
+	_check(bool(edge_placement.get("success", false)), "edge-placement fixture creates one valid ingredient")
+	_check(float(edge_basis.get("ingredient_distribution_score", 100.0)) < 100.0, "edge placement remains available as a non-scoring diagnostic")
+	_check(
+		is_equal_approx(float(Dictionary(edge_scored.get("dimensions", {})).get("ingredients", 0.0)), 100.0)
+		and is_equal_approx(float(Dictionary(edge_stored.get("dimensions", {})).get("ingredients", 0.0)), 100.0),
+		"click-authored placement cannot deduct controllable ingredient quality"
+	)
+	_check(
+		not PackedStringArray(edge_scored.get("tags", [])).has("配料靠边易漏")
+		and not PackedStringArray(edge_stored.get("tags", [])).has("配料靠边易漏"),
+		"non-controllable distribution diagnostics stay out of immediate and stored customer feedback"
+	)
 	var layer := IngredientLayer.new()
 	layer.size = Vector2(640.0, 400.0)
 	root.add_child(layer)

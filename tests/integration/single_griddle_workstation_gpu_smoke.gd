@@ -40,7 +40,7 @@ func _run() -> void:
 	unit.main_action.pressed.emit()
 	await process_frame
 	_check(unit.state == CompactGriddleUnit.State.BATTER and unit.pancake_surface.visible, "adding batter activates the rendered pancake surface")
-	var center := unit.pancake_surface.get_global_rect().get_center()
+	var center: Vector2 = unit.pancake_surface.get_global_rect().get_center()
 	_press(center)
 	for step in 96:
 		var progress := float(step + 1) / 96.0

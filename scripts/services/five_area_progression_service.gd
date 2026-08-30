@@ -6,7 +6,7 @@ extends RefCounted
 ## the persistence coordinator in phase 4.
 const LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID := &"growth.capacity.pancake_holding_tray.two_slots"
 const PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.first_slot"
-const PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.second_slot"
+const RETIRED_PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.second_slot"
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
@@ -401,16 +401,20 @@ func load_snapshot(value: Dictionary) -> void:
 
 
 func _migrate_legacy_pancake_holding_tray_growth() -> void:
-	# The retired 40-coin upgrade unlocked both trays at once. Preserve that
-	# completed or already-paid purchase when saves are loaded under the new,
-	# independently unlockable tray progression.
-	if bool(owned_growth_ids.get(LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID, false)):
+	# All retired holding-tray purchases now unlock the single four-serving tray.
+	# Keep the first-slot ID as the active save key so both generations of saves
+	# preserve a completed or already-paid purchase without charging again.
+	if (
+		bool(owned_growth_ids.get(LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID, false))
+		or bool(owned_growth_ids.get(RETIRED_PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID, false))
+	):
 		owned_growth_ids[PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID] = true
-		owned_growth_ids[PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID] = true
-	if pending_growth_ids.has(LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID):
-		for growth_id in [PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID, PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID]:
-			if not owns_growth(growth_id) and not pending_growth_ids.has(growth_id):
-				pending_growth_ids.append(growth_id)
+	if (
+		pending_growth_ids.has(LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID)
+		or pending_growth_ids.has(RETIRED_PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID)
+	):
+		if not owns_growth(PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID) and not pending_growth_ids.has(PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID):
+			pending_growth_ids.append(PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID)
 
 
 func _normalize_three_area_state() -> void:

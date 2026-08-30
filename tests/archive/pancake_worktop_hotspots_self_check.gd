@@ -229,9 +229,11 @@ func _test_one_click_ingredient_upgrades(station: Node, unit: Node, session: Fak
 		unit.advance_main()
 		var before := int(session.inventory[str(stock_id)])
 		var added := Dictionary(station.apply_one_click_ingredient(stock_id))
+		var is_unlimited := stock_id in [&"stock.pancake.scallion", &"stock.pancake.coriander"]
+		var expected_inventory := before if is_unlimited else before - 1
 		_check(
-			bool(added.get("success", false)) and bool(added.get("one_click", false)) and int(session.inventory[str(stock_id)]) == before - 1,
-			"%s click adds exactly one inventory-backed portion without an upgrade" % stock_id
+			bool(added.get("success", false)) and bool(added.get("one_click", false)) and int(session.inventory[str(stock_id)]) == expected_inventory,
+			"%s click adds exactly one portion with the correct inventory behavior" % stock_id
 		)
 		var ingredient_type := StringName(added.get("ingredient_type", &""))
 		_check(unit.ingredient_model.count_type(ingredient_type) == 1, "%s click creates one pancake placement" % stock_id)
@@ -335,13 +337,13 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var batter_ladle_visual := hotspots.get_node("BatterLadleSource/Visual") as TextureRect
 	_check(spreader_hit_button != null, "spreader uses its component-local alpha hit target")
 	var expected_component_rects := {
-		&"PorkFlossSource": Rect2(1137.0, 578.0, 214.0, 180.0),
-		&"HamSource": Rect2(1319.0, 578.0, 214.0, 180.0),
-		&"EggCarton": Rect2(1269.0, 795.0, 216.0, 234.0),
-		&"ScallionTray": Rect2(1128.0, 709.0, 146.0, 147.0),
-		&"CorianderTray": Rect2(1233.0, 709.0, 149.0, 149.0),
-		&"BaocuiBasket": Rect2(954.0, 578.0, 214.0, 180.0),
-		&"SecretSauceSource": Rect2(1034.0, 717.0, 123.0, 134.4),
+		&"PorkFlossSource": Rect2(1161.0, 656.0, 214.0, 180.0),
+		&"HamSource": Rect2(1314.0, 656.0, 214.0, 180.0),
+		&"EggCarton": Rect2(1269.0, 787.0, 216.0, 234.0),
+		&"ScallionTray": Rect2(1143.0, 767.0, 146.0, 147.0),
+		&"CorianderTray": Rect2(1248.0, 767.0, 149.0, 149.0),
+		&"BaocuiBasket": Rect2(1008.0, 656.0, 214.0, 180.0),
+		&"SecretSauceSource": Rect2(1049.0, 761.0, 137.0, 148.4),
 	}
 	for component_path in expected_component_rects:
 		var component := hotspots.get_node(NodePath(str(component_path))) as Control
@@ -353,7 +355,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 		_check(not source._alpha_hit_regions.is_empty(), "%s derives its clickable silhouette from its visible artwork" % component_path)
 	_check(Rect2(station.position, station.size).is_equal_approx(Rect2(220.0, 566.0, 1170.0, 444.0)), "the unified pancake station preserves the authored griddle-station rectangle")
 	var surface_design_rect := Rect2(station.position + unit.position + unit.pancake_surface.position, unit.pancake_surface.size)
-	_check(surface_design_rect.is_equal_approx(Rect2(610.0, 622.0, 400.0, 400.0)), "the interactive griddle surface preserves its authored 1920x1080 design rectangle")
+	_check(surface_design_rect.is_equal_approx(Rect2(654.0, 641.0, 314.0, 314.0)), "the interactive pancake surface matches the aozi-v1 cooking plate")
 	_check(StringName(hotspots.get_node("ScallionTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")
 	_check(StringName(hotspots.get_node("CorianderTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.coriander", "coriander tray maps to coriander stock")
 	_check(StringName(hotspots.get_node("BaocuiBasket/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")
@@ -375,8 +377,8 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var scallion_before_click := int(session.inventory["stock.pancake.scallion"])
 	hotspots.call("_on_material_short_clicked", scallion_click_source.source_ref(), scallion_click_source)
 	_check(
-		unit.ingredient_model.count_type(IngredientModel.SCALLION) == 1 and int(session.inventory["stock.pancake.scallion"]) == scallion_before_click - 1,
-		"a scallion hotspot click adds one portion without starting a drag"
+		unit.ingredient_model.count_type(IngredientModel.SCALLION) == 1 and int(session.inventory["stock.pancake.scallion"]) == scallion_before_click,
+		"an unlimited scallion hotspot click adds one portion without consuming stock or starting a drag"
 	)
 	unit.reset_unit()
 	session.progression.owned_growth[&"growth.automation.pancake.one_click_egg"] = true

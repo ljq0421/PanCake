@@ -137,10 +137,11 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var pancake_station_view: Control = $SafeArea/JianbingStallArtwork
 @onready var multi_griddle_station: Control = $SafeArea/JianbingStallArtwork/MultiGriddleStation
 @onready var pancake_holding_tray_button: TextureButton = %PancakeHoldingTray
-@onready var pancake_holding_sources: Array[ProductDragSource] = [%PancakeHoldingSource01, %PancakeHoldingSource02]
-@onready var pancake_holding_slot_frames: Array[TextureRect] = [
-	$FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01,
-	$FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02,
+@onready var pancake_holding_sources: Array[ProductDragSource] = [
+	%PancakeHoldingSource01,
+	%PancakeHoldingSource02,
+	%PancakeHoldingSource03,
+	%PancakeHoldingSource04,
 ]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var result_review_scroll: ScrollContainer = %ResultReviewScroll
@@ -1266,7 +1267,7 @@ func _refresh_pancake_drag_sources() -> void:
 	for slot_index in range(pancake_holding_sources.size()):
 		var product := Dictionary(holding_slots[slot_index]) if slot_index < holding_slots.size() else {}
 		var source := pancake_holding_sources[slot_index]
-		var slot_unlocked := slot_index < pancake_holding_slot_frames.size() and pancake_holding_slot_frames[slot_index].visible
+		var slot_unlocked := pancake_holding_tray_button.visible
 		# Pancakes are intentionally selected by click before delivery. Keeping the
 		# source clickable but disabling native dragging prevents bypassing that
 		# two-step flow while preserving its discard affordance elsewhere.
@@ -1281,17 +1282,13 @@ func _refresh_pancake_holding_tray() -> void:
 	if pancake_holding_tray_button == null:
 		return
 	var session := get_node_or_null("/root/GameSession")
-	var first_slot_unlocked := false
-	var second_slot_unlocked := false
+	var tray_unlocked := false
 	if session != null and session.has_method("progression_service"):
 		var progression: RefCounted = session.call("progression_service")
-		first_slot_unlocked = progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot")
-		second_slot_unlocked = progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.second_slot")
-	pancake_holding_tray_button.visible = first_slot_unlocked
-	pancake_holding_tray_button.disabled = not first_slot_unlocked
-	for slot_index in range(pancake_holding_slot_frames.size()):
-		pancake_holding_slot_frames[slot_index].visible = first_slot_unlocked if slot_index == 0 else second_slot_unlocked
-	if first_slot_unlocked:
+		tray_unlocked = progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot")
+	pancake_holding_tray_button.visible = tray_unlocked
+	pancake_holding_tray_button.disabled = not tray_unlocked
+	if tray_unlocked:
 		_refresh_pancake_drag_sources()
 
 
@@ -1728,8 +1725,8 @@ func _single_ready_griddle_pancake_when_holding_trays_empty(session: Node) -> Di
 	if multi_griddle_station == null or not session.has_method("pancake_holding_tray_snapshot"):
 		return {}
 	var holding_slots := Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
-	# The holding-tray model always has two physical slots.  Require both to be
-	# empty before bypassing the normal source-selection step.
+	# Require all four positions in the single holding tray to be empty before
+	# bypassing the normal source-selection step.
 	if holding_slots.size() < pancake_holding_sources.size():
 		return {}
 	for slot_index in range(pancake_holding_sources.size()):

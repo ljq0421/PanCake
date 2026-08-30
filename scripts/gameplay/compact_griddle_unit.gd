@@ -183,6 +183,9 @@ static func _compact_pancake_parameters() -> PancakeSimulationParameters:
 	var compact_parameters := PancakeSimulationParameters.new()
 	var spatial_scale := float(GRID_SIZE) / REFERENCE_GRID_SIZE
 	compact_parameters.grid_size = GRID_SIZE
+	# aozi-v1's usable iron surface is approximately 405 px wide by 305 px
+	# tall. Keep rendering, simulation, hit-testing and folding on that ellipse.
+	compact_parameters.pan_height_ratio = 0.75
 	compact_parameters.scraper_width *= spatial_scale
 	compact_parameters.spreader_bar_thickness *= spatial_scale
 	compact_parameters.scraper_sample_spacing *= spatial_scale

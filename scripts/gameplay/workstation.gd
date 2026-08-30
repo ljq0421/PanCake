@@ -2997,8 +2997,7 @@ func _growth_ticket_display_name(growth_id: StringName) -> String:
 	var names := {
 		&"growth.add_on.pancake.ham_sausage": "火腿肠",
 		&"growth.add_on.pancake.meat_floss": "肉松",
-		&"growth.capacity.pancake_holding_tray.first_slot": "暂存盘 1",
-		&"growth.capacity.pancake_holding_tray.second_slot": "暂存盘 2",
+		&"growth.capacity.pancake_holding_tray.first_slot": "煎饼暂存盘",
 		&"growth.add_on.pancake.coriander": "香菜",
 		&"growth.add_on.pancake.preserved_mustard": "榨菜",
 		&"growth.add_on.pancake.pork_tenderloin": "里脊肉",

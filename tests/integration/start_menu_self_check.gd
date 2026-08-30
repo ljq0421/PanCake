@@ -25,13 +25,14 @@ func _run() -> void:
 	var background := menu.get_node("Background") as TextureRect
 	var continue_button := menu.get_node("Content/Layout/MenuPanel/Menu/ContinueButton") as Button
 	var new_game_button := menu.get_node("Content/Layout/MenuPanel/Menu/NewGameButton") as Button
+	var shops_button := menu.get_node("Content/Layout/MenuPanel/Menu/ShopsButton") as Button
 	var settings_button := menu.get_node("Content/Layout/MenuPanel/Menu/SettingsButton") as Button
 	var quit_button := menu.get_node("Content/Layout/MenuPanel/Menu/QuitButton") as Button
 	var loading_overlay := menu.get_node("LoadingOverlay") as Control
 	var loading_progress := menu.get_node("LoadingOverlay/Center/Dialog/Rows/LoadingProgress") as ProgressBar
 	_check(background.texture != null and background.texture.resource_path == "res://resources/art/ui/start_menu/start_menu_background_morning_mobile_cart_v4_bold_chinese.png", "start menu uses the current Chinese-style morning mobile-cart background")
 	_check(background.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED, "background covers wider and taller aspect ratios")
-	_check(continue_button.text == "继续游戏" and new_game_button.text == "新游戏", "primary start actions are present")
+	_check(continue_button.text == "继续游戏" and new_game_button.text == "新游戏" and shops_button.text == "选择铺子", "primary start actions are present")
 	_check(settings_button.text == "设置" and quit_button.text == "退出游戏", "settings and desktop quit actions are present")
 	_check(continue_button.disabled == not session.has_save(), "continue availability mirrors persistent session state")
 	_check(not loading_overlay.visible and is_zero_approx(loading_progress.value), "threaded loading overlay starts hidden and empty")
@@ -39,6 +40,12 @@ func _run() -> void:
 	session.begin_new_game()
 	menu.call("_refresh_save_state")
 	_check(session.has_save() and not continue_button.disabled, "new game creates a resumable session")
+	menu.call("_open_chapter_select")
+	var chapter_overlay := menu.get_node("ChapterOverlay") as Control
+	var noodle_chapter_button := menu.get_node("ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content/NoodleShopButton") as Button
+	var noodle_chapter_status := menu.get_node("ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content/NoodleShopStatus") as Label
+	_check(chapter_overlay.visible and noodle_chapter_button.disabled and "未解锁" in noodle_chapter_status.text, "shop selector presents the locked second chapter and its unlock progress")
+	menu.call("_close_chapter_select")
 	_check("已完成 0 单" in session.resume_summary(), "new session summary is player-readable")
 	session.call("mark_session_left")
 	_check(session.call("is_business_paused"), "returning to the start page persists a paused business session")

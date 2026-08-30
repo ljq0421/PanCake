@@ -24,6 +24,14 @@ const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
 @onready var loading_status_label: Label = %LoadingStatusLabel
 @onready var loading_progress: ProgressBar = %LoadingProgress
 @onready var loading_detail_label: Label = %LoadingDetailLabel
+@onready var shops_button: Button = %ShopsButton
+@onready var chapter_overlay: Control = %ChapterOverlay
+@onready var breakfast_shop_button: Button = %BreakfastShopButton
+@onready var noodle_shop_button: Button = %NoodleShopButton
+@onready var breakfast_shop_status: Label = %BreakfastShopStatus
+@onready var noodle_shop_status: Label = %NoodleShopStatus
+@onready var chapter_hint: Label = %ChapterHint
+@onready var chapter_close_button: Button = %ChapterCloseButton
 
 var _session: Node
 var _loading := false
@@ -43,10 +51,15 @@ func _ready() -> void:
 	continue_button.pressed.connect(_continue_game)
 	new_game_button.pressed.connect(_request_new_game)
 	settings_button.pressed.connect(_open_settings)
+	shops_button.pressed.connect(_open_chapter_select)
+	breakfast_shop_button.pressed.connect(_select_breakfast_shop)
+	noodle_shop_button.pressed.connect(_select_noodle_shop)
+	chapter_close_button.pressed.connect(_close_chapter_select)
 	quit_button.pressed.connect(_quit_game)
 	new_game_cancel_button.pressed.connect(_close_new_game_confirmation)
 	new_game_confirm_button.pressed.connect(_start_new_game)
 	settings_overlay.visible = false
+	chapter_overlay.visible = false
 	_shared_settings_panel = SETTINGS_PANEL_SCRIPT.new()
 	add_child(_shared_settings_panel)
 	_shared_settings_panel.closed.connect(_on_shared_settings_closed)
@@ -77,6 +90,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _shared_settings_panel != null and _shared_settings_panel.is_open():
 		_close_settings()
+	elif chapter_overlay.visible:
+		_close_chapter_select()
 	elif new_game_overlay.visible:
 		_close_new_game_confirmation()
 	else:
@@ -86,7 +101,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _refresh_save_state() -> void:
 	continue_button.disabled = not bool(_session.call("has_save"))
+	shops_button.disabled = not bool(_session.call("has_save"))
 	resume_label.text = str(_session.call("resume_summary"))
+	_refresh_chapter_cards()
 
 
 func _focus_primary_action() -> void:
@@ -100,7 +117,8 @@ func _continue_game() -> void:
 	if not bool(_session.call("has_save")):
 		_refresh_save_state()
 		return
-	_begin_game_load(false)
+	var active_id := StringName(_session.call("active_chapter_id"))
+	_begin_game_load(false, str(_session.call("chapter_scene_path", active_id)))
 
 
 func _request_new_game() -> void:
@@ -112,7 +130,63 @@ func _request_new_game() -> void:
 
 
 func _start_new_game() -> void:
-	_begin_game_load(true)
+	_begin_game_load(true, GAME_SCENE)
+
+
+func _open_chapter_select() -> void:
+	if not bool(_session.call("has_save")):
+		return
+	_refresh_chapter_cards()
+	chapter_overlay.visible = true
+	var active_id := StringName(_session.call("active_chapter_id"))
+	if active_id == _session.NOODLE_CHAPTER_ID:
+		noodle_shop_button.grab_focus()
+	else:
+		breakfast_shop_button.grab_focus()
+
+
+func _close_chapter_select() -> void:
+	chapter_overlay.visible = false
+	shops_button.grab_focus()
+
+
+func _select_breakfast_shop() -> void:
+	_select_shop(_session.BREAKFAST_CHAPTER_ID)
+
+
+func _select_noodle_shop() -> void:
+	_select_shop(_session.NOODLE_CHAPTER_ID)
+
+
+func _select_shop(chapter_id: StringName) -> void:
+	var result := Dictionary(_session.call("select_chapter", chapter_id))
+	if not bool(result.get("success", false)):
+		chapter_hint.text = "请先结束当前店铺的营业日。" if StringName(result.get("reason", &"")) == &"business_day_open" else "这家铺子还没有解锁。"
+		_refresh_chapter_cards()
+		return
+	chapter_overlay.visible = false
+	_begin_game_load(false, str(result.get("scene_path", GAME_SCENE)))
+
+
+func _refresh_chapter_cards() -> void:
+	if _session == null or not bool(_session.call("has_save")):
+		return
+	var breakfast := Dictionary(_session.call("chapter_status", _session.BREAKFAST_CHAPTER_ID))
+	var noodle := Dictionary(_session.call("chapter_status", _session.NOODLE_CHAPTER_ID))
+	var active_id := StringName(_session.call("active_chapter_id"))
+	var active_status := breakfast if active_id == _session.BREAKFAST_CHAPTER_ID else noodle
+	var blocks_switch := bool(active_status.get("day_open", false))
+	breakfast_shop_button.text = "继续煎饼铺" if active_id == _session.BREAKFAST_CHAPTER_ID else "进入煎饼铺"
+	noodle_shop_button.text = "继续刀削面馆" if active_id == _session.NOODLE_CHAPTER_ID else "进入刀削面馆"
+	breakfast_shop_button.disabled = blocks_switch and active_id != _session.BREAKFAST_CHAPTER_ID
+	noodle_shop_button.disabled = not bool(noodle.get("unlocked", false)) or (blocks_switch and active_id != _session.NOODLE_CHAPTER_ID)
+	breakfast_shop_status.text = "第 %d 日 · %d 金币%s" % [int(breakfast.get("current_day", 1)), int(breakfast.get("coins", 0)), " · 营业中" if bool(breakfast.get("day_open", false)) else ""]
+	if bool(noodle.get("unlocked", false)):
+		noodle_shop_status.text = "第 %d 日 · %d 金币%s" % [int(noodle.get("current_day", 1)), int(noodle.get("coins", 0)), " · 营业中" if bool(noodle.get("day_open", false)) else ""] if bool(noodle.get("initialized", false)) else "已解锁 · 首次进入将开始教学"
+	else:
+		var progress := Dictionary(noodle.get("unlock_progress", {}))
+		noodle_shop_status.text = "未解锁 · 四区 %d/4 · 铜牌 %d/4" % [int(progress.get("unlocked_area_count", 0)), int(progress.get("bronze_area_count", 0))]
+	chapter_hint.text = "当前店铺营业中，结束本日后才能切换。" if blocks_switch else "选择一家已解锁的铺子开始营业。"
 
 
 func _begin_game_load(start_new_game: bool, path_override: String = "") -> void:
@@ -203,9 +277,15 @@ func _set_menu_actions_disabled(disabled: bool) -> void:
 	continue_button.disabled = disabled or not bool(_session.call("has_save"))
 	new_game_button.disabled = disabled
 	settings_button.disabled = disabled
+	shops_button.disabled = disabled or not bool(_session.call("has_save"))
 	quit_button.disabled = disabled
 	new_game_cancel_button.disabled = disabled
 	new_game_confirm_button.disabled = disabled
+	breakfast_shop_button.disabled = disabled
+	noodle_shop_button.disabled = disabled
+	chapter_close_button.disabled = disabled
+	if not disabled:
+		_refresh_chapter_cards()
 
 
 func _open_settings() -> void:

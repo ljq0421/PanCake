@@ -152,7 +152,9 @@ func _test_dropped_ingredient_orientation(unit: CompactGriddleUnit) -> void:
 	var placement := Dictionary(unit.ingredient_model.placements.back()) if not unit.ingredient_model.placements.is_empty() else {}
 	_check(bool(result.get("success", false)), "a valid manually dragged topping still lands on the pancake")
 	_check(is_zero_approx(float(placement.get("rotation", INF))), "a manually dragged topping keeps the drag preview orientation after release")
-	var subcell_local := center + Vector2(2.3, 1.7)
+	# Stay outside the one-grid-cell centre-tap fan-out used for repeat portions,
+	# while retaining non-integer coordinates for the continuous-position check.
+	var subcell_local := center + Vector2(9.3, 6.7)
 	var subcell_validation := Dictionary(unit.validate_ingredient_drop({
 		"source_kind": &"pancake_shared_ingredient",
 		"stock_id": &"stock.pancake.baocui",
@@ -166,20 +168,20 @@ func _test_dropped_ingredient_orientation(unit: CompactGriddleUnit) -> void:
 
 func _test_small_topping_visual_scale() -> void:
 	var expected_scales := {
-		IngredientModel.BAOCUI: 0.16,
-		IngredientModel.HAM_SAUSAGE: 0.32,
-		IngredientModel.SCALLION: 0.56,
-		IngredientModel.MEAT_FLOSS: 0.36,
-		IngredientModel.PORK_TENDERLOIN: 0.104,
-		IngredientModel.CORIANDER: 0.56,
-		IngredientModel.PRESERVED_MUSTARD: 0.096,
+		IngredientModel.BAOCUI: 0.16 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
+		IngredientModel.HAM_SAUSAGE: 0.32 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
+		IngredientModel.SCALLION: 0.56 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
+		IngredientModel.MEAT_FLOSS: 0.36 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
+		IngredientModel.PORK_TENDERLOIN: 0.104 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
+		IngredientModel.CORIANDER: 0.56 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
+		IngredientModel.PRESERVED_MUSTARD: 0.096 * IngredientLayer.AOZI_V1_SURFACE_SCALE,
 	}
 	for ingredient_type_variant in expected_scales:
 		var ingredient_type := StringName(ingredient_type_variant)
 		var expected_scale := float(expected_scales[ingredient_type_variant])
 		_check(
 			is_equal_approx(IngredientLayer.visual_scale_for(ingredient_type), expected_scale),
-			"%s visual scale is reduced to 80 percent" % ingredient_type,
+			"%s visual scale follows the smaller aozi-v1 cooking surface" % ingredient_type,
 		)
 	_check(is_equal_approx(IngredientLayer.visual_scale_for(IngredientModel.EGG), 0.14), "egg visual size is not changed by the small-topping scale")
 	_check(is_equal_approx(IngredientLayer.visual_scale_for(IngredientModel.YOUTIAO), 0.78), "youtiao visual size is not changed by the small-topping scale")

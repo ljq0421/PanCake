@@ -32,7 +32,7 @@ func _run() -> void:
 	for stock_id in inventory.keys():
 		inventory[stock_id] = 0
 	inventory["stock.pancake.egg"] = 2
-	inventory["stock.pancake.scallion"] = 3
+	inventory["stock.pancake.baocui"] = 3
 	inventory["stock.youtiao.plain_dough"] = 3
 	session.call("save_inventory", inventory)
 	var griddle_snapshot := {

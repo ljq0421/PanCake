@@ -16,7 +16,7 @@ const CUP_STACK_TEXTURE_PATHS := [
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png",
 ]
 const FILLED_CUP_TEXTURE_PATH := "res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png"
-const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/sugar-jar-open-for-soy-milk.png"
+const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/material_slots/legacy_trays/sugar-square-ingredient-tray-v2.png"
 const MACHINE_TIER_LAYOUTS: Array[Dictionary] = [
 	{
 		"texture_path": "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png",

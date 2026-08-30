@@ -3,12 +3,12 @@ extends RefCounted
 
 signal changed(snapshot: Dictionary)
 
-const SLOT_COUNT := 2
+const SLOT_COUNT := 4
 const AGING_SECONDS := 20.0
 const STALE_SECONDS := 60.0
 const EXPIRED_SECONDS := STALE_SECONDS
 
-var _slots: Array[Dictionary] = [{}, {}]
+var _slots: Array[Dictionary] = [{}, {}, {}, {}]
 
 
 func _init(snapshot: Dictionary = {}) -> void:
@@ -23,7 +23,7 @@ func snapshot() -> Dictionary:
 
 
 func load_snapshot(value: Dictionary) -> void:
-	_slots = [{}, {}]
+	_slots = [{}, {}, {}, {}]
 	var source_slots: Array = Array(value.get("slots", []))
 	for index in mini(source_slots.size(), SLOT_COUNT):
 		var candidate := Dictionary(source_slots[index]).duplicate(true)

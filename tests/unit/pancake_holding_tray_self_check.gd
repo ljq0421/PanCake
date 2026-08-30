@@ -13,7 +13,13 @@ func _run() -> void:
 	_check(bool(tray.call("store", product).get("success", false)) and tray.call("store", product.duplicate(true)).get("reason") == &"duplicate_product_instance", "tray rejects duplicate product instances")
 	var product_two: Dictionary = product.duplicate(true)
 	product_two["product_instance_id"] = &"product_instance.pancake.2"
-	_check(bool(tray.call("store", product_two).get("success", false)) and not bool(tray.call("store", product_two).get("success", false)), "tray has exactly two slots")
+	var product_three: Dictionary = product.duplicate(true)
+	product_three["product_instance_id"] = &"product_instance.pancake.3"
+	var product_four: Dictionary = product.duplicate(true)
+	product_four["product_instance_id"] = &"product_instance.pancake.4"
+	var product_five: Dictionary = product.duplicate(true)
+	product_five["product_instance_id"] = &"product_instance.pancake.5"
+	_check(bool(tray.call("store", product_two).get("success", false)) and bool(tray.call("store", product_three).get("success", false)) and bool(tray.call("store", product_four).get("success", false)) and tray.call("store", product_five).get("reason") == &"capacity_full", "the single tray stores exactly four pancakes")
 	tray.call("advance_time", 40.0)
 	var aging: Dictionary = tray.call("preview_serve_matching", 0, order)
 	_check(bool(aging.get("success", false)) and is_equal_approx(float(aging.get("freshness_penalty", 0.0)), 10.0) and aging.get("grade") == &"B", "aging tray product applies linear freshness penalty and recomputes grade")
@@ -29,7 +35,7 @@ func _run() -> void:
 	_check(is_equal_approx(float(tray.call("preview_serve", 0, order).get("freshness_penalty", 0.0)), 20.0), "freshness penalty stays capped after 60 seconds")
 	var served: Dictionary = tray.call("serve", 0, mismatch)
 	_check(bool(served.get("success", false)) and Dictionary(tray.call("slot_snapshot", 0)).get("state") == &"empty", "serving a mismatched stale pancake consumes exactly one stored instance")
-	_check(tray.call("clear_for_day_end").size() == 1 and tray.call("snapshot").get("slots", []).all(func(slot: Dictionary): return slot.is_empty()), "day end clears the remaining tray slot")
+	_check(tray.call("clear_for_day_end").size() == 3 and tray.call("snapshot").get("slots", []).all(func(slot: Dictionary): return slot.is_empty()), "day end clears all remaining positions in the single tray")
 	_finish()
 
 func _check(condition: bool, message: String) -> void:

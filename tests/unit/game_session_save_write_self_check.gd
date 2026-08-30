@@ -76,7 +76,14 @@ func _read_test_save() -> Dictionary:
 		return {}
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
-	return Dictionary(parsed) if parsed is Dictionary else {}
+	if not parsed is Dictionary:
+		return {}
+	var root_save := Dictionary(parsed)
+	if str(root_save.get("save_kind", "")) != GAME_SESSION_STORE.SAVE_KIND:
+		return root_save
+	var campaign := Dictionary(root_save.get("campaign", {}))
+	var chapter_id := str(campaign.get("active_chapter_id", GAME_SESSION_STORE.BREAKFAST_CHAPTER_ID))
+	return Dictionary(Dictionary(root_save.get("chapters", {})).get(chapter_id, {}))
 
 
 func _companion_exists(suffix: String) -> bool:

@@ -21,6 +21,8 @@ func _run() -> void:
 	var material := surface.pancake_visual.material as ShaderMaterial
 
 	_check(workstation.griddle_art != null and workstation.griddle_art.texture != null and workstation.griddle_art.texture.resource_path == "res://resources/art/workstation/tools/aozi-v1.png", "compact workstation uses the requested aozi-v1 griddle artwork")
+	_check(surface.position == Vector2(54.0, -30.0) and surface.size == Vector2(314.0, 314.0), "pancake surface is centered on aozi-v1's usable iron plate")
+	_check(is_equal_approx(workstation.pancake_model.parameters.pan_height_ratio, 0.75), "pancake simulation matches aozi-v1's cooking-surface ellipse")
 	_check(surface.pancake_visual != null, "scene owns a stable PancakeVisual node")
 	_check(material != null and material.shader != null, "PancakeVisual owns the P0.3 shader material")
 	var raw_texture := material.get_shader_parameter(&"raw_texture") as Texture2D

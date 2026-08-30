@@ -3,7 +3,8 @@ extends Control
 
 const FOLD_MODEL_SCRIPT := preload("res://scripts/gameplay/pancake_fold_model.gd")
 const YOUTIAO_TEXTURE := preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png")
-const SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER := 0.8
+const AOZI_V1_SURFACE_SCALE := 314.0 / 400.0
+const SMALL_TOPPING_VISUAL_SCALE_MULTIPLIER := 0.8 * AOZI_V1_SURFACE_SCALE
 
 @export var egg_texture: Texture2D
 @export var baocui_texture: Texture2D

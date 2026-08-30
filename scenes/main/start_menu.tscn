@@ -333,6 +333,18 @@ theme_override_styles/pressed = SubResource("Style_button_secondary_hover")
 theme_override_styles/focus = SubResource("Style_focus")
 text = "新游戏"
 
+[node name="ShopsButton" type="Button" parent="Content/Layout/MenuPanel/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.89, 0.72, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("Style_button_secondary")
+theme_override_styles/hover = SubResource("Style_button_secondary_hover")
+theme_override_styles/pressed = SubResource("Style_button_secondary_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "选择铺子"
+
 [node name="SettingsButton" type="Button" parent="Content/Layout/MenuPanel/Menu"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 58)
@@ -366,6 +378,155 @@ theme_override_colors/font_color = Color(0.58, 0.67, 0.64, 1)
 theme_override_font_sizes/font_size = 15
 text = "方向键选择  ·  Enter 确认  ·  游戏内 Esc 暂停"
 horizontal_alignment = 1
+
+[node name="ChapterOverlay" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 900
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.02, 0.035, 0.03, 0.88)
+
+[node name="Panel" type="PanelContainer" parent="ChapterOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -610.0
+offset_top = -330.0
+offset_right = 610.0
+offset_bottom = 330.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_menu_panel")
+
+[node name="Layout" type="VBoxContainer" parent="ChapterOverlay/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="ChapterOverlay/Panel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.46, 1)
+theme_override_font_sizes/font_size = 42
+text = "选择今天经营的铺子"
+horizontal_alignment = 1
+
+[node name="Cards" type="HBoxContainer" parent="ChapterOverlay/Panel/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="BreakfastCard" type="PanelContainer" parent="ChapterOverlay/Panel/Layout/Cards"]
+custom_minimum_size = Vector2(560, 300)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("Style_status")
+
+[node name="Content" type="VBoxContainer" parent="ChapterOverlay/Panel/Layout/Cards/BreakfastCard"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Name" type="Label" parent="ChapterOverlay/Panel/Layout/Cards/BreakfastCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.91, 0.74, 1)
+theme_override_font_sizes/font_size = 34
+text = "第一章 · 清晨煎饼铺"
+
+[node name="Description" type="Label" parent="ChapterOverlay/Panel/Layout/Cards/BreakfastCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.9, 0.84, 1)
+theme_override_font_sizes/font_size = 20
+text = "单鏊摊面与四区早餐调度"
+
+[node name="BreakfastShopStatus" type="Label" parent="ChapterOverlay/Panel/Layout/Cards/BreakfastCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 0.86, 0.56, 1)
+theme_override_font_sizes/font_size = 21
+text = "第 1 日 · 0 金币"
+vertical_alignment = 1
+
+[node name="BreakfastShopButton" type="Button" parent="ChapterOverlay/Panel/Layout/Cards/BreakfastCard/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("Style_button_primary")
+theme_override_styles/hover = SubResource("Style_button_primary_hover")
+theme_override_styles/pressed = SubResource("Style_button_primary_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "继续煎饼铺"
+
+[node name="NoodleCard" type="PanelContainer" parent="ChapterOverlay/Panel/Layout/Cards"]
+custom_minimum_size = Vector2(560, 300)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("Style_status")
+
+[node name="Content" type="VBoxContainer" parent="ChapterOverlay/Panel/Layout/Cards/NoodleCard"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Name" type="Label" parent="ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.36, 1)
+theme_override_font_sizes/font_size = 34
+text = "第二章 · 老城刀削面馆"
+
+[node name="Description" type="Label" parent="ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.9, 0.84, 1)
+theme_override_font_sizes/font_size = 20
+text = "稳定刀工、入锅节奏与熟度判断"
+
+[node name="NoodleShopStatus" type="Label" parent="ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 0.86, 0.56, 1)
+theme_override_font_sizes/font_size = 21
+text = "未解锁 · 四区 0/4 · 铜牌 0/4"
+vertical_alignment = 1
+
+[node name="NoodleShopButton" type="Button" parent="ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("Style_button_primary")
+theme_override_styles/hover = SubResource("Style_button_primary_hover")
+theme_override_styles/pressed = SubResource("Style_button_primary_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "进入刀削面馆"
+
+[node name="ChapterHint" type="Label" parent="ChapterOverlay/Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.76, 1)
+theme_override_font_sizes/font_size = 18
+text = "选择一家已解锁的铺子开始营业。"
+horizontal_alignment = 1
+
+[node name="ChapterCloseButton" type="Button" parent="ChapterOverlay/Panel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_button_secondary")
+theme_override_styles/hover = SubResource("Style_button_secondary_hover")
+theme_override_styles/pressed = SubResource("Style_button_secondary_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "返回"
 
 [node name="RightSpace" type="Control" parent="Content/Layout"]
 layout_mode = 2

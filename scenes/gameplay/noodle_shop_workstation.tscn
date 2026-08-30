@@ -1,0 +1,577 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/noodle_shop_workstation.gd" id="1_workstation"]
+[ext_resource type="Script" path="res://scripts/gameplay/noodle_gesture_surface.gd" id="2_gesture"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/spreader_scrape.wav" id="3_knife"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/pancake_flip.wav" id="4_basket"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/order_serve.wav" id="5_serve"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/payment_collect.wav" id="6_payment"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/patience_warning.wav" id="7_patience"]
+
+[sub_resource type="StyleBoxFlat" id="Style_header"]
+bg_color = Color(0.055, 0.14, 0.15, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.82, 0.58, 0.3, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
+
+[sub_resource type="StyleBoxFlat" id="Style_side"]
+bg_color = Color(0.07, 0.16, 0.17, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.38, 0.66, 0.61, 0.9)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 18.0
+content_margin_top = 18.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxFlat" id="Style_button"]
+bg_color = Color(0.12, 0.38, 0.32, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.56, 0.84, 0.66, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_top = 10.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="Style_button_hover"]
+bg_color = Color(0.18, 0.52, 0.4, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.78, 0.4, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_button_disabled"]
+bg_color = Color(0.1, 0.16, 0.16, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.36, 0.34, 0.8)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_modal"]
+bg_color = Color(0.04, 0.1, 0.11, 0.99)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.72, 0.34, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+content_margin_left = 32.0
+content_margin_top = 28.0
+content_margin_right = 32.0
+content_margin_bottom = 28.0
+
+[node name="NoodleShopWorkstation" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_workstation")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.055, 0.12, 0.13, 1)
+
+[node name="ShopSign" type="Label" parent="."]
+layout_mode = 0
+offset_left = 25.0
+offset_top = 14.0
+offset_right = 285.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(1, 0.75, 0.38, 1)
+theme_override_font_sizes/font_size = 34
+text = "老城刀削面"
+horizontal_alignment = 1
+
+[node name="CustomerPortrait" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 62.0
+offset_right = 288.0
+offset_bottom = 294.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="OrderPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 310.0
+offset_top = 20.0
+offset_right = 1065.0
+offset_bottom = 292.0
+theme_override_styles/panel = SubResource("Style_header")
+
+[node name="Layout" type="VBoxContainer" parent="OrderPanel"]
+layout_mode = 2
+theme_override_constants/separation = 9
+
+[node name="OrderTitle" type="Label" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.82, 0.46, 1)
+theme_override_font_sizes/font_size = 34
+text = "清汤刀削面"
+
+[node name="OrderDetails" type="Label" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.9, 0.94, 0.86, 1)
+theme_override_font_sizes/font_size = 20
+text = "标准面 · 目标6刀\n汤底：清汤 · 浇头：葱花"
+autowrap_mode = 2
+
+[node name="BatchLabel" type="Label" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.9, 0.75, 1)
+theme_override_font_sizes/font_size = 20
+text = "已削 0/6 刀 · 沥水 0.0 秒"
+
+[node name="RefuseButton" type="Button" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "谢绝当前订单"
+
+[node name="StatsPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 1085.0
+offset_top = 20.0
+offset_right = 1890.0
+offset_bottom = 292.0
+theme_override_styles/panel = SubResource("Style_header")
+
+[node name="Layout" type="VBoxContainer" parent="StatsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TimerLabel" type="Label" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.77, 0.4, 1)
+theme_override_font_sizes/font_size = 44
+text = "教学不限时"
+horizontal_alignment = 1
+
+[node name="EconomyLabel" type="Label" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.94, 0.86, 1)
+theme_override_font_sizes/font_size = 20
+text = "面馆金币 0 · 全局口碑 0 · 第 1 日"
+horizontal_alignment = 1
+
+[node name="EndDayButton" type="Button" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+text = "提前结束营业"
+
+[node name="GestureSurface" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 28.0
+offset_top = 310.0
+offset_right = 1418.0
+offset_bottom = 970.0
+mouse_filter = 0
+script = ExtResource("2_gesture")
+
+[node name="StatusLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 55.0
+offset_top = 984.0
+offset_right = 1388.0
+offset_bottom = 1040.0
+theme_override_colors/font_color = Color(1, 0.91, 0.68, 1)
+theme_override_font_sizes/font_size = 22
+text = "点击开始制作，再从面团划向锅口。"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ActionsPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 1440.0
+offset_top = 310.0
+offset_right = 1890.0
+offset_bottom = 1040.0
+theme_override_styles/panel = SubResource("Style_side")
+
+[node name="Scroll" type="ScrollContainer" parent="ActionsPanel"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Actions" type="VBoxContainer" parent="ActionsPanel/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="BeginButton" type="Button" parent="ActionsPanel/Scroll/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "开始制作"
+
+[node name="CookRow" type="HBoxContainer" parent="ActionsPanel/Scroll/Actions"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LiftButton" type="Button" parent="ActionsPanel/Scroll/Actions/CookRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "提篮"
+
+[node name="ReturnButton" type="Button" parent="ActionsPanel/Scroll/Actions/CookRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "回锅"
+
+[node name="BowlButton" type="Button" parent="ActionsPanel/Scroll/Actions/CookRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "入碗"
+
+[node name="BrothTitle" type="Label" parent="ActionsPanel/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.42, 1)
+theme_override_font_sizes/font_size = 19
+text = "汤底"
+
+[node name="BrothRow" type="HBoxContainer" parent="ActionsPanel/Scroll/Actions"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ClearBrothButton" type="Button" parent="ActionsPanel/Scroll/Actions/BrothRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "清汤"
+
+[node name="TomatoBrothButton" type="Button" parent="ActionsPanel/Scroll/Actions/BrothRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "番茄汤"
+
+[node name="NoBrothButton" type="Button" parent="ActionsPanel/Scroll/Actions/BrothRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "无汤"
+
+[node name="ToppingTitle" type="Label" parent="ActionsPanel/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.42, 1)
+theme_override_font_sizes/font_size = 19
+text = "浇头"
+
+[node name="ToppingGrid" type="GridContainer" parent="ActionsPanel/Scroll/Actions"]
+layout_mode = 2
+columns = 2
+
+[node name="ScallionButton" type="Button" parent="ActionsPanel/Scroll/Actions/ToppingGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "葱花"
+
+[node name="TomatoToppingButton" type="Button" parent="ActionsPanel/Scroll/Actions/ToppingGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "番茄鸡蛋"
+
+[node name="ZhajiangButton" type="Button" parent="ActionsPanel/Scroll/Actions/ToppingGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "炸酱"
+
+[node name="CucumberButton" type="Button" parent="ActionsPanel/Scroll/Actions/ToppingGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "黄瓜丝"
+
+[node name="ServeButton" type="Button" parent="ActionsPanel/Scroll/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "递交这碗面"
+
+[node name="DiscardButton" type="Button" parent="ActionsPanel/Scroll/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_button_disabled")
+text = "废弃这碗并重做"
+
+[node name="CollectButton" type="Button" parent="ActionsPanel/Scroll/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 23
+theme_override_styles/normal = SubResource("Style_button_hover")
+theme_override_styles/hover = SubResource("Style_button")
+text = "点击收款"
+
+[node name="StockTitle" type="Label" parent="ActionsPanel/Scroll/Actions"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.42, 1)
+theme_override_font_sizes/font_size = 19
+text = "浇头补货"
+
+[node name="TomatoRestockButton" type="Button" parent="ActionsPanel/Scroll/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "补番茄鸡蛋 0/6（2币）"
+
+[node name="ZhajiangRestockButton" type="Button" parent="ActionsPanel/Scroll/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "补炸酱 0/6（3币）"
+
+[node name="ResultPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 200
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -220.0
+offset_right = 400.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_modal")
+
+[node name="Layout" type="VBoxContainer" parent="ResultPanel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="ResultTitle" type="Label" parent="ResultPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.4, 1)
+theme_override_font_sizes/font_size = 42
+text = "A · 95 分"
+horizontal_alignment = 1
+
+[node name="ResultDetails" type="Label" parent="ResultPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.9, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 22
+text = "刀工利落，熟度正好。"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResultCloseButton" type="Button" parent="ResultPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+text = "查看收款"
+
+[node name="DayPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 300
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -560.0
+offset_top = -410.0
+offset_right = 560.0
+offset_bottom = 410.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_modal")
+
+[node name="Layout" type="VBoxContainer" parent="DayPanel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="DayPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.4, 1)
+theme_override_font_sizes/font_size = 40
+text = "午市打烊"
+horizontal_alignment = 1
+
+[node name="DaySummary" type="Label" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 21
+text = "第 1 日结束"
+horizontal_alignment = 1
+
+[node name="GrowthTitle" type="Label" parent="DayPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.57, 0.9, 0.75, 1)
+theme_override_font_sizes/font_size = 24
+text = "面馆成长 · 次日生效"
+
+[node name="GrowthTomato" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "番茄鸡蛋配方 · 10币"
+
+[node name="GrowthKnife" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "锋利削面刀 · 30币"
+
+[node name="GrowthZhajiang" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "炸酱配方 · 24币"
+
+[node name="GrowthBasket" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "稳定面篮 · 45币"
+
+[node name="Buttons" type="HBoxContainer" parent="DayPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NextDayButton" type="Button" parent="DayPanel/Layout/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+text = "开始下一营业日"
+
+[node name="DayMenuButton" type="Button" parent="DayPanel/Layout/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+text = "返回主菜单选铺子"
+
+[node name="KnifeAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("3_knife")
+volume_db = -6.0
+
+[node name="BasketAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("4_basket")
+volume_db = -8.0
+
+[node name="ServeAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("5_serve")
+volume_db = -5.0
+
+[node name="PaymentAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("6_payment")
+volume_db = -5.0
+
+[node name="PatienceAudio" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("7_patience")
+volume_db = -7.0

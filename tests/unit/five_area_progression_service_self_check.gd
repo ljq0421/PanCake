@@ -12,6 +12,10 @@ func _initialize() -> void:
 func _run() -> void:
 	var starter := SERVICE.new({"coins": 10})
 	_check(starter.owns_area(&"area.pancake") and not starter.owns_stock(&"stock.pancake.egg"), "new game starts with pancake only and no egg")
+	var retired_tray_owner := SERVICE.new({"owned_growth_ids": [&"growth.capacity.pancake_holding_tray.second_slot"]})
+	_check(retired_tray_owner.owns_growth(&"growth.capacity.pancake_holding_tray.first_slot") and not retired_tray_owner.owns_growth(&"growth.capacity.pancake_holding_tray.second_slot"), "retired second-tray ownership migrates to the single tray")
+	var retired_tray_pending := SERVICE.new({"pending_growth_ids": [&"growth.capacity.pancake_holding_tray.second_slot"]})
+	_check(Array(retired_tray_pending.snapshot().get("pending_growth_ids", [])).has(&"growth.capacity.pancake_holding_tray.first_slot") and not Array(retired_tray_pending.snapshot().get("pending_growth_ids", [])).has(&"growth.capacity.pancake_holding_tray.second_slot"), "retired pending second-tray purchases migrate to the single tray")
 	_check(bool(starter.purchase(&"growth.add_on.pancake.egg").get("success", false)), "egg can be reserved with 10 coins without completing tutorial")
 	starter.set_day_open(false)
 	_check(bool(starter.begin_next_business_day().get("success", false)) and starter.owns_stock(&"stock.pancake.egg"), "egg activates on the next business day")

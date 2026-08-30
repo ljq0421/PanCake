@@ -13,11 +13,14 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var tray := WORKSTATION_SCENE.instantiate()
-	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray") is TextureButton, "formal workstation authors a clickable pancake holding tray")
-	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01") is TextureRect and tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02") is TextureRect, "holding tray authors two visible slots")
-	var first_source := tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/PancakeHoldingSource01") as ProductDragSource
-	var second_source := tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/PancakeHoldingSource02") as ProductDragSource
-	_check(first_source != null and second_source != null and first_source.size == Vector2(114.0, 114.0) and second_source.size == Vector2(114.0, 114.0), "packaged pancakes fill each finished-tray slot at a readable size")
+	var tray_button := tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray") as TextureButton
+	_check(tray_button != null and tray_button.texture_normal != null and tray_button.texture_normal.resource_path.ends_with("orange_juice/yinpin-v1.png"), "formal workstation authors one clickable holding tray with the requested artwork")
+	_check(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01") == null and tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02") == null, "retired duplicate tray frames are removed")
+	var sources: Array[ProductDragSource] = []
+	for source_index in range(1, 5):
+		sources.append(tray.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/PancakeHoldingSource%02d" % source_index) as ProductDragSource)
+	var first_source := sources[0]
+	_check(sources.size() == 4 and sources.all(func(source): return source != null and source.size == Vector2(84.0, 84.0)), "four readable packaged-pancake positions fit inside the single tray")
 	_check(WORKSTATION.PANCAKE_HOLDING_PACKAGE_TEXTURE.resource_path.ends_with("paper_bag_package_v1.png"), "finished-tray slots keep the packaged pancake artwork separate from order cards")
 	var egg_baocui := {
 		"ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.baocui"],
@@ -43,19 +46,16 @@ func _run() -> void:
 		var formal_workstation := WORKSTATION_SCENE.instantiate()
 		root.add_child(formal_workstation)
 		await process_frame
-		var first_slot_frame := formal_workstation.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame01") as TextureRect
-		var second_slot_frame := formal_workstation.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray/SlotFrame02") as TextureRect
-		_check(first_slot_frame != null and first_slot_frame.visible and second_slot_frame != null and not second_slot_frame.visible, "formal workstation shows only the first holding tray slot until the second slot is unlocked")
+		var formal_tray := formal_workstation.get_node_or_null("FiveAreaInfrastructure/PancakeHoldingTray") as TextureButton
+		_check(formal_tray != null and formal_tray.visible and int(session.call("pancake_holding_tray_slot_count")) == 4, "one purchase exposes the tray and all four storage positions")
 		formal_workstation.queue_free()
 		await process_frame
 	var workshop := WORKSHOP_SCENE.instantiate()
 	root.add_child(workshop)
 	await process_frame
-	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_first_slot") is Button and workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") is Button, "workshop authors separate pancake holding-tray upgrade hotspots")
-	var second_slot_tag := workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") as Button
-	_check(second_slot_tag != null and second_slot_tag.visible, "second holding-tray reservation tag remains visible with its prerequisite unmet")
-	var preview_slot := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview/Slot01") as TextureRect
-	_check(preview_slot != null and preview_slot.texture != null and preview_slot.texture.resource_path.ends_with("empty-square-ingredient-tray-v1.png"), "workshop preview uses the revised empty-square tray asset")
+	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_first_slot") is Button and workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") == null, "workshop exposes one holding-tray purchase and removes the second upgrade")
+	var preview := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview") as TextureRect
+	_check(preview != null and preview.texture != null and preview.texture.resource_path.ends_with("orange_juice/yinpin-v1.png"), "workshop preview uses the requested single-tray artwork")
 	workshop.free()
 	_finish()
 

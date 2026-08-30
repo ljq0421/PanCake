@@ -70,7 +70,7 @@ func _run() -> void:
 	var campaign := Dictionary(migrated.call("campaign_snapshot"))
 	var chapters := Dictionary(Dictionary(migrated.get("_campaign_data")).get("chapters", {}))
 	var breakfast := Dictionary(chapters.get(str(migrated.BREAKFAST_CHAPTER_ID), {}))
-	_check(migrated.has_save() and int(Dictionary(migrated.get("_campaign_data")).get("version", 0)) == 11, "version ten save automatically migrates to campaign version eleven")
+	_check(migrated.has_save() and int(Dictionary(migrated.get("_campaign_data")).get("version", 0)) == 12, "version ten save automatically migrates to campaign version twelve")
 	_check(int(campaign.get("global_reputation", -1)) == 22, "legacy shop reputation becomes the authoritative global reputation")
 	_check(not Dictionary(breakfast.get("progression", {})).has("reputation"), "migrated chapter state no longer persists a second reputation authority")
 	_check(int(Dictionary(breakfast.get("progression", {})).get("coins", -1)) == 37 and int(Dictionary(breakfast.get("progression", {})).get("current_day", -1)) == 7, "migration preserves first-shop coins and business day")

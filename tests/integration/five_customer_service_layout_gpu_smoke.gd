@@ -42,11 +42,15 @@ func _run() -> void:
 	workstation.call("_refresh_customer_service_slots", _preview_orders())
 	await process_frame
 	var card_rects: Array[Rect2] = []
+	var safe_area := workstation.get_node("SafeArea") as Control
+	var worktop_edge_y := (safe_area.get_global_transform() * Vector2(0.0, 646.0)).y
 	for slot_index in 5:
 		var slot := workstation.get_node("SafeArea/ServiceCustomer%d" % (slot_index + 1)) as CustomerServiceSlot
 		var order_panel := slot.get_node("OrderPanel") as Control
+		var portrait_bottom_y := (slot.portrait.get_global_transform() * Vector2(0.0, slot.portrait.size.y)).y
 		_check(slot.visible and not slot.is_presentation_transitioning(), "service slot %d is visibly settled" % (slot_index + 1))
 		_check(order_panel.size.x == 264.0 and order_panel.size.y <= 282.0, "service slot %d keeps the bounded variable-height card" % (slot_index + 1))
+		_check(absf(worktop_edge_y - portrait_bottom_y) <= 8.0, "service slot %d customer stands against the worktop edge" % (slot_index + 1))
 		card_rects.append(order_panel.get_global_rect())
 	for left_index in 4:
 		_check(not card_rects[left_index].intersects(card_rects[left_index + 1]), "adjacent order cards %d and %d do not overlap" % [left_index + 1, left_index + 2])

@@ -1,0 +1,48 @@
+{
+  "title": "选择第三章夜宵工作台构图",
+  "question": "三种方案都沿用前两章的中式卡通手绘世界，只改变烤串、炸串、装盘与顾客信息的同屏关系。请选择最适合长时间经营的一种。",
+  "options": [
+    {
+      "id": "twin-fire-wings",
+      "label": "双翼火线",
+      "kicker": "THE ROLL",
+      "lineage": "夜市摊主面前展开的左右双灶",
+      "thesis": "共享装盘台是中轴，左烤右炸像两翼展开，玩家视线始终回到订单的交汇点。",
+      "palette": ["#132827", "#F2B24F", "#C75C35", "#F5E3BA", "#6E8064"],
+      "materials": ["暖木案台", "深灰铸铁", "铜色油锅", "轻水粉纸纹", "夜灯暖光"],
+      "viewport": "1920×1080 摊主视角；顶部顾客与订单，中下部左侧长炭炉、中央装盘刷料台、右侧双篮炸锅，双产线等权且无面板切换。",
+      "risk": "中央装盘区若过宽会拉长鼠标往返，需要用近距离投放区和大热区控制疲劳。",
+      "comp": ".impeccable/mocks/decision/night-market-twin-fire-wings.png"
+    },
+    {
+      "id": "front-back-layers",
+      "label": "前店后灶",
+      "lineage": "窄摊位的前后两层操作案",
+      "thesis": "顾客取餐在上层，烤炸设备居中，备料与成品托盘贴近玩家形成清晰的三层纵深。",
+      "palette": ["#132827", "#F2B24F", "#C75C35", "#F5E3BA", "#6E8064"],
+      "materials": ["暖木案台", "深灰铸铁", "铜色油锅", "轻水粉纸纹", "夜灯暖光"],
+      "viewport": "1920×1080 轻俯视；上方顾客与交付窗，中层横向排列烤炉、共享刷料台和炸锅，下层连续食材轨道与成品托盘。",
+      "risk": "纵向层级最规整，但下层食材轨道可能压缩设备的视觉体量。",
+      "comp": ".impeccable/mocks/decision/night-market-front-back-layers.png"
+    },
+    {
+      "id": "hero-grill-side-fryer",
+      "label": "主烤副炸",
+      "lineage": "以炭火烤炉为招牌动作的主次工作台",
+      "thesis": "大烤炉占据中心舞台，炸锅作为右侧快速副线，形成最强记忆点与最短教学路径。",
+      "palette": ["#132827", "#F2B24F", "#C75C35", "#F5E3BA", "#6E8064"],
+      "materials": ["暖木案台", "深灰铸铁", "铜色油锅", "轻水粉纸纹", "夜灯暖光"],
+      "viewport": "1920×1080 摊主视角；中央超宽炭炉容纳六串，左侧备料刷料，右侧紧凑炸锅与沥油架，顶部订单与顾客压成一条夜市招牌带。",
+      "risk": "视觉最有主角，但炸串线容易被误读为附属玩法，后续成长空间较小。",
+      "comp": ".impeccable/mocks/decision/night-market-hero-grill-side-fryer.png"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  },
+  "steer": true
+}

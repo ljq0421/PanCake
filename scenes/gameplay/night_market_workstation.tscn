@@ -1,0 +1,1202 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/night_market_workstation.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/background/night_market_empty_stall-v1.png" id="2_background"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/layers/charcoal_grill-rgba-v1.png" id="3_grill"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/layers/plating_station-rgba-v1.png" id="4_plating"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/layers/twin_fryer_base-rgba-v1.png" id="5_fryer"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/sprites/skewer_doneness_atlas-rgba-v2.png" id="6_food"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/sprites/fryer_basket_states-rgba-v1.png" id="7_basket"]
+[ext_resource type="Texture2D" path="res://resources/art/night_market/sprites/cooking_effects_atlas-rgba-v1.png" id="8_effects"]
+
+[sub_resource type="StyleBoxFlat" id="Style_top"]
+bg_color = Color(0.025, 0.105, 0.11, 0.91)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.62, 0.25, 0.95)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="Style_device"]
+bg_color = Color(0.025, 0.105, 0.11, 0.84)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.36, 0.72, 0.62, 0.92)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="Style_button"]
+bg_color = Color(0.12, 0.38, 0.32, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.78, 0.65, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_button_hover"]
+bg_color = Color(0.19, 0.53, 0.41, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.74, 0.3, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_secondary"]
+bg_color = Color(0.06, 0.18, 0.18, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.53, 0.66, 0.58, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_danger"]
+bg_color = Color(0.43, 0.16, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.94, 0.49, 0.29, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_disabled"]
+bg_color = Color(0.07, 0.12, 0.12, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.24, 0.31, 0.29, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_modal"]
+bg_color = Color(0.025, 0.09, 0.095, 0.985)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.7, 0.28, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+content_margin_left = 30.0
+content_margin_top = 26.0
+content_margin_right = 30.0
+content_margin_bottom = 26.0
+
+[sub_resource type="StyleBoxFlat" id="Style_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.85, 0.5, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="NightMarketWorkstation" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="ArtLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="GrillArt" type="TextureRect" parent="ArtLayer"]
+layout_mode = 0
+offset_left = -10.0
+offset_top = 360.0
+offset_right = 750.0
+offset_bottom = 930.0
+mouse_filter = 2
+texture = ExtResource("3_grill")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillGlowLow" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 36.0
+offset_top = 500.0
+offset_right = 270.0
+offset_bottom = 700.0
+mouse_filter = 2
+texture = ExtResource("8_effects")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillGlowMedium" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 250.0
+offset_top = 480.0
+offset_right = 500.0
+offset_bottom = 700.0
+mouse_filter = 2
+texture = ExtResource("8_effects")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillGlowHigh" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 470.0
+offset_top = 455.0
+offset_right = 730.0
+offset_bottom = 700.0
+mouse_filter = 2
+texture = ExtResource("8_effects")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillSmokeArt" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 270.0
+offset_top = 360.0
+offset_right = 500.0
+offset_bottom = 600.0
+mouse_filter = 2
+texture = ExtResource("8_effects")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillFood0" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 28.0
+offset_top = 490.0
+offset_right = 183.0
+offset_bottom = 665.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillFood1" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 132.0
+offset_top = 490.0
+offset_right = 287.0
+offset_bottom = 665.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillFood2" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 236.0
+offset_top = 490.0
+offset_right = 391.0
+offset_bottom = 665.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillFood3" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 340.0
+offset_top = 490.0
+offset_right = 495.0
+offset_bottom = 665.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillFood4" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 444.0
+offset_top = 490.0
+offset_right = 599.0
+offset_bottom = 665.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GrillFood5" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 548.0
+offset_top = 490.0
+offset_right = 703.0
+offset_bottom = 665.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlatingArt" type="TextureRect" parent="ArtLayer"]
+layout_mode = 0
+offset_left = 590.0
+offset_top = 390.0
+offset_right = 1330.0
+offset_bottom = 945.0
+mouse_filter = 2
+texture = ExtResource("4_plating")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlateFood0" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 750.0
+offset_top = 660.0
+offset_right = 980.0
+offset_bottom = 875.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PlateFood1" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 920.0
+offset_top = 650.0
+offset_right = 1150.0
+offset_bottom = 865.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SeasoningEffectArt" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 810.0
+offset_top = 500.0
+offset_right = 1140.0
+offset_bottom = 800.0
+mouse_filter = 2
+texture = ExtResource("8_effects")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerBaseArt" type="TextureRect" parent="ArtLayer"]
+layout_mode = 0
+offset_left = 1130.0
+offset_top = 390.0
+offset_right = 1940.0
+offset_bottom = 950.0
+mouse_filter = 2
+texture = ExtResource("5_fryer")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerFoodArt" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1260.0
+offset_top = 520.0
+offset_right = 1500.0
+offset_bottom = 750.0
+mouse_filter = 2
+texture = ExtResource("6_food")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerBasketArt" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1175.0
+offset_top = 440.0
+offset_right = 1665.0
+offset_bottom = 735.0
+mouse_filter = 2
+texture = ExtResource("7_basket")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FryerEffectArt" type="TextureRect" parent="ArtLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1240.0
+offset_top = 500.0
+offset_right = 1530.0
+offset_bottom = 760.0
+mouse_filter = 2
+texture = ExtResource("8_effects")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NightShade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.025, 0.03, 0.12)
+
+[node name="CustomerPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 286.0
+offset_bottom = 302.0
+theme_override_styles/panel = SubResource("Style_top")
+
+[node name="Layout" type="VBoxContainer" parent="CustomerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ShopSign" type="Label" parent="CustomerPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.74, 0.31, 1)
+theme_override_font_sizes/font_size = 28
+text = "灯火串铺"
+horizontal_alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="CustomerPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 188)
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 3
+stretch_mode = 5
+
+[node name="CustomerHint" type="Label" parent="CustomerPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.9, 0.82, 1)
+theme_override_font_sizes/font_size = 16
+text = "夜深了，客人更看重出餐节奏"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="OrderPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 306.0
+offset_top = 18.0
+offset_right = 1198.0
+offset_bottom = 302.0
+theme_override_styles/panel = SubResource("Style_top")
+
+[node name="Layout" type="VBoxContainer" parent="OrderPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="OrderTitle" type="Label" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.38, 1)
+theme_override_font_sizes/font_size = 34
+text = "新手双拼"
+
+[node name="OrderDetails" type="Label" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.92, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 22
+text = "需要：羊肉串 ＋ 炸藕片\n教学不限时"
+vertical_alignment = 1
+
+[node name="TutorialLabel" type="Label" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.94, 0.76, 1)
+theme_override_font_sizes/font_size = 20
+text = "教学：选择中火，放入一串羊肉串。"
+autowrap_mode = 2
+
+[node name="RefuseButton" type="Button" parent="OrderPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "谢绝当前订单"
+
+[node name="StatsPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 1218.0
+offset_top = 18.0
+offset_right = 1896.0
+offset_bottom = 302.0
+theme_override_styles/panel = SubResource("Style_top")
+
+[node name="Layout" type="VBoxContainer" parent="StatsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TimerLabel" type="Label" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.3, 1)
+theme_override_font_sizes/font_size = 42
+text = "教学不限时"
+horizontal_alignment = 1
+
+[node name="EconomyLabel" type="Label" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.94, 0.85, 1)
+theme_override_font_sizes/font_size = 20
+text = "串铺金币 0 · 全局口碑 0 · 第 1 日"
+horizontal_alignment = 1
+
+[node name="StockRow" type="HBoxContainer" parent="StatsPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ChickenRestockButton" type="Button" parent="StatsPanel/Layout/StockRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "补鸡肉 0/6（2币）"
+
+[node name="PotatoRestockButton" type="Button" parent="StatsPanel/Layout/StockRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "补薯片 0/6（2币）"
+
+[node name="EndDayButton" type="Button" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "提前结束营业"
+
+[node name="GrillPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 558.0
+offset_right = 694.0
+offset_bottom = 978.0
+theme_override_styles/panel = SubResource("Style_device")
+
+[node name="Layout" type="VBoxContainer" parent="GrillPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="GrillPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.3, 1)
+theme_override_font_sizes/font_size = 27
+text = "炭火烤串 · 点烤位翻面"
+
+[node name="ZoneRow" type="HBoxContainer" parent="GrillPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ZoneLowButton" type="Button" parent="GrillPanel/Layout/ZoneRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "小火"
+
+[node name="ZoneMediumButton" type="Button" parent="GrillPanel/Layout/ZoneRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "中火 ✓"
+
+[node name="ZoneHighButton" type="Button" parent="GrillPanel/Layout/ZoneRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "旺火"
+
+[node name="Slots" type="HBoxContainer" parent="GrillPanel/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Low" type="VBoxContainer" parent="GrillPanel/Layout/Slots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GrillSlot0" type="Button" parent="GrillPanel/Layout/Slots/Low"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "小火 1\n空位"
+
+[node name="GrillSlot1" type="Button" parent="GrillPanel/Layout/Slots/Low"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "小火 2\n空位"
+
+[node name="Medium" type="VBoxContainer" parent="GrillPanel/Layout/Slots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GrillSlot2" type="Button" parent="GrillPanel/Layout/Slots/Medium"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "▶ 中火 1\n空位"
+
+[node name="GrillSlot3" type="Button" parent="GrillPanel/Layout/Slots/Medium"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "中火 2\n空位"
+
+[node name="High" type="VBoxContainer" parent="GrillPanel/Layout/Slots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="GrillSlot4" type="Button" parent="GrillPanel/Layout/Slots/High"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "旺火 1\n空位"
+
+[node name="GrillSlot5" type="Button" parent="GrillPanel/Layout/Slots/High"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "旺火 2\n空位"
+
+[node name="AddRow" type="HBoxContainer" parent="GrillPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AddLambButton" type="Button" parent="GrillPanel/Layout/AddRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "放羊肉串"
+
+[node name="AddChickenButton" type="Button" parent="GrillPanel/Layout/AddRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "放鸡肉串"
+
+[node name="PlateGrillButton" type="Button" parent="GrillPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "取下第 3 烤位并装盘"
+
+[node name="PlatePanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 714.0
+offset_top = 558.0
+offset_right = 1224.0
+offset_bottom = 978.0
+theme_override_styles/panel = SubResource("Style_device")
+
+[node name="Layout" type="VBoxContainer" parent="PlatePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="PlatePanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.3, 1)
+theme_override_font_sizes/font_size = 27
+text = "中央装盘 · 两条火线在这里汇合"
+horizontal_alignment = 1
+
+[node name="PlateItemsLabel" type="Label" parent="PlatePanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 20
+text = "托盘为空"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SeasoningTitle" type="Label" parent="PlatePanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.61, 0.91, 0.72, 1)
+theme_override_font_sizes/font_size = 17
+text = "作用于最近一串尚未调味的成品"
+horizontal_alignment = 1
+
+[node name="SeasoningGrid" type="GridContainer" parent="PlatePanel/Layout"]
+layout_mode = 2
+columns = 2
+
+[node name="CuminButton" type="Button" parent="PlatePanel/Layout/SeasoningGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "撒孜然"
+
+[node name="ChiliButton" type="Button" parent="PlatePanel/Layout/SeasoningGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "撒辣椒面"
+
+[node name="SaltPepperButton" type="Button" parent="PlatePanel/Layout/SeasoningGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "撒椒盐"
+
+[node name="PlumButton" type="Button" parent="PlatePanel/Layout/SeasoningGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "撒甘梅粉"
+
+[node name="ServeButton" type="Button" parent="PlatePanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "递交这份夜宵"
+
+[node name="BottomRow" type="HBoxContainer" parent="PlatePanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DiscardButton" type="Button" parent="PlatePanel/Layout/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_danger")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "废弃当前制作"
+
+[node name="CollectButton" type="Button" parent="PlatePanel/Layout/BottomRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "点击收款 +18"
+
+[node name="FryerPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 1244.0
+offset_top = 558.0
+offset_right = 1890.0
+offset_bottom = 978.0
+theme_override_styles/panel = SubResource("Style_device")
+
+[node name="Layout" type="VBoxContainer" parent="FryerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="FryerPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.72, 0.3, 1)
+theme_override_font_sizes/font_size = 27
+text = "炸串 · 控油温、提篮与沥油"
+
+[node name="FryerStatusLabel" type="Label" parent="FryerPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 82)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 18
+text = "油温 170℃ · 标准\n炸篮：空 ×0 · 提起\n炸制 0.0 秒 · 沥油 0.0 秒"
+
+[node name="PowerRow" type="HBoxContainer" parent="FryerPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PowerLowButton" type="Button" parent="FryerPanel/Layout/PowerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "低温 160℃"
+
+[node name="PowerStandardButton" type="Button" parent="FryerPanel/Layout/PowerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "标准 178℃"
+
+[node name="PowerHighButton" type="Button" parent="FryerPanel/Layout/PowerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "高温 195℃"
+
+[node name="AddRow" type="HBoxContainer" parent="FryerPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AddLotusButton" type="Button" parent="FryerPanel/Layout/AddRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "放藕片串"
+
+[node name="AddPotatoButton" type="Button" parent="FryerPanel/Layout/AddRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "放薯片串"
+
+[node name="ActionRow" type="HBoxContainer" parent="FryerPanel/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="LowerFryerButton" type="Button" parent="FryerPanel/Layout/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "下炸篮"
+
+[node name="LiftFryerButton" type="Button" parent="FryerPanel/Layout/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "提炸篮"
+
+[node name="PlateFryerButton" type="Button" parent="FryerPanel/Layout/ActionRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "装盘"
+
+[node name="Hint" type="Label" parent="FryerPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.88, 0.73, 1)
+theme_override_font_sizes/font_size = 17
+text = "藕片目标：170–185℃ · 炸 4.5–7.0 秒 · 沥油 0.8–1.8 秒"
+autowrap_mode = 2
+
+[node name="StatusPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 992.0
+offset_right = 1890.0
+offset_bottom = 1062.0
+theme_override_styles/panel = SubResource("Style_top")
+
+[node name="StatusLabel" type="Label" parent="StatusPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.97, 0.79, 1)
+theme_override_font_sizes/font_size = 21
+text = "先完成教学双拼。"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResultDim" type="ColorRect" parent="."]
+visible = false
+z_index = 100
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.01, 0.025, 0.03, 0.72)
+
+[node name="ResultPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 110
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -390.0
+offset_top = -220.0
+offset_right = 390.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_modal")
+
+[node name="Layout" type="VBoxContainer" parent="ResultPanel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="ResultTitle" type="Label" parent="ResultPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.31, 1)
+theme_override_font_sizes/font_size = 42
+text = "A · 96 分"
+horizontal_alignment = 1
+
+[node name="ResultDetails" type="Label" parent="ResultPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.93, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 22
+text = "两条火线配合漂亮。\n单品 96 · 配方 100 · 时间 100\n待收款：18 金币"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResultCloseButton" type="Button" parent="ResultPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "查看托盘与收款"
+
+[node name="DayDim" type="ColorRect" parent="."]
+visible = false
+z_index = 120
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.01, 0.025, 0.03, 0.78)
+
+[node name="DayPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+z_index = 130
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = -350.0
+offset_right = 520.0
+offset_bottom = 350.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_modal")
+
+[node name="Layout" type="VBoxContainer" parent="DayPanel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="DayPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.31, 1)
+theme_override_font_sizes/font_size = 40
+text = "灯火收摊"
+horizontal_alignment = 1
+
+[node name="DaySummary" type="Label" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 0.88, 1)
+theme_override_font_sizes/font_size = 21
+text = "第 1 日结束\n完成 0 单 · 营收 0 金币 · 口碑 +0\n成长购买后将在下一营业日生效。"
+horizontal_alignment = 1
+
+[node name="GrowthTitle" type="Label" parent="DayPanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.61, 0.92, 0.73, 1)
+theme_override_font_sizes/font_size = 24
+text = "本店成长"
+
+[node name="GrowthChicken" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "香辣鸡肉串配方 · 12币"
+
+[node name="GrowthEmberBaffle" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "余火挡板 · 28币"
+
+[node name="GrowthPotato" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "甘梅炸薯片配方 · 20币"
+
+[node name="GrowthThermostaticFryer" type="Button" parent="DayPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/disabled = SubResource("Style_disabled")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "恒温炸锅 · 44币"
+
+[node name="DayButtons" type="HBoxContainer" parent="DayPanel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NextDayButton" type="Button" parent="DayPanel/Layout/DayButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "开始下一营业日"
+
+[node name="DayMenuButton" type="Button" parent="DayPanel/Layout/DayButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "返回铺子选择"

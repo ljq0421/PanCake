@@ -19,14 +19,17 @@ const SETTINGS_PATH := "user://project_cake_settings.cfg"
 const SAVE_WRITE_MERGE_SECONDS := 2.0
 const SAVE_TEMP_SUFFIX := ".tmp"
 const SAVE_BACKUP_SUFFIX := ".bak"
-const SAVE_VERSION := 11
+const SAVE_VERSION := 12
 const SAVE_KIND := "project_cake_campaign_v1"
+const PREVIOUS_SAVE_VERSION := 11
 const LEGACY_SAVE_VERSION := 10
 const LEGACY_SAVE_KIND := "breakfast_stall_four_area_v1"
 const BREAKFAST_CHAPTER_ID := &"chapter.breakfast_stall"
 const NOODLE_CHAPTER_ID := &"chapter.noodle_shop"
+const NIGHT_MARKET_CHAPTER_ID := &"chapter.night_market"
 const BREAKFAST_SCENE_PATH := "res://scenes/main/main.tscn"
 const NOODLE_SCENE_PATH := "res://scenes/main/noodle_shop_main.tscn"
+const NIGHT_MARKET_SCENE_PATH := "res://scenes/main/night_market_main.tscn"
 const ORDER_PROMOTIONS_KEY := "pending_order_promotions"
 const SPECIAL_CUSTOMER_STATE_KEY := "special_customer_state"
 const FIRST_BUSINESS_DAY_DURATION_SECONDS := 60.0
@@ -65,6 +68,8 @@ const BUSINESS_REPORT_SERVICE := preload("res://scripts/services/business_report
 const DAILY_GOAL_SERVICE := preload("res://scripts/services/daily_goal_service.gd")
 const ATTENTION_SERVICE := preload("res://scripts/services/attention_service.gd")
 const NOODLE_SHOP_SESSION := preload("res://scripts/services/noodle_shop_session.gd")
+const NOODLE_SHOP_CATALOG := preload("res://scripts/data/noodle_shop_catalog.gd")
+const NIGHT_MARKET_SESSION := preload("res://scripts/services/night_market_session.gd")
 const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.04": {
 		"product_id": &"product.youtiao.plain",
@@ -127,6 +132,7 @@ var _save_data: Dictionary = {}
 var _campaign_data: Dictionary = {}
 var _active_chapter: StringName = BREAKFAST_CHAPTER_ID
 var _noodle_session: RefCounted
+var _night_market_session: RefCounted
 var _active_save_path := SAVE_PATH
 var _active_settings_path := SETTINGS_PATH
 var _settings: Dictionary = DEFAULT_SETTINGS.duplicate(true)
@@ -153,6 +159,8 @@ func _ready() -> void:
 	_load_save()
 	if has_save() and _active_chapter == NOODLE_CHAPTER_ID:
 		_restore_noodle_session()
+	elif has_save() and _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_restore_night_market_session()
 	else:
 		_restore_progression()
 		_reconcile_completed_tutorial_order()
@@ -211,21 +219,27 @@ func chapter_scene_path(chapter_id: StringName) -> String:
 		return BREAKFAST_SCENE_PATH
 	if chapter_id == NOODLE_CHAPTER_ID:
 		return NOODLE_SCENE_PATH
+	if chapter_id == NIGHT_MARKET_CHAPTER_ID:
+		return NIGHT_MARKET_SCENE_PATH
 	return ""
 
 
 func chapter_statuses() -> Array[Dictionary]:
-	return [chapter_status(BREAKFAST_CHAPTER_ID), chapter_status(NOODLE_CHAPTER_ID)]
+	return [chapter_status(BREAKFAST_CHAPTER_ID), chapter_status(NOODLE_CHAPTER_ID), chapter_status(NIGHT_MARKET_CHAPTER_ID)]
 
 
 func chapter_status(chapter_id: StringName) -> Dictionary:
-	if chapter_id not in [BREAKFAST_CHAPTER_ID, NOODLE_CHAPTER_ID]:
+	if chapter_id not in [BREAKFAST_CHAPTER_ID, NOODLE_CHAPTER_ID, NIGHT_MARKET_CHAPTER_ID]:
 		return {"success": false, "reason": &"unknown_chapter", "chapter_id": chapter_id}
 	var unlocked_ids := Array(Dictionary(_campaign_data.get("campaign", {})).get("unlocked_chapter_ids", [BREAKFAST_CHAPTER_ID]))
 	var unlocked := chapter_id == BREAKFAST_CHAPTER_ID or unlocked_ids.has(chapter_id) or unlocked_ids.has(str(chapter_id))
 	var chapters := Dictionary(_campaign_data.get("chapters", {}))
 	var chapter_data := Dictionary(chapters.get(str(chapter_id), {}))
-	var progress := _breakfast_milestone_progress(_breakfast_chapter_snapshot()) if chapter_id == NOODLE_CHAPTER_ID else {}
+	var progress: Dictionary = {}
+	if chapter_id == NOODLE_CHAPTER_ID:
+		progress = _breakfast_milestone_progress(_breakfast_chapter_snapshot())
+	elif chapter_id == NIGHT_MARKET_CHAPTER_ID:
+		progress = _noodle_milestone_progress(_noodle_chapter_snapshot())
 	var day := 1
 	var coins := 0
 	var day_open_value := false
@@ -238,10 +252,15 @@ func chapter_status(chapter_id: StringName) -> Dictionary:
 		day = maxi(int(chapter_data.get("current_day", 1)), 1)
 		coins = maxi(int(chapter_data.get("coins", 0)), 0)
 		day_open_value = bool(chapter_data.get("day_open", true))
+	var label := "煎饼铺"
+	if chapter_id == NOODLE_CHAPTER_ID:
+		label = "老城刀削面馆"
+	elif chapter_id == NIGHT_MARKET_CHAPTER_ID:
+		label = "灯火串铺"
 	return {
 		"success": true,
 		"chapter_id": chapter_id,
-		"label": "煎饼铺" if chapter_id == BREAKFAST_CHAPTER_ID else "老城刀削面馆",
+		"label": label,
 		"unlocked": unlocked,
 		"active": chapter_id == _active_chapter,
 		"initialized": not chapter_data.is_empty(),
@@ -272,11 +291,16 @@ func select_chapter(chapter_id: StringName) -> Dictionary:
 	if chapter_id == NOODLE_CHAPTER_ID and not chapters.has(str(chapter_id)):
 		_noodle_session = NOODLE_SHOP_SESSION.new()
 		chapters[str(chapter_id)] = _noodle_session.call("snapshot")
+	elif chapter_id == NIGHT_MARKET_CHAPTER_ID and not chapters.has(str(chapter_id)):
+		_night_market_session = NIGHT_MARKET_SESSION.new()
+		chapters[str(chapter_id)] = _night_market_session.call("snapshot")
 	_campaign_data["chapters"] = chapters
 	_save_data = Dictionary(chapters.get(str(chapter_id), {})).duplicate(true)
 	_clear_chapter_services()
 	if chapter_id == NOODLE_CHAPTER_ID:
 		_restore_noodle_session()
+	elif chapter_id == NIGHT_MARKET_CHAPTER_ID:
+		_restore_night_market_session()
 	else:
 		_restore_progression()
 	_write_save()
@@ -448,6 +472,155 @@ func _noodle_mutation(method_name: StringName) -> Dictionary:
 	return result
 
 
+func night_market_shop_snapshot() -> Dictionary:
+	_ensure_night_market_session()
+	return Dictionary(_night_market_session.call("snapshot")).duplicate(true)
+
+
+func night_market_ensure_active_order() -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("ensure_active_order"))
+	_sync_night_market_session_to_save()
+	_touch_and_write()
+	return result
+
+
+func night_market_add_grill_skewer(item_id: StringName, zone_id: StringName) -> Dictionary:
+	return _night_market_mutation(&"add_grill_skewer", [item_id, zone_id])
+
+
+func night_market_flip_grill_slot(slot_index: int) -> Dictionary:
+	return _night_market_mutation(&"flip_grill_slot", [slot_index])
+
+
+func night_market_plate_grill_slot(slot_index: int) -> Dictionary:
+	return _night_market_mutation(&"plate_grill_slot", [slot_index])
+
+
+func night_market_add_fryer_item(item_id: StringName) -> Dictionary:
+	return _night_market_mutation(&"add_fryer_item", [item_id])
+
+
+func night_market_set_fryer_power(power_id: StringName) -> Dictionary:
+	return _night_market_mutation(&"set_fryer_power", [power_id])
+
+
+func night_market_lower_fryer() -> Dictionary:
+	return _night_market_mutation(&"lower_fryer")
+
+
+func night_market_lift_fryer() -> Dictionary:
+	return _night_market_mutation(&"lift_fryer")
+
+
+func night_market_plate_fryer() -> Dictionary:
+	return _night_market_mutation(&"plate_fryer")
+
+
+func night_market_season_last(seasoning_id: StringName) -> Dictionary:
+	return _night_market_mutation(&"season_last", [seasoning_id])
+
+
+func night_market_serve_plate() -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("serve_plate"))
+	if bool(result.get("success", false)):
+		_apply_global_reputation_delta(int(result.get("reputation_delta", 0)))
+		_sync_night_market_session_to_save()
+		_touch_and_write()
+		order_settled.emit(result.duplicate(true))
+		campaign_changed.emit(campaign_snapshot())
+	return result
+
+
+func night_market_collect_payment() -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("collect_payment"))
+	if bool(result.get("success", false)):
+		_sync_night_market_session_to_save()
+		_touch_and_write()
+		coins_changed.emit(int(result.get("coins", 0)))
+	return result
+
+
+func night_market_refuse_order() -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("refuse_order"))
+	if bool(result.get("success", false)):
+		_apply_global_reputation_delta(int(result.get("reputation_delta", 0)))
+		_sync_night_market_session_to_save()
+		_touch_and_write()
+		campaign_changed.emit(campaign_snapshot())
+	return result
+
+
+func night_market_discard_production() -> Dictionary:
+	return _night_market_mutation(&"discard_production")
+
+
+func night_market_advance(delta: float) -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("advance", delta))
+	var reputation_delta := int(result.get("reputation_delta", 0))
+	if reputation_delta != 0:
+		_apply_global_reputation_delta(reputation_delta)
+		campaign_changed.emit(campaign_snapshot())
+	if bool(result.get("changed", false)):
+		_sync_night_market_session_to_save()
+		_touch_and_write()
+	return result
+
+
+func night_market_restock(stock_id: StringName) -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("restock", stock_id))
+	if bool(result.get("success", false)):
+		_sync_night_market_session_to_save()
+		_touch_and_write()
+		coins_changed.emit(int(result.get("coins", 0)))
+	return result
+
+
+func night_market_growth_overview() -> Array[Dictionary]:
+	_ensure_night_market_session()
+	return Array(_night_market_session.call("growth_overview")).duplicate(true)
+
+
+func night_market_purchase_growth(growth_id: StringName) -> Dictionary:
+	return _night_market_mutation(&"purchase_growth", [growth_id])
+
+
+func night_market_milestone_progress() -> Dictionary:
+	_ensure_night_market_session()
+	return Dictionary(_night_market_session.call("milestone_progress")).duplicate(true)
+
+
+func night_market_end_day(reason: StringName = &"manual") -> Dictionary:
+	_ensure_night_market_session()
+	var bill := Dictionary(_night_market_session.call("end_day", reason))
+	_sync_night_market_session_to_save()
+	_touch_and_write(true)
+	return bill
+
+
+func night_market_begin_next_day() -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.call("begin_next_day"))
+	if bool(result.get("success", false)):
+		_sync_night_market_session_to_save()
+		_touch_and_write(true)
+	return result
+
+
+func _night_market_mutation(method_name: StringName, arguments: Array = []) -> Dictionary:
+	_ensure_night_market_session()
+	var result := Dictionary(_night_market_session.callv(method_name, arguments))
+	if bool(result.get("success", false)):
+		_sync_night_market_session_to_save()
+		_touch_and_write()
+	return result
+
+
 func open_soy_test_profile() -> Dictionary:
 	# Keep the developer-facing soy test save in a separate user:// file.  The
 	# normal save remains loaded at startup and is never overwritten by the
@@ -508,6 +681,7 @@ func begin_new_game() -> Dictionary:
 	var now := int(Time.get_unix_time_from_system())
 	_active_chapter = BREAKFAST_CHAPTER_ID
 	_noodle_session = null
+	_night_market_session = null
 	_progression = PROGRESSION_SERVICE.new()
 	_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new()
 	_order_service = FIVE_AREA_ORDER_SERVICE.new()
@@ -578,6 +752,10 @@ func continue_game() -> bool:
 		_ensure_noodle_session()
 		_noodle_session.call("set_business_paused", true)
 		_save_data = Dictionary(_noodle_session.call("snapshot")).duplicate(true)
+	elif _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_ensure_night_market_session()
+		_night_market_session.call("set_business_paused", true)
+		_save_data = Dictionary(_night_market_session.call("snapshot")).duplicate(true)
 	else:
 		_save_data["last_played_at_unix"] = int(Time.get_unix_time_from_system())
 		_save_data["business_paused"] = true
@@ -616,6 +794,8 @@ func rollback_scene_binding_save_batch() -> void:
 	_save_flush_elapsed = _scene_binding_save_flush_elapsed_before_batch
 	if _active_chapter == NOODLE_CHAPTER_ID:
 		_restore_noodle_session()
+	elif _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_restore_night_market_session()
 	else:
 		_restore_progression()
 	_scene_binding_save_active_reset()
@@ -657,7 +837,11 @@ func resume_summary() -> String:
 	if not has_save():
 		return "还没有营业记录，新游戏会从第一位顾客开始。"
 	var timestamp := int(_campaign_data.get("last_played_at_unix", _save_data.get("last_played_at_unix", 0)))
-	var label := "煎饼铺" if _active_chapter == BREAKFAST_CHAPTER_ID else "老城刀削面馆"
+	var label := "煎饼铺"
+	if _active_chapter == NOODLE_CHAPTER_ID:
+		label = "老城刀削面馆"
+	elif _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		label = "灯火串铺"
 	var orders := int(_save_data.get("orders_completed", 0))
 	return "%s  ·  %s  ·  已完成 %d 单" % [label, _format_timestamp(timestamp), orders]
 
@@ -666,6 +850,7 @@ func reset_incompatible_development_save() -> Dictionary:
 	_save_data.clear()
 	_campaign_data.clear()
 	_noodle_session = null
+	_night_market_session = null
 	_active_chapter = BREAKFAST_CHAPTER_ID
 	_save_dirty = false
 	_save_flush_elapsed = 0.0
@@ -714,6 +899,9 @@ func is_business_paused() -> bool:
 	if _active_chapter == NOODLE_CHAPTER_ID:
 		_ensure_noodle_session()
 		return bool(_noodle_session.get("business_paused"))
+	if _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_ensure_night_market_session()
+		return bool(_night_market_session.get("business_paused"))
 	return bool(_save_data.get("business_paused", false))
 
 
@@ -724,6 +912,12 @@ func set_business_paused(paused: bool) -> void:
 		_ensure_noodle_session()
 		_noodle_session.call("set_business_paused", paused)
 		_sync_noodle_session_to_save()
+		_touch_and_write()
+		return
+	if _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_ensure_night_market_session()
+		_night_market_session.call("set_business_paused", paused)
+		_sync_night_market_session_to_save()
 		_touch_and_write()
 		return
 	_save_data["business_paused"] = paused
@@ -855,6 +1049,12 @@ func mark_session_left() -> void:
 		_ensure_noodle_session()
 		_noodle_session.call("set_business_paused", true)
 		_sync_noodle_session_to_save()
+		_touch_and_write(true)
+		return
+	if _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_ensure_night_market_session()
+		_night_market_session.call("set_business_paused", true)
+		_sync_night_market_session_to_save()
 		_touch_and_write(true)
 		return
 	_save_data["business_paused"] = true
@@ -4215,6 +4415,7 @@ func _load_save() -> void:
 	_save_data.clear()
 	_campaign_data.clear()
 	_noodle_session = null
+	_night_market_session = null
 	_active_chapter = BREAKFAST_CHAPTER_ID
 	_recover_interrupted_save_write()
 	if not FileAccess.file_exists(_active_save_path):
@@ -4231,6 +4432,13 @@ func _load_save() -> void:
 			_campaign_data = parsed_data
 			_ensure_campaign_shape()
 			_load_active_chapter_snapshot()
+			return
+		if int(parsed_data.get("version", 0)) == PREVIOUS_SAVE_VERSION and str(parsed_data.get("save_kind", "")) == SAVE_KIND:
+			_campaign_data = parsed_data
+			_campaign_data["version"] = SAVE_VERSION
+			_ensure_campaign_shape()
+			_load_active_chapter_snapshot()
+			_write_save()
 			return
 		if int(parsed_data.get("version", 0)) == LEGACY_SAVE_VERSION and str(parsed_data.get("save_kind", "")) == LEGACY_SAVE_KIND:
 			_migrate_legacy_campaign_save(parsed_data)
@@ -4270,7 +4478,7 @@ func _ensure_campaign_shape() -> void:
 	var unlocked: Array[StringName] = []
 	for value in Array(campaign.get("unlocked_chapter_ids", [])):
 		var chapter_id := StringName(value)
-		if chapter_id in [BREAKFAST_CHAPTER_ID, NOODLE_CHAPTER_ID] and not unlocked.has(chapter_id):
+		if chapter_id in [BREAKFAST_CHAPTER_ID, NOODLE_CHAPTER_ID, NIGHT_MARKET_CHAPTER_ID] and not unlocked.has(chapter_id):
 			unlocked.append(chapter_id)
 	if not unlocked.has(BREAKFAST_CHAPTER_ID):
 		unlocked.push_front(BREAKFAST_CHAPTER_ID)
@@ -4293,14 +4501,44 @@ func _load_active_chapter_snapshot() -> void:
 	_save_data = Dictionary(chapters.get(str(_active_chapter), {})).duplicate(true)
 	if _active_chapter == BREAKFAST_CHAPTER_ID:
 		_ensure_save_shape()
-	else:
+	elif _active_chapter == NOODLE_CHAPTER_ID:
 		_restore_noodle_session()
+	else:
+		_restore_night_market_session()
 
 
 func _breakfast_chapter_snapshot() -> Dictionary:
 	if _active_chapter == BREAKFAST_CHAPTER_ID and not _save_data.is_empty():
 		return _save_data.duplicate(true)
 	return Dictionary(Dictionary(_campaign_data.get("chapters", {})).get(str(BREAKFAST_CHAPTER_ID), {})).duplicate(true)
+
+
+func _noodle_chapter_snapshot() -> Dictionary:
+	if _active_chapter == NOODLE_CHAPTER_ID:
+		if _noodle_session != null:
+			return Dictionary(_noodle_session.call("snapshot")).duplicate(true)
+		if not _save_data.is_empty():
+			return _save_data.duplicate(true)
+	return Dictionary(Dictionary(_campaign_data.get("chapters", {})).get(str(NOODLE_CHAPTER_ID), {})).duplicate(true)
+
+
+func _noodle_milestone_progress(noodle_snapshot: Dictionary) -> Dictionary:
+	var owned_value: Variant = noodle_snapshot.get("owned_growth_ids", [])
+	var owned_count := 0
+	for growth_id in NOODLE_SHOP_CATALOG.GROWTH_DISPLAY_ORDER:
+		var is_owned := false
+		if owned_value is Dictionary:
+			var owned := Dictionary(owned_value)
+			is_owned = bool(owned.get(growth_id, owned.get(str(growth_id), false)))
+		elif owned_value is Array or owned_value is PackedStringArray:
+			is_owned = Array(owned_value).has(growth_id) or Array(owned_value).has(str(growth_id))
+		if is_owned:
+			owned_count += 1
+	return {
+		"owned_growth_count": owned_count,
+		"required_growth_count": NOODLE_SHOP_CATALOG.GROWTH_DISPLAY_ORDER.size(),
+		"complete": owned_count == NOODLE_SHOP_CATALOG.GROWTH_DISPLAY_ORDER.size(),
+	}
 
 
 func _breakfast_milestone_progress(breakfast_snapshot: Dictionary) -> Dictionary:
@@ -4340,6 +4578,9 @@ func _refresh_campaign_unlocks() -> bool:
 	if not unlocked.has(NOODLE_CHAPTER_ID) and bool(_breakfast_milestone_progress(_breakfast_chapter_snapshot()).get("complete", false)):
 		unlocked.append(NOODLE_CHAPTER_ID)
 		changed = true
+	if not unlocked.has(NIGHT_MARKET_CHAPTER_ID) and bool(_noodle_milestone_progress(_noodle_chapter_snapshot()).get("complete", false)):
+		unlocked.append(NIGHT_MARKET_CHAPTER_ID)
+		changed = true
 	campaign["unlocked_chapter_ids"] = unlocked
 	_campaign_data["campaign"] = campaign
 	return changed
@@ -4372,6 +4613,15 @@ func _ensure_noodle_session() -> void:
 		_restore_noodle_session()
 
 
+func _restore_night_market_session() -> void:
+	_night_market_session = NIGHT_MARKET_SESSION.new(_save_data)
+
+
+func _ensure_night_market_session() -> void:
+	if _night_market_session == null:
+		_restore_night_market_session()
+
+
 func _clear_chapter_services() -> void:
 	_progression = null
 	_pancake_holding_tray = null
@@ -4380,6 +4630,7 @@ func _clear_chapter_services() -> void:
 	_business_report_service = null
 	_daily_goal_service = null
 	_noodle_session = null
+	_night_market_session = null
 
 
 func _sync_noodle_session_to_save() -> void:
@@ -4389,11 +4640,20 @@ func _sync_noodle_session_to_save() -> void:
 	_save_data = Dictionary(_noodle_session.call("snapshot")).duplicate(true)
 
 
+func _sync_night_market_session_to_save() -> void:
+	if _active_chapter != NIGHT_MARKET_CHAPTER_ID:
+		return
+	_ensure_night_market_session()
+	_save_data = Dictionary(_night_market_session.call("snapshot")).duplicate(true)
+
+
 func _sync_active_chapter_to_campaign() -> void:
 	if _campaign_data.is_empty():
 		return
 	if _active_chapter == NOODLE_CHAPTER_ID:
 		_sync_noodle_session_to_save()
+	elif _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_sync_night_market_session_to_save()
 	elif _save_data.has("progression"):
 		var breakfast_progression := Dictionary(_save_data.get("progression", {})).duplicate(true)
 		breakfast_progression.erase("reputation")
@@ -4411,6 +4671,9 @@ func _active_chapter_day_open() -> bool:
 	if _active_chapter == NOODLE_CHAPTER_ID:
 		_ensure_noodle_session()
 		return bool(_noodle_session.get("day_open"))
+	if _active_chapter == NIGHT_MARKET_CHAPTER_ID:
+		_ensure_night_market_session()
+		return bool(_night_market_session.get("day_open"))
 	return bool(_save_data.get("day_open", Dictionary(_save_data.get("progression", {})).get("day_open", true)))
 
 

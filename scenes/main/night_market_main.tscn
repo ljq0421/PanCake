@@ -1,0 +1,123 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/main/night_market_main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/night_market_workstation.tscn" id="2_workstation"]
+
+[sub_resource type="StyleBoxFlat" id="Style_pause"]
+bg_color = Color(0.025, 0.09, 0.095, 0.99)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.7, 0.28, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+content_margin_left = 32.0
+content_margin_top = 28.0
+content_margin_right = 32.0
+content_margin_bottom = 28.0
+
+[sub_resource type="StyleBoxFlat" id="Style_button"]
+bg_color = Color(0.12, 0.38, 0.32, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_button_hover"]
+bg_color = Color(0.18, 0.52, 0.4, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.78, 0.4, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="NightMarketMain" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Workstation" parent="." instance=ExtResource("2_workstation")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="PauseDim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 900
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.01, 0.025, 0.03, 0.82)
+
+[node name="PausePanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+z_index = 910
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = -220.0
+offset_right = 270.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_pause")
+
+[node name="Layout" type="VBoxContainer" parent="PausePanel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="PausePanel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.4, 1)
+theme_override_font_sizes/font_size = 38
+text = "暂停营业"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="PausePanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+text = "继续看火"
+
+[node name="MainMenuButton" type="Button" parent="PausePanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+text = "返回开始页"
+
+[node name="EndBusinessButton" type="Button" parent="PausePanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+theme_override_styles/normal = SubResource("Style_button")
+theme_override_styles/hover = SubResource("Style_button_hover")
+text = "结束营业并查看账单"

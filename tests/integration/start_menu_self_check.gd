@@ -112,7 +112,7 @@ func _run() -> void:
 		restored_customer_count += 1
 		all_restored_customers_standing = all_restored_customers_standing \
 			and not bool(service_slot.call("is_presentation_transitioning")) \
-			and service_slot.portrait.position == Vector2(12.0, 140.0) \
+			and service_slot.portrait.position == Vector2(12.0, 380.0) \
 			and service_slot.get_node("OrderPanel").visible
 	_check(
 		(restored_customer_count > 0 and all_restored_customers_standing)

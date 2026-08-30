@@ -1,0 +1,12 @@
+{
+  "approved": true,
+  "approvedAt": "2026-08-30",
+  "seedKey": "3e73e27e",
+  "optionId": "twin-fire-wings",
+  "buildPath": "comp",
+  "promptFile": "night-market-twin-fire-wings.prompt.txt",
+  "referenceImages": [
+    "tmp/validation/single_jianbing_stall_gpu_1920x1080.png",
+    "resources/art/noodle_shop/background/noodle_shop_interior_background-v1.png"
+  ]
+}

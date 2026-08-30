@@ -2,6 +2,7 @@ extends SceneTree
 
 const STORE := preload("res://scripts/services/game_session_store.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const NOODLE_CATALOG := preload("res://scripts/data/noodle_shop_catalog.gd")
 
 var _failures: Array[String] = []
 var _session: Node
@@ -16,7 +17,8 @@ func _run() -> void:
 	root.add_child(_session)
 	_session.set("_active_save_path", "user://campaign_chapter_self_check.json")
 	var started := Dictionary(_session.call("begin_new_game"))
-	_check(bool(started.get("success", false)) and _session.SAVE_VERSION == 11, "new game creates campaign version eleven")
+	_check(bool(started.get("success", false)) and _session.SAVE_VERSION == 12, "new game creates campaign version twelve")
+	_check(Array(_session.call("chapter_statuses")).size() == 3, "campaign exposes breakfast, lunch and late-night chapters")
 	_check(StringName(_session.call("active_chapter_id")) == _session.BREAKFAST_CHAPTER_ID, "new campaign starts in breakfast chapter")
 	_check(not bool(Dictionary(_session.call("chapter_status", _session.NOODLE_CHAPTER_ID)).get("unlocked", true)), "noodle chapter starts locked")
 	var progression: RefCounted = _session.call("progression_service")
@@ -64,6 +66,20 @@ func _run() -> void:
 	var blocked := Dictionary(_session.call("select_chapter", _session.BREAKFAST_CHAPTER_ID))
 	_check(StringName(blocked.get("reason", &"")) == &"business_day_open", "open noodle day prevents switching shops")
 	_session.call("noodle_end_day", &"manual")
+	_check(not bool(Dictionary(_session.call("chapter_status", _session.NIGHT_MARKET_CHAPTER_ID)).get("unlocked", true)), "night-market chapter remains locked before all noodle growth is owned")
+	var noodle_session: RefCounted = _session.get("_noodle_session")
+	var owned_growth_ids := {}
+	for growth_id in NOODLE_CATALOG.GROWTH_DISPLAY_ORDER:
+		owned_growth_ids[growth_id] = true
+	noodle_session.set("owned_growth_ids", owned_growth_ids)
+	_session.call("_sync_noodle_session_to_save")
+	_session.call("_refresh_campaign_unlocks")
+	var night_status := Dictionary(_session.call("chapter_status", _session.NIGHT_MARKET_CHAPTER_ID))
+	_check(bool(night_status.get("unlocked", false)), "owning all four noodle growth items permanently unlocks the night-market chapter")
+	var selected_night := Dictionary(_session.call("select_chapter", _session.NIGHT_MARKET_CHAPTER_ID))
+	_check(bool(selected_night.get("success", false)) and str(selected_night.get("scene_path", "")).ends_with("night_market_main.tscn"), "closed noodle day can enter the independent night-market scene")
+	_check(int(Dictionary(_session.call("chapter_status", _session.NIGHT_MARKET_CHAPTER_ID)).get("coins", -1)) == 0, "new night-market chapter starts with independent zero coins")
+	_session.call("night_market_end_day", &"manual")
 	_check(bool(Dictionary(_session.call("select_chapter", _session.BREAKFAST_CHAPTER_ID)).get("success", false)), "day end permits returning to breakfast shop")
 	_check(int(Dictionary(_session.call("chapter_status", _session.BREAKFAST_CHAPTER_ID)).get("coins", -1)) == 88, "switching shops preserves breakfast-shop coins independently")
 	_finish()

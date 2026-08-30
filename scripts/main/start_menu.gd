@@ -28,8 +28,10 @@ const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
 @onready var chapter_overlay: Control = %ChapterOverlay
 @onready var breakfast_shop_button: Button = %BreakfastShopButton
 @onready var noodle_shop_button: Button = %NoodleShopButton
+@onready var night_market_shop_button: Button = %NightMarketShopButton
 @onready var breakfast_shop_status: Label = %BreakfastShopStatus
 @onready var noodle_shop_status: Label = %NoodleShopStatus
+@onready var night_market_shop_status: Label = %NightMarketShopStatus
 @onready var chapter_hint: Label = %ChapterHint
 @onready var chapter_close_button: Button = %ChapterCloseButton
 
@@ -54,6 +56,7 @@ func _ready() -> void:
 	shops_button.pressed.connect(_open_chapter_select)
 	breakfast_shop_button.pressed.connect(_select_breakfast_shop)
 	noodle_shop_button.pressed.connect(_select_noodle_shop)
+	night_market_shop_button.pressed.connect(_select_night_market_shop)
 	chapter_close_button.pressed.connect(_close_chapter_select)
 	quit_button.pressed.connect(_quit_game)
 	new_game_cancel_button.pressed.connect(_close_new_game_confirmation)
@@ -141,6 +144,8 @@ func _open_chapter_select() -> void:
 	var active_id := StringName(_session.call("active_chapter_id"))
 	if active_id == _session.NOODLE_CHAPTER_ID:
 		noodle_shop_button.grab_focus()
+	elif active_id == _session.NIGHT_MARKET_CHAPTER_ID:
+		night_market_shop_button.grab_focus()
 	else:
 		breakfast_shop_button.grab_focus()
 
@@ -158,6 +163,10 @@ func _select_noodle_shop() -> void:
 	_select_shop(_session.NOODLE_CHAPTER_ID)
 
 
+func _select_night_market_shop() -> void:
+	_select_shop(_session.NIGHT_MARKET_CHAPTER_ID)
+
+
 func _select_shop(chapter_id: StringName) -> void:
 	var result := Dictionary(_session.call("select_chapter", chapter_id))
 	if not bool(result.get("success", false)):
@@ -173,19 +182,31 @@ func _refresh_chapter_cards() -> void:
 		return
 	var breakfast := Dictionary(_session.call("chapter_status", _session.BREAKFAST_CHAPTER_ID))
 	var noodle := Dictionary(_session.call("chapter_status", _session.NOODLE_CHAPTER_ID))
+	var night_market := Dictionary(_session.call("chapter_status", _session.NIGHT_MARKET_CHAPTER_ID))
 	var active_id := StringName(_session.call("active_chapter_id"))
-	var active_status := breakfast if active_id == _session.BREAKFAST_CHAPTER_ID else noodle
+	var active_status := breakfast
+	if active_id == _session.NOODLE_CHAPTER_ID:
+		active_status = noodle
+	elif active_id == _session.NIGHT_MARKET_CHAPTER_ID:
+		active_status = night_market
 	var blocks_switch := bool(active_status.get("day_open", false))
 	breakfast_shop_button.text = "继续煎饼铺" if active_id == _session.BREAKFAST_CHAPTER_ID else "进入煎饼铺"
 	noodle_shop_button.text = "继续刀削面馆" if active_id == _session.NOODLE_CHAPTER_ID else "进入刀削面馆"
+	night_market_shop_button.text = "继续灯火串铺" if active_id == _session.NIGHT_MARKET_CHAPTER_ID else "进入灯火串铺"
 	breakfast_shop_button.disabled = blocks_switch and active_id != _session.BREAKFAST_CHAPTER_ID
 	noodle_shop_button.disabled = not bool(noodle.get("unlocked", false)) or (blocks_switch and active_id != _session.NOODLE_CHAPTER_ID)
+	night_market_shop_button.disabled = not bool(night_market.get("unlocked", false)) or (blocks_switch and active_id != _session.NIGHT_MARKET_CHAPTER_ID)
 	breakfast_shop_status.text = "第 %d 日 · %d 金币%s" % [int(breakfast.get("current_day", 1)), int(breakfast.get("coins", 0)), " · 营业中" if bool(breakfast.get("day_open", false)) else ""]
 	if bool(noodle.get("unlocked", false)):
 		noodle_shop_status.text = "第 %d 日 · %d 金币%s" % [int(noodle.get("current_day", 1)), int(noodle.get("coins", 0)), " · 营业中" if bool(noodle.get("day_open", false)) else ""] if bool(noodle.get("initialized", false)) else "已解锁 · 首次进入将开始教学"
 	else:
 		var progress := Dictionary(noodle.get("unlock_progress", {}))
 		noodle_shop_status.text = "未解锁 · 四区 %d/4 · 铜牌 %d/4" % [int(progress.get("unlocked_area_count", 0)), int(progress.get("bronze_area_count", 0))]
+	if bool(night_market.get("unlocked", false)):
+		night_market_shop_status.text = "第 %d 日 · %d 金币%s" % [int(night_market.get("current_day", 1)), int(night_market.get("coins", 0)), " · 营业中" if bool(night_market.get("day_open", false)) else ""] if bool(night_market.get("initialized", false)) else "已解锁 · 首次进入将开始双火线教学"
+	else:
+		var night_progress := Dictionary(night_market.get("unlock_progress", {}))
+		night_market_shop_status.text = "未解锁 · 面馆成长 %d/%d" % [int(night_progress.get("owned_growth_count", 0)), int(night_progress.get("required_growth_count", 4))]
 	chapter_hint.text = "当前店铺营业中，结束本日后才能切换。" if blocks_switch else "选择一家已解锁的铺子开始营业。"
 
 
@@ -283,6 +304,7 @@ func _set_menu_actions_disabled(disabled: bool) -> void:
 	new_game_confirm_button.disabled = disabled
 	breakfast_shop_button.disabled = disabled
 	noodle_shop_button.disabled = disabled
+	night_market_shop_button.disabled = disabled
 	chapter_close_button.disabled = disabled
 	if not disabled:
 		_refresh_chapter_cards()

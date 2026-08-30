@@ -34,16 +34,17 @@ func _run() -> void:
 	var visual := basket_component.get_node_or_null("Visual") as TextureRect if basket_component != null else null
 	_check(basket_component != null and basket != null, "BaocuiBasket owns the shared worktop source")
 	var hotspot_controller := basket_component.get_parent() as PancakeWorktopHotspots if basket_component != null else null
-	_check(hotspot_controller != null and hotspot_controller.baocui_tray_textures.size() == 6, "the crisp tray has one complete-tray texture for each of the six stock states")
-	var empty_texture_size := visual.texture.get_size() if visual != null and visual.texture != null else Vector2.ZERO
-	_check(empty_texture_size == Vector2(512, 512), "the empty crisp tray uses the same canvas size as the meat-floss and ham trays")
+	_check(hotspot_controller != null and hotspot_controller.baocui_tray_textures.size() == 10, "the crisp tray has one complete-tray texture for each of the ten stock states")
+	var restock_status := Dictionary(session.call("five_area_restock_status", STOCK_ID))
+	_check(int(restock_status.get("capacity", 0)) == 10, "the crisp restock capacity is ten")
+	var authored_texture_size: Vector2 = hotspot_controller.baocui_tray_textures.front().get_size() if hotspot_controller != null and not hotspot_controller.baocui_tray_textures.is_empty() else Vector2.ZERO
+	_check(authored_texture_size == Vector2(256, 256), "the crisp tray states use the authored 256-pixel canvas")
 	if hotspot_controller != null:
 		for texture_index in range(hotspot_controller.baocui_tray_textures.size()):
-			var expected_path := "res://resources/art/ingredients/baocui/baocui-%d.png" % (texture_index + 1)
-			var normalized_texture := hotspot_controller.baocui_tray_textures[texture_index] as AtlasTexture
-			_check(normalized_texture != null and normalized_texture.atlas.resource_path == expected_path, "crisp tray state %d uses its matching baocui artwork" % (texture_index + 1))
-			_check(normalized_texture != null and normalized_texture.region == Rect2(0, 0, 512, 512), "crisp tray state %d crops only the extra transparent canvas" % (texture_index + 1))
-			_check(hotspot_controller.baocui_tray_textures[texture_index].get_size() == empty_texture_size, "crisp tray state %d matches the meat-floss and ham tray canvas size" % (texture_index + 1))
+			var expected_path := "res://resources/art/ingredients/baocui/baocui-v1-%d.png" % (texture_index + 1)
+			var texture := hotspot_controller.baocui_tray_textures[texture_index]
+			_check(texture != null and texture.resource_path == expected_path, "crisp tray state %d uses its matching baocui-v1 artwork" % (texture_index + 1))
+			_check(texture != null and texture.get_size() == authored_texture_size, "crisp tray state %d keeps a consistent canvas size" % (texture_index + 1))
 	if basket != null:
 		_check(not basket.disabled, "an empty unlocked basket remains clickable for restocking")
 		_check(not basket._has_point(Vector2.ZERO), "transparent margin outside the crisp-basket artwork is not clickable")

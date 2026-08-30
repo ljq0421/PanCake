@@ -437,9 +437,7 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var scallion := hotspots.get_node("ScallionTray/Hotspot") as ProductDragSource
 	scallion.begin_gesture(Vector2.ZERO)
 	scallion.advance_gesture(0.20)
-	_check(scallion.is_hold_active(), "holding owned scallion stock enters the restock gesture")
-	scallion.advance_gesture(0.20)
-	_check(float(session.restock_hold_seconds.get(&"stock.pancake.scallion", 0.0)) > 0.0, "holding scallion stock advances the restock service")
+	_check(not scallion.hold_enabled and not scallion.is_hold_active(), "unlimited scallion never enters the restock gesture")
 	scallion.end_gesture()
 	var pork_floss_source := hotspots.get_node("PorkFlossSource/Hotspot") as ProductDragSource
 	pork_floss_source.begin_gesture(Vector2.ZERO)

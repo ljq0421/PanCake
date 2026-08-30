@@ -158,7 +158,7 @@ func _configure_editor_pancake_preview(synced_preview: Control) -> void:
 			container.modulate = Color.WHITE
 	_set_editor_preview_texture_from_last_export(
 		worktop,
-		NodePath("EggCarton/Visual/Contents"),
+		NodePath("EggCarton/Visual"),
 		worktop,
 		&"egg_content_textures"
 	)

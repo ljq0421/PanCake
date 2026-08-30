@@ -48,7 +48,7 @@ func _run() -> void:
 	_check(props != null and props.get_node_or_null("WorkshopProp_growth_automation_pancake_auto_sauce_brush") == null, "baseline automatic sauce is removed from the workshop")
 	_check(props != null and props.get_node_or_null("PressSpreaderPreview") is TextureRect, "press preview is an authored workshop-scene node")
 	var juice_tray_preview := props.get_node_or_null("FilledOrangeJuiceTrayPreview") as TextureRect if props != null else null
-	_check(juice_tray_preview != null and juice_tray_preview.texture != null and juice_tray_preview.texture.resource_path.ends_with("juice-6.png"), "workshop shows the authored transparent six-bottle orange-juice tray preview")
+	_check(juice_tray_preview != null and juice_tray_preview.texture != null and juice_tray_preview.texture.resource_path.ends_with("yinpin-v1-10.png"), "workshop shows the authored full ten-box orange-juice tray preview")
 	var juice_unlock_tag := props.get_node_or_null("WorkshopProp_growth_area_packaged_drink") as Button if props != null else null
 	_check(juice_unlock_tag != null and juice_unlock_tag.visible and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "成品饮品架\n条件不足", "locked juice-tray preview shows its name and concise unavailable-reservation tag")
 	_check(juice_unlock_tag != null and juice_unlock_tag.tooltip_text.contains("先解锁豆浆区域"), "locked juice-tray hover explains why it cannot be reserved")

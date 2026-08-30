@@ -6,14 +6,18 @@ signal audio_cue_requested(cue: StringName)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const JUICE_STOCK_TEXTURES := {
-	1: preload("res://resources/art/products/orange_juice/juice-1.png"),
-	2: preload("res://resources/art/products/orange_juice/juice-2.png"),
-	3: preload("res://resources/art/products/orange_juice/juice-3.png"),
-	4: preload("res://resources/art/products/orange_juice/juice-4.png"),
-	5: preload("res://resources/art/products/orange_juice/juice-5.png"),
-	6: preload("res://resources/art/products/orange_juice/juice-6.png"),
+	1: preload("res://resources/art/products/orange_juice/yinpin-v1-1.png"),
+	2: preload("res://resources/art/products/orange_juice/yinpin-v1-2.png"),
+	3: preload("res://resources/art/products/orange_juice/yinpin-v1-3.png"),
+	4: preload("res://resources/art/products/orange_juice/yinpin-v1-4.png"),
+	5: preload("res://resources/art/products/orange_juice/yinpin-v1-5.png"),
+	6: preload("res://resources/art/products/orange_juice/yinpin-v1-6.png"),
+	7: preload("res://resources/art/products/orange_juice/yinpin-v1-7.png"),
+	8: preload("res://resources/art/products/orange_juice/yinpin-v1-8.png"),
+	9: preload("res://resources/art/products/orange_juice/yinpin-v1-9.png"),
+	10: preload("res://resources/art/products/orange_juice/yinpin-v1-10.png"),
 }
-const EMPTY_JUICE_TRAY_TEXTURE := preload("res://resources/art/workstation/material_slots/empty-shallow-ingredient-tray-wide-v2-512.png")
+const EMPTY_JUICE_TRAY_TEXTURE := preload("res://resources/art/products/orange_juice/yinpin-v1.png")
 const JUICE_DRAG_PREVIEW_TEXTURE := preload("res://resources/art/products/orange_juice/boxed_orange_juice_v1.png")
 
 var _lock_cover: Button
@@ -155,7 +159,7 @@ static func _id_in(values: Array, expected: StringName) -> bool:
 static func _stock_texture_for(product_id: StringName, count: int) -> Texture2D:
 	if product_id != &"product.packaged_drink.juice" or count <= 0:
 		return null
-	return JUICE_STOCK_TEXTURES.get(clampi(count, 1, 6)) as Texture2D
+	return JUICE_STOCK_TEXTURES.get(clampi(count, 1, 10)) as Texture2D
 
 
 static func _lane_hint(product: Dictionary, count: int, capacity: int, unlocked: bool) -> String:

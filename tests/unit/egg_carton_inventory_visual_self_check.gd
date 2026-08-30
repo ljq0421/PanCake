@@ -2,6 +2,7 @@ extends SceneTree
 
 const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
 var failures := PackedStringArray()
 
@@ -31,19 +32,24 @@ func _run() -> void:
 	if carton != null and visual != null and contents != null:
 		_check(carton.get_global_rect() == visual.get_global_rect() and visual.get_global_rect() == contents.get_global_rect(), "egg contents share the carton component coordinates")
 	if hotspots != null:
-		_check(hotspots.egg_content_textures.size() == 7 and hotspots.egg_content_textures[0] == null, "egg inventory maps empty stock plus all six filled states")
-		for count in range(1, 7):
-			hotspots._update_egg_inventory_visual(count, 6)
-			var texture_path := contents.texture.resource_path if contents != null and contents.texture != null else ""
-			_check(texture_path.ends_with("egg-carton-overlay-%d-egg-512.png" % count), "%d-egg stock state uses its matching overlay" % count)
+		_check(int(CATALOG.stock_definition(&"stock.pancake.egg").get("restock_capacity", 0)) == 10, "egg restock capacity is ten")
+		_check(hotspots.egg_content_textures.size() == 11, "egg inventory maps the empty tray plus all ten filled states")
+		var empty_texture_path := hotspots.egg_content_textures[0].resource_path if hotspots.egg_content_textures[0] != null else ""
+		_check(empty_texture_path.ends_with("empty-square-ingredient-tray-v1.png"), "zero egg stock uses the requested empty tray")
+		for count in range(0, 11):
+			hotspots._update_egg_inventory_visual(count, 10)
+			var texture_path := visual.texture.resource_path if visual != null and visual.texture != null else ""
+			var expected_filename := "empty-square-ingredient-tray-v1.png" if count == 0 else "egg-v1-%d.png" % count
+			_check(texture_path.ends_with(expected_filename), "%d-egg stock state uses its matching complete tray" % count)
+			_check(contents == null or (not contents.visible and contents.texture == null), "legacy egg overlay stays disabled")
 	_check(source != null and source is EggCartonDragSource and source.hold_enabled and is_equal_approx(source.hold_threshold_seconds, 0.20) and not source.native_drag_enabled, "egg carton uses click-to-place plus a 0.2-second hold-to-restock")
 	if source is EggCartonDragSource:
 		_check(not source._has_point(Vector2.ZERO), "transparent margin outside the egg-carton artwork is not clickable")
 		source.set_filled_slot_count(3)
-		var first_egg := Vector2(source.size.x * 0.25, source.size.y * 0.348)
-		var empty_lower_right := Vector2(source.size.x * 0.75, source.size.y * 0.504)
+		var first_egg := Vector2(source.size.x * 0.75, source.size.y * 0.52)
+		var empty_upper_left := Vector2(source.size.x * 0.25, source.size.y * 0.36)
 		_check(source._has_point(first_egg), "a filled egg slot is a valid pointer target")
-		_check(source._slot_index_at(empty_lower_right) == -1, "an empty egg slot cannot start a drag")
+		_check(source._slot_index_at(empty_upper_left) == -1, "an empty egg slot cannot start a drag")
 		_check(source._slot_index_at(first_egg) == 0, "click hit-testing identifies the exact visible egg slot")
 	workstation.queue_free()
 	_finish()

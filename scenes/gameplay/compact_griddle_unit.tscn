@@ -1,7 +1,7 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/griddle/jianbing-griddle.png" id="2_griddle"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/tools/aozi-v1.png" id="2_griddle"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/textures/pancake_raw_texture_v1.png" id="3_pancake"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/packaging/paper_bag_package_v1.png" id="4_bag"]
 [ext_resource type="Script" path="res://scripts/ui/pancake_heatmap.gd" id="5_heatmap"]
@@ -43,10 +43,6 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_jianbing_griddle"]
-atlas = ExtResource("2_griddle")
-region = Rect2(128, 48, 1276, 900)
 
 [sub_resource type="ShaderMaterial" id="PancakeMaterial"]
 shader = ExtResource("15_pancake_shader")
@@ -106,7 +102,7 @@ offset_top = -10.0
 offset_right = 460.0
 offset_bottom = 322.0
 mouse_filter = 2
-texture = SubResource("AtlasTexture_jianbing_griddle")
+texture = ExtResource("2_griddle")
 expand_mode = 1
 stretch_mode = 5
 

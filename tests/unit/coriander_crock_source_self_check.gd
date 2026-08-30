@@ -32,43 +32,22 @@ func _run() -> void:
 	for _frame in range(4):
 		await process_frame
 	var source := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/CorianderTray/Hotspot") as ProductDragSource
+	var visual := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/CorianderTray/Visual") as TextureRect
 	var fryer := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer") as Control
-	_check(source != null and not source.disabled, "an empty unlocked coriander crock remains clickable")
+	_check(source != null and not source.disabled and not source.hold_enabled, "the unlocked unlimited coriander tray remains clickable without a restock gesture")
+	_check(visual != null and visual.texture != null and visual.texture.resource_path.ends_with("xiangcai-v1.png"), "coriander uses the revised static tray artwork")
 	_check(fryer != null and fryer.visible, "the unlocked fryer is visible beside the coriander crock")
 	if source != null:
-		await _hold_control(source)
-		await process_frame
-		var replenished := Dictionary(session.call("inventory_snapshot"))
-		_check(int(replenished.get(str(STOCK_ID), 0)) == 1, "holding the coriander crock works while the fryer is visible")
+		source.begin_gesture(Vector2.ZERO)
+		source.advance_gesture(0.42)
+		_check(not source.is_hold_active(), "holding unlimited coriander never starts replenishment")
+		source.end_gesture()
+	var restock_status := Dictionary(session.call("five_area_restock_status", STOCK_ID))
+	_check(not bool(restock_status.get("success", false)) and StringName(restock_status.get("reason", &"")) == &"restock_unnecessary", "coriander rejects paid restocking as unnecessary")
+	_check(int(Dictionary(session.call("inventory_snapshot")).get(str(STOCK_ID), 0)) == 0, "unlimited coriander remains outside managed inventory")
 	workstation.queue_free()
 	await process_frame
 	_finish()
-
-
-func _hold_control(control: Control) -> void:
-	var position := root.get_final_transform() * control.get_global_rect().get_center()
-	Input.warp_mouse(position)
-	var motion := InputEventMouseMotion.new()
-	motion.position = position
-	motion.global_position = position
-	Input.parse_input_event(motion)
-	await process_frame
-	_check(root.gui_get_hovered_control() == control, "real pointer reaches the coriander crock instead of the fryer")
-	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
-	press.pressed = true
-	press.position = position
-	press.global_position = position
-	root.push_input(press)
-	# Complete one 0.15-second unit after the 0.2-second hold threshold without
-	# crossing into a second replenishment cycle.
-	await create_timer(0.42).timeout
-	var release := InputEventMouseButton.new()
-	release.button_index = MOUSE_BUTTON_LEFT
-	release.pressed = false
-	release.position = position
-	release.global_position = position
-	root.push_input(release)
 
 
 func _check(condition: bool, message: String) -> void:

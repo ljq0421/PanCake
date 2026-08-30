@@ -97,17 +97,17 @@ const STOCK_DEFINITIONS := {
 	# Batter is always available at the pancake station. Keep its stable ID and
 	# unit cost for recipes/accounting, but never expose it as managed inventory.
 	&"stock.pancake.batter": {"label": "面糊", "area_id": &"area.pancake", "category": &"base", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &""},
-	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.07"},
-	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.08"},
-	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &"slot.09"},
+	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 10, "material_slot_id": &"slot.07"},
+	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 10, "material_slot_id": &"slot.08"},
+	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &"slot.09"},
 	# Keep this stable ID so existing runtime save and order contracts continue to
 	# resolve, while all player-facing text identifies the single shared sauce.
 	# The shared sauce jar is a station fixture: it never needs stocking and does
 	# not add a replenishment cost to the finished pancake.
 	&"stock.pancake.sauce.sweet_flour": {"label": "秘制酱料", "area_id": &"area.pancake", "category": &"sauce", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &"", "surface_input_id": &"ui.pancake.secret_sauce_brush"},
-	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 6, "material_slot_id": &""},
-	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 10, "material_slot_id": &""},
+	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 10, "material_slot_id": &""},
+	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &""},
 	# A stable order/simulation identifier for the processed plain youtiao.
 	# Capacity stays zero so it can never enter the paid ordinary-restock path.
 	&"stock.pancake.youtiao": {"label": "油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &""},
@@ -115,7 +115,7 @@ const STOCK_DEFINITIONS := {
 	# fixed at four even after the shared pantry-capacity growth upgrades.
 	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
 	&"stock.chicken.cutlet_raw": {"label": "鸡排", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.15, "restock_unit_cost": 4, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &""},
-	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 6, "material_slot_id": &""},
+	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 10, "material_slot_id": &""},
 }
 
 ## Stable left-to-right workbench order used by the opening checklist.  The

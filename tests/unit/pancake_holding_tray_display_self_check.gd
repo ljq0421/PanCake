@@ -55,7 +55,7 @@ func _run() -> void:
 	var second_slot_tag := workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") as Button
 	_check(second_slot_tag != null and second_slot_tag.visible, "second holding-tray reservation tag remains visible with its prerequisite unmet")
 	var preview_slot := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview/Slot01") as TextureRect
-	_check(preview_slot != null and preview_slot.texture != null and preview_slot.texture.resource_path.ends_with("empty-square-ingredient-tray.png"), "workshop preview uses the confirmed empty-square tray asset")
+	_check(preview_slot != null and preview_slot.texture != null and preview_slot.texture.resource_path.ends_with("empty-square-ingredient-tray-v1.png"), "workshop preview uses the revised empty-square tray asset")
 	workshop.free()
 	_finish()
 

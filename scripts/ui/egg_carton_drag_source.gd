@@ -1,10 +1,11 @@
 class_name EggCartonDragSource
 extends ProductDragSource
 
-## The order matches the inventory artwork: left to right, then top to bottom.
+## The v1 artwork fills the lower row from right to left, then the upper row
+## from right to left.
 const SLOT_CENTERS := [
-	Vector2(0.25, 0.348), Vector2(0.50, 0.348), Vector2(0.75, 0.348),
-	Vector2(0.25, 0.504), Vector2(0.50, 0.504), Vector2(0.75, 0.504),
+	Vector2(0.75, 0.52), Vector2(0.625, 0.52), Vector2(0.50, 0.52), Vector2(0.375, 0.52), Vector2(0.25, 0.52),
+	Vector2(0.75, 0.36), Vector2(0.625, 0.36), Vector2(0.50, 0.36), Vector2(0.375, 0.36), Vector2(0.25, 0.36),
 ]
 
 var _filled_slot_count := 0
@@ -50,7 +51,7 @@ func end_gesture() -> void:
 func _slot_index_at(point: Vector2) -> int:
 	if size.x <= 0.0 or size.y <= 0.0:
 		return -1
-	var radius := Vector2(size.x * 0.105, size.y * 0.135)
+	var radius := Vector2(size.x * 0.08, size.y * 0.12)
 	for index in _filled_slot_count:
 		var center: Vector2 = Vector2(SLOT_CENTERS[index]) * size
 		var distance: Vector2 = (point - center) / radius

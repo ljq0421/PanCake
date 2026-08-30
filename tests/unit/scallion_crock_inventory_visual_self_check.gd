@@ -34,18 +34,25 @@ func _run() -> void:
 	var spreader_source := hotspots.get_node_or_null("SpreaderSource/HitButton") as AlphaTextureHitButton if hotspots != null else null
 	var spreader_holder := hotspots.get_node_or_null("SpreaderSource/Visual") as TextureRect if hotspots != null else null
 	_check(crock != null, "the workbench includes a dedicated scallion crock visual")
-	_check(source != null and source.hold_enabled and not source.native_drag_enabled, "the crock uses click-to-add and hold-to-restock gestures")
+	_check(source != null and not source.hold_enabled and not source.native_drag_enabled, "the scallion tray uses click-to-add without a restock gesture")
 	if crock != null:
-		_check(crock.state_textures.size() == 3, "the crock has empty, half-full, and full state textures")
-		_check(crock._state_texture_for_quantity(0).resource_path.ends_with("scallion-crock-empty.png"), "zero scallion stock shows the empty crock")
-		_check(crock._state_texture_for_quantity(1).resource_path.ends_with("scallion-crock-half.png"), "partial scallion stock shows the half-full crock")
-		_check(crock._state_texture_for_quantity(6).resource_path.ends_with("scallion-crock-full.png"), "full scallion stock shows the full crock")
+		_check(crock.state_textures.is_empty(), "unlimited scallion uses one static tray texture")
+		_check(crock.texture != null and crock.texture.resource_path.ends_with("xiangcong-v1.png"), "scallion uses the revised static tray artwork")
 	if crock != null and source != null:
 		_check(crock.get_global_rect() == source.get_global_rect(), "crock artwork and interaction target share the ScallionTray placement")
 		_check(crock.size.x > 0.0 and crock.size.y > 0.0, "scallion crock keeps a non-empty authored interaction footprint")
 	if coriander_crock != null and coriander_source != null:
 		_check(coriander_crock.get_global_rect() == coriander_source.get_global_rect(), "coriander crock artwork and interaction target share the CorianderTray placement")
 		_check(coriander_crock.get_node_or_null("Contents") == null, "state-texture coriander crock keeps no redundant contents layer")
+		_check(coriander_crock.texture != null and coriander_crock.texture.resource_path.ends_with("xiangcai-v1.png"), "coriander uses the revised static tray artwork")
+	var restock_status := Dictionary(session.call("five_area_restock_status", &"stock.pancake.scallion")) if session != null else {}
+	_check(not bool(restock_status.get("success", false)) and StringName(restock_status.get("reason", &"")) == &"restock_unnecessary", "scallion rejects paid restocking as unnecessary")
+	if session != null:
+		var unlimited_stock_ids: Array[StringName] = [&"stock.pancake.scallion", &"stock.pancake.coriander"]
+		var consume_result := Dictionary(session.call("consume_inventory_stock_ids", unlimited_stock_ids))
+		_check(bool(consume_result.get("success", false)) and Array(consume_result.get("consumed_stock_ids", [])).is_empty(), "using unlimited scallion and coriander consumes no managed inventory")
+	if source != null:
+		_check(source.tooltip_text.contains("无需补货"), "scallion interaction explains that restocking is unnecessary")
 	if crock != null and source != null and spreader_source != null:
 		var pointer_position := root.get_final_transform() * source.get_global_rect().get_center()
 		Input.warp_mouse(pointer_position)

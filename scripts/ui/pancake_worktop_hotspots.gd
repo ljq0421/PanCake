@@ -9,7 +9,7 @@ const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/b
 const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png")
 const BATTER_LADLE_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
 const BATTER_LADLE_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png")
-const BAOCUI_EMPTY_TRAY := preload("res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png")
+const BAOCUI_EMPTY_TRAY := preload("res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png")
 const EGG_DRAG_PREVIEW := preload("res://resources/art/ingredients/egg/egg_whole_v1_five_area_v2.png")
 const AUTO_BATTER_LADLE_GROWTH_ID := &"growth.automation.pancake.auto_batter_ladle"
 const PRESS_SPREADER_GROWTH_ID := &"growth.automation.pancake.press_once"
@@ -62,9 +62,8 @@ const EGG_STOCK_ID := &"stock.pancake.egg"
 const BAOCUI_STOCK_ID := &"stock.pancake.baocui"
 
 @export var griddle_station_path: NodePath
-## Indexes map directly to egg counts.  The scene starts with no content
-## textures, so the new carton stays visible while the matching egg layers
-## are authored.
+## Indexes map directly to egg counts. Index zero is the empty tray; all other
+## entries are complete tray images rather than overlays.
 @export var egg_content_textures: Array[Texture2D] = []
 ## Ordered from one to the maximum visible crisp count. Each texture is a
 ## complete ingredient tray, so inventory changes replace the tray artwork.
@@ -76,7 +75,7 @@ var _workshop_preview := false
 
 
 func _ready() -> void:
-	_update_egg_inventory_visual(0, int(CATALOG.stock_definition(EGG_STOCK_ID).get("restock_capacity", 6)))
+	_update_egg_inventory_visual(0, int(CATALOG.stock_definition(EGG_STOCK_ID).get("restock_capacity", 10)))
 	_update_baocui_inventory_visual(0)
 	_update_spreader_holder_visual()
 	for hotspot_name in INGREDIENT_HOTSPOT_IDS:
@@ -141,7 +140,7 @@ func refresh_from_session() -> void:
 	for hotspot_name in SAUCE_HOTSPOT_IDS:
 		_refresh_material_hotspot(_material_hotspot(hotspot_name), SAUCE_HOTSPOT_IDS[hotspot_name], &"pancake_shared_sauce", inventory, progression)
 	_refresh_optional_stock_visuals(progression)
-	var egg_capacity := int(CATALOG.stock_definition(EGG_STOCK_ID).get("restock_capacity", 6))
+	var egg_capacity := int(CATALOG.stock_definition(EGG_STOCK_ID).get("restock_capacity", 10))
 	if _session.has_method("five_area_restock_status"):
 		var egg_status := Dictionary(_session.call("five_area_restock_status", EGG_STOCK_ID))
 		egg_capacity = int(egg_status.get("capacity", egg_capacity))
@@ -243,7 +242,9 @@ func _refresh_material_hotspot(hotspot: ProductDragSource, stock_id: StringName,
 	var label := _stock_label(stock_id)
 	var click_action := "点击打蛋" if stock_id == EGG_STOCK_ID else "点击加入煎饼"
 	var hint := (
-		"%s：%s；原地长按补货" % [label, click_action]
+		"%s：%s；供应充足，无需补货" % [label, click_action]
+		if unlimited
+		else "%s：%s；原地长按补货" % [label, click_action]
 	) if source_kind == &"pancake_shared_ingredient" else (
 		"%s：点击后在鏊面拖刷" % label
 		if unlimited
@@ -461,14 +462,15 @@ func _update_egg_inventory_visual(stock: int, capacity: int) -> void:
 	var carton_base := carton.get_node_or_null("Visual") as TextureRect
 	if carton_base == null:
 		return
-	# The carton owns its optional content layer. Only that child changes with
-	# stock, so the old woven-basket states can never reappear.
+	# The v1 egg assets already include their metal tray, so replace the complete
+	# visual instead of layering them over the legacy carton artwork.
 	var content_visual := carton_base.get_node_or_null("Contents") as TextureRect
-	if content_visual == null:
-		return
 	var display_stock := capacity if _workshop_preview else stock
 	var capped_stock := clampi(display_stock, 0, maxi(capacity, 0))
-	content_visual.texture = egg_content_textures[capped_stock] if capped_stock < egg_content_textures.size() else null
+	carton_base.texture = egg_content_textures[capped_stock] if capped_stock < egg_content_textures.size() else null
+	if content_visual != null:
+		content_visual.texture = null
+		content_visual.visible = false
 
 
 func _update_baocui_inventory_visual(stock: int) -> void:

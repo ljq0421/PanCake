@@ -15,12 +15,12 @@ func _run() -> void:
 	var overlay := OVERLAY_SCENE.instantiate() as UpgradeWorkshopOverlay
 	var authored_worktop := overlay.get_node_or_null("EditorPreview/SyncedWorkstationPreview/SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
 	var authored_preview_paths := {
-		"EggCarton/Visual/Contents": "egg-carton-overlay-6-egg-512.png",
-		"BaocuiBasket/Visual": "baocui-6.png",
-		"ScallionTray/Visual": "scallion-crock-full.png",
-		"CorianderTray/Visual": "cilantro-jar-full.png",
-		"HamSource/Visual": "empty-square-ingredient-tray-ham-6.png",
-		"PorkFlossSource/Visual": "empty-square-ingredient-tray-6.png",
+		"EggCarton/Visual": "egg-v1-10.png",
+		"BaocuiBasket/Visual": "baocui-v1-10.png",
+		"ScallionTray/Visual": "xiangcong-v1.png",
+		"CorianderTray/Visual": "xiangcai-v1.png",
+		"HamSource/Visual": "huotui-v1-10.png",
+		"PorkFlossSource/Visual": "rousong-v1-10.png",
 	}
 	for visual_path in authored_preview_paths:
 		var authored_visual := authored_worktop.get_node_or_null(visual_path) as TextureRect if authored_worktop != null else null
@@ -62,10 +62,10 @@ func _run() -> void:
 		if synced_preview != null
 		else null
 	)
-	var egg_contents := pancake_worktop.get_node_or_null("EggCarton/Visual/Contents") as TextureRect if pancake_worktop != null else null
+	var egg_visual := pancake_worktop.get_node_or_null("EggCarton/Visual") as TextureRect if pancake_worktop != null else null
 	var baocui_visual := pancake_worktop.get_node_or_null("BaocuiBasket/Visual") as TextureRect if pancake_worktop != null else null
-	_check(egg_contents != null and egg_contents.visible and egg_contents.texture != null, "editor workshop preview shows a full egg carton")
-	_check(baocui_visual != null and baocui_visual.visible and baocui_visual.texture != null and baocui_visual.texture.resource_path.ends_with("baocui-6.png"), "editor workshop preview shows the full baocui basket")
+	_check(egg_visual != null and egg_visual.visible and egg_visual.texture != null and egg_visual.texture.resource_path.ends_with("egg-v1-10.png"), "editor workshop preview shows a full egg tray")
+	_check(baocui_visual != null and baocui_visual.visible and baocui_visual.texture != null and baocui_visual.texture.resource_path.ends_with("baocui-v1-10.png"), "editor workshop preview shows the full baocui basket")
 	for source_path in ["ScallionTray", "CorianderTray", "HamSource", "PorkFlossSource", "SecretSauceSource", "BatterLadleSource"]:
 		var source := pancake_worktop.get_node_or_null(source_path) as Control if pancake_worktop != null else null
 		var visual := source.get_node_or_null("Visual") as TextureRect if source != null else null
@@ -75,11 +75,11 @@ func _run() -> void:
 	var egg_carton := pancake_worktop.get_node_or_null("EggCarton") as Control if pancake_worktop != null else null
 	if egg_carton != null:
 		egg_carton.visible = false
-	if egg_contents != null:
-		egg_contents.texture = null
+	if egg_visual != null:
+		egg_visual.texture = null
 	await process_frame
 	_check(egg_carton != null and egg_carton.visible, "editor preview restores material visibility after nested-scene refresh")
-	_check(egg_contents != null and egg_contents.texture != null, "editor preview restores full material artwork after nested-scene refresh")
+	_check(egg_visual != null and egg_visual.texture != null, "editor preview restores full material artwork after nested-scene refresh")
 	var soy_station := (
 		synced_preview.get_node_or_null("FiveAreaInfrastructure/Stations/FreshSoyMilkStation") as Control
 		if synced_preview != null

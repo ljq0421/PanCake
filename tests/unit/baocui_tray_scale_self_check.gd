@@ -1,6 +1,8 @@
 extends SceneTree
 
 const ARTWORK_SCENE := preload("res://scenes/gameplay/jianbing_stall_artwork.tscn")
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const STOCK_ID := &"stock.pancake.baocui"
 
 var failures := PackedStringArray()
 
@@ -8,18 +10,14 @@ var failures := PackedStringArray()
 func _initialize() -> void:
 	var artwork := ARTWORK_SCENE.instantiate()
 	var hotspots := artwork.get_node("PancakeWorktopHotspots") as PancakeWorktopHotspots
-	var meat_floss_visual := artwork.get_node("PancakeWorktopHotspots/PorkFlossSource/Visual") as IngredientTrayVisual
-	var ham_visual := artwork.get_node("PancakeWorktopHotspots/HamSource/Visual") as IngredientTrayVisual
-	_check(hotspots.baocui_tray_textures.size() == meat_floss_visual.state_textures.size(), "crisp and meat-floss trays expose the same number of stock states")
-	_check(hotspots.baocui_tray_textures.size() == ham_visual.state_textures.size(), "crisp and ham trays expose the same number of stock states")
+	var visual := artwork.get_node("PancakeWorktopHotspots/BaocuiBasket/Visual") as TextureRect
+	_check(int(CATALOG.stock_definition(STOCK_ID).get("restock_capacity", 0)) == 10, "crisp restock capacity is ten")
+	_check(hotspots.baocui_tray_textures.size() == 10, "crisp tray exposes all ten stock states")
 	for state_index in range(hotspots.baocui_tray_textures.size()):
 		var crisp_texture := hotspots.baocui_tray_textures[state_index]
-		var meat_floss_texture := meat_floss_visual.state_textures[state_index]
-		var ham_texture := ham_visual.state_textures[state_index]
-		_check(crisp_texture.get_size() == meat_floss_texture.get_size(), "crisp tray state %d matches the meat-floss tray canvas" % (state_index + 1))
-		_check(crisp_texture.get_size() == ham_texture.get_size(), "crisp tray state %d matches the ham tray canvas" % (state_index + 1))
-		_check(crisp_texture.get_image().get_used_rect() == meat_floss_texture.get_image().get_used_rect(), "crisp tray state %d keeps the same plate bounds as meat floss" % (state_index + 1))
-		_check(crisp_texture.get_image().get_used_rect() == ham_texture.get_image().get_used_rect(), "crisp tray state %d keeps the same plate bounds as ham" % (state_index + 1))
+		_check(crisp_texture != null and crisp_texture.get_size() == Vector2(256, 256), "crisp tray state %d uses the authored 256-pixel canvas" % (state_index + 1))
+		hotspots._update_baocui_inventory_visual(state_index + 1)
+		_check(visual.texture == crisp_texture, "crisp stock %d selects its matching visual state" % (state_index + 1))
 	artwork.free()
 	_finish()
 

@@ -37,9 +37,9 @@
 [ext_resource type="Script" uid="uid://dt6j7cu1bhqwo" path="res://scripts/ui/tutorial_guide_arrow.gd" id="63_guide_arrow"]
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
-[ext_resource type="Texture2D" uid="uid://ckmvltf7nemxc" path="res://resources/art/ingredients/baocui/baocui_empty_bamboo_basket_v5_medium_outline_soft.png" id="81_waste_basket"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
-[ext_resource type="Texture2D" uid="uid://dhlixsd00feh7" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray.png" id="83_pancake_holding_tray"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="83_pancake_holding_tray"]
 [ext_resource type="Shader" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_formal_polish"]

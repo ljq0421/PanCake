@@ -56,19 +56,19 @@ func _run() -> void:
 		session.call("save_inventory", station_inventory)
 		station.call("refresh_from_session")
 		var tray_source := lane_sources[0] as ProductDragSource if not lane_sources.is_empty() else null
-		_check(tray_source != null and tray_source.texture_normal != null and tray_source.texture_normal.resource_path.ends_with("empty-shallow-ingredient-tray-wide-v2-512.png"), "zero juice stock displays the authored empty physical tray")
-		var empty_tray_bounds := (load("res://resources/art/workstation/material_slots/empty-shallow-ingredient-tray-wide-v2-512.png") as Texture2D).get_image().get_used_rect()
-		var filled_tray_bounds := (load("res://resources/art/products/orange_juice/juice-1.png") as Texture2D).get_image().get_used_rect()
-		_check(empty_tray_bounds == filled_tray_bounds, "empty and filled juice trays keep the same authored plate bounds")
-		station_inventory[str(STOCK_ID)] = 6
+		_check(tray_source != null and tray_source.texture_normal != null and tray_source.texture_normal.resource_path.ends_with("yinpin-v1.png"), "zero juice stock displays the revised empty physical tray")
+		var empty_tray_size := (load("res://resources/art/products/orange_juice/yinpin-v1.png") as Texture2D).get_size()
+		var filled_tray_size := (load("res://resources/art/products/orange_juice/yinpin-v1-1.png") as Texture2D).get_size()
+		_check(empty_tray_size == filled_tray_size, "empty and filled juice trays keep the same authored canvas size")
+		station_inventory[str(STOCK_ID)] = 10
 		session.call("save_inventory", station_inventory)
 		station.call("refresh_from_session")
-		_check(tray_source != null and tray_source.texture_normal != null and tray_source.texture_normal.resource_path.ends_with("juice-6.png"), "six juice bottles display the authored six-bottle physical tray art")
+		_check(tray_source != null and tray_source.texture_normal != null and tray_source.texture_normal.resource_path.ends_with("yinpin-v1-10.png"), "ten juice boxes display the authored full physical tray art")
 		var uses_all_stock_frames := true
-		for stock_count in range(1, 7):
+		for stock_count in range(1, 11):
 			var stock_texture := station.call("_stock_texture_for", PRODUCT_ID, stock_count) as Texture2D
-			uses_all_stock_frames = uses_all_stock_frames and stock_texture != null and stock_texture.resource_path.ends_with("juice-%d.png" % stock_count)
-		_check(uses_all_stock_frames, "juice inventory one through six maps to its matching authored stock frame")
+			uses_all_stock_frames = uses_all_stock_frames and stock_texture != null and stock_texture.resource_path.ends_with("yinpin-v1-%d.png" % stock_count)
+		_check(uses_all_stock_frames, "juice inventory one through ten maps to its matching authored stock frame")
 		var soy_cups := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/FreshSoyMilkStation/CupStack") as Control
 		_check(station != null and soy_cups != null and not station.get_global_rect().intersects(soy_cups.get_global_rect()), "juice lane stays below the soy cup interaction region")
 		var soy_station := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/FreshSoyMilkStation") as Control
@@ -91,7 +91,7 @@ func _run() -> void:
 		session.call("save_inventory", inventory)
 		session.call("credit_coins", 6)
 		var status := Dictionary(session.call("five_area_restock_status", STOCK_ID))
-		_check(int(status.get("capacity", 0)) == 6 and int(status.get("unit_cost", 0)) == 1, "juice uses six-bottle, one-coin restock rules")
+		_check(int(status.get("capacity", 0)) == 10 and int(status.get("unit_cost", 0)) == 1, "juice uses ten-box, one-coin restock rules")
 		var partial := Dictionary(session.call("advance_five_area_restock_hold", STOCK_ID, float(status.get("unit_seconds", 0.2)) * 0.5))
 		_check(int(partial.get("completed_units", 0)) == 0 and float(Dictionary(session.call("five_area_restock_status", STOCK_ID)).get("progress_seconds", 0.0)) > 0.0, "juice partial refill progress is retained")
 		var completed := Dictionary(session.call("advance_five_area_restock_hold", STOCK_ID, float(status.get("unit_seconds", 0.2)) * 0.5))

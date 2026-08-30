@@ -21,12 +21,14 @@ func _run() -> void:
 
 	_check_full_state(artwork.get_node("PancakeWorktopHotspots/PorkFlossSource/Visual") as IngredientTrayVisual, "meat floss tray")
 	_check_full_state(artwork.get_node("PancakeWorktopHotspots/HamSource/Visual") as IngredientTrayVisual, "ham tray")
-	_check_full_state(artwork.get_node("PancakeWorktopHotspots/ScallionTray/Visual") as IngredientTrayVisual, "scallion jar")
-	_check_full_state(artwork.get_node("PancakeWorktopHotspots/CorianderTray/Visual") as IngredientTrayVisual, "coriander jar")
+	_check_static_state(artwork.get_node("PancakeWorktopHotspots/ScallionTray/Visual") as IngredientTrayVisual, "xiangcong-v1.png", "scallion tray")
+	_check_static_state(artwork.get_node("PancakeWorktopHotspots/CorianderTray/Visual") as IngredientTrayVisual, "xiangcai-v1.png", "coriander tray")
 	_check(
-		(artwork.get_node("PancakeWorktopHotspots/EggCarton/Visual/Contents") as TextureRect).texture == worktop.egg_content_textures.back(),
+		(artwork.get_node("PancakeWorktopHotspots/EggCarton/Visual") as TextureRect).texture == worktop.egg_content_textures.back(),
 		"workshop preview shows a full egg carton"
 	)
+	var egg_contents := artwork.get_node("PancakeWorktopHotspots/EggCarton/Visual/Contents") as TextureRect
+	_check(not egg_contents.visible and egg_contents.texture == null, "workshop preview does not reuse the legacy egg overlay")
 	_check(
 		(artwork.get_node("PancakeWorktopHotspots/BaocuiBasket/Visual") as TextureRect).texture == worktop.baocui_tray_textures.back(),
 		"workshop preview shows a full crisp tray"
@@ -38,6 +40,10 @@ func _run() -> void:
 
 func _check_full_state(visual: IngredientTrayVisual, label: String) -> void:
 	_check(visual != null and visual.texture == visual.state_textures.back(), "workshop preview shows a full %s" % label)
+
+
+func _check_static_state(visual: IngredientTrayVisual, expected_filename: String, label: String) -> void:
+	_check(visual != null and visual.state_textures.is_empty() and visual.texture != null and visual.texture.resource_path.ends_with(expected_filename), "workshop preview shows the static unlimited %s" % label)
 
 
 func _check(condition: bool, message: String) -> void:

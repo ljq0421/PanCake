@@ -10,8 +10,18 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	_test_shared_heat_boundaries()
 	_test_local_heat_variation_is_explained()
 	_finish()
+
+
+func _test_shared_heat_boundaries() -> void:
+	_check(
+		not PANCAKE_SCORER_SCRIPT.heat_is_suitable_metrics({"mean_front_doneness": 0.249, "mean_back_doneness": 0.50})
+		and PANCAKE_SCORER_SCRIPT.heat_is_suitable_metrics({"mean_front_doneness": 0.25, "mean_back_doneness": 0.749})
+		and not PANCAKE_SCORER_SCRIPT.heat_is_suitable_metrics({"mean_front_doneness": 0.75, "mean_back_doneness": 0.50}),
+		"shared heat contract treats 0.25 as suitable and 0.75 as charred"
+	)
 
 
 func _test_local_heat_variation_is_explained() -> void:
@@ -21,7 +31,7 @@ func _test_local_heat_variation_is_explained() -> void:
 	for index in model.cell_count:
 		if model.coverage[index] <= 0.0:
 			continue
-		# Both sides average to the golden target, but each side has large local
+		# Both sides average inside the suitable band, but each side has large local
 		# variation. This reproduces the previously unexplained low heat score.
 		var doneness := 0.92 if hot_cell else 0.36
 		model.doneness[index] = doneness
@@ -31,7 +41,7 @@ func _test_local_heat_variation_is_explained() -> void:
 	model.yolk_broken = true
 	model.flip(false)
 	var ingredients := IngredientModel.new()
-	var order := {"heat_preference": &"golden", "ingredients": [], "sauces": [], "time_limit": 72.0}
+	var order := {"ingredients": [], "sauces": [], "time_limit": 72.0}
 	var completed := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_order(
 		model,
 		ingredients,
@@ -45,7 +55,7 @@ func _test_local_heat_variation_is_explained() -> void:
 		float(Dictionary(completed.get("dimensions", {})).get("heat", 100.0)) < 60.0
 		and completed_tags.has("火候不均")
 		and str(completed.get("feedback", "")).contains("火候不够均匀"),
-		"low local heat score with green side averages reports uneven heat"
+		"low local heat score with suitable side averages reports uneven heat"
 	)
 	var stored := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_stored_product(
 		{"serving_score_basis": completed.get("serving_score_basis", {})},

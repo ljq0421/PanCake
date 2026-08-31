@@ -3,10 +3,11 @@ extends RefCounted
 
 const UNFLIPPED_DELIVERY_PENALTY := 12.0
 const MAX_PORTIONS_PER_REQUIREMENT := 2
-## The progress-bar green band is also the delivery-contract tolerance.  A
-## player must be able to trust that a side shown as green is not later called
-## under- or overcooked by the customer.
-const HEAT_GREEN_TOLERANCE := 0.08
+## Pancake heat has one shared, order-independent contract. Both boundaries
+## are intentionally broad: 0.25 enters the suitable band and 0.75 enters the
+## charred band.
+const HEAT_SUITABLE_MIN := 0.25
+const HEAT_CHARRED_MIN := 0.75
 ## A score below this threshold is a material quality failure even if the two
 ## side averages happen to remain inside the green delivery window.  In that
 ## case the result panel must explain the local heat variation to the player.
@@ -129,8 +130,7 @@ static func evaluate_order(
 	var back_total := 0.0
 	var front_squared_total := 0.0
 	var back_squared_total := 0.0
-	var heat_squared_error := 0.0
-	var heat_target := _heat_target(order.get("heat_preference", &"golden"))
+	var suitable_heat_samples := 0
 	for index in model.cell_count:
 		if model.coverage[index] <= 0.0:
 			continue
@@ -142,9 +142,10 @@ static func evaluate_order(
 		back_total += model.back_doneness[index]
 		front_squared_total += model.doneness[index] * model.doneness[index]
 		back_squared_total += model.back_doneness[index] * model.back_doneness[index]
-		var front_error := model.doneness[index] - heat_target
-		var back_error := model.back_doneness[index] - heat_target
-		heat_squared_error += (front_error * front_error + back_error * back_error) * 0.5
+		if _doneness_is_suitable(model.doneness[index]):
+			suitable_heat_samples += 1
+		if _doneness_is_suitable(model.back_doneness[index]):
+			suitable_heat_samples += 1
 	var divisor := maxf(float(covered_indices.size()), 1.0)
 	var mean_thickness := thickness_total / divisor
 	var thickness_variance := maxf(thickness_squared_total / divisor - mean_thickness * mean_thickness, 0.0)
@@ -156,8 +157,7 @@ static func evaluate_order(
 		thickness_score = 100.0
 	var mean_front := front_total / divisor
 	var mean_back := back_total / divisor
-	var heat_rmse := sqrt(heat_squared_error / divisor)
-	var heat_score := 100.0 * clampf(1.0 - heat_rmse / 0.62, 0.0, 1.0)
+	var heat_score := 100.0 * float(suitable_heat_samples) / (divisor * 2.0)
 	var egg_result := model.calculate_egg_spread_summary()
 	var egg_score := 100.0 if egg_automation_applied else float(egg_result.score)
 
@@ -242,7 +242,7 @@ static func evaluate_order(
 	var tags := PackedStringArray()
 	if thickness_score < 58.0:
 		tags.append("厚薄不均")
-	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target, heat_score, non_burning_griddle_applied):
+	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_score):
 		tags.append(heat_tag)
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
@@ -299,6 +299,7 @@ static func evaluate_order(
 		},
 		"intrinsic_dimensions": {
 			"thickness": thickness_score,
+			"heat": heat_score,
 			"egg": egg_score,
 		},
 		"heat_moments": {
@@ -332,7 +333,8 @@ static func evaluate_order(
 			"mean_thickness": mean_thickness,
 			"mean_front_doneness": mean_front,
 			"mean_back_doneness": mean_back,
-			"heat_target": heat_target,
+			"heat_suitable_min": HEAT_SUITABLE_MIN,
+			"heat_charred_min": HEAT_CHARRED_MIN,
 			"non_burning_griddle_applied": non_burning_griddle_applied,
 			"egg_coverage_ratio": float(egg_result.coverage_ratio),
 			"egg_uniformity": float(egg_result.uniformity),
@@ -375,17 +377,12 @@ static func evaluate_stored_product(
 	var sauce_automation_applied := bool(production.get("sauce_automation_applied", false))
 	var non_burning_griddle_applied := bool(production.get("non_burning_griddle_applied", false))
 
-	var heat_target := _heat_target(StringName(order.get("heat_preference", &"golden")))
 	var heat_moments: Dictionary = Dictionary(basis.get("heat_moments", {}))
-	var mean_front := float(heat_moments.get("mean_front", heat_target))
-	var mean_back := float(heat_moments.get("mean_back", heat_target))
-	var mean_front_squared := float(heat_moments.get("mean_front_squared", mean_front * mean_front))
-	var mean_back_squared := float(heat_moments.get("mean_back_squared", mean_back * mean_back))
-	var heat_mse := maxf((
-		mean_front_squared - 2.0 * heat_target * mean_front + heat_target * heat_target
-		+ mean_back_squared - 2.0 * heat_target * mean_back + heat_target * heat_target
-	) * 0.5, 0.0)
-	var heat_score := 100.0 * clampf(1.0 - sqrt(heat_mse) / 0.62, 0.0, 1.0)
+	var mean_front := float(heat_moments.get("mean_front", 0.50))
+	var mean_back := float(heat_moments.get("mean_back", 0.50))
+	# New products persist the order-independent heat score. For older saves,
+	# derive a compatible score from the two stored side averages.
+	var heat_score := float(intrinsic.get("heat", _heat_score_for_side_means(mean_front, mean_back)))
 
 	var sauce_results: Dictionary = Dictionary(basis.get("sauce_results", {}))
 	var sauce_profiles: Dictionary = Dictionary(basis.get("sauce_profiles", {}))
@@ -472,7 +469,7 @@ static func evaluate_stored_product(
 	var tags := PackedStringArray()
 	if thickness_score < 58.0:
 		tags.append("厚薄不均")
-	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_target, heat_score, non_burning_griddle_applied):
+	for heat_tag in _heat_feedback_tags(mean_front, mean_back, heat_score):
 		tags.append(heat_tag)
 	if sauce_score >= 82.0:
 		tags.append("酱料均匀")
@@ -502,7 +499,8 @@ static func evaluate_stored_product(
 		"metrics": {
 			"mean_front_doneness": mean_front,
 			"mean_back_doneness": mean_back,
-			"heat_target": heat_target,
+			"heat_suitable_min": HEAT_SUITABLE_MIN,
+			"heat_charred_min": HEAT_CHARRED_MIN,
 			"non_burning_griddle_applied": non_burning_griddle_applied,
 		},
 		"tags": tags,
@@ -542,62 +540,47 @@ static func _spice_profile_meets_target(profile: Dictionary) -> bool:
 	)
 
 
-static func _heat_target(preference: StringName) -> float:
-	match preference:
-		&"light":
-			return 0.48
-		&"well_done":
-			return 0.76
-	return 0.64
-
-
-static func heat_target_for(preference: StringName) -> float:
-	return _heat_target(preference)
-
-
 static func heat_feedback_for_metrics(metrics: Dictionary) -> String:
 	return _heat_feedback_text(
 		float(metrics.get("mean_front_doneness", 0.0)),
 		float(metrics.get("mean_back_doneness", 0.0)),
-		float(metrics.get("heat_target", 0.0)),
 		100.0,
-		bool(metrics.get("non_burning_griddle_applied", false)),
 	)
 
 
-static func heat_matches_preference_metrics(metrics: Dictionary) -> bool:
-	var target := float(metrics.get("heat_target", 0.0))
-	if target <= 0.0:
-		return false
-	return _heat_matches_target(
+static func heat_is_suitable_metrics(metrics: Dictionary) -> bool:
+	return _heat_is_suitable(
 		float(metrics.get("mean_front_doneness", 0.0)),
 		float(metrics.get("mean_back_doneness", 0.0)),
-		target,
 	)
 
 
-static func _heat_matches_target(mean_front: float, mean_back: float, heat_target: float) -> bool:
-	return (
-		absf(mean_front - heat_target) <= HEAT_GREEN_TOLERANCE
-		and absf(mean_back - heat_target) <= HEAT_GREEN_TOLERANCE
-	)
+static func _heat_is_suitable(mean_front: float, mean_back: float) -> bool:
+	return _doneness_is_suitable(mean_front) and _doneness_is_suitable(mean_back)
+
+
+static func _doneness_is_suitable(doneness: float) -> bool:
+	return doneness >= HEAT_SUITABLE_MIN and doneness < HEAT_CHARRED_MIN
+
+
+static func _heat_score_for_side_means(mean_front: float, mean_back: float) -> float:
+	var suitable_sides := int(_doneness_is_suitable(mean_front)) + int(_doneness_is_suitable(mean_back))
+	return float(suitable_sides) * 50.0
 
 
 static func _heat_feedback_tags(
 	mean_front: float,
 	mean_back: float,
-	heat_target: float,
-	heat_score: float = 100.0,
-	non_burning_griddle_applied: bool = false
+	heat_score: float = 100.0
 ) -> PackedStringArray:
 	var tags := PackedStringArray()
 	for side in [["正面", mean_front], ["反面", mean_back]]:
 		var side_name := str(side[0])
 		var side_doneness := float(side[1])
-		if side_doneness < heat_target - HEAT_GREEN_TOLERANCE:
-			tags.append("%s火候不足" % side_name if non_burning_griddle_applied else "%s偏生" % side_name)
-		elif side_doneness > heat_target + HEAT_GREEN_TOLERANCE:
-			tags.append("%s偏焦" % side_name)
+		if side_doneness < HEAT_SUITABLE_MIN:
+			tags.append("%s未熟" % side_name)
+		elif side_doneness >= HEAT_CHARRED_MIN:
+			tags.append("%s焦糊" % side_name)
 	if tags.is_empty() and heat_score < HEAT_FEEDBACK_SCORE_THRESHOLD:
 		tags.append("火候不均")
 	return tags
@@ -606,11 +589,9 @@ static func _heat_feedback_tags(
 static func _heat_feedback_text(
 	mean_front: float,
 	mean_back: float,
-	heat_target: float,
-	heat_score: float = 100.0,
-	non_burning_griddle_applied: bool = false
+	heat_score: float = 100.0
 ) -> String:
-	return "、".join(_heat_feedback_tags(mean_front, mean_back, heat_target, heat_score, non_burning_griddle_applied))
+	return "、".join(_heat_feedback_tags(mean_front, mean_back, heat_score))
 
 
 static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio: float) -> String:
@@ -619,7 +600,7 @@ static func _feedback_for(score: float, tags: PackedStringArray, patience_ratio:
 	if tags.has("鸡蛋厚薄不均") or tags.has("鸡蛋局部堆积"):
 		return "鸡蛋有些地方堆得太厚，画圈时再连续、均匀一些。"
 	var heat_feedback := PackedStringArray()
-	for heat_tag in ["正面偏生", "正面偏焦", "反面偏生", "反面偏焦", "正面火候不足", "反面火候不足"]:
+	for heat_tag in ["正面未熟", "正面焦糊", "反面未熟", "反面焦糊"]:
 		if tags.has(heat_tag):
 			heat_feedback.append(heat_tag)
 	if not heat_feedback.is_empty():

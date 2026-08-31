@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const LAUNCH_SCREENSHOT := "res://tmp/validation/formal_payment_collection_fx_launch_1920x1080.png"
 const IMPACT_SCREENSHOT := "res://tmp/validation/formal_payment_collection_fx_impact_1920x1080.png"
 

@@ -346,16 +346,18 @@ static func validate_catalog() -> PackedStringArray
 
 保留现有煎饼评分维度，订单模板只声明要求，不复制评分公式。
 
-| 模板 ID | 必需小料 | 酱料 | 火候 | 基础售价 |
-|---|---|---|---|---:|
-| `order.pancake.classic` | 鸡蛋、薄脆、香葱 | 甜面酱 | 金黄 | 8 |
-| `order.pancake.scallion_light` | 鸡蛋、香葱 | 甜面酱 | 嫩火 | 7 |
-| `order.pancake.chili_ham` | 鸡蛋、薄脆、火腿肠 | 辣酱 | 偏香脆 | 12 |
-| `order.pancake.double_sauce` | 鸡蛋、薄脆、火腿肠、香葱 | 双酱 | 金黄 | 16 |
-| `order.pancake.meat_floss_sweet` | 鸡蛋、薄脆、肉松、香葱 | 甜面酱 | 金黄 | 15 |
-| `order.pancake.tenderloin_double_sauce` | 鸡蛋、里脊肉、香葱 | 双酱 | 偏香脆 | 18 |
-| `order.pancake.coriander` | 鸡蛋、薄脆、香菜 | 甜面酱 | 金黄 | 10 |
-| `order.pancake.preserved_mustard` | 鸡蛋、薄脆、榨菜 | 辣酱 | 金黄 | 11 |
+| 模板 ID | 必需小料 | 酱料 | 基础售价 |
+|---|---|---|---:|
+| `order.pancake.classic` | 鸡蛋、薄脆、香葱 | 甜面酱 | 8 |
+| `order.pancake.scallion_light` | 鸡蛋、香葱 | 甜面酱 | 7 |
+| `order.pancake.chili_ham` | 鸡蛋、薄脆、火腿肠 | 辣酱 | 12 |
+| `order.pancake.double_sauce` | 鸡蛋、薄脆、火腿肠、香葱 | 双酱 | 16 |
+| `order.pancake.meat_floss_sweet` | 鸡蛋、薄脆、肉松、香葱 | 甜面酱 | 15 |
+| `order.pancake.tenderloin_double_sauce` | 鸡蛋、里脊肉、香葱 | 双酱 | 18 |
+| `order.pancake.coriander` | 鸡蛋、薄脆、香菜 | 甜面酱 | 10 |
+| `order.pancake.preserved_mustard` | 鸡蛋、薄脆、榨菜 | 辣酱 | 11 |
+
+全部模板共用三档火候：未熟 `0%–25%`、合适 `25%–75%`、焦糊 `75%–100%`；订单模板不声明火候偏好。
 
 模板只有在全部必需小料和酱料已解锁时才进入候选池。
 
@@ -934,7 +936,7 @@ stale
     "product_instance_id": &"",
     "product_id": &"product.pancake.custom",
     "source_order_template_id": &"",
-    "heat_preference": &"",
+    "heat_is_suitable": true,
     "ingredient_ids": PackedStringArray(),
     "sauce_ids": PackedStringArray(),
     "fold_snapshot": {},
@@ -945,7 +947,7 @@ stale
 }
 ```
 
-交付不使用 `source_order_template_id` 作为硬门槛。暂存煎饼可以交给任意当前活动订单，但必须依据成品快照重新计算该订单下的火候、酱料、配料、订单和等待时间分，再扣新鲜度分；差异只能影响评分和结算反馈，不能替玩家拒绝错单。递餐期间暂停鏊上在制煎饼，付款后为下一位顾客恢复原制作阶段。
+交付不使用 `source_order_template_id` 作为硬门槛。暂存煎饼可以交给任意当前活动订单；火候按统一三档直接判断，其余维度依据成品快照重新计算酱料、配料、订单和等待时间分，再扣新鲜度分。差异只能影响评分和结算反馈，不能替玩家拒绝错单。递餐期间暂停鏊上在制煎饼，付款后为下一位顾客恢复原制作阶段。
 
 新鲜度 v0：
 
@@ -1351,7 +1353,7 @@ func load_snapshot(snapshot: Dictionary) -> Dictionary
 
 新增正式主场景：
 
-`scenes/gameplay/five_area_workstation.tscn`
+`scenes/gameplay/four_area_workstation.tscn`
 
 `main_page_prototype.tscn` 只作为布局参考，不能直接承担业务状态。现有 `workstation.tscn` 在煎饼站拆分完成前保持可运行，禁止在拆分过程中破坏已有煎饼验证。
 

@@ -1,6 +1,6 @@
 extends SceneTree
 
-const SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const OUTPUT_1920 := "res://tmp/validation/cooking_progress_1920x1080.png"
 const OUTPUT_1280 := "res://tmp/validation/cooking_progress_1280x720.png"
 
@@ -27,7 +27,6 @@ func _run() -> void:
 	griddle.pancake_model.coverage.fill(1.0)
 	griddle.pancake_model.doneness.fill(0.64)
 	griddle.pancake_model.cooking_exposure_seconds.fill(0.0)
-	griddle.order = {"heat_preference": &"golden"}
 	griddle.state = CompactGriddleUnit.State.FIRST_SIDE
 	griddle.first_side_seconds = 6.0
 	griddle.call("_refresh_ui")

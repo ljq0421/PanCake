@@ -171,6 +171,7 @@ pancake_front_texture = ExtResource("16_cooked")
 pancake_back_texture = ExtResource("3_pancake")
 pancake_edge_texture = ExtResource("18_edge")
 paper_bag_package_texture = ExtResource("4_bag")
+package_display_rect = Rect2(68.5334, 93.5334, 174.9332, 174.9332)
 
 [node name="EggCrackEffect" type="AnimatedSprite2D" parent="PancakeSurface"]
 unique_name_in_owner = true
@@ -230,7 +231,7 @@ offset_top = 69.0
 offset_right = 292.0
 offset_bottom = 233.0
 pivot_offset = Vector2(82, 82)
-scale = Vector2(2, 2)
+scale = Vector2(1.066666, 1.066666)
 mouse_filter = 2
 texture = ExtResource("4_bag")
 expand_mode = 1

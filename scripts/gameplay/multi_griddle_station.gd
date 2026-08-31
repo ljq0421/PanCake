@@ -396,6 +396,11 @@ func _source_is_available_for_drop(source_ref: Dictionary, validation: Dictionar
 		var progression: RefCounted = _session.call("progression_service") if _session.has_method("progression_service") else null
 		if progression == null or not bool(progression.call("owns_stock", stock_id)):
 			return false
+		# Unlimited garnishes intentionally keep a zero inventory count. Their
+		# unlock state is the complete availability contract, just as it is in
+		# _consume_inventory_stock below.
+		if _stock_is_unlimited(stock_id):
+			return true
 		return int(Dictionary(_session.call("inventory_snapshot")).get(str(stock_id), 0)) > 0
 	if not PANCAKE_YOUTIAO_PRODUCT_IDS.has(StringName(source_ref.get("product_id", &""))):
 		return false
@@ -787,11 +792,7 @@ func _build_product(unit: Node) -> Dictionary:
 		intrinsic_score += float(value)
 	if not intrinsic_dimensions.is_empty():
 		intrinsic_score /= float(intrinsic_dimensions.size())
-	# Retain the legacy category for unscored previews and old integrations.  The
-	# formal delivery path uses per-side green-band matching instead.
-	var summary := Dictionary(unit.pancake_model.calculate_summary())
-	var mean_heat := (float(summary.get("mean_doneness", 0.0)) + float(summary.get("mean_back_doneness", 0.0))) * 0.5
-	var actual_heat: StringName = &"light" if mean_heat < 0.34 else (&"golden" if mean_heat < 0.62 else &"well_done")
+	var heat_metrics := Dictionary(score_result.get("metrics", {}))
 	var cost_stock_ids := PackedStringArray(["stock.pancake.batter"])
 	cost_stock_ids.append_array(unit.applied_ingredient_ids)
 	cost_stock_ids.append_array(unit.applied_sauce_ids)
@@ -803,7 +804,8 @@ func _build_product(unit: Node) -> Dictionary:
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
 		"source_index": int(unit.unit_index),
-		"heat_preference": actual_heat,
+		"heat_is_suitable": PANCAKE_SCORER.heat_is_suitable_metrics(heat_metrics),
+		"heat_feedback": PANCAKE_SCORER.heat_feedback_for_metrics(heat_metrics),
 		"ingredient_ids": unit.applied_ingredient_ids.duplicate(),
 		"sauce_ids": unit.applied_sauce_ids.duplicate(),
 		"cost_stock_ids": cost_stock_ids,
@@ -823,7 +825,6 @@ static func _unbound_production_context() -> Dictionary:
 	return {
 		"id": &"production.pancake.unbound",
 		"product_id": &"product.pancake.custom",
-		"heat_preference": &"golden",
 		"ingredients": PackedStringArray(),
 		"sauces": PackedStringArray(),
 		"ingredient_ids": PackedStringArray(),

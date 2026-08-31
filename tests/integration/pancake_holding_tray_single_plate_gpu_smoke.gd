@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const RUNTIME_CAPTURE := "res://tmp/validation/pancake_holding_tray_single_plate_runtime_gpu.png"
 const WORKSHOP_CAPTURE := "res://tmp/validation/pancake_holding_tray_single_plate_workshop_gpu.png"
 
@@ -27,7 +27,7 @@ func _run() -> void:
 	session.call("begin_new_game")
 	var progression: RefCounted = session.call("progression_service")
 	progression.set("owned_growth_ids", {&"growth.capacity.pancake_holding_tray.first_slot": true})
-	for product_index in range(4):
+	for product_index in range(3):
 		var stored := Dictionary(session.call("store_pancake_product", {
 			"product_instance_id": StringName("gpu.tray.pancake.%d" % product_index),
 			"product_id": &"product.pancake.custom",
@@ -40,14 +40,14 @@ func _run() -> void:
 	root.add_child(station)
 	for _frame in 8:
 		await process_frame
-	var tray := station.get_node("FiveAreaInfrastructure/PancakeHoldingTray") as TextureButton
+	var tray := station.get_node("FiveAreaInfrastructure/Stations/PancakeHoldingTray") as TextureButton
 	var visible_sources: Array[Control] = []
-	for source_index in range(1, 5):
-		var source := station.get_node("FiveAreaInfrastructure/PancakeHoldingTray/PancakeHoldingSource%02d" % source_index) as Control
+	for source_index in range(1, 4):
+		var source := station.get_node("FiveAreaInfrastructure/Stations/PancakeHoldingTray/PancakeHoldingSource%02d" % source_index) as Control
 		if source.visible:
 			visible_sources.append(source)
 	_check(tray.visible and tray.texture_normal != null and tray.texture_normal.resource_path.ends_with("orange_juice/yinpin-v1.png"), "runtime uses one requested tray texture")
-	_check(visible_sources.size() == 4 and visible_sources.all(func(source): return tray.get_global_rect().encloses(source.get_global_rect())), "all four stored pancakes remain readable inside the single tray")
+	_check(visible_sources.size() == 3 and visible_sources.all(func(source): return source.scale.is_equal_approx(Vector2(1.066666, 1.066666))), "all three stored pancakes remain readable as a single stacked tray")
 	var output_paths := PackedStringArray()
 	output_paths.append(await _capture(RUNTIME_CAPTURE))
 	station.call("_open_upgrade_workshop")
@@ -57,7 +57,8 @@ func _run() -> void:
 	var workshop_preview := workshop.get_node("UpgradeProps/PancakeHoldingTrayPreview") as TextureRect if workshop != null else null
 	_check(workshop != null and workshop.visible, "upgrade workshop opens")
 	_check(workshop != null and workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") == null, "workshop has no second tray purchase")
-	_check(workshop_preview != null and workshop_preview.texture != null and workshop_preview.texture.resource_path.ends_with("orange_juice/yinpin-v1.png"), "workshop previews the same single tray")
+	_check(workshop_preview != null and not workshop_preview.visible, "workshop hides its ghosted preview when the live tray is already installed")
+	_check(tray.visible, "workshop keeps exactly the installed live tray visible")
 	output_paths.append(await _capture(WORKSHOP_CAPTURE))
 	station.queue_free()
 	await process_frame

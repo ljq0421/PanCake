@@ -21,13 +21,12 @@ func _initialize() -> void:
 	bar.configure(0.50, 0.40, 0.60, true, BAR.STAGE_RED)
 	_check(bar.current_stage() == BAR.STAGE_RED, "an explicit danger state overrides the pointer segment")
 
-	var light := GRIDDLE.heat_window_for_preference(&"light")
-	var golden := GRIDDLE.heat_window_for_preference(&"golden")
-	var well_done := GRIDDLE.heat_window_for_preference(&"well_done")
-	_check(light.is_equal_approx(Vector2(0.40, 0.56)), "light pancake orders use a 0.40-0.56 green window")
-	_check(golden.is_equal_approx(Vector2(0.56, 0.72)), "golden pancake orders use a 0.56-0.72 green window")
-	_check(well_done.is_equal_approx(Vector2(0.68, 0.84)), "well-done pancake orders use a 0.68-0.84 green window")
-	_check(GRIDDLE.heat_stage_for_doneness(0.64, golden) == BAR.STAGE_GREEN, "pancake heat classification shares the bar's stage semantics")
+	var suitable := GRIDDLE.heat_window()
+	_check(suitable.is_equal_approx(Vector2(0.25, 0.75)), "all pancakes use the shared 0.25-0.75 suitable window")
+	_check(GRIDDLE.heat_stage_for_doneness(0.249, suitable) == BAR.STAGE_YELLOW, "doneness below 0.25 is undercooked")
+	_check(GRIDDLE.heat_stage_for_doneness(0.25, suitable) == BAR.STAGE_GREEN, "the lower suitable boundary is inclusive")
+	_check(GRIDDLE.heat_stage_for_doneness(0.749, suitable) == BAR.STAGE_GREEN, "doneness below 0.75 remains suitable")
+	_check(GRIDDLE.heat_stage_for_doneness(0.75, suitable) == BAR.STAGE_RED, "the 0.75 charred boundary is exclusive from the suitable window")
 	bar.free()
 
 	if _failures.is_empty():

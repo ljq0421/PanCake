@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const DAILY_BILL_CAPTURES := [
 	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/five_area_growth_ui_gpu_1920x1080.png"},
 	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/five_area_growth_ui_gpu_1280x720.png"},
@@ -87,7 +87,14 @@ func _run() -> void:
 	var youtiao_finished_tray_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_capacity_youtiao_finished_tray") as Button if workshop != null else null
 	var chicken_finished_tray_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_capacity_chicken_finished_tray") as Button if workshop != null else null
 	var baocui_tag := baocui_prop.get_node("ConditionTag") as Label if baocui_prop != null else null
-	_check(baocui_prop != null and baocui_prop.visible and baocui_tag != null and baocui_tag.text == "可预订", "workshop hotspots keep only their actionable state visible at rest")
+	_check(
+		baocui_prop != null
+		and baocui_prop.visible
+		and baocui_tag != null
+		and baocui_tag.text == "30 金币"
+		and is_equal_approx(baocui_prop.modulate.a, 1.0),
+		"affordable, unlocked workshop reservations show a solid price-only tag",
+	)
 	_check(
 		workshop_detail != null
 		and youtiao_fryer_prop != null

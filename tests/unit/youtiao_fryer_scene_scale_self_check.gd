@@ -72,6 +72,29 @@ func _run() -> void:
 	fryer.call("_apply_fryer_layout", false, false, false, false)
 	_check(fryer.fryer_assembly.scale == Vector2(1.1, 1.1), "returning to a basic layout restores its independent authored scale")
 
+	var transfer_texture := GradientTexture2D.new()
+	for source in fryer.fryer_slot_sources:
+		source.texture_normal = transfer_texture
+		source.visible = false
+	# Sparse slots are possible after individual drag delivery. The transfer must
+	# animate the two visible products, not assume that occupied indices are dense.
+	fryer.fryer_slot_sources[1].visible = true
+	fryer.fryer_slot_sources[3].visible = true
+	fryer.call("_play_batch_to_finished_tray", false, 2, 0)
+	var transfer_ghosts := fryer.get_children().filter(func(child: Node) -> bool: return child.has_meta(&"spatial_flight_effect"))
+	_check(transfer_ghosts.size() == 2, "two sparse ready oil strips receive two staggered filter-to-tray flights")
+	var first_transfer_position := (transfer_ghosts[0] as Control).position if not transfer_ghosts.is_empty() else Vector2.ZERO
+	await create_timer(0.38).timeout
+	await process_frame
+	_check(
+		not transfer_ghosts.is_empty()
+		and is_instance_valid(transfer_ghosts[0])
+		and (transfer_ghosts[0] as Control).position.distance_to(first_transfer_position) > 8.0,
+		"the first oil strip is visibly in flight before the staggered transfer finishes",
+	)
+	await create_timer(0.58).timeout
+	_check(fryer.get_children().all(func(child: Node) -> bool: return not child.has_meta(&"spatial_flight_effect")), "all filter-to-tray transfer ghosts clean themselves up")
+
 	fryer.queue_free()
 	_finish()
 

@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 
 var failures := PackedStringArray()
 var _product_sequence := 0
@@ -24,13 +24,11 @@ func _run() -> void:
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
 		"quantity": 1,
-		"heat_preference": &"golden",
 		"ingredient_ids": PackedStringArray(),
 		"sauce_ids": PackedStringArray(),
 	}
 	var first_opened := Dictionary(session.call("open_formal_order", [item.duplicate(true)], {"source": &"click_delivery_first", "patience_seconds": 120.0}))
 	var different_item := item.duplicate(true)
-	different_item["heat_preference"] = &"well_done"
 	different_item["ingredient_ids"] = PackedStringArray(["stock.pancake.egg"])
 	var second_opened := Dictionary(session.call("open_formal_order", [different_item], {"source": &"click_delivery_second", "patience_seconds": 120.0}))
 	var first_order := Dictionary(first_opened.get("order", {}))
@@ -94,14 +92,14 @@ func _prepare_ready_pancake(workstation: Node, item: Dictionary) -> void:
 		"product_instance_id": StringName("test.click_delivery.%d" % _product_sequence),
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
-		"heat_preference": StringName(item.get("heat_preference", &"golden")),
+		"heat_is_suitable": true,
 		"ingredient_ids": PackedStringArray(Array(item.get("ingredient_ids", []))),
 		"sauce_ids": PackedStringArray(Array(item.get("sauce_ids", []))),
 		"score": 100.0,
 		"feedback": "test ready pancake",
 		"serving_score_basis": {
 			"version": 2,
-			"intrinsic_dimensions": {"integrity": 100.0, "thickness": 100.0, "egg": 100.0, "fold": 100.0},
+			"intrinsic_dimensions": {"integrity": 100.0, "thickness": 100.0, "heat": 100.0, "egg": 100.0, "fold": 100.0},
 			"heat_moments": {"mean_front": 0.64, "mean_back": 0.64, "mean_front_squared": 0.4096, "mean_back_squared": 0.4096},
 			"sauce_results": {},
 			"sauce_profiles": {},

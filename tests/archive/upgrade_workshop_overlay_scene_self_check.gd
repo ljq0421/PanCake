@@ -29,7 +29,7 @@ func _run() -> void:
 	_check(editor_material_previews != null and not editor_material_previews.visible, "runtime hides the scene-authored editor material guides")
 	var overlay_scene_source := FileAccess.get_file_as_string("res://scenes/ui/upgrade_workshop_overlay.tscn")
 	var overlay_script_source := FileAccess.get_file_as_string("res://scripts/ui/upgrade_workshop_overlay.gd")
-	_check(overlay_scene_source.contains("path=\"res://scenes/gameplay/five_area_workstation.tscn\""), "editor preview reads from the formal workstation scene")
+	_check(overlay_scene_source.contains("path=\"res://scenes/gameplay/four_area_workstation.tscn\""), "editor preview reads from the formal workstation scene")
 	_check(overlay_scene_source.contains("name=\"SyncedWorkstationPreview\" parent=\"EditorPreview\"") and overlay_scene_source.contains("instance=ExtResource(\"3_workstation_preview\")"), "workshop scene authors one synchronized external workstation instance")
 	_check(overlay_script_source.contains("func _enter_tree()"), "runtime removes the editor-only workstation before child callbacks run")
 	var props := overlay.get_node_or_null("UpgradeProps") as Control
@@ -50,7 +50,7 @@ func _run() -> void:
 	var juice_tray_preview := props.get_node_or_null("FilledOrangeJuiceTrayPreview") as TextureRect if props != null else null
 	_check(juice_tray_preview != null and juice_tray_preview.texture != null and juice_tray_preview.texture.resource_path.ends_with("yinpin-v1-10.png"), "workshop shows the authored full ten-box orange-juice tray preview")
 	var juice_unlock_tag := props.get_node_or_null("WorkshopProp_growth_area_packaged_drink") as Button if props != null else null
-	_check(juice_unlock_tag != null and juice_unlock_tag.visible and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "成品饮品架\n条件不足", "locked juice-tray preview shows its name and concise unavailable-reservation tag")
+	_check(juice_unlock_tag != null and juice_unlock_tag.visible and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "200 金币" and is_equal_approx(juice_unlock_tag.modulate.a, 0.42), "locked juice-tray preview shows a translucent price-only reservation tag")
 	_check(juice_unlock_tag != null and juice_unlock_tag.tooltip_text.contains("先解锁豆浆区域"), "locked juice-tray hover explains why it cannot be reserved")
 	_check(juice_unlock_tag != null and juice_tray_preview != null and not juice_unlock_tag.get_global_rect().intersects(juice_tray_preview.get_global_rect()), "juice reservation tag is separate from the drink-tray artwork")
 	_check(juice_tray_preview != null and is_equal_approx(juice_tray_preview.self_modulate.a, 0.42), "locked juice-tray preview is translucent")
@@ -79,7 +79,7 @@ func _run() -> void:
 		_check(advanced_soy_prop != null and not advanced_soy_prop.visible, "advanced soy machine is hidden until the intermediate machine is installed")
 		var finished_tray_tag := finished_tray_prop.get_node_or_null("ConditionTag") as Label if finished_tray_prop != null else null
 		_check(finished_tray_prop != null and finished_tray_prop.visible, "finished-youtiao tray remains labelled before the fryer is installed")
-		_check(finished_tray_tag != null and finished_tray_tag.text == "油条成品盘\n条件不足", "unavailable workshop tags show their name and concise copy")
+		_check(finished_tray_tag != null and finished_tray_tag.text == "50 金币" and is_equal_approx(finished_tray_prop.modulate.a, 0.42), "unavailable workshop tags show a translucent price-only cost")
 		_check(finished_tray_prop != null and finished_tray_prop.tooltip_text.contains("先解锁油条区域"), "finished-youtiao tray hover explains its reservation prerequisite")
 		_check(chicken_tray_prop != null and chicken_tray_prop.visible and chicken_tray_prop.tooltip_text.contains("先预订双篮炸锅"), "chicken tray is visible in the workshop and explains its dual-fryer prerequisite")
 		_check(baocui_prop != null and baocui_prop.visible and baocui_prop.tooltip_text.contains("金币"), "baocui tag remains visible and explains its current availability")
@@ -116,12 +116,12 @@ func _run() -> void:
 		})
 		overlay.refresh()
 		_check(press_prop != null and not press_prop.visible, "owned press hides its workshop tag")
-		_check(non_burning_griddle_prop != null and non_burning_griddle_prop.visible and (non_burning_griddle_prop.get_node_or_null("ConditionTag") as Label).text.begins_with("不会糊的煎饼鏊子"), "non-burning griddle appears after its two prerequisite tools")
+		_check(non_burning_griddle_prop != null and non_burning_griddle_prop.visible and (non_burning_griddle_prop.get_node_or_null("ConditionTag") as Label).text == "180 金币", "non-burning griddle appears after its two prerequisite tools with its cost")
 		_check(advanced_soy_prop != null and advanced_soy_prop.visible, "advanced soy machine appears after the intermediate machine is installed")
 		progression.set("unlocked_area_ids", {&"area.pancake": true, &"area.youtiao": true, &"area.fresh_soy_milk": true})
 		progression.set("coins", 200)
 		overlay.refresh()
-		_check(juice_unlock_tag != null and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "成品饮品架\n200 金币", "available reservations show their name and price")
+		_check(juice_unlock_tag != null and (juice_unlock_tag.get_node_or_null("ConditionTag") as Label).text == "200 金币" and is_equal_approx(juice_unlock_tag.modulate.a, 1.0), "available reservations show a solid price-only tag")
 		if juice_unlock_tag != null:
 			juice_unlock_tag.emit_signal("pressed")
 		await process_frame

@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const PROGRESSION_SERVICE := preload("res://scripts/services/five_area_progression_service.gd")
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
@@ -12,6 +12,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	root.size = Vector2i(1920, 1080)
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
@@ -20,6 +21,7 @@ func _run() -> void:
 	var visual := carton.get_node_or_null("Visual") as TextureRect if carton != null else null
 	var contents := visual.get_node_or_null("Contents") as TextureRect if visual != null else null
 	var source := carton.get_node_or_null("Hotspot") as ProductDragSource if carton != null else null
+	var holding_tray := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeHoldingTray") as Control
 	_check(hotspots != null, "the physical egg carton belongs to the worktop controller")
 	_check(carton != null and visual != null and contents != null, "the egg-carton component owns visual, contents, and hotspot nodes")
 	if hotspots != null and carton != null:
@@ -30,7 +32,13 @@ func _run() -> void:
 		hotspots._refresh_optional_stock_visuals(starter_progression)
 		_check(carton.visible, "unlocking egg restores its carton to the worktop")
 	if carton != null and visual != null and contents != null:
-		_check(carton.get_global_rect() == visual.get_global_rect() and visual.get_global_rect() == contents.get_global_rect(), "egg contents share the carton component coordinates")
+		_check(carton.get_global_rect().encloses(visual.get_global_rect()) and visual.get_global_rect().encloses(contents.get_global_rect()), "egg content layers remain contained within the scaled carton artwork")
+	if carton != null and source != null and holding_tray != null:
+		_check(carton.get_global_rect().encloses(source.get_global_rect()), "egg hotspot stays within the physical carton")
+		_check(not source.get_global_rect().intersects(holding_tray.get_global_rect()), "egg hotspot does not overlap the finished-pancake tray")
+		_check(holding_tray is AlphaTextureButton, "finished-pancake tray uses its visible texture as the pointer hit shape")
+		_check(not holding_tray._has_point(Vector2.ZERO) and holding_tray._has_point(holding_tray.size * 0.5), "finished-pancake tray ignores transparent canvas margins while retaining its visible center")
+		_check(not holding_tray._has_point(Vector2(30.0, holding_tray.size.y * 0.5)), "finished-pancake tray also ignores its aspect-fit side margin")
 	if hotspots != null:
 		_check(int(CATALOG.stock_definition(&"stock.pancake.egg").get("restock_capacity", 0)) == 10, "egg restock capacity is ten")
 		_check(hotspots.egg_content_textures.size() == 11, "egg inventory maps the empty tray plus all ten filled states")
@@ -45,6 +53,7 @@ func _run() -> void:
 	_check(source != null and source is EggCartonDragSource and source.hold_enabled and is_equal_approx(source.hold_threshold_seconds, 0.20) and not source.native_drag_enabled, "egg carton uses click-to-place plus a 0.2-second hold-to-restock")
 	if source is EggCartonDragSource:
 		_check(not source._has_point(Vector2.ZERO), "transparent margin outside the egg-carton artwork is not clickable")
+		_check(source._has_point(source.size * 0.5), "the visible upper egg-carton body remains clickable")
 		source.set_filled_slot_count(3)
 		var first_egg := Vector2(source.size.x * 0.75, source.size.y * 0.52)
 		var empty_upper_left := Vector2(source.size.x * 0.25, source.size.y * 0.36)

@@ -16,7 +16,7 @@ func _run() -> void:
 		"item_results": [{
 			"product_id": &"product.pancake.custom",
 			"product": {"product_id": &"product.youtiao.plain"},
-			"mismatch_reasons": PackedStringArray(["product_id", "heat_preference", "ingredient_ids", "sauce_ids"]),
+			"mismatch_reasons": PackedStringArray(["product_id", "heat", "ingredient_ids", "sauce_ids"]),
 		}],
 	})
 	var feedback := str(summary.get("feedback", ""))
@@ -31,12 +31,12 @@ func _run() -> void:
 		"order_success": false,
 		"item_results": [{
 			"product_id": &"product.pancake.custom",
-			"product": {"product_id": &"product.pancake.custom", "heat_feedback": "正面偏生、反面偏焦"},
-			"mismatch_reasons": PackedStringArray(["heat_preference"]),
+			"product": {"product_id": &"product.pancake.custom", "heat_feedback": "正面未熟、反面焦糊"},
+			"mismatch_reasons": PackedStringArray(["heat"]),
 		}],
 	})
 	_check(
-		str(heat_summary.get("feedback", "")) == "顾客指出：煎饼正面偏生、反面偏焦",
+		str(heat_summary.get("feedback", "")) == "顾客指出：煎饼正面未熟、反面焦糊",
 		"pancake heat mismatch identifies the undercooked and overcooked sides"
 	)
 	var quality_summary := WORKSTATION._tray_result_summary({
@@ -46,11 +46,11 @@ func _run() -> void:
 			"ingredient_ids": PackedStringArray(["stock.pancake.baocui"]),
 			"product": {
 				"product_id": &"product.pancake.custom",
-				"heat_feedback": "正面偏焦",
+				"heat_feedback": "正面焦糊",
 				"dimension_scores": {"heat": 96.0, "ingredients": 79.0, "order": 100.0},
 				"tags": PackedStringArray(["配料靠边易漏"]),
 			},
-			"mismatch_reasons": PackedStringArray(["heat_preference"]),
+			"mismatch_reasons": PackedStringArray(["heat"]),
 		}],
 	})
 	_check(
@@ -64,13 +64,13 @@ func _run() -> void:
 	var detailed_feedback := GAME_SESSION_STORE._formal_review_feedback(
 		&"product.pancake.custom",
 		&"product.pancake.custom",
-		{"heat_preference": &"golden", "ingredient_ids": PackedStringArray(["stock.pancake.egg"]), "sauce_ids": PackedStringArray(["stock.pancake.sauce.sweet_flour"])},
-		{"heat_feedback": "正面偏生、反面偏焦", "ingredient_ids": PackedStringArray(["stock.pancake.baocui"]), "sauce_ids": PackedStringArray()},
-		PackedStringArray(["heat_preference", "ingredient_ids", "sauce_ids"]),
+		{"ingredient_ids": PackedStringArray(["stock.pancake.egg"]), "sauce_ids": PackedStringArray(["stock.pancake.sauce.sweet_flour"])},
+		{"heat_feedback": "正面未熟、反面焦糊", "ingredient_ids": PackedStringArray(["stock.pancake.baocui"]), "sauce_ids": PackedStringArray()},
+		PackedStringArray(["heat", "ingredient_ids", "sauce_ids"]),
 		0.0,
 	)
 	_check(
-		detailed_feedback == "煎饼不符合订单要求：火候订单要金黄，实际正面偏生、反面偏焦；配料订单要鸡蛋，实际薄脆；酱料订单要秘制酱料，实际不加",
+		detailed_feedback == "煎饼不符合订单要求：火候应在合适区间，实际正面未熟、反面焦糊；配料订单要鸡蛋，实际薄脆；酱料订单要秘制酱料，实际不加",
 		"formal review spells out each pancake requirement and the delivered result"
 	)
 	if _failures.is_empty():

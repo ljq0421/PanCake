@@ -39,7 +39,6 @@ func _run() -> void:
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
 		"temperature_mode": order_item.get("temperature_mode", &"hot"),
-		"heat_preference": order_item.get("heat_preference", &"golden"),
 		"ingredient_ids": Array(order_item.get("ingredient_ids", [])).duplicate(),
 		"sauce_ids": Array(order_item.get("sauce_ids", [])).duplicate(),
 		"score": 100.0,

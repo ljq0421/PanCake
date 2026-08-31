@@ -298,14 +298,19 @@ func chapter_status(chapter_id: StringName) -> Dictionary:
 	}
 
 
-func select_chapter(chapter_id: StringName) -> Dictionary:
+func select_chapter(chapter_id: StringName, allow_locked_in_debug_build: bool = false) -> Dictionary:
 	if not has_save():
 		return {"success": false, "reason": &"no_active_save"}
 	var status := chapter_status(chapter_id)
-	if not bool(status.get("success", false)) or not bool(status.get("unlocked", false)):
+	var debug_bypass := (
+		allow_locked_in_debug_build
+		and OS.is_debug_build()
+		and not bool(status.get("unlocked", false))
+	)
+	if not bool(status.get("success", false)) or (not bool(status.get("unlocked", false)) and not debug_bypass):
 		return {"success": false, "reason": &"chapter_locked", "status": status}
 	if chapter_id == _active_chapter:
-		return {"success": true, "changed": false, "chapter_id": chapter_id, "scene_path": chapter_scene_path(chapter_id)}
+		return {"success": true, "changed": false, "chapter_id": chapter_id, "scene_path": chapter_scene_path(chapter_id), "debug_bypass": debug_bypass}
 	if _active_chapter_day_open():
 		return {"success": false, "reason": &"business_day_open", "active_chapter_id": _active_chapter}
 	_sync_active_chapter_to_campaign()
@@ -332,7 +337,7 @@ func select_chapter(chapter_id: StringName) -> Dictionary:
 	_write_save()
 	chapter_changed.emit(chapter_id)
 	campaign_changed.emit(campaign_snapshot())
-	return {"success": true, "changed": true, "chapter_id": chapter_id, "scene_path": chapter_scene_path(chapter_id)}
+	return {"success": true, "changed": true, "chapter_id": chapter_id, "scene_path": chapter_scene_path(chapter_id), "debug_bypass": debug_bypass}
 
 
 func noodle_shop_snapshot() -> Dictionary:
@@ -1133,7 +1138,6 @@ func open_pancake_order(template: Dictionary) -> Dictionary:
 		"pancake_template_id": StringName(template.get("id", &"")),
 		"ingredient_ids": ingredient_ids,
 		"sauce_ids": sauce_ids,
-		"heat_preference": StringName(template.get("heat_preference", &"")),
 	}], {"legacy_order": template.duplicate(true)})
 
 
@@ -1796,7 +1800,6 @@ func _score_pancake_for_delivery(product: Dictionary, order: Dictionary, item: D
 	var elapsed_seconds := 0.0 if tutorial_no_countdown else maxf(patience_seconds - remaining_patience, 0.0)
 	var patience_ratio := 1.0 if tutorial_no_countdown else remaining_patience / patience_seconds
 	var scoring_order := {
-		"heat_preference": StringName(item.get("heat_preference", &"golden")),
 		"ingredients": _legacy_pancake_ids(item.get("ingredient_ids", []), LEGACY_PANCAKE_STOCK_IDS),
 		"sauces": _legacy_pancake_ids(item.get("sauce_ids", []), LEGACY_PANCAKE_SAUCE_STOCK_IDS),
 		"time_limit": patience_seconds,
@@ -1818,7 +1821,7 @@ func _score_pancake_for_delivery(product: Dictionary, order: Dictionary, item: D
 	scored_product["feedback"] = str(result.get("feedback", product.get("feedback", "")))
 	scored_product["tags"] = Array(result.get("tags", [])).duplicate()
 	var heat_feedback := PANCAKE_SCORER.heat_feedback_for_metrics(Dictionary(result.get("metrics", {})))
-	scored_product["heat_matches_requested_preference"] = PANCAKE_SCORER.heat_matches_preference_metrics(Dictionary(result.get("metrics", {})))
+	scored_product["heat_is_suitable"] = PANCAKE_SCORER.heat_is_suitable_metrics(Dictionary(result.get("metrics", {})))
 	if heat_feedback.is_empty():
 		scored_product.erase("heat_feedback")
 	else:
@@ -2888,14 +2891,11 @@ static func _formal_review_feedback(expected_product_id: StringName, actual_prod
 
 static func _formal_review_mismatch_details(order_item: Dictionary, product: Dictionary, mismatch_reasons: PackedStringArray) -> PackedStringArray:
 	var details := PackedStringArray()
-	if mismatch_reasons.has("heat_preference"):
-		var expected_heat := _formal_review_heat_label(StringName(order_item.get("heat_preference", &"golden")))
+	if mismatch_reasons.has("heat"):
 		var actual_heat := str(product.get("heat_feedback", ""))
-		if actual_heat.is_empty() and product.has("heat_preference"):
-			actual_heat = _formal_review_heat_label(StringName(product.get("heat_preference", &"")))
 		if actual_heat.is_empty():
-			actual_heat = "未达到%s火候" % expected_heat
-		details.append("火候订单要%s，实际%s" % [expected_heat, actual_heat])
+			actual_heat = "火候不合适"
+		details.append("火候应在合适区间，实际%s" % actual_heat)
 	if mismatch_reasons.has("ingredient_ids"):
 		details.append("配料订单要%s，实际%s" % [
 			_formal_review_stock_list(order_item.get("ingredient_ids", [])),
@@ -2953,14 +2953,6 @@ static func _formal_review_stock_label(stock_id: StringName) -> String:
 	}.get(stock_id, "未知配料")
 
 
-static func _formal_review_heat_label(preference: StringName) -> String:
-	return {
-		&"light": "嫩一点",
-		&"golden": "金黄",
-		&"well_done": "焦香一点",
-	}.get(preference, "指定")
-
-
 static func _formal_review_temperature_label(temperature: StringName) -> String:
 	return {
 		&"heated": "热饮",
@@ -2988,7 +2980,7 @@ func pancake_holding_tray_snapshot() -> Dictionary:
 func pancake_holding_tray_slot_count() -> int:
 	_ensure_progression()
 	if bool(_progression.call("owns_growth", &"growth.capacity.pancake_holding_tray.first_slot")):
-		return 4
+		return 3
 	return 0
 
 
@@ -4748,6 +4740,12 @@ func _ensure_progression() -> void:
 func _ensure_pancake_holding_tray() -> void:
 	if _pancake_holding_tray == null:
 		_pancake_holding_tray = PANCAKE_HOLDING_TRAY_MODEL.new(Dictionary(_save_data.get("pancake_holding_tray", {})))
+		# Version-1 saves could contain a fourth package. The tray is now a
+		# three-package stack, so discard that overflow immediately and persist
+		# the compacted snapshot instead of letting it reappear after reload.
+		if int(_pancake_holding_tray.call("discarded_legacy_slot_count")) > 0:
+			_sync_pancake_holding_tray_to_save()
+			_touch_and_write()
 
 
 func _ensure_order_service() -> void:

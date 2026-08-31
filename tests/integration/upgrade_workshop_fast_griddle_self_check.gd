@@ -37,11 +37,22 @@ func _run() -> void:
 	_check(non_burning != null and not non_burning.visible and fast_cook != null and fast_cook.visible, "fast-cook griddle replaces the completed non-burning griddle tag")
 	_check(
 		fast_tag != null
-		and fast_tag.text == "可预订"
+		and fast_tag.text == "240 金币"
+		and is_equal_approx(fast_cook.modulate.a, 1.0)
 		and fast_cook.tooltip_text.contains("快熟煎饼鏊子")
 		and fast_cook.tooltip_text.contains("240 金币"),
-		"fast-cook griddle keeps its state concise while hover help carries the name and price",
+		"available fast-cook reservation shows a solid price-only tag while hover help carries its details",
 	)
+	progression.set("coins", 0)
+	overlay.refresh()
+	_check(
+		fast_tag != null
+		and fast_tag.text == "240 金币"
+		and is_equal_approx(fast_cook.modulate.a, 0.42),
+		"unaffordable reservations keep their price but use a translucent tag",
+	)
+	progression.set("coins", 240)
+	overlay.refresh()
 	var purchase_status := Dictionary(session.call("growth_purchase_status", &"growth.automation.pancake.fast_cook_griddle"))
 	_check(bool(purchase_status.get("can_purchase", false)), "fast-cook griddle is purchasable after the non-burning griddle")
 	var purchase := Dictionary(session.call("purchase_growth", &"growth.automation.pancake.fast_cook_griddle"))

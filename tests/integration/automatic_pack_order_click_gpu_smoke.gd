@@ -30,7 +30,6 @@ func _run() -> void:
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
 		"quantity": 1,
-		"heat_preference": &"golden",
 		"ingredient_ids": PackedStringArray(),
 		"sauce_ids": PackedStringArray(),
 	}
@@ -70,7 +69,7 @@ func _run() -> void:
 		"product_instance_id": &"test.gpu.click_delivery",
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
-		"heat_preference": &"golden",
+		"heat_is_suitable": true,
 		"ingredient_ids": PackedStringArray(),
 		"sauce_ids": PackedStringArray(),
 		"score": 100.0,
@@ -82,11 +81,27 @@ func _run() -> void:
 	var target_slot := _service_slot_for_order(workstation, second_id)
 	var item_button := target_slot.get_node("OrderPanel/ItemButton1") as Button if target_slot != null else null
 	_check(item_button != null and item_button.visible and not item_button.disabled, "non-focused customer item has a real pointer target")
+	var delivery_source_center: Vector2 = ready_unit.package_visual.get_global_rect().get_center()
+	var delivery_source_size: Vector2 = ready_unit.package_visual.get_global_rect().size
+	var delivery_target_center: Vector2 = item_button.get_global_rect().get_center() if item_button != null else Vector2.ZERO
 	if item_button != null:
 		await _click_control(item_button)
+	var delivery_ghosts := workstation.get_children().filter(func(child: Node) -> bool: return child.has_meta(&"spatial_flight_effect"))
+	var delivery_ghost := delivery_ghosts[0] as TextureRect if not delivery_ghosts.is_empty() else null
+	_check(delivery_ghost != null and delivery_ghost.size.is_equal_approx(delivery_source_size) and delivery_ghost.get_node_or_null("PancakePackageIngredientGrid") is PancakePackageIngredientGrid, "click delivery keeps the pancake at its source size and carries its ingredient grid")
+	await create_timer(0.34).timeout
 	await process_frame
+	if delivery_ghost != null and is_instance_valid(delivery_ghost):
+		var flight_center: Vector2 = delivery_ghost.get_global_rect().get_center()
+		_check(
+			flight_center.distance_to(delivery_source_center) > 20.0
+			and flight_center.distance_to(delivery_target_center) > 8.0,
+			"the delivered product passes through an intermediate arc instead of teleporting",
+		)
 	_check(StringName(Dictionary(session.call("formal_order", second_id)).get("state", &"")) == &"settled", "one real order-item click delivers the sole ready pancake to that exact customer")
 	_check(StringName(Dictionary(session.call("formal_order", first_id)).get("state", &"")) in [&"active", &"serving"], "real click does not deliver to the previously focused customer")
+	await create_timer(0.50).timeout
+	_check(workstation.get_children().all(func(child: Node) -> bool: return not child.has_meta(&"spatial_flight_effect")), "the delivery handoff visual cleans itself up after arrival")
 
 	await RenderingServer.frame_post_draw
 	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)

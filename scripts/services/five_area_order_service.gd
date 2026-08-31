@@ -63,7 +63,6 @@ func open_pancake_order(template: Dictionary) -> Dictionary:
 		"pancake_template_id": StringName(template.get("id", &"")),
 		"ingredient_ids": Array(template.get("ingredient_ids", [])),
 		"sauce_ids": Array(template.get("sauce_ids", [])),
-		"heat_preference": StringName(template.get("heat_preference", &"")),
 	}], {"legacy_order": template.duplicate(true)})
 
 
@@ -79,6 +78,9 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 	var normalized_items: Array = []
 	for source_item in items:
 		var item: Dictionary = Dictionary(source_item).duplicate(true)
+		# Heat preferences were removed in snapshot version 8. Ignore callers that
+		# still pass the legacy field instead of persisting it into new orders.
+		item.erase("heat_preference")
 		if StringName(item.get("area_id", &"")).is_empty() or StringName(item.get("product_id", &"")).is_empty():
 			return {"success": false, "reason": &"invalid_order_item"}
 		var ingredient_ids := _normalized_ids(item.get("ingredient_ids", []))
@@ -241,7 +243,7 @@ func activate_order(order_id: StringName) -> Dictionary:
 
 func snapshot() -> Dictionary:
 	return {
-		"version": 7,
+		"version": 8,
 		"sequence": _sequence,
 		"active_order_id": str(_active_order_ids.front()) if not _active_order_ids.is_empty() else "",
 		"active_order_ids": PackedStringArray(_active_order_ids.map(func(value): return str(value))),
@@ -671,10 +673,8 @@ func _product_mismatch_reasons(item: Dictionary, product: Dictionary) -> PackedS
 		reasons.append("product_id")
 	var area_id := StringName(item.get("area_id", &""))
 	if area_id == &"area.pancake":
-		var uses_green_band_match := product.has("heat_matches_requested_preference")
-		var heat_matches := bool(product.get("heat_matches_requested_preference", false)) if uses_green_band_match else StringName(product.get("heat_preference", &"")) == StringName(item.get("heat_preference", &""))
-		if not heat_matches:
-			reasons.append("heat_preference")
+		if product.has("heat_is_suitable") and not bool(product.get("heat_is_suitable", false)):
+			reasons.append("heat")
 	else:
 		var expected_temperature := normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))
 		var actual_temperature := normalized_temperature_mode(product.get("temperature_mode", &"room_temperature"))
@@ -776,11 +776,14 @@ func _restore(source: Dictionary) -> void:
 		var restored_items: Array = Array(order.get("items", [])).duplicate(true)
 		for item_index in range(restored_items.size()):
 			var item := Dictionary(restored_items[item_index]).duplicate(true)
+			item.erase("heat_preference")
 			item["temperature_mode"] = normalized_temperature_mode(item.get("temperature_mode", &"room_temperature"))
 			var restored_products := _item_products(item)
 			var restored_ids := PackedStringArray()
 			for product_index in range(restored_products.size()):
 				var product := restored_products[product_index].duplicate(true)
+				product.erase("heat_preference")
+				product.erase("heat_matches_requested_preference")
 				if not product.has("reservation_origin"):
 					product["reservation_origin"] = {"source_kind": &"legacy", "source_index": -1, "product_id": StringName(product.get("product_id", &""))}
 				if not product.has("return_policy"):

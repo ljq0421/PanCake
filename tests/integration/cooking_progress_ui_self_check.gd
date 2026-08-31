@@ -19,43 +19,33 @@ func _run() -> void:
 	griddle.pancake_model.coverage.fill(1.0)
 	griddle.pancake_model.doneness.fill(0.48)
 	griddle.pancake_model.cooking_exposure_seconds.fill(0.0)
-	griddle.order = {"heat_preference": &"light"}
 	griddle.state = CompactGriddleUnit.State.FIRST_SIDE
 	griddle.call("_refresh_heat_visual")
-	_check(griddle.heat_bar.visible and griddle.heat_bar.current_stage() == BAR.STAGE_GREEN, "a light-order pancake is green at its requested target")
-	_check(griddle.heat_status_label.text.contains("火候正好"), "pancake green state is also stated in text")
+	_check(griddle.heat_bar.visible and griddle.heat_bar.current_stage() == BAR.STAGE_GREEN, "a pancake inside the shared suitable band is green")
+	_check(griddle.heat_status_label.text.contains("火候合适"), "pancake suitable state is also stated in text")
 
-	griddle.order = {"heat_preference": &"well_done"}
+	griddle.pancake_model.doneness.fill(0.75)
 	griddle.call("_refresh_heat_visual")
-	_check(griddle.heat_bar.current_stage() == BAR.STAGE_YELLOW and griddle.heat_status_label.text.contains("偏生"), "the same doneness remains yellow for a well-done order")
-	griddle.pancake_model.doneness.fill(0.90)
-	griddle.call("_refresh_heat_visual")
-	_check(griddle.heat_bar.current_stage() == BAR.STAGE_RED and griddle.heat_status_label.text.contains("过火风险"), "pancake doneness beyond the order window is red with matching text")
-	griddle.pancake_model.doneness.fill(0.93)
-	griddle.pancake_model.cooking_exposure_seconds.fill(8.0)
-	griddle.call("_refresh_heat_visual")
-	_check(griddle.heat_bar.current_stage() == BAR.STAGE_RED and griddle.heat_status_label.text.contains("已焦糊"), "visible charring forces the pancake bar and copy to red danger")
+	_check(griddle.heat_bar.current_stage() == BAR.STAGE_RED and griddle.heat_status_label.text.contains("已焦糊"), "the 0.75 boundary enters the red charred stage")
 	griddle.call("set_non_burning_upgrade_enabled", true)
 	griddle.call("_refresh_heat_visual")
 	_check(
 		not bool(griddle.call("cooking_heat_status").get("charred", true))
 		and griddle.heat_bar.current_stage() == BAR.STAGE_GREEN
-		and griddle.heat_status_label.text.contains("火候正好")
-		and is_equal_approx(float(griddle.pancake_model.cooking_doneness_cap), 0.84),
-		"non-burning griddle caps an overcooked pancake at the active order's green ceiling",
+		and griddle.heat_status_label.text.contains("火候合适")
+		and is_equal_approx(float(griddle.pancake_model.cooking_doneness_cap), 0.749),
+		"non-burning griddle caps an overcooked pancake just below the shared charred boundary",
 	)
-	griddle.order = {"heat_preference": &"light"}
 	griddle.pancake_model.doneness.fill(0.20)
 	griddle.call("_refresh_heat_visual")
-	_check(griddle.heat_status_label.text.contains("火候不足") and not griddle.heat_status_label.text.contains("偏焦"), "non-burning griddle describes a missed heat target only as insufficient")
+	_check(griddle.heat_status_label.text.contains("未熟") and not griddle.heat_status_label.text.contains("焦糊"), "the shared low stage is described as undercooked")
 	_check(
 		PANCAKE_SCORER.heat_feedback_for_metrics({
 			"mean_front_doneness": 0.20,
-			"mean_back_doneness": 0.48,
-			"heat_target": 0.64,
+			"mean_back_doneness": 0.20,
 			"non_burning_griddle_applied": true,
-		}) == "正面火候不足、反面火候不足",
-		"protected pancake delivery feedback calls an unmet heat target insufficient instead of undercooked",
+		}) == "正面未熟、反面未熟",
+		"protected pancake delivery feedback identifies both undercooked sides",
 	)
 	griddle.state = CompactGriddleUnit.State.IDLE
 	griddle.call("_refresh_heat_visual")
@@ -76,7 +66,7 @@ func _run() -> void:
 	var fast_doneness := float(fast_speed_griddle.pancake_model.mean_side_doneness(false))
 	_check(is_equal_approx(fast_doneness, basic_doneness * CompactGriddleUnit.FAST_COOK_HEAT_MULTIPLIER), "fast-cook griddle doubles cooking progress for the same real time")
 	fast_speed_griddle.call("_process", 60.0)
-	_check(float(fast_speed_griddle.pancake_model.mean_side_doneness(false)) <= CompactGriddleUnit.heat_window_for_preference(&"golden").y + 0.0001, "fast-cook griddle retains the non-burning order ceiling")
+	_check(float(fast_speed_griddle.pancake_model.mean_side_doneness(false)) < CompactGriddleUnit.heat_window().y, "fast-cook griddle retains the non-burning shared ceiling")
 
 	var fryer := FRYER_SCENE.instantiate() as CartoonYoutiaoFryerToggle
 	root.add_child(fryer)

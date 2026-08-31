@@ -3,7 +3,7 @@ extends SceneTree
 const SESSION_SCRIPT := preload("res://scripts/services/game_session_store.gd")
 const SOURCE_SCRIPT := preload("res://scripts/ui/product_drag_source.gd")
 const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const SETTINGS_PANEL_SCRIPT := preload("res://scripts/ui/game_settings_panel.gd")
 
 const TOOL_KEYS := {
@@ -139,7 +139,7 @@ func _test_tutorial_delivery_completes_without_recipe_gate(session: Node) -> voi
 		"product_instance_id": &"test.tutorial.step_complete",
 		"product_id": &"product.pancake.custom",
 		"area_id": &"area.pancake",
-		"heat_preference": &"charred",
+		"heat_is_suitable": false,
 		"ingredient_ids": [],
 		"sauce_ids": [],
 	}))

@@ -89,7 +89,7 @@ func _check_completed_delivery_ends_tutorial(session: Node) -> void:
 		"product_instance_id": &"test.wrong_tutorial_pancake",
 		"product_id": &"product.pancake.custom",
 		"area_id": &"area.pancake",
-		"heat_preference": &"charred",
+		"heat_is_suitable": false,
 		"ingredient_ids": [],
 		"sauce_ids": [],
 		"score": 1.0,

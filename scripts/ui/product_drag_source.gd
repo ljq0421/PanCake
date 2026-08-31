@@ -2,6 +2,7 @@ class_name ProductDragSource
 extends TextureButton
 
 const HOLD_PROGRESS_RING_SCRIPT := preload("res://scripts/ui/hold_progress_ring.gd")
+const HOVER_MODULATE := Color(1.18, 1.13, 0.96, 1.0)
 
 signal short_clicked(source_ref: Dictionary)
 signal drag_started(source_ref: Dictionary)
@@ -43,6 +44,8 @@ var _native_drag_in_progress := false
 var _drop_forward_target: Control
 var _hold_progress_ring: HoldProgressRing
 var _hover_rest_modulate := Color.WHITE
+var _hover_visual_target: CanvasItem
+var _hover_visual_rest_modulate := Color.WHITE
 var _hovered := false
 var _base_drag_threshold_pixels := 4.0
 var _effective_cancel_tolerance_pixels := 8.0
@@ -106,7 +109,7 @@ func set_hold_progress(progress_ratio: float) -> void:
 func play_result_feedback(success: bool) -> void:
 	if _result_feedback_tween != null and _result_feedback_tween.is_valid():
 		_result_feedback_tween.kill()
-	var rest_color := _hover_rest_modulate * Color(1.06, 1.04, 0.94, 1.0) if _hovered else _hover_rest_modulate
+	var rest_color := self_modulate
 	var feedback_color := Color(0.72, 1.0, 0.72, rest_color.a) if success else Color(1.0, 0.48, 0.44, rest_color.a)
 	_result_feedback_tween = create_tween()
 	_result_feedback_tween.set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
@@ -129,6 +132,19 @@ func set_drag_preview_text(value: String) -> void:
 
 func set_drag_preview_size(value: Vector2) -> void:
 	drag_preview_size = Vector2(maxf(value.x, 1.0), maxf(value.y, 1.0))
+
+
+func set_hover_visual_target(value: CanvasItem) -> void:
+	_hover_visual_target = value
+	refresh_hover_visual()
+
+
+func refresh_hover_visual() -> void:
+	if not _hovered:
+		return
+	modulate = _hover_rest_modulate * HOVER_MODULATE
+	if _hover_visual_target != null:
+		_hover_visual_target.modulate = _hover_visual_rest_modulate * HOVER_MODULATE
 
 
 func set_drag_preview_offset(value: Vector2) -> void:
@@ -347,7 +363,9 @@ func is_hold_active() -> bool:
 func _on_mouse_exited() -> void:
 	if _hovered:
 		_hovered = false
-		self_modulate = _hover_rest_modulate
+		modulate = _hover_rest_modulate
+		if _hover_visual_target != null:
+			_hover_visual_target.modulate = _hover_visual_rest_modulate
 		hover_changed.emit(_source_ref.duplicate(true), false)
 	# The process loop applies the configured tolerance.  A zero-tolerance hold
 	# cancels immediately without turning the exit into a short click.
@@ -367,10 +385,12 @@ func _on_mouse_entered() -> void:
 	if disabled:
 		return
 	_hovered = true
-	_hover_rest_modulate = self_modulate
+	_hover_rest_modulate = modulate
+	if _hover_visual_target != null:
+		_hover_visual_rest_modulate = _hover_visual_target.modulate
 	# This high-frequency affordance is intentionally instantaneous; motion here
 	# would make repeated ingredient selection feel slower.
-	self_modulate = _hover_rest_modulate * Color(1.06, 1.04, 0.94, 1.0)
+	refresh_hover_visual()
 	hover_changed.emit(_source_ref.duplicate(true), true)
 
 

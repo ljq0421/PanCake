@@ -26,7 +26,6 @@ func _run() -> void:
 	var order := {
 		"ingredients": [&"egg", &"youtiao", &"scallion"],
 		"sauces": [],
-		"heat_preference": &"golden",
 		"time_limit": 72.0,
 	}
 	var scored := PancakeScorer.evaluate_order(model, ingredients, fold, order, 20.0, 1.0)
@@ -54,7 +53,7 @@ func _run() -> void:
 	var edge_model := _uniform_pancake(64)
 	var edge_ingredients := IngredientModel.new()
 	var edge_placement := Dictionary(edge_ingredients.place(IngredientModel.BAOCUI, Vector2(8.0, 32.0), 0.0, edge_model))
-	var edge_order := {"ingredients": [&"baocui"], "sauces": [], "heat_preference": &"golden", "time_limit": 72.0}
+	var edge_order := {"ingredients": [&"baocui"], "sauces": [], "time_limit": 72.0}
 	var edge_scored := Dictionary(PancakeScorer.evaluate_order(edge_model, edge_ingredients, PancakeFoldModel.new(edge_model, edge_ingredients), edge_order, 20.0, 1.0))
 	var edge_basis := Dictionary(edge_scored.get("serving_score_basis", {}))
 	var edge_stored := Dictionary(PancakeScorer.evaluate_stored_product({"serving_score_basis": edge_basis}, edge_order, 20.0, 1.0))

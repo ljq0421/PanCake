@@ -3,12 +3,13 @@ extends RefCounted
 
 signal changed(snapshot: Dictionary)
 
-const SLOT_COUNT := 4
+const SLOT_COUNT := 3
 const AGING_SECONDS := 20.0
 const STALE_SECONDS := 60.0
 const EXPIRED_SECONDS := STALE_SECONDS
 
-var _slots: Array[Dictionary] = [{}, {}, {}, {}]
+var _slots: Array[Dictionary] = [{}, {}, {}]
+var _discarded_legacy_slot_count := 0
 
 
 func _init(snapshot: Dictionary = {}) -> void:
@@ -19,17 +20,25 @@ func snapshot() -> Dictionary:
 	var slots: Array[Dictionary] = []
 	for slot in _slots:
 		slots.append(slot.duplicate(true))
-	return {"slot_count": SLOT_COUNT, "slots": slots}
+	return {"version": 2, "slot_count": SLOT_COUNT, "slots": slots}
 
 
 func load_snapshot(value: Dictionary) -> void:
-	_slots = [{}, {}, {}, {}]
+	_slots = [{}, {}, {}]
+	_discarded_legacy_slot_count = 0
 	var source_slots: Array = Array(value.get("slots", []))
 	for index in mini(source_slots.size(), SLOT_COUNT):
 		var candidate := Dictionary(source_slots[index]).duplicate(true)
 		if _is_valid_product(candidate):
 			candidate["age_seconds"] = maxf(float(candidate.get("age_seconds", 0.0)), 0.0)
 			_slots[index] = candidate
+	for index in range(SLOT_COUNT, source_slots.size()):
+		if _is_valid_product(Dictionary(source_slots[index])):
+			_discarded_legacy_slot_count += 1
+
+
+func discarded_legacy_slot_count() -> int:
+	return _discarded_legacy_slot_count
 
 
 func slot_snapshot(slot_index: int) -> Dictionary:
@@ -137,7 +146,7 @@ static func freshness_penalty(age_seconds: float) -> float:
 
 static func legacy_order_penalty(mismatch_reasons: PackedStringArray) -> float:
 	var penalty := 0.0
-	if mismatch_reasons.has("heat_preference"):
+	if mismatch_reasons.has("heat"):
 		penalty += 15.0
 	if mismatch_reasons.has("ingredient_ids"):
 		penalty += 12.0
@@ -160,8 +169,8 @@ func _mismatch_reasons(product: Dictionary, order: Dictionary) -> PackedStringAr
 	var reasons := PackedStringArray()
 	if StringName(product.get("product_id", &"")) != StringName(order.get("product_id", &"product.pancake.custom")):
 		reasons.append("product_id")
-	if StringName(product.get("heat_preference", &"")) != StringName(order.get("heat_preference", &"")):
-		reasons.append("heat_preference")
+	if product.has("heat_is_suitable") and not bool(product.get("heat_is_suitable", false)):
+		reasons.append("heat")
 	if not _same_id_set(product.get("ingredient_ids", []), order.get("ingredient_ids", [])):
 		reasons.append("ingredient_ids")
 	if not _same_id_set(product.get("sauce_ids", []), order.get("sauce_ids", [])):

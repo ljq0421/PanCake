@@ -117,7 +117,6 @@ static func _legacy_order(template_id: StringName) -> Dictionary:
 		"title": template.get("title", "煎饼订单"),
 		"ingredients": ingredients,
 		"sauces": sauces,
-		"heat_preference": template.get("heat_preference", &"golden"),
 		"time_limit": float(template.get("time_limit", 72.0)),
 		"payment_coins": int(template.get("payment_coins", 1)),
 		"customer_line": template.get("customer_line", "请按订单制作。"),

@@ -6,16 +6,9 @@ const PANCAKE_HOLDING_PACKAGE_TEXTURE := preload("res://resources/art/workstatio
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_model.gd")
 const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
-const PANCAKE_RECIPE_MARKER_TEXTURES := {
-	&"stock.pancake.egg": preload("res://resources/art/ingredients/egg/egg_intact_raw_v1_five_area_v2.png"),
-	&"stock.pancake.baocui": preload("res://resources/art/ingredients/baocui/baocui_intact_v1.png"),
-	&"stock.pancake.scallion": preload("res://resources/art/ingredients/scallion/scallion_scattered_v1_five_area_v2.png"),
-	&"stock.pancake.ham_sausage": preload("res://resources/art/ingredients/ham_sausage/ham_sausage_slices_v1.png"),
-	&"stock.pancake.meat_floss": preload("res://resources/art/ingredients/meat_floss/meat_floss_pile_v1.png"),
-	&"stock.pancake.coriander": preload("res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png"),
-	&"stock.pancake.youtiao": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png"),
-	&"stock.pancake.sauce.sweet_flour": preload("res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png"),
-}
+const SPATIAL_FLIGHT_EFFECT := preload("res://scripts/ui/spatial_flight_effect.gd")
+const WORKSTATION_PHYSICAL_HOVER := preload("res://scripts/ui/workstation_physical_hover.gd")
+const PANCAKE_PACKAGE_INGREDIENT_GRID := preload("res://scripts/ui/pancake_package_ingredient_grid.gd")
 const PANCAKE_RECIPE_MARKER_LABELS := {
 	&"stock.pancake.egg": "鸡蛋",
 	&"stock.pancake.baocui": "薄脆",
@@ -28,10 +21,6 @@ const PANCAKE_RECIPE_MARKER_LABELS := {
 	&"stock.pancake.pork_tenderloin": "里脊",
 	&"stock.pancake.sauce.sweet_flour": "甜面酱",
 }
-const PANCAKE_RECIPE_MARKER_VISIBLE_LIMIT := 3
-const PANCAKE_PACKAGE_MARKER_SIZE := Vector2(21.0, 21.0)
-const PANCAKE_PACKAGE_MARKER_GAP := 2.0
-const PANCAKE_PACKAGE_MARKER_ROW_Y := 57.0
 const RESULT_METRIC_NODE_ICON_PATHS := {
 	&"IntegrityMetric": "res://resources/art/ui/quality/quality_integrity_v2_chinese_ui.png",
 	&"ThicknessMetric": "res://resources/art/ui/quality/quality_thickness_uniformity_v2_chinese_ui.png",
@@ -141,7 +130,6 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 	%PancakeHoldingSource01,
 	%PancakeHoldingSource02,
 	%PancakeHoldingSource03,
-	%PancakeHoldingSource04,
 ]
 @onready var waste_area: StagedProductDropTarget = %WasteBasket
 @onready var result_review_scroll: ScrollContainer = %ResultReviewScroll
@@ -179,6 +167,7 @@ var _top_warning_tween: Tween
 var _audio_orders_seeded := false
 var _known_audio_order_ids: Dictionary = {}
 var _warned_audio_order_ids: Dictionary = {}
+var _physical_hover: WorkstationPhysicalHover
 
 
 func _ready() -> void:
@@ -266,6 +255,7 @@ func _ready() -> void:
 	_refresh_selected_pancake_delivery_source()
 	_refresh_selected_pancake_order_target()
 	_apply_pointer_cursors(self)
+	_install_physical_hover_feedback()
 	var active_order := Dictionary(session.call("active_formal_order")) if session != null else {}
 
 
@@ -300,6 +290,25 @@ func _apply_pointer_cursors(root_node: Node) -> void:
 		(root_node as BaseButton).mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	for child in root_node.get_children():
 		_apply_pointer_cursors(child)
+
+
+func _install_physical_hover_feedback() -> void:
+	if _physical_hover != null:
+		return
+	_physical_hover = WORKSTATION_PHYSICAL_HOVER.new()
+	add_child(_physical_hover)
+	# These two roots contain only the operating counter's tangible tools,
+	# ingredients, equipment and trays. UI in SafeArea (orders, panels and
+	# day-end controls) is deliberately outside this treatment.
+	_physical_hover.watch_tree(pancake_station_view)
+	_physical_hover.watch_tree(five_area_infrastructure)
+	# These physical lock props sit in SafeArea only for layout layering. They
+	# are still workbench interactions, unlike the surrounding order and modal UI.
+	_physical_hover.watch_tree(get_node_or_null("SafeArea/FiveAreaStationClickLayers"))
+	_physical_hover.watch_tree(get_node_or_null("SafeArea/LockedIngredientInteractions"))
+	_physical_hover.watch_tree(get_node_or_null("SafeArea/YoutiaoDoughPlain"))
+	if waste_area != null:
+		_physical_hover.watch_control(waste_area, waste_area.get_node_or_null("BasketArtwork") as CanvasItem)
 
 
 func _populate_result(score_result: Dictionary) -> void:
@@ -1272,7 +1281,10 @@ func _refresh_pancake_drag_sources() -> void:
 		# source clickable but disabling native dragging prevents bypassing that
 		# two-step flow while preserving its discard affordance elsewhere.
 		source.native_drag_enabled = false
-		source.configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "discardable": true}, PANCAKE_HOLDING_PACKAGE_TEXTURE, slot_unlocked and not product.is_empty(), _pancake_holding_tooltip(product))
+		source.configure({"source_kind": &"pancake_holding", "source_index": slot_index, "product_id": StringName(product.get("product_id", &"")), "product": product.duplicate(true), "discardable": true}, PANCAKE_HOLDING_PACKAGE_TEXTURE, slot_unlocked and not product.is_empty(), _pancake_holding_tooltip(product))
+		# The stacked paper bags retain their transparent canvas, so make clicks
+		# follow the visible bag silhouette and leave exposed lower bags selectable.
+		source.set_alpha_hit_regions([{"texture": PANCAKE_HOLDING_PACKAGE_TEXTURE, "rect": Rect2(Vector2.ZERO, source.size)}])
 		source.visible = slot_unlocked and not product.is_empty()
 		source.set_selection_highlight(_same_pancake_delivery_source(source.source_ref(), _selected_pancake_delivery_source_ref))
 		_refresh_pancake_recipe_markers(source, product)
@@ -1329,82 +1341,15 @@ static func _pancake_holding_store_failure_text(reason: StringName) -> String:
 
 
 func _refresh_pancake_recipe_markers(source: Control, product: Dictionary) -> void:
-	for child in source.get_children():
-		if child.has_meta("pancake_recipe_marker"):
-			child.queue_free()
-	if product.is_empty():
-		return
-	var marker_entries := _pancake_recipe_marker_entries(product)
-	var visible_count := mini(marker_entries.size(), PANCAKE_RECIPE_MARKER_VISIBLE_LIMIT)
-	var marker_row_width := float(visible_count) * PANCAKE_PACKAGE_MARKER_SIZE.x + maxf(float(visible_count - 1), 0.0) * PANCAKE_PACKAGE_MARKER_GAP
-	var marker_row_start_x := (source.size.x - marker_row_width) * 0.5
-	for marker_index in visible_count:
-		var entry := Dictionary(marker_entries[marker_index])
-		var marker_card := Panel.new()
-		marker_card.set_meta("pancake_recipe_marker", true)
-		marker_card.z_index = 10
-		marker_card.position = Vector2(marker_row_start_x + float(marker_index) * (PANCAKE_PACKAGE_MARKER_SIZE.x + PANCAKE_PACKAGE_MARKER_GAP), PANCAKE_PACKAGE_MARKER_ROW_Y)
-		marker_card.size = PANCAKE_PACKAGE_MARKER_SIZE
-		marker_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var marker_style := StyleBoxFlat.new()
-		marker_style.bg_color = Color(1.0, 0.94, 0.78, 0.92)
-		marker_style.border_color = Color(0.34, 0.14, 0.04, 0.92)
-		marker_style.set_border_width_all(1)
-		marker_style.set_corner_radius_all(5)
-		marker_card.add_theme_stylebox_override("panel", marker_style)
-		source.add_child(marker_card)
-		var marker := TextureRect.new()
-		marker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 2)
-		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		marker.texture = PANCAKE_RECIPE_MARKER_TEXTURES.get(StringName(entry.get("stock_id", &""))) as Texture2D
-		marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		marker_card.add_child(marker)
-		var portions := int(entry.get("count", 1))
-		if portions > 1:
-			var count_label := Label.new()
-			count_label.set_meta("pancake_recipe_marker", true)
-			count_label.z_index = 11
-			count_label.position = marker_card.position + Vector2(13.0, 10.0)
-			count_label.size = Vector2(12.0, 12.0)
-			count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			count_label.text = str(portions)
-			count_label.add_theme_font_size_override("font_size", 10)
-			count_label.add_theme_color_override("font_color", Color.WHITE)
-			count_label.add_theme_color_override("font_outline_color", Color(0.16, 0.06, 0.02, 1.0))
-			count_label.add_theme_constant_override("outline_size", 2)
-			source.add_child(count_label)
-	if marker_entries.size() > visible_count:
-		var extra_label := Label.new()
-		extra_label.set_meta("pancake_recipe_marker", true)
-		extra_label.z_index = 11
-		extra_label.position = Vector2(marker_row_start_x + marker_row_width + 2.0, PANCAKE_PACKAGE_MARKER_ROW_Y + 3.0)
-		extra_label.size = Vector2(22.0, 16.0)
-		extra_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		extra_label.text = "+%d" % (marker_entries.size() - visible_count)
-		extra_label.add_theme_font_size_override("font_size", 11)
-		extra_label.add_theme_color_override("font_color", Color.WHITE)
-		extra_label.add_theme_color_override("font_outline_color", Color(0.16, 0.06, 0.02, 1.0))
-		extra_label.add_theme_constant_override("outline_size", 2)
-		source.add_child(extra_label)
-
-
-static func _pancake_recipe_marker_entries(product: Dictionary) -> Array[Dictionary]:
-	var counts := {}
-	var order: Array[StringName] = []
-	for stock_group in [Array(product.get("ingredient_ids", [])), Array(product.get("sauce_ids", []))]:
-		for stock_value in stock_group:
-			var stock_id := StringName(stock_value)
-			if not PANCAKE_RECIPE_MARKER_TEXTURES.has(stock_id):
-				continue
-			if not counts.has(stock_id):
-				order.append(stock_id)
-				counts[stock_id] = 0
-			counts[stock_id] = int(counts[stock_id]) + 1
-	var entries: Array[Dictionary] = []
-	for stock_id in order:
-		entries.append({"stock_id": stock_id, "count": int(counts[stock_id])})
-	return entries
+	var ingredient_grid := source.get_node_or_null("PancakePackageIngredientGrid") as PancakePackageIngredientGrid
+	if ingredient_grid == null:
+		ingredient_grid = PANCAKE_PACKAGE_INGREDIENT_GRID.new()
+		ingredient_grid.name = "PancakePackageIngredientGrid"
+		ingredient_grid.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+		ingredient_grid.z_index = 10
+		source.add_child(ingredient_grid)
+	ingredient_grid.configure(product)
+	ingredient_grid.visible = not product.is_empty()
 
 
 static func _pancake_holding_tooltip(product: Dictionary) -> String:
@@ -1699,12 +1644,14 @@ func _try_deliver_order_item(order_id: StringName, item_index: int) -> void:
 		tool_status_label.text = _missing_delivery_source_text(StringName(item.get("area_id", &"")))
 		return
 	var source_ref := Dictionary(chosen.get("source_ref", {}))
+	var delivery_motion := _delivery_motion_snapshot(source_ref, order_id, item_index)
 	var staged := Dictionary(session.call("stage_product_to_order", source_ref, order_id, item_index))
 	if not bool(staged.get("success", false)):
 		var failure_message := str(staged.get("message", "交付失败，成品未被消耗：%s" % str(staged.get("reason", &"unknown"))))
 		tool_status_label.text = failure_message
 		_refresh_formal_shell()
 		return
+	_play_delivery_motion(delivery_motion)
 	_on_clicked_product_consumed(source_ref)
 	if not tutorial_order and not bool(staged.get("will_match", false)):
 		_show_top_warning("订单内容不匹配；本单仍会结算并按现有规则扣分")
@@ -1803,6 +1750,103 @@ func _on_clicked_product_consumed(source_ref: Dictionary) -> void:
 	cartoon_youtiao_fryer.refresh_from_session()
 	fresh_soy_station.refresh_from_session()
 	packaged_drink_station.call("refresh_from_session")
+
+
+func _delivery_motion_snapshot(source_ref: Dictionary, order_id: StringName, item_index: int) -> Dictionary:
+	var target := _delivery_motion_target(order_id, item_index)
+	if target == null:
+		return {}
+	var source := _delivery_motion_source(source_ref)
+	var texture: Texture2D
+	var source_rect := Rect2()
+	if source is ProductDragSource:
+		var product_source := source as ProductDragSource
+		texture = product_source.drag_preview_texture if product_source.drag_preview_texture != null else product_source.texture_normal
+		source_rect = SPATIAL_FLIGHT_EFFECT.canvas_rect(product_source)
+	elif source is TextureRect:
+		texture = (source as TextureRect).texture
+		source_rect = SPATIAL_FLIGHT_EFFECT.canvas_rect(source as TextureRect)
+	elif source is Control:
+		source_rect = SPATIAL_FLIGHT_EFFECT.canvas_rect(source as Control)
+	if texture == null:
+		texture = PRODUCT_VISUALS.texture_for(StringName(source_ref.get("product_id", &"")))
+	if source_rect.size == Vector2.ZERO:
+		var fallback := _delivery_motion_fallback_source(StringName(source_ref.get("product_id", &"")))
+		if fallback != null:
+			source_rect = SPATIAL_FLIGHT_EFFECT.canvas_rect(fallback)
+	if texture == null or source_rect.size == Vector2.ZERO:
+		return {}
+	var is_pancake := StringName(source_ref.get("product_id", &"")) == &"product.pancake.custom"
+	return {
+		"texture": texture,
+		"source_rect": source_rect,
+		"target_rect": SPATIAL_FLIGHT_EFFECT.canvas_rect(target),
+		"pancake_product": Dictionary(source_ref.get("product", {})).duplicate(true) if is_pancake else {},
+		"preserve_source_size": is_pancake,
+	}
+
+
+func _play_delivery_motion(snapshot: Dictionary) -> void:
+	if snapshot.is_empty():
+		return
+	SPATIAL_FLIGHT_EFFECT.play(
+		self,
+		snapshot.get("texture") as Texture2D,
+		snapshot.get("source_rect", Rect2()) as Rect2,
+		snapshot.get("target_rect", Rect2()) as Rect2,
+		0.0,
+		_formal_payment_should_reduce_motion(),
+		RESULT_OVERLAY_Z_INDEX - 2,
+		Dictionary(snapshot.get("pancake_product", {})),
+		bool(snapshot.get("preserve_source_size", false))
+	)
+
+
+func _delivery_motion_target(order_id: StringName, item_index: int) -> Control:
+	for service_slot in customer_service_slots:
+		if service_slot == null or not service_slot.has_method("delivery_target"):
+			continue
+		var target := service_slot.call("delivery_target", order_id, item_index) as Control
+		if target != null:
+			return target
+	return null
+
+
+func _delivery_motion_source(source_ref: Dictionary) -> Control:
+	if StringName(source_ref.get("source_kind", &"")) == &"pancake_griddle_ready":
+		var unit_index := int(source_ref.get("source_index", -1))
+		if unit_index >= 0 and unit_index < multi_griddle_station.units.size():
+			return multi_griddle_station.units[unit_index].package_visual
+	var candidates: Array[ProductDragSource] = []
+	candidates.append_array(pancake_holding_sources)
+	candidates.append_array(cartoon_youtiao_fryer.output_sources)
+	candidates.append_array(cartoon_youtiao_fryer.plate_sources)
+	candidates.append_array(fresh_soy_station.product_sources())
+	candidates.append_array(packaged_drink_station.call("product_sources"))
+	for candidate in candidates:
+		if candidate != null and candidate.visible and _same_delivery_motion_source(candidate.source_ref(), source_ref):
+			return candidate
+	return null
+
+
+func _delivery_motion_fallback_source(product_id: StringName) -> Control:
+	if product_id == &"product.pancake.custom":
+		return pancake_station_view
+	if product_id in [&"product.youtiao.plain", &"product.chicken.cutlet"]:
+		return cartoon_youtiao_fryer
+	if product_id == &"product.fresh_soy_milk.yellow_bean":
+		return fresh_soy_station
+	if product_id == &"product.packaged_drink.juice":
+		return packaged_drink_station
+	return null
+
+
+static func _same_delivery_motion_source(candidate: Dictionary, requested: Dictionary) -> bool:
+	for key in [&"source_kind", &"source_slot_id", &"source_index", &"lane_id"]:
+		if requested.has(key) and candidate.get(key) != requested.get(key):
+			return false
+	var requested_product := StringName(requested.get("product_id", &""))
+	return requested_product.is_empty() or StringName(candidate.get("product_id", &"")) == requested_product
 
 
 func _on_customer_service_product_dropped(order_id: StringName, item_index: int, source_ref: Dictionary) -> void:
@@ -2482,7 +2526,7 @@ static func _add_delivery_feedback_candidate(candidates: Array[Dictionary], text
 
 static func _delivery_mismatch_metric(reason: StringName) -> StringName:
 	match reason:
-		&"heat_preference": return &"heat"
+		&"heat": return &"heat"
 		&"ingredient_ids": return &"ingredients"
 		&"sauce_ids": return &"sauce"
 		&"missing_order_item", &"incomplete_quantity", &"product_id": return &"order"
@@ -2495,7 +2539,7 @@ static func _delivery_mismatch_score(reason: StringName, product: Dictionary) ->
 		&"missing_order_item", &"incomplete_quantity", &"product_id": return 0.0
 		&"ingredient_ids": return minf(float(dimensions.get("ingredients", 100.0)), float(dimensions.get("order", 100.0)))
 		&"sauce_ids": return minf(float(dimensions.get("sauce", 100.0)), float(dimensions.get("order", 100.0)))
-		&"heat_preference": return float(dimensions.get("heat", 100.0))
+		&"heat": return float(dimensions.get("heat", 100.0))
 		_: return float(dimensions.get("order", 0.0))
 
 
@@ -2558,7 +2602,7 @@ static func _delivery_feedback_text(reason: StringName, expected_product: String
 	match reason:
 		&"missing_order_item", &"incomplete_quantity": return "%s未按订单交齐" % expected_product
 		&"product_id": return "交付的%s与订单要求的%s不符" % [actual_product, expected_product]
-		&"heat_preference":
+		&"heat":
 			var heat_feedback := str(product.get("heat_feedback", ""))
 			return "%s%s" % [expected_product, heat_feedback] if not heat_feedback.is_empty() else "%s火候不符合订单要求" % expected_product
 		&"temperature_mode": return "%s温度不符合订单要求" % expected_product

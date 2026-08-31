@@ -5,6 +5,7 @@ extends RefCounted
 ## The simulation owns quality; this service owns stable product/accounting IDs.
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const PANCAKE_SCORER := preload("res://scripts/gameplay/pancake_scorer.gd")
 const LEGACY_INGREDIENT_TO_STOCK := {
 	&"egg": &"stock.pancake.egg",
 	&"baocui": &"stock.pancake.baocui",
@@ -48,7 +49,7 @@ func formal_order_from_legacy(order: Dictionary) -> Dictionary:
 		var stock_id: StringName = LEGACY_SAUCE_TO_STOCK.get(StringName(sauce_id), &"")
 		if not stock_id.is_empty():
 			sauce_ids.append(str(stock_id))
-	return {"order_id": StringName(order.get("id", &"")), "product_id": &"product.pancake.custom", "heat_preference": StringName(order.get("heat_preference", &"")), "ingredient_ids": ingredient_ids, "sauce_ids": sauce_ids}
+	return {"order_id": StringName(order.get("id", &"")), "product_id": &"product.pancake.custom", "ingredient_ids": ingredient_ids, "sauce_ids": sauce_ids}
 
 
 func create_product_snapshot(
@@ -69,10 +70,12 @@ func create_product_snapshot(
 	var ingredient_ids := _ingredient_cost_stock_ids(score_result, fallback_ingredient_ids)
 	var sauce_ids := _sauce_stock_ids(score_result)
 	var cost_stock_ids := _cost_stock_ids(ingredient_ids, sauce_ids)
+	var heat_metrics := Dictionary(score_result.get("metrics", {}))
 	return {
 		"product_instance_id": product_instance_id,
 		"product_id": &"product.pancake.custom",
-		"heat_preference": _actual_heat_preference(score_result),
+		"heat_is_suitable": PANCAKE_SCORER.heat_is_suitable_metrics(heat_metrics),
+		"heat_feedback": PANCAKE_SCORER.heat_feedback_for_metrics(heat_metrics),
 		"ingredient_ids": ingredient_ids,
 		"sauce_ids": sauce_ids,
 		"cost_stock_ids": cost_stock_ids,
@@ -106,19 +109,6 @@ func settle_completed_pancake(score_result: Dictionary, order: Dictionary = {}, 
 		"material_cost": int(product.get("material_cost", 0)),
 		"product": product,
 	}
-
-
-func _actual_heat_preference(score_result: Dictionary) -> StringName:
-	var basis := Dictionary(score_result.get("serving_score_basis", {}))
-	var moments := Dictionary(basis.get("heat_moments", {}))
-	if moments.is_empty():
-		return StringName(score_result.get("actual_heat_preference", &"golden"))
-	var mean_heat := (float(moments.get("mean_front", 0.64)) + float(moments.get("mean_back", 0.64))) * 0.5
-	if mean_heat < 0.56:
-		return &"light"
-	if mean_heat >= 0.70:
-		return &"well_done"
-	return &"golden"
 
 
 func _intrinsic_dimensions(score_result: Dictionary) -> Dictionary:

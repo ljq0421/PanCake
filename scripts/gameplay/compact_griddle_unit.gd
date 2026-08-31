@@ -17,6 +17,8 @@ const P1_SESSION_SCRIPT := preload("res://scripts/gameplay/p1_session.gd")
 const PANCAKE_SCORER_SCRIPT := preload("res://scripts/gameplay/pancake_scorer.gd")
 const COOKING_STAGE_BAR_SCRIPT := preload("res://scripts/ui/cooking_stage_bar.gd")
 const READY_DRAG_TEXTURE := preload("res://resources/art/workstation/packaging/paper_bag_package_v1.png")
+const PANCAKE_PACKAGE_INGREDIENT_GRID := preload("res://scripts/ui/pancake_package_ingredient_grid.gd")
+const PHYSICAL_HOVER_MODULATE := Color(1.18, 1.13, 0.96, 1.0)
 const SPREADER_NORMAL := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
 const SPREADER_WIDE := preload("res://resources/art/workstation/tools/batter_spreader_upgrade_v1_five_area_v2.png")
 const SAUCE_BRUSH_TEXTURE := preload("res://resources/art/workstation/tools/sauce_brush_v1_five_area_v2.png")
@@ -35,16 +37,10 @@ const SPREADER_SAMPLE_SPACING := 2.5
 ## turn a single fast move into a 40+ ms feedback loop, so only the newest path
 ## representative is simulated; pointer sampling remains fully event-driven.
 const MAX_SPREAD_SIMULATION_SAMPLES_PER_FRAME := 1
-## The order-specific green band is deliberately narrow enough to communicate
-## an excellent heat result without turning the bar into a precision gate.
-const HEAT_GREEN_TOLERANCE := PANCAKE_SCORER_SCRIPT.HEAT_GREEN_TOLERANCE
-## Keep this aligned with pancake_surface.gdshader: a side begins to show
-## char marks only after it has stayed on the griddle for eight seconds and is
-## sufficiently cooked.  The score system already deducts heat quality for
-## this state; this constant makes the consequence visible while playing.
-const CHARRED_EXPOSURE_SECONDS := 8.0
-const CHARRED_DONENESS := 0.92
-const CHARRED_RATIO_WARNING := 0.10
+const HEAT_SUITABLE_MIN := PANCAKE_SCORER_SCRIPT.HEAT_SUITABLE_MIN
+const HEAT_CHARRED_MIN := PANCAKE_SCORER_SCRIPT.HEAT_CHARRED_MIN
+## The non-burning upgrade must stop just below the exclusive charred boundary.
+const NON_BURNING_DONENESS_CAP := HEAT_CHARRED_MIN - 0.001
 ## The fast-cook griddle is intentionally a second-stage upgrade.  It halves
 ## real-time cooking waits while the non-burning cap still protects the result.
 const FAST_COOK_HEAT_MULTIPLIER := 2.0
@@ -137,6 +133,7 @@ var _spread_previous_grid := Vector2.ZERO
 var _spread_has_previous := false
 var _display_name := "主鏊"
 var _package_selection_outline: Panel
+var _package_ingredient_grid: PancakePackageIngredientGrid
 var _surface_action: StringName = SURFACE_ACTION_NONE
 var _surface_stock_id: StringName = &""
 var _surface_changed := false
@@ -177,6 +174,8 @@ var _automatic_fold_pending_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
 var _automatic_fold_tween: Tween
 var _fold_threshold_feedback_region: StringName = FOLD_MODEL_SCRIPT.REGION_NONE
 var _suppress_fold_threshold_feedback := false
+var _package_hover_rest_modulate := Color.WHITE
+var _package_hovered := false
 
 
 static func _compact_pancake_parameters() -> PancakeSimulationParameters:
@@ -195,7 +194,10 @@ static func _compact_pancake_parameters() -> PancakeSimulationParameters:
 
 func _ready() -> void:
 	main_action.pressed.connect(func() -> void: main_action_requested.emit(unit_index))
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
 	_create_package_selection_outline()
+	_ensure_package_ingredient_grid()
 	pancake_surface.set_model(pancake_model)
 	ingredient_layer.set_model(ingredient_model)
 	ingredient_layer.set_fold_model(fold_model)
@@ -317,11 +319,9 @@ func _effective_cooking_heat() -> float:
 
 
 func _apply_cooking_doneness_cap() -> void:
-	# Protect the active order's full green range, rather than merely stopping
-	# short of the visual char threshold. A protected pancake can be undercooked,
-	# but cannot become overcooked for its order.
-	var heat_window := heat_window_for_preference(StringName(order.get("heat_preference", &"golden")))
-	pancake_model.cooking_doneness_cap = heat_window.y if _non_burning_upgrade_enabled else 1.0
+	# A protected pancake can remain undercooked, but cannot enter the shared
+	# charred band.
+	pancake_model.cooking_doneness_cap = NON_BURNING_DONENESS_CAP if _non_burning_upgrade_enabled else 1.0
 
 
 func _cap_existing_doneness() -> void:
@@ -794,12 +794,27 @@ func _gui_input(event: InputEvent) -> void:
 	accept_event()
 
 
+func _on_mouse_entered() -> void:
+	if state != State.READY or not package_visual.visible:
+		return
+	_package_hovered = true
+	_package_hover_rest_modulate = package_visual.self_modulate
+	package_visual.self_modulate = _package_hover_rest_modulate * PHYSICAL_HOVER_MODULATE
+
+
+func _on_mouse_exited() -> void:
+	if not _package_hovered:
+		return
+	package_visual.self_modulate = _package_hover_rest_modulate
+	_package_hovered = false
+
+
 func _create_package_selection_outline() -> void:
 	_package_selection_outline = Panel.new()
 	_package_selection_outline.name = "SelectionOutline"
 	_package_selection_outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_package_selection_outline.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
-	_package_selection_outline.z_index = 1
+	_package_selection_outline.z_index = 100
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(1.0, 0.76, 0.18, 0.12)
 	style.border_color = Color("ffe17a")
@@ -812,6 +827,23 @@ func _create_package_selection_outline() -> void:
 	_package_selection_outline.add_theme_stylebox_override("panel", style)
 	_package_selection_outline.visible = false
 	package_visual.add_child(_package_selection_outline)
+
+
+func _refresh_package_recipe_markers() -> void:
+	var ingredient_grid := _ensure_package_ingredient_grid()
+	ingredient_grid.configure(ready_product)
+	ingredient_grid.visible = state == State.READY and not ready_product.is_empty()
+
+
+func _ensure_package_ingredient_grid() -> PancakePackageIngredientGrid:
+	if _package_ingredient_grid != null and is_instance_valid(_package_ingredient_grid):
+		return _package_ingredient_grid
+	_package_ingredient_grid = PANCAKE_PACKAGE_INGREDIENT_GRID.new()
+	_package_ingredient_grid.name = "PancakePackageIngredientGrid"
+	_package_ingredient_grid.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+	_package_ingredient_grid.z_index = 10
+	package_visual.add_child(_package_ingredient_grid)
+	return _package_ingredient_grid
 
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
@@ -1729,6 +1761,11 @@ func _refresh_ui() -> void:
 	pancake_surface.batter_pour_guide_outer_radius_pixels = BEST_BATTER_OUTER_RADIUS / float(GRID_SIZE) * pancake_surface.size.x
 	pancake_surface.queue_redraw()
 	package_visual.visible = state == State.READY
+	_refresh_package_recipe_markers()
+	fold_overlay.set_package_recipe_product(ready_product if not ready_product.is_empty() else {
+		"ingredient_ids": applied_ingredient_ids,
+		"sauce_ids": applied_sauce_ids,
+	})
 	if _package_selection_outline != null:
 		_package_selection_outline.visible = _package_selection_outline.visible and package_visual.visible
 	match state:
@@ -1800,7 +1837,7 @@ func _refresh_heat_visual() -> void:
 	var cooking := bool(heat_status.get("cooking", false))
 	heat_bar.visible = true
 	heat_status_label.visible = true
-	var heat_window := heat_window_for_preference(StringName(order.get("heat_preference", &"golden")))
+	var heat_window := heat_window()
 	if not cooking:
 		var inactive_text := "火候 · 已结束" if state in [State.GARNISH, State.FOLDING, State.READY] else "火候 · 未开始"
 		heat_bar.configure(0.0, heat_window.x, heat_window.y, false, &"", inactive_text)
@@ -1809,13 +1846,14 @@ func _refresh_heat_visual() -> void:
 		return
 	var visible_side_doneness := float(heat_status.get("doneness", 0.0))
 	var charred := bool(heat_status.get("charred", false))
+	var heat_stage := StringName(heat_status.get("heat_stage", COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW))
 	var status_text := _heat_status_text(heat_status)
 	heat_bar.configure(
 		visible_side_doneness,
 		heat_window.x,
 		heat_window.y,
 		true,
-		COOKING_STAGE_BAR_SCRIPT.STAGE_RED if charred else &"",
+		COOKING_STAGE_BAR_SCRIPT.STAGE_RED if heat_stage == COOKING_STAGE_BAR_SCRIPT.STAGE_RED else &"",
 		status_text,
 	)
 	heat_status_label.modulate = Color(1.0, 0.50, 0.32, 1.0) if charred else Color.WHITE
@@ -1828,35 +1866,20 @@ func cooking_heat_status() -> Dictionary:
 		return {"cooking": false, "phase": &"", "seconds": 0.0, "doneness": 0.0, "flip_ready": false, "charred": false}
 	var first_side := state == State.FIRST_SIDE
 	var visible_side_doneness := pancake_model.mean_side_doneness(pancake_model.is_flipped)
-	var charred_ratio := _visible_side_charred_ratio()
-	var heat_window := heat_window_for_preference(StringName(order.get("heat_preference", &"golden")))
+	var heat_window := heat_window()
+	var heat_stage := heat_stage_for_doneness(visible_side_doneness, heat_window)
 	return {
 		"cooking": true,
 		"phase": &"first_side" if first_side else &"second_side",
 		"seconds": first_side_seconds if first_side else second_side_seconds,
 		"doneness": visible_side_doneness,
 		"flip_ready": first_side and visible_side_doneness >= P1Session.RECOMMENDED_FLIP_DONENESS,
-		"charred": charred_ratio >= CHARRED_RATIO_WARNING,
-		"charred_ratio": charred_ratio,
+		"charred": heat_stage == COOKING_STAGE_BAR_SCRIPT.STAGE_RED,
 		"target": (heat_window.x + heat_window.y) * 0.5,
 		"green_start": heat_window.x,
 		"green_end": heat_window.y,
-		"heat_stage": heat_stage_for_doneness(visible_side_doneness, heat_window),
+		"heat_stage": heat_stage,
 	}
-
-
-func _visible_side_charred_ratio() -> float:
-	var exposure_field := pancake_model.back_cooking_exposure_seconds if pancake_model.is_flipped else pancake_model.cooking_exposure_seconds
-	var doneness_field := pancake_model.back_doneness if pancake_model.is_flipped else pancake_model.doneness
-	var covered_cells := 0
-	var charred_cells := 0
-	for index in pancake_model.cell_count:
-		if pancake_model.coverage[index] <= 0.0:
-			continue
-		covered_cells += 1
-		if exposure_field[index] >= CHARRED_EXPOSURE_SECONDS and doneness_field[index] >= CHARRED_DONENESS:
-			charred_cells += 1
-	return float(charred_cells) / maxf(float(covered_cells), 1.0)
 
 
 func _heat_status_text(heat_status: Dictionary) -> String:
@@ -1867,27 +1890,23 @@ func _heat_status_text(heat_status: Dictionary) -> String:
 	if bool(heat_status.get("charred", false)):
 		return "%s %.1f秒 · 已焦糊 · %d%%" % [side_label, seconds, doneness_percent]
 	var stage_text: String = str({
-		COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW: "火候不足" if _non_burning_upgrade_enabled else "偏生",
-		COOKING_STAGE_BAR_SCRIPT.STAGE_GREEN: "火候正好",
-		COOKING_STAGE_BAR_SCRIPT.STAGE_RED: "过火风险",
-	}.get(StringName(heat_status.get("heat_stage", COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW)), "偏生"))
+		COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW: "未熟",
+		COOKING_STAGE_BAR_SCRIPT.STAGE_GREEN: "火候合适",
+		COOKING_STAGE_BAR_SCRIPT.STAGE_RED: "焦糊",
+	}.get(StringName(heat_status.get("heat_stage", COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW)), "未熟"))
 	if is_first_side and bool(heat_status.get("flip_ready", false)):
 		return "%s %.1f秒 · %s %d%% · 可翻面" % [side_label, seconds, stage_text, doneness_percent]
 	return "%s %.1f秒 · %s · %d%%" % [side_label, seconds, stage_text, doneness_percent]
 
 
-static func heat_window_for_preference(preference: StringName) -> Vector2:
-	var target := float(PANCAKE_SCORER_SCRIPT.heat_target_for(preference))
-	return Vector2(
-		clampf(target - HEAT_GREEN_TOLERANCE, 0.02, 0.96),
-		clampf(target + HEAT_GREEN_TOLERANCE, 0.04, 0.98),
-	)
+static func heat_window() -> Vector2:
+	return Vector2(HEAT_SUITABLE_MIN, HEAT_CHARRED_MIN)
 
 
 static func heat_stage_for_doneness(doneness: float, heat_window: Vector2) -> StringName:
 	if doneness < heat_window.x:
 		return COOKING_STAGE_BAR_SCRIPT.STAGE_YELLOW
-	if doneness <= heat_window.y:
+	if doneness < heat_window.y:
 		return COOKING_STAGE_BAR_SCRIPT.STAGE_GREEN
 	return COOKING_STAGE_BAR_SCRIPT.STAGE_RED
 

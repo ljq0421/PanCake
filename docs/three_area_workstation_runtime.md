@@ -6,7 +6,7 @@
 
 ## 当时的入口与场景结构
 
-- 正式入口固定为 `res://scenes/gameplay/five_area_workstation.tscn`，根节点类型继续为 `Workstation`。
+- 正式入口固定为 `res://scenes/gameplay/four_area_workstation.tscn`，根节点类型继续为 `Workstation`。
 - 该场景是独立场景，不继承历史工作台。`FiveAreaInfrastructure/Stations` 只包含现磨豆浆、煎饼和油条三个常驻区域。
 - 历史 `initial_unlock_workstation.tscn`、`workstation.tscn`、`initial_unlock_preview.tscn` 已删除，不提供内部路径跳转。
 - 旧单鏊、旧五区点击层、旧单顾客订单卡、旧材料架/工具架、旧全局废弃与暂存控件，以及槽位 7–18 的锁层均不在运行树中。

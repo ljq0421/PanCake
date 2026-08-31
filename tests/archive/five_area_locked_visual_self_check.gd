@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const LOCKED_STATIONS := {
 	&"area.fresh_soy_milk": "FreshSoyMilkStation",
 	&"area.youtiao": "YoutiaoStation",

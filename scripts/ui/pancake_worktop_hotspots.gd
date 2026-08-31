@@ -148,6 +148,7 @@ func refresh_from_session() -> void:
 	_update_baocui_inventory_visual(int(inventory.get(str(BAOCUI_STOCK_ID), 0)))
 	_update_spreader_holder_visual()
 	_update_batter_ladle_holder_visual()
+	_refresh_material_hover_visuals()
 
 
 func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringName, source_kind: StringName) -> void:
@@ -182,6 +183,9 @@ func _configure_material_hotspot(hotspot: ProductDragSource, stock_id: StringNam
 		else -drag_preview_size * 0.5
 	)
 	hotspot.mouse_filter = Control.MOUSE_FILTER_STOP
+	# The authored ingredient art is a sibling of the transparent drag target.
+	# Let the source restore that prop's hover after periodic inventory refreshes.
+	hotspot.set_hover_visual_target(hotspot.get_parent() as CanvasItem)
 	if not hotspot.short_clicked.is_connected(_on_material_short_clicked):
 		hotspot.short_clicked.connect(_on_material_short_clicked.bind(hotspot))
 	if not hotspot.hold_requested.is_connected(_on_material_hold_requested):
@@ -281,6 +285,17 @@ func _refresh_optional_stock_visuals(progression: RefCounted) -> void:
 				if unlocked and not _workshop_preview
 				else Control.MOUSE_BEHAVIOR_DISABLED
 			)
+
+
+func _refresh_material_hover_visuals() -> void:
+	for hotspot_name in INGREDIENT_HOTSPOT_IDS:
+		var hotspot := _material_hotspot(hotspot_name)
+		if hotspot != null:
+			hotspot.refresh_hover_visual()
+	for hotspot_name in SAUCE_HOTSPOT_IDS:
+		var hotspot := _material_hotspot(hotspot_name)
+		if hotspot != null:
+			hotspot.refresh_hover_visual()
 
 
 func _set_container_preview(enabled: bool) -> void:

@@ -10,7 +10,6 @@ const ORDERS: Array[Dictionary] = [
 		"title": "经典杂粮煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.SCALLION],
 		"sauces": [SAUCE_SWEET],
-		"heat_preference": &"golden",
 		"time_limit": 72.0,
 		"payment_coins": 3,
 		"customer_line": "来一份经典的，薄脆和葱花都要。",
@@ -20,17 +19,15 @@ const ORDERS: Array[Dictionary] = [
 		"title": "火腿薄脆煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.HAM_SAUSAGE],
 		"sauces": [SAUCE_SWEET],
-		"heat_preference": &"well_done",
 		"time_limit": 76.0,
 		"payment_coins": 12,
-		"customer_line": "火腿薄脆，刷秘制酱料，边缘煎香一点。",
+		"customer_line": "火腿薄脆，刷秘制酱料。",
 	},
 	{
 		"id": &"double_sauce",
 		"title": "全料秘制煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.HAM_SAUSAGE, IngredientModel.SCALLION],
 		"sauces": [SAUCE_SWEET],
-		"heat_preference": &"golden",
 		"time_limit": 82.0,
 		"payment_coins": 22,
 		"customer_line": "刷秘制酱料，配料给我放匀。",
@@ -40,17 +37,15 @@ const ORDERS: Array[Dictionary] = [
 		"title": "葱香少料煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.SCALLION],
 		"sauces": [SAUCE_SWEET],
-		"heat_preference": &"light",
 		"time_limit": 68.0,
 		"payment_coins": 5,
-		"customer_line": "不要火腿和薄脆，嫩一点就好。",
+		"customer_line": "不要火腿和薄脆，葱花保留。",
 	},
 	{
 		"id": &"meat_floss_sweet",
 		"title": "秘制肉松煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.BAOCUI, IngredientModel.MEAT_FLOSS, IngredientModel.SCALLION],
 		"sauces": [SAUCE_SWEET],
-		"heat_preference": &"golden",
 		"time_limit": 84.0,
 		"payment_coins": 28,
 		"customer_line": "肉松铺匀些，秘制酱料和葱花都要。",
@@ -60,7 +55,6 @@ const ORDERS: Array[Dictionary] = [
 		"title": "秘制里脊煎饼",
 		"ingredients": [IngredientModel.EGG, IngredientModel.PORK_TENDERLOIN, IngredientModel.SCALLION],
 		"sauces": [SAUCE_SWEET],
-		"heat_preference": &"well_done",
 		"time_limit": 88.0,
 		"payment_coins": 36,
 		"customer_line": "里脊配秘制酱料，饼皮要结实一点。",
@@ -115,5 +109,4 @@ static func format_requirements(order: Dictionary) -> String:
 		var portions := int(sauce_counts[sauce_type])
 		var label := sauce_display_name(sauce_type)
 		sauce_names.append(label if portions == 1 else "%s×%d" % [label, portions])
-	var heat_label: String = str({&"light": "嫩火", &"golden": "金黄", &"well_done": "偏香脆"}.get(order.get("heat_preference", &"golden"), "金黄"))
-	return "%s\n配料：%s\n酱料：%s · 火候：%s" % [order.title, "、".join(ingredient_names), "、".join(sauce_names), heat_label]
+	return "%s\n配料：%s\n酱料：%s" % [order.title, "、".join(ingredient_names), "、".join(sauce_names)]

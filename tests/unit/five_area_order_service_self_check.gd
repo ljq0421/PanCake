@@ -4,31 +4,29 @@ var _failures: Array[String] = []
 func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	var service: RefCounted = ORDERS.new()
-	var template := {"id": &"order.pancake.classic", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour"]}
+	var template := {"id": &"order.pancake.classic", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour"]}
 	var opened: Dictionary = service.call("open_pancake_order", template)
 	var order_id: StringName = Dictionary(opened.get("order", {})).get("order_id", &"")
-	var product := {"product_instance_id": &"product.1", "product_id": &"product.pancake.custom", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour"]}
+	var product := {"product_instance_id": &"product.1", "product_id": &"product.pancake.custom", "heat_is_suitable": true, "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour"]}
 	_check(bool(service.call("preview_attach_product", order_id, 0, product).get("will_match", false)), "formal order previews matching tray product")
-	var green_band_product := product.duplicate(true)
-	green_band_product["heat_preference"] = &"well_done"
-	green_band_product["heat_matches_requested_preference"] = true
-	var outside_green_band_product := product.duplicate(true)
-	outside_green_band_product["heat_matches_requested_preference"] = false
+	var suitable_product := product.duplicate(true)
+	var unsuitable_product := product.duplicate(true)
+	unsuitable_product["heat_is_suitable"] = false
 	_check(
-		bool(service.call("preview_attach_product", order_id, 0, green_band_product).get("will_match", false))
-		and not bool(service.call("preview_attach_product", order_id, 0, outside_green_band_product).get("will_match", true)),
-		"pancake delivery uses the shared two-sided green-band result when it is available, while old products retain category fallback"
+		bool(service.call("preview_attach_product", order_id, 0, suitable_product).get("will_match", false))
+		and not bool(service.call("preview_attach_product", order_id, 0, unsuitable_product).get("will_match", true)),
+		"pancake delivery accepts the shared suitable band and rejects universally unsuitable heat"
 	)
 	_check(bool(service.call("attach_product", order_id, 0, product).get("success", false)), "formal order reserves matched product")
 	var settled: Dictionary = service.call("settle_order", order_id)
 	var repeated_settlement: Dictionary = service.call("settle_order", order_id)
 	_check(bool(settled.get("order_success", false)) and bool(repeated_settlement.get("success", false)) and bool(repeated_settlement.get("already_settled", false)), "formal order settles once and safely accepts a retry")
 	var multi: Dictionary = service.call("open_order", [
-		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [], "heat_preference": &"golden"},
+		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": []},
 		{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.milk", "quantity": 1},
 	])
 	var multi_id: StringName = Dictionary(multi.get("order", {})).get("order_id", &"")
-	var pancake_product := {"product_instance_id": &"product.2", "product_id": &"product.pancake.custom", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": []}
+	var pancake_product := {"product_instance_id": &"product.2", "product_id": &"product.pancake.custom", "heat_is_suitable": true, "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": []}
 	var drink_product := {"product_instance_id": &"product.3", "product_id": &"product.packaged_drink.milk"}
 	_check(int(service.call("best_delivery_item_index", multi_id, drink_product)) == 1, "delivery prefers the matching unfinished item instead of binding production in advance")
 	var partial_attach: Dictionary = service.call("attach_product", multi_id, 0, pancake_product)
@@ -36,10 +34,10 @@ func _run() -> void:
 	_check(bool(partial_attach.get("success", false)) and not bool(partial_settle.get("success", true)) and partial_settle.get("reason", &"") == &"missing_order_item", "multi-item order preserves a valid partial delivery without settling early")
 	_check(bool(service.call("attach_product", multi_id, 1, drink_product).get("success", false)), "formal order routes the later product to its remaining multi-item entry")
 	var sauce_contract: RefCounted = ORDERS.new()
-	var double_sauce: Dictionary = sauce_contract.call("open_pancake_order", {"id": &"order.pancake.double_sauce", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]})
+	var double_sauce: Dictionary = sauce_contract.call("open_pancake_order", {"id": &"order.pancake.double_sauce", "ingredient_ids": [&"stock.pancake.egg"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.red_chili"]})
 	_check(bool(double_sauce.get("success", false)), "formal pancake order accepts the confirmed two-sauce maximum")
 	var double_portion_contract: RefCounted = ORDERS.new()
-	var double_portion: Dictionary = double_portion_contract.call("open_pancake_order", {"id": &"order.pancake.double_portion", "heat_preference": &"golden", "ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.meat_floss", &"stock.pancake.meat_floss"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"]})
+	var double_portion: Dictionary = double_portion_contract.call("open_pancake_order", {"id": &"order.pancake.double_portion", "ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.egg", &"stock.pancake.meat_floss", &"stock.pancake.meat_floss"], "sauce_ids": [&"stock.pancake.sauce.sweet_flour", &"stock.pancake.sauce.sweet_flour"]})
 	var double_item: Dictionary = {}
 	if bool(double_portion.get("success", false)):
 		var double_items: Array = Array(Dictionary(double_portion.get("order", {})).get("items", []))
@@ -153,7 +151,7 @@ func _run() -> void:
 	refill.call("settle_order", first_refill_id)
 	_check(Array(refill.call("active_orders")).size() == 3 and Array(refill.call("waiting_orders")).is_empty(), "settling a customer leaves the vacant service position for delayed walk-in scheduling")
 	var version_four: Dictionary = Dictionary(refill.call("snapshot"))
-	_check(int(version_four.get("version", 0)) == 7, "formal order snapshots now write version seven for the six-order queue")
+	_check(int(version_four.get("version", 0)) == 8, "formal order snapshots now write version eight without heat preferences")
 	version_four["version"] = 4
 	var version_four_orders: Dictionary = Dictionary(version_four.get("orders", {}))
 	for raw_order_id in version_four_orders:
@@ -176,7 +174,7 @@ func _run() -> void:
 	preserved_orders[preserved_order_id] = preserved_order
 	preserved_snapshot["orders"] = preserved_orders
 	var preserved_restore: RefCounted = ORDERS.new(preserved_snapshot)
-	_check(StringName(Dictionary(preserved_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_10", "version-seven restore preserves the customer identity stored on the order")
+	_check(StringName(Dictionary(preserved_restore.call("order_by_id", StringName(preserved_order_id))).get("customer_id", &"")) == &"customer_10", "version-eight restore preserves the customer identity stored on the order")
 	preserved_order["customer_id"] = &"customer_15"
 	preserved_orders[preserved_order_id] = preserved_order
 	preserved_snapshot["orders"] = preserved_orders

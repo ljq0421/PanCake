@@ -553,7 +553,6 @@ static func _pancake_candidate(progression: Dictionary, tutorial: Dictionary, se
 			"pancake_template_id": template_id,
 			"ingredient_ids": Array(template.get("ingredient_stock_ids", [])),
 			"sauce_ids": Array(template.get("sauce_stock_ids", [])),
-			"heat_preference": StringName(template.get("heat_preference", &"golden")),
 		}],
 		"metadata": {
 			"legacy_order": legacy,

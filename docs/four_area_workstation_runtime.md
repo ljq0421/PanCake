@@ -6,7 +6,7 @@
 
 - 固定四区：`area.pancake`（煎饼）、`area.youtiao`（油条）、`area.fresh_soy_milk`（现磨豆浆）、`area.packaged_drink`（成品饮品）。
 - 煎饼区只有 `device.pancake_griddle`，其 `griddle_count` 固定为 `1`；成长不提供第二或第三个鏊位。
-- 正式工作台入口是 `res://scenes/gameplay/four_area_workstation.tscn`。它继承旧路径 `five_area_workstation.tscn` 的资源内容，后者只作为存量资源兼容层，不代表五区玩法，也不得作为新功能入口。
+- 正式工作台唯一入口是 `res://scenes/gameplay/four_area_workstation.tscn`，场景内容直接维护在该文件中，不再通过旧五区场景继承。所有新功能、测试和编辑器预览都必须引用这一入口。
 - 订单、库存、成长和设备只能引用上列四区目录中存在的稳定 ID。
 
 ## 开局、营业时间与教学

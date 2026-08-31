@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://x84wsqbvl1do"]
+[gd_scene format=3 uid="uid://c3ue38k5csw63"]
 
 [ext_resource type="Script" uid="uid://dbk2xuxevgb1g" path="res://scripts/gameplay/five_area_workstation.gd" id="1_38olv"]
 [ext_resource type="Resource" uid="uid://c8n37jd6t6h6m" path="res://resources/data/pancake_simulation_parameters.tres" id="2_g7se5"]
@@ -11,18 +11,6 @@
 [ext_resource type="AudioStream" uid="uid://dgr6inaps3u47" path="res://resources/audio/sfx/pancake_fold.wav" id="9_g8thx"]
 [ext_resource type="AudioStream" uid="uid://do7ny84he6ayf" path="res://resources/audio/sfx/order_serve.wav" id="10_t8d3v"]
 [ext_resource type="AudioStream" uid="uid://cew8cpgor5lf3" path="res://resources/audio/sfx/cooking_sizzle.wav" id="11_3q22l"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/morning_ambience.wav" id="audio_ambience"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/customer_arrive.wav" id="audio_arrive"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/patience_warning.wav" id="audio_patience"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/payment_collect.wav" id="audio_payment"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/youtiao_load.wav" id="audio_youtiao_load"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/fryer_start.wav" id="audio_fryer_start"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/fryer_ready.wav" id="audio_fryer_ready"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/soy_cup_place.wav" id="audio_soy_cup"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/soy_dispense.wav" id="audio_soy_dispense"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/soy_ready.wav" id="audio_soy_ready"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/drink_restock.wav" id="audio_drink_restock"]
-[ext_resource type="AudioStream" path="res://resources/audio/sfx/drink_pickup.wav" id="audio_drink_pickup"]
 [ext_resource type="Texture2D" uid="uid://bynvu1f6ibjg5" path="res://resources/art/workstation/background/empty-workbench.png" id="12_whx3a"]
 [ext_resource type="Texture2D" uid="uid://c4kc7vci8tfog" path="res://resources/art/payments/coin_1_v2_chinese_ui.png" id="13_wq4vo"]
 [ext_resource type="Texture2D" uid="uid://c20iol4qkhexk" path="res://resources/art/payments/payment_cash_small_v2_chinese_ui.png" id="24_174he"]
@@ -37,10 +25,23 @@
 [ext_resource type="Script" uid="uid://dt6j7cu1bhqwo" path="res://scripts/ui/tutorial_guide_arrow.gd" id="63_guide_arrow"]
 [ext_resource type="PackedScene" uid="uid://cutgih44ymmyc" path="res://scenes/gameplay/cartoon_youtiao_fryer_toggle.tscn" id="74_cartoon_youtiao"]
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
-[ext_resource type="Texture2D" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="81_waste_basket"]
-[ext_resource type="PackedScene" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
+[ext_resource type="Texture2D" uid="uid://uwmrg0jctqwh" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="81_waste_basket"]
+[ext_resource type="PackedScene" uid="uid://d1d3cotxm1vxl" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
 [ext_resource type="Texture2D" uid="uid://qxcwppwhxlbq" path="res://resources/art/products/orange_juice/yinpin-v1.png" id="83_pancake_holding_tray"]
-[ext_resource type="Shader" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
+[ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="85_pancake_holding_tray_hit"]
+[ext_resource type="Shader" uid="uid://coyn1qbaqcitu" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
+[ext_resource type="AudioStream" uid="uid://d3nagqs4bkp1t" path="res://resources/audio/sfx/morning_ambience.wav" id="audio_ambience"]
+[ext_resource type="AudioStream" uid="uid://do2e1cckajyd6" path="res://resources/audio/sfx/customer_arrive.wav" id="audio_arrive"]
+[ext_resource type="AudioStream" uid="uid://dhmlb1gtjvast" path="res://resources/audio/sfx/drink_pickup.wav" id="audio_drink_pickup"]
+[ext_resource type="AudioStream" uid="uid://bulsdy4psbjsl" path="res://resources/audio/sfx/drink_restock.wav" id="audio_drink_restock"]
+[ext_resource type="AudioStream" uid="uid://c4o5tgqompe0g" path="res://resources/audio/sfx/fryer_ready.wav" id="audio_fryer_ready"]
+[ext_resource type="AudioStream" uid="uid://drsc8u5ybh8d8" path="res://resources/audio/sfx/fryer_start.wav" id="audio_fryer_start"]
+[ext_resource type="AudioStream" uid="uid://ns0c0nx72j5b" path="res://resources/audio/sfx/patience_warning.wav" id="audio_patience"]
+[ext_resource type="AudioStream" uid="uid://7ey0c8kbp8ey" path="res://resources/audio/sfx/payment_collect.wav" id="audio_payment"]
+[ext_resource type="AudioStream" uid="uid://dhon6bor80xkl" path="res://resources/audio/sfx/soy_cup_place.wav" id="audio_soy_cup"]
+[ext_resource type="AudioStream" uid="uid://c4s8wuheqrbss" path="res://resources/audio/sfx/soy_dispense.wav" id="audio_soy_dispense"]
+[ext_resource type="AudioStream" uid="uid://ckh7syexa146x" path="res://resources/audio/sfx/soy_ready.wav" id="audio_soy_ready"]
+[ext_resource type="AudioStream" uid="uid://b4xseunre8hev" path="res://resources/audio/sfx/youtiao_load.wav" id="audio_youtiao_load"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_formal_polish"]
 shader = ExtResource("84_formal_polish")
@@ -271,7 +272,7 @@ corner_radius_bottom_left = 14
 shadow_color = Color(0.34, 0.16, 0.04, 0.3)
 shadow_size = 8
 
-[node name="Workstation" type="Control" unique_id=54162380]
+[node name="Workstation2" type="Control" unique_id=54162380]
 process_mode = 1
 layout_mode = 3
 anchors_preset = 15
@@ -355,8 +356,9 @@ texture = ExtResource("12_whx3a")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FormalWorkbenchPolish" type="ColorRect" parent="SafeArea"]
+[node name="FormalWorkbenchPolish" type="ColorRect" parent="SafeArea" unique_id=695611734]
 z_index = -95
+material = SubResource("ShaderMaterial_formal_polish")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -364,8 +366,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-material = SubResource("ShaderMaterial_formal_polish")
-color = Color(1, 1, 1, 1)
 
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1
@@ -1497,12 +1497,12 @@ offset_bottom = 860.0
 
 [node name="PackagedDrinkStation" parent="FiveAreaInfrastructure/Stations" unique_id=1263986130 instance=ExtResource("82_packaged_drink")]
 z_index = 19
+custom_minimum_size = Vector2(290, 175)
 layout_mode = 0
-offset_left = 1540.0
-offset_top = 830.0
-offset_right = 1830.0
-offset_bottom = 1005.0
-scale = Vector2(1.5, 1.5)
+offset_left = 1556.0
+offset_top = 837.0
+offset_right = 1920.0
+offset_bottom = 1041.0
 
 [node name="CartoonYoutiaoFryer" parent="FiveAreaInfrastructure/Stations" unique_id=1123320882 instance=ExtResource("74_cartoon_youtiao")]
 layout_mode = 0
@@ -1562,62 +1562,58 @@ text = "拖入报废
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PancakeHoldingTray" type="TextureButton" parent="FiveAreaInfrastructure" unique_id=1824711041]
+[node name="PancakeHoldingTray" type="TextureButton" parent="FiveAreaInfrastructure/Stations" unique_id=1824711041]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1027.0
-offset_top = 876.0
-offset_right = 1391.0
-offset_bottom = 1080.0
-tooltip_text = "煎饼暂存盘：点击存入已打包煎饼，最多暂存 4 份"
+offset_left = 1192.0
+offset_top = 837.0
+offset_right = 1556.0
+offset_bottom = 1041.0
+tooltip_text = "煎饼暂存盘：点击存入已打包煎饼，最多暂存 3 份"
 texture_normal = ExtResource("83_pancake_holding_tray")
 ignore_texture_size = true
 stretch_mode = 5
+script = ExtResource("85_pancake_holding_tray_hit")
+hit_texture = ExtResource("83_pancake_holding_tray")
 
-[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=843643587]
+[node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure/Stations/PancakeHoldingTray" unique_id=843643587]
 unique_name_in_owner = true
 visible = false
+z_index = 1
 layout_mode = 0
-offset_left = 10.0
-offset_top = 48.0
-offset_right = 94.0
-offset_bottom = 132.0
+offset_left = 42.0
+offset_top = -8.0
+offset_right = 206.0
+offset_bottom = 156.0
+scale = Vector2(1.066666, 1.066666)
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
 
-[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure/PancakeHoldingTray" unique_id=1760000249]
+[node name="PancakeHoldingSource02" type="TextureButton" parent="FiveAreaInfrastructure/Stations/PancakeHoldingTray" unique_id=1760000249]
 unique_name_in_owner = true
 visible = false
+z_index = 2
 layout_mode = 0
-offset_left = 98.0
-offset_top = 48.0
-offset_right = 182.0
-offset_bottom = 132.0
+offset_left = 76.0
+offset_top = -13.0
+offset_right = 240.0
+offset_bottom = 151.0
+scale = Vector2(1.066666, 1.066666)
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
 
-[node name="PancakeHoldingSource03" type="TextureButton" parent="FiveAreaInfrastructure/PancakeHoldingTray"]
+[node name="PancakeHoldingSource03" type="TextureButton" parent="FiveAreaInfrastructure/Stations/PancakeHoldingTray" unique_id=127524645]
 unique_name_in_owner = true
 visible = false
+z_index = 3
 layout_mode = 0
-offset_left = 186.0
-offset_top = 48.0
-offset_right = 270.0
-offset_bottom = 132.0
-ignore_texture_size = true
-stretch_mode = 5
-script = ExtResource("60_ikhp0")
-
-[node name="PancakeHoldingSource04" type="TextureButton" parent="FiveAreaInfrastructure/PancakeHoldingTray"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_left = 274.0
-offset_top = 48.0
-offset_right = 358.0
-offset_bottom = 132.0
+offset_left = 110.0
+offset_top = -18.0
+offset_right = 274.0
+offset_bottom = 146.0
+scale = Vector2(1.066666, 1.066666)
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")

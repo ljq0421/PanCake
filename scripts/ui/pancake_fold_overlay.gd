@@ -18,11 +18,16 @@ const FOLD_LANDED_BEND_RATIO := 0.22
 const FOLD_HEIGHT_SCREEN_FACTOR := 0.15
 const FOLD_VISIBLE_COVERAGE_MIN := 0.02
 const FOLD_VISIBLE_DAMAGE_MAX := 0.98
+const PANCAKE_PACKAGE_INGREDIENT_GRID := preload("res://scripts/ui/pancake_package_ingredient_grid.gd")
 
 @export var pancake_front_texture: Texture2D
 @export var pancake_back_texture: Texture2D
 @export var pancake_edge_texture: Texture2D
 @export var paper_bag_package_texture: Texture2D
+## Mirrors PackageVisual's final rendered rectangle, relative to this overlay.
+## Keeping this authored rect prevents the reveal bag from growing or jumping
+## when the ready-state PackageVisual takes over.
+@export var package_display_rect := Rect2(68.5334, 93.5334, 174.9332, 174.9332)
 
 var fold_model: RefCounted
 var guides_visible := false
@@ -41,6 +46,8 @@ var _animated_progress := 0.0
 var _settle_phase := 1.0
 var _fold_tween: Tween
 var _package_tween: Tween
+var _package_recipe_product: Dictionary = {}
+var _package_ingredient_grid: PancakePackageIngredientGrid
 var _fold_sweet_sauce_texture: Texture2D
 var _fold_chili_sauce_texture: Texture2D
 var _last_sauce_front_strip_count := 0
@@ -59,6 +66,7 @@ var _fold_profile_build_count := 0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ensure_package_ingredient_grid()
 	queue_redraw()
 
 
@@ -82,6 +90,7 @@ func set_fold_model(value: RefCounted) -> void:
 		_last_drag_progress = float(fold_model.drag_progress)
 		for region in [FOLD_MODEL_SCRIPT.REGION_LEFT, FOLD_MODEL_SCRIPT.REGION_RIGHT]:
 			_folded_snapshot[region] = fold_model.is_region_folded(region)
+	_ensure_package_ingredient_grid().visible = fold_model != null and fold_model.package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE
 	queue_redraw()
 
 
@@ -107,6 +116,15 @@ func set_automatic_pending_region(value: StringName) -> void:
 func set_fold_sauce_textures(sweet_texture: Texture2D, chili_texture: Texture2D) -> void:
 	_fold_sweet_sauce_texture = sweet_texture
 	_fold_chili_sauce_texture = chili_texture
+	queue_redraw()
+
+
+func set_package_recipe_product(product: Dictionary) -> void:
+	var next_product := product.duplicate(true)
+	if _package_recipe_product == next_product:
+		return
+	_package_recipe_product = next_product
+	_ensure_package_ingredient_grid().configure(_package_recipe_product)
 	queue_redraw()
 
 
@@ -145,6 +163,7 @@ func _on_fold_changed() -> void:
 		_last_active_region = FOLD_MODEL_SCRIPT.REGION_NONE
 		_last_drag_progress = 0.0
 	var package_result: StringName = fold_model.package_result if fold_model != null else FOLD_MODEL_SCRIPT.PACKAGE_NONE
+	_ensure_package_ingredient_grid().visible = package_result != FOLD_MODEL_SCRIPT.PACKAGE_NONE
 	if package_result != _last_package_result:
 		_last_package_result = package_result
 		if _package_tween != null and _package_tween.is_running():
@@ -211,6 +230,8 @@ func is_fold_animation_active() -> bool:
 
 func _set_package_reveal(value: float) -> void:
 	_package_reveal = clampf(value, 0.0, 1.0)
+	var ingredient_grid := _ensure_package_ingredient_grid()
+	ingredient_grid.modulate.a = lerpf(0.76, 1.0, _package_reveal)
 	queue_redraw()
 
 
@@ -964,14 +985,24 @@ func _draw_package() -> void:
 	if texture == null:
 		return
 	var eased_reveal := 1.0 - pow(1.0 - _package_reveal, 3.0)
-	var reduce_motion := _should_reduce_motion()
-	var reveal_scale := lerpf(0.96 if reduce_motion else 0.84, 1.0, eased_reveal)
-	var side := minf(size.x, size.y) * 0.82 * reveal_scale
-	var downward_entry := Vector2(0.0, lerpf(4.0 if reduce_motion else 24.0, 0.0, eased_reveal))
-	var rect := Rect2(size * 0.5 - Vector2.ONE * side * 0.5 + downward_entry, Vector2.ONE * side)
-	# Start fully opaque so the retired pancake state cannot show through while
-	# the bag moves and scales into its resting position.
-	draw_texture_rect(texture, rect, false, Color.WHITE)
+	# The paper bag must be visually identical during its reveal and once it is
+	# ready for delivery. Only its opacity changes; its size and position do not.
+	draw_texture_rect(texture, package_display_rect, false, Color(1.0, 1.0, 1.0, lerpf(0.76, 1.0, eased_reveal)))
+
+
+func _ensure_package_ingredient_grid() -> PancakePackageIngredientGrid:
+	if _package_ingredient_grid != null and is_instance_valid(_package_ingredient_grid):
+		return _package_ingredient_grid
+	_package_ingredient_grid = PANCAKE_PACKAGE_INGREDIENT_GRID.new()
+	_package_ingredient_grid.name = "PancakePackageIngredientGrid"
+	_package_ingredient_grid.position = package_display_rect.position
+	_package_ingredient_grid.size = PancakePackageIngredientGrid.REFERENCE_SIZE
+	_package_ingredient_grid.scale = package_display_rect.size / PancakePackageIngredientGrid.REFERENCE_SIZE
+	_package_ingredient_grid.z_index = 1
+	_package_ingredient_grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_package_ingredient_grid.visible = false
+	add_child(_package_ingredient_grid)
+	return _package_ingredient_grid
 
 
 func current_package_texture() -> Texture2D:

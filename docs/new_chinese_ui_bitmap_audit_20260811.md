@@ -4,7 +4,7 @@
 
 本审计只统计当前正式入口可达且会被玩家看见的 UI 位图：
 
-`project.godot -> scenes/main/start_menu.tscn -> scenes/main/main.tscn -> scenes/gameplay/five_area_workstation.tscn -> scenes/gameplay/initial_unlock_workstation.tscn`
+`project.godot -> scenes/main/start_menu.tscn -> scenes/main/main.tscn -> scenes/gameplay/four_area_workstation.tscn -> scenes/gameplay/initial_unlock_workstation.tscn`
 
 同时核对 `scripts/main/start_menu.gd`、`scripts/gameplay/workstation.gd` 的 `preload/load`，以及 1920×1080 GPU 截图。`docs/` 概念图、`tmp/`、`.godot/imported/`、未被场景或脚本引用的历史资源不计入运行时清单。
 

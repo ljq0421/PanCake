@@ -168,7 +168,7 @@ func _select_night_market_shop() -> void:
 
 
 func _select_shop(chapter_id: StringName) -> void:
-	var result := Dictionary(_session.call("select_chapter", chapter_id))
+	var result := Dictionary(_session.call("select_chapter", chapter_id, OS.is_debug_build()))
 	if not bool(result.get("success", false)):
 		chapter_hint.text = "请先结束当前店铺的营业日。" if StringName(result.get("reason", &"")) == &"business_day_open" else "这家铺子还没有解锁。"
 		_refresh_chapter_cards()
@@ -190,12 +190,21 @@ func _refresh_chapter_cards() -> void:
 	elif active_id == _session.NIGHT_MARKET_CHAPTER_ID:
 		active_status = night_market
 	var blocks_switch := bool(active_status.get("day_open", false))
+	var debug_chapter_access := OS.is_debug_build()
 	breakfast_shop_button.text = "继续煎饼铺" if active_id == _session.BREAKFAST_CHAPTER_ID else "进入煎饼铺"
-	noodle_shop_button.text = "继续刀削面馆" if active_id == _session.NOODLE_CHAPTER_ID else "进入刀削面馆"
-	night_market_shop_button.text = "继续灯火串铺" if active_id == _session.NIGHT_MARKET_CHAPTER_ID else "进入灯火串铺"
+	noodle_shop_button.text = "继续刀削面馆" if active_id == _session.NOODLE_CHAPTER_ID else (
+		"Debug 进入刀削面馆"
+		if debug_chapter_access and not bool(noodle.get("unlocked", false))
+		else "进入刀削面馆"
+	)
+	night_market_shop_button.text = "继续灯火串铺" if active_id == _session.NIGHT_MARKET_CHAPTER_ID else (
+		"Debug 进入灯火串铺"
+		if debug_chapter_access and not bool(night_market.get("unlocked", false))
+		else "进入灯火串铺"
+	)
 	breakfast_shop_button.disabled = blocks_switch and active_id != _session.BREAKFAST_CHAPTER_ID
-	noodle_shop_button.disabled = not bool(noodle.get("unlocked", false)) or (blocks_switch and active_id != _session.NOODLE_CHAPTER_ID)
-	night_market_shop_button.disabled = not bool(night_market.get("unlocked", false)) or (blocks_switch and active_id != _session.NIGHT_MARKET_CHAPTER_ID)
+	noodle_shop_button.disabled = (not bool(noodle.get("unlocked", false)) and not debug_chapter_access) or (blocks_switch and active_id != _session.NOODLE_CHAPTER_ID)
+	night_market_shop_button.disabled = (not bool(night_market.get("unlocked", false)) and not debug_chapter_access) or (blocks_switch and active_id != _session.NIGHT_MARKET_CHAPTER_ID)
 	var special_customer_progress := str(_session.call("special_customer_reputation_summary"))
 	breakfast_shop_status.text = "第 %d 日 · %d 金币%s\n%s" % [
 		int(breakfast.get("current_day", 1)),
@@ -207,13 +216,21 @@ func _refresh_chapter_cards() -> void:
 		noodle_shop_status.text = "第 %d 日 · %d 金币%s" % [int(noodle.get("current_day", 1)), int(noodle.get("coins", 0)), " · 营业中" if bool(noodle.get("day_open", false)) else ""] if bool(noodle.get("initialized", false)) else "已解锁 · 首次进入将开始教学"
 	else:
 		var progress := Dictionary(noodle.get("unlock_progress", {}))
-		noodle_shop_status.text = "未解锁 · 四区 %d/4 · 铜牌 %d/4" % [int(progress.get("unlocked_area_count", 0)), int(progress.get("bronze_area_count", 0))]
+		noodle_shop_status.text = "未解锁 · 四区 %d/4 · 铜牌 %d/4%s" % [
+			int(progress.get("unlocked_area_count", 0)),
+			int(progress.get("bronze_area_count", 0)),
+			"\nDebug 可直接进入，不改变解锁进度" if debug_chapter_access else "",
+		]
 	if bool(night_market.get("unlocked", false)):
 		night_market_shop_status.text = "第 %d 日 · %d 金币%s" % [int(night_market.get("current_day", 1)), int(night_market.get("coins", 0)), " · 营业中" if bool(night_market.get("day_open", false)) else ""] if bool(night_market.get("initialized", false)) else "已解锁 · 首次进入将开始双火线教学"
 	else:
 		var night_progress := Dictionary(night_market.get("unlock_progress", {}))
-		night_market_shop_status.text = "未解锁 · 面馆成长 %d/%d" % [int(night_progress.get("owned_growth_count", 0)), int(night_progress.get("required_growth_count", 4))]
-	chapter_hint.text = "当前店铺营业中，结束本日后才能切换。" if blocks_switch else "选择一家已解锁的铺子开始营业。"
+		night_market_shop_status.text = "未解锁 · 面馆成长 %d/%d%s" % [
+			int(night_progress.get("owned_growth_count", 0)),
+			int(night_progress.get("required_growth_count", 4)),
+			"\nDebug 可直接进入，不改变解锁进度" if debug_chapter_access else "",
+		]
+	chapter_hint.text = "当前店铺营业中，结束本日后才能切换。" if blocks_switch else ("Debug 构建可直接进入未解锁铺子；正常解锁进度不会改变。" if debug_chapter_access else "选择一家已解锁的铺子开始营业。")
 
 
 func _begin_game_load(start_new_game: bool, path_override: String = "") -> void:

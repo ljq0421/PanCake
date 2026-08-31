@@ -272,7 +272,18 @@ func sync_pointer_to_viewport() -> Vector2:
 
 
 func _input(event: InputEvent) -> void:
-	if not pointer_pressed or not event is InputEventMouseMotion:
+	if not pointer_pressed:
+		return
+	if event is InputEventMouseButton:
+		var mouse_button := event as InputEventMouseButton
+		if mouse_button.button_index == MOUSE_BUTTON_LEFT and not mouse_button.pressed:
+			# Raw viewport input arrives before GUI routing. Finish the gesture here
+			# so releasing over an overlapping Control cannot leave the surface's
+			# pointer state latched and keep a batter pour running indefinitely.
+			var local_position: Vector2 = get_global_transform_with_canvas().affine_inverse() * Vector2(mouse_button.position)
+			_finish_pointer_gesture(local_position)
+		return
+	if not event is InputEventMouseMotion:
 		return
 	# _gui_input is accumulated and can also stop arriving when a held pointer
 	# crosses another Control. Track raw viewport motion for the active gesture,
@@ -301,6 +312,18 @@ func _end_precision_pointer_input() -> void:
 	_precision_pointer_input_active = false
 
 
+func _finish_pointer_gesture(local_position: Vector2) -> void:
+	if not pointer_pressed:
+		return
+	pointer_pressed = false
+	pointer_local_position = local_position
+	if model != null:
+		mouse_grid_cell = PancakeSpace.local_to_grid(local_position, size, model.grid_size)
+	_end_precision_pointer_input()
+	pointer_ended.emit(local_position)
+	queue_redraw()
+
+
 func _gui_input(event: InputEvent) -> void:
 	if model == null:
 		return
@@ -322,9 +345,7 @@ func _gui_input(event: InputEvent) -> void:
 			pointer_started.emit(event.position)
 			accept_event()
 		elif event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-			pointer_pressed = false
-			_end_precision_pointer_input()
-			pointer_ended.emit(event.position)
+			_finish_pointer_gesture(event.position)
 			accept_event()
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			pointer_pressed = false

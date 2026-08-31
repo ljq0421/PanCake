@@ -30,7 +30,6 @@ func _run() -> void:
 		"product_instance_id": &"p0.first_day.pancake",
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
-		"heat_preference": StringName(item.get("heat_preference", &"golden")),
 		"ingredient_ids": Array(item.get("ingredient_ids", [])).duplicate(),
 		"sauce_ids": Array(item.get("sauce_ids", [])).duplicate(),
 		"material_cost": 0,

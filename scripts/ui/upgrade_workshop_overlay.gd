@@ -5,6 +5,7 @@ extends Control
 signal begin_next_day_requested
 signal closed
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const UNAVAILABLE_TAG_OPACITY := 0.42
 const PRESS_SPREADER_PROP_PATH := NodePath("UpgradeProps/WorkshopProp_growth_automation_pancake_press_once")
 const RUNTIME_PRESS_VISUAL_PATH := NodePath("JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
 const EDITOR_PRESS_VISUAL_PATH := NodePath("SyncedWorkstationPreview/SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
@@ -204,8 +205,11 @@ func refresh() -> void:
 	var pancake_holding_tray_owned := owned_growth_ids.has("growth.capacity.pancake_holding_tray.first_slot")
 	_press_preview.visible = true
 	_press_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if press_spreader_owned else 0.42)
-	_pancake_holding_tray_preview.visible = true
-	_pancake_holding_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if pancake_holding_tray_owned else 0.42)
+	# The live workstation behind the overlay already shows the installed tray.
+	# Keep this ghosted prop only while the tray is still available to purchase,
+	# otherwise the two copies appear offset from one another in the workshop.
+	_pancake_holding_tray_preview.visible = not pancake_holding_tray_owned
+	_pancake_holding_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 0.42)
 	# A future drink rack is still readable in the workshop, but remains clearly
 	# a preview until the area is active on the next business day.
 	_juice_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if packaged_drinks_unlocked else 0.42)
@@ -260,7 +264,10 @@ func refresh() -> void:
 			condition_tag.text = _tag_text(growth_id, status)
 			_fit_tag_to_content(growth_id, prop, condition_tag)
 		_apply_upgrade_tag_style(prop, status)
-		prop.modulate = Color.WHITE if _state_text(status) != "条件不足" and _state_text(status) != "金币不足" else Color(0.78, 0.78, 0.78, 1.0)
+		# Price is always visible on a reservation tag.  A solid tag means the
+		# player can reserve it now; every unavailable state is a translucent
+		# preview, while its exact missing conditions stay in the hover/detail UI.
+		prop.modulate = Color.WHITE if bool(status.get("can_purchase", false)) else Color(1.0, 1.0, 1.0, UNAVAILABLE_TAG_OPACITY)
 	if not _selected_id.is_empty() and selected_prop_is_visible:
 		_show_detail(_selected_id)
 	else:
@@ -469,7 +476,7 @@ func _requirements_text(status: Dictionary) -> String:
 
 
 func _tag_text(_growth_id: StringName, status: Dictionary) -> String:
-	return _state_text(status)
+	return "%d 金币" % int(status.get("price", 0))
 
 
 func _tag_tooltip_text(growth_id: StringName, status: Dictionary) -> String:

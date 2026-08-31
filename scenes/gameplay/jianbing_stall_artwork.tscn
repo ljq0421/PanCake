@@ -98,9 +98,9 @@ baocui_tray_textures = Array[Texture2D]([ExtResource("12_baocui_01"), ExtResourc
 [node name="BaocuiBasket" type="Control" parent="PancakeWorktopHotspots" unique_id=1496909340]
 z_index = 120
 anchors_preset = 0
-offset_left = 1008.0
+offset_left = 970.0
 offset_top = 656.0
-offset_right = 1222.0
+offset_right = 1184.0
 offset_bottom = 836.0
 mouse_filter = 2
 
@@ -130,9 +130,9 @@ script = ExtResource("31_product_drag")
 
 [node name="PorkFlossSource" type="Control" parent="PancakeWorktopHotspots" unique_id=1915430299]
 anchors_preset = 0
-offset_left = 1161.0
+offset_left = 1123.0
 offset_top = 656.0
-offset_right = 1375.0
+offset_right = 1337.0
 offset_bottom = 836.0
 mouse_filter = 2
 
@@ -168,9 +168,9 @@ script = ExtResource("31_product_drag")
 
 [node name="HamSource" type="Control" parent="PancakeWorktopHotspots" unique_id=40359447]
 anchors_preset = 0
-offset_left = 1314.0
+offset_left = 1276.0
 offset_top = 656.0
-offset_right = 1528.0
+offset_right = 1490.0
 offset_bottom = 836.0
 mouse_filter = 2
 
@@ -206,10 +206,11 @@ script = ExtResource("31_product_drag")
 
 [node name="SecretSauceSource" type="Control" parent="PancakeWorktopHotspots" unique_id=698685248]
 anchors_preset = 0
-offset_left = 1049.0
-offset_top = 761.0
-offset_right = 1186.0
-offset_bottom = 909.4
+offset_left = 983.25
+offset_top = 746.2
+offset_right = 1188.75
+offset_bottom = 968.8
+scale = Vector2(0.9, 0.9)
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/SecretSauceSource" unique_id=698685249]
@@ -220,6 +221,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.9, 0.9)
 mouse_filter = 2
 texture = ExtResource("9_sweet_bean_sauce")
 expand_mode = 1
@@ -233,16 +235,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.9, 0.9)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
 
 [node name="ScallionTray" type="Control" parent="PancakeWorktopHotspots" unique_id=1021085658]
 anchors_preset = 0
-offset_left = 1143.0
-offset_top = 767.0
-offset_right = 1289.0
-offset_bottom = 914.0
+offset_left = 1081.8002
+offset_top = 751.60004
+offset_right = 1286.2001
+offset_bottom = 957.4001
+scale = Vector2(0.9, 0.9)
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/ScallionTray" unique_id=1425551347]
@@ -253,6 +257,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.9, 0.9)
 mouse_filter = 2
 texture = ExtResource("26_scallion_full")
 expand_mode = 1
@@ -268,16 +273,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.9, 0.9)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
 
 [node name="CorianderTray" type="Control" parent="PancakeWorktopHotspots" unique_id=817709265]
 anchors_preset = 0
-offset_left = 1248.0
-offset_top = 767.0
-offset_right = 1397.0
-offset_bottom = 916.0
+offset_left = 1181.7001
+offset_top = 749.19995
+offset_right = 1390.3002
+offset_bottom = 957.7999
+scale = Vector2(0.9, 0.9)
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/CorianderTray" unique_id=1925334901]
@@ -288,6 +295,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.9, 0.9)
 mouse_filter = 2
 texture = ExtResource("21_coriander_full")
 expand_mode = 1
@@ -303,16 +311,18 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.9, 0.9)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("31_product_drag")
 
 [node name="EggCarton" type="Control" parent="PancakeWorktopHotspots" unique_id=565590056]
 anchors_preset = 0
-offset_left = 1269.0
-offset_top = 787.0
-offset_right = 1485.0
-offset_bottom = 1021.0
+offset_left = 1308.0001
+offset_top = 738.00006
+offset_right = 1524.0001
+offset_bottom = 972.00006
+scale = Vector2(0.95, 0.95)
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/EggCarton" unique_id=326901718]
@@ -322,6 +332,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.95, 0.95)
 mouse_filter = 2
 texture = ExtResource("40_egg_10")
 expand_mode = 1
@@ -336,28 +347,29 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(0.95, 0.95)
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Hotspot" type="TextureButton" parent="PancakeWorktopHotspots/EggCarton" unique_id=1146976014]
 z_index = 2
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 0
+offset_left = 18.0
+offset_top = 52.63149
+offset_right = 198.0
+offset_bottom = 156.78664
+scale = Vector2(0.95, 0.95)
 focus_mode = 0
 mouse_default_cursor_shape = 2
 script = ExtResource("39_egg_carton_drag")
 
 [node name="SpreaderSource" type="Control" parent="PancakeWorktopHotspots" unique_id=1478005217]
 anchors_preset = 0
-offset_left = 1144.0
-offset_top = 819.0
-offset_right = 1304.0
-offset_bottom = 979.0
+offset_left = 1090.0
+offset_top = 873.0
+offset_right = 1250.0
+offset_bottom = 1033.0
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/SpreaderSource" unique_id=71572555]
@@ -408,10 +420,10 @@ hit_texture = ExtResource("41_spreader_holder_filled")
 
 [node name="BatterLadleSource" type="Control" parent="PancakeWorktopHotspots" unique_id=888931824]
 anchors_preset = 0
-offset_left = 1013.0
-offset_top = 813.0
-offset_right = 1219.0
-offset_bottom = 984.0
+offset_left = 961.0
+offset_top = 866.5
+offset_right = 1167.0
+offset_bottom = 1037.5
 mouse_filter = 2
 
 [node name="Visual" type="TextureRect" parent="PancakeWorktopHotspots/BatterLadleSource" unique_id=888931825]

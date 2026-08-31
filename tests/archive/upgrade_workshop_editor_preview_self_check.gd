@@ -1,7 +1,7 @@
 extends SceneTree
 
 const OVERLAY_SCENE := preload("res://scenes/ui/upgrade_workshop_overlay.tscn")
-const WORKSTATION_SCENE_PATH := "res://scenes/gameplay/five_area_workstation.tscn"
+const WORKSTATION_SCENE_PATH := "res://scenes/gameplay/four_area_workstation.tscn"
 
 var failures := PackedStringArray()
 

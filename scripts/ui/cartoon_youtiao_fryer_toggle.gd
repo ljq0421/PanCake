@@ -20,8 +20,10 @@ const FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
 const CHICKEN_FINISHED_TRAY_GROWTH_ID := &"growth.capacity.chicken_finished_tray"
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const COOKING_STAGE_BAR_SCRIPT := preload("res://scripts/ui/cooking_stage_bar.gd")
+const SPATIAL_FLIGHT_EFFECT := preload("res://scripts/ui/spatial_flight_effect.gd")
 const MACHINE_HOLD_THRESHOLD_SECONDS := 0.20
 const MACHINE_ADD_INTERVAL_SECONDS := 0.25
+const TRAY_TRANSFER_STAGGER_SECONDS := 0.12
 const TRAY_VISUAL_CAPACITY := 4
 const PLATE_VISUAL_CAPACITY := TRAY_VISUAL_CAPACITY * 2
 const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
@@ -461,6 +463,7 @@ func _load_selected_input() -> void:
 func _store_ready_fryer_batch_on_plate(product_id: StringName) -> void:
 	var session := get_node_or_null("/root/GameSession")
 	var is_chicken := product_id == CHICKEN_PRODUCT_ID
+	var previous_count := _chicken_plate_products.size() if is_chicken else _plate_count
 	var result := {"success": false, "reason": &"no_game_session"}
 	if session != null and session.has_method("store_ready_fryer_batch_to_available_capacity"):
 		result = Dictionary(session.call("store_ready_fryer_batch_to_available_capacity", &"slot.chicken" if is_chicken else &"slot.04", &"right" if is_chicken else &"left"))
@@ -471,6 +474,7 @@ func _store_ready_fryer_batch_on_plate(product_id: StringName) -> void:
 	if bool(result.get("success", false)):
 		var quantity := int(result.get("stored_quantity", 0))
 		var remaining := int(result.get("remaining_quantity", 0))
+		_play_batch_to_finished_tray(is_chicken, quantity, previous_count)
 		var message := "%d份鸡排已放入鸡排盘" % quantity if is_chicken else "%d根油条已放入成品盘" % quantity
 		if remaining > 0:
 			message += "；成品盘已满，剩余%d份保留在滤网中" % remaining
@@ -478,6 +482,40 @@ func _store_ready_fryer_batch_on_plate(product_id: StringName) -> void:
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
 	_request_session_refresh()
+
+
+func _play_batch_to_finished_tray(is_chicken: bool, quantity: int, previous_count: int) -> void:
+	if quantity <= 0:
+		return
+	var source_controls: Array[ProductDragSource] = chicken_slot_sources if is_chicken else fryer_slot_sources
+	var tray := chicken_tray if is_chicken else plain_tray
+	var motion_reduced := reduce_motion or (
+		DisplayServer.has_method(&"accessibility_should_reduce_motion")
+		and bool(DisplayServer.call(&"accessibility_should_reduce_motion"))
+	)
+	var visible_sources: Array[ProductDragSource] = []
+	for source in source_controls:
+		if source != null and source.visible:
+			visible_sources.append(source)
+	var animated_count := mini(quantity, visible_sources.size())
+	for transfer_index in range(animated_count):
+		var source := visible_sources[transfer_index]
+		var target_index := mini(previous_count + transfer_index, tray.product_sources.size() - 1)
+		if target_index < 0:
+			continue
+		var target := tray.product_sources[target_index]
+		var texture := source.texture_normal
+		if texture == null:
+			texture = chicken_golden_texture if is_chicken else _plate_youtiao_texture()
+		SPATIAL_FLIGHT_EFFECT.play(
+			self,
+			texture,
+			SPATIAL_FLIGHT_EFFECT.canvas_rect(source),
+			SPATIAL_FLIGHT_EFFECT.canvas_rect(target),
+			float(transfer_index) * TRAY_TRANSFER_STAGGER_SECONDS,
+			motion_reduced,
+			40
+		)
 
 
 func _perform_machine_click() -> void:

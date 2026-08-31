@@ -13,7 +13,6 @@ func _initialize() -> void:
 		"title": "恢复订单",
 		"ingredients": [&"egg", &"baocui", &"scallion"],
 		"sauces": [&"sweet_flour"],
-		"heat_preference": &"golden",
 		"payment_coins": 3,
 	}
 	var opened: Dictionary = store.call("open_pancake_order", legacy_order)
@@ -21,7 +20,6 @@ func _initialize() -> void:
 	var product := {
 		"product_instance_id": &"product.recovery.1",
 		"product_id": &"product.pancake.custom",
-		"heat_preference": &"golden",
 		"ingredient_ids": [&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion"],
 		"sauce_ids": [&"stock.pancake.sauce.sweet_flour"],
 		"score": 80.0,

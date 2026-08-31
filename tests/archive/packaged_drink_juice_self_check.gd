@@ -2,7 +2,7 @@ extends SceneTree
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 const PROGRESSION := preload("res://scripts/services/five_area_progression_service.gd")
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 
 const AREA_ID := &"area.packaged_drink"
 const GROWTH_ID := &"growth.area.packaged_drink"

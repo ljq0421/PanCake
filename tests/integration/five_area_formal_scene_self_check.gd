@@ -32,6 +32,56 @@ func _run() -> void:
 		_check(stations != null and stations.get_node_or_null(NodePath(str(station_name))) != null, "%s is present" % station_name)
 	var pancake_station := workstation.get_node_or_null("SafeArea/JianbingStallArtwork") as Control
 	_check(pancake_station != null and pancake_station.get_node_or_null("MultiGriddleStation") != null, "the unified pancake station owns its physical griddle")
+	var physical_hover := workstation._physical_hover as WorkstationPhysicalHover
+	var spreader_hit := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/HitButton") as BaseButton
+	var spreader_visual := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource") as CanvasItem
+	var spreader_rest_modulate := spreader_visual.modulate if spreader_visual != null else Color.WHITE
+	if spreader_hit != null:
+		spreader_hit.mouse_entered.emit()
+	_check(
+		physical_hover != null
+		and spreader_visual != null
+		and spreader_visual.modulate.is_equal_approx(spreader_rest_modulate * WorkstationPhysicalHover.HOVER_MODULATE),
+		"transparent physical tool hit layers brighten their visible artwork on hover",
+	)
+	if spreader_hit != null:
+		spreader_hit.mouse_exited.emit()
+	_check(spreader_visual != null and spreader_visual.modulate.is_equal_approx(spreader_rest_modulate), "physical tool artwork returns to its authored color after hover")
+	var ladle_hit := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BatterLadleSource/HitButton") as BaseButton
+	var ladle_artwork := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BatterLadleSource") as CanvasItem
+	var ladle_rest_modulate := ladle_artwork.modulate if ladle_artwork != null else Color.WHITE
+	if ladle_hit != null:
+		ladle_hit.disabled = false
+		ladle_hit.mouse_filter = Control.MOUSE_FILTER_STOP
+		ladle_hit.mouse_entered.emit()
+	_check(ladle_artwork != null and ladle_artwork.modulate.is_equal_approx(ladle_rest_modulate * WorkstationPhysicalHover.HOVER_MODULATE), "batter-ladle artwork brightens through its transparent hit layer")
+	if ladle_hit != null:
+		ladle_hit.mouse_exited.emit()
+	_check(ladle_artwork != null and ladle_artwork.modulate.is_equal_approx(ladle_rest_modulate), "batter-ladle artwork restores after hover")
+	var baocui_source := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BaocuiBasket/Hotspot") as ProductDragSource
+	var baocui_artwork := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/BaocuiBasket") as CanvasItem
+	if baocui_source != null:
+		baocui_source.disabled = false
+		baocui_source.mouse_filter = Control.MOUSE_FILTER_STOP
+		baocui_source.mouse_entered.emit()
+		baocui_artwork.modulate = Color.WHITE # The inventory refresh resets its normal artwork state.
+		baocui_source.refresh_hover_visual()
+	_check(baocui_artwork != null and baocui_artwork.modulate.is_equal_approx(ProductDragSource.HOVER_MODULATE), "pancake ingredient hover is reapplied after an inventory refresh")
+	if baocui_source != null:
+		baocui_source.mouse_exited.emit()
+	_check(baocui_artwork != null and baocui_artwork.modulate.is_equal_approx(Color.WHITE), "pancake ingredient hover restores after pointer exit")
+	var drink_station := stations.get_node_or_null("PackagedDrinkStation") as Control if stations != null else null
+	var drink_sources: Array = drink_station.call("product_sources") if drink_station != null else []
+	var drink_source := drink_sources.front() as ProductDragSource if not drink_sources.is_empty() else null
+	if drink_source != null:
+		drink_source.disabled = false
+		drink_source.mouse_filter = Control.MOUSE_FILTER_STOP
+		var drink_rest_modulate := drink_source.modulate
+		drink_source.mouse_entered.emit()
+		drink_source.self_modulate = Color.WHITE # Simulates an inventory refresh while the pointer remains over it.
+		_check(drink_source.modulate.is_equal_approx(drink_rest_modulate * WorkstationPhysicalHover.HOVER_MODULATE), "product-source hover survives a visual refresh instead of flashing once")
+		drink_source.mouse_exited.emit()
+		_check(drink_source.modulate.is_equal_approx(drink_rest_modulate), "product-source hover restores after the pointer leaves")
 	_check(stations != null and stations.get_node_or_null("PancakeStation") == null, "the former split pancake station wrapper is absent")
 	_check(stations != null and stations.get_node_or_null("WasteBasket") != null, "the shared waste basket may coexist with production workstations")
 	for retired_name in [&"YoutiaoStation", &"SteamerStation"]:
@@ -153,6 +203,13 @@ func _run() -> void:
 		var saved_slots := Array(saved_griddles.get("slots", []))
 		_check(griddle.units[0].state == CompactGriddleUnit.State.IDLE and (saved_slots.is_empty() or int(Dictionary(saved_slots[0]).get("state", -1)) == CompactGriddleUnit.State.IDLE), "day end clears the live unfinished pancake before it can resave during the workshop")
 		_check(bool(Dictionary(game_session.call("begin_next_business_day")).get("success", false)) and griddle.units[0].state == CompactGriddleUnit.State.IDLE, "next business day never restores an unfinished pancake")
+		var ready_unit := griddle.units[0] as CompactGriddleUnit
+		ready_unit.mark_ready({"product_id": &"product.pancake.custom"})
+		var package_rest_modulate := ready_unit.package_visual.self_modulate
+		ready_unit.mouse_entered.emit()
+		_check(ready_unit.package_visual.self_modulate.is_equal_approx(package_rest_modulate * CompactGriddleUnit.PHYSICAL_HOVER_MODULATE), "ready paper-bag pancake brightens on hover before delivery")
+		ready_unit.mouse_exited.emit()
+		_check(ready_unit.package_visual.self_modulate.is_equal_approx(package_rest_modulate), "ready paper-bag pancake restores its normal color after hover")
 	workstation.queue_free()
 	_finish()
 

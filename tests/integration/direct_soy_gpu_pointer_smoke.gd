@@ -4,7 +4,7 @@ extends SceneTree
 ## runs with a GPU window: synthetic mouse events must reach the actual controls
 ## in the formal workstation rather than calling service methods directly.
 
-const WORKSTATION := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION := preload("res://scenes/gameplay/four_area_workstation.tscn")
 
 var failures := PackedStringArray()
 

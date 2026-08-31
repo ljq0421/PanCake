@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const SETTINGS_PANEL_SCRIPT := preload("res://scripts/ui/game_settings_panel.gd")
 const CAPTURES := [
 	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/five_customer_service_layout_gpu_1280x720.png"},

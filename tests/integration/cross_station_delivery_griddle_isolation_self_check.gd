@@ -4,7 +4,7 @@ extends SceneTree
 ## live pancake griddle.  Each case uses the actual customer-card button path,
 ## then waits through the griddle's one-second safety save interval.
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 
 var _failures := PackedStringArray()
 var _sequence := 0
@@ -119,7 +119,7 @@ func _prepare_pancake(workstation: Node, pancake_state: StringName) -> void:
 			"status": &"available",
 		})
 	else:
-		unit.begin_order({"id": StringName("test.cross_station.in_progress.%d" % _sequence), "heat_preference": &"golden"})
+		unit.begin_order({"id": StringName("test.cross_station.in_progress.%d" % _sequence)})
 	station.call("_sync_snapshot_to_session")
 
 
@@ -150,7 +150,6 @@ func _pancake_order_item() -> Dictionary:
 		"area_id": &"area.pancake",
 		"product_id": &"product.pancake.custom",
 		"quantity": 1,
-		"heat_preference": &"golden",
 		"ingredient_ids": PackedStringArray(),
 		"sauce_ids": PackedStringArray(),
 	}

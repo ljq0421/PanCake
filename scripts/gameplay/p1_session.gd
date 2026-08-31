@@ -7,7 +7,7 @@ const IMPATIENT_RATIO_THRESHOLD := 0.30
 const SATISFIED_SCORE_THRESHOLD := 70.0
 ## This is a quality recommendation, not an interaction gate.  Players may
 ## flip earlier and accept the lower two-sided heat score at settlement.
-const RECOMMENDED_FLIP_DONENESS := 0.30
+const RECOMMENDED_FLIP_DONENESS := 0.25
 const REACTION_NEUTRAL: StringName = &"neutral"
 const REACTION_IMPATIENT: StringName = &"impatient"
 const REACTION_SATISFIED: StringName = &"satisfied"
@@ -166,7 +166,7 @@ func flip_readiness(model: PancakeModel, ingredients: IngredientModel) -> Dictio
 			"early_flip": true,
 			"current_doneness": current_doneness,
 			"recommended_doneness": RECOMMENDED_FLIP_DONENESS,
-			"quality_warning": "现在也可以翻面，但饼皮偏生会降低火候分和订单评价。",
+			"quality_warning": "现在也可以翻面，但这一面尚未熟，会降低火候分和成品评价。",
 		}
 	return {"success": true, "early_flip": false}
 

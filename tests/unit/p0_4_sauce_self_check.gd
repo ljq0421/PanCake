@@ -105,7 +105,7 @@ func _test_scorer_distinguishes_sauce_results() -> void:
 
 
 func _test_customer_review_sauce_score_contract() -> void:
-	var plain_order := {"heat_preference": &"golden", "ingredients": [], "sauces": [], "time_limit": 72.0}
+	var plain_order := {"ingredients": [], "sauces": [], "time_limit": 72.0}
 	var plain_model := _covered_model(32)
 	plain_model.doneness.fill(0.50)
 	plain_model.back_doneness.fill(0.50)
@@ -114,7 +114,7 @@ func _test_customer_review_sauce_score_contract() -> void:
 	var plain_review := Dictionary(PANCAKE_SCORER_SCRIPT.evaluate_stored_product({"serving_score_basis": plain_result.get("serving_score_basis", {})}, plain_order, 20.0, 1.0))
 	_check(is_equal_approx(float(Dictionary(plain_result.get("dimensions", {})).get("sauce", 0.0)), 100.0) and is_equal_approx(float(Dictionary(plain_review.get("dimensions", {})).get("sauce", 0.0)), 100.0), "orders without sauce receive a 100 sauce score in both completion and customer review")
 
-	var automatic_order := {"heat_preference": &"golden", "ingredients": [], "sauces": [OrderService.SAUCE_SWEET], "time_limit": 72.0}
+	var automatic_order := {"ingredients": [], "sauces": [OrderService.SAUCE_SWEET], "time_limit": 72.0}
 	var automatic_model := _covered_model(32)
 	automatic_model.doneness.fill(0.50)
 	automatic_model.back_doneness.fill(0.50)

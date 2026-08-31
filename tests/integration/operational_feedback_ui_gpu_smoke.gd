@@ -1,6 +1,6 @@
 extends SceneTree
 
-const WORKSTATION_SCENE := preload("res://scenes/gameplay/five_area_workstation.tscn")
+const WORKSTATION_SCENE := preload("res://scenes/gameplay/four_area_workstation.tscn")
 const CAPTURES := [
 	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/operational_feedback_ui_gpu_1920x1080.png"},
 	{"size": Vector2i(1366, 768), "path": "res://tmp/validation/operational_feedback_ui_gpu_1366x768.png"},

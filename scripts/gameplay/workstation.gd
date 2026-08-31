@@ -1022,7 +1022,7 @@ func _process(delta: float) -> void:
 	_simulation_accumulator += delta
 	while _simulation_accumulator + 0.000001 >= parameters.simulation_step_seconds:
 		if pour_used and not _folding_locks_preparation() and _is_active_cooking_phase():
-			pancake_model.cooking_doneness_cap = PANCAKE_SCORER_SCRIPT.heat_target_for(StringName(p1_session.order.get("heat_preference", &"golden"))) if _intermediate_griddle_owned else 1.0
+			pancake_model.cooking_doneness_cap = PANCAKE_SCORER_SCRIPT.HEAT_CHARRED_MIN - 0.001 if _intermediate_griddle_owned else 1.0
 			pancake_model.advance_cooking(parameters.simulation_step_seconds, p1_session.heat_level)
 		else:
 			pancake_model.advance_solidification(parameters.simulation_step_seconds)
@@ -2518,7 +2518,7 @@ func _pancake_tray_mismatch_text(reasons: Array) -> String:
 	for reason_variant in reasons:
 		match str(reason_variant):
 			"product_id": labels.append("品类不同")
-			"heat_preference": labels.append("火候要求不同")
+			"heat": labels.append("火候不合适")
 			"ingredient_ids": labels.append("小料不同")
 			"sauce_ids": labels.append("酱料不同")
 			_: labels.append(str(reason_variant))

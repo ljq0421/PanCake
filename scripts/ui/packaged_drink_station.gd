@@ -26,7 +26,9 @@ var _refresh_elapsed := 0.0
 
 
 func _ready() -> void:
+	resized.connect(_sync_surface_layout)
 	_build_surface()
+	_sync_surface_layout()
 	refresh_from_session()
 
 
@@ -96,6 +98,16 @@ func _build_surface() -> void:
 	_lock_cover.add_theme_font_size_override("font_size", 18)
 	_lock_cover.pressed.connect(_on_lock_cover_pressed)
 	add_child(_lock_cover)
+
+
+func _sync_surface_layout() -> void:
+	for source in _sources:
+		source.position = Vector2.ZERO
+		source.size = size
+		source.set_drag_preview_size(source.size)
+	if _lock_cover != null:
+		_lock_cover.position = Vector2(10.0, 42.0)
+		_lock_cover.size = Vector2(maxf(size.x - 20.0, 1.0), maxf(size.y - 50.0, 1.0))
 
 
 func _area_product_ids() -> Array[StringName]:

@@ -32,6 +32,20 @@ func _has_point(point: Vector2) -> bool:
 		return false
 	if _hit_image == null or size.x <= 0.0 or size.y <= 0.0:
 		return false
-	var pixel_x := clampi(floori(point.x / size.x * float(_hit_image.get_width())), 0, _hit_image.get_width() - 1)
-	var pixel_y := clampi(floori(point.y / size.y * float(_hit_image.get_height())), 0, _hit_image.get_height() - 1)
+	var painted_rect := _painted_texture_rect()
+	if not painted_rect.has_point(point):
+		return false
+	var pixel_x := clampi(floori((point.x - painted_rect.position.x) / painted_rect.size.x * float(_hit_image.get_width())), 0, _hit_image.get_width() - 1)
+	var pixel_y := clampi(floori((point.y - painted_rect.position.y) / painted_rect.size.y * float(_hit_image.get_height())), 0, _hit_image.get_height() - 1)
 	return _hit_image.get_pixel(pixel_x, pixel_y).a > 0.0
+
+
+func _painted_texture_rect() -> Rect2:
+	var control_rect := Rect2(Vector2.ZERO, size)
+	if stretch_mode not in [TextureButton.STRETCH_KEEP_ASPECT, TextureButton.STRETCH_KEEP_ASPECT_CENTERED]:
+		return control_rect
+	var texture_size := Vector2(_hit_image.get_width(), _hit_image.get_height())
+	var scale_factor := minf(size.x / texture_size.x, size.y / texture_size.y)
+	var painted_size := texture_size * scale_factor
+	var painted_position := (size - painted_size) * 0.5 if stretch_mode == TextureButton.STRETCH_KEEP_ASPECT_CENTERED else Vector2.ZERO
+	return Rect2(painted_position, painted_size)

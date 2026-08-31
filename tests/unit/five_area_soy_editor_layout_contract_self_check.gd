@@ -6,7 +6,7 @@ var failures := PackedStringArray()
 
 
 func _initialize() -> void:
-	var workstation_scene_source := FileAccess.get_file_as_string("res://scenes/gameplay/five_area_workstation.tscn")
+	var workstation_scene_source := FileAccess.get_file_as_string("res://scenes/gameplay/four_area_workstation.tscn")
 	var workstation_script_source := FileAccess.get_file_as_string("res://scripts/gameplay/five_area_workstation.gd")
 	var soy_scene_source := FileAccess.get_file_as_string("res://scenes/gameplay/direct_soy_station.tscn")
 	var preview_script_source := FileAccess.get_file_as_string("res://scripts/ui/direct_soy_station_editor_preview.gd")

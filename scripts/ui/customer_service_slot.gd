@@ -58,12 +58,14 @@ var _pending_presentation: Dictionary = {}
 var _portrait_rest_position := Vector2.ZERO
 var _order_panel_rest_position := Vector2.ZERO
 var _transition_phase: StringName = &"idle"
+var _has_special_rule := false
 
 
 func _ready() -> void:
 	_register_authored_item_controls()
 	_ensure_item_control_count(item_buttons.size())
 	card_focus_button.pressed.connect(_request_focus)
+	_bind_detail_disclosure_control(card_focus_button)
 	_portrait_rest_position = portrait.position
 	_order_panel_rest_position = order_panel.position
 	portrait.pivot_offset = Vector2(portrait.size.x * 0.5, portrait.size.y)
@@ -144,8 +146,10 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 	var rule_text := str(order.get("special_rule_text", Dictionary(order.get("metadata", {})).get("special_rule_text", "")))
 	special_title.visible = not special_customer_id.is_empty()
 	special_title.text = title_text
-	special_rule.visible = not special_customer_id.is_empty()
+	_has_special_rule = not special_customer_id.is_empty() and not rule_text.is_empty()
+	special_rule.visible = false
 	special_rule.text = rule_text
+	card_focus_button.tooltip_text = "%s\n%s\n点击聚焦此订单" % [title_text, rule_text] if _has_special_rule else "点击订单卡切换当前制作目标"
 	# The coin is baked into the card background; leave only the dynamic reward amount.
 	# Tutorial orders use this same compact header for their no-countdown status.
 	order_title.text = "教学单 · 不限时" if bool(order.get("tutorial_no_countdown", false)) else str(maxi(perfect_quote, 0))
@@ -171,6 +175,7 @@ func bind_order(order: Dictionary, customer_texture: Texture2D, item_textures: A
 		quantity_labels[item_index].text = "✓" if completed else "%d/%d" % [mini(attached_count, required_count), required_count]
 	_bind_requirements_by_item(requirements_by_item)
 	update_patience(order)
+	_sync_special_rule_visibility_from_input()
 
 
 func update_patience(order: Dictionary) -> void:
@@ -344,6 +349,7 @@ func _register_item_control(button: Button, icon: TextureRect, quantity: Label, 
 		(button as OrderItemDropButton).item_index = item_index
 	button.z_index = 2
 	button.pressed.connect(_request_delivery.bind(item_index))
+	_bind_detail_disclosure_control(button)
 	if button.has_signal("product_source_dropped"):
 		button.connect("product_source_dropped", _on_product_source_dropped)
 	item_buttons.append(button)
@@ -395,8 +401,11 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 		blocks.append({"top": row_top, "height": pancake_height})
 		_layout_pancake_item(item_index, row_top, requirements)
 		row_top += pancake_height + CARD_BLOCK_GAP
-	if special_rule.visible:
-		blocks.append({"top": row_top, "height": 30.0})
+	# Keep one stable rule row on special cards so focus/hover disclosure never
+	# makes the card or patience footer jump under the pointer. Do not add the
+	# row to CardBackground's content blocks: at rest that would render as an
+	# unexplained empty order box instead of quiet breathing room.
+	if _has_special_rule:
 		special_rule.position = Vector2(15.0, row_top + 3.0)
 		special_rule.size = Vector2(card_width - 30.0, 24.0)
 		row_top += 30.0 + CARD_BLOCK_GAP
@@ -412,6 +421,35 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 	progress_title.size = Vector2(51.0, 21.0)
 	patience_bar.position = Vector2(PATIENCE_FILL_POSITION_X, card_height - PATIENCE_FILL_BOTTOM_INSET)
 	patience_bar.size = PATIENCE_FILL_SIZE
+
+
+func _bind_detail_disclosure_control(control: Control) -> void:
+	control.mouse_entered.connect(_show_special_rule_details)
+	control.mouse_exited.connect(_queue_special_rule_visibility_sync)
+	control.focus_entered.connect(_show_special_rule_details)
+	control.focus_exited.connect(_queue_special_rule_visibility_sync)
+
+
+func _show_special_rule_details() -> void:
+	special_rule.visible = _has_special_rule
+
+
+func _queue_special_rule_visibility_sync() -> void:
+	call_deferred("_sync_special_rule_visibility_from_input")
+
+
+func _sync_special_rule_visibility_from_input() -> void:
+	if not _has_special_rule or not visible:
+		special_rule.visible = false
+		return
+	var viewport := get_viewport()
+	var hovered := viewport.gui_get_hovered_control() if viewport != null else null
+	var focused := viewport.gui_get_focus_owner() if viewport != null else null
+	special_rule.visible = _is_order_panel_control(hovered) or _is_order_panel_control(focused)
+
+
+func _is_order_panel_control(control: Control) -> bool:
+	return control != null and (control == order_panel or order_panel.is_ancestor_of(control))
 
 
 func _is_pancake_item(item: Dictionary) -> bool:

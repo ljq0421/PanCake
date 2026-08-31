@@ -46,6 +46,11 @@ func _run() -> void:
 	var topping_button := station.get_node("ActionsPanel/Scroll/Actions/ToppingGrid/ScallionButton") as Button
 	var serve_button := station.get_node("ActionsPanel/Scroll/Actions/ServeButton") as Button
 	_check(gesture != null and not begin_button.disabled, "tutorial renders an interactive dough, pot and start action")
+	_check(
+		gesture.has_formal_art()
+		and (station.get_node("Backdrop") as TextureRect).texture.resource_path == "res://resources/art/noodle_shop/background/noodle_shop_interior_background-v1.png",
+		"runtime binds the authored noodle interior and all workstation art layers",
+	)
 	await _click_control(begin_button)
 	for _stroke in 6:
 		await _perform_shaving_gesture(gesture)

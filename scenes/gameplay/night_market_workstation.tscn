@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/night_market_workstation.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/night_market/background/night_market_empty_stall-v1.png" id="2_background"]
@@ -8,6 +8,19 @@
 [ext_resource type="Texture2D" path="res://resources/art/night_market/sprites/skewer_doneness_atlas-rgba-v2.png" id="6_food"]
 [ext_resource type="Texture2D" path="res://resources/art/night_market/sprites/fryer_basket_states-rgba-v1.png" id="7_basket"]
 [ext_resource type="Texture2D" path="res://resources/art/night_market/sprites/cooking_effects_atlas-rgba-v1.png" id="8_effects"]
+[ext_resource type="Script" path="res://scripts/ui/night_market_audio_player.gd" id="9_audio_script"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_grill_place.wav" id="10_grill_place"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_grill_sizzle.wav" id="11_grill_sizzle"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_grill_flip.wav" id="12_grill_flip"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_grill_lift.wav" id="13_grill_lift"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_fryer_lower.wav" id="14_fryer_lower"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_fryer_bubbles.wav" id="15_fryer_bubbles"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_fryer_lift.wav" id="16_fryer_lift"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_season.wav" id="17_season"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_overcook_warning.wav" id="18_overcook"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/order_serve.wav" id="19_serve"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/payment_collect.wav" id="20_payment"]
+[ext_resource type="AudioStream" path="res://resources/audio/sfx/night_ready_cue.wav" id="21_ready"]
 
 [sub_resource type="StyleBoxFlat" id="Style_top"]
 bg_color = Color(0.025, 0.105, 0.11, 0.91)
@@ -137,6 +150,22 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
+
+[node name="NightAudio" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("9_audio_script")
+grill_place_stream = ExtResource("10_grill_place")
+grill_sizzle_stream = ExtResource("11_grill_sizzle")
+grill_flip_stream = ExtResource("12_grill_flip")
+grill_lift_stream = ExtResource("13_grill_lift")
+fryer_lower_stream = ExtResource("14_fryer_lower")
+fryer_bubbles_stream = ExtResource("15_fryer_bubbles")
+fryer_lift_stream = ExtResource("16_fryer_lift")
+season_stream = ExtResource("17_season")
+ready_cue_stream = ExtResource("21_ready")
+overcook_warning_stream = ExtResource("18_overcook")
+serve_stream = ExtResource("19_serve")
+payment_stream = ExtResource("20_payment")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
@@ -500,7 +529,7 @@ theme_override_styles/panel = SubResource("Style_top")
 
 [node name="Layout" type="VBoxContainer" parent="StatsPanel"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="TimerLabel" type="Label" parent="StatsPanel/Layout"]
 unique_name_in_owner = true
@@ -517,6 +546,17 @@ theme_override_colors/font_color = Color(0.9, 0.94, 0.85, 1)
 theme_override_font_sizes/font_size = 20
 text = "串铺金币 0 · 全局口碑 0 · 第 1 日"
 horizontal_alignment = 1
+
+[node name="DetailReadoutButton" type="Button" parent="StatsPanel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("Style_secondary")
+theme_override_styles/hover = SubResource("Style_button_hover")
+theme_override_styles/pressed = SubResource("Style_button_hover")
+theme_override_styles/focus = SubResource("Style_focus")
+text = "显示详细数值"
 
 [node name="StockRow" type="HBoxContainer" parent="StatsPanel/Layout"]
 layout_mode = 2
@@ -991,10 +1031,11 @@ theme_override_styles/focus = SubResource("Style_focus")
 text = "装盘"
 
 [node name="Hint" type="Label" parent="FryerPanel/Layout"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 0.88, 0.73, 1)
 theme_override_font_sizes/font_size = 17
-text = "藕片目标：170–185℃ · 炸 4.5–7.0 秒 · 沥油 0.8–1.8 秒"
+text = "观察油泡、上色与滴油速度判断火候。"
 autowrap_mode = 2
 
 [node name="StatusPanel" type="PanelContainer" parent="."]
@@ -1065,6 +1106,7 @@ theme_override_font_sizes/font_size = 22
 text = "两条火线配合漂亮。\n单品 96 · 配方 100 · 时间 100\n待收款：18 金币"
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="ResultCloseButton" type="Button" parent="ResultPanel/Layout"]
 unique_name_in_owner = true

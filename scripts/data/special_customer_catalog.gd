@@ -8,6 +8,7 @@ const STUDENT := &"special.student"
 const BLOGGER := &"special.blogger"
 
 const SPECIAL_CUSTOMER_IDS: Array[StringName] = [GLUTTON, STUDENT, BLOGGER]
+const REPUTATION_UNLOCK_ORDER: Array[StringName] = [STUDENT, GLUTTON, BLOGGER]
 const SPECIAL_ROLE_IDS: Array[StringName] = [
 	&"customer_special_glutton",
 	&"customer_special_student",
@@ -21,6 +22,7 @@ const DEFINITIONS := {
 		"customer_line": "今天特别饿，给我来三份，至少要两种不一样的！",
 		"rule_text": "至少两类餐品 · 共3份 · 完成金币+20%",
 		"patience_seconds": 150.0,
+		"min_global_reputation": 85,
 		"unlock_completed_area_ids": [&"area.youtiao"],
 	},
 	STUDENT: {
@@ -29,6 +31,7 @@ const DEFINITIONS := {
 		"customer_line": "预算有点紧，麻烦给我最实惠的经典简餐，谢谢。",
 		"rule_text": "最低价经典简餐 · 成功额外口碑+2",
 		"patience_seconds": 90.0,
+		"min_global_reputation": 20,
 		"unlock_completed_area_ids": [&"area.pancake"],
 	},
 	BLOGGER: {
@@ -36,6 +39,7 @@ const DEFINITIONS := {
 		"title": "探店博主",
 		"customer_line": "今天做一期早餐摊探店，拿出你们最稳的水准吧。",
 		"rule_text": "全A金币+50%且总口碑+8 · 含C或失败口碑-4",
+		"min_global_reputation": 220,
 		"unlock_completed_area_ids": [&"area.pancake", &"area.youtiao", &"area.fresh_soy_milk"],
 	},
 }
@@ -56,10 +60,11 @@ static func is_special_role_id(customer_id: StringName) -> bool:
 static func eligible_ids(progression: Dictionary) -> Array[StringName]:
 	var completed := _id_set(Dictionary(progression.get("tutorial", {})).get("completed_area_ids", []))
 	var unlocked_stocks := _id_set(progression.get("unlocked_stock_ids", []))
+	var global_reputation := maxi(int(progression.get("reputation", progression.get("global_reputation", 0))), 0)
 	var result: Array[StringName] = []
 	for special_id in SPECIAL_CUSTOMER_IDS:
 		var entry := definition(special_id)
-		var eligible := true
+		var eligible := global_reputation >= int(entry.get("min_global_reputation", 0))
 		for area_id_variant in Array(entry.get("unlock_completed_area_ids", [])):
 			if not completed.has(StringName(area_id_variant)):
 				eligible = false
@@ -73,6 +78,41 @@ static func eligible_ids(progression: Dictionary) -> Array[StringName]:
 		if eligible:
 			result.append(special_id)
 	return result
+
+
+static func reputation_unlock_overview(current_reputation: int) -> Dictionary:
+	var reputation := maxi(current_reputation, 0)
+	var milestones: Array[Dictionary] = []
+	var unlocked_ids: Array[StringName] = []
+	var next_special_id := &""
+	for special_id in REPUTATION_UNLOCK_ORDER:
+		var entry := definition(special_id)
+		var minimum := maxi(int(entry.get("min_global_reputation", 0)), 0)
+		var unlocked := reputation >= minimum
+		milestones.append({
+			"special_customer_id": special_id,
+			"title": str(entry.get("title", "")),
+			"min_global_reputation": minimum,
+			"unlocked": unlocked,
+		})
+		if unlocked:
+			unlocked_ids.append(special_id)
+		elif next_special_id.is_empty():
+			next_special_id = special_id
+	var next_entry := definition(next_special_id) if not next_special_id.is_empty() else {}
+	var next_minimum := maxi(int(next_entry.get("min_global_reputation", 0)), 0)
+	return {
+		"current_reputation": reputation,
+		"milestones": milestones,
+		"unlocked_ids": unlocked_ids,
+		"unlocked_count": unlocked_ids.size(),
+		"total_count": REPUTATION_UNLOCK_ORDER.size(),
+		"all_unlocked": next_special_id.is_empty(),
+		"next_special_customer_id": next_special_id,
+		"next_title": str(next_entry.get("title", "")),
+		"next_min_global_reputation": next_minimum,
+		"remaining_reputation": maxi(next_minimum - reputation, 0),
+	}
 
 
 static func default_state(current_day: int = 1) -> Dictionary:

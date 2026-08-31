@@ -529,6 +529,14 @@ func _update_batter_ladle_holder_visual() -> void:
 	holder_visual.texture = display_texture
 	hit_button.hit_texture = display_texture
 	hit_button.disabled = not batter_available or _workshop_preview
+	# Disabled BaseButtons still participate in GUI picking. The authored ladle
+	# overlaps the sauce tray, so once batter is no longer available its inactive
+	# silhouette must let pointer events reach the usable sauce beneath it.
+	hit_button.mouse_filter = (
+		Control.MOUSE_FILTER_STOP
+		if not hit_button.disabled
+		else Control.MOUSE_FILTER_IGNORE
+	)
 	if not batter_available:
 		hit_button.tooltip_text = "鏊面制作中"
 	elif _auto_batter_ladle_owned():

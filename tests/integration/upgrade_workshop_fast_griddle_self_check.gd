@@ -35,7 +35,13 @@ func _run() -> void:
 	overlay.refresh()
 	var fast_tag := fast_cook.get_node_or_null("ConditionTag") as Label if fast_cook != null else null
 	_check(non_burning != null and not non_burning.visible and fast_cook != null and fast_cook.visible, "fast-cook griddle replaces the completed non-burning griddle tag")
-	_check(fast_tag != null and fast_tag.text == "快熟煎饼鏊子\n240 金币", "fast-cook griddle shows its price when it can be reserved")
+	_check(
+		fast_tag != null
+		and fast_tag.text == "可预订"
+		and fast_cook.tooltip_text.contains("快熟煎饼鏊子")
+		and fast_cook.tooltip_text.contains("240 金币"),
+		"fast-cook griddle keeps its state concise while hover help carries the name and price",
+	)
 	var purchase_status := Dictionary(session.call("growth_purchase_status", &"growth.automation.pancake.fast_cook_griddle"))
 	_check(bool(purchase_status.get("can_purchase", false)), "fast-cook griddle is purchasable after the non-burning griddle")
 	var purchase := Dictionary(session.call("purchase_growth", &"growth.automation.pancake.fast_cook_griddle"))

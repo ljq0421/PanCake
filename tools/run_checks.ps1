@@ -1,13 +1,12 @@
 param([int]$TimeoutSeconds = 60)
 
 $ErrorActionPreference = 'Stop'
-$godot = 'D:\Godot\Godot_v4.7.1-stable_win64_console.exe'
+$godot = & (Join-Path $PSScriptRoot 'resolve_godot.ps1')
 $project = Split-Path -Parent $PSScriptRoot
 $sandboxRoot = Join-Path $project '.godot-user-checks'
 $results = [System.Collections.Generic.List[object]]::new()
 $failurePattern = 'SCRIPT ERROR|Parse Error|Failed loading resource|Cannot open file|Parameter "t" is null|RID allocations|FAIL:|SELF[_-]?CHECK_FAIL|SELF-CHECK FAIL'
 
-if (-not (Test-Path -LiteralPath $godot)) { throw "Godot executable not found: $godot" }
 if ($TimeoutSeconds -le 0) { throw 'TimeoutSeconds must be greater than zero.' }
 
 $sharedProfiles = @{

@@ -34,6 +34,18 @@ func _run() -> void:
 	_check(bool(served.get("success", false)) and int(served.get("payment_coins", 0)) == 18, "tutorial combo creates the fixed eighteen-coin payment")
 	var collected := Dictionary(session.call("collect_payment"))
 	_check(bool(collected.get("completed_tutorial_now", false)) and int(session.get("coins")) == 18, "collecting tutorial payment starts timed service")
+	for expected_recipe in [CATALOG.RECIPE_LAMB, CATALOG.RECIPE_LOTUS, CATALOG.RECIPE_BASIC_COMBO]:
+		var timed_order := Dictionary(Dictionary(session.call("ensure_active_order")).get("order", {}))
+		_check(
+			StringName(timed_order.get("recipe_id", &"")) == expected_recipe
+			and not bool(timed_order.get("tutorial_no_countdown", true))
+			and float(timed_order.get("remaining_patience_seconds", 0.0)) > 0.0,
+			"timed service introduces %s in the authored single-line to combo order" % expected_recipe,
+		)
+		session.call("refuse_order")
+	var rotated_order := Dictionary(Dictionary(session.call("ensure_active_order")).get("order", {}))
+	_check(StringName(rotated_order.get("recipe_id", &"")) == CATALOG.RECIPE_LOTUS, "normal rotation continues after the introductory combo without repeating it")
+	session.call("refuse_order")
 	session.call("set_business_paused", false)
 	session.call("advance", 1.0)
 	_check(is_equal_approx(float(session.get("remaining_seconds")), 59.0), "first-day timer advances only after tutorial collection")

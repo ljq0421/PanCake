@@ -87,7 +87,7 @@ func _run() -> void:
 	var youtiao_finished_tray_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_capacity_youtiao_finished_tray") as Button if workshop != null else null
 	var chicken_finished_tray_prop := workshop.get_node("UpgradeProps/WorkshopProp_growth_capacity_chicken_finished_tray") as Button if workshop != null else null
 	var baocui_tag := baocui_prop.get_node("ConditionTag") as Label if baocui_prop != null else null
-	_check(baocui_prop != null and baocui_prop.visible and baocui_tag != null and baocui_tag.text == "薄脆\n30 金币", "workshop renders concise equipment tags with name and price")
+	_check(baocui_prop != null and baocui_prop.visible and baocui_tag != null and baocui_tag.text == "可预订", "workshop hotspots keep only their actionable state visible at rest")
 	_check(
 		workshop_detail != null
 		and youtiao_fryer_prop != null
@@ -101,6 +101,8 @@ func _run() -> void:
 	if baocui_prop != null:
 		var hovered := await _hover_control(baocui_prop, Vector2(0.5, 0.5))
 		_check(hovered == baocui_prop, "workshop tag owns its complete pointer target")
+		var hover_hint := workshop.get_node("HoverHint/HintLabel") as Label
+		_check(hover_hint != null and "薄脆" in hover_hint.text and "30 金币" in hover_hint.text, "hover progressively reveals the upgrade name, price and conditions")
 		await _click_control(baocui_prop)
 	var detail_text := workshop.get_node("DetailPanel/DetailText") as RichTextLabel if workshop != null else null
 	var buy_button := workshop.get_node("DetailPanel/BuyButton") as Button if workshop != null else null

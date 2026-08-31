@@ -36,6 +36,12 @@ func _run() -> void:
 	var gesture := workstation.get_node_or_null("GestureSurface") as NoodleGestureSurface
 	var shop_sign := workstation.get_node_or_null("ShopSign") as Label
 	_check(gesture != null and shop_sign != null and "刀削面" in shop_sign.text, "new map exposes the dough-to-pot gesture surface and its own shop identity")
+	_check(
+		gesture != null
+		and gesture.has_formal_art()
+		and (workstation.get_node("Backdrop") as TextureRect).texture.resource_path == "res://resources/art/noodle_shop/background/noodle_shop_interior_background-v1.png",
+		"noodle shop uses its formal interior, dough, pot, basket, feedback and product art",
+	)
 	var snapshot := Dictionary(_session.call("noodle_shop_snapshot"))
 	var order := Dictionary(snapshot.get("active_order", {}))
 	_check(
@@ -52,6 +58,8 @@ func _run() -> void:
 		_session.call("noodle_advance", 0.5)
 		_check(bool(Dictionary(_session.call("noodle_record_stroke", 140.0, 0.2)).get("success", false)), "gesture creates an independently cooking noodle batch")
 	_session.call("noodle_advance", 3.0)
+	workstation.call("_refresh", false)
+	_check(gesture.qualitative_doneness() == "火候正好", "worktop translates per-batch cook windows into a visual-first doneness cue")
 	_check(bool(Dictionary(_session.call("noodle_lift_basket")).get("success", false)), "single basket lifts after six batches")
 	_session.call("noodle_advance", 0.6)
 	_session.call("noodle_transfer_to_bowl")
@@ -66,6 +74,7 @@ func _run() -> void:
 	_check(is_equal_approx(float(snapshot.get("remaining_seconds", 0.0)), 60.0), "the first timed service window starts at sixty seconds")
 	workstation.call("end_business_day_early")
 	_check((workstation.get_node("DayPanel") as Control).visible, "day end opens the noodle shop bill and growth surface")
+	_check("早餐特殊顾客" in (workstation.get_node("DayPanel/Layout/DaySummary") as Label).text and "20" in (workstation.get_node("DayPanel/Layout/DaySummary") as Label).text, "noodle day end explains how shared reputation advances breakfast special customers")
 	var purchase := Dictionary(_session.call("noodle_purchase_growth", NOODLE_CATALOG.GROWTH_TOMATO))
 	_check(bool(purchase.get("success", false)), "tomato recipe can be purchased for the next business day")
 	_session.call("noodle_begin_next_day")

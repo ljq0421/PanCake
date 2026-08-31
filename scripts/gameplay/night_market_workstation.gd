@@ -14,12 +14,19 @@ const PORTRAIT_CATALOG := preload("res://scripts/ui/customer_portrait_catalog.gd
 const FOOD_ATLAS: Texture2D = preload("res://resources/art/night_market/sprites/skewer_doneness_atlas-rgba-v2.png")
 const BASKET_ATLAS: Texture2D = preload("res://resources/art/night_market/sprites/fryer_basket_states-rgba-v1.png")
 const EFFECT_ATLAS: Texture2D = preload("res://resources/art/night_market/sprites/cooking_effects_atlas-rgba-v1.png")
+const READY_NONE := &""
+const READY_GRILL_FLIP := &"grill_flip"
+const READY_GRILL_LIFT := &"grill_lift"
+const READY_FRYER_LIFT := &"fryer_lift"
+const READY_FRYER_PLATE := &"fryer_plate"
+const READY_TINT := Color(1.0, 0.86, 0.48, 1.0)
 
 @onready var portrait: TextureRect = %Portrait
 @onready var order_title: Label = %OrderTitle
 @onready var order_details: Label = %OrderDetails
 @onready var timer_label: Label = %TimerLabel
 @onready var economy_label: Label = %EconomyLabel
+@onready var detail_readout_button: Button = %DetailReadoutButton
 @onready var tutorial_label: Label = %TutorialLabel
 @onready var status_label: Label = %StatusLabel
 @onready var grill_food_art: Array[TextureRect] = [%GrillFood0, %GrillFood1, %GrillFood2, %GrillFood3, %GrillFood4, %GrillFood5]
@@ -36,6 +43,7 @@ const EFFECT_ATLAS: Texture2D = preload("res://resources/art/night_market/sprite
 @onready var add_chicken_button: Button = %AddChickenButton
 @onready var plate_grill_button: Button = %PlateGrillButton
 @onready var fryer_status_label: Label = %FryerStatusLabel
+@onready var fryer_hint_label: Label = %Hint
 @onready var add_lotus_button: Button = %AddLotusButton
 @onready var add_potato_button: Button = %AddPotatoButton
 @onready var power_buttons: Array[Button] = [%PowerLowButton, %PowerStandardButton, %PowerHighButton]
@@ -48,6 +56,9 @@ const EFFECT_ATLAS: Texture2D = preload("res://resources/art/night_market/sprite
 @onready var discard_button: Button = %DiscardButton
 @onready var refuse_button: Button = %RefuseButton
 @onready var collect_button: Button = %CollectButton
+@onready var plate_panel: Control = $PlatePanel
+@onready var fryer_panel: Control = $FryerPanel
+@onready var seasoning_title_label: Label = $PlatePanel/Layout/SeasoningTitle
 @onready var chicken_restock_button: Button = %ChickenRestockButton
 @onready var potato_restock_button: Button = %PotatoRestockButton
 @onready var result_dim: ColorRect = $ResultDim
@@ -62,6 +73,7 @@ const EFFECT_ATLAS: Texture2D = preload("res://resources/art/night_market/sprite
 @onready var end_day_button: Button = %EndDayButton
 @onready var next_day_button: Button = %NextDayButton
 @onready var day_menu_button: Button = %DayMenuButton
+@onready var night_audio: NightMarketAudioPlayer = %NightAudio
 
 var _session: Node
 var _portraits: RefCounted = PORTRAIT_CATALOG.new()
@@ -70,6 +82,8 @@ var _selected_zone := CATALOG.ZONE_MEDIUM
 var _selected_grill_slot := 2
 var _atlas_cache: Dictionary = {}
 var _seasoning_effect_remaining := 0.0
+var _show_precision_details := false
+var _active_readiness_keys: Dictionary = {}
 
 
 func _ready() -> void:
@@ -103,6 +117,7 @@ func _ready() -> void:
 	collect_button.pressed.connect(_collect_payment)
 	chicken_restock_button.pressed.connect(func(): _restock(CATALOG.STOCK_CHICKEN))
 	potato_restock_button.pressed.connect(func(): _restock(CATALOG.STOCK_POTATO))
+	detail_readout_button.pressed.connect(_toggle_precision_details)
 	result_close_button.pressed.connect(_close_result)
 	end_day_button.pressed.connect(end_business_day_early)
 	next_day_button.pressed.connect(_begin_next_day)
@@ -160,6 +175,7 @@ func _add_grill(item_id: StringName) -> void:
 	if bool(result.get("success", false)):
 		_selected_grill_slot = int(result.get("slot_index", _selected_grill_slot))
 		status_label.text = "%s已放入%s；点烤位翻面。" % [CATALOG.item_label(item_id), _zone_label(_selected_zone)]
+		night_audio.play_cue(&"grill_place")
 	else:
 		status_label.text = _reason_text(StringName(result.get("reason", &"")))
 	_refresh(true)
@@ -169,12 +185,16 @@ func _flip_grill_slot(slot_index: int) -> void:
 	_selected_grill_slot = slot_index
 	var result := Dictionary(_session.call("night_market_flip_grill_slot", slot_index))
 	status_label.text = "第 %d 烤位已翻面。" % (slot_index + 1) if bool(result.get("success", false)) else _reason_text(StringName(result.get("reason", &"")))
+	if bool(result.get("success", false)):
+		night_audio.play_cue(&"grill_flip")
 	_refresh(true)
 
 
 func _plate_selected_grill() -> void:
 	var result := Dictionary(_session.call("night_market_plate_grill_slot", _selected_grill_slot))
 	status_label.text = "烤串已放到中央托盘，请调味。" if bool(result.get("success", false)) else _reason_text(StringName(result.get("reason", &"")))
+	if bool(result.get("success", false)):
+		night_audio.play_cue(&"grill_lift")
 	_refresh(true)
 
 
@@ -193,12 +213,16 @@ func _set_fryer_power(power_id: StringName) -> void:
 func _lower_fryer() -> void:
 	var result := Dictionary(_session.call("night_market_lower_fryer"))
 	status_label.text = "炸篮已入油，注意油温与上色。" if bool(result.get("success", false)) else _reason_text(StringName(result.get("reason", &"")))
+	if bool(result.get("success", false)):
+		night_audio.play_cue(&"fryer_lower")
 	_refresh(true)
 
 
 func _lift_fryer() -> void:
 	var result := Dictionary(_session.call("night_market_lift_fryer"))
 	status_label.text = "炸篮已提起，开始计算沥油时间。" if bool(result.get("success", false)) else _reason_text(StringName(result.get("reason", &"")))
+	if bool(result.get("success", false)):
+		night_audio.play_cue(&"fryer_lift")
 	_refresh(true)
 
 
@@ -214,6 +238,7 @@ func _season(seasoning_id: StringName) -> void:
 	if bool(result.get("success", false)):
 		_seasoning_effect_remaining = 0.45
 		seasoning_effect_art.visible = true
+		night_audio.play_cue(&"season")
 	_refresh(true)
 
 
@@ -224,15 +249,21 @@ func _serve_plate() -> void:
 		return
 	var score := Dictionary(result.get("score", {}))
 	result_title.text = "%s · %.0f 分" % [str(result.get("grade", "D")), float(score.get("overall_score", 0.0))]
-	result_details.text = "%s\n单品 %.0f  ·  配方 %.0f  ·  时间 %.0f\n待收款：%d 金币" % [
-		str(score.get("feedback", "")),
+	var detail_lines := PackedStringArray([str(score.get("feedback", ""))])
+	for diagnostic_value in Array(score.get("diagnostics", [])):
+		var diagnostic := str(diagnostic_value)
+		if not diagnostic.is_empty():
+			detail_lines.append("• %s" % diagnostic)
+	detail_lines.append("单品 %.0f  ·  配方 %.0f  ·  时间 %.0f" % [
 		float(score.get("item_score", 0.0)),
 		float(score.get("recipe_score", 0.0)),
 		float(score.get("time_score", 0.0)),
-		int(result.get("payment_coins", 0)),
-	]
+	])
+	detail_lines.append("待收款：%d 金币" % int(result.get("payment_coins", 0)))
+	result_details.text = "\n".join(detail_lines)
 	result_panel.visible = true
 	result_dim.visible = true
+	night_audio.play_cue(&"serve")
 	_refresh(true)
 
 
@@ -240,6 +271,7 @@ func _collect_payment() -> void:
 	var result := Dictionary(_session.call("night_market_collect_payment"))
 	if bool(result.get("success", false)):
 		status_label.text = "收下 %d 金币，迎接下一位顾客。" % int(result.get("collected_coins", 0))
+		night_audio.play_cue(&"payment")
 		result_panel.visible = false
 		result_dim.visible = false
 		_session.call("night_market_ensure_active_order")
@@ -288,9 +320,10 @@ func _begin_next_day() -> void:
 
 
 func _show_day_bill(bill: Dictionary) -> void:
-	day_summary.text = "第 %d 日结束\n完成 %d 单 · 营收 %d 金币 · 口碑 %+d\n成长购买后将在下一营业日生效。" % [
+	day_summary.text = "第 %d 日结束\n完成 %d 单 · 营收 %d 金币 · 口碑 %+d\n%s\n成长购买后将在下一营业日生效。" % [
 		int(bill.get("day", 1)), int(bill.get("orders_completed", 0)),
 		int(bill.get("revenue", 0)), int(bill.get("reputation_delta", 0)),
+		str(_session.call("special_customer_reputation_summary")),
 	]
 	day_panel.visible = true
 	day_dim.visible = true
@@ -316,10 +349,12 @@ func _refresh(force_portrait: bool) -> void:
 	timer_label.text = "教学不限时" if not bool(shop.get("tutorial_completed", false)) else "%02d:%02d" % [floori(float(shop.get("remaining_seconds", 0.0)) / 60.0), int(shop.get("remaining_seconds", 0.0)) % 60]
 	economy_label.text = "串铺金币 %d  ·  全局口碑 %d  ·  第 %d 日" % [int(shop.get("coins", 0)), int(_session.call("global_reputation")), int(shop.get("current_day", 1))]
 	tutorial_label.text = _tutorial_step(order, production)
-	_update_grill(production)
+	var ember_baffle := _shop_owns_growth(shop, CATALOG.GROWTH_EMBER_BAFFLE)
+	_update_grill(production, ember_baffle)
 	_update_fryer(production)
 	_update_plate(production)
 	_update_art_layers(production)
+	_update_readiness_feedback(production, ember_baffle)
 	var unlocked := Array(shop.get("unlocked_recipe_ids", []))
 	var inventory := Dictionary(shop.get("inventory", {}))
 	add_chicken_button.visible = unlocked.has(CATALOG.RECIPE_CHICKEN) or unlocked.has(str(CATALOG.RECIPE_CHICKEN))
@@ -356,38 +391,182 @@ func _close_result() -> void:
 	result_dim.visible = false
 
 
-func _update_grill(production: Dictionary) -> void:
+func _toggle_precision_details() -> void:
+	_show_precision_details = not _show_precision_details
+	_refresh(true)
+
+
+func _update_grill(production: Dictionary, ember_baffle: bool = false) -> void:
 	var slots := Array(production.get("grill_slots", []))
+	var selected_readiness := READY_NONE
 	for index in grill_slot_buttons.size():
 		var zone := CATALOG.zone_for_slot(index)
 		var skewer := Dictionary(slots[index]) if index < slots.size() else {}
 		var prefix := "▶ " if index == _selected_grill_slot else ""
+		grill_slot_buttons[index].modulate = Color.WHITE
 		if skewer.is_empty():
-			grill_slot_buttons[index].text = "%s%s %d\n空位" % [prefix, _zone_label(zone), index % 2 + 1]
+			grill_slot_buttons[index].text = "%s%s %d · 空位" % [prefix, _zone_label(zone), index % 2 + 1]
+			grill_slot_buttons[index].tooltip_text = "选择这个烤位；放串后点按烤位翻面。"
 			continue
 		var item_id := StringName(skewer.get("item_id", &""))
-		grill_slot_buttons[index].text = "%s\n正 %.0f / 反 %.0f\n点按翻面 · 当前%s" % [
-			prefix + CATALOG.item_label(item_id), float(skewer.get("front_heat", 0.0)),
-			float(skewer.get("back_heat", 0.0)), "正" if StringName(skewer.get("side", &"front")) == &"front" else "反",
-		]
+		var current_side := "正" if StringName(skewer.get("side", &"front")) == &"front" else "反"
+		var readiness := _grill_readiness(skewer, ember_baffle)
+		if index == _selected_grill_slot:
+			selected_readiness = readiness
+		if readiness == READY_GRILL_FLIP:
+			prefix = "★翻面 "
+			grill_slot_buttons[index].modulate = READY_TINT
+		elif readiness == READY_GRILL_LIFT:
+			prefix = "★起串 "
+			grill_slot_buttons[index].modulate = READY_TINT
+		if _show_precision_details:
+			grill_slot_buttons[index].text = "%s\n正 %.0f / 反 %.0f\n点按翻面 · 当前%s" % [
+				prefix + CATALOG.item_label(item_id), float(skewer.get("front_heat", 0.0)),
+				float(skewer.get("back_heat", 0.0)), current_side,
+			]
+		else:
+			grill_slot_buttons[index].text = "%s\n正面 %s · 反面 %s" % [
+				prefix + CATALOG.item_label(item_id),
+				_grill_heat_label(item_id, float(skewer.get("front_heat", 0.0))),
+				_grill_heat_label(item_id, float(skewer.get("back_heat", 0.0))),
+			]
+		if readiness == READY_GRILL_LIFT:
+			grill_slot_buttons[index].tooltip_text = "两面已金黄；选中后点击下方按钮起串。点按烤位仍会翻面。"
+		elif readiness == READY_GRILL_FLIP:
+			grill_slot_buttons[index].tooltip_text = "当前%s面已金黄；现在点按烤位翻面。" % current_side
+		else:
+			grill_slot_buttons[index].tooltip_text = "点按翻面 · 当前%s面" % current_side
 	zone_buttons[0].text = "小火%s" % (" ✓" if _selected_zone == CATALOG.ZONE_LOW else "")
 	zone_buttons[1].text = "中火%s" % (" ✓" if _selected_zone == CATALOG.ZONE_MEDIUM else "")
 	zone_buttons[2].text = "旺火%s" % (" ✓" if _selected_zone == CATALOG.ZONE_HIGH else "")
-	plate_grill_button.text = "取下第 %d 烤位并装盘" % (_selected_grill_slot + 1)
+	plate_grill_button.text = "★ 两面金黄，立即起串" if selected_readiness == READY_GRILL_LIFT else "取下%s %d并装盘" % [_zone_label(CATALOG.zone_for_slot(_selected_grill_slot)), _selected_grill_slot % 2 + 1]
+	plate_grill_button.modulate = READY_TINT if selected_readiness == READY_GRILL_LIFT else Color.WHITE
 
 
 func _update_fryer(production: Dictionary) -> void:
 	var fryer := Dictionary(production.get("fryer", {}))
 	var item_id := StringName(fryer.get("item_id", &""))
 	var state := StringName(fryer.get("state", &"raised"))
-	fryer_status_label.text = "油温 %.0f℃ · %s\n炸篮：%s ×%d · %s\n炸制 %.1f 秒 · 沥油 %.1f 秒" % [
-		float(production.get("oil_temperature", 170.0)), _power_label(StringName(production.get("fryer_power", &"standard"))),
-		"空" if item_id.is_empty() else CATALOG.item_label(item_id), int(fryer.get("count", 0)), _fryer_state_label(state),
-		float(fryer.get("cook_seconds", 0.0)), float(fryer.get("drain_seconds", 0.0)),
-	]
+	var readiness := _fryer_readiness(fryer)
+	var state_label := "★可提篮" if readiness == READY_FRYER_LIFT else "★可装盘" if readiness == READY_FRYER_PLATE else _fryer_state_label(state)
+	if _show_precision_details:
+		fryer_status_label.text = "油温 %.0f℃ · %s\n炸篮：%s ×%d · %s\n炸制 %.1f 秒 · 沥油 %.1f 秒" % [
+			float(production.get("oil_temperature", 170.0)), _power_label(StringName(production.get("fryer_power", &"standard"))),
+			"空" if item_id.is_empty() else CATALOG.item_label(item_id), int(fryer.get("count", 0)), state_label,
+			float(fryer.get("cook_seconds", 0.0)), float(fryer.get("drain_seconds", 0.0)),
+		]
+	else:
+		if item_id.is_empty():
+			fryer_status_label.text = "油温等待食材 · %s\n炸篮空 · 先放入食材" % _power_label(StringName(production.get("fryer_power", &"standard")))
+		else:
+			fryer_status_label.text = "油温%s · %s\n%s ×%d · %s · %s · %s" % [
+				_fryer_temperature_label(item_id, float(production.get("oil_temperature", 170.0))),
+				_power_label(StringName(production.get("fryer_power", &"standard"))),
+				CATALOG.item_label(item_id), int(fryer.get("count", 0)), state_label,
+				_fryer_cook_label(item_id, float(fryer.get("cook_seconds", 0.0))),
+				_fryer_drain_label(item_id, state, float(fryer.get("drain_seconds", 0.0))),
+			]
+	detail_readout_button.text = "隐藏详细数值" if _show_precision_details else "显示详细数值"
+	power_buttons[0].text = "低温 160℃" if _show_precision_details else "低温"
+	power_buttons[1].text = "标准 178℃" if _show_precision_details else "标准"
+	power_buttons[2].text = "高温 195℃" if _show_precision_details else "高温"
+	if item_id.is_empty():
+		fryer_hint_label.text = "选择食材后显示其精确目标。" if _show_precision_details else "观察油泡、上色与滴油速度判断火候。"
+	else:
+		var definition := CATALOG.item(item_id)
+		if _show_precision_details:
+			fryer_hint_label.text = "%s目标：%.0f–%.0f℃ · 炸 %.1f–%.1f 秒 · 沥油 %.1f–%.1f 秒" % [
+				CATALOG.item_label(item_id), float(definition.get("temp_min", 0.0)), float(definition.get("temp_max", 0.0)),
+				float(definition.get("cook_min", 0.0)), float(definition.get("cook_max", 0.0)),
+				float(definition.get("drain_min", 0.0)), float(definition.get("drain_max", 0.0)),
+			]
+		else:
+			fryer_hint_label.text = "%s目标：油温适宜 · 上色金黄 · 沥油至滴落变缓" % CATALOG.item_label(item_id)
+	fryer_hint_label.modulate.a = 1.0 if _show_precision_details or _panel_has_pointer_or_focus(fryer_panel) else 0.0
 	lower_fryer_button.disabled = int(fryer.get("count", 0)) <= 0 or state == &"cooking"
 	lift_fryer_button.disabled = state != &"cooking"
 	plate_fryer_button.disabled = state != &"draining"
+	lift_fryer_button.text = "★ 提篮" if readiness == READY_FRYER_LIFT else "提炸篮"
+	plate_fryer_button.text = "★ 装盘" if readiness == READY_FRYER_PLATE else "装盘"
+	lift_fryer_button.modulate = READY_TINT if readiness == READY_FRYER_LIFT else Color.WHITE
+	plate_fryer_button.modulate = READY_TINT if readiness == READY_FRYER_PLATE else Color.WHITE
+
+
+static func _grill_readiness(skewer: Dictionary, ember_baffle: bool = false) -> StringName:
+	var item_id := StringName(skewer.get("item_id", &""))
+	var definition := CATALOG.item(item_id)
+	if definition.is_empty() or StringName(definition.get("line", &"")) != CATALOG.LINE_GRILL:
+		return READY_NONE
+	var minimum := float(definition.get("target_min", 45.0))
+	var maximum := float(definition.get("target_max", 68.0)) + (8.0 if ember_baffle else 0.0)
+	var front := float(skewer.get("front_heat", 0.0))
+	var back := float(skewer.get("back_heat", 0.0))
+	var front_ready := front >= minimum and front <= maximum
+	var back_ready := back >= minimum and back <= maximum
+	if front_ready and back_ready:
+		return READY_GRILL_LIFT
+	var front_active := StringName(skewer.get("side", &"front")) == &"front"
+	var current_heat := front if front_active else back
+	var opposite_heat := back if front_active else front
+	if current_heat >= minimum and current_heat <= maximum and opposite_heat < minimum:
+		return READY_GRILL_FLIP
+	return READY_NONE
+
+
+static func _fryer_readiness(fryer: Dictionary) -> StringName:
+	var item_id := StringName(fryer.get("item_id", &""))
+	var definition := CATALOG.item(item_id)
+	if definition.is_empty() or StringName(definition.get("line", &"")) != CATALOG.LINE_FRYER:
+		return READY_NONE
+	var state := StringName(fryer.get("state", &"raised"))
+	if state == &"cooking":
+		var cook_seconds := float(fryer.get("cook_seconds", 0.0))
+		if cook_seconds >= float(definition.get("cook_min", 4.5)) and cook_seconds <= float(definition.get("cook_max", 7.0)):
+			return READY_FRYER_LIFT
+	elif state == &"draining":
+		var drain_seconds := float(fryer.get("drain_seconds", 0.0))
+		if drain_seconds >= float(definition.get("drain_min", 0.8)) and drain_seconds <= float(definition.get("drain_max", 1.8)):
+			return READY_FRYER_PLATE
+	return READY_NONE
+
+
+func _update_readiness_feedback(production: Dictionary, ember_baffle: bool) -> void:
+	var current_keys: Dictionary = {}
+	var new_messages := PackedStringArray()
+	var slots := Array(production.get("grill_slots", []))
+	for index in slots.size():
+		var skewer := Dictionary(slots[index])
+		var readiness := _grill_readiness(skewer, ember_baffle)
+		if readiness == READY_NONE:
+			continue
+		var side := StringName(skewer.get("side", &"front"))
+		var key := "grill:%d:%s:%s" % [index, readiness, side if readiness == READY_GRILL_FLIP else &"both"]
+		current_keys[key] = true
+		if _active_readiness_keys.has(key):
+			continue
+		var label := CATALOG.item_label(StringName(skewer.get("item_id", &"")))
+		if readiness == READY_GRILL_FLIP:
+			new_messages.append("%s%s%d已金黄，现在翻面" % [label, _zone_label(CATALOG.zone_for_slot(index)), index % 2 + 1])
+		else:
+			new_messages.append("%s两面已金黄，现在起串" % label)
+	var fryer := Dictionary(production.get("fryer", {}))
+	var fryer_readiness := _fryer_readiness(fryer)
+	if fryer_readiness != READY_NONE:
+		var fryer_key := "fryer:%s" % fryer_readiness
+		current_keys[fryer_key] = true
+		if not _active_readiness_keys.has(fryer_key):
+			var fryer_label := CATALOG.item_label(StringName(fryer.get("item_id", &"")))
+			new_messages.append("%s已金黄，现在提篮" % fryer_label if fryer_readiness == READY_FRYER_LIFT else "%s滴油变缓，现在装盘" % fryer_label)
+	_active_readiness_keys = current_keys
+	if new_messages.is_empty():
+		return
+	status_label.text = "火候提示：%s。" % "；".join(new_messages)
+	night_audio.play_cue(&"ready_cue")
+
+
+static func _shop_owns_growth(shop: Dictionary, growth_id: StringName) -> bool:
+	var owned := Array(shop.get("owned_growth_ids", []))
+	return owned.has(growth_id) or owned.has(str(growth_id))
 
 
 func _update_plate(production: Dictionary) -> void:
@@ -397,6 +576,22 @@ func _update_plate(production: Dictionary) -> void:
 		var seasoning := StringName(item.get("seasoning_id", &""))
 		lines.append("%s · %s" % [CATALOG.item_label(StringName(item.get("item_id", &""))), "待调味" if seasoning.is_empty() else CATALOG.seasoning_label(seasoning)])
 	plate_items_label.text = "托盘为空" if lines.is_empty() else "\n".join(lines)
+	seasoning_title_label.modulate.a = 1.0 if _panel_has_pointer_or_focus(plate_panel) else 0.0
+
+
+func _panel_has_pointer_or_focus(panel: Control) -> bool:
+	if panel == null:
+		return false
+	var viewport := get_viewport()
+	if viewport == null:
+		return false
+	var hovered := viewport.gui_get_hovered_control()
+	var focused := viewport.gui_get_focus_owner()
+	return _control_belongs_to_panel(hovered, panel) or _control_belongs_to_panel(focused, panel)
+
+
+static func _control_belongs_to_panel(control: Control, panel: Control) -> bool:
+	return control != null and (control == panel or panel.is_ancestor_of(control))
 
 
 func _initialize_art_layers() -> void:
@@ -461,6 +656,12 @@ func _update_art_layers(production: Dictionary) -> void:
 		var oil_temperature := float(production.get("oil_temperature", 170.0))
 		var bubble_frame := 0 if oil_temperature < 160.0 else 1 if oil_temperature <= 190.0 else 2
 		fryer_effect_art.texture = _atlas_frame(EFFECT_ATLAS, bubble_frame, 1, 4, 2)
+	var fryer_overcooked := fryer_food_art.visible and _doneness_column(fryer_item_id, fryer) >= 3
+	night_audio.set_cooking_activity(
+		not slots.all(func(value: Variant) -> bool: return Dictionary(value).is_empty()),
+		fryer_state == &"cooking",
+		has_overcooked_grill or fryer_overcooked
+	)
 
 
 func _atlas_frame(atlas: Texture2D, column: int, row: int, columns: int, rows: int) -> AtlasTexture:
@@ -506,6 +707,50 @@ static func _doneness_column(item_id: StringName, item_state: Dictionary) -> int
 	if cook_seconds <= float(definition.get("cook_max", 7.0)):
 		return 2
 	return 3
+
+
+static func _grill_heat_label(item_id: StringName, heat: float) -> String:
+	var definition := CATALOG.item(item_id)
+	if heat <= 2.0:
+		return "生"
+	if heat < float(definition.get("target_min", 45.0)):
+		return "渐熟"
+	if heat <= float(definition.get("target_max", 68.0)):
+		return "金黄"
+	return "焦深"
+
+
+static func _fryer_temperature_label(item_id: StringName, temperature: float) -> String:
+	if item_id.is_empty():
+		return "等待食材"
+	var definition := CATALOG.item(item_id)
+	if temperature < float(definition.get("temp_min", 165.0)):
+		return "偏低"
+	if temperature <= float(definition.get("temp_max", 185.0)):
+		return "适宜"
+	return "偏高"
+
+
+static func _fryer_cook_label(item_id: StringName, cook_seconds: float) -> String:
+	if item_id.is_empty() or cook_seconds <= 0.1:
+		return "未开始"
+	var definition := CATALOG.item(item_id)
+	if cook_seconds < float(definition.get("cook_min", 4.5)):
+		return "渐熟"
+	if cook_seconds <= float(definition.get("cook_max", 7.0)):
+		return "金黄"
+	return "焦深"
+
+
+static func _fryer_drain_label(item_id: StringName, state: StringName, drain_seconds: float) -> String:
+	if item_id.is_empty() or state != &"draining":
+		return "尚未沥油"
+	var definition := CATALOG.item(item_id)
+	if drain_seconds < float(definition.get("drain_min", 0.8)):
+		return "滴油明显"
+	if drain_seconds <= float(definition.get("drain_max", 1.8)):
+		return "沥油正好"
+	return "沥得偏干"
 
 
 func _tutorial_step(order: Dictionary, production: Dictionary) -> String:

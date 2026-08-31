@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generator": "project-cake-breakfast-shop-audio-v2",
-  "generated_on": "2026-08-29",
+  "generator": "project-cake-kitchen-audio-v4",
+  "generated_on": "2026-08-31",
   "origin": "Original deterministic procedural synthesis; no third-party recordings, samples, or melodies.",
   "format": {
     "sample_rate_hz": 32000,
@@ -180,6 +180,96 @@
       "seed": 1212,
       "duration_seconds": 0.42,
       "sha256": "9698a82c94d5f59589561baae67cfec298b3318314478765e7ddd003047aa80c"
+    },
+    {
+      "cue": "night_grill_place",
+      "file": "night_grill_place.wav",
+      "description": "Bamboo skewer settling on an iron rack with an immediate grease hiss.",
+      "trigger": "A grill item is successfully placed over charcoal.",
+      "seed": 1301,
+      "duration_seconds": 0.58,
+      "sha256": "68306b2143c46f82b78ba3b21685a7b3f242cdff30b9a665c5cf43cfccf5899c"
+    },
+    {
+      "cue": "night_grill_sizzle",
+      "file": "night_grill_sizzle.wav",
+      "description": "Seamless charcoal-grill bed with fat crackles and restrained ember texture.",
+      "trigger": "Loops while at least one skewer remains on the grill.",
+      "seed": 1302,
+      "duration_seconds": 2.4,
+      "sha256": "87b8363204a507451747d22676c8b518d349b939a7f4ab2b1ef863462a36f225"
+    },
+    {
+      "cue": "night_grill_flip",
+      "file": "night_grill_flip.wav",
+      "description": "A short bamboo-skewer turn with two light iron-rack contacts.",
+      "trigger": "A grill slot is successfully flipped.",
+      "seed": 1303,
+      "duration_seconds": 0.44,
+      "sha256": "166914ff9f939be2b74a53b7d449247fb7d2f13ad4f9ec28916bb73e595ffd27"
+    },
+    {
+      "cue": "night_grill_lift",
+      "file": "night_grill_lift.wav",
+      "description": "Skewer scraping free of the rack and landing on a ceramic plate.",
+      "trigger": "A cooked grill item is successfully moved to the shared plate.",
+      "seed": 1304,
+      "duration_seconds": 0.54,
+      "sha256": "24152b468f4babf58e4ae24187ebea7ed0e5daa38577637004f14a18bce44d31"
+    },
+    {
+      "cue": "night_fryer_lower",
+      "file": "night_fryer_lower.wav",
+      "description": "Night-stall fryer basket entering hot oil with a fast bubble bloom.",
+      "trigger": "A loaded night-market basket is successfully lowered into oil.",
+      "seed": 1305,
+      "duration_seconds": 0.92,
+      "sha256": "cec445134f1d33300c6653e21ca3578602a53f7c79caf83fef3660f8d23487cc"
+    },
+    {
+      "cue": "night_fryer_bubbles",
+      "file": "night_fryer_bubbles.wav",
+      "description": "Seamless active-oil bubble bed with denser high-frequency droplets.",
+      "trigger": "Loops while the night-market fryer basket is cooking.",
+      "seed": 1306,
+      "duration_seconds": 2.4,
+      "sha256": "7c59a7443457cd35499b18315592287423fdc816d5f5f5e06b7de8173edc959b"
+    },
+    {
+      "cue": "night_fryer_lift",
+      "file": "night_fryer_lift.wav",
+      "description": "Wire basket lift followed by a short trail of oil drips.",
+      "trigger": "The night-market fryer basket is successfully raised to drain.",
+      "seed": 1307,
+      "duration_seconds": 0.72,
+      "sha256": "cb5c0feb771775fa10c1e90f4e840490182616a7a9ad7fd00a61956537ef3169"
+    },
+    {
+      "cue": "night_season",
+      "file": "night_season.wav",
+      "description": "Dry seasoning shaken across a plated skewer in three restrained passes.",
+      "trigger": "A plated night-market item is successfully seasoned.",
+      "seed": 1308,
+      "duration_seconds": 0.48,
+      "sha256": "689a44dd0889171e5b67fb91afb8afb3fecc805c88020599be43fa5fc25e9192"
+    },
+    {
+      "cue": "night_ready_cue",
+      "file": "night_ready_cue.wav",
+      "description": "Two bright bamboo-and-brass ticks marking a night-market best-action window.",
+      "trigger": "Plays once when grill, fryer, or draining food first enters its best-action window.",
+      "seed": 1310,
+      "duration_seconds": 0.46,
+      "sha256": "9f879ecfd81726fa998725fbe638781b74e3d5c78da6c1ba0cdfb4af16b3ca8f"
+    },
+    {
+      "cue": "night_overcook_warning",
+      "file": "night_overcook_warning.wav",
+      "description": "Dry char crackle and two low rack knocks signalling food has crossed into overcooked state.",
+      "trigger": "Plays once when active grill or fryer food first becomes overcooked.",
+      "seed": 1309,
+      "duration_seconds": 0.62,
+      "sha256": "6657c06c68f486d35ccdabd01bae81d93dcb38ced8ff7b085244ae8be6432267"
     }
   ]
 }

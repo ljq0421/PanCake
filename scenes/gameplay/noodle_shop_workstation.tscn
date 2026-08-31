@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/noodle_shop_workstation.gd" id="1_workstation"]
 [ext_resource type="Script" path="res://scripts/gameplay/noodle_gesture_surface.gd" id="2_gesture"]
@@ -7,6 +7,16 @@
 [ext_resource type="AudioStream" path="res://resources/audio/sfx/order_serve.wav" id="5_serve"]
 [ext_resource type="AudioStream" path="res://resources/audio/sfx/payment_collect.wav" id="6_payment"]
 [ext_resource type="AudioStream" path="res://resources/audio/sfx/patience_warning.wav" id="7_patience"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/background/noodle_shop_interior_background-v1.png" id="8_background"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/tools/dough_station-v1.png" id="9_dough"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/tools/boiling_pot_stove-v4.png" id="10_pot"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/tools/noodle_basket-v3.png" id="11_basket"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/feedback/noodle_batch_standard-v1.png" id="12_batch"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/feedback/shaving_knife-v1.png" id="13_knife"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/feedback/drain_droplets-v1.png" id="14_drain"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/products/clear_broth_noodles-v3.png" id="15_clear"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/products/tomato_egg_noodles-v1.png" id="16_tomato"]
+[ext_resource type="Texture2D" path="res://resources/art/noodle_shop/products/zhajiang_noodles-v1.png" id="17_zhajiang"]
 
 [sub_resource type="StyleBoxFlat" id="Style_header"]
 bg_color = Color(0.055, 0.14, 0.15, 0.96)
@@ -103,7 +113,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_workstation")
 
-[node name="Backdrop" type="ColorRect" parent="."]
+[node name="Backdrop" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -111,7 +121,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.055, 0.12, 0.13, 1)
+texture = ExtResource("8_background")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="ShopSign" type="Label" parent="."]
 layout_mode = 0
@@ -225,6 +237,15 @@ offset_right = 1418.0
 offset_bottom = 970.0
 mouse_filter = 0
 script = ExtResource("2_gesture")
+dough_texture = ExtResource("9_dough")
+pot_texture = ExtResource("10_pot")
+basket_texture = ExtResource("11_basket")
+batch_texture = ExtResource("12_batch")
+knife_texture = ExtResource("13_knife")
+drain_texture = ExtResource("14_drain")
+clear_bowl_texture = ExtResource("15_clear")
+tomato_bowl_texture = ExtResource("16_tomato")
+zhajiang_bowl_texture = ExtResource("17_zhajiang")
 
 [node name="StatusLabel" type="Label" parent="."]
 unique_name_in_owner = true

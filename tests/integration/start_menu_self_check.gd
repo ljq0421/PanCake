@@ -44,7 +44,9 @@ func _run() -> void:
 	var chapter_overlay := menu.get_node("ChapterOverlay") as Control
 	var noodle_chapter_button := menu.get_node("ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content/NoodleShopButton") as Button
 	var noodle_chapter_status := menu.get_node("ChapterOverlay/Panel/Layout/Cards/NoodleCard/Content/NoodleShopStatus") as Label
+	var breakfast_chapter_status := menu.get_node("ChapterOverlay/Panel/Layout/Cards/BreakfastCard/Content/BreakfastShopStatus") as Label
 	_check(chapter_overlay.visible and noodle_chapter_button.disabled and "未解锁" in noodle_chapter_status.text, "shop selector presents the locked second chapter and its unlock progress")
+	_check("早餐特殊顾客 0/3" in breakfast_chapter_status.text and "20" in breakfast_chapter_status.text, "shop selector explains the first global-reputation special-customer milestone")
 	menu.call("_close_chapter_select")
 	_check("已完成 0 单" in session.resume_summary(), "new session summary is player-readable")
 	session.call("mark_session_left")

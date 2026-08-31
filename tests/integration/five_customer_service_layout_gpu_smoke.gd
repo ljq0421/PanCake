@@ -51,6 +51,15 @@ func _run() -> void:
 		_check(slot.visible and not slot.is_presentation_transitioning(), "service slot %d is visibly settled" % (slot_index + 1))
 		_check(order_panel.size.x == 264.0 and order_panel.size.y <= 282.0, "service slot %d keeps the bounded variable-height card" % (slot_index + 1))
 		_check(absf(worktop_edge_y - portrait_bottom_y) <= 8.0, "service slot %d customer stands against the worktop edge" % (slot_index + 1))
+		if slot_index == 0:
+			var special_rule := slot.get_node("OrderPanel/SpecialRule") as Label
+			_check(slot.special_title.visible and not special_rule.visible, "the special customer keeps identity visible while its secondary rule rests hidden")
+			var resting_size := order_panel.size
+			slot.card_focus_button.grab_focus()
+			await process_frame
+			_check(special_rule.visible and order_panel.size == resting_size, "keyboard focus reveals the special rule without moving the card")
+			slot.card_focus_button.release_focus()
+			slot.call("_sync_special_rule_visibility_from_input")
 		card_rects.append(order_panel.get_global_rect())
 	for left_index in 4:
 		_check(not card_rects[left_index].intersects(card_rects[left_index + 1]), "adjacent order cards %d and %d do not overlap" % [left_index + 1, left_index + 2])
@@ -104,7 +113,7 @@ func _preview_orders() -> Array:
 	]
 	var orders: Array = []
 	for slot_index in 5:
-		orders.append({
+		var order := {
 			"order_id": StringName("preview.five.%d" % slot_index),
 			"service_slot": slot_index,
 			"customer_id": StringName("customer_%02d" % (slot_index * 2 + 1)),
@@ -112,7 +121,12 @@ func _preview_orders() -> Array:
 			"remaining_patience_seconds": 90.0 - slot_index * 12.0,
 			"perfect_quote_coins": 8 + slot_index * 3,
 			"items": item_sets[slot_index],
-		})
+		}
+		if slot_index == 0:
+			order["special_customer_id"] = &"special.student"
+			order["special_title"] = "赶早课学生"
+			order["special_rule_text"] = "只要一份即食餐品 · 耐心较短 · 准时完成额外加成"
+		orders.append(order)
 	return orders
 
 

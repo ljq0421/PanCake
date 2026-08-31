@@ -229,11 +229,12 @@ func _begin_next_day() -> void:
 
 
 func _show_day_bill(bill: Dictionary) -> void:
-	day_summary.text = "第 %d 日结束\n完成 %d 单 · 营收 %d 金币 · 口碑 %+d\n购买成长后，下一营业日生效。" % [
+	day_summary.text = "第 %d 日结束\n完成 %d 单 · 营收 %d 金币 · 口碑 %+d\n%s\n购买成长后，下一营业日生效。" % [
 		int(bill.get("day", 1)),
 		int(bill.get("orders_completed", 0)),
 		int(bill.get("revenue", 0)),
 		int(bill.get("reputation_delta", 0)),
+		str(_session.call("special_customer_reputation_summary")),
 	]
 	day_panel.visible = true
 	result_panel.visible = false
@@ -246,6 +247,8 @@ func _refresh(force_portrait: bool) -> void:
 	var shop := Dictionary(_session.call("noodle_shop_snapshot"))
 	var order := Dictionary(shop.get("active_order", {}))
 	var production := Dictionary(shop.get("production", {}))
+	var owned_growth_ids := Array(shop.get("owned_growth_ids", []))
+	production["stable_basket"] = owned_growth_ids.has(CATALOG.GROWTH_STABLE_BASKET) or owned_growth_ids.has(str(CATALOG.GROWTH_STABLE_BASKET))
 	gesture_surface.set_production_snapshot(production)
 	var recipe := CATALOG.recipe(StringName(order.get("recipe_id", production.get("recipe_id", CATALOG.RECIPE_CLEAR))))
 	order_title.text = "等待下一位顾客" if order.is_empty() else str(order.get("title", "刀削面"))

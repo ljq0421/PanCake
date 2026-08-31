@@ -7,3 +7,5 @@
 /tmp/logs
 *.log
 /tmp
+/playtest-results/
+/playtest-profiles/

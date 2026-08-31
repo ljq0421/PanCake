@@ -425,7 +425,7 @@ func _show_detail(growth_id: StringName) -> void:
 
 
 func _show_default_detail() -> void:
-	_detail.text = "[b]选择一个升级[/b]　[color=#72d9c0]查看设备升级条件[/color]\n点击设备旁的标签，查看价格、前置条件和生效时间。"
+	_detail.text = "[b]选择一个升级[/b]　[color=#72d9c0]查看设备升级条件[/color]\n热点只显示当前状态；悬停可预览，点击后固定显示价格、前置条件和生效时间。"
 	_buy.disabled = true
 	_buy.text = "选择升级后可预订"
 	_detail_panel.visible = true
@@ -468,18 +468,18 @@ func _requirements_text(status: Dictionary) -> String:
 	return "可立即预订，下一营业日生效。" if lines.is_empty() else "需要：\n" + "\n".join(lines)
 
 
-func _tag_text(growth_id: StringName, status: Dictionary) -> String:
-	var definition := CATALOG.growth_definition(growth_id)
-	var growth_name := str(definition.get("label", "升级"))
-	if bool(status.get("can_purchase", false)):
-		return "%s\n%d 金币" % [growth_name, int(status.get("price", 0))]
-	return "%s\n%s" % [growth_name, _state_text(status)]
+func _tag_text(_growth_id: StringName, status: Dictionary) -> String:
+	return _state_text(status)
 
 
 func _tag_tooltip_text(growth_id: StringName, status: Dictionary) -> String:
-	if bool(status.get("can_purchase", false)):
-		return _tag_text(growth_id, status)
-	return _requirements_text(status)
+	var definition := CATALOG.growth_definition(growth_id)
+	return "%s · %s · %d 金币\n%s" % [
+		str(definition.get("label", "升级")),
+		_state_text(status),
+		int(status.get("price", 0)),
+		_requirements_text(status),
+	]
 
 
 func _unlock_condition_labels(definition: Dictionary) -> PackedStringArray:

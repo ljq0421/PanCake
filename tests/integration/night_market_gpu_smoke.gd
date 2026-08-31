@@ -9,6 +9,14 @@ const CAPTURES := [
 	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/night_market_twin_fire_gpu_1920x1080.png"},
 	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/night_market_twin_fire_gpu_1280x720.png"},
 ]
+const READINESS_CAPTURES := [
+	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/night_market_ready_windows_gpu_1920x1080.png"},
+	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/night_market_ready_windows_gpu_1280x720.png"},
+]
+const RESULT_CAPTURES := [
+	{"size": Vector2i(1920, 1080), "path": "res://tmp/validation/night_market_result_feedback_gpu_1920x1080.png"},
+	{"size": Vector2i(1280, 720), "path": "res://tmp/validation/night_market_result_feedback_gpu_1280x720.png"},
+]
 
 var _failures: Array[String] = []
 var _session: Node
@@ -57,10 +65,18 @@ func _run() -> void:
 	_check(grill_art.texture.resource_path == "res://resources/art/night_market/layers/charcoal_grill-rgba-v1.png", "grill is an independent formal art layer")
 	_check(plating_art.texture.resource_path == "res://resources/art/night_market/layers/plating_station-rgba-v1.png", "plating station is an independent formal art layer")
 	_check(fryer_art.texture.resource_path == "res://resources/art/night_market/layers/twin_fryer_base-rgba-v1.png", "fryer is an independent formal art layer")
+	_check(
+		(station.get_node("StatsPanel/Layout/DetailReadoutButton") as Button).text == "显示详细数值"
+		and not (station.get_node("FryerPanel/Layout/FryerStatusLabel") as Label).text.contains("℃")
+		and is_zero_approx((station.get_node("FryerPanel/Layout/Hint") as Label).modulate.a)
+		and is_zero_approx((station.get_node("PlatePanel/Layout/SeasoningTitle") as Label).modulate.a),
+		"first viewport favors qualitative cooking states and suppresses secondary instructions until focus",
+	)
 	station.call("_add_grill", NIGHT_CATALOG.ITEM_LAMB)
+	_session.call("night_market_advance", 1.5)
 	station.call("_add_fryer", NIGHT_CATALOG.ITEM_LOTUS)
 	station.call("_lower_fryer")
-	_session.call("night_market_advance", 3.5)
+	_session.call("night_market_advance", 2.0)
 	station.call("_refresh", true)
 	await process_frame
 	var grill_food := station.get_node("ArtLayer/GrillFood2") as TextureRect
@@ -87,6 +103,68 @@ func _run() -> void:
 		var image := root.get_texture().get_image()
 		var save_error := image.save_png(output_absolute)
 		_check(save_error == OK and image.get_size() == capture_size, "night-market first viewport captures at %dx%d" % [capture_size.x, capture_size.y])
+		output_paths.append(output_absolute)
+	_session.call("night_market_advance", 3.5)
+	station.call("_refresh", true)
+	var grill_slot := station.get_node("GrillPanel/Layout/Slots/Medium/GrillSlot2") as Button
+	var lift_fryer_button := station.get_node("FryerPanel/Layout/ActionRow/LiftFryerButton") as Button
+	var status_label := station.get_node("StatusPanel/StatusLabel") as Label
+	_check(
+		grill_slot.text.contains("★翻面")
+		and lift_fryer_button.text.contains("★")
+		and status_label.text.contains("现在翻面")
+		and status_label.text.contains("现在提篮"),
+		"simultaneous best-action windows visibly identify both required controls",
+	)
+	_session.call("set_business_paused", true)
+	for capture_value in READINESS_CAPTURES:
+		var capture := Dictionary(capture_value)
+		var capture_size := Vector2i(capture.get("size", Vector2i.ZERO))
+		DisplayServer.window_set_size(capture_size)
+		for _frame in 6:
+			await process_frame
+		var visible_rect := root.get_visible_rect()
+		_check(visible_rect.encloses(grill_slot.get_global_rect()), "ready grill control stays inside the %dx%d viewport" % [capture_size.x, capture_size.y])
+		_check(visible_rect.encloses(lift_fryer_button.get_global_rect()), "ready fryer control stays inside the %dx%d viewport" % [capture_size.x, capture_size.y])
+		var output_absolute := ProjectSettings.globalize_path(str(capture.get("path", "")))
+		DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
+		var image := root.get_texture().get_image()
+		var save_error := image.save_png(output_absolute)
+		_check(save_error == OK and image.get_size() == capture_size, "night-market ready windows capture at %dx%d" % [capture_size.x, capture_size.y])
+		output_paths.append(output_absolute)
+	_session.call("set_business_paused", false)
+	station.call("_flip_grill_slot", 2)
+	station.call("_lift_fryer")
+	_session.call("night_market_advance", 1.2)
+	station.call("_plate_fryer")
+	station.call("_season", NIGHT_CATALOG.SEASONING_SALT_PEPPER)
+	_session.call("night_market_advance", 5.8)
+	station.call("_plate_selected_grill")
+	station.call("_season", NIGHT_CATALOG.SEASONING_CUMIN)
+	station.call("_serve_plate")
+	await process_frame
+	var result_panel := station.get_node("ResultPanel") as Control
+	var result_details := station.get_node("ResultPanel/Layout/ResultDetails") as Label
+	_check(
+		result_panel.visible
+		and result_details.text.contains("羊肉串")
+		and result_details.text.contains("炸藕片")
+		and result_details.text.count("•") == 2,
+		"night-market result presents one concise diagnostic for each completed item",
+	)
+	for capture_value in RESULT_CAPTURES:
+		var capture := Dictionary(capture_value)
+		var capture_size := Vector2i(capture.get("size", Vector2i.ZERO))
+		DisplayServer.window_set_size(capture_size)
+		for _frame in 6:
+			await process_frame
+		var visible_rect := root.get_visible_rect()
+		_check(visible_rect.encloses(result_panel.get_global_rect()), "result feedback stays inside the %dx%d viewport" % [capture_size.x, capture_size.y])
+		var output_absolute := ProjectSettings.globalize_path(str(capture.get("path", "")))
+		DirAccess.make_dir_recursive_absolute(output_absolute.get_base_dir())
+		var image := root.get_texture().get_image()
+		var save_error := image.save_png(output_absolute)
+		_check(save_error == OK and image.get_size() == capture_size, "night-market result feedback captures at %dx%d" % [capture_size.x, capture_size.y])
 		output_paths.append(output_absolute)
 	scene.queue_free()
 	await process_frame

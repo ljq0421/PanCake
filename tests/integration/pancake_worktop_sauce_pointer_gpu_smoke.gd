@@ -40,12 +40,19 @@ func _run() -> void:
 	unit.state = CompactGriddleUnit.State.GARNISH
 	unit.p1_session.phase = P1Session.Phase.SAUCE_AND_FILLINGS
 	unit.call("_refresh_ui")
-	var sweet := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SecretSauceSource/Hotspot") as ProductDragSource
+	var worktop := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as PancakeWorktopHotspots
+	worktop.refresh_from_session()
+	var ladle_hit := worktop.get_node("BatterLadleSource/HitButton") as BaseButton
+	var sweet := worktop.get_node("SecretSauceSource/Hotspot") as ProductDragSource
 	var hit: Control = sweet
 	var short_clicks := [0]
 	sweet.short_clicked.connect(func(_source_ref: Dictionary) -> void: short_clicks[0] += 1)
 	var before := int(Dictionary(session.call("inventory_snapshot")).get("stock.pancake.sauce.sweet_flour", 0))
 	await _hover_control(hit)
+	var hovered := root.gui_get_hovered_control()
+	if hovered != hit:
+		print("[DIAG] expected sauce hotspot, hovered=%s" % [str(root.get_path_to(hovered)) if hovered != null else "<null>"])
+	_check(ladle_hit.disabled and ladle_hit.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the unavailable overlapping batter ladle releases pointer picking")
 	_check(root.gui_get_hovered_control() == hit, "the authored transparent sauce button owns the rendered jar hit area")
 	_check(not sweet.disabled, "the sweet-sauce source is enabled")
 	await _click_control(hit)

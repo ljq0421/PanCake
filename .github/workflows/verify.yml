@@ -1,0 +1,42 @@
+name: Verify Project Cake
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  headless-checks:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      GODOT_VERSION: 4.7.1-stable
+      GODOT_ARCHIVE: Godot_v4.7.1-stable_win64.exe.zip
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download Godot 4.7.1
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP $env:GODOT_ARCHIVE
+          $install = Join-Path $env:RUNNER_TEMP 'godot'
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION/$env:GODOT_ARCHIVE" -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $install -Force
+          $console = Get-ChildItem -LiteralPath $install -Filter '*_console.exe' -File | Select-Object -First 1
+          if ($null -eq $console) { throw 'Godot console executable was not found in the official archive.' }
+          "PROJECT_CAKE_GODOT=$($console.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify deterministic audio
+        run: python tools/generate_kitchen_sfx.py --verify
+
+      - name: Run headless release checks
+        shell: pwsh
+        run: ./tools/run_release_checks.ps1 -SkipGpu -TimeoutSeconds 90

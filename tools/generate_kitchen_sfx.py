@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Project Cake's original, deterministic breakfast-shop audio pack."""
+"""Generate Project Cake's original, deterministic kitchen audio pack."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from pathlib import Path
 
 
 MIX_RATE = 32_000
-GENERATOR_VERSION = "project-cake-breakfast-shop-audio-v2"
-GENERATED_ON = "2026-08-29"
+GENERATOR_VERSION = "project-cake-kitchen-audio-v4"
+GENERATED_ON = "2026-08-31"
 TAU = math.tau
 
 CUE_SPECS = {
@@ -132,6 +132,66 @@ CUE_SPECS = {
         "duration": 0.42,
         "description": "A carton slides free of the display tray with a light paper rustle.",
         "trigger": "A stocked packaged drink begins a delivery drag.",
+    },
+    "night_grill_place": {
+        "seed": 1301,
+        "duration": 0.58,
+        "description": "Bamboo skewer settling on an iron rack with an immediate grease hiss.",
+        "trigger": "A grill item is successfully placed over charcoal.",
+    },
+    "night_grill_sizzle": {
+        "seed": 1302,
+        "duration": 2.40,
+        "description": "Seamless charcoal-grill bed with fat crackles and restrained ember texture.",
+        "trigger": "Loops while at least one skewer remains on the grill.",
+    },
+    "night_grill_flip": {
+        "seed": 1303,
+        "duration": 0.44,
+        "description": "A short bamboo-skewer turn with two light iron-rack contacts.",
+        "trigger": "A grill slot is successfully flipped.",
+    },
+    "night_grill_lift": {
+        "seed": 1304,
+        "duration": 0.54,
+        "description": "Skewer scraping free of the rack and landing on a ceramic plate.",
+        "trigger": "A cooked grill item is successfully moved to the shared plate.",
+    },
+    "night_fryer_lower": {
+        "seed": 1305,
+        "duration": 0.92,
+        "description": "Night-stall fryer basket entering hot oil with a fast bubble bloom.",
+        "trigger": "A loaded night-market basket is successfully lowered into oil.",
+    },
+    "night_fryer_bubbles": {
+        "seed": 1306,
+        "duration": 2.40,
+        "description": "Seamless active-oil bubble bed with denser high-frequency droplets.",
+        "trigger": "Loops while the night-market fryer basket is cooking.",
+    },
+    "night_fryer_lift": {
+        "seed": 1307,
+        "duration": 0.72,
+        "description": "Wire basket lift followed by a short trail of oil drips.",
+        "trigger": "The night-market fryer basket is successfully raised to drain.",
+    },
+    "night_season": {
+        "seed": 1308,
+        "duration": 0.48,
+        "description": "Dry seasoning shaken across a plated skewer in three restrained passes.",
+        "trigger": "A plated night-market item is successfully seasoned.",
+    },
+    "night_ready_cue": {
+        "seed": 1310,
+        "duration": 0.46,
+        "description": "Two bright bamboo-and-brass ticks marking a night-market best-action window.",
+        "trigger": "Plays once when grill, fryer, or draining food first enters its best-action window.",
+    },
+    "night_overcook_warning": {
+        "seed": 1309,
+        "duration": 0.62,
+        "description": "Dry char crackle and two low rack knocks signalling food has crossed into overcooked state.",
+        "trigger": "Plays once when active grill or fryer food first becomes overcooked.",
     },
 }
 
@@ -455,6 +515,79 @@ def _drink_pickup(spec: dict) -> list[float]:
     return _impact_cue(spec, ((0.24, 188.0, 0.26, 36.0),), ((0.01, 0.34, 0.28, 12.0),), peak=0.58)
 
 
+def _night_grill_place(spec: dict) -> list[float]:
+    return _impact_cue(
+        spec,
+        ((0.04, 520.0, 0.22, 40.0), (0.16, 690.0, 0.16, 44.0), (0.28, 104.0, 0.30, 28.0)),
+        ((0.10, 0.42, 0.24, 16.0),),
+        peak=0.68,
+    )
+
+
+def _night_grill_flip(spec: dict) -> list[float]:
+    return _impact_cue(
+        spec,
+        ((0.04, 760.0, 0.25, 46.0), (0.17, 540.0, 0.23, 43.0), (0.27, 126.0, 0.16, 32.0)),
+        ((0.02, 0.30, 0.10, 13.0),),
+        peak=0.62,
+    )
+
+
+def _night_grill_lift(spec: dict) -> list[float]:
+    return _impact_cue(
+        spec,
+        ((0.05, 610.0, 0.20, 42.0), (0.30, 172.0, 0.40, 31.0), (0.36, 890.0, 0.13, 48.0)),
+        ((0.02, 0.28, 0.16, 11.0),),
+        peak=0.66,
+    )
+
+
+def _night_fryer_lift(spec: dict) -> list[float]:
+    return _impact_cue(
+        spec,
+        ((0.04, 480.0, 0.25, 36.0), (0.15, 720.0, 0.18, 42.0), (0.40, 116.0, 0.15, 30.0)),
+        ((0.02, 0.52, 0.18, 14.0),),
+        peak=0.66,
+    )
+
+
+def _night_season(spec: dict) -> list[float]:
+    return _impact_cue(
+        spec,
+        ((0.05, 820.0, 0.10, 45.0), (0.18, 910.0, 0.09, 47.0), (0.31, 760.0, 0.08, 44.0)),
+        ((0.02, 0.40, 0.28, 18.0),),
+        peak=0.54,
+    )
+
+
+def _night_ready_cue(spec: dict) -> list[float]:
+    return _impact_cue(
+        spec,
+        ((0.04, 880.0, 0.22, 52.0), (0.18, 1_175.0, 0.25, 50.0), (0.31, 196.0, 0.10, 36.0)),
+        ((0.02, 0.34, 0.08, 18.0),),
+        peak=0.58,
+    )
+
+
+def _night_overcook_warning(spec: dict) -> list[float]:
+    rng = random.Random(spec["seed"])
+    count = round(spec["duration"] * MIX_RATE)
+    char = _bandpass(_noise(count, rng), 1_400.0, 7_800.0)
+    body = _lowpass(_noise(count, rng), 720.0)
+    output = [0.0] * count
+    for index in range(count):
+        t = index / MIX_RATE
+        sample = 0.30 * char[index] * _envelope(t, 0.0, 0.50, 0.01, 0.14)
+        for start, frequency, strength in ((0.12, 138.0, 0.48), (0.36, 126.0, 0.42)):
+            local = t - start
+            if 0.0 <= local < 0.20:
+                decay = math.exp(-local * 34.0)
+                sample += strength * 0.25 * math.sin(TAU * frequency * local) * decay
+                sample += strength * 0.12 * body[index] * decay
+        output[index] = sample
+    return _soft_limit(output, 0.64)
+
+
 GENERATORS = {
     "batter_drop": _batter_drop,
     "spreader_scrape": _spreader_scrape,
@@ -475,6 +608,16 @@ GENERATORS = {
     "soy_ready": _soy_ready,
     "drink_restock": _drink_restock,
     "drink_pickup": _drink_pickup,
+    "night_grill_place": _night_grill_place,
+    "night_grill_sizzle": _cooking_sizzle,
+    "night_grill_flip": _night_grill_flip,
+    "night_grill_lift": _night_grill_lift,
+    "night_fryer_lower": _fryer_start,
+    "night_fryer_bubbles": _cooking_sizzle,
+    "night_fryer_lift": _night_fryer_lift,
+    "night_season": _night_season,
+    "night_ready_cue": _night_ready_cue,
+    "night_overcook_warning": _night_overcook_warning,
 }
 
 

@@ -196,7 +196,13 @@ func _refresh_chapter_cards() -> void:
 	breakfast_shop_button.disabled = blocks_switch and active_id != _session.BREAKFAST_CHAPTER_ID
 	noodle_shop_button.disabled = not bool(noodle.get("unlocked", false)) or (blocks_switch and active_id != _session.NOODLE_CHAPTER_ID)
 	night_market_shop_button.disabled = not bool(night_market.get("unlocked", false)) or (blocks_switch and active_id != _session.NIGHT_MARKET_CHAPTER_ID)
-	breakfast_shop_status.text = "第 %d 日 · %d 金币%s" % [int(breakfast.get("current_day", 1)), int(breakfast.get("coins", 0)), " · 营业中" if bool(breakfast.get("day_open", false)) else ""]
+	var special_customer_progress := str(_session.call("special_customer_reputation_summary"))
+	breakfast_shop_status.text = "第 %d 日 · %d 金币%s\n%s" % [
+		int(breakfast.get("current_day", 1)),
+		int(breakfast.get("coins", 0)),
+		" · 营业中" if bool(breakfast.get("day_open", false)) else "",
+		special_customer_progress,
+	]
 	if bool(noodle.get("unlocked", false)):
 		noodle_shop_status.text = "第 %d 日 · %d 金币%s" % [int(noodle.get("current_day", 1)), int(noodle.get("coins", 0)), " · 营业中" if bool(noodle.get("day_open", false)) else ""] if bool(noodle.get("initialized", false)) else "已解锁 · 首次进入将开始教学"
 	else:

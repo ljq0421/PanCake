@@ -2837,9 +2837,10 @@ func _refresh_growth_section(message: String = "") -> void:
 		return
 	var snapshot: Dictionary = game_session.call("five_area_progression_snapshot")
 	var pending_growth_ids: Array = Array(snapshot.get("pending_growth_ids", []))
-	var balance_text := "现有 %d 金币 · 口碑 %d · 全部 21 项升级均可在工坊查看；本夜可预订多个，次日统一生效" % [
+	var balance_text := "现有 %d 金币 · 口碑 %d · 全部 21 项升级均可在工坊查看；本夜可预订多个，次日统一生效\n%s" % [
 		int(snapshot.get("coins", 0)),
 		int(snapshot.get("reputation", 0)),
+		str(game_session.call("special_customer_reputation_summary")),
 	]
 	growth_balance_label.text = balance_text if message.is_empty() else "%s · %s" % [balance_text, message]
 	for button in growth_ticket_buttons:
@@ -3160,6 +3161,8 @@ func _refresh_global_status() -> void:
 		int(snapshot.get("current_day", 1)),
 		int(snapshot.get("reputation", 0)),
 	]
+	global_status_label.tooltip_text = str(game_session.call("special_customer_reputation_summary")) \
+		if game_session != null and game_session.has_method("special_customer_reputation_summary") else ""
 
 
 func _raw_order_items_for_card(order: Dictionary) -> Array[Dictionary]:

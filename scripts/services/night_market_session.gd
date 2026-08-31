@@ -13,6 +13,11 @@ const ORDER_PROVIDER := preload("res://scripts/services/night_market_order_provi
 
 const FIRST_DAY_SECONDS := 60.0
 const NORMAL_DAY_SECONDS := 120.0
+const INTRO_TIMED_RECIPE_SEQUENCE: Array[StringName] = [
+	CATALOG.RECIPE_LAMB,
+	CATALOG.RECIPE_LOTUS,
+	CATALOG.RECIPE_BASIC_COMBO,
+]
 const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01", &"customer_02", &"customer_03", &"customer_04", &"customer_05",
 	&"customer_06", &"customer_07", &"customer_08", &"customer_09", &"customer_10",
@@ -148,11 +153,7 @@ func ensure_active_order() -> Dictionary:
 	var tutorial := not tutorial_completed
 	var recipe_id := CATALOG.RECIPE_TUTORIAL
 	if not tutorial:
-		var available := unlocked_recipe_ids.keys()
-		available.sort_custom(func(left, right): return str(left) < str(right))
-		if not available.is_empty():
-			recipe_id = StringName(available[recipe_cursor % available.size()])
-			recipe_cursor += 1
+		recipe_id = _next_timed_recipe_id()
 	order_sequence += 1
 	var customer_id := CUSTOMER_IDS[customer_cursor % CUSTOMER_IDS.size()]
 	customer_cursor += 1
@@ -163,6 +164,26 @@ func ensure_active_order() -> Dictionary:
 	order_changed.emit(active_order.duplicate(true))
 	changed.emit(snapshot())
 	return {"success": true, "created": true, "order": active_order.duplicate(true)}
+
+
+func _next_timed_recipe_id() -> StringName:
+	if recipe_cursor < INTRO_TIMED_RECIPE_SEQUENCE.size():
+		var introductory_recipe := INTRO_TIMED_RECIPE_SEQUENCE[recipe_cursor]
+		recipe_cursor += 1
+		return introductory_recipe
+	var available := unlocked_recipe_ids.keys()
+	available.sort_custom(func(left, right): return str(left) < str(right))
+	if available.is_empty():
+		recipe_cursor += 1
+		return CATALOG.RECIPE_LAMB
+	# Continue after the introductory combo instead of immediately repeating it.
+	# Newly unlocked recipes still join the same deterministic rotation.
+	var combo_index := available.find(CATALOG.RECIPE_BASIC_COMBO)
+	var rotation_start := combo_index + 1 if combo_index >= 0 else 0
+	var rotation_offset := recipe_cursor - INTRO_TIMED_RECIPE_SEQUENCE.size()
+	var recipe_id := StringName(available[(rotation_start + rotation_offset) % available.size()])
+	recipe_cursor += 1
+	return recipe_id
 
 
 func advance(delta: float) -> Dictionary:

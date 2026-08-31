@@ -70,6 +70,7 @@ const ATTENTION_SERVICE := preload("res://scripts/services/attention_service.gd"
 const NOODLE_SHOP_SESSION := preload("res://scripts/services/noodle_shop_session.gd")
 const NOODLE_SHOP_CATALOG := preload("res://scripts/data/noodle_shop_catalog.gd")
 const NIGHT_MARKET_SESSION := preload("res://scripts/services/night_market_session.gd")
+const PLAYTEST_TELEMETRY := preload("res://scripts/services/playtest_telemetry.gd")
 const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
 	&"slot.04": {
 		"product_id": &"product.youtiao.plain",
@@ -152,6 +153,7 @@ var _scene_binding_save_snapshot: Dictionary = {}
 var _scene_binding_campaign_snapshot: Dictionary = {}
 var _scene_binding_save_dirty_before_batch := false
 var _scene_binding_save_flush_elapsed_before_batch := 0.0
+var _playtest_telemetry: RefCounted
 
 
 func _ready() -> void:
@@ -170,6 +172,7 @@ func _ready() -> void:
 	# remain empty through its opening restock window.
 	_load_settings()
 	apply_settings()
+	_initialize_playtest_telemetry()
 
 
 func _process(delta: float) -> void:
@@ -181,6 +184,8 @@ func _process(delta: float) -> void:
 
 
 func _exit_tree() -> void:
+	if _playtest_telemetry != null and bool(_playtest_telemetry.call("is_enabled")):
+		_playtest_telemetry.call("finish", _playtest_context())
 	flush_pending_save()
 
 
@@ -212,6 +217,27 @@ func active_chapter_id() -> StringName:
 
 func global_reputation() -> int:
 	return maxi(int(Dictionary(_campaign_data.get("campaign", {})).get("global_reputation", 0)), 0)
+
+
+func special_customer_reputation_overview() -> Dictionary:
+	return SPECIAL_CUSTOMER_CATALOG.reputation_unlock_overview(global_reputation())
+
+
+func special_customer_reputation_summary() -> String:
+	var overview := special_customer_reputation_overview()
+	var current := int(overview.get("current_reputation", 0))
+	var unlocked := int(overview.get("unlocked_count", 0))
+	var total := int(overview.get("total_count", 3))
+	if bool(overview.get("all_unlocked", false)):
+		return "全局口碑 %d · 早餐特殊顾客已全部解锁（%d/%d）" % [current, unlocked, total]
+	return "全局口碑 %d · 早餐特殊顾客 %d/%d · %s需 %d（还差 %d）" % [
+		current,
+		unlocked,
+		total,
+		str(overview.get("next_title", "下一位特殊顾客")),
+		int(overview.get("next_min_global_reputation", 0)),
+		int(overview.get("remaining_reputation", 0)),
+	]
 
 
 func chapter_scene_path(chapter_id: StringName) -> String:
@@ -391,6 +417,7 @@ func noodle_collect_payment() -> Dictionary:
 		_sync_noodle_session_to_save()
 		_touch_and_write()
 		coins_changed.emit(int(result.get("coins", 0)))
+		_playtest_record(&"payment_collected", {"amount": int(result.get("collected_coins", 0))})
 	return result
 
 
@@ -402,6 +429,11 @@ func noodle_refuse_order() -> Dictionary:
 		_sync_noodle_session_to_save()
 		_touch_and_write()
 		campaign_changed.emit(campaign_snapshot())
+		_playtest_record(&"order_refused", {
+			"success": true,
+			"reputation_delta": int(result.get("reputation_delta", 0)),
+			"production_started": bool(result.get("production_started", false)),
+		})
 	return result
 
 
@@ -416,6 +448,8 @@ func noodle_advance(delta: float) -> Dictionary:
 	if reputation_delta != 0:
 		_apply_global_reputation_delta(reputation_delta)
 		campaign_changed.emit(campaign_snapshot())
+	if bool(result.get("customer_left_now", false)):
+		_playtest_record(&"order_abandoned", {"reputation_delta": reputation_delta, "reason": "patience_expired"})
 	if bool(result.get("changed", false)):
 		_sync_noodle_session_to_save()
 		_touch_and_write()
@@ -443,6 +477,11 @@ func noodle_purchase_growth(growth_id: StringName) -> Dictionary:
 	if bool(result.get("success", false)):
 		_sync_noodle_session_to_save()
 		_touch_and_write()
+	_playtest_record(&"growth_purchased", {
+		"growth_id": growth_id,
+		"success": bool(result.get("success", false)),
+		"reason": result.get("reason", &""),
+	})
 	return result
 
 
@@ -451,6 +490,7 @@ func noodle_end_day(reason: StringName = &"manual") -> Dictionary:
 	var bill := Dictionary(_noodle_session.call("end_day", reason))
 	_sync_noodle_session_to_save()
 	_touch_and_write(true)
+	_playtest_record(&"day_ended", _playtest_day_payload(bill, reason))
 	return bill
 
 
@@ -540,6 +580,7 @@ func night_market_collect_payment() -> Dictionary:
 		_sync_night_market_session_to_save()
 		_touch_and_write()
 		coins_changed.emit(int(result.get("coins", 0)))
+		_playtest_record(&"payment_collected", {"amount": int(result.get("collected_coins", 0))})
 	return result
 
 
@@ -551,6 +592,11 @@ func night_market_refuse_order() -> Dictionary:
 		_sync_night_market_session_to_save()
 		_touch_and_write()
 		campaign_changed.emit(campaign_snapshot())
+		_playtest_record(&"order_refused", {
+			"success": true,
+			"reputation_delta": int(result.get("reputation_delta", 0)),
+			"production_started": bool(result.get("production_started", false)),
+		})
 	return result
 
 
@@ -565,6 +611,8 @@ func night_market_advance(delta: float) -> Dictionary:
 	if reputation_delta != 0:
 		_apply_global_reputation_delta(reputation_delta)
 		campaign_changed.emit(campaign_snapshot())
+	if bool(result.get("customer_left_now", false)):
+		_playtest_record(&"order_abandoned", {"reputation_delta": reputation_delta, "reason": "patience_expired"})
 	if bool(result.get("changed", false)):
 		_sync_night_market_session_to_save()
 		_touch_and_write()
@@ -587,7 +635,13 @@ func night_market_growth_overview() -> Array[Dictionary]:
 
 
 func night_market_purchase_growth(growth_id: StringName) -> Dictionary:
-	return _night_market_mutation(&"purchase_growth", [growth_id])
+	var result := _night_market_mutation(&"purchase_growth", [growth_id])
+	_playtest_record(&"growth_purchased", {
+		"growth_id": growth_id,
+		"success": bool(result.get("success", false)),
+		"reason": result.get("reason", &""),
+	})
+	return result
 
 
 func night_market_milestone_progress() -> Dictionary:
@@ -600,6 +654,7 @@ func night_market_end_day(reason: StringName = &"manual") -> Dictionary:
 	var bill := Dictionary(_night_market_session.call("end_day", reason))
 	_sync_night_market_session_to_save()
 	_touch_and_write(true)
+	_playtest_record(&"day_ended", _playtest_day_payload(bill, reason))
 	return bill
 
 
@@ -741,6 +796,7 @@ func begin_new_game() -> Dictionary:
 	inventory_changed.emit(inventory_snapshot())
 	production_changed.emit(five_area_production_snapshot())
 	prepared_product_slots_changed.emit(prepared_product_slots_snapshot())
+	_playtest_record(&"new_game", {})
 	return {"success": true, "snapshot": _save_data.duplicate(true)}
 
 
@@ -1905,6 +1961,7 @@ func collect_tray_payment(settlement_id: StringName) -> Dictionary:
 	_touch_and_write()
 	coins_changed.emit(int(_progression.get("coins")))
 	progression_changed.emit(five_area_progression_snapshot())
+	_playtest_record(&"payment_collected", {"amount": amount, "settlement_id": settlement_id})
 	return {"success": true, "amount": amount, "payment": payment.duplicate(true)}
 
 
@@ -3609,6 +3666,11 @@ func purchase_growth(growth_id: StringName) -> Dictionary:
 		_touch_and_write()
 		coins_changed.emit(int(_progression.get("coins")))
 		progression_changed.emit(five_area_progression_snapshot())
+	_playtest_record(&"growth_purchased", {
+		"growth_id": growth_id,
+		"success": bool(result.get("success", false)),
+		"reason": result.get("reason", &""),
+	})
 	return result
 
 
@@ -4112,6 +4174,7 @@ func end_business_day(cutoff: Dictionary = {}) -> Dictionary:
 	_save_data["last_bill"] = bill.duplicate(true)
 	_sync_business_services_to_save()
 	_touch_and_write()
+	_playtest_record(&"day_ended", _playtest_day_payload(bill, cutoff_reason))
 	return bill
 
 
@@ -4799,6 +4862,86 @@ func _sync_progression_to_save() -> void:
 			campaign_changed.emit(campaign_snapshot())
 
 
+func playtest_telemetry_status() -> Dictionary:
+	if _playtest_telemetry == null:
+		return {"success": true, "enabled": false}
+	return Dictionary(_playtest_telemetry.call("status")).duplicate(true)
+
+
+func _initialize_playtest_telemetry() -> void:
+	_playtest_telemetry = PLAYTEST_TELEMETRY.new()
+	var configured := Dictionary(_playtest_telemetry.call("configure_from_args", OS.get_cmdline_user_args(), {
+		"project": str(ProjectSettings.get_setting("application/config/name", "project-cake")),
+		"engine_version": Engine.get_version_info().get("string", ""),
+		"save_version": SAVE_VERSION,
+		"continued_save": has_save(),
+	}))
+	if not bool(configured.get("enabled", false)):
+		return
+	order_settled.connect(_on_playtest_order_settled)
+	chapter_changed.connect(func(chapter_id: StringName): _playtest_record(&"chapter_selected", {"chapter_id": chapter_id}))
+	_playtest_record(&"campaign_loaded", {})
+	print("PLAYTEST_TELEMETRY_OUTPUT=%s" % str(configured.get("output_directory", "")))
+
+
+func _on_playtest_order_settled(result: Dictionary) -> void:
+	var score := Dictionary(result.get("score", {}))
+	var order := Dictionary(result.get("order", {}))
+	var grade := str(result.get("grade", result.get("reported_grade", "")))
+	var payload := {
+		"success": bool(result.get("order_success", result.get("success", true))),
+		"order_id": result.get("order_id", order.get("order_id", &"")),
+		"recipe_id": order.get("recipe_id", result.get("recipe_id", &"")),
+		"grade": grade,
+		"payment_coins": int(result.get("payment_coins", result.get("earned_coins", result.get("pending_payment_coins", 0)))),
+		"reputation_delta": int(result.get("reputation_delta", 0)),
+		"special_customer_id": result.get("special_customer_id", order.get("special_customer_id", &"")),
+		"terminal_state": result.get("terminal_state", &"completed"),
+		"reason": result.get("reason", &""),
+	}
+	if score.has("overall_score"):
+		payload["overall_score"] = float(score.get("overall_score", 0.0))
+	elif result.has("overall_score"):
+		payload["overall_score"] = float(result.get("overall_score", 0.0))
+	_playtest_record(&"order_settled", payload)
+
+
+func _playtest_record(kind: StringName, payload: Dictionary) -> void:
+	if _playtest_telemetry == null or not bool(_playtest_telemetry.call("is_enabled")):
+		return
+	var enriched := _playtest_context()
+	for key in payload:
+		enriched[key] = payload[key]
+	_playtest_telemetry.call("record", kind, enriched)
+
+
+func _playtest_context() -> Dictionary:
+	var progression := Dictionary(_save_data.get("progression", {})) if _active_chapter == BREAKFAST_CHAPTER_ID else _save_data
+	var day := int(progression.get("current_day", 1))
+	var coins := int(progression.get("coins", 0))
+	var owned_growth_ids := Array(progression.get("owned_growth_ids", []))
+	return {
+		"chapter_id": _active_chapter,
+		"day": day,
+		"coins": coins,
+		"owned_growth_count": owned_growth_ids.size(),
+		"global_reputation": global_reputation(),
+		"day_open": bool(progression.get("day_open", true)),
+	}
+
+
+func _playtest_day_payload(bill: Dictionary, reason: StringName) -> Dictionary:
+	return {
+		"success": bool(bill.get("success", true)),
+		"reason": reason,
+		"day": int(bill.get("day", _playtest_context().get("day", 1))),
+		"orders_completed": int(bill.get("orders_completed", bill.get("completed_orders", 0))),
+		"revenue": int(bill.get("revenue", bill.get("gross_revenue", bill.get("earned_coins", 0)))),
+		"reputation_delta": int(bill.get("reputation_delta", bill.get("today_reputation_delta", 0))),
+		"waste_count": Array(bill.get("waste", bill.get("inventory_waste", []))).size(),
+	}
+
+
 func _apply_global_reputation_delta(delta: int) -> void:
 	if delta == 0 or _campaign_data.is_empty():
 		return
@@ -5229,7 +5372,6 @@ func _recover_interrupted_save_write() -> void:
 func _remove_file_if_present(absolute_path: String) -> void:
 	if FileAccess.file_exists(absolute_path):
 		DirAccess.remove_absolute(absolute_path)
-
 
 func _load_settings() -> void:
 	_settings = DEFAULT_SETTINGS.duplicate(true)

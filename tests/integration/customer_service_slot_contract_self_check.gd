@@ -130,7 +130,13 @@ func _run() -> void:
 		"items": [{"product_id": &"product.pancake.custom", "quantity": 3, "prepared_product_instance_ids": []}],
 	}
 	slot.bind_order(special_order, null, [null], [], 18)
-	_check(slot.special_title.visible and slot.special_title.text == "超能吃大胃王" and slot.special_rule.visible and slot.special_rule.text.find("共3份") >= 0, "special title and rule summary come from static order-card labels")
+	var special_card_size: Vector2 = slot.get_node("OrderPanel").size
+	_check(slot.special_title.visible and slot.special_title.text == "超能吃大胃王" and not slot.special_rule.visible and slot.card_focus_button.tooltip_text.find("共3份") >= 0, "special card keeps the customer identity visible while moving its full rule into progressive disclosure")
+	slot.card_focus_button.grab_focus()
+	_check(slot.special_rule.visible and slot.special_rule.text.find("共3份") >= 0 and slot.get_node("OrderPanel").size == special_card_size, "keyboard focus reveals the special rule without moving the card layout")
+	slot.card_focus_button.release_focus()
+	slot.call("_sync_special_rule_visibility_from_input")
+	_check(not slot.special_rule.visible and slot.get_node("OrderPanel").size == special_card_size, "leaving the card hides secondary rules without collapsing the reserved row")
 	_check(slot.quantity_labels[0].visible and slot.quantity_labels[0].text == "0/3", "quantity progress begins at zero of three")
 	for delivered_count in [1, 2, 3]:
 		special_order["items"][0]["prepared_product_instance_ids"] = range(delivered_count)

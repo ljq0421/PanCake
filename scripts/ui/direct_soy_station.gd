@@ -68,7 +68,6 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 @onready var soy_milk_dispenser: TextureRect = %SoyMilkDispenser
 @onready var dispense_effect: SoyDispenseEffect = %DispenseEffect
 @onready var queued_cup_effect: SoyDispenseEffect = %QueuedCupEffect
-@onready var sugar_label: Label = %SugarLabel
 
 var lock_cover: Control = null
 var _filling := false
@@ -180,10 +179,8 @@ func refresh_from_session() -> void:
 	_configure_cup_source(queued_cup_output, 1, queued_cup, right_empty_visible, has_right_cup)
 	_update_cup_selection_frames(cup_state == &"filled")
 	sugar_jar.visible = sugar_enabled
-	sugar_label.visible = sugar_enabled
 	sugar_jar.disabled = not sugar_enabled or cup_state != &"filled" or sugar_servings >= 2
 	sugar_jar.tooltip_text = "给第%d杯加糖（最多两份）" % (_selected_cup_index + 1) if not sugar_jar.disabled else "请先接好豆浆" if cup_state != &"filled" else "第%d杯已是多糖" % (_selected_cup_index + 1)
-	sugar_label.text = "糖：%s" % ["无糖", "正常糖（1份）", "多糖（2份）"][clampi(sugar_servings, 0, 2)]
 	var left_outlet_ready := (cup_state == &"held_empty" and not secondary_empty_cup_placed) or primary_empty_cup_placed
 	var right_outlet_ready := _double_fill_enabled and ((cup_state == &"held_empty" and (held_empty_cup_count >= 2 or secondary_empty_cup_placed)) or (cup_state == &"filled" and secondary_empty_cup_placed))
 	var dual_outlets_ready := _double_fill_enabled and cup_state == &"held_empty" and held_empty_cup_count >= 2
@@ -197,7 +194,6 @@ func refresh_from_session() -> void:
 	dual_nozzle_button.tooltip_text = "同时接满左右两杯豆浆"
 	if _workshop_preview:
 		# The workshop previews the compact station without exposing live controls.
-		sugar_label.visible = false
 		nozzle_button.disabled = true
 		second_nozzle_button.visible = false
 		dual_nozzle_button.visible = false
@@ -205,7 +201,6 @@ func refresh_from_session() -> void:
 		queued_cup_output.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
-		sugar_label.visible = sugar_enabled
 		machine_output.mouse_filter = Control.MOUSE_FILTER_STOP if machine_output.visible else Control.MOUSE_FILTER_IGNORE
 		queued_cup_output.mouse_filter = Control.MOUSE_FILTER_STOP if queued_cup_output.visible else Control.MOUSE_FILTER_IGNORE
 		sugar_jar.mouse_filter = Control.MOUSE_FILTER_STOP

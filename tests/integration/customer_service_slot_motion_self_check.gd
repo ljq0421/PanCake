@@ -73,10 +73,10 @@ func _run() -> void:
 		"normal-motion entry starts below and slightly behind the authored service pose",
 	)
 	_check(
-		slot.get_node("OrderPanel").position == Vector2(155.0, -2.0)
+		_is_order_card_above_head(slot)
 		and slot.get_node("OrderPanel").visible
 		and slot.get_node("OrderPanel").modulate.a < 1.0,
-		"the order card is present but visually withheld while its customer approaches",
+		"the order card stays above the customer's head while visually withheld during approach",
 	)
 	await _wait(0.15)
 	_check(
@@ -90,12 +90,12 @@ func _run() -> void:
 		not slot.is_presentation_transitioning()
 		and slot.portrait.position == portrait_rest_position
 		and slot.portrait.scale == Vector2.ONE
-		and slot.get_node("OrderPanel").position == Vector2(155.0, -2.0)
+		and _is_order_card_above_head(slot)
 		and slot.get_node("OrderPanel").scale == Vector2.ONE
 		and is_equal_approx(slot.portrait.modulate.a, 1.0)
 		and is_equal_approx(slot.get_node("OrderPanel").modulate.a, 1.0)
 		and slot.get_node("OrderPanel").visible,
-		"entry restores the authored positions and full opacity",
+		"entry restores the customer and head-mounted card positions at full opacity",
 	)
 	var second_order := _order(&"order.motion.second")
 	slot.present_order(second_order, null, [null], [[]], 6, false)
@@ -135,7 +135,6 @@ func _run() -> void:
 	_check(
 		slot.portrait.position == portrait_rest_position
 		and slot.portrait.scale == Vector2.ONE
-		and slot.get_node("OrderPanel").position == Vector2(155.0, -2.0)
 		and slot.get_node("OrderPanel").scale == Vector2.ONE,
 		"reduced motion keeps both customer layers stationary and unscaled",
 	)
@@ -148,7 +147,7 @@ func _run() -> void:
 		"the replacement order remains visually withheld while its reduced-motion customer fades in",
 	)
 	await _wait(0.25)
-	_check(StringName(slot.get("_order_id")) == &"order.motion.reduced" and not slot.is_presentation_transitioning() and slot.get_node("OrderPanel").visible, "reduced motion shows the order only after the customer finishes arriving")
+	_check(StringName(slot.get("_order_id")) == &"order.motion.reduced" and not slot.is_presentation_transitioning() and _is_order_card_above_head(slot) and slot.get_node("OrderPanel").visible, "reduced motion restores the order above the customer's head after arrival")
 	slot.queue_free()
 	await process_frame
 	_finish()
@@ -166,6 +165,16 @@ func _order(order_id: StringName) -> Dictionary:
 
 func _wait(seconds: float) -> void:
 	await create_timer(seconds).timeout
+
+
+func _is_order_card_above_head(slot: CustomerServiceSlot) -> bool:
+	var panel := slot.get_node("OrderPanel") as Control
+	var portrait_rest_position := slot.get("_portrait_rest_position") as Vector2
+	var expected_position := Vector2(
+		portrait_rest_position.x + (slot.portrait.size.x - panel.size.x) * 0.5,
+		portrait_rest_position.y - panel.size.y - 14.0,
+	)
+	return panel.position.is_equal_approx(expected_position)
 
 
 func _check(condition: bool, message: String) -> void:

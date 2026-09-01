@@ -32,7 +32,13 @@ func _run() -> void:
 		hotspots._refresh_optional_stock_visuals(starter_progression)
 		_check(carton.visible, "unlocking egg restores its carton to the worktop")
 	if carton != null and visual != null and contents != null:
-		_check(carton.get_global_rect().encloses(visual.get_global_rect()) and visual.get_global_rect().encloses(contents.get_global_rect()), "egg content layers remain contained within the scaled carton artwork")
+		_check(carton.get_global_rect().encloses(visual.get_global_rect()) and visual.get_global_rect().encloses(contents.get_global_rect()), "egg content layers remain contained within the tray artwork")
+		_check(carton.size.is_equal_approx(Vector2(214.0, 180.0)), "egg tray uses the shared 214x180 ingredient-tray display size")
+		_check(visual.get_global_rect().size.is_equal_approx(Vector2(214.0, 180.0)), "egg tray artwork fills the shared ingredient-tray display rectangle")
+		var shared_tray_paths := ["BaocuiBasket/Visual", "PorkFlossSource/Visual", "HamSource/Visual"]
+		for tray_path in shared_tray_paths:
+			var shared_tray := hotspots.get_node_or_null(NodePath(tray_path)) as TextureRect
+			_check(shared_tray != null and visual.get_global_rect().size.is_equal_approx(shared_tray.get_global_rect().size), "egg tray display size matches %s" % tray_path)
 	if carton != null and source != null and holding_tray != null:
 		_check(carton.get_global_rect().encloses(source.get_global_rect()), "egg hotspot stays within the physical carton")
 		_check(not source.get_global_rect().intersects(holding_tray.get_global_rect()), "egg hotspot does not overlap the finished-pancake tray")

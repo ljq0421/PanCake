@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://c3ue38k5csw63"]
+[gd_scene format=3 uid="uid://del7opqmsi0x0"]
 
 [ext_resource type="Script" uid="uid://dbk2xuxevgb1g" path="res://scripts/gameplay/five_area_workstation.gd" id="1_38olv"]
 [ext_resource type="Resource" uid="uid://c8n37jd6t6h6m" path="res://resources/data/pancake_simulation_parameters.tres" id="2_g7se5"]
@@ -28,8 +28,8 @@
 [ext_resource type="Texture2D" uid="uid://uwmrg0jctqwh" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" uid="uid://d1d3cotxm1vxl" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
 [ext_resource type="Texture2D" uid="uid://qxcwppwhxlbq" path="res://resources/art/products/orange_juice/yinpin-v1.png" id="83_pancake_holding_tray"]
-[ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="85_pancake_holding_tray_hit"]
 [ext_resource type="Shader" uid="uid://coyn1qbaqcitu" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
+[ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="85_pancake_holding_tray_hit"]
 [ext_resource type="AudioStream" uid="uid://d3nagqs4bkp1t" path="res://resources/audio/sfx/morning_ambience.wav" id="audio_ambience"]
 [ext_resource type="AudioStream" uid="uid://do2e1cckajyd6" path="res://resources/audio/sfx/customer_arrive.wav" id="audio_arrive"]
 [ext_resource type="AudioStream" uid="uid://dhmlb1gtjvast" path="res://resources/audio/sfx/drink_pickup.wav" id="audio_drink_pickup"]

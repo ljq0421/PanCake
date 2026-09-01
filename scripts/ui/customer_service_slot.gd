@@ -19,6 +19,7 @@ const NORMAL_REQUIREMENT_LIMIT := 2
 const PATIENCE_FILL_POSITION_X := 64.5
 const PATIENCE_FILL_BOTTOM_INSET := 25.5
 const PATIENCE_FILL_SIZE := Vector2(187.5, 13.5)
+const ORDER_CARD_HEAD_GAP := 14.0
 const PORTRAIT_ENTER_SECONDS := 0.80
 const PORTRAIT_EXIT_SECONDS := 0.80
 const PORTRAIT_FADE_SECONDS := 0.20
@@ -411,6 +412,7 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 		row_top += 30.0 + CARD_BLOCK_GAP
 	var card_height := CARD_HEADER_HEIGHT + CARD_CONTENT_INSET + CARD_FOOTER_HEIGHT if blocks.is_empty() else row_top + CARD_CONTENT_INSET + CARD_FOOTER_HEIGHT - CARD_BLOCK_GAP
 	order_panel.size = Vector2(card_width, card_height)
+	_layout_order_card_above_portrait()
 	card_background.set_card_layout(blocks)
 	header_title.visible = not special_title.visible
 	order_title.position = Vector2(card_width - 72.0, 7.5)
@@ -421,6 +423,17 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 	progress_title.size = Vector2(51.0, 21.0)
 	patience_bar.position = Vector2(PATIENCE_FILL_POSITION_X, card_height - PATIENCE_FILL_BOTTOM_INSET)
 	patience_bar.size = PATIENCE_FILL_SIZE
+
+
+## Keeps every variable-height card centered immediately above its customer's
+## head, rather than leaving it offset at the side of the service slot.
+func _layout_order_card_above_portrait() -> void:
+	_order_panel_rest_position = Vector2(
+		portrait.position.x + (portrait.size.x - order_panel.size.x) * 0.5,
+		portrait.position.y - order_panel.size.y - ORDER_CARD_HEAD_GAP,
+	)
+	order_panel.position = _order_panel_rest_position
+	order_panel.pivot_offset = order_panel.size * 0.5
 
 
 func _bind_detail_disclosure_control(control: Control) -> void:

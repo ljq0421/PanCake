@@ -84,6 +84,12 @@ func _run() -> void:
 		and not slot.item_buttons[2].visible,
 		"a one-product order collapses the simple card to one row",
 	)
+	var one_item_card := slot.get_node("OrderPanel") as Control
+	_check(
+		one_item_card.position.is_equal_approx(Vector2(-6.0, 180.0))
+		and is_equal_approx(one_item_card.get_rect().end.y, slot.portrait.position.y - 14.0),
+		"the variable-height order card is centered immediately above the customer's head",
+	)
 	_check(slot.portrait.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("PortraitButton") == null and slot.get_node_or_null("FocusFrame") == null, "portrait renders behind the order-card controls without an unused portrait click target")
 	_check(slot.portrait.position.is_equal_approx(Vector2(12.0, 380.0)) and slot.portrait.size.is_equal_approx(Vector2(228.0, 372.4)), "customer portrait rests at the lowered worktop-facing service position")
 	_check(slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "the order card retains its explicit focus click target")

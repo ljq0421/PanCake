@@ -34,10 +34,8 @@ const ITEM_TEXTURES := {
 	&"stock.pancake.coriander": preload("res://resources/art/ingredients/coriander/coriander_scattered_five_area_v2.png"),
 	&"stock.pancake.youtiao": preload("res://resources/art/products/youtiao/plain_youtiao_v1_five_area_v3.png"),
 }
-const SELECTED_BACKGROUND := Color(1.0, 0.94, 0.78, 0.94)
-const SELECTED_BORDER := Color(0.34, 0.14, 0.04, 0.94)
-const UNSELECTED_BACKGROUND := Color(0.18, 0.10, 0.05, 0.50)
-const UNSELECTED_BORDER := Color(0.48, 0.27, 0.12, 0.62)
+const CELL_BACKGROUND := Color(1.0, 0.94, 0.78, 0.94)
+const CELL_BORDER := Color(0.34, 0.14, 0.04, 0.94)
 const CHECK_GREEN := Color(0.20, 0.64, 0.26, 1.0)
 
 var _selected_ids := {}
@@ -90,12 +88,12 @@ func _draw() -> void:
 			CELL_SIZE,
 		)
 		var selected := _selected_ids.has(stock_id)
-		draw_rect(cell_rect, SELECTED_BACKGROUND if selected else UNSELECTED_BACKGROUND, true)
-		draw_rect(cell_rect, SELECTED_BORDER if selected else UNSELECTED_BORDER, false, 1.2, true)
-		var icon_rect := cell_rect.grow(-2.5)
+		draw_rect(cell_rect, CELL_BACKGROUND, true)
+		draw_rect(cell_rect, CELL_BORDER, false, 1.2, true)
+		var icon_rect := cell_rect.grow(-1.25)
 		var texture := ITEM_TEXTURES.get(stock_id) as Texture2D
 		if texture != null:
-			draw_texture_rect(texture, icon_rect, false, Color.WHITE if selected else Color(0.72, 0.66, 0.56, 0.50))
+			draw_texture_rect(texture, icon_rect, false, Color.WHITE)
 		if selected:
 			_draw_check(cell_rect)
 	draw_set_transform_matrix(Transform2D.IDENTITY)

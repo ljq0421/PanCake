@@ -28,8 +28,8 @@
 [ext_resource type="Texture2D" uid="uid://uwmrg0jctqwh" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" uid="uid://d1d3cotxm1vxl" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
 [ext_resource type="Texture2D" uid="uid://qxcwppwhxlbq" path="res://resources/art/products/orange_juice/yinpin-v1.png" id="83_pancake_holding_tray"]
-[ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="85_pancake_holding_tray_hit"]
 [ext_resource type="Shader" uid="uid://coyn1qbaqcitu" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
+[ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="85_pancake_holding_tray_hit"]
 [ext_resource type="AudioStream" uid="uid://d3nagqs4bkp1t" path="res://resources/audio/sfx/morning_ambience.wav" id="audio_ambience"]
 [ext_resource type="AudioStream" uid="uid://do2e1cckajyd6" path="res://resources/audio/sfx/customer_arrive.wav" id="audio_arrive"]
 [ext_resource type="AudioStream" uid="uid://dhmlb1gtjvast" path="res://resources/audio/sfx/drink_pickup.wav" id="audio_drink_pickup"]
@@ -369,6 +369,8 @@ mouse_filter = 2
 
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1
+offset_left = -100.0
+offset_right = -100.0
 
 [node name="GlobalStatusBackground" type="Panel" parent="SafeArea" unique_id=1595226911]
 z_index = 140
@@ -1514,9 +1516,9 @@ offset_bottom = 1065.0
 unique_name_in_owner = true
 z_index = 80
 anchors_preset = 0
-offset_left = 667.0
+offset_left = 567.0
 offset_top = 961.0
-offset_right = 799.0
+offset_right = 699.0
 offset_bottom = 1076.0
 tooltip_text = "拖入成品可报废；长按可清空当前鏊面"
 mouse_default_cursor_shape = 2
@@ -1564,9 +1566,9 @@ vertical_alignment = 1
 [node name="PancakeHoldingTray" type="TextureButton" parent="FiveAreaInfrastructure/Stations" unique_id=1824711041]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1192.0
+offset_left = 1092.0
 offset_top = 837.0
-offset_right = 1556.0
+offset_right = 1456.0
 offset_bottom = 1041.0
 tooltip_text = "煎饼暂存盘：点击存入已打包煎饼，最多暂存 3 份"
 texture_normal = ExtResource("83_pancake_holding_tray")

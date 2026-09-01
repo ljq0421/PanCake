@@ -13,6 +13,11 @@ func _initialize() -> void:
 	_check(WorkbenchArtSpec.CONTAINER_M == Vector2(176, 96), "M containers use the 176x96 art contract")
 	_check(WorkbenchArtSpec.CONTAINER_L == Vector2(288, 120), "L containers use the 288x120 art contract")
 	_check(is_equal_approx(WorkbenchArtSpec.ROUND_TOP_ASPECT, 0.36), "round horizontal tops share the 0.36 perspective ratio")
+	_check(is_equal_approx(WorkbenchArtSpec.GRIDDLE_RUNTIME_SURFACE_ASPECT, 0.75), "the interaction griddle keeps its runtime-contract aspect exception")
+	_check(WorkbenchArtSpec.PERSPECTIVE_MASTER_PATHS.size() == 4, "four explicit perspective masters are registered")
+	for master_kind in [&"round_top", &"rectangular_tray", &"machine", &"cylinder"]:
+		var master_path := str(WorkbenchArtSpec.PERSPECTIVE_MASTER_PATHS.get(master_kind, ""))
+		_check(not master_path.is_empty() and ResourceLoader.exists(master_path), "%s perspective master exists" % master_kind)
 
 	var griddle := GRIDDLE_SCENE.instantiate()
 	var griddle_art := griddle.get_node("GriddleArt") as TextureRect

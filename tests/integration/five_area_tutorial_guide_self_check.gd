@@ -81,12 +81,12 @@ func _run() -> void:
 	_check(bool(Dictionary(griddle.pancake_model.crack_egg(Vector2(31, 31))).get("success", false)), "tutorial fixture adds the required egg before checking flip guidance")
 	pancake_guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))
 	_check(pancake_guide.get("target") == griddle.heat_status_label and str(pancake_guide.get("message", "")).contains("火候计时"), "first side before readiness points to the visible heat timer")
-	griddle.pancake_model.advance_cooking(4.0, 1.25)
+	griddle.pancake_model.doneness.fill(0.48)
 	griddle.first_side_seconds = 4.0
 	griddle.call("_refresh_heat_visual")
 	pancake_guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))
 	_check(pancake_guide.get("target") == griddle.main_action and str(pancake_guide.get("message", "")).contains("现在可翻面"), "recommended first-side heat points the tutorial arrow at flip")
-	griddle.pancake_model.advance_cooking(10.0, 1.25)
+	griddle.pancake_model.doneness.fill(0.75)
 	griddle.first_side_seconds = 14.0
 	griddle.call("_refresh_heat_visual")
 	pancake_guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.pancake"))

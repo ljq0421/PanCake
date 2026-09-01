@@ -15,9 +15,10 @@ func _initialize() -> void:
 	_check(hotspots.baocui_tray_textures.size() == 10, "crisp tray exposes all ten stock states")
 	for state_index in range(hotspots.baocui_tray_textures.size()):
 		var crisp_texture := hotspots.baocui_tray_textures[state_index]
-		_check(crisp_texture != null and crisp_texture.get_size() == Vector2(256, 256), "crisp tray state %d uses the authored 256-pixel canvas" % (state_index + 1))
+		_check(crisp_texture != null and (state_index == 9 or crisp_texture.get_size() == Vector2(256, 256)), "partial crisp state %d keeps its legacy canvas while full stock uses the P1 M master" % (state_index + 1))
 		hotspots._update_baocui_inventory_visual(state_index + 1)
 		_check(visual.texture == crisp_texture, "crisp stock %d selects its matching visual state" % (state_index + 1))
+	_check(visual.size.is_equal_approx(Vector2(176.0, 96.0)), "crisp stock states share the P1 M display rectangle")
 	artwork.free()
 	_finish()
 

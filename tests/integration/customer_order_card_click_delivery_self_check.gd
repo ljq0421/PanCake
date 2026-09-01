@@ -47,7 +47,7 @@ func _run() -> void:
 	_prepare_ready_pancake(workstation, item)
 	_check(workstation.multi_griddle_station.griddle_count() == 1 and workstation.multi_griddle_station.units.size() == 1, "click delivery operates from the permanent single griddle")
 	var holding_slots := Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", []))
-	_check(holding_slots.size() == 4 and holding_slots.all(func(slot): return Dictionary(slot).is_empty()), "all four positions in the pancake holding tray are empty before direct griddle delivery")
+	_check(holding_slots.size() == 3 and holding_slots.all(func(slot): return Dictionary(slot).is_empty()), "all three authored positions in the pancake holding tray are empty before direct griddle delivery")
 	var second_slot := _service_slot_for_order(workstation, second_order_id)
 	var second_button := second_slot.get_node("OrderPanel/ItemButton1") as Button if second_slot != null else null
 	_check(second_button != null and second_button.visible and not second_button.disabled, "the non-focused customer's real item button is clickable")

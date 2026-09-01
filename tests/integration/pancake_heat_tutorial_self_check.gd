@@ -34,13 +34,13 @@ func _run() -> void:
 	guide = Dictionary(workstation.call("_tutorial_guide_for_area", session, &"area.pancake"))
 	_check(guide.get("target") == griddle.heat_status_label and str(guide.get("message", "")).contains("火候计时"), "first side below the recommended heat points at the visible heat timer")
 
-	griddle.pancake_model.advance_cooking(4.0, 1.25)
+	griddle.pancake_model.doneness.fill(0.48)
 	griddle.first_side_seconds = 4.0
 	griddle.call("_refresh_heat_visual")
 	guide = Dictionary(workstation.call("_tutorial_guide_for_area", session, &"area.pancake"))
 	_check(guide.get("target") == griddle.main_action and str(guide.get("message", "")).contains("现在可翻面"), "recommended first-side heat points at the flip control")
 
-	griddle.pancake_model.advance_cooking(10.0, 1.25)
+	griddle.pancake_model.doneness.fill(0.75)
 	griddle.first_side_seconds = 14.0
 	griddle.call("_refresh_heat_visual")
 	guide = Dictionary(workstation.call("_tutorial_guide_for_area", session, &"area.pancake"))

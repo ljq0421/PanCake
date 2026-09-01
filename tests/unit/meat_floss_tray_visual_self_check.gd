@@ -17,10 +17,11 @@ func _initialize() -> void:
 	visual._base_texture = visual.empty_texture
 	for state_index in range(visual.state_textures.size()):
 		var texture := visual.state_textures[state_index]
-		var expected_path := "res://resources/art/ingredients/meat_floss/rousong-v1-%d.png" % (state_index + 1)
-		_check(texture != null and texture.resource_path == expected_path, "meat-floss stock %d uses its matching rousong-v1 artwork" % (state_index + 1))
-		_check(texture != null and texture.get_size() == Vector2(256, 256), "meat-floss stock %d uses the authored 256-pixel canvas" % (state_index + 1))
+		var expected_path := "res://resources/art/workstation/containers/p1/container-m-pork-floss-full-p1-v2-transparent.png" if state_index == 9 else "res://resources/art/ingredients/meat_floss/rousong-v1-%d.png" % (state_index + 1)
+		_check(texture != null and texture.resource_path == expected_path, "meat-floss stock %d uses its matching authored artwork" % (state_index + 1))
+		_check(texture != null and (state_index == 9 or texture.get_size() == Vector2(256, 256)), "partial meat-floss state %d keeps its legacy canvas while full stock uses the P1 M master" % (state_index + 1))
 		_check(visual._state_texture_for_quantity(state_index + 1) == texture, "meat-floss stock %d selects its matching visual state" % (state_index + 1))
+	_check(visual.size.is_equal_approx(Vector2(176.0, 96.0)), "meat-floss stock states share the P1 M display rectangle")
 	artwork.free()
 	_finish()
 

@@ -8,6 +8,7 @@ const PAYMENT_COIN_MODEL_SCRIPT := preload("res://scripts/gameplay/payment_coin_
 const UI_SCALE_APPLIER := preload("res://scripts/ui/ui_scale_applier.gd")
 const SPATIAL_FLIGHT_EFFECT := preload("res://scripts/ui/spatial_flight_effect.gd")
 const WORKSTATION_PHYSICAL_HOVER := preload("res://scripts/ui/workstation_physical_hover.gd")
+const WORKBENCH_STATE_BADGE := preload("res://scripts/ui/workbench_state_badge.gd")
 const PANCAKE_PACKAGE_INGREDIENT_GRID := preload("res://scripts/ui/pancake_package_ingredient_grid.gd")
 const PANCAKE_RECIPE_MARKER_LABELS := {
 	&"stock.pancake.egg": "鸡蛋",
@@ -171,12 +172,16 @@ var _audio_orders_seeded := false
 var _known_audio_order_ids: Dictionary = {}
 var _warned_audio_order_ids: Dictionary = {}
 var _physical_hover: WorkstationPhysicalHover
+var _station_state_badges: Dictionary = {}
+var _recent_reminders: Array[Dictionary] = []
+var _current_attention_entries: Array = []
 
 
 func _ready() -> void:
 	_five_area_mouse_behavior_before_daily_bill = five_area_infrastructure.mouse_behavior_recursive
 	_pancake_station_mouse_behavior_before_modal = pancake_station_view.mouse_behavior_recursive
 	super._ready()
+	_install_station_state_badges()
 	# The base shop setup initializes legacy foreground layers after the scene
 	# has been instantiated. Set these application-layer values after that setup
 	# so the result UI always remains above all direct-manipulation hotspots.
@@ -736,6 +741,8 @@ func _process(delta: float) -> void:
 			_refresh_material_slots()
 			_refresh_tutorial_guide()
 			_refresh_multi_griddle_mode()
+			_refresh_station_state_badges()
+			_render_attention_rail()
 	if serve_product_button != null:
 		serve_product_button.visible = false
 
@@ -796,6 +803,7 @@ func _on_production_shell_changed(_snapshot: Dictionary = {}) -> void:
 	# card/portrait tree; only the production-dependent shell is refreshed.
 	_refresh_pending_payment_display()
 	_refresh_attention_rail()
+	_refresh_station_state_badges()
 	_refresh_pancake_drag_sources()
 
 
@@ -1237,37 +1245,141 @@ func _refresh_p1_ui() -> void:
 func _refresh_attention_rail() -> void:
 	var session := get_node_or_null("/root/GameSession")
 	if session == null or not session.has_method("five_area_attention"):
+		_current_attention_entries.clear()
+		_render_attention_rail()
 		return
 	var entries: Array = Array(session.call("five_area_attention"))
 	_apply_attention_entries(entries)
 
 
 func _apply_attention_entries(entries: Array) -> void:
+	_current_attention_entries = entries.duplicate(true)
+	_render_attention_rail()
+
+
+func _render_attention_rail() -> void:
 	var rail := $FiveAreaInfrastructure/AttentionRail
 	var all_parts := PackedStringArray()
 	var has_red_entry := false
-	for entry_value in entries:
+	for entry_value in _current_attention_entries:
 		var entry := Dictionary(entry_value)
 		has_red_entry = has_red_entry or StringName(entry.get("severity", &"yellow")) == &"red"
 		all_parts.append("%s %d秒" % [
 			_attention_label(StringName(entry.get("status_key", &"attention"))),
 			maxi(ceili(float(entry.get("seconds_to_irreversible_loss", 0.0))), 0),
 		])
-	var visible_parts := PackedStringArray()
-	for part_index in mini(all_parts.size(), 2):
-		visible_parts.append(all_parts[part_index])
-	if all_parts.size() > visible_parts.size():
-		visible_parts.append("另有%d项" % (all_parts.size() - visible_parts.size()))
+	var now := Time.get_ticks_msec()
+	_recent_reminders = _recent_reminders.filter(func(entry: Dictionary) -> bool: return int(entry.get("expires_at_msec", 0)) > now)
+	var rows: Array[Dictionary] = []
+	if not all_parts.is_empty():
+		rows.append({
+			"text": "%s · %d项待处理" % ["紧急" if has_red_entry else "注意", all_parts.size()],
+			"tooltip": "待处理事项\n%s" % "\n".join(all_parts),
+			"severity": &"red" if has_red_entry else &"yellow",
+		})
+	for reminder in _recent_reminders:
+		if rows.size() >= 3:
+			break
+		rows.append({
+			"text": "%s · %s" % ["警告" if StringName(reminder.get("severity", &"info")) == &"red" else "提醒", str(reminder.get("message", ""))],
+			"tooltip": str(reminder.get("message", "")),
+			"severity": StringName(reminder.get("severity", &"info")),
+		})
 	for index in range(rail.get_child_count()):
 		var label := rail.get_child(index) as Label
 		if label == null:
 			continue
-		label.visible = index == 0 and not all_parts.is_empty()
-		if index != 0:
+		label.visible = index < rows.size()
+		if index >= rows.size():
 			continue
-		label.text = "%s  ·  %s" % ["紧急" if has_red_entry else "注意", "  ·  ".join(visible_parts)]
-		label.tooltip_text = "待处理事项\n%s" % "\n".join(all_parts)
-		label.add_theme_color_override("font_color", Color("ff8f78") if has_red_entry else Color("ffd06a"))
+		var row := Dictionary(rows[index])
+		var severity := StringName(row.get("severity", &"info"))
+		label.text = str(row.get("text", ""))
+		label.tooltip_text = str(row.get("tooltip", ""))
+		label.add_theme_color_override("font_color", Color("ff8f78") if severity == &"red" else Color("ffd06a") if severity == &"yellow" else Color("e7e1d3"))
+
+
+func _push_recent_reminder(message: String, severity: StringName = &"info") -> void:
+	var normalized := message.strip_edges()
+	if normalized.is_empty():
+		return
+	_recent_reminders = _recent_reminders.filter(func(entry: Dictionary) -> bool: return str(entry.get("message", "")) != normalized)
+	_recent_reminders.push_front({
+		"message": normalized,
+		"severity": severity,
+		"expires_at_msec": Time.get_ticks_msec() + 12000,
+	})
+	if _recent_reminders.size() > 3:
+		_recent_reminders.resize(3)
+	_render_attention_rail()
+
+
+func _install_station_state_badges() -> void:
+	if not _station_state_badges.is_empty():
+		return
+	var stations := $FiveAreaInfrastructure/Stations as Control
+	var definitions := {
+		&"fryer": {"position": Vector2(54.0, 808.0), "size": Vector2(250.0, 38.0)},
+		&"griddle": {"position": Vector2(590.0, 646.0), "size": Vector2(244.0, 38.0)},
+		&"soy": {"position": Vector2(1670.0, 788.0), "size": Vector2(218.0, 38.0)},
+		&"drink": {"position": Vector2(1590.0, 1002.0), "size": Vector2(280.0, 38.0)},
+	}
+	for state_id in definitions:
+		var definition := Dictionary(definitions[state_id])
+		var badge := WORKBENCH_STATE_BADGE.new() as WorkbenchStateBadge
+		badge.name = "%sStateBadge" % str(state_id).capitalize()
+		badge.position = Vector2(definition["position"])
+		badge.size = Vector2(definition["size"])
+		badge.z_index = 145
+		stations.add_child(badge)
+		_station_state_badges[state_id] = badge
+	_refresh_station_state_badges()
+
+
+func _refresh_station_state_badges() -> void:
+	if _station_state_badges.is_empty():
+		return
+	var session := get_node_or_null("/root/GameSession")
+	if session == null:
+		return
+	var production := Dictionary(session.call("five_area_production_snapshot")) if session.has_method("five_area_production_snapshot") else {}
+	var progression := Dictionary(session.call("five_area_progression_snapshot")) if session.has_method("five_area_progression_snapshot") else {}
+	var inventory := Dictionary(session.call("inventory_snapshot")) if session.has_method("inventory_snapshot") else {}
+	var griddle_snapshot := {}
+	var heat_status := {}
+	if multi_griddle_station != null and not multi_griddle_station.units.is_empty():
+		var unit: Node = multi_griddle_station.units[0] as Node
+		griddle_snapshot = Dictionary(unit.snapshot())
+		heat_status = Dictionary(unit.cooking_heat_status())
+	_apply_station_badge(&"griddle", WorkbenchStateBadge.griddle_state(griddle_snapshot, heat_status))
+	var fryer_snapshot := Dictionary(production.get("youtiao_fryer", {})).duplicate(true)
+	_enrich_fryer_durations(fryer_snapshot)
+	var fryer_shortage := int(inventory.get("stock.youtiao.plain_dough", 0)) <= 0
+	_apply_station_badge(&"fryer", WorkbenchStateBadge.fryer_state(fryer_snapshot, fryer_shortage))
+	var soy_snapshot := Dictionary(production.get("fresh_soy_milk_machine", {}))
+	var cup_shortage := int(fresh_soy_station.get("_cup_stack_count")) <= 0 if fresh_soy_station != null else false
+	_apply_station_badge(&"soy", WorkbenchStateBadge.soy_state(soy_snapshot, cup_shortage))
+	var unlocked_areas := Array(progression.get("unlocked_area_ids", []))
+	var drink_count := maxi(int(inventory.get("stock.packaged_drink.juice", 0)), 0)
+	var drink_capacity := int(CATALOG.stock_definition(&"stock.packaged_drink.juice").get("restock_capacity", 10))
+	_apply_station_badge(&"drink", WorkbenchStateBadge.packaged_drink_state(_id_in(unlocked_areas, &"area.packaged_drink"), drink_count, drink_capacity))
+
+
+func _apply_station_badge(state_id: StringName, presentation: Dictionary) -> void:
+	var badge := _station_state_badges.get(state_id) as WorkbenchStateBadge
+	if badge == null:
+		return
+	badge.set_state(StringName(presentation.get("state", WorkbenchStateBadge.STATE_DEFAULT)), str(presentation.get("detail", "")), float(presentation.get("progress", -1.0)))
+
+
+func _enrich_fryer_durations(snapshot: Dictionary) -> void:
+	var lanes := Dictionary(snapshot.get("lanes", {})).duplicate(true)
+	for lane_id in lanes:
+		var lane := Dictionary(lanes[lane_id]).duplicate(true)
+		var recipe := CATALOG.recipe_definition(StringName(lane.get("recipe_id", &"")))
+		lane["duration_seconds"] = float(recipe.get("duration_seconds", 0.0))
+		lanes[lane_id] = lane
+	snapshot["lanes"] = lanes
 
 
 func _refresh_pancake_drag_sources() -> void:
@@ -2414,6 +2526,7 @@ func _on_waste_active_griddle_clear_requested() -> void:
 
 func _show_station_status(message: String) -> void:
 	tool_status_label.text = message
+	_push_recent_reminder(message, _reminder_severity(message))
 
 
 func _show_top_warning(message: String) -> void:
@@ -2422,6 +2535,7 @@ func _show_top_warning(message: String) -> void:
 	if _top_warning_tween != null and _top_warning_tween.is_valid():
 		_top_warning_tween.kill()
 	top_warning_label.text = message
+	_push_recent_reminder(message, &"red")
 	top_warning_label.modulate = Color.WHITE
 	top_warning_label.visible = true
 	_top_warning_tween = create_tween()
@@ -2431,6 +2545,13 @@ func _show_top_warning(message: String) -> void:
 		return
 	_top_warning_tween.tween_property(top_warning_label, "modulate:a", 0.0, TOP_WARNING_FADE_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	_top_warning_tween.tween_callback(func() -> void: top_warning_label.visible = false)
+
+
+static func _reminder_severity(message: String) -> StringName:
+	for warning_word in ["失败", "不足", "缺货", "过火", "焦糊", "不匹配", "无法", "危险"]:
+		if warning_word in message:
+			return &"red"
+	return &"info"
 
 
 static func _tray_result_summary(settlement: Dictionary) -> Dictionary:

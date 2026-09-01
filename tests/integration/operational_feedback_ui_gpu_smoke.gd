@@ -43,6 +43,16 @@ func _run() -> void:
 		{"status_key": &"fresh_soy_milk_ready", "severity": &"yellow", "seconds_to_irreversible_loss": 12.1},
 		{"status_key": &"tray_stale", "severity": &"yellow", "seconds_to_irreversible_loss": 19.8},
 	])
+	workstation.call("_push_recent_reminder", "果汁缺货，请长按补货", &"red")
+	workstation.call("_push_recent_reminder", "煎饼已经完成包装", &"info")
+	var badges := Dictionary(workstation.get("_station_state_badges"))
+	(badges[&"fryer"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_RISK, "炸锅 · 过火风险")
+	(badges[&"griddle"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_ACTIVE, "鏊台 · 制作", 0.58)
+	(badges[&"soy"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_COMPLETE, "豆浆机 · 可交付")
+	(badges[&"drink"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_SHORTAGE, "饮品架 · 缺货 0/10")
+	var master_bus := AudioServer.get_bus_index(&"Master")
+	var previous_master_mute := AudioServer.is_bus_mute(master_bus)
+	AudioServer.set_bus_mute(master_bus, true)
 	await process_frame
 
 	var attention := workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention01") as Label
@@ -52,12 +62,15 @@ func _run() -> void:
 		if is_instance_valid(coin):
 			coins.append(coin)
 	_check(workstation.get_node_or_null("FiveAreaInfrastructure/PendingPaymentButton") == null, "payment collection uses no separate CTA button")
-	_check(attention.visible and attention.text.begins_with("紧急") and "另有1项" in attention.text, "attention chip prioritizes urgency and caps the inline summary")
+	_check(attention.visible and attention.text == "紧急 · 3项待处理", "attention chip prioritizes urgency and keeps the three-item summary compact")
 	_check("煎饼暂存即将陈旧" in attention.tooltip_text, "attention tooltip preserves overflow details")
+	_check((workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention02") as Label).visible and (workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention03") as Label).visible, "two recent transient messages remain in the three-chip reminder track")
+	_check((badges[&"fryer"] as WorkbenchStateBadge).detail_text().contains("过火") and (badges[&"drink"] as WorkbenchStateBadge).detail_text().contains("缺货"), "muted preview keeps explicit risk and shortage text")
 	_check(coins.size() == 4, "payment preview renders the expected denomination cluster")
 	for capture_variant in CAPTURES:
 		var capture: Dictionary = capture_variant
 		await _capture(workstation, coins, Vector2i(capture["size"]), str(capture["path"]))
+	AudioServer.set_bus_mute(master_bus, previous_master_mute)
 	workstation.queue_free()
 	await process_frame
 	_finish()
@@ -90,6 +103,10 @@ func _capture(workstation: Control, coins: Array[TextureRect], window_size: Vect
 	var attention := workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention01") as Label
 	var attention_rect: Rect2 = screen_transform * attention.get_global_rect()
 	_check(viewport_rect.encloses(attention_rect), "attention chip stays on-screen at %s" % window_size)
+	for badge_value in Dictionary(workstation.get("_station_state_badges")).values():
+		var badge := badge_value as WorkbenchStateBadge
+		var badge_rect: Rect2 = screen_transform * badge.get_global_rect()
+		_check(viewport_rect.encloses(badge_rect), "%s stays on-screen at %s" % [badge.name, window_size])
 	for coin in coins:
 		var coin_rect: Rect2 = screen_transform * coin.get_global_rect()
 		_check(viewport_rect.encloses(coin_rect), "clickable payment coin stays on-screen at %s" % window_size)

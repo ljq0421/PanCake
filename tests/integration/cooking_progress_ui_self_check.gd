@@ -49,7 +49,7 @@ func _run() -> void:
 	)
 	griddle.state = CompactGriddleUnit.State.IDLE
 	griddle.call("_refresh_heat_visual")
-	_check(griddle.heat_bar.visible and griddle.heat_bar.current_stage() == BAR.STAGE_INACTIVE and griddle.heat_status_label.text.contains("未开始"), "an unlocked idle griddle keeps a grey progress bar in place")
+	_check(not griddle.heat_bar.visible and not griddle.heat_status_label.visible, "an idle griddle leaves its timing row quiet while the P2 device badge shows the explicit standby state")
 
 	var basic_speed_griddle := GRIDDLE_SCENE.instantiate() as CompactGriddleUnit
 	var fast_speed_griddle := GRIDDLE_SCENE.instantiate() as CompactGriddleUnit

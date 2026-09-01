@@ -38,11 +38,12 @@ func _run() -> void:
 func _test_opening_restock_tasks(session: Node) -> void:
 	session.call("begin_new_game")
 	var initial := Array(session.call("opening_restock_tasks"))
-	_check(initial.size() == 2, "opening checklist only exposes the two unlocked starter stocks")
+	_check(initial.size() == 4, "opening checklist exposes the two unlimited basics plus the two default finite ingredients")
 	_check(
-		initial.all(func(value: Variant) -> bool: return bool(Dictionary(value).get("is_unlimited", false)) and bool(Dictionary(value).get("completed", false)) and int(Dictionary(value).get("target", -1)) == 0),
+		initial.slice(0, 2).all(func(value: Variant) -> bool: return bool(Dictionary(value).get("is_unlimited", false)) and bool(Dictionary(value).get("completed", false)) and int(Dictionary(value).get("target", -1)) == 0),
 		"unlimited starter stocks are shown as complete rather than hard-coded quantities"
 	)
+	_check(_task_index(initial, &"stock.pancake.egg") >= 0 and _task_index(initial, &"stock.pancake.baocui") >= 0, "default finite egg and crisp stocks remain visible as actionable opening tasks")
 	var progression: RefCounted = session.call("progression_service")
 	var unlocked := Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
 	unlocked[&"stock.pancake.egg"] = true

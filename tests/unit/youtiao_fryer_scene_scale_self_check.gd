@@ -56,7 +56,7 @@ func _run() -> void:
 			}
 			fryer.call("_apply_snapshot")
 			_check(fryer.position.is_equal_approx(authored_station_position + SINGLE_BASKET_STATION_OFFSET), "tier %d keeps the complete %s fryer state shifted right with its root" % [tier, state])
-			_check(fryer.fryer_assembly.position == Vector2(80.0, -10.0) and fryer.youtiao_progress_label.position.is_equal_approx(Vector2(30.0, 10.0)), "tier %d %s leaves internal cooker and progress layouts untouched" % [tier, state])
+			_check(fryer.fryer_assembly.position == Vector2(80.0, -10.0) and fryer.youtiao_progress_label.position.is_equal_approx(Vector2(30.0, 300.0)), "tier %d %s keeps the internal cooker and P2 device-attached progress layout stable" % [tier, state])
 	fryer._machine = {"tier": 2, "state": &"ready_to_collect", "capacity": 4, "quantity": 2, "occupied_slot_indices": [0, 1]}
 	fryer.call("_apply_snapshot")
 	_check(fryer.position.is_equal_approx(authored_station_position), "tier 2 dual-basket fryer retains its authored station position")

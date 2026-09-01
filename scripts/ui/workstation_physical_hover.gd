@@ -79,6 +79,7 @@ func _on_mouse_entered(control: Control, visual: CanvasItem) -> void:
 	# below it, so use the inherited modulation channel to brighten that artwork.
 	_rest_modulates[key] = visual.modulate
 	visual.modulate = visual.modulate * HOVER_MODULATE
+	control.set_meta(&"workbench_visual_state", &"hover")
 
 
 func _on_mouse_exited(control: Control, visual: CanvasItem) -> void:
@@ -87,3 +88,4 @@ func _on_mouse_exited(control: Control, visual: CanvasItem) -> void:
 		return
 	visual.modulate = _rest_modulates[key] as Color
 	_rest_modulates.erase(key)
+	control.set_meta(&"workbench_visual_state", &"default")

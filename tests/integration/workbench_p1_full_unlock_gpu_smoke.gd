@@ -26,7 +26,13 @@ func _run() -> void:
 	_setup_full_unlock(session)
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
-	for _frame in 16:
+	for _frame in 8:
+		await process_frame
+	workstation.set_process(false)
+	workstation.set("_restore_customer_layout_without_entrance", true)
+	workstation.set("_customer_service_slot_signatures", {})
+	workstation.call("_refresh_customer_service_slots", _preview_orders())
+	for _frame in 8:
 		await process_frame
 
 	var griddle_art := workstation.get_node("SafeArea/JianbingStallArtwork/MultiGriddleStation/Griddle01/GriddleArt") as TextureRect
@@ -36,6 +42,7 @@ func _run() -> void:
 	var fryer := workstation.get_node("FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer") as CartoonYoutiaoFryerToggle
 	var fifth_customer := workstation.get_node("SafeArea/ServiceCustomer5") as Control
 	var background := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
+	var drink_source := workstation.packaged_drink_station.product_sources()[0] as ProductDragSource
 
 	_check(griddle_art.size == Vector2(455, 302) and pancake_surface.size == Vector2(314, 314), "griddle shell is smaller while the usable surface remains full-size")
 	_check(soy_station.visible and soy_art.size == Vector2(315, 300), "fully unlocked soy machine uses the reduced footprint")
@@ -45,7 +52,9 @@ func _run() -> void:
 	var fifth_painted_rect := _painted_texture_rect(fifth_portrait)
 	var soy_painted_rect := _painted_texture_rect(soy_art)
 	_check(Rect2(Vector2.ZERO, Vector2(1920, 1080)).encloses(soy_painted_rect), "soy machine painted body stays inside the 1920x1080 viewport")
+	_check(fifth_customer.visible and (fifth_customer.get_node("OrderPanel") as Control).visible, "the full-unlock capture renders a real fifth customer and order card")
 	_check(not fifth_painted_rect.intersects(soy_painted_rect), "reduced soy machine painted body does not overlap the fifth customer portrait (portrait=%s soy=%s)" % [fifth_painted_rect, soy_painted_rect])
+	_check(drink_source.find_children("Representative*", "TextureRect", false, false).size() == 5 and (drink_source.get_node("CountBadge") as Label).text == "×10", "packaged drinks use representative cartons plus a real quantity badge")
 
 	await RenderingServer.frame_post_draw
 	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)
@@ -107,6 +116,28 @@ func _setup_full_unlock(session: Node) -> void:
 	]
 	for item in order_items:
 		session.call("open_formal_order", [item], {"patience_seconds": 120.0, "tutorial_no_countdown": true})
+
+
+func _preview_orders() -> Array:
+	var products := [
+		{"area_id": &"area.pancake", "product_id": &"product.pancake.custom", "quantity": 1, "prepared_product_instance_ids": []},
+		{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1, "prepared_product_instance_ids": []},
+		{"area_id": &"area.fresh_soy_milk", "product_id": &"product.fresh_soy_milk.yellow_bean", "quantity": 1, "prepared_product_instance_ids": []},
+		{"area_id": &"area.packaged_drink", "product_id": &"product.packaged_drink.juice", "quantity": 1, "prepared_product_instance_ids": []},
+		{"area_id": &"area.youtiao", "product_id": &"product.chicken.cutlet", "quantity": 1, "prepared_product_instance_ids": []},
+	]
+	var orders: Array = []
+	for slot_index in 5:
+		orders.append({
+			"order_id": StringName("p1.full.%d" % slot_index),
+			"service_slot": slot_index,
+			"customer_id": StringName("customer_%02d" % (slot_index + 1)),
+			"patience_seconds": 120.0,
+			"remaining_patience_seconds": 120.0 - slot_index * 9.0,
+			"perfect_quote_coins": 12,
+			"items": [Dictionary(products[slot_index]).duplicate(true)],
+		})
+	return orders
 
 
 func _check(condition: bool, message: String) -> void:

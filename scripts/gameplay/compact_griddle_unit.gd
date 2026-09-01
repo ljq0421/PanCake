@@ -1839,10 +1839,11 @@ func _refresh_heat_visual() -> void:
 	heat_status_label.visible = true
 	var heat_window := heat_window()
 	if not cooking:
-		var inactive_text := "火候 · 已结束" if state in [State.GARNISH, State.FOLDING, State.READY] else "火候 · 未开始"
-		heat_bar.configure(0.0, heat_window.x, heat_window.y, false, &"", inactive_text)
-		heat_status_label.modulate = Color.WHITE
-		heat_status_label.text = inactive_text
+		# P2 keeps idle/completed equipment quiet. The attached state badge owns
+		# those explicit states; this detailed heat row appears only while timing
+		# can still change the food.
+		heat_bar.visible = false
+		heat_status_label.visible = false
 		return
 	var visible_side_doneness := float(heat_status.get("doneness", 0.0))
 	var charred := bool(heat_status.get("charred", false))

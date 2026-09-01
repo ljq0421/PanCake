@@ -14,6 +14,19 @@ const LIGHT_DIRECTION := Vector2(-0.70710678, -0.70710678)
 const SHADOW_DIRECTION := Vector2(0.70710678, 0.70710678)
 const SHADOW_COLOR := Color(0.24, 0.15, 0.10, 0.30)
 
+## Confirmed P1 perspective masters.  New workstation art is derived from one
+## of these four sources instead of copying the independent angles of legacy
+## props.  The active griddle surface remains a documented runtime exception:
+## its simulation and pointer mapping use 0.75, which takes precedence over the
+## general 0.36 prop-top target in the visual specification.
+const PERSPECTIVE_MASTER_PATHS := {
+	&"round_top": "res://resources/art/workstation/perspective_masters/p1/round-griddle-master-p1-v3-transparent.png",
+	&"rectangular_tray": "res://resources/art/workstation/containers/p1/container-l-empty-p1-v2-transparent.png",
+	&"machine": "res://resources/art/workstation/perspective_masters/p1/soy-machine-master-p1-v3-transparent.png",
+	&"cylinder": "res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png",
+}
+const GRIDDLE_RUNTIME_SURFACE_ASPECT := 0.75
+
 enum ContainerSizeClass { S, M, L }
 
 

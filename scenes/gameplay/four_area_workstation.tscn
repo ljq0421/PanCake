@@ -1497,9 +1497,9 @@ mouse_filter = 2
 [node name="FreshSoyMilkStation" parent="FiveAreaInfrastructure/Stations" unique_id=143699513 instance=ExtResource("37_830a8")]
 z_index = 20
 layout_mode = 0
-offset_left = 1586.0
+offset_left = 1594.0
 offset_top = 480.0
-offset_right = 1996.0
+offset_right = 2004.0
 offset_bottom = 860.0
 
 [node name="PackagedDrinkStation" parent="FiveAreaInfrastructure/Stations" unique_id=1263986130 instance=ExtResource("82_packaged_drink")]
@@ -1629,25 +1629,25 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
 
-[node name="AttentionRail" type="VBoxContainer" parent="FiveAreaInfrastructure" unique_id=1664686673]
+[node name="AttentionRail" type="HBoxContainer" parent="FiveAreaInfrastructure" unique_id=1664686673]
 z_index = 150
 layout_mode = 0
-offset_left = 1260.0
+offset_left = 1100.0
 offset_top = 82.0
 offset_right = 1890.0
 offset_bottom = 126.0
 mouse_filter = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 4
 
 [node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=806710644]
 visible = false
-custom_minimum_size = Vector2(630, 44)
+custom_minimum_size = Vector2(258, 40)
 layout_mode = 2
 mouse_default_cursor_shape = 16
 theme_override_colors/font_color = Color(1, 0.81, 0.4, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.025, 0.01, 0.95)
 theme_override_constants/outline_size = 2
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBox_attention_chip")
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -1656,13 +1656,33 @@ text_overrun_behavior = 3
 
 [node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=1799233558]
 visible = false
+custom_minimum_size = Vector2(258, 40)
 layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.906, 0.882, 0.827, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.025, 0.01, 0.95)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBox_attention_chip")
 horizontal_alignment = 2
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="Attention03" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=96487461]
 visible = false
+custom_minimum_size = Vector2(258, 40)
 layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.906, 0.882, 0.827, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.025, 0.01, 0.95)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBox_attention_chip")
 horizontal_alignment = 2
+vertical_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="TutorialGuideOverlay" type="Control" parent="." unique_id=171059711]
 unique_name_in_owner = true

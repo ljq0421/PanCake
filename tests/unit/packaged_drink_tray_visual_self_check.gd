@@ -12,12 +12,20 @@ func _initialize() -> void:
 	_check(int(CATALOG.stock_definition(STOCK_ID).get("restock_capacity", 0)) == 10, "juice restock capacity is ten")
 	_check(STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.resource_path.ends_with("container-l-empty-p1-v2-transparent.png"), "empty juice stock uses the P1 L container artwork")
 	_check(STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.get_size().x > STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.get_size().y, "P1 empty juice tray keeps a horizontal authored canvas")
-	_check(STATION_SCRIPT.JUICE_STOCK_TEXTURES.size() == 10, "juice tray exposes all ten stock states")
-	for stock_count in range(1, 11):
-		var texture := STATION_SCRIPT._stock_texture_for(PRODUCT_ID, stock_count) as Texture2D
-		var expected_path := "res://resources/art/products/orange_juice/yinpin-v1-%d.png" % stock_count
-		_check(texture != null and texture.resource_path == expected_path, "juice stock %d uses its matching yinpin-v1 artwork" % stock_count)
-		_check(texture != null and texture.get_size() == Vector2(419, 256), "juice stock %d uses the authored canvas" % stock_count)
+	_check(STATION_SCRIPT.MAX_REPRESENTATIVE_ITEMS == 5, "juice inventory is capped at five representative cartons")
+	var station: Node = load("res://scenes/gameplay/packaged_drink_station.tscn").instantiate()
+	station.call("_build_surface")
+	var source := station.product_sources()[0] as ProductDragSource
+	var representatives := source.find_children("Representative*", "TextureRect", false, false)
+	var badge := source.get_node("CountBadge") as Label
+	_check(representatives.size() == 5, "juice tray builds a fixed representative set instead of ten count-specific trays")
+	station.call("_refresh_representative_overlay", source, 10, 10, true)
+	_check(representatives.all(func(item: Node) -> bool: return (item as TextureRect).visible), "full stock shows five representative cartons")
+	_check(badge.text == "×10", "real stock remains visible as a quantity badge")
+	station.call("_refresh_representative_overlay", source, 0, 10, true)
+	_check(representatives.all(func(item: Node) -> bool: return not (item as TextureRect).visible), "empty stock keeps the tray clear")
+	_check(badge.text == "缺货 0", "empty stock uses text as well as warning colour")
+	station.free()
 	_finish()
 
 

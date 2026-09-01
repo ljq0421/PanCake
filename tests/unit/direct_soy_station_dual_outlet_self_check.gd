@@ -1,9 +1,9 @@
 extends SceneTree
 
 const STATION_SCENE := preload("res://scenes/gameplay/direct_soy_station.tscn")
-const MANUAL_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png"
-const AUTO_FILL_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png"
-const DUAL_OUTLET_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png"
+const MANUAL_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser-p1-v2-transparent.png"
+const AUTO_FILL_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-p1-v2-transparent.png"
+const DUAL_OUTLET_TEXTURE_PATH := "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-p1-v2-transparent.png"
 const FILLED_CUP_TEXTURE_PATH := "res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png"
 
 var failures := PackedStringArray()

@@ -5,24 +5,15 @@ signal status_message(message: String)
 signal audio_cue_requested(cue: StringName)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const JUICE_STOCK_TEXTURES := {
-	1: preload("res://resources/art/products/orange_juice/yinpin-v1-1.png"),
-	2: preload("res://resources/art/products/orange_juice/yinpin-v1-2.png"),
-	3: preload("res://resources/art/products/orange_juice/yinpin-v1-3.png"),
-	4: preload("res://resources/art/products/orange_juice/yinpin-v1-4.png"),
-	5: preload("res://resources/art/products/orange_juice/yinpin-v1-5.png"),
-	6: preload("res://resources/art/products/orange_juice/yinpin-v1-6.png"),
-	7: preload("res://resources/art/products/orange_juice/yinpin-v1-7.png"),
-	8: preload("res://resources/art/products/orange_juice/yinpin-v1-8.png"),
-	9: preload("res://resources/art/products/orange_juice/yinpin-v1-9.png"),
-	10: preload("res://resources/art/products/orange_juice/yinpin-v1-10.png"),
-}
 const EMPTY_JUICE_TRAY_TEXTURE := preload("res://resources/art/workstation/containers/p1/container-l-empty-p1-v2-transparent.png")
 const JUICE_DRAG_PREVIEW_TEXTURE := preload("res://resources/art/products/orange_juice/boxed_orange_juice_v1.png")
 const CONTAINER_TREATMENT := preload("res://resources/materials/workbench_container_treatment.tres")
+const MAX_REPRESENTATIVE_ITEMS := 5
 
 var _lock_cover: Button
 var _sources: Array[ProductDragSource] = []
+var _representatives: Dictionary = {}
+var _count_badges: Dictionary = {}
 var _refresh_elapsed := 0.0
 
 
@@ -65,14 +56,13 @@ func refresh_from_session() -> void:
 		var count := maxi(int(inventory.get(str(stock_id), 0)), 0)
 		var capacity := int(Dictionary(session.call("five_area_restock_status", stock_id)).get("capacity", 6)) if not stock_id.is_empty() else 6
 		var product_unlocked := area_unlocked and _id_in(unlocked_products, product_id)
-		var stock_visual := _stock_texture_for(product_id, count)
-		var tray_texture: Texture2D = stock_visual if stock_visual != null else EMPTY_JUICE_TRAY_TEXTURE
 		source.visible = product_unlocked
-		source.configure({"source_kind": &"packaged_drink_inventory", "source_index": index, "stock_id": stock_id, "product_id": product_id}, tray_texture, product_unlocked, _lane_hint(product, count, capacity, product_unlocked))
+		source.configure({"source_kind": &"packaged_drink_inventory", "source_index": index, "stock_id": stock_id, "product_id": product_id}, EMPTY_JUICE_TRAY_TEXTURE, product_unlocked, _lane_hint(product, count, capacity, product_unlocked))
 		source.set_drag_preview_texture(JUICE_DRAG_PREVIEW_TEXTURE)
 		source.set_drag_preview_text("")
-		source.set_drag_preview_size(source.size)
+		source.set_drag_preview_size(Vector2(96.0, 96.0))
 		source.set_drag_available(product_unlocked and count > 0)
+		_refresh_representative_overlay(source, count, capacity, product_unlocked)
 
 
 func _build_surface() -> void:
@@ -83,7 +73,7 @@ func _build_surface() -> void:
 		source.size = size
 		source.material = CONTAINER_TREATMENT
 		source.ignore_texture_size = true
-		source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_COVERED
+		source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		source.set_meta(&"workbench_container_size_class", "L")
 		source.hold_enabled = true
 		source.hold_threshold_seconds = 0.20
@@ -93,6 +83,7 @@ func _build_surface() -> void:
 		source.drag_started.connect(_on_lane_drag_started)
 		add_child(source)
 		_sources.append(source)
+		_build_representative_overlay(source)
 	_lock_cover = Button.new()
 	_lock_cover.position = Vector2(10, 42)
 	_lock_cover.size = Vector2(size.x - 20, size.y - 50)
@@ -107,7 +98,7 @@ func _sync_surface_layout() -> void:
 	for source in _sources:
 		source.position = Vector2.ZERO
 		source.size = size
-		source.set_drag_preview_size(source.size)
+		_layout_representative_overlay(source)
 	if _lock_cover != null:
 		_lock_cover.position = Vector2(10.0, 42.0)
 		_lock_cover.size = Vector2(maxf(size.x - 20.0, 1.0), maxf(size.y - 50.0, 1.0))
@@ -171,10 +162,62 @@ static func _id_in(values: Array, expected: StringName) -> bool:
 	return values.has(expected) or values.has(str(expected))
 
 
-static func _stock_texture_for(product_id: StringName, count: int) -> Texture2D:
-	if product_id != &"product.packaged_drink.juice" or count <= 0:
-		return null
-	return JUICE_STOCK_TEXTURES.get(clampi(count, 1, 10)) as Texture2D
+func _build_representative_overlay(source: ProductDragSource) -> void:
+	var visuals: Array[TextureRect] = []
+	for item_index in MAX_REPRESENTATIVE_ITEMS:
+		var visual := TextureRect.new()
+		visual.name = "Representative%02d" % (item_index + 1)
+		visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		visual.texture = JUICE_DRAG_PREVIEW_TEXTURE
+		visual.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		visual.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		source.add_child(visual)
+		visuals.append(visual)
+	_representatives[source.get_instance_id()] = visuals
+	var badge := Label.new()
+	badge.name = "CountBadge"
+	badge.z_index = 20
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	badge.add_theme_font_size_override(&"font_size", 22)
+	badge.add_theme_color_override(&"font_outline_color", Color(0.16, 0.055, 0.01, 0.98))
+	badge.add_theme_constant_override(&"outline_size", 5)
+	source.add_child(badge)
+	_count_badges[source.get_instance_id()] = badge
+	_layout_representative_overlay(source)
+
+
+func _layout_representative_overlay(source: ProductDragSource) -> void:
+	var visuals := Array(_representatives.get(source.get_instance_id(), []))
+	var item_size := Vector2(62.0, 96.0)
+	var spacing := 48.0
+	var row_width := item_size.x + spacing * maxf(visuals.size() - 1, 0)
+	var origin := Vector2((source.size.x - row_width) * 0.5, maxf(source.size.y - 132.0, 20.0))
+	for item_index in visuals.size():
+		var visual := visuals[item_index] as TextureRect
+		visual.position = origin + Vector2(item_index * spacing, 0.0)
+		visual.size = item_size
+	var badge := _count_badges.get(source.get_instance_id()) as Label
+	if badge != null:
+		badge.position = Vector2(maxf(source.size.x - 116.0, 0.0), 18.0)
+		badge.size = Vector2(100.0, 40.0)
+
+
+func _refresh_representative_overlay(source: ProductDragSource, count: int, capacity: int, unlocked: bool) -> void:
+	var visuals := Array(_representatives.get(source.get_instance_id(), []))
+	var visible_count := 0
+	if unlocked and count > 0:
+		visible_count = 2 if count <= 2 else 4 if count < capacity else MAX_REPRESENTATIVE_ITEMS
+	for item_index in visuals.size():
+		(visuals[item_index] as TextureRect).visible = item_index < visible_count
+	var badge := _count_badges.get(source.get_instance_id()) as Label
+	if badge == null:
+		return
+	badge.visible = unlocked
+	badge.text = "缺货 0" if count <= 0 else "×%d" % count
+	badge.add_theme_color_override(&"font_color", Color("ff8f78") if count <= 0 else Color("ffd06a") if count <= 2 else Color("fff1bd"))
+	badge.tooltip_text = "库存 %d/%d" % [count, capacity]
 
 
 static func _lane_hint(product: Dictionary, count: int, capacity: int, unlocked: bool) -> String:

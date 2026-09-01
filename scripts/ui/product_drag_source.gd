@@ -120,6 +120,7 @@ func play_result_feedback(success: bool) -> void:
 func set_selection_highlight(value: bool) -> void:
 	if _selection_outline != null:
 		_selection_outline.visible = value
+	set_meta(&"workbench_visual_state", &"selected" if value else &"default")
 
 
 func set_drag_preview_texture(value: Texture2D) -> void:

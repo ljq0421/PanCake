@@ -37,7 +37,7 @@ func _run() -> void:
 	if carton != null and visual != null and contents != null:
 		_check(carton.get_global_rect().encloses(visual.get_global_rect()) and visual.get_global_rect().encloses(contents.get_global_rect()), "egg content layers remain contained within the tray artwork")
 		_check(carton.size.is_equal_approx(Vector2(214.0, 180.0)), "egg tray uses the shared 214x180 ingredient-tray display size")
-		_check(visual.get_global_rect().size.is_equal_approx(Vector2(214.0, 180.0)), "egg tray artwork fills the shared ingredient-tray display rectangle")
+		_check(visual.get_global_rect().size.is_equal_approx(Vector2(176.0, 96.0)), "egg artwork uses the P1 M container rectangle inside its interaction area")
 		var shared_tray_paths := ["BaocuiBasket/Visual", "PorkFlossSource/Visual", "HamSource/Visual"]
 		for tray_path in shared_tray_paths:
 			var shared_tray := hotspots.get_node_or_null(NodePath(tray_path)) as TextureRect
@@ -56,7 +56,7 @@ func _run() -> void:
 		for count in range(0, 11):
 			hotspots._update_egg_inventory_visual(count, 10)
 			var texture_path := visual.texture.resource_path if visual != null and visual.texture != null else ""
-			var expected_filename := "empty-square-ingredient-tray-v1.png" if count == 0 else "egg-v1-%d.png" % count
+			var expected_filename := "empty-square-ingredient-tray-v1.png" if count == 0 else "container-m-egg-full-p1-v2-transparent.png" if count == 10 else "egg-v1-%d.png" % count
 			_check(texture_path.ends_with(expected_filename), "%d-egg stock state uses its matching complete tray" % count)
 			_check(contents == null or (not contents.visible and contents.texture == null), "legacy egg overlay stays disabled")
 	_check(source != null and source is EggCartonDragSource and source.hold_enabled and is_equal_approx(source.hold_threshold_seconds, 0.20) and not source.native_drag_enabled, "egg carton uses click-to-place plus a 0.2-second hold-to-restock")

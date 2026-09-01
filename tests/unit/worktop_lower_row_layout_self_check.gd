@@ -14,14 +14,14 @@ func _run() -> void:
 	var artwork := ARTWORK_SCENE.instantiate()
 	root.add_child(artwork)
 	var worktop := artwork.get_node("PancakeWorktopHotspots") as Control
-	_check_tool_source(worktop, &"BatterLadleSource", Rect2(977.0, 872.5, 206.0, 171.0))
-	_check_tool_source(worktop, &"SpreaderSource", Rect2(1125.0, 878.0, 160.0, 160.0))
+	_check_tool_source(worktop, &"BatterLadleSource", Rect2(961.0, 866.5, 206.0, 171.0))
+	_check_tool_source(worktop, &"SpreaderSource", Rect2(1090.0, 873.0, 160.0, 160.0))
 
 	var workstation := WORKSTATION_SCENE.instantiate()
 	root.add_child(workstation)
 	await process_frame
 	var holding_tray := workstation.get_node("FiveAreaInfrastructure/Stations/PancakeHoldingTray") as TextureButton
-	_check(holding_tray.position.is_equal_approx(Vector2(1258.0, 875.0)), "finished tray uses the authored lower-row position")
+	_check(holding_tray.position.is_equal_approx(Vector2(1092.0, 837.0)), "finished tray uses the P1 authored lower-row position")
 	_check(holding_tray.size.is_equal_approx(Vector2(364.0, 204.0)), "moving the finished tray preserves its authored size and click surface")
 	for source_index in range(1, 4):
 		var source := holding_tray.get_node("PancakeHoldingSource%02d" % source_index) as Control

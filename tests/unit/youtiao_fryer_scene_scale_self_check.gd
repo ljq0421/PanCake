@@ -27,6 +27,10 @@ const LEFT_BASKET_SCALES := {
 	&"dual_right_lowered": Vector2(0.5, 0.5),
 	&"dual_both_lowered": Vector2(0.5, 0.5),
 }
+const SINGLE_BASKET_STATION_OFFSET := Vector2(180.0, 0.0)
+const POSITIONED_SINGLE_BASKET_STATES: Array[StringName] = [
+	&"loaded", &"frying", &"ready_safe", &"burnt", &"ready_to_collect",
+]
 
 var failures := PackedStringArray()
 
@@ -38,19 +42,30 @@ func _initialize() -> void:
 func _run() -> void:
 	var fryer := FRYER_SCENE.instantiate() as CartoonYoutiaoFryerToggle
 	root.add_child(fryer)
+	fryer.single_basket_station_offset = SINGLE_BASKET_STATION_OFFSET
+	fryer.call("_ensure_visual_resources")
+	var authored_station_position := fryer.position
+	for tier in [0, 1]:
+		for state in POSITIONED_SINGLE_BASKET_STATES:
+			fryer._machine = {
+				"tier": tier,
+				"state": state,
+				"capacity": 2,
+				"quantity": 2,
+				"occupied_slot_indices": [0, 1],
+			}
+			fryer.call("_apply_snapshot")
+			_check(fryer.position.is_equal_approx(authored_station_position + SINGLE_BASKET_STATION_OFFSET), "tier %d keeps the complete %s fryer state shifted right with its root" % [tier, state])
+			_check(fryer.fryer_assembly.position == Vector2(80.0, -10.0) and fryer.youtiao_progress_label.position.is_equal_approx(Vector2(30.0, 10.0)), "tier %d %s leaves internal cooker and progress layouts untouched" % [tier, state])
+	fryer._machine = {"tier": 2, "state": &"ready_to_collect", "capacity": 4, "quantity": 2, "occupied_slot_indices": [0, 1]}
+	fryer.call("_apply_snapshot")
+	_check(fryer.position.is_equal_approx(authored_station_position), "tier 2 dual-basket fryer retains its authored station position")
+	fryer._machine = {"tier": 0, "state": &"idle", "capacity": 2, "quantity": 0, "occupied_slot_indices": []}
+	fryer.call("_apply_snapshot")
 	_check(fryer.fryer_assembly.position == Vector2(80.0, -10.0), "the fryer assembly is authored fifty pixels farther right")
 	_check(fryer.basket_products.scale == Vector2(0.65, 0.65) and fryer.chicken_basket_products.scale == Vector2(0.5, 0.5) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return source.scale == Vector2(0.8, 0.8)), "the active basic youtiao group uses its enlarged scale while the chicken group keeps the original dual-fryer scale")
-	_check(fryer.plain_tray.size == Vector2(235.0, 185.0) and fryer.chicken_tray.size == Vector2(235.0, 185.0) and fryer.plain_tray.scale == Vector2(1.2, 1.2) and fryer.plain_tray.scale == fryer.chicken_tray.scale, "the two finished-product trays share one enlarged size and scale")
-	_check(fryer.plain_tray.position.is_equal_approx(Vector2(3.0, 420.0)) and fryer.chicken_tray.position.is_equal_approx(Vector2(232.0, 420.0)), "the two finished-product trays preserve their current authored positions")
-	_check(fryer.plain_tray.slot_origin == Vector2(48.0, 43.0) and fryer.plain_tray.slot_step == Vector2(34.0, 0.0) and fryer.plain_tray.slot_size == Vector2(34.0, 79.0) and fryer.plain_tray.slot_columns == 4, "the finished youtiao row moves eight units left and eight units up")
-	_check(fryer.chicken_tray.slot_origin == Vector2(70.0, 45.0) and fryer.chicken_tray.slot_step == Vector2(48.0, 24.0) and fryer.chicken_tray.slot_size == Vector2(47.5, 47.5) and fryer.chicken_tray.slot_columns == 2, "the four finished chicken portions use a vertically tightened authored two-by-two grid")
-	var expected_chicken_positions := [Vector2(70.0, 45.0), Vector2(118.0, 45.0), Vector2(70.0, 69.0), Vector2(118.0, 69.0)]
-	for source_index in range(fryer.chicken_tray.product_sources.size()):
-		_check(fryer.chicken_tray.product_sources[source_index].position == expected_chicken_positions[source_index], "chicken tray slot %d stays in its two-by-two grid cell" % source_index)
-	for tray: YoutiaoTrayView in [fryer.plain_tray, fryer.chicken_tray]:
-		for source in tray.product_sources:
-			var source_rect := source.get_rect()
-			_check(source_rect.position.x >= 0.0 and source_rect.position.y >= 0.0 and source_rect.end.x <= tray.size.x and source_rect.end.y <= tray.size.y, "%s keeps every authored product slot inside the tray" % tray.name)
+	_check(fryer.shared_tray != null and fryer.shared_tray.source_capacity == 16, "one shared 2x8 finished-product tray replaces the two separate plates")
+	_check(fryer.shared_tray.product_sources.size() == 16, "shared tray creates sixteen reusable product sources")
 	for layout_name in LAYOUT_NAMES:
 		var animation := fryer.fryer_layout_player.get_animation(layout_name)
 		var scale_track := animation.find_track(NodePath(".:scale"), Animation.TYPE_VALUE) if animation != null else -1

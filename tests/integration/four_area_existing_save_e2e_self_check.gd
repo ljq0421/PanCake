@@ -25,7 +25,7 @@ func _run() -> void:
 	var progression := Dictionary(session.four_area_progression_snapshot())
 	var inventory := Dictionary(session.inventory_snapshot())
 	_check(bool(next_day.get("success", false)) and bool(session.is_opening_restock_active()), "next day returns to a fresh restock window")
-	_check(Array(progression.get("owned_growth_ids", [])).has("growth.add_on.pancake.egg") and Array(next_day.get("restock_required_ids", [])).has("stock.pancake.egg") and int(inventory.get("stock.pancake.egg", -1)) == 0, "reserved egg growth activates next day and starts empty for player restock")
+	_check(Array(progression.get("owned_growth_ids", [])).has("growth.add_on.pancake.meat_floss") and Array(next_day.get("restock_required_ids", [])).has("stock.pancake.meat_floss") and int(inventory.get("stock.pancake.meat_floss", -1)) == 0, "reserved meat-floss growth activates next day and starts empty for player restock")
 	_finish()
 
 

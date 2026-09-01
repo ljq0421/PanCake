@@ -126,7 +126,7 @@ func _prepare_pancake(workstation: Node, pancake_state: StringName) -> void:
 func _prepare_delivery_product(session: Node, product_id: StringName) -> void:
 	if product_id == &"product.youtiao.plain":
 		session.call("clear_prepared_product_slots")
-		session.call("_append_prepared_product", &"slot.04", {
+		session.call("_append_prepared_product", &"slot.fryer_finished", {
 			"product_instance_id": StringName("test.cross_station.youtiao.%d" % _sequence),
 			"area_id": &"area.youtiao",
 			"product_id": product_id,

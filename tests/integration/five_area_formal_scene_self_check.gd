@@ -90,26 +90,27 @@ func _run() -> void:
 	_check(drinks != null and drinks.has_signal("status_message") and drinks.call("product_sources").size() == 1, "visible packaged-drink station exposes one future-extensible juice lane")
 	var fryer := stations.get_node_or_null("CartoonYoutiaoFryer") as CartoonYoutiaoFryerToggle if stations != null else null
 	_check(fryer != null and fryer.has_signal("status_message"), "cartoon fryer exposes workstation status messages")
+	_check(fryer != null and fryer.single_basket_station_offset == Vector2(180.0, 0.0), "the live workstation configures the approved 180-pixel shift for basic and intermediate fryer tiers")
 	_check(fryer != null and fryer.youtiao_progress_bar != null and fryer.chicken_progress_bar != null and fryer.youtiao_progress_bar.size.y >= 20.0 and fryer.chicken_progress_bar.size.y >= 20.0, "cartoon fryer authors clear independent progress bars for both cooking lanes")
-	_check(fryer != null and fryer.plain_tray != null and fryer.chicken_tray != null and fryer.get_node_or_null("SesameTray") == null, "plain oil-strip and chicken-cutlet serving trays are authored beside the fryer, without the retired sesame tray")
+	_check(fryer != null and fryer.shared_tray != null and fryer.get_node_or_null("ChickenTray") == null and fryer.get_node_or_null("SesameTray") == null, "one shared oil-strip and chicken-cutlet serving tray is authored beside the fryer")
 	_check(fryer != null and not fryer_scene_source.contains("ChickenCutletRaw") and not source.contains("name=\"ChickenCutletRaw\""), "chicken has no separate raw-material restock region")
 	_check(fryer != null and fryer.basket_products.name == &"LeftBasket" and fryer.chicken_basket_products.name == &"RightBasket" and fryer.fryer_layout_player.get_parent() == fryer.fryer_assembly, "the authored fryer assembly owns explicit left/right basket groups and its layout player")
 	_check(fryer != null and [&"basic_raised", &"basic_lowered", &"advanced_raised", &"advanced_lowered", &"dual_both_raised", &"dual_left_lowered", &"dual_right_lowered", &"dual_both_lowered"].all(func(animation_name: StringName) -> bool: return fryer.fryer_layout_player.has_animation(animation_name)), "the scene authors every single- and dual-basket layout state")
 	_check(fryer_scene_source.contains("FryerLayoutPlayer") and not fryer_script_source.contains("basket_products.position =") and not fryer_script_source.contains("chicken_basket_products.position =") and not fryer_script_source.contains("fryer_visual.size ="), "runtime code selects authored layout states without overwriting scene positions or sizes")
 	_check(fryer != null and fryer.burnt_batch_source.get_parent() == fryer.fryer_visual, "the full-fryer burnt drag target inherits the authored fryer visual rectangle")
-	_check(fryer != null and fryer.plain_tray.size == Vector2(235.0, 185.0), "the reusable plain tray preserves its live authored size")
-	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.plate_sources.size() == 8 and fryer.waste_source != null and fryer.get_node_or_null("PreparedPlain") == null and fryer.get_node_or_null("WasteTarget") == null, "cartoon fryer exposes both independently authored fryer lanes and serving trays")
-	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.plain_tray.artwork.z_index), "finished youtiao drag sources render above serving-tray artwork")
+	_check(fryer != null and fryer.shared_tray.size == Vector2(480.0, 240.0), "the reusable shared tray preserves its authored 2x8 footprint")
+	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.plate_sources.size() == 16 and fryer.waste_source != null and fryer.get_node_or_null("PreparedPlain") == null and fryer.get_node_or_null("WasteTarget") == null, "cartoon fryer exposes both fryer lanes and one sixteen-source shared tray")
+	_check(fryer != null and fryer.output_sources.all(func(source: ProductDragSource) -> bool: return source.z_index > fryer.shared_tray.artwork.z_index), "finished youtiao drag sources render above shared-tray artwork")
 	_check(fryer != null and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return not source.native_drag_enabled) and fryer.plate_sources.all(func(source: ProductDragSource) -> bool: return source.native_drag_enabled and is_equal_approx(source.drag_threshold_pixels, 4.0)), "inactive chicken slots stay click-only until a finished batch enables its discard drag")
-	_check(fryer != null and fryer.plain_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source._drop_forward_target == fryer.plain_tray), "stored oil strips forward drops to the plain serving-tray component")
+	_check(fryer != null and fryer.shared_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source._drop_forward_target == fryer.shared_tray), "stored products forward drops to the shared serving-tray component")
 	_check(fryer != null and fryer.output_sources.size() == 8 and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.basket_products) and fryer.chicken_slot_sources.all(func(source: ProductDragSource) -> bool: return source.get_parent() == fryer.chicken_basket_products), "two basket-product groups each own four visible click targets")
-	_check(fryer != null and fryer.plain_tray.product_sources.size() == 4, "the reusable plain tray exposes four oil-stick positions")
+	_check(fryer != null and fryer.shared_tray.product_sources.size() == 16, "the shared tray exposes sixteen reusable product sources")
 	if fryer != null:
 		var pancake_click_requests: Array[Dictionary] = []
 		var capture_pancake_click := func(source_ref: Dictionary) -> void: pancake_click_requests.append(source_ref.duplicate(true))
 		fryer.youtiao_add_to_pancake_requested.connect(capture_pancake_click)
-		fryer._on_plain_tray_clicked()
-		fryer._on_plain_tray_product_short_clicked({"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": 0, "product_id": &"product.youtiao.plain"})
+		fryer._on_shared_tray_clicked()
+		fryer._on_shared_tray_product_short_clicked({"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.fryer_finished", "source_index": 0, "product_id": &"product.youtiao.plain"})
 		fryer.youtiao_add_to_pancake_requested.disconnect(capture_pancake_click)
 		_check(pancake_click_requests.size() == 1, "prepared-tray youtiao clicks request one-click pancake placement while clicking the tray collects fryer output")
 		var session: Node = root.get_node_or_null("GameSession")
@@ -119,22 +120,21 @@ func _run() -> void:
 			progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true})
 			fryer.set_workshop_preview(true)
 			_check(fryer.get_node_or_null("SesameTray") == null, "workshop preview does not recreate the retired sesame tray")
-			_check(not fryer.chicken_tray.visible, "advanced-youtiao workshop preview keeps chicken equipment locked")
+			_check(fryer.shared_tray.visible, "workshop preview exposes the future shared tray")
 			fryer.set_workshop_preview(false)
 			fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 1, "occupied_slot_indices": [0]}
 			fryer._apply_snapshot()
-			_check(not fryer.plain_tray.visible and not fryer._can_drop_data(Vector2(260.0, 420.0), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "before the finished tray unlock, fried youtiao stays in the raised filter basket")
+			_check(not fryer.shared_tray.visible and not fryer._can_drop_data(Vector2(260.0, 420.0), {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}}), "before the finished tray unlock, fried youtiao stays in the raised filter basket")
 			progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true})
 			fryer.refresh_from_session()
 		fryer._machine = {"state": &"ready_to_collect", "capacity": 4, "quantity": 4, "occupied_slot_indices": [0, 1, 2, 3]}
-		fryer._plate_count = 0
 		fryer._apply_snapshot()
 		_check(_visible_count(fryer.plate_sources) == 0, "finished youtiao remains in the basket until the player uses or stores it")
-		_check(not fryer.plain_tray._can_drop_data(fryer.plain_tray.size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "finished fryer youtiao cannot be dragged to the serving plate")
+		_check(not fryer.shared_tray._can_drop_data(fryer.shared_tray.size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "finished fryer youtiao cannot be dragged to the serving plate")
 		fryer._plate_products = [{"product_id": &"product.youtiao.plain"}]
-		fryer._plate_count = 1
+		fryer._plate_entries = [{"source_index": 0, "product_id": &"product.youtiao.plain", "cell_indices": [0, 1]}]
 		fryer._apply_snapshot()
-		_check(_visible_count(fryer.plate_sources) == 1 and fryer.plain_tray.product_sources[0].visible and fryer.plain_tray.product_sources[0].position == fryer.plain_tray.slot_origin, "storing one fried youtiao displays one draggable product in the reusable plain tray")
+		_check(_visible_count(fryer.plate_sources) == 1 and fryer.shared_tray.product_sources[0].visible, "storing one fried youtiao displays one draggable product in the shared tray")
 		_check(not fryer.plate_sources[0]._can_drop_data(fryer.plate_sources[0].size * 0.5, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}), "stored oil strips do not forward fryer drops into the serving tray")
 		fryer._chicken_unlocked = true
 		fryer._machine = {

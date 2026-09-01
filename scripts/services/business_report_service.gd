@@ -60,7 +60,10 @@ func build_bill() -> Dictionary:
 			var terminal_state := str(details.get("terminal_state", "completed"))
 			order_states[terminal_state] = int(order_states.get(terminal_state, 0)) + 1
 		elif kind == &"stock_cost" or bool(details.get("counts_cash_cost", false)):
-			cash_cost += maxi(-coins_delta, 0)
+			# Replenishment is an operating cost even though it no longer removes
+			# spendable coins immediately.  Keep the legacy coins_delta fallback so
+			# previously saved ledger entries remain reportable.
+			cash_cost += maxi(int(details.get("operating_cost", -coins_delta)), 0)
 		elif kind == &"waste":
 			var attributed_cost := maxi(int(details.get("attributed_cost", 0)), 0)
 			waste_cost += attributed_cost

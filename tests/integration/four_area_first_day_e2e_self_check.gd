@@ -48,9 +48,9 @@ func _run() -> void:
 	var payment := Dictionary(session.collect_all_pending_order_payments())
 	_check(bool(staged.get("success", false)) and bool(settled.get("success", false)) and int(payment.get("amount", 0)) > 0, "first pancake is staged, delivered, and paid through public session calls")
 
-	session.credit_coins(10)
-	var growth := Dictionary(session.purchase_growth(&"growth.add_on.pancake.egg"))
-	_check(bool(growth.get("success", false)), "first-day coins can reserve the next-day egg growth")
+	session.credit_coins(80)
+	var growth := Dictionary(session.purchase_growth(&"growth.add_on.pancake.meat_floss"))
+	_check(bool(growth.get("success", false)), "first-day coins can reserve the next-day meat-floss growth")
 	var next_delay := float(Dictionary(session.customer_arrival_snapshot()).get("next_arrival_remaining_seconds", -1.0))
 	var next_arrival := Dictionary(session.advance_customer_arrivals(next_delay + 0.01))
 	_check(not Array(session.active_formal_orders()).is_empty() and bool(next_arrival.get("success", false)), "a new customer is available before the game is saved")

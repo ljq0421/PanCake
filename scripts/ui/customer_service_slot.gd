@@ -23,6 +23,9 @@ const ORDER_CARD_HEAD_GAP := 14.0
 const PORTRAIT_ENTER_SECONDS := 0.80
 const PORTRAIT_EXIT_SECONDS := 0.80
 const PORTRAIT_FADE_SECONDS := 0.20
+const PORTRAIT_VISUAL_SCALE := 1.3
+const PORTRAIT_REST_SCALE := Vector2.ONE * PORTRAIT_VISUAL_SCALE
+const PORTRAIT_PRESENTATION_START_SCALE := Vector2.ONE * (PORTRAIT_VISUAL_SCALE * 0.96)
 const ORDER_PANEL_ENTER_DELAY_SECONDS := 0.30
 const ORDER_PANEL_ENTER_SECONDS := 0.40
 const ORDER_PANEL_EXIT_SECONDS := 0.40
@@ -203,13 +206,13 @@ func _play_customer_exit(reduce_motion: bool) -> void:
 	if reduce_motion:
 		portrait.position = _portrait_rest_position
 		order_panel.position = _order_panel_rest_position
-		portrait.scale = Vector2.ONE
+		portrait.scale = PORTRAIT_REST_SCALE
 		order_panel.scale = Vector2.ONE
 		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, REDUCED_PRESENTATION_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(order_panel, "modulate:a", 0.0, REDUCED_PRESENTATION_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 	else:
 		_presentation_tween.tween_property(portrait, "position", _portrait_rest_position + PORTRAIT_APPROACH_OFFSET, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		_presentation_tween.tween_property(portrait, "scale", PRESENTATION_START_SCALE, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "scale", PORTRAIT_PRESENTATION_START_SCALE, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(portrait, "modulate:a", 0.0, PORTRAIT_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(order_panel, "scale", PRESENTATION_START_SCALE, ORDER_PANEL_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(order_panel, "modulate:a", 0.0, ORDER_PANEL_EXIT_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
@@ -249,13 +252,13 @@ func _present_pending_customer() -> void:
 	if reduce_motion:
 		portrait.position = _portrait_rest_position
 		order_panel.position = _order_panel_rest_position
-		portrait.scale = Vector2.ONE
+		portrait.scale = PORTRAIT_REST_SCALE
 		order_panel.scale = Vector2.ONE
 		portrait.modulate.a = 0.0
 		order_panel.modulate.a = 0.0
 	else:
 		portrait.position = _portrait_rest_position + PORTRAIT_APPROACH_OFFSET
-		portrait.scale = PRESENTATION_START_SCALE
+		portrait.scale = PORTRAIT_PRESENTATION_START_SCALE
 		portrait.modulate.a = 0.0
 		order_panel.position = _order_panel_rest_position
 		order_panel.scale = PRESENTATION_START_SCALE
@@ -269,7 +272,7 @@ func _present_pending_customer() -> void:
 		# The frontal half-body artwork approaches from behind the counter instead
 		# of pretending to walk laterally across the whole viewport.
 		_presentation_tween.tween_property(portrait, "position", _portrait_rest_position, PORTRAIT_ENTER_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-		_presentation_tween.tween_property(portrait, "scale", Vector2.ONE, PORTRAIT_ENTER_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+		_presentation_tween.tween_property(portrait, "scale", PORTRAIT_REST_SCALE, PORTRAIT_ENTER_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(portrait, "modulate:a", 1.0, PORTRAIT_FADE_SECONDS).set_delay(entrance_delay_seconds).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(order_panel, "scale", Vector2.ONE, ORDER_PANEL_ENTER_SECONDS).set_delay(entrance_delay_seconds + ORDER_PANEL_ENTER_DELAY_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
 		_presentation_tween.tween_property(order_panel, "modulate:a", 1.0, ORDER_PANEL_ENTER_SECONDS).set_delay(entrance_delay_seconds + ORDER_PANEL_ENTER_DELAY_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
@@ -294,7 +297,7 @@ func _reset_presentation_transforms() -> void:
 	portrait.position = _portrait_rest_position
 	order_panel.position = _order_panel_rest_position
 	portrait.rotation = 0.0
-	portrait.scale = Vector2.ONE
+	portrait.scale = PORTRAIT_REST_SCALE
 	order_panel.scale = Vector2.ONE
 	portrait.modulate.a = 1.0
 	order_panel.modulate.a = 1.0
@@ -430,7 +433,7 @@ func _apply_card_layout(items: Array, requirements_by_item: Array) -> void:
 func _layout_order_card_above_portrait() -> void:
 	_order_panel_rest_position = Vector2(
 		portrait.position.x + (portrait.size.x - order_panel.size.x) * 0.5,
-		portrait.position.y - order_panel.size.y - ORDER_CARD_HEAD_GAP,
+		portrait.position.y - portrait.size.y * (PORTRAIT_VISUAL_SCALE - 1.0) - order_panel.size.y - ORDER_CARD_HEAD_GAP,
 	)
 	order_panel.position = _order_panel_rest_position
 	order_panel.pivot_offset = order_panel.size * 0.5

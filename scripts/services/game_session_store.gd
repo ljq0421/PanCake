@@ -72,19 +72,16 @@ const NOODLE_SHOP_CATALOG := preload("res://scripts/data/noodle_shop_catalog.gd"
 const NIGHT_MARKET_SESSION := preload("res://scripts/services/night_market_session.gd")
 const PLAYTEST_TELEMETRY := preload("res://scripts/services/playtest_telemetry.gd")
 const PREPARED_PRODUCT_SLOT_DEFINITIONS := {
-	&"slot.04": {
+	&"slot.fryer_finished": {
 		"product_id": &"product.youtiao.plain",
 		"recipe_id": &"recipe.youtiao.plain",
 		"requires_growth_id": &"growth.capacity.youtiao_finished_tray",
-		"accepted_product_ids": [&"product.youtiao.plain"],
-	},
-	&"slot.chicken": {
-		"product_id": &"product.chicken.cutlet",
-		"recipe_id": &"recipe.chicken.cutlet",
-		"requires_growth_id": &"growth.capacity.chicken_finished_tray",
-		"accepted_product_ids": [&"product.chicken.cutlet"],
+		"accepted_product_ids": [&"product.youtiao.plain", &"product.chicken.cutlet"],
 	},
 }
+const SHARED_FINISHED_TRAY_SLOT_ID := &"slot.fryer_finished"
+const SHARED_FINISHED_TRAY_COLUMNS := 8
+const SHARED_FINISHED_TRAY_ROWS := 2
 const DEBUG_TIER_GROWTH_IDS := {
 	&"area.pancake": [&""],
 	&"area.youtiao": [&"growth.area.youtiao"],
@@ -2364,7 +2361,17 @@ func take_youtiao_fryer_slot(slot_index: int) -> Dictionary:
 
 
 func preview_take_ready_youtiao_for_pancake() -> Dictionary:
-	var preview := preview_take_prepared_product(&"slot.04")
+	var status := prepared_product_slot_status(SHARED_FINISHED_TRAY_SLOT_ID)
+	if not bool(status.get("success", false)):
+		return status
+	var source_index := -1
+	for index in range(Array(status.get("products", [])).size()):
+		if StringName(Dictionary(Array(status.get("products", []))[index]).get("product_id", &"")) == &"product.youtiao.plain":
+			source_index = index
+			break
+	if source_index < 0:
+		return {"success": false, "reason": &"prepared_product_slot_empty", "slot_id": SHARED_FINISHED_TRAY_SLOT_ID}
+	var preview := preview_take_prepared_product(SHARED_FINISHED_TRAY_SLOT_ID, source_index)
 	if not bool(preview.get("success", false)):
 		return preview
 	var product := Dictionary(preview.get("product", {}))
@@ -2377,7 +2384,7 @@ func take_ready_youtiao_for_pancake() -> Dictionary:
 	var preview := preview_take_ready_youtiao_for_pancake()
 	if not bool(preview.get("success", false)):
 		return preview
-	return take_prepared_product(&"slot.04")
+	return take_prepared_product(SHARED_FINISHED_TRAY_SLOT_ID, int(preview.get("source_index", -1)))
 
 
 func discard_f3_youtiao() -> Dictionary:
@@ -3082,24 +3089,22 @@ func prepared_product_slot_status(slot_id: StringName) -> Dictionary:
 	if definition.is_empty():
 		return {"success": false, "reason": &"unknown_prepared_product_slot", "slot_id": slot_id}
 	_ensure_progression()
-	var recipe_id := StringName(definition.get("recipe_id", &""))
 	var required_growth_id := StringName(definition.get("requires_growth_id", &""))
-	var recipe_unlocked := bool(_progression.call("owns_recipe", recipe_id))
 	var tray_unlocked := required_growth_id.is_empty() or bool(_progression.call("owns_growth", required_growth_id))
-	var unlocked := recipe_unlocked and tray_unlocked
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), []))
-	var capacity_per_product := _prepared_product_capacity_per_product()
-	var capacity := _prepared_product_slot_capacity(slot_id)
+	var layout := _shared_finished_tray_layout(products)
 	return {
-		"success": unlocked,
-		"reason": &"" if unlocked else &"finished_tray_locked" if not tray_unlocked else &"recipe_locked",
+		"success": tray_unlocked,
+		"reason": &"" if tray_unlocked else &"finished_tray_locked",
 		"slot_id": slot_id,
 		"product_id": StringName(definition.get("product_id", &"")),
-		"recipe_id": recipe_id,
 		"requires_growth_id": required_growth_id,
-		"capacity": capacity,
-		"capacity_per_product": capacity_per_product,
+		"capacity": SHARED_FINISHED_TRAY_COLUMNS * SHARED_FINISHED_TRAY_ROWS,
+		"columns": SHARED_FINISHED_TRAY_COLUMNS,
+		"rows": SHARED_FINISHED_TRAY_ROWS,
+		"occupied_cells": Array(layout.get("occupied_cells", [])),
+		"entries": Array(layout.get("entries", [])).duplicate(true),
 		"count": products.size(),
 		"products": products.duplicate(true),
 	}
@@ -3126,8 +3131,7 @@ func preview_store_ready_fryer_batch(slot_id: StringName, lane_id: StringName = 
 	if not _prepared_product_slot_accepts_product(slot_id, product_id):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": product}
 	var products: Array = Array(status.get("products", []))
-	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
-	var available_capacity := maxi(capacity_per_product - _prepared_product_count(products, product_id), 0)
+	var available_capacity := _shared_finished_tray_available_product_count(products, product_id)
 	if quantity > available_capacity:
 		return {
 			"success": false,
@@ -3193,8 +3197,7 @@ func store_ready_fryer_batch_to_available_capacity(slot_id: StringName, lane_id:
 	if not _prepared_product_slot_accepts_product(slot_id, product_id):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id, "product": expected_product}
 	var stored_products: Array = Array(status.get("products", [])).duplicate(true)
-	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
-	var available_capacity := maxi(capacity_per_product - _prepared_product_count(stored_products, product_id), 0)
+	var available_capacity := _shared_finished_tray_available_product_count(stored_products, product_id)
 	if available_capacity <= 0:
 		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id, "product_id": product_id, "available_capacity": 0}
 	var quantity := mini(ready_quantity, available_capacity)
@@ -3246,8 +3249,7 @@ func preview_store_ready_fryer_slot(slot_id: StringName, lane_id: StringName, so
 	if not _prepared_product_slot_accepts_product(slot_id, final_product_id):
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
 	var products: Array = Array(status.get("products", []))
-	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
-	if _prepared_product_count(products, final_product_id) >= capacity_per_product:
+	if _shared_finished_tray_available_product_count(products, final_product_id) <= 0:
 		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id, "product_id": final_product_id}
 	return {"success": true, "reason": &"", "slot_id": slot_id, "product": product, "source_index": source_index, "final_product_id": final_product_id}
 
@@ -3343,8 +3345,7 @@ func _append_prepared_product(slot_id: StringName, product: Dictionary) -> Dicti
 		return {"success": false, "reason": &"prepared_product_slot_mismatch", "slot_id": slot_id}
 	var slots := prepared_product_slots_snapshot()
 	var products: Array = Array(slots.get(str(slot_id), [])).duplicate(true)
-	var capacity_per_product := int(status.get("capacity_per_product", status.get("capacity", 0)))
-	if _prepared_product_count(products, product_id) >= capacity_per_product:
+	if _shared_finished_tray_available_product_count(products, product_id) <= 0:
 		return {"success": false, "reason": &"prepared_product_slot_full", "slot_id": slot_id, "product_id": product_id}
 	products.append(product.duplicate(true))
 	slots[str(slot_id)] = products
@@ -3479,8 +3480,6 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 	var unit_seconds := float(status.get("unit_seconds", 0.001))
 	if current >= capacity:
 		return _five_area_restock_result(status, false, &"capacity_reached", 0, 0)
-	if int(_progression.get("coins")) < unit_cost:
-		return _five_area_restock_result(status, false, &"insufficient_coins", 0, 0)
 	var progress_by_stock := Dictionary(_save_data.get("restock_progress", {})).duplicate(true)
 	var stock_key := str(stock_id)
 	var progress := maxf(float(progress_by_stock.get(stock_key, 0.0)), 0.0) + maxf(delta, 0.0)
@@ -3494,15 +3493,9 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 			reason = &"capacity_reached"
 			progress = 0.0
 			break
-		if int(_progression.get("coins")) < unit_cost:
-			reason = &"insufficient_coins"
-			progress = 0.0
-			break
 		inventory[stock_key] = current + 1
-		_progression.set("coins", int(_progression.get("coins")) - unit_cost)
 		progress = maxf(progress - unit_seconds, 0.0)
 		completed_units += 1
-		charged_coins += unit_cost
 	if reason.is_empty() and int(inventory.get(stock_key, 0)) >= capacity:
 		reason = &"capacity_reached"
 		progress = 0.0
@@ -3510,6 +3503,9 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 	_save_data["inventory"] = _normalize_inventory(inventory)
 	_save_data["restock_progress"] = progress_by_stock
 	if completed_units > 0:
+		# Cost is accounted for in the current business day's ledger rather than
+		# taken from the player's spendable upgrade coins.
+		var operating_cost := completed_units * unit_cost
 		_sync_progression_to_save()
 		_record_business_event({
 			"event_id": _next_ledger_event_id(&"restock"),
@@ -3517,8 +3513,12 @@ func advance_five_area_restock_hold(stock_id: StringName, delta: float) -> Dicti
 			"area_id": StringName(status.get("area_id", &"")),
 			"source_id": stock_id,
 			"quantity": completed_units,
-			"coins_delta": -charged_coins,
-			"details": {"unit_cost": unit_cost, "counts_cash_cost": true},
+			"coins_delta": 0,
+			"details": {
+				"unit_cost": unit_cost,
+				"operating_cost": operating_cost,
+				"counts_cash_cost": true,
+			},
 		})
 		_sync_business_services_to_save()
 		# Gesture progress is transient. Persist once per completed unit batch,
@@ -5094,8 +5094,7 @@ static func _normalize_order_promotions(values: Array) -> Array:
 
 static func _empty_prepared_product_slots() -> Dictionary:
 	return {
-		"slot.04": [],
-		"slot.chicken": [],
+		"slot.fryer_finished": [],
 	}
 
 
@@ -5110,33 +5109,73 @@ static func _prepared_slot_id_for_product(product_id: StringName) -> StringName:
 
 func _normalize_prepared_product_slots(value: Dictionary) -> Dictionary:
 	var normalized := _empty_prepared_product_slots()
-	var capacity_per_product := _prepared_product_capacity_per_product()
+	# Legacy saves only contain the two retired tray keys. Their unserved food is
+	# intentionally cleared as part of the shared-tray migration.
+	if not value.has(str(SHARED_FINISHED_TRAY_SLOT_ID)) and not value.has(SHARED_FINISHED_TRAY_SLOT_ID):
+		return normalized
 	for slot_id in PREPARED_PRODUCT_SLOT_DEFINITIONS:
 		var products: Array = []
-		var counts_by_product: Dictionary = {}
 		for product_variant in Array(value.get(str(slot_id), value.get(slot_id, []))):
 			var product := Dictionary(product_variant).duplicate(true)
 			var product_id := StringName(product.get("product_id", &""))
 			if product.is_empty() or not _prepared_product_slot_accepts_product(StringName(slot_id), product_id):
 				continue
-			if int(counts_by_product.get(product_id, 0)) >= capacity_per_product:
+			if _shared_finished_tray_available_product_count(products, product_id) <= 0:
 				continue
 			products.append(product)
-			counts_by_product[product_id] = int(counts_by_product.get(product_id, 0)) + 1
 		normalized[str(slot_id)] = products
 	return normalized
 
 
-func _prepared_product_capacity_per_product() -> int:
-	_ensure_progression()
-	var tier := int(_progression.call("device_tier", &"device.youtiao_fryer"))
-	return maxi(int(CATALOG.device_tier(&"device.youtiao_fryer", tier).get("capacity", 4)), 0)
+static func _shared_finished_tray_layout(products: Array) -> Dictionary:
+	var occupied := PackedByteArray()
+	occupied.resize(SHARED_FINISHED_TRAY_COLUMNS * SHARED_FINISHED_TRAY_ROWS)
+	var entries: Array[Dictionary] = []
+	for source_index in range(products.size()):
+		var product := Dictionary(products[source_index])
+		var product_id := StringName(product.get("product_id", &""))
+		var cells := _shared_finished_tray_next_cells(occupied, product_id)
+		if cells.is_empty():
+			continue
+		for cell in cells:
+			occupied[int(cell)] = 1
+		entries.append({"source_index": source_index, "product_id": product_id, "cell_indices": cells})
+	var occupied_cells: Array[int] = []
+	for cell_index in range(occupied.size()):
+		if occupied[cell_index] != 0:
+			occupied_cells.append(cell_index)
+	return {"entries": entries, "occupied_cells": occupied_cells}
 
 
-func _prepared_product_slot_capacity(slot_id: StringName) -> int:
-	var definition := Dictionary(PREPARED_PRODUCT_SLOT_DEFINITIONS.get(slot_id, {}))
-	var accepted_product_ids := Array(definition.get("accepted_product_ids", [definition.get("product_id", &"")]))
-	return _prepared_product_capacity_per_product() * accepted_product_ids.size()
+static func _shared_finished_tray_available_product_count(products: Array, product_id: StringName) -> int:
+	var layout := _shared_finished_tray_layout(products)
+	var occupied := PackedByteArray()
+	occupied.resize(SHARED_FINISHED_TRAY_COLUMNS * SHARED_FINISHED_TRAY_ROWS)
+	for cell in Array(layout.get("occupied_cells", [])):
+		occupied[int(cell)] = 1
+	var count := 0
+	while true:
+		var cells := _shared_finished_tray_next_cells(occupied, product_id)
+		if cells.is_empty():
+			return count
+		for cell in cells:
+			occupied[int(cell)] = 1
+		count += 1
+	return count
+
+
+static func _shared_finished_tray_next_cells(occupied: PackedByteArray, product_id: StringName) -> Array[int]:
+	if product_id == &"product.youtiao.plain":
+		for column in SHARED_FINISHED_TRAY_COLUMNS:
+			var top := column * SHARED_FINISHED_TRAY_ROWS
+			if occupied[top] == 0 and occupied[top + 1] == 0:
+				return [top, top + 1]
+		return []
+	if product_id == &"product.chicken.cutlet":
+		for cell_index in occupied.size():
+			if occupied[cell_index] == 0:
+				return [cell_index]
+	return []
 
 
 func _reconcile_unrecorded_settled_orders() -> void:

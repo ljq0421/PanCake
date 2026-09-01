@@ -787,40 +787,17 @@ offset_bottom = 70.0
 mouse_filter = 2
 script = ExtResource("6_cooking_bar")
 
-[node name="PlainTray" parent="." unique_id=686091902 instance=ExtResource("3_tray")]
+[node name="SharedTray" parent="." unique_id=686091902 instance=ExtResource("3_tray")]
 unique_name_in_owner = true
 z_index = 1
-custom_minimum_size = Vector2(235, 185)
+custom_minimum_size = Vector2(480, 240)
 layout_mode = 0
-offset_left = 3.0
-offset_top = 420.0
-offset_right = 238.0
-offset_bottom = 605.0
-scale = Vector2(1.2, 1.2)
-destination_product_id = &"product.youtiao.plain"
-product_hint = "点击加到当前煎饼；也可拖到煎饼或出餐位"
-slot_origin = Vector2(48, 43)
-slot_step = Vector2(34, 0)
-slot_size = Vector2(34, 79)
-
-[node name="ChickenTray" parent="." unique_id=1169360273 instance=ExtResource("3_tray")]
-unique_name_in_owner = true
-z_index = 1
-custom_minimum_size = Vector2(235, 185)
-layout_mode = 0
-offset_left = 232.0
-offset_top = 420.00003
-offset_right = 467.0
-offset_bottom = 605.0
-scale = Vector2(1.2, 1.2)
-destination_product_id = &"product.chicken.cutlet"
-prepared_slot_id = &"slot.chicken"
-accepted_fryer_lane_id = &"right"
-product_hint = "从鸡排盘拖鸡排到出餐位"
-slot_origin = Vector2(70, 45)
-slot_step = Vector2(48, 24)
-slot_size = Vector2(47.5, 47.5)
-slot_columns = 2
+offset_left = -16.0
+offset_top = 388.0
+offset_right = 464.0
+offset_bottom = 628.0
+scale = Vector2(1.1, 1.1)
+product_hint = "油条可点击加入煎饼；两类成品均可拖到出餐位"
 
 [node name="StatusLabel" type="Label" parent="." unique_id=948688222]
 unique_name_in_owner = true

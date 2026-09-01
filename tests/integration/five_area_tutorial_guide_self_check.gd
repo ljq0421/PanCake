@@ -56,7 +56,7 @@ func _run() -> void:
 	_check(Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao")).get("target") == workstation.cartoon_youtiao_fryer.waste_source, "burnt youtiao points to the dedicated whole-batch waste source")
 
 	var youtiao_target := _bind_centered_tutorial_order(workstation, stub, &"area.youtiao", &"product.youtiao.plain")
-	stub.prepared_counts[&"slot.04"] = 1
+	stub.prepared_counts[&"slot.fryer_finished"] = 1
 	guide = Dictionary(workstation.call("_tutorial_guide_for_area", stub, &"area.youtiao"))
 	_check(guide.get("target") == youtiao_target, "stored youtiao points to the real centered customer-card delivery target")
 	workstation.customer_service_slots[2].call("bind_order", {}, null, [], [], 0)

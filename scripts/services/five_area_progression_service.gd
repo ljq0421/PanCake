@@ -7,6 +7,8 @@ extends RefCounted
 const LEGACY_PANCAKE_HOLDING_TRAY_GROWTH_ID := &"growth.capacity.pancake_holding_tray.two_slots"
 const PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.first_slot"
 const RETIRED_PANCAKE_HOLDING_TRAY_SECOND_SLOT_GROWTH_ID := &"growth.capacity.pancake_holding_tray.second_slot"
+const SHARED_FINISHED_TRAY_GROWTH_ID := &"growth.capacity.youtiao_finished_tray"
+const RETIRED_CHICKEN_FINISHED_TRAY_GROWTH_ID := &"growth.capacity.chicken_finished_tray"
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
 
@@ -20,11 +22,19 @@ var unlocked_recipe_ids: Dictionary = {&"recipe.pancake.base": true}
 var unlocked_product_ids: Dictionary = {&"product.pancake.custom": true}
 var unlocked_stock_ids: Dictionary = {
 	&"stock.pancake.batter": true,
+	&"stock.pancake.egg": true,
+	&"stock.pancake.baocui": true,
 	&"stock.pancake.sauce.sweet_flour": true,
 }
 var unlocked_automation_ids: Dictionary = {}
 var owned_assist_ids: Dictionary = {}
-var owned_growth_ids: Dictionary = {}
+# These are free starter fixtures for a fresh profile.  Keep their growth IDs
+# installed so dependent upgrades and area gates remain reachable without
+# charging the player or showing duplicate purchase offers.
+var owned_growth_ids: Dictionary = {
+	&"growth.add_on.pancake.egg": true,
+	&"growth.add_on.pancake.baocui": true,
+}
 var stock_capacity := 6
 var area_mastery: Dictionary = {}
 var area_mastery_details: Dictionary = {}
@@ -387,6 +397,7 @@ func load_snapshot(value: Dictionary) -> void:
 	pending_growth_ids = _load_id_array(value.get("pending_growth_ids", []))
 	var tutorial: Dictionary = Dictionary(value.get("tutorial", {}))
 	_migrate_legacy_pancake_holding_tray_growth()
+	_migrate_legacy_finished_tray_growth()
 	tutorial_completed_area_ids = _load_id_set(tutorial.get("completed_area_ids", []))
 	tutorial_completed_device_ids = {}
 	tutorial_queue_area_ids = _load_id_array(tutorial.get("queue_area_ids", [&"area.pancake"]))
@@ -415,6 +426,18 @@ func _migrate_legacy_pancake_holding_tray_growth() -> void:
 	):
 		if not owns_growth(PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID) and not pending_growth_ids.has(PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID):
 			pending_growth_ids.append(PANCAKE_HOLDING_TRAY_FIRST_SLOT_GROWTH_ID)
+
+
+func _migrate_legacy_finished_tray_growth() -> void:
+	# The two fryer serving trays now share the original oil-strip purchase.
+	# A chicken-tray owner has already paid for the same capability, so grant the
+	# shared tray without a refund before retired IDs are normalized away.
+	if bool(owned_growth_ids.get(RETIRED_CHICKEN_FINISHED_TRAY_GROWTH_ID, false)):
+		owned_growth_ids[SHARED_FINISHED_TRAY_GROWTH_ID] = true
+	if pending_growth_ids.has(RETIRED_CHICKEN_FINISHED_TRAY_GROWTH_ID):
+		if not owns_growth(SHARED_FINISHED_TRAY_GROWTH_ID) and not pending_growth_ids.has(SHARED_FINISHED_TRAY_GROWTH_ID):
+			pending_growth_ids.append(SHARED_FINISHED_TRAY_GROWTH_ID)
+		pending_growth_ids.erase(RETIRED_CHICKEN_FINISHED_TRAY_GROWTH_ID)
 
 
 func _normalize_three_area_state() -> void:

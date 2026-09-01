@@ -27,10 +27,13 @@ func _run() -> void:
 	if hotspots != null and carton != null:
 		var starter_progression := PROGRESSION_SERVICE.new()
 		hotspots._refresh_optional_stock_visuals(starter_progression)
-		_check(not starter_progression.owns_stock(&"stock.pancake.egg") and not carton.visible, "a new game keeps egg locked and removes its carton from the worktop")
-		starter_progression.unlocked_stock_ids[&"stock.pancake.egg"] = true
+		_check(starter_progression.owns_stock(&"stock.pancake.egg") and carton.visible, "a new game shows its default-unlocked egg carton on the worktop")
+		var legacy_progression := PROGRESSION_SERVICE.new({
+			"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.pancake.sauce.sweet_flour"],
+		})
+		hotspots._refresh_optional_stock_visuals(legacy_progression)
+		_check(not legacy_progression.owns_stock(&"stock.pancake.egg") and not carton.visible, "an existing save without egg keeps its carton hidden")
 		hotspots._refresh_optional_stock_visuals(starter_progression)
-		_check(carton.visible, "unlocking egg restores its carton to the worktop")
 	if carton != null and visual != null and contents != null:
 		_check(carton.get_global_rect().encloses(visual.get_global_rect()) and visual.get_global_rect().encloses(contents.get_global_rect()), "egg content layers remain contained within the tray artwork")
 		_check(carton.size.is_equal_approx(Vector2(214.0, 180.0)), "egg tray uses the shared 214x180 ingredient-tray display size")

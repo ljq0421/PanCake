@@ -76,8 +76,8 @@ func _run() -> void:
 		"material_cost": 2,
 		"status": &"available",
 	}
-	session.call("_append_prepared_product", &"slot.04", staged_product)
-	session.call("_append_prepared_product", &"slot.04", {
+	session.call("_append_prepared_product", &"slot.fryer_finished", staged_product)
+	session.call("_append_prepared_product", &"slot.fryer_finished", {
 		"product_instance_id": &"day.end.prepared.youtiao",
 		"area_id": &"area.youtiao",
 		"product_id": &"product.youtiao.plain",
@@ -86,7 +86,7 @@ func _run() -> void:
 	})
 	var opened := Dictionary(session.call("open_formal_order", [{"area_id": &"area.youtiao", "product_id": &"product.youtiao.plain", "quantity": 1}]))
 	var order_id := StringName(Dictionary(opened.get("order", {})).get("order_id", &""))
-	var staged := Dictionary(session.call("stage_product_to_order", {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.04", "source_index": -1, "product_id": &"product.youtiao.plain"}, order_id, 0))
+	var staged := Dictionary(session.call("stage_product_to_order", {"source_kind": &"prepared_product_slot", "source_slot_id": &"slot.fryer_finished", "source_index": -1, "product_id": &"product.youtiao.plain"}, order_id, 0))
 	_check(bool(staged.get("success", false)), "fixture stages one finished product onto an unsettled customer order")
 	var sold := Dictionary(session.call("record_order_completed", {"id": &"day.end.sold", "title": "已售煎饼"}, {
 		"area_id": &"area.pancake",
@@ -119,7 +119,7 @@ func _run() -> void:
 	_check(Array(Dictionary(session.call("five_area_pancake_griddles_snapshot")).get("slots", [])).is_empty(), "day end clears pancake work in progress")
 	_check(Array(Dictionary(session.call("f3_machine_snapshot", &"device.fresh_soy_milk_machine")).get("output_rack", [])).all(func(value): return Dictionary(value).is_empty()), "day end clears finished soy output")
 	_check(Array(Dictionary(session.call("pancake_holding_tray_snapshot")).get("slots", [])).all(func(value): return Dictionary(value).is_empty()), "day end clears finished pancakes from the holding tray")
-	_check(Array(Dictionary(session.call("prepared_product_slots_snapshot")).get("slot.04", [])).is_empty(), "day end clears finished youtiao from prepared slots")
+	_check(Array(Dictionary(session.call("prepared_product_slots_snapshot")).get("slot.fryer_finished", [])).is_empty(), "day end clears finished products from the shared prepared slot")
 	_check(Array(session.call("active_formal_orders")).is_empty(), "day end clears all unsettled customer orders")
 	_check(Array(bill.get("inventory_waste", [])).size() == 3, "day end exposes every non-empty leftover stock row")
 	_check(Array(bill.get("production_waste", [])).size() == 3, "day end exposes work in progress and finished machine output")

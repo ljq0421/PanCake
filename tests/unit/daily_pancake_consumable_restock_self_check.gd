@@ -47,15 +47,15 @@ func _run() -> void:
 		_check(int(unlocked_inventory.get(stock_id, 0)) == 0, "opened business keeps unlocked %s empty" % stock_id)
 	session.call("begin_new_game")
 	progression = session.call("progression_service")
-	progression.set("coins", 10)
-	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.egg").get("success", false)), "egg unlock can be reserved for the next business day")
+	progression.set("coins", 80)
+	_check(bool(session.call("purchase_growth", &"growth.add_on.pancake.meat_floss").get("success", false)), "meat-floss unlock can be reserved for the next business day after starter baocui")
 	session.call("end_business_day")
-	var activated_egg_day := Dictionary(session.call("begin_next_business_day"))
-	var activated_egg_inventory := Dictionary(session.call("inventory_snapshot"))
+	var activated_meat_floss_day := Dictionary(session.call("begin_next_business_day"))
+	var activated_meat_floss_inventory := Dictionary(session.call("inventory_snapshot"))
 	_check(
-		int(activated_egg_inventory.get("stock.pancake.egg", -1)) == 0
-		and Array(activated_egg_day.get("restock_required_ids", [])).has("stock.pancake.egg"),
-		"egg activation opens an empty container that requires manual restocking"
+		int(activated_meat_floss_inventory.get("stock.pancake.meat_floss", -1)) == 0
+		and Array(activated_meat_floss_day.get("restock_required_ids", [])).has("stock.pancake.meat_floss"),
+		"meat-floss activation opens an empty container that requires manual restocking"
 	)
 	_finish()
 

@@ -21,7 +21,7 @@ func _run() -> void:
 	var payment_tray := artwork.get_node_or_null("PaymentTray") as TextureRect if artwork != null else null
 	_check(payment_tray != null and payment_tray.texture != null and payment_tray.texture.resource_path.ends_with("yinpin-v1.png"), "the workbench uses yinpin-v1 as its payment tray")
 	_check(sauce_source != null and payment_tray != null and payment_tray.get_global_rect().position.x < sauce_source.get_global_rect().position.x, "the payment tray is positioned to the left of the sauce source")
-	_check(sauce_visual != null and payment_tray != null and payment_tray.z_index == worktop.z_index + sauce_visual.z_index, "the payment tray shares the sauce tray's visual layer")
+	_check(sauce_visual != null and payment_tray != null and artwork.z_index + payment_tray.z_index == worktop.z_index + sauce_visual.z_index, "the payment tray shares the sauce tray's final visual layer")
 	if payment_tray != null:
 		var coin_center: Vector2 = workstation.call("_formal_payment_coin_target", 0) + Vector2(22.0, 22.0)
 		var coin_global_position: Vector2 = workstation.payment_coin_layer.get_global_transform() * coin_center

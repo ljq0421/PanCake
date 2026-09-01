@@ -2107,7 +2107,7 @@ func _ingredient_available_for_drag(ingredient_type: StringName) -> bool:
 		var session := get_node_or_null("/root/GameSession")
 		if session == null or not session.has_method("prepared_product_slot_status"):
 			return false
-		return int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) > 0
+		return int(Dictionary(session.call("prepared_product_slot_status", &"slot.fryer_finished")).get("count", 0)) > 0
 	return ingredient_stock_model.has_stock(ingredient_type)
 
 
@@ -2116,7 +2116,7 @@ func _consume_dragged_ingredient(ingredient_type: StringName) -> bool:
 		var session := get_node_or_null("/root/GameSession")
 		if session == null or not session.has_method("take_prepared_product"):
 			return false
-		return bool(Dictionary(session.call("take_prepared_product", &"slot.04")).get("success", false))
+		return bool(Dictionary(session.call("take_ready_youtiao_for_pancake")).get("success", false))
 	return ingredient_stock_model.consume(ingredient_type)
 
 

@@ -18,7 +18,7 @@ func _run() -> void:
 	session.call("begin_new_game")
 	_clear_orders(session)
 	_enable_youtiao_and_chicken(session)
-	var stored_youtiao := Dictionary(session.call("_append_prepared_product", &"slot.04", {
+	var stored_youtiao := Dictionary(session.call("_append_prepared_product", &"slot.fryer_finished", {
 		"product_instance_id": &"test.exact_delivery.youtiao",
 		"area_id": &"area.youtiao",
 		"product_id": &"product.youtiao.plain",
@@ -41,7 +41,7 @@ func _run() -> void:
 		bool(stored_youtiao.get("success", false))
 		and not chicken_order_id.is_empty()
 		and chosen.is_empty()
-		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.04")).get("count", 0)) == 1,
+		and int(Dictionary(session.call("prepared_product_slot_status", &"slot.fryer_finished")).get("count", 0)) == 1,
 		"a chicken-card click does not substitute or consume a ready youtiao"
 	)
 	workstation.queue_free()
@@ -55,7 +55,7 @@ func _enable_youtiao_and_chicken(session: Node) -> void:
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true, &"recipe.chicken.cutlet": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true, &"product.chicken.cutlet": true})
 	progression.set("unlocked_stock_ids", {&"stock.youtiao.plain_dough": true, &"stock.chicken.cutlet_raw": true})
-	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true, &"growth.equipment.youtiao.dual_basket": true, &"growth.capacity.chicken_finished_tray": true})
+	progression.set("owned_growth_ids", {&"growth.capacity.youtiao_finished_tray": true, &"growth.equipment.youtiao.dual_basket": true})
 	session.call("_sync_progression_to_save")
 
 

@@ -6,13 +6,14 @@ signal product_drag_ended(source_ref: Dictionary, successful: bool)
 signal tray_clicked
 
 @export var destination_product_id: StringName = &"product.youtiao.plain"
-@export var prepared_slot_id: StringName = &"slot.04"
+@export var prepared_slot_id: StringName = &"slot.fryer_finished"
 @export var accepted_fryer_lane_id: StringName = &"left"
 @export var product_hint := "从成品盘拖成品到出餐位"
 @export var slot_origin := Vector2(48.0, 62.0)
 @export var slot_step := Vector2(44.0, 0.0)
 @export var slot_size := Vector2(48.0, 104.0)
 @export_range(1, 4, 1) var slot_columns := 4
+@export_range(1, 16, 1) var source_capacity := 16
 
 @onready var artwork: TextureRect = %Artwork
 @onready var product_sources: Array[ProductDragSource] = [
@@ -29,6 +30,7 @@ var _tray_click_pending := false
 
 
 func _ready() -> void:
+	_ensure_product_sources()
 	_apply_slot_layout()
 	set_process(Engine.is_editor_hint())
 	if Engine.is_editor_hint():
@@ -38,11 +40,7 @@ func _ready() -> void:
 			source.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return
 	for source in product_sources:
-		source.z_index = artwork.z_index + 1
-		source.native_drag_enabled = true
-		source.drag_threshold_pixels = 4.0
-		source.set_drop_forward_target(self)
-		source.drag_ended.connect(_on_product_drag_ended)
+		_initialize_source(source)
 		_hide_source(source)
 
 
@@ -98,6 +96,38 @@ func configure_products(entries: Array[Dictionary], product_texture: Texture2D, 
 		source.visible = true
 
 
+func preview_shared_products(entries: Array[Dictionary], textures: Dictionary) -> void:
+	configure_shared_products(entries, textures, false)
+
+
+func configure_shared_products(entries: Array[Dictionary], textures: Dictionary, interaction_enabled: bool) -> void:
+	_ensure_product_sources()
+	for slot_index in range(product_sources.size()):
+		var source := product_sources[slot_index]
+		if slot_index >= entries.size():
+			_hide_source(source)
+			continue
+		var entry := Dictionary(entries[slot_index])
+		var product_id := StringName(entry.get("product_id", &""))
+		var product_texture := textures.get(product_id) as Texture2D
+		if product_texture == null:
+			_hide_source(source)
+			continue
+		source.position = Vector2(entry.get("position", Vector2.ZERO))
+		source.size = Vector2(entry.get("size", Vector2.ZERO))
+		source.self_modulate = Color.WHITE
+		source.configure({
+			"source_kind": &"prepared_product_slot",
+			"source_slot_id": prepared_slot_id,
+			"source_index": int(entry.get("source_index", -1)),
+			"product_id": product_id,
+			"discardable": true,
+		}, product_texture, interaction_enabled, product_hint)
+		source.set_alpha_hit_regions([{"texture": product_texture, "rect": Rect2(Vector2.ZERO, source.size)}])
+		source.mouse_filter = Control.MOUSE_FILTER_STOP if interaction_enabled else Control.MOUSE_FILTER_IGNORE
+		source.visible = true
+
+
 func contains_canvas_point(canvas_point: Vector2) -> bool:
 	var local_point := get_global_transform_with_canvas().affine_inverse() * canvas_point
 	return Rect2(Vector2.ZERO, size).has_point(local_point)
@@ -127,6 +157,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _apply_slot_layout() -> void:
+	_ensure_product_sources()
 	var columns := maxi(slot_columns, 1)
 	for slot_index in range(product_sources.size()):
 		var source := product_sources[slot_index]
@@ -145,6 +176,27 @@ func _hide_source(source: ProductDragSource) -> void:
 	source.set_alpha_hit_regions([])
 	source.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	source.visible = false
+
+
+func _ensure_product_sources() -> void:
+	while product_sources.size() < source_capacity:
+		var source := ProductDragSource.new()
+		source.name = "ProductSource%d" % (product_sources.size() + 1)
+		source.ignore_texture_size = true
+		source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		add_child(source)
+		product_sources.append(source)
+		if not Engine.is_editor_hint():
+			_initialize_source(source)
+
+
+func _initialize_source(source: ProductDragSource) -> void:
+	source.z_index = artwork.z_index + 1
+	source.native_drag_enabled = true
+	source.drag_threshold_pixels = 4.0
+	source.set_drop_forward_target(self)
+	if not source.drag_ended.is_connected(_on_product_drag_ended):
+		source.drag_ended.connect(_on_product_drag_ended)
 
 
 func _on_product_drag_ended(source_ref: Dictionary, successful: bool) -> void:

@@ -425,7 +425,7 @@ func _on_material_hold_requested(source_ref: Dictionary, hotspot: ProductDragSou
 	if bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)):
 		hotspot.accept_hold()
 		hotspot.set_hold_progress(float(status.get("container_fill_ratio", 0.0)))
-		status_message.emit("持续按住补%s；每完成一份才扣金币" % _stock_label(stock_id))
+		status_message.emit("持续按住补%s；补货成本将计入当日营业成本" % _stock_label(stock_id))
 		return
 	hotspot.reject_hold()
 	status_message.emit(_restock_failure_text(StringName(status.get("reason", &"")), status))
@@ -580,5 +580,4 @@ static func _restock_failure_text(reason: StringName, status: Dictionary) -> Str
 	match reason:
 		&"stock_locked": return "该材料尚未解锁"
 		&"capacity_reached": return "材料库存已满"
-		&"insufficient_coins": return "余额不足：每份需要%d金币" % int(status.get("unit_cost", 0))
 	return "当前无法补货"

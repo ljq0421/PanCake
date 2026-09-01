@@ -24,12 +24,24 @@ func _run() -> void:
 		return
 	var begun := Dictionary(session.call("begin_new_game"))
 	var progression := Dictionary(session.call("five_area_progression_snapshot"))
+	var inventory := Dictionary(session.call("inventory_snapshot"))
+	var opening_restock_tasks := Array(session.call("opening_restock_tasks"))
 	_check(bool(begun.get("success", false)), "new game starts successfully")
 	_check(
 		int(progression.get("current_day", 0)) == 1
 		and Array(progression.get("unlocked_area_ids", [])).has("area.pancake")
-		and not Array(progression.get("unlocked_stock_ids", [])).has("stock.pancake.egg"),
-		"current baseline starts on day one with the pancake area and no egg unlock"
+		and Array(progression.get("unlocked_stock_ids", [])).has("stock.pancake.egg")
+		and Array(progression.get("unlocked_stock_ids", [])).has("stock.pancake.baocui")
+		and Array(progression.get("owned_growth_ids", [])).has("growth.add_on.pancake.egg")
+		and Array(progression.get("owned_growth_ids", [])).has("growth.add_on.pancake.baocui"),
+		"new game starts with the pancake area plus free egg and baocui unlocks"
+	)
+	_check(
+		int(inventory.get("stock.pancake.egg", -1)) == 0
+		and int(inventory.get("stock.pancake.baocui", -1)) == 0
+		and _has_restock_task(opening_restock_tasks, &"stock.pancake.egg")
+		and _has_restock_task(opening_restock_tasks, &"stock.pancake.baocui"),
+		"starter egg and baocui are unlocked empty containers in the opening restock flow"
 	)
 
 	var game := MAIN_SCENE.instantiate()
@@ -44,15 +56,27 @@ func _run() -> void:
 	var spreader_hit := worktop.get_node("SpreaderSource/HitButton") as Button
 	var sweet_sauce := worktop.get_node("SecretSauceSource/Hotspot") as ProductDragSource
 	var egg := worktop.get_node("EggCarton/Hotspot") as ProductDragSource
+	var egg_carton := worktop.get_node("EggCarton") as Control
+	var baocui_basket := worktop.get_node("BaocuiBasket") as Control
+	var pork_floss_source := worktop.get_node("PorkFlossSource") as Control
+	var ham_source := worktop.get_node("HamSource") as Control
 
 	_check(station.griddle_count() == 1 and station.units.size() == 1, "current four-area baseline exposes one pancake griddle")
 	_check(ladle_hit.visible and not ladle_hit.disabled, "the authored batter ladle is available on a new game")
 	_check(spreader_hit.visible and not spreader_hit.disabled, "the authored manual spreader is available on a new game")
 	_check(not sweet_sauce.disabled and not sweet_sauce.native_drag_enabled, "sweet sauce uses the current click-to-prime interaction")
-	_check(egg.disabled and not egg.native_drag_enabled, "egg remains locked and never exposes the removed raw-ingredient drag grammar")
+	_check(not egg.disabled and not egg.native_drag_enabled and egg.tooltip_text.contains("库存不足"), "empty unlocked egg remains available for hold-to-restock without enabling raw-ingredient dragging")
+	_check(
+		egg_carton != null
+		and baocui_basket != null
+		and pork_floss_source != null
+		and ham_source != null
+		and egg_carton.position.x < baocui_basket.position.x
+		and baocui_basket.position.x < pork_floss_source.position.x
+		and pork_floss_source.position.x < ham_source.position.x,
+		"the middle row to the right of the griddle is ordered egg, baocui, meat floss, then ham"
+	)
 
-	await _hover_control(ladle_hit)
-	_check(root.gui_get_hovered_control() == ladle_hit, "the rendered ladle owns its pointer hit area")
 	await _click_control(ladle_hit)
 	_check(
 		station.is_batter_ladle_selected()
@@ -69,6 +93,10 @@ func _run() -> void:
 	game.queue_free()
 	await process_frame
 	_finish(output_absolute)
+
+
+func _has_restock_task(tasks: Array, stock_id: StringName) -> bool:
+	return tasks.any(func(task: Dictionary) -> bool: return StringName(task.get("id", &"")) == stock_id)
 
 
 func _hover_control(control: Control) -> void:

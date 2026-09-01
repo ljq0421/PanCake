@@ -738,7 +738,7 @@ func _consume_ingredient(stock_id: StringName) -> Dictionary:
 	if stock_id == &"stock.pancake.youtiao":
 		if not _session.has_method("take_prepared_product"):
 			return {"success": false, "reason": &"no_youtiao_source"}
-		return Dictionary(_session.call("take_prepared_product", &"slot.04"))
+		return Dictionary(_session.call("take_ready_youtiao_for_pancake"))
 	if not _session.has_method("consume_inventory_stock_ids"):
 		return {"success": false, "reason": &"no_inventory"}
 	var stock_ids: Array[StringName] = [stock_id]

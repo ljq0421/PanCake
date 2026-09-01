@@ -37,7 +37,10 @@ class FakeGameSession extends Node:
 		return inventory.duplicate(true)
 
 	func prepared_product_slot_status(_slot_id: StringName) -> Dictionary:
-		return {"count": prepared_products.size(), "capacity": 8, "capacity_per_product": 4, "products": prepared_products.duplicate(true)}
+		var entries: Array[Dictionary] = []
+		for source_index in range(mini(prepared_products.size(), 8)):
+			entries.append({"source_index": source_index, "product_id": StringName(prepared_products[source_index].get("product_id", &"")), "cell_indices": [source_index * 2, source_index * 2 + 1]})
+		return {"count": prepared_products.size(), "capacity": 16, "columns": 8, "rows": 2, "entries": entries, "products": prepared_products.duplicate(true)}
 
 	func load_f3_youtiao(_recipe_id: StringName, quantity: int) -> Dictionary:
 		if int(inventory.get("stock.youtiao.plain_dough", 0)) < quantity:
@@ -197,20 +200,20 @@ func _run() -> void:
 	session.finished_tray_unlocked = false
 	fryer.call("refresh_from_session")
 	var finished_stick := {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0, "product_id": &"product.youtiao.plain"}}
-	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.plain_tray.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
+	_check(not bool(fryer.call("_can_drop_data", Vector2(260.0, 420.0), finished_stick)) and not fryer.shared_tray.visible, "a fried youtiao remains on the filter basket while the serving tray is locked")
 	session.finished_tray_unlocked = true
 	fryer.call("refresh_from_session")
-	_check(not bool(fryer.plain_tray.call("_can_drop_data", fryer.plain_tray.size * 0.5, finished_stick)), "the visible serving plate does not accept dragged youtiao")
+	_check(not bool(fryer.shared_tray.call("_can_drop_data", fryer.shared_tray.size * 0.5, finished_stick)), "the visible shared plate does not accept dragged youtiao")
 	_check(not fryer.call("_requires_timed_session_refresh"), "a ready fryer stops rebuilding drag sources before a serving-tray drag")
 	var ready_snapshot_calls := session.machine_snapshot_calls
 	for _tick in 8:
 		fryer.call("_process", 0.11)
 	_check(session.machine_snapshot_calls == ready_snapshot_calls, "a ready fryer performs no periodic session snapshots while its output is draggable")
 
-	# Clicking the finished tray, rather than a collectible youtiao, uses the
-	# batch storage transaction. Dragging one stick remains for pancake/order use.
-	fryer.call("_on_plain_tray_clicked")
-	_check(session.prepared_products.size() == 1 and int(session.machine.get("quantity", -1)) == 0, "clicking the finished tray moves the ready batch into the finished tray")
+	# Clicking a finished filter item stores its entire ready batch. Dragging one
+	# stick remains available for pancake/order use.
+	fryer.call("_on_fryer_output_short_clicked", {"product_id": &"product.youtiao.plain"})
+	_check(session.prepared_products.size() == 1 and int(session.machine.get("quantity", -1)) == 0, "clicking a finished filter item moves the ready batch into the shared tray")
 	session.prepared_products.clear()
 
 	# Prepared products may be consumed by the pancake station rather than by the
@@ -281,7 +284,7 @@ func _run() -> void:
 	session.prepared_products.clear()
 	fryer.call("refresh_from_session")
 	_check(
-		not fryer.plain_tray.call("_can_drop_data", Vector2.ZERO, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}})
+		not fryer.shared_tray.call("_can_drop_data", Vector2.ZERO, {"kind": &"product_source", "source_ref": {"source_kind": &"youtiao_fryer_slot", "source_index": 0}})
 		and session.prepared_products.is_empty()
 		and int(session.machine.get("quantity", 0)) == 1,
 		"the reusable plain tray ignores fryer-slot drops",
@@ -292,7 +295,7 @@ func _run() -> void:
 	fryer.editor_preview_trays = true
 	fryer.call("_apply_editor_preview")
 	_check(fryer.fryer_visual.texture == fryer.advanced_lowered_machine_texture and fryer.fryer_layout_player.current_animation == &"advanced_lowered" and fryer.basket_products.position == Vector2(23.0, 211.0) and fryer.basket_products.scale == Vector2(0.82, 0.82) and fryer.fryer_slot_sources.map(func(source: ProductDragSource) -> float: return source.position.x) == [0.0, 27.0, 54.0, 81.0] and fryer.fryer_slot_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview exposes the raised, larger and tightly spaced advanced fried-youtiao layout without running production")
-	_check(fryer.plain_tray.visible and fryer.plain_tray.product_sources.all(func(source: ProductDragSource) -> bool: return source.visible), "the editor preview displays the reusable plain serving tray and all authored slots")
+	_check(fryer.shared_tray.visible and fryer.shared_tray.product_sources.filter(func(source: ProductDragSource) -> bool: return source.visible).size() == 8, "the editor preview displays eight oil strips across the shared tray")
 
 	fryer.queue_free()
 	session.queue_free()

@@ -10,6 +10,35 @@ const PRESS_SPREADER_PROP_PATH := NodePath("UpgradeProps/WorkshopProp_growth_aut
 const RUNTIME_PRESS_VISUAL_PATH := NodePath("JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
 const EDITOR_PRESS_VISUAL_PATH := NodePath("SyncedWorkstationPreview/SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/SpreaderSource/PressVisual")
 const EDITOR_PANCAKE_WORKTOP_PATH := NodePath("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots")
+const EDITOR_YOUTIAO_STATION_PATH := NodePath("SafeArea/FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer")
+const EDITOR_YOUTIAO_VISUAL_PATH := NodePath("FryerAssembly/FryerVisual")
+const EDITOR_YOUTIAO_TRAY_PATH := NodePath("SharedTray")
+const EDITOR_SOY_STATION_PATH := NodePath("SafeArea/FiveAreaInfrastructure/Stations/FreshSoyMilkStation")
+const EDITOR_SOY_DISPENSER_PATH := NodePath("MachineAssembly/SoyMilkDispenser")
+const EDITOR_SOY_CUP_STACK_PATH := NodePath("CupStack")
+const EDITOR_SOY_SUGAR_JAR_PATH := NodePath("SugarJar")
+const EDITOR_HOLDING_TRAY_PATH := NodePath("SafeArea/FiveAreaInfrastructure/Stations/PancakeHoldingTray")
+const EDITOR_PACKAGED_DRINK_STATION_PATH := NodePath("SafeArea/FiveAreaInfrastructure/Stations/PackagedDrinkStation")
+const EDITOR_PREVIEW_LOCKED_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
+const EDITOR_YOUTIAO_TEXTURE_PATHS = [
+	"res://resources/art/workstation/machines/youtiao_fryer/youtiao-fryer-cartoon-empty-drain-lowered.png",
+	"res://resources/art/workstation/machines/youtiao_fryer/advanced/youtiao-fryer-cartoon-advanced-empty-drain-lowered.png",
+	"res://resources/art/workstation/machines/youtiao_fryer/youtiao_chicken_dual_fryer_v2.png",
+]
+const EDITOR_SOY_TEXTURE_PATHS = [
+	"res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png",
+	"res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png",
+	"res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png",
+]
+const EDITOR_SOY_CUP_STACK_TEXTURE_PATH := "res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png"
+const EDITOR_SOY_SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/material_slots/legacy_trays/sugar-square-ingredient-tray-v2.png"
+
+enum EditorPreviewPreset {
+	INITIAL_UNLOCKS,
+	YOUTIAO_STAGE,
+	SOY_STAGE,
+	ALL_CONTENT,
+}
 const EDITOR_PANCAKE_CONTAINER_PATHS: Array[NodePath] = [
 	NodePath("EggCarton"),
 	NodePath("BaocuiBasket"),
@@ -55,10 +84,13 @@ const EDITOR_PREVIEW_HIDDEN_PATHS: Array[NodePath] = [
 @onready var _juice_tray_preview := %FilledOrangeJuiceTrayPreview as TextureRect
 @onready var _pancake_holding_tray_preview := %PancakeHoldingTrayPreview as TextureRect
 @onready var _editor_preview := %EditorPreview as Control
+@export_group("编辑器工坊预览")
+@export_enum("初始：锁定内容", "油条：第一档已解锁", "豆浆：第一档已解锁", "全部内容：布局校准") var editor_preview_preset: int = EditorPreviewPreset.INITIAL_UNLOCKS
 var _selected_id: StringName = &""
 
 var _anchors: Dictionary = {}
 var _tag_layouts: Dictionary = {}
+var _editor_texture_cache: Dictionary = {}
 
 
 func _enter_tree() -> void:
@@ -87,7 +119,10 @@ func _ready() -> void:
 		_editor_preview.visible = true
 		var material_previews := get_node_or_null("EditorMaterialPreviews") as CanvasItem
 		if material_previews != null:
-			material_previews.visible = true
+			# The old, hand-placed guides are retained only as scene-authoring
+			# references. The synchronized workstation below is now the visual
+			# authority for editor positioning, matching the runtime composition.
+			material_previews.visible = false
 		_configure_editor_workstation_preview()
 		call_deferred("_sync_press_spreader_layout")
 		return
@@ -138,10 +173,12 @@ func _configure_editor_workstation_preview() -> void:
 		var preview_node := synced_preview.get_node_or_null(scene_path) as CanvasItem
 		if preview_node != null:
 			preview_node.visible = false
-	_configure_editor_pancake_preview(synced_preview)
+	_configure_editor_pancake_preview(synced_preview, _editor_preview_has_pancake_unlocks())
+	_configure_editor_equipment_preview(synced_preview)
+	_configure_editor_upgrade_tags()
 
 
-func _configure_editor_pancake_preview(synced_preview: Control) -> void:
+func _configure_editor_pancake_preview(synced_preview: Control, unlocked: bool) -> void:
 	# The pancake worktop normally fills and reveals these containers from the
 	# live GameSession. That gameplay script is intentionally not a @tool script,
 	# so an editor-only workshop instance would otherwise show empty or missing
@@ -155,7 +192,7 @@ func _configure_editor_pancake_preview(synced_preview: Control) -> void:
 		var container := worktop.get_node_or_null(container_path) as CanvasItem
 		if container != null:
 			container.visible = true
-			container.modulate = Color.WHITE
+			container.modulate = Color.WHITE if unlocked else EDITOR_PREVIEW_LOCKED_MODULATE
 	_set_editor_preview_texture_from_last_export(
 		worktop,
 		NodePath("EggCarton/Visual"),
@@ -171,6 +208,111 @@ func _configure_editor_pancake_preview(synced_preview: Control) -> void:
 	for visual_path in EDITOR_FULL_CONTAINER_VISUAL_PATHS:
 		var visual := worktop.get_node_or_null(visual_path) as TextureRect
 		_set_editor_preview_texture_from_last_export(worktop, visual_path, visual, &"state_textures")
+
+
+func _configure_editor_equipment_preview(synced_preview: Control) -> void:
+	var youtiao_unlocked := editor_preview_preset >= EditorPreviewPreset.YOUTIAO_STAGE
+	var soy_unlocked := editor_preview_preset >= EditorPreviewPreset.SOY_STAGE
+	var all_content_unlocked := editor_preview_preset == EditorPreviewPreset.ALL_CONTENT
+	var youtiao_tier := 2 if all_content_unlocked else 0
+	var soy_tier := 2 if all_content_unlocked else 0
+	var youtiao := synced_preview.get_node_or_null(EDITOR_YOUTIAO_STATION_PATH) as Control
+	if youtiao != null:
+		youtiao.visible = true
+		youtiao.modulate = Color.WHITE if youtiao_unlocked else EDITOR_PREVIEW_LOCKED_MODULATE
+		youtiao.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var fryer_visual := youtiao.get_node_or_null(EDITOR_YOUTIAO_VISUAL_PATH) as TextureRect
+		if fryer_visual != null:
+			fryer_visual.texture = _editor_texture(EDITOR_YOUTIAO_TEXTURE_PATHS[youtiao_tier])
+			fryer_visual.visible = true
+		var youtiao_tray := youtiao.get_node_or_null(EDITOR_YOUTIAO_TRAY_PATH) as CanvasItem
+		if youtiao_tray != null:
+			youtiao_tray.visible = true
+			youtiao_tray.modulate = Color.WHITE if youtiao_unlocked else EDITOR_PREVIEW_LOCKED_MODULATE
+	var soy := synced_preview.get_node_or_null(EDITOR_SOY_STATION_PATH) as Control
+	if soy != null:
+		soy.visible = true
+		soy.modulate = Color.WHITE if soy_unlocked else EDITOR_PREVIEW_LOCKED_MODULATE
+		soy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var dispenser := soy.get_node_or_null(EDITOR_SOY_DISPENSER_PATH) as TextureRect
+		if dispenser != null:
+			dispenser.texture = _editor_texture(EDITOR_SOY_TEXTURE_PATHS[soy_tier])
+			dispenser.visible = true
+		var cup_stack := soy.get_node_or_null(EDITOR_SOY_CUP_STACK_PATH) as TextureButton
+		if cup_stack != null:
+			cup_stack.texture_normal = _editor_texture(EDITOR_SOY_CUP_STACK_TEXTURE_PATH)
+			cup_stack.visible = true
+		var sugar_jar := soy.get_node_or_null(EDITOR_SOY_SUGAR_JAR_PATH) as TextureButton
+		if sugar_jar != null:
+			sugar_jar.texture_normal = _editor_texture(EDITOR_SOY_SUGAR_JAR_TEXTURE_PATH)
+			sugar_jar.visible = soy_unlocked
+	var holding_tray := synced_preview.get_node_or_null(EDITOR_HOLDING_TRAY_PATH) as CanvasItem
+	if holding_tray != null:
+		holding_tray.visible = false
+	var packaged_drink_station := synced_preview.get_node_or_null(EDITOR_PACKAGED_DRINK_STATION_PATH) as CanvasItem
+	if packaged_drink_station != null:
+		packaged_drink_station.visible = false
+	_press_preview.visible = true
+	_press_preview.self_modulate = Color.WHITE if _editor_preview_has_pancake_unlocks() else EDITOR_PREVIEW_LOCKED_MODULATE
+	_pancake_holding_tray_preview.visible = true
+	_pancake_holding_tray_preview.self_modulate = Color.WHITE if all_content_unlocked else EDITOR_PREVIEW_LOCKED_MODULATE
+	_juice_tray_preview.visible = true
+	_juice_tray_preview.self_modulate = Color.WHITE if all_content_unlocked else EDITOR_PREVIEW_LOCKED_MODULATE
+
+
+func _configure_editor_upgrade_tags() -> void:
+	var visible_growth_ids := _editor_preview_visible_growth_ids()
+	for raw_growth_id in CATALOG.GROWTH_DISPLAY_ORDER:
+		var growth_id := StringName(raw_growth_id)
+		var prop := get_node_or_null(NodePath("UpgradeProps/WorkshopProp_" + str(growth_id).replace(".", "_"))) as Button
+		if prop == null:
+			continue
+		prop.visible = visible_growth_ids.has(growth_id)
+		prop.modulate = Color.WHITE if editor_preview_preset != EditorPreviewPreset.INITIAL_UNLOCKS else EDITOR_PREVIEW_LOCKED_MODULATE
+		var condition_tag := prop.get_node_or_null("ConditionTag") as Label
+		if condition_tag != null:
+			condition_tag.text = "%d 金币" % int(CATALOG.growth_definition(growth_id).get("price", 0))
+	var preset_label: String = ["初始锁定内容", "油条第一档", "豆浆第一档", "全部内容校准"][clampi(editor_preview_preset, 0, 3)]
+	_queue.text = "升级工坊 · 编辑器预览：%s" % preset_label
+
+
+func _editor_preview_has_pancake_unlocks() -> bool:
+	return editor_preview_preset >= EditorPreviewPreset.YOUTIAO_STAGE
+
+
+func _editor_preview_visible_growth_ids() -> Array[StringName]:
+	match editor_preview_preset:
+		EditorPreviewPreset.INITIAL_UNLOCKS:
+			return [
+				&"growth.add_on.pancake.egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion",
+				&"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss",
+				&"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander",
+				&"growth.automation.pancake.press_once", &"growth.automation.pancake.non_burning_griddle",
+				&"growth.capacity.pancake_holding_tray.first_slot", &"growth.area.youtiao",
+				&"growth.area.fresh_soy_milk", &"growth.area.packaged_drink",
+			]
+		EditorPreviewPreset.YOUTIAO_STAGE:
+			return [
+				&"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced",
+				&"growth.capacity.chicken_finished_tray", &"growth.area.fresh_soy_milk",
+				&"growth.area.packaged_drink",
+			]
+		EditorPreviewPreset.SOY_STAGE:
+			return [
+				&"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket",
+				&"growth.capacity.chicken_finished_tray", &"growth.assist.fresh_soy_milk.sugar",
+				&"growth.automation.fresh_soy_milk.auto_fill", &"growth.area.packaged_drink",
+			]
+		_:
+			return CATALOG.GROWTH_DISPLAY_ORDER.duplicate()
+
+
+func _editor_texture(path: String) -> Texture2D:
+	if _editor_texture_cache.has(path):
+		return _editor_texture_cache[path] as Texture2D
+	var texture := load(path) as Texture2D
+	_editor_texture_cache[path] = texture
+	return texture
 
 
 func _set_editor_preview_texture_from_last_export(
@@ -229,7 +371,6 @@ func refresh() -> void:
 		# then the completed-state feedback.
 		var show_prerequisite_locked_visual := growth_id in [
 			&"growth.capacity.youtiao_finished_tray",
-			&"growth.capacity.chicken_finished_tray",
 			&"growth.add_on.pancake.egg",
 			&"growth.add_on.pancake.baocui",
 			&"growth.add_on.pancake.scallion",

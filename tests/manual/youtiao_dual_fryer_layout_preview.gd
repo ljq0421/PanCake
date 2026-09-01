@@ -31,10 +31,8 @@ func _run() -> void:
 	root.add_child(fryer)
 	await process_frame
 	fryer.call("_ensure_visual_resources")
-	fryer.plain_tray.visible = true
-	fryer.chicken_tray.visible = true
-	fryer.plain_tray.preview_products(fryer.call("_plate_youtiao_texture"), 4)
-	fryer.chicken_tray.preview_products(fryer.chicken_golden_texture, 4)
+	fryer.shared_tray.visible = true
+	fryer.shared_tray.preview_shared_products(fryer.call("_editor_preview_tray_entries", true), fryer.call("_shared_tray_textures"))
 	fryer.status_label.visible = false
 	if fryer.youtiao_progress_bar != null:
 		fryer.youtiao_progress_bar.visible = false

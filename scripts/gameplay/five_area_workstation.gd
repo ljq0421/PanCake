@@ -84,12 +84,15 @@ const FORMAL_PAYMENT_COIN_SIZES := {
 	10: Vector2(62.0, 62.0),
 	20: Vector2(70.0, 70.0),
 }
-const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(990.0, 707.0)
-const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 20.0
-const FORMAL_PAYMENT_COIN_ROW_SPACING := 20.0
+# Keep the full-sized payment coins in a restrained horizontal cluster. The
+# shallow tray cannot support multiple widely separated rows of large coins.
+const FORMAL_PAYMENT_COIN_ORIGIN := Vector2(930.0, 704.0)
+const FORMAL_PAYMENT_COIN_COLUMN_SPACING := 60.0
+const FORMAL_PAYMENT_COIN_ROW_SPACING := 0.0
 const FORMAL_PAYMENT_COIN_MAX_COLUMNS := 3
+const FORMAL_PAYMENT_COIN_TRAY_CONTENT_RECT := Rect2(36.0, 56.0, 198.0, 76.0)
 const FORMAL_PAYMENT_COIN_SCATTER_OFFSETS := [
-	Vector2(-7.0, 8.0),
+	Vector2(-7.0, 20.0),
 	Vector2(8.0, -6.0),
 	Vector2(-3.0, 12.0),
 	Vector2(6.0, -10.0),
@@ -103,8 +106,8 @@ const FORMAL_PAYMENT_COIN_SCATTER_OFFSETS := [
 	Vector2(3.0, -4.0),
 ]
 const FORMAL_PAYMENT_COIN_SCATTER_ROTATIONS := [
-	-0.18, 0.13, -0.10, 0.20, -0.15, 0.09,
-	0.17, -0.11, 0.08, -0.19, 0.14, -0.06,
+	-0.06, 0.05, -0.04, 0.06, -0.05, 0.04,
+	0.05, -0.04, 0.03, -0.06, 0.04, -0.03,
 ]
 const FORMAL_PAYMENT_COIN_STAGGER_SECONDS := 0.05
 const FORMAL_PAYMENT_COIN_LAUNCH_SECONDS := 0.12
@@ -998,7 +1001,6 @@ static func _restock_failure_text(reason: StringName, status: Dictionary) -> Str
 	match reason:
 		&"stock_locked": return "该材料尚未解锁"
 		&"capacity_reached": return "材料槽已满"
-		&"insufficient_coins": return "余额不足：每份需要 %d 金币" % int(status.get("unit_cost", 0))
 		_: return "暂时无法补货：%s" % str(reason)
 
 
@@ -1027,7 +1029,7 @@ func _tutorial_guide_for_area(session: Node, area_id: StringName) -> Dictionary:
 	var inventory := Dictionary(session.call("inventory_snapshot"))
 	match area_id:
 		&"area.youtiao":
-			var prepared_plain := Dictionary(session.call("prepared_product_slot_status", &"slot.04")) if session.has_method("prepared_product_slot_status") else {}
+			var prepared_plain := Dictionary(session.call("prepared_product_slot_status", &"slot.fryer_finished")) if session.has_method("prepared_product_slot_status") else {}
 			if int(prepared_plain.get("count", 0)) > 0:
 				return {"target": _tutorial_delivery_target(session, area_id), "message": "点击订单中的油条，从成品区逐根交付"}
 			var machine := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
@@ -1721,7 +1723,7 @@ func _available_delivery_source_refs() -> Array[Dictionary]:
 			result.append(source_ref)
 	var session := get_node_or_null("/root/GameSession")
 	if session != null and session.has_method("prepared_product_slot_status"):
-		for slot_id in [&"slot.04", &"slot.chicken"]:
+		for slot_id in [&"slot.fryer_finished"]:
 			var status := Dictionary(session.call("prepared_product_slot_status", slot_id))
 			if bool(status.get("success", false)) and int(status.get("count", 0)) > 0:
 				# Each stored product needs its own source index; using the legacy -1
@@ -2279,8 +2281,9 @@ func _show_formal_payment_coins(amount: int) -> void:
 		coin.unique_name_in_owner = false
 		coin.texture = texture
 		coin.size = _formal_payment_coin_size(denomination)
-		coin.position = _formal_payment_coin_target(_formal_payment_coin_sprites.size()) \
+		var desired_position := _formal_payment_coin_target(_formal_payment_coin_sprites.size()) \
 			+ (FORMAL_PAYMENT_COIN_SIZE - coin.size) * 0.5
+		coin.position = _formal_payment_coin_position_inside_tray(desired_position, coin.size)
 		coin.pivot_offset = coin.size * 0.5
 		coin.rotation = _formal_payment_coin_rotation(_formal_payment_coin_sprites.size())
 		coin.visible = true
@@ -2306,6 +2309,22 @@ func _formal_payment_coin_target(index: int) -> Vector2:
 		float(column) * FORMAL_PAYMENT_COIN_COLUMN_SPACING,
 		float(row) * FORMAL_PAYMENT_COIN_ROW_SPACING,
 	) + _formal_payment_coin_scatter_offset(index)
+
+
+func _formal_payment_coin_position_inside_tray(desired_position: Vector2, coin_size: Vector2) -> Vector2:
+	var payment_tray := get_node_or_null("SafeArea/JianbingStallArtwork/PaymentTray") as Control
+	if payment_tray == null:
+		return desired_position
+	var tray_transform := payment_tray.get_global_transform()
+	var safe_position: Vector2 = tray_transform * FORMAL_PAYMENT_COIN_TRAY_CONTENT_RECT.position
+	var safe_end: Vector2 = tray_transform * FORMAL_PAYMENT_COIN_TRAY_CONTENT_RECT.end
+	var safe_rect := Rect2(safe_position, safe_end - safe_position)
+	var layer_transform := payment_coin_layer.get_global_transform()
+	var desired_global_position: Vector2 = layer_transform * desired_position
+	var maximum_position := safe_rect.end - coin_size
+	desired_global_position.x = clampf(desired_global_position.x, safe_rect.position.x, maximum_position.x)
+	desired_global_position.y = clampf(desired_global_position.y, safe_rect.position.y, maximum_position.y)
+	return layer_transform.affine_inverse() * desired_global_position
 
 
 func _formal_payment_coin_size(denomination: int) -> Vector2:

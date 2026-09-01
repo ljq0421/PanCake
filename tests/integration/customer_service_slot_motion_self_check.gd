@@ -2,6 +2,7 @@ extends SceneTree
 
 const SCENE := preload("res://scenes/gameplay/customer_service_slot.tscn")
 const WORKSTATION_SCRIPT := preload("res://scripts/gameplay/workstation.gd")
+const PORTRAIT_REST_SCALE := Vector2(1.3, 1.3)
 
 var failures := PackedStringArray()
 
@@ -51,7 +52,7 @@ func _run() -> void:
 	_check(
 		far_right_slot.portrait.global_position.x > 0.0
 		and far_right_slot.portrait.position.y > far_right_rest_position.y
-		and far_right_slot.portrait.scale.x < 1.0,
+		and far_right_slot.portrait.scale.x < PORTRAIT_REST_SCALE.x,
 		"a far-right customer approaches locally from behind the counter instead of crossing the viewport",
 	)
 	await _wait(0.90)
@@ -69,7 +70,7 @@ func _run() -> void:
 	_check(
 		slot.portrait.position.x == portrait_rest_position.x
 		and slot.portrait.position.y > portrait_rest_position.y
-		and slot.portrait.scale.x < 1.0,
+		and slot.portrait.scale.x < PORTRAIT_REST_SCALE.x,
 		"normal-motion entry starts below and slightly behind the authored service pose",
 	)
 	_check(
@@ -89,7 +90,7 @@ func _run() -> void:
 	_check(
 		not slot.is_presentation_transitioning()
 		and slot.portrait.position == portrait_rest_position
-		and slot.portrait.scale == Vector2.ONE
+		and slot.portrait.scale == PORTRAIT_REST_SCALE
 		and _is_order_card_above_head(slot)
 		and slot.get_node("OrderPanel").scale == Vector2.ONE
 		and is_equal_approx(slot.portrait.modulate.a, 1.0)
@@ -134,7 +135,7 @@ func _run() -> void:
 	await process_frame
 	_check(
 		slot.portrait.position == portrait_rest_position
-		and slot.portrait.scale == Vector2.ONE
+		and slot.portrait.scale == PORTRAIT_REST_SCALE
 		and slot.get_node("OrderPanel").scale == Vector2.ONE,
 		"reduced motion keeps both customer layers stationary and unscaled",
 	)
@@ -172,7 +173,7 @@ func _is_order_card_above_head(slot: CustomerServiceSlot) -> bool:
 	var portrait_rest_position := slot.get("_portrait_rest_position") as Vector2
 	var expected_position := Vector2(
 		portrait_rest_position.x + (slot.portrait.size.x - panel.size.x) * 0.5,
-		portrait_rest_position.y - panel.size.y - 14.0,
+		portrait_rest_position.y - slot.portrait.size.y * (PORTRAIT_REST_SCALE.y - 1.0) - panel.size.y - 14.0,
 	)
 	return panel.position.is_equal_approx(expected_position)
 

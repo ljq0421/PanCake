@@ -1511,6 +1511,7 @@ offset_left = 13.0
 offset_top = 422.0
 offset_right = 613.0
 offset_bottom = 1065.0
+single_basket_station_offset = Vector2(180, 0)
 
 [node name="WasteBasket" type="Control" parent="FiveAreaInfrastructure/Stations" unique_id=1652300954]
 unique_name_in_owner = true

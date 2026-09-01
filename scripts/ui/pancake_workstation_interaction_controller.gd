@@ -188,10 +188,6 @@ func _on_refill_hold_requested(ingredient_id: StringName) -> void:
 		source.call("reject_hold")
 		_show_refill_message(ingredient_id, &"capacity_reached")
 		return
-	if int(status.get("coins", 0)) < int(status.get("unit_cost", 0)):
-		source.call("reject_hold")
-		_show_refill_message(ingredient_id, &"insufficient_coins")
-		return
 	_release_active_refill()
 	_active_refill_source = source
 	_active_refill_stock_id = stock_id
@@ -263,7 +259,6 @@ func _show_refill_message(ingredient_id: StringName, reason: StringName) -> void
 		return
 	match reason:
 		&"capacity_reached": status_label.text = "%s盘已经满了" % _ingredient_label(ingredient_id)
-		&"insufficient_coins": status_label.text = "金币不足，无法继续补%s" % _ingredient_label(ingredient_id)
 		&"stock_locked": status_label.text = "%s尚未解锁" % _ingredient_label(ingredient_id)
 		_: status_label.text = "当前无法补充%s" % _ingredient_label(ingredient_id)
 

@@ -86,12 +86,12 @@ func _run() -> void:
 	)
 	var one_item_card := slot.get_node("OrderPanel") as Control
 	_check(
-		one_item_card.position.is_equal_approx(Vector2(-6.0, 180.0))
-		and is_equal_approx(one_item_card.get_rect().end.y, slot.portrait.position.y - 14.0),
+		one_item_card.position.is_equal_approx(Vector2(-6.0, 68.28))
+		and is_equal_approx(one_item_card.get_rect().end.y, slot.portrait.position.y - slot.portrait.size.y * 0.3 - 14.0),
 		"the variable-height order card is centered immediately above the customer's head",
 	)
 	_check(slot.portrait.z_index < 0 and slot.get_node("OrderPanel").z_index > 0 and slot.get_node_or_null("PortraitButton") == null and slot.get_node_or_null("FocusFrame") == null, "portrait renders behind the order-card controls without an unused portrait click target")
-	_check(slot.portrait.position.is_equal_approx(Vector2(12.0, 380.0)) and slot.portrait.size.is_equal_approx(Vector2(228.0, 372.4)), "customer portrait rests at the lowered worktop-facing service position")
+	_check(slot.portrait.position.is_equal_approx(Vector2(12.0, 380.0)) and slot.portrait.size.is_equal_approx(Vector2(228.0, 372.4)) and slot.portrait.scale.is_equal_approx(Vector2(1.3, 1.3)), "customer portrait rests at the lowered worktop-facing service position at 1.3x visual scale")
 	_check(slot.card_focus_button.mouse_filter == Control.MOUSE_FILTER_STOP, "the order card retains its explicit focus click target")
 	var item_hover_style := slot.item_buttons[0].get_theme_stylebox(&"hover") as StyleBoxFlat
 	var item_focus_style := slot.item_buttons[0].get_theme_stylebox(&"focus") as StyleBoxFlat

@@ -10,15 +10,37 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var starter := SERVICE.new({"coins": 10})
-	_check(starter.owns_area(&"area.pancake") and not starter.owns_stock(&"stock.pancake.egg"), "new game starts with pancake only and no egg")
+	var starter := SERVICE.new()
+	_check(
+		starter.owns_area(&"area.pancake")
+		and starter.owns_stock(&"stock.pancake.batter")
+		and starter.owns_stock(&"stock.pancake.egg")
+		and starter.owns_stock(&"stock.pancake.baocui")
+		and starter.owns_stock(&"stock.pancake.sauce.sweet_flour"),
+		"new game starts with the full basic pancake recipe stock set"
+	)
+	_check(
+		starter.owns_growth(&"growth.add_on.pancake.egg")
+		and starter.owns_growth(&"growth.add_on.pancake.baocui")
+		and StringName(starter.purchase_status(&"growth.add_on.pancake.egg").get("reason", &"")) == &"already_owned"
+		and StringName(starter.purchase_status(&"growth.add_on.pancake.baocui").get("reason", &"")) == &"already_owned",
+		"starter egg and baocui growth are installed for free and cannot be repurchased"
+	)
+	var existing_save := SERVICE.new({
+		"unlocked_stock_ids": [&"stock.pancake.batter", &"stock.pancake.sauce.sweet_flour"],
+		"owned_growth_ids": [],
+	})
+	_check(
+		not existing_save.owns_stock(&"stock.pancake.egg")
+		and not existing_save.owns_stock(&"stock.pancake.baocui")
+		and not existing_save.owns_growth(&"growth.add_on.pancake.egg")
+		and not existing_save.owns_growth(&"growth.add_on.pancake.baocui"),
+		"loading an existing save does not grant the new starter unlocks"
+	)
 	var retired_tray_owner := SERVICE.new({"owned_growth_ids": [&"growth.capacity.pancake_holding_tray.second_slot"]})
 	_check(retired_tray_owner.owns_growth(&"growth.capacity.pancake_holding_tray.first_slot") and not retired_tray_owner.owns_growth(&"growth.capacity.pancake_holding_tray.second_slot"), "retired second-tray ownership migrates to the single tray")
 	var retired_tray_pending := SERVICE.new({"pending_growth_ids": [&"growth.capacity.pancake_holding_tray.second_slot"]})
 	_check(Array(retired_tray_pending.snapshot().get("pending_growth_ids", [])).has(&"growth.capacity.pancake_holding_tray.first_slot") and not Array(retired_tray_pending.snapshot().get("pending_growth_ids", [])).has(&"growth.capacity.pancake_holding_tray.second_slot"), "retired pending second-tray purchases migrate to the single tray")
-	_check(bool(starter.purchase(&"growth.add_on.pancake.egg").get("success", false)), "egg can be reserved with 10 coins without completing tutorial")
-	starter.set_day_open(false)
-	_check(bool(starter.begin_next_business_day().get("success", false)) and starter.owns_stock(&"stock.pancake.egg"), "egg activates on the next business day")
 	var topping_chain := SERVICE.new({
 		"coins": 160,
 		"unlocked_area_ids": [&"area.pancake"],
@@ -57,11 +79,12 @@ func _run() -> void:
 		"unlocked_area_ids": [&"area.pancake", &"area.youtiao"],
 		"owned_growth_ids": ["growth.area.youtiao", "growth.equipment.youtiao.advanced"],
 	})
+	_check(bool(youtiao_route.purchase(&"growth.capacity.youtiao_finished_tray").get("success", false)), "one 50-coin shared finished tray can be reserved after the youtiao area")
 	_check(bool(youtiao_route.purchase(&"growth.equipment.youtiao.dual_basket").get("success", false)), "dual basket needs only advanced fryer and 350 coins")
 	youtiao_route.set_day_open(false)
 	youtiao_route.begin_next_business_day()
 	_check(youtiao_route.owns_growth(&"growth.equipment.youtiao.dual_basket") and youtiao_route.owns_recipe(&"recipe.chicken.cutlet"), "dual basket unlocks chicken on the next business day")
-	_check(bool(youtiao_route.purchase(&"growth.capacity.chicken_finished_tray").get("success", false)), "chicken tray is purchasable after dual basket")
+	_check(youtiao_route.owns_growth(&"growth.capacity.youtiao_finished_tray"), "the purchased shared tray remains available after the dual basket unlock")
 
 	var soy_route := SERVICE.new({
 		"coins": 600,

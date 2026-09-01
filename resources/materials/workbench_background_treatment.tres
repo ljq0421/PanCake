@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://resources/shaders/workbench_background_treatment.gdshader" id="1_shader"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/wood_contrast = 0.8
+shader_parameter/wood_saturation = 0.92
+shader_parameter/center_lift = 0.04
+shader_parameter/wood_base = Color(0.725, 0.471, 0.243, 1)
+shader_parameter/wood_base_mix = 0.14

@@ -1,0 +1,19 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://resources/shaders/workbench_art_treatment.gdshader" id="1_shader"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/saturation = 0.9
+shader_parameter/contrast = 0.96
+shader_parameter/tint_color = Color(0.91, 0.86, 0.77, 1)
+shader_parameter/tint_mix = 0.04
+shader_parameter/green_replacement_strength = 0.0
+shader_parameter/outline_color = Color(0.22, 0.14, 0.09, 0.96)
+shader_parameter/outline_texels = 4.0
+shader_parameter/shadow_color = Color(0.24, 0.15, 0.10, 0.28)
+shader_parameter/shadow_offset_texels = Vector2(7, 9)
+shader_parameter/highlight_color = Color(1, 0.94, 0.78, 0.82)
+shader_parameter/highlight_strength = 0.18
+shader_parameter/panel_source_split = 1.0
+shader_parameter/panel_target_split = 1.0

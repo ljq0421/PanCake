@@ -16,7 +16,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var tray := WORKSTATION_SCENE.instantiate()
 	var tray_button := tray.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeHoldingTray") as TextureButton
-	_check(tray_button != null and tray_button.texture_normal != null and tray_button.texture_normal.resource_path.ends_with("orange_juice/yinpin-v1.png"), "formal workstation authors one clickable holding tray with the requested artwork")
+	_check(tray_button != null and tray_button.texture_normal != null and tray_button.texture_normal.resource_path.ends_with("container-l-empty-p1-v2-transparent.png"), "formal workstation authors one clickable P1 L holding tray")
 	var formal_tray_position := tray_button.position if tray_button != null else Vector2.ZERO
 	var formal_tray_size := tray_button.size if tray_button != null else Vector2.ZERO
 	_check(tray.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeHoldingTray/SlotFrame01") == null and tray.get_node_or_null("FiveAreaInfrastructure/Stations/PancakeHoldingTray/SlotFrame02") == null, "retired duplicate tray frames are removed")
@@ -72,7 +72,7 @@ func _run() -> void:
 	await process_frame
 	_check(workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_first_slot") is Button and workshop.get_node_or_null("UpgradeProps/WorkshopProp_growth_capacity_pancake_holding_tray_second_slot") == null, "workshop exposes one holding-tray purchase and removes the second upgrade")
 	var preview := workshop.get_node_or_null("UpgradeProps/PancakeHoldingTrayPreview") as TextureRect
-	_check(preview != null and preview.texture != null and preview.texture.resource_path.ends_with("orange_juice/yinpin-v1.png"), "workshop preview uses the requested single-tray artwork")
+	_check(preview != null and preview.texture != null and preview.texture.resource_path.ends_with("container-l-empty-p1-v2-transparent.png"), "workshop preview uses the requested P1 L tray artwork")
 	_check(preview != null and preview.position.is_equal_approx(formal_tray_position) and preview.size.is_equal_approx(formal_tray_size), "workshop preview aligns with the finished tray on the formal workstation")
 	_check(preview != null and not preview.visible, "workshop hides the ghosted tray preview once the live tray is owned")
 	if session != null:

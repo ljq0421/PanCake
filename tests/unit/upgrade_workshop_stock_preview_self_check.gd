@@ -21,8 +21,8 @@ func _run() -> void:
 
 	_check_full_state(artwork.get_node("PancakeWorktopHotspots/PorkFlossSource/Visual") as IngredientTrayVisual, "meat floss tray")
 	_check_full_state(artwork.get_node("PancakeWorktopHotspots/HamSource/Visual") as IngredientTrayVisual, "ham tray")
-	_check_static_state(artwork.get_node("PancakeWorktopHotspots/ScallionTray/Visual") as IngredientTrayVisual, "xiangcong-v1.png", "scallion tray")
-	_check_static_state(artwork.get_node("PancakeWorktopHotspots/CorianderTray/Visual") as IngredientTrayVisual, "xiangcai-v1.png", "coriander tray")
+	_check_static_state(artwork.get_node("PancakeWorktopHotspots/ScallionTray/Visual") as IngredientTrayVisual, "container-s-scallion-p1-v2-transparent.png", "scallion tray")
+	_check_static_state(artwork.get_node("PancakeWorktopHotspots/CorianderTray/Visual") as IngredientTrayVisual, "container-s-coriander-p1-v2-transparent.png", "coriander tray")
 	_check(
 		(artwork.get_node("PancakeWorktopHotspots/EggCarton/Visual") as TextureRect).texture == worktop.egg_content_textures.back(),
 		"workshop preview shows a full egg carton"

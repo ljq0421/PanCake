@@ -17,8 +17,9 @@ const JUICE_STOCK_TEXTURES := {
 	9: preload("res://resources/art/products/orange_juice/yinpin-v1-9.png"),
 	10: preload("res://resources/art/products/orange_juice/yinpin-v1-10.png"),
 }
-const EMPTY_JUICE_TRAY_TEXTURE := preload("res://resources/art/products/orange_juice/yinpin-v1.png")
+const EMPTY_JUICE_TRAY_TEXTURE := preload("res://resources/art/workstation/containers/p1/container-l-empty-p1-v2-transparent.png")
 const JUICE_DRAG_PREVIEW_TEXTURE := preload("res://resources/art/products/orange_juice/boxed_orange_juice_v1.png")
+const CONTAINER_TREATMENT := preload("res://resources/materials/workbench_container_treatment.tres")
 
 var _lock_cover: Button
 var _sources: Array[ProductDragSource] = []
@@ -80,8 +81,10 @@ func _build_surface() -> void:
 		source.name = "DrinkLane%02d" % (index + 1)
 		source.position = Vector2.ZERO
 		source.size = size
+		source.material = CONTAINER_TREATMENT
 		source.ignore_texture_size = true
-		source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		source.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_COVERED
+		source.set_meta(&"workbench_container_size_class", "L")
 		source.hold_enabled = true
 		source.hold_threshold_seconds = 0.20
 		source.cancel_pending_on_mouse_exit = false

@@ -31,7 +31,7 @@ const EDITOR_SOY_TEXTURE_PATHS = [
 	"res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png",
 ]
 const EDITOR_SOY_CUP_STACK_TEXTURE_PATH := "res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png"
-const EDITOR_SOY_SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/material_slots/legacy_trays/sugar-square-ingredient-tray-v2.png"
+const EDITOR_SOY_SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/containers/p1/container-s-sugar-p1-v2-transparent.png"
 
 enum EditorPreviewPreset {
 	INITIAL_UNLOCKS,

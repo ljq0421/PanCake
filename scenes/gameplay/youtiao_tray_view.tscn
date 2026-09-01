@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://q3alpodm6utg" path="res://scripts/ui/youtiao_tray_view.gd" id="1_tray"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="2_source"]
+[ext_resource type="Material" path="res://resources/materials/workbench_container_treatment.tres" id="3_container_treatment"]
 
 [node name="YoutiaoTrayView" type="Control" unique_id=796360723]
 layout_mode = 3
@@ -13,17 +14,23 @@ destination_product_id = &""
 
 [node name="Artwork" type="TextureRect" parent="." unique_id=1489592618]
 unique_name_in_owner = true
+material = ExtResource("3_container_treatment")
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -1.0
-offset_right = -1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -144.0
+offset_top = -60.0
+offset_right = 144.0
+offset_bottom = 60.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 6
+metadata/workbench_container_size_class = "L"
 
 [node name="ProductSource1" type="TextureButton" parent="." unique_id=1935543161]
 unique_name_in_owner = true

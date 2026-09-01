@@ -35,7 +35,7 @@ func _run() -> void:
 	var visual := workstation.get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/CorianderTray/Visual") as TextureRect
 	var fryer := workstation.get_node_or_null("FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer") as Control
 	_check(source != null and not source.disabled and not source.hold_enabled, "the unlocked unlimited coriander tray remains clickable without a restock gesture")
-	_check(visual != null and visual.texture != null and visual.texture.resource_path.ends_with("xiangcai-v1.png"), "coriander uses the revised static tray artwork")
+	_check(visual != null and visual.texture != null and visual.texture.resource_path.ends_with("container-s-coriander-p1-v2-transparent.png"), "coriander uses the P1 S tray artwork")
 	_check(fryer != null and fryer.visible, "the unlocked fryer is visible beside the coriander crock")
 	if source != null:
 		source.begin_gesture(Vector2.ZERO)

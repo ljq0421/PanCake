@@ -46,7 +46,7 @@ func _run() -> void:
 		var source := station.get_node("FiveAreaInfrastructure/Stations/PancakeHoldingTray/PancakeHoldingSource%02d" % source_index) as Control
 		if source.visible:
 			visible_sources.append(source)
-	_check(tray.visible and tray.texture_normal != null and tray.texture_normal.resource_path.ends_with("orange_juice/yinpin-v1.png"), "runtime uses one requested tray texture")
+	_check(tray.visible and tray.texture_normal != null and tray.texture_normal.resource_path.ends_with("container-l-empty-p1-v2-transparent.png"), "runtime uses one requested P1 L tray texture")
 	_check(visible_sources.size() == 3 and visible_sources.all(func(source): return source.scale.is_equal_approx(Vector2(1.066666, 1.066666))), "all three stored pancakes remain readable as a single stacked tray")
 	var output_paths := PackedStringArray()
 	output_paths.append(await _capture(RUNTIME_CAPTURE))

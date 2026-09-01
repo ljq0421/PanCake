@@ -19,7 +19,7 @@ func _run() -> void:
 	var sauce_source := worktop.get_node_or_null("SecretSauceSource") as Control if worktop != null else null
 	var sauce_visual := worktop.get_node_or_null("SecretSauceSource/Visual") as TextureRect if worktop != null else null
 	var payment_tray := artwork.get_node_or_null("PaymentTray") as TextureRect if artwork != null else null
-	_check(payment_tray != null and payment_tray.texture != null and payment_tray.texture.resource_path.ends_with("yinpin-v1.png"), "the workbench uses yinpin-v1 as its payment tray")
+	_check(payment_tray != null and payment_tray.texture != null and payment_tray.texture.resource_path.ends_with("container-l-empty-p1-v2-transparent.png"), "the workbench uses the P1 L component as its payment tray")
 	_check(sauce_source != null and payment_tray != null and payment_tray.get_global_rect().position.x < sauce_source.get_global_rect().position.x, "the payment tray is positioned to the left of the sauce source")
 	_check(sauce_visual != null and payment_tray != null and artwork.z_index + payment_tray.z_index == worktop.z_index + sauce_visual.z_index, "the payment tray shares the sauce tray's final visual layer")
 	if payment_tray != null:

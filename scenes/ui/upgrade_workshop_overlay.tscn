@@ -5,15 +5,16 @@
 [ext_resource type="PackedScene" path="res://scenes/gameplay/four_area_workstation.tscn" id="3_workstation_preview"]
 [ext_resource type="Texture2D" path="res://resources/art/products/orange_juice/yinpin-v1-10.png" id="4_juice_tray"]
 [ext_resource type="Texture2D" uid="uid://uwmrg0jctqwh" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="5_egg_carton"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/inventory_containers/egg/egg-v1-10.png" id="6_egg_full"]
-[ext_resource type="Texture2D" uid="uid://cfdibq22114if" path="res://resources/art/ingredients/baocui/baocui-v1-10.png" id="7_baocui_full"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/scallion/xiangcong-v1.png" id="8_scallion_full"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/coriander/xiangcai-v1.png" id="9_coriander_full"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/huotui-v1-10.png" id="10_ham_full"]
-[ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/rousong-v1-10.png" id="11_pork_floss_full"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-m-egg-full-p1-v2-transparent.png" id="6_egg_full"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-m-baocui-full-p1-v2-transparent.png" id="7_baocui_full"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-s-scallion-p1-v2-transparent.png" id="8_scallion_full"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-s-coriander-p1-v2-transparent.png" id="9_coriander_full"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-m-ham-full-p1-v2-transparent.png" id="10_ham_full"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-m-pork-floss-full-p1-v2-transparent.png" id="11_pork_floss_full"]
 [ext_resource type="Texture2D" uid="uid://co64wbpj5nh2h" path="res://resources/art/ingredients/condiments/sweet-bean-sauce-jar-no-brush.png" id="12_sauce_jar"]
 [ext_resource type="Texture2D" uid="uid://bbs102m2mlmlx" path="res://resources/art/workstation/tools/batter_ladle_holder_occupied_v1.png" id="13_batter_ladle"]
-[ext_resource type="Texture2D" uid="uid://qxcwppwhxlbq" path="res://resources/art/products/orange_juice/yinpin-v1.png" id="14_pancake_holding_tray"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-l-empty-p1-v2-transparent.png" id="14_pancake_holding_tray"]
+[ext_resource type="Material" path="res://resources/materials/workbench_container_treatment.tres" id="15_container_treatment"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_workshop_header"]
 content_margin_left = 22.0
@@ -456,15 +457,17 @@ stretch_mode = 5
 unique_name_in_owner = true
 self_modulate = Color(1, 1, 1, 0.42)
 z_index = 1
+material = ExtResource("15_container_treatment")
 layout_mode = 0
-offset_left = 1192.0
+offset_left = 1092.0
 offset_top = 837.0
-offset_right = 1556.0
+offset_right = 1456.0
 offset_bottom = 1041.0
 mouse_filter = 2
 texture = ExtResource("14_pancake_holding_tray")
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 6
+metadata/workbench_container_size_class = "L"
 
 [node name="WorkshopProp_growth_area_packaged_drink" type="Button" parent="UpgradeProps" unique_id=578231561]
 unique_name_in_owner = true

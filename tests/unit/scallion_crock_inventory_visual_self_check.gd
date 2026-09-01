@@ -37,14 +37,16 @@ func _run() -> void:
 	_check(source != null and not source.hold_enabled and not source.native_drag_enabled, "the scallion tray uses click-to-add without a restock gesture")
 	if crock != null:
 		_check(crock.state_textures.is_empty(), "unlimited scallion uses one static tray texture")
-		_check(crock.texture != null and crock.texture.resource_path.ends_with("xiangcong-v1.png"), "scallion uses the revised static tray artwork")
+		_check(crock.texture != null and crock.texture.resource_path.ends_with("container-s-scallion-p1-v2-transparent.png"), "scallion uses the P1 S tray artwork")
 	if crock != null and source != null:
-		_check(crock.get_global_rect() == source.get_global_rect(), "crock artwork and interaction target share the ScallionTray placement")
+		_check(source.get_global_rect().encloses(crock.get_global_rect()), "scallion interaction target encloses the compact P1 crock artwork")
+		_check(source.size.x >= 56.0 and source.size.y >= 56.0, "scallion interaction target keeps the minimum accessible footprint")
 		_check(crock.size.x > 0.0 and crock.size.y > 0.0, "scallion crock keeps a non-empty authored interaction footprint")
 	if coriander_crock != null and coriander_source != null:
-		_check(coriander_crock.get_global_rect() == coriander_source.get_global_rect(), "coriander crock artwork and interaction target share the CorianderTray placement")
+		_check(coriander_source.get_global_rect().encloses(coriander_crock.get_global_rect()), "coriander interaction target encloses the compact P1 crock artwork")
+		_check(coriander_source.size.x >= 56.0 and coriander_source.size.y >= 56.0, "coriander interaction target keeps the minimum accessible footprint")
 		_check(coriander_crock.get_node_or_null("Contents") == null, "state-texture coriander crock keeps no redundant contents layer")
-		_check(coriander_crock.texture != null and coriander_crock.texture.resource_path.ends_with("xiangcai-v1.png"), "coriander uses the revised static tray artwork")
+		_check(coriander_crock.texture != null and coriander_crock.texture.resource_path.ends_with("container-s-coriander-p1-v2-transparent.png"), "coriander uses the P1 S tray artwork")
 	var restock_status := Dictionary(session.call("five_area_restock_status", &"stock.pancake.scallion")) if session != null else {}
 	_check(not bool(restock_status.get("success", false)) and StringName(restock_status.get("reason", &"")) == &"restock_unnecessary", "scallion rejects paid restocking as unnecessary")
 	if session != null:

@@ -17,7 +17,7 @@
 [ext_resource type="Script" uid="uid://w156b2v4cjh1" path="res://scripts/ui/modal_outside_input_shield.gd" id="26_wxlxi"]
 [ext_resource type="PackedScene" uid="uid://bcgkauxm4opdi" path="res://scenes/gameplay/customer_service_slot.tscn" id="27_rkfb0"]
 [ext_resource type="Script" uid="uid://c0knmwo6mgf78" path="res://scripts/ui/five_area_material_slot.gd" id="29_uwcff"]
-[ext_resource type="Texture2D" uid="uid://ghrsjrdg6w05" path="res://resources/art/ingredients/youtiao/plain_youtiao_dough_v1_five_area_v3.png" id="34_ajejd"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-l-youtiao-dough-p1-v2-transparent.png" id="34_ajejd"]
 [ext_resource type="PackedScene" uid="uid://bgfmpn1k6dtn5" path="res://scenes/gameplay/direct_soy_station.tscn" id="37_830a8"]
 [ext_resource type="Script" uid="uid://bwg8jlfcysptn" path="res://scripts/ui/product_drag_source.gd" id="60_ikhp0"]
 [ext_resource type="Script" uid="uid://3dm4r8fyaulo" path="res://scripts/ui/tutorial_guide_overlay.gd" id="61_oefc1"]
@@ -27,7 +27,7 @@
 [ext_resource type="Script" uid="uid://ccsbl38s1fuxk" path="res://scripts/ui/staged_product_drop_target.gd" id="80_waste_target"]
 [ext_resource type="Texture2D" uid="uid://uwmrg0jctqwh" path="res://resources/art/workstation/material_slots/legacy_trays/empty-square-ingredient-tray-v1.png" id="81_waste_basket"]
 [ext_resource type="PackedScene" uid="uid://d1d3cotxm1vxl" path="res://scenes/gameplay/packaged_drink_station.tscn" id="82_packaged_drink"]
-[ext_resource type="Texture2D" uid="uid://qxcwppwhxlbq" path="res://resources/art/products/orange_juice/yinpin-v1.png" id="83_pancake_holding_tray"]
+[ext_resource type="Texture2D" path="res://resources/art/workstation/containers/p1/container-l-empty-p1-v2-transparent.png" id="83_pancake_holding_tray"]
 [ext_resource type="Shader" uid="uid://coyn1qbaqcitu" path="res://resources/shaders/formal_workbench_polish.gdshader" id="84_formal_polish"]
 [ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="85_pancake_holding_tray_hit"]
 [ext_resource type="AudioStream" uid="uid://d3nagqs4bkp1t" path="res://resources/audio/sfx/morning_ambience.wav" id="audio_ambience"]
@@ -42,10 +42,12 @@
 [ext_resource type="AudioStream" uid="uid://c4s8wuheqrbss" path="res://resources/audio/sfx/soy_dispense.wav" id="audio_soy_dispense"]
 [ext_resource type="AudioStream" uid="uid://ckh7syexa146x" path="res://resources/audio/sfx/soy_ready.wav" id="audio_soy_ready"]
 [ext_resource type="AudioStream" uid="uid://b4xseunre8hev" path="res://resources/audio/sfx/youtiao_load.wav" id="audio_youtiao_load"]
+[ext_resource type="Material" path="res://resources/materials/workbench_background_treatment.tres" id="p1_background_treatment"]
+[ext_resource type="Material" path="res://resources/materials/workbench_container_treatment.tres" id="p1_container_treatment"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_formal_polish"]
 shader = ExtResource("84_formal_polish")
-shader_parameter/intensity = 0.72
+shader_parameter/intensity = 0.55
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_top_status"]
 bg_color = Color(0.045, 0.09, 0.1, 0.88)
@@ -345,6 +347,7 @@ mouse_filter = 2
 
 [node name="BackgroundArtwork" type="TextureRect" parent="SafeArea" unique_id=1027853457]
 z_index = -100
+material = ExtResource("p1_background_treatment")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1450,13 +1453,14 @@ scale = Vector2(0.68, 0.68)
 [node name="YoutiaoDoughPlain" type="TextureButton" parent="SafeArea" unique_id=757275453]
 unique_name_in_owner = true
 z_index = 31
+material = ExtResource("p1_container_treatment")
 layout_mode = 0
 offset_left = 1595.0
 offset_top = 956.0
 offset_right = 1893.0
 offset_bottom = 1045.0
 ignore_texture_size = true
-stretch_mode = 5
+stretch_mode = 6
 script = ExtResource("29_uwcff")
 stock_id = &"stock.youtiao.plain_dough"
 recipe_id = &"recipe.youtiao.plain"
@@ -1464,6 +1468,7 @@ product_id = &"product.youtiao.plain"
 source_kind = &"youtiao_dough"
 material_texture = ExtResource("34_ajejd")
 material_label = "油条面胚"
+metadata/workbench_container_size_class = "L"
 
 [node name="FiveAreaInfrastructure" type="Control" parent="." unique_id=521012009]
 layout_mode = 1
@@ -1526,6 +1531,7 @@ mouse_default_cursor_shape = 2
 script = ExtResource("80_waste_target")
 
 [node name="BasketArtwork" type="TextureRect" parent="FiveAreaInfrastructure/Stations/WasteBasket" unique_id=1066170999]
+material = ExtResource("p1_container_treatment")
 layout_mode = 0
 offset_left = 8.0
 offset_right = 124.0
@@ -1534,6 +1540,7 @@ mouse_filter = 2
 texture = ExtResource("81_waste_basket")
 expand_mode = 1
 stretch_mode = 5
+metadata/workbench_container_size_class = "S"
 
 [node name="Title" type="Label" parent="FiveAreaInfrastructure/Stations/WasteBasket" unique_id=831026544]
 layout_mode = 0
@@ -1566,6 +1573,7 @@ vertical_alignment = 1
 
 [node name="PancakeHoldingTray" type="TextureButton" parent="FiveAreaInfrastructure/Stations" unique_id=1824711041]
 unique_name_in_owner = true
+material = ExtResource("p1_container_treatment")
 layout_mode = 0
 offset_left = 1092.0
 offset_top = 837.0
@@ -1574,9 +1582,10 @@ offset_bottom = 1041.0
 tooltip_text = "煎饼暂存盘：点击存入已打包煎饼，最多暂存 3 份"
 texture_normal = ExtResource("83_pancake_holding_tray")
 ignore_texture_size = true
-stretch_mode = 5
+stretch_mode = 6
 script = ExtResource("85_pancake_holding_tray_hit")
 hit_texture = ExtResource("83_pancake_holding_tray")
+metadata/workbench_container_size_class = "L"
 
 [node name="PancakeHoldingSource01" type="TextureButton" parent="FiveAreaInfrastructure/Stations/PancakeHoldingTray" unique_id=843643587]
 unique_name_in_owner = true

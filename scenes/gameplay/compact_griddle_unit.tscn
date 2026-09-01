@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/compact_griddle_unit.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/art/workstation/tools/aozi-v1.png" id="2_griddle"]
@@ -24,6 +24,7 @@
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/ham_sausage/ham-sausage-1.png" id="27_ham_portion"]
 [ext_resource type="Texture2D" path="res://resources/art/ingredients/meat_floss/pork-floss-portion-2.png" id="28_pork_floss_portion"]
 [ext_resource type="Script" path="res://scripts/ui/cooking_stage_bar.gd" id="29_cooking_bar"]
+[ext_resource type="Material" path="res://resources/materials/workbench_griddle_treatment.tres" id="30_griddle_treatment"]
 
 [sub_resource type="StyleBoxFlat" id="ActionStyle"]
 bg_color = Color(0.88, 0.47, 0.13, 0.94)
@@ -97,10 +98,11 @@ horizontal_alignment = 2
 
 [node name="GriddleArt" type="TextureRect" parent="."]
 unique_name_in_owner = true
-offset_left = -40.0
-offset_top = -10.0
-offset_right = 460.0
-offset_bottom = 322.0
+material = ExtResource("30_griddle_treatment")
+offset_left = -17.5
+offset_top = 5.0
+offset_right = 437.5
+offset_bottom = 307.0
 mouse_filter = 2
 texture = ExtResource("2_griddle")
 expand_mode = 1

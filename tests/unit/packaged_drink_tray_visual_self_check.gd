@@ -10,8 +10,8 @@ var failures := PackedStringArray()
 
 func _initialize() -> void:
 	_check(int(CATALOG.stock_definition(STOCK_ID).get("restock_capacity", 0)) == 10, "juice restock capacity is ten")
-	_check(STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.resource_path.ends_with("yinpin-v1.png"), "empty juice stock uses the revised finished-drink tray")
-	_check(STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.get_size() == Vector2(419, 256), "empty juice tray uses the authored canvas")
+	_check(STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.resource_path.ends_with("container-l-empty-p1-v2-transparent.png"), "empty juice stock uses the P1 L container artwork")
+	_check(STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.get_size().x > STATION_SCRIPT.EMPTY_JUICE_TRAY_TEXTURE.get_size().y, "P1 empty juice tray keeps a horizontal authored canvas")
 	_check(STATION_SCRIPT.JUICE_STOCK_TEXTURES.size() == 10, "juice tray exposes all ten stock states")
 	for stock_count in range(1, 11):
 		var texture := STATION_SCRIPT._stock_texture_for(PRODUCT_ID, stock_count) as Texture2D

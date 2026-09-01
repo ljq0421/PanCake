@@ -2,14 +2,7 @@ extends SceneTree
 
 const ARTWORK_SCENE := preload("res://scenes/gameplay/jianbing_stall_artwork.tscn")
 const SOY_SCENE := preload("res://scenes/gameplay/direct_soy_station.tscn")
-const SCALE_FACTOR := 1.4
-const SAUCE_VISUAL_SCALE_FACTOR := 1.5
-
-const ORIGINAL_SIZES := {
-	&"SecretSauceSource": Vector2(137.0, 148.4),
-	&"ScallionTray": Vector2(146.0, 147.0),
-	&"CorianderTray": Vector2(149.0, 149.0),
-}
+const CONDIMENT_SOURCES := [&"SecretSauceSource", &"ScallionTray", &"CorianderTray"]
 
 var failures := PackedStringArray()
 
@@ -22,14 +15,13 @@ func _run() -> void:
 	var artwork := ARTWORK_SCENE.instantiate()
 	root.add_child(artwork)
 	var worktop := artwork.get_node("PancakeWorktopHotspots") as Control
-	for source_name in ORIGINAL_SIZES:
+	for source_name in CONDIMENT_SOURCES:
 		var source := worktop.get_node(str(source_name)) as Control
 		var visual := source.get_node("Visual") as TextureRect
 		var hotspot := source.get_node("Hotspot") as ProductDragSource
-		var source_scale := SAUCE_VISUAL_SCALE_FACTOR if source_name == &"SecretSauceSource" else SCALE_FACTOR
-		var expected_size: Vector2 = ORIGINAL_SIZES[source_name] * source_scale
-		_check(source.size.is_equal_approx(expected_size), "%s uses its visual-normalized scale" % source_name)
-		_check(visual.get_global_rect().is_equal_approx(source.get_global_rect()), "%s artwork follows the resized source rectangle" % source_name)
+		_check(visual.size.is_equal_approx(WorkbenchArtSpec.CONTAINER_S), "%s artwork uses the P1 S component size" % source_name)
+		_check(str(visual.get_meta(&"workbench_container_size_class", "")) == "S", "%s records the reusable S component class" % source_name)
+		_check(source.get_global_rect().encloses(visual.get_global_rect()), "%s keeps its S artwork inside the established hit target" % source_name)
 		_check(hotspot.get_global_rect().is_equal_approx(source.get_global_rect()), "%s hotspot follows the resized source rectangle" % source_name)
 
 	var soy_station := SOY_SCENE.instantiate()
@@ -37,7 +29,8 @@ func _run() -> void:
 	await process_frame
 	soy_station.set_workshop_preview(true)
 	var sugar_jar := soy_station.get_node("SugarJar") as TextureButton
-	_check(sugar_jar.size.is_equal_approx(Vector2(157.0, 125.0) * SCALE_FACTOR), "sugar tray is exactly 1.4x its previous size")
+	_check(sugar_jar.size.is_equal_approx(WorkbenchArtSpec.CONTAINER_S), "sugar tray uses the P1 S component size")
+	_check(str(sugar_jar.get_meta(&"workbench_container_size_class", "")) == "S", "sugar tray records the reusable S component class")
 	_check(sugar_jar.has_method("_has_point") and sugar_jar.call("_has_point", sugar_jar.size * 0.5), "sugar tray keeps its texture-shaped click hotspot")
 
 	artwork.queue_free()

@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://d4t5ukdi2w3j" path="res://resources/art/workstation/machines/youtiao_fryer/youtiao-raw-dough-v4.png" id="3_t355c"]
 [ext_resource type="PackedScene" uid="uid://ctm07paqtlqsu" path="res://scenes/gameplay/youtiao_tray_view.tscn" id="3_tray"]
 [ext_resource type="Script" uid="uid://b0wj33mr1emti" path="res://scripts/ui/cooking_stage_bar.gd" id="6_cooking_bar"]
+[ext_resource type="Material" path="res://resources/materials/workbench_fryer_treatment.tres" id="7_fryer_treatment"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_t355c"]
 atlas = ExtResource("3_t355c")
@@ -559,6 +560,7 @@ mouse_filter = 2
 
 [node name="FryerVisual" type="TextureRect" parent="FryerAssembly" unique_id=714480438]
 unique_name_in_owner = true
+material = ExtResource("7_fryer_treatment")
 layout_mode = 0
 offset_left = -47.27272
 offset_top = 80.0

@@ -16,16 +16,16 @@ const CUP_STACK_TEXTURE_PATHS := [
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_8_v3_bold_cartoon_transparent.png",
 ]
 const FILLED_CUP_TEXTURE_PATH := "res://resources/art/products/soy_milk/yellow_soy_milk_cup_filled_v1.png"
-const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/material_slots/legacy_trays/sugar-square-ingredient-tray-v2.png"
+const SUGAR_JAR_TEXTURE_PATH := "res://resources/art/workstation/containers/p1/container-s-sugar-p1-v2-transparent.png"
 const MACHINE_TIER_LAYOUTS: Array[Dictionary] = [
 	{
-		"texture_path": "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser.png",
+		"texture_path": "res://resources/art/workstation/machines/soy_milk/soy-milk-dispenser-p1-v2-transparent.png",
 	},
 	{
-		"texture_path": "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-transparent.png",
+		"texture_path": "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-p1-v2-transparent.png",
 	},
 	{
-		"texture_path": "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-transparent.png",
+		"texture_path": "res://resources/art/workstation/machines/soy_milk/automatic-soy-milk-dispenser-two-outlets-p1-v2-transparent.png",
 	},
 ]
 const OUTLET_CUP_REGION := Rect2(261.0, 1125.0, 430.0, 488.0)
@@ -38,15 +38,15 @@ const WORKSHOP_LOCKED_AREA_MODULATE := Color(1.0, 1.0, 1.0, 0.42)
 
 @export_group("Machine geometry")
 @export_subgroup("Basic")
-@export var basic_machine_rect := Rect2(0.0, 0.0, 343.2, 358.4)
+@export var basic_machine_rect := Rect2(57.0, 42.0, 315.0, 300.0)
 @export var basic_left_nozzle_texture_position := Vector2(575.0, 1000.0)
 @export var basic_left_cup_offset := Vector2(0.0, 8.0)
 @export_subgroup("Intermediate")
-@export var intermediate_machine_rect := Rect2(0.0, 0.0, 343.2, 358.4)
+@export var intermediate_machine_rect := Rect2(57.0, 42.0, 315.0, 300.0)
 @export var intermediate_left_nozzle_texture_position := Vector2(573.0, 1040.0)
 @export var intermediate_left_cup_offset := Vector2(0.0, 8.0)
 @export_subgroup("Advanced")
-@export var advanced_machine_rect := Rect2(0.0, 0.0, 343.2, 358.4)
+@export var advanced_machine_rect := Rect2(57.0, 42.0, 315.0, 300.0)
 @export var advanced_left_nozzle_texture_position := Vector2(452.0, 980.0)
 @export var advanced_right_nozzle_texture_position := Vector2(689.0, 980.0)
 @export var advanced_left_cup_offset := Vector2(0.0, 8.0)

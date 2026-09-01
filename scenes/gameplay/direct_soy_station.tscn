@@ -5,6 +5,8 @@
 [ext_resource type="Script" uid="uid://b5kdixo6o3tup" path="res://scripts/ui/soy_dispense_effect.gd" id="6_effect"]
 [ext_resource type="Script" uid="uid://dbbug6716cjmf" path="res://scripts/ui/alpha_texture_button.gd" id="10_texture_hit"]
 [ext_resource type="Script" uid="uid://cutcx46klm5cc" path="res://scripts/ui/direct_soy_station_editor_preview.gd" id="11_editor_preview"]
+[ext_resource type="Material" path="res://resources/materials/workbench_soy_machine_treatment.tres" id="12_soy_treatment"]
+[ext_resource type="Material" path="res://resources/materials/workbench_container_treatment.tres" id="13_container_treatment"]
 
 [sub_resource type="StyleBoxFlat" id="Style_nozzle_action"]
 bg_color = Color(1, 0.71, 0.2, 0.18)
@@ -82,10 +84,12 @@ mouse_filter = 1
 [node name="SoyMilkDispenser" type="TextureRect" parent="MachineAssembly" unique_id=1208859431]
 unique_name_in_owner = true
 z_index = -2
+material = ExtResource("12_soy_treatment")
 layout_mode = 0
-offset_left = -1.0
-offset_right = 342.2
-offset_bottom = 358.4
+offset_left = 57.0
+offset_top = 42.0
+offset_right = 372.0
+offset_bottom = 342.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
@@ -265,15 +269,17 @@ hold_threshold_seconds = 0.5
 [node name="SugarJar" type="TextureButton" parent="." unique_id=1158254122]
 unique_name_in_owner = true
 z_index = 3
+material = ExtResource("13_container_treatment")
 layout_mode = 0
-offset_left = -200.0
-offset_top = 166.0
-offset_right = 19.799988
-offset_bottom = 341.0
+offset_left = -138.1
+offset_top = 215.5
+offset_right = -42.1
+offset_bottom = 291.5
 tooltip_text = "成品杯加糖（最多两份）"
 ignore_texture_size = true
-stretch_mode = 4
+stretch_mode = 6
 script = ExtResource("10_texture_hit")
+metadata/workbench_container_size_class = "S"
 
 [node name="AnimationOrigin" type="Control" parent="SugarJar" unique_id=941771361]
 layout_mode = 1

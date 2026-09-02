@@ -3078,7 +3078,7 @@ func _set_upgrade_workshop_preview(enabled: bool) -> void:
 		"SafeArea/RightRack",
 		"SafeArea/SurfaceReadoutLabel",
 		"SafeArea/IngredientDragPreview",
-		"FiveAreaInfrastructure/AttentionRail",
+		"SafeArea/AttentionRail",
 	]:
 		var runtime_node := get_node_or_null(scene_path) as CanvasItem
 		if runtime_node == null:

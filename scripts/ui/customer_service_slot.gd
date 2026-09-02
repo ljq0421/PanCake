@@ -63,6 +63,7 @@ var _portrait_rest_position := Vector2.ZERO
 var _order_panel_rest_position := Vector2.ZERO
 var _transition_phase: StringName = &"idle"
 var _has_special_rule := false
+var _focused := false
 
 
 func _ready() -> void:
@@ -118,6 +119,18 @@ func present_order(
 
 func is_presentation_transitioning() -> bool:
 	return _transition_phase != &"idle"
+
+
+func bound_order_id() -> StringName:
+	return _order_id
+
+
+func set_focused(value: bool) -> void:
+	_focused = value
+	card_background.set_focused(value)
+	order_panel.self_modulate = Color.WHITE if value else Color(0.88, 0.87, 0.82, 1.0)
+	portrait.self_modulate = Color.WHITE if value else Color(0.84, 0.84, 0.80, 1.0)
+	z_index = 8 if value else 0
 
 
 ## Restores a persisted customer exactly at the authored service position.

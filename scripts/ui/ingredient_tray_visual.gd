@@ -1,6 +1,9 @@
 class_name IngredientTrayVisual
 extends TextureRect
 
+const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const INVENTORY_COUNT_BADGE := preload("res://scripts/ui/inventory_count_badge.gd")
+
 ## Keeps a physical countertop tray in sync with an inventory stock. Input is
 ## intentionally handled by the matching PancakeWorktopHotspots drag source.
 
@@ -20,10 +23,12 @@ extends TextureRect
 var _session: Node
 var _base_texture: Texture2D
 var _workshop_preview := false
+var _count_badge
 
 
 func _ready() -> void:
 	_base_texture = empty_texture if empty_texture != null else texture
+	_ensure_count_badge()
 	call_deferred("_bind_session")
 
 
@@ -60,7 +65,13 @@ func _refresh_from_session() -> void:
 	if _session == null or stock_id.is_empty() or not _session.has_method("inventory_snapshot"):
 		return
 	var inventory := Dictionary(_session.call("inventory_snapshot"))
-	var quantity := full_quantity if _workshop_preview else maxi(int(inventory.get(str(stock_id), 0)), 0)
+	var stock_definition := CATALOG.stock_definition(stock_id)
+	var unlimited := bool(stock_definition.get("unlimited", false))
+	var quantity := full_quantity if _workshop_preview or unlimited else maxi(int(inventory.get(str(stock_id), 0)), 0)
+	_ensure_count_badge()
+	# The tray contents themselves communicate availability; numeric stock
+	# badges made the compact topping row read like debug instrumentation.
+	_count_badge.set_stock(quantity, full_quantity, true)
 	var contents := get_node_or_null(contents_visual_path) as TextureRect
 	if not state_textures.is_empty():
 		texture = _state_texture_for_quantity(quantity)
@@ -78,16 +89,20 @@ func _refresh_from_session() -> void:
 func _state_texture_for_quantity(quantity: int) -> Texture2D:
 	if state_textures.is_empty():
 		return null
-	# A full quantity-indexed container set has one texture for each stocked
-	# amount (1..full_quantity), while the scene's original texture is kept for
-	# the empty state.
-	if state_textures.size() == full_quantity:
-		if quantity <= 0:
-			return _base_texture
-		return state_textures[clampi(quantity, 1, state_textures.size()) - 1]
 	if quantity <= 0:
-		return state_textures[0]
-	var full_index := state_textures.size() - 1
-	if quantity >= full_quantity:
-		return state_textures[full_index]
-	return state_textures[mini(1, full_index)]
+		return _base_texture
+	# Countertop inventory is represented by one stable, full-looking master;
+	# the badge carries the real stock count. This prevents the scene from
+	# accumulating one painted item for every unlocked unit.
+	return state_textures.back()
+
+
+func _ensure_count_badge() -> void:
+	if _count_badge != null:
+		return
+	_count_badge = INVENTORY_COUNT_BADGE.new()
+	_count_badge.name = "InventoryCountBadge"
+	_count_badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_count_badge.position = Vector2(-62.0, -34.0)
+	_count_badge.size = Vector2(56.0, 28.0)
+	add_child(_count_badge)

@@ -56,8 +56,10 @@ func _run() -> void:
 		for count in range(0, 11):
 			hotspots._update_egg_inventory_visual(count, 10)
 			var texture_path := visual.texture.resource_path if visual != null and visual.texture != null else ""
-			var expected_filename := "empty-square-ingredient-tray-v1.png" if count == 0 else "container-m-egg-full-p1-v2-transparent.png" if count == 10 else "egg-v1-%d.png" % count
-			_check(texture_path.ends_with(expected_filename), "%d-egg stock state uses its matching complete tray" % count)
+			var expected_filename := "empty-square-ingredient-tray-v1.png" if count == 0 else "container-m-egg-full-p1-v2-transparent.png"
+			_check(texture_path.ends_with(expected_filename), "%d-egg stock uses the stable representative tray" % count)
+			var count_badge := visual.get_node_or_null("InventoryCountBadge") as Label
+			_check(count_badge != null and not count_badge.visible, "%d-egg stock keeps the small-ingredient quantity badge hidden" % count)
 			_check(contents == null or (not contents.visible and contents.texture == null), "legacy egg overlay stays disabled")
 	_check(source != null and source is EggCartonDragSource and source.hold_enabled and is_equal_approx(source.hold_threshold_seconds, 0.20) and not source.native_drag_enabled, "egg carton uses click-to-place plus a 0.2-second hold-to-restock")
 	if source is EggCartonDragSource:

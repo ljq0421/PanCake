@@ -5,6 +5,8 @@ signal status_message(message: String)
 signal audio_cue_requested(cue: StringName)
 
 const CUP_STACK_CAPACITY := 8
+const REPRESENTATIVE_CUP_STACK_COUNT := 4
+const INVENTORY_COUNT_BADGE := preload("res://scripts/ui/inventory_count_badge.gd")
 const CUP_STACK_TEXTURE_PATHS := [
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_1_v3_bold_cartoon_transparent.png",
 	"res://resources/art/products/soy_milk/soy_milk_plastic_cup_stack_2_v3_bold_cartoon_transparent.png",
@@ -81,9 +83,11 @@ var _cup_stack_count := CUP_STACK_CAPACITY
 var _outlet_cup_texture: Texture2D
 var _filled_cup_texture: Texture2D
 var _texture_cache: Dictionary = {}
+var _cup_stack_count_badge
 
 
 func _ready() -> void:
+	_ensure_cup_stack_count_badge()
 	machine_output.short_clicked.connect(_on_cup_short_clicked)
 	queued_cup_output.short_clicked.connect(_on_queued_cup_short_clicked)
 	cup_stack.short_clicked.connect(_on_cup_stack_short_clicked)
@@ -276,9 +280,10 @@ func _refresh_cup_stack() -> void:
 	# stack of cups.  The preview remains non-interactive and does not consume
 	# the live station's cup inventory.
 	var preview_stack_count := CUP_STACK_CAPACITY if _workshop_preview else _cup_stack_count
-	var display_count := clampi(preview_stack_count, 1, CUP_STACK_CAPACITY)
-	var stack_texture := _cup_stack_texture(display_count)
+	var stack_texture := _cup_stack_texture(REPRESENTATIVE_CUP_STACK_COUNT)
 	var has_stock := preview_stack_count > 0
+	_ensure_cup_stack_count_badge()
+	_cup_stack_count_badge.set_stock(preview_stack_count, CUP_STACK_CAPACITY, _workshop_preview)
 	cup_stack.visible = true
 	cup_stack.configure(
 		{"source_kind": &"soy_cup_stack", "cup_count": preview_stack_count},
@@ -313,6 +318,17 @@ func _sync_outlet_cup_size_to_stack() -> void:
 	left_selection_frame.size = outlet_display_size + Vector2(8.0, 8.0)
 	right_selection_frame.position = Vector2(-4.0, -4.0)
 	right_selection_frame.size = outlet_display_size + Vector2(8.0, 8.0)
+
+
+func _ensure_cup_stack_count_badge() -> void:
+	if _cup_stack_count_badge != null:
+		return
+	_cup_stack_count_badge = INVENTORY_COUNT_BADGE.new()
+	_cup_stack_count_badge.name = "InventoryCountBadge"
+	_cup_stack_count_badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_cup_stack_count_badge.position = Vector2(-60.0, -32.0)
+	_cup_stack_count_badge.size = Vector2(54.0, 28.0)
+	cup_stack.add_child(_cup_stack_count_badge)
 
 
 func _ensure_visual_resources() -> bool:

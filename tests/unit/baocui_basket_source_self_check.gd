@@ -53,7 +53,9 @@ func _run() -> void:
 		await process_frame
 		var replenished := Dictionary(session.call("inventory_snapshot"))
 		_check(int(replenished.get(str(STOCK_ID), 0)) == 1, "holding an empty basket replenishes one crisp through real pointer input")
-		_check(visual != null and hotspot_controller != null and visual.texture == hotspot_controller.baocui_tray_textures.front(), "one-crisp tray artwork appears after restocking")
+		_check(visual != null and hotspot_controller != null and visual.texture == hotspot_controller.baocui_tray_textures.back(), "one-crisp stock keeps the stable representative tray after restocking")
+		var count_badge := visual.get_node_or_null("InventoryCountBadge") as Label if visual != null else null
+		_check(count_badge != null and not count_badge.visible, "one-crisp stock keeps the small-ingredient quantity badge hidden")
 	workstation.queue_free()
 	await process_frame
 	_finish()

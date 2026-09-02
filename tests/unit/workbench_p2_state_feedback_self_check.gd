@@ -55,14 +55,14 @@ func _check_reminder_track() -> void:
 	workstation.call("_push_recent_reminder", "豆浆接满，可以交付", &"info")
 	workstation.call("_push_recent_reminder", "果汁缺货，请长按补货", &"red")
 	workstation.call("_push_recent_reminder", "煎饼已完成包装", &"info")
-	var rail := workstation.get_node("FiveAreaInfrastructure/AttentionRail") as Control
+	var rail := workstation.get_node("SafeArea/AttentionRail") as Control
 	var visible_count := 0
 	for child in rail.get_children():
 		if (child as Label).visible:
 			visible_count += 1
-	_check(visible_count == 3, "attention track displays no more than three chips including urgent state")
+	_check(visible_count == 1, "attention track collapses urgent state and recent reminders into one summary chip")
 	_check((rail.get_child(0) as Label).text.begins_with("紧急"), "urgent device loss remains first")
-	_check("缺货" in (rail.get_child(1) as Label).text or "完成" in (rail.get_child(1) as Label).text, "recent transient feedback remains readable after its popup")
+	_check("缺货" in (rail.get_child(0) as Label).tooltip_text and "完成" in (rail.get_child(0) as Label).tooltip_text, "recent transient feedback remains available in the summary tooltip")
 	workstation.free()
 
 

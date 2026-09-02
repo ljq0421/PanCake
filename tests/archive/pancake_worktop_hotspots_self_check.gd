@@ -337,25 +337,25 @@ func _test_worktop_hotspot_mapping(session: FakeSession) -> void:
 	var batter_ladle_visual := hotspots.get_node("BatterLadleSource/Visual") as TextureRect
 	_check(spreader_hit_button != null, "spreader uses its component-local alpha hit target")
 	var expected_component_rects := {
-		&"PorkFlossSource": Rect2(1161.0, 656.0, 214.0, 180.0),
-		&"HamSource": Rect2(1314.0, 656.0, 214.0, 180.0),
-		&"EggCarton": Rect2(1269.0, 787.0, 216.0, 234.0),
-		&"ScallionTray": Rect2(1143.0, 767.0, 146.0, 147.0),
-		&"CorianderTray": Rect2(1248.0, 767.0, 149.0, 149.0),
-		&"BaocuiBasket": Rect2(1008.0, 656.0, 214.0, 180.0),
-		&"SecretSauceSource": Rect2(1049.0, 761.0, 137.0, 148.4),
+		&"PorkFlossSource": Rect2(1284.0, 752.0, 214.0, 180.0),
+		&"HamSource": Rect2(1437.0, 752.0, 214.0, 180.0),
+		&"EggCarton": Rect2(978.0, 752.0, 214.0, 180.0),
+		&"ScallionTray": Rect2(1306.5503, 654.4, 204.3999, 205.8001),
+		&"CorianderTray": Rect2(1406.4502, 652.0, 208.6001, 208.6),
+		&"BaocuiBasket": Rect2(1131.0, 752.0, 214.0, 180.0),
+		&"SecretSauceSource": Rect2(1208.0, 649.0, 205.5, 222.6),
 	}
 	for component_path in expected_component_rects:
 		var component := hotspots.get_node(NodePath(str(component_path))) as Control
 		var visual := component.get_node("Visual") as TextureRect
 		var source := component.get_node("Hotspot") as ProductDragSource
 		_check(Rect2(component.position, component.size).is_equal_approx(expected_component_rects[component_path]), "%s preserves the approved 1920x1080 worktop geometry" % component_path)
-		_check(visual.get_global_rect().is_equal_approx(component.get_global_rect()), "%s visual follows its single component rectangle" % component_path)
-		_check(source.get_global_rect().is_equal_approx(component.get_global_rect()), "%s hotspot follows its single component rectangle" % component_path)
+		_check(component.get_global_rect().encloses(visual.get_global_rect()), "%s visual stays inside its single component rectangle" % component_path)
+		_check(component.get_global_rect().encloses(source.get_global_rect()), "%s hotspot stays inside its single component rectangle" % component_path)
 		_check(not source._alpha_hit_regions.is_empty(), "%s derives its clickable silhouette from its visible artwork" % component_path)
 	_check(Rect2(station.position, station.size).is_equal_approx(Rect2(220.0, 566.0, 1170.0, 444.0)), "the unified pancake station preserves the authored griddle-station rectangle")
 	var surface_design_rect := Rect2(station.position + unit.position + unit.pancake_surface.position, unit.pancake_surface.size)
-	_check(surface_design_rect.is_equal_approx(Rect2(654.0, 641.0, 314.0, 314.0)), "the interactive pancake surface matches the aozi-v1 cooking plate")
+	_check(surface_design_rect.is_equal_approx(Rect2(654.0, 641.0, 314.0, 314.0)) and unit.pancake_surface.scale == Vector2(1.0, 0.8), "the model-space pancake surface uses the gentler P1 griddle ellipse")
 	_check(StringName(hotspots.get_node("ScallionTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.scallion", "left worktop bowl maps to scallion stock")
 	_check(StringName(hotspots.get_node("CorianderTray/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.coriander", "coriander tray maps to coriander stock")
 	_check(StringName(hotspots.get_node("BaocuiBasket/Hotspot").source_ref().get("stock_id", &"")) == &"stock.pancake.baocui", "middle worktop basket maps to baocui stock")

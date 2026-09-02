@@ -46,6 +46,10 @@ func _run() -> void:
 	workstation.call("_push_recent_reminder", "果汁缺货，请长按补货", &"red")
 	workstation.call("_push_recent_reminder", "煎饼已经完成包装", &"info")
 	var badges := Dictionary(workstation.get("_station_state_badges"))
+	_check((badges[&"fryer"] as Control).get_parent() == workstation.get_node("FiveAreaInfrastructure/Stations/CartoonYoutiaoFryer"), "fryer state is owned by the fryer node")
+	_check((badges[&"griddle"] as Control).get_parent() == workstation.get_node("SafeArea/JianbingStallArtwork/MultiGriddleStation/Griddle01"), "griddle state is owned by the griddle node")
+	_check((badges[&"soy"] as Control).get_parent() == workstation.get_node("FiveAreaInfrastructure/Stations/FreshSoyMilkStation"), "soy state is owned by the soy-machine node")
+	_check((badges[&"drink"] as Control).get_parent() == workstation.get_node("FiveAreaInfrastructure/Stations/PackagedDrinkStation"), "drink state is owned by the drink-rack node")
 	(badges[&"fryer"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_RISK, "炸锅 · 过火风险")
 	(badges[&"griddle"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_ACTIVE, "鏊台 · 制作", 0.58)
 	(badges[&"soy"] as WorkbenchStateBadge).set_state(WorkbenchStateBadge.STATE_COMPLETE, "豆浆机 · 可交付")
@@ -55,7 +59,7 @@ func _run() -> void:
 	AudioServer.set_bus_mute(master_bus, true)
 	await process_frame
 
-	var attention := workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention01") as Label
+	var attention := workstation.get_node("SafeArea/AttentionRail/Attention01") as Label
 	var coins: Array[TextureRect] = []
 	for coin_value in Array(workstation.get("_formal_payment_coin_sprites")):
 		var coin := coin_value as TextureRect
@@ -64,7 +68,7 @@ func _run() -> void:
 	_check(workstation.get_node_or_null("FiveAreaInfrastructure/PendingPaymentButton") == null, "payment collection uses no separate CTA button")
 	_check(attention.visible and attention.text == "紧急 · 3项待处理", "attention chip prioritizes urgency and keeps the three-item summary compact")
 	_check("煎饼暂存即将陈旧" in attention.tooltip_text, "attention tooltip preserves overflow details")
-	_check((workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention02") as Label).visible and (workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention03") as Label).visible, "two recent transient messages remain in the three-chip reminder track")
+	_check(not (workstation.get_node("SafeArea/AttentionRail/Attention02") as Label).visible and not (workstation.get_node("SafeArea/AttentionRail/Attention03") as Label).visible, "recent transient messages stay in the single summary chip tooltip")
 	_check((badges[&"fryer"] as WorkbenchStateBadge).detail_text().contains("过火") and (badges[&"drink"] as WorkbenchStateBadge).detail_text().contains("缺货"), "muted preview keeps explicit risk and shortage text")
 	_check(coins.size() == 4, "payment preview renders the expected denomination cluster")
 	for capture_variant in CAPTURES:
@@ -100,7 +104,7 @@ func _capture(workstation: Control, coins: Array[TextureRect], window_size: Vect
 		await process_frame
 	var viewport_rect := Rect2(Vector2.ZERO, Vector2(window_size))
 	var screen_transform: Transform2D = root.get_screen_transform()
-	var attention := workstation.get_node("FiveAreaInfrastructure/AttentionRail/Attention01") as Label
+	var attention := workstation.get_node("SafeArea/AttentionRail/Attention01") as Label
 	var attention_rect: Rect2 = screen_transform * attention.get_global_rect()
 	_check(viewport_rect.encloses(attention_rect), "attention chip stays on-screen at %s" % window_size)
 	for badge_value in Dictionary(workstation.get("_station_state_badges")).values():

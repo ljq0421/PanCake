@@ -144,6 +144,7 @@ const TOP_WARNING_FADE_SECONDS := 0.20
 @onready var tutorial_guide_overlay: Control = %TutorialGuideOverlay
 @onready var top_warning_label: Label = %TopWarningLabel
 @onready var pancake_worktop_hotspots: Control = get_node_or_null("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots") as Control
+@onready var workstation_zone_backdrop: WorkbenchZoneBackdrop = %WorkstationZoneBackdrop
 @onready var fixed_material_lock_buttons: Array[BaseButton] = [
 	$SafeArea/LockedIngredientInteractions/Slot01LockedButton,
 	$SafeArea/LockedIngredientInteractions/Slot02LockedButton,
@@ -175,6 +176,35 @@ var _physical_hover: WorkstationPhysicalHover
 var _station_state_badges: Dictionary = {}
 var _recent_reminders: Array[Dictionary] = []
 var _current_attention_entries: Array = []
+
+
+func _refresh_customer_service_slots(orders: Array) -> void:
+	super._refresh_customer_service_slots(orders)
+	_refresh_visual_workflow_focus(orders)
+
+
+func _refresh_visual_workflow_focus(orders: Array) -> void:
+	var focused_order: Dictionary = {}
+	if not _formal_order_id.is_empty():
+		for order_value in orders:
+			var candidate := Dictionary(order_value)
+			if StringName(candidate.get("order_id", &"")) == _formal_order_id:
+				focused_order = candidate
+				break
+	if focused_order.is_empty() and not orders.is_empty():
+		focused_order = Dictionary(orders[0])
+	var focused_order_id := StringName(focused_order.get("order_id", &""))
+	for service_slot in customer_service_slots:
+		if service_slot.has_method("set_focused") and service_slot.has_method("bound_order_id"):
+			service_slot.call("set_focused", StringName(service_slot.call("bound_order_id")) == focused_order_id and not focused_order_id.is_empty())
+	if workstation_zone_backdrop == null:
+		return
+	var area_id: StringName = &""
+	var items := Array(focused_order.get("items", []))
+	if not items.is_empty():
+		var product_id := StringName(Dictionary(items[0]).get("product_id", &""))
+		area_id = StringName(CATALOG.product_definition(product_id).get("area_id", &""))
+	workstation_zone_backdrop.set_active_area(area_id)
 
 
 func _ready() -> void:
@@ -1258,7 +1288,7 @@ func _apply_attention_entries(entries: Array) -> void:
 
 
 func _render_attention_rail() -> void:
-	var rail := $FiveAreaInfrastructure/AttentionRail
+	var rail := $SafeArea/AttentionRail
 	var all_parts := PackedStringArray()
 	var has_red_entry := false
 	for entry_value in _current_attention_entries:
@@ -1270,32 +1300,41 @@ func _render_attention_rail() -> void:
 		])
 	var now := Time.get_ticks_msec()
 	_recent_reminders = _recent_reminders.filter(func(entry: Dictionary) -> bool: return int(entry.get("expires_at_msec", 0)) > now)
-	var rows: Array[Dictionary] = []
+	var summary: Dictionary = {}
 	if not all_parts.is_empty():
-		rows.append({
+		summary = {
 			"text": "%s · %d项待处理" % ["紧急" if has_red_entry else "注意", all_parts.size()],
 			"tooltip": "待处理事项\n%s" % "\n".join(all_parts),
 			"severity": &"red" if has_red_entry else &"yellow",
-		})
-	for reminder in _recent_reminders:
-		if rows.size() >= 3:
-			break
-		rows.append({
-			"text": "%s · %s" % ["警告" if StringName(reminder.get("severity", &"info")) == &"red" else "提醒", str(reminder.get("message", ""))],
-			"tooltip": str(reminder.get("message", "")),
-			"severity": StringName(reminder.get("severity", &"info")),
-		})
+		}
+	if not _recent_reminders.is_empty():
+		var reminder_parts := PackedStringArray()
+		for reminder in _recent_reminders:
+			reminder_parts.append(str(reminder.get("message", "")))
+		if summary.is_empty():
+			var latest := Dictionary(_recent_reminders[0])
+			var extra_count := _recent_reminders.size() - 1
+			summary = {
+				"text": "%s · %s%s" % [
+					"警告" if StringName(latest.get("severity", &"info")) == &"red" else "提醒",
+					str(latest.get("message", "")),
+					" · 另%d项" % extra_count if extra_count > 0 else "",
+				],
+				"tooltip": "最近提醒\n%s" % "\n".join(reminder_parts),
+				"severity": StringName(latest.get("severity", &"info")),
+			}
+		else:
+			summary["tooltip"] = "%s\n\n最近提醒\n%s" % [str(summary.get("tooltip", "")), "\n".join(reminder_parts)]
 	for index in range(rail.get_child_count()):
 		var label := rail.get_child(index) as Label
 		if label == null:
 			continue
-		label.visible = index < rows.size()
-		if index >= rows.size():
+		label.visible = index == 0 and not summary.is_empty()
+		if not label.visible:
 			continue
-		var row := Dictionary(rows[index])
-		var severity := StringName(row.get("severity", &"info"))
-		label.text = str(row.get("text", ""))
-		label.tooltip_text = str(row.get("tooltip", ""))
+		var severity := StringName(summary.get("severity", &"info"))
+		label.text = str(summary.get("text", ""))
+		label.tooltip_text = str(summary.get("tooltip", ""))
 		label.add_theme_color_override("font_color", Color("ff8f78") if severity == &"red" else Color("ffd06a") if severity == &"yellow" else Color("e7e1d3"))
 
 
@@ -1317,21 +1356,25 @@ func _push_recent_reminder(message: String, severity: StringName = &"info") -> v
 func _install_station_state_badges() -> void:
 	if not _station_state_badges.is_empty():
 		return
-	var stations := $FiveAreaInfrastructure/Stations as Control
+	var griddle_unit := multi_griddle_station.get_node_or_null("Griddle01") as Control
 	var definitions := {
-		&"fryer": {"position": Vector2(54.0, 808.0), "size": Vector2(250.0, 38.0)},
-		&"griddle": {"position": Vector2(590.0, 646.0), "size": Vector2(244.0, 38.0)},
-		&"soy": {"position": Vector2(1670.0, 788.0), "size": Vector2(218.0, 38.0)},
-		&"drink": {"position": Vector2(1590.0, 1002.0), "size": Vector2(280.0, 38.0)},
+		&"fryer": {"parent": cartoon_youtiao_fryer, "position": Vector2(41.0, 386.0), "size": Vector2(250.0, 38.0)},
+		&"griddle": {"parent": griddle_unit, "position": Vector2(24.0, 248.0), "size": Vector2(226.0, 36.0)},
+		&"soy": {"parent": fresh_soy_station, "position": Vector2(76.0, 308.0), "size": Vector2(218.0, 38.0)},
+		&"drink": {"parent": packaged_drink_station, "position": Vector2(34.0, 165.0), "size": Vector2(280.0, 38.0)},
 	}
 	for state_id in definitions:
 		var definition := Dictionary(definitions[state_id])
+		var station_parent := definition.get("parent") as Control
+		if station_parent == null:
+			continue
 		var badge := WORKBENCH_STATE_BADGE.new() as WorkbenchStateBadge
 		badge.name = "%sStateBadge" % str(state_id).capitalize()
 		badge.position = Vector2(definition["position"])
 		badge.size = Vector2(definition["size"])
 		badge.z_index = 145
-		stations.add_child(badge)
+		badge.set_meta(&"station_owner_path", station_parent.get_path())
+		station_parent.add_child(badge)
 		_station_state_badges[state_id] = badge
 	_refresh_station_state_badges()
 
@@ -2534,6 +2577,8 @@ func _show_top_warning(message: String) -> void:
 		return
 	if _top_warning_tween != null and _top_warning_tween.is_valid():
 		_top_warning_tween.kill()
+	var attention_rail := $SafeArea/AttentionRail as Control
+	attention_rail.visible = false
 	top_warning_label.text = message
 	_push_recent_reminder(message, &"red")
 	top_warning_label.modulate = Color.WHITE
@@ -2541,10 +2586,16 @@ func _show_top_warning(message: String) -> void:
 	_top_warning_tween = create_tween()
 	_top_warning_tween.tween_interval(TOP_WARNING_DURATION_SECONDS)
 	if _formal_payment_should_reduce_motion():
-		_top_warning_tween.tween_callback(func() -> void: top_warning_label.visible = false)
+		_top_warning_tween.tween_callback(func() -> void:
+			top_warning_label.visible = false
+			attention_rail.visible = true
+		)
 		return
 	_top_warning_tween.tween_property(top_warning_label, "modulate:a", 0.0, TOP_WARNING_FADE_SECONDS).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
-	_top_warning_tween.tween_callback(func() -> void: top_warning_label.visible = false)
+	_top_warning_tween.tween_callback(func() -> void:
+		top_warning_label.visible = false
+		attention_rail.visible = true
+	)
 
 
 static func _reminder_severity(message: String) -> StringName:

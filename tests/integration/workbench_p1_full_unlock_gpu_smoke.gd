@@ -43,6 +43,10 @@ func _run() -> void:
 	var fifth_customer := workstation.get_node("SafeArea/ServiceCustomer5") as Control
 	var background := workstation.get_node("SafeArea/BackgroundArtwork") as TextureRect
 	var drink_source := workstation.packaged_drink_station.product_sources()[0] as ProductDragSource
+	var egg_visual := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/EggCarton/Visual") as TextureRect
+	var ham_visual := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/HamSource/Visual") as IngredientTrayVisual
+	var floss_visual := workstation.get_node("SafeArea/JianbingStallArtwork/PancakeWorktopHotspots/PorkFlossSource/Visual") as IngredientTrayVisual
+	var zone_backdrop := workstation.get_node("SafeArea/WorkstationZoneBackdrop") as WorkbenchZoneBackdrop
 
 	_check(griddle_art.size == Vector2(455, 302) and pancake_surface.size == Vector2(314, 314), "griddle shell is smaller while the usable surface remains full-size")
 	_check(soy_station.visible and soy_art.size == Vector2(315, 300), "fully unlocked soy machine uses the reduced footprint")
@@ -55,6 +59,14 @@ func _run() -> void:
 	_check(fifth_customer.visible and (fifth_customer.get_node("OrderPanel") as Control).visible, "the full-unlock capture renders a real fifth customer and order card")
 	_check(not fifth_painted_rect.intersects(soy_painted_rect), "reduced soy machine painted body does not overlap the fifth customer portrait (portrait=%s soy=%s)" % [fifth_painted_rect, soy_painted_rect])
 	_check(drink_source.find_children("Representative*", "TextureRect", false, false).size() == 5 and (drink_source.get_node("CountBadge") as Label).text == "×10", "packaged drinks use representative cartons plus a real quantity badge")
+	_check(egg_visual.texture.resource_path.ends_with("container-m-egg-full-p1-v2-transparent.png") and not (egg_visual.get_node("InventoryCountBadge") as Label).visible, "egg inventory uses one P1 representative tray without a numeric small-ingredient label")
+	_check(ham_visual.texture == ham_visual.state_textures.back() and not (ham_visual.get_node("InventoryCountBadge") as Label).visible, "ham inventory uses one representative tray without a numeric small-ingredient label")
+	_check(floss_visual.texture == floss_visual.state_textures.back() and not (floss_visual.get_node("InventoryCountBadge") as Label).visible, "meat-floss inventory uses one representative tray without a numeric small-ingredient label")
+	_check(soy_station.cup_stack.texture_normal.resource_path.ends_with("soy_milk_plastic_cup_stack_4_v3_bold_cartoon_transparent.png") and (soy_station.cup_stack.get_node("InventoryCountBadge") as Label).text == "×8", "soy cups use a four-cup representative stack plus the real quantity badge")
+	_check(zone_backdrop.active_zone_id() == &"area.pancake", "the first focused order highlights the matching pancake work zone")
+	var pancake_zone := zone_backdrop.zone_polygon(&"area.pancake")
+	_check(pancake_zone.size() == 4 and pancake_zone[0].x > pancake_zone[3].x and pancake_zone[1].x > pancake_zone[2].x, "work-zone frames converge toward the tabletop vanishing point instead of using front-view rectangles")
+	_check((workstation.get_node("SafeArea/AttentionRail/Attention02") as Label).visible == false and (workstation.get_node("SafeArea/AttentionRail/Attention03") as Label).visible == false, "top HUD reserves one reminder entry instead of a competing reminder row")
 
 	await RenderingServer.frame_post_draw
 	var output_absolute := ProjectSettings.globalize_path(SCREENSHOT_PATH)

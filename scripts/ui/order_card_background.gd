@@ -7,14 +7,23 @@ const HEADER_FILL := Color("dfa040")
 const CONTENT_FILL := Color("fff4d6")
 const CONTENT_BORDER := Color("c87b35")
 const FOOTER_FILL := Color("efc979")
+const FOCUSED_BORDER := Color("ffc34a")
 
 @export_range(0.5, 3.0, 0.1) var scale_factor := 1.0
 
 var _blocks: Array[Dictionary] = []
+var _focused := false
 
 
 func set_card_layout(blocks: Array[Dictionary]) -> void:
 	_blocks = blocks.duplicate(true)
+	queue_redraw()
+
+
+func set_focused(value: bool) -> void:
+	if _focused == value:
+		return
+	_focused = value
 	queue_redraw()
 
 
@@ -26,7 +35,11 @@ func _notification(what: int) -> void:
 func _draw() -> void:
 	if size.x <= 0.0 or size.y <= 0.0:
 		return
-	_draw_box(Rect2(Vector2.ZERO, size), CARD_FILL, CARD_BORDER, 7.0 * scale_factor, roundi(2.0 * scale_factor))
+	var outer_border := FOCUSED_BORDER if _focused else CARD_BORDER
+	var outer_width := roundi((4.0 if _focused else 2.0) * scale_factor)
+	_draw_box(Rect2(Vector2.ZERO, size), CARD_FILL, outer_border, 7.0 * scale_factor, outer_width)
+	if _focused:
+		draw_rect(Rect2(8.0 * scale_factor, 7.0 * scale_factor, 42.0 * scale_factor, 4.0 * scale_factor), FOCUSED_BORDER)
 	# The outer shell owns the rounded top corners; the header intentionally
 	# meets it flush so its baseline stays perfectly straight.
 	draw_rect(Rect2(2.0 * scale_factor, 2.0 * scale_factor, size.x - 4.0 * scale_factor, 26.0 * scale_factor), HEADER_FILL)

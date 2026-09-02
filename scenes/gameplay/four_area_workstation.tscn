@@ -44,6 +44,7 @@
 [ext_resource type="AudioStream" uid="uid://b4xseunre8hev" path="res://resources/audio/sfx/youtiao_load.wav" id="audio_youtiao_load"]
 [ext_resource type="Material" path="res://resources/materials/workbench_background_treatment.tres" id="p1_background_treatment"]
 [ext_resource type="Material" path="res://resources/materials/workbench_container_treatment.tres" id="p1_container_treatment"]
+[ext_resource type="Script" path="res://scripts/ui/workbench_zone_backdrop.gd" id="p0_zone_backdrop"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_formal_polish"]
 shader = ExtResource("84_formal_polish")
@@ -370,6 +371,19 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="WorkstationZoneBackdrop" type="Control" parent="SafeArea"]
+unique_name_in_owner = true
+z_index = -92
+z_as_relative = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("p0_zone_backdrop")
+
 [node name="JianbingStallArtwork" parent="SafeArea" unique_id=988830653 instance=ExtResource("62_stall")]
 layout_mode = 1
 offset_left = -100.0
@@ -431,10 +445,10 @@ unique_name_in_owner = true
 visible = false
 z_index = 250
 layout_mode = 0
-offset_left = 710.0
-offset_top = 82.0
-offset_right = 1250.0
-offset_bottom = 122.0
+offset_left = 1260.0
+offset_top = 16.0
+offset_right = 1900.0
+offset_bottom = 72.0
 theme_override_colors/font_color = Color(1, 0.84, 0.36, 1)
 theme_override_colors/font_outline_color = Color(0.16, 0.06, 0.015, 0.96)
 theme_override_constants/outline_size = 4
@@ -583,10 +597,10 @@ text = "婉拒订单"
 [node name="BottomStrip" type="Panel" parent="SafeArea" unique_id=438973155]
 z_index = 150
 layout_mode = 0
-offset_left = 20.0
-offset_top = 82.0
-offset_right = 700.0
-offset_bottom = 122.0
+offset_left = 532.0
+offset_top = 650.0
+offset_right = 924.0
+offset_bottom = 694.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_top_status")
 
@@ -609,10 +623,10 @@ unique_name_in_owner = true
 layout_mode = 0
 offset_left = 14.0
 offset_top = 4.0
-offset_right = 454.0
-offset_bottom = 36.0
+offset_right = 250.0
+offset_bottom = 40.0
 theme_override_colors/font_color = Color(0.5, 0.94, 0.94, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 16
 text = "当前工具：未拿工具"
 vertical_alignment = 1
 clip_text = true
@@ -646,12 +660,12 @@ clip_text = true
 [node name="WarningLabel" type="Label" parent="SafeArea/BottomStrip" unique_id=1009949277]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 462.0
+offset_left = 258.0
 offset_top = 4.0
-offset_right = 666.0
-offset_bottom = 36.0
+offset_right = 382.0
+offset_bottom = 40.0
 theme_override_colors/font_color = Color(0.76, 0.92, 0.76, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 text = "当前无破洞风险"
 vertical_alignment = 1
 clip_text = true
@@ -1629,34 +1643,34 @@ ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("60_ikhp0")
 
-[node name="AttentionRail" type="HBoxContainer" parent="FiveAreaInfrastructure" unique_id=1664686673]
+[node name="AttentionRail" type="HBoxContainer" parent="SafeArea" unique_id=1664686673]
 z_index = 150
 layout_mode = 0
-offset_left = 1100.0
-offset_top = 82.0
-offset_right = 1890.0
-offset_bottom = 126.0
+offset_left = 1260.0
+offset_top = 16.0
+offset_right = 1900.0
+offset_bottom = 72.0
 mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="Attention01" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=806710644]
+[node name="Attention01" type="Label" parent="SafeArea/AttentionRail" unique_id=806710644]
 visible = false
-custom_minimum_size = Vector2(258, 40)
+custom_minimum_size = Vector2(640, 56)
 layout_mode = 2
 mouse_default_cursor_shape = 16
 theme_override_colors/font_color = Color(1, 0.81, 0.4, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.025, 0.01, 0.95)
 theme_override_constants/outline_size = 2
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBox_attention_chip")
 horizontal_alignment = 2
 vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Attention02" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=1799233558]
+[node name="Attention02" type="Label" parent="SafeArea/AttentionRail" unique_id=1799233558]
 visible = false
-custom_minimum_size = Vector2(258, 40)
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.906, 0.882, 0.827, 1)
@@ -1669,9 +1683,9 @@ vertical_alignment = 1
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Attention03" type="Label" parent="FiveAreaInfrastructure/AttentionRail" unique_id=96487461]
+[node name="Attention03" type="Label" parent="SafeArea/AttentionRail" unique_id=96487461]
 visible = false
-custom_minimum_size = Vector2(258, 40)
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.906, 0.882, 0.827, 1)

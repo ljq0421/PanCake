@@ -1,9 +1,9 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b68vwy0g6kfrp"]
 
-[ext_resource type="Shader" path="res://resources/shaders/workbench_griddle_treatment.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://ce0uakok3hecu" path="res://resources/shaders/workbench_griddle_treatment.gdshader" id="1_shader"]
 
 [resource]
 shader = ExtResource("1_shader")
-shader_parameter/charcoal_color = Color(0.212, 0.200, 0.184, 1)
-shader_parameter/warm_shadow = Color(0.20, 0.13, 0.09, 0.28)
+shader_parameter/charcoal_color = Color(0.212, 0.2, 0.184, 1)
+shader_parameter/warm_shadow = Color(0.2, 0.13, 0.09, 0.28)
 shader_parameter/rim_highlight = Color(0.86, 0.72, 0.54, 0.24)

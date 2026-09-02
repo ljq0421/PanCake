@@ -4,6 +4,7 @@ extends Control
 signal status_message(message: String)
 
 const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
+const INVENTORY_COUNT_BADGE := preload("res://scripts/ui/inventory_count_badge.gd")
 const SPREADER_HOLDER_EMPTY := preload("res://resources/art/workstation/tools/batter_ladle_holder_empty_v1.png")
 const SPREADER_HOLDER_FILLED := preload("res://resources/art/workstation/tools/batter_spreader_holder_wide_filled_v2.png")
 const PRESS_SPREADER := preload("res://resources/art/workstation/tools/pancake-press-wide-upgrade-v2-base.png")
@@ -482,7 +483,8 @@ func _update_egg_inventory_visual(stock: int, capacity: int) -> void:
 	var content_visual := carton_base.get_node_or_null("Contents") as TextureRect
 	var display_stock := capacity if _workshop_preview else stock
 	var capped_stock := clampi(display_stock, 0, maxi(capacity, 0))
-	carton_base.texture = egg_content_textures[capped_stock] if capped_stock < egg_content_textures.size() else null
+	carton_base.texture = egg_content_textures.back() if capped_stock > 0 and not egg_content_textures.is_empty() else egg_content_textures[0] if not egg_content_textures.is_empty() else null
+	_inventory_count_badge(carton_base).set_stock(capped_stock, capacity, true)
 	if content_visual != null:
 		content_visual.texture = null
 		content_visual.visible = false
@@ -495,9 +497,23 @@ func _update_baocui_inventory_visual(stock: int) -> void:
 	var visual := basket.get_node_or_null("Visual") as TextureRect
 	if visual == null:
 		return
-	var display_stock := baocui_tray_textures.size() if _workshop_preview else stock
-	var texture_index := clampi(display_stock, 0, baocui_tray_textures.size()) - 1
-	visual.texture = baocui_tray_textures[texture_index] if texture_index >= 0 else BAOCUI_EMPTY_TRAY
+	var capacity := int(CATALOG.stock_definition(BAOCUI_STOCK_ID).get("restock_capacity", baocui_tray_textures.size()))
+	var display_stock := capacity if _workshop_preview else maxi(stock, 0)
+	visual.texture = baocui_tray_textures.back() if display_stock > 0 and not baocui_tray_textures.is_empty() else BAOCUI_EMPTY_TRAY
+	_inventory_count_badge(visual).set_stock(display_stock, capacity, true)
+
+
+func _inventory_count_badge(visual: TextureRect):
+	var badge: Variant = visual.get_node_or_null("InventoryCountBadge")
+	if badge != null:
+		return badge
+	badge = INVENTORY_COUNT_BADGE.new()
+	badge.name = "InventoryCountBadge"
+	badge.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	badge.position = Vector2(-62.0, -34.0)
+	badge.size = Vector2(56.0, 28.0)
+	visual.add_child(badge)
+	return badge
 
 
 func _update_spreader_holder_visual() -> void:

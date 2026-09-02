@@ -120,18 +120,18 @@ func _apply_presentation() -> void:
 static func griddle_state(snapshot: Dictionary, heat_status: Dictionary = {}) -> Dictionary:
 	var state := int(snapshot.get("state", 0))
 	if bool(heat_status.get("charred", false)):
-		return {"state": STATE_RISK, "detail": "鏊台 · 已焦糊", "progress": -1.0}
+		return {"state": STATE_RISK, "detail": "已焦糊", "progress": -1.0}
 	if state == 6:
-		return {"state": STATE_COMPLETE, "detail": "鏊台 · 可交付", "progress": -1.0}
+		return {"state": STATE_COMPLETE, "detail": "可交付", "progress": -1.0}
 	if state in [1, 2, 3, 4, 5]:
 		var progress := float(heat_status.get("doneness", -1.0)) if bool(heat_status.get("cooking", false)) else -1.0
-		return {"state": STATE_ACTIVE, "detail": "鏊台 · 制作", "progress": progress}
-	return {"state": STATE_DEFAULT, "detail": "鏊台 · 待命", "progress": -1.0}
+		return {"state": STATE_ACTIVE, "detail": "制作中", "progress": progress}
+	return {"state": STATE_DEFAULT, "detail": "待命", "progress": -1.0}
 
 
 static func fryer_state(snapshot: Dictionary, shortage: bool = false) -> Dictionary:
 	if not bool(snapshot.get("owned", false)):
-		return {"state": STATE_UNAVAILABLE, "detail": "炸锅 · 未解锁", "progress": -1.0}
+		return {"state": STATE_UNAVAILABLE, "detail": "未解锁", "progress": -1.0}
 	var lanes := Dictionary(snapshot.get("lanes", {}))
 	var lane_values: Array = lanes.values() if not lanes.is_empty() else [snapshot]
 	var states: Array[StringName] = []
@@ -146,32 +146,32 @@ static func fryer_state(snapshot: Dictionary, shortage: bool = false) -> Diction
 			var duration := maxf(float(lane.get("duration_seconds", 0.0)), 0.001)
 			progress = maxf(progress, clampf(float(lane.get("cooking_elapsed_seconds", 0.0)) / duration, 0.0, 1.0))
 	if states.any(func(value: StringName) -> bool: return value in [&"overcooking", &"burnt"]):
-		return {"state": STATE_RISK, "detail": "炸锅 · 过火风险", "progress": -1.0}
+		return {"state": STATE_RISK, "detail": "过火风险", "progress": -1.0}
 	if states.any(func(value: StringName) -> bool: return value in [&"ready_safe", &"ready_to_collect"]):
-		return {"state": STATE_COMPLETE, "detail": "炸锅 · 可收取", "progress": -1.0}
+		return {"state": STATE_COMPLETE, "detail": "可收取", "progress": -1.0}
 	if states.any(func(value: StringName) -> bool: return value in [&"loaded", &"frying", &"draining"]):
-		return {"state": STATE_ACTIVE, "detail": "炸锅 · 进行中", "progress": progress}
+		return {"state": STATE_ACTIVE, "detail": "进行中", "progress": progress}
 	if shortage:
-		return {"state": STATE_SHORTAGE, "detail": "炸锅 · 原料缺货", "progress": -1.0}
-	return {"state": STATE_DEFAULT, "detail": "炸锅 · 待命", "progress": -1.0}
+		return {"state": STATE_SHORTAGE, "detail": "原料缺货", "progress": -1.0}
+	return {"state": STATE_DEFAULT, "detail": "待命", "progress": -1.0}
 
 
 static func soy_state(snapshot: Dictionary, cup_shortage: bool = false) -> Dictionary:
 	if not bool(snapshot.get("owned", false)):
-		return {"state": STATE_UNAVAILABLE, "detail": "豆浆机 · 未解锁", "progress": -1.0}
+		return {"state": STATE_UNAVAILABLE, "detail": "未解锁", "progress": -1.0}
 	var cup_state := StringName(snapshot.get("cup_state", snapshot.get("state", &"ready")))
 	if cup_state == &"filled" or int(snapshot.get("ready_cup_count", 0)) > 0:
-		return {"state": STATE_COMPLETE, "detail": "豆浆机 · 可交付", "progress": -1.0}
+		return {"state": STATE_COMPLETE, "detail": "可交付", "progress": -1.0}
 	if cup_state == &"held_empty":
-		return {"state": STATE_ACTIVE, "detail": "豆浆机 · 接浆中", "progress": -1.0}
+		return {"state": STATE_ACTIVE, "detail": "接浆中", "progress": -1.0}
 	if cup_shortage:
-		return {"state": STATE_SHORTAGE, "detail": "豆浆机 · 空杯缺货", "progress": -1.0}
-	return {"state": STATE_DEFAULT, "detail": "豆浆机 · 待命", "progress": -1.0}
+		return {"state": STATE_SHORTAGE, "detail": "空杯缺货", "progress": -1.0}
+	return {"state": STATE_DEFAULT, "detail": "待命", "progress": -1.0}
 
 
 static func packaged_drink_state(unlocked: bool, count: int, capacity: int) -> Dictionary:
 	if not unlocked:
-		return {"state": STATE_UNAVAILABLE, "detail": "饮品架 · 未解锁", "progress": -1.0}
+		return {"state": STATE_UNAVAILABLE, "detail": "未解锁", "progress": -1.0}
 	if count <= 0:
-		return {"state": STATE_SHORTAGE, "detail": "饮品架 · 缺货 0/%d" % capacity, "progress": -1.0}
-	return {"state": STATE_COMPLETE, "detail": "饮品架 · 充足 ×%d" % count, "progress": -1.0}
+		return {"state": STATE_SHORTAGE, "detail": "缺货 0/%d" % capacity, "progress": -1.0}
+	return {"state": STATE_COMPLETE, "detail": "充足 ×%d" % count, "progress": -1.0}

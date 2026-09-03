@@ -5,7 +5,34 @@ extends RefCounted
 ## counts and pending purchases; this catalog intentionally contains no save/UI
 ## state.
 
-const BALANCE_VERSION := 10
+const BALANCE_VERSION := 11
+const CARTOON_BREAKFAST_V1 := true
+
+## Cartoon breakfast v1 deliberately exposes only the two physical counter
+## expansions.  The larger historical catalog remains below as save/reference
+## data, but runtime purchase APIs resolve through this compact contract.
+const CARTOON_BREAKFAST_GROWTH_DEFINITIONS := {
+	&"growth.area.youtiao": {
+		"label": "油条炸锅", "kind": &"area_unlock", "price": 200,
+		"requires_area_id": &"area.pancake", "area_id": &"area.youtiao",
+		"device_id": &"device.youtiao_fryer", "target_tier": 0,
+		"unlock_recipe_ids": [&"recipe.youtiao.plain"],
+		"unlock_product_ids": [&"product.youtiao.plain"],
+		"unlock_stock_ids": [&"stock.youtiao.plain_dough"],
+		"anchor_id": &"youtiao.fryer",
+	},
+	&"growth.area.fresh_soy_milk": {
+		"label": "饮品区", "kind": &"area_unlock", "price": 200,
+		"requires_area_id": &"area.pancake", "area_id": &"area.fresh_soy_milk",
+		"device_id": &"device.fresh_soy_milk_machine", "target_tier": 0,
+		"unlock_area_ids": [&"area.packaged_drink"],
+		"unlock_device_ids": [&"device.packaged_drink_rack"],
+		"unlock_recipe_ids": [&"recipe.fresh_soy_milk.yellow_bean", &"recipe.packaged_drink.juice"],
+		"unlock_product_ids": [&"product.fresh_soy_milk.yellow_bean", &"product.packaged_drink.juice"],
+		"unlock_stock_ids": [&"stock.packaged_drink.juice"],
+		"anchor_id": &"soy.machine",
+	},
+}
 
 const AREA_IDS: Array[StringName] = [
 	&"area.pancake",
@@ -97,25 +124,25 @@ const STOCK_DEFINITIONS := {
 	# Batter is always available at the pancake station. Keep its stable ID and
 	# unit cost for recipes/accounting, but never expose it as managed inventory.
 	&"stock.pancake.batter": {"label": "面糊", "area_id": &"area.pancake", "category": &"base", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &""},
-	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 10, "material_slot_id": &"slot.07"},
-	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 10, "material_slot_id": &"slot.08"},
+	&"stock.pancake.egg": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &"slot.07"},
+	&"stock.pancake.baocui": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &"slot.08"},
 	&"stock.pancake.scallion": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &"slot.09"},
 	# Keep this stable ID so existing runtime save and order contracts continue to
 	# resolve, while all player-facing text identifies the single shared sauce.
 	# The shared sauce jar is a station fixture: it never needs stocking and does
 	# not add a replenishment cost to the finished pancake.
 	&"stock.pancake.sauce.sweet_flour": {"label": "秘制酱料", "area_id": &"area.pancake", "category": &"sauce", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &"", "surface_input_id": &"ui.pancake.secret_sauce_brush"},
-	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 10, "material_slot_id": &""},
-	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 10, "material_slot_id": &""},
+	&"stock.pancake.ham_sausage": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &""},
+	&"stock.pancake.meat_floss": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &""},
 	&"stock.pancake.coriander": {"area_id": &"area.pancake", "category": &"add_on", "unlimited": true, "restock_unit_cost": 1, "restock_capacity": 0, "material_slot_id": &""},
 	# A stable order/simulation identifier for the processed plain youtiao.
 	# Capacity stays zero so it can never enter the paid ordinary-restock path.
 	&"stock.pancake.youtiao": {"label": "油条", "area_id": &"area.pancake", "category": &"prepared_add_on", "restock_unit_cost": 2, "restock_capacity": 0, "material_slot_id": &""},
 	# The physical board has four authored dough positions. Keep its stock cap
 	# fixed at four even after the shared pantry-capacity growth upgrades.
-	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.15, "restock_unit_cost": 2, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
+	&"stock.youtiao.plain_dough": {"label": "油条面胚", "area_id": &"area.youtiao", "category": &"dough", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "fixed_restock_capacity": true, "material_slot_id": &"slot.04"},
 	&"stock.chicken.cutlet_raw": {"label": "鸡排", "area_id": &"area.youtiao", "category": &"dough", "refill_seconds": 0.15, "restock_unit_cost": 4, "restock_capacity": 4, "fixed_restock_capacity": true, "material_slot_id": &""},
-	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "refill_seconds": 0.15, "restock_unit_cost": 1, "restock_capacity": 10, "material_slot_id": &""},
+	&"stock.packaged_drink.juice": {"label": "果汁", "area_id": &"area.packaged_drink", "category": &"packaged_drink", "unlimited": true, "restock_unit_cost": 0, "restock_capacity": 0, "material_slot_id": &""},
 }
 
 ## Stable left-to-right workbench order used by the opening checklist.  The
@@ -213,10 +240,8 @@ const GROWTH_DEFINITIONS := {
 }
 ## Stable visual order for the upgrade workshop. It is not a purchase route.
 const GROWTH_DISPLAY_ORDER: Array[StringName] = [
-	&"growth.add_on.pancake.egg", &"growth.automation.pancake.one_click_egg", &"growth.add_on.pancake.baocui", &"growth.add_on.pancake.scallion", &"growth.automation.pancake.auto_batter_ladle", &"growth.add_on.pancake.meat_floss", &"growth.add_on.pancake.ham_sausage", &"growth.add_on.pancake.coriander", &"growth.automation.pancake.press_once", &"growth.automation.pancake.non_burning_griddle", &"growth.automation.pancake.fast_cook_griddle", &"growth.capacity.pancake_holding_tray.first_slot",
-	&"growth.area.youtiao", &"growth.capacity.youtiao_finished_tray", &"growth.equipment.youtiao.advanced", &"growth.equipment.youtiao.dual_basket",
-	&"growth.area.fresh_soy_milk", &"growth.assist.fresh_soy_milk.sugar", &"growth.automation.fresh_soy_milk.auto_fill", &"growth.automation.fresh_soy_milk.advanced",
-	&"growth.area.packaged_drink",
+	&"growth.area.youtiao",
+	&"growth.area.fresh_soy_milk",
 ]
 const MASTERY_DEFINITIONS := {
 	&"area.pancake": {"qualified_key": &"qualified", "a_grade_key": &"a_grade", "bronze": {"qualified": 8, "a_grade": 2}, "silver": {"qualified": 20, "a_grade": 8}, "gold": {"qualified": 50, "a_grade": 25}},
@@ -287,7 +312,7 @@ static func product_definition(product_id: StringName) -> Dictionary:
 	return _copy_definition(PRODUCT_DEFINITIONS, product_id)
 
 static func growth_definition(growth_id: StringName) -> Dictionary:
-	return _copy_definition(GROWTH_DEFINITIONS, growth_id)
+	return _copy_definition(CARTOON_BREAKFAST_GROWTH_DEFINITIONS, growth_id)
 
 static func pancake_order_template(template_id: StringName) -> Dictionary:
 	var template := _copy_definition(PANCAKE_ORDER_TEMPLATES, template_id)

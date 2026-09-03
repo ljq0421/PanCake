@@ -26,6 +26,11 @@ func _run() -> void:
 	if fixture_value is Dictionary:
 		var fixture := Dictionary(fixture_value)
 		fixture["version"] = source.PREVIOUS_SAVE_VERSION
+		var chapters := Dictionary(fixture.get("chapters", {})).duplicate(true)
+		var noodle := Dictionary(chapters.get(str(source.NOODLE_CHAPTER_ID), {})).duplicate(true)
+		noodle["migration_marker"] = "preserve-me"
+		chapters[str(source.NOODLE_CHAPTER_ID)] = noodle
+		fixture["chapters"] = chapters
 		var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 		if file != null:
 			file.store_string(JSON.stringify(fixture))
@@ -38,9 +43,11 @@ func _run() -> void:
 	await process_frame
 	var campaign := Dictionary(migrated.call("campaign_snapshot"))
 	var breakfast: Dictionary = Dictionary(Dictionary(migrated.get("_campaign_data")).get("chapters", {})).get(str(migrated.BREAKFAST_CHAPTER_ID), {})
-	_check(migrated.has_save() and migrated.SAVE_VERSION == 12, "version-eleven campaign migrates in place to version twelve")
+	_check(migrated.has_save() and migrated.SAVE_VERSION == 13, "previous campaign migrates to cartoon-breakfast save version thirteen")
 	_check(int(campaign.get("global_reputation", -1)) == 17, "version-eleven migration preserves shared reputation")
-	_check(int(Dictionary(breakfast.get("progression", {})).get("coins", -1)) == 63, "version-eleven migration preserves breakfast coins")
+	_check(int(Dictionary(breakfast.get("progression", {})).get("coins", -1)) == 0 and int(Dictionary(breakfast.get("progression", {})).get("current_day", -1)) == 1, "migration resets only breakfast to the new day-one rules")
+	var migrated_chapters := Dictionary(Dictionary(migrated.get("_campaign_data")).get("chapters", {}))
+	_check(str(Dictionary(migrated_chapters.get(str(migrated.NOODLE_CHAPTER_ID), {})).get("migration_marker", "")) == "preserve-me", "migration preserves non-breakfast chapter state")
 	_check(Array(migrated.call("chapter_statuses")).size() == 3, "migrated campaign exposes the third chapter without unlocking it early")
 	_check(not bool(Dictionary(migrated.call("chapter_status", migrated.NIGHT_MARKET_CHAPTER_ID)).get("unlocked", true)), "migrated campaign keeps the night-market milestone locked")
 	migrated.queue_free()

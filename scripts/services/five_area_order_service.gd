@@ -14,10 +14,10 @@ const SPECIALS := preload("res://scripts/data/special_customer_catalog.gd")
 ## never introduce a third sauce when more sauce content is added later.
 const MAX_SAUCE_TYPES_PER_ITEM := 2
 const MAX_PORTIONS_PER_REQUIREMENT := 2
-## The storefront has five physical service positions.  Orders are created
+## The cartoon storefront has four physical service positions. Orders are created
 ## only as a customer walks in, so there is no hidden waiting queue.
-const MAX_OPEN_ORDERS := 5
-const MAX_ACTIVE_CUSTOMERS := 5
+const MAX_OPEN_ORDERS := 4
+const MAX_ACTIVE_CUSTOMERS := 4
 const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_01",
 	&"customer_02",
@@ -25,22 +25,8 @@ const CUSTOMER_IDS: Array[StringName] = [
 	&"customer_04",
 	&"customer_05",
 	&"customer_06",
-	&"customer_07",
-	&"customer_08",
-	&"customer_09",
-	&"customer_10",
-	&"customer_11",
-	&"customer_12",
-	&"customer_13",
-	&"customer_14",
-	&"customer_15",
-	&"customer_16",
-	&"customer_17",
-	&"customer_18",
-	&"customer_19",
-	&"customer_20",
 ]
-const LEGACY_CUSTOMER_COUNT_BEFORE_POOL_EXPANSION := 10
+const LEGACY_CUSTOMER_COUNT_BEFORE_POOL_EXPANSION := 6
 
 var _orders: Dictionary = {}
 var _active_order_ids: Array[StringName] = []
@@ -71,7 +57,7 @@ func open_pancake_order(template: Dictionary) -> Dictionary:
 func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 	if _queue_order_ids.size() >= MAX_OPEN_ORDERS:
 		return {"success": false, "reason": &"queue_full"}
-	if items.is_empty():
+	if items.size() != 1:
 		return {"success": false, "reason": &"missing_order_items"}
 	_sequence += 1
 	var order_id: StringName = StringName("runtime.order.%06d" % _sequence)
@@ -125,10 +111,7 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		complexity = &"double"
 	elif normalized_items.size() >= 3:
 		complexity = &"triple"
-	var requested_customer_id := StringName(metadata.get("customer_id", &""))
 	var customer_id := customer_id_for_sequence(_sequence)
-	if SPECIALS.is_special_id(StringName(metadata.get("special_customer_id", &""))) and not requested_customer_id.is_empty():
-		customer_id = requested_customer_id
 	var order: Dictionary = {
 		"order_id": order_id,
 		"sequence": _sequence,
@@ -137,9 +120,9 @@ func open_order(items: Array, metadata: Dictionary = {}) -> Dictionary:
 		"status": initial_state,
 		"service_slot": -1,
 		"customer_id": customer_id,
-		"special_customer_id": StringName(metadata.get("special_customer_id", &"")),
-		"special_title": str(metadata.get("special_title", "")),
-		"special_rule_text": str(metadata.get("special_rule_text", "")),
+		"special_customer_id": &"",
+		"special_title": "",
+		"special_rule_text": "",
 		"customer_line": str(metadata.get("customer_line", "")),
 		"perfect_quote_coins": maxi(int(metadata.get("perfect_quote_coins", metadata.get("base_coins", 1))), 0),
 		"items": normalized_items,

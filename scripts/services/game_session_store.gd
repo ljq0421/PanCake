@@ -19,9 +19,10 @@ const SETTINGS_PATH := "user://project_cake_settings.cfg"
 const SAVE_WRITE_MERGE_SECONDS := 2.0
 const SAVE_TEMP_SUFFIX := ".tmp"
 const SAVE_BACKUP_SUFFIX := ".bak"
-const SAVE_VERSION := 12
+const SAVE_VERSION := 13
 const SAVE_KIND := "project_cake_campaign_v1"
-const PREVIOUS_SAVE_VERSION := 11
+const PREVIOUS_SAVE_VERSION := 12
+const OLDER_CAMPAIGN_SAVE_VERSION := 11
 const LEGACY_SAVE_VERSION := 10
 const LEGACY_SAVE_KIND := "breakfast_stall_four_area_v1"
 const BREAKFAST_CHAPTER_ID := &"chapter.breakfast_stall"
@@ -1717,7 +1718,7 @@ func preview_packaged_drink_inventory(stock_id: StringName, product_id: StringNa
 	if not bool(_progression.call("owns_area", &"area.packaged_drink")) or not bool(_progression.call("owns_product", product_id)) or not bool(_progression.call("owns_stock", stock_id)):
 		return {"success": false, "reason": &"stock_locked", "stock_id": stock_id}
 	var inventory := inventory_snapshot()
-	if int(inventory.get(str(stock_id), 0)) <= 0:
+	if not bool(CATALOG.stock_definition(stock_id).get("unlimited", false)) and int(inventory.get(str(stock_id), 0)) <= 0:
 		return {"success": false, "reason": &"insufficient_stock", "stock_id": stock_id}
 	var generated := Dictionary(_production_service.call("packaged_drink_product", product_id, false))
 	return generated if bool(generated.get("success", false)) else {"success": false, "reason": generated.get("reason", &"packaged_drink_unavailable")}
@@ -4488,17 +4489,66 @@ func _load_save() -> void:
 			_ensure_campaign_shape()
 			_load_active_chapter_snapshot()
 			return
-		if int(parsed_data.get("version", 0)) == PREVIOUS_SAVE_VERSION and str(parsed_data.get("save_kind", "")) == SAVE_KIND:
-			_campaign_data = parsed_data
-			_campaign_data["version"] = SAVE_VERSION
-			_ensure_campaign_shape()
-			_load_active_chapter_snapshot()
-			_write_save()
+		if int(parsed_data.get("version", 0)) in [PREVIOUS_SAVE_VERSION, OLDER_CAMPAIGN_SAVE_VERSION] and str(parsed_data.get("save_kind", "")) == SAVE_KIND:
+			_migrate_campaign_to_cartoon_breakfast(parsed_data)
 			return
 		if int(parsed_data.get("version", 0)) == LEGACY_SAVE_VERSION and str(parsed_data.get("save_kind", "")) == LEGACY_SAVE_KIND:
 			_migrate_legacy_campaign_save(parsed_data)
 			return
 	reset_incompatible_development_save()
+
+
+func _migrate_campaign_to_cartoon_breakfast(previous: Dictionary) -> void:
+	_campaign_data = previous.duplicate(true)
+	_campaign_data["version"] = SAVE_VERSION
+	_ensure_campaign_shape()
+	var chapters := Dictionary(_campaign_data.get("chapters", {})).duplicate(true)
+	chapters[str(BREAKFAST_CHAPTER_ID)] = _new_cartoon_breakfast_snapshot(int(Time.get_unix_time_from_system()))
+	_campaign_data["chapters"] = chapters
+	_load_active_chapter_snapshot()
+	_write_save()
+
+
+func _new_cartoon_breakfast_snapshot(now: int) -> Dictionary:
+	var progression := PROGRESSION_SERVICE.new()
+	var production := FIVE_AREA_PRODUCTION_SERVICE.new()
+	production.call("configure", progression, self)
+	var ledger := BUSINESS_REPORT_SERVICE.new()
+	ledger.call("begin_day", 1)
+	return {
+		"version": LEGACY_SAVE_VERSION,
+		"save_kind": LEGACY_SAVE_KIND,
+		"started_at_unix": now,
+		"last_played_at_unix": now,
+		"day_open": true,
+		"business_paused": false,
+		"business_day_remaining_seconds": FIRST_BUSINESS_DAY_DURATION_SECONDS,
+		"customer_arrival": _new_customer_arrival_state(now),
+		"orders_completed": 0,
+		"today_orders": [],
+		"today_reputation_delta": 0,
+		"today_cutoff": {},
+		"progression": progression.call("snapshot"),
+		"inventory": _new_inventory_snapshot(),
+		"restock_progress": {},
+		"pending_tray_payments": {},
+		"prepared_product_slots": _empty_prepared_product_slots(),
+		"pancake_holding_tray": PANCAKE_HOLDING_TRAY_MODEL.new().snapshot(),
+		"formal_orders": FIVE_AREA_ORDER_SERVICE.new().snapshot(),
+		"production": production.call("snapshot"),
+		"today_ledger": ledger.call("snapshot"),
+		"daily_goal": DAILY_GOAL_SERVICE.new().snapshot(),
+		"last_bill": {},
+		"ledger_event_sequence": 0,
+		RECONCILED_FORMAL_ORDER_IDS_KEY: [],
+		"pancake_order_cursor": 0,
+		"pancake_orders_issued_today": 0,
+		"order_rng_seed": now,
+		"order_sequence": 0,
+		"tutorial_order_generated_day": 0,
+		ORDER_PROMOTIONS_KEY: [],
+		SPECIAL_CUSTOMER_STATE_KEY: SPECIAL_CUSTOMER_CATALOG.default_state(1),
+	}
 
 
 func _migrate_legacy_campaign_save(legacy: Dictionary) -> void:
@@ -4519,10 +4569,10 @@ func _migrate_legacy_campaign_save(legacy: Dictionary) -> void:
 			"unlocked_chapter_ids": unlocked,
 			"active_chapter_id": BREAKFAST_CHAPTER_ID,
 		},
-		"chapters": {str(BREAKFAST_CHAPTER_ID): legacy_copy},
+		"chapters": {str(BREAKFAST_CHAPTER_ID): _new_cartoon_breakfast_snapshot(now)},
 	}
 	_active_chapter = BREAKFAST_CHAPTER_ID
-	_save_data = legacy_copy
+	_save_data = Dictionary(Dictionary(_campaign_data.get("chapters", {})).get(str(BREAKFAST_CHAPTER_ID), {})).duplicate(true)
 	_ensure_save_shape()
 	_write_save()
 

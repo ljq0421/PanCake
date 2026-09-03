@@ -54,8 +54,8 @@ static func generate(
 			eligible_areas.append(area_id)
 	if eligible_areas.is_empty():
 		return {"success": false, "reason": &"no_eligible_playable_order"}
-	if not special_context.is_empty():
-		return _candidate_with_optional_special(eligible_areas, progression, seed, sequence, current_day, special_context)
+	# The argument remains part of the stable API, but cartoon breakfast v1 does
+	# not emit special-customer orders.
 	return _normal_candidate(eligible_areas, progression, seed, sequence)
 
 
@@ -225,51 +225,9 @@ static func _product_item_unit_price(item: Dictionary) -> int:
 
 
 static func _normal_candidate(eligible_areas: Array[StringName], progression: Dictionary, seed: int, sequence: int) -> Dictionary:
-	var has_pancake := eligible_areas.has(&"area.pancake")
-	var has_youtiao := eligible_areas.has(&"area.youtiao")
-	var has_soy := eligible_areas.has(&"area.fresh_soy_milk")
-	var has_packaged_drink := eligible_areas.has(&"area.packaged_drink")
-	if eligible_areas.size() == 1:
-		return _candidate_for_area(eligible_areas[0], progression, seed, sequence)
-	var candidates: Array[Dictionary] = []
-	if has_pancake and has_youtiao and not has_soy:
-		if _roll(seed, sequence, 17, 100) < 75:
-			candidates.append(_candidate_for_area(&"area.pancake", progression, seed, sequence))
-			if _roll(seed, sequence, 19, 100) < 30:
-				candidates.append(_candidate_for_area(&"area.youtiao", progression, seed + 7919, sequence))
-		else:
-			candidates.append(_candidate_for_area(&"area.youtiao", progression, seed, sequence))
-	elif has_pancake and has_youtiao and has_soy and not has_packaged_drink:
-		var main_roll := _roll(seed, sequence, 23, 100)
-		if main_roll < 70:
-			candidates.append(_candidate_for_area(&"area.pancake", progression, seed, sequence))
-			var side_roll := _roll(seed, sequence, 29, 100)
-			if side_roll >= 55 and side_roll < 90:
-				var side_area := &"area.youtiao" if _roll(seed, sequence, 31, 2) == 0 else &"area.fresh_soy_milk"
-				candidates.append(_candidate_for_area(side_area, progression, seed + 7919, sequence))
-			elif side_roll >= 90:
-				candidates.append(_candidate_for_area(&"area.youtiao", progression, seed + 7919, sequence))
-				candidates.append(_candidate_for_area(&"area.fresh_soy_milk", progression, seed + 15838, sequence))
-		elif main_roll < 85:
-			candidates.append(_candidate_for_area(&"area.youtiao", progression, seed, sequence))
-		else:
-			candidates.append(_candidate_for_area(&"area.fresh_soy_milk", progression, seed, sequence))
-	elif has_packaged_drink:
-		var drink_roll := _roll(seed, sequence, 41, 100)
-		var primary_area := &"area.pancake" if drink_roll < 60 else (&"area.youtiao" if drink_roll < 75 else (&"area.fresh_soy_milk" if drink_roll < 88 else &"area.packaged_drink"))
-		candidates.append(_candidate_for_area(primary_area, progression, seed, sequence))
-		if _roll(seed, sequence, 43, 100) >= 72:
-			var companions := eligible_areas.duplicate()
-			companions.erase(primary_area)
-			if not companions.is_empty():
-				candidates.append(_candidate_for_area(companions[_roll(seed, sequence, 47, companions.size())], progression, seed + 7919, sequence))
-	else:
-		var fallback_area := &"area.pancake" if has_pancake else eligible_areas[_roll(seed, sequence, 37, eligible_areas.size())]
-		candidates.append(_candidate_for_area(fallback_area, progression, seed, sequence))
-	for candidate in candidates:
-		if not bool(candidate.get("success", false)):
-			return candidate
-	return _combine_candidates(candidates)
+	if eligible_areas.is_empty():
+		return {"success": false, "reason": &"no_eligible_playable_order"}
+	return _candidate_for_area(_weighted_area(eligible_areas, progression, seed, sequence), progression, seed, sequence)
 
 
 static func _candidate_for_area(area_id: StringName, progression: Dictionary, seed: int, sequence: int) -> Dictionary:
@@ -303,7 +261,7 @@ static func generate_queue_candidates(
 	var explicit_promotion := not promotion_id.is_empty()
 	var tutorial := Dictionary(progression.get("tutorial", {}))
 	var tutorial_context_present := not StringName(tutorial.get("active_id", &"")).is_empty()
-	var allow_specials := not explicit_promotion and not tutorial_context_present and not special_context.is_empty()
+	var allow_specials := false
 	for offset in range(clampi(count, 0, 6)):
 		var sequence := first_sequence + offset
 		var generated: Dictionary
@@ -373,24 +331,7 @@ static func _post_tutorial_exposure_candidate(
 	var primary := _promotion_primary_candidate(progression, seed, sequence, tutorial_kind, tutorial_id)
 	if not bool(primary.get("success", false)):
 		return primary
-	var candidates: Array[Dictionary] = [primary]
-	var promotion_area_id := _promotion_area_id(tutorial_kind, tutorial_id)
-	# Keep the ordinary 72/20/8 complexity roll, but clamp the promotion window
-	# to one old companion so the newly unlocked output remains the focus.
-	if _roll(seed, sequence, 113, 100) >= 72:
-		var old_areas := _eligible_completed_areas(progression, promotion_area_id)
-		if not old_areas.is_empty():
-			var old_area_id := _weighted_area(old_areas, progression, seed + 7919, sequence)
-			var companion: Dictionary
-			if old_area_id == &"area.pancake":
-				companion = _pancake_candidate(progression, {}, seed + 104729, sequence, false)
-			else:
-				var product_ids := _eligible_product_ids(old_area_id, progression)
-				var product_id := _weighted_product(product_ids, seed + 104729, sequence)
-				companion = _product_candidate(old_area_id, product_id, progression, seed + 104729, sequence, false)
-			if bool(companion.get("success", false)):
-				candidates.append(companion)
-	var result := _combine_candidates(candidates)
+	var result := primary.duplicate(true)
 	var metadata := Dictionary(result.get("metadata", {})).duplicate(true)
 	metadata["promotion_tutorial_kind"] = tutorial_kind
 	metadata["promotion_tutorial_id"] = tutorial_id
@@ -589,9 +530,6 @@ static func _product_candidate(area_id: StringName, product_id: StringName, prog
 	var temperature_mode := &"room_temperature"
 	var patience := float(BASE_PATIENCE_SECONDS.get(area_id, 24.0))
 	var quantity := 1
-	if area_id == &"area.youtiao" and not teaching:
-		var quantity_roll := _roll(seed, sequence, 127, 100)
-		quantity = 1 if quantity_roll < 50 else (2 if quantity_roll < 85 else 3)
 	var ingredient_ids := PackedStringArray()
 	var sugar_servings := 0
 	if area_id == &"area.fresh_soy_milk":
@@ -690,6 +628,9 @@ static func _eligible_pancake_templates(progression: Dictionary) -> Array[String
 	for template_key in CATALOG.PANCAKE_ORDER_TEMPLATES.keys():
 		var template_id := StringName(template_key)
 		var template := CATALOG.pancake_order_template(template_id)
+		var template_ingredients := Array(template.get("ingredient_stock_ids", []))
+		if template_ingredients.has(&"stock.pancake.coriander") or template_ingredients.has(&"stock.pancake.youtiao"):
+			continue
 		var valid := true
 		for recipe_id_variant in Array(template.get("requires_recipe_ids", [])):
 			if not owned_recipes.has(StringName(recipe_id_variant)):

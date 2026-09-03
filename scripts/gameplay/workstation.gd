@@ -3504,7 +3504,7 @@ func _current_customer_texture(state: StringName) -> Texture2D:
 
 
 func _set_customer_portrait_state(state: StringName) -> void:
-	var texture_state := P1Session.REACTION_IMPATIENT if state == P1Session.REACTION_VERY_UNHAPPY else state
+	var texture_state := &"angry" if state == P1Session.REACTION_VERY_UNHAPPY else state
 	var target_texture := _current_customer_texture(texture_state)
 	if _customer_visual_state == state and customer_portrait.texture == target_texture:
 		return
@@ -3536,7 +3536,7 @@ func _refresh_customer_queue() -> void:
 		var visible_order := Dictionary(visible_order_variant)
 		visible_customer_ids.append(StringName(visible_order.get("customer_id", &"customer_01")))
 	_customer_portraits.call("set_visible_customers", visible_customer_ids)
-	queue_status_label.text = "在场\n%d/5" % mini(orders.size(), 5)
+	queue_status_label.text = "在场\n%d/4" % mini(orders.size(), 4)
 	for slot_index in customer_slot_buttons.size():
 		var button := customer_slot_buttons[slot_index]
 		var bar := customer_slot_patience_bars[slot_index]
@@ -3547,7 +3547,7 @@ func _refresh_customer_queue() -> void:
 
 func _resolve_customer_service_slots() -> Array[Control]:
 	var result: Array[Control] = []
-	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3", &"ServiceCustomer4", &"ServiceCustomer5"]:
+	for node_name in [&"ServiceCustomer1", &"ServiceCustomer2", &"ServiceCustomer3", &"ServiceCustomer4"]:
 		var node := get_node_or_null("SafeArea/%s" % node_name) as Control
 		if node != null:
 			result.append(node)

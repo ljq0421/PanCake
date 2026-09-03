@@ -17,7 +17,7 @@ func _run() -> void:
 	root.add_child(_session)
 	_session.set("_active_save_path", "user://campaign_chapter_self_check.json")
 	var started := Dictionary(_session.call("begin_new_game"))
-	_check(bool(started.get("success", false)) and _session.SAVE_VERSION == 12, "new game creates campaign version twelve")
+	_check(bool(started.get("success", false)) and _session.SAVE_VERSION == 13, "new game creates campaign version thirteen")
 	_check(Array(_session.call("chapter_statuses")).size() == 3, "campaign exposes breakfast, lunch and late-night chapters")
 	_check(StringName(_session.call("active_chapter_id")) == _session.BREAKFAST_CHAPTER_ID, "new campaign starts in breakfast chapter")
 	_check(not bool(Dictionary(_session.call("chapter_status", _session.NOODLE_CHAPTER_ID)).get("unlocked", true)), "noodle chapter starts locked")

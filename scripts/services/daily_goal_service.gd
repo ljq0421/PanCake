@@ -19,6 +19,10 @@ func begin_day(context: Dictionary) -> Dictionary:
 	if int(_goal.get("day", 0)) == day:
 		return {"success": true, "created": false, "goal": current_goal()}
 	_goal.clear()
+	# Daily goals are outside the cartoon breakfast v1 scope.
+	if CATALOG.CARTOON_BREAKFAST_V1:
+		daily_goal_changed.emit({})
+		return {"success": true, "created": false, "reason": &"feature_disabled", "goal": {}}
 	if not _all_areas_ready(context):
 		daily_goal_changed.emit({})
 		return {"success": true, "created": false, "reason": &"five_areas_not_ready", "goal": {}}

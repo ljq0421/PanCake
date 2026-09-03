@@ -127,6 +127,7 @@ func _ready() -> void:
 		call_deferred("_sync_press_spreader_layout")
 		return
 	_editor_preview.visible = false
+	_hide_inactive_growth_props()
 	_buy.pressed.connect(_on_buy)
 	%NextDayButton.pressed.connect(func() -> void: begin_next_day_requested.emit())
 	%BackButton.pressed.connect(func() -> void: closed.emit())
@@ -153,6 +154,20 @@ func _ready() -> void:
 		_tag_layouts[growth_id] = {"position": prop.position, "size": prop.size}
 	refresh()
 	call_deferred("_focus_first_available_prop")
+
+
+func _hide_inactive_growth_props() -> void:
+	var active_names := {}
+	for growth_id in CATALOG.GROWTH_DISPLAY_ORDER:
+		active_names["WorkshopProp_" + str(growth_id).replace(".", "_")] = true
+	var props := get_node_or_null("UpgradeProps")
+	if props == null:
+		return
+	for child in props.get_children():
+		if child is Button and not active_names.has(child.name):
+			(child as Button).visible = false
+			(child as Button).disabled = true
+			(child as Button).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _process(_delta: float) -> void:
@@ -345,12 +360,12 @@ func refresh() -> void:
 	var soy_milk_machine_upgrade_id := _next_soy_milk_machine_upgrade(owned_growth_ids)
 	var press_spreader_owned := owned_growth_ids.has("growth.automation.pancake.press_once")
 	var pancake_holding_tray_owned := owned_growth_ids.has("growth.capacity.pancake_holding_tray.first_slot")
-	_press_preview.visible = true
+	_press_preview.visible = not CATALOG.CARTOON_BREAKFAST_V1
 	_press_preview.self_modulate = Color(1.0, 1.0, 1.0, 1.0 if press_spreader_owned else 0.42)
 	# The live workstation behind the overlay already shows the installed tray.
 	# Keep this ghosted prop only while the tray is still available to purchase,
 	# otherwise the two copies appear offset from one another in the workshop.
-	_pancake_holding_tray_preview.visible = not pancake_holding_tray_owned
+	_pancake_holding_tray_preview.visible = not CATALOG.CARTOON_BREAKFAST_V1 and not pancake_holding_tray_owned
 	_pancake_holding_tray_preview.self_modulate = Color(1.0, 1.0, 1.0, 0.42)
 	# A future drink rack is still readable in the workshop, but remains clearly
 	# a preview until the area is active on the next business day.

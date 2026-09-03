@@ -15,6 +15,7 @@ var _sources: Array[ProductDragSource] = []
 var _representatives: Dictionary = {}
 var _count_badges: Dictionary = {}
 var _refresh_elapsed := 0.0
+var baked_into_workbench_artwork := false
 
 
 func _ready() -> void:
@@ -53,16 +54,19 @@ func refresh_from_session() -> void:
 		var recipe := CATALOG.recipe_definition(StringName(product.get("recipe_id", &"")))
 		var stock_ids := Array(recipe.get("stock_ids", []))
 		var stock_id := StringName(stock_ids[0]) if not stock_ids.is_empty() else &""
-		var count := maxi(int(inventory.get(str(stock_id), 0)), 0)
-		var capacity := int(Dictionary(session.call("five_area_restock_status", stock_id)).get("capacity", 6)) if not stock_id.is_empty() else 6
+		var unlimited := bool(CATALOG.stock_definition(stock_id).get("unlimited", false))
+		var capacity := 5 if unlimited else int(Dictionary(session.call("five_area_restock_status", stock_id)).get("capacity", 6)) if not stock_id.is_empty() else 6
+		var count := capacity if unlimited else maxi(int(inventory.get(str(stock_id), 0)), 0)
 		var product_unlocked := area_unlocked and _id_in(unlocked_products, product_id)
 		source.visible = product_unlocked
-		source.configure({"source_kind": &"packaged_drink_inventory", "source_index": index, "stock_id": stock_id, "product_id": product_id}, EMPTY_JUICE_TRAY_TEXTURE, product_unlocked, _lane_hint(product, count, capacity, product_unlocked))
-		source.set_drag_preview_texture(JUICE_DRAG_PREVIEW_TEXTURE)
+		var base_texture: Texture2D = null if baked_into_workbench_artwork else EMPTY_JUICE_TRAY_TEXTURE
+		source.configure({"source_kind": &"packaged_drink_inventory", "source_index": index, "stock_id": stock_id, "product_id": product_id}, base_texture, product_unlocked, _lane_hint(product, count, capacity, product_unlocked))
+		source.set_drag_preview_texture(null if baked_into_workbench_artwork else JUICE_DRAG_PREVIEW_TEXTURE)
 		source.set_drag_preview_text("")
 		source.set_drag_preview_size(Vector2(96.0, 96.0))
-		source.set_drag_available(product_unlocked and count > 0)
-		_refresh_representative_overlay(source, count, capacity, product_unlocked)
+		source.hold_enabled = not unlimited
+		source.set_drag_available(product_unlocked and (unlimited or count > 0))
+		_refresh_representative_overlay(source, count, capacity, product_unlocked, unlimited)
 
 
 func _build_surface() -> void:
@@ -118,6 +122,10 @@ func _on_lane_hold_requested(source_ref: Dictionary) -> void:
 	var source := _source_for_ref(source_ref)
 	var session := get_node_or_null("/root/GameSession")
 	if source == null or session == null:
+		return
+	if bool(CATALOG.stock_definition(StringName(source_ref.get("stock_id", &""))).get("unlimited", false)):
+		source.reject_hold()
+		status_message.emit("果汁供应充足，无需补货")
 		return
 	var status := Dictionary(session.call("five_area_restock_status", StringName(source_ref.get("stock_id", &""))))
 	if bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0)) and int(status.get("coins", 0)) >= int(status.get("unit_cost", 0)):
@@ -204,17 +212,17 @@ func _layout_representative_overlay(source: ProductDragSource) -> void:
 		badge.size = Vector2(100.0, 40.0)
 
 
-func _refresh_representative_overlay(source: ProductDragSource, count: int, capacity: int, unlocked: bool) -> void:
+func _refresh_representative_overlay(source: ProductDragSource, count: int, capacity: int, unlocked: bool, unlimited: bool = false) -> void:
 	var visuals := Array(_representatives.get(source.get_instance_id(), []))
 	var visible_count := 0
-	if unlocked and count > 0:
+	if unlocked and count > 0 and not baked_into_workbench_artwork:
 		visible_count = 2 if count <= 2 else 4 if count < capacity else MAX_REPRESENTATIVE_ITEMS
 	for item_index in visuals.size():
 		(visuals[item_index] as TextureRect).visible = item_index < visible_count
 	var badge := _count_badges.get(source.get_instance_id()) as Label
 	if badge == null:
 		return
-	badge.visible = unlocked
+	badge.visible = unlocked and not unlimited
 	badge.text = "缺货 0" if count <= 0 else "×%d" % count
 	badge.add_theme_color_override(&"font_color", Color("ff8f78") if count <= 0 else Color("ffd06a") if count <= 2 else Color("fff1bd"))
 	badge.tooltip_text = "库存 %d/%d" % [count, capacity]
@@ -226,5 +234,5 @@ static func _lane_hint(product: Dictionary, count: int, capacity: int, unlocked:
 	if count <= 0:
 		return "%s已售罄：长按补货" % str(product.get("label", "饮品"))
 	if count >= capacity:
-		return "%s库存充足：拖到顾客订单交付" % str(product.get("label", "饮品"))
+		return "%s供应充足：拖到顾客订单交付" % str(product.get("label", "饮品"))
 	return "%s：拖动交付；长按补货（%d/%d）" % [str(product.get("label", "饮品")), count, capacity]

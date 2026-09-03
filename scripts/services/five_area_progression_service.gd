@@ -24,6 +24,9 @@ var unlocked_stock_ids: Dictionary = {
 	&"stock.pancake.batter": true,
 	&"stock.pancake.egg": true,
 	&"stock.pancake.baocui": true,
+	&"stock.pancake.scallion": true,
+	&"stock.pancake.ham_sausage": true,
+	&"stock.pancake.meat_floss": true,
 	&"stock.pancake.sauce.sweet_flour": true,
 }
 var unlocked_automation_ids: Dictionary = {}
@@ -31,10 +34,7 @@ var owned_assist_ids: Dictionary = {}
 # These are free starter fixtures for a fresh profile.  Keep their growth IDs
 # installed so dependent upgrades and area gates remain reachable without
 # charging the player or showing duplicate purchase offers.
-var owned_growth_ids: Dictionary = {
-	&"growth.add_on.pancake.egg": true,
-	&"growth.add_on.pancake.baocui": true,
-}
+var owned_growth_ids: Dictionary = {}
 var stock_capacity := 6
 var area_mastery: Dictionary = {}
 var area_mastery_details: Dictionary = {}
@@ -384,6 +384,11 @@ func load_snapshot(value: Dictionary) -> void:
 		unlocked_stock_ids[&"stock.pancake.sauce.sweet_flour"] = true
 	for starter_stock_id in [
 		&"stock.pancake.batter",
+		&"stock.pancake.egg",
+		&"stock.pancake.baocui",
+		&"stock.pancake.scallion",
+		&"stock.pancake.ham_sausage",
+		&"stock.pancake.meat_floss",
 		&"stock.pancake.sauce.sweet_flour",
 	]:
 		unlocked_stock_ids[starter_stock_id] = true
@@ -472,8 +477,32 @@ func _normalize_three_area_state() -> void:
 	for starter_recipe in [&"recipe.pancake.base"]:
 		unlocked_recipe_ids[starter_recipe] = true
 	unlocked_product_ids[&"product.pancake.custom"] = true
-	for starter_stock in [&"stock.pancake.batter", &"stock.pancake.sauce.sweet_flour"]:
+	for starter_stock in [
+		&"stock.pancake.batter",
+		&"stock.pancake.egg",
+		&"stock.pancake.baocui",
+		&"stock.pancake.scallion",
+		&"stock.pancake.ham_sausage",
+		&"stock.pancake.meat_floss",
+		&"stock.pancake.sauce.sweet_flour",
+	]:
 		unlocked_stock_ids[starter_stock] = true
+	# The right-hand counter is one purchase in cartoon breakfast v1. Normalize
+	# any loaded state so soy and the packaged-drink tray can never diverge.
+	if unlocked_area_ids.has(&"area.fresh_soy_milk"):
+		unlocked_area_ids[&"area.packaged_drink"] = true
+		device_tiers[&"device.fresh_soy_milk_machine"] = 0
+		device_tiers[&"device.packaged_drink_rack"] = 0
+		unlocked_recipe_ids[&"recipe.fresh_soy_milk.yellow_bean"] = true
+		unlocked_recipe_ids[&"recipe.packaged_drink.juice"] = true
+		unlocked_product_ids[&"product.fresh_soy_milk.yellow_bean"] = true
+		unlocked_product_ids[&"product.packaged_drink.juice"] = true
+		unlocked_stock_ids[&"stock.packaged_drink.juice"] = true
+	if unlocked_area_ids.has(&"area.youtiao"):
+		device_tiers[&"device.youtiao_fryer"] = 0
+		unlocked_recipe_ids[&"recipe.youtiao.plain"] = true
+		unlocked_product_ids[&"product.youtiao.plain"] = true
+		unlocked_stock_ids[&"stock.youtiao.plain_dough"] = true
 
 
 func _active_area_set(source: Dictionary) -> Dictionary:
@@ -595,6 +624,10 @@ func _evaluate_purchase(growth_id: StringName) -> Dictionary:
 		status["pending_activation"] = true
 		status["reason"] = &"pending_activation"
 		return status
+	if not pending_growth_ids.is_empty():
+		status["reason"] = &"daily_purchase_limit"
+		status["missing_requirements"] = [{"reason": &"daily_purchase_limit", "pending_growth_id": pending_growth_ids.front()}]
+		return status
 	if not required_area.is_empty() and not owns_area(required_area):
 		missing_requirements.append({"reason": &"area_locked", "required_area_id": required_area})
 	for required_growth_variant in Array(definition.get("requires_growth_ids", [])):
@@ -652,7 +685,12 @@ func _apply_growth(growth_id: StringName, definition: Dictionary) -> void:
 			tutorial_queue_area_ids.append(area_id)
 	var device_id: StringName = definition.get("device_id", &"")
 	if not device_id.is_empty():
-		device_tiers[device_id] = maxi(device_tier(device_id), int(definition.get("target_tier", 1)))
+		device_tiers[device_id] = int(definition.get("target_tier", 0))
+	for extra_area_id_variant in Array(definition.get("unlock_area_ids", [])):
+		var extra_area_id := StringName(extra_area_id_variant)
+		unlocked_area_ids[extra_area_id] = true
+	for extra_device_id_variant in Array(definition.get("unlock_device_ids", [])):
+		device_tiers[StringName(extra_device_id_variant)] = 0
 	for recipe_id in definition.get("unlock_recipe_ids", []):
 		unlocked_recipe_ids[recipe_id] = true
 	for product_id in definition.get("unlock_product_ids", []):

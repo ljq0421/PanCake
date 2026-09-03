@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/gameplay/four_area_workstation.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scripts/gameplay/cartoon_breakfast_workstation.gd" id="2_script"]
+
+[node name="Workstation" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+metadata/unlocked_ingredient_ids = Array[StringName]([&"egg", &"baocui", &"scallion", &"ham_sausage", &"meat_floss"])

@@ -112,6 +112,8 @@ var _machine_press_active := false
 var _machine_hold_active := false
 var _machine_hold_elapsed := 0.0
 var _machine_add_elapsed := 0.0
+var baked_into_workbench_artwork := false
+var direct_single_delivery_only := false
 var _machine_lane: StringName = &"left"
 var _workshop_preview := false
 var _workshop_advanced_preview := false
@@ -329,14 +331,15 @@ func _update_machine_hover_preview(point: Vector2) -> void:
 			message = "本批已焦糊，请先处理成品"
 		_:
 			message = "当前设备不可用"
-	fryer_visual.self_modulate = Color(0.82, 1.0, 0.82, 1.0) if valid else Color(1.0, 0.72, 0.68, 1.0)
+	if not baked_into_workbench_artwork:
+		fryer_visual.self_modulate = Color(0.82, 1.0, 0.82, 1.0) if valid else Color(1.0, 0.72, 0.68, 1.0)
 	tooltip_text = message
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if valid else Control.CURSOR_FORBIDDEN
 
 
 func _clear_machine_hover_preview() -> void:
 	if fryer_visual != null:
-		fryer_visual.self_modulate = Color.WHITE
+		fryer_visual.self_modulate = Color(1.0, 1.0, 1.0, 0.0) if baked_into_workbench_artwork else Color.WHITE
 	tooltip_text = ""
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
@@ -392,6 +395,10 @@ func _advance_machine_hold(delta: float) -> void:
 
 func _start_machine_input_hold() -> void:
 	var session := get_node_or_null("/root/GameSession")
+	if _machine_lane == &"left" and _can_load_selected_lane() and bool(CATALOG.stock_definition(DOUGH_STOCK_ID).get("unlimited", false)):
+		_load_dough(RECIPE_ID)
+		_end_machine_gesture()
+		return
 	var status := Dictionary(session.call("five_area_restock_status", _selected_stock_id())) if session != null else {"success": false, "reason": &"no_game_session"}
 	var can_restock := bool(status.get("success", false)) and int(status.get("current_stock", 0)) < int(status.get("capacity", 0))
 	if _can_load_selected_lane() and (_selected_input_stock() > 0 or can_restock):
@@ -415,9 +422,10 @@ func _end_machine_gesture() -> void:
 
 func _load_dough(recipe_id: StringName = RECIPE_ID) -> void:
 	var session := get_node_or_null("/root/GameSession")
-	var result := Dictionary(session.call("load_f3_youtiao", recipe_id, 1)) if session != null else {"success": false, "reason": &"no_game_session"}
+	var quantity := maxi(int(_machine.get("capacity", 4)) - int(_machine.get("quantity", 0)), 1)
+	var result := Dictionary(session.call("load_f3_youtiao", recipe_id, quantity)) if session != null else {"success": false, "reason": &"no_game_session"}
 	if bool(result.get("success", false)):
-		status_message.emit("油条面胚已加入炸篮")
+		status_message.emit("已装入四根油条面胚，点击炸锅开始炸制")
 		audio_cue_requested.emit(&"youtiao_load")
 	else:
 		status_message.emit(_failure_text(StringName(result.get("reason", &""))))
@@ -532,6 +540,8 @@ func _perform_machine_click() -> void:
 
 func _play_machine_input_feedback(success: bool) -> void:
 	raw_input_feedback_requested.emit(success)
+	if baked_into_workbench_artwork:
+		return
 	if _machine_feedback_tween != null and _machine_feedback_tween.is_valid():
 		_machine_feedback_tween.kill()
 	fryer_visual.pivot_offset = fryer_visual.size * 0.5
@@ -1035,6 +1045,9 @@ func _on_shared_tray_clicked() -> void:
 func _on_fryer_output_short_clicked(source_ref: Dictionary) -> void:
 	var product_id := StringName(source_ref.get("product_id", &""))
 	if product_id in [PRODUCT_ID, CHICKEN_PRODUCT_ID]:
+		if direct_single_delivery_only:
+			status_message.emit("拖动一根油条到顾客订单交付")
+			return
 		_store_ready_fryer_batch_on_plate(product_id)
 
 
@@ -1204,7 +1217,7 @@ func _state_text(state: StringName) -> String:
 	return {
 		&"unowned": "油条机未解锁", &"idle": "长按油条机添加面胚", &"loaded": "点击油条机开始炸制",
 		&"frying": "炸制中", &"ready_safe": "点击油条机抬起沥网", &"overcooking": "油条即将炸糊",
-		&"draining": "正在沥油", &"ready_to_collect": "点击任意油条，整篮放入成品盘" if _finished_tray_unlocked else "成品盘尚未解锁，炸好的油条请暂存在滤网中", &"burnt": "油条已炸糊，拖去废弃",
+		&"draining": "正在沥油", &"ready_to_collect": "拖动一根油条交付" if direct_single_delivery_only else "点击任意油条，整篮放入成品盘" if _finished_tray_unlocked else "成品盘尚未解锁，炸好的油条请暂存在滤网中", &"burnt": "油条已炸糊，拖去废弃",
 	}.get(state, "油条机")
 
 

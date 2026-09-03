@@ -5,10 +5,7 @@ const DEFAULT_CUSTOMER_ID := &"customer_01"
 const NEUTRAL_STATE := &"neutral"
 # Keep portrait loading in sync with the playable ordinary-customer pool.
 const CUSTOMER_IDS: Array[StringName] = [
-	&"customer_01", &"customer_02", &"customer_03", &"customer_04", &"customer_05",
-	&"customer_06", &"customer_07", &"customer_08", &"customer_09", &"customer_10",
-	&"customer_11", &"customer_12", &"customer_13", &"customer_14", &"customer_15",
-	&"customer_16", &"customer_17", &"customer_18", &"customer_19", &"customer_20",
+	&"customer_01", &"customer_02", &"customer_03", &"customer_04", &"customer_05", &"customer_06",
 ]
 const STATES: Array[StringName] = [
 	NEUTRAL_STATE,
@@ -16,12 +13,14 @@ const STATES: Array[StringName] = [
 	&"satisfied",
 	&"accepting_bag",
 	&"paying_coins",
+	&"angry",
 ]
 const REACTION_STATES: Array[StringName] = [
 	&"impatient",
 	&"satisfied",
 	&"accepting_bag",
 	&"paying_coins",
+	&"angry",
 ]
 const MAX_IN_FLIGHT := 2
 
@@ -36,8 +35,7 @@ var _reaction_prewarm_enabled := false
 
 func resource_path_for(customer_id: StringName, state: StringName) -> String:
 	var stable_customer_id := _normalized_customer_id(customer_id)
-	var stable_state := state if STATES.has(state) else NEUTRAL_STATE
-	return "res://resources/art/customers/%s/%s_%s_cropped.tres" % [stable_customer_id, stable_customer_id, stable_state]
+	return "res://resources/art/cartoon/customer-%d.png" % (CUSTOMER_IDS.find(stable_customer_id) + 1)
 
 
 func texture_for(customer_id: StringName, state: StringName) -> Texture2D:
@@ -46,6 +44,10 @@ func texture_for(customer_id: StringName, state: StringName) -> Texture2D:
 	var key := _cache_key(stable_customer_id, stable_state)
 	if _cache.has(key):
 		return _cache[key] as Texture2D
+	var cartoon_texture := _cartoon_texture_for(stable_customer_id, stable_state)
+	if cartoon_texture != null:
+		_cache[key] = cartoon_texture
+		return cartoon_texture
 	if stable_state != NEUTRAL_STATE:
 		_queue_state(stable_customer_id, stable_state)
 		return _load_neutral(stable_customer_id)
@@ -136,6 +138,10 @@ func _queue_state(customer_id: StringName, state: StringName) -> void:
 	var key := _cache_key(customer_id, state)
 	if _cache.has(key) or _queued_keys.has(key) or _failed_keys.has(key):
 		return
+	var cartoon_texture := _cartoon_texture_for(customer_id, state)
+	if cartoon_texture != null:
+		_cache[key] = cartoon_texture
+		return
 	var path := resource_path_for(customer_id, state)
 	if _pending_by_path.has(path):
 		return
@@ -212,6 +218,26 @@ func _key_for_path(path: String) -> String:
 
 func _normalized_customer_id(customer_id: StringName) -> StringName:
 	return customer_id if CUSTOMER_IDS.has(customer_id) else DEFAULT_CUSTOMER_ID
+
+
+func _cartoon_texture_for(customer_id: StringName, state: StringName) -> Texture2D:
+	var atlas := load(resource_path_for(customer_id, state)) as Texture2D
+	if atlas == null:
+		return null
+	var half_size := Vector2(atlas.get_width() / 2.0, atlas.get_height() / 2.0)
+	var stable_state := state if STATES.has(state) else NEUTRAL_STATE
+	var cell := Vector2i(1, 0)
+	if stable_state == &"impatient":
+		cell = Vector2i(0, 1)
+	elif stable_state == &"angry":
+		cell = Vector2i(1, 1)
+	elif stable_state in [&"satisfied", &"accepting_bag", &"paying_coins"]:
+		cell = Vector2i(0, 0)
+	var texture := AtlasTexture.new()
+	texture.atlas = atlas
+	texture.region = Rect2(Vector2(cell) * half_size, half_size)
+	texture.filter_clip = true
+	return texture
 
 
 func _cache_key(customer_id: StringName, state: StringName) -> String:

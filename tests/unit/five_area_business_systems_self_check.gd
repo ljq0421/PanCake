@@ -39,14 +39,14 @@ func _initialize() -> void:
 	_check(safe_soy_ready.size() == 1 and StringName(Dictionary(safe_soy_ready[0]).get("source_id", &"")) == &"device.fresh_soy_milk_machine", "attention rail retains soy states that carry a real loss window")
 
 	var goals: RefCounted = GOALS.new()
-	var areas := [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk", &"area.steamer"]
+	var areas := [&"area.pancake", &"area.packaged_drink", &"area.youtiao", &"area.fresh_soy_milk"]
 	var created: Dictionary = goals.call("begin_day", {"current_day": 9, "unlocked_area_ids": areas, "tutorial_completed_area_ids": areas, "specialization": {}, "order_rng_seed": 123})
-	_check(bool(created.get("created", false)) and StringName(Dictionary(created.get("goal", {})).get("goal_id", &"")) == &"goal.signature.combo_two_no_failure", "daily goal starts deterministically only after all five tutorials")
+	_check(not bool(created.get("created", true)) and Dictionary(created.get("goal", {})).is_empty(), "daily goals remain disabled in cartoon breakfast v1")
 	goals.call("record_business_event", {"kind": &"sale", "quantity": 1, "details": {"complexity": &"double"}})
 	var completed: Dictionary = goals.call("record_business_event", {"kind": &"sale", "quantity": 1, "details": {"complexity": &"double"}})
-	_check(bool(completed.get("completed", false)) and not StringName(completed.get("reward_event_id", &"")).is_empty(), "daily goal emits one stable reward request on completion")
+	_check(not bool(completed.get("completed", false)) and StringName(completed.get("reward_event_id", &"")).is_empty(), "business events cannot create a hidden daily-goal reward")
 	var same_day: Dictionary = goals.call("begin_day", {"current_day": 9, "unlocked_area_ids": areas, "tutorial_completed_area_ids": areas, "specialization": {}, "order_rng_seed": 999})
-	_check(not bool(same_day.get("created", true)) and bool(Dictionary(same_day.get("goal", {})).get("completed", false)), "save restore and same-day entry do not reroll a daily goal")
+	_check(not bool(same_day.get("created", true)) and Dictionary(same_day.get("goal", {})).is_empty(), "same-day entry keeps daily goals absent")
 
 	_finish()
 

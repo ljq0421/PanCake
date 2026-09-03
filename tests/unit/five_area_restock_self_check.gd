@@ -1,11 +1,8 @@
 extends SceneTree
 
 const SERVICE := preload("res://scripts/services/five_area_restock_service.gd")
-const CATALOG := preload("res://scripts/data/five_area_catalog.gd")
-const EGG_STOCK := &"stock.pancake.egg"
-const YOUTIAO_STOCK := &"stock.youtiao.plain_dough"
 
-var _failures := PackedStringArray()
+var _failures: Array[String] = []
 
 
 func _initialize() -> void:
@@ -13,73 +10,29 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	for stock_id in CATALOG.stock_ids():
-		var definition := CATALOG.stock_definition(stock_id)
-		if definition.has("refill_seconds"):
-			_check(is_equal_approx(float(definition.get("refill_seconds", 0.0)), 0.15), "%s uses the unified 0.15-second refill duration" % stock_id)
 	var session := root.get_node_or_null("GameSession")
 	_check(session != null, "GameSession autoload is available")
 	if session == null:
 		_finish()
 		return
 	session.call("begin_new_game")
-	var progression: RefCounted = session.call("progression_service")
-	var unlocked_stock_ids := Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
-	unlocked_stock_ids[EGG_STOCK] = true
-	progression.set("unlocked_stock_ids", unlocked_stock_ids)
-	session.call("_sync_progression_to_save")
-	var service: RefCounted = SERVICE.new(session)
-	var inventory: Dictionary = session.call("inventory_snapshot")
-	inventory[str(EGG_STOCK)] = 0
-	session.call("save_inventory", inventory)
-	var empty_status: Dictionary = service.call("status", EGG_STOCK)
-	_check(bool(empty_status.get("success", false)) and int(empty_status.get("current_stock", -1)) == 0 and is_zero_approx(float(empty_status.get("container_fill_ratio", -1.0))), "formal service reads stable pancake stock IDs and exposes empty-container progress")
-	var zero_coin_restock: Dictionary = service.call("advance_hold", EGG_STOCK, 1.0)
-	_check(int(zero_coin_restock.get("completed_units", 0)) == 6 and int(session.call("inventory_snapshot").get(str(EGG_STOCK), -1)) == 6, "zero spendable coins still allow replenishment")
-	service.call("release", EGG_STOCK)
-	inventory = session.call("inventory_snapshot")
-	inventory[str(EGG_STOCK)] = 0
-	session.call("save_inventory", inventory)
-	var unit_seconds := float(service.call("status", EGG_STOCK).get("unit_seconds", 0.0))
-	service.call("advance_hold", EGG_STOCK, unit_seconds * 0.40)
-	var partial := float(service.call("status", EGG_STOCK).get("progress_seconds", 0.0))
-	_check(partial > 0.0 and partial < unit_seconds, "formal service stores partial hold progress")
-	var cancelled := Dictionary(service.call("release", EGG_STOCK))
-	_check(float(cancelled.get("cancelled_seconds", 0.0)) > 0.0 and is_zero_approx(float(service.call("status", EGG_STOCK).get("progress_seconds", -1.0))), "releasing clears only the current unfinished refill cycle")
-	var still_partial: Dictionary = service.call("advance_hold", EGG_STOCK, unit_seconds * 0.60)
-	_check(int(still_partial.get("completed_units", 0)) == 0 and int(session.call("inventory_snapshot").get(str(EGG_STOCK), 0)) == 0, "cancelled progress cannot be resumed into an early charge")
-	var completed: Dictionary = service.call("advance_hold", EGG_STOCK, unit_seconds * 0.40)
-	_check(int(completed.get("completed_units", 0)) == 1 and int(session.call("inventory_snapshot").get(str(EGG_STOCK), 0)) == 1, "one fresh complete cycle commits exactly one formal stock unit")
-	_check(is_equal_approx(float(completed.get("container_fill_ratio", 0.0)), 1.0 / float(completed.get("capacity", 1))), "restock progress reports the full container's current fill ratio")
-	_check(int(session.call("five_area_progression_snapshot").get("coins", -1)) == 0 and int(completed.get("charged_coins", -1)) == 0, "a completed formal restock leaves spendable coins unchanged")
-	_check(int(session.call("today_bill").get("cash_cost", 0)) == 7, "all replenished units are recorded as today's operating cost")
-	unlocked_stock_ids = Dictionary(progression.get("unlocked_stock_ids")).duplicate(true)
-	unlocked_stock_ids[YOUTIAO_STOCK] = true
-	progression.set("unlocked_stock_ids", unlocked_stock_ids)
-	session.call("_sync_progression_to_save")
-	inventory = session.call("inventory_snapshot")
-	inventory[str(YOUTIAO_STOCK)] = 0
-	session.call("save_inventory", inventory)
-	var youtiao_status := Dictionary(service.call("status", YOUTIAO_STOCK))
-	_check(is_equal_approx(float(youtiao_status.get("unit_seconds", 0.0)), 0.15), "plain youtiao dough uses the unified 0.15-second unit duration")
-	_check(int(youtiao_status.get("capacity", 0)) == 4, "plain youtiao dough is limited to the four physical board slots")
-	service.call("advance_hold", YOUTIAO_STOCK, 0.06)
-	service.call("release", YOUTIAO_STOCK)
-	var youtiao_completed := Dictionary(service.call("advance_hold", YOUTIAO_STOCK, 0.09))
-	_check(int(youtiao_completed.get("completed_units", 0)) == 0 and int(session.call("inventory_snapshot").get(str(YOUTIAO_STOCK), 0)) == 0, "cancelled youtiao hold discards the unfinished cycle")
-	youtiao_completed = Dictionary(service.call("advance_hold", YOUTIAO_STOCK, 0.06))
-	_check(int(youtiao_completed.get("completed_units", 0)) == 1 and int(session.call("inventory_snapshot").get(str(YOUTIAO_STOCK), 0)) == 1, "a fresh complete youtiao cycle commits one unit at the faster rate")
-	_check(int(session.call("five_area_progression_snapshot").get("coins", -1)) == 0, "faster youtiao restock also leaves spendable coins unchanged")
-	_check(int(session.call("today_bill").get("cash_cost", 0)) == 9, "youtiao replenishment adds its unit cost to today's operating cost")
-	session.call("continue_game")
-	_check(int(session.call("inventory_snapshot").get(str(EGG_STOCK), 0)) == 1 and int(session.call("inventory_snapshot").get(str(YOUTIAO_STOCK), 0)) == 1, "formal restock inventory persists through save reload")
+	var service := SERVICE.new(session)
+	var before := Dictionary(session.call("inventory_snapshot"))
+	for stock_id in [
+		&"stock.pancake.egg", &"stock.pancake.baocui", &"stock.pancake.scallion",
+		&"stock.pancake.ham_sausage", &"stock.pancake.meat_floss", &"stock.pancake.sauce.sweet_flour",
+		&"stock.youtiao.plain_dough", &"stock.packaged_drink.juice",
+	]:
+		var status := Dictionary(service.status(stock_id))
+		var advanced := Dictionary(service.advance_hold(stock_id, 1.0))
+		_check(not bool(status.get("success", true)) and StringName(status.get("reason", &"")) == &"restock_unnecessary", "%s exposes no refill operation" % stock_id)
+		_check(not bool(advanced.get("success", true)) and StringName(advanced.get("reason", &"")) == &"restock_unnecessary", "%s ignores long-hold refill" % stock_id)
+	_check(Dictionary(session.call("inventory_snapshot")) == before and int(Dictionary(session.call("today_bill")).get("cash_cost", 0)) == 0, "blocked refill gestures change neither inventory nor costs")
 	_finish()
 
 
 func _check(condition: bool, message: String) -> void:
-	if condition:
-		print("PASS: %s" % message)
-	else:
+	if not condition:
 		_failures.append(message)
 
 
@@ -88,6 +41,5 @@ func _finish() -> void:
 		print("FIVE_AREA_RESTOCK_SELF_CHECK_PASS")
 		quit(0)
 		return
-	for failure in _failures:
-		push_error(failure)
+	printerr("FIVE_AREA_RESTOCK_SELF_CHECK_FAIL\n" + "\n".join(_failures))
 	quit(1)

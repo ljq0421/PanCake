@@ -39,6 +39,10 @@ var _selected_tool: StringName = &""
 var _reserved_ingredient_drag_stock_id: StringName = &""
 var _ingredient_feedback_tween: Tween
 var _target_preview_visible := false
+## The cartoon workstation uses one baked-in contextual tool hotspot. After a
+## successful held pour it can hand the player the spreader immediately,
+## without interrupting the pour while the pointer is still down.
+var auto_select_spreader_after_pour := false
 
 
 func _ready() -> void:
@@ -311,10 +315,12 @@ func complete_surface_action(unit_index: int, action: StringName, changed: bool)
 	if action == UNIT_SCRIPT.SURFACE_ACTION_POUR_BATTER:
 		var pour_unit := _unit(unit_index)
 		if changed:
-			# Pouring is complete when the pointer is released. Put the ladle
-			# back into its holder instead of leaving another tool in hand.
 			clear_held_tool()
-			status_message.emit("面糊已倒入；面糊勺已放回筒中")
+			if auto_select_spreader_after_pour:
+				_set_selected_tool(&"tool.pancake.spreader")
+				status_message.emit("面糊已倒入；摊饼器已自动拿起，绕鏊面转一圈即可")
+			else:
+				status_message.emit("面糊已倒入；面糊勺已放回筒中")
 		else:
 			if pour_unit != null:
 				pour_unit.reset_unit()

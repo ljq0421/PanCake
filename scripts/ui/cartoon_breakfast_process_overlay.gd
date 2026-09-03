@@ -20,24 +20,17 @@ func update_presentation(pancake: Dictionary, fryer: Dictionary, show_drinks: bo
 
 
 func _draw() -> void:
-	_draw_pancake()
+	_draw_pancake_overlays()
 	_draw_partial_youtiao()
 	_draw_boxed_juice()
 	_draw_payment_coins()
 
 
-func _draw_pancake() -> void:
-	if pancake_mode == &"idle":
-		return
-	var center := Vector2(720.0, 740.0)
-	var radius := 70.0 if pancake_mode == &"batter" else 146.0
-	var color := Color("f4d69a") if pancake_mode in [&"batter", &"first_side"] else Color("e6b866")
-	draw_set_transform(center, 0.0, Vector2(1.0, 0.80))
-	draw_circle(Vector2.ZERO, radius + 5.0, Color(0.24, 0.10, 0.025, 0.72))
-	draw_circle(Vector2.ZERO, radius, color)
-	draw_arc(Vector2.ZERO, radius - 5.0, 0.0, TAU, 64, Color(0.96, 0.78, 0.39, 0.8), 4.0, true)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+func _draw_pancake_overlays() -> void:
+	# The live pancake body comes from PancakeHeatmap/PancakeModel. Keep only
+	# lightweight garnish and packaging fallbacks that do not replace its shape.
 	if pancake_mode in [&"garnish", &"folding"]:
+		var center := Vector2(720.0, 740.0)
 		var colors := [Color("f6edd1"), Color("d89a37"), Color("73a64b"), Color("d97155"), Color("a86f43")]
 		for index in pancake_ingredients.size():
 			var angle := float(index) * 1.71 - 1.1

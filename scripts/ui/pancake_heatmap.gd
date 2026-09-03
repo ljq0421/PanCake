@@ -204,6 +204,16 @@ func force_texture_upload() -> void:
 	_rebuild_heatmap_texture()
 
 
+func refresh_material_textures() -> void:
+	_sweet_sauce_material_image = null
+	_chili_sauce_material_image = null
+	_sweet_sauce_material_rgb.clear()
+	_chili_sauce_material_rgb.clear()
+	_sauce_material_image_size = 0
+	_dirty = true
+	_rebuild_heatmap_texture()
+
+
 func set_fold_visual_state(
 	left_progress: float,
 	right_progress: float,

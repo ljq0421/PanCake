@@ -164,6 +164,8 @@ var _egg_liquid_falling := false
 var _intact_egg_local_override := Vector2.ZERO
 var _has_intact_egg_local_override := false
 var spreader_visual_enabled := true
+var _spreader_cursor_source_normal: Texture2D = SPREADER_NORMAL
+var _spreader_cursor_source_wide: Texture2D = SPREADER_WIDE
 var _hardware_spreader_cursor_normal: Texture2D
 var _hardware_spreader_cursor_wide: Texture2D
 var _hardware_spreader_cursor_hotspot := Vector2.ZERO
@@ -351,9 +353,9 @@ func set_spreader_visual_enabled(value: bool) -> void:
 
 
 func _build_hardware_spreader_cursors() -> void:
-	_hardware_spreader_cursor_normal = _scaled_cursor_texture(SPREADER_NORMAL)
-	_hardware_spreader_cursor_wide = _scaled_cursor_texture(SPREADER_WIDE)
-	var source_size := Vector2(SPREADER_NORMAL.get_size())
+	_hardware_spreader_cursor_normal = _scaled_cursor_texture(_spreader_cursor_source_normal)
+	_hardware_spreader_cursor_wide = _scaled_cursor_texture(_spreader_cursor_source_wide)
+	var source_size := Vector2(_spreader_cursor_source_normal.get_size())
 	if source_size.x > 0.0 and source_size.y > 0.0:
 		var source_hotspot := source_size * 0.5 - HARDWARE_SPREADER_SOURCE_OFFSET
 		_hardware_spreader_cursor_hotspot = source_hotspot / source_size * Vector2(HARDWARE_SPREADER_CURSOR_SIZE)
@@ -361,6 +363,14 @@ func _build_hardware_spreader_cursors() -> void:
 			Vector2.ZERO,
 			Vector2(HARDWARE_SPREADER_CURSOR_SIZE - Vector2i.ONE)
 		)
+
+
+func set_spreader_cursor_textures(normal_texture: Texture2D, wide_texture: Texture2D = null) -> void:
+	if normal_texture == null:
+		return
+	_spreader_cursor_source_normal = normal_texture
+	_spreader_cursor_source_wide = wide_texture if wide_texture != null else normal_texture
+	_build_hardware_spreader_cursors()
 
 
 func _scaled_cursor_texture(source: Texture2D) -> Texture2D:

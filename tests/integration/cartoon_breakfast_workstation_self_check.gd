@@ -31,10 +31,46 @@ func _run() -> void:
 	_check(workstation.fryer_state_artwork.texture == null, "after one stick leaves, the procedural overlay shows the remaining batch")
 	_check(workstation.contextual_tool_button != null and workstation.contextual_tool_button.size.x >= 56.0, "the baked-in pancake tool has a transparent interactive hotspot")
 	_check(workstation.process_overlay != null and workstation.process_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE, "procedural process feedback never intercepts input")
+	var pancake_unit := workstation.multi_griddle_station.get_node("Griddle01") as CompactGriddleUnit
+	var pancake_material := pancake_unit.pancake_visual.material as ShaderMaterial
+	_check(
+		pancake_unit.pancake_surface.position.is_equal_approx(Vector2(27.0, -124.0))
+		and pancake_unit.pancake_surface.size.is_equal_approx(Vector2(398.0, 398.0))
+		and pancake_unit.pancake_surface.scale.is_equal_approx(Vector2.ONE),
+		"cartoon pancake surface is calibrated to the full authored griddle interior",
+	)
+	_check(is_equal_approx(pancake_unit.pancake_model.parameters.pan_height_ratio, 0.64), "cartoon pancake ellipse matches the authored griddle foreshortening")
+	_check(bool(workstation.multi_griddle_station.get("auto_select_spreader_after_pour")), "cartoon held pour hands off to the spreader only after release")
+	_check(
+		pancake_material != null
+		and (pancake_material.get_shader_parameter(&"raw_texture") as Texture2D).resource_path.begins_with("res://resources/art/cartoon/process/")
+		and (pancake_material.get_shader_parameter(&"cooked_texture") as Texture2D).resource_path.begins_with("res://resources/art/cartoon/process/"),
+		"live pancake shader uses the cartoon process materials",
+	)
+	workstation.call("_on_contextual_tool_pressed")
+	_check(
+		pancake_unit.state == CompactGriddleUnit.State.IDLE
+		and pancake_unit.pancake_model.covered_cell_count() == 0
+		and StringName(workstation.multi_griddle_station.get("_selected_tool")) == &"tool.pancake.ladle",
+		"one contextual click prepares the ladle for a player-controlled held pour",
+	)
+	workstation.call("_enforce_cartoon_only_visuals")
+	_check(pancake_unit.pancake_visual.texture is ImageTexture, "cartoon-only enforcement preserves the model-generated field texture")
 	_check(_visible_textures_are_cartoon_only(workstation), "all visible workstation textures come from resources/art/cartoon")
 	_check(not workstation.get_node("SafeArea/ServiceCustomer5").visible, "fifth customer slot is disabled")
 	_check(workstation.customer_service_slots.size() == 4, "exactly four customer service slots are resolved")
 	_check(not workstation.customer_service_slots.has(workstation.get_node("SafeArea/ServiceCustomer5")), "customer allocation cannot resolve a fifth slot")
+	for slot_index in workstation.customer_service_slots.size():
+		var slot := workstation.customer_service_slots[slot_index] as CustomerServiceSlot
+		var portrait_bottom := slot.position.y + slot.scale.y * (slot.portrait.position.y + slot.portrait.size.y)
+		var slot_clip_bottom := slot.position.y + slot.scale.y * slot.size.y
+		var portrait_visual_width := slot.portrait.size.x * slot.portrait.scale.x * slot.scale.x
+		var portrait_center_x := slot.position.x + slot.scale.x * (slot.portrait.position.x + slot.portrait.size.x * 0.5)
+		var portrait_left := portrait_center_x - portrait_visual_width * 0.5
+		var portrait_right := portrait_center_x + portrait_visual_width * 0.5
+		_check(slot.clip_contents and is_equal_approx(slot_clip_bottom, 468.0), "customer slot %d clips at the marked counter edge" % (slot_index + 1))
+		_check(is_equal_approx(portrait_bottom, 468.0) and slot.portrait.size == Vector2(260.0, 200.0), "customer slot %d uses the shared visible-height frame and marked baseline" % (slot_index + 1))
+		_check(portrait_left >= 210.0 - 0.01 and portrait_right <= 1648.0 + 0.01, "customer slot %d stays between the vertical blockers" % (slot_index + 1))
 	workstation.call("_open_upgrade_workshop")
 	await process_frame
 	var workshop := workstation.get("_upgrade_workshop") as UpgradeWorkshopOverlay
@@ -66,6 +102,7 @@ func _run() -> void:
 		for state in [&"neutral", &"impatient", &"satisfied", &"angry"]:
 			var texture := portraits.texture_for(customer_id, state) as AtlasTexture
 			_check(texture != null and texture.region.size.x > 0.0 and texture.region.size.y > 0.0, "%s exposes %s atlas state" % [customer_id, state])
+			_check(texture != null and texture.region.size != Vector2(texture.atlas.get_width() / 2.0, texture.atlas.get_height() / 2.0), "%s %s is cropped to its visible figure" % [customer_id, state])
 
 	workstation.queue_free()
 	await process_frame

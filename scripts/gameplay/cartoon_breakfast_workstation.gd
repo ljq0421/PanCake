@@ -9,14 +9,29 @@ const ART_DRINKS := preload("res://resources/art/cartoon/doujiang-2.png")
 const ART_ALL_EQUIPMENT := preload("res://resources/art/cartoon/shebei-2.png")
 const ART_RAW_YOUTIAO := preload("res://resources/art/cartoon/mianpi-1.png")
 const ART_READY_YOUTIAO := preload("res://resources/art/cartoon/youtiao-1.png")
+const ART_PANCAKE_RAW := preload("res://resources/art/cartoon/process/pancake_raw_cartoon_v1.png")
+const ART_PANCAKE_COOKED := preload("res://resources/art/cartoon/process/pancake_cooked_cartoon_v1.png")
+const ART_PANCAKE_CHARRED := preload("res://resources/art/cartoon/process/pancake_charred_cartoon_v1.png")
+const ART_EGG_SPREAD := preload("res://resources/art/cartoon/process/egg_spread_cartoon_v1.png")
+const ART_SWEET_SAUCE := preload("res://resources/art/cartoon/process/sweet_flour_sauce_cartoon_v1.png")
+const ART_CHILI_SAUCE := preload("res://resources/art/cartoon/process/chili_sauce_cartoon_v1.png")
+const ART_BATTER_SPREADER := preload("res://resources/art/cartoon/process/batter_spreader_cartoon_v1.png")
 
 const ART_SOURCE_SIZE := Vector2(1672.0, 941.0)
 const DESIGN_SIZE := Vector2(1920.0, 1080.0)
 const ART_SCALE := DESIGN_SIZE.x / ART_SOURCE_SIZE.x
 const ART_TOP := (DESIGN_SIZE.y - ART_SOURCE_SIZE.y * ART_SCALE) * 0.5
+const CUSTOMER_COUNTER_EDGE_Y := 468.0
+const CUSTOMER_HORIZONTAL_LIMITS := Vector2(210.0, 1648.0)
+const CUSTOMER_PORTRAIT_SIZE := Vector2(260.0, 200.0)
 const LEFT_ART_REGION := Rect2(0.0, 430.0, 455.0, 511.0)
 const INGREDIENT_ART_REGION := Rect2(810.0, 487.0, 410.0, 190.0)
 const CONTEXT_TOOL_RECT := Rect2(842.0, 680.0, 150.0, 130.0)
+## Calibrated against the authored dark cooking surface in xiaoliao-1.png.
+## The cartoon griddle is more foreshortened than the retired griddle artwork,
+## so both its field rectangle and simulation ellipse ratio are overridden.
+const CARTOON_PANCAKE_SURFACE_RECT := Rect2(27.0, -124.0, 398.0, 398.0)
+const CARTOON_PAN_HEIGHT_RATIO := 0.64
 const FRYER_INPUT_RECT := Rect2(42.0, 500.0, 410.0, 330.0)
 const SOY_INPUT_RECT := Rect2(1200.0, 470.0, 360.0, 350.0)
 const DRINK_INPUT_RECT := Rect2(1270.0, 680.0, 345.0, 210.0)
@@ -43,6 +58,7 @@ var _last_fryer_signature := ""
 func _ready() -> void:
 	_install_cartoon_artwork()
 	_hide_retired_workbench_artwork()
+	_configure_cartoon_customer_layout()
 	super._ready()
 	_configure_cartoon_layout()
 	_enforce_cartoon_only_visuals()
@@ -101,7 +117,6 @@ func _process(delta: float) -> void:
 		return
 	_cartoon_refresh_elapsed = 0.0
 	_refresh_cartoon_presentation()
-	_apply_contextual_spreader_after_pour()
 	_enforce_cartoon_only_visuals()
 
 
@@ -201,8 +216,16 @@ func _configure_cartoon_layout() -> void:
 	pancake_station_view.position = Vector2(-91.0, -26.0)
 	var unit := multi_griddle_station.get_node_or_null("Griddle01") as CompactGriddleUnit
 	if unit != null:
-		unit.set_spreader_visual_enabled(false)
+		multi_griddle_station.set("auto_select_spreader_after_pour", true)
+		unit.pancake_surface.scale = Vector2.ONE
+		unit.pancake_surface.position = CARTOON_PANCAKE_SURFACE_RECT.position
+		unit.pancake_surface.size = CARTOON_PANCAKE_SURFACE_RECT.size
+		unit.pancake_surface.pivot_offset = CARTOON_PANCAKE_SURFACE_RECT.size * 0.5
+		unit.pancake_model.parameters.pan_height_ratio = CARTOON_PAN_HEIGHT_RATIO
+		unit.set_spreader_cursor_textures(ART_BATTER_SPREADER)
+		unit.set_spreader_visual_enabled(true)
 		unit.self_modulate.a = 0.0
+		_apply_cartoon_pancake_material(unit)
 	var main_action := pancake_station_view.get_node_or_null("MultiGriddleStation/Griddle01/MainAction") as Control
 	if main_action != null:
 		main_action.visible = false
@@ -241,6 +264,50 @@ func _configure_cartoon_layout() -> void:
 	packaged_drink_station.size = drink_rect.size
 	packaged_drink_station.baked_into_workbench_artwork = true
 	packaged_drink_station.refresh_from_session()
+
+
+func _configure_cartoon_customer_layout() -> void:
+	for slot_index in customer_service_slots.size():
+		var slot_value := customer_service_slots[slot_index]
+		var slot := slot_value as CustomerServiceSlot
+		if slot == null or is_zero_approx(slot.scale.x) or is_zero_approx(slot.scale.y):
+			continue
+		# Clip the whole service slot at the rear counter edge. During entrance and
+		# exit motion customers can move down behind the counter, but can never be
+		# painted over the interactive worktop.
+		var local_counter_edge := (CUSTOMER_COUNTER_EDGE_Y - slot.position.y) / slot.scale.y
+		slot.size.y = local_counter_edge
+		slot.clip_contents = true
+		var portrait_position := Vector2(
+			(slot.card_width - CUSTOMER_PORTRAIT_SIZE.x) * 0.5,
+			local_counter_edge - CUSTOMER_PORTRAIT_SIZE.y,
+		)
+		# Distribute the complete visual frames between the two vertical blockers,
+		# not merely their pivot points, so wide poses also stay inside the opening.
+		var visual_width := CUSTOMER_PORTRAIT_SIZE.x * slot.portrait.scale.x * slot.scale.x
+		var center_left := CUSTOMER_HORIZONTAL_LIMITS.x + visual_width * 0.5
+		var center_right := CUSTOMER_HORIZONTAL_LIMITS.y - visual_width * 0.5
+		var distribution := float(slot_index) / float(maxi(customer_service_slots.size() - 1, 1))
+		var desired_center_x := lerpf(center_left, center_right, distribution)
+		slot.position.x = desired_center_x - (portrait_position.x + CUSTOMER_PORTRAIT_SIZE.x * 0.5) * slot.scale.x
+		slot.portrait.position = portrait_position
+		slot.portrait.size = CUSTOMER_PORTRAIT_SIZE
+		slot.portrait.pivot_offset = Vector2(CUSTOMER_PORTRAIT_SIZE.x * 0.5, CUSTOMER_PORTRAIT_SIZE.y)
+		slot.set("_portrait_rest_position", portrait_position)
+
+
+func _apply_cartoon_pancake_material(unit: CompactGriddleUnit) -> void:
+	var material := unit.pancake_visual.material as ShaderMaterial
+	if material == null:
+		return
+	material.set_shader_parameter(&"raw_texture", ART_PANCAKE_RAW)
+	material.set_shader_parameter(&"cooked_texture", ART_PANCAKE_COOKED)
+	material.set_shader_parameter(&"charred_texture", ART_PANCAKE_CHARRED)
+	material.set_shader_parameter(&"edge_texture", ART_PANCAKE_RAW)
+	material.set_shader_parameter(&"egg_surface_texture", ART_EGG_SPREAD)
+	material.set_shader_parameter(&"sweet_sauce_texture", ART_SWEET_SAUCE)
+	material.set_shader_parameter(&"chili_sauce_texture", ART_CHILI_SAUCE)
+	unit.pancake_surface.refresh_material_textures()
 
 
 func _refresh_cartoon_presentation(force: bool = false) -> void:
@@ -333,14 +400,6 @@ func _on_fryer_hotspot_up() -> void:
 		cartoon_youtiao_fryer.call("_finish_drag_or_click", Vector2.ZERO)
 
 
-func _apply_contextual_spreader_after_pour() -> void:
-	var unit := multi_griddle_station.get_node_or_null("Griddle01")
-	if unit == null or int(unit.get("state")) != GRIDDLE_UNIT.State.BATTER:
-		return
-	if StringName(multi_griddle_station.get("_selected_tool")) != &"tool.pancake.spreader":
-		multi_griddle_station.call("select_worktop_tool", &"tool.pancake.spreader")
-
-
 func _update_contextual_tool_hint() -> void:
 	if contextual_tool_button == null:
 		return
@@ -349,9 +408,9 @@ func _update_contextual_tool_hint() -> void:
 		return
 	match int(unit.get("state")):
 		GRIDDLE_UNIT.State.IDLE:
-			contextual_tool_button.tooltip_text = "点击准备面糊，再长按鏊面倒浆"
+			contextual_tool_button.tooltip_text = "点击拿起面糊勺，再在鏊面长按控制倒浆"
 		GRIDDLE_UNIT.State.BATTER:
-			contextual_tool_button.tooltip_text = "摊饼器已就绪，在鏊面拖动摊开"
+			contextual_tool_button.tooltip_text = "摊饼器已就绪，绕鏊面转满一圈"
 		GRIDDLE_UNIT.State.FIRST_SIDE:
 			contextual_tool_button.tooltip_text = "火候合适后点击翻面"
 		GRIDDLE_UNIT.State.SECOND_SIDE, GRIDDLE_UNIT.State.GARNISH:
@@ -390,10 +449,18 @@ func _enforce_cartoon_only_visuals() -> void:
 	for badge in _station_state_badges.values():
 		if badge is CanvasItem:
 			(badge as CanvasItem).visible = false
+	var inherited_main_action := pancake_station_view.get_node_or_null("MultiGriddleStation/Griddle01/MainAction") as Control
+	if inherited_main_action != null:
+		inherited_main_action.visible = false
+		inherited_main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _is_cartoon_texture(texture: Texture2D) -> bool:
 	if texture == null:
+		return true
+	# PancakeHeatmap produces model-backed field textures at runtime. They have
+	# no resource_path, but are gameplay output rather than retired disk art.
+	if texture is ImageTexture:
 		return true
 	if texture is AtlasTexture:
 		return _is_cartoon_texture((texture as AtlasTexture).atlas)

@@ -23,6 +23,49 @@ const REACTION_STATES: Array[StringName] = [
 	&"angry",
 ]
 const MAX_IN_FLIGHT := 2
+# The six cartoon sheets were authored on two different cell aspect ratios and
+# with different amounts of transparent padding.  Crop to the painted figure
+# before the shared service-slot layout scales it; this keeps every customer's
+# visible height stable instead of scaling the whole source cell.
+const CARTOON_VISIBLE_BOUNDS := {
+	&"customer_01": {
+		&"satisfied": Rect2(198.0, 28.0, 513.0, 459.0),
+		&"neutral": Rect2(148.0, 14.0, 367.0, 479.0),
+		&"impatient": Rect2(286.0, 2.0, 395.0, 485.0),
+		&"angry": Rect2(80.0, 4.0, 499.0, 475.0),
+	},
+	&"customer_02": {
+		&"satisfied": Rect2(52.0, 48.0, 575.0, 547.0),
+		&"neutral": Rect2(0.0, 48.0, 577.0, 549.0),
+		&"impatient": Rect2(108.0, 8.0, 457.0, 565.0),
+		&"angry": Rect2(36.0, 12.0, 559.0, 569.0),
+	},
+	&"customer_03": {
+		&"satisfied": Rect2(180.0, 12.0, 529.0, 499.0),
+		&"neutral": Rect2(134.0, 8.0, 381.0, 503.0),
+		&"impatient": Rect2(272.0, 0.0, 415.0, 495.0),
+		&"angry": Rect2(56.0, 0.0, 543.0, 487.0),
+	},
+	&"customer_04": {
+		&"satisfied": Rect2(180.0, 8.0, 529.0, 503.0),
+		&"neutral": Rect2(72.0, 0.0, 489.0, 511.0),
+		&"impatient": Rect2(214.0, 0.0, 441.0, 491.0),
+		&"angry": Rect2(46.0, 0.0, 487.0, 485.0),
+	},
+	&"customer_05": {
+		&"satisfied": Rect2(44.0, 20.0, 579.0, 599.0),
+		&"neutral": Rect2(68.0, 38.0, 527.0, 585.0),
+		&"impatient": Rect2(86.0, 10.0, 515.0, 579.0),
+		&"angry": Rect2(12.0, 12.0, 585.0, 579.0),
+	},
+	&"customer_06": {
+		&"satisfied": Rect2(46.0, 20.0, 569.0, 583.0),
+		&"neutral": Rect2(74.0, 30.0, 503.0, 575.0),
+		&"impatient": Rect2(90.0, 10.0, 485.0, 563.0),
+		&"angry": Rect2(16.0, 8.0, 581.0, 563.0),
+	},
+}
+const CARTOON_CROP_MARGIN := 6.0
 
 var _cache: Dictionary = {}
 var _visible_customer_ids: Dictionary = {}
@@ -226,6 +269,7 @@ func _cartoon_texture_for(customer_id: StringName, state: StringName) -> Texture
 		return null
 	var half_size := Vector2(atlas.get_width() / 2.0, atlas.get_height() / 2.0)
 	var stable_state := state if STATES.has(state) else NEUTRAL_STATE
+	var visual_state := &"satisfied" if stable_state in [&"satisfied", &"accepting_bag", &"paying_coins"] else stable_state
 	var cell := Vector2i(1, 0)
 	if stable_state == &"impatient":
 		cell = Vector2i(0, 1)
@@ -233,9 +277,12 @@ func _cartoon_texture_for(customer_id: StringName, state: StringName) -> Texture
 		cell = Vector2i(1, 1)
 	elif stable_state in [&"satisfied", &"accepting_bag", &"paying_coins"]:
 		cell = Vector2i(0, 0)
+	var cell_rect := Rect2(Vector2(cell) * half_size, half_size)
+	var local_bounds := Rect2(Dictionary(CARTOON_VISIBLE_BOUNDS.get(customer_id, {})).get(visual_state, Rect2(Vector2.ZERO, half_size)))
+	var painted_region := Rect2(cell_rect.position + local_bounds.position, local_bounds.size).grow(CARTOON_CROP_MARGIN)
 	var texture := AtlasTexture.new()
 	texture.atlas = atlas
-	texture.region = Rect2(Vector2(cell) * half_size, half_size)
+	texture.region = painted_region.intersection(cell_rect)
 	texture.filter_clip = true
 	return texture
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PancakeStoveLevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/PancakeStoveLevelData.cs" id="1_stove"]
+
+[resource]
+script = ExtResource("1_stove")
+Level = 2
+CanBurn = false
+SideAReadySeconds = 2.2
+SideAOverdoneSeconds = 0.0
+SideBReadySeconds = 1.1
+SideABurnSeconds = 0.0
+SideBBurnSeconds = 0.0
+UpgradePrice = 120

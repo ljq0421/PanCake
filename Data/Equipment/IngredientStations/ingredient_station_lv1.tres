@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="IngredientStationLevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/IngredientStationLevelData.cs" id="1_station"]
+
+[resource]
+script = ExtResource("1_station")
+Level = 1
+BatterCapacity = 10
+EggCapacity = 10
+SauceCapacity = 12
+CrispyCapacity = 6
+ScallionCapacity = 6
+HamCapacity = 4
+RefillSeconds = 1.0
+UpgradePrice = 0
+

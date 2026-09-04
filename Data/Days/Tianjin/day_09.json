@@ -1,0 +1,31 @@
+{
+  "day": 9,
+  "durationSeconds": 120,
+  "customerCount": 14,
+  "expectedRevenue": 148,
+  "patienceMultiplier": 1.10,
+  "maxWaitingCustomers": 5,
+  "randomSeed": 1009,
+  "customerWeights": { "normal": 1.0 },
+  "orderTypeWeights": { "pancake": 0.45, "youtiao": 0.10, "pancake_youtiao": 0.20, "soy_milk": 0.10, "pancake_soy_milk": 0.15 },
+  "recipeWeights": {
+    "pancake_basic": 0.05,
+    "pancake_crispy": 0.10,
+    "pancake_scallion": 0.10,
+    "pancake_scallion_crispy": 0.20,
+    "pancake_ham": 0.15,
+    "pancake_ham_crispy": 0.15,
+    "pancake_youtiao": 0.15,
+    "pancake_scallion_youtiao": 0.10
+  },
+  "arrivalSegments": [
+    { "start": 0.0, "end": 0.20, "customerRatio": 0.20 },
+    { "start": 0.20, "end": 0.75, "customerRatio": 0.60 },
+    { "start": 0.75, "end": 1.0, "customerRatio": 0.20 }
+  ],
+  "startUnlocks": ["product:soy_milk"],
+  "completionUnlocks": [],
+  "availableRecipeIds": ["pancake_basic", "pancake_crispy", "pancake_scallion", "pancake_scallion_crispy", "pancake_ham", "pancake_ham_crispy", "pancake_youtiao", "pancake_scallion_youtiao"],
+  "availableProductKinds": ["pancake", "youtiao", "soyMilk"],
+  "constraints": { "maxBigOrderCustomers": 0, "simpleNewProductOrders": 2, "maxConsecutiveYoutiaoOrders": 2, "maxPancakesPerCustomer": 1 }
+}

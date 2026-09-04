@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/CustomerTypeData.cs" id="1_customer"]
+
+[resource]
+script = ExtResource("1_customer")
+Id = "office_worker"
+DisplayName = "赶时间上班族"
+HappyUntilSeconds = 10.8
+NormalUntilSeconds = 21.6
+ImpatientUntilSeconds = 30.24
+LeaveAtSeconds = 36.0
+PerfectTipRate = 0.2
+IsBigOrderCustomer = false
+OrderProfile = 0

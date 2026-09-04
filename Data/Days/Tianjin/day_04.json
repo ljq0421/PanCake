@@ -1,0 +1,45 @@
+{
+  "day": 4,
+  "durationSeconds": 90,
+  "customerCount": 10,
+  "expectedRevenue": 82,
+  "patienceMultiplier": 1.06,
+  "maxWaitingCustomers": 5,
+  "randomSeed": 1004,
+  "customerWeights": {
+    "normal": 1.0
+  },
+  "orderTypeWeights": {
+    "pancake": 1.0
+  },
+  "recipeWeights": {
+    "pancake_basic": 0.20,
+    "pancake_crispy": 0.30,
+    "pancake_scallion": 0.20,
+    "pancake_scallion_crispy": 0.30
+  },
+  "arrivalSegments": [
+    { "start": 0.0, "end": 0.20, "customerRatio": 0.20 },
+    { "start": 0.20, "end": 0.75, "customerRatio": 0.60 },
+    { "start": 0.75, "end": 1.0, "customerRatio": 0.20 }
+  ],
+  "startUnlocks": [],
+  "completionUnlocks": [
+    "equipment:pancake_stove_lv2"
+  ],
+  "availableRecipeIds": [
+    "pancake_basic",
+    "pancake_crispy",
+    "pancake_scallion",
+    "pancake_scallion_crispy"
+  ],
+  "availableProductKinds": [
+    "pancake"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 2,
+    "maxPancakesPerCustomer": 1
+  }
+}

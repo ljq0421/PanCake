@@ -1,0 +1,32 @@
+{
+  "day": 5,
+  "durationSeconds": 90,
+  "customerCount": 10,
+  "expectedRevenue": 76,
+  "patienceMultiplier": 1.16,
+  "maxWaitingCustomers": 5,
+  "randomSeed": 1005,
+  "customerWeights": { "normal": 1.0 },
+  "orderTypeWeights": { "pancake": 0.70, "youtiao": 0.15, "pancake_youtiao": 0.15 },
+  "recipeWeights": {
+    "pancake_basic": 0.20,
+    "pancake_crispy": 0.30,
+    "pancake_scallion": 0.20,
+    "pancake_scallion_crispy": 0.30
+  },
+  "arrivalSegments": [
+    { "start": 0.0, "end": 0.20, "customerRatio": 0.20 },
+    { "start": 0.20, "end": 0.75, "customerRatio": 0.60 },
+    { "start": 0.75, "end": 1.0, "customerRatio": 0.20 }
+  ],
+  "startUnlocks": ["equipment:fryer_lv1", "product:youtiao"],
+  "completionUnlocks": [],
+  "availableRecipeIds": ["pancake_basic", "pancake_crispy", "pancake_scallion", "pancake_scallion_crispy"],
+  "availableProductKinds": ["pancake", "youtiao"],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 2,
+    "maxConsecutiveYoutiaoOrders": 2,
+    "maxPancakesPerCustomer": 1
+  }
+}

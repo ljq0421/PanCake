@@ -1,0 +1,56 @@
+[gd_scene format=3]
+
+[node name="TianjinShop" type="Node2D"]
+
+[node name="Background" type="Sprite2D" parent="."]
+
+[node name="Workbench" type="Node2D" parent="."]
+
+[node name="FryerStation" type="Node2D" parent="Workbench"]
+position = Vector2(250, 560)
+
+[node name="PancakeStation" type="Node2D" parent="Workbench"]
+position = Vector2(880, 520)
+
+[node name="IngredientArea" type="Node2D" parent="Workbench"]
+position = Vector2(1380, 560)
+
+[node name="BatterTray" type="Node2D" parent="Workbench/IngredientArea"]
+
+[node name="EggTray" type="Node2D" parent="Workbench/IngredientArea"]
+
+[node name="SauceTray" type="Node2D" parent="Workbench/IngredientArea"]
+
+[node name="CrispyTray" type="Node2D" parent="Workbench/IngredientArea"]
+
+[node name="ScallionTray" type="Node2D" parent="Workbench/IngredientArea"]
+
+[node name="HamTray" type="Node2D" parent="Workbench/IngredientArea"]
+
+[node name="SoyMilkTray" type="Node2D" parent="Workbench"]
+position = Vector2(1680, 560)
+
+[node name="DeliveryZone" type="Node2D" parent="Workbench"]
+position = Vector2(960, 820)
+
+[node name="Customers" type="Node2D" parent="."]
+
+[node name="QueueSlot1" type="Marker2D" parent="Customers"]
+position = Vector2(380, 250)
+
+[node name="QueueSlot2" type="Marker2D" parent="Customers"]
+position = Vector2(670, 250)
+
+[node name="QueueSlot3" type="Marker2D" parent="Customers"]
+position = Vector2(960, 250)
+
+[node name="QueueSlot4" type="Marker2D" parent="Customers"]
+position = Vector2(1250, 250)
+
+[node name="QueueSlot5" type="Marker2D" parent="Customers"]
+position = Vector2(1540, 250)
+
+[node name="InteractionLayer" type="CanvasLayer" parent="."]
+
+[node name="Effects" type="Node2D" parent="."]
+

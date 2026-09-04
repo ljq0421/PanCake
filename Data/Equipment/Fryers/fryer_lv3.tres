@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FryerLevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/FryerLevelData.cs" id="1_fryer"]
+
+[resource]
+script = ExtResource("1_fryer")
+Level = 3
+Capacity = 8
+GoldenStartSeconds = 4.5
+GoldenEndSeconds = 5.5
+BurnAtSeconds = 0.0
+AutoRaise = true
+AutoRaiseAtSeconds = 5.5
+DrainSeconds = 0.6
+UpgradePrice = 320

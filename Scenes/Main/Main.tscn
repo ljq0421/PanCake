@@ -1,0 +1,53 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Core/GameController.cs" id="1_game"]
+[ext_resource type="Script" path="res://Scripts/Core/DayController.cs" id="2_day"]
+[ext_resource type="PackedScene" path="res://Scenes/Shop/TianjinShop.tscn" id="3_shop"]
+[ext_resource type="Script" path="res://Scripts/UI/DataDebugPanel.cs" id="4_debug"]
+[ext_resource type="PackedScene" path="res://Scenes/Gameplay/PancakeLab.tscn" id="5_lab"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/MorningHub.tscn" id="6_hub"]
+[ext_resource type="PackedScene" path="res://Scenes/Gameplay/TianjinDayScreen.tscn" id="7_day_screen"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/TianjinMapScreen.tscn" id="8_map"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_game")
+DayControllerPath = NodePath("DayController")
+DebugPanelPath = NodePath("UI/DataDebugPanel")
+PancakeLabPath = NodePath("UI/PancakeLab")
+HubPath = NodePath("UI/MorningHub")
+TianjinDayPath = NodePath("UI/TianjinDayScreen")
+MapPath = NodePath("UI/TianjinMapScreen")
+
+[node name="DayController" type="Node" parent="."]
+script = ExtResource("2_day")
+
+[node name="CustomerManager" type="Node" parent="."]
+
+[node name="OrderService" type="Node" parent="."]
+
+[node name="EconomyService" type="Node" parent="."]
+
+[node name="UpgradeService" type="Node" parent="."]
+
+[node name="ShopRoot" type="Node2D" parent="."]
+
+[node name="TianjinShop" parent="ShopRoot" instance=ExtResource("3_shop")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="MorningHub" parent="UI" instance=ExtResource("6_hub")]
+
+[node name="TianjinDayScreen" parent="UI" instance=ExtResource("7_day_screen")]
+
+[node name="TianjinMapScreen" parent="UI" instance=ExtResource("8_map")]
+
+[node name="PancakeLab" parent="UI" instance=ExtResource("5_lab")]
+
+[node name="DataDebugPanel" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_debug")

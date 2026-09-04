@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RecipeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/RecipeData.cs" id="1_recipe"]
+
+[resource]
+script = ExtResource("1_recipe")
+Id = "pancake_ham"
+DisplayName = "火腿煎饼"
+Price = 9
+ExtraIngredients = Array[String](["ham"])
+

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dk7xci03xjimg"
-path="res://.godot/imported/天津早餐铺场景背景.png-f4699ecffe94413b263a795a1d5180be.ctex"
+uid="uid://tiir70lar5x0"
+path="res://.godot/imported/展开煎饼基础层-v2.png-0568a207a7b98312147ac500184f63e2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resource/art/天津早餐铺场景背景.png"
-dest_files=["res://.godot/imported/天津早餐铺场景背景.png-f4699ecffe94413b263a795a1d5180be.ctex"]
+source_file="res://resource/art/TianJin/展开煎饼基础层-v2.png"
+dest_files=["res://.godot/imported/展开煎饼基础层-v2.png-0568a207a7b98312147ac500184f63e2.ctex"]
 
 [params]
 

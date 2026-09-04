@@ -375,8 +375,17 @@ public partial class SaveService : Node
         HasLoadError = true;
         LoadErrorMessage = $"存档无法读取：{exception.Message}";
         CorruptBackupPath = absolute + $".corrupt-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak";
-        File.Copy(absolute, CorruptBackupPath, true);
-        GD.PushError($"{LoadErrorMessage} 已备份到 {CorruptBackupPath}");
+        try
+        {
+            File.Copy(absolute, CorruptBackupPath, true);
+            GD.PushError($"{LoadErrorMessage} 已备份到 {CorruptBackupPath}");
+        }
+        catch (Exception backupException)
+        {
+            CorruptBackupPath = string.Empty;
+            LoadErrorMessage += $"；损坏文件备份失败：{backupException.Message}";
+            GD.PushError(LoadErrorMessage);
+        }
     }
 
     private void ClearLoadError()

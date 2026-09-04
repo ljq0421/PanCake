@@ -8,6 +8,7 @@ using ProjectCake.Gameplay;
 using ProjectCake.Inventory;
 using ProjectCake.Orders;
 using ProjectCake.Pancake;
+using ProjectCake.UI;
 
 namespace ProjectCake.Tests;
 
@@ -22,6 +23,7 @@ public partial class StageFourSelfTest : Node
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
             TestCatalog(catalog);
+            TestArtCatalog();
             TestFryers(catalog);
             TestSoyMilk();
             TestOrderProgress(catalog);
@@ -69,6 +71,19 @@ public partial class StageFourSelfTest : Node
             Check(Close(config.DurationSeconds, seconds[index]) && config.CustomerCount == customers[index]
                 && config.ExpectedRevenue == revenues[index] && config.RandomSeed == 1000 + day, $"Day {day} 基线数值准确");
         }
+    }
+
+    private void TestArtCatalog()
+    {
+        var art = new TianjinArtCatalog();
+        Check(art.MissingRequiredAssets().Count == 0, "天津第一章美术映射全部可加载", string.Join(" | ", art.MissingRequiredAssets()));
+        Check(art.Stove(1) != art.Stove(2) && art.Stove(2) != art.Stove(3), "煎饼炉 Lv1～Lv3 使用独立图片");
+        Check(art.Fryer(1) != art.Fryer(2) && art.Fryer(2) != art.Fryer(3), "油条锅 Lv1～Lv3 使用独立图片");
+        Check(art.Customer("normal") == art.Customer("missing_customer_type"), "缺失顾客类型稳定回退到现有人物素材");
+        Check(art.Background.GetWidth() == 1920 && art.Background.GetHeight() == 1080, "营业背景运行版本固定为 1920×1080");
+        Check(art.StoveVisual(3).DisplaySize.X > 0 && art.ProductVisual(ProductKind.SoyMilk).DisplaySize.Y > 0, "设备与商品映射包含独立显示规格");
+        var secondCatalog = new TianjinArtCatalog();
+        Check(ReferenceEquals(art.Ingredient(StableIds.Ingredients.Ham), secondCatalog.Ingredient(StableIds.Ingredients.Ham)), "多界面共享已裁切纹理缓存");
     }
 
     private void TestFryers(DataCatalog catalog)
@@ -296,6 +311,9 @@ public partial class StageFourSelfTest : Node
 
     private void TestScenes()
     {
+        var hub = new MorningHub();
+        Check(!hub.DeveloperToolsVisible, "正式启动参数不显示煎饼实验台与 Day 数据入口");
+        hub.Free();
         foreach (string path in new[] { "res://Scenes/Main/Main.tscn", "res://Scenes/UI/TianjinMapScreen.tscn", "res://Scenes/Gameplay/TianjinDayScreen.tscn" })
             Check(ResourceLoader.Load<PackedScene>(path) is not null, $"阶段 4 场景可加载：{path.GetFile()}");
         Node main = ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate();

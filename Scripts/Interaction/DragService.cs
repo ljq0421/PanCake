@@ -29,7 +29,7 @@ public partial class DragService : Node
         }
     }
 
-    public void BeginDrag(Control source, string payloadId, string displayName, Color color)
+    public void BeginDrag(Control source, string payloadId, string displayName, Color color, DragVisualSpec? visual = null)
     {
         if (_overlay is null || IsDragging)
         {
@@ -41,10 +41,26 @@ public partial class DragService : Node
         _returning = false;
         _proxy = new PanelContainer
         {
-            CustomMinimumSize = new Vector2(150, 58),
+            CustomMinimumSize = visual?.DisplaySize ?? new Vector2(150, 58),
             MouseFilter = Control.MouseFilterEnum.Ignore,
             ZIndex = 1000,
         };
+        if (visual is DragVisualSpec art)
+        {
+            _proxy.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+            _proxy.AddChild(new TextureRect
+            {
+                Texture = art.Texture,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            });
+            _overlay.AddChild(_proxy);
+            MoveProxy(source.GetGlobalMousePosition());
+            SetProcessInput(true);
+            DragStarted?.Invoke(payloadId);
+            return;
+        }
         var style = new StyleBoxFlat
         {
             BgColor = color,

@@ -3,61 +3,91 @@ using ProjectCake.Core;
 using ProjectCake.Customers;
 using ProjectCake.Data;
 using ProjectCake.Orders;
+using ProjectCake.UI;
 
 namespace ProjectCake.Gameplay;
 
+/*
+THESIS: the shop itself is the interface; customers, food, and equipment carry the service rhythm instead of a workflow dashboard.
+OWN-WORLD: the approved Tianjin storefront fills the frame while cream paper, warm status colors, dark-brown outlines, and one soft shadow hold the HUD.
+STORY: read visual orders above the queue, prepare food across the physical counter, deliver to the selected guest, and close on a printed receipt.
+FIRST VIEWPORT: five guests own the open window; the fryer, large pancake stove, ingredients, and delivery shelf sit exactly on the painted counter.
+FORM: a single-screen casual management workbench at a fixed 16:9 design resolution.
+*/
 public partial class TianjinDayScreen : Control
 {
     public event Action? HubRequested;
-    public event Action<int>? NextDayRequested;
 
-    private readonly Button[] _customerCards = new Button[5];
+    private readonly Button[] _customerButtons = new Button[5];
+    private readonly HBoxContainer[] _orderRows = new HBoxContainer[5];
+    private readonly TextureRect[] _portraits = new TextureRect[5];
+    private readonly Label[] _customerBadges = new Label[5];
+    private readonly ProgressBar[] _patienceBars = new ProgressBar[5];
+    private readonly string[] _customerSignatures = new string[5];
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
     private DayController _controller = null!;
+    private TianjinArtCatalog _art = null!;
     private PancakeWorkstation _workstation = null!;
     private Label _dayTitle = null!;
     private Label _clock = null!;
     private Label _income = null!;
+    private PanelContainer _feedbackPanel = null!;
     private Label _feedback = null!;
     private Label _door = null!;
-    private PanelContainer _prepare = null!;
-    private Label _prepareText = null!;
     private Label _countdown = null!;
     private PanelContainer _results = null!;
+    private ColorRect _resultBlocker = null!;
     private RichTextLabel _resultText = null!;
-    private VBoxContainer _resultUpgrades = null!;
-    private Button _nextButton = null!;
+    private Label _unlockText = null!;
     private ConfirmationDialog _abandonDialog = null!;
     private DayCommitResult _commit;
     private bool _committed;
     private bool _focused = true;
+    private double _feedbackRemaining;
 
     public override void _Ready() => Build();
 
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
-        _catalog = catalog; _save = save; _controller = controller; _committed = false; _results.Visible = false;
+        _catalog = catalog;
+        _save = save;
+        _controller = controller;
+        _committed = false;
+        _results.Visible = false;
+        _resultBlocker.Visible = false;
+        _countdown.Visible = false;
+        Array.Fill(_customerSignatures, string.Empty);
         if (!controller.TryPrepareDay(day, catalog, out string error))
         {
-            ShowFeedback(error, true); return;
+            ShowFeedback(error, true);
+            return;
         }
         if (!save.ApplyStartUnlocks(controller.CurrentConfig!, out error))
         {
-            ShowFeedback(error, true); return;
+            ShowFeedback(error, true);
+            return;
         }
         int fryerLevel = controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao)
             ? Math.Max(1, save.Data.PurchasedFryerLevel)
             : 0;
-        _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig);
+        _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig, _art);
         _workstation.SubmitPrepared = SubmitPrepared;
         _workstation.SubmitProduct = SubmitProduct;
         _workstation.InteractionEnabled = false;
         _workstation.ResetForDay();
-        _prepare.Visible = true; _countdown.Visible = false;
-        string fryer = fryerLevel > 0 ? $" · 油条锅 Lv{fryerLevel}" : string.Empty;
-        _prepareText.Text = $"Day {day}\n{controller.CurrentConfig.DurationSeconds:0} 秒 · {controller.CurrentConfig.CustomerCount} 位顾客\n煎饼炉 Lv{save.Data.PurchasedStoveLevel} · 配料台 Lv{save.Data.PurchasedIngredientStationLevel}{fryer}\n{TutorialText(day)}";
         Render();
+    }
+
+    public void BeginDay()
+    {
+        if (_controller is null) return;
+        if (_controller.TryStartDay(out string error))
+        {
+            _countdown.Visible = true;
+            ShowFeedback("铺门打开，准备迎接第一位客人。", false);
+        }
+        else ShowFeedback(error, true);
     }
 
     public void ConnectController(DayController controller)
@@ -65,11 +95,16 @@ public partial class TianjinDayScreen : Control
         _controller = controller;
         controller.StateChanged += OnStateChanged;
         controller.DayFinished += OnDayFinished;
-        controller.DeliveryCompleted += evaluation => ShowFeedback(evaluation.Message, evaluation.Grade == DeliveryGrade.Incorrect);
+        controller.DeliveryCompleted += evaluation => ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     }
 
     public override void _Process(double delta)
     {
+        if (_feedbackRemaining > 0)
+        {
+            _feedbackRemaining -= delta;
+            if (_feedbackRemaining <= 0) _feedbackPanel.Visible = false;
+        }
         if (_controller is null || !_focused || !IsVisibleInTree()) return;
         _controller.Tick(delta);
         _workstation.InteractionEnabled = _controller.State is DayState.Running or DayState.Closing;
@@ -81,84 +116,238 @@ public partial class TianjinDayScreen : Control
     {
         if (what == NotificationApplicationFocusOut)
         {
-            _focused = false; if (_controller is not null) _controller.IsPaused = true; _workstation?.CancelInput(); if (_workstation is not null) _workstation.Paused = true;
+            _focused = false;
+            if (_controller is not null) _controller.IsPaused = true;
+            _workstation?.CancelInput();
+            if (_workstation is not null) _workstation.Paused = true;
         }
         else if (what == NotificationApplicationFocusIn)
         {
-            _focused = true; if (_controller is not null) _controller.IsPaused = false; if (_workstation is not null) _workstation.Paused = false;
+            _focused = true;
+            if (_controller is not null) _controller.IsPaused = false;
+            if (_workstation is not null) _workstation.Paused = false;
         }
     }
 
     private void Build()
     {
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var bg = new ColorRect { Color = new Color("#211713"), MouseFilter = MouseFilterEnum.Ignore }; bg.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); AddChild(bg);
-        var root = new VBoxContainer(); root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); root.OffsetLeft = 24; root.OffsetTop = 16; root.OffsetRight = -24; root.OffsetBottom = -16; root.AddThemeConstantOverride("separation", 10); AddChild(root);
-        var hud = new HBoxContainer { CustomMinimumSize = new Vector2(0, 58) }; root.AddChild(hud);
-        _dayTitle = Text("Day", 28, "#FFD596"); _dayTitle.SizeFlagsHorizontal = SizeFlags.ExpandFill; hud.AddChild(_dayTitle);
-        _clock = Text("00:00", 25, "#F5E0C5"); hud.AddChild(_clock); _income = Text("营业额 ¥0", 23, "#7DDA96"); hud.AddChild(_income);
-        var back = new Button { Text = "返回大厅", CustomMinimumSize = new Vector2(140, 48) }; back.Pressed += RequestAbandon; hud.AddChild(back);
-        var customerPanel = Panel("#30241E"); root.AddChild(customerPanel);
-        var customerColumn = new VBoxContainer(); customerPanel.AddChild(customerColumn);
-        var customerHeader = new HBoxContainer(); customerColumn.AddChild(customerHeader); var waiting = Text("顾客队列 · 点击订单选择出餐目标", 18, "#DCC3A6"); waiting.SizeFlagsHorizontal = SizeFlags.ExpandFill; customerHeader.AddChild(waiting); _door = Text("门外候场 0", 16, "#A99788"); customerHeader.AddChild(_door);
-        var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 10); customerColumn.AddChild(row);
-        for (int index = 0; index < _customerCards.Length; index++)
-        {
-            int slot = index; var card = new Button { Text = "空位", CustomMinimumSize = new Vector2(0, 112), SizeFlagsHorizontal = SizeFlags.ExpandFill, Disabled = true };
-            card.AddThemeFontSizeOverride("font_size", 17); card.Pressed += () => SelectSlot(slot); row.AddChild(card); _customerCards[index] = card;
-        }
-        _feedback = Text("点击开店，准备营业。", 18, "#78D892"); _feedback.HorizontalAlignment = HorizontalAlignment.Center; root.AddChild(_feedback);
-        _workstation = new PancakeWorkstation { SizeFlagsVertical = SizeFlags.ExpandFill }; _workstation.Feedback += ShowFeedback; root.AddChild(_workstation);
+        Theme = TianjinUi.CreateTheme();
+        _art = new TianjinArtCatalog();
+        var background = TianjinUi.Texture(_art.Background, Vector2.Zero, TextureRect.StretchModeEnum.Scale);
+        TianjinUi.FullRect(background);
+        AddChild(background);
+
+        _workstation = new PancakeWorkstation();
+        TianjinUi.FullRect(_workstation);
+        _workstation.Feedback += ShowFeedback;
         _workstation.YoutiaoConsumed += quantity => _controller?.Ledger?.RecordYoutiaoUsed(quantity);
         _workstation.YoutiaoBurnt += quantity => _controller?.Ledger?.RecordYoutiaoBurnt(quantity);
-        BuildPrepareOverlay(); BuildResultOverlay();
-        _abandonDialog = new ConfirmationDialog { Title = "放弃本日营业？", DialogText = "本日收入和成绩不会保存，重新开始会生成相同顾客计划。", OkButtonText = "放弃并返回" };
-        _abandonDialog.Confirmed += () => { _controller.AbandonDay(); _workstation.ResetForDay(); HubRequested?.Invoke(); }; AddChild(_abandonDialog);
+        AddChild(_workstation);
+
+        BuildCustomers();
+        BuildHud();
+        BuildFeedback();
+        BuildResultOverlay();
+
+        _countdown = TianjinUi.Label("3", 112, TianjinUi.Paper, HorizontalAlignment.Center);
+        _countdown.Position = new Vector2(850, 450);
+        _countdown.Size = new Vector2(220, 180);
+        _countdown.AddThemeConstantOverride("outline_size", 12);
+        _countdown.AddThemeColorOverride("font_outline_color", TianjinUi.BrownDark);
+        _countdown.ZIndex = 90;
+        _countdown.Visible = false;
+        AddChild(_countdown);
+
+        _abandonDialog = new ConfirmationDialog
+        {
+            Title = "提前打烊？",
+            DialogText = "本日收入和成绩不会保存，重新开始仍会遇到同一批顾客。",
+            OkButtonText = "打烊并返回",
+        };
+        _abandonDialog.Confirmed += () =>
+        {
+            _controller.AbandonDay();
+            _workstation.ResetForDay();
+            HubRequested?.Invoke();
+        };
+        AddChild(_abandonDialog);
     }
 
-    private void BuildPrepareOverlay()
+    private void BuildHud()
     {
-        _prepare = OverlayPanel("#382820"); var box = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center }; box.AddThemeConstantOverride("separation", 24); _prepare.AddChild(box);
-        _prepareText = Text("营业准备", 32, "#FFD596"); _prepareText.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(_prepareText);
-        var open = new Button { Text = "开店", CustomMinimumSize = new Vector2(280, 70), SizeFlagsHorizontal = SizeFlags.ShrinkCenter }; open.AddThemeFontSizeOverride("font_size", 25); open.Pressed += StartDay; box.AddChild(open);
-        _countdown = Text("3", 76, "#FFF0D4"); _countdown.HorizontalAlignment = HorizontalAlignment.Center; _countdown.Visible = false; box.AddChild(_countdown);
-        AddChild(_prepare);
+        var hud = TianjinUi.Panel(new Color("#FFF4D5"), 16);
+        hud.SetAnchorsPreset(LayoutPreset.TopWide);
+        hud.OffsetLeft = 24;
+        hud.OffsetTop = 18;
+        hud.OffsetRight = -24;
+        hud.OffsetBottom = 90;
+        hud.ZIndex = 70;
+        AddChild(hud);
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 20);
+        hud.AddChild(row);
+        _dayTitle = TianjinUi.Label("Day 1", 28, TianjinUi.BrownDark);
+        _dayTitle.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        row.AddChild(_dayTitle);
+        _door = TianjinUi.Label("门外候场 0", 18, TianjinUi.Brown);
+        row.AddChild(_door);
+        _clock = TianjinUi.Label("01:00", 26, TianjinUi.BrownDark);
+        row.AddChild(_clock);
+        row.AddChild(TianjinUi.Texture(_art.Coin, new Vector2(44, 44)));
+        _income = TianjinUi.Label("¥0", 25, TianjinUi.Green);
+        row.AddChild(_income);
+        var back = TianjinUi.Button("提前打烊", false, new Vector2(148, 52));
+        back.Pressed += RequestAbandon;
+        row.AddChild(back);
+    }
+
+    private void BuildCustomers()
+    {
+        var customers = new HBoxContainer();
+        customers.Position = new Vector2(54, 98);
+        customers.Size = new Vector2(1812, 340);
+        customers.AddThemeConstantOverride("separation", 12);
+        customers.ZIndex = 30;
+        AddChild(customers);
+        for (int index = 0; index < _customerButtons.Length; index++)
+        {
+            int slot = index;
+            var button = new Button
+            {
+                Text = string.Empty,
+                CustomMinimumSize = new Vector2(352, 340),
+                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                FocusMode = FocusModeEnum.All,
+                Visible = false,
+            };
+            button.AddThemeStyleboxOverride("normal", TianjinUi.Box(new Color(1, 1, 1, 0), 16, 0, false));
+            button.AddThemeStyleboxOverride("hover", TianjinUi.Box(new Color(1, 0.95f, 0.76f, 0.18f), 16, 3, false));
+            button.AddThemeStyleboxOverride("pressed", TianjinUi.Box(new Color(1, 0.89f, 0.48f, 0.24f), 16, 4, false));
+            button.Pressed += () => SelectSlot(slot);
+            customers.AddChild(button);
+            _customerButtons[index] = button;
+
+            var column = new VBoxContainer();
+            TianjinUi.FullRect(column, 4, 4, -4, -4);
+            column.MouseFilter = MouseFilterEnum.Ignore;
+            column.AddThemeConstantOverride("separation", 2);
+            button.AddChild(column);
+            var bubble = TianjinUi.Panel(TianjinUi.Paper, 14, 4, true);
+            bubble.CustomMinimumSize = new Vector2(0, 142);
+            bubble.MouseFilter = MouseFilterEnum.Ignore;
+            column.AddChild(bubble);
+            _orderRows[index] = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+            _orderRows[index].AddThemeConstantOverride("separation", 4);
+            bubble.AddChild(_orderRows[index]);
+            ArtVisual customerVisual = _art.CustomerVisual("normal");
+            _portraits[index] = TianjinUi.Texture(customerVisual.Texture, new Vector2(0, customerVisual.DisplaySize.Y));
+            _portraits[index].SizeFlagsVertical = SizeFlags.ExpandFill;
+            column.AddChild(_portraits[index]);
+            _customerBadges[index] = TianjinUi.Label("普通顾客", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
+            column.AddChild(_customerBadges[index]);
+            _patienceBars[index] = new ProgressBar
+            {
+                MinValue = 0,
+                MaxValue = 100,
+                Value = 100,
+                ShowPercentage = false,
+                CustomMinimumSize = new Vector2(0, 18),
+                MouseFilter = MouseFilterEnum.Ignore,
+            };
+            _patienceBars[index].AddThemeStyleboxOverride("background", TianjinUi.Box(new Color("#E2CDA8"), 8, 3, false));
+            _patienceBars[index].AddThemeStyleboxOverride("fill", TianjinUi.Box(TianjinUi.Green, 7, 0, false));
+            column.AddChild(_patienceBars[index]);
+        }
+    }
+
+    private void BuildFeedback()
+    {
+        _feedbackPanel = TianjinUi.Panel(TianjinUi.Paper, 14);
+        _feedbackPanel.Position = new Vector2(600, 104);
+        _feedbackPanel.Size = new Vector2(720, 62);
+        _feedbackPanel.ZIndex = 80;
+        _feedbackPanel.Visible = false;
+        AddChild(_feedbackPanel);
+        _feedback = TianjinUi.Label(string.Empty, 19, TianjinUi.Green, HorizontalAlignment.Center);
+        _feedbackPanel.AddChild(_feedback);
     }
 
     private void BuildResultOverlay()
     {
-        _results = OverlayPanel("#34251E"); _results.Visible = false; var box = new VBoxContainer(); box.AddThemeConstantOverride("separation", 14); _results.AddChild(box);
-        var title = Text("今日结算", 36, "#FFD596"); title.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(title);
-        _resultText = new RichTextLabel { BbcodeEnabled = true, FitContent = true, CustomMinimumSize = new Vector2(700, 280) }; _resultText.AddThemeFontSizeOverride("normal_font_size", 22); box.AddChild(_resultText);
-        _resultUpgrades = new VBoxContainer(); box.AddChild(_resultUpgrades);
-        var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center }; actions.AddThemeConstantOverride("separation", 12); box.AddChild(actions);
-        var hub = new Button { Text = "返回大厅", CustomMinimumSize = new Vector2(180, 58) }; hub.Pressed += () => HubRequested?.Invoke(); actions.AddChild(hub);
-        _nextButton = new Button { Text = "下一天", CustomMinimumSize = new Vector2(180, 58) }; _nextButton.Pressed += () => NextDayRequested?.Invoke(Math.Min(15, _controller.CurrentConfig!.Day + 1)); actions.AddChild(_nextButton);
+        _resultBlocker = new ColorRect
+        {
+            Color = new Color(0.20f, 0.09f, 0.04f, 0.48f),
+            MouseFilter = MouseFilterEnum.Stop,
+            ZIndex = 95,
+            Visible = false,
+        };
+        TianjinUi.FullRect(_resultBlocker);
+        AddChild(_resultBlocker);
+        _results = TianjinUi.Panel(TianjinUi.Paper, 22);
+        _results.Position = new Vector2(530, 150);
+        _results.Size = new Vector2(860, 780);
+        _results.ZIndex = 100;
+        _results.Visible = false;
         AddChild(_results);
-    }
-
-    private void StartDay()
-    {
-        if (_controller.TryStartDay(out string error)) { _countdown.Visible = true; ShowFeedback("准备开店……", false); }
-        else ShowFeedback(error, true);
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 16);
+        _results.AddChild(column);
+        var title = TianjinUi.Label("今日营业收据", 38, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        column.AddChild(title);
+        _resultText = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            FitContent = false,
+            CustomMinimumSize = new Vector2(760, 450),
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        _resultText.AddThemeFontSizeOverride("normal_font_size", 22);
+        _resultText.AddThemeColorOverride("default_color", TianjinUi.BrownText);
+        column.AddChild(_resultText);
+        _unlockText = TianjinUi.Label(string.Empty, 18, TianjinUi.Orange, HorizontalAlignment.Center);
+        _unlockText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        column.AddChild(_unlockText);
+        var hub = TianjinUi.Button("收好收入 · 返回经营首页", true, new Vector2(0, 76));
+        hub.Pressed += () => HubRequested?.Invoke();
+        column.AddChild(hub);
     }
 
     private void OnStateChanged(DayState state)
     {
-        if (state == DayState.Running) { _prepare.Visible = false; ShowFeedback("开始营业！点击顾客选择订单。", false); }
-        else if (state == DayState.Closing) ShowFeedback("停止接单，还有 15 秒完成当前队列。", false);
+        if (state == DayState.Running)
+        {
+            _countdown.Visible = false;
+            ShowFeedback("开始营业！先点选顾客，再把早餐送到出餐口。", false);
+        }
+        else if (state == DayState.Closing)
+            ShowFeedback("停止接新客，最后 15 秒把手上的订单做完。", false);
     }
 
     private void OnDayFinished(DayResult result)
     {
         if (_committed) return;
         _committed = true;
-        _commit = _save.CommitDay(result, _controller.CurrentPlan!, _controller.CurrentConfig!);
         _workstation.InteractionEnabled = false;
-        string stars = result.Day == 15 ? $"\n天津评级  {new string('★', _commit.EarnedStars)}{new string('☆', 3 - _commit.EarnedStars)}{(_commit.EarnedStars >= 1 ? " · 天津已点亮" : " · 尚未达到一星")}" : string.Empty;
-        _resultText.Text = $"[center]销售额  ¥{result.SaleRevenue}    小费  ¥{result.Tips}\n[font_size=30][color=#FFD596]今日总收入  ¥{result.TotalRevenue}[/color][/font_size]\n永久金币增加  ¥{_commit.PermanentCoinGain}{(_commit.NewBest ? "  ·  新纪录" : "")}\n完成 / 流失  {result.CompletedCustomers} / {result.LostCustomers}\nPerfect / Correct / Incorrect  {result.PerfectOrders} / {result.CorrectOrders} / {result.IncorrectOrders}\n最高连击  {result.HighestCorrectStreak}    满意度  {result.Satisfaction:0}%\n油条使用  {result.YoutiaoUsed}    炸焦  {result.YoutiaoBurnt}{stars}[/center]";
-        RenderResultUpgrades();
-        _nextButton.Visible = result.Day < 15;
+        try
+        {
+            _commit = _save.CommitDay(result, _controller.CurrentPlan!, _controller.CurrentConfig!);
+        }
+        catch (IOException exception)
+        {
+            _resultText.Text = $"[center][font_size=34][color=#D95D47]！ 本次成绩未能保存[/color][/font_size]\n\n{exception.Message}\n\n请检查存档目录后返回经营首页。[/center]";
+            _unlockText.Text = "本次金币、纪录与解锁均已回退，不会留下半份存档。";
+            _resultBlocker.Visible = true;
+            _results.Visible = true;
+            return;
+        }
+        string stars = result.Day == 15
+            ? $"\n[font_size=30][color=#E9873D]天津评级  {new string('★', _commit.EarnedStars)}{new string('☆', 3 - _commit.EarnedStars)}[/color][/font_size]"
+            : string.Empty;
+        _resultText.Text = $"[center][font_size=24]Day {result.Day} 打烊[/font_size]\n\n[font_size=42][color=#4A291C]今日总收入  ¥{result.TotalRevenue}[/color][/font_size]\n销售额 ¥{result.SaleRevenue}  ·  小费 ¥{result.Tips}\n永久金币增加 ¥{_commit.PermanentCoinGain}{(_commit.NewBest ? "  ·  新纪录" : string.Empty)}\n\n完成 {result.CompletedCustomers} 位  ·  流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}%  ·  Perfect {result.PerfectOrders} 单\n最高连续正确 {result.HighestCorrectStreak} 单\n油条使用 {result.YoutiaoUsed} 根  ·  炸焦 {result.YoutiaoBurnt} 根{stars}[/center]";
+        string[] unlocks = _controller.CurrentConfig!.CompletionUnlocks.ToArray();
+        _unlockText.Text = unlocks.Length > 0 ? "新设备或新内容已经送到店里，回到经营首页查看。" : "今天的记录已经写进经营手账。";
+        _resultBlocker.Visible = true;
         _results.Visible = true;
     }
 
@@ -184,22 +373,30 @@ public partial class TianjinDayScreen : Control
 
     private void SelectSlot(int index)
     {
-        if (index < _controller.CustomerQueue!.Slots.Count && !_controller.CustomerQueue.TrySelect(_controller.CustomerQueue.Slots[index].Id)) ShowFeedback("该顾客当前不能选择。", true);
+        if (index < _controller.CustomerQueue!.Slots.Count && !_controller.CustomerQueue.TrySelect(_controller.CustomerQueue.Slots[index].Id))
+            ShowFeedback("这位顾客还没有站稳，请稍等一下。", true);
         RenderCustomers();
     }
 
     private void RequestAbandon()
     {
-        if (_controller.State is DayState.Opening or DayState.Running or DayState.Closing) _abandonDialog.PopupCentered(); else HubRequested?.Invoke();
+        if (_controller.State is DayState.Opening or DayState.Running or DayState.Closing) _abandonDialog.PopupCentered();
+        else HubRequested?.Invoke();
     }
 
     private void Render()
     {
         if (_controller?.CurrentConfig is null) return;
-        _dayTitle.Text = $"Day {_controller.CurrentConfig.Day} · {_controller.State}";
-        _clock.Text = _controller.State == DayState.Opening ? $"开店 {_controller.OpeningRemainingSeconds:0.0}" : _controller.State == DayState.Closing ? $"收尾 {_controller.ClosingRemainingSeconds:0.0}" : $"剩余 {FormatTime(_controller.DayRemainingSeconds)}";
-        if (_controller.State == DayState.Opening) _countdown.Text = Math.Max(1, (int)Math.Ceiling(_controller.OpeningRemainingSeconds)).ToString();
-        _income.Text = $"营业额 ¥{_controller.Ledger?.Build().TotalRevenue ?? 0}";
+        _dayTitle.Text = $"Day {_controller.CurrentConfig.Day} · {DaySubtitle(_controller.CurrentConfig.Day)}";
+        _clock.Text = _controller.State switch
+        {
+            DayState.Opening => $"开门 {_controller.OpeningRemainingSeconds:0.0}",
+            DayState.Closing => $"收尾 {_controller.ClosingRemainingSeconds:0.0}",
+            _ => $"剩余 {FormatTime(_controller.DayRemainingSeconds)}",
+        };
+        if (_controller.State == DayState.Opening)
+            _countdown.Text = Math.Max(1, (int)Math.Ceiling(_controller.OpeningRemainingSeconds)).ToString();
+        _income.Text = $"¥{_controller.Ledger?.Build().TotalRevenue ?? 0}";
         RenderCustomers();
     }
 
@@ -208,73 +405,115 @@ public partial class TianjinDayScreen : Control
         if (_controller?.CustomerQueue is null) return;
         IReadOnlyList<CustomerRuntime> slots = _controller.CustomerQueue.Slots;
         _door.Text = $"门外候场 {_controller.CustomerQueue.DoorQueue.Count}";
-        for (int index = 0; index < _customerCards.Length; index++)
+        for (int index = 0; index < _customerButtons.Length; index++)
         {
-            Button card = _customerCards[index];
-            if (index >= slots.Count) { card.Text = "空位"; card.Disabled = true; card.Modulate = Colors.White; continue; }
+            Button button = _customerButtons[index];
+            if (index >= slots.Count)
+            {
+                button.Visible = false;
+                _customerSignatures[index] = string.Empty;
+                continue;
+            }
             CustomerRuntime customer = slots[index];
+            button.Visible = true;
             bool selected = _controller.CustomerQueue.SelectedCustomerId == customer.Id;
-            card.Text = $"{(selected ? "▶ " : "")}{Emotion(customer.State)} · {customer.Type.DisplayName}\n{FormatOrder(customer)}\n耐心 {(1 - customer.PatienceProgress):P0}";
-            card.Disabled = customer.State is CustomerState.Entering or CustomerState.Leaving or CustomerState.Served;
-            card.Modulate = selected ? new Color("#FFD596") : StateColor(customer.State);
+            string progress = string.Join(',', customer.Order.Lines.Select((_, line) => customer.Progress.GetDeliveredQuantity(line)));
+            string signature = customer.Id + ":" + progress;
+            if (!string.Equals(_customerSignatures[index], signature, StringComparison.Ordinal))
+            {
+                _customerSignatures[index] = signature;
+                RenderOrder(index, customer);
+                button.Modulate = new Color(1, 1, 1, 0.25f);
+                button.Scale = new Vector2(0.96f, 0.96f);
+                button.PivotOffset = button.Size * 0.5f;
+                CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
+                    .TweenProperty(button, "modulate", Colors.White, 0.24);
+                CreateTween().SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
+                    .TweenProperty(button, "scale", selected ? new Vector2(1.025f, 1.025f) : Vector2.One, 0.24);
+            }
+            else button.Scale = selected ? new Vector2(1.025f, 1.025f) : Vector2.One;
+            button.Disabled = customer.State is CustomerState.Entering or CustomerState.Leaving or CustomerState.Served;
+            _portraits[index].Texture = _art.Customer(customer.Type.Id);
+            _portraits[index].Modulate = customer.State == CustomerState.Angry ? new Color("#FFD4C9") : Colors.White;
+            _customerBadges[index].Text = (selected ? "➜ 正在出餐 · " : string.Empty) + CustomerBadge(customer.Type.Id) + CustomerStateText(customer.State);
+            _customerBadges[index].Modulate = selected ? TianjinUi.Orange : StateColor(customer.State);
+            _patienceBars[index].Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
+            _patienceBars[index].AddThemeStyleboxOverride("fill", TianjinUi.Box(StateColor(customer.State), 7, 0, false));
+            button.AddThemeStyleboxOverride("normal", TianjinUi.Box(selected ? new Color(1, 0.84f, 0.33f, 0.26f) : new Color(1, 1, 1, 0), 16, selected ? 4 : 0, false));
         }
     }
 
-    private void RenderResultUpgrades()
+    private void RenderOrder(int slot, CustomerRuntime customer)
     {
-        foreach (Node child in _resultUpgrades.GetChildren()) child.QueueFree();
-        foreach (string id in _save.Data.UnlockedUpgradeIds)
-        {
-            (string name, int price, bool owned) = UpgradeInfo(id);
-            if (string.IsNullOrEmpty(name) || owned) continue;
-            var button = new Button { Text = $"购买 {name} · ¥{price}", Disabled = _save.Data.Coins < price };
-            button.Pressed += () => { _save.TryPurchase(id, _catalog, out string error); ShowFeedback(string.IsNullOrEmpty(error) ? "升级购买成功。" : error, !string.IsNullOrEmpty(error)); RenderResultUpgrades(); }; _resultUpgrades.AddChild(button);
-        }
-    }
-
-    private void ShowFeedback(string message, bool error) { _feedback.Text = message; _feedback.Modulate = error ? new Color("#FF756A") : new Color("#78D892"); }
-    private string FormatOrder(CustomerRuntime customer)
-    {
-        var parts = new List<string>();
+        HBoxContainer row = _orderRows[slot];
+        foreach (Node child in row.GetChildren()) child.QueueFree();
         for (int index = 0; index < customer.Order.Lines.Count; index++)
         {
             OrderLineData line = customer.Order.Lines[index];
-            int done = customer.Progress.GetDeliveredQuantity(index);
-            string name = line.ProductKind switch
+            int delivered = customer.Progress.GetDeliveredQuantity(index);
+            var item = new VBoxContainer { CustomMinimumSize = new Vector2(96, 98), MouseFilter = MouseFilterEnum.Ignore };
+            item.AddThemeConstantOverride("separation", 0);
+            ArtVisual productVisual = _art.ProductVisual(line.ProductKind);
+            item.AddChild(TianjinUi.Texture(productVisual.Texture, new Vector2(58, 46)));
+            string name = line.ProductKind switch { ProductKind.Pancake => "煎饼", ProductKind.Youtiao => "单卖油条", _ => "豆浆" };
+            item.AddChild(TianjinUi.Label(name, 16, TianjinUi.BrownText, HorizontalAlignment.Center));
+            item.AddChild(TianjinUi.Label(delivered >= line.Quantity ? $"✓ {delivered}/{line.Quantity}" : $"{delivered}/{line.Quantity}", 18, delivered >= line.Quantity ? TianjinUi.Green : TianjinUi.BrownText, HorizontalAlignment.Center));
+            if (line.ProductKind == ProductKind.Pancake && _catalog.RecipesById.TryGetValue(line.DefinitionId, out RecipeData? recipe) && recipe.ExtraIngredients.Count > 0)
             {
-                ProductKind.Pancake => $"煎饼〔{_catalog.RecipesById[line.DefinitionId].DisplayName.Replace("煎饼", string.Empty)}〕",
-                ProductKind.Youtiao => "独立油条",
-                _ => "豆浆",
-            };
-            parts.Add($"{name} {done}/{line.Quantity}");
+                var toppings = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+                foreach (string ingredient in recipe.ExtraIngredients)
+                    toppings.AddChild(TianjinUi.Texture(_art.Ingredient(ingredient), new Vector2(21, 18)));
+                item.AddChild(toppings);
+            }
+            row.AddChild(item);
         }
-        return string.Join(" + ", parts);
     }
-    private (string Name, int Price, bool Owned) UpgradeInfo(string id) => id switch
+
+    private void ShowFeedback(string message, bool error)
     {
-        "equipment:ingredient_station_lv2" => ("配料台 Lv2", 60, _save.Data.PurchasedIngredientStationLevel >= 2),
-        "equipment:ingredient_station_lv3" => ("配料台 Lv3", 180, _save.Data.PurchasedIngredientStationLevel >= 3),
-        "equipment:pancake_stove_lv2" => ("煎饼炉 Lv2", 120, _save.Data.PurchasedStoveLevel >= 2),
-        "equipment:pancake_stove_lv3" => ("煎饼炉 Lv3", 300, _save.Data.PurchasedStoveLevel >= 3),
-        "equipment:fryer_lv2" => ("油条锅 Lv2", 160, _save.Data.PurchasedFryerLevel >= 2),
-        "equipment:fryer_lv3" => ("油条锅 Lv3", 320, _save.Data.PurchasedFryerLevel >= 3),
-        _ => (string.Empty, 0, true),
+        _feedback.Text = (error ? "！ " : "✓ ") + message;
+        _feedback.Modulate = error ? TianjinUi.Red : TianjinUi.Green;
+        _feedbackPanel.Visible = true;
+        _feedbackPanel.Modulate = new Color(1, 1, 1, 0.2f);
+        _feedbackPanel.Position = new Vector2(600, 94);
+        _feedbackRemaining = 2.4;
+        CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
+            .TweenProperty(_feedbackPanel, "modulate", Colors.White, 0.18);
+        CreateTween().SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
+            .TweenProperty(_feedbackPanel, "position", new Vector2(600, 104), 0.18);
+    }
+
+    private static string CustomerBadge(string id) => id switch
+    {
+        "office_worker" => "赶时间上班族 · 优先",
+        "regular" => "老顾客 · 很有耐心",
+        "big_order" => "大订单顾客 · 多件",
+        _ => "普通顾客",
     };
-    private static string TutorialText(int day) => day switch
+
+    private static string CustomerStateText(CustomerState state) => state switch
     {
-        5 => "教学：逐根装入油条，放下炸篮；金黄后抬篮。",
-        7 => "教学：把沥油区的熟油条拖进煎饼。",
-        8 => "新配料：火腿已经加入配料台。",
-        9 => "教学：成品豆浆可直接拖到出餐口。",
-        11 => "特殊顾客出现：优先留意上班族。",
-        12 => "大订单出现：逐件补齐后才会结算。",
-        15 => "天津最终高峰：至少一星即可点亮天津。",
+        CustomerState.Entering => " · 入场中",
+        CustomerState.Impatient => " · ！着急",
+        CustomerState.Angry => " · ！生气",
+        CustomerState.Leaving => " · 已离开",
+        CustomerState.Served => " · ✓ 已取餐",
         _ => string.Empty,
     };
-    private static string Emotion(CustomerState state) => state switch { CustomerState.Happy => "开心", CustomerState.Normal => "等待", CustomerState.Impatient => "不耐烦", CustomerState.Angry => "生气", CustomerState.Entering => "进店", _ => "离开" };
-    private static Color StateColor(CustomerState state) => state switch { CustomerState.Happy => new Color("#BDE6C5"), CustomerState.Normal => Colors.White, CustomerState.Impatient => new Color("#FFD185"), CustomerState.Angry => new Color("#FF8A78"), _ => new Color("#AAAAAA") };
+
+    private static string DaySubtitle(int day) => day switch
+    {
+        1 => "第一张煎饼", 5 => "油条开锅", 9 => "豆浆套餐", 11 => "特殊顾客", 12 => "大订单", 15 => "天津最终高峰", _ => "早餐高峰",
+    };
+
+    private static Color StateColor(CustomerState state) => state switch
+    {
+        CustomerState.Happy => TianjinUi.Green,
+        CustomerState.Normal => TianjinUi.Brown,
+        CustomerState.Impatient => TianjinUi.Orange,
+        CustomerState.Angry => TianjinUi.Red,
+        _ => new Color("#8A7766"),
+    };
+
     private static string FormatTime(double seconds) => $"{(int)seconds / 60:00}:{(int)seconds % 60:00}";
-    private static Label Text(string text, int size, string color) { var l = new Label { Text = text }; l.AddThemeFontSizeOverride("font_size", size); l.AddThemeColorOverride("font_color", new Color(color)); return l; }
-    private static PanelContainer Panel(string color) { var p = new PanelContainer(); p.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(color), CornerRadiusTopLeft = 14, CornerRadiusTopRight = 14, CornerRadiusBottomLeft = 14, CornerRadiusBottomRight = 14, ContentMarginLeft = 14, ContentMarginRight = 14, ContentMarginTop = 10, ContentMarginBottom = 10 }); return p; }
-    private static PanelContainer OverlayPanel(string color) { var p = Panel(color); p.SetAnchorsPreset(LayoutPreset.Center); p.Position = new Vector2(-430, -310); p.Size = new Vector2(860, 620); p.ZIndex = 1000; return p; }
 }

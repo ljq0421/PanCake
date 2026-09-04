@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bgr8u4vop2era"
-path="res://.godot/imported/天津早餐铺风格锚点图-v2.png-86e4ef0f962b9cbef8180db0f9eca24a.ctex"
+uid="uid://wj01ckni6g65"
+path="res://.godot/imported/鸡蛋.png-be581d1be797648b1007649eb60a70c0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resource/art/天津早餐铺风格锚点图-v2.png"
-dest_files=["res://.godot/imported/天津早餐铺风格锚点图-v2.png-86e4ef0f962b9cbef8180db0f9eca24a.ctex"]
+source_file="res://resource/art/TianJin/鸡蛋.png"
+dest_files=["res://.godot/imported/鸡蛋.png-be581d1be797648b1007649eb60a70c0.ctex"]
 
 [params]
 

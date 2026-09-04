@@ -34,7 +34,12 @@ public partial class GameController : Node
         hub.Initialize(catalog, save);
         dayScreen.ConnectController(dayController);
         mapScreen.Initialize(save);
-        hub.DayRequested += day => { dayScreen.Initialize(catalog, save, dayController, day); ShowOnly(dayScreen, hub, pancakeLab, debugPanel, mapScreen); };
+        hub.DayRequested += day =>
+        {
+            dayScreen.Initialize(catalog, save, dayController, day);
+            ShowOnly(dayScreen, hub, pancakeLab, debugPanel, mapScreen);
+            dayScreen.BeginDay();
+        };
         hub.LabRequested += () => ShowOnly(pancakeLab, hub, dayScreen, debugPanel, mapScreen);
         hub.DebugRequested += () => ShowOnly(debugPanel, hub, dayScreen, pancakeLab, mapScreen);
         hub.MapRequested += () => ShowOnly(mapScreen, hub, dayScreen, pancakeLab, debugPanel);
@@ -43,7 +48,6 @@ public partial class GameController : Node
         debugPanel.PancakeLabRequested += () => ShowOnly(pancakeLab, hub, debugPanel, dayScreen, mapScreen);
         debugPanel.HubRequested += () => ShowOnly(hub, debugPanel, pancakeLab, dayScreen, mapScreen);
         dayScreen.HubRequested += () => ShowOnly(hub, dayScreen, pancakeLab, debugPanel, mapScreen);
-        dayScreen.NextDayRequested += day => { dayScreen.Initialize(catalog, save, dayController, day); ShowOnly(dayScreen, hub, pancakeLab, debugPanel, mapScreen); };
         mapScreen.HubRequested += () => ShowOnly(hub, mapScreen, dayScreen, pancakeLab, debugPanel);
         ShowOnly(hub, pancakeLab, dayScreen, debugPanel, mapScreen);
     }

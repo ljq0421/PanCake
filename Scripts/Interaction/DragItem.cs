@@ -2,6 +2,8 @@ using Godot;
 
 namespace ProjectCake.Interaction;
 
+public readonly record struct DragVisualSpec(Texture2D Texture, Vector2 DisplaySize);
+
 public partial class DragItem : PanelContainer
 {
     public event Action? StartRejected;
@@ -11,6 +13,7 @@ public partial class DragItem : PanelContainer
     private string _payloadId = string.Empty;
     private string _displayName = string.Empty;
     private Color _color = Colors.White;
+    private DragVisualSpec? _visual;
 
     public void Configure(
         DragService dragService,
@@ -23,8 +26,21 @@ public partial class DragItem : PanelContainer
         _payloadId = payloadId;
         _displayName = displayName;
         _color = color;
+        _visual = null;
         _canStart = canStart;
         MouseDefaultCursorShape = CursorShape.PointingHand;
+    }
+
+    public void Configure(
+        DragService dragService,
+        string payloadId,
+        string displayName,
+        Color color,
+        DragVisualSpec visual,
+        Func<bool>? canStart = null)
+    {
+        Configure(dragService, payloadId, displayName, color, canStart);
+        _visual = visual;
     }
 
     public override void _GuiInput(InputEvent @event)
@@ -33,7 +49,7 @@ public partial class DragItem : PanelContainer
         {
             if (_dragService is not null && (_canStart?.Invoke() ?? true))
             {
-                _dragService.BeginDrag(this, _payloadId, _displayName, _color);
+                _dragService.BeginDrag(this, _payloadId, _displayName, _color, _visual);
             }
             else
             {

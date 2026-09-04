@@ -3,6 +3,7 @@ extends FiveAreaWorkstation
 
 const GRIDDLE_UNIT := preload("res://scripts/gameplay/compact_griddle_unit.gd")
 const PROCESS_OVERLAY := preload("res://scripts/ui/cartoon_breakfast_process_overlay.gd")
+const CARTOON_EGG_CRACK_EFFECT := preload("res://scripts/ui/cartoon_egg_crack_effect.gd")
 const ART_PANCAKE := preload("res://resources/art/cartoon/xiaoliao-1.png")
 const ART_YOUTIAO := preload("res://resources/art/cartoon/zhaguo-1.png")
 const ART_DRINKS := preload("res://resources/art/cartoon/doujiang-2.png")
@@ -50,6 +51,7 @@ var fryer_state_artwork: TextureRect
 var process_overlay: Control
 var contextual_tool_button: Button
 var fryer_hotspot_button: Button
+var cartoon_egg_crack_effect: Control
 var _cartoon_refresh_elapsed := 0.0
 var _last_macro_signature := ""
 var _last_fryer_signature := ""
@@ -226,10 +228,7 @@ func _configure_cartoon_layout() -> void:
 		unit.set_spreader_visual_enabled(true)
 		unit.self_modulate.a = 0.0
 		_apply_cartoon_pancake_material(unit)
-	var main_action := pancake_station_view.get_node_or_null("MultiGriddleStation/Griddle01/MainAction") as Control
-	if main_action != null:
-		main_action.visible = false
-		main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_install_cartoon_egg_crack_effect(unit)
 	for node_name in INGREDIENT_RECTS:
 		var source := pancake_worktop_hotspots.get_node_or_null(NodePath(str(node_name))) as Control
 		if source == null:
@@ -264,6 +263,17 @@ func _configure_cartoon_layout() -> void:
 	packaged_drink_station.size = drink_rect.size
 	packaged_drink_station.baked_into_workbench_artwork = true
 	packaged_drink_station.refresh_from_session()
+
+
+func _install_cartoon_egg_crack_effect(unit: CompactGriddleUnit) -> void:
+	cartoon_egg_crack_effect = CARTOON_EGG_CRACK_EFFECT.new() as Control
+	cartoon_egg_crack_effect.name = "CartoonEggCrackEffect"
+	cartoon_egg_crack_effect.z_index = 12
+	cartoon_egg_crack_effect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cartoon_egg_crack_effect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	unit.pancake_surface.add_child(cartoon_egg_crack_effect)
+	cartoon_egg_crack_effect.call("configure", unit.pancake_model)
+	unit.egg_crack_visual_requested.connect(Callable(cartoon_egg_crack_effect, "play_at"))
 
 
 func _configure_cartoon_customer_layout() -> void:
@@ -449,10 +459,6 @@ func _enforce_cartoon_only_visuals() -> void:
 	for badge in _station_state_badges.values():
 		if badge is CanvasItem:
 			(badge as CanvasItem).visible = false
-	var inherited_main_action := pancake_station_view.get_node_or_null("MultiGriddleStation/Griddle01/MainAction") as Control
-	if inherited_main_action != null:
-		inherited_main_action.visible = false
-		inherited_main_action.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _is_cartoon_texture(texture: Texture2D) -> bool:

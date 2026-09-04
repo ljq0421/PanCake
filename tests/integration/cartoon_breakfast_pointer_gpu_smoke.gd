@@ -2,6 +2,8 @@ extends SceneTree
 
 const WORKSTATION := preload("res://scenes/gameplay/cartoon_breakfast_workstation.tscn")
 const PANCAKE_CAPTURE := "res://tmp/validation/cartoon_breakfast/full_pan_first_side_1920x1080.png"
+const EGG_CAPTURE := "res://tmp/validation/cartoon_breakfast/egg_crack_feedback_1920x1080.png"
+const PACKAGE_CAPTURE := "res://tmp/validation/cartoon_breakfast/package_button_1920x1080.png"
 
 var _failures := PackedStringArray()
 
@@ -29,7 +31,7 @@ func _run() -> void:
 	progression.set("device_tiers", {&"device.pancake_griddle": 0, &"device.youtiao_fryer": 0})
 	progression.set("unlocked_recipe_ids", {&"recipe.pancake.base": true, &"recipe.youtiao.plain": true})
 	progression.set("unlocked_product_ids", {&"product.pancake.custom": true, &"product.youtiao.plain": true})
-	progression.set("unlocked_stock_ids", {&"stock.pancake.batter": true, &"stock.youtiao.plain_dough": true})
+	progression.set("unlocked_stock_ids", {&"stock.pancake.batter": true, &"stock.pancake.egg": true, &"stock.youtiao.plain_dough": true})
 	session.call("_sync_progression_to_save")
 	session.set("_production_service", null)
 	session.call("_ensure_production_service")
@@ -73,20 +75,53 @@ func _run() -> void:
 	await process_frame
 	_check(pancake_unit.state == CompactGriddleUnit.State.FIRST_SIDE, "one complete revolution advances the pancake into first-side cooking")
 	_check(float(Dictionary(pancake_unit.pancake_model.calculate_summary()).get("coverage_ratio", 0.0)) > 0.99, "one circle fills the entire usable griddle model")
+	_check(
+		pancake_unit.main_action.visible
+		and pancake_unit.main_action.is_visible_in_tree()
+		and not pancake_unit.main_action.disabled
+		and pancake_unit.main_action.mouse_filter == Control.MOUSE_FILTER_STOP
+		and pancake_unit.main_action.text == "翻面",
+		"the real first-side state exposes an interactive flip button",
+	)
 	await RenderingServer.frame_post_draw
 	var pancake_capture := ProjectSettings.globalize_path(PANCAKE_CAPTURE)
 	DirAccess.make_dir_recursive_absolute(pancake_capture.get_base_dir())
 	_check(root.get_texture().get_image().save_png(pancake_capture) == OK, "the full-size cartoon pancake frame can be captured for visual review")
+
+	var egg_result := Dictionary(workstation.multi_griddle_station.call("apply_one_click_ingredient", &"stock.pancake.egg"))
+	_check(bool(egg_result.get("success", false)), "the production ingredient path accepts an egg during first-side cooking")
+	await create_timer(0.10).timeout
+	_check(workstation.cartoon_egg_crack_effect.visible and bool(workstation.cartoon_egg_crack_effect.call("is_playing")), "adding an egg starts the cartoon crack feedback")
+	await RenderingServer.frame_post_draw
+	var egg_capture := ProjectSettings.globalize_path(EGG_CAPTURE)
+	_check(root.get_texture().get_image().save_png(egg_capture) == OK, "the cartoon egg feedback frame can be captured for visual review")
+
+	await _click_control(pancake_unit.main_action)
+	_check(
+		pancake_unit.state == CompactGriddleUnit.State.SECOND_SIDE
+		and pancake_unit.main_action.visible
+		and pancake_unit.main_action.is_visible_in_tree()
+		and not pancake_unit.main_action.disabled
+		and pancake_unit.main_action.text == "打包",
+		"clicking flip advances the model and exposes the package button",
+	)
+	await RenderingServer.frame_post_draw
+	var package_capture := ProjectSettings.globalize_path(PACKAGE_CAPTURE)
+	_check(root.get_texture().get_image().save_png(package_capture) == OK, "the package-button state can be captured for visual review")
 
 	await _begin_hold_control(workstation.fryer_hotspot_button)
 	await create_timer(0.55).timeout
 	await _release_control(workstation.fryer_hotspot_button)
 	var loaded := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	_check(StringName(loaded.get("state", &"")) == &"loaded" and int(loaded.get("quantity", 0)) == 4, "real pointer hold on the empty fryer loads four dough blanks")
+	workstation.cartoon_youtiao_fryer.call("refresh_from_session")
+	_check(_retired_fryer_visuals_hidden(workstation), "loaded-state refresh cannot reveal retired fryer or dough artwork")
 
 	await _click_control(workstation.fryer_hotspot_button)
 	var frying := Dictionary(session.call("f3_machine_snapshot", &"device.youtiao_fryer"))
 	_check(StringName(frying.get("state", &"")) == &"frying", "real pointer click starts the loaded fryer")
+	workstation.cartoon_youtiao_fryer.call("refresh_from_session")
+	_check(_retired_fryer_visuals_hidden(workstation), "frying-state refresh cannot reveal retired fryer or dough artwork")
 
 	DisplayServer.window_set_size(Vector2i(1280, 720))
 	for _frame in 4:
@@ -150,6 +185,15 @@ func _release_control(control: Control) -> void:
 
 func _pointer_position(control: Control) -> Vector2:
 	return root.get_final_transform() * (control.get_global_transform_with_canvas() * (control.size * 0.5))
+
+
+func _retired_fryer_visuals_hidden(workstation: CartoonBreakfastWorkstation) -> bool:
+	if not is_zero_approx(workstation.cartoon_youtiao_fryer.fryer_visual.self_modulate.a):
+		return false
+	for source in workstation.cartoon_youtiao_fryer.fryer_slot_sources:
+		if not is_zero_approx(source.self_modulate.a):
+			return false
+	return true
 
 
 func _press(position: Vector2) -> void:

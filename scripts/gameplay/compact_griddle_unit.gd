@@ -7,6 +7,7 @@ signal transient_warning_requested(message: String)
 signal packaging_finished(unit_index: int)
 signal fold_feedback_requested(unit_index: int, feedback_kind: StringName)
 signal ready_product_clicked(source_ref: Dictionary)
+signal egg_crack_visual_requested(local_position: Vector2)
 
 const GRID_SIZE := 64
 const REFERENCE_GRID_SIZE := 128.0
@@ -1306,6 +1307,7 @@ func _process_egg_spread(delta: float) -> void:
 
 
 func _play_egg_crack_effect(local_position: Vector2) -> void:
+	egg_crack_visual_requested.emit(local_position)
 	# A quick second drop should land the first egg before the next egg starts
 	# falling, so two completed fried eggs remain visible until spreading begins.
 	if _egg_liquid_falling:

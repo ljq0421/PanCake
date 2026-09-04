@@ -29,9 +29,14 @@ func _run() -> void:
 	_check(workstation.fryer_state_artwork.texture != null and workstation.fryer_state_artwork.texture.atlas.resource_path.ends_with("youtiao-1.png"), "four cooked sticks use restored youtiao-1")
 	workstation.call("_apply_fryer_art_state", &"ready_to_collect", 3)
 	_check(workstation.fryer_state_artwork.texture == null, "after one stick leaves, the procedural overlay shows the remaining batch")
+	workstation.cartoon_youtiao_fryer.call("refresh_from_session")
+	_check(is_zero_approx(workstation.cartoon_youtiao_fryer.fryer_visual.self_modulate.a), "refreshing the fryer suppresses the retired machine artwork in the same call")
+	for source in workstation.cartoon_youtiao_fryer.fryer_slot_sources:
+		_check(is_zero_approx(source.self_modulate.a), "refreshing the fryer suppresses every retired youtiao sprite in the same call")
 	_check(workstation.contextual_tool_button != null and workstation.contextual_tool_button.size.x >= 56.0, "the baked-in pancake tool has a transparent interactive hotspot")
 	_check(workstation.process_overlay != null and workstation.process_overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE, "procedural process feedback never intercepts input")
 	var pancake_unit := workstation.multi_griddle_station.get_node("Griddle01") as CompactGriddleUnit
+	_check(workstation.cartoon_egg_crack_effect != null and workstation.cartoon_egg_crack_effect.mouse_filter == Control.MOUSE_FILTER_IGNORE, "cartoon egg feedback is installed without blocking griddle input")
 	var pancake_material := pancake_unit.pancake_visual.material as ShaderMaterial
 	_check(
 		pancake_unit.pancake_surface.position.is_equal_approx(Vector2(27.0, -124.0))
@@ -54,7 +59,17 @@ func _run() -> void:
 		and StringName(workstation.multi_griddle_station.get("_selected_tool")) == &"tool.pancake.ladle",
 		"one contextual click prepares the ladle for a player-controlled held pour",
 	)
+	pancake_unit.begin_order({})
+	_check(bool(pancake_unit.use_press_spreader().get("success", false)), "self-check can advance a seeded pancake into first-side cooking")
 	workstation.call("_enforce_cartoon_only_visuals")
+	_check(
+		pancake_unit.main_action.visible
+		and pancake_unit.main_action.is_visible_in_tree()
+		and not pancake_unit.main_action.disabled
+		and pancake_unit.main_action.mouse_filter == Control.MOUSE_FILTER_STOP
+		and pancake_unit.main_action.text == "翻面",
+		"cartoon-only enforcement keeps the flip/package action visible and interactive",
+	)
 	_check(pancake_unit.pancake_visual.texture is ImageTexture, "cartoon-only enforcement preserves the model-generated field texture")
 	_check(_visible_textures_are_cartoon_only(workstation), "all visible workstation textures come from resources/art/cartoon")
 	_check(not workstation.get_node("SafeArea/ServiceCustomer5").visible, "fifth customer slot is disabled")

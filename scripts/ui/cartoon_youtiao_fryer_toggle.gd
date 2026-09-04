@@ -112,7 +112,11 @@ var _machine_press_active := false
 var _machine_hold_active := false
 var _machine_hold_elapsed := 0.0
 var _machine_add_elapsed := 0.0
-var baked_into_workbench_artwork := false
+var baked_into_workbench_artwork := false:
+	set(value):
+		baked_into_workbench_artwork = value
+		if is_node_ready():
+			_enforce_baked_in_visuals()
 var direct_single_delivery_only := false
 var _machine_lane: StringName = &"left"
 var _workshop_preview := false
@@ -620,6 +624,22 @@ func _apply_snapshot() -> void:
 	var youtiao_progress_visible := state not in [&"unowned", &"unsupported"] and (not _workshop_preview or _workshop_advanced_preview)
 	_apply_lane_progress(&"left", _machine, youtiao_progress_bar, youtiao_progress_label, youtiao_progress_visible)
 	_apply_lane_progress(&"right", right_lane, chicken_progress_bar, chicken_progress_label, _chicken_unlocked)
+	_enforce_baked_in_visuals()
+
+
+func _enforce_baked_in_visuals() -> void:
+	if not baked_into_workbench_artwork:
+		return
+	# State refreshes replace the retired machine and food textures. Keep their
+	# alpha suppressed in the same call so no rendered frame can expose them
+	# before the cartoon workstation refreshes its authored overlay.
+	if is_instance_valid(fryer_visual):
+		fryer_visual.self_modulate.a = 0.0
+	for source in fryer_slot_sources + chicken_slot_sources:
+		if is_instance_valid(source):
+			source.self_modulate.a = 0.0
+	if is_instance_valid(burnt_batch_source):
+		burnt_batch_source.self_modulate.a = 0.0
 
 
 func _apply_lane_progress(

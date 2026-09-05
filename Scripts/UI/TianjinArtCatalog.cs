@@ -1,9 +1,19 @@
 using Godot;
+using ProjectCake.Customers;
 using ProjectCake.Data;
 
 namespace ProjectCake.UI;
 
 public readonly record struct ArtVisual(Texture2D Texture, Vector2 DisplaySize);
+public readonly record struct CustomerPortraitVisual(Texture2D Body, Texture2D Head, Vector2 DisplaySize);
+
+public enum CustomerExpression
+{
+    Happy,
+    Normal,
+    Impatient,
+    Angry,
+}
 
 public sealed class TianjinArtCatalog
 {
@@ -15,11 +25,16 @@ public sealed class TianjinArtCatalog
     {
         Load("background", "早餐铺主界面-1920x1080.png");
         Load("coin", "金币图标.png", true);
-        Load("customer", "普通男上班族顾客_1.png", true);
-        Load("pancake_base", "展开煎饼基础层-v2.png");
-        Load("pancake_egg", "鸡蛋覆盖层.png");
-        Load("pancake_sauce", "酱料覆盖层.png");
-        Load("pancake_finished", "折叠后通用煎饼成品_1.png", true);
+        LoadCustomer("young_woman");
+        LoadCustomer("male_office");
+        LoadCustomer("elder_regular");
+        LoadCustomer("female_office");
+        Load("pancake_base", "展开煎饼基础层-v2.png", true);
+        Load("pancake_egg", "鸡蛋覆盖层.png", true);
+        Load("pancake_sauce", "酱料覆盖层.png", true);
+        Load("pancake_folded", "折叠后通用煎饼成品_1.png", true);
+        Load("pancake_bagged", "装袋后的通用煎饼果子.png", true);
+        Load("pancake_burnt_overlay", "煎饼焦糊覆盖层.png", true);
         Load("batter", "面糊勺.png", true);
         Load("egg", "鸡蛋.png", true);
         Load("sauce_brush", "酱刷.png", true);
@@ -28,8 +43,20 @@ public sealed class TianjinArtCatalog
         Load("ham", "火腿片.png", true);
         Load("raw_youtiao", "生油条面坯.png", true);
         Load("youtiao", "熟油条.png", true);
+        Load("burnt_youtiao", "炸焦油条.png", true);
+        Load("youtiao_rack", "油条沥油架.png", true);
         Load("soy_tray", "成品豆浆托盘.png", true);
         Load("soy_milk", "成品豆浆杯.png", true);
+        Load("serving_tray", "出餐托盘.png", true);
+        Load("ingredient_tray", "通用食材托盘.png", true);
+        Load("batter_container", "面糊容器.png", true);
+        Load("sauce_container", "酱料容器.png", true);
+        Load("trash", "卡通垃圾桶.png", true);
+        Load("heart_effect", "开心爱心特效.png", true);
+        Load("star_effect", "星星特效图标.png", true);
+        Load("map_background", "中国区域地图基础背景.png");
+        Load("tianjin_map_node", "天津城市节点.png", true);
+        Load("locked_map_node", "通用未解锁城市节点.png", true);
         Load("scraper", "煎饼刮板.png", true);
         Load("spatula", "煎饼铲子.png", true);
         for (int level = 1; level <= 3; level++)
@@ -40,27 +67,44 @@ public sealed class TianjinArtCatalog
                 2 => "Lv2恒温煎饼炉-v2.png",
                 _ => "Lv3恒温快热煎饼炉-v2.png",
             });
-            Load($"fryer_{level}", level switch
+            Load($"fryer_body_{level}", level switch
             {
-                1 => "Lv1基础油条炸锅-v2.png",
-                2 => "Lv2中级油条炸锅-v2.png",
-                _ => "Lv3高级油条炸锅-v2.png",
+                1 => "油条炸锅_Lv1_基础锅体.png",
+                2 => "油条炸锅_Lv2_中级锅体.png",
+                _ => "油条炸锅_Lv3_高级自动锅体.png",
             });
         }
+        Load("fryer_basket_6", "6根容量油条滤篮.png");
+        Load("fryer_basket_8", "8根容量油条滤篮.png");
     }
 
     public Texture2D Background => Get("background");
     public Texture2D Coin => Get("coin");
-    public Texture2D Customer(string _) => Get("customer");
     public Texture2D PancakeBase => Get("pancake_base");
     public Texture2D PancakeEgg => Get("pancake_egg");
     public Texture2D PancakeSauce => Get("pancake_sauce");
-    public Texture2D FinishedPancake => Get("pancake_finished");
+    public Texture2D FoldedPancake => Get("pancake_folded");
+    public Texture2D FinishedPancake => Get("pancake_bagged");
+    public Texture2D PancakeBurntOverlay => Get("pancake_burnt_overlay");
     public Texture2D Scraper => Get("scraper");
     public Texture2D Spatula => Get("spatula");
     public Texture2D Stove(int level) => Get($"stove_{Math.Clamp(level, 1, 3)}");
-    public Texture2D Fryer(int level) => Get($"fryer_{Math.Clamp(level, 1, 3)}");
+    public Texture2D Fryer(int level) => FryerBody(level);
+    public Texture2D FryerBody(int level) => Get($"fryer_body_{Math.Clamp(level, 1, 3)}");
+    public Texture2D FryerBasket(int level) => Get(level <= 1 ? "fryer_basket_6" : "fryer_basket_8");
     public Texture2D SoyTray => Get("soy_tray");
+    public Texture2D ServingTray => Get("serving_tray");
+    public Texture2D IngredientTray => Get("ingredient_tray");
+    public Texture2D BatterContainer => Get("batter_container");
+    public Texture2D SauceContainer => Get("sauce_container");
+    public Texture2D Trash => Get("trash");
+    public Texture2D HeartEffect => Get("heart_effect");
+    public Texture2D StarEffect => Get("star_effect");
+    public Texture2D YoutiaoRack => Get("youtiao_rack");
+    public Texture2D BurntYoutiao => Get("burnt_youtiao");
+    public Texture2D MapBackground => Get("map_background");
+    public Texture2D TianjinMapNode => Get("tianjin_map_node");
+    public Texture2D LockedMapNode => Get("locked_map_node");
 
     public Texture2D Ingredient(string stableId) => stableId switch
     {
@@ -84,9 +128,37 @@ public sealed class TianjinArtCatalog
 
     public Texture2D RawYoutiao => Get("raw_youtiao");
 
+    public string CustomerAppearance(string customerTypeId) => customerTypeId switch
+    {
+        "office_worker" => "male_office",
+        "regular" => "elder_regular",
+        "big_order" => "female_office",
+        _ => "young_woman",
+    };
+
+    public Texture2D CustomerBody(string customerTypeId) => Get($"customer_{CustomerAppearance(customerTypeId)}_body");
+
+    public Texture2D CustomerHead(string customerTypeId, CustomerExpression expression) =>
+        Get($"customer_{CustomerAppearance(customerTypeId)}_head_{ExpressionKey(expression)}");
+
+    public CustomerPortraitVisual CustomerPortrait(string customerTypeId, CustomerExpression expression) =>
+        new(CustomerBody(customerTypeId), CustomerHead(customerTypeId, expression), new Vector2(220, 154));
+
+    public CustomerPortraitVisual CustomerPortrait(string customerTypeId, CustomerState state, bool wasServed) =>
+        CustomerPortrait(customerTypeId, ResolveCustomerExpression(state, wasServed));
+
+    public static CustomerExpression ResolveCustomerExpression(CustomerState state, bool wasServed = false) => state switch
+    {
+        CustomerState.Happy => CustomerExpression.Happy,
+        CustomerState.Impatient => CustomerExpression.Impatient,
+        CustomerState.Angry => CustomerExpression.Angry,
+        CustomerState.Served => CustomerExpression.Happy,
+        CustomerState.Leaving or CustomerState.Left => wasServed ? CustomerExpression.Happy : CustomerExpression.Angry,
+        _ => CustomerExpression.Normal,
+    };
+
     public ArtVisual BackgroundVisual => new(Background, new Vector2(1920, 1080));
     public ArtVisual CoinVisual => new(Coin, new Vector2(44, 44));
-    public ArtVisual CustomerVisual(string stableId) => new(Customer(stableId), new Vector2(220, 154));
     public ArtVisual StoveVisual(int level) => new(Stove(level), new Vector2(360, 340));
     public ArtVisual FryerVisual(int level) => new(Fryer(level), new Vector2(330, 340));
     public ArtVisual IngredientVisual(string stableId) => new(Ingredient(stableId), new Vector2(62, 58));
@@ -96,9 +168,19 @@ public sealed class TianjinArtCatalog
     {
         string[] required =
         {
-            "background", "coin", "customer", "pancake_base", "pancake_egg", "pancake_sauce", "pancake_finished",
-            "batter", "egg", "sauce_brush", "crispy", "scallion", "ham", "raw_youtiao", "youtiao", "soy_tray", "soy_milk",
-            "scraper", "spatula", "stove_1", "stove_2", "stove_3", "fryer_1", "fryer_2", "fryer_3",
+            "background", "coin", "pancake_base", "pancake_egg", "pancake_sauce", "pancake_folded", "pancake_bagged", "pancake_burnt_overlay",
+            "batter", "egg", "sauce_brush", "crispy", "scallion", "ham", "raw_youtiao", "youtiao", "burnt_youtiao", "youtiao_rack",
+            "soy_tray", "soy_milk", "serving_tray", "ingredient_tray", "batter_container", "sauce_container", "trash", "heart_effect", "star_effect",
+            "map_background", "tianjin_map_node", "locked_map_node", "scraper", "spatula", "stove_1", "stove_2", "stove_3",
+            "fryer_body_1", "fryer_body_2", "fryer_body_3", "fryer_basket_6", "fryer_basket_8",
+            "customer_young_woman_body", "customer_young_woman_head_happy", "customer_young_woman_head_normal",
+            "customer_young_woman_head_impatient", "customer_young_woman_head_angry",
+            "customer_male_office_body", "customer_male_office_head_happy", "customer_male_office_head_normal",
+            "customer_male_office_head_impatient", "customer_male_office_head_angry",
+            "customer_elder_regular_body", "customer_elder_regular_head_happy", "customer_elder_regular_head_normal",
+            "customer_elder_regular_head_impatient", "customer_elder_regular_head_angry",
+            "customer_female_office_body", "customer_female_office_head_happy", "customer_female_office_head_normal",
+            "customer_female_office_head_impatient", "customer_female_office_head_angry",
         };
         return required.Where(key => !_textures.ContainsKey(key)).ToArray();
     }
@@ -113,6 +195,24 @@ public sealed class TianjinArtCatalog
         Texture2D? texture = ResourceLoader.Load<Texture2D>(Root + fileName);
         if (texture is not null) _textures[key] = trimTransparent ? Trim(texture) : texture;
     }
+
+    private void LoadCustomer(string appearance)
+    {
+        string folder = $"Customers/{appearance}/";
+        Load($"customer_{appearance}_body", folder + "body.png");
+        Load($"customer_{appearance}_head_happy", folder + "head_happy.png");
+        Load($"customer_{appearance}_head_normal", folder + "head_normal.png");
+        Load($"customer_{appearance}_head_impatient", folder + "head_impatient.png");
+        Load($"customer_{appearance}_head_angry", folder + "head_angry.png");
+    }
+
+    private static string ExpressionKey(CustomerExpression expression) => expression switch
+    {
+        CustomerExpression.Happy => "happy",
+        CustomerExpression.Impatient => "impatient",
+        CustomerExpression.Angry => "angry",
+        _ => "normal",
+    };
 
     private static Texture2D Trim(Texture2D texture)
     {

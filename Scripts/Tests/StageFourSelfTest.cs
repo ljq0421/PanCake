@@ -31,7 +31,7 @@ public partial class StageFourSelfTest : Node
             TestAllDaysCompletable(catalog);
             TestFullChapterController(catalog);
             TestStarsAndSave(catalog);
-            TestScenes();
+            TestScenes(catalog);
         }
         catch (Exception exception)
         {
@@ -79,7 +79,37 @@ public partial class StageFourSelfTest : Node
         Check(art.MissingRequiredAssets().Count == 0, "天津第一章美术映射全部可加载", string.Join(" | ", art.MissingRequiredAssets()));
         Check(art.Stove(1) != art.Stove(2) && art.Stove(2) != art.Stove(3), "煎饼炉 Lv1～Lv3 使用独立图片");
         Check(art.Fryer(1) != art.Fryer(2) && art.Fryer(2) != art.Fryer(3), "油条锅 Lv1～Lv3 使用独立图片");
-        Check(art.Customer("normal") == art.Customer("missing_customer_type"), "缺失顾客类型稳定回退到现有人物素材");
+        Check(art.FryerBasket(1) != art.FryerBasket(2) && ReferenceEquals(art.FryerBasket(2), art.FryerBasket(3)), "Lv1 使用 6 根滤篮，Lv2/Lv3 共用 8 根滤篮");
+        Check(!ReferenceEquals(art.FoldedPancake, art.FinishedPancake), "折叠煎饼与装袋成品使用独立素材");
+        Check(art.PancakeBurntOverlay.GetWidth() > 0 && art.BurntYoutiao.GetWidth() > 0, "煎饼和油条焦糊状态素材可加载");
+        Check(art.ServingTray.GetWidth() > 0 && art.YoutiaoRack.GetWidth() > 0 && art.Trash.GetWidth() > 0, "出餐、沥油和垃圾桶功能素材可加载");
+        Check(art.MapBackground.GetWidth() == 1672 && art.MapBackground.GetHeight() == 941
+            && art.TianjinMapNode.GetWidth() > 0 && art.LockedMapNode.GetWidth() > 0, "地图背景与城市节点素材可加载");
+        string[] customerTypes = { "normal", "office_worker", "regular", "big_order" };
+        Check(customerTypes.Select(art.CustomerBody).Distinct().Count() == 4, "四类顾客使用四套独立身体素材");
+        Check(art.CustomerAppearance("normal") == "young_woman" && art.CustomerAppearance("office_worker") == "male_office"
+            && art.CustomerAppearance("regular") == "elder_regular" && art.CustomerAppearance("big_order") == "female_office",
+            "四类顾客形象映射固定");
+        foreach (string customerType in customerTypes)
+        {
+            CustomerPortraitVisual[] portraits = Enum.GetValues<CustomerExpression>().Select(expression => art.CustomerPortrait(customerType, expression)).ToArray();
+            Check(portraits.All(portrait => ReferenceEquals(portrait.Body, portraits[0].Body))
+                && portraits.Select(portrait => portrait.Head).Distinct().Count() == 4, $"{customerType} 固定身体并切换四张完整头部");
+            Check(portraits.All(portrait => portrait.Body.GetWidth() == 1086 && portrait.Body.GetHeight() == 1448
+                && portrait.Head.GetWidth() == 1086 && portrait.Head.GetHeight() == 1448), $"{customerType} 分层素材画布统一为 1086×1448");
+        }
+        Check(ReferenceEquals(art.CustomerBody("normal"), art.CustomerBody("missing_customer_type"))
+            && ReferenceEquals(art.CustomerHead("normal", CustomerExpression.Normal), art.CustomerHead("missing_customer_type", CustomerExpression.Normal)),
+            "缺失顾客类型稳定回退到年轻女性普通顾客");
+        Check(TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Entering) == CustomerExpression.Normal
+            && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Happy) == CustomerExpression.Happy
+            && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Normal) == CustomerExpression.Normal
+            && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Impatient) == CustomerExpression.Impatient
+            && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Angry) == CustomerExpression.Angry,
+            "顾客等待状态逐一映射到完整头部表情");
+        Check(TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Leaving, true) == CustomerExpression.Happy
+            && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Leaving, false) == CustomerExpression.Angry,
+            "成功离场保持开心，流失离场保持生气");
         Check(art.Background.GetWidth() == 1920 && art.Background.GetHeight() == 1080, "营业背景运行版本固定为 1920×1080");
         Check(art.StoveVisual(3).DisplaySize.X > 0 && art.ProductVisual(ProductKind.SoyMilk).DisplaySize.Y > 0, "设备与商品映射包含独立显示规格");
         var secondCatalog = new TianjinArtCatalog();
@@ -309,7 +339,7 @@ public partial class StageFourSelfTest : Node
         foreach (string backup in Directory.GetFiles(Path.GetDirectoryName(legacyAbsolute)!, Path.GetFileName(legacyAbsolute) + ".v1-backup-*.bak")) DeleteIfExists(backup);
     }
 
-    private void TestScenes()
+    private void TestScenes(DataCatalog catalog)
     {
         var hub = new MorningHub();
         Check(!hub.DeveloperToolsVisible, "正式启动参数不显示煎饼实验台与 Day 数据入口");
@@ -319,6 +349,17 @@ public partial class StageFourSelfTest : Node
         Node main = ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate();
         Check(main.HasNode("UI/TianjinMapScreen"), "Main 接入天津完成与武汉占位地图");
         main.Free();
+
+        var workstation = new PancakeWorkstation();
+        AddChild(workstation);
+        workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[5], new TianjinArtCatalog());
+        Check(workstation.FindChild("FryerVisual", true, false) is FryerVisualView, "工作台使用锅体与滤篮分层的炸锅视图");
+        Check(workstation.FindChild("TrashZone", true, false) is not null, "工作台接入可拖放垃圾桶");
+        string[] framelessAreas = { "FryerArea", "StoveArea", "IngredientArea", "DeliveryArea" };
+        Check(framelessAreas.All(name => workstation.FindChild(name, true, false) is Control and not PanelContainer), "四个设备区域使用无框场景容器");
+        Godot.Collections.Array<Node> ingredientSlots = workstation.FindChildren("IngredientSlot_*", "PanelContainer", true, false);
+        Check(ingredientSlots.Count == 6 && ingredientSlots.Cast<PanelContainer>().All(slot => slot.GetThemeStylebox("panel") is StyleBoxEmpty), "六个配料槽不再绘制卡片框体");
+        workstation.QueueFree();
     }
 
     private DayPlan Generate(DataCatalog catalog, int day) => new OrderGenerator().Generate(catalog.DaysByNumber[day], catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);

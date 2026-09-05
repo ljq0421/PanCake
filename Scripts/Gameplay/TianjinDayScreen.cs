@@ -20,10 +20,11 @@ public partial class TianjinDayScreen : Control
 
     private readonly Button[] _customerButtons = new Button[5];
     private readonly HBoxContainer[] _orderRows = new HBoxContainer[5];
-    private readonly TextureRect[] _portraits = new TextureRect[5];
+    private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[5];
     private readonly Label[] _customerBadges = new Label[5];
     private readonly ProgressBar[] _patienceBars = new ProgressBar[5];
     private readonly string[] _customerSignatures = new string[5];
+    private readonly string[] _portraitSignatures = new string[5];
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
     private DayController _controller = null!;
@@ -32,6 +33,7 @@ public partial class TianjinDayScreen : Control
     private Label _dayTitle = null!;
     private Label _clock = null!;
     private Label _income = null!;
+    private TextureRect _coinTarget = null!;
     private PanelContainer _feedbackPanel = null!;
     private Label _feedback = null!;
     private Label _door = null!;
@@ -58,6 +60,7 @@ public partial class TianjinDayScreen : Control
         _resultBlocker.Visible = false;
         _countdown.Visible = false;
         Array.Fill(_customerSignatures, string.Empty);
+        Array.Fill(_portraitSignatures, string.Empty);
         if (!controller.TryPrepareDay(day, catalog, out string error))
         {
             ShowFeedback(error, true);
@@ -194,7 +197,8 @@ public partial class TianjinDayScreen : Control
         row.AddChild(_door);
         _clock = TianjinUi.Label("01:00", 26, TianjinUi.BrownDark);
         row.AddChild(_clock);
-        row.AddChild(TianjinUi.Texture(_art.Coin, new Vector2(44, 44)));
+        _coinTarget = TianjinUi.Texture(_art.Coin, new Vector2(44, 44));
+        row.AddChild(_coinTarget);
         _income = TianjinUi.Label("¥0", 25, TianjinUi.Green);
         row.AddChild(_income);
         var back = TianjinUi.Button("提前打烊", false, new Vector2(148, 52));
@@ -240,8 +244,9 @@ public partial class TianjinDayScreen : Control
             _orderRows[index] = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
             _orderRows[index].AddThemeConstantOverride("separation", 4);
             bubble.AddChild(_orderRows[index]);
-            ArtVisual customerVisual = _art.CustomerVisual("normal");
-            _portraits[index] = TianjinUi.Texture(customerVisual.Texture, new Vector2(0, customerVisual.DisplaySize.Y));
+            CustomerPortraitVisual customerVisual = _art.CustomerPortrait("normal", CustomerExpression.Normal);
+            _portraits[index] = new CustomerPortraitView();
+            _portraits[index].SetVisual(customerVisual);
             _portraits[index].SizeFlagsVertical = SizeFlags.ExpandFill;
             column.AddChild(_portraits[index]);
             _customerBadges[index] = TianjinUi.Label("普通顾客", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
@@ -353,13 +358,16 @@ public partial class TianjinDayScreen : Control
 
     private bool SubmitPrepared(Pancake.PancakeStateMachine machine)
     {
+        int selectedSlot = SelectedSlotIndex();
         DeliveryEvaluation evaluation = _controller.TryDeliverSelected(machine, _catalog);
         ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
+        PlayDeliveryEffects(evaluation, selectedSlot);
         return evaluation.ItemAccepted || evaluation.CompletesOrder;
     }
 
     private bool SubmitProduct(ProductKind kind)
     {
+        int selectedSlot = SelectedSlotIndex();
         DeliveryEvaluation evaluation = kind switch
         {
             ProductKind.Youtiao when _workstation.FryerMachine is not null => _controller.TryDeliverYoutiaoSelected(_workstation.FryerMachine.Inventory),
@@ -368,6 +376,7 @@ public partial class TianjinDayScreen : Control
         };
         if (kind == ProductKind.Youtiao && (evaluation.ItemAccepted || evaluation.CompletesOrder)) _controller.Ledger?.RecordYoutiaoUsed();
         ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
+        PlayDeliveryEffects(evaluation, selectedSlot);
         return evaluation.ItemAccepted || evaluation.CompletesOrder;
     }
 
@@ -411,7 +420,9 @@ public partial class TianjinDayScreen : Control
             if (index >= slots.Count)
             {
                 button.Visible = false;
+                _portraits[index].Rotation = 0;
                 _customerSignatures[index] = string.Empty;
+                _portraitSignatures[index] = string.Empty;
                 continue;
             }
             CustomerRuntime customer = slots[index];
@@ -433,8 +444,21 @@ public partial class TianjinDayScreen : Control
             }
             else button.Scale = selected ? new Vector2(1.025f, 1.025f) : Vector2.One;
             button.Disabled = customer.State is CustomerState.Entering or CustomerState.Leaving or CustomerState.Served;
-            _portraits[index].Texture = _art.Customer(customer.Type.Id);
-            _portraits[index].Modulate = customer.State == CustomerState.Angry ? new Color("#FFD4C9") : Colors.White;
+            CustomerExpression expression = TianjinArtCatalog.ResolveCustomerExpression(customer.State, customer.WasServed);
+            string portraitSignature = $"{customer.Type.Id}:{expression}";
+            if (!string.Equals(_portraitSignatures[index], portraitSignature, StringComparison.Ordinal))
+            {
+                _portraitSignatures[index] = portraitSignature;
+                _portraits[index].SetVisual(_art.CustomerPortrait(customer.Type.Id, expression));
+            }
+            double motionTime = Time.GetTicksMsec() / 1000.0;
+            _portraits[index].PivotOffset = _portraits[index].Size * 0.5f;
+            _portraits[index].Rotation = customer.State switch
+            {
+                CustomerState.Impatient => Mathf.DegToRad(Mathf.Sin((float)(motionTime * 7.0 + index)) * 0.8f),
+                CustomerState.Angry => Mathf.DegToRad(Mathf.Sin((float)(motionTime * 11.0 + index)) * 1.7f),
+                _ => 0,
+            };
             _customerBadges[index].Text = (selected ? "➜ 正在出餐 · " : string.Empty) + CustomerBadge(customer.Type.Id) + CustomerStateText(customer.State);
             _customerBadges[index].Modulate = selected ? TianjinUi.Orange : StateColor(customer.State);
             _patienceBars[index].Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
@@ -481,6 +505,68 @@ public partial class TianjinDayScreen : Control
             .TweenProperty(_feedbackPanel, "modulate", Colors.White, 0.18);
         CreateTween().SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
             .TweenProperty(_feedbackPanel, "position", new Vector2(600, 104), 0.18);
+    }
+
+    private int SelectedSlotIndex()
+    {
+        if (_controller?.CustomerQueue is null) return -1;
+        string? selected = _controller.CustomerQueue.SelectedCustomerId;
+        for (int index = 0; index < _controller.CustomerQueue.Slots.Count; index++)
+            if (_controller.CustomerQueue.Slots[index].Id == selected) return index;
+        return -1;
+    }
+
+    private void PlayDeliveryEffects(DeliveryEvaluation evaluation, int slot)
+    {
+        if (slot < 0 || slot >= _customerButtons.Length || !evaluation.CompletesOrder) return;
+        Vector2 origin = GetGlobalTransform().AffineInverse() * _customerButtons[slot].GetGlobalRect().GetCenter();
+        if (evaluation.Grade is DeliveryGrade.Perfect or DeliveryGrade.Correct)
+        {
+            for (int index = 0; index < (evaluation.Grade == DeliveryGrade.Perfect ? 5 : 3); index++)
+                SpawnCelebration(_art.HeartEffect, origin + new Vector2((index - 2) * 28, 12), new Vector2((index - 2) * 20, -100 - index * 12), index * 0.035);
+        }
+        if (evaluation.Grade == DeliveryGrade.Perfect)
+        {
+            for (int index = 0; index < 3; index++)
+                SpawnCelebration(_art.StarEffect, origin + new Vector2((index - 1) * 44, -20), new Vector2((index - 1) * 25, -142), 0.05 + index * 0.04);
+        }
+        if (evaluation.TotalRevenue > 0)
+        {
+            Vector2 target = GetGlobalTransform().AffineInverse() * _coinTarget.GetGlobalRect().GetCenter();
+            for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08);
+        }
+    }
+
+    private void SpawnCelebration(Texture2D texture, Vector2 position, Vector2 travel, double delay)
+    {
+        var effect = TianjinUi.Texture(texture, new Vector2(58, 58));
+        effect.Position = position - effect.Size * 0.5f;
+        effect.PivotOffset = effect.Size * 0.5f;
+        effect.Scale = new Vector2(0.35f, 0.35f);
+        effect.Modulate = new Color(1, 1, 1, 0);
+        effect.MouseFilter = MouseFilterEnum.Ignore;
+        effect.ZIndex = 86;
+        AddChild(effect);
+        Tween tween = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(effect, "position", effect.Position + travel, 0.72).SetDelay(delay);
+        tween.TweenProperty(effect, "scale", Vector2.One, 0.34).SetDelay(delay);
+        tween.TweenProperty(effect, "modulate", Colors.White, 0.18).SetDelay(delay);
+        tween.Chain().TweenProperty(effect, "modulate", new Color(1, 1, 1, 0), 0.24).SetDelay(0.24);
+        tween.Finished += effect.QueueFree;
+    }
+
+    private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay)
+    {
+        var coin = TianjinUi.Texture(_art.Coin, new Vector2(38, 38));
+        coin.Position = origin - coin.Size * 0.5f;
+        coin.MouseFilter = MouseFilterEnum.Ignore;
+        coin.ZIndex = 87;
+        AddChild(coin);
+        Tween tween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
+        tween.TweenProperty(coin, "position", target - coin.Size * 0.5f, 0.62).SetDelay(delay);
+        tween.Parallel().TweenProperty(coin, "scale", new Vector2(0.65f, 0.65f), 0.62).SetDelay(delay);
+        tween.TweenProperty(coin, "modulate", new Color(1, 1, 1, 0), 0.12);
+        tween.Finished += coin.QueueFree;
     }
 
     private static string CustomerBadge(string id) => id switch

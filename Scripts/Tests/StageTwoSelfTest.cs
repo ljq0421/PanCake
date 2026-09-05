@@ -20,6 +20,7 @@ public partial class StageTwoSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             RunEquipmentAndInventoryTests(catalog);
             RunCoverageTests();
+            RunClickOrDragTests();
             RunStateMachineTests(catalog);
             RunRecipeAndPracticeTests(catalog);
             RunSceneTests();
@@ -70,9 +71,43 @@ public partial class StageTwoSelfTest : Node
 
     private void RunCoverageTests()
     {
-        var spread = new CoverageTracker(23);
-        MarkCells(spread, 23, 200);
-        Check(spread.CoveredCells == 23 && spread.IsComplete, "摊饼达到 23/32 自动完成");
+        var clockwise = new CircularStrokeTracker();
+        TraceEllipse(clockwise, 0, Mathf.Tau, 64);
+        Check(clockwise.IsComplete, "摊饼顺时针绕一圈自动完成");
+
+        var counterClockwise = new CircularStrokeTracker();
+        TraceEllipse(counterClockwise, 0, -Mathf.Tau, 64);
+        Check(counterClockwise.IsComplete, "摊饼逆时针绕一圈自动完成");
+
+        var half = new CircularStrokeTracker();
+        TraceEllipse(half, 0, Mathf.Pi, 32);
+        Check(!half.IsComplete, "摊饼只画半圈不会完成");
+
+        var backAndForth = new CircularStrokeTracker();
+        backAndForth.BeginStroke(EllipsePoint(0), Vector2.Zero, new Vector2(200, 120));
+        for (int index = 0; index < 12; index++)
+        {
+            backAndForth.AddPoint(EllipsePoint(0.7f), Vector2.Zero, new Vector2(200, 120));
+            backAndForth.AddPoint(EllipsePoint(0), Vector2.Zero, new Vector2(200, 120));
+        }
+        Check(!backAndForth.IsComplete, "局部来回摩擦不能冒充完整一圈");
+
+        var resumed = new CircularStrokeTracker();
+        TraceEllipse(resumed, 0, Mathf.Pi, 32);
+        resumed.EndStroke();
+        TraceEllipse(resumed, Mathf.Pi, Mathf.Pi, 32);
+        Check(resumed.IsComplete, "中途松手后可以从已有进度继续摊饼");
+
+        var outOfBand = new CircularStrokeTracker();
+        outOfBand.BeginStroke(EllipsePoint(0), Vector2.Zero, new Vector2(200, 120));
+        outOfBand.AddPoint(EllipsePoint(0.4f), Vector2.Zero, new Vector2(200, 120));
+        float beforeGap = (float)outOfBand.Progress;
+        outOfBand.AddPoint(new Vector2(400, 0), Vector2.Zero, new Vector2(200, 120));
+        outOfBand.AddPoint(EllipsePoint(2.4f), Vector2.Zero, new Vector2(200, 120));
+        Check(Mathf.IsEqualApprox(beforeGap, (float)outOfBand.Progress), "离开容错带时暂停累计且不计算返回跳跃");
+
+        resumed.Reset();
+        Check(!resumed.IsComplete && Mathf.IsZeroApprox((float)resumed.Progress), "清理炉面会重置摊饼轨迹");
 
         var sauce = new CoverageTracker(16);
         MarkCells(sauce, 15, 200);
@@ -87,6 +122,43 @@ public partial class StageTwoSelfTest : Node
         var fast = new CoverageTracker(32);
         fast.AddSegment(new Vector2(-190, 0), new Vector2(190, 0), 200);
         Check(fast.CoveredCells >= 6, "快速轨迹按 12 像素插值，不跳过中间区域", $"覆盖 {fast.CoveredCells} 格");
+    }
+
+    private static void TraceEllipse(CircularStrokeTracker tracker, float start, float sweep, int steps)
+    {
+        Vector2 radii = new(200, 120);
+        tracker.BeginStroke(EllipsePoint(start), Vector2.Zero, radii);
+        for (int index = 1; index <= steps; index++)
+        {
+            tracker.AddPoint(EllipsePoint(start + sweep * index / steps), Vector2.Zero, radii);
+        }
+    }
+
+    private static Vector2 EllipsePoint(float angle) => new(Mathf.Cos(angle) * 150, Mathf.Sin(angle) * 90);
+
+    private void RunClickOrDragTests()
+    {
+        var overlay = new Control { Size = new Vector2(400, 300) };
+        AddChild(overlay);
+        var drag = new DragService();
+        overlay.AddChild(drag);
+        drag.Configure(overlay);
+        var batter = new DragItem { Size = new Vector2(120, 60) };
+        overlay.AddChild(batter);
+        int clicks = 0;
+        batter.Configure(drag, "batter", "面糊", Colors.White);
+        batter.EnableClick(() => clicks++);
+
+        batter._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        batter._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false });
+        Check(clicks == 1 && !drag.IsDragging, "面糊短按只触发一次点击且不会启动拖拽");
+
+        Vector2 pressPosition = batter.GetGlobalMousePosition();
+        batter._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        batter._Input(new InputEventMouseMotion { Position = pressPosition + new Vector2(16, 0) });
+        Check(clicks == 1 && drag.IsDragging, "面糊移动超过 10 像素后进入原有拖拽且不重复点击");
+        drag.CancelDrag();
+        overlay.QueueFree();
     }
 
     private void RunStateMachineTests(DataCatalog catalog)

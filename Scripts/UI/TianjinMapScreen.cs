@@ -8,10 +8,13 @@ public partial class TianjinMapScreen : Control
     public event Action? HubRequested;
 
     private SaveService _save = null!;
+    private TianjinArtCatalog _art = null!;
     private PanelContainer _tianjinCard = null!;
     private Label _tianjinState = null!;
     private PanelContainer _wuhanCard = null!;
     private Label _wuhanState = null!;
+    private TextureRect _wuhanLockedIcon = null!;
+    private Label _wuhanUnlockedEmblem = null!;
     private bool _lightUpPlayed;
 
     public override void _Ready() => Build();
@@ -45,14 +48,12 @@ public partial class TianjinMapScreen : Control
     {
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Theme = TianjinUi.CreateTheme();
-        var background = new ColorRect { Color = TianjinUi.Cream, MouseFilter = MouseFilterEnum.Ignore };
+        _art = new TianjinArtCatalog();
+        var background = TianjinUi.Texture(_art.MapBackground, Vector2.Zero, TextureRect.StretchModeEnum.Scale);
         background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        background.Modulate = new Color(1, 1, 1, 0.92f);
+        background.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(background);
-
-        var dawn = new ColorRect { Color = new Color("#F6C76A"), MouseFilter = MouseFilterEnum.Ignore };
-        dawn.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        dawn.OffsetTop = 500;
-        AddChild(dawn);
 
         var margin = new MarginContainer();
         margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -69,9 +70,11 @@ public partial class TianjinMapScreen : Control
 
         var route = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, SizeFlagsVertical = SizeFlags.ExpandFill };
         route.AddThemeConstantOverride("separation", 45); root.AddChild(route);
-        _tianjinCard = CityCard("天津", "煎饼果子 · 油条 · 豆浆", out _tianjinState); route.AddChild(_tianjinCard);
+        _tianjinCard = CityCard(_art.TianjinMapNode, "天津", "煎饼果子 · 油条 · 豆浆", out _tianjinState); route.AddChild(_tianjinCard);
         var arrow = Text("➜", 56, TianjinUi.Brown); arrow.VerticalAlignment = VerticalAlignment.Center; route.AddChild(arrow);
-        _wuhanCard = CityCard("武汉", "下一章", out _wuhanState); route.AddChild(_wuhanCard);
+        _wuhanCard = CityCard(_art.LockedMapNode, "武汉", "下一章", out _wuhanState); route.AddChild(_wuhanCard);
+        _wuhanLockedIcon = _wuhanCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon");
+        _wuhanUnlockedEmblem = _wuhanCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem");
         root.AddChild(Text("完成天津 Day 15 并获得一星，即可点亮城市印章并开放下一站。", 19, TianjinUi.BrownText));
     }
 
@@ -84,16 +87,30 @@ public partial class TianjinMapScreen : Control
         SetCardColor(_tianjinCard, complete ? TianjinUi.Yellow : TianjinUi.CreamMuted);
 
         bool wuhan = _save.Data.UnlockedCityIds.Contains("city:wuhan", StringComparer.Ordinal);
-        _wuhanState.Text = wuhan ? "已开放\n敬请期待" : "未开放\n先点亮天津";
+        _wuhanLockedIcon.Visible = !wuhan;
+        _wuhanUnlockedEmblem.Visible = wuhan;
+        _wuhanState.Text = wuhan ? "路线已开放\n章节敬请期待" : "未开放\n先点亮天津";
         SetCardColor(_wuhanCard, wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);
     }
 
-    private static PanelContainer CityCard(string city, string subtitle, out Label state)
+    private static PanelContainer CityCard(Texture2D icon, string city, string subtitle, out Label state)
     {
-        var card = new PanelContainer { CustomMinimumSize = new Vector2(520, 410) };
-        var box = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        box.AddThemeConstantOverride("separation", 20); card.AddChild(box);
-        var emblem = Text(city[..1], 92, TianjinUi.BrownDark); emblem.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(emblem);
+        var card = new PanelContainer { CustomMinimumSize = new Vector2(470, 390) };
+        var box = new VBoxContainer { Name = "VBoxContainer", Alignment = BoxContainer.AlignmentMode.Center };
+        box.AddThemeConstantOverride("separation", 10); card.AddChild(box);
+        var iconStack = new Control { Name = "IconStack", CustomMinimumSize = new Vector2(170, 170) };
+        TextureRect cityIcon = TianjinUi.Texture(icon, Vector2.Zero);
+        cityIcon.Name = "CityIcon";
+        TianjinUi.FullRect(cityIcon);
+        iconStack.AddChild(cityIcon);
+        Label unlockedEmblem = Text(city[..1], 88, TianjinUi.BrownDark);
+        unlockedEmblem.Name = "UnlockedEmblem";
+        unlockedEmblem.HorizontalAlignment = HorizontalAlignment.Center;
+        unlockedEmblem.VerticalAlignment = VerticalAlignment.Center;
+        unlockedEmblem.Visible = false;
+        TianjinUi.FullRect(unlockedEmblem);
+        iconStack.AddChild(unlockedEmblem);
+        box.AddChild(iconStack);
         var name = Text(city, 38, TianjinUi.BrownText); name.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(name);
         var sub = Text(subtitle, 20, TianjinUi.Brown); sub.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(sub);
         state = Text(string.Empty, 22, TianjinUi.BrownText); state.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(state);

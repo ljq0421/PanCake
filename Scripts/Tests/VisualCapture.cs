@@ -25,6 +25,7 @@ public partial class VisualCapture : Node
         bool capture720 = args.Contains("--capture-720", StringComparer.Ordinal);
         bool captureResult = args.Contains("--capture-result", StringComparer.Ordinal);
         bool captureLedger = args.Contains("--capture-ledger", StringComparer.Ordinal);
+        bool captureExpressions = args.Contains("--capture-customer-expressions", StringComparer.Ordinal);
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
@@ -32,7 +33,11 @@ public partial class VisualCapture : Node
             GetNode<SaveService>("/root/SaveService").UsePathForTests(temporarySave);
         }
 
-        if (captureDay || phase4Day > 0 || captureResult)
+        if (captureExpressions)
+        {
+            BuildCustomerExpressionGallery();
+        }
+        else if (captureDay || phase4Day > 0 || captureResult)
         {
             Node main = GetNode("../Main");
             var dayScreen = main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
@@ -61,6 +66,15 @@ public partial class VisualCapture : Node
                     for (int step = 0; step < steps; step++)
                     {
                         controller.Tick(.1);
+                        if (phase4Day == 15 && controller.CustomerQueue is not null)
+                        {
+                            foreach (CustomerRuntime customer in controller.CustomerQueue.Slots)
+                            {
+                                customer.WaitSeconds = 0;
+                                if (customer.State is CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry)
+                                    customer.State = CustomerState.Happy;
+                            }
+                        }
                         if (phase4Day == 15 && controller.CustomerQueue?.Slots.Count >= 5) break;
                     }
                 }
@@ -88,6 +102,7 @@ public partial class VisualCapture : Node
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string output = captureResult ? $"res://.godot/phase4_result{sizeSuffix}.png"
+            : captureExpressions ? $"res://.godot/customer_expressions{sizeSuffix}.png"
             : phase4Day > 0 ? $"res://.godot/phase4_day{phase4Day}{sizeSuffix}.png"
             : captureMap ? $"res://.godot/phase4_map{sizeSuffix}.png"
             : captureLedger ? $"res://.godot/phase4_ledger{sizeSuffix}.png"
@@ -107,6 +122,70 @@ public partial class VisualCapture : Node
             if (File.Exists(absolute)) File.Delete(absolute);
         }
         GetTree().Quit(0);
+    }
+
+    private void BuildCustomerExpressionGallery()
+    {
+        Node main = GetNode("../Main");
+        main.ProcessMode = ProcessModeEnum.Disabled;
+        main.GetNode<Node2D>("ShopRoot").Visible = false;
+        foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Visible = false;
+
+        var gallery = new ColorRect
+        {
+            Color = new Color("#FFF4D5"),
+            Theme = TianjinUi.CreateTheme(),
+        };
+        TianjinUi.FullRect(gallery);
+        AddChild(gallery);
+
+        Label title = TianjinUi.Label("天津顾客 · 半身表情验收", 34, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        title.Position = new Vector2(70, 24);
+        title.Size = new Vector2(1780, 58);
+        gallery.AddChild(title);
+
+        var grid = new GridContainer { Columns = 5 };
+        grid.Position = new Vector2(65, 94);
+        grid.Size = new Vector2(1790, 930);
+        grid.AddThemeConstantOverride("h_separation", 12);
+        grid.AddThemeConstantOverride("v_separation", 12);
+        gallery.AddChild(grid);
+
+        grid.AddChild(Header(string.Empty, 250));
+        foreach (string expressionName in new[] { "开心", "正常", "不耐烦", "生气" })
+            grid.AddChild(Header(expressionName, 365));
+
+        var art = new TianjinArtCatalog();
+        (string Id, string Name)[] customers =
+        {
+            ("normal", "普通顾客\n年轻女性"),
+            ("office_worker", "赶时间上班族\n男上班族"),
+            ("regular", "老顾客\n老大爷"),
+            ("big_order", "大订单顾客\n女上班族"),
+        };
+        CustomerExpression[] expressions = Enum.GetValues<CustomerExpression>();
+        foreach ((string customerType, string displayName) in customers)
+        {
+            grid.AddChild(Header(displayName, 250));
+            foreach (CustomerExpression expression in expressions)
+            {
+                var panel = TianjinUi.Panel(TianjinUi.Paper, 14, 3, false);
+                panel.CustomMinimumSize = new Vector2(365, 202);
+                var portrait = new CustomerPortraitView();
+                portrait.SetVisual(art.CustomerPortrait(customerType, expression));
+                portrait.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+                panel.AddChild(portrait);
+                grid.AddChild(panel);
+            }
+        }
+    }
+
+    private static Label Header(string text, float width)
+    {
+        Label label = TianjinUi.Label(text, 21, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        label.CustomMinimumSize = new Vector2(width, 52);
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        return label;
     }
 
     private static void CompleteDayForCapture(DayController controller, DataCatalog catalog)

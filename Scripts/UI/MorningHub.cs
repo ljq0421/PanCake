@@ -264,23 +264,30 @@ public partial class MorningHub : Control
             NextStoveUpgrade()));
         _equipment.AddChild(EquipmentCard(
             "油条锅",
-            _art.Fryer(Math.Max(1, _save.Data.PurchasedFryerLevel)),
+            FryerPreview(Math.Max(1, _save.Data.PurchasedFryerLevel)),
             _save.Data.PurchasedFryerLevel,
             NextFryerUpgrade()));
         _equipment.AddChild(EquipmentCard(
             "配料台",
-            _art.Ingredient(StableIds.Ingredients.Crispy),
+            IngredientStationPreview(),
             _save.Data.PurchasedIngredientStationLevel,
             NextStationUpgrade()));
     }
 
     private Control EquipmentCard(string name, Texture2D texture, int level, UpgradeOffer? offer)
     {
-        var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        card.AddThemeConstantOverride("separation", 8);
         var image = TianjinUi.Texture(texture, new Vector2(0, 340));
         image.SizeFlagsVertical = SizeFlags.ExpandFill;
-        card.AddChild(image);
+        return EquipmentCard(name, image, level, offer);
+    }
+
+    private Control EquipmentCard(string name, Control visual, int level, UpgradeOffer? offer)
+    {
+        var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        card.AddThemeConstantOverride("separation", 8);
+        visual.CustomMinimumSize = new Vector2(0, 340);
+        visual.SizeFlagsVertical = SizeFlags.ExpandFill;
+        card.AddChild(visual);
         card.AddChild(TianjinUi.Label(level == 0 ? $"{name} · 尚未解锁" : $"{name} · Lv{level}", 22, TianjinUi.BrownText, HorizontalAlignment.Center));
         if (offer is UpgradeOffer upgrade)
         {
@@ -295,6 +302,30 @@ public partial class MorningHub : Control
             card.AddChild(TianjinUi.Label(note, 17, TianjinUi.Brown, HorizontalAlignment.Center));
         }
         return card;
+    }
+
+    private Control FryerPreview(int level)
+    {
+        var preview = new Control();
+        TextureRect body = TianjinUi.Texture(_art.FryerBody(level), Vector2.Zero);
+        TianjinUi.FullRect(body);
+        preview.AddChild(body);
+        TextureRect basket = TianjinUi.Texture(_art.FryerBasket(level), Vector2.Zero);
+        TianjinUi.FullRect(basket);
+        preview.AddChild(basket);
+        return preview;
+    }
+
+    private Control IngredientStationPreview()
+    {
+        var preview = new Control();
+        TextureRect tray = TianjinUi.Texture(_art.IngredientTray, Vector2.Zero);
+        TianjinUi.FullRect(tray, 22, 24, -22, -24);
+        preview.AddChild(tray);
+        TextureRect crispy = TianjinUi.Texture(_art.Ingredient(StableIds.Ingredients.Crispy), Vector2.Zero);
+        TianjinUi.FullRect(crispy, 86, 76, -86, -76);
+        preview.AddChild(crispy);
+        return preview;
     }
 
     private void RenderLedger()
@@ -321,6 +352,29 @@ public partial class MorningHub : Control
         _message.Text = ok ? "新设备已经装好，下次营业立即生效。" : error;
         _message.Modulate = ok ? TianjinUi.Green : TianjinUi.Red;
         Render();
+        if (ok) PlayUpgradeStars();
+    }
+
+    private void PlayUpgradeStars()
+    {
+        Vector2 origin = new(1450, 730);
+        for (int index = 0; index < 5; index++)
+        {
+            var star = TianjinUi.Texture(_art.StarEffect, new Vector2(58, 58));
+            star.Position = origin + new Vector2((index - 2) * 48, Math.Abs(index - 2) * 8);
+            star.PivotOffset = star.Size * 0.5f;
+            star.Scale = new Vector2(0.35f, 0.35f);
+            star.Modulate = new Color(1, 1, 1, 0);
+            star.ZIndex = 150;
+            star.MouseFilter = MouseFilterEnum.Ignore;
+            AddChild(star);
+            Tween tween = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+            tween.TweenProperty(star, "position", star.Position + new Vector2(0, -105 - index * 9), 0.62 + index * 0.04);
+            tween.TweenProperty(star, "scale", Vector2.One, 0.38);
+            tween.TweenProperty(star, "modulate", Colors.White, 0.18);
+            tween.Chain().TweenProperty(star, "modulate", new Color(1, 1, 1, 0), 0.24).SetDelay(0.18);
+            tween.Finished += star.QueueFree;
+        }
     }
 
     private UpgradeOffer? NextStoveUpgrade() => FirstAvailable(

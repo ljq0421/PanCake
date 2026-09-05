@@ -5,6 +5,7 @@ using ProjectCake.Data;
 using ProjectCake.Fryer;
 using ProjectCake.Gameplay;
 using ProjectCake.Inventory;
+using ProjectCake.Interaction;
 using ProjectCake.Orders;
 using ProjectCake.Pancake;
 using ProjectCake.UI;
@@ -20,8 +21,16 @@ public partial class VisualCapture : Node
         int captureFryerLevel = args.Contains("--capture-fryer-level2", StringComparer.Ordinal) ? 2
             : args.Contains("--capture-fryer-level3", StringComparer.Ordinal) ? 3 : 1;
         bool captureRunning = OS.GetCmdlineUserArgs().Contains("--capture-running", StringComparer.Ordinal);
+        bool captureLowStock = args.Contains("--capture-low-stock", StringComparer.Ordinal);
+        bool captureInteraction = args.Contains("--capture-interaction", StringComparer.Ordinal);
+        bool capturePancakeReady = args.Contains("--capture-pancake-ready", StringComparer.Ordinal);
+        bool captureSauceReady = args.Contains("--capture-sauce-ready", StringComparer.Ordinal);
+        bool captureThreeCustomers = args.Contains("--capture-three-customers", StringComparer.Ordinal);
         bool captureDay = captureFryerWorkstation || captureRunning || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
-        int phase4Day = captureFryerWorkstation || args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
+        int phase4Day = captureThreeCustomers ? 15
+            : captureLowStock || captureInteraction || capturePancakeReady || captureSauceReady ? 9
+            : args.Contains("--capture-day1", StringComparer.Ordinal) ? 1
+            : captureFryerWorkstation || args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
             : args.Contains("--capture-day9", StringComparer.Ordinal) ? 9
             : args.Contains("--capture-day15", StringComparer.Ordinal) ? 15 : 0;
         bool captureMap = args.Contains("--capture-map", StringComparer.Ordinal);
@@ -56,6 +65,7 @@ public partial class VisualCapture : Node
             int day = captureResult ? 15 : phase4Day > 0 ? phase4Day : 1;
             var captureSave = GetNode<SaveService>("/root/SaveService");
             if (captureFryerWorkstation) captureSave.Data.PurchasedFryerLevel = captureFryerLevel;
+            if (capturePancakeReady || captureSauceReady) captureSave.Data.PurchasedStoveLevel = 2;
             if (day == 15)
             {
                 captureSave.Data.PurchasedStoveLevel = 3;
@@ -66,7 +76,9 @@ public partial class VisualCapture : Node
             foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Visible = screen == dayScreen;
             if (captureRunning || phase4Day > 0 || captureResult)
             {
+                controller.IsPaused = false;
                 dayScreen.BeginDay();
+                controller.IsPaused = false;
                 controller.Tick(3);
                 if (captureResult)
                 {
@@ -74,9 +86,11 @@ public partial class VisualCapture : Node
                 }
                 else
                 {
-                    int steps = phase4Day == 15 ? 900 : 30;
+                    int targetCustomerCount = captureThreeCustomers ? 3 : phase4Day == 15 ? 5 : 1;
+                    int steps = phase4Day == 15 ? 900 : 80;
                     for (int step = 0; step < steps; step++)
                     {
+                        controller.IsPaused = false;
                         controller.Tick(.1);
                         if (phase4Day == 15 && controller.CustomerQueue is not null)
                         {
@@ -87,11 +101,56 @@ public partial class VisualCapture : Node
                                     customer.State = CustomerState.Happy;
                             }
                         }
-                        if (phase4Day == 15 && controller.CustomerQueue?.Slots.Count >= 5) break;
+                        if (controller.CustomerQueue?.Slots.Count >= targetCustomerCount) break;
                     }
+                    PancakeWorkstation workstation = dayScreen.GetChildren().OfType<PancakeWorkstation>().Single();
+                    if (captureLowStock)
+                    {
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Batter, 5);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Egg, 2);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Sauce, 0);
+                    }
+                    if (captureInteraction)
+                    {
+                        CustomerRuntime? target = controller.CustomerQueue?.Slots.FirstOrDefault(customer => customer.State is
+                            CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry);
+                        for (int step = 0; target is null && step < 100; step++)
+                        {
+                            controller.IsPaused = false;
+                            controller.Tick(.1);
+                            target = controller.CustomerQueue?.Slots.FirstOrDefault(customer => customer.State is
+                                CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry);
+                        }
+                        if (target is not null) controller.CustomerQueue!.TrySelect(target.Id);
+                        MakeBagged(workstation.Machine, GetNode<DataCatalog>("/root/DataCatalog").RecipesById[StableIds.Recipes.Basic]);
+                        if (workstation.FindChild("DeliveryDropZone", true, false) is DropZone delivery)
+                            delivery.SetDragState(DropZoneVisualState.Eligible);
+                    }
+                    if (capturePancakeReady)
+                    {
+                        PancakeStateMachine machine = workstation.Machine;
+                        machine.TryExecute(PancakeCommand.PlaceBatter);
+                        machine.TryExecute(PancakeCommand.BeginSpread);
+                        machine.SetSpreadCoverage(1);
+                        machine.TryExecute(PancakeCommand.CompleteSpread);
+                        machine.TryExecute(PancakeCommand.AddEgg);
+                        machine.Tick(machine.Stove.SideAReadySeconds);
+                    }
+                    if (captureSauceReady)
+                    {
+                        PancakeStateMachine machine = workstation.Machine;
+                        machine.TryExecute(PancakeCommand.PlaceBatter);
+                        machine.TryExecute(PancakeCommand.BeginSpread);
+                        machine.SetSpreadCoverage(1);
+                        machine.TryExecute(PancakeCommand.CompleteSpread);
+                        machine.TryExecute(PancakeCommand.AddEgg);
+                        machine.Tick(machine.Stove.SideAReadySeconds);
+                        machine.TryExecute(PancakeCommand.Flip);
+                        machine.Tick(machine.Stove.SideBReadySeconds);
+                    }
+                    dayScreen.RefreshForCapture(captureInteraction || capturePancakeReady || captureSauceReady);
                     if (captureFryerWorkstation)
                     {
-                        PancakeWorkstation workstation = dayScreen.GetChildren().OfType<PancakeWorkstation>().Single();
                         FryerStateMachine fryer = workstation.FryerMachine!;
                         for (int quantity = 0; quantity < 4; quantity++) fryer.TryExecute(FryerCommand.LoadOne);
                         fryer.TryExecute(FryerCommand.LowerBasket);
@@ -126,12 +185,23 @@ public partial class VisualCapture : Node
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(2.6), SceneTreeTimer.SignalName.Timeout);
+        if ((captureInteraction || capturePancakeReady || captureSauceReady) && phase4Day > 0)
+        {
+            Node main = GetNode("../Main");
+            main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen").RefreshForCapture(true);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string output = captureResult ? $"res://.godot/phase4_result{sizeSuffix}.png"
             : captureFryerSlots ? $"res://.godot/fryer_slots{sizeSuffix}.png"
             : captureFryerWorkstation ? $"res://.godot/fryer_workstation_lv{captureFryerLevel}{sizeSuffix}.png"
             : captureExpressions ? $"res://.godot/customer_expressions_page{expressionPage}{sizeSuffix}.png"
+            : captureLowStock ? $"res://.godot/phase4_low_stock{sizeSuffix}.png"
+            : captureInteraction ? $"res://.godot/phase4_interaction{sizeSuffix}.png"
+            : capturePancakeReady ? $"res://.godot/phase4_pancake_ready{sizeSuffix}.png"
+            : captureSauceReady ? $"res://.godot/phase4_sauce_ready{sizeSuffix}.png"
+            : captureThreeCustomers ? $"res://.godot/phase4_three_customers{sizeSuffix}.png"
             : phase4Day > 0 ? $"res://.godot/phase4_day{phase4Day}{sizeSuffix}.png"
             : captureMap ? $"res://.godot/phase4_map{sizeSuffix}.png"
             : captureLedger ? $"res://.godot/phase4_ledger{sizeSuffix}.png"
@@ -329,5 +399,11 @@ public partial class VisualCapture : Node
         foreach (string ingredient in recipe.ExtraIngredients) machine.TryExecute(PancakeCommand.AddIngredient, ingredient);
         if (recipe.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao)) machine.TrySetInternalYoutiaoQuality(YoutiaoQuality.Golden);
         machine.TryExecute(PancakeCommand.Fold); machine.TryExecute(PancakeCommand.Bag);
+    }
+
+    private static void ReduceTo(IngredientInventory inventory, string ingredientId, int target)
+    {
+        int amount = Math.Max(0, inventory.GetQuantity(ingredientId) - target);
+        if (amount > 0) inventory.TryConsume(ingredientId, amount);
     }
 }

@@ -382,8 +382,8 @@ public partial class StageFourSelfTest : Node
         workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[5], new TianjinArtCatalog());
         Check(workstation.FindChild("FryerVisual", true, false) is FryerVisualView, "工作台使用锅体与滤篮分层的炸锅视图");
         Check(workstation.FindChild("FryerStack", true, false) is Control { Size: var fryerSize }
-            && fryerSize.X == 365 && fryerSize.Y == 396, "桌面炸锅调整为上一版本线性尺寸的 0.8 倍");
-        Check(workstation.FindChild("FinishedYoutiaoArea", true, false) is HBoxContainer
+            && fryerSize.X == 350 && fryerSize.Y == 350, "桌面炸锅收进紧凑的左侧生产闭环");
+        Check(workstation.FindChild("FinishedYoutiaoArea", true, false) is VBoxContainer
             && workstation.FindChild("FinishedYoutiaoStock", true, false) is Label
             && workstation.FindChild("FinishedYoutiaoDrag", true, false) is DragItem, "成品油条库存与拖拽入口合并显示且不再使用独立沥油架");
         Check(workstation.FindChild("TrashZone", true, false) is not null, "工作台接入可拖放垃圾桶");
@@ -391,6 +391,31 @@ public partial class StageFourSelfTest : Node
         Check(framelessAreas.All(name => workstation.FindChild(name, true, false) is Control and not PanelContainer), "四个设备区域使用无框场景容器");
         Godot.Collections.Array<Node> ingredientSlots = workstation.FindChildren("IngredientSlot_*", "PanelContainer", true, false);
         Check(ingredientSlots.Count == 6 && ingredientSlots.Cast<PanelContainer>().All(slot => slot.GetThemeStylebox("panel") is StyleBoxEmpty), "六个配料槽不再绘制卡片框体");
+        Check(new[] { "FryerLowerAction", "FryerRaiseAction", "FryerDiscardAction", "PancakeFlipAction", "PancakeFoldAction", "PancakeBagAction", "PancakeDiscardAction" }
+            .All(name => workstation.FindChild(name, true, false) is Button { Visible: false }), "空设备不显示无效操作，动作按钮由状态上下文控制");
+        Check(workstation.FindChildren("IngredientRefill_*", "Button", true, false).Cast<Button>().All(button => !button.Visible), "满库存时隐藏补料入口");
+        Check(workstation.FindChildren("IngredientStock_*", "ProgressBar", true, false).Cast<ProgressBar>().All(stock => !stock.Visible), "正常库存不显示长库存条");
+        Check(workstation.FindChild("IngredientInput_sauce", true, false) is Control and not BaseButton,
+            "酱料槽只展示库存，抹酱操作留在炉面轨迹");
+        var batterStock = workstation.FindChild("IngredientStock_batter", true, false) as ProgressBar;
+        var batterRefill = workstation.FindChild("IngredientRefill_batter", true, false) as Button;
+        for (int index = 0; index < 5; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
+        Check(batterStock is { Visible: true } && batterStock.CustomMinimumSize.Y == 4
+            && batterRefill is { Visible: true } && Mathf.IsEqualApprox(batterRefill.Modulate.A, 0.65f), "半库存显示弱橙条和弱化补料入口");
+        for (int index = 0; index < 3; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
+        Check(batterStock is { Visible: true } && batterStock.CustomMinimumSize.Y == 6
+            && batterRefill is { Visible: true } && Mathf.IsEqualApprox(batterRefill.Modulate.A, 1f), "两成库存显示强化红条和补料入口");
+        workstation.Inventory.TryConsume(StableIds.Ingredients.Batter, 2);
+        Check(workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "×0" } emptyCount
+            && emptyCount.Modulate == TianjinUi.Red, "零库存数量使用红色且补料入口保持显示");
+        workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Batter);
+        Check(batterStock is { Visible: true } && batterRefill is { Text: "补料中", Disabled: true }, "补料中显示进度并禁用重复补料");
+        workstation.CanSubmitToSelectedCustomer = () => false;
+        MakeBagged(workstation.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
+        var delivery = workstation.FindChild("DeliveryDropZone", true, false) as DropZone;
+        Check(delivery is not null && !delivery.CanAccept("finished_pancake"), "未选择顾客时出餐口拒绝成品且不会提前消费");
+        workstation.CanSubmitToSelectedCustomer = () => true;
+        Check(delivery?.CanAccept("finished_pancake") == true, "选择有效顾客后出餐口接收已装袋煎饼");
         workstation.QueueFree();
     }
 

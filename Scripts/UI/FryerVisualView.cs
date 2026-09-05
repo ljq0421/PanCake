@@ -1,5 +1,6 @@
 using Godot;
 using ProjectCake.Fryer;
+using ProjectCake.Interaction;
 
 namespace ProjectCake.UI;
 
@@ -9,16 +10,10 @@ namespace ProjectCake.UI;
 /// </summary>
 public partial class FryerVisualView : Control
 {
-    private readonly record struct FryerSlotSpec(
-        Vector2 Position,
-        float RotationDegrees,
-        float Scale,
-        int DrawOrder);
-
     // Positions are normalized against the shared square fryer canvas.  They are
     // deliberately authored per basket size instead of being inferred from the
     // mouse release point: dropping means "load the next slot", not "place here".
-    private static readonly FryerSlotSpec[] SixSlotLayout =
+    private static readonly SnapSlot[] SixSlotLayout =
     {
         new(new Vector2(0.38f, 0.41f), -2.0f, 0.96f, 0),
         new(new Vector2(0.50f, 0.41f),  1.5f, 1.00f, 1),
@@ -28,7 +23,7 @@ public partial class FryerVisualView : Control
         new(new Vector2(0.64f, 0.53f),  3.0f, 0.96f, 5),
     };
 
-    private static readonly FryerSlotSpec[] EightSlotLayout =
+    private static readonly SnapSlot[] EightSlotLayout =
     {
         new(new Vector2(0.32f, 0.41f), -3.0f, 0.95f, 0),
         new(new Vector2(0.44f, 0.41f),  1.0f, 0.98f, 1),
@@ -93,7 +88,7 @@ public partial class FryerVisualView : Control
             _lastLowered = lowered;
             float targetProgress = lowered ? 1 : 0;
             _basketTween?.Kill();
-            if (animate && IsInsideTree())
+            if (animate && IsInsideTree() && !ReducedMotion)
             {
                 _basketTween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
                 _basketTween.TweenMethod(Callable.From<float>(value =>
@@ -126,6 +121,7 @@ public partial class FryerVisualView : Control
         DrawTextureRect(_art.FryerBasket(_machine.Level.Level), basketRect, false);
         DrawBatch(runtime, canvas, basketPlacement);
         DrawCookingEffects(runtime, canvas, basketPlacement);
+        DrawStateIndicator(runtime, canvas, basketPlacement);
     }
 
     private void DrawBatch(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)
@@ -140,13 +136,13 @@ public partial class FryerVisualView : Control
             YoutiaoQuality.Deep => new Color(0.78f, 0.56f, 0.34f),
             _ => Colors.White,
         };
-        IReadOnlyList<FryerSlotSpec> layout = LayoutForLevel(_machine.Level.Level);
+        IReadOnlyList<SnapSlot> layout = LayoutForLevel(_machine.Level.Level);
         Vector2 slotBounds = canvas.Size * 0.18f * Mathf.Min(basketPlacement.Size.X, basketPlacement.Size.Y);
         int visibleCount = Math.Min(runtime.Quantity, layout.Count);
         for (int index = 0; index < visibleCount; index++)
         {
-            FryerSlotSpec slot = layout[index];
-            Vector2 normalizedPosition = basketPlacement.Position + slot.Position * basketPlacement.Size;
+            SnapSlot slot = layout[index];
+            Vector2 normalizedPosition = basketPlacement.Position + slot.NormalizedPosition * basketPlacement.Size;
             Vector2 center = canvas.Position + canvas.Size * normalizedPosition;
             Vector2 itemSize = FitInside(texture.GetSize(), slotBounds * slot.Scale);
             DrawSetTransform(center, Mathf.DegToRad(slot.RotationDegrees), Vector2.One);
@@ -170,15 +166,63 @@ public partial class FryerVisualView : Control
         }
     }
 
+    private void DrawStateIndicator(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)
+    {
+        if (runtime.Quantity <= 0) return;
+        Rect2 basket = ResolveBasketRect(canvas, basketPlacement);
+        if (runtime.State == FryerState.Frying && runtime.Quality == YoutiaoQuality.Golden)
+        {
+            Color ready = new(1f, 0.75f, 0.18f, 0.92f);
+            float y = basket.Position.Y + basket.Size.Y * 0.29f;
+            for (int index = -1; index <= 1; index++)
+            {
+                Vector2 center = new(basket.GetCenter().X + index * basket.Size.X * 0.16f, y);
+                DrawArc(center, 8, Mathf.Pi * 1.10f, Mathf.Pi * 1.90f, 12, ready, 4, true);
+            }
+        }
+        else if (runtime.State is FryerState.Raised or FryerState.Draining)
+        {
+            Color drop = new(0.98f, 0.67f, 0.22f, 0.82f);
+            float progress = runtime.State == FryerState.Draining && _machine is not null
+                ? Mathf.Clamp((float)(runtime.DrainSeconds / _machine.Level.DrainSeconds), 0, 1)
+                : 0;
+            for (int index = -1; index <= 1; index++)
+            {
+                float offset = (index + 1) * 0.14f + progress * 0.08f;
+                Vector2 center = new(basket.GetCenter().X + index * basket.Size.X * 0.13f, basket.End.Y - basket.Size.Y * offset);
+                DrawCircle(center, 4, drop);
+            }
+        }
+        else if (runtime.State == FryerState.Burnt)
+        {
+            Vector2 center = basket.GetCenter() + new Vector2(0, -basket.Size.Y * 0.08f);
+            Vector2 diagonal = new(11, 11);
+            DrawLine(center - diagonal, center + diagonal, TianjinUi.Red, 5, true);
+            DrawLine(center + new Vector2(-diagonal.X, diagonal.Y), center + new Vector2(diagonal.X, -diagonal.Y), TianjinUi.Red, 5, true);
+        }
+    }
+
+    public Vector2 NextLoadSlotGlobalCenter()
+    {
+        if (_machine is null || Size.X <= 0 || Size.Y <= 0) return GetGlobalRect().GetCenter();
+        IReadOnlyList<SnapSlot> layout = LayoutForLevel(_machine.Level.Level);
+        int index = Math.Clamp(_machine.Runtime.Quantity, 0, layout.Count - 1);
+        Rect2 canvas = FittedSquare(Size, 2);
+        Rect2 placement = BasketPlacementForLevel(_machine.Level.Level);
+        Vector2 normalized = placement.Position + layout[index].NormalizedPosition * placement.Size;
+        Vector2 localCenter = canvas.Position + canvas.Size * normalized;
+        return GetGlobalTransform() * localCenter;
+    }
+
     internal static int SlotCountForLevel(int level) => LayoutForLevel(level).Count;
 
     internal static bool LayoutMeetsConstraints(int level)
     {
-        IReadOnlyList<FryerSlotSpec> layout = LayoutForLevel(level);
+        IReadOnlyList<SnapSlot> layout = LayoutForLevel(level);
         Rect2 basketPlacement = BasketPlacementForLevel(level);
         return layout.Count == (level <= 1 ? 6 : 8)
-            && layout.All(slot => slot.Position.X is >= 0.25f and <= 0.75f
-                && slot.Position.Y is >= 0.35f and <= 0.60f
+            && layout.All(slot => slot.NormalizedPosition.X is >= 0.25f and <= 0.75f
+                && slot.NormalizedPosition.Y is >= 0.35f and <= 0.60f
                 && Math.Abs(slot.RotationDegrees) <= 8
                 && slot.Scale is >= 0.85f and <= 1.10f)
             && layout.Select((slot, index) => slot.DrawOrder == index).All(matches => matches)
@@ -188,7 +232,7 @@ public partial class FryerVisualView : Control
             && basketPlacement.End.Y <= 1;
     }
 
-    private static IReadOnlyList<FryerSlotSpec> LayoutForLevel(int level) => level <= 1 ? SixSlotLayout : EightSlotLayout;
+    private static IReadOnlyList<SnapSlot> LayoutForLevel(int level) => level <= 1 ? SixSlotLayout : EightSlotLayout;
 
     private static Rect2 BasketPlacementForLevel(int level) => level switch
     {
@@ -254,6 +298,8 @@ public partial class FryerVisualView : Control
     }
 
     private static bool IsLowered(FryerState state) => state is FryerState.Frying or FryerState.Burnt;
+    private static bool ReducedMotion => ProjectSettings.HasSetting("accessibility/reduce_motion")
+        && ProjectSettings.GetSetting("accessibility/reduce_motion").AsBool();
     private static Rect2 FittedSquare(Vector2 size, float margin)
     {
         float side = Mathf.Min(size.X, size.Y) - margin * 2;

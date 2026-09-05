@@ -2,6 +2,16 @@ using Godot;
 
 namespace ProjectCake.Interaction;
 
+public enum DragCompletion
+{
+    Accepted,
+    Missed,
+    Rejected,
+    Cancelled,
+}
+
+public readonly record struct DragResult(string PayloadId, DragCompletion Completion, DropZone? Zone = null);
+
 public partial class DragService : Node
 {
     private readonly List<DropZone> _zones = new();
@@ -10,9 +20,10 @@ public partial class DragService : Node
     private string _payloadId = string.Empty;
     private Vector2 _sourceCenter;
     private bool _returning;
+    private Tween? _motionTween;
 
     public event Action<string>? DragStarted;
-    public event Action<string, bool>? DragEnded;
+    public event Action<DragResult>? DragEnded;
 
     public bool IsDragging => _proxy is not null;
 
@@ -58,6 +69,7 @@ public partial class DragService : Node
             _overlay.AddChild(_proxy);
             MoveProxy(source.GetGlobalMousePosition());
             SetProcessInput(true);
+            UpdateHighlights(source.GetGlobalMousePosition());
             DragStarted?.Invoke(payloadId);
             return;
         }
@@ -88,6 +100,7 @@ public partial class DragService : Node
         _overlay.AddChild(_proxy);
         MoveProxy(source.GetGlobalMousePosition());
         SetProcessInput(true);
+        UpdateHighlights(source.GetGlobalMousePosition());
         DragStarted?.Invoke(payloadId);
     }
 
@@ -125,25 +138,23 @@ public partial class DragService : Node
 
         string payload = _payloadId;
         ClearDrag();
-        DragEnded?.Invoke(payload, false);
+        DragEnded?.Invoke(new DragResult(payload, DragCompletion.Cancelled));
     }
 
     private void CompleteDrag(Vector2 position)
     {
         DropZone? zone = _zones.FirstOrDefault(candidate =>
             candidate.IsVisibleInTree()
-            && candidate.GetGlobalRect().HasPoint(position)
-            && candidate.CanAccept(_payloadId));
+            && candidate.GetGlobalRect().HasPoint(position));
         string payload = _payloadId;
-        if (zone is not null)
+        if (zone?.CanAccept(_payloadId) == true)
         {
-            zone.Accept(payload);
-            ClearDrag();
-            DragEnded?.Invoke(payload, true);
+            AnimateAccept(zone, payload);
             return;
         }
 
-        AnimateReturn(payload);
+        if (zone is not null) zone.PulseRejected();
+        AnimateReturn(payload, zone is null ? DragCompletion.Missed : DragCompletion.Rejected, zone);
     }
 
     private void MoveProxy(Vector2 position)
@@ -158,16 +169,26 @@ public partial class DragService : Node
     {
         foreach (DropZone zone in _zones)
         {
-            bool hovered = zone.IsVisibleInTree() && zone.GetGlobalRect().HasPoint(position);
-            zone.SetDragHighlight(hovered, hovered && zone.CanAccept(_payloadId));
+            if (!zone.IsVisibleInTree())
+            {
+                zone.SetDragState(DropZoneVisualState.Idle);
+                continue;
+            }
+            bool hovered = zone.GetGlobalRect().HasPoint(position);
+            bool valid = zone.CanAccept(_payloadId);
+            zone.SetDragState(hovered
+                ? valid ? DropZoneVisualState.HoverValid : DropZoneVisualState.HoverInvalid
+                : valid ? DropZoneVisualState.Eligible : DropZoneVisualState.Idle);
         }
     }
 
     private void ClearDrag()
     {
+        _motionTween?.Kill();
+        _motionTween = null;
         foreach (DropZone zone in _zones)
         {
-            zone.SetDragHighlight(false, false);
+            zone.SetDragState(DropZoneVisualState.Idle);
         }
 
         _proxy?.QueueFree();
@@ -177,7 +198,7 @@ public partial class DragService : Node
         SetProcessInput(false);
     }
 
-    private void AnimateReturn(string payload)
+    private void AnimateReturn(string payload, DragCompletion completion, DropZone? zone = null)
     {
         if (_proxy is null)
         {
@@ -186,12 +207,58 @@ public partial class DragService : Node
 
         _returning = true;
         SetProcessInput(false);
-        Tween tween = CreateTween().SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-        tween.TweenProperty(_proxy, "global_position", _sourceCenter - _proxy.Size * 0.5f, 0.22);
+        Tween tween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        _motionTween = tween;
+        double duration = ReducedMotion ? 0.10 : 0.18;
+        tween.TweenProperty(_proxy, "global_position", _sourceCenter - _proxy.Size * 0.5f, duration);
         tween.Finished += () =>
         {
+            if (_motionTween != tween) return;
+            _motionTween = null;
             ClearDrag();
-            DragEnded?.Invoke(payload, false);
+            DragEnded?.Invoke(new DragResult(payload, completion, zone));
         };
     }
+
+    private void AnimateAccept(DropZone zone, string payload)
+    {
+        if (_proxy is null) return;
+        _returning = true;
+        SetProcessInput(false);
+        foreach (DropZone candidate in _zones) candidate.SetDragState(DropZoneVisualState.Idle);
+
+        Vector2 target = zone.ResolveSnapGlobalCenter(payload) - _proxy.Size * 0.5f;
+        if (ReducedMotion)
+        {
+            zone.Accept(payload);
+            ClearDrag();
+            if (IsInstanceValid(zone)) zone.PulseAccepted();
+            DragEnded?.Invoke(new DragResult(payload, DragCompletion.Accepted, zone));
+            return;
+        }
+
+        _proxy.PivotOffset = _proxy.Size * 0.5f;
+        Tween tween = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
+        _motionTween = tween;
+        tween.TweenProperty(_proxy, "global_position", target, 0.14);
+        tween.TweenProperty(_proxy, "scale", new Vector2(0.94f, 0.94f), 0.14);
+        tween.Finished += () =>
+        {
+            if (_motionTween != tween) return;
+            _motionTween = null;
+            if (!IsInstanceValid(zone) || !zone.IsVisibleInTree() || !zone.CanAccept(payload))
+            {
+                if (IsInstanceValid(zone)) zone.PulseRejected();
+                AnimateReturn(payload, DragCompletion.Rejected, zone);
+                return;
+            }
+            zone.Accept(payload);
+            ClearDrag();
+            if (IsInstanceValid(zone)) zone.PulseAccepted();
+            DragEnded?.Invoke(new DragResult(payload, DragCompletion.Accepted, zone));
+        };
+    }
+
+    private static bool ReducedMotion => ProjectSettings.HasSetting("accessibility/reduce_motion")
+        && ProjectSettings.GetSetting("accessibility/reduce_motion").AsBool();
 }

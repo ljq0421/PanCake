@@ -8,6 +8,7 @@ public enum PancakeSound
     Stroke,
     Sizzle,
     Flip,
+    Ready,
     Success,
     Overdone,
     Error,
@@ -26,6 +27,7 @@ public partial class PancakeAudio : Node
         _sounds[PancakeSound.Stroke] = MakeTone(320, 0.08, 0.18);
         _sounds[PancakeSound.Sizzle] = MakeNoise(0.12, 0.16);
         _sounds[PancakeSound.Flip] = MakeTone(460, 0.09, 0.30);
+        _sounds[PancakeSound.Ready] = MakeChord(new[] { 620.0, 820.0 }, 0.14, 0.22);
         _sounds[PancakeSound.Success] = MakeChord(new[] { 660.0, 880.0 }, 0.18, 0.25);
         _sounds[PancakeSound.Overdone] = MakeTone(230, 0.18, 0.24);
         _sounds[PancakeSound.Error] = MakeTone(145, 0.12, 0.28);

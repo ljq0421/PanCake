@@ -20,7 +20,7 @@ public partial class StageTwoSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             RunEquipmentAndInventoryTests(catalog);
             RunCoverageTests();
-            RunClickOrDragTests();
+            RunDragInteractionTests();
             RunStateMachineTests(catalog);
             RunRecipeAndPracticeTests(catalog);
             RunSceneTests();
@@ -136,7 +136,7 @@ public partial class StageTwoSelfTest : Node
 
     private static Vector2 EllipsePoint(float angle) => new(Mathf.Cos(angle) * 150, Mathf.Sin(angle) * 90);
 
-    private void RunClickOrDragTests()
+    private void RunDragInteractionTests()
     {
         var overlay = new Control { Size = new Vector2(400, 300) };
         AddChild(overlay);
@@ -145,19 +145,25 @@ public partial class StageTwoSelfTest : Node
         drag.Configure(overlay);
         var batter = new DragItem { Size = new Vector2(120, 60) };
         overlay.AddChild(batter);
-        int clicks = 0;
+        int dragStarts = 0;
+        DragResult? ended = null;
+        drag.DragStarted += _ => dragStarts++;
+        drag.DragEnded += result => ended = result;
         batter.Configure(drag, "batter", "面糊", Colors.White);
-        batter.EnableClick(() => clicks++);
 
         batter._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
-        batter._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false });
-        Check(clicks == 1 && !drag.IsDragging, "面糊短按只触发一次点击且不会启动拖拽");
-
-        Vector2 pressPosition = batter.GetGlobalMousePosition();
-        batter._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
-        batter._Input(new InputEventMouseMotion { Position = pressPosition + new Vector2(16, 0) });
-        Check(clicks == 1 && drag.IsDragging, "面糊移动超过 10 像素后进入原有拖拽且不重复点击");
+        Check(dragStarts == 1 && drag.IsDragging, "面糊按下后只进入拖拽，不保留点击分支");
         drag.CancelDrag();
+        Check(ended is { Completion: DragCompletion.Cancelled } && !drag.IsDragging, "取消拖拽不会误报为非法投放");
+
+        var zone = new DropZone { Position = new Vector2(180, 120), Size = new Vector2(100, 80) };
+        overlay.AddChild(zone);
+        zone.Configure(_ => true, _ => { }, _ => new Vector2(246, 172));
+        Check(zone.ResolveSnapGlobalCenter("batter") == new Vector2(246, 172), "投放区使用固定吸附点而不是鼠标松开坐标");
+        zone.SetDragState(DropZoneVisualState.Eligible);
+        Check(zone.VisualState == DropZoneVisualState.Eligible, "合法投放区可在未悬停时显示弱提示");
+        zone.SetDragState(DropZoneVisualState.HoverInvalid);
+        Check(zone.VisualState == DropZoneVisualState.HoverInvalid, "非法悬停使用独立拒绝状态");
         overlay.QueueFree();
     }
 

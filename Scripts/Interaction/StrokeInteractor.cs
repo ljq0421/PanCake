@@ -30,6 +30,7 @@ public partial class StrokeInteractor : Control
     public Action? InvalidStroke { get; set; }
     public Func<EllipseGeometry>? ResolveSpreadGeometry { get; set; }
     public Texture2D? SpreadToolTexture { get; set; }
+    public Texture2D? SauceToolTexture { get; set; }
     public float PancakeRadius { get; set; } = 180;
 
     public double SpreadProgress => _spread.Progress;
@@ -92,7 +93,7 @@ public partial class StrokeInteractor : Control
 
     public void RefreshVisualState()
     {
-        bool show = _pointerInside && ResolveMode?.Invoke() == StrokeMode.Spread;
+        bool show = _pointerInside && ResolveMode?.Invoke() is StrokeMode.Spread or StrokeMode.Sauce;
         SetToolVisible(show);
         if (show)
         {
@@ -151,6 +152,8 @@ public partial class StrokeInteractor : Control
             _lastPoint = current;
             progress = _sauce.Progress;
             complete = _sauce.IsComplete;
+            UpdateTool(position);
+            QueueRedraw();
         }
         StrokeProgressed?.Invoke(_activeMode, progress);
 
@@ -170,8 +173,17 @@ public partial class StrokeInteractor : Control
 
     public override void _Draw()
     {
-        if (ResolveMode?.Invoke() != StrokeMode.Spread)
+        StrokeMode mode = ResolveMode?.Invoke() ?? StrokeMode.None;
+        if (mode == StrokeMode.None)
         {
+            return;
+        }
+
+        if (mode == StrokeMode.Sauce)
+        {
+            EllipseGeometry sauceGeometry = GetSpreadGeometry();
+            DrawPolyline(EllipsePoints(sauceGeometry, -Mathf.Pi / 2.0f, Mathf.Tau, 72), new Color(0.96f, 0.49f, 0.18f, 0.62f), 6, true);
+            DrawTool(SauceToolTexture, new Vector2(104, 104), new Vector2(38, 72));
             return;
         }
 
@@ -183,7 +195,7 @@ public partial class StrokeInteractor : Control
             float sweep = Mathf.Tau * (float)_spread.Progress * direction;
             DrawPolyline(EllipsePoints(geometry, -Mathf.Pi / 2.0f, sweep, Math.Max(8, Mathf.CeilToInt(72 * (float)_spread.Progress))), new Color("#F5B83D"), 10.0f, true);
         }
-        DrawSpreadTool();
+        DrawTool(SpreadToolTexture, new Vector2(116, 116), new Vector2(47, 79));
     }
 
     private EllipseGeometry GetSpreadGeometry() => ResolveSpreadGeometry?.Invoke()
@@ -220,17 +232,15 @@ public partial class StrokeInteractor : Control
         }
     }
 
-    private void DrawSpreadTool()
+    private void DrawTool(Texture2D? texture, Vector2 toolSize, Vector2 contactAnchor)
     {
-        if (!_toolVisible || SpreadToolTexture is null)
+        if (!_toolVisible || texture is null)
         {
             return;
         }
 
-        Vector2 toolSize = new(116, 116);
-        Vector2 contactAnchor = new(47, 79);
         DrawSetTransform(_toolPosition, _toolRotation, Vector2.One);
-        DrawTextureRect(SpreadToolTexture, new Rect2(-contactAnchor, toolSize), false);
+        DrawTextureRect(texture, new Rect2(-contactAnchor, toolSize), false);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 

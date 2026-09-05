@@ -102,6 +102,8 @@ public partial class PancakeCanvas : Control
 
         if (runtime.Quality == PancakeQuality.Burnt || runtime.State == PancakeState.Burnt)
             DrawCentered(_art.PancakeBurntOverlay, surface.GetCenter(), surface.Size * 1.03f);
+
+        DrawStateIndicator(surface, runtime.State);
     }
 
     public Rect2 GetSurfaceRect()
@@ -138,6 +140,22 @@ public partial class PancakeCanvas : Control
         if (radii.X <= 0 || radii.Y <= 0) return;
         DrawSetTransform(rect.GetCenter(), 0, new Vector2(radii.X / radii.Y, 1));
         DrawCircle(Vector2.Zero, radii.Y, color);
+        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+    }
+
+    private void DrawStateIndicator(Rect2 surface, PancakeState state)
+    {
+        Color? color = state switch
+        {
+            PancakeState.SideAReady => TianjinUi.Green,
+            PancakeState.SideAOverdone => TianjinUi.Orange,
+            PancakeState.Burnt => TianjinUi.Red,
+            _ => null,
+        };
+        if (color is not Color indicator) return;
+        Vector2 radii = surface.Size * 0.5f + new Vector2(8, 6);
+        DrawSetTransform(surface.GetCenter(), 0, new Vector2(radii.X / radii.Y, 1));
+        DrawArc(Vector2.Zero, radii.Y, 0, Mathf.Tau, 64, indicator, 6, true);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 

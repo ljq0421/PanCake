@@ -244,7 +244,7 @@ public partial class TianjinDayScreen : Control
             _orderRows[index] = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
             _orderRows[index].AddThemeConstantOverride("separation", 4);
             bubble.AddChild(_orderRows[index]);
-            CustomerPortraitVisual customerVisual = _art.CustomerPortrait("normal", CustomerExpression.Normal);
+            CustomerPortraitVisual customerVisual = _art.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId, CustomerExpression.Normal);
             _portraits[index] = new CustomerPortraitView();
             _portraits[index].SetVisual(customerVisual);
             _portraits[index].SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -445,11 +445,11 @@ public partial class TianjinDayScreen : Control
             else button.Scale = selected ? new Vector2(1.025f, 1.025f) : Vector2.One;
             button.Disabled = customer.State is CustomerState.Entering or CustomerState.Leaving or CustomerState.Served;
             CustomerExpression expression = TianjinArtCatalog.ResolveCustomerExpression(customer.State, customer.WasServed);
-            string portraitSignature = $"{customer.Type.Id}:{expression}";
+            string portraitSignature = $"{customer.AppearanceId}:{expression}";
             if (!string.Equals(_portraitSignatures[index], portraitSignature, StringComparison.Ordinal))
             {
                 _portraitSignatures[index] = portraitSignature;
-                _portraits[index].SetVisual(_art.CustomerPortrait(customer.Type.Id, expression));
+                _portraits[index].SetVisual(_art.CustomerPortrait(customer.AppearanceId, expression));
             }
             double motionTime = Time.GetTicksMsec() / 1000.0;
             _portraits[index].PivotOffset = _portraits[index].Size * 0.5f;

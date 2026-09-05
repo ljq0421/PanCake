@@ -153,7 +153,7 @@ public partial class DayController : Node
     public DeliveryEvaluation TryDeliverYoutiaoSelected(YoutiaoInventory inventory)
     {
         if (!inventory.TryPeek(out YoutiaoQuality quality))
-            return Rejected("沥油区没有可用油条。");
+            return Rejected("没有可用的成品油条。");
         CustomerRuntime? customer = GetDeliveryCustomer(out DeliveryEvaluation rejection);
         if (customer is null) return rejection;
         var item = new DeliveredItem(ProductKind.Youtiao, StableIds.Products.Youtiao, null, quality);

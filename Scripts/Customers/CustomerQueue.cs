@@ -171,6 +171,12 @@ public sealed class CustomerQueue
         while (_slots.Count < _capacity && _pending.Count > 0)
         {
             CustomerRuntime customer = _pending.Dequeue();
+            var unavailableAppearances = _slots.Select(item => item.AppearanceId).ToHashSet(StringComparer.Ordinal);
+            customer.AppearanceId = CustomerAppearanceCatalog.Select(
+                customer.Type.Id,
+                _plan.RandomSeed,
+                customer.Id,
+                unavailableAppearances);
             customer.State = CustomerState.Entering;
             customer.PhaseSeconds = 0;
             customer.Order.Status = OrderStatus.Waiting;

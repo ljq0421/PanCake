@@ -40,9 +40,9 @@ The player moves through a shop-management home, a timed service shift, a receip
 ## Evidence on Hand
 
 - Complete Tianjin chapter design and balancing documents in `docs`.
-- Background, three stove levels, three fryer levels, food layers, ingredients, tools, one reusable customer, soy milk, finished products, and coin art in `resource/art/TianJin`.
+- Background, three stove levels, three fryer levels, food layers, ingredients, tools, 24 customer appearances with four expressions each, soy milk, finished products, and coin art in `resource/art/TianJin`.
 - Existing deterministic self-tests and visual-capture scenes for all gameplay systems.
-- Additional customer portraits, a bespoke order bubble, and a bespoke patience frame are not yet available; runtime-drawn replacements must remain swappable.
+- Customer portraits are integrated. A bespoke order bubble and a bespoke patience frame are not yet available; their runtime-drawn replacements must remain swappable.
 
 ## Product Principles
 

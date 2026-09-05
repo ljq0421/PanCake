@@ -149,7 +149,7 @@ public sealed class FryerStateMachine
         if (Level.AutoRaise)
             return FryerActionResult.Fail(FryerActionError.InvalidState, "高级油条锅会在最佳时刻自动抬篮。");
         BeginRaise();
-        return FryerActionResult.Ok(Inventory.CanStore(Runtime.Quantity) ? "炸篮已抬起，开始沥油。" : "炸篮已抬起，等待沥油区空位。");
+        return FryerActionResult.Ok(Inventory.CanStore(Runtime.Quantity) ? "炸篮已抬起，开始沥油。" : "炸篮已抬起，等待成品区空位。");
     }
 
     private void BeginRaise()

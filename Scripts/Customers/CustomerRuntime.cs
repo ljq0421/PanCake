@@ -38,6 +38,7 @@ public sealed class CustomerRuntime
     public double PhaseSeconds { get; internal set; }
     public double ArrivalDelaySeconds { get; internal set; }
     public bool WasServed { get; internal set; }
+    public string AppearanceId { get; internal set; } = CustomerAppearanceCatalog.DefaultAppearanceId;
 
     public double LeaveAtSeconds => Type.LeaveAtSeconds * PatienceMultiplier;
     public double PatienceProgress => Math.Clamp(WaitSeconds / LeaveAtSeconds, 0, 1);

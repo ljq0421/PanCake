@@ -25,10 +25,6 @@ public sealed class TianjinArtCatalog
     {
         Load("background", "早餐铺主界面-1920x1080.png");
         Load("coin", "金币图标.png", true);
-        LoadCustomer("young_woman");
-        LoadCustomer("male_office");
-        LoadCustomer("elder_regular");
-        LoadCustomer("female_office");
         Load("pancake_base", "展开煎饼基础层-v2.png", true);
         Load("pancake_egg", "鸡蛋覆盖层.png", true);
         Load("pancake_sauce", "酱料覆盖层.png", true);
@@ -128,24 +124,20 @@ public sealed class TianjinArtCatalog
 
     public Texture2D RawYoutiao => Get("raw_youtiao");
 
-    public string CustomerAppearance(string customerTypeId) => customerTypeId switch
-    {
-        "office_worker" => "male_office",
-        "regular" => "elder_regular",
-        "big_order" => "female_office",
-        _ => "young_woman",
-    };
+    public string CustomerAppearance(string appearanceId) => CustomerAppearanceCatalog.IsKnown(appearanceId)
+        ? appearanceId
+        : CustomerAppearanceCatalog.DefaultAppearanceId;
 
-    public Texture2D CustomerBody(string customerTypeId) => Get($"customer_{CustomerAppearance(customerTypeId)}_body");
+    public Texture2D CustomerBody(string appearanceId) => LoadCustomerTexture(CustomerAppearance(appearanceId), "body.png");
 
-    public Texture2D CustomerHead(string customerTypeId, CustomerExpression expression) =>
-        Get($"customer_{CustomerAppearance(customerTypeId)}_head_{ExpressionKey(expression)}");
+    public Texture2D CustomerHead(string appearanceId, CustomerExpression expression) =>
+        LoadCustomerTexture(CustomerAppearance(appearanceId), $"head_{ExpressionKey(expression)}.png");
 
-    public CustomerPortraitVisual CustomerPortrait(string customerTypeId, CustomerExpression expression) =>
-        new(CustomerBody(customerTypeId), CustomerHead(customerTypeId, expression), new Vector2(220, 154));
+    public CustomerPortraitVisual CustomerPortrait(string appearanceId, CustomerExpression expression) =>
+        new(CustomerBody(appearanceId), CustomerHead(appearanceId, expression), new Vector2(220, 154));
 
-    public CustomerPortraitVisual CustomerPortrait(string customerTypeId, CustomerState state, bool wasServed) =>
-        CustomerPortrait(customerTypeId, ResolveCustomerExpression(state, wasServed));
+    public CustomerPortraitVisual CustomerPortrait(string appearanceId, CustomerState state, bool wasServed) =>
+        CustomerPortrait(appearanceId, ResolveCustomerExpression(state, wasServed));
 
     public static CustomerExpression ResolveCustomerExpression(CustomerState state, bool wasServed = false) => state switch
     {
@@ -173,16 +165,17 @@ public sealed class TianjinArtCatalog
             "soy_tray", "soy_milk", "serving_tray", "ingredient_tray", "batter_container", "sauce_container", "trash", "heart_effect", "star_effect",
             "map_background", "tianjin_map_node", "locked_map_node", "scraper", "spatula", "stove_1", "stove_2", "stove_3",
             "fryer_body_1", "fryer_body_2", "fryer_body_3", "fryer_basket_6", "fryer_basket_8",
-            "customer_young_woman_body", "customer_young_woman_head_happy", "customer_young_woman_head_normal",
-            "customer_young_woman_head_impatient", "customer_young_woman_head_angry",
-            "customer_male_office_body", "customer_male_office_head_happy", "customer_male_office_head_normal",
-            "customer_male_office_head_impatient", "customer_male_office_head_angry",
-            "customer_elder_regular_body", "customer_elder_regular_head_happy", "customer_elder_regular_head_normal",
-            "customer_elder_regular_head_impatient", "customer_elder_regular_head_angry",
-            "customer_female_office_body", "customer_female_office_head_happy", "customer_female_office_head_normal",
-            "customer_female_office_head_impatient", "customer_female_office_head_angry",
         };
-        return required.Where(key => !_textures.ContainsKey(key)).ToArray();
+        var missing = required.Where(key => !_textures.ContainsKey(key)).ToList();
+        foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
+        {
+            string folder = $"Customers/{appearance.Id}/";
+            foreach (string fileName in new[] { "body.png", "head_happy.png", "head_normal.png", "head_impatient.png", "head_angry.png" })
+            {
+                if (!ResourceLoader.Exists(Root + folder + fileName)) missing.Add($"customer_{appearance.Id}_{fileName[..^4]}");
+            }
+        }
+        return missing;
     }
 
     private Texture2D Get(string key) => _textures.TryGetValue(key, out Texture2D? texture)
@@ -196,14 +189,11 @@ public sealed class TianjinArtCatalog
         if (texture is not null) _textures[key] = trimTransparent ? Trim(texture) : texture;
     }
 
-    private void LoadCustomer(string appearance)
+    private static Texture2D LoadCustomerTexture(string appearance, string fileName)
     {
-        string folder = $"Customers/{appearance}/";
-        Load($"customer_{appearance}_body", folder + "body.png");
-        Load($"customer_{appearance}_head_happy", folder + "head_happy.png");
-        Load($"customer_{appearance}_head_normal", folder + "head_normal.png");
-        Load($"customer_{appearance}_head_impatient", folder + "head_impatient.png");
-        Load($"customer_{appearance}_head_angry", folder + "head_angry.png");
+        string path = Root + $"Customers/{appearance}/{fileName}";
+        Texture2D? texture = ResourceLoader.Load<Texture2D>(path);
+        return texture ?? throw new InvalidOperationException($"天津顾客美术资源未加载：{path}");
     }
 
     private static string ExpressionKey(CustomerExpression expression) => expression switch

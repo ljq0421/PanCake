@@ -16,16 +16,23 @@ public partial class VisualCapture : Node
     public override async void _Ready()
     {
         string[] args = OS.GetCmdlineUserArgs();
+        bool captureFryerWorkstation = args.Contains("--capture-fryer-workstation", StringComparer.Ordinal);
+        int captureFryerLevel = args.Contains("--capture-fryer-level2", StringComparer.Ordinal) ? 2
+            : args.Contains("--capture-fryer-level3", StringComparer.Ordinal) ? 3 : 1;
         bool captureRunning = OS.GetCmdlineUserArgs().Contains("--capture-running", StringComparer.Ordinal);
-        bool captureDay = captureRunning || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
-        int phase4Day = args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
+        bool captureDay = captureFryerWorkstation || captureRunning || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
+        int phase4Day = captureFryerWorkstation || args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
             : args.Contains("--capture-day9", StringComparer.Ordinal) ? 9
             : args.Contains("--capture-day15", StringComparer.Ordinal) ? 15 : 0;
         bool captureMap = args.Contains("--capture-map", StringComparer.Ordinal);
         bool capture720 = args.Contains("--capture-720", StringComparer.Ordinal);
         bool captureResult = args.Contains("--capture-result", StringComparer.Ordinal);
         bool captureLedger = args.Contains("--capture-ledger", StringComparer.Ordinal);
-        bool captureExpressions = args.Contains("--capture-customer-expressions", StringComparer.Ordinal);
+        string? expressionPageArg = args.FirstOrDefault(item => item.StartsWith("--capture-customer-expressions-page=", StringComparison.Ordinal));
+        int expressionPage = expressionPageArg is not null && int.TryParse(expressionPageArg.Split('=')[1], out int parsedPage)
+            ? Math.Clamp(parsedPage, 1, 6) : 1;
+        bool captureExpressions = args.Contains("--capture-customer-expressions", StringComparer.Ordinal) || expressionPageArg is not null;
+        bool captureFryerSlots = args.Contains("--capture-fryer-slots", StringComparer.Ordinal);
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
@@ -33,9 +40,13 @@ public partial class VisualCapture : Node
             GetNode<SaveService>("/root/SaveService").UsePathForTests(temporarySave);
         }
 
-        if (captureExpressions)
+        if (captureFryerSlots)
         {
-            BuildCustomerExpressionGallery();
+            BuildFryerSlotGallery();
+        }
+        else if (captureExpressions)
+        {
+            BuildCustomerExpressionGallery(expressionPage);
         }
         else if (captureDay || phase4Day > 0 || captureResult)
         {
@@ -44,6 +55,7 @@ public partial class VisualCapture : Node
             var controller = main.GetNode<DayController>("DayController");
             int day = captureResult ? 15 : phase4Day > 0 ? phase4Day : 1;
             var captureSave = GetNode<SaveService>("/root/SaveService");
+            if (captureFryerWorkstation) captureSave.Data.PurchasedFryerLevel = captureFryerLevel;
             if (day == 15)
             {
                 captureSave.Data.PurchasedStoveLevel = 3;
@@ -77,6 +89,21 @@ public partial class VisualCapture : Node
                         }
                         if (phase4Day == 15 && controller.CustomerQueue?.Slots.Count >= 5) break;
                     }
+                    if (captureFryerWorkstation)
+                    {
+                        PancakeWorkstation workstation = dayScreen.GetChildren().OfType<PancakeWorkstation>().Single();
+                        FryerStateMachine fryer = workstation.FryerMachine!;
+                        for (int quantity = 0; quantity < 4; quantity++) fryer.TryExecute(FryerCommand.LoadOne);
+                        fryer.TryExecute(FryerCommand.LowerBasket);
+                        fryer.Tick(fryer.Level.GoldenStartSeconds + 0.05);
+                        if (fryer.Level.AutoRaise)
+                            fryer.Tick(Math.Max(0, fryer.Level.AutoRaiseAtSeconds - fryer.Runtime.FrySeconds) + 0.05);
+                        else
+                            fryer.TryExecute(FryerCommand.RaiseBasket);
+                        fryer.Tick(fryer.Level.DrainSeconds + 0.05);
+                        for (int quantity = 0; quantity < 4; quantity++) fryer.TryExecute(FryerCommand.LoadOne);
+                        fryer.TryExecute(FryerCommand.LowerBasket);
+                    }
                 }
             }
         }
@@ -102,7 +129,9 @@ public partial class VisualCapture : Node
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string output = captureResult ? $"res://.godot/phase4_result{sizeSuffix}.png"
-            : captureExpressions ? $"res://.godot/customer_expressions{sizeSuffix}.png"
+            : captureFryerSlots ? $"res://.godot/fryer_slots{sizeSuffix}.png"
+            : captureFryerWorkstation ? $"res://.godot/fryer_workstation_lv{captureFryerLevel}{sizeSuffix}.png"
+            : captureExpressions ? $"res://.godot/customer_expressions_page{expressionPage}{sizeSuffix}.png"
             : phase4Day > 0 ? $"res://.godot/phase4_day{phase4Day}{sizeSuffix}.png"
             : captureMap ? $"res://.godot/phase4_map{sizeSuffix}.png"
             : captureLedger ? $"res://.godot/phase4_ledger{sizeSuffix}.png"
@@ -124,7 +153,7 @@ public partial class VisualCapture : Node
         GetTree().Quit(0);
     }
 
-    private void BuildCustomerExpressionGallery()
+    private void BuildFryerSlotGallery()
     {
         Node main = GetNode("../Main");
         main.ProcessMode = ProcessModeEnum.Disabled;
@@ -139,7 +168,85 @@ public partial class VisualCapture : Node
         TianjinUi.FullRect(gallery);
         AddChild(gallery);
 
-        Label title = TianjinUi.Label("天津顾客 · 半身表情验收", 34, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        Label title = TianjinUi.Label("油条炸锅 · 固定槽位视觉验收", 34, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        title.Position = new Vector2(70, 20);
+        title.Size = new Vector2(1780, 56);
+        gallery.AddChild(title);
+
+        var grid = new GridContainer { Columns = 4 };
+        grid.Position = new Vector2(64, 88);
+        grid.Size = new Vector2(1792, 930);
+        grid.AddThemeConstantOverride("h_separation", 14);
+        grid.AddThemeConstantOverride("v_separation", 14);
+        gallery.AddChild(grid);
+
+        DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        var art = new TianjinArtCatalog();
+        for (int level = 1; level <= 3; level++)
+        {
+            foreach (string state in new[] { "待下锅", "炸制中", "抬篮沥油", "焦糊素材" })
+            {
+                var machine = new FryerStateMachine(catalog.FryersByLevel[level]);
+                for (int quantity = 0; quantity < machine.Level.Capacity; quantity++) machine.TryExecute(FryerCommand.LoadOne);
+                if (state != "待下锅")
+                {
+                    machine.TryExecute(FryerCommand.LowerBasket);
+                    machine.Tick(machine.Level.GoldenStartSeconds + 0.05);
+                }
+                if (state == "抬篮沥油")
+                {
+                    if (machine.Level.AutoRaise)
+                        machine.Tick(Math.Max(0, machine.Level.AutoRaiseAtSeconds - machine.Runtime.FrySeconds) + 0.05);
+                    else
+                        machine.TryExecute(FryerCommand.RaiseBasket);
+                }
+                else if (state == "焦糊素材")
+                {
+                    // Lv3 normally auto-raises before burning. Force only the
+                    // render state here so every body can validate the shared
+                    // burnt sprite and lowered-basket alignment.
+                    machine.Runtime.State = FryerState.Burnt;
+                    machine.Runtime.Quality = YoutiaoQuality.Burnt;
+                }
+
+                var card = TianjinUi.Panel(new Color("#FFF9E8"), 16, 3, false);
+                card.CustomMinimumSize = new Vector2(430, 292);
+                grid.AddChild(card);
+                var row = new HBoxContainer();
+                row.AddThemeConstantOverride("separation", 8);
+                card.AddChild(row);
+                var view = new FryerVisualView
+                {
+                    CustomMinimumSize = new Vector2(210, 250),
+                    MouseFilter = Control.MouseFilterEnum.Ignore,
+                };
+                view.Bind(art, machine);
+                row.AddChild(view);
+                var label = TianjinUi.Label($"Lv{level}\n{state}\n{machine.Level.Capacity}/{machine.Level.Capacity}", 24,
+                    TianjinUi.BrownText, HorizontalAlignment.Center);
+                label.CustomMinimumSize = new Vector2(175, 150);
+                label.VerticalAlignment = VerticalAlignment.Center;
+                row.AddChild(label);
+            }
+        }
+    }
+
+    private void BuildCustomerExpressionGallery(int page)
+    {
+        Node main = GetNode("../Main");
+        main.ProcessMode = ProcessModeEnum.Disabled;
+        main.GetNode<Node2D>("ShopRoot").Visible = false;
+        foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Visible = false;
+
+        var gallery = new ColorRect
+        {
+            Color = new Color("#FFF4D5"),
+            Theme = TianjinUi.CreateTheme(),
+        };
+        TianjinUi.FullRect(gallery);
+        AddChild(gallery);
+
+        Label title = TianjinUi.Label($"天津顾客 · 半身表情验收 {page}/6", 34, TianjinUi.BrownDark, HorizontalAlignment.Center);
         title.Position = new Vector2(70, 24);
         title.Size = new Vector2(1780, 58);
         gallery.AddChild(title);
@@ -156,23 +263,17 @@ public partial class VisualCapture : Node
             grid.AddChild(Header(expressionName, 365));
 
         var art = new TianjinArtCatalog();
-        (string Id, string Name)[] customers =
-        {
-            ("normal", "普通顾客\n年轻女性"),
-            ("office_worker", "赶时间上班族\n男上班族"),
-            ("regular", "老顾客\n老大爷"),
-            ("big_order", "大订单顾客\n女上班族"),
-        };
+        CustomerAppearanceDefinition[] customers = CustomerAppearanceCatalog.All.Skip((page - 1) * 4).Take(4).ToArray();
         CustomerExpression[] expressions = Enum.GetValues<CustomerExpression>();
-        foreach ((string customerType, string displayName) in customers)
+        foreach (CustomerAppearanceDefinition appearance in customers)
         {
-            grid.AddChild(Header(displayName, 250));
+            grid.AddChild(Header(appearance.DisplayName, 250));
             foreach (CustomerExpression expression in expressions)
             {
                 var panel = TianjinUi.Panel(TianjinUi.Paper, 14, 3, false);
                 panel.CustomMinimumSize = new Vector2(365, 202);
                 var portrait = new CustomerPortraitView();
-                portrait.SetVisual(art.CustomerPortrait(customerType, expression));
+                portrait.SetVisual(art.CustomerPortrait(appearance.Id, expression));
                 portrait.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
                 panel.AddChild(portrait);
                 grid.AddChild(panel);

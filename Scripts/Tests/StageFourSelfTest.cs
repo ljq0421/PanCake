@@ -5,6 +5,7 @@ using ProjectCake.Customers;
 using ProjectCake.Data;
 using ProjectCake.Fryer;
 using ProjectCake.Gameplay;
+using ProjectCake.Interaction;
 using ProjectCake.Inventory;
 using ProjectCake.Orders;
 using ProjectCake.Pancake;
@@ -24,6 +25,7 @@ public partial class StageFourSelfTest : Node
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
             TestCatalog(catalog);
             TestArtCatalog();
+            TestCustomerAppearances(catalog);
             TestFryers(catalog);
             TestSoyMilk();
             TestOrderProgress(catalog);
@@ -80,27 +82,32 @@ public partial class StageFourSelfTest : Node
         Check(art.Stove(1) != art.Stove(2) && art.Stove(2) != art.Stove(3), "煎饼炉 Lv1～Lv3 使用独立图片");
         Check(art.Fryer(1) != art.Fryer(2) && art.Fryer(2) != art.Fryer(3), "油条锅 Lv1～Lv3 使用独立图片");
         Check(art.FryerBasket(1) != art.FryerBasket(2) && ReferenceEquals(art.FryerBasket(2), art.FryerBasket(3)), "Lv1 使用 6 根滤篮，Lv2/Lv3 共用 8 根滤篮");
+        Check(FryerVisualView.SlotCountForLevel(1) == 6 && FryerVisualView.SlotCountForLevel(2) == 8
+            && FryerVisualView.SlotCountForLevel(3) == 8, "Lv1 使用六槽布局，Lv2/Lv3 使用八槽布局");
+        Check(Enumerable.Range(1, 3).All(FryerVisualView.LayoutMeetsConstraints), "炸锅槽位位置、角度、缩放与绘制顺序满足视觉约束");
+        Check(Enumerable.Range(1, 3).All(FryerVisualView.LoweredBasketFitsInnerFrame), "下锅后滤篮外框与各级炸锅内框对齐且下边缘不越界");
         Check(!ReferenceEquals(art.FoldedPancake, art.FinishedPancake), "折叠煎饼与装袋成品使用独立素材");
         Check(art.PancakeBurntOverlay.GetWidth() > 0 && art.BurntYoutiao.GetWidth() > 0, "煎饼和油条焦糊状态素材可加载");
         Check(art.ServingTray.GetWidth() > 0 && art.YoutiaoRack.GetWidth() > 0 && art.Trash.GetWidth() > 0, "出餐、沥油和垃圾桶功能素材可加载");
         Check(art.MapBackground.GetWidth() == 1672 && art.MapBackground.GetHeight() == 941
             && art.TianjinMapNode.GetWidth() > 0 && art.LockedMapNode.GetWidth() > 0, "地图背景与城市节点素材可加载");
-        string[] customerTypes = { "normal", "office_worker", "regular", "big_order" };
-        Check(customerTypes.Select(art.CustomerBody).Distinct().Count() == 4, "四类顾客使用四套独立身体素材");
-        Check(art.CustomerAppearance("normal") == "young_woman" && art.CustomerAppearance("office_worker") == "male_office"
-            && art.CustomerAppearance("regular") == "elder_regular" && art.CustomerAppearance("big_order") == "female_office",
-            "四类顾客形象映射固定");
-        foreach (string customerType in customerTypes)
+        Check(CustomerAppearanceCatalog.All.Count == 24 && CustomerAppearanceCatalog.All.Select(item => item.Id).Distinct().Count() == 24,
+            "天津顾客目录包含 24 套唯一外观");
+        Check(CustomerAppearanceCatalog.CandidatesFor("normal").Count == 24
+            && CustomerAppearanceCatalog.CandidatesFor("office_worker").Count == 9
+            && CustomerAppearanceCatalog.CandidatesFor("regular").Count == 9
+            && CustomerAppearanceCatalog.CandidatesFor("big_order").Count == 6, "普通与三类特殊顾客外观池数量准确");
+        foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
         {
-            CustomerPortraitVisual[] portraits = Enum.GetValues<CustomerExpression>().Select(expression => art.CustomerPortrait(customerType, expression)).ToArray();
+            CustomerPortraitVisual[] portraits = Enum.GetValues<CustomerExpression>().Select(expression => art.CustomerPortrait(appearance.Id, expression)).ToArray();
             Check(portraits.All(portrait => ReferenceEquals(portrait.Body, portraits[0].Body))
-                && portraits.Select(portrait => portrait.Head).Distinct().Count() == 4, $"{customerType} 固定身体并切换四张完整头部");
+                && portraits.Select(portrait => portrait.Head).Distinct().Count() == 4, $"{appearance.DisplayName} 固定身体并切换四张完整头部");
             Check(portraits.All(portrait => portrait.Body.GetWidth() == 1086 && portrait.Body.GetHeight() == 1448
-                && portrait.Head.GetWidth() == 1086 && portrait.Head.GetHeight() == 1448), $"{customerType} 分层素材画布统一为 1086×1448");
+                && portrait.Head.GetWidth() == 1086 && portrait.Head.GetHeight() == 1448), $"{appearance.DisplayName} 分层素材画布统一为 1086×1448");
         }
-        Check(ReferenceEquals(art.CustomerBody("normal"), art.CustomerBody("missing_customer_type"))
-            && ReferenceEquals(art.CustomerHead("normal", CustomerExpression.Normal), art.CustomerHead("missing_customer_type", CustomerExpression.Normal)),
-            "缺失顾客类型稳定回退到年轻女性普通顾客");
+        Check(ReferenceEquals(art.CustomerBody("young_woman"), art.CustomerBody("missing_appearance"))
+            && ReferenceEquals(art.CustomerHead("young_woman", CustomerExpression.Normal), art.CustomerHead("missing_appearance", CustomerExpression.Normal)),
+            "缺失顾客外观稳定回退到年轻女性");
         Check(TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Entering) == CustomerExpression.Normal
             && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Happy) == CustomerExpression.Happy
             && TianjinArtCatalog.ResolveCustomerExpression(CustomerState.Normal) == CustomerExpression.Normal
@@ -114,6 +121,26 @@ public partial class StageFourSelfTest : Node
         Check(art.StoveVisual(3).DisplaySize.X > 0 && art.ProductVisual(ProductKind.SoyMilk).DisplaySize.Y > 0, "设备与商品映射包含独立显示规格");
         var secondCatalog = new TianjinArtCatalog();
         Check(ReferenceEquals(art.Ingredient(StableIds.Ingredients.Ham), secondCatalog.Ingredient(StableIds.Ingredients.Ham)), "多界面共享已裁切纹理缓存");
+    }
+
+    private void TestCustomerAppearances(DataCatalog catalog)
+    {
+        IReadOnlyList<string> office = CustomerAppearanceCatalog.CandidatesFor("office_worker");
+        IReadOnlyList<string> regular = CustomerAppearanceCatalog.CandidatesFor("regular");
+        IReadOnlyList<string> bigOrder = CustomerAppearanceCatalog.CandidatesFor("big_order");
+        Check(office.Contains("delivery_rider") && office.Contains("taxi_driver") && office.Contains("tianjin_port_worker"),
+            "赶时间顾客池包含通勤与工作身份");
+        Check(regular.Contains("morning_elder") && regular.Contains("culture_street_shopkeeper") && regular.Contains("kite_artisan"),
+            "熟客池包含社区与传统手艺身份");
+        Check(bigOrder.Contains("female_office") && bigOrder.Contains("tourist") && bigOrder.Contains("culture_street_owner"),
+            "大订单顾客池包含已确认身份");
+        Check(CustomerAppearanceCatalog.Select("missing_type", 1001, "C001") == CustomerAppearanceCatalog.DefaultAppearanceId,
+            "未知顾客类型回退到年轻女性外观");
+
+        string[] first = BuildAppearanceSequence(catalog, 1001);
+        string[] second = BuildAppearanceSequence(catalog, 1001);
+        Check(first.SequenceEqual(second), "相同种子与队列流程复现相同外观序列");
+        Check(first.Distinct(StringComparer.Ordinal).Count() == first.Length, "五名同屏顾客外观互不重复");
     }
 
     private void TestFryers(DataCatalog catalog)
@@ -354,12 +381,31 @@ public partial class StageFourSelfTest : Node
         AddChild(workstation);
         workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[5], new TianjinArtCatalog());
         Check(workstation.FindChild("FryerVisual", true, false) is FryerVisualView, "工作台使用锅体与滤篮分层的炸锅视图");
+        Check(workstation.FindChild("FryerStack", true, false) is Control { Size: var fryerSize }
+            && fryerSize.X == 365 && fryerSize.Y == 396, "桌面炸锅调整为上一版本线性尺寸的 0.8 倍");
+        Check(workstation.FindChild("FinishedYoutiaoArea", true, false) is HBoxContainer
+            && workstation.FindChild("FinishedYoutiaoStock", true, false) is Label
+            && workstation.FindChild("FinishedYoutiaoDrag", true, false) is DragItem, "成品油条库存与拖拽入口合并显示且不再使用独立沥油架");
         Check(workstation.FindChild("TrashZone", true, false) is not null, "工作台接入可拖放垃圾桶");
         string[] framelessAreas = { "FryerArea", "StoveArea", "IngredientArea", "DeliveryArea" };
         Check(framelessAreas.All(name => workstation.FindChild(name, true, false) is Control and not PanelContainer), "四个设备区域使用无框场景容器");
         Godot.Collections.Array<Node> ingredientSlots = workstation.FindChildren("IngredientSlot_*", "PanelContainer", true, false);
         Check(ingredientSlots.Count == 6 && ingredientSlots.Cast<PanelContainer>().All(slot => slot.GetThemeStylebox("panel") is StyleBoxEmpty), "六个配料槽不再绘制卡片框体");
         workstation.QueueFree();
+    }
+
+    private static string[] BuildAppearanceSequence(DataCatalog catalog, int seed)
+    {
+        PlannedCustomer[] customers = Enumerable.Range(1, 5).Select(index => new PlannedCustomer
+        {
+            CustomerId = $"appearance-{index}",
+            CustomerTypeId = "normal",
+            ArrivalTime = 0,
+            Order = Order($"appearance-order-{index}", "normal", 0),
+        }).ToArray();
+        var queue = new CustomerQueue(new DayPlan { Day = 1, RandomSeed = seed, Customers = customers }, catalog.CustomersById, 1, 5);
+        queue.Tick(0, 0.01, true);
+        return queue.Slots.Select(item => item.AppearanceId).ToArray();
     }
 
     private DayPlan Generate(DataCatalog catalog, int day) => new OrderGenerator().Generate(catalog.DaysByNumber[day], catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);

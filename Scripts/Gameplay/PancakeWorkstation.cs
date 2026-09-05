@@ -187,7 +187,7 @@ public partial class PancakeWorkstation : Control
         TianjinUi.FullRect(stage);
         AddChild(stage);
         Control fryer = BuildFryer();
-        Place(fryer, 24, 612, 348, 420);
+        Place(fryer, 24, 486, 540, 546);
         stage.AddChild(fryer);
         Control stove = BuildStove();
         Place(stove, 430, 486, 850, 546);
@@ -216,74 +216,72 @@ public partial class PancakeWorkstation : Control
 
     private Control BuildFryer()
     {
-        var root = FramelessRoot("FryerArea", 348);
+        var root = FramelessRoot("FryerArea", 540);
         _fryerPanel = root;
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 5);
-        FullRect(column, 8, 0, -8, 0);
-        root.AddChild(column);
-        column.AddChild(FloatingText("油条备货", 22, TianjinUi.BrownText));
+        Label title = FloatingText("油条备货", 22, TianjinUi.BrownText);
+        Place(title, 4, 0, 388, 34);
+        root.AddChild(title);
 
-        var equipmentRow = new HBoxContainer();
-        equipmentRow.AddThemeConstantOverride("separation", 6);
-        var fryerStack = new Control { CustomMinimumSize = new Vector2(154, 166) };
+        var fryerStack = new Control { Name = "FryerStack" };
+        Place(fryerStack, 0, 20, 365, 396);
         _fryerVisual = new FryerVisualView { Name = "FryerVisual", MouseFilter = MouseFilterEnum.Ignore };
         FullRect(_fryerVisual, 0, 0, 0, 0);
         fryerStack.AddChild(_fryerVisual);
         var basket = new DropZone { Name = "FryerBasketDropZone" };
-        FullRect(basket, 18, 28, -18, -28);
+        FullRect(basket, 41, 62, -41, -122);
         basket.Configure(id => id == RawYoutiaoPayload && CanLoadRawYoutiao(), _ => ExecuteFryer(FryerCommand.LoadOne));
         fryerStack.AddChild(basket);
         _drag.RegisterZone(basket);
-        equipmentRow.AddChild(fryerStack);
+        root.AddChild(fryerStack);
 
-        var loadColumn = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var raw = new DragItem { CustomMinimumSize = new Vector2(0, 104), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var loadColumn = new VBoxContainer();
+        Place(loadColumn, 365, 70, 78, 230);
+        var raw = new DragItem { CustomMinimumSize = new Vector2(0, 190), SizeFlagsHorizontal = SizeFlags.ExpandFill };
         raw.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        TextureRect rawTray = TianjinUi.Texture(_art.IngredientTray, new Vector2(0, 104));
+        TextureRect rawTray = TianjinUi.Texture(_art.IngredientTray, new Vector2(0, 190));
         rawTray.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         rawTray.Modulate = new Color(1, 1, 1, 0.72f);
         rawTray.MouseFilter = MouseFilterEnum.Ignore;
         raw.AddChild(rawTray);
-        var rawContent = new HBoxContainer();
-        rawContent.AddChild(TianjinUi.Texture(_art.RawYoutiao, new Vector2(58, 58)));
-        rawContent.AddChild(FloatingText("生油条\n拖入炸篮", 16, TianjinUi.BrownText, HorizontalAlignment.Center));
+        var rawContent = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        rawContent.AddChild(TianjinUi.Texture(_art.RawYoutiao, new Vector2(68, 92)));
+        rawContent.AddChild(FloatingText("生油条\n拖入", 15, TianjinUi.BrownText, HorizontalAlignment.Center));
         raw.AddChild(rawContent);
         raw.Configure(_drag, RawYoutiaoPayload, "生油条", new Color("#F7D892"), new DragVisualSpec(_art.RawYoutiao, new Vector2(105, 105)), CanLoadRawYoutiao);
         raw.StartRejected += () => Reject("炸篮当前不能继续装料。");
         ConfigureArtInteraction(raw);
         loadColumn.AddChild(raw);
-        loadColumn.AddChild(FloatingText("拖到左侧炸篮", 14, TianjinUi.BrownText, HorizontalAlignment.Center));
-        equipmentRow.AddChild(loadColumn);
-        column.AddChild(equipmentRow);
+        loadColumn.AddChild(FloatingText("拖到炸篮", 13, TianjinUi.BrownText, HorizontalAlignment.Center));
+        root.AddChild(loadColumn);
 
         _fryerStatus = FloatingText("尚未解锁", 16, TianjinUi.BrownText, HorizontalAlignment.Center);
-        column.AddChild(_fryerStatus);
+        Place(_fryerStatus, 4, 402, 388, 28);
+        root.AddChild(_fryerStatus);
         var actions = new HBoxContainer();
+        Place(actions, 4, 432, 388, 56);
         _lowerBasket = ActionButton("下锅", () => ExecuteFryer(FryerCommand.LowerBasket));
         _raiseBasket = ActionButton("抬篮", () => ExecuteFryer(FryerCommand.RaiseBasket));
         _discardBatch = ActionButton("清理", () => ExecuteFryer(FryerCommand.Discard));
         actions.AddChild(_lowerBasket); actions.AddChild(_raiseBasket); actions.AddChild(_discardBatch);
-        column.AddChild(actions);
+        root.AddChild(actions);
 
-        var stockRow = new HBoxContainer { CustomMinimumSize = new Vector2(0, 70) };
-        var rack = TianjinUi.Texture(_art.YoutiaoRack, new Vector2(112, 68));
-        rack.Modulate = new Color(1, 1, 1, 0.82f);
-        stockRow.AddChild(rack);
-        _fryerStock = FloatingText("沥油区 0/0", 15, TianjinUi.BrownText, HorizontalAlignment.Center);
+        var stockRow = new HBoxContainer { Name = "FinishedYoutiaoArea" };
+        Place(stockRow, 4, 490, 388, 56);
+        _fryerStock = FloatingText("成品油条 0/0", 16, TianjinUi.BrownText, HorizontalAlignment.Center);
+        _fryerStock.Name = "FinishedYoutiaoStock";
         _fryerStock.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         stockRow.AddChild(_fryerStock);
-        _storedYoutiao = new DragItem { CustomMinimumSize = new Vector2(116, 54), Visible = false };
+        _storedYoutiao = new DragItem { Name = "FinishedYoutiaoDrag", CustomMinimumSize = new Vector2(188, 60), Visible = false };
         _storedYoutiao.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         var storedContent = new HBoxContainer();
-        storedContent.AddChild(TianjinUi.Texture(_art.Ingredient(StableIds.Ingredients.Youtiao), new Vector2(52, 48)));
-        storedContent.AddChild(FloatingText("取油条", 15, TianjinUi.BrownText, HorizontalAlignment.Center));
+        storedContent.AddChild(TianjinUi.Texture(_art.Ingredient(StableIds.Ingredients.Youtiao), new Vector2(58, 54)));
+        storedContent.AddChild(FloatingText("拖拽取用", 16, TianjinUi.BrownText, HorizontalAlignment.Center));
         _storedYoutiao.AddChild(storedContent);
         _storedYoutiao.Configure(_drag, StoredYoutiaoPayload, "熟油条", TianjinUi.Yellow, new DragVisualSpec(_art.Ingredient(StableIds.Ingredients.Youtiao), new Vector2(115, 105)), () => InteractionEnabled && !Paused && FryerMachine?.Inventory.Count > 0);
-        _storedYoutiao.StartRejected += () => Reject("沥油区没有可用油条。");
+        _storedYoutiao.StartRejected += () => Reject("没有可用的成品油条。");
         ConfigureArtInteraction(_storedYoutiao);
         stockRow.AddChild(_storedYoutiao);
-        column.AddChild(stockRow);
+        root.AddChild(stockRow);
         return root;
     }
 
@@ -759,7 +757,7 @@ public partial class PancakeWorkstation : Control
             string automation = FryerMachine.Level.AutoRaise ? " · 自动抬篮" : string.Empty;
             _fryerVisual.Refresh();
             _fryerStatus.Text = $"Lv{FryerMachine.Level.Level}{automation} · {FryerStateName(fryer.State)} · {fryer.Quantity}/{FryerMachine.Level.Capacity} · {QualityName(fryer.Quality)}";
-            _fryerStock.Text = $"沥油区 {FryerMachine.Inventory.Count}/{FryerMachine.Inventory.Capacity}  金黄 {FryerMachine.Inventory.CountQuality(YoutiaoQuality.Golden)}";
+            _fryerStock.Text = $"成品油条 {FryerMachine.Inventory.Count}/{FryerMachine.Inventory.Capacity}  金黄 {FryerMachine.Inventory.CountQuality(YoutiaoQuality.Golden)}";
             _storedYoutiao.Visible = FryerMachine.Inventory.Count > 0;
             _lowerBasket.Disabled = !CanInteract || fryer.State != FryerState.Loaded;
             _raiseBasket.Disabled = !CanInteract || fryer.State != FryerState.Frying || FryerMachine.Level.AutoRaise;

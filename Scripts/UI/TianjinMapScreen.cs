@@ -1,11 +1,13 @@
 using Godot;
 using ProjectCake.Core;
+using ProjectCake.Data;
 
 namespace ProjectCake.UI;
 
 public partial class TianjinMapScreen : Control
 {
     public event Action? HubRequested;
+    public event Action<string>? CityRequested;
 
     private SaveService _save = null!;
     private TianjinArtCatalog _art = null!;
@@ -71,11 +73,15 @@ public partial class TianjinMapScreen : Control
         var route = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, SizeFlagsVertical = SizeFlags.ExpandFill };
         route.AddThemeConstantOverride("separation", 45); root.AddChild(route);
         _tianjinCard = CityCard(_art.TianjinMapNode, "天津", "煎饼果子 · 油条 · 豆浆", out _tianjinState); route.AddChild(_tianjinCard);
+        _tianjinCard.MouseDefaultCursorShape = CursorShape.PointingHand;
+        _tianjinCard.GuiInput += input => { if (IsClick(input)) CityRequested?.Invoke(StableIds.Cities.Tianjin); };
         var arrow = Text("➜", 56, TianjinUi.Brown); arrow.VerticalAlignment = VerticalAlignment.Center; route.AddChild(arrow);
         _wuhanCard = CityCard(_art.LockedMapNode, "武汉", "下一章", out _wuhanState); route.AddChild(_wuhanCard);
+        _wuhanCard.MouseDefaultCursorShape = CursorShape.PointingHand;
+        _wuhanCard.GuiInput += input => { if (IsClick(input) && _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) CityRequested?.Invoke(StableIds.Cities.Wuhan); };
         _wuhanLockedIcon = _wuhanCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon");
         _wuhanUnlockedEmblem = _wuhanCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem");
-        root.AddChild(Text("完成天津 Day 15 并获得一星，即可点亮城市印章并开放下一站。", 19, TianjinUi.BrownText));
+        root.AddChild(Text("完成天津 Day 15 并获得一星即可前往武汉；点亮武汉后，下一站进入筹备。", 19, TianjinUi.BrownText));
     }
 
     private void Render()
@@ -86,17 +92,21 @@ public partial class TianjinMapScreen : Control
         _tianjinState.Text = complete ? $"已点亮  {new string('★', stars)}{new string('☆', 3 - stars)}\n最高星级：{stars}" : "尚未点亮\n完成 Day 15 并至少获得一星";
         SetCardColor(_tianjinCard, complete ? TianjinUi.Yellow : TianjinUi.CreamMuted);
 
-        bool wuhan = _save.Data.UnlockedCityIds.Contains("city:wuhan", StringComparer.Ordinal);
-        _wuhanLockedIcon.Visible = !wuhan;
-        _wuhanUnlockedEmblem.Visible = wuhan;
-        _wuhanState.Text = wuhan ? "路线已开放\n章节敬请期待" : "未开放\n先点亮天津";
-        SetCardColor(_wuhanCard, wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);
+        bool wuhan = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
+        _wuhanLockedIcon.Texture = wuhan ? new WuhanArtCatalog().CityNode : _art.LockedMapNode;
+        _wuhanLockedIcon.Visible = true;
+        _wuhanUnlockedEmblem.Visible = false;
+        CityProgressData wuhanProgress = _save.Data.GetCity(StableIds.Cities.Wuhan);
+        _wuhanState.Text = !wuhan ? "未开放\n先点亮天津" : wuhanProgress.Completed
+            ? $"已点亮  {new string('★', wuhanProgress.BestStars)}{new string('☆', 3 - wuhanProgress.BestStars)}\n下一站筹备中"
+            : $"路线已开放\n武汉 Day {wuhanProgress.HighestUnlockedDay}";
+        SetCardColor(_wuhanCard, wuhanProgress.Completed ? TianjinUi.Yellow : wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);
     }
 
     private static PanelContainer CityCard(Texture2D icon, string city, string subtitle, out Label state)
     {
         var card = new PanelContainer { CustomMinimumSize = new Vector2(470, 390) };
-        var box = new VBoxContainer { Name = "VBoxContainer", Alignment = BoxContainer.AlignmentMode.Center };
+        var box = new VBoxContainer { Name = "VBoxContainer", Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
         box.AddThemeConstantOverride("separation", 10); card.AddChild(box);
         var iconStack = new Control { Name = "IconStack", CustomMinimumSize = new Vector2(170, 170) };
         TextureRect cityIcon = TianjinUi.Texture(icon, Vector2.Zero);
@@ -128,6 +138,8 @@ public partial class TianjinMapScreen : Control
             ShadowColor = TianjinUi.Shadow, ShadowSize = 5, ShadowOffset = new Vector2(0, 6),
         });
     }
+
+    private static bool IsClick(InputEvent input) => input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false };
 
     private static Label Text(string text, int size, string color)
     {

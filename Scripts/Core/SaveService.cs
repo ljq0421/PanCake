@@ -18,9 +18,52 @@ public sealed class DayBestRecord
     public int YoutiaoBurnt { get; set; }
 }
 
+public sealed class CityProgressData
+{
+    public int HighestUnlockedDay { get; set; } = 1;
+    public int BestStars { get; set; }
+    public bool Completed { get; set; }
+    public Dictionary<string, int> EquipmentLevels { get; set; } = new(StringComparer.Ordinal);
+    public List<string> UnlockedContentIds { get; set; } = new();
+    public List<string> UnlockedCollectibleIds { get; set; } = new();
+    public Dictionary<int, DayBestRecord> DayBestRecords { get; set; } = new();
+    public DayPlan? LastDayPlan { get; set; }
+}
+
 public sealed class SaveData
 {
     public int Version { get; set; } = SaveService.CurrentVersion;
+    public int Coins { get; set; }
+    public Dictionary<string, CityProgressData> Cities { get; set; } = new(StringComparer.Ordinal) { [StableIds.Cities.Tianjin] = SaveService.NewTianjinProgress() };
+    public List<string> UnlockedCityIds { get; set; } = new() { StableIds.Cities.Tianjin };
+
+    [JsonIgnore] public CityProgressData Tianjin => GetCity(StableIds.Cities.Tianjin);
+    [JsonIgnore] public CityProgressData Wuhan => GetCity(StableIds.Cities.Wuhan);
+    [JsonIgnore] public int HighestUnlockedDay { get => Tianjin.HighestUnlockedDay; set => Tianjin.HighestUnlockedDay = value; }
+    [JsonIgnore] public int PurchasedStoveLevel { get => Equipment(Tianjin, "pancake_stove", 1); set => Tianjin.EquipmentLevels["pancake_stove"] = value; }
+    [JsonIgnore] public int PurchasedIngredientStationLevel { get => Equipment(Tianjin, "ingredient_station", 1); set => Tianjin.EquipmentLevels["ingredient_station"] = value; }
+    [JsonIgnore] public int PurchasedFryerLevel { get => Equipment(Tianjin, "fryer", 0); set => Tianjin.EquipmentLevels["fryer"] = value; }
+    [JsonIgnore] public List<string> UnlockedUpgradeIds { get => Tianjin.UnlockedContentIds; set => Tianjin.UnlockedContentIds = value; }
+    [JsonIgnore] public Dictionary<int, DayBestRecord> DayBestRecords { get => Tianjin.DayBestRecords; set => Tianjin.DayBestRecords = value; }
+    [JsonIgnore] public DayPlan? LastDayPlan { get => Tianjin.LastDayPlan; set => Tianjin.LastDayPlan = value; }
+    [JsonIgnore] public int TianjinBestStars { get => Tianjin.BestStars; set => Tianjin.BestStars = value; }
+    [JsonIgnore] public bool TianjinCompleted { get => Tianjin.Completed; set => Tianjin.Completed = value; }
+
+    public CityProgressData GetCity(string cityId)
+    {
+        if (!Cities.TryGetValue(cityId, out CityProgressData? progress))
+        {
+            progress = cityId == StableIds.Cities.Wuhan ? SaveService.NewWuhanProgress() : SaveService.NewTianjinProgress();
+            Cities[cityId] = progress;
+        }
+        return progress;
+    }
+    private static int Equipment(CityProgressData city, string id, int fallback) => city.EquipmentLevels.GetValueOrDefault(id, fallback);
+}
+
+internal sealed class LegacySaveDataV2
+{
+    public int Version { get; set; }
     public int Coins { get; set; }
     public int HighestUnlockedDay { get; set; } = 1;
     public int PurchasedStoveLevel { get; set; } = 1;
@@ -50,377 +93,200 @@ public readonly record struct DayCommitResult(int PermanentCoinGain, bool NewBes
 
 public partial class SaveService : Node
 {
-    public const int CurrentVersion = 2;
-    public const string DefaultSavePath = "user://project_cake_save_v2.json";
-    public const string LegacySavePath = "user://project_cake_save_v1.json";
-
+    public const int CurrentVersion = 3;
+    public const string DefaultSavePath = "user://project_cake_save_v3.json";
+    public const string LegacySavePath = "user://project_cake_save_v2.json";
+    private const string LegacyV1Path = "user://project_cake_save_v1.json";
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = false,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+        WriteIndented = true, PropertyNameCaseInsensitive = false, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         Converters = { new JsonStringEnumConverter() },
     };
 
     private string _savePath = DefaultSavePath;
     private string? _legacyPath = LegacySavePath;
-
     public event Action? Changed;
     public SaveData Data { get; private set; } = new();
     public bool HasLoadError { get; private set; }
     public string LoadErrorMessage { get; private set; } = string.Empty;
     public string CorruptBackupPath { get; private set; } = string.Empty;
     public bool MigratedLegacySave { get; private set; }
-
     public override void _Ready() => Load();
-
-    public void UsePathForTests(string path)
-    {
-        _savePath = path;
-        _legacyPath = null;
-        Load();
-    }
-
-    public void UsePathsForTests(string currentPath, string legacyPath)
-    {
-        _savePath = currentPath;
-        _legacyPath = legacyPath;
-        Load();
-    }
+    public void UsePathForTests(string path) { _savePath = path; _legacyPath = null; Load(); }
+    public void UsePathsForTests(string currentPath, string legacyPath) { _savePath = currentPath; _legacyPath = legacyPath; Load(); }
 
     public void Load()
     {
-        ClearLoadError();
-        MigratedLegacySave = false;
+        ClearLoadError(); MigratedLegacySave = false;
         string absolute = ProjectSettings.GlobalizePath(_savePath);
         if (!File.Exists(absolute))
         {
-            if (_legacyPath is not null && File.Exists(ProjectSettings.GlobalizePath(_legacyPath)))
-            {
-                MigrateLegacy(ProjectSettings.GlobalizePath(_legacyPath));
-                Changed?.Invoke();
-                return;
-            }
-            Data = NewData();
-            Changed?.Invoke();
-            return;
+            string? legacy = FindLegacyAbsolute();
+            if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
+            Data = new SaveData(); Changed?.Invoke(); return;
         }
-
-        try
-        {
-            SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions);
-            Validate(loaded);
-            Data = loaded!;
-        }
-        catch (Exception exception)
-        {
-            SetCorruptError(absolute, exception);
-            Data = NewData();
-        }
+        try { SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions); Validate(loaded); Data = loaded!; }
+        catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
 
     public bool ConfirmCreateNewAfterCorruption(out string error)
     {
-        if (!HasLoadError)
-        {
-            error = "当前没有需要恢复的损坏存档。";
-            return false;
-        }
-        Data = NewData();
-        ClearLoadError();
-        bool saved = TrySave(out error);
-        Changed?.Invoke();
-        return saved;
+        if (!HasLoadError) { error = "当前没有需要恢复的损坏存档。"; return false; }
+        Data = new SaveData(); ClearLoadError(); bool saved = TrySave(out error); Changed?.Invoke(); return saved;
     }
 
     public bool ApplyStartUnlocks(DayConfig config, out string error)
     {
-        SaveData snapshot = Clone(Data);
-        bool changed = false;
-        if (config.StartUnlocks.Contains("equipment:fryer_lv1", StringComparer.Ordinal) && Data.PurchasedFryerLevel < 1)
+        SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId); bool changed = false;
+        foreach (string unlock in config.StartUnlocks)
         {
-            Data.PurchasedFryerLevel = 1;
-            changed = true;
+            if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) { city.UnlockedContentIds.Add(unlock); changed = true; }
+            if (unlock == "equipment:fryer_lv1" && config.CityId == StableIds.Cities.Tianjin && Data.PurchasedFryerLevel < 1) { Data.PurchasedFryerLevel = 1; changed = true; }
+            if (unlock == "equipment:doupi_griddle_lv1" && city.EquipmentLevels.GetValueOrDefault("doupi_griddle") < 1) { city.EquipmentLevels["doupi_griddle"] = 1; changed = true; }
+            if (unlock == "equipment:egg_rice_wine_station" && city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station") < 1) { city.EquipmentLevels["egg_rice_wine_station"] = 1; changed = true; }
         }
-        if (!changed)
-        {
-            error = string.Empty;
-            return true;
-        }
-        if (!TrySave(out error))
-        {
-            Data = snapshot;
-            return false;
-        }
-        Changed?.Invoke();
-        return true;
+        if (!changed) { error = string.Empty; return true; }
+        city.UnlockedContentIds.Sort(StringComparer.Ordinal);
+        if (!TrySave(out error)) { Data = snapshot; return false; }
+        Changed?.Invoke(); return true;
     }
 
     public DayCommitResult CommitDay(DayResult result, DayPlan plan, DayConfig config)
     {
-        SaveData snapshot = Clone(Data);
-        bool hadBest = Data.DayBestRecords.TryGetValue(result.Day, out DayBestRecord? best);
-        int previousBest = hadBest ? best!.TotalRevenue : 0;
-        int gain = Math.Max(0, result.TotalRevenue - previousBest);
-        bool newBest = !hadBest || result.TotalRevenue > previousBest;
-        Data.Coins += gain;
-        if (newBest)
+        SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId);
+        bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out DayBestRecord? best);
+        int previousBest = hadBest ? best!.TotalRevenue : 0; int gain = Math.Max(0, result.TotalRevenue - previousBest); bool newBest = !hadBest || result.TotalRevenue > previousBest;
+        Data.Coins += gain; if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
+        int chapterDays = config.CityId == StableIds.Cities.Wuhan ? 12 : 15;
+        city.HighestUnlockedDay = Math.Min(chapterDays, Math.Max(city.HighestUnlockedDay, result.Day + 1));
+        foreach (string unlock in config.CompletionUnlocks) if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) city.UnlockedContentIds.Add(unlock);
+        city.UnlockedContentIds.Sort(StringComparer.Ordinal); city.LastDayPlan = plan;
+        int stars = EvaluateStars(result, config); bool newlyCompleted = false;
+        if (stars > city.BestStars) city.BestStars = stars;
+        if (result.Day == chapterDays && stars >= 1 && !city.Completed) { city.Completed = true; newlyCompleted = true; }
+        if (config.CityId == StableIds.Cities.Tianjin && city.Completed)
         {
-            Data.DayBestRecords[result.Day] = new DayBestRecord
-            {
-                TotalRevenue = result.TotalRevenue,
-                CompletedCustomers = result.CompletedCustomers,
-                PerfectOrders = result.PerfectOrders,
-                HighestCorrectStreak = result.HighestCorrectStreak,
-                Satisfaction = result.Satisfaction,
-                YoutiaoUsed = result.YoutiaoUsed,
-                YoutiaoBurnt = result.YoutiaoBurnt,
-            };
+            if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+            Data.GetCity(StableIds.Cities.Wuhan);
         }
-
-        Data.HighestUnlockedDay = Math.Min(15, Math.Max(Data.HighestUnlockedDay, result.Day + 1));
-        foreach (string unlock in config.CompletionUnlocks)
-        {
-            if (!Data.UnlockedUpgradeIds.Contains(unlock, StringComparer.Ordinal)) Data.UnlockedUpgradeIds.Add(unlock);
-        }
-        Data.UnlockedUpgradeIds.Sort(StringComparer.Ordinal);
-        Data.LastDayPlan = plan;
-
-        int stars = EvaluateStars(result, config);
-        bool newlyCompleted = false;
-        if (stars > Data.TianjinBestStars) Data.TianjinBestStars = stars;
-        if (stars >= 1 && !Data.TianjinCompleted)
-        {
-            Data.TianjinCompleted = true;
-            newlyCompleted = true;
-        }
-        if (Data.TianjinCompleted && !Data.UnlockedCityIds.Contains("city:wuhan", StringComparer.Ordinal))
-        {
-            Data.UnlockedCityIds.Add("city:wuhan");
-            Data.UnlockedCityIds.Sort(StringComparer.Ordinal);
-        }
-
-        if (!TrySave(out string error))
-        {
-            Data = snapshot;
-            throw new IOException(error);
-        }
-        Changed?.Invoke();
-        return new DayCommitResult(gain, newBest, stars, newlyCompleted);
+        if (config.CityId == StableIds.Cities.Wuhan && city.Completed)
+            foreach (string id in new[] { "collectible:wuhan_hot_dry_noodles", "collectible:wuhan_doupi", "collectible:wuhan_egg_rice_wine", "badge:wuhan_chapter" })
+                if (!city.UnlockedCollectibleIds.Contains(id, StringComparer.Ordinal)) city.UnlockedCollectibleIds.Add(id);
+        Data.UnlockedCityIds.Sort(StringComparer.Ordinal);
+        if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
+        Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted);
     }
 
-    public bool TryPurchase(string upgradeId, DataCatalog catalog, out string error)
+    public bool TryPurchase(string upgradeId, DataCatalog catalog, out string error) => TryPurchase(StableIds.Cities.Tianjin, upgradeId, catalog, out error);
+    public bool TryPurchase(string cityId, string upgradeId, DataCatalog catalog, out string error)
     {
-        if (!Data.UnlockedUpgradeIds.Contains(upgradeId, StringComparer.Ordinal))
-        {
-            error = "该升级尚未开放。";
-            return false;
-        }
-
-        int price;
-        Action apply;
-        if (upgradeId == "equipment:ingredient_station_lv2" && catalog.TryGetIngredientStation(2, out IngredientStationLevelData station2))
-        {
-            if (Data.PurchasedIngredientStationLevel >= 2) return AlreadyOwned("配料台 Lv2", out error);
-            price = station2.UpgradePrice;
-            apply = () => Data.PurchasedIngredientStationLevel = 2;
-        }
-        else if (upgradeId == "equipment:ingredient_station_lv3" && catalog.TryGetIngredientStation(3, out IngredientStationLevelData station3))
-        {
-            if (Data.PurchasedIngredientStationLevel >= 3) return AlreadyOwned("配料台 Lv3", out error);
-            if (Data.PurchasedIngredientStationLevel != 2) return PreviousRequired("配料台 Lv2", out error);
-            price = station3.UpgradePrice;
-            apply = () => Data.PurchasedIngredientStationLevel = 3;
-        }
-        else if (upgradeId == "equipment:pancake_stove_lv2" && catalog.TryGetStove(2, out PancakeStoveLevelData stove2))
-        {
-            if (Data.PurchasedStoveLevel >= 2) return AlreadyOwned("煎饼炉 Lv2", out error);
-            price = stove2.UpgradePrice;
-            apply = () => Data.PurchasedStoveLevel = 2;
-        }
-        else if (upgradeId == "equipment:pancake_stove_lv3" && catalog.TryGetStove(3, out PancakeStoveLevelData stove3))
-        {
-            if (Data.PurchasedStoveLevel >= 3) return AlreadyOwned("煎饼炉 Lv3", out error);
-            if (Data.PurchasedStoveLevel != 2) return PreviousRequired("煎饼炉 Lv2", out error);
-            price = stove3.UpgradePrice;
-            apply = () => Data.PurchasedStoveLevel = 3;
-        }
-        else if (upgradeId == "equipment:fryer_lv2" && catalog.TryGetFryer(2, out FryerLevelData fryer2))
-        {
-            if (Data.PurchasedFryerLevel >= 2) return AlreadyOwned("油条锅 Lv2", out error);
-            if (Data.PurchasedFryerLevel != 1) return PreviousRequired("油条锅 Lv1", out error);
-            price = fryer2.UpgradePrice;
-            apply = () => Data.PurchasedFryerLevel = 2;
-        }
-        else if (upgradeId == "equipment:fryer_lv3" && catalog.TryGetFryer(3, out FryerLevelData fryer3))
-        {
-            if (Data.PurchasedFryerLevel >= 3) return AlreadyOwned("油条锅 Lv3", out error);
-            if (Data.PurchasedFryerLevel != 2) return PreviousRequired("油条锅 Lv2", out error);
-            price = fryer3.UpgradePrice;
-            apply = () => Data.PurchasedFryerLevel = 3;
-        }
-        else
-        {
-            error = "不支持该升级。";
-            return false;
-        }
-
-        if (Data.Coins < price)
-        {
-            error = $"金币不足，需要 ¥{price}。";
-            return false;
-        }
-
-        SaveData snapshot = Clone(Data);
-        Data.Coins -= price;
-        apply();
-        if (!TrySave(out error))
-        {
-            Data = snapshot;
-            return false;
-        }
-        Changed?.Invoke();
-        return true;
+        CityProgressData city = Data.GetCity(cityId);
+        if (!city.UnlockedContentIds.Contains(upgradeId, StringComparer.Ordinal)) { error = "该升级尚未开放。"; return false; }
+        (string equipment, int target, int price, string display) = cityId == StableIds.Cities.Wuhan ? ResolveWuhanUpgrade(upgradeId, catalog) : ResolveTianjinUpgrade(upgradeId, catalog);
+        if (equipment.Length == 0) return Fail("不支持该升级。", out error);
+        int current = city.EquipmentLevels.GetValueOrDefault(equipment, equipment is "pancake_stove" or "ingredient_station" or "noodle_cooker" ? 1 : 0);
+        if (current >= target) return Fail($"{display} 已经购买。", out error);
+        if (current != target - 1) return Fail($"需要先购买上一等级的{display[..^3]}。", out error);
+        if (Data.Coins < price) return Fail($"金币不足，需要 ¥{price}。", out error);
+        SaveData snapshot = Clone(Data); Data.Coins -= price; city.EquipmentLevels[equipment] = target;
+        if (!TrySave(out error)) { Data = snapshot; return false; }
+        Changed?.Invoke(); return true;
     }
 
     public bool ResetProgress(out string error)
     {
-        SaveData snapshot = Clone(Data);
-        Data = NewData();
-        ClearLoadError();
-        if (!TrySave(out error))
-        {
-            Data = snapshot;
-            return false;
-        }
-        Changed?.Invoke();
-        return true;
+        SaveData snapshot = Clone(Data); Data = new SaveData(); ClearLoadError();
+        if (!TrySave(out error)) { Data = snapshot; return false; }
+        Changed?.Invoke(); return true;
     }
 
     public bool TrySave(out string error)
     {
-        if (HasLoadError)
-        {
-            error = "损坏存档尚未确认重置，禁止覆盖。";
-            return false;
-        }
+        if (HasLoadError) { error = "损坏存档尚未确认重置，禁止覆盖。"; return false; }
         try
         {
-            string absolute = ProjectSettings.GlobalizePath(_savePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
-            string temporary = absolute + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(Data, JsonOptions));
-            File.Move(temporary, absolute, true);
-            error = string.Empty;
-            return true;
+            string absolute = ProjectSettings.GlobalizePath(_savePath); Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
+            string temporary = absolute + ".tmp"; File.WriteAllText(temporary, JsonSerializer.Serialize(Data, JsonOptions)); File.Move(temporary, absolute, true);
+            error = string.Empty; return true;
         }
-        catch (Exception exception)
-        {
-            error = $"保存失败：{exception.Message}";
-            GD.PushError(error);
-            return false;
-        }
+        catch (Exception exception) { error = $"保存失败：{exception.Message}"; GD.PushError(error); return false; }
     }
 
     public static int EvaluateStars(DayResult result, DayConfig config)
     {
         int stars = 0;
         foreach (StarGoalConfig goal in config.StarGoals.OrderBy(goal => goal.Stars))
-        {
-            if (result.CompletedCustomers >= goal.MinimumCompletedCustomers
-                && result.Satisfaction + 0.0001 >= goal.MinimumSatisfaction
-                && result.PerfectOrders >= goal.MinimumPerfectOrders)
-            {
-                stars = goal.Stars;
-            }
-        }
+            if (result.CompletedCustomers >= goal.MinimumCompletedCustomers && result.Satisfaction + .0001 >= goal.MinimumSatisfaction && result.PerfectOrders >= goal.MinimumPerfectOrders) stars = goal.Stars;
         return stars;
     }
 
+    public static CityProgressData NewTianjinProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["pancake_stove"] = 1, ["ingredient_station"] = 1, ["fryer"] = 0 } };
+    public static CityProgressData NewWuhanProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0, ["egg_rice_wine_station"] = 0 } };
+
+    private string? FindLegacyAbsolute()
+    {
+        if (_legacyPath is not null && File.Exists(ProjectSettings.GlobalizePath(_legacyPath))) return ProjectSettings.GlobalizePath(_legacyPath);
+        if (_savePath == DefaultSavePath && File.Exists(ProjectSettings.GlobalizePath(LegacyV1Path))) return ProjectSettings.GlobalizePath(LegacyV1Path);
+        return null;
+    }
     private void MigrateLegacy(string legacyAbsolute)
     {
         try
         {
-            LegacySaveDataV1? legacy = JsonSerializer.Deserialize<LegacySaveDataV1>(File.ReadAllText(legacyAbsolute), JsonOptions);
-            if (legacy is null || legacy.Version != 1) throw new InvalidDataException("旧存档版本无效。");
-            CorruptBackupPath = legacyAbsolute + $".v1-backup-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak";
-            File.Copy(legacyAbsolute, CorruptBackupPath, true);
-            int highest = legacy.DayBestRecords.ContainsKey(4) ? Math.Max(5, legacy.HighestUnlockedDay) : legacy.HighestUnlockedDay;
-            Data = new SaveData
-            {
-                Coins = legacy.Coins,
-                HighestUnlockedDay = Math.Clamp(highest, 1, 15),
-                PurchasedStoveLevel = legacy.PurchasedStoveLevel,
-                PurchasedIngredientStationLevel = legacy.PurchasedIngredientStationLevel,
-                PurchasedFryerLevel = highest >= 5 ? 1 : 0,
-                UnlockedUpgradeIds = legacy.UnlockedUpgradeIds.ToList(),
-                DayBestRecords = legacy.DayBestRecords,
-                LastDayPlan = legacy.LastDayPlan,
-            };
-            if (!TrySave(out string error)) throw new IOException(error);
-            MigratedLegacySave = true;
+            string json = File.ReadAllText(legacyAbsolute); int version = JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32();
+            LegacySaveDataV2 legacy = version switch { 2 => JsonSerializer.Deserialize<LegacySaveDataV2>(json, JsonOptions)!, 1 => ConvertV1(JsonSerializer.Deserialize<LegacySaveDataV1>(json, JsonOptions)!), _ => throw new InvalidDataException("旧存档版本无效。") };
+            CorruptBackupPath = legacyAbsolute + $".v{version}-backup-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak"; File.Copy(legacyAbsolute, CorruptBackupPath, true);
+            CityProgressData tianjin = NewTianjinProgress();
+            tianjin.HighestUnlockedDay = Math.Clamp(legacy.HighestUnlockedDay, 1, 15); tianjin.BestStars = legacy.TianjinBestStars; tianjin.Completed = legacy.TianjinCompleted;
+            tianjin.EquipmentLevels["pancake_stove"] = legacy.PurchasedStoveLevel; tianjin.EquipmentLevels["ingredient_station"] = legacy.PurchasedIngredientStationLevel; tianjin.EquipmentLevels["fryer"] = legacy.PurchasedFryerLevel;
+            tianjin.UnlockedContentIds = legacy.UnlockedUpgradeIds; tianjin.DayBestRecords = legacy.DayBestRecords; tianjin.LastDayPlan = legacy.LastDayPlan;
+            Data = new SaveData { Coins = legacy.Coins, Cities = new(StringComparer.Ordinal) { [StableIds.Cities.Tianjin] = tianjin }, UnlockedCityIds = new() { StableIds.Cities.Tianjin } };
+            if (legacy.TianjinCompleted || legacy.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) { Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan); Data.Cities[StableIds.Cities.Wuhan] = NewWuhanProgress(); }
+            if (!TrySave(out string error)) throw new IOException(error); MigratedLegacySave = true;
         }
-        catch (Exception exception)
-        {
-            HasLoadError = true;
-            LoadErrorMessage = $"旧存档迁移失败：{exception.Message}";
-            Data = NewData();
-            GD.PushError(LoadErrorMessage);
-        }
+        catch (Exception exception) { HasLoadError = true; LoadErrorMessage = $"旧存档迁移失败：{exception.Message}"; Data = new SaveData(); GD.PushError(LoadErrorMessage); }
     }
-
-    private void SetCorruptError(string absolute, Exception exception)
+    private static LegacySaveDataV2 ConvertV1(LegacySaveDataV1 legacy)
     {
-        HasLoadError = true;
-        LoadErrorMessage = $"存档无法读取：{exception.Message}";
-        CorruptBackupPath = absolute + $".corrupt-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak";
-        try
-        {
-            File.Copy(absolute, CorruptBackupPath, true);
-            GD.PushError($"{LoadErrorMessage} 已备份到 {CorruptBackupPath}");
-        }
-        catch (Exception backupException)
-        {
-            CorruptBackupPath = string.Empty;
-            LoadErrorMessage += $"；损坏文件备份失败：{backupException.Message}";
-            GD.PushError(LoadErrorMessage);
-        }
+        int highest = legacy.DayBestRecords.ContainsKey(4) ? Math.Max(5, legacy.HighestUnlockedDay) : legacy.HighestUnlockedDay;
+        return new LegacySaveDataV2 { Version = 2, Coins = legacy.Coins, HighestUnlockedDay = highest, PurchasedStoveLevel = legacy.PurchasedStoveLevel, PurchasedIngredientStationLevel = legacy.PurchasedIngredientStationLevel, PurchasedFryerLevel = highest >= 5 ? 1 : 0, UnlockedUpgradeIds = legacy.UnlockedUpgradeIds, DayBestRecords = legacy.DayBestRecords, LastDayPlan = legacy.LastDayPlan };
     }
-
-    private void ClearLoadError()
+    private static (string, int, int, string) ResolveTianjinUpgrade(string id, DataCatalog catalog) => id switch
     {
-        HasLoadError = false;
-        LoadErrorMessage = string.Empty;
-        CorruptBackupPath = string.Empty;
-    }
-
-    private static bool AlreadyOwned(string displayName, out string error)
+        "equipment:ingredient_station_lv2" when catalog.TryGetIngredientStation(2, out var d) => ("ingredient_station", 2, d.UpgradePrice, "配料台 Lv2"),
+        "equipment:ingredient_station_lv3" when catalog.TryGetIngredientStation(3, out var d) => ("ingredient_station", 3, d.UpgradePrice, "配料台 Lv3"),
+        "equipment:pancake_stove_lv2" when catalog.TryGetStove(2, out var d) => ("pancake_stove", 2, d.UpgradePrice, "煎饼炉 Lv2"),
+        "equipment:pancake_stove_lv3" when catalog.TryGetStove(3, out var d) => ("pancake_stove", 3, d.UpgradePrice, "煎饼炉 Lv3"),
+        "equipment:fryer_lv2" when catalog.TryGetFryer(2, out var d) => ("fryer", 2, d.UpgradePrice, "油条锅 Lv2"),
+        "equipment:fryer_lv3" when catalog.TryGetFryer(3, out var d) => ("fryer", 3, d.UpgradePrice, "油条锅 Lv3"), _ => (string.Empty, 0, 0, string.Empty),
+    };
+    private static (string, int, int, string) ResolveWuhanUpgrade(string id, DataCatalog catalog) => id switch
     {
-        error = $"{displayName} 已经购买。";
-        return false;
-    }
-
-    private static bool PreviousRequired(string displayName, out string error)
-    {
-        error = $"需要先购买 {displayName}。";
-        return false;
-    }
-
-    private static SaveData NewData() => new();
+        "equipment:wuhan_ingredient_station_lv2" when catalog.TryGetWuhanIngredientStation(2, out var d) => ("ingredient_station", 2, d.UpgradePrice, "备料台 Lv2"),
+        "equipment:wuhan_ingredient_station_lv3" when catalog.TryGetWuhanIngredientStation(3, out var d) => ("ingredient_station", 3, d.UpgradePrice, "备料台 Lv3"),
+        "equipment:noodle_cooker_lv2" when catalog.TryGetNoodleCooker(2, out var d) => ("noodle_cooker", 2, d.UpgradePrice, "煮面锅 Lv2"),
+        "equipment:noodle_cooker_lv3" when catalog.TryGetNoodleCooker(3, out var d) => ("noodle_cooker", 3, d.UpgradePrice, "煮面锅 Lv3"),
+        "equipment:doupi_griddle_lv2" when catalog.TryGetDoupiGriddle(2, out var d) => ("doupi_griddle", 2, d.UpgradePrice, "豆皮锅 Lv2"),
+        "equipment:doupi_griddle_lv3" when catalog.TryGetDoupiGriddle(3, out var d) => ("doupi_griddle", 3, d.UpgradePrice, "豆皮锅 Lv3"), _ => (string.Empty, 0, 0, string.Empty),
+    };
+    private static DayBestRecord ToRecord(DayResult r) => new() { TotalRevenue = r.TotalRevenue, CompletedCustomers = r.CompletedCustomers, PerfectOrders = r.PerfectOrders, HighestCorrectStreak = r.HighestCorrectStreak, Satisfaction = r.Satisfaction, YoutiaoUsed = r.YoutiaoUsed, YoutiaoBurnt = r.YoutiaoBurnt };
+    private static bool Fail(string message, out string error) { error = message; return false; }
     private static SaveData Clone(SaveData data) => JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(data, JsonOptions), JsonOptions)!;
-
     private static void Validate(SaveData? data)
     {
-        if (data is null || data.Version != CurrentVersion) throw new InvalidDataException("存档版本无效。");
-        if (data.Coins < 0 || data.HighestUnlockedDay is < 1 or > 15
-            || data.PurchasedStoveLevel is < 1 or > 3
-            || data.PurchasedIngredientStationLevel is < 1 or > 3
-            || data.PurchasedFryerLevel is < 0 or > 3
-            || data.TianjinBestStars is < 0 or > 3)
+        if (data is null || data.Version != CurrentVersion || data.Coins < 0) throw new InvalidDataException("存档版本或金币数值无效。");
+        foreach ((string id, CityProgressData city) in data.Cities)
         {
-            throw new InvalidDataException("存档包含非法进度数值。");
+            int max = id == StableIds.Cities.Wuhan ? 12 : 15;
+            if (city.HighestUnlockedDay is < 1 || city.HighestUnlockedDay > max || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
         }
-        if (data.TianjinCompleted && data.TianjinBestStars < 1) throw new InvalidDataException("天津完成状态与星级不一致。");
     }
+    private void SetCorruptError(string absolute, Exception exception)
+    {
+        HasLoadError = true; LoadErrorMessage = $"存档无法读取：{exception.Message}"; CorruptBackupPath = absolute + $".corrupt-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak";
+        try { File.Copy(absolute, CorruptBackupPath, true); } catch { CorruptBackupPath = string.Empty; }
+        GD.PushError(LoadErrorMessage);
+    }
+    private void ClearLoadError() { HasLoadError = false; LoadErrorMessage = string.Empty; CorruptBackupPath = string.Empty; }
 }

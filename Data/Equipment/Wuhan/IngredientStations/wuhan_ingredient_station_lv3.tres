@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WuhanIngredientStationLevelData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/WuhanIngredientStationLevelData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+Level = 3
+NoodlesCapacity = 12
+BaseSeasoningCapacity = 12
+ScallionCapacity = 10
+ChiliOilCapacity = 10
+BraisedBeefCapacity = 8
+LowStockThreshold = 2
+RefillSeconds = 1.0
+UpgradePrice = 300

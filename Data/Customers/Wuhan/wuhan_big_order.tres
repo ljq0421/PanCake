@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/CustomerTypeData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+Id = "wuhan_big_order"
+DisplayName = "带走大单顾客"
+HappyUntilSeconds = 22.5
+NormalUntilSeconds = 45.0
+ImpatientUntilSeconds = 63.0
+LeaveAtSeconds = 75.0
+PerfectTipRate = 0.1
+IsBigOrderCustomer = true
+OrderProfile = 2

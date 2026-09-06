@@ -23,10 +23,10 @@ public partial class StageOneSelfTest : Node
     {
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
         Check(catalog.IsValid, "生产数据目录通过完整校验", FormatIssues(catalog.ValidationIssues));
-        Check(catalog.RecipesById.Count == 8, "加载 8 个配方", $"实际 {catalog.RecipesById.Count}");
+        Check(catalog.RecipesById.Count == 14, "加载天津 8 个与武汉 6 个配方", $"实际 {catalog.RecipesById.Count}");
         Check(catalog.StovesByLevel.Count == 3, "加载 3 级煎饼炉", $"实际 {catalog.StovesByLevel.Count}");
         Check(catalog.IngredientStationsByLevel.Count == 3, "加载 3 级配料台", $"实际 {catalog.IngredientStationsByLevel.Count}");
-        Check(catalog.CustomersById.Count == 4, "加载 4 类顾客", $"实际 {catalog.CustomersById.Count}");
+        Check(catalog.CustomersById.Count == 9, "加载天津 4 类与武汉 5 类顾客", $"实际 {catalog.CustomersById.Count}");
         Check(catalog.DaysByNumber.Count == 15, "加载 Day 1～15", $"实际 {catalog.DaysByNumber.Count}");
 
         var expectedRecipes = new Dictionary<string, (int Price, string[] Ingredients)>(StringComparer.Ordinal)

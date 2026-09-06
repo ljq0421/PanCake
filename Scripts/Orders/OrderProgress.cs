@@ -25,6 +25,10 @@ public sealed class OrderProgress
     public IReadOnlyList<DeliveredItem> DeliveredItems => _delivered;
     public bool HasRecipeMismatch { get; private set; }
     public bool HasQualityIssue { get; private set; }
+    public bool HasNoodlesSoft { get; private set; }
+    public bool HasNoodlesOvercooked { get; private set; }
+    public bool HasDoupiOverbrowned { get; private set; }
+    public bool AllNoodlesMixed { get; private set; } = true;
     public bool IsComplete => Order.Lines.Select((line, index) => _fulfilled[index] >= line.Quantity).All(done => done);
 
     public int GetDeliveredQuantity(int lineIndex) => lineIndex >= 0 && lineIndex < _fulfilled.Length ? _fulfilled[lineIndex] : 0;
@@ -59,8 +63,8 @@ public sealed class OrderProgress
     {
         if (!CanAccept(item, out string error)) return OrderItemAcceptance.Reject(error);
 
-        int lineIndex = item.ProductKind == ProductKind.Pancake
-            ? FindPancakeLine(item.DefinitionId)
+        int lineIndex = item.ProductKind is ProductKind.Pancake or ProductKind.HotDryNoodles
+            ? FindRecipeLine(item.ProductKind, item.DefinitionId)
             : FindAvailableLine(item.ProductKind);
         if (lineIndex < 0) return OrderItemAcceptance.Reject("这位顾客不需要更多这种商品。");
 
@@ -81,18 +85,32 @@ public sealed class OrderProgress
         {
             HasQualityIssue = true;
         }
+        else if (item.ProductKind == ProductKind.HotDryNoodles)
+        {
+            if (!string.Equals(target.DefinitionId, item.DefinitionId, StringComparison.Ordinal)) HasRecipeMismatch = true;
+            WuhanFoodQuality quality = item.WuhanQuality ?? WuhanFoodQuality.None;
+            HasNoodlesSoft |= quality.HasFlag(WuhanFoodQuality.NoodlesSoft);
+            HasNoodlesOvercooked |= quality.HasFlag(WuhanFoodQuality.NoodlesOvercooked);
+            AllNoodlesMixed &= quality.HasFlag(WuhanFoodQuality.MixedComplete);
+            HasQualityIssue |= HasNoodlesSoft || HasNoodlesOvercooked || !AllNoodlesMixed;
+        }
+        else if (item.ProductKind == ProductKind.Doupi)
+        {
+            HasDoupiOverbrowned |= (item.WuhanQuality ?? WuhanFoodQuality.None).HasFlag(WuhanFoodQuality.DoupiOverbrowned);
+            HasQualityIssue |= HasDoupiOverbrowned;
+        }
 
         return OrderItemAcceptance.Accept(IsComplete, IsComplete ? "订单商品已经齐全。" : "商品已加入订单，顾客仍在等待其余内容。");
     }
 
-    private int FindPancakeLine(string actualRecipeId)
+    private int FindRecipeLine(ProductKind kind, string actualRecipeId)
     {
         int exact = Enumerable.Range(0, Order.Lines.Count).FirstOrDefault(
-            index => Order.Lines[index].ProductKind == ProductKind.Pancake
+            index => Order.Lines[index].ProductKind == kind
                 && _fulfilled[index] < Order.Lines[index].Quantity
                 && string.Equals(Order.Lines[index].DefinitionId, actualRecipeId, StringComparison.Ordinal),
             -1);
-        return exact >= 0 ? exact : FindAvailableLine(ProductKind.Pancake);
+        return exact >= 0 ? exact : FindAvailableLine(kind);
     }
 
     private int FindAvailableLine(ProductKind kind)

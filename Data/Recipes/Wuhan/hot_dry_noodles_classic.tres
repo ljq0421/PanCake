@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="RecipeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Data/RecipeData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "hot_dry_noodles_classic"
+DisplayName = "经典热干面"
+Price = 10
+ExtraIngredients = Array[String]([])

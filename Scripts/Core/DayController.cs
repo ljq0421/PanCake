@@ -41,6 +41,9 @@ public partial class DayController : Node
     public double DayRemainingSeconds => Math.Max(0, (CurrentConfig?.DurationSeconds ?? 0) - DayElapsedSeconds);
 
     public bool TryPrepareDay(int dayNumber, DataCatalog catalog, out string error)
+        => TryPrepareDay(StableIds.Cities.Tianjin, dayNumber, catalog, out error);
+
+    public bool TryPrepareDay(string cityId, int dayNumber, DataCatalog catalog, out string error)
     {
         if (!catalog.IsValid)
         {
@@ -48,7 +51,7 @@ public partial class DayController : Node
             return false;
         }
 
-        if (!catalog.TryGetDay(dayNumber, out DayConfig config))
+        if (!catalog.TryGetDay(cityId, dayNumber, out DayConfig config))
         {
             error = $"找不到 Day {dayNumber} 配置。";
             return false;
@@ -56,8 +59,9 @@ public partial class DayController : Node
 
         CurrentConfig = config;
         CurrentPlan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
-        CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers);
-        Ledger = new DayLedger(config.Day, config.CustomerCount);
+        CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers,
+            config.Constraints.PressureDelaySeconds, config.Constraints.MaxPressureDelaySeconds);
+        Ledger = new DayLedger(config.Day, config.CustomerCount, config.SatisfactionAverageMode);
         CustomerQueue.CustomerLost += _ => Ledger.RecordLost();
         DayElapsedSeconds = 0;
         OpeningRemainingSeconds = OpeningDurationSeconds;
@@ -168,6 +172,12 @@ public partial class DayController : Node
         return TryDeliverItem(customer, item, tray.TryConsumeForDelivery, null);
     }
 
+    public DeliveryEvaluation TryDeliverWuhanSelected(DeliveredItem item, Func<bool> consume)
+    {
+        CustomerRuntime? customer = GetDeliveryCustomer(out DeliveryEvaluation rejection);
+        return customer is null ? rejection : TryDeliverItem(customer, item, consume, null);
+    }
+
     public void AbandonDay()
     {
         if (State is DayState.Opening or DayState.Running or DayState.Closing)
@@ -218,7 +228,9 @@ public partial class DayController : Node
             return incomplete;
         }
 
-        DeliveryEvaluation evaluation = new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
+        DeliveryEvaluation evaluation = customer.Order.CityId == StableIds.Cities.Wuhan
+            ? new OrderEvaluator().EvaluateCompletedWuhan(customer.Progress, customer.PatienceProgress, customer.Type)
+            : new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
         if (!CustomerQueue!.TryMarkServed(customer.Id)) return Rejected("顾客状态已经变化，本次交付未生效。");
         Ledger!.RecordDelivery(evaluation);
         DeliveryCompleted?.Invoke(evaluation);

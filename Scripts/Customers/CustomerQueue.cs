@@ -16,13 +16,20 @@ public sealed class CustomerQueue
     private readonly List<CustomerRuntime> _slots = new();
     private readonly Queue<CustomerRuntime> _pending = new();
     private int _nextPlanIndex;
+    private readonly double _pressureDelaySeconds;
+    private readonly double _maxPressureDelaySeconds;
+    private int _pressurePlanIndex = -1;
+    private double _pressureDelayApplied;
+    private double _pressureBlockedUntil;
 
-    public CustomerQueue(DayPlan plan, IReadOnlyDictionary<string, CustomerTypeData> types, double patienceMultiplier, int capacity)
+    public CustomerQueue(DayPlan plan, IReadOnlyDictionary<string, CustomerTypeData> types, double patienceMultiplier, int capacity, double pressureDelaySeconds = 0, double maxPressureDelaySeconds = 0)
     {
         _plan = plan;
         _types = types;
         _patienceMultiplier = patienceMultiplier;
         _capacity = capacity;
+        _pressureDelaySeconds = pressureDelaySeconds;
+        _maxPressureDelaySeconds = maxPressureDelaySeconds;
     }
 
     public event Action<CustomerRuntime>? CustomerEntered;
@@ -44,9 +51,24 @@ public sealed class CustomerQueue
         {
             while (_nextPlanIndex < _plan.Customers.Count && _plan.Customers[_nextPlanIndex].ArrivalTime <= dayElapsedSeconds)
             {
+                if (_maxPressureDelaySeconds > 0 && _slots.Count + _pending.Count >= _capacity) break;
+                if (_pressurePlanIndex != _nextPlanIndex)
+                {
+                    _pressurePlanIndex = _nextPlanIndex; _pressureDelayApplied = 0; _pressureBlockedUntil = 0;
+                }
+                if (dayElapsedSeconds < _pressureBlockedUntil) break;
+                if (IsUnderComplexPressure() && _pressureDelaySeconds > 0 && _pressureDelayApplied < _maxPressureDelaySeconds)
+                {
+                    double delay = Math.Min(_pressureDelaySeconds, _maxPressureDelaySeconds - _pressureDelayApplied);
+                    _pressureDelayApplied += delay;
+                    _pressureBlockedUntil = dayElapsedSeconds + delay;
+                    break;
+                }
                 PlannedCustomer plan = _plan.Customers[_nextPlanIndex++];
                 _pending.Enqueue(new CustomerRuntime(plan, _types[plan.CustomerTypeId], _patienceMultiplier));
+                _pressurePlanIndex = -1;
                 changed = true;
+                changed |= AdmitPending();
             }
         }
 
@@ -139,6 +161,14 @@ public sealed class CustomerQueue
     public IReadOnlyList<CustomerRuntime> ForceLoseAll()
     {
         var lost = new List<CustomerRuntime>();
+        while (_nextPlanIndex < _plan.Customers.Count)
+        {
+            PlannedCustomer plan = _plan.Customers[_nextPlanIndex++];
+            var customer = new CustomerRuntime(plan, _types[plan.CustomerTypeId], _patienceMultiplier) { State = CustomerState.Left };
+            customer.Order.Status = OrderStatus.Lost;
+            lost.Add(customer);
+            CustomerLost?.Invoke(customer);
+        }
         while (_pending.Count > 0)
         {
             CustomerRuntime customer = _pending.Dequeue();
@@ -185,5 +215,12 @@ public sealed class CustomerQueue
             changed = true;
         }
         return changed;
+    }
+
+    private bool IsUnderComplexPressure()
+    {
+        int complex = _slots.Count(customer => customer.Order.IsComplex && customer.State is not (CustomerState.Leaving or CustomerState.Served));
+        int big = _slots.Count(customer => customer.Type.IsBigOrderCustomer && customer.State is not (CustomerState.Leaving or CustomerState.Served));
+        return complex >= 2 || big >= 1 && complex >= 1;
     }
 }

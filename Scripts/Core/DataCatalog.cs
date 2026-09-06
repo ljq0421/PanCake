@@ -11,7 +11,14 @@ public partial class DataCatalog : Node
     public const string FryerDirectory = "res://Data/Equipment/Fryers";
     public const string ProductDirectory = "res://Data/Products";
     public const string DayDirectory = "res://Data/Days/Tianjin";
+    public const string WuhanDayDirectory = "res://Data/Days/Wuhan";
     public const string CustomerDirectory = "res://Data/Customers";
+    public const string WuhanRecipeDirectory = "res://Data/Recipes/Wuhan";
+    public const string WuhanProductDirectory = "res://Data/Products/Wuhan";
+    public const string WuhanCustomerDirectory = "res://Data/Customers/Wuhan";
+    public const string NoodleCookerDirectory = "res://Data/Equipment/Wuhan/NoodleCookers";
+    public const string DoupiGriddleDirectory = "res://Data/Equipment/Wuhan/DoupiGriddles";
+    public const string WuhanIngredientStationDirectory = "res://Data/Equipment/Wuhan/IngredientStations";
 
     private readonly Dictionary<string, RecipeData> _recipesById = new(StringComparer.Ordinal);
     private readonly Dictionary<int, PancakeStoveLevelData> _stovesByLevel = new();
@@ -19,7 +26,11 @@ public partial class DataCatalog : Node
     private readonly Dictionary<int, FryerLevelData> _fryersByLevel = new();
     private readonly Dictionary<string, ProductData> _productsById = new(StringComparer.Ordinal);
     private readonly Dictionary<int, DayConfig> _daysByNumber = new();
+    private readonly Dictionary<string, Dictionary<int, DayConfig>> _daysByCity = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CustomerTypeData> _customersById = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, NoodleCookerLevelData> _noodleCookersByLevel = new();
+    private readonly Dictionary<int, DoupiGriddleLevelData> _doupiGriddlesByLevel = new();
+    private readonly Dictionary<int, WuhanIngredientStationLevelData> _wuhanIngredientStationsByLevel = new();
     private readonly List<ValidationIssue> _validationIssues = new();
 
     public IReadOnlyDictionary<string, RecipeData> RecipesById => _recipesById;
@@ -31,6 +42,9 @@ public partial class DataCatalog : Node
     public IReadOnlyDictionary<string, ProductData> ProductsById => _productsById;
 
     public IReadOnlyDictionary<int, DayConfig> DaysByNumber => _daysByNumber;
+    public IReadOnlyDictionary<int, NoodleCookerLevelData> NoodleCookersByLevel => _noodleCookersByLevel;
+    public IReadOnlyDictionary<int, DoupiGriddleLevelData> DoupiGriddlesByLevel => _doupiGriddlesByLevel;
+    public IReadOnlyDictionary<int, WuhanIngredientStationLevelData> WuhanIngredientStationsByLevel => _wuhanIngredientStationsByLevel;
     public IReadOnlyDictionary<string, CustomerTypeData> CustomersById => _customersById;
 
     public IReadOnlyList<ValidationIssue> ValidationIssues => _validationIssues;
@@ -50,17 +64,28 @@ public partial class DataCatalog : Node
         _fryersByLevel.Clear();
         _productsById.Clear();
         _daysByNumber.Clear();
+        _daysByCity.Clear();
         _customersById.Clear();
+        _noodleCookersByLevel.Clear();
+        _doupiGriddlesByLevel.Clear();
+        _wuhanIngredientStationsByLevel.Clear();
         _validationIssues.Clear();
 
         var recipes = LoadResources<RecipeData>(RecipeDirectory, _validationIssues);
+        recipes.AddRange(LoadResources<RecipeData>(WuhanRecipeDirectory, _validationIssues));
         var stoves = LoadResources<PancakeStoveLevelData>(EquipmentDirectory, _validationIssues);
         var ingredientStations = LoadResources<IngredientStationLevelData>(IngredientStationDirectory, _validationIssues);
         var fryers = LoadResources<FryerLevelData>(FryerDirectory, _validationIssues);
         var products = LoadResources<ProductData>(ProductDirectory, _validationIssues);
+        products.AddRange(LoadResources<ProductData>(WuhanProductDirectory, _validationIssues));
         var customers = LoadResources<CustomerTypeData>(CustomerDirectory, _validationIssues);
+        customers.AddRange(LoadResources<CustomerTypeData>(WuhanCustomerDirectory, _validationIssues));
+        var noodleCookers = LoadResources<NoodleCookerLevelData>(NoodleCookerDirectory, _validationIssues);
+        var doupiGriddles = LoadResources<DoupiGriddleLevelData>(DoupiGriddleDirectory, _validationIssues);
+        var wuhanStations = LoadResources<WuhanIngredientStationLevelData>(WuhanIngredientStationDirectory, _validationIssues);
         var dayLoader = new DayConfigLoader();
         IReadOnlyList<DayConfigLoadResult> dayResults = dayLoader.LoadDirectory(DayDirectory);
+        IReadOnlyList<DayConfigLoadResult> wuhanDayResults = dayLoader.LoadDirectory(WuhanDayDirectory);
         var days = new List<DayConfig>();
 
         foreach (DayConfigLoadResult result in dayResults)
@@ -72,7 +97,16 @@ public partial class DataCatalog : Node
             }
         }
 
-        _validationIssues.AddRange(CatalogValidator.ValidateAll(recipes, stoves, ingredientStations, fryers, products, customers, days));
+        foreach (DayConfigLoadResult result in wuhanDayResults)
+        {
+            _validationIssues.AddRange(result.Issues);
+            if (result.Config is not null) days.Add(result.Config);
+        }
+
+        List<DayConfig> tianjinDays = days.Where(day => day.CityId == StableIds.Cities.Tianjin).ToList();
+        List<DayConfig> wuhanDays = days.Where(day => day.CityId == StableIds.Cities.Wuhan).ToList();
+        _validationIssues.AddRange(CatalogValidator.ValidateAll(recipes, stoves, ingredientStations, fryers, products, customers, tianjinDays));
+        _validationIssues.AddRange(WuhanCatalogValidator.Validate(wuhanDays, recipes, customers, noodleCookers, doupiGriddles, wuhanStations));
 
         foreach (RecipeData recipe in recipes)
         {
@@ -101,8 +135,18 @@ public partial class DataCatalog : Node
 
         foreach (DayConfig day in days)
         {
-            _daysByNumber.TryAdd(day.Day, day);
+            if (!_daysByCity.TryGetValue(day.CityId, out Dictionary<int, DayConfig>? cityDays))
+            {
+                cityDays = new Dictionary<int, DayConfig>();
+                _daysByCity[day.CityId] = cityDays;
+            }
+            cityDays.TryAdd(day.Day, day);
+            if (day.CityId == StableIds.Cities.Tianjin) _daysByNumber.TryAdd(day.Day, day);
         }
+
+        foreach (NoodleCookerLevelData item in noodleCookers) _noodleCookersByLevel.TryAdd(item.Level, item);
+        foreach (DoupiGriddleLevelData item in doupiGriddles) _doupiGriddlesByLevel.TryAdd(item.Level, item);
+        foreach (WuhanIngredientStationLevelData item in wuhanStations) _wuhanIngredientStationsByLevel.TryAdd(item.Level, item);
 
         foreach (CustomerTypeData customer in customers)
         {
@@ -111,7 +155,7 @@ public partial class DataCatalog : Node
 
         if (IsValid)
         {
-            GD.Print($"DataCatalog 已加载：{_recipesById.Count} 个配方，{_productsById.Count} 个商品，{_stovesByLevel.Count} 级煎饼炉，{_ingredientStationsByLevel.Count} 级配料台，{_fryersByLevel.Count} 级油条锅，{_customersById.Count} 类顾客，{_daysByNumber.Count} 天配置。");
+            GD.Print($"DataCatalog 已加载：{_recipesById.Count} 个配方，{_productsById.Count} 个商品，{_customersById.Count} 类顾客；天津 {_daysByNumber.Count} 天，武汉 {GetDays(StableIds.Cities.Wuhan).Count} 天。");
             return;
         }
 
@@ -133,6 +177,16 @@ public partial class DataCatalog : Node
     public bool TryGetProduct(string id, out ProductData product) => _productsById.TryGetValue(id, out product!);
 
     public bool TryGetDay(int day, out DayConfig config) => _daysByNumber.TryGetValue(day, out config!);
+    public bool TryGetDay(string cityId, int day, out DayConfig config)
+    {
+        config = null!;
+        return _daysByCity.TryGetValue(cityId, out Dictionary<int, DayConfig>? days) && days.TryGetValue(day, out config!);
+    }
+    public IReadOnlyDictionary<int, DayConfig> GetDays(string cityId) =>
+        _daysByCity.TryGetValue(cityId, out Dictionary<int, DayConfig>? days) ? days : new Dictionary<int, DayConfig>();
+    public bool TryGetNoodleCooker(int level, out NoodleCookerLevelData data) => _noodleCookersByLevel.TryGetValue(level, out data!);
+    public bool TryGetDoupiGriddle(int level, out DoupiGriddleLevelData data) => _doupiGriddlesByLevel.TryGetValue(level, out data!);
+    public bool TryGetWuhanIngredientStation(int level, out WuhanIngredientStationLevelData data) => _wuhanIngredientStationsByLevel.TryGetValue(level, out data!);
     public bool TryGetCustomer(string id, out CustomerTypeData customer) => _customersById.TryGetValue(id, out customer!);
 
     public DayConfig GetDayOrThrow(int day)

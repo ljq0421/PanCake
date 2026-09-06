@@ -13,6 +13,9 @@ public sealed class OrderGenerator
         IReadOnlyDictionary<string, ProductData>? products = null,
         IReadOnlyDictionary<string, CustomerTypeData>? customers = null)
     {
+        if (config.CityId == StableIds.Cities.Wuhan)
+            return GenerateWuhan(config, recipes, products, customers);
+
         var random = new DeterministicRandom(config.RandomSeed);
         IReadOnlyList<double> arrivals = GenerateArrivals(config, random);
         IReadOnlyDictionary<int, TutorialOrder> tutorials = BuildTutorialAssignments(config, random);
@@ -70,6 +73,158 @@ public sealed class OrderGenerator
         }
 
         return new DayPlan { Day = config.Day, RandomSeed = config.RandomSeed, Customers = planned };
+    }
+
+    private DayPlan GenerateWuhan(
+        DayConfig config,
+        IReadOnlyDictionary<string, RecipeData> recipes,
+        IReadOnlyDictionary<string, ProductData>? products,
+        IReadOnlyDictionary<string, CustomerTypeData>? customers)
+    {
+        var random = new DeterministicRandom(config.RandomSeed);
+        IReadOnlyList<double> arrivals = GenerateArrivals(config, random);
+        List<string> customerBag = BuildQuotaBag(config.CustomerWeights, config.CustomerCount, random);
+        RepairAdjacent(customerBag, "wuhan_big_order");
+        List<string> orderBag = BuildQuotaBag(config.OrderTypeWeights, config.CustomerCount, random);
+
+        var assignedTypes = new string[config.CustomerCount];
+        int bigOrdinal = BigStructureOffset(config.Day);
+        foreach (int index in Enumerable.Range(0, customerBag.Count).Where(index => customerBag[index] == "wuhan_big_order"))
+        {
+            string structure = new[] { "hot_dry_noodles", "noodles_egg_rice_wine", "noodles_doupi" }[bigOrdinal++ % 3];
+            assignedTypes[index] = TakePreferred(orderBag, structure, random);
+        }
+        int regularOrdinal = 0;
+        int regularCount = customerBag.Count(value => value == "wuhan_regular");
+        int regularEggCount = AllocateByLargestRemainder(regularCount, new[] { .70, .30 })[0];
+        for (int index = 0; index < customerBag.Count; index++)
+        {
+            string customerType = customerBag[index];
+            if (customerType == "wuhan_big_order") continue;
+            string preferred = customerType switch
+            {
+                "wuhan_tourist" => "wuhan_full_combo",
+                "wuhan_regular" => regularOrdinal++ < regularEggCount ? "noodles_egg_rice_wine" : "noodles_doupi",
+                "wuhan_office_worker" => orderBag.Contains("noodles_egg_rice_wine") ? "noodles_egg_rice_wine" : "hot_dry_noodles",
+                _ => string.Empty,
+            };
+            assignedTypes[index] = TakePreferred(orderBag, preferred, random);
+        }
+        RepairConsecutiveOrders(assignedTypes, "wuhan_full_combo", 2);
+
+        int noodlePortions = assignedTypes.Select((type, index) => NoodleQuantity(type, customerBag[index])).Sum();
+        List<string> recipeBag = BuildQuotaBag(config.RecipeWeights, noodlePortions, random);
+        var planned = new List<PlannedCustomer>(config.CustomerCount);
+        bool forcedDay4Doupi = false;
+        for (int index = 0; index < config.CustomerCount; index++)
+        {
+            string customerType = customerBag[index];
+            string orderType = assignedTypes[index];
+            int noodleQuantity = NoodleQuantity(orderType, customerType);
+            var noodleRecipes = new List<string>();
+            for (int item = 0; item < noodleQuantity; item++)
+            {
+                string desired = string.Empty;
+                if (customerType == "wuhan_regular") desired = orderType == "noodles_egg_rice_wine" ? StableIds.Recipes.HotDryNoodlesClassic : StableIds.Recipes.HotDryNoodlesScallion;
+                noodleRecipes.Add(TakePreferred(recipeBag, desired, random));
+            }
+            int doupiQuantity = orderType switch
+            {
+                "doupi" => config.Day == 4 && !forcedDay4Doupi ? 1 : random.NextDouble() < .6 ? 1 : 2,
+                "noodles_doupi" or "wuhan_full_combo" => customerType == "wuhan_big_order" ? 2 : 1,
+                _ => 0,
+            };
+            if (orderType == "doupi" && config.Day == 4) forcedDay4Doupi = true;
+            IReadOnlyList<OrderLineData> lines = BuildWuhanLines(orderType, noodleRecipes, doupiQuantity);
+            int price = lines.Sum(line => line.ProductKind switch
+            {
+                ProductKind.HotDryNoodles => recipes[line.DefinitionId].Price * line.Quantity,
+                ProductKind.Doupi => GetUnitPrice(products, StableIds.Products.Doupi, 5) * line.Quantity,
+                ProductKind.EggRiceWine => GetUnitPrice(products, StableIds.Products.EggRiceWine, 4) * line.Quantity,
+                _ => 0,
+            });
+            string ordinal = (index + 1).ToString("D3");
+            double arrival = Math.Round(arrivals[index], 4, MidpointRounding.AwayFromZero);
+            planned.Add(new PlannedCustomer
+            {
+                CustomerId = $"W{config.Day:D2}-C{ordinal}", CustomerTypeId = customerType, ArrivalTime = arrival,
+                Order = new OrderData
+                {
+                    OrderId = $"W{config.Day:D2}-O{ordinal}", CityId = config.CityId, OrderTypeId = orderType,
+                    CustomerTypeId = customerType, CreatedTime = arrival,
+                    PatienceSeconds = ResolveLeaveSeconds(customerType, customers) * config.PatienceMultiplier,
+                    BasePrice = price, Lines = lines,
+                },
+            });
+        }
+        return new DayPlan { Day = config.Day, RandomSeed = config.RandomSeed, Customers = planned };
+    }
+
+    private static List<string> BuildQuotaBag(IReadOnlyDictionary<string, double> weights, int total, DeterministicRandom random)
+    {
+        string[] ids = weights.Keys.ToArray();
+        int[] counts = AllocateByLargestRemainder(total, ids.Select(id => weights[id]).ToArray());
+        var bag = new List<string>(total);
+        for (int index = 0; index < ids.Length; index++) for (int count = 0; count < counts[index]; count++) bag.Add(ids[index]);
+        Shuffle(bag, random);
+        return bag;
+    }
+
+    private static void Shuffle<T>(IList<T> values, DeterministicRandom random)
+    {
+        for (int index = values.Count - 1; index > 0; index--)
+        {
+            int swap = random.NextInt(index + 1);
+            (values[index], values[swap]) = (values[swap], values[index]);
+        }
+    }
+
+    private static string TakePreferred(List<string> bag, string preferred, DeterministicRandom random)
+    {
+        int index = preferred.Length > 0 ? bag.FindIndex(value => value == preferred) : -1;
+        if (index < 0) index = random.NextInt(bag.Count);
+        string value = bag[index];
+        bag.RemoveAt(index);
+        return value;
+    }
+
+    private static void RepairAdjacent(List<string> values, string restricted)
+    {
+        for (int index = 1; index < values.Count; index++)
+        {
+            if (values[index] != restricted || values[index - 1] != restricted) continue;
+            int swap = values.FindIndex(index + 1, value => value != restricted);
+            if (swap >= 0) (values[index], values[swap]) = (values[swap], values[index]);
+        }
+    }
+
+    private static void RepairConsecutiveOrders(string[] values, string restricted, int maximum)
+    {
+        int run = 0;
+        for (int index = 0; index < values.Length; index++)
+        {
+            run = values[index] == restricted ? run + 1 : 0;
+            if (run <= maximum) continue;
+            int swap = Array.FindIndex(values, index + 1, value => value != restricted);
+            if (swap < 0) swap = Array.FindIndex(values, 0, index, value => value != restricted);
+            if (swap >= 0) (values[index], values[swap]) = (values[swap], values[index]);
+            run = values[index] == restricted ? run : 0;
+        }
+    }
+
+    private static int BigStructureOffset(int day) => day switch { <= 9 => 0, 10 => 1, 11 => 3, _ => 5 };
+    private static int NoodleQuantity(string orderType, string customerType) =>
+        orderType is "hot_dry_noodles" or "noodles_doupi" or "noodles_egg_rice_wine" or "wuhan_full_combo"
+            ? customerType == "wuhan_big_order" ? 2 : 1 : 0;
+
+    private static IReadOnlyList<OrderLineData> BuildWuhanLines(string orderType, IReadOnlyList<string> noodleRecipes, int doupiQuantity)
+    {
+        var lines = new List<OrderLineData>();
+        foreach (IGrouping<string, string> group in noodleRecipes.GroupBy(value => value, StringComparer.Ordinal))
+            lines.Add(new OrderLineData(ProductKind.HotDryNoodles, group.Key, group.Count()));
+        if (orderType is "doupi" or "noodles_doupi" or "wuhan_full_combo") lines.Add(new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, doupiQuantity));
+        if (orderType is "egg_rice_wine" or "noodles_egg_rice_wine" or "wuhan_full_combo") lines.Add(new OrderLineData(ProductKind.EggRiceWine, StableIds.Products.EggRiceWine, 1));
+        return lines;
     }
 
     public static int[] AllocateByLargestRemainder(int total, IReadOnlyList<double> ratios)

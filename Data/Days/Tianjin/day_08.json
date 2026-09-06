@@ -1,4 +1,6 @@
 {
+  "cityId": "city:tianjin",
+  "satisfactionAverageMode": "plannedCustomers",
   "day": 8,
   "durationSeconds": 115,
   "customerCount": 14,

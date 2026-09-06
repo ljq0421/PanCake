@@ -62,10 +62,11 @@ public static class CustomerAppearanceCatalog
 
     public static IReadOnlyList<string> CandidatesFor(string customerTypeId) => customerTypeId switch
     {
-        "normal" => NormalPool,
-        "office_worker" => OfficeWorkerPool,
-        "regular" => RegularPool,
-        "big_order" => BigOrderPool,
+        "normal" or "wuhan_normal" => NormalPool,
+        "office_worker" or "wuhan_office_worker" => OfficeWorkerPool,
+        "regular" or "wuhan_regular" => RegularPool,
+        "wuhan_tourist" => new[] { "tourist" },
+        "big_order" or "wuhan_big_order" => BigOrderPool,
         _ => new[] { DefaultAppearanceId },
     };
 

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DoupiGriddleLevelData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/DoupiGriddleLevelData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+Level = 1
+BatchYield = 8
+StageSeconds = 2.5
+BurnSeconds = 4.5
+SecondStageReadySeconds = 3.5
+SecondStageOverbrownedSeconds = 6.5
+SecondStageBurnSeconds = 8.5
+CanBurn = true
+AutoFlip = false
+SpeedMultiplier = 1.0
+UpgradePrice = 0

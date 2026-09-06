@@ -48,11 +48,13 @@ public partial class StageFourSelfTest : Node
     {
         Check(catalog.IsValid, "完整天津数据目录通过校验", string.Join(" | ", catalog.ValidationIssues));
         Check(catalog.DaysByNumber.Count == 15, "Day 1～15 连续加载");
-        Check(catalog.ProductsById.Count == 2 && catalog.ProductsById[StableIds.Products.Youtiao].UnitPrice == 2
-            && catalog.ProductsById[StableIds.Products.SoyMilk].UnitPrice == 3, "油条与豆浆商品价格准确");
+        Check(catalog.ProductsById.Count == 4 && catalog.ProductsById[StableIds.Products.Youtiao].UnitPrice == 2
+            && catalog.ProductsById[StableIds.Products.SoyMilk].UnitPrice == 3
+            && catalog.ProductsById[StableIds.Products.Doupi].UnitPrice == 5
+            && catalog.ProductsById[StableIds.Products.EggRiceWine].UnitPrice == 4, "天津与武汉独立商品价格准确");
         Check(catalog.FryersByLevel.Count == 3 && catalog.FryersByLevel[1].Capacity == 6
             && catalog.FryersByLevel[2].Capacity == 8 && catalog.FryersByLevel[3].AutoRaise, "三级油条锅资源准确");
-        Check(catalog.CustomersById.Count == 4, "四类顾客资源齐全");
+        Check(catalog.CustomersById.Count == 9, "天津与武汉顾客资源齐全");
         CheckCustomer(catalog, "office_worker", 10.8, 21.6, 30.24, 36, .2);
         CheckCustomer(catalog, "regular", 18, 36, 50.4, 60, .1);
         CheckCustomer(catalog, "big_order", 20.4, 40.8, 57.12, 68, .1);
@@ -347,7 +349,7 @@ public partial class StageFourSelfTest : Node
         Directory.CreateDirectory(Path.GetDirectoryName(legacyAbsolute)!);
         File.WriteAllText(legacyAbsolute, "{\"Version\":1,\"Coins\":500,\"HighestUnlockedDay\":4,\"PurchasedStoveLevel\":2,\"PurchasedIngredientStationLevel\":2,\"UnlockedUpgradeIds\":[],\"DayBestRecords\":{\"4\":{\"TotalRevenue\":82,\"CompletedCustomers\":10,\"PerfectOrders\":5,\"HighestCorrectStreak\":3,\"Satisfaction\":90,\"YoutiaoUsed\":0,\"YoutiaoBurnt\":0}},\"LastDayPlan\":null}");
         var save = new SaveService(); AddChild(save); save.UsePathsForTests(current, legacy);
-        Check(save.MigratedLegacySave && save.Data.Version == 2 && save.Data.Coins == 500 && save.Data.HighestUnlockedDay == 5
+        Check(save.MigratedLegacySave && save.Data.Version == SaveService.CurrentVersion && save.Data.Coins == 500 && save.Data.HighestUnlockedDay == 5
             && save.Data.PurchasedFryerLevel == 1, "v1 存档自动迁移并保留阶段 3 进度");
         Check(File.Exists(save.CorruptBackupPath), "迁移前保留带时间戳的 v1 备份");
 

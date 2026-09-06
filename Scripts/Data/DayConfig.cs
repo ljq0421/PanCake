@@ -8,12 +8,26 @@ public enum ProductKind
     Pancake,
     Youtiao,
     SoyMilk,
+    HotDryNoodles,
+    Doupi,
+    EggRiceWine,
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<SatisfactionAverageMode>))]
+public enum SatisfactionAverageMode
+{
+    PlannedCustomers,
+    CompletedCustomers,
 }
 
 public sealed class DayConfig
 {
     [JsonIgnore]
     public string SourcePath { get; set; } = string.Empty;
+
+    public string CityId { get; set; } = StableIds.Cities.Tianjin;
+
+    public SatisfactionAverageMode SatisfactionAverageMode { get; set; } = SatisfactionAverageMode.PlannedCustomers;
 
     [JsonRequired]
     public int Day { get; set; }
@@ -106,4 +120,10 @@ public sealed class DayConstraintConfig
 
     [JsonRequired]
     public int MaxPancakesPerCustomer { get; set; }
+
+    public int MaxConsecutiveComplexOrders { get; set; } = 2;
+
+    public double PressureDelaySeconds { get; set; }
+
+    public double MaxPressureDelaySeconds { get; set; }
 }

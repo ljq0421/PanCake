@@ -1,4 +1,6 @@
 {
+  "cityId": "city:tianjin",
+  "satisfactionAverageMode": "plannedCustomers",
   "day": 1,
   "durationSeconds": 60,
   "customerCount": 6,
@@ -37,4 +39,3 @@
     "maxPancakesPerCustomer": 1
   }
 }
-

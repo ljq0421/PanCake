@@ -1,0 +1,7 @@
+{
+  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":7,"durationSeconds":115,"customerCount":14,"expectedRevenue":186,"patienceMultiplier":1.0,"maxWaitingCustomers":4,"randomSeed":2007,
+  "customerWeights":{"wuhan_normal":0.85,"wuhan_office_worker":0.15},"orderTypeWeights":{"hot_dry_noodles":0.40,"doupi":0.10,"egg_rice_wine":0.05,"noodles_doupi":0.20,"noodles_egg_rice_wine":0.20,"wuhan_full_combo":0.05},"recipeWeights":{"hot_dry_noodles_classic":0.10,"hot_dry_noodles_scallion":0.15,"hot_dry_noodles_chili":0.15,"hot_dry_noodles_scallion_chili":0.20,"hot_dry_noodles_beef":0.25,"hot_dry_noodles_beef_chili":0.15},
+  "arrivalSegments":[{"start":0.0,"end":0.2,"customerRatio":0.15},{"start":0.2,"end":0.75,"customerRatio":0.70},{"start":0.75,"end":1.0,"customerRatio":0.15}],
+  "startUnlocks":["recipe:hot_dry_noodles_beef","recipe:hot_dry_noodles_beef_chili"],"completionUnlocks":[],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion","hot_dry_noodles_chili","hot_dry_noodles_scallion_chili","hot_dry_noodles_beef","hot_dry_noodles_beef_chili"],"availableProductKinds":["hotDryNoodles","doupi","eggRiceWine"],
+  "constraints":{"maxBigOrderCustomers":0,"simpleNewProductOrders":0,"maxConsecutiveYoutiaoOrders":2,"maxPancakesPerCustomer":2,"maxConsecutiveComplexOrders":2,"pressureDelaySeconds":2,"maxPressureDelaySeconds":4},"starGoals":[]
+}

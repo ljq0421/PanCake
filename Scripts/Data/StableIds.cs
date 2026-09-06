@@ -2,15 +2,25 @@ namespace ProjectCake.Data;
 
 public static class StableIds
 {
+    public static class Cities
+    {
+        public const string Tianjin = "city:tianjin";
+        public const string Wuhan = "city:wuhan";
+    }
+
     public static class Products
     {
         public const string Youtiao = "youtiao";
         public const string SoyMilk = "soy_milk";
+        public const string Doupi = "doupi";
+        public const string EggRiceWine = "egg_rice_wine";
 
         public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
         {
             Youtiao,
             SoyMilk,
+            Doupi,
+            EggRiceWine,
         };
     }
 
@@ -23,6 +33,11 @@ public static class StableIds
         public const string Scallion = "scallion";
         public const string Ham = "ham";
         public const string Youtiao = "youtiao";
+        public const string WuhanNoodles = "wuhan_noodles";
+        public const string WuhanBaseSeasoning = "wuhan_base_seasoning";
+        public const string WuhanScallion = "wuhan_scallion";
+        public const string WuhanChiliOil = "wuhan_chili_oil";
+        public const string WuhanBraisedBeef = "wuhan_braised_beef";
     }
 
     public static class Recipes
@@ -35,6 +50,12 @@ public static class StableIds
         public const string HamCrispy = "pancake_ham_crispy";
         public const string Youtiao = "pancake_youtiao";
         public const string ScallionYoutiao = "pancake_scallion_youtiao";
+        public const string HotDryNoodlesClassic = "hot_dry_noodles_classic";
+        public const string HotDryNoodlesScallion = "hot_dry_noodles_scallion";
+        public const string HotDryNoodlesChili = "hot_dry_noodles_chili";
+        public const string HotDryNoodlesScallionChili = "hot_dry_noodles_scallion_chili";
+        public const string HotDryNoodlesBeef = "hot_dry_noodles_beef";
+        public const string HotDryNoodlesBeefChili = "hot_dry_noodles_beef_chili";
 
         public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
         {
@@ -46,6 +67,12 @@ public static class StableIds
             HamCrispy,
             Youtiao,
             ScallionYoutiao,
+            HotDryNoodlesClassic,
+            HotDryNoodlesScallion,
+            HotDryNoodlesChili,
+            HotDryNoodlesScallionChili,
+            HotDryNoodlesBeef,
+            HotDryNoodlesBeefChili,
         };
     }
 
@@ -58,6 +85,11 @@ public static class StableIds
         Ingredients.Scallion,
         Ingredients.Ham,
         Ingredients.Youtiao,
+        Ingredients.WuhanNoodles,
+        Ingredients.WuhanBaseSeasoning,
+        Ingredients.WuhanScallion,
+        Ingredients.WuhanChiliOil,
+        Ingredients.WuhanBraisedBeef,
     };
 
     public static readonly IReadOnlySet<string> CustomerTypeIds = new HashSet<string>(StringComparer.Ordinal)
@@ -66,6 +98,11 @@ public static class StableIds
         "office_worker",
         "regular",
         "big_order",
+        "wuhan_normal",
+        "wuhan_office_worker",
+        "wuhan_regular",
+        "wuhan_tourist",
+        "wuhan_big_order",
     };
 
     public static readonly IReadOnlySet<string> OrderTypeIds = new HashSet<string>(StringComparer.Ordinal)
@@ -76,6 +113,12 @@ public static class StableIds
         "soy_milk",
         "pancake_soy_milk",
         "full_combo",
+        "hot_dry_noodles",
+        "doupi",
+        "egg_rice_wine",
+        "noodles_doupi",
+        "noodles_egg_rice_wine",
+        "wuhan_full_combo",
     };
 
     public static readonly IReadOnlySet<string> UnlockIds = BuildUnlockIds();
@@ -105,6 +148,16 @@ public static class StableIds
         values.Add("equipment:fryer_lv3");
         values.Add("product:soy_milk");
         values.Add("product:youtiao");
+        values.Add("product:doupi");
+        values.Add("product:egg_rice_wine");
+        values.Add("equipment:wuhan_ingredient_station_lv2");
+        values.Add("equipment:wuhan_ingredient_station_lv3");
+        values.Add("equipment:noodle_cooker_lv2");
+        values.Add("equipment:noodle_cooker_lv3");
+        values.Add("equipment:doupi_griddle_lv1");
+        values.Add("equipment:doupi_griddle_lv2");
+        values.Add("equipment:doupi_griddle_lv3");
+        values.Add("equipment:egg_rice_wine_station");
 
         return values;
     }

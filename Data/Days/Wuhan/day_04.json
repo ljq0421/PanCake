@@ -1,0 +1,7 @@
+{
+  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":4,"durationSeconds":90,"customerCount":10,"expectedRevenue":112,"patienceMultiplier":1.0,"maxWaitingCustomers":4,"randomSeed":2004,
+  "customerWeights":{"wuhan_normal":1.0},"orderTypeWeights":{"hot_dry_noodles":0.70,"doupi":0.20,"noodles_doupi":0.10},"recipeWeights":{"hot_dry_noodles_classic":0.25,"hot_dry_noodles_scallion":0.25,"hot_dry_noodles_chili":0.25,"hot_dry_noodles_scallion_chili":0.25},
+  "arrivalSegments":[{"start":0.0,"end":0.2,"customerRatio":0.15},{"start":0.2,"end":0.75,"customerRatio":0.70},{"start":0.75,"end":1.0,"customerRatio":0.15}],
+  "startUnlocks":["equipment:doupi_griddle_lv1","product:doupi"],"completionUnlocks":[],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion","hot_dry_noodles_chili","hot_dry_noodles_scallion_chili"],"availableProductKinds":["hotDryNoodles","doupi"],
+  "constraints":{"maxBigOrderCustomers":0,"simpleNewProductOrders":0,"maxConsecutiveYoutiaoOrders":2,"maxPancakesPerCustomer":2,"maxConsecutiveComplexOrders":2,"pressureDelaySeconds":2,"maxPressureDelaySeconds":4},"starGoals":[]
+}

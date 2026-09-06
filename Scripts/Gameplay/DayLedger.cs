@@ -1,4 +1,5 @@
 using ProjectCake.Orders;
+using ProjectCake.Data;
 
 namespace ProjectCake.Gameplay;
 
@@ -24,13 +25,15 @@ public sealed class DayLedger
 {
     private readonly int _day;
     private readonly int _plannedCustomers;
+    private readonly SatisfactionAverageMode _averageMode;
     private int _satisfactionPoints;
     private int _currentStreak;
 
-    public DayLedger(int day, int plannedCustomers)
+    public DayLedger(int day, int plannedCustomers, SatisfactionAverageMode averageMode = SatisfactionAverageMode.PlannedCustomers)
     {
         _day = day;
         _plannedCustomers = plannedCustomers;
+        _averageMode = averageMode;
     }
 
     public int SaleRevenue { get; private set; }
@@ -92,7 +95,9 @@ public sealed class DayLedger
         CorrectOrders = CorrectOrders,
         IncorrectOrders = IncorrectOrders,
         HighestCorrectStreak = HighestCorrectStreak,
-        Satisfaction = _plannedCustomers == 0 ? 0 : (double)_satisfactionPoints / _plannedCustomers,
+        Satisfaction = (_averageMode == SatisfactionAverageMode.CompletedCustomers ? CompletedCustomers : _plannedCustomers) == 0
+            ? 0
+            : (double)_satisfactionPoints / (_averageMode == SatisfactionAverageMode.CompletedCustomers ? CompletedCustomers : _plannedCustomers),
         YoutiaoUsed = YoutiaoUsed,
         YoutiaoBurnt = YoutiaoBurnt,
     };

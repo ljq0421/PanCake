@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NoodleCookerLevelData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/NoodleCookerLevelData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+Level = 1
+BasketCount = 1
+OptimalSeconds = 1.6
+SoftUntilSeconds = 3.0
+OvercookedSeconds = 4.0
+AutoLockOptimal = false
+AutoRaise = false
+NaturalDrainSeconds = 0.7
+QuickDrainSeconds = 0.35
+UpgradePrice = 0

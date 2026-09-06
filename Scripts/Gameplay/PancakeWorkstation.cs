@@ -11,6 +11,11 @@ namespace ProjectCake.Gameplay;
 
 public partial class PancakeWorkstation : Control
 {
+    private static readonly Rect2 FryerAreaRect = new(24, 475, 520, 535);
+    private static readonly Rect2 StoveAreaRect = new(446, 475, 760, 535);
+    private static readonly Rect2 UtilityAreaRect = new(1218, 590, 666, 100);
+    private static readonly Rect2 IngredientAreaRect = new(1218, 700, 666, 310);
+
     private static readonly (string Id, string Name, Color Color, bool Drag)[] Ingredients =
     {
         (StableIds.Ingredients.Batter, "面糊", new Color("#E9C687"), true),
@@ -203,16 +208,16 @@ public partial class PancakeWorkstation : Control
         TianjinUi.FullRect(stage);
         AddChild(stage);
         Control fryer = BuildFryer();
-        Place(fryer, 24, 500, 520, 510);
+        Place(fryer, FryerAreaRect);
         stage.AddChild(fryer);
         Control stove = BuildStove();
-        Place(stove, 446, 500, 760, 510);
+        Place(stove, StoveAreaRect);
         stage.AddChild(stove);
         Control ingredients = BuildIngredients();
-        Place(ingredients, 1218, 590, 666, 420);
+        Place(ingredients, IngredientAreaRect);
         stage.AddChild(ingredients);
         Control delivery = BuildDelivery();
-        Place(delivery, 1192, 468, 692, 110);
+        Place(delivery, UtilityAreaRect);
         stage.AddChild(delivery);
         _batterLadle = new TextureRect
         {
@@ -239,7 +244,7 @@ public partial class PancakeWorkstation : Control
         root.AddChild(title);
 
         var fryerStack = new Control { Name = "FryerStack" };
-        Place(fryerStack, 0, 18, 350, 350);
+        Place(fryerStack, 0, 18, 340, 340);
         _fryerVisual = new FryerVisualView { Name = "FryerVisual", MouseFilter = MouseFilterEnum.Ignore };
         FullRect(_fryerVisual, 0, 0, 0, 0);
         fryerStack.AddChild(_fryerVisual);
@@ -254,22 +259,16 @@ public partial class PancakeWorkstation : Control
         root.AddChild(fryerStack);
 
         var loadColumn = new VBoxContainer();
-        Place(loadColumn, 350, 58, 150, 160);
-        var raw = new DragItem { CustomMinimumSize = new Vector2(0, 160), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        Place(loadColumn, 342, 48, 170, 150);
+        var rawSlot = new WorkstationSlotView { Name = "RawYoutiaoSlot", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        rawSlot.Configure(_art.IngredientTray, _art.RawYoutiao, "生油条", RawYoutiaoSlotSpec());
+        var raw = new DragItem { Name = "RawYoutiaoInput" };
         raw.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        TextureRect rawTray = TianjinUi.Texture(_art.IngredientTray, new Vector2(0, 160));
-        rawTray.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        rawTray.Modulate = new Color(1, 1, 1, 0.72f);
-        rawTray.MouseFilter = MouseFilterEnum.Ignore;
-        raw.AddChild(rawTray);
-        var rawContent = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        rawContent.AddChild(TianjinUi.Texture(_art.RawYoutiao, new Vector2(76, 94)));
-        rawContent.AddChild(FloatingText("生油条", 15, TianjinUi.BrownText, HorizontalAlignment.Center));
-        raw.AddChild(rawContent);
         raw.Configure(_drag, RawYoutiaoPayload, "生油条", new Color("#F7D892"), new DragVisualSpec(_art.RawYoutiao, new Vector2(105, 105)), CanLoadRawYoutiao);
         raw.StartRejected += () => Reject("炸篮当前不能继续装料。");
-        ConfigureArtInteraction(raw);
-        loadColumn.AddChild(raw);
+        rawSlot.SetInteraction(raw);
+        ConfigureArtInteraction(raw, rawSlot.HoverTarget);
+        loadColumn.AddChild(rawSlot);
         root.AddChild(loadColumn);
 
         _fryerStatus = FloatingText("尚未解锁", 16, TianjinUi.BrownText, HorizontalAlignment.Center);
@@ -312,66 +311,43 @@ public partial class PancakeWorkstation : Control
     {
         var root = FramelessRoot("IngredientArea", 666);
         var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 6);
+        column.AddThemeConstantOverride("separation", 4);
         FullRect(column, 4, 0, -4, 0);
         root.AddChild(column);
         column.AddChild(FloatingText("配料", 21, TianjinUi.BrownText));
-        var groups = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
-        groups.AddThemeConstantOverride("separation", 8);
-        var core = new VBoxContainer { CustomMinimumSize = new Vector2(321, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var extras = new VBoxContainer { CustomMinimumSize = new Vector2(321, 0), SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        core.AddThemeConstantOverride("separation", 6);
-        extras.AddThemeConstantOverride("separation", 6);
-        groups.AddChild(core);
-        groups.AddChild(extras);
-        column.AddChild(groups);
-        foreach ((string id, string name, Color color, bool drag) in Ingredients)
+        var grid = new GridContainer
         {
-            Control group = id is StableIds.Ingredients.Crispy or StableIds.Ingredients.Ham ? extras : core;
-            group.AddChild(BuildIngredientSlot(id, name, color, drag));
-        }
+            Columns = 2,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+        };
+        grid.AddThemeConstantOverride("h_separation", 8);
+        grid.AddThemeConstantOverride("v_separation", 6);
+        column.AddChild(grid);
+        foreach ((string id, string name, Color color, bool drag) in Ingredients)
+            grid.AddChild(BuildIngredientSlot(id, name, color, drag));
         return root;
     }
 
-    private PanelContainer BuildIngredientSlot(string id, string name, Color color, bool drag)
+    private WorkstationSlotView BuildIngredientSlot(string id, string name, Color color, bool drag)
     {
-        var slot = new PanelContainer
-        {
-            Name = $"IngredientSlot_{id.Replace(':', '_')}",
-            CustomMinimumSize = new Vector2(316, 82),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-        };
-        slot.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        var slot = new WorkstationSlotView { Name = $"IngredientSlot_{id.Replace(':', '_')}", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         Texture2D containerTexture = id switch
         {
             StableIds.Ingredients.Batter => _art.BatterContainer,
             StableIds.Ingredients.Sauce => _art.SauceContainer,
             _ => _art.IngredientTray,
         };
-        TextureRect containerArt = TianjinUi.Texture(containerTexture, new Vector2(316, 82));
-        containerArt.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        containerArt.Modulate = new Color(1, 1, 1, 0.88f);
-        containerArt.MouseFilter = MouseFilterEnum.Ignore;
-        slot.AddChild(containerArt);
-        var contentColumn = new VBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        contentColumn.AddThemeConstantOverride("separation", 0);
-        slot.AddChild(contentColumn);
-        var row = new HBoxContainer { CustomMinimumSize = new Vector2(0, 66), SizeFlagsVertical = SizeFlags.ExpandFill };
-        row.AddThemeConstantOverride("separation", 4);
-        contentColumn.AddChild(row);
         Texture2D texture = _art.Ingredient(id);
+        slot.Configure(containerTexture, texture, name, IngredientSlotSpec(id));
         Control input;
         if (drag)
         {
-            var item = new DragItem { CustomMinimumSize = new Vector2(170, 62), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var item = new DragItem();
             item.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-            var content = new HBoxContainer();
-            content.AddChild(TianjinUi.Texture(texture, new Vector2(56, 54)));
-            content.AddChild(FloatingText(name, 17, TianjinUi.BrownText, HorizontalAlignment.Center));
-            item.AddChild(content);
             item.Configure(_drag, id, name, color, new DragVisualSpec(texture, new Vector2(105, 105)), () => CanUse(id));
             item.StartRejected += () => Reject("当前不能取用该食材。");
-            ConfigureArtInteraction(item);
+            ConfigureArtInteraction(item, slot.HoverTarget);
             if (id == StableIds.Ingredients.Batter) _batterItem = item;
             input = item;
         }
@@ -379,14 +355,10 @@ public partial class PancakeWorkstation : Control
         {
             var button = new ClickInteractable
             {
-                Text = name,
-                Icon = texture,
-                ExpandIcon = true,
-                CustomMinimumSize = new Vector2(170, 62),
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                Text = string.Empty,
             };
             ApplyFramelessButtonStyle(button);
-            ConfigureArtInteraction(button);
+            ConfigureArtInteraction(button, slot.HoverTarget);
             button.Invoked += () =>
             {
                 if (id == StableIds.Ingredients.Egg) Execute(PancakeCommand.AddEgg);
@@ -396,29 +368,20 @@ public partial class PancakeWorkstation : Control
         }
         else
         {
-            var display = new HBoxContainer
-            {
-                CustomMinimumSize = new Vector2(170, 62),
-                SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                MouseFilter = MouseFilterEnum.Ignore,
-            };
-            display.AddChild(TianjinUi.Texture(texture, new Vector2(56, 54)));
-            display.AddChild(FloatingText(name, 17, TianjinUi.BrownText, HorizontalAlignment.Center));
-            input = display;
+            input = new Control { MouseFilter = MouseFilterEnum.Ignore };
         }
         input.Name = $"IngredientInput_{id.Replace(':', '_')}";
-        row.AddChild(input);
-        var count = FloatingText("×0", 16, TianjinUi.BrownText, HorizontalAlignment.Center);
+        slot.SetInteraction(input);
+        Label count = slot.CountLabel;
         count.Name = $"IngredientCount_{id.Replace(':', '_')}";
-        count.CustomMinimumSize = new Vector2(50, 58);
+        count.Text = "×0";
         _counts[id] = count;
-        row.AddChild(count);
         var refill = SmallButton("补料");
         refill.Name = $"IngredientRefill_{id.Replace(':', '_')}";
-        refill.CustomMinimumSize = new Vector2(62, 48);
+        refill.CustomMinimumSize = new Vector2(0, 48);
         refill.Pressed += () => Refill(id);
         _refills[id] = refill;
-        row.AddChild(refill);
+        slot.SetRefillControl(refill);
         var stock = new ProgressBar
         {
             Name = $"IngredientStock_{id.Replace(':', '_')}",
@@ -435,7 +398,7 @@ public partial class PancakeWorkstation : Control
         stock.AddThemeStyleboxOverride("fill", stockFill);
         _stockBars[id] = stock;
         _stockFills[id] = stockFill;
-        contentColumn.AddChild(stock);
+        slot.SetStockControl(stock);
         _ingredientRows[id] = slot;
         return slot;
     }
@@ -506,12 +469,9 @@ public partial class PancakeWorkstation : Control
 
     private Control BuildDelivery()
     {
-        var root = FramelessRoot("DeliveryArea", 692);
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 8);
-        FullRect(row, 0, 0, 0, 0);
-        root.AddChild(row);
+        var root = FramelessRoot("DeliveryArea", 666);
         var delivery = new DropZone { Name = "DeliveryDropZone", CustomMinimumSize = new Vector2(138, 92) };
+        Place(delivery, 57, 4, 138, 92);
         _deliveryZone = delivery;
         TextureRect servingTray = TianjinUi.Texture(_art.ServingTray, new Vector2(138, 92));
         servingTray.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -520,26 +480,32 @@ public partial class PancakeWorkstation : Control
         delivery.AddChild(servingTray);
         delivery.AddChild(FloatingText("出餐", 17, TianjinUi.BrownText, HorizontalAlignment.Center));
         delivery.Configure(CanDeliverPayload, DeliverPayload, _ => delivery.GetGlobalRect().GetCenter());
-        row.AddChild(delivery);
+        root.AddChild(delivery);
         _drag.RegisterZone(delivery);
+        var finishedSlot = new Control { Name = "FinishedPancakeSlot", CustomMinimumSize = new Vector2(138, 92) };
+        Place(finishedSlot, 203, 4, 138, 92);
         _finished = new DragItem { CustomMinimumSize = new Vector2(138, 92), Visible = false };
         _finished.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         var finishedRow = new HBoxContainer();
+        FullRect(finishedRow, 0, 0, 0, 0);
+        finishedRow.Alignment = BoxContainer.AlignmentMode.Center;
         finishedRow.AddChild(TianjinUi.Texture(_art.FinishedPancake, new Vector2(70, 64)));
         finishedRow.AddChild(FloatingText("煎饼", 15, TianjinUi.BrownText, HorizontalAlignment.Center));
         _finished.AddChild(finishedRow);
         _finished.Configure(_drag, "finished_pancake", "装袋煎饼", TianjinUi.Cream, new DragVisualSpec(_art.FinishedPancake, new Vector2(150, 125)), () => CanInteract && Machine.Runtime.State == PancakeState.Bagged);
         ConfigureArtInteraction(_finished);
-        row.AddChild(_finished);
+        finishedSlot.AddChild(_finished);
+        FullRect(_finished, 0, 0, 0, 0);
+        root.AddChild(finishedSlot);
         _soyPanel = new Control { CustomMinimumSize = new Vector2(144, 92) };
+        Place(_soyPanel, 349, 4, 144, 92);
         TextureRect soyTray = TianjinUi.Texture(_art.SoyTray, new Vector2(144, 92));
+        FullRect(soyTray, 0, 0, 0, 0);
         soyTray.Modulate = new Color(1, 1, 1, 0.42f);
         soyTray.MouseFilter = MouseFilterEnum.Ignore;
         _soyPanel.AddChild(soyTray);
-        var soyContentRow = new HBoxContainer();
-        FullRect(soyContentRow, 0, 0, 0, 0);
-        _soyPanel.AddChild(soyContentRow);
         _soyCup = new DragItem { CustomMinimumSize = new Vector2(74, 86) };
+        Place(_soyCup, 0, 3, 74, 86);
         _soyCup.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         var soyContent = new HBoxContainer();
         soyContent.AddChild(TianjinUi.Texture(_art.Product(ProductKind.SoyMilk), new Vector2(44, 58)));
@@ -547,14 +513,16 @@ public partial class PancakeWorkstation : Control
         _soyCup.Configure(_drag, SoyMilkPayload, "豆浆", TianjinUi.Cream, new DragVisualSpec(_art.Product(ProductKind.SoyMilk), new Vector2(88, 98)), () => CanInteract && SoyMilkTray?.CanStartDrag == true);
         _soyCup.StartRejected += () => Reject("豆浆托盘正在取杯、补货或已经空了。");
         ConfigureArtInteraction(_soyCup);
-        soyContentRow.AddChild(_soyCup);
+        _soyPanel.AddChild(_soyCup);
         var soyActions = new VBoxContainer();
+        Place(soyActions, 76, 2, 68, 88);
         _soyStatus = FloatingText("6/6", 14, TianjinUi.BrownText, HorizontalAlignment.Center); soyActions.AddChild(_soyStatus);
         _soyRefill = SmallButton("补料"); _soyRefill.CustomMinimumSize = new Vector2(62, 48); _soyRefill.Pressed += RefillSoyMilk; soyActions.AddChild(_soyRefill);
-        soyContentRow.AddChild(soyActions);
-        row.AddChild(_soyPanel);
+        _soyPanel.AddChild(soyActions);
+        root.AddChild(_soyPanel);
 
         _trashZone = new DropZone { Name = "TrashZone", CustomMinimumSize = new Vector2(108, 92) };
+        Place(_trashZone, 501, 4, 108, 92);
         _trashZone.Configure(CanTrashPayload, DiscardPayload, _ => _trashZone.GetGlobalRect().GetCenter());
         TextureRect trashArt = TianjinUi.Texture(_art.Trash, new Vector2(68, 72));
         trashArt.Position = new Vector2(20, 0);
@@ -565,11 +533,39 @@ public partial class PancakeWorkstation : Control
         _trashButton.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _trashButton.Pressed += ClearCurrentWaste;
         _trashZone.AddChild(_trashButton);
-        row.AddChild(_trashZone);
+        root.AddChild(_trashZone);
         _drag.RegisterZone(_trashZone);
         ConfigureArtInteraction(_trashButton);
         return root;
     }
+
+    private static WorkstationSlotSpec RawYoutiaoSlotSpec() => new(
+        new Vector2(170, 150),
+        new Rect2(0, 28, 170, 88),
+        new Rect2(53, 40, 64, 64),
+        new Rect2(24, 116, 122, 26),
+        new Rect2(),
+        new Rect2(),
+        new Rect2(0, 20, 170, 126),
+        new Rect2(),
+        0.74f);
+
+    private static WorkstationSlotSpec IngredientSlotSpec(string id) => new(
+        new Vector2(321, 88),
+        new Rect2(0, 0, 248, 82),
+        new Rect2(56, 5, 136, 52),
+        new Rect2(62, 56, 124, 25),
+        new Rect2(188, 7, 58, 25),
+        new Rect2(252, 18, 66, 52),
+        new Rect2(8, 3, 232, 79),
+        new Rect2(4, 82, 240, 6),
+        id switch
+        {
+            StableIds.Ingredients.Batter => 0.72f,
+            StableIds.Ingredients.Crispy => 0.56f,
+            StableIds.Ingredients.Scallion => 0.66f,
+            _ => 0.62f,
+        });
 
     private bool CanInteract => InteractionEnabled && !Paused && !_batterDropAnimating;
     private bool CanUse(string id) => _initialized && CanInteract && _enabledIngredients.Contains(id) && Inventory.GetQuantity(id) > 0 && !Inventory.IsRefilling(id);
@@ -1032,20 +1028,21 @@ public partial class PancakeWorkstation : Control
         button.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
         button.AddThemeFontSizeOverride("font_size", 16);
     }
-    private void ConfigureArtInteraction(Control control)
+    private void ConfigureArtInteraction(Control control, Control? visualTarget = null)
     {
-        control.MouseEntered += () => AnimateArtInteraction(control, 1.035f, new Color(1.08f, 1.08f, 1.04f, 1), 0.12);
-        control.MouseExited += () => AnimateArtInteraction(control, 1f, Colors.White, 0.12);
+        Control target = visualTarget ?? control;
+        control.MouseEntered += () => AnimateArtInteraction(target, 1.035f, new Color(1.08f, 1.08f, 1.04f, 1), 0.12);
+        control.MouseExited += () => AnimateArtInteraction(target, 1f, Colors.White, 0.12);
         if (control is BaseButton button)
         {
-            button.ButtonDown += () => AnimateArtInteraction(control, 0.98f, new Color(0.94f, 0.94f, 0.94f, 1), 0.10);
+            button.ButtonDown += () => AnimateArtInteraction(target, 0.98f, new Color(0.94f, 0.94f, 0.94f, 1), 0.10);
             button.ButtonUp += () =>
             {
                 bool hovered = control.GetGlobalRect().HasPoint(control.GetGlobalMousePosition());
-                AnimateArtInteraction(control, hovered ? 1.035f : 1f, hovered ? new Color(1.08f, 1.08f, 1.04f, 1) : Colors.White, 0.12);
+                AnimateArtInteraction(target, hovered ? 1.035f : 1f, hovered ? new Color(1.08f, 1.08f, 1.04f, 1) : Colors.White, 0.12);
             };
         }
-        if (control is DragItem dragItem) dragItem.StartRejected += () => PulseRejected(control);
+        if (control is DragItem dragItem) dragItem.StartRejected += () => PulseRejected(target);
     }
     private void AnimateArtInteraction(Control control, float targetScale, Color targetModulate, double duration)
     {
@@ -1099,5 +1096,6 @@ public partial class PancakeWorkstation : Control
         button.AddThemeFontSizeOverride("font_size", 17);
     }
     private static void Place(Control control, float x, float y, float width, float height) { control.Position = new Vector2(x, y); control.Size = new Vector2(width, height); }
+    private static void Place(Control control, Rect2 rect) { control.Position = rect.Position; control.Size = rect.Size; }
     private static void FullRect(Control c, float l, float t, float r, float b) { c.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); c.OffsetLeft = l; c.OffsetTop = t; c.OffsetRight = r; c.OffsetBottom = b; }
 }

@@ -377,20 +377,48 @@ public partial class StageFourSelfTest : Node
         Check(main.HasNode("UI/TianjinMapScreen"), "Main 接入天津完成与武汉占位地图");
         main.Free();
 
+        var dayLayout = new TianjinDayScreen();
+        AddChild(dayLayout);
+        var customerStrip = dayLayout.FindChild("CustomerStrip", true, false) as HBoxContainer;
+        var feedbackPanel = dayLayout.FindChild("FeedbackPanel", true, false) as Control;
+        float customerContentWidth = customerStrip?.GetChildren().OfType<Button>()
+            .Sum(button => button.CustomMinimumSize.X) ?? float.MaxValue;
+        int visibleSlotGaps = Math.Max(0, (customerStrip?.GetChildCount() ?? 0) - 1) * 12;
+        Check(customerStrip is { Position.Y: 160, Size.X: 1812 }
+            && customerContentWidth + visibleSlotGaps <= customerStrip.Size.X, "顾客区下移且五个顾客槽不会横向溢出");
+        Check(customerStrip is not null && feedbackPanel is not null
+            && customerStrip.Position.Y + customerStrip.Size.Y < feedbackPanel.Position.Y, "反馈提示位于顾客区下方的独立安全带");
+        dayLayout.QueueFree();
+
         var workstation = new PancakeWorkstation();
         AddChild(workstation);
         workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[5], new TianjinArtCatalog());
         Check(workstation.FindChild("FryerVisual", true, false) is FryerVisualView, "工作台使用锅体与滤篮分层的炸锅视图");
         Check(workstation.FindChild("FryerStack", true, false) is Control { Size: var fryerSize }
-            && fryerSize.X == 350 && fryerSize.Y == 350, "桌面炸锅收进紧凑的左侧生产闭环");
+            && fryerSize.X == 340 && fryerSize.Y == 340, "桌面炸锅收进紧凑的左侧生产闭环");
         Check(workstation.FindChild("FinishedYoutiaoArea", true, false) is VBoxContainer
             && workstation.FindChild("FinishedYoutiaoStock", true, false) is Label
             && workstation.FindChild("FinishedYoutiaoDrag", true, false) is DragItem, "成品油条库存与拖拽入口合并显示且不再使用独立沥油架");
         Check(workstation.FindChild("TrashZone", true, false) is not null, "工作台接入可拖放垃圾桶");
         string[] framelessAreas = { "FryerArea", "StoveArea", "IngredientArea", "DeliveryArea" };
         Check(framelessAreas.All(name => workstation.FindChild(name, true, false) is Control and not PanelContainer), "四个设备区域使用无框场景容器");
-        Godot.Collections.Array<Node> ingredientSlots = workstation.FindChildren("IngredientSlot_*", "PanelContainer", true, false);
-        Check(ingredientSlots.Count == 6 && ingredientSlots.Cast<PanelContainer>().All(slot => slot.GetThemeStylebox("panel") is StyleBoxEmpty), "六个配料槽不再绘制卡片框体");
+        WorkstationSlotView[] ingredientSlots = workstation.FindChildren("IngredientSlot_*", "Control", true, false)
+            .OfType<WorkstationSlotView>().ToArray();
+        Check(ingredientSlots.Length == 6, "六个配料槽统一使用工作台槽位组件");
+        Check(ingredientSlots.All(slot => slot.IngredientIsInsideTray(4)), "六个配料图片均位于托盘安全边界内");
+        var rawSlot = workstation.FindChild("RawYoutiaoSlot", true, false) as WorkstationSlotView;
+        Check(rawSlot is not null && rawSlot.IngredientIsInsideTray(8), "生油条缩小并居中收进托盘安全边界");
+        Check(ingredientSlots.All(slot => slot.ClickBounds.Size.X >= 48 && slot.ClickBounds.Size.Y >= 48)
+            && rawSlot is not null && rawSlot.ClickBounds.Size.X >= 48 && rawSlot.ClickBounds.Size.Y >= 48, "食材与生油条槽位点击区域不小于 48×48");
+        var utilityArea = workstation.FindChild("DeliveryArea", true, false) as Control;
+        var ingredientArea = workstation.FindChild("IngredientArea", true, false) as Control;
+        Check(utilityArea is not null && utilityArea.Position.Y >= 578 && utilityArea.Position.X >= 0
+            && utilityArea.Position.X + utilityArea.Size.X <= 1920, "出餐、豆浆与丢弃辅助区完整位于工作台内");
+        Check(utilityArea is not null && ingredientArea is not null
+            && utilityArea.Position.Y + utilityArea.Size.Y <= ingredientArea.Position.Y
+            && ingredientArea.Position.Y + ingredientArea.Size.Y <= 1080, "右侧辅助区与配料区上下分区且不越界");
+        Check(workstation.FindChild("FinishedPancakeSlot", true, false) is Control { CustomMinimumSize: var finishedSlotSize }
+            && finishedSlotSize == new Vector2(138, 92), "装袋成品隐藏时保留固定辅助槽位");
         Check(new[] { "FryerLowerAction", "FryerRaiseAction", "FryerDiscardAction", "PancakeFlipAction", "PancakeFoldAction", "PancakeBagAction", "PancakeDiscardAction" }
             .All(name => workstation.FindChild(name, true, false) is Button { Visible: false }), "空设备不显示无效操作，动作按钮由状态上下文控制");
         Check(workstation.FindChildren("IngredientRefill_*", "Button", true, false).Cast<Button>().All(button => !button.Visible), "满库存时隐藏补料入口");
@@ -402,9 +430,12 @@ public partial class StageFourSelfTest : Node
         for (int index = 0; index < 5; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
         Check(batterStock is { Visible: true } && batterStock.CustomMinimumSize.Y == 4
             && batterRefill is { Visible: true } && Mathf.IsEqualApprox(batterRefill.Modulate.A, 0.65f), "半库存显示弱橙条和弱化补料入口");
+        WorkstationSlotView? batterSlot = ingredientSlots.FirstOrDefault(slot => slot.Name.ToString() == "IngredientSlot_batter");
+        Rect2 batterVisualBeforeRefill = batterSlot?.IngredientVisualRect ?? new Rect2();
         for (int index = 0; index < 3; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
         Check(batterStock is { Visible: true } && batterStock.CustomMinimumSize.Y == 6
             && batterRefill is { Visible: true } && Mathf.IsEqualApprox(batterRefill.Modulate.A, 1f), "两成库存显示强化红条和补料入口");
+        Check(batterSlot is not null && batterSlot.IngredientVisualRect == batterVisualBeforeRefill, "补料入口显隐不会推动食材锚点");
         workstation.Inventory.TryConsume(StableIds.Ingredients.Batter, 2);
         Check(workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "×0" } emptyCount
             && emptyCount.Modulate == TianjinUi.Red, "零库存数量使用红色且补料入口保持显示");

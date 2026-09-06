@@ -35,6 +35,7 @@ public partial class VisualCapture : Node
             : args.Contains("--capture-day15", StringComparer.Ordinal) ? 15 : 0;
         bool captureMap = args.Contains("--capture-map", StringComparer.Ordinal);
         bool capture720 = args.Contains("--capture-720", StringComparer.Ordinal);
+        GetWindow().Size = capture720 ? new Vector2I(1280, 720) : new Vector2I(1920, 1080);
         bool captureResult = args.Contains("--capture-result", StringComparer.Ordinal);
         bool captureLedger = args.Contains("--capture-ledger", StringComparer.Ordinal);
         string? expressionPageArg = args.FirstOrDefault(item => item.StartsWith("--capture-customer-expressions-page=", StringComparison.Ordinal));

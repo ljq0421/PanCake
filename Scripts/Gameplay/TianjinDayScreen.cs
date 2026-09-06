@@ -227,7 +227,8 @@ public partial class TianjinDayScreen : Control
     private void BuildCustomers()
     {
         var customers = new HBoxContainer();
-        customers.Position = new Vector2(54, 100);
+        customers.Name = "CustomerStrip";
+        customers.Position = new Vector2(54, 160);
         customers.Size = new Vector2(1812, 322);
         customers.Alignment = BoxContainer.AlignmentMode.Center;
         customers.AddThemeConstantOverride("separation", 12);
@@ -238,6 +239,7 @@ public partial class TianjinDayScreen : Control
             int slot = index;
             var button = new Button
             {
+                Name = $"CustomerSlot{index + 1}",
                 Text = string.Empty,
                 CustomMinimumSize = new Vector2(340, 322),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
@@ -292,7 +294,8 @@ public partial class TianjinDayScreen : Control
     private void BuildFeedback()
     {
         _feedbackPanel = TianjinUi.Panel(TianjinUi.Paper, 14);
-        _feedbackPanel.Position = new Vector2(600, 426);
+        _feedbackPanel.Name = "FeedbackPanel";
+        _feedbackPanel.Position = new Vector2(600, 506);
         _feedbackPanel.Size = new Vector2(720, 58);
         _feedbackPanel.ZIndex = 80;
         _feedbackPanel.Visible = false;
@@ -532,12 +535,12 @@ public partial class TianjinDayScreen : Control
         _feedback.Modulate = error ? TianjinUi.Red : TianjinUi.Green;
         _feedbackPanel.Visible = true;
         _feedbackPanel.Modulate = new Color(1, 1, 1, 0.2f);
-        _feedbackPanel.Position = new Vector2(600, 416);
+        _feedbackPanel.Position = new Vector2(600, 496);
         _feedbackRemaining = 2.4;
         CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
             .TweenProperty(_feedbackPanel, "modulate", Colors.White, 0.18);
         CreateTween().SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
-            .TweenProperty(_feedbackPanel, "position", new Vector2(600, 426), 0.18);
+            .TweenProperty(_feedbackPanel, "position", new Vector2(600, 506), 0.18);
     }
 
     private int SelectedSlotIndex()

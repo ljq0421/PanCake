@@ -4,7 +4,7 @@ namespace ProjectCake.UI;
 
 public partial class CustomerPortraitView : Control
 {
-    private const float HalfBodyZoom = 1.7f;
+    private const float PortraitCanvasHeight = 328.0f;
     private const float TopInset = 6.0f;
 
     private readonly TextureRect _body;
@@ -45,7 +45,7 @@ public partial class CustomerPortraitView : Control
     private void LayoutLayers()
     {
         Vector2 layerPosition = new(0, TopInset);
-        Vector2 layerSize = new(Size.X, Size.Y * HalfBodyZoom);
+        Vector2 layerSize = new(Size.X, PortraitCanvasHeight);
         _body.Position = layerPosition;
         _body.Size = layerSize;
         _head.Position = layerPosition;

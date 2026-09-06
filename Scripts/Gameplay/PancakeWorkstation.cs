@@ -13,8 +13,13 @@ public partial class PancakeWorkstation : Control
 {
     private static readonly Rect2 FryerAreaRect = new(24, 475, 520, 535);
     private static readonly Rect2 StoveAreaRect = new(446, 475, 760, 535);
-    private static readonly Rect2 UtilityAreaRect = new(1218, 590, 666, 100);
+    private static readonly Rect2 UtilityAreaRect = new(1218, 578, 666, 112);
     private static readonly Rect2 IngredientAreaRect = new(1218, 700, 666, 310);
+    private static readonly Rect2 DeliveryDropZoneRect = new(33, 2, 174, 108);
+    private static readonly Rect2 FinishedPancakeSlotRect = new(215, 10, 138, 92);
+    private static readonly Rect2 SoyMilkSlotRect = new(361, 10, 144, 92);
+    private static readonly Rect2 TrashZoneRect = new(513, 2, 120, 108);
+    private static readonly Rect2 ServingTrayTextureRegion = new(0, 224, 1536, 576);
 
     private static readonly (string Id, string Name, Color Color, bool Drag)[] Ingredients =
     {
@@ -30,11 +35,7 @@ public partial class PancakeWorkstation : Control
     private const string StoredYoutiaoPayload = "stored_youtiao";
     private const string SoyMilkPayload = "soy_milk_cup";
 
-    private readonly Dictionary<string, Label> _counts = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Button> _refills = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Control> _ingredientRows = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, ProgressBar> _stockBars = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, StyleBoxFlat> _stockFills = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IngredientStockSlotView> _ingredientSlots = new(StringComparer.Ordinal);
     private readonly HashSet<string> _lowStockNotified = new(StringComparer.Ordinal);
     private readonly Dictionary<Control, Tween> _interactionTweens = new();
     private readonly HashSet<string> _enabledIngredients = new(StringComparer.Ordinal)
@@ -329,9 +330,9 @@ public partial class PancakeWorkstation : Control
         return root;
     }
 
-    private WorkstationSlotView BuildIngredientSlot(string id, string name, Color color, bool drag)
+    private IngredientStockSlotView BuildIngredientSlot(string id, string name, Color color, bool drag)
     {
-        var slot = new WorkstationSlotView { Name = $"IngredientSlot_{id.Replace(':', '_')}", SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        var slot = new IngredientStockSlotView { Name = $"IngredientSlot_{id.Replace(':', '_')}", SizeFlagsHorizontal = SizeFlags.ExpandFill };
         Texture2D containerTexture = id switch
         {
             StableIds.Ingredients.Batter => _art.BatterContainer,
@@ -339,7 +340,10 @@ public partial class PancakeWorkstation : Control
             _ => _art.IngredientTray,
         };
         Texture2D texture = _art.Ingredient(id);
-        slot.Configure(containerTexture, texture, name, IngredientSlotSpec(id));
+        IngredientVisualMode visualMode = id is StableIds.Ingredients.Egg or StableIds.Ingredients.Crispy or StableIds.Ingredients.Ham
+            ? IngredientVisualMode.CountLayout
+            : IngredientVisualMode.StageScale;
+        slot.ConfigureStock(containerTexture, texture, name, IngredientSlotSpec(id), visualMode);
         Control input;
         if (drag)
         {
@@ -372,34 +376,11 @@ public partial class PancakeWorkstation : Control
         }
         input.Name = $"IngredientInput_{id.Replace(':', '_')}";
         slot.SetInteraction(input);
-        Label count = slot.CountLabel;
-        count.Name = $"IngredientCount_{id.Replace(':', '_')}";
-        count.Text = "×0";
-        _counts[id] = count;
-        var refill = SmallButton("补料");
-        refill.Name = $"IngredientRefill_{id.Replace(':', '_')}";
-        refill.CustomMinimumSize = new Vector2(0, 48);
-        refill.Pressed += () => Refill(id);
-        _refills[id] = refill;
-        slot.SetRefillControl(refill);
-        var stock = new ProgressBar
-        {
-            Name = $"IngredientStock_{id.Replace(':', '_')}",
-            MinValue = 0,
-            MaxValue = 100,
-            Value = 100,
-            ShowPercentage = false,
-            CustomMinimumSize = new Vector2(0, 4),
-            MouseFilter = MouseFilterEnum.Ignore,
-            Visible = false,
-        };
-        stock.AddThemeStyleboxOverride("background", StockBarStyle(new Color(0.40f, 0.25f, 0.16f, 0.20f)));
-        StyleBoxFlat stockFill = StockBarStyle(TianjinUi.Orange);
-        stock.AddThemeStyleboxOverride("fill", stockFill);
-        _stockBars[id] = stock;
-        _stockFills[id] = stockFill;
-        slot.SetStockControl(stock);
-        _ingredientRows[id] = slot;
+        slot.StockLabel.Name = $"IngredientCount_{id.Replace(':', '_')}";
+        slot.RefillButton.Name = $"IngredientRefill_{id.Replace(':', '_')}";
+        slot.StockBar.Name = $"IngredientStock_{id.Replace(':', '_')}";
+        slot.RefillRequested += () => Refill(id);
+        _ingredientSlots[id] = slot;
         return slot;
     }
 
@@ -470,21 +451,29 @@ public partial class PancakeWorkstation : Control
     private Control BuildDelivery()
     {
         var root = FramelessRoot("DeliveryArea", 666);
-        var delivery = new DropZone { Name = "DeliveryDropZone", CustomMinimumSize = new Vector2(138, 92) };
-        Place(delivery, 57, 4, 138, 92);
+        var delivery = new DropZone { Name = "DeliveryDropZone", CustomMinimumSize = DeliveryDropZoneRect.Size };
+        Place(delivery, DeliveryDropZoneRect);
         _deliveryZone = delivery;
-        TextureRect servingTray = TianjinUi.Texture(_art.ServingTray, new Vector2(138, 92));
-        servingTray.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var servingTrayTexture = new AtlasTexture
+        {
+            Atlas = _art.ServingTray,
+            Region = ServingTrayTextureRegion,
+            FilterClip = true,
+        };
+        TextureRect servingTray = TianjinUi.Texture(
+            servingTrayTexture,
+            DeliveryDropZoneRect.Size);
+        servingTray.Name = "ServingTrayArt";
         servingTray.Modulate = new Color(1, 1, 1, 0.82f);
         servingTray.MouseFilter = MouseFilterEnum.Ignore;
-        delivery.AddChild(servingTray);
+        AddDropZoneFill(delivery, servingTray, DeliveryDropZoneRect.Size);
         delivery.AddChild(FloatingText("出餐", 17, TianjinUi.BrownText, HorizontalAlignment.Center));
         delivery.Configure(CanDeliverPayload, DeliverPayload, _ => delivery.GetGlobalRect().GetCenter());
         root.AddChild(delivery);
         _drag.RegisterZone(delivery);
-        var finishedSlot = new Control { Name = "FinishedPancakeSlot", CustomMinimumSize = new Vector2(138, 92) };
-        Place(finishedSlot, 203, 4, 138, 92);
-        _finished = new DragItem { CustomMinimumSize = new Vector2(138, 92), Visible = false };
+        var finishedSlot = new Control { Name = "FinishedPancakeSlot", CustomMinimumSize = FinishedPancakeSlotRect.Size };
+        Place(finishedSlot, FinishedPancakeSlotRect);
+        _finished = new DragItem { CustomMinimumSize = FinishedPancakeSlotRect.Size, Visible = false };
         _finished.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         var finishedRow = new HBoxContainer();
         FullRect(finishedRow, 0, 0, 0, 0);
@@ -497,9 +486,9 @@ public partial class PancakeWorkstation : Control
         finishedSlot.AddChild(_finished);
         FullRect(_finished, 0, 0, 0, 0);
         root.AddChild(finishedSlot);
-        _soyPanel = new Control { CustomMinimumSize = new Vector2(144, 92) };
-        Place(_soyPanel, 349, 4, 144, 92);
-        TextureRect soyTray = TianjinUi.Texture(_art.SoyTray, new Vector2(144, 92));
+        _soyPanel = new Control { Name = "SoyMilkSlot", CustomMinimumSize = SoyMilkSlotRect.Size };
+        Place(_soyPanel, SoyMilkSlotRect);
+        TextureRect soyTray = TianjinUi.Texture(_art.SoyTray, SoyMilkSlotRect.Size);
         FullRect(soyTray, 0, 0, 0, 0);
         soyTray.Modulate = new Color(1, 1, 1, 0.42f);
         soyTray.MouseFilter = MouseFilterEnum.Ignore;
@@ -521,18 +510,18 @@ public partial class PancakeWorkstation : Control
         _soyPanel.AddChild(soyActions);
         root.AddChild(_soyPanel);
 
-        _trashZone = new DropZone { Name = "TrashZone", CustomMinimumSize = new Vector2(108, 92) };
-        Place(_trashZone, 501, 4, 108, 92);
+        _trashZone = new DropZone { Name = "TrashZone", CustomMinimumSize = TrashZoneRect.Size };
+        Place(_trashZone, TrashZoneRect);
         _trashZone.Configure(CanTrashPayload, DiscardPayload, _ => _trashZone.GetGlobalRect().GetCenter());
-        TextureRect trashArt = TianjinUi.Texture(_art.Trash, new Vector2(68, 72));
-        trashArt.Position = new Vector2(20, 0);
+        TextureRect trashArt = TianjinUi.Texture(_art.Trash, TrashZoneRect.Size);
+        trashArt.Name = "TrashArt";
         trashArt.MouseFilter = MouseFilterEnum.Ignore;
-        _trashZone.AddChild(trashArt);
-        _trashButton = new Button { Text = "丢弃", Flat = true, CustomMinimumSize = new Vector2(108, 92) };
+        AddDropZoneFill(_trashZone, trashArt, TrashZoneRect.Size);
+        _trashButton = new Button { Name = "TrashButton", Text = "丢弃", Flat = true, CustomMinimumSize = TrashZoneRect.Size };
         _trashButton.AddThemeFontSizeOverride("font_size", 14);
         _trashButton.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _trashButton.Pressed += ClearCurrentWaste;
-        _trashZone.AddChild(_trashButton);
+        AddDropZoneFill(_trashZone, _trashButton, TrashZoneRect.Size);
         root.AddChild(_trashZone);
         _drag.RegisterZone(_trashZone);
         ConfigureArtInteraction(_trashButton);
@@ -777,7 +766,7 @@ public partial class PancakeWorkstation : Control
     private void Refill(string id)
     {
         if (!CanInteract || !Inventory.TryBeginRefill(id)) Reject("料盒已满或正在补料。");
-        else Inform("开始补料，1 秒后补满。", false);
+        else Inform($"{IngredientName(id)}开始补货，{Inventory.LevelData.RefillSeconds:0.0} 秒后补满。", false);
     }
     private void Discard()
     {
@@ -805,38 +794,30 @@ public partial class PancakeWorkstation : Control
     private void Render()
     {
         if (!_initialized) return;
-        foreach ((string id, Label label) in _counts)
+        foreach ((string id, IngredientStockSlotView slot) in _ingredientSlots)
         {
             bool enabled = _enabledIngredients.Contains(id);
-            _ingredientRows[id].Visible = enabled;
+            slot.Visible = enabled;
             if (!enabled)
             {
                 _lowStockNotified.Remove(id);
-                _stockBars[id].Visible = false;
-                _refills[id].Visible = false;
                 continue;
             }
             int quantity = Inventory.GetQuantity(id);
             int capacity = Inventory.GetCapacity(id);
-            bool refilling = Inventory.IsRefilling(id);
-            double fraction = capacity > 0 ? (double)quantity / capacity : 0;
-            label.Text = refilling ? $"{Inventory.GetRefillProgress(id):P0}" : $"×{quantity}";
-            label.Modulate = InventoryColor(fraction);
-            ProgressBar stock = _stockBars[id];
-            double shownFraction = refilling ? Inventory.GetRefillProgress(id) : fraction;
-            stock.Value = shownFraction * 100;
-            stock.Visible = refilling || fraction <= 0.50;
-            stock.CustomMinimumSize = new Vector2(0, !refilling && fraction <= 0.20 ? 6 : 4);
-            _stockFills[id].BgColor = refilling ? TianjinUi.Green : fraction <= 0.20 ? TianjinUi.Red : TianjinUi.Orange;
-            _refills[id].Text = refilling ? "补料中" : "补料";
-            _refills[id].Visible = refilling || fraction <= 0.50;
-            _refills[id].Disabled = !CanInteract || refilling || quantity >= capacity;
-            _refills[id].Modulate = !refilling && fraction is > 0.20 and <= 0.50 ? new Color(1, 1, 1, 0.65f) : Colors.White;
-            if (!refilling && fraction <= 0.20)
+            IngredientStockStatus status = Inventory.GetStatus(id);
+            slot.RenderStock(quantity, capacity, status, Inventory.GetRefillProgress(id), CanInteract);
+            if (status is IngredientStockStatus.Low or IngredientStockStatus.Empty)
             {
-                if (_lowStockNotified.Add(id)) Inform($"{IngredientName(id)}库存不足。", false);
+                if (_lowStockNotified.Add(id))
+                {
+                    string message = status == IngredientStockStatus.Empty
+                        ? $"{IngredientName(id)}已经用完，点击 + 补货。"
+                        : $"{IngredientName(id)}只剩 {quantity} 份，可以点击 + 补货。";
+                    Inform(message, false);
+                }
             }
-            else if (fraction > 0.20)
+            else if (status == IngredientStockStatus.Normal)
             {
                 _lowStockNotified.Remove(id);
             }
@@ -946,13 +927,6 @@ public partial class PancakeWorkstation : Control
     private static bool IsPancakeAttentionState(PancakeState state) => state is
         PancakeState.SideAReady or PancakeState.SideAOverdone or PancakeState.Folded or PancakeState.Bagged or PancakeState.Burnt;
 
-    private static Color InventoryColor(double fraction) => fraction switch
-    {
-        <= 0 => TianjinUi.Red,
-        <= 0.30 => TianjinUi.Orange,
-        _ => TianjinUi.Green,
-    };
-
     private static string IngredientName(string id) => id switch
     {
         StableIds.Ingredients.Batter => "面糊",
@@ -974,15 +948,6 @@ public partial class PancakeWorkstation : Control
         }
         Reject(result.Completion == DragCompletion.Rejected ? "该位置当前不能接收这件物品。" : "拖放位置无效。");
     }
-
-    private static StyleBoxFlat StockBarStyle(Color color) => new()
-    {
-        BgColor = color,
-        CornerRadiusTopLeft = 3,
-        CornerRadiusTopRight = 3,
-        CornerRadiusBottomLeft = 3,
-        CornerRadiusBottomRight = 3,
-    };
 
     private void PulseAttention(Control control, Color tint)
     {
@@ -1094,6 +1059,18 @@ public partial class PancakeWorkstation : Control
         button.AddThemeColorOverride("font_pressed_color", TianjinUi.BrownText);
         button.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
         button.AddThemeFontSizeOverride("font_size", 17);
+    }
+    private static void AddDropZoneFill(DropZone zone, Control child, Vector2 outerSize)
+    {
+        var layer = new Control
+        {
+            Name = $"{child.Name}Layer",
+            CustomMinimumSize = new Vector2(outerSize.X - 6, outerSize.Y - 6),
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
+        zone.AddChild(layer);
+        layer.AddChild(child);
+        FullRect(child, 0, 0, 6, 6);
     }
     private static void Place(Control control, float x, float y, float width, float height) { control.Position = new Vector2(x, y); control.Size = new Vector2(width, height); }
     private static void Place(Control control, Rect2 rect) { control.Position = rect.Position; control.Size = rect.Size; }

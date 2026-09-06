@@ -50,15 +50,22 @@ public partial class StageTwoSelfTest : Node
         }
 
         Check(!inventory.TryConsume(StableIds.Ingredients.Batter), "库存不会减为负数");
+        Check(inventory.GetStatus(StableIds.Ingredients.Batter) == IngredientStockStatus.Empty, "零库存进入缺货状态");
+        Check(inventory.CanRefill(StableIds.Ingredients.Batter), "缺货配料允许一键补满");
         inventory.TryConsume(StableIds.Ingredients.Egg);
         Check(inventory.TryBeginRefill(StableIds.Ingredients.Batter), "面糊可独立开始补料");
         Check(inventory.TryBeginRefill(StableIds.Ingredients.Egg), "鸡蛋可同时开始补料");
+        Check(inventory.GetStatus(StableIds.Ingredients.Batter) == IngredientStockStatus.Refilling, "补货期间进入补货中状态");
         inventory.Tick(0.5);
         Check(inventory.IsRefilling(StableIds.Ingredients.Batter) && inventory.IsRefilling(StableIds.Ingredients.Egg), "多个料盒同时计时");
         Check(!inventory.TryConsume(StableIds.Ingredients.Batter), "补料中不能消耗");
         inventory.Tick(0.5);
         Check(inventory.GetQuantity(StableIds.Ingredients.Batter) == levelOne.BatterCapacity, "面糊 1 秒后补满");
         Check(inventory.GetQuantity(StableIds.Ingredients.Egg) == levelOne.EggCapacity, "鸡蛋 1 秒后补满");
+        Check(inventory.GetStatus(StableIds.Ingredients.Batter) == IngredientStockStatus.Normal, "补满后恢复正常状态");
+
+        inventory.TryConsume(StableIds.Ingredients.Crispy, levelOne.CrispyCapacity - levelOne.LowStockThreshold);
+        Check(inventory.GetStatus(StableIds.Ingredients.Crispy) == IngredientStockStatus.Low, "库存剩余两份时进入低库存状态");
 
         inventory.TryConsume(StableIds.Ingredients.Sauce);
         inventory.TryBeginRefill(StableIds.Ingredients.Sauce);
@@ -353,7 +360,7 @@ public partial class StageTwoSelfTest : Node
 
         Check(station.BatterCapacity == batter && station.EggCapacity == egg && station.SauceCapacity == sauce
             && station.CrispyCapacity == crispy && station.ScallionCapacity == scallion && station.HamCapacity == ham
-            && Close(station.RefillSeconds, 1) && station.UpgradePrice == price,
+            && station.LowStockThreshold == 2 && Close(station.RefillSeconds, 1) && station.UpgradePrice == price,
             $"配料台 Lv{level} 数值准确");
     }
 

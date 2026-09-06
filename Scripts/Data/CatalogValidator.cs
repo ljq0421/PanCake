@@ -164,6 +164,15 @@ public static class CatalogValidator
                 Add(issues, source, "RefillSeconds", "补料时间必须大于 0。");
             }
 
+            if (station.LowStockThreshold <= 0)
+            {
+                Add(issues, source, "LowStockThreshold", "低库存阈值必须大于 0。");
+            }
+            else if (capacities.Values.Any(capacity => station.LowStockThreshold >= capacity))
+            {
+                Add(issues, source, "LowStockThreshold", "低库存阈值必须小于每一种配料的容量。");
+            }
+
             if (station.UpgradePrice < 0)
             {
                 Add(issues, source, "UpgradePrice", "升级价格不能为负数。");

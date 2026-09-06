@@ -384,10 +384,23 @@ public partial class StageFourSelfTest : Node
         float customerContentWidth = customerStrip?.GetChildren().OfType<Button>()
             .Sum(button => button.CustomMinimumSize.X) ?? float.MaxValue;
         int visibleSlotGaps = Math.Max(0, (customerStrip?.GetChildCount() ?? 0) - 1) * 12;
-        Check(customerStrip is { Position.Y: 160, Size.X: 1812 }
-            && customerContentWidth + visibleSlotGaps <= customerStrip.Size.X, "顾客区下移且五个顾客槽不会横向溢出");
+        Check(customerStrip is { Position.Y: 160, Size.X: 1812, Size.Y: 415 }
+            && customerStrip.Position.Y + customerStrip.Size.Y == 575
+            && customerContentWidth + visibleSlotGaps <= customerStrip.Size.X, "顾客区延伸至桌面上沿且五个顾客槽不会横向溢出");
+        var firstCustomerSlot = customerStrip?.GetChildren().OfType<Button>().FirstOrDefault();
+        var customerColumn = firstCustomerSlot?.FindChild("CustomerColumn", true, false) as Control;
+        var portraitStack = firstCustomerSlot?.FindChild("PortraitStack", true, false) as Control;
+        var portrait = portraitStack?.GetChildren().OfType<CustomerPortraitView>().FirstOrDefault();
+        var patience = portraitStack?.GetChildren().OfType<ProgressBar>().FirstOrDefault();
+        Check(firstCustomerSlot is { CustomMinimumSize.Y: 415 }
+            && customerColumn is { AnchorBottom: 1, OffsetBottom: 0 }
+            && portraitStack is { ClipContents: true, SizeFlagsVertical: Control.SizeFlags.ExpandFill }
+            && portrait is { AnchorBottom: 1 }
+            && patience is { AnchorTop: 1, AnchorBottom: 1, OffsetTop: -14, OffsetBottom: 0 },
+            "人物视窗占满桌沿区域且耐心条叠加在人物底部");
         Check(customerStrip is not null && feedbackPanel is not null
-            && customerStrip.Position.Y + customerStrip.Size.Y < feedbackPanel.Position.Y, "反馈提示位于顾客区下方的独立安全带");
+            && feedbackPanel.Position.Y < customerStrip.Position.Y + customerStrip.Size.Y
+            && feedbackPanel.ZIndex > customerStrip.ZIndex, "短时反馈以更高层级覆盖顾客下半身");
         dayLayout.QueueFree();
 
         var workstation = new PancakeWorkstation();
@@ -412,41 +425,91 @@ public partial class StageFourSelfTest : Node
             && rawSlot is not null && rawSlot.ClickBounds.Size.X >= 48 && rawSlot.ClickBounds.Size.Y >= 48, "食材与生油条槽位点击区域不小于 48×48");
         var utilityArea = workstation.FindChild("DeliveryArea", true, false) as Control;
         var ingredientArea = workstation.FindChild("IngredientArea", true, false) as Control;
-        Check(utilityArea is not null && utilityArea.Position.Y >= 578 && utilityArea.Position.X >= 0
-            && utilityArea.Position.X + utilityArea.Size.X <= 1920, "出餐、豆浆与丢弃辅助区完整位于工作台内");
+        var deliveryZone = workstation.FindChild("DeliveryDropZone", true, false) as DropZone;
+        var finishedSlot = workstation.FindChild("FinishedPancakeSlot", true, false) as Control;
+        var soyMilkSlot = workstation.FindChild("SoyMilkSlot", true, false) as Control;
+        var trashZone = workstation.FindChild("TrashZone", true, false) as DropZone;
+        var servingTrayArt = workstation.FindChild("ServingTrayArt", true, false) as TextureRect;
+        var trashArt = workstation.FindChild("TrashArt", true, false) as TextureRect;
+        var trashButton = workstation.FindChild("TrashButton", true, false) as Button;
+        string utilityLayoutDetails = string.Join(" | ", new Control?[] { utilityArea, deliveryZone, finishedSlot, soyMilkSlot, trashZone }
+            .Select(control => control is null ? "null" : $"{control.Name}@{control.Position}/{control.Size}"));
+        Check(utilityArea is { Position: var utilityPosition, Size: var utilitySize }
+            && utilityPosition == new Vector2(1218, 578) && utilitySize == new Vector2(666, 112),
+            "出餐、豆浆与丢弃辅助区使用加高后的固定工作台区域");
         Check(utilityArea is not null && ingredientArea is not null
             && utilityArea.Position.Y + utilityArea.Size.Y <= ingredientArea.Position.Y
             && ingredientArea.Position.Y + ingredientArea.Size.Y <= 1080, "右侧辅助区与配料区上下分区且不越界");
-        Check(workstation.FindChild("FinishedPancakeSlot", true, false) is Control { CustomMinimumSize: var finishedSlotSize }
+        Check(deliveryZone is { Position: var deliveryPosition, Size: var deliverySize }
+            && deliveryPosition == new Vector2(33, 2) && deliverySize == new Vector2(174, 108)
+            && finishedSlot is { Position: var finishedPosition, Size: var finishedSize }
+            && finishedPosition == new Vector2(215, 10) && finishedSize == new Vector2(138, 92)
+            && soyMilkSlot is { Position: var soyPosition, Size: var soySize }
+            && soyPosition == new Vector2(361, 10) && soySize == new Vector2(144, 92)
+            && trashZone is { Position: var trashPosition, Size: var trashSize }
+            && trashPosition == new Vector2(513, 2) && trashSize == new Vector2(120, 108),
+            "辅助槽按出餐、成品、豆浆、丢弃顺序使用固定尺寸和位置", utilityLayoutDetails);
+        Check(deliveryZone is not null && finishedSlot is not null && soyMilkSlot is not null && trashZone is not null
+            && deliveryZone.Position.X + deliveryZone.Size.X + 8 == finishedSlot.Position.X
+            && finishedSlot.Position.X + finishedSlot.Size.X + 8 == soyMilkSlot.Position.X
+            && soyMilkSlot.Position.X + soyMilkSlot.Size.X + 8 == trashZone.Position.X,
+            "四个辅助槽保持 8px 横向间距且互不重叠", utilityLayoutDetails);
+        Control?[] utilitySlots = { deliveryZone, finishedSlot, soyMilkSlot, trashZone };
+        Check(utilityArea is not null && utilitySlots.All(slot => slot is not null
+            && slot.Position.X >= 0 && slot.Position.Y >= 0
+            && slot.Position.X + slot.Size.X <= utilityArea.Size.X
+            && slot.Position.Y + slot.Size.Y <= utilityArea.Size.Y),
+            "四个辅助槽完整位于辅助区内", utilityLayoutDetails);
+        Check(finishedSlot is { CustomMinimumSize: var finishedSlotSize }
             && finishedSlotSize == new Vector2(138, 92), "装袋成品隐藏时保留固定辅助槽位");
+        Check(deliveryZone is not null && trashZone is not null
+            && deliveryZone.Size.X >= 48 && deliveryZone.Size.Y >= 48
+            && trashZone.Size.X >= 48 && trashZone.Size.Y >= 48,
+            "出餐与垃圾桶拖放区域均不小于 48×48");
+        string utilityVisualDetails = string.Join(" | ", new Control?[] { deliveryZone, servingTrayArt, trashZone, trashArt, trashButton }
+            .Select(control => control is null ? "null" : $"{control.Name}@{control.GetGlobalRect()}"));
+        Check(servingTrayArt is { StretchMode: TextureRect.StretchModeEnum.KeepAspectCentered, Texture: AtlasTexture servingTrayTexture }
+            && servingTrayArt.CustomMinimumSize == deliveryZone!.CustomMinimumSize
+            && servingTrayArt.GetGlobalRect() == deliveryZone.GetGlobalRect()
+            && servingTrayTexture.Region == new Rect2(0, 224, 1536, 576),
+            "出餐盘运行时裁掉无效画布并等比居中填入出餐区", utilityVisualDetails);
+        Check(trashArt is { StretchMode: TextureRect.StretchModeEnum.KeepAspectCentered }
+            && trashButton is not null && trashZone is not null
+            && trashArt.CustomMinimumSize == trashZone.CustomMinimumSize
+            && trashButton.CustomMinimumSize == trashZone.CustomMinimumSize
+            && trashArt.GetGlobalRect() == trashZone.GetGlobalRect()
+            && trashButton.GetGlobalRect() == trashZone.GetGlobalRect(),
+            "垃圾桶保持等比居中且丢弃按钮完整覆盖拖放区域", utilityVisualDetails);
         Check(new[] { "FryerLowerAction", "FryerRaiseAction", "FryerDiscardAction", "PancakeFlipAction", "PancakeFoldAction", "PancakeBagAction", "PancakeDiscardAction" }
             .All(name => workstation.FindChild(name, true, false) is Button { Visible: false }), "空设备不显示无效操作，动作按钮由状态上下文控制");
-        Check(workstation.FindChildren("IngredientRefill_*", "Button", true, false).Cast<Button>().All(button => !button.Visible), "满库存时隐藏补料入口");
-        Check(workstation.FindChildren("IngredientStock_*", "ProgressBar", true, false).Cast<ProgressBar>().All(stock => !stock.Visible), "正常库存不显示长库存条");
+        Check(workstation.FindChildren("IngredientRefill_*", "Button", true, false).Cast<Button>().All(button => !button.Visible), "满库存时隐藏补货入口");
+        Check(workstation.FindChildren("IngredientStock_*", "ProgressBar", true, false).Cast<ProgressBar>().All(stock => stock.Visible && stock.Value == 100), "正常库存持续显示低干扰比例条");
         Check(workstation.FindChild("IngredientInput_sauce", true, false) is Control and not BaseButton,
             "酱料槽只展示库存，抹酱操作留在炉面轨迹");
         var batterStock = workstation.FindChild("IngredientStock_batter", true, false) as ProgressBar;
         var batterRefill = workstation.FindChild("IngredientRefill_batter", true, false) as Button;
         for (int index = 0; index < 5; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: true } && batterStock.CustomMinimumSize.Y == 4
-            && batterRefill is { Visible: true } && Mathf.IsEqualApprox(batterRefill.Modulate.A, 0.65f), "半库存显示弱橙条和弱化补料入口");
+        Check(batterStock is { Visible: true, Value: 50 }
+            && batterRefill is { Visible: false }
+            && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "5/10" }, "正常库存使用当前/上限并隐藏补货入口");
         WorkstationSlotView? batterSlot = ingredientSlots.FirstOrDefault(slot => slot.Name.ToString() == "IngredientSlot_batter");
-        Rect2 batterVisualBeforeRefill = batterSlot?.IngredientVisualRect ?? new Rect2();
         for (int index = 0; index < 3; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: true } && batterStock.CustomMinimumSize.Y == 6
-            && batterRefill is { Visible: true } && Mathf.IsEqualApprox(batterRefill.Modulate.A, 1f), "两成库存显示强化红条和补料入口");
-        Check(batterSlot is not null && batterSlot.IngredientVisualRect == batterVisualBeforeRefill, "补料入口显隐不会推动食材锚点");
+        Check(batterStock is { Visible: true, Value: 20 }
+            && batterRefill is { Visible: true, Text: "+", Disabled: false }
+            && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "2/10" } lowCount
+            && lowCount.Modulate == TianjinUi.Orange, "剩余两份进入低库存状态并显示一键补满入口");
+        Check(batterSlot is not null && batterSlot.IngredientIsInsideTray(4), "库存视觉档位变化后仍位于托盘安全边界内");
         workstation.Inventory.TryConsume(StableIds.Ingredients.Batter, 2);
-        Check(workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "×0" } emptyCount
+        Check(workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "0/10" } emptyCount
             && emptyCount.Modulate == TianjinUi.Red, "零库存数量使用红色且补料入口保持显示");
         workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: true } && batterRefill is { Text: "补料中", Disabled: true }, "补料中显示进度并禁用重复补料");
+        Check(batterStock is { Visible: true, Value: 0 } && batterRefill is { Text: "…", Disabled: true }
+            && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "0%" }, "补货中显示进度并禁用重复补货");
         workstation.CanSubmitToSelectedCustomer = () => false;
         MakeBagged(workstation.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
-        var delivery = workstation.FindChild("DeliveryDropZone", true, false) as DropZone;
-        Check(delivery is not null && !delivery.CanAccept("finished_pancake"), "未选择顾客时出餐口拒绝成品且不会提前消费");
+        Check(deliveryZone is not null && !deliveryZone.CanAccept("finished_pancake"), "未选择顾客时出餐口拒绝成品且不会提前消费");
         workstation.CanSubmitToSelectedCustomer = () => true;
-        Check(delivery?.CanAccept("finished_pancake") == true, "选择有效顾客后出餐口接收已装袋煎饼");
+        Check(deliveryZone?.CanAccept("finished_pancake") == true, "选择有效顾客后出餐口接收已装袋煎饼");
         workstation.QueueFree();
     }
 

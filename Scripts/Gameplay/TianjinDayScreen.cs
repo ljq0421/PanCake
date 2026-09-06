@@ -16,6 +16,10 @@ FORM: a single-screen casual management workbench at a fixed 16:9 design resolut
 */
 public partial class TianjinDayScreen : Control
 {
+    private const float CustomerStripTop = 160;
+    private const float CountertopTop = 575;
+    private const float CustomerStripHeight = CountertopTop - CustomerStripTop;
+
     public event Action? HubRequested;
 
     private readonly Button[] _customerButtons = new Button[5];
@@ -228,8 +232,8 @@ public partial class TianjinDayScreen : Control
     {
         var customers = new HBoxContainer();
         customers.Name = "CustomerStrip";
-        customers.Position = new Vector2(54, 160);
-        customers.Size = new Vector2(1812, 322);
+        customers.Position = new Vector2(54, CustomerStripTop);
+        customers.Size = new Vector2(1812, CustomerStripHeight);
         customers.Alignment = BoxContainer.AlignmentMode.Center;
         customers.AddThemeConstantOverride("separation", 12);
         customers.ZIndex = 30;
@@ -241,7 +245,7 @@ public partial class TianjinDayScreen : Control
             {
                 Name = $"CustomerSlot{index + 1}",
                 Text = string.Empty,
-                CustomMinimumSize = new Vector2(340, 322),
+                CustomMinimumSize = new Vector2(340, CustomerStripHeight),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
                 FocusMode = FocusModeEnum.All,
                 Visible = false,
@@ -253,8 +257,8 @@ public partial class TianjinDayScreen : Control
             customers.AddChild(button);
             _customerButtons[index] = button;
 
-            var column = new VBoxContainer();
-            TianjinUi.FullRect(column, 4, 4, -4, -4);
+            var column = new VBoxContainer { Name = "CustomerColumn" };
+            TianjinUi.FullRect(column, 4, 4, -4, 0);
             column.MouseFilter = MouseFilterEnum.Ignore;
             column.AddThemeConstantOverride("separation", 2);
             button.AddChild(column);
@@ -270,12 +274,25 @@ public partial class TianjinDayScreen : Control
             CustomerPortraitVisual customerVisual = _art.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId, CustomerExpression.Normal);
             _portraits[index] = new CustomerPortraitView();
             _portraits[index].SetVisual(customerVisual);
-            _portraits[index].SizeFlagsVertical = SizeFlags.ExpandFill;
-            column.AddChild(_portraits[index]);
+            var portraitStack = new Control
+            {
+                Name = "PortraitStack",
+                ClipContents = true,
+                MouseFilter = MouseFilterEnum.Ignore,
+                SizeFlagsVertical = SizeFlags.ExpandFill,
+            };
+            column.AddChild(portraitStack);
+            portraitStack.AddChild(_portraits[index]);
+            TianjinUi.FullRect(_portraits[index]);
             _customerBadges[index] = TianjinUi.Label("普通顾客", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
             _customerBadges[index].CustomMinimumSize = new Vector2(0, 22);
+            _customerBadges[index].AddThemeConstantOverride("outline_size", 4);
+            _customerBadges[index].AddThemeColorOverride("font_outline_color", new Color(1f, 0.94f, 0.79f, 0.92f));
+            _customerBadges[index].SetAnchorsPreset(LayoutPreset.BottomWide);
+            _customerBadges[index].OffsetTop = -36;
+            _customerBadges[index].OffsetBottom = -14;
             _customerBadges[index].Visible = false;
-            column.AddChild(_customerBadges[index]);
+            portraitStack.AddChild(_customerBadges[index]);
             _patienceBars[index] = new ProgressBar
             {
                 MinValue = 0,
@@ -285,9 +302,12 @@ public partial class TianjinDayScreen : Control
                 CustomMinimumSize = new Vector2(0, 14),
                 MouseFilter = MouseFilterEnum.Ignore,
             };
+            _patienceBars[index].SetAnchorsPreset(LayoutPreset.BottomWide);
+            _patienceBars[index].OffsetTop = -14;
+            _patienceBars[index].OffsetBottom = 0;
             _patienceBars[index].AddThemeStyleboxOverride("background", TianjinUi.Box(new Color("#E2CDA8"), 8, 3, false));
             _patienceBars[index].AddThemeStyleboxOverride("fill", TianjinUi.Box(TianjinUi.Green, 7, 0, false));
-            column.AddChild(_patienceBars[index]);
+            portraitStack.AddChild(_patienceBars[index]);
         }
     }
 

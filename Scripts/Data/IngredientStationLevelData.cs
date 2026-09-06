@@ -12,6 +12,7 @@ public partial class IngredientStationLevelData : Resource
     [Export] public int CrispyCapacity { get; set; }
     [Export] public int ScallionCapacity { get; set; }
     [Export] public int HamCapacity { get; set; }
+    [Export] public int LowStockThreshold { get; set; } = 2;
     [Export] public float RefillSeconds { get; set; } = 1.0f;
     [Export] public int UpgradePrice { get; set; }
 

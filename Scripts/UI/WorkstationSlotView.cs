@@ -2,6 +2,13 @@ using Godot;
 
 namespace ProjectCake.UI;
 
+public enum IngredientVisualMode
+{
+    Single,
+    StageScale,
+    CountLayout,
+}
+
 public readonly record struct WorkstationSlotSpec(
     Vector2 MinimumSize,
     Rect2 TrayRect,
@@ -23,12 +30,15 @@ public partial class WorkstationSlotView : Control
     private readonly TextureRect _tray;
     private readonly Control _ingredientAnchor;
     private readonly TextureRect _ingredient;
+    private readonly List<TextureRect> _ingredientVisuals = new();
     private readonly Label _label;
     private readonly Label _count;
     private readonly Control _clickArea;
     private readonly Control _refillStatus;
     private readonly Control _stockStatus;
     private WorkstationSlotSpec _spec;
+    private IngredientVisualMode _visualMode;
+    private float _stockFraction = 1f;
 
     public WorkstationSlotView()
     {
@@ -48,6 +58,7 @@ public partial class WorkstationSlotView : Control
         _visualLayer.AddChild(_ingredientAnchor);
         _ingredient = TextureNode("Ingredient");
         _ingredientAnchor.AddChild(_ingredient);
+        _ingredientVisuals.Add(_ingredient);
 
         _label = SlotLabel("Label", 16);
         _visualLayer.AddChild(_label);
@@ -65,26 +76,46 @@ public partial class WorkstationSlotView : Control
     }
 
     public Label CountLabel => _count;
-    public TextureRect HoverTarget => _ingredient;
+    public Control HoverTarget => _ingredientAnchor;
     public Rect2 TrayVisualRect => FitInside(_tray.Texture?.GetSize() ?? Vector2.Zero, _spec.TrayRect);
     public Rect2 IngredientVisualRect
     {
         get
         {
             Rect2 bounds = CenteredScale(_spec.IngredientAnchorRect, _spec.MaxVisualRatio);
-            return FitInside(_ingredient.Texture?.GetSize() ?? Vector2.Zero, bounds);
+            if (_visualMode == IngredientVisualMode.CountLayout)
+            {
+                return VisibleUnitCount(_stockFraction) == 0
+                    ? new Rect2(bounds.GetCenter(), Vector2.Zero)
+                    : bounds;
+            }
+
+            float stageScale = _visualMode == IngredientVisualMode.StageScale ? StageScale(_stockFraction) : 1f;
+            return FitInside(_ingredient.Texture?.GetSize() ?? Vector2.Zero, CenteredScale(bounds, stageScale));
         }
     }
     public Rect2 ClickBounds => _spec.ClickRect;
 
-    public void Configure(Texture2D trayTexture, Texture2D ingredientTexture, string label, WorkstationSlotSpec spec)
+    public void Configure(
+        Texture2D trayTexture,
+        Texture2D ingredientTexture,
+        string label,
+        WorkstationSlotSpec spec,
+        IngredientVisualMode visualMode = IngredientVisualMode.Single)
     {
         _spec = spec;
+        _visualMode = visualMode;
         CustomMinimumSize = spec.MinimumSize;
         _tray.Texture = trayTexture;
-        _ingredient.Texture = ingredientTexture;
+        EnsureIngredientVisuals(visualMode == IngredientVisualMode.CountLayout ? 4 : 1, ingredientTexture);
         _label.Text = label;
         LayoutChildren();
+    }
+
+    public void SetStockFraction(double fraction)
+    {
+        _stockFraction = Mathf.Clamp((float)fraction, 0f, 1f);
+        LayoutIngredientVisuals();
     }
 
     public void SetInteraction(Control interaction)
@@ -124,14 +155,92 @@ public partial class WorkstationSlotView : Control
         _visualLayer.Size = Size;
         Place(_tray, _spec.TrayRect);
         Place(_ingredientAnchor, _spec.IngredientAnchorRect);
-        Rect2 ingredientBounds = CenteredScale(new Rect2(Vector2.Zero, _spec.IngredientAnchorRect.Size), _spec.MaxVisualRatio);
-        Place(_ingredient, ingredientBounds);
+        LayoutIngredientVisuals();
         Place(_label, _spec.LabelRect);
         Place(_count, _spec.CountRect);
         Place(_clickArea, _spec.ClickRect);
         Place(_refillStatus, _spec.RefillRect);
         Place(_stockStatus, _spec.StockRect);
     }
+
+
+    private void EnsureIngredientVisuals(int count, Texture2D texture)
+    {
+        while (_ingredientVisuals.Count < count)
+        {
+            TextureRect copy = TextureNode($"Ingredient{_ingredientVisuals.Count + 1}");
+            _ingredientAnchor.AddChild(copy);
+            _ingredientVisuals.Add(copy);
+        }
+
+        for (int index = 0; index < _ingredientVisuals.Count; index++)
+        {
+            _ingredientVisuals[index].Texture = texture;
+            _ingredientVisuals[index].Visible = index < count;
+        }
+    }
+
+    private void LayoutIngredientVisuals()
+    {
+        if (_ingredientVisuals.Count == 0)
+        {
+            return;
+        }
+
+        Rect2 localBounds = CenteredScale(new Rect2(Vector2.Zero, _spec.IngredientAnchorRect.Size), _spec.MaxVisualRatio);
+        if (_visualMode == IngredientVisualMode.CountLayout)
+        {
+            int visible = VisibleUnitCount(_stockFraction);
+            for (int index = 0; index < _ingredientVisuals.Count; index++)
+            {
+                TextureRect visual = _ingredientVisuals[index];
+                visual.Visible = index < visible;
+                if (!visual.Visible)
+                {
+                    continue;
+                }
+
+                int column = index % 2;
+                int row = index / 2;
+                Vector2 cellSize = localBounds.Size * new Vector2(0.58f, 0.64f);
+                Vector2 cellPosition = localBounds.Position + new Vector2(
+                    column * localBounds.Size.X * 0.38f,
+                    row * localBounds.Size.Y * 0.32f);
+                Place(visual, FitInside(visual.Texture?.GetSize() ?? Vector2.Zero, new Rect2(cellPosition, cellSize)));
+                visual.Modulate = Colors.White;
+            }
+            return;
+        }
+
+        float scale = _visualMode == IngredientVisualMode.StageScale ? StageScale(_stockFraction) : 1f;
+        _ingredient.Visible = _visualMode == IngredientVisualMode.Single || _stockFraction > 0;
+        Place(_ingredient, FitInside(_ingredient.Texture?.GetSize() ?? Vector2.Zero, CenteredScale(localBounds, scale)));
+        _ingredient.Modulate = _visualMode == IngredientVisualMode.StageScale
+            ? new Color(1f, 1f, 1f, 0.48f + _stockFraction * 0.52f)
+            : Colors.White;
+        for (int index = 1; index < _ingredientVisuals.Count; index++)
+        {
+            _ingredientVisuals[index].Visible = false;
+        }
+    }
+
+    private static int VisibleUnitCount(float fraction) => fraction switch
+    {
+        <= 0f => 0,
+        <= 0.25f => 1,
+        <= 0.50f => 2,
+        <= 0.75f => 3,
+        _ => 4,
+    };
+
+    private static float StageScale(float fraction) => fraction switch
+    {
+        <= 0f => 0f,
+        <= 0.25f => 0.50f,
+        <= 0.50f => 0.68f,
+        <= 0.75f => 0.84f,
+        _ => 1f,
+    };
 
     private static TextureRect TextureNode(string name) => new()
     {

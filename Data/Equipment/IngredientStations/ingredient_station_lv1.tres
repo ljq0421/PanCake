@@ -11,6 +11,6 @@ SauceCapacity = 12
 CrispyCapacity = 6
 ScallionCapacity = 6
 HamCapacity = 4
+LowStockThreshold = 2
 RefillSeconds = 1.0
 UpgradePrice = 0
-

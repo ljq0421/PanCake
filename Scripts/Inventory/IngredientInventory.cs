@@ -2,6 +2,14 @@ using ProjectCake.Data;
 
 namespace ProjectCake.Inventory;
 
+public enum IngredientStockStatus
+{
+    Normal,
+    Low,
+    Empty,
+    Refilling,
+}
+
 public sealed class IngredientInventory
 {
     private static readonly string[] SupportedIngredients =
@@ -40,6 +48,29 @@ public sealed class IngredientInventory
 
     public bool IsRefilling(string ingredientId) => _refillRemaining.ContainsKey(ingredientId);
 
+    public IngredientStockStatus GetStatus(string ingredientId)
+    {
+        if (IsRefilling(ingredientId))
+        {
+            return IngredientStockStatus.Refilling;
+        }
+
+        int quantity = GetQuantity(ingredientId);
+        if (quantity <= 0)
+        {
+            return IngredientStockStatus.Empty;
+        }
+
+        return quantity <= LevelData.LowStockThreshold
+            ? IngredientStockStatus.Low
+            : IngredientStockStatus.Normal;
+    }
+
+    public bool CanRefill(string ingredientId) =>
+        SupportedIngredients.Contains(ingredientId, StringComparer.Ordinal)
+        && !IsRefilling(ingredientId)
+        && GetQuantity(ingredientId) < GetCapacity(ingredientId);
+
     public double GetRefillProgress(string ingredientId)
     {
         if (!_refillRemaining.TryGetValue(ingredientId, out double remaining))
@@ -64,9 +95,7 @@ public sealed class IngredientInventory
 
     public bool TryBeginRefill(string ingredientId)
     {
-        if (!SupportedIngredients.Contains(ingredientId, StringComparer.Ordinal)
-            || IsRefilling(ingredientId)
-            || GetQuantity(ingredientId) >= GetCapacity(ingredientId))
+        if (!CanRefill(ingredientId))
         {
             return false;
         }
@@ -128,4 +157,3 @@ public sealed class IngredientInventory
         }
     }
 }
-

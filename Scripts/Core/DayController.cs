@@ -135,11 +135,16 @@ public partial class DayController : Node
 
     public DeliveryEvaluation TryDeliverSelected(
         PancakeStateMachine pancake,
-        DataCatalog catalog)
+        DataCatalog catalog) => TryDeliverPancakeTo(CustomerQueue?.SelectedCustomerId, pancake, catalog);
+
+    public bool CanDeliverTo(string? customerId, ProductKind kind) =>
+        FindDeliveryCustomer(customerId) is CustomerRuntime customer && customer.Progress.CanAccept(kind);
+
+    public DeliveryEvaluation TryDeliverPancakeTo(string? customerId, PancakeStateMachine pancake, DataCatalog catalog)
     {
-        if (State is not (DayState.Running or DayState.Closing) || CustomerQueue?.SelectedCustomer is not CustomerRuntime customer)
+        if (FindDeliveryCustomer(customerId) is not CustomerRuntime customer)
         {
-            return new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "请先选择一位仍在等待的顾客。");
+            return Rejected("请把成品拖给仍在等待的顾客。");
         }
 
         if (!pancake.TryGetPrepared(out PreparedPancake prepared))
@@ -154,20 +159,26 @@ public partial class DayController : Node
         return TryDeliverItem(customer, item, null, pancake.TryAcceptPrepared);
     }
 
-    public DeliveryEvaluation TryDeliverYoutiaoSelected(YoutiaoInventory inventory)
+    public DeliveryEvaluation TryDeliverYoutiaoSelected(YoutiaoInventory inventory) =>
+        TryDeliverYoutiaoTo(CustomerQueue?.SelectedCustomerId, inventory);
+
+    public DeliveryEvaluation TryDeliverYoutiaoTo(string? customerId, YoutiaoInventory inventory)
     {
         if (!inventory.TryPeek(out YoutiaoQuality quality))
             return Rejected("没有可用的成品油条。");
-        CustomerRuntime? customer = GetDeliveryCustomer(out DeliveryEvaluation rejection);
-        if (customer is null) return rejection;
+        CustomerRuntime? customer = FindDeliveryCustomer(customerId);
+        if (customer is null) return Rejected("这位顾客已经不能接餐，请拖给仍在等待的顾客。");
         var item = new DeliveredItem(ProductKind.Youtiao, StableIds.Products.Youtiao, null, quality);
         return TryDeliverItem(customer, item, () => inventory.TryTake(out _), null);
     }
 
-    public DeliveryEvaluation TryDeliverSoyMilkSelected(SoyMilkTrayRuntime tray)
+    public DeliveryEvaluation TryDeliverSoyMilkSelected(SoyMilkTrayRuntime tray) =>
+        TryDeliverSoyMilkTo(CustomerQueue?.SelectedCustomerId, tray);
+
+    public DeliveryEvaluation TryDeliverSoyMilkTo(string? customerId, SoyMilkTrayRuntime tray)
     {
-        CustomerRuntime? customer = GetDeliveryCustomer(out DeliveryEvaluation rejection);
-        if (customer is null) return rejection;
+        CustomerRuntime? customer = FindDeliveryCustomer(customerId);
+        if (customer is null) return Rejected("这位顾客已经不能接餐，请拖给仍在等待的顾客。");
         var item = new DeliveredItem(ProductKind.SoyMilk, StableIds.Products.SoyMilk);
         return TryDeliverItem(customer, item, tray.TryConsumeForDelivery, null);
     }
@@ -211,6 +222,12 @@ public partial class DayController : Node
         rejection = null!;
         return customer;
     }
+
+    private CustomerRuntime? FindDeliveryCustomer(string? customerId) =>
+        State is DayState.Running or DayState.Closing
+            ? CustomerQueue?.Slots.FirstOrDefault(customer => customer.Id == customerId
+                && customer.State is CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry)
+            : null;
 
     private DeliveryEvaluation TryDeliverItem(CustomerRuntime customer, DeliveredItem item, Func<bool>? consume, Func<bool>? acceptPrepared)
     {

@@ -2,6 +2,7 @@ using Godot;
 using ProjectCake.Core;
 using ProjectCake.Customers;
 using ProjectCake.Data;
+using ProjectCake.Interaction;
 using ProjectCake.Orders;
 using ProjectCake.UI;
 
@@ -10,7 +11,7 @@ namespace ProjectCake.Gameplay;
 /*
 THESIS: the shop itself is the interface; customers, food, and equipment carry the service rhythm instead of a workflow dashboard.
 OWN-WORLD: the approved Tianjin storefront fills the frame while cream paper, warm status colors, dark-brown outlines, and one soft shadow hold the HUD.
-STORY: read visual orders above the queue, prepare food across the physical counter, deliver to the selected guest, and close on a printed receipt.
+STORY: read visual orders above the queue, prepare food across the physical counter, drag food to its guest, and close on a printed receipt.
 FIRST VIEWPORT: five guests own the open window; the fryer, large pancake stove, ingredients, and delivery shelf sit exactly on the painted counter.
 FORM: a single-screen casual management workbench at a fixed 16:9 design resolution.
 */
@@ -22,16 +23,18 @@ public partial class TianjinDayScreen : Control
 
     public event Action? HubRequested;
 
-    private readonly Button[] _customerButtons = new Button[5];
+    private readonly Control[] _customerSlots = new Control[5];
+    private readonly DropZone[] _customerDropZones = new DropZone[5];
+    private readonly string?[] _deliveryCustomerIds = new string?[5];
     private readonly PanelContainer[] _orderCards = new PanelContainer[5];
     private readonly HBoxContainer[] _orderRows = new HBoxContainer[5];
     private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[5];
     private readonly Label[] _customerBadges = new Label[5];
+    private readonly Label[] _customerStateBadges = new Label[5];
     private readonly ProgressBar[] _patienceBars = new ProgressBar[5];
     private readonly string[] _customerSignatures = new string[5];
     private readonly string[] _portraitSignatures = new string[5];
     private readonly CustomerState?[] _displayedCustomerStates = new CustomerState?[5];
-    private readonly bool[] _selectedCustomerSlots = new bool[5];
     private readonly Dictionary<Control, Tween> _uiTweens = new();
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
@@ -39,6 +42,7 @@ public partial class TianjinDayScreen : Control
     private TianjinArtCatalog _art = null!;
     private PancakeWorkstation _workstation = null!;
     private Label _dayTitle = null!;
+    private Label _completedOrders = null!;
     private Label _clock = null!;
     private Label _income = null!;
     private TextureRect _coinTarget = null!;
@@ -51,9 +55,13 @@ public partial class TianjinDayScreen : Control
     private RichTextLabel _resultText = null!;
     private Label _unlockText = null!;
     private ConfirmationDialog _abandonDialog = null!;
+    private ColorRect _pauseBlocker = null!;
+    private PanelContainer _pausePanel = null!;
     private DayCommitResult _commit;
     private bool _committed;
     private bool _focused = true;
+    private bool _manualPaused;
+    private bool _focusPaused;
     private double _feedbackRemaining;
 
     public override void _Ready() => Build();
@@ -67,10 +75,14 @@ public partial class TianjinDayScreen : Control
         _results.Visible = false;
         _resultBlocker.Visible = false;
         _countdown.Visible = false;
+        _manualPaused = false;
+        _focusPaused = false;
+        _pauseBlocker.Visible = false;
+        _pausePanel.Visible = false;
         Array.Fill(_customerSignatures, string.Empty);
         Array.Fill(_portraitSignatures, string.Empty);
         Array.Fill(_displayedCustomerStates, null);
-        Array.Fill(_selectedCustomerSlots, false);
+        Array.Fill(_deliveryCustomerIds, null);
         if (!controller.TryPrepareDay(day, catalog, out string error))
         {
             ShowFeedback(error, true);
@@ -85,11 +97,10 @@ public partial class TianjinDayScreen : Control
             ? Math.Max(1, save.Data.PurchasedFryerLevel)
             : 0;
         _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig, _art);
-        _workstation.SubmitPrepared = SubmitPrepared;
-        _workstation.SubmitProduct = SubmitProduct;
-        _workstation.CanSubmitToSelectedCustomer = HasSelectedDeliveryCustomer;
+        _workstation.DirectCustomerDelivery = true;
         _workstation.InteractionEnabled = false;
         _workstation.ResetForDay();
+        ApplyPauseState();
         Render();
     }
 
@@ -98,6 +109,7 @@ public partial class TianjinDayScreen : Control
         if (_controller is null) return;
         if (_controller.TryStartDay(out string error))
         {
+            SetManualPaused(false);
             _countdown.Visible = true;
             ShowFeedback("铺门打开，准备迎接第一位客人。", false);
         }
@@ -142,16 +154,25 @@ public partial class TianjinDayScreen : Control
         if (what == NotificationApplicationFocusOut)
         {
             _focused = false;
-            if (_controller is not null) _controller.IsPaused = true;
+            _focusPaused = true;
             _workstation?.CancelInput();
-            if (_workstation is not null) _workstation.Paused = true;
+            ApplyPauseState();
         }
         else if (what == NotificationApplicationFocusIn)
         {
             _focused = true;
-            if (_controller is not null) _controller.IsPaused = false;
-            if (_workstation is not null) _workstation.Paused = false;
+            _focusPaused = false;
+            ApplyPauseState();
         }
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event is not InputEventKey { Keycode: Key.Escape, Pressed: true, Echo: false }) return;
+        if (_abandonDialog.Visible) return;
+        if (_controller?.State is not (DayState.Opening or DayState.Running or DayState.Closing)) return;
+        SetManualPaused(!_manualPaused);
+        GetViewport().SetInputAsHandled();
     }
 
     private void Build()
@@ -173,6 +194,7 @@ public partial class TianjinDayScreen : Control
         BuildCustomers();
         BuildHud();
         BuildFeedback();
+        BuildPauseOverlay();
         BuildResultOverlay();
 
         _countdown = TianjinUi.Label("3", 112, TianjinUi.Paper, HorizontalAlignment.Center);
@@ -186,15 +208,21 @@ public partial class TianjinDayScreen : Control
 
         _abandonDialog = new ConfirmationDialog
         {
-            Title = "提前打烊？",
+            Title = "放弃本日？",
             DialogText = "本日收入和成绩不会保存，重新开始仍会遇到同一批顾客。",
-            OkButtonText = "打烊并返回",
+            OkButtonText = "确认放弃",
+            CancelButtonText = "继续营业",
         };
         _abandonDialog.Confirmed += () =>
         {
             _controller.AbandonDay();
             _workstation.ResetForDay();
+            SetManualPaused(false);
             HubRequested?.Invoke();
+        };
+        _abandonDialog.Canceled += () =>
+        {
+            if (_manualPaused) _pausePanel.Visible = true;
         };
         AddChild(_abandonDialog);
     }
@@ -210,22 +238,26 @@ public partial class TianjinDayScreen : Control
         hud.ZIndex = 70;
         AddChild(hud);
         var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 20);
+        row.AddThemeConstantOverride("separation", 16);
         hud.AddChild(row);
         _dayTitle = TianjinUi.Label("Day 1", 28, TianjinUi.BrownDark);
         _dayTitle.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(_dayTitle);
+        _completedOrders = TianjinUi.Label("完成订单 0/0", 18, TianjinUi.BrownText);
+        _completedOrders.Name = "CompletedOrders";
+        row.AddChild(_completedOrders);
         _door = TianjinUi.Label("门外候场 0", 18, TianjinUi.Brown);
         row.AddChild(_door);
         _clock = TianjinUi.Label("01:00", 26, TianjinUi.BrownDark);
         row.AddChild(_clock);
         _coinTarget = TianjinUi.Texture(_art.Coin, new Vector2(44, 44));
         row.AddChild(_coinTarget);
-        _income = TianjinUi.Label("¥0", 25, TianjinUi.Green);
+        _income = TianjinUi.Label("今日收入 ¥0", 21, TianjinUi.Green);
         row.AddChild(_income);
-        var back = TianjinUi.Button("提前打烊", false, new Vector2(148, 52));
-        back.Pressed += RequestAbandon;
-        row.AddChild(back);
+        var pause = TianjinUi.Button("暂停", false, new Vector2(112, 52));
+        pause.Name = "PauseButton";
+        pause.Pressed += () => SetManualPaused(true);
+        row.AddChild(pause);
     }
 
     private void BuildCustomers()
@@ -238,24 +270,23 @@ public partial class TianjinDayScreen : Control
         customers.AddThemeConstantOverride("separation", 12);
         customers.ZIndex = 30;
         AddChild(customers);
-        for (int index = 0; index < _customerButtons.Length; index++)
+        for (int index = 0; index < _customerSlots.Length; index++)
         {
-            int slot = index;
-            var button = new Button
+            var button = new Control
             {
                 Name = $"CustomerSlot{index + 1}",
-                Text = string.Empty,
                 CustomMinimumSize = new Vector2(340, CustomerStripHeight),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
-                FocusMode = FocusModeEnum.All,
+                MouseFilter = MouseFilterEnum.Ignore,
                 Visible = false,
             };
-            button.AddThemeStyleboxOverride("normal", TianjinUi.Box(new Color(1, 1, 1, 0), 16, 0, false));
-            button.AddThemeStyleboxOverride("hover", TianjinUi.Box(new Color(1, 0.95f, 0.76f, 0.18f), 16, 3, false));
-            button.AddThemeStyleboxOverride("pressed", TianjinUi.Box(new Color(1, 0.89f, 0.48f, 0.24f), 16, 4, false));
-            button.Pressed += () => SelectSlot(slot);
             customers.AddChild(button);
-            _customerButtons[index] = button;
+            _customerSlots[index] = button;
+            var dropZone = new DropZone { Name = $"CustomerDropZone{index + 1}", HitPadding = 5, ZIndex = 1 };
+            TianjinUi.FullRect(dropZone);
+            button.AddChild(dropZone);
+            _customerDropZones[index] = dropZone;
+            _workstation.RegisterCustomerZone(dropZone);
 
             var column = new VBoxContainer { Name = "CustomerColumn" };
             TianjinUi.FullRect(column, 4, 4, -4, 0);
@@ -263,16 +294,59 @@ public partial class TianjinDayScreen : Control
             column.AddThemeConstantOverride("separation", 2);
             button.AddChild(column);
             var bubble = TianjinUi.Panel(TianjinUi.Paper, 14, 4, true);
-            bubble.CustomMinimumSize = new Vector2(220, 94);
+            bubble.AddThemeStyleboxOverride("panel", OrderCardStyle());
+            bubble.CustomMinimumSize = new Vector2(220, 108);
             bubble.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
             bubble.MouseFilter = MouseFilterEnum.Ignore;
             column.AddChild(bubble);
             _orderCards[index] = bubble;
+            button.MouseEntered += () => AnimateControl(bubble, new Vector2(1.012f, 1.012f), Colors.White, 0.12);
+            button.MouseExited += () => AnimateControl(bubble, Vector2.One, Colors.White, 0.12);
+            var orderContent = new Control
+            {
+                Name = "OrderContent",
+                CustomMinimumSize = new Vector2(188, 96),
+                MouseFilter = MouseFilterEnum.Ignore,
+            };
+            bubble.AddChild(orderContent);
             _orderRows[index] = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
-            _orderRows[index].AddThemeConstantOverride("separation", 4);
-            bubble.AddChild(_orderRows[index]);
+            _orderRows[index].AddThemeConstantOverride("separation", 6);
+            TianjinUi.FullRect(_orderRows[index], 0, 16, 0, -8);
+            orderContent.AddChild(_orderRows[index]);
+
+            _customerBadges[index] = OrderBadge("CustomerTypeBadge", HorizontalAlignment.Left);
+            _customerBadges[index].Position = new Vector2(4, 0);
+            _customerBadges[index].Size = new Vector2(84, 16);
+            orderContent.AddChild(_customerBadges[index]);
+            _customerStateBadges[index] = OrderBadge("CustomerStateBadge", HorizontalAlignment.Right);
+            _customerStateBadges[index].SetAnchorsPreset(LayoutPreset.TopRight);
+            _customerStateBadges[index].OffsetLeft = -96;
+            _customerStateBadges[index].OffsetTop = 0;
+            _customerStateBadges[index].OffsetRight = -4;
+            _customerStateBadges[index].OffsetBottom = 16;
+            orderContent.AddChild(_customerStateBadges[index]);
+
+            _patienceBars[index] = new ProgressBar
+            {
+                Name = "OrderPatience",
+                MinValue = 0,
+                MaxValue = 100,
+                Value = 100,
+                ShowPercentage = false,
+                CustomMinimumSize = new Vector2(0, 8),
+                MouseFilter = MouseFilterEnum.Ignore,
+            };
+            _patienceBars[index].SetAnchorsPreset(LayoutPreset.BottomWide);
+            _patienceBars[index].OffsetTop = -8;
+            _patienceBars[index].OffsetBottom = 0;
+            _patienceBars[index].AddThemeStyleboxOverride("background", TianjinUi.Box(new Color("#E2CDA8"), 4, 2, false));
+            _patienceBars[index].AddThemeStyleboxOverride("fill", TianjinUi.Box(TianjinUi.Green, 4, 0, false));
+            orderContent.AddChild(_patienceBars[index]);
             CustomerPortraitVisual customerVisual = _art.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId, CustomerExpression.Normal);
-            _portraits[index] = new CustomerPortraitView();
+            _portraits[index] = new CustomerPortraitView
+            {
+                Presentation = CustomerPortraitPresentation.CounterHalfBody,
+            };
             _portraits[index].SetVisual(customerVisual);
             var portraitStack = new Control
             {
@@ -284,30 +358,6 @@ public partial class TianjinDayScreen : Control
             column.AddChild(portraitStack);
             portraitStack.AddChild(_portraits[index]);
             TianjinUi.FullRect(_portraits[index]);
-            _customerBadges[index] = TianjinUi.Label("普通顾客", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
-            _customerBadges[index].CustomMinimumSize = new Vector2(0, 22);
-            _customerBadges[index].AddThemeConstantOverride("outline_size", 4);
-            _customerBadges[index].AddThemeColorOverride("font_outline_color", new Color(1f, 0.94f, 0.79f, 0.92f));
-            _customerBadges[index].SetAnchorsPreset(LayoutPreset.BottomWide);
-            _customerBadges[index].OffsetTop = -36;
-            _customerBadges[index].OffsetBottom = -14;
-            _customerBadges[index].Visible = false;
-            portraitStack.AddChild(_customerBadges[index]);
-            _patienceBars[index] = new ProgressBar
-            {
-                MinValue = 0,
-                MaxValue = 100,
-                Value = 100,
-                ShowPercentage = false,
-                CustomMinimumSize = new Vector2(0, 14),
-                MouseFilter = MouseFilterEnum.Ignore,
-            };
-            _patienceBars[index].SetAnchorsPreset(LayoutPreset.BottomWide);
-            _patienceBars[index].OffsetTop = -14;
-            _patienceBars[index].OffsetBottom = 0;
-            _patienceBars[index].AddThemeStyleboxOverride("background", TianjinUi.Box(new Color("#E2CDA8"), 8, 3, false));
-            _patienceBars[index].AddThemeStyleboxOverride("fill", TianjinUi.Box(TianjinUi.Green, 7, 0, false));
-            portraitStack.AddChild(_patienceBars[index]);
         }
     }
 
@@ -322,6 +372,46 @@ public partial class TianjinDayScreen : Control
         AddChild(_feedbackPanel);
         _feedback = TianjinUi.Label(string.Empty, 19, TianjinUi.Green, HorizontalAlignment.Center);
         _feedbackPanel.AddChild(_feedback);
+    }
+
+    private void BuildPauseOverlay()
+    {
+        _pauseBlocker = new ColorRect
+        {
+            Name = "PauseBlocker",
+            Color = new Color(0.20f, 0.09f, 0.04f, 0.42f),
+            MouseFilter = MouseFilterEnum.Stop,
+            ZIndex = 91,
+            Visible = false,
+        };
+        TianjinUi.FullRect(_pauseBlocker);
+        AddChild(_pauseBlocker);
+
+        _pausePanel = TianjinUi.Panel(TianjinUi.Paper, 22);
+        _pausePanel.Name = "PausePanel";
+        _pausePanel.Position = new Vector2(680, 330);
+        _pausePanel.Size = new Vector2(560, 360);
+        _pausePanel.ZIndex = 92;
+        _pausePanel.Visible = false;
+        AddChild(_pausePanel);
+
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 18);
+        _pausePanel.AddChild(column);
+        column.AddChild(TianjinUi.Label("营业暂停", 38, TianjinUi.BrownDark, HorizontalAlignment.Center));
+        Label explanation = TianjinUi.Label("计时、顾客耐心和工作台都已暂停。", 20, TianjinUi.BrownText, HorizontalAlignment.Center);
+        explanation.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        column.AddChild(explanation);
+        Button resume = TianjinUi.Button("继续营业", true, new Vector2(0, 72));
+        resume.Name = "ResumeButton";
+        resume.Pressed += () => SetManualPaused(false);
+        column.AddChild(resume);
+        Button abandon = TianjinUi.Button("放弃本日", false, new Vector2(0, 58));
+        abandon.Name = "AbandonDayButton";
+        abandon.Pressed += RequestAbandon;
+        column.AddChild(abandon);
+        Label warning = TianjinUi.Label("放弃后，本日收入与成绩不会保存。", 17, TianjinUi.Red, HorizontalAlignment.Center);
+        column.AddChild(warning);
     }
 
     private void BuildResultOverlay()
@@ -369,10 +459,12 @@ public partial class TianjinDayScreen : Control
         if (state == DayState.Running)
         {
             _countdown.Visible = false;
-            ShowFeedback("开始营业！先点选顾客，再把早餐送到出餐口。", false);
+            ShowFeedback("开始营业！做好早餐后，直接拖给对应顾客。", false);
         }
         else if (state == DayState.Closing)
             ShowFeedback("停止接新客，最后 15 秒把手上的订单做完。", false);
+        else if (state is DayState.Preparing or DayState.Results)
+            SetManualPaused(false);
     }
 
     private void OnDayFinished(DayResult result)
@@ -402,41 +494,60 @@ public partial class TianjinDayScreen : Control
         _results.Visible = true;
     }
 
-    private bool SubmitPrepared(Pancake.PancakeStateMachine machine)
+    private bool SubmitToCustomer(string customerId, int slot, string payload)
     {
-        int selectedSlot = SelectedSlotIndex();
-        DeliveryEvaluation evaluation = _controller.TryDeliverSelected(machine, _catalog);
-        ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
-        PlayDeliveryEffects(evaluation, selectedSlot);
-        return evaluation.ItemAccepted || evaluation.CompletesOrder;
-    }
-
-    private bool SubmitProduct(ProductKind kind)
-    {
-        int selectedSlot = SelectedSlotIndex();
+        ProductKind? kind = PancakeWorkstation.DeliveryProduct(payload);
         DeliveryEvaluation evaluation = kind switch
         {
-            ProductKind.Youtiao when _workstation.FryerMachine is not null => _controller.TryDeliverYoutiaoSelected(_workstation.FryerMachine.Inventory),
-            ProductKind.SoyMilk when _workstation.SoyMilkTray is not null => _controller.TryDeliverSoyMilkSelected(_workstation.SoyMilkTray),
+            ProductKind.Pancake => _controller.TryDeliverPancakeTo(customerId, _workstation.Machine, _catalog),
+            ProductKind.Youtiao when _workstation.FryerMachine is not null => _controller.TryDeliverYoutiaoTo(customerId, _workstation.FryerMachine.Inventory),
+            ProductKind.SoyMilk when _workstation.SoyMilkTray is not null => _controller.TryDeliverSoyMilkTo(customerId, _workstation.SoyMilkTray),
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
         };
         if (kind == ProductKind.Youtiao && (evaluation.ItemAccepted || evaluation.CompletesOrder)) _controller.Ledger?.RecordYoutiaoUsed();
         ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
-        PlayDeliveryEffects(evaluation, selectedSlot);
+        PlayDeliveryEffects(evaluation, slot);
         return evaluation.ItemAccepted || evaluation.CompletesOrder;
     }
 
-    private void SelectSlot(int index)
+    private void BindDeliveryCustomer(int slot, string customerId)
     {
-        if (index < _controller.CustomerQueue!.Slots.Count && !_controller.CustomerQueue.TrySelect(_controller.CustomerQueue.Slots[index].Id))
-            ShowFeedback("这位顾客还没有站稳，请稍等一下。", true);
-        RenderCustomers();
+        if (_deliveryCustomerIds[slot] == customerId) return;
+        _deliveryCustomerIds[slot] = customerId;
+        _customerDropZones[slot].ConfigureResult(
+            payload => _workstation.CanDeliverProduct(payload)
+                && PancakeWorkstation.DeliveryProduct(payload) is ProductKind kind
+                && _controller.CanDeliverTo(customerId, kind),
+            payload => _workstation.DeliverToCustomer(payload, () => SubmitToCustomer(customerId, slot, payload)),
+            _ => _portraits[slot].GetGlobalRect().GetCenter());
     }
 
     private void RequestAbandon()
     {
-        if (_controller.State is DayState.Opening or DayState.Running or DayState.Closing) _abandonDialog.PopupCentered();
+        if (_controller.State is DayState.Opening or DayState.Running or DayState.Closing)
+        {
+            SetManualPaused(true);
+            _pausePanel.Visible = false;
+            _abandonDialog.PopupCentered();
+        }
         else HubRequested?.Invoke();
+    }
+
+    private void SetManualPaused(bool paused)
+    {
+        _manualPaused = paused;
+        if (paused) _workstation?.CancelInput();
+        bool active = _controller?.State is DayState.Opening or DayState.Running or DayState.Closing;
+        _pauseBlocker.Visible = paused && active;
+        _pausePanel.Visible = paused && active && !_abandonDialog.Visible;
+        ApplyPauseState();
+    }
+
+    private void ApplyPauseState()
+    {
+        bool paused = _manualPaused || _focusPaused;
+        if (_controller is not null) _controller.IsPaused = paused;
+        if (_workstation is not null) _workstation.Paused = paused;
     }
 
     private void Render()
@@ -451,7 +562,9 @@ public partial class TianjinDayScreen : Control
         };
         if (_controller.State == DayState.Opening)
             _countdown.Text = Math.Max(1, (int)Math.Ceiling(_controller.OpeningRemainingSeconds)).ToString();
-        _income.Text = $"¥{_controller.Ledger?.Build().TotalRevenue ?? 0}";
+        DayResult? progress = _controller.Ledger?.Build();
+        _completedOrders.Text = $"完成订单 {progress?.CompletedCustomers ?? 0}/{_controller.CurrentConfig.CustomerCount}";
+        _income.Text = $"今日收入 ¥{progress?.TotalRevenue ?? 0}";
         RenderCustomers();
     }
 
@@ -460,22 +573,23 @@ public partial class TianjinDayScreen : Control
         if (_controller?.CustomerQueue is null) return;
         IReadOnlyList<CustomerRuntime> slots = _controller.CustomerQueue.Slots;
         _door.Text = $"门外候场 {_controller.CustomerQueue.DoorQueue.Count}";
-        for (int index = 0; index < _customerButtons.Length; index++)
+        for (int index = 0; index < _customerSlots.Length; index++)
         {
-            Button button = _customerButtons[index];
+            Control button = _customerSlots[index];
             if (index >= slots.Count)
             {
                 button.Visible = false;
                 _portraits[index].Rotation = 0;
+                _portraits[index].Scale = Vector2.One;
                 _customerSignatures[index] = string.Empty;
                 _portraitSignatures[index] = string.Empty;
                 _displayedCustomerStates[index] = null;
-                _selectedCustomerSlots[index] = false;
+                _deliveryCustomerIds[index] = null;
                 continue;
             }
             CustomerRuntime customer = slots[index];
             button.Visible = true;
-            bool selected = _controller.CustomerQueue.SelectedCustomerId == customer.Id;
+            BindDeliveryCustomer(index, customer.Id);
             string progress = string.Join(',', customer.Order.Lines.Select((_, line) => customer.Progress.GetDeliveredQuantity(line)));
             string signature = customer.Id + ":" + progress;
             if (!string.Equals(_customerSignatures[index], signature, StringComparison.Ordinal))
@@ -488,12 +602,6 @@ public partial class TianjinDayScreen : Control
                     AnimateControl(button, Vector2.One, Colors.White, 0.22);
                 }
             }
-            if (_selectedCustomerSlots[index] != selected)
-            {
-                _selectedCustomerSlots[index] = selected;
-                AnimateControl(button, Vector2.One, Colors.White, 0.18);
-            }
-            button.Disabled = customer.State is CustomerState.Entering or CustomerState.Leaving or CustomerState.Served;
             CustomerExpression expression = TianjinArtCatalog.ResolveCustomerExpression(customer.State, customer.WasServed);
             string portraitSignature = $"{customer.AppearanceId}:{expression}";
             if (!string.Equals(_portraitSignatures[index], portraitSignature, StringComparison.Ordinal))
@@ -503,15 +611,17 @@ public partial class TianjinDayScreen : Control
             }
             if (_displayedCustomerStates[index] is CustomerState previousState && previousState != customer.State
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)
-                PulseCustomer(_portraits[index], customer.State == CustomerState.Angry ? TianjinUi.Red : TianjinUi.Orange);
+                PulseCustomer(_portraits[index], customer.State == CustomerState.Angry ? TianjinUi.Red : TianjinUi.Orange, false);
             _displayedCustomerStates[index] = customer.State;
-            string badge = CustomerStatusBadge(customer.Type.Id, customer.State, selected);
+            string badge = CustomerTypeBadge(customer.Type.Id);
             _customerBadges[index].Text = badge;
-            _customerBadges[index].Visible = badge.Length > 0;
-            _customerBadges[index].Modulate = selected ? TianjinUi.Orange : StateColor(customer.State);
+            _customerBadges[index].Modulate = badge.Length == 0 ? Colors.Transparent : CustomerBadgeColor(customer.Type.Id);
+            string stateBadge = CustomerStateBadge(customer.State);
+            _customerStateBadges[index].Text = stateBadge;
+            _customerStateBadges[index].Modulate = stateBadge.Length == 0 ? Colors.Transparent : StateColor(customer.State);
             _patienceBars[index].Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
             _patienceBars[index].AddThemeStyleboxOverride("fill", TianjinUi.Box(StateColor(customer.State), 7, 0, false));
-            button.AddThemeStyleboxOverride("normal", CustomerSlotStyle(selected));
+            _orderCards[index].AddThemeStyleboxOverride("panel", OrderCardStyle());
         }
     }
 
@@ -519,34 +629,81 @@ public partial class TianjinDayScreen : Control
     {
         HBoxContainer row = _orderRows[slot];
         foreach (Node child in row.GetChildren()) child.QueueFree();
-        _orderCards[slot].CustomMinimumSize = new Vector2(customer.Order.Lines.Count switch
-        {
-            <= 1 => 220,
-            2 => 304,
-            _ => 328,
-        }, 94);
+        float contentWidth = customer.Order.Lines.Sum(line => line.ProductKind == ProductKind.Pancake ? 104 : 76)
+            + Math.Max(0, customer.Order.Lines.Count - 1) * 6;
+        _orderCards[slot].CustomMinimumSize = new Vector2(Math.Clamp(contentWidth + 20, 220, 328), 108);
         for (int index = 0; index < customer.Order.Lines.Count; index++)
         {
             OrderLineData line = customer.Order.Lines[index];
             int delivered = customer.Progress.GetDeliveredQuantity(index);
-            var item = new VBoxContainer { CustomMinimumSize = new Vector2(72, 64), MouseFilter = MouseFilterEnum.Ignore };
-            item.AddThemeConstantOverride("separation", 0);
+            bool completed = delivered >= line.Quantity;
+            float itemWidth = line.ProductKind == ProductKind.Pancake ? 104 : 76;
+            var item = new Control
+            {
+                Name = "OrderItem",
+                CustomMinimumSize = new Vector2(itemWidth, 72),
+                MouseFilter = MouseFilterEnum.Ignore,
+                Modulate = completed ? new Color(0.78f, 0.85f, 0.72f, 1f) : Colors.White,
+            };
             ArtVisual productVisual = _art.ProductVisual(line.ProductKind);
-            item.AddChild(TianjinUi.Texture(productVisual.Texture, new Vector2(44, 32)));
+            TextureRect productIcon = TianjinUi.Texture(productVisual.Texture, new Vector2(52, 36));
+            productIcon.Name = "OrderProductIcon";
+            productIcon.Position = new Vector2((itemWidth - 52) * 0.5f, 0);
+            productIcon.Size = new Vector2(52, 36);
+            item.AddChild(productIcon);
             string name = line.ProductKind switch { ProductKind.Pancake => "煎饼", ProductKind.Youtiao => "单卖油条", _ => "豆浆" };
-            item.AddChild(TianjinUi.Label(name, 14, TianjinUi.BrownText, HorizontalAlignment.Center));
-            string quantity = delivered >= line.Quantity ? "✓" : line.Quantity > 1 ? $"{delivered}/{line.Quantity}" : string.Empty;
+            Label nameLabel = TianjinUi.Label(name, 14, TianjinUi.BrownText, HorizontalAlignment.Center);
+            nameLabel.Position = new Vector2(0, 36);
+            nameLabel.Size = new Vector2(itemWidth, 17);
+            item.AddChild(nameLabel);
+            string quantity = completed
+                ? line.Quantity > 1 ? $"✓ {line.Quantity}/{line.Quantity}" : "✓"
+                : line.Quantity > 1 ? $"{delivered}/{line.Quantity}" : string.Empty;
             if (quantity.Length > 0)
-                item.AddChild(TianjinUi.Label(quantity, 16, delivered >= line.Quantity ? TianjinUi.Green : TianjinUi.BrownText, HorizontalAlignment.Center));
+            {
+                Label quantityLabel = TianjinUi.Label(quantity, 13, completed ? TianjinUi.Green : TianjinUi.BrownText, HorizontalAlignment.Center);
+                quantityLabel.Name = "OrderQuantity";
+                float quantityWidth = completed && line.Quantity == 1 ? 24 : 48;
+                quantityLabel.Position = new Vector2(itemWidth - quantityWidth, 0);
+                quantityLabel.Size = new Vector2(quantityWidth, 20);
+                quantityLabel.AddThemeConstantOverride("outline_size", 3);
+                quantityLabel.AddThemeColorOverride("font_outline_color", TianjinUi.Paper);
+                item.AddChild(quantityLabel);
+            }
             if (line.ProductKind == ProductKind.Pancake && _catalog.RecipesById.TryGetValue(line.DefinitionId, out RecipeData? recipe) && recipe.ExtraIngredients.Count > 0)
             {
-                var toppings = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
+                var toppings = new HBoxContainer
+                {
+                    Name = "OrderToppings",
+                    Alignment = BoxContainer.AlignmentMode.Center,
+                    MouseFilter = MouseFilterEnum.Ignore,
+                    Position = new Vector2(0, 51),
+                    Size = new Vector2(itemWidth, 21),
+                };
+                toppings.AddThemeConstantOverride("separation", 2);
                 foreach (string ingredient in recipe.ExtraIngredients)
-                    toppings.AddChild(TianjinUi.Texture(_art.Ingredient(ingredient), new Vector2(18, 16)));
+                    toppings.AddChild(OrderTopping(ingredient));
                 item.AddChild(toppings);
             }
             row.AddChild(item);
         }
+    }
+
+    private Control OrderTopping(string ingredientId)
+    {
+        var group = new HBoxContainer
+        {
+            CustomMinimumSize = new Vector2(50, 22),
+            MouseFilter = MouseFilterEnum.Ignore,
+            Alignment = BoxContainer.AlignmentMode.Center,
+        };
+        group.AddThemeConstantOverride("separation", 1);
+        group.AddChild(TianjinUi.Texture(_art.Ingredient(ingredientId), new Vector2(28, 22)));
+        Label label = TianjinUi.Label(IngredientDisplayName(ingredientId), 12, TianjinUi.BrownText, HorizontalAlignment.Left);
+        label.CustomMinimumSize = new Vector2(21, 22);
+        label.VerticalAlignment = VerticalAlignment.Center;
+        group.AddChild(label);
+        return group;
     }
 
     private void ShowFeedback(string message, bool error)
@@ -563,27 +720,10 @@ public partial class TianjinDayScreen : Control
             .TweenProperty(_feedbackPanel, "position", new Vector2(600, 506), 0.18);
     }
 
-    private int SelectedSlotIndex()
-    {
-        if (_controller?.CustomerQueue is null) return -1;
-        string? selected = _controller.CustomerQueue.SelectedCustomerId;
-        for (int index = 0; index < _controller.CustomerQueue.Slots.Count; index++)
-            if (_controller.CustomerQueue.Slots[index].Id == selected) return index;
-        return -1;
-    }
-
-    private bool HasSelectedDeliveryCustomer()
-    {
-        if (_controller?.CustomerQueue is null) return false;
-        string? selected = _controller.CustomerQueue.SelectedCustomerId;
-        return selected is not null && _controller.CustomerQueue.Slots.Any(customer => customer.Id == selected
-            && customer.State is CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry);
-    }
-
     private void PlayDeliveryEffects(DeliveryEvaluation evaluation, int slot)
     {
-        if (slot < 0 || slot >= _customerButtons.Length || !evaluation.CompletesOrder) return;
-        Vector2 origin = GetGlobalTransform().AffineInverse() * _customerButtons[slot].GetGlobalRect().GetCenter();
+        if (slot < 0 || slot >= _customerSlots.Length || !evaluation.CompletesOrder) return;
+        Vector2 origin = GetGlobalTransform().AffineInverse() * _customerSlots[slot].GetGlobalRect().GetCenter();
         if (evaluation.Grade is DeliveryGrade.Perfect or DeliveryGrade.Correct)
         {
             for (int index = 0; index < (evaluation.Grade == DeliveryGrade.Perfect ? 5 : 3); index++)
@@ -633,23 +773,62 @@ public partial class TianjinDayScreen : Control
         tween.Finished += coin.QueueFree;
     }
 
-    private static string CustomerStatusBadge(string id, CustomerState state, bool selected)
+    private static string CustomerTypeBadge(string id)
     {
-        if (selected) return "正在出餐";
-        return state switch
+        return id switch
         {
-            CustomerState.Impatient => "着急等待",
-            CustomerState.Angry => "即将离开",
-            CustomerState.Leaving => "已经离开",
-            CustomerState.Served => "已经取餐",
-            _ => id switch
-            {
-                "office_worker" => "赶时间",
-                "regular" => "耐心等待",
-                "big_order" => "多件订单",
-                _ => string.Empty,
-            },
+            "office_worker" => "赶时间",
+            "regular" => "耐心等待",
+            "big_order" => "多件订单",
+            _ => string.Empty,
         };
+    }
+
+    private static string CustomerStateBadge(CustomerState state) => state switch
+    {
+        CustomerState.Impatient => "着急",
+        CustomerState.Angry => "即将离开",
+        CustomerState.Leaving => "正在离开",
+        CustomerState.Served => "已取餐",
+        _ => string.Empty,
+    };
+
+    private static string IngredientDisplayName(string id) => id switch
+    {
+        StableIds.Ingredients.Crispy => "薄脆",
+        StableIds.Ingredients.Scallion => "香葱",
+        StableIds.Ingredients.Ham => "火腿",
+        StableIds.Ingredients.Youtiao => "油条",
+        _ => string.Empty,
+    };
+
+    private static Color CustomerBadgeColor(string id) => id switch
+    {
+        "office_worker" => TianjinUi.Orange,
+        "regular" => TianjinUi.Green,
+        "big_order" => TianjinUi.Brown,
+        _ => TianjinUi.BrownText,
+    };
+
+    private static Label OrderBadge(string name, HorizontalAlignment alignment)
+    {
+        Label label = TianjinUi.Label(string.Empty, 13, TianjinUi.BrownText, alignment);
+        label.Name = name;
+        label.MouseFilter = MouseFilterEnum.Ignore;
+        label.AddThemeConstantOverride("outline_size", 3);
+        label.AddThemeColorOverride("font_outline_color", new Color(1f, 0.94f, 0.79f, 0.96f));
+        return label;
+    }
+
+    private static StyleBoxFlat OrderCardStyle(bool selected = false)
+    {
+        StyleBoxFlat style = TianjinUi.Box(selected ? new Color("#FFF2C4") : TianjinUi.Paper, 14, selected ? 5 : 4, true);
+        if (selected) style.BorderColor = TianjinUi.Orange;
+        style.ContentMarginLeft = 10;
+        style.ContentMarginTop = 6;
+        style.ContentMarginRight = 10;
+        style.ContentMarginBottom = 6;
+        return style;
     }
 
     private void AnimateControl(Control control, Vector2 targetScale, Color targetModulate, double duration)
@@ -670,7 +849,7 @@ public partial class TianjinDayScreen : Control
         tween.Finished += () => _uiTweens.Remove(control);
     }
 
-    private void PulseCustomer(Control portrait, Color tint)
+    private void PulseCustomer(Control portrait, Color tint, bool selected)
     {
         if (!IsInstanceValid(portrait) || portrait.IsQueuedForDeletion()) return;
         portrait.PivotOffset = portrait.Size * 0.5f;
@@ -679,7 +858,7 @@ public partial class TianjinDayScreen : Control
         _uiTweens[portrait] = tween;
         if (!ReducedMotion) tween.TweenProperty(portrait, "scale", new Vector2(1.035f, 1.035f), 0.12);
         tween.Parallel().TweenProperty(portrait, "modulate", new Color(tint, 1), 0.12);
-        tween.TweenProperty(portrait, "scale", Vector2.One, 0.16);
+        tween.TweenProperty(portrait, "scale", selected ? new Vector2(1.018f, 1.018f) : Vector2.One, 0.16);
         tween.Parallel().TweenProperty(portrait, "modulate", Colors.White, 0.16);
         tween.Finished += () => _uiTweens.Remove(portrait);
     }
@@ -697,13 +876,6 @@ public partial class TianjinDayScreen : Control
         CustomerState.Angry => TianjinUi.Red,
         _ => new Color("#8A7766"),
     };
-
-    private static StyleBoxFlat CustomerSlotStyle(bool selected)
-    {
-        StyleBoxFlat style = TianjinUi.Box(selected ? new Color(1, 0.84f, 0.33f, 0.20f) : new Color(1, 1, 1, 0), 16, selected ? 4 : 0, false);
-        if (selected) style.BorderColor = TianjinUi.Yellow;
-        return style;
-    }
 
     private static bool ReducedMotion => ProjectSettings.HasSetting("accessibility/reduce_motion")
         && ProjectSettings.GetSetting("accessibility/reduce_motion").AsBool();

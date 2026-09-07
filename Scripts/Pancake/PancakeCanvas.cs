@@ -14,6 +14,9 @@ public partial class PancakeCanvas : Control
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
 
+    public float DisplayScale { get; set; } = 1.0f;
+    public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
+
     public float BatterDropProgress
     {
         get => _batterDropProgress;
@@ -122,8 +125,8 @@ public partial class PancakeCanvas : Control
 
     private (Vector2 Center, float Size) GetStoveGeometry()
     {
-        Vector2 center = Size * 0.5f + new Vector2(0, 16);
-        float stoveSize = Mathf.Min(Size.X * 0.72f, Size.Y * 1.04f);
+        Vector2 center = Size * 0.5f + new Vector2(0, 16) + DisplayOffset;
+        float stoveSize = Mathf.Min(Size.X * 0.72f, Size.Y * 1.04f) * Mathf.Max(0.1f, DisplayScale);
         return (center, stoveSize);
     }
 

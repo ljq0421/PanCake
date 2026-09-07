@@ -23,11 +23,15 @@ public partial class VisualCapture : Node
         bool captureRunning = OS.GetCmdlineUserArgs().Contains("--capture-running", StringComparer.Ordinal);
         bool captureLowStock = args.Contains("--capture-low-stock", StringComparer.Ordinal);
         bool captureInteraction = args.Contains("--capture-interaction", StringComparer.Ordinal);
+        bool captureDirectDelivery = args.Contains("--capture-direct-delivery", StringComparer.Ordinal);
         bool capturePancakeReady = args.Contains("--capture-pancake-ready", StringComparer.Ordinal);
         bool captureSauceReady = args.Contains("--capture-sauce-ready", StringComparer.Ordinal);
         bool captureThreeCustomers = args.Contains("--capture-three-customers", StringComparer.Ordinal);
-        bool captureDay = captureFryerWorkstation || captureRunning || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
-        int phase4Day = captureThreeCustomers ? 15
+        bool capturePause = args.Contains("--capture-pause", StringComparer.Ordinal);
+        bool capturePartialOrder = args.Contains("--capture-partial-order", StringComparer.Ordinal);
+        bool captureDay = captureFryerWorkstation || captureRunning || capturePause || capturePartialOrder
+            || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
+        int phase4Day = captureDirectDelivery || captureThreeCustomers || capturePause || capturePartialOrder ? 15
             : captureLowStock || captureInteraction || capturePancakeReady || captureSauceReady ? 9
             : args.Contains("--capture-day1", StringComparer.Ordinal) ? 1
             : captureFryerWorkstation || args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
@@ -164,6 +168,13 @@ public partial class VisualCapture : Node
                         for (int quantity = 0; quantity < 4; quantity++) fryer.TryExecute(FryerCommand.LoadOne);
                         fryer.TryExecute(FryerCommand.LowerBasket);
                     }
+                    if (capturePartialOrder)
+                    {
+                        DeliverPartialOrderForCapture(controller, workstation, GetNode<DataCatalog>("/root/DataCatalog"));
+                        workstation.RefreshForCapture();
+                    }
+                    if (capturePause && dayScreen.FindChild("PauseButton", true, false) is Button pause)
+                        pause.EmitSignal(Button.SignalName.Pressed);
                 }
             }
         }
@@ -192,9 +203,30 @@ public partial class VisualCapture : Node
             main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen").RefreshForCapture(true);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        if (captureDirectDelivery)
+        {
+            Node main = GetNode("../Main");
+            var screen = main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
+            var controller = main.GetNode<DayController>("DayController");
+            var workstation = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+            screen.RefreshForCapture(true);
+            CustomerRuntime customer = controller.CustomerQueue!.Slots[2];
+            RecipeData recipe = GetNode<DataCatalog>("/root/DataCatalog").RecipesById[
+                customer.Order.Lines.First(line => line.ProductKind == ProductKind.Pancake).DefinitionId];
+            MakeBagged(workstation.Machine, recipe);
+            workstation.RefreshForCapture();
+            var drag = workstation.GetChildren().OfType<DragService>().Single();
+            var zone = (DropZone)screen.FindChild("CustomerDropZone3", true, false);
+            drag.BeginDrag((Control)workstation.FindChild("FinishedPancakeSlot", true, false), "finished_pancake", "煎饼", TianjinUi.Cream,
+                new DragVisualSpec(new TianjinArtCatalog().FinishedPancake, new Vector2(150, 125)));
+            using var motion = new InputEventMouseMotion { Position = zone.GetGlobalRect().GetCenter() };
+            drag._Input(motion);
+            await ToSignal(GetTree().CreateTimer(.2), SceneTreeTimer.SignalName.Timeout);
+        }
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
-        string output = captureResult ? $"res://.godot/phase4_result{sizeSuffix}.png"
+        string output = captureDirectDelivery ? $"res://.godot/direct_delivery{sizeSuffix}.png"
+            : captureResult ? $"res://.godot/phase4_result{sizeSuffix}.png"
             : captureFryerSlots ? $"res://.godot/fryer_slots{sizeSuffix}.png"
             : captureFryerWorkstation ? $"res://.godot/fryer_workstation_lv{captureFryerLevel}{sizeSuffix}.png"
             : captureExpressions ? $"res://.godot/customer_expressions_page{expressionPage}{sizeSuffix}.png"
@@ -202,6 +234,8 @@ public partial class VisualCapture : Node
             : captureInteraction ? $"res://.godot/phase4_interaction{sizeSuffix}.png"
             : capturePancakeReady ? $"res://.godot/phase4_pancake_ready{sizeSuffix}.png"
             : captureSauceReady ? $"res://.godot/phase4_sauce_ready{sizeSuffix}.png"
+            : capturePause ? $"res://.godot/phase4_pause{sizeSuffix}.png"
+            : capturePartialOrder ? $"res://.godot/phase4_partial_order{sizeSuffix}.png"
             : captureThreeCustomers ? $"res://.godot/phase4_three_customers{sizeSuffix}.png"
             : phase4Day > 0 ? $"res://.godot/phase4_day{phase4Day}{sizeSuffix}.png"
             : captureMap ? $"res://.godot/phase4_map{sizeSuffix}.png"
@@ -400,6 +434,32 @@ public partial class VisualCapture : Node
         foreach (string ingredient in recipe.ExtraIngredients) machine.TryExecute(PancakeCommand.AddIngredient, ingredient);
         if (recipe.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao)) machine.TrySetInternalYoutiaoQuality(YoutiaoQuality.Golden);
         machine.TryExecute(PancakeCommand.Fold); machine.TryExecute(PancakeCommand.Bag);
+    }
+
+    private static void DeliverPartialOrderForCapture(DayController controller, PancakeWorkstation workstation, DataCatalog catalog)
+    {
+        CustomerRuntime? customer = controller.CustomerQueue?.Slots.FirstOrDefault(item => item.Order.Lines.Count > 1);
+        if (customer is null || controller.CustomerQueue?.TrySelect(customer.Id) != true) return;
+        OrderLineData? line = customer.Order.Lines.FirstOrDefault(item => item.ProductKind == ProductKind.SoyMilk)
+            ?? customer.Order.Lines.FirstOrDefault(item => item.ProductKind == ProductKind.Youtiao)
+            ?? customer.Order.Lines.FirstOrDefault();
+        if (line is null) return;
+        if (line.ProductKind == ProductKind.SoyMilk && workstation.SoyMilkTray is not null)
+        {
+            controller.TryDeliverSoyMilkSelected(workstation.SoyMilkTray);
+            return;
+        }
+        if (line.ProductKind == ProductKind.Youtiao && workstation.FryerMachine is not null)
+        {
+            workstation.FryerMachine.Inventory.TryStore(1, YoutiaoQuality.Golden);
+            controller.TryDeliverYoutiaoSelected(workstation.FryerMachine.Inventory);
+            return;
+        }
+        if (line.ProductKind == ProductKind.Pancake)
+        {
+            MakeBagged(workstation.Machine, catalog.RecipesById[line.DefinitionId]);
+            controller.TryDeliverSelected(workstation.Machine, catalog);
+        }
     }
 
     private static void ReduceTo(IngredientInventory inventory, string ingredientId, int target)

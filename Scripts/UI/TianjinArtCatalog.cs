@@ -1,11 +1,22 @@
 using Godot;
 using ProjectCake.Customers;
 using ProjectCake.Data;
+using System.Text.Json;
 
 namespace ProjectCake.UI;
 
 public readonly record struct ArtVisual(Texture2D Texture, Vector2 DisplaySize);
-public readonly record struct CustomerPortraitVisual(Texture2D Body, Texture2D Head, Vector2 DisplaySize);
+public readonly record struct CustomerPortraitVisual(
+    Texture2D Body,
+    Texture2D Head,
+    Vector2 DisplaySize,
+    float PortraitScale,
+    Vector2 HeadAnchor);
+
+public readonly record struct CustomerPortraitLayout(
+    float Scale,
+    Vector2 HeadAnchor,
+    Rect2I NormalVisibleBounds);
 
 public enum CustomerExpression
 {
@@ -18,11 +29,15 @@ public enum CustomerExpression
 public sealed class TianjinArtCatalog
 {
     private const string Root = "res://resource/art/TianJin/";
+    private const string PortraitLayoutPath = Root + "Customers/portrait_layout.json";
     private static readonly Dictionary<string, Texture2D> SharedTextures = new(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, CustomerPortraitLayout>? SharedPortraitLayouts;
     private readonly Dictionary<string, Texture2D> _textures = SharedTextures;
+    private readonly IReadOnlyDictionary<string, CustomerPortraitLayout> _portraitLayouts;
 
     public TianjinArtCatalog()
     {
+        _portraitLayouts = LoadPortraitLayouts();
         Load("background", "早餐铺主界面-1920x1080.png");
         Load("coin", "金币图标.png", true);
         Load("pancake_base", "展开煎饼基础层-v2.png", true);
@@ -133,8 +148,20 @@ public sealed class TianjinArtCatalog
     public Texture2D CustomerHead(string appearanceId, CustomerExpression expression) =>
         LoadCustomerTexture(CustomerAppearance(appearanceId), $"head_{ExpressionKey(expression)}.png");
 
-    public CustomerPortraitVisual CustomerPortrait(string appearanceId, CustomerExpression expression) =>
-        new(CustomerBody(appearanceId), CustomerHead(appearanceId, expression), new Vector2(220, 154));
+    public CustomerPortraitVisual CustomerPortrait(string appearanceId, CustomerExpression expression)
+    {
+        string appearance = CustomerAppearance(appearanceId);
+        CustomerPortraitLayout layout = _portraitLayouts[appearance];
+        return new CustomerPortraitVisual(
+            CustomerBody(appearance),
+            CustomerHead(appearance, expression),
+            new Vector2(220, 154),
+            layout.Scale,
+            layout.HeadAnchor);
+    }
+
+    public CustomerPortraitLayout CustomerLayout(string appearanceId) =>
+        _portraitLayouts[CustomerAppearance(appearanceId)];
 
     public CustomerPortraitVisual CustomerPortrait(string appearanceId, CustomerState state, bool wasServed) =>
         CustomerPortrait(appearanceId, ResolveCustomerExpression(state, wasServed));
@@ -175,7 +202,45 @@ public sealed class TianjinArtCatalog
                 if (!ResourceLoader.Exists(Root + folder + fileName)) missing.Add($"customer_{appearance.Id}_{fileName[..^4]}");
             }
         }
+        if (!Godot.FileAccess.FileExists(PortraitLayoutPath)) missing.Add("customer_portrait_layout");
         return missing;
+    }
+
+    private static IReadOnlyDictionary<string, CustomerPortraitLayout> LoadPortraitLayouts()
+    {
+        lock (SharedTextures)
+        {
+            if (SharedPortraitLayouts is not null) return SharedPortraitLayouts;
+            if (!Godot.FileAccess.FileExists(PortraitLayoutPath))
+                throw new InvalidOperationException($"天津顾客头像布局资源不存在：{PortraitLayoutPath}");
+
+            string json = Godot.FileAccess.GetFileAsString(PortraitLayoutPath);
+            using JsonDocument document = JsonDocument.Parse(json);
+            JsonElement root = document.RootElement;
+            if (root.GetProperty("canvasWidth").GetInt32() != 1086 || root.GetProperty("canvasHeight").GetInt32() != 1448)
+                throw new InvalidOperationException("天津顾客头像布局画布必须为 1086×1448。");
+
+            JsonElement appearances = root.GetProperty("appearances");
+            var layouts = new Dictionary<string, CustomerPortraitLayout>(StringComparer.Ordinal);
+            foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
+            {
+                if (!appearances.TryGetProperty(appearance.Id, out JsonElement entry))
+                    throw new InvalidOperationException($"天津顾客头像布局缺少人物：{appearance.Id}");
+                float scale = entry.GetProperty("scale").GetSingle();
+                JsonElement anchor = entry.GetProperty("headAnchor");
+                Vector2 headAnchor = new(anchor[0].GetSingle(), anchor[1].GetSingle());
+                JsonElement bounds = entry.GetProperty("normalVisibleBounds");
+                Rect2I visibleBounds = new(bounds[0].GetInt32(), bounds[1].GetInt32(), bounds[2].GetInt32(), bounds[3].GetInt32());
+                if (!float.IsFinite(scale) || scale <= 0
+                    || !float.IsFinite(headAnchor.X) || !float.IsFinite(headAnchor.Y)
+                    || headAnchor.X is < 0 or > 1 || headAnchor.Y is < 0 or > 1
+                    || visibleBounds.Size.X <= 0 || visibleBounds.Size.Y <= 0)
+                    throw new InvalidOperationException($"天津顾客头像布局数据非法：{appearance.Id}");
+                layouts[appearance.Id] = new CustomerPortraitLayout(scale, headAnchor, visibleBounds);
+            }
+            SharedPortraitLayouts = layouts;
+            return SharedPortraitLayouts;
+        }
     }
 
     private Texture2D Get(string key) => _textures.TryGetValue(key, out Texture2D? texture)

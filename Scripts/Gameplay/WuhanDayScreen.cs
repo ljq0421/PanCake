@@ -89,17 +89,25 @@ public partial class WuhanDayScreen : Control
     }
     private void BuildWorkstation()
     {
-        _basketRow=new HBoxContainer(); var cooker=StationPanel("煮面锅",new Vector2(30,575),new Vector2(410,465),_art.Cooker(1),out VBoxContainer cookerCol); _cookerImage=(TextureRect)cookerCol.GetChild(1); _basketRow.AddThemeConstantOverride("separation",6); cookerCol.AddChild(_basketRow);
+        _basketRow=new HBoxContainer(); StationArea(new Vector2(30,575),new Vector2(410,465),_art.Cooker(1),out VBoxContainer cookerCol); _cookerImage=(TextureRect)cookerCol.GetChild(0); _basketRow.AddThemeConstantOverride("separation",6); cookerCol.AddChild(_basketRow);
         for(int i=0;i<2;i++){int slot=i;_basketButtons[i]=TianjinUi.Button($"漏勺 {i+1}",true,new Vector2(0,64));_basketButtons[i].SizeFlagsHorizontal=SizeFlags.ExpandFill;_basketButtons[i].Pressed+=()=>BasketAction(slot);_basketLabels[i]=TianjinUi.Label("空",15,TianjinUi.BrownDark,HorizontalAlignment.Center);var col=new VBoxContainer{SizeFlagsHorizontal=SizeFlags.ExpandFill};col.AddChild(_basketButtons[i]);col.AddChild(_basketLabels[i]);_basketRow.AddChild(col);}
-        var bowl=StationPanel("拌面主操作区",new Vector2(455,575),new Vector2(520,465),_art.Texture("mix_station"),out VBoxContainer bowlCol); _bowlImage=TianjinUi.Button("在碗内按住鼠标画圈拌面",false,new Vector2(0,52)); _bowlImage.GuiInput+=OnMixInput; bowlCol.AddChild(_bowlImage); _bowlStatus=TianjinUi.Label("空碗",16,TianjinUi.BrownDark,HorizontalAlignment.Center); bowlCol.AddChild(_bowlStatus);
+        StationArea(new Vector2(455,575),new Vector2(520,465),null,out VBoxContainer bowlCol); AddMixingSurface(bowlCol); _bowlStatus=TianjinUi.Label("空碗",16,TianjinUi.BrownDark,HorizontalAlignment.Center); bowlCol.AddChild(_bowlStatus);
         _ingredientRow=new HBoxContainer(); _ingredientRow.AddThemeConstantOverride("separation",4); bowlCol.AddChild(_ingredientRow); AddIngredient("基础调味",StableIds.Ingredients.WuhanBaseSeasoning);AddIngredient("葱花",StableIds.Ingredients.WuhanScallion);AddIngredient("辣油",StableIds.Ingredients.WuhanChiliOil);AddIngredient("牛肉",StableIds.Ingredients.WuhanBraisedBeef);
         var deliver=TianjinUi.Button("热干面出餐",true,new Vector2(0,50)); deliver.Pressed+=DeliverNoodles; bowlCol.AddChild(deliver);
-        var doupi=StationPanel("三鲜豆皮",new Vector2(990,575),new Vector2(430,465),_art.Griddle(1),out VBoxContainer doupiCol); _doupiImage=(TextureRect)doupiCol.GetChild(1); _doupiButton=TianjinUi.Button("开始制作",true,new Vector2(0,58));_doupiButton.Pressed+=DoupiAction;doupiCol.AddChild(_doupiButton);_doupiStatus=TianjinUi.Label("Day 4 解锁",16,TianjinUi.BrownDark,HorizontalAlignment.Center);doupiCol.AddChild(_doupiStatus);var giveDoupi=TianjinUi.Button("交付豆皮",false,new Vector2(0,48));giveDoupi.Pressed+=DeliverDoupi;doupiCol.AddChild(giveDoupi);
-        var egg=StationPanel("蛋酒",new Vector2(1435,575),new Vector2(455,465),_art.Texture("egg_station"),out VBoxContainer eggCol);_eggButton=TianjinUi.Button("冲一杯蛋酒",true,new Vector2(0,62));_eggButton.Pressed+=EggAction;eggCol.AddChild(_eggButton);_eggStatus=TianjinUi.Label("Day 6 解锁",16,TianjinUi.BrownDark,HorizontalAlignment.Center);eggCol.AddChild(_eggStatus);
+        StationArea(new Vector2(990,575),new Vector2(430,465),_art.Griddle(1),out VBoxContainer doupiCol); _doupiImage=(TextureRect)doupiCol.GetChild(0); _doupiButton=TianjinUi.Button("开始制作",true,new Vector2(0,58));_doupiButton.Pressed+=DoupiAction;doupiCol.AddChild(_doupiButton);_doupiStatus=TianjinUi.Label("Day 4 解锁",16,TianjinUi.BrownDark,HorizontalAlignment.Center);doupiCol.AddChild(_doupiStatus);var giveDoupi=TianjinUi.Button("交付豆皮",false,new Vector2(0,48));giveDoupi.Pressed+=DeliverDoupi;doupiCol.AddChild(giveDoupi);
+        StationArea(new Vector2(1435,575),new Vector2(455,465),_art.Texture("egg_station"),out VBoxContainer eggCol);_eggButton=TianjinUi.Button("冲一杯蛋酒",true,new Vector2(0,62));_eggButton.Pressed+=EggAction;eggCol.AddChild(_eggButton);_eggStatus=TianjinUi.Label("Day 6 解锁",16,TianjinUi.BrownDark,HorizontalAlignment.Center);eggCol.AddChild(_eggStatus);
     }
-    private PanelContainer StationPanel(string title,Vector2 pos,Vector2 size,Texture2D texture,out VBoxContainer col)
+    private Control StationArea(Vector2 pos,Vector2 size,Texture2D? texture,out VBoxContainer col)
     {
-        var panel=TianjinUi.Panel(new Color("#FFF4D5E8"),14);panel.Position=pos;panel.Size=size;panel.ZIndex=20;AddChild(panel);col=new VBoxContainer();col.AddThemeConstantOverride("separation",5);panel.AddChild(col);col.AddChild(TianjinUi.Label(title,22,TianjinUi.BrownDark,HorizontalAlignment.Center));var image=TianjinUi.Texture(texture,new Vector2(0,250));image.SizeFlagsVertical=SizeFlags.ExpandFill;col.AddChild(image);return panel;
+        var area=new Control{Position=pos,Size=size,ZIndex=20};AddChild(area);col=new VBoxContainer();col.AddThemeConstantOverride("separation",5);TianjinUi.FullRect(col);area.AddChild(col);
+        if(texture is not null){var image=TianjinUi.Texture(texture,new Vector2(0,250));image.SizeFlagsVertical=SizeFlags.ExpandFill;col.AddChild(image);}return area;
+    }
+    private void AddMixingSurface(VBoxContainer col)
+    {
+        var surface=new Control{CustomMinimumSize=new Vector2(0,250),SizeFlagsVertical=SizeFlags.ExpandFill};col.AddChild(surface);
+        var image=TianjinUi.Texture(_art.Texture("mix_station"),Vector2.Zero);TianjinUi.FullRect(image);surface.AddChild(image);
+        _bowlImage=new Button{Flat=true,TooltipText="按住碗内画圈拌面"};_bowlImage.AddThemeStyleboxOverride("normal",new StyleBoxEmpty());_bowlImage.AddThemeStyleboxOverride("hover",TianjinUi.Box(new Color(1,.82f,.25f,.14f),20,3,false));_bowlImage.AddThemeStyleboxOverride("pressed",TianjinUi.Box(new Color(1,.72f,.16f,.2f),20,3,false));_bowlImage.AddThemeStyleboxOverride("focus",TianjinUi.Box(new Color(1,.82f,.25f,.14f),20,3,false));TianjinUi.FullRect(_bowlImage);_bowlImage.GuiInput+=OnMixInput;surface.AddChild(_bowlImage);
+        col.AddChild(TianjinUi.Label("按住碗内画圈拌面",16,TianjinUi.BrownDark,HorizontalAlignment.Center));
     }
     private void AddIngredient(string name,string id){var button=TianjinUi.Button(name,false,new Vector2(0,46));button.SizeFlagsHorizontal=SizeFlags.ExpandFill;button.Pressed+=()=>IngredientAction(id);button.SetMeta("ingredient_id",id);_ingredientRow.AddChild(button);}
 

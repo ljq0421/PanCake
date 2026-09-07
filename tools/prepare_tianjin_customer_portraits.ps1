@@ -1,6 +1,7 @@
 param(
     [string]$ArtRoot = (Join-Path $PSScriptRoot '..\resource\art\TianJin'),
-    [string]$PreviewPath = (Join-Path $PSScriptRoot '..\.tmp\customer_portraits_preview.png')
+    [string]$PreviewPath = (Join-Path $PSScriptRoot '..\.tmp\customer_portraits_preview.png'),
+    [string]$LayoutPath = (Join-Path $PSScriptRoot '..\resource\art\TianJin\Customers\portrait_layout.json')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,7 +17,41 @@ using System.Runtime.InteropServices;
 
 public static class PortraitBitmapTools
 {
-    public static Rectangle KeepCenterComponent(Bitmap bitmap)
+    public static int FindBestVerticalCut(Bitmap bitmap, int searchLeft, int searchRight)
+    {
+        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+        BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            byte[] bytes = new byte[data.Stride * data.Height];
+            Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
+            int midpoint = (searchLeft + searchRight) / 2;
+            int bestX = -1;
+            int bestCount = int.MaxValue;
+            int bestDistance = int.MaxValue;
+            for (int x = Math.Max(0, searchLeft); x <= Math.Min(bitmap.Width - 1, searchRight); x++)
+            {
+                int count = 0;
+                for (int y = 0; y < bitmap.Height; y++)
+                {
+                    if (bytes[y * data.Stride + x * 4 + 3] <= 12) continue;
+                    count++;
+                }
+                int distance = Math.Abs(x - midpoint);
+                if (count > bestCount || (count == bestCount && distance >= bestDistance)) continue;
+                bestX = x;
+                bestCount = count;
+                bestDistance = distance;
+            }
+            return bestX;
+        }
+        finally
+        {
+            bitmap.UnlockBits(data);
+        }
+    }
+
+    public static Rectangle KeepComponentNearest(Bitmap bitmap, int expectedCenterX, int expectedCenterY)
     {
         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
         BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
@@ -26,15 +61,13 @@ public static class PortraitBitmapTools
             Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
             int seed = -1;
             long bestDistance = long.MaxValue;
-            int centerX = bitmap.Width / 2;
-            int centerY = bitmap.Height / 2;
             for (int y = 0; y < bitmap.Height; y++)
             {
                 int row = y * data.Stride;
                 for (int x = 0; x < bitmap.Width; x++)
                 {
                     if (bytes[row + x * 4 + 3] <= 12) continue;
-                    long dx = x - centerX, dy = y - centerY;
+                    long dx = x - expectedCenterX, dy = y - expectedCenterY;
                     long distance = dx * dx + dy * dy;
                     if (distance >= bestDistance) continue;
                     bestDistance = distance;
@@ -67,6 +100,10 @@ public static class PortraitBitmapTools
                         int nextX = x + offsetX;
                         if (nextX < 0 || nextX >= bitmap.Width) continue;
                         int next = nextY * bitmap.Width + nextX;
+                        // Keep the same visibility threshold during traversal so
+                        // faint generator noise cannot bridge adjacent portraits.
+                        // The padded source rectangle preserves transparent room
+                        // for high-quality resampling around the retained outline.
                         if (keep[next] || bytes[nextY * data.Stride + nextX * 4 + 3] <= 12) continue;
                         keep[next] = true;
                         queue[queueTail++] = next;
@@ -85,6 +122,40 @@ public static class PortraitBitmapTools
                 }
             }
             Marshal.Copy(bytes, 0, data.Scan0, bytes.Length);
+            const int padding = 6;
+            minX = Math.Max(0, minX - padding);
+            minY = Math.Max(0, minY - padding);
+            maxX = Math.Min(bitmap.Width - 1, maxX + padding);
+            maxY = Math.Min(bitmap.Height - 1, maxY + padding);
+            return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        }
+        finally
+        {
+            bitmap.UnlockBits(data);
+        }
+    }
+
+    public static Rectangle VisibleBounds(Bitmap bitmap)
+    {
+        var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+        BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            byte[] bytes = new byte[data.Stride * data.Height];
+            Marshal.Copy(data.Scan0, bytes, 0, bytes.Length);
+            int minX = bitmap.Width, minY = bitmap.Height, maxX = -1, maxY = -1;
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                int row = y * data.Stride;
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    if (bytes[row + x * 4 + 3] <= 12) continue;
+                    minX = Math.Min(minX, x); minY = Math.Min(minY, y);
+                    maxX = Math.Max(maxX, x); maxY = Math.Max(maxY, y);
+                }
+            }
+            if (maxX < minX || maxY < minY)
+                throw new InvalidOperationException("Bitmap contains no visible pixels.");
             return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
         finally
@@ -261,29 +332,61 @@ foreach ($character in $characters) {
             throw "$($character.Sheet) has an unexpected size: $($sheet.Width)x$($sheet.Height)."
         }
 
-        $isolatedCells = @()
+        $expectedCenters = @($character.Cells | ForEach-Object {
+            ,@([int][Math]::Round($_[0] + ($_[2] / 2.0)), [int][Math]::Round($_[1] + ($_[3] / 2.0)))
+        })
+        $isolatedHeads = @()
         $bounds = @()
-        foreach ($cell in $character.Cells) {
-            $isolated = New-TransparentBitmap -Width $cell[2] -Height $cell[3]
-            $graphics = [System.Drawing.Graphics]::FromImage($isolated)
-            try {
-                $graphics.CompositingMode = [System.Drawing.Drawing2D.CompositingMode]::SourceCopy
-                $graphics.DrawImage(
+        for ($index = 0; $index -lt $character.Cells.Count; $index++) {
+            # First try a full-sheet flood fill: disconnected heads can overlap
+            # in X while still remaining distinct components.
+            $isolated = $sheet.Clone(
+                [System.Drawing.Rectangle]::new(0, 0, $sheet.Width, $sheet.Height),
+                [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            $expectedCenterX = $expectedCenters[$index][0]
+            $expectedCenterY = $expectedCenters[$index][1]
+            $bounds += [PortraitBitmapTools]::KeepComponentNearest($isolated, $expectedCenterX, $expectedCenterY)
+            $isolatedHeads += $isolated
+        }
+        $componentCenters = @($bounds | ForEach-Object { $_.Left + ($_.Width / 2.0) })
+        $needsAdaptiveSplit = $false
+        for ($index = 1; $index -lt $componentCenters.Count; $index++) {
+            if ($componentCenters[$index] -le $componentCenters[$index - 1]) { $needsAdaptiveSplit = $true }
+        }
+        if ($needsAdaptiveSplit) {
+            foreach ($isolated in $isolatedHeads) { $isolated.Dispose() }
+            $isolatedHeads = @()
+            $bounds = @()
+            $cuts = @()
+            for ($index = 0; $index -lt $expectedCenters.Count - 1; $index++) {
+                $cuts += [PortraitBitmapTools]::FindBestVerticalCut(
                     $sheet,
-                    [System.Drawing.Rectangle]::new(0, 0, $cell[2], $cell[3]),
-                    [System.Drawing.Rectangle]::new($cell[0], $cell[1], $cell[2], $cell[3]),
-                    [System.Drawing.GraphicsUnit]::Pixel)
+                    $expectedCenters[$index][0],
+                    $expectedCenters[$index + 1][0])
             }
-            finally {
-                $graphics.Dispose()
+            for ($index = 0; $index -lt $character.Cells.Count; $index++) {
+                # Touching source silhouettes are separated at the lowest-alpha
+                # vertical seam between their authored centers, never at a fixed
+                # equal-width grid line.
+                $left = if ($index -eq 0) { 0 } else { $cuts[$index - 1] + 1 }
+                $right = if ($index -eq $character.Cells.Count - 1) { $sheet.Width - 1 } else { $cuts[$index] - 1 }
+                $width = $right - $left + 1
+                $isolated = $sheet.Clone(
+                    [System.Drawing.Rectangle]::new($left, 0, $width, $sheet.Height),
+                    [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+                $bounds += [PortraitBitmapTools]::KeepComponentNearest(
+                    $isolated,
+                    $expectedCenters[$index][0] - $left,
+                    $expectedCenters[$index][1])
+                $isolatedHeads += $isolated
             }
-            $bounds += [PortraitBitmapTools]::KeepCenterComponent($isolated)
-            $isolatedCells += $isolated
         }
         $maxWidth = ($bounds | Measure-Object -Property Width -Maximum).Maximum
         $maxHeight = ($bounds | Measure-Object -Property Height -Maximum).Maximum
+        $sourceVisibleBounds = @($isolatedHeads | ForEach-Object { [PortraitBitmapTools]::VisibleBounds($_) })
+        $normalSourceArea = [double]($sourceVisibleBounds[1].Width * $sourceVisibleBounds[1].Height)
         $target = $character.Target
-        $scale = [Math]::Min($target[2] / $maxWidth, $target[3] / $maxHeight)
+        $placementScale = [Math]::Min($target[2] / $maxWidth, $target[3] / $maxHeight)
         $centerX = $target[0] + ($target[2] / 2.0)
         $centerY = $target[1] + ($target[3] / 2.0)
 
@@ -297,17 +400,29 @@ foreach ($character in $characters) {
                 $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
                 $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
                 $source = $bounds[$index]
-                $width = [int][Math]::Round($source.Width * $scale)
-                $height = [int][Math]::Round($source.Height * $scale)
+                $sourceArea = [double]($sourceVisibleBounds[$index].Width * $sourceVisibleBounds[$index].Height)
+                $expressionScale = $placementScale * [Math]::Sqrt($normalSourceArea / $sourceArea)
+                $width = [int][Math]::Round($source.Width * $expressionScale)
+                $height = [int][Math]::Round($source.Height * $expressionScale)
                 $left = [int][Math]::Round($centerX - ($width / 2.0))
                 $top = [int][Math]::Round($centerY - ($height / 2.0))
                 $destination = [System.Drawing.Rectangle]::new($left, $top, $width, $height)
-                $graphics.DrawImage($isolatedCells[$index], $destination, $source, [System.Drawing.GraphicsUnit]::Pixel)
+                $graphics.DrawImage($isolatedHeads[$index], $destination, $source, [System.Drawing.GraphicsUnit]::Pixel)
             }
             finally {
                 $graphics.Dispose()
             }
             $heads += $head
+        }
+        $headAreas = @($heads | ForEach-Object {
+            $visible = [PortraitBitmapTools]::VisibleBounds($_)
+            [double]($visible.Width * $visible.Height)
+        })
+        $normalHeadArea = $headAreas[1]
+        foreach ($area in $headAreas) {
+            if ($area -lt $normalHeadArea * 0.98 -or $area -gt $normalHeadArea * 1.02) {
+                throw "$($character.Sheet) expression area normalization exceeded 2%."
+            }
         }
 
         $body = $portrait.Clone([System.Drawing.Rectangle]::new(0, 0, $canvasWidth, $canvasHeight), [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
@@ -323,14 +438,47 @@ foreach ($character in $characters) {
             Id = $character.Id
             Body = $body
             Heads = $heads
+            NormalBounds = [PortraitBitmapTools]::VisibleBounds($heads[1])
         }
-        foreach ($isolated in $isolatedCells) { $isolated.Dispose() }
+        foreach ($isolated in $isolatedHeads) { $isolated.Dispose() }
     }
     finally {
         $portrait.Dispose()
         $sheet.Dispose()
     }
 }
+
+$normalAreas = @($processed | ForEach-Object { [double]($_.NormalBounds.Width * $_.NormalBounds.Height) } | Sort-Object)
+$middle = [int]($normalAreas.Count / 2)
+$referenceArea = ($normalAreas[$middle - 1] + $normalAreas[$middle]) / 2.0
+$layoutAppearances = [ordered]@{}
+foreach ($character in $processed) {
+    $bounds = $character.NormalBounds
+    $area = [double]($bounds.Width * $bounds.Height)
+    $scale = [Math]::Sqrt($referenceArea / $area)
+    if ([double]::IsNaN($scale) -or [double]::IsInfinity($scale) -or $scale -le 0) {
+        throw "Invalid portrait normalization scale for $($character.Id)."
+    }
+    $layoutAppearances[$character.Id] = [ordered]@{
+        scale = [Math]::Round($scale, 8)
+        headAnchor = @(
+            [Math]::Round(($bounds.Left + ($bounds.Width / 2.0)) / $canvasWidth, 8),
+            [Math]::Round(($bounds.Top + ($bounds.Height / 2.0)) / $canvasHeight, 8)
+        )
+        normalVisibleBounds = @($bounds.Left, $bounds.Top, $bounds.Width, $bounds.Height)
+    }
+}
+$layout = [ordered]@{
+    canvasWidth = $canvasWidth
+    canvasHeight = $canvasHeight
+    referenceVisibleArea = [Math]::Round($referenceArea, 4)
+    appearances = $layoutAppearances
+}
+$layoutParent = Split-Path -Parent $LayoutPath
+if (-not (Test-Path -LiteralPath $layoutParent)) {
+    New-Item -ItemType Directory -Path $layoutParent | Out-Null
+}
+$layout | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $LayoutPath -Encoding utf8
 
 try {
     $previewPages = [Math]::Ceiling($processed.Count / 4.0)
@@ -371,4 +519,5 @@ finally {
 }
 
 Write-Output "Prepared $($processed.Count * 5) runtime customer assets."
+Write-Output "Portrait layout: $LayoutPath"
 Write-Output "Preview pages: $previewPages in $previewDirectory"

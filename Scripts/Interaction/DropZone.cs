@@ -14,13 +14,19 @@ public partial class DropZone : PanelContainer
 {
     private readonly StyleBoxFlat _style = new();
     private Func<string, bool>? _canAccept;
-    private Action<string>? _accepted;
+    private Func<string, bool>? _accepted;
     private Func<string, Vector2>? _snapGlobalCenter;
     private DropZoneVisualState _visualState;
     private Tween? _stateTween;
     private Tween? _pulseTween;
 
     public DropZoneVisualState VisualState => _visualState;
+    public int ConfigurationVersion { get; private set; }
+    public float HitPadding { get; set; }
+
+    public bool ContainsPoint(Vector2 globalPosition, bool padded = true) =>
+        new Rect2(Vector2.Zero, Size).Grow(padded ? HitPadding : 0)
+            .HasPoint(GetGlobalTransform().AffineInverse() * globalPosition);
 
     public override void _Ready()
     {
@@ -43,14 +49,23 @@ public partial class DropZone : PanelContainer
         Action<string> accepted,
         Func<string, Vector2>? snapGlobalCenter = null)
     {
+        ConfigureResult(canAccept, id => { accepted(id); return true; }, snapGlobalCenter);
+    }
+
+    public void ConfigureResult(Func<string, bool> canAccept, Func<string, bool> accepted,
+        Func<string, Vector2>? snapGlobalCenter = null)
+    {
         _canAccept = canAccept;
         _accepted = accepted;
         _snapGlobalCenter = snapGlobalCenter;
+        ConfigurationVersion++;
     }
 
     public bool CanAccept(string payloadId) => _canAccept?.Invoke(payloadId) == true;
 
-    public void Accept(string payloadId) => _accepted?.Invoke(payloadId);
+    public void Accept(string payloadId) => TryAccept(payloadId);
+
+    public bool TryAccept(string payloadId) => CanAccept(payloadId) && _accepted?.Invoke(payloadId) == true;
 
     public Vector2 ResolveSnapGlobalCenter(string payloadId) =>
         _snapGlobalCenter?.Invoke(payloadId) ?? GetGlobalRect().GetCenter();

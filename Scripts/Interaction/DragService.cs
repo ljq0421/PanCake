@@ -143,9 +143,7 @@ public partial class DragService : Node
 
     private void CompleteDrag(Vector2 position)
     {
-        DropZone? zone = _zones.FirstOrDefault(candidate =>
-            candidate.IsVisibleInTree()
-            && candidate.GetGlobalRect().HasPoint(position));
+        DropZone? zone = ResolveZone(position);
         string payload = _payloadId;
         if (zone?.CanAccept(_payloadId) == true)
         {
@@ -155,6 +153,16 @@ public partial class DragService : Node
 
         if (zone is not null) zone.PulseRejected();
         AnimateReturn(payload, zone is null ? DragCompletion.Missed : DragCompletion.Rejected, zone);
+    }
+
+    // A visible target wins over a neighbour's expanded margin, even if invalid.
+    // This prevents a deliberate drop on one customer from reaching someone else.
+    public DropZone? ResolveZone(Vector2 position)
+    {
+        DropZone[] visible = _zones.Where(zone => IsInstanceValid(zone) && zone.IsVisibleInTree()).ToArray();
+        return visible.FirstOrDefault(zone => zone.ContainsPoint(position, false))
+            ?? visible.Where(zone => zone.HitPadding > 0 && zone.CanAccept(_payloadId) && zone.ContainsPoint(position))
+                .OrderBy(zone => zone.GetGlobalRect().GetCenter().DistanceSquaredTo(position)).FirstOrDefault();
     }
 
     private void MoveProxy(Vector2 position)
@@ -167,6 +175,7 @@ public partial class DragService : Node
 
     private void UpdateHighlights(Vector2 position)
     {
+        DropZone? hoveredZone = ResolveZone(position);
         foreach (DropZone zone in _zones)
         {
             if (!zone.IsVisibleInTree())
@@ -174,7 +183,7 @@ public partial class DragService : Node
                 zone.SetDragState(DropZoneVisualState.Idle);
                 continue;
             }
-            bool hovered = zone.GetGlobalRect().HasPoint(position);
+            bool hovered = zone == hoveredZone;
             bool valid = zone.CanAccept(_payloadId);
             zone.SetDragState(hovered
                 ? valid ? DropZoneVisualState.HoverValid : DropZoneVisualState.HoverInvalid
@@ -228,9 +237,15 @@ public partial class DragService : Node
         foreach (DropZone candidate in _zones) candidate.SetDragState(DropZoneVisualState.Idle);
 
         Vector2 target = zone.ResolveSnapGlobalCenter(payload) - _proxy.Size * 0.5f;
+        int version = zone.ConfigurationVersion;
         if (ReducedMotion)
         {
-            zone.Accept(payload);
+            if (!zone.TryAccept(payload))
+            {
+                zone.PulseRejected();
+                AnimateReturn(payload, DragCompletion.Rejected, zone);
+                return;
+            }
             ClearDrag();
             if (IsInstanceValid(zone)) zone.PulseAccepted();
             DragEnded?.Invoke(new DragResult(payload, DragCompletion.Accepted, zone));
@@ -246,13 +261,12 @@ public partial class DragService : Node
         {
             if (_motionTween != tween) return;
             _motionTween = null;
-            if (!IsInstanceValid(zone) || !zone.IsVisibleInTree() || !zone.CanAccept(payload))
+            if (!IsInstanceValid(zone) || !zone.IsVisibleInTree() || zone.ConfigurationVersion != version || !zone.TryAccept(payload))
             {
                 if (IsInstanceValid(zone)) zone.PulseRejected();
                 AnimateReturn(payload, DragCompletion.Rejected, zone);
                 return;
             }
-            zone.Accept(payload);
             ClearDrag();
             if (IsInstanceValid(zone)) zone.PulseAccepted();
             DragEnded?.Invoke(new DragResult(payload, DragCompletion.Accepted, zone));

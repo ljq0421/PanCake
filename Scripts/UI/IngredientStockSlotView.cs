@@ -38,6 +38,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
             ShowPercentage = false,
             CustomMinimumSize = new Vector2(0, 6),
             MouseFilter = MouseFilterEnum.Ignore,
+            Visible = false,
         };
         _stock.AddThemeStyleboxOverride("background", StockBarStyle(new Color(0.25f, 0.14f, 0.09f, 0.24f)));
         _stockFill = StockBarStyle(TianjinUi.Green);
@@ -80,10 +81,11 @@ public partial class IngredientStockSlotView : WorkstationSlotView
             : $"{quantity}/{capacity}";
         CountLabel.Modulate = StatusColor(status);
         SetStockFraction(shownFraction);
+        SetIngredientAvailable(quantity > 0 || status == IngredientStockStatus.Refilling);
 
         _stock.Value = shownFraction * 100;
-        _stock.Visible = true;
-        _stockFill.BgColor = StatusColor(status);
+        _stock.Visible = status == IngredientStockStatus.Refilling;
+        _stockFill.BgColor = TianjinUi.Green;
 
         bool needsRefill = status is IngredientStockStatus.Low or IngredientStockStatus.Empty;
         _refill.Visible = needsRefill || status == IngredientStockStatus.Refilling;
@@ -101,7 +103,32 @@ public partial class IngredientStockSlotView : WorkstationSlotView
             {
                 PlayRefillCompleteFeedback();
             }
+            else if (status is IngredientStockStatus.Low or IngredientStockStatus.Empty)
+            {
+                PlayStockAttention(status);
+            }
         }
+    }
+
+    private void PlayStockAttention(IngredientStockStatus status)
+    {
+        _feedbackTween?.Kill();
+        PivotOffset = Size * 0.5f;
+        Scale = Vector2.One;
+        Modulate = Colors.White;
+        Color tint = status == IngredientStockStatus.Empty
+            ? new Color(1f, 0.76f, 0.70f, 1f)
+            : new Color(1f, 0.88f, 0.67f, 1f);
+        Tween tween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        _feedbackTween = tween;
+        if (!ReducedMotion)
+        {
+            tween.TweenProperty(this, "scale", new Vector2(1.025f, 1.025f), 0.10);
+        }
+        tween.Parallel().TweenProperty(this, "modulate", tint, 0.10);
+        tween.TweenProperty(this, "scale", Vector2.One, 0.15);
+        tween.Parallel().TweenProperty(this, "modulate", Colors.White, 0.15);
+        tween.Finished += () => _feedbackTween = null;
     }
 
     private void PlayRefillCompleteFeedback()

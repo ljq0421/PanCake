@@ -19,6 +19,10 @@ public partial class TianjinMapScreen : Control
     private Label _wuhanUnlockedEmblem = null!;
     private bool _lightUpPlayed;
 
+    // Production keeps progression gating intact. QA can reach any map card with
+    // the existing --dev-ui launch flag, without marking that city as unlocked.
+    public bool DeveloperToolsVisible => OS.GetCmdlineUserArgs().Contains("--dev-ui", StringComparer.Ordinal);
+
     public override void _Ready() => Build();
 
     public void Initialize(SaveService save)
@@ -67,6 +71,10 @@ public partial class TianjinMapScreen : Control
         var titles = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; header.AddChild(titles);
         titles.AddChild(Text("早餐地图", 46, TianjinUi.BrownText));
         titles.AddChild(Text("从天津的清晨，走向下一座城市", 22, TianjinUi.Brown));
+        var testEntry = TianjinUi.Button("测试直达武汉", false, new Vector2(190, 58));
+        testEntry.TooltipText = "临时测试入口：不要求天津章节已完成，也不会改变城市解锁状态。正式发布前移除。";
+        testEntry.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Wuhan);
+        header.AddChild(testEntry);
         var back = TianjinUi.Button("返回经营首页", false, new Vector2(210, 58));
         back.Pressed += () => HubRequested?.Invoke(); header.AddChild(back);
 
@@ -78,7 +86,11 @@ public partial class TianjinMapScreen : Control
         var arrow = Text("➜", 56, TianjinUi.Brown); arrow.VerticalAlignment = VerticalAlignment.Center; route.AddChild(arrow);
         _wuhanCard = CityCard(_art.LockedMapNode, "武汉", "下一章", out _wuhanState); route.AddChild(_wuhanCard);
         _wuhanCard.MouseDefaultCursorShape = CursorShape.PointingHand;
-        _wuhanCard.GuiInput += input => { if (IsClick(input) && _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) CityRequested?.Invoke(StableIds.Cities.Wuhan); };
+        _wuhanCard.GuiInput += input =>
+        {
+            bool unlocked = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
+            if (IsClick(input) && CanEnterCity(unlocked, DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Wuhan);
+        };
         _wuhanLockedIcon = _wuhanCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon");
         _wuhanUnlockedEmblem = _wuhanCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem");
         root.AddChild(Text("完成天津 Day 15 并获得一星即可前往武汉；点亮武汉后，下一站进入筹备。", 19, TianjinUi.BrownText));
@@ -97,7 +109,7 @@ public partial class TianjinMapScreen : Control
         _wuhanLockedIcon.Visible = true;
         _wuhanUnlockedEmblem.Visible = false;
         CityProgressData wuhanProgress = _save.Data.GetCity(StableIds.Cities.Wuhan);
-        _wuhanState.Text = !wuhan ? "未开放\n先点亮天津" : wuhanProgress.Completed
+        _wuhanState.Text = !wuhan && DeveloperToolsVisible ? "测试直达\n不写入城市解锁" : !wuhan ? "未开放\n可使用上方测试入口" : wuhanProgress.Completed
             ? $"已点亮  {new string('★', wuhanProgress.BestStars)}{new string('☆', 3 - wuhanProgress.BestStars)}\n下一站筹备中"
             : $"路线已开放\n武汉 Day {wuhanProgress.HighestUnlockedDay}";
         SetCardColor(_wuhanCard, wuhanProgress.Completed ? TianjinUi.Yellow : wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);
@@ -140,6 +152,8 @@ public partial class TianjinMapScreen : Control
     }
 
     private static bool IsClick(InputEvent input) => input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false };
+
+    public static bool CanEnterCity(bool isUnlocked, bool developerToolsVisible) => isUnlocked || developerToolsVisible;
 
     private static Label Text(string text, int size, string color)
     {

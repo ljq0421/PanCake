@@ -19,7 +19,7 @@ public partial class WuhanSelfTest : Node
     }
     private void TestData(DataCatalog c)
     {
-        var days=c.GetDays(StableIds.Cities.Wuhan);Check(c.IsValid,"全量数据目录校验通过");Check(days.Count==12,"武汉包含 Day 1～12");Check(days.Values.Sum(d=>d.DurationSeconds)==1400,"营业时长合计 1400 秒");Check(days.Values.Sum(d=>d.ExpectedRevenue)==2389,"预计收入合计 2389");Check(c.NoodleCookersByLevel.Values.Sum(x=>x.UpgradePrice)+c.DoupiGriddlesByLevel.Values.Sum(x=>x.UpgradePrice)+c.WuhanIngredientStationsByLevel.Values.Sum(x=>x.UpgradePrice)==2000,"升级价格合计 2000");
+        var days=c.GetDays(StableIds.Cities.Wuhan);Check(c.IsValid,"全量数据目录校验通过");Check(days.Count==12,"武汉包含 Day 1～12");Check(days.Values.Sum(d=>d.DurationSeconds)==1400,"营业时长合计 1400 秒");Check(days.Values.Sum(d=>d.ExpectedRevenue)==2389,"预计收入合计 2389");Check(c.NoodleCookersByLevel.Values.Sum(x=>x.UpgradePrice)+c.DoupiGriddlesByLevel.Values.Sum(x=>x.UpgradePrice)+c.WuhanIngredientStationsByLevel.Values.Sum(x=>x.UpgradePrice)==2000,"升级价格合计 2000");Check(ProjectCake.UI.TianjinMapScreen.CanEnterCity(false,true)&&!ProjectCake.UI.TianjinMapScreen.CanEnterCity(false,false)&&ProjectCake.UI.TianjinMapScreen.CanEnterCity(true,false),"开发测试入口可绕过城市前置解锁");
     }
     private void TestOrders(DataCatalog c)
     {

@@ -18,7 +18,7 @@ public partial class StageFourSelfTest : Node
     private int _passed;
     private int _failed;
 
-    public override void _Ready()
+    public override async void _Ready()
     {
         try
         {
@@ -34,6 +34,7 @@ public partial class StageFourSelfTest : Node
             TestFullChapterController(catalog);
             TestStarsAndSave(catalog);
             TestScenes(catalog);
+            await TestDirectDelivery(catalog);
         }
         catch (Exception exception)
         {
@@ -99,6 +100,8 @@ public partial class StageFourSelfTest : Node
             && CustomerAppearanceCatalog.CandidatesFor("office_worker").Count == 9
             && CustomerAppearanceCatalog.CandidatesFor("regular").Count == 9
             && CustomerAppearanceCatalog.CandidatesFor("big_order").Count == 6, "普通与三类特殊顾客外观池数量准确");
+        var normalizedNormalAreas = new List<float>();
+        var normalizedExpressionAreas = new List<(string Name, float Area)>();
         foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
         {
             CustomerPortraitVisual[] portraits = Enum.GetValues<CustomerExpression>().Select(expression => art.CustomerPortrait(appearance.Id, expression)).ToArray();
@@ -106,7 +109,35 @@ public partial class StageFourSelfTest : Node
                 && portraits.Select(portrait => portrait.Head).Distinct().Count() == 4, $"{appearance.DisplayName} 固定身体并切换四张完整头部");
             Check(portraits.All(portrait => portrait.Body.GetWidth() == 1086 && portrait.Body.GetHeight() == 1448
                 && portrait.Head.GetWidth() == 1086 && portrait.Head.GetHeight() == 1448), $"{appearance.DisplayName} 分层素材画布统一为 1086×1448");
+            Check(portraits.All(portrait => Close(portrait.PortraitScale, portraits[0].PortraitScale)
+                && portrait.HeadAnchor.IsEqualApprox(portraits[0].HeadAnchor)), $"{appearance.DisplayName} 四种表情共享同一套头身缩放与锚点");
+            CustomerPortraitLayout layout = art.CustomerLayout(appearance.Id);
+            normalizedNormalAreas.Add(layout.NormalVisibleBounds.Size.X * layout.NormalVisibleBounds.Size.Y * layout.Scale * layout.Scale);
+            for (int expressionIndex = 0; expressionIndex < portraits.Length; expressionIndex++)
+            {
+                CustomerPortraitVisual portrait = portraits[expressionIndex];
+                Rect2I visible = VisibleBounds(portrait.Head);
+                normalizedExpressionAreas.Add(($"{appearance.Id}:{Enum.GetValues<CustomerExpression>()[expressionIndex]}",
+                    visible.Size.X * visible.Size.Y * portrait.PortraitScale * portrait.PortraitScale));
+                Check(visible.Position.X >= 8 && visible.Position.Y >= 8
+                    && visible.End.X <= portrait.Head.GetWidth() - 8 && visible.End.Y <= portrait.Head.GetHeight() - 8,
+                    $"{appearance.DisplayName} 头像保留透明安全边界");
+            }
+            var portraitView = new CustomerPortraitView();
+            portraitView.SetVisual(portraits[0]);
+            Check(portraitView.BodyLayerScale.IsEqualApprox(portraitView.HeadLayerScale)
+                && portraitView.BodyLayerScale.IsEqualApprox(Vector2.One * portraits[0].PortraitScale),
+                $"{appearance.DisplayName} 身体与头部应用相同缩放");
+            portraitView.Free();
         }
+        float normalizedReference = normalizedNormalAreas.OrderBy(area => area).ElementAt(normalizedNormalAreas.Count / 2);
+        Check(normalizedNormalAreas.Max() / normalizedNormalAreas.Min() < 1.001f,
+            "24 名顾客正常头像按可视包围框面积归一");
+        (string Name, float Area) minimumExpression = normalizedExpressionAreas.MinBy(item => item.Area);
+        (string Name, float Area) maximumExpression = normalizedExpressionAreas.MaxBy(item => item.Area);
+        Check(normalizedExpressionAreas.All(item => item.Area >= normalizedReference * 0.90f && item.Area <= normalizedReference * 1.10f),
+            "四种表情切换后的可视头像面积偏差不超过 10%",
+            $"range={minimumExpression.Name}={minimumExpression.Area:F1}..{maximumExpression.Name}={maximumExpression.Area:F1}; reference={normalizedReference:F1}");
         Check(ReferenceEquals(art.CustomerBody("young_woman"), art.CustomerBody("missing_appearance"))
             && ReferenceEquals(art.CustomerHead("young_woman", CustomerExpression.Normal), art.CustomerHead("missing_appearance", CustomerExpression.Normal)),
             "缺失顾客外观稳定回退到年轻女性");
@@ -303,7 +334,7 @@ public partial class StageFourSelfTest : Node
                 controller.Tick(.05); soy.Tick(.05);
                 CustomerRuntime? customer = controller.CustomerQueue?.Slots.FirstOrDefault(item => item.State is CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry);
                 if (customer is null) continue;
-                controller.CustomerQueue!.TrySelect(customer.Id);
+                Check(controller.CustomerQueue!.SelectedCustomerId is null, "直接交付无需选中顾客");
                 for (int lineIndex = 0; lineIndex < customer.Order.Lines.Count; lineIndex++)
                 {
                     OrderLineData line = customer.Order.Lines[lineIndex];
@@ -312,19 +343,19 @@ public partial class StageFourSelfTest : Node
                         if (line.ProductKind == ProductKind.Pancake)
                         {
                             MakeBagged(pancake, catalog.RecipesById[line.DefinitionId]);
-                            DeliveryEvaluation delivery = controller.TryDeliverSelected(pancake, catalog);
+                            DeliveryEvaluation delivery = controller.TryDeliverPancakeTo(customer.Id, pancake, catalog);
                             Check(delivery.Grade != DeliveryGrade.Rejected, $"Day {day} 营业闭环接收煎饼");
                             pancake.TryExecute(PancakeCommand.Discard);
                         }
                         else if (line.ProductKind == ProductKind.Youtiao)
                         {
                             youtiao.TryStore(1, YoutiaoQuality.Golden);
-                            Check(controller.TryDeliverYoutiaoSelected(youtiao).Grade != DeliveryGrade.Rejected, $"Day {day} 营业闭环接收独立油条");
+                            Check(controller.TryDeliverYoutiaoTo(customer.Id, youtiao).Grade != DeliveryGrade.Rejected, $"Day {day} 营业闭环接收独立油条");
                         }
                         else
                         {
                             if (!soy.CanStartDrag) soy.Tick(.3);
-                            Check(controller.TryDeliverSoyMilkSelected(soy).Grade != DeliveryGrade.Rejected, $"Day {day} 营业闭环接收豆浆");
+                            Check(controller.TryDeliverSoyMilkTo(customer.Id, soy).Grade != DeliveryGrade.Rejected, $"Day {day} 营业闭环接收豆浆");
                         }
                     }
                 }
@@ -332,6 +363,104 @@ public partial class StageFourSelfTest : Node
             Check(result is not null && result.CompletedCustomers == catalog.DaysByNumber[day].CustomerCount && result.LostCustomers == 0,
                 $"Day {day} 从开店、逐件出餐到结算完整闭环");
             controller.QueueFree();
+        }
+    }
+
+    private async Task TestDirectDelivery(DataCatalog catalog)
+    {
+        string savePath = $"user://direct-delivery-{Guid.NewGuid():N}.json";
+        var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
+        var controller = new DayController(); AddChild(controller);
+        var screen = new TianjinDayScreen(); AddChild(screen);
+        screen.ConnectController(controller);
+        screen.Initialize(catalog, save, controller, 15);
+        screen.SetProcess(false);
+        screen.BeginDay(); controller.Tick(3);
+        for (int step = 0; step < 1000; step++)
+        {
+            controller.Tick(.1);
+            foreach (CustomerRuntime waiting in controller.CustomerQueue!.Slots) waiting.WaitSeconds = 0;
+            if (controller.CustomerQueue.Slots.Count >= 5
+                && controller.CustomerQueue.Slots.All(customer => customer.State == CustomerState.Happy)) break;
+        }
+        screen.RefreshForCapture(true);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var workstation = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+        var drag = workstation.GetChildren().OfType<DragService>().Single();
+        var source = workstation.FindChild("FinishedPancakeSlot", true, false) as Control;
+        var customer = controller.CustomerQueue!.Slots.Last();
+        int slot = controller.CustomerQueue.Slots.Count - 1;
+        var zone = (DropZone)screen.FindChild($"CustomerDropZone{slot + 1}", true, false);
+        RecipeData recipe = catalog.RecipesById[customer.Order.Lines.First(line => line.ProductKind == ProductKind.Pancake).DefinitionId];
+        MakeBagged(workstation.Machine, recipe);
+        Check(workstation.DirectCustomerDelivery && workstation.FindChild("DeliveryDropZone", true, false) is Control { Visible: false }
+            && workstation.FindChild("DirectDeliveryHint", true, false) is Label { Visible: true },
+            "天津取消出餐口目标，显示直接拖给顾客提示");
+        Check(zone.CanAccept("finished_pancake") && !zone.CanAccept(StableIds.Ingredients.Batter), "顾客接收成品而不接收原料");
+        int before = customer.Progress.DeliveredItems.Count;
+        drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
+        ReleaseOn(zone);
+        await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
+        Check(customer.Progress.DeliveredItems.Count == before + 1
+            && controller.CustomerQueue.SelectedCustomerId is null
+            && controller.CustomerQueue.Slots.Where(other => other != customer).All(other => other.Progress.DeliveredItems.Count == 0)
+            && workstation.Machine.Runtime.State == PancakeState.Empty,
+            "未点击顾客时拖到最后一位只交给该顾客，并清空成品位");
+
+        MakeBagged(workstation.Machine, recipe);
+        Check(!controller.TryDeliverPancakeTo("missing-customer", workstation.Machine, catalog).ItemAccepted
+            && workstation.Machine.Runtime.State == PancakeState.Bagged, "无效顾客 ID 不消耗成品");
+        var soy = new SoyMilkTrayRuntime(6);
+        var youtiao = new YoutiaoInventory(6); youtiao.TryStore(1, YoutiaoQuality.Golden);
+        Check(!controller.TryDeliverSoyMilkTo("missing-customer", soy).ItemAccepted && soy.Quantity == 6
+            && !controller.TryDeliverYoutiaoTo("missing-customer", youtiao).ItemAccepted && youtiao.Count == 1,
+            "无效顾客不会消耗豆浆和油条库存");
+        CustomerRuntime next = controller.CustomerQueue.Slots.First();
+        var firstZone = (DropZone)screen.FindChild("CustomerDropZone1", true, false);
+        DragResult? result = null;
+        drag.DragEnded += value => result = value;
+        drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
+        ReleaseOn(firstZone);
+        next.State = CustomerState.Leaving;
+        await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
+        Check(result?.Completion == DragCompletion.Rejected && next.Progress.DeliveredItems.Count == 0
+            && workstation.Machine.Runtime.State == PancakeState.Bagged, "吸附途中顾客离开时回弹且保留成品");
+        next.State = CustomerState.Happy;
+        drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
+        ReleaseOn(firstZone);
+        firstZone.ConfigureResult(_ => true, _ => throw new InvalidOperationException("不应交给换位后的顾客"));
+        await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
+        Check(result?.Completion == DragCompletion.Rejected && workstation.Machine.Runtime.State == PancakeState.Bagged,
+            "吸附途中顾客槽重新绑定时不会误送给新顾客");
+        drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
+        using (var escape = new InputEventKey { Keycode = Key.Escape, Pressed = true }) drag._Input(escape);
+        Check(result?.Completion == DragCompletion.Cancelled && workstation.Machine.Runtime.State == PancakeState.Bagged,
+            "Esc 取消直接出餐并保留成品");
+        drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
+        screen._Notification((int)NotificationApplicationFocusOut);
+        Check(!drag.IsDragging && workstation.Paused && workstation.Machine.Runtime.State == PancakeState.Bagged,
+            "失焦取消出餐拖拽并暂停工作台");
+
+        var overlay = new Control(); AddChild(overlay);
+        var zones = new DragService(); overlay.AddChild(zones); zones.Configure(overlay);
+        var left = new DropZone { Position = new Vector2(20, 20), Size = new Vector2(100, 100), HitPadding = 24 };
+        var right = new DropZone { Position = new Vector2(130, 20), Size = new Vector2(100, 100) };
+        overlay.AddChild(left); overlay.AddChild(right);
+        left.Configure(_ => true, _ => { }); right.Configure(_ => false, _ => { });
+        zones.RegisterZone(left); zones.RegisterZone(right);
+        Check(zones.ResolveZone(new Vector2(125, 60)) == left, "目标边缘外的容错区可以命中");
+        Check(zones.ResolveZone(new Vector2(135, 60)) == right, "实际落点优先于邻近扩展区，不把拒收物品转交旁人");
+        overlay.QueueFree(); screen.QueueFree(); controller.QueueFree(); save.QueueFree();
+        DeleteIfExists(ProjectSettings.GlobalizePath(savePath));
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+        void ReleaseOn(DropZone target)
+        {
+            using var release = new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, Pressed = false, Position = target.GetGlobalRect().GetCenter(),
+            };
+            drag._Input(release);
         }
     }
 
@@ -383,27 +512,78 @@ public partial class StageFourSelfTest : Node
         AddChild(dayLayout);
         var customerStrip = dayLayout.FindChild("CustomerStrip", true, false) as HBoxContainer;
         var feedbackPanel = dayLayout.FindChild("FeedbackPanel", true, false) as Control;
-        float customerContentWidth = customerStrip?.GetChildren().OfType<Button>()
+        float customerContentWidth = customerStrip?.GetChildren().OfType<Control>()
             .Sum(button => button.CustomMinimumSize.X) ?? float.MaxValue;
         int visibleSlotGaps = Math.Max(0, (customerStrip?.GetChildCount() ?? 0) - 1) * 12;
         Check(customerStrip is { Position.Y: 160, Size.X: 1812, Size.Y: 415 }
             && customerStrip.Position.Y + customerStrip.Size.Y == 575
             && customerContentWidth + visibleSlotGaps <= customerStrip.Size.X, "顾客区延伸至桌面上沿且五个顾客槽不会横向溢出");
-        var firstCustomerSlot = customerStrip?.GetChildren().OfType<Button>().FirstOrDefault();
+        var firstCustomerSlot = customerStrip?.GetChildren().OfType<Control>().FirstOrDefault();
         var customerColumn = firstCustomerSlot?.FindChild("CustomerColumn", true, false) as Control;
+        var orderCard = firstCustomerSlot?.FindChild("OrderContent", true, false)?.GetParentOrNull<PanelContainer>();
+        var orderContent = firstCustomerSlot?.FindChild("OrderContent", true, false) as Control;
         var portraitStack = firstCustomerSlot?.FindChild("PortraitStack", true, false) as Control;
         var portrait = portraitStack?.GetChildren().OfType<CustomerPortraitView>().FirstOrDefault();
-        var patience = portraitStack?.GetChildren().OfType<ProgressBar>().FirstOrDefault();
+        var patience = orderContent?.GetChildren().OfType<ProgressBar>().FirstOrDefault();
+        var customerBadge = firstCustomerSlot?.FindChild("CustomerTypeBadge", true, false) as Label;
+        var customerStateBadge = firstCustomerSlot?.FindChild("CustomerStateBadge", true, false) as Label;
         Check(firstCustomerSlot is { CustomMinimumSize.Y: 415 }
             && customerColumn is { AnchorBottom: 1, OffsetBottom: 0 }
             && portraitStack is { ClipContents: true, SizeFlagsVertical: Control.SizeFlags.ExpandFill }
-            && portrait is { AnchorBottom: 1 }
-            && patience is { AnchorTop: 1, AnchorBottom: 1, OffsetTop: -14, OffsetBottom: 0 },
-            "人物视窗占满桌沿区域且耐心条叠加在人物底部");
+            && portrait is { AnchorBottom: 1, Presentation: CustomerPortraitPresentation.CounterHalfBody }
+            && Math.Abs(portrait.VisibleBodyFraction - 0.65f) < 0.001f,
+            "天津顾客使用约 65% 半身裁切且人物视窗止于桌沿");
+        Check(orderCard is { CustomMinimumSize.Y: 108 }
+            && orderContent is { CustomMinimumSize.Y: 96 }
+            && patience is { AnchorTop: 1, AnchorBottom: 1, OffsetTop: -8, OffsetBottom: 0 }
+            && patience.GetParent() == orderContent
+            && portraitStack?.GetChildren().OfType<ProgressBar>().Any() == false,
+            "订单卡使用 108px 紧凑配方区且耐心条固定在卡片底部");
+        Check(customerBadge?.GetParent() == orderContent && customerStateBadge?.GetParent() == orderContent,
+            "顾客类型与动态状态分别固定在订单卡左右上角");
+        Check(dayLayout.FindChild("CompletedOrders", true, false) is Label
+            && dayLayout.FindChild("PauseButton", true, false) is Button { Text: "暂停" }
+            && dayLayout.FindChild("PausePanel", true, false) is PanelContainer { Visible: false }
+            && dayLayout.FindChild("ResumeButton", true, false) is Button { Text: "继续营业" }
+            && dayLayout.FindChild("AbandonDayButton", true, false) is Button { Text: "放弃本日" },
+            "HUD 提供订单进度与暂停入口，暂停面板明确区分继续和放弃本日");
         Check(customerStrip is not null && feedbackPanel is not null
             && feedbackPanel.Position.Y < customerStrip.Position.Y + customerStrip.Size.Y
             && feedbackPanel.ZIndex > customerStrip.ZIndex, "短时反馈以更高层级覆盖顾客下半身");
         dayLayout.QueueFree();
+
+        string pauseSavePath = $"user://stage4-pause-{Guid.NewGuid():N}.json";
+        var pauseSave = new SaveService();
+        AddChild(pauseSave);
+        pauseSave.UsePathForTests(pauseSavePath);
+        var pauseController = new DayController();
+        AddChild(pauseController);
+        var pauseLayout = new TianjinDayScreen();
+        AddChild(pauseLayout);
+        pauseLayout.ConnectController(pauseController);
+        pauseLayout.Initialize(catalog, pauseSave, pauseController, 15);
+        pauseLayout.BeginDay();
+        var pauseWorkstation = pauseLayout.GetChildren().OfType<PancakeWorkstation>().Single();
+        var pauseButton = pauseLayout.FindChild("PauseButton", true, false) as Button;
+        var resumeButton = pauseLayout.FindChild("ResumeButton", true, false) as Button;
+        pauseButton?.EmitSignal(Button.SignalName.Pressed);
+        Check(pauseController.IsPaused && pauseWorkstation.Paused
+            && pauseLayout.FindChild("PauseBlocker", true, false) is ColorRect { Visible: true }
+            && pauseLayout.FindChild("PausePanel", true, false) is PanelContainer { Visible: true },
+            "手动暂停同时冻结营业控制器与工作台并显示阻断层");
+        pauseLayout._Notification((int)Node.NotificationApplicationFocusOut);
+        pauseLayout._Notification((int)Node.NotificationApplicationFocusIn);
+        Check(pauseController.IsPaused && pauseWorkstation.Paused
+            && pauseLayout.FindChild("PausePanel", true, false) is PanelContainer { Visible: true },
+            "失焦暂停恢复不会解除手动暂停状态");
+        resumeButton?.EmitSignal(Button.SignalName.Pressed);
+        Check(!pauseController.IsPaused && !pauseWorkstation.Paused,
+            "继续营业同步恢复营业控制器与工作台");
+        pauseLayout.QueueFree();
+        pauseController.QueueFree();
+        pauseSave.QueueFree();
+        string pauseSaveAbsolute = ProjectSettings.GlobalizePath(pauseSavePath);
+        if (File.Exists(pauseSaveAbsolute)) File.Delete(pauseSaveAbsolute);
 
         var workstation = new PancakeWorkstation();
         AddChild(workstation);
@@ -411,9 +591,10 @@ public partial class StageFourSelfTest : Node
         Check(workstation.FindChild("FryerVisual", true, false) is FryerVisualView, "工作台使用锅体与滤篮分层的炸锅视图");
         Check(workstation.FindChild("FryerStack", true, false) is Control { Size: var fryerSize }
             && fryerSize.X == 340 && fryerSize.Y == 340, "桌面炸锅收进紧凑的左侧生产闭环");
-        Check(workstation.FindChild("FinishedYoutiaoArea", true, false) is VBoxContainer
+        Check(workstation.FindChild("FinishedYoutiaoArea", true, false) is WorkstationSlotView finishedYoutiaoSlot
             && workstation.FindChild("FinishedYoutiaoStock", true, false) is Label
-            && workstation.FindChild("FinishedYoutiaoDrag", true, false) is DragItem, "成品油条库存与拖拽入口合并显示且不再使用独立沥油架");
+            && workstation.FindChild("FinishedYoutiaoDrag", true, false) is DragItem
+            && finishedYoutiaoSlot.IngredientIsInsideTray(4), "成品油条始终绑定现有沥油架、数量和拖拽入口");
         Check(workstation.FindChild("TrashZone", true, false) is not null, "工作台接入可拖放垃圾桶");
         string[] framelessAreas = { "FryerArea", "StoveArea", "IngredientArea", "DeliveryArea" };
         Check(framelessAreas.All(name => workstation.FindChild(name, true, false) is Control and not PanelContainer), "四个设备区域使用无框场景容器");
@@ -421,8 +602,25 @@ public partial class StageFourSelfTest : Node
             .OfType<WorkstationSlotView>().ToArray();
         Check(ingredientSlots.Length == 6, "六个配料槽统一使用工作台槽位组件");
         Check(ingredientSlots.All(slot => slot.IngredientIsInsideTray(4)), "六个配料图片均位于托盘安全边界内");
+        WorkstationSlotView[] representativeSlots = ingredientSlots.Where(slot =>
+            slot.Name.ToString() is "IngredientSlot_egg" or "IngredientSlot_crispy" or "IngredientSlot_scallion" or "IngredientSlot_ham").ToArray();
+        Check(representativeSlots.Length == 4
+            && representativeSlots.All(slot => slot.VisibleIngredientVisualCount == 3)
+            && representativeSlots.All(slot => slot.IngredientVisualRect.Size.X >= slot.TrayVisualRect.Size.X * 0.55f
+                && slot.IngredientVisualRect.Size.X <= slot.TrayVisualRect.Size.X * 0.72f),
+            "鸡蛋、薄脆、香葱与火腿使用固定三件代表图且占托盘宽度约六成",
+            string.Join(" | ", representativeSlots.Select(slot =>
+                $"{slot.Name}: ingredient={slot.IngredientVisualRect}; tray={slot.TrayVisualRect}")));
+        WorkstationSlotView? eggSlot = representativeSlots.FirstOrDefault(slot => slot.Name.ToString() == "IngredientSlot_egg");
+        eggSlot?.SetStockFraction(0.1);
+        eggSlot?.SetIngredientAvailable(false);
+        Check(eggSlot is { VisibleIngredientVisualCount: 3, IngredientVisualOpacity: 0.45f },
+            "代表性食材数量不随库存变化且空库存仅弱化图案");
+        eggSlot?.SetIngredientAvailable(true);
         var rawSlot = workstation.FindChild("RawYoutiaoSlot", true, false) as WorkstationSlotView;
-        Check(rawSlot is not null && rawSlot.IngredientIsInsideTray(8), "生油条缩小并居中收进托盘安全边界");
+        Check(rawSlot is not null && rawSlot.IngredientIsInsideTray(8)
+            && rawSlot.IngredientVisualRect.Size.X is >= 105 and <= 120,
+            "生油条以 105～120px 视觉长度居中收进托盘安全边界");
         Check(ingredientSlots.All(slot => slot.ClickBounds.Size.X >= 48 && slot.ClickBounds.Size.Y >= 48)
             && rawSlot is not null && rawSlot.ClickBounds.Size.X >= 48 && rawSlot.ClickBounds.Size.Y >= 48, "食材与生油条槽位点击区域不小于 48×48");
         var utilityArea = workstation.FindChild("DeliveryArea", true, false) as Control;
@@ -433,23 +631,25 @@ public partial class StageFourSelfTest : Node
         var trashZone = workstation.FindChild("TrashZone", true, false) as DropZone;
         var servingTrayArt = workstation.FindChild("ServingTrayArt", true, false) as TextureRect;
         var trashArt = workstation.FindChild("TrashArt", true, false) as TextureRect;
-        var trashButton = workstation.FindChild("TrashButton", true, false) as Button;
+        var trashLabel = workstation.FindChild("TrashLabel", true, false) as Label;
         string utilityLayoutDetails = string.Join(" | ", new Control?[] { utilityArea, deliveryZone, finishedSlot, soyMilkSlot, trashZone }
             .Select(control => control is null ? "null" : $"{control.Name}@{control.Position}/{control.Size}"));
         Check(utilityArea is { Position: var utilityPosition, Size: var utilitySize }
-            && utilityPosition == new Vector2(1218, 578) && utilitySize == new Vector2(666, 112),
-            "出餐、豆浆与丢弃辅助区使用加高后的固定工作台区域");
+            && utilityPosition == new Vector2(1090, 578) && utilitySize == new Vector2(794, 112)
+            && ingredientArea is { Position: var ingredientPosition, Size: var ingredientSize }
+            && ingredientPosition == new Vector2(1090, 700) && ingredientSize == new Vector2(794, 310),
+            "右侧辅助区与配料区整体向炉面移动 128px");
         Check(utilityArea is not null && ingredientArea is not null
             && utilityArea.Position.Y + utilityArea.Size.Y <= ingredientArea.Position.Y
             && ingredientArea.Position.Y + ingredientArea.Size.Y <= 1080, "右侧辅助区与配料区上下分区且不越界");
         Check(deliveryZone is { Position: var deliveryPosition, Size: var deliverySize }
-            && deliveryPosition == new Vector2(33, 2) && deliverySize == new Vector2(174, 108)
+            && deliveryPosition == new Vector2(40, 2) && deliverySize == new Vector2(190, 108)
             && finishedSlot is { Position: var finishedPosition, Size: var finishedSize }
-            && finishedPosition == new Vector2(215, 10) && finishedSize == new Vector2(138, 92)
+            && finishedPosition == new Vector2(238, 10) && finishedSize == new Vector2(150, 92)
             && soyMilkSlot is { Position: var soyPosition, Size: var soySize }
-            && soyPosition == new Vector2(361, 10) && soySize == new Vector2(144, 92)
+            && soyPosition == new Vector2(396, 10) && soySize == new Vector2(178, 92)
             && trashZone is { Position: var trashPosition, Size: var trashSize }
-            && trashPosition == new Vector2(513, 2) && trashSize == new Vector2(120, 108),
+            && trashPosition == new Vector2(582, 2) && trashSize == new Vector2(130, 108),
             "辅助槽按出餐、成品、豆浆、丢弃顺序使用固定尺寸和位置", utilityLayoutDetails);
         Check(deliveryZone is not null && finishedSlot is not null && soyMilkSlot is not null && trashZone is not null
             && deliveryZone.Position.X + deliveryZone.Size.X + 8 == finishedSlot.Position.X
@@ -463,12 +663,12 @@ public partial class StageFourSelfTest : Node
             && slot.Position.Y + slot.Size.Y <= utilityArea.Size.Y),
             "四个辅助槽完整位于辅助区内", utilityLayoutDetails);
         Check(finishedSlot is { CustomMinimumSize: var finishedSlotSize }
-            && finishedSlotSize == new Vector2(138, 92), "装袋成品隐藏时保留固定辅助槽位");
+            && finishedSlotSize == new Vector2(150, 92), "装袋成品隐藏时保留固定辅助槽位");
         Check(deliveryZone is not null && trashZone is not null
             && deliveryZone.Size.X >= 48 && deliveryZone.Size.Y >= 48
             && trashZone.Size.X >= 48 && trashZone.Size.Y >= 48,
             "出餐与垃圾桶拖放区域均不小于 48×48");
-        string utilityVisualDetails = string.Join(" | ", new Control?[] { deliveryZone, servingTrayArt, trashZone, trashArt, trashButton }
+        string utilityVisualDetails = string.Join(" | ", new Control?[] { deliveryZone, servingTrayArt, trashZone, trashArt, trashLabel }
             .Select(control => control is null ? "null" : $"{control.Name}@{control.GetGlobalRect()}"));
         Check(servingTrayArt is { StretchMode: TextureRect.StretchModeEnum.KeepAspectCentered, Texture: AtlasTexture servingTrayTexture }
             && servingTrayArt.CustomMinimumSize == deliveryZone!.CustomMinimumSize
@@ -476,43 +676,89 @@ public partial class StageFourSelfTest : Node
             && servingTrayTexture.Region == new Rect2(0, 224, 1536, 576),
             "出餐盘运行时裁掉无效画布并等比居中填入出餐区", utilityVisualDetails);
         Check(trashArt is { StretchMode: TextureRect.StretchModeEnum.KeepAspectCentered }
-            && trashButton is not null && trashZone is not null
+            && trashLabel is not null && trashZone is not null
             && trashArt.CustomMinimumSize == trashZone.CustomMinimumSize
-            && trashButton.CustomMinimumSize == trashZone.CustomMinimumSize
+            && trashLabel.MouseFilter == Control.MouseFilterEnum.Ignore
             && trashArt.GetGlobalRect() == trashZone.GetGlobalRect()
-            && trashButton.GetGlobalRect() == trashZone.GetGlobalRect(),
-            "垃圾桶保持等比居中且丢弃按钮完整覆盖拖放区域", utilityVisualDetails);
+            && trashLabel.GetGlobalRect() == trashZone.GetGlobalRect(),
+            "垃圾桶保持等比居中且拖入丢弃提示覆盖拖放区域", utilityVisualDetails);
         Check(new[] { "FryerLowerAction", "FryerRaiseAction", "FryerDiscardAction", "PancakeFlipAction", "PancakeFoldAction", "PancakeBagAction", "PancakeDiscardAction" }
             .All(name => workstation.FindChild(name, true, false) is Button { Visible: false }), "空设备不显示无效操作，动作按钮由状态上下文控制");
         Check(workstation.FindChildren("IngredientRefill_*", "Button", true, false).Cast<Button>().All(button => !button.Visible), "满库存时隐藏补货入口");
-        Check(workstation.FindChildren("IngredientStock_*", "ProgressBar", true, false).Cast<ProgressBar>().All(stock => stock.Visible && stock.Value == 100), "正常库存持续显示低干扰比例条");
+        Check(workstation.FindChildren("IngredientStock_*", "ProgressBar", true, false).Cast<ProgressBar>().All(stock => !stock.Visible), "正常库存只显示数字并隐藏比例条");
         Check(workstation.FindChild("IngredientInput_sauce", true, false) is Control and not BaseButton,
             "酱料槽只展示库存，抹酱操作留在炉面轨迹");
+        Check(workstation.FindChild("IngredientSlot_batter", true, false) is WorkstationSlotView
+            { AttentionState: WorkstationSlotAttentionState.Required }
+            && workstation.FindChild("PancakeStatusText", true, false) is Label { Text: "拖入面糊 · 开始摊饼" }
+            && workstation.FindChild("PancakeStatusTag", true, false) is PanelContainer
+            && workstation.FindChild("FryerStatusTag", true, false) is PanelContainer,
+            "空炉突出面糊并使用贴近设备的全关卡动作状态签");
         var batterStock = workstation.FindChild("IngredientStock_batter", true, false) as ProgressBar;
         var batterRefill = workstation.FindChild("IngredientRefill_batter", true, false) as Button;
         for (int index = 0; index < 5; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: true, Value: 50 }
+        Check(batterStock is { Visible: false, Value: 50 }
             && batterRefill is { Visible: false }
             && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "5/10" }, "正常库存使用当前/上限并隐藏补货入口");
         WorkstationSlotView? batterSlot = ingredientSlots.FirstOrDefault(slot => slot.Name.ToString() == "IngredientSlot_batter");
         for (int index = 0; index < 3; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: true, Value: 20 }
+        Check(batterStock is { Visible: false, Value: 20 }
             && batterRefill is { Visible: true, Text: "+", Disabled: false }
             && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "2/10" } lowCount
-            && lowCount.Modulate == TianjinUi.Orange, "剩余两份进入低库存状态并显示一键补满入口");
+            && lowCount.Modulate == TianjinUi.Orange, "剩余两份进入低库存状态、隐藏比例条并显示一键补满入口");
         Check(batterSlot is not null && batterSlot.IngredientIsInsideTray(4), "库存视觉档位变化后仍位于托盘安全边界内");
         workstation.Inventory.TryConsume(StableIds.Ingredients.Batter, 2);
         Check(workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "0/10" } emptyCount
-            && emptyCount.Modulate == TianjinUi.Red, "零库存数量使用红色且补料入口保持显示");
+            && emptyCount.Modulate == TianjinUi.Red
+            && batterSlot is { IngredientVisualOpacity: 0.45f }, "零库存数量使用红色且食材图保持 45% 弱化显示");
         workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Batter);
         Check(batterStock is { Visible: true, Value: 0 } && batterRefill is { Text: "…", Disabled: true }
             && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "0%" }, "补货中显示进度并禁用重复补货");
+        var stoveCanvas = workstation.FindChild("PancakeCanvas", true, false) as PancakeCanvas;
+        var stoveDropZone = workstation.FindChild("PancakeDropZone", true, false) as DropZone;
+        var stoveStroke = workstation.FindChild("PancakeStrokeInput", true, false) as StrokeInteractor;
+        Rect2 expectedStoveInput = stoveCanvas is null
+            ? new Rect2()
+            : new Rect2(stoveCanvas.Position + stoveCanvas.GetSurfaceRect().Position, stoveCanvas.GetSurfaceRect().Size).Grow(42);
+        Check(stoveCanvas is { DisplayScale: 0.90f, DisplayOffset.X: -16 }
+            && stoveDropZone is not null && stoveStroke is not null
+            && stoveDropZone.Position.IsEqualApprox(expectedStoveInput.Position) && stoveDropZone.Size.IsEqualApprox(expectedStoveInput.Size)
+            && stoveStroke.Position.IsEqualApprox(expectedStoveInput.Position) && stoveStroke.Size.IsEqualApprox(expectedStoveInput.Size),
+            "煎饼炉缩小 10% 并由同一炉面几何驱动拖放与轨迹输入区",
+            $"expected={expectedStoveInput}; drop={stoveDropZone?.Position}/{stoveDropZone?.Size}; stroke={stoveStroke?.Position}/{stoveStroke?.Size}");
         workstation.CanSubmitToSelectedCustomer = () => false;
         MakeBagged(workstation.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
         Check(deliveryZone is not null && !deliveryZone.CanAccept("finished_pancake"), "未选择顾客时出餐口拒绝成品且不会提前消费");
         workstation.CanSubmitToSelectedCustomer = () => true;
         Check(deliveryZone?.CanAccept("finished_pancake") == true, "选择有效顾客后出餐口接收已装袋煎饼");
         workstation.QueueFree();
+
+        var recipeAttentionWorkstation = new PancakeWorkstation();
+        AddChild(recipeAttentionWorkstation);
+        recipeAttentionWorkstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[15], new TianjinArtCatalog());
+        recipeAttentionWorkstation.RequiredToppingsForSelectedCustomer = () => new HashSet<string>(StringComparer.Ordinal)
+        {
+            StableIds.Ingredients.Crispy,
+        };
+        PancakeStateMachine attentionMachine = recipeAttentionWorkstation.Machine;
+        attentionMachine.TryExecute(PancakeCommand.PlaceBatter);
+        attentionMachine.TryExecute(PancakeCommand.BeginSpread);
+        attentionMachine.SetSpreadCoverage(1);
+        attentionMachine.TryExecute(PancakeCommand.CompleteSpread);
+        attentionMachine.TryExecute(PancakeCommand.AddEgg);
+        attentionMachine.Tick(attentionMachine.Stove.SideAReadySeconds);
+        attentionMachine.TryExecute(PancakeCommand.Flip);
+        attentionMachine.Tick(attentionMachine.Stove.SideBReadySeconds);
+        attentionMachine.TryExecute(PancakeCommand.BeginSauce);
+        attentionMachine.SetSauceCoverage(1);
+        attentionMachine.TryExecute(PancakeCommand.CompleteSauce);
+        recipeAttentionWorkstation.RefreshForCapture();
+        Check(recipeAttentionWorkstation.FindChild("IngredientSlot_crispy", true, false) is WorkstationSlotView
+            { AttentionState: WorkstationSlotAttentionState.Required }
+            && recipeAttentionWorkstation.FindChild("IngredientSlot_ham", true, false) is WorkstationSlotView
+            { AttentionState: WorkstationSlotAttentionState.Actionable },
+            "选中订单优先突出首个未完成煎饼仍缺配料，同时保留其他配料可操作");
+        recipeAttentionWorkstation.QueueFree();
     }
 
     private static string[] BuildAppearanceSequence(DataCatalog catalog, int seed)
@@ -560,6 +806,27 @@ public partial class StageFourSelfTest : Node
         foreach (string ingredient in recipe.ExtraIngredients) machine.TryExecute(PancakeCommand.AddIngredient, ingredient);
         if (recipe.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao)) machine.TrySetInternalYoutiaoQuality(YoutiaoQuality.Golden);
         machine.TryExecute(PancakeCommand.Fold); machine.TryExecute(PancakeCommand.Bag);
+    }
+    private static Rect2I VisibleBounds(Texture2D texture)
+    {
+        Image image = texture.GetImage();
+        if (image.GetFormat() != Image.Format.Rgba8) image.Convert(Image.Format.Rgba8);
+        byte[] pixels = image.GetData();
+        int width = image.GetWidth(), height = image.GetHeight();
+        int minX = width, minY = height, maxX = -1, maxY = -1;
+        for (int y = 0; y < height; y++)
+        {
+            int row = y * width * 4;
+            for (int x = 0; x < width; x++)
+            {
+                if (pixels[row + x * 4 + 3] <= 12) continue;
+                minX = Math.Min(minX, x); minY = Math.Min(minY, y);
+                maxX = Math.Max(maxX, x); maxY = Math.Max(maxY, y);
+            }
+        }
+        return maxX < minX || maxY < minY
+            ? new Rect2I()
+            : new Rect2I(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
     private void CheckCustomer(DataCatalog catalog, string id, double happy, double normal, double impatient, double leave, double tip)
     {

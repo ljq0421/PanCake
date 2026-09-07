@@ -16,6 +16,7 @@ public partial class PancakeCanvas : Control
 
     public float DisplayScale { get; set; } = 1.0f;
     public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
+    public bool ShowBaggedPancake { get; set; } = true;
 
     public float BatterDropProgress
     {
@@ -58,7 +59,8 @@ public partial class PancakeCanvas : Control
         }
         if (runtime.State is PancakeState.Bagged or PancakeState.Delivered)
         {
-            DrawCentered(_art.FinishedPancake, stoveCenter + new Vector2(0, -12), new Vector2(250, 210), qualityTint);
+            if (ShowBaggedPancake)
+                DrawCentered(_art.FinishedPancake, stoveCenter + new Vector2(0, -12), new Vector2(250, 210), qualityTint);
             return;
         }
 

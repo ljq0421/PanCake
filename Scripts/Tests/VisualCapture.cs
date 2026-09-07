@@ -29,9 +29,12 @@ public partial class VisualCapture : Node
         bool captureThreeCustomers = args.Contains("--capture-three-customers", StringComparer.Ordinal);
         bool capturePause = args.Contains("--capture-pause", StringComparer.Ordinal);
         bool capturePartialOrder = args.Contains("--capture-partial-order", StringComparer.Ordinal);
+        bool captureBagged = args.Contains("--capture-bagged", StringComparer.Ordinal);
+        bool captureRefilling = args.Contains("--capture-refilling", StringComparer.Ordinal);
         bool captureDay = captureFryerWorkstation || captureRunning || capturePause || capturePartialOrder
             || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
-        int phase4Day = captureDirectDelivery || captureThreeCustomers || capturePause || capturePartialOrder ? 15
+        int phase4Day = args.Contains("--capture-day11", StringComparer.Ordinal) ? 11
+            : captureDirectDelivery || captureThreeCustomers || capturePause || capturePartialOrder ? 15
             : captureLowStock || captureInteraction || capturePancakeReady || captureSauceReady ? 9
             : args.Contains("--capture-day1", StringComparer.Ordinal) ? 1
             : captureFryerWorkstation || args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
@@ -77,6 +80,13 @@ public partial class VisualCapture : Node
                 captureSave.Data.PurchasedIngredientStationLevel = 3;
                 captureSave.Data.PurchasedFryerLevel = 3;
             }
+            string? equipmentArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-workbench-level=", StringComparison.Ordinal));
+            if (equipmentArg is not null && int.TryParse(equipmentArg.Split('=')[1], out int captureLevel))
+            {
+                captureSave.Data.PurchasedStoveLevel = Math.Clamp(captureLevel, 1, 3);
+                captureSave.Data.PurchasedFryerLevel = Math.Clamp(captureLevel, 1, 3);
+                captureSave.Data.PurchasedIngredientStationLevel = Math.Clamp(captureLevel, 1, 3);
+            }
             dayScreen.Initialize(GetNode<DataCatalog>("/root/DataCatalog"), captureSave, controller, day);
             foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Visible = screen == dayScreen;
             if (captureRunning || phase4Day > 0 || captureResult)
@@ -91,13 +101,13 @@ public partial class VisualCapture : Node
                 }
                 else
                 {
-                    int targetCustomerCount = captureThreeCustomers ? 3 : phase4Day == 15 ? 5 : 1;
-                    int steps = phase4Day == 15 ? 900 : 80;
+                    int targetCustomerCount = captureThreeCustomers ? 3 : phase4Day is 11 or 15 ? 5 : 1;
+                    int steps = phase4Day is 11 or 15 ? 900 : 80;
                     for (int step = 0; step < steps; step++)
                     {
                         controller.IsPaused = false;
                         controller.Tick(.1);
-                        if (phase4Day == 15 && controller.CustomerQueue is not null)
+                        if (phase4Day is 11 or 15 && controller.CustomerQueue is not null)
                         {
                             foreach (CustomerRuntime customer in controller.CustomerQueue.Slots)
                             {
@@ -173,6 +183,27 @@ public partial class VisualCapture : Node
                         DeliverPartialOrderForCapture(controller, workstation, GetNode<DataCatalog>("/root/DataCatalog"));
                         workstation.RefreshForCapture();
                     }
+                    if (captureBagged)
+                        MakeBagged(workstation.Machine, GetNode<DataCatalog>("/root/DataCatalog").RecipesById[StableIds.Recipes.Basic]);
+                    if (captureRefilling)
+                    {
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Batter, 0);
+                        workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Batter);
+                        workstation.Inventory.Tick(.5);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Egg, 0);
+                        while (workstation.SoyMilkTray?.Quantity > 0)
+                        {
+                            workstation.SoyMilkTray.TryConsumeForDelivery();
+                            workstation.SoyMilkTray.Tick(1);
+                        }
+                    }
+                    if (phase4Day == 11)
+                    {
+                        dayScreen.RefreshForCapture(true);
+                        workstation.Tick(.3);
+                        dayScreen.SetProcess(false);
+                        ((Control)dayScreen.FindChild("FeedbackPanel", true, false)).Visible = captureRefilling || capturePartialOrder;
+                    }
                     if (capturePause && dayScreen.FindChild("PauseButton", true, false) is Button pause)
                         pause.EmitSignal(Button.SignalName.Pressed);
                 }
@@ -214,6 +245,7 @@ public partial class VisualCapture : Node
             RecipeData recipe = GetNode<DataCatalog>("/root/DataCatalog").RecipesById[
                 customer.Order.Lines.First(line => line.ProductKind == ProductKind.Pancake).DefinitionId];
             MakeBagged(workstation.Machine, recipe);
+            workstation.Tick(.3);
             workstation.RefreshForCapture();
             var drag = workstation.GetChildren().OfType<DragService>().Single();
             var zone = (DropZone)screen.FindChild("CustomerDropZone3", true, false);
@@ -225,7 +257,11 @@ public partial class VisualCapture : Node
         }
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
-        string output = captureDirectDelivery ? $"res://.godot/direct_delivery{sizeSuffix}.png"
+        string? outputArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-output=", StringComparison.Ordinal));
+        string output = outputArg is not null ? outputArg["--capture-output=".Length..]
+            : captureBagged ? $"res://.godot/phase4_bagged{sizeSuffix}.png"
+            : captureRefilling ? $"res://.godot/phase4_refilling{sizeSuffix}.png"
+            : captureDirectDelivery ? $"res://.godot/direct_delivery{sizeSuffix}.png"
             : captureResult ? $"res://.godot/phase4_result{sizeSuffix}.png"
             : captureFryerSlots ? $"res://.godot/fryer_slots{sizeSuffix}.png"
             : captureFryerWorkstation ? $"res://.godot/fryer_workstation_lv{captureFryerLevel}{sizeSuffix}.png"

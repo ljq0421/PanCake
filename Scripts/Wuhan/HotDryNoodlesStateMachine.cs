@@ -12,6 +12,7 @@ public sealed class HotDryNoodlesStateMachine
     private NoodleQuality _quality;
     public NoodleBowlState State { get; private set; }
     public double MixProgress { get; private set; }
+    public NoodleQuality Quality => _quality;
     public IReadOnlySet<string> Toppings => _toppings;
 
     public bool TryAddNoodles(NoodleQuality quality)

@@ -29,7 +29,7 @@ public sealed class NoodleCookerStateMachine
     public bool TryStart(int basket)
     {
         if (!TryGet(basket, out NoodleBasketRuntime item) || item.State != NoodleBasketState.Empty) return false;
-        item.State = NoodleBasketState.Cooking; item.CookSeconds = 0; item.DrainSeconds = 0; return true;
+        item.State = NoodleBasketState.Cooking; item.CookSeconds = 0; item.DrainSeconds = 0; item.Quality = NoodleQuality.Optimal; return true;
     }
 
     public void Tick(double delta)
@@ -79,6 +79,14 @@ public sealed class NoodleCookerStateMachine
         quality = NoodleQuality.Optimal;
         if (!TryGet(basket, out NoodleBasketRuntime item) || item.State != NoodleBasketState.Drained) return false;
         quality = item.Quality; item.State = NoodleBasketState.Empty; item.CookSeconds = 0; item.DrainSeconds = 0; return true;
+    }
+
+    // Validate the destination before consuming the source. Both mutations are synchronous.
+    public bool TryTransferTo(int basket, HotDryNoodlesStateMachine bowl)
+    {
+        if (!TryGet(basket, out NoodleBasketRuntime item) || item.State != NoodleBasketState.Drained
+            || !bowl.TryAddNoodles(item.Quality)) return false;
+        return TryTake(basket, out _);
     }
 
     private bool TryGet(int index, out NoodleBasketRuntime item)

@@ -55,7 +55,12 @@ public partial class PancakeWorkstation : Control
     private TextureRect _batterLadle = null!;
     private Tween? _batterTween;
     private bool _batterDropAnimating;
+    private TextureRect _bagTransfer = null!;
+    private double _bagTransferRemaining;
+    private bool _baggedPresented;
+    private const double BagTransferDuration = 0.22;
     private DragItem _finished = null!;
+    private Label? _finishedTrayLabel;
     private Label _state = null!;
     private Button _flip = null!;
     private Button _fold = null!;
@@ -100,6 +105,9 @@ public partial class PancakeWorkstation : Control
     public bool InteractionEnabled { get; set; } = true;
     public bool Paused { get; set; }
     public bool DirectCustomerDelivery { get; set; }
+    // Set before adding the workstation to the tree. Legacy/practice views opt out.
+    public bool UseServingTray { get; init; }
+    internal bool IsTransferringBag => _bagTransferRemaining > 0;
 
     public void RegisterCustomerZone(DropZone zone) => _drag.RegisterZone(zone);
 
@@ -113,7 +121,7 @@ public partial class PancakeWorkstation : Control
 
     public bool CanDeliverProduct(string payload) => _initialized && CanInteract && payload switch
     {
-        "finished_pancake" => Machine.Runtime.State == PancakeState.Bagged,
+        "finished_pancake" => Machine.Runtime.State == PancakeState.Bagged && !IsTransferringBag,
         StoredYoutiaoPayload => FryerMachine?.Inventory.Count > 0,
         SoyMilkPayload => SoyMilkTray?.CanStartDrag == true,
         _ => false,
@@ -141,6 +149,7 @@ public partial class PancakeWorkstation : Control
         _lastPancakeState = null;
         _lastFryerState = null;
         _lastFryerQuality = null;
+        ResetBagPresentation();
         Machine = new PancakeStateMachine(catalog.StovesByLevel[stoveLevel]);
         Inventory = new IngredientInventory(catalog.IngredientStationsByLevel[stationLevel]);
         Machine.Changed += Render;
@@ -175,6 +184,7 @@ public partial class PancakeWorkstation : Control
             return;
         }
         Machine.Tick(deltaSeconds);
+        TickBagTransfer(deltaSeconds);
         Inventory.Tick(deltaSeconds);
         FryerMachine?.Tick(deltaSeconds);
         _fryerVisual.Tick(deltaSeconds);
@@ -193,6 +203,7 @@ public partial class PancakeWorkstation : Control
 
     public void ResetForDay()
     {
+        ResetBagPresentation();
         FinishBatterDropAnimation();
         if (_initialized && Machine.Runtime.State != PancakeState.Empty)
         {
@@ -248,10 +259,10 @@ public partial class PancakeWorkstation : Control
         Place(stove, StoveAreaRect);
         stage.AddChild(stove);
         Control ingredients = BuildIngredients();
-        Place(ingredients, IngredientAreaRect);
+        Place(ingredients, UseServingTray ? TianjinWorkbenchLayout.Ingredients : IngredientAreaRect);
         stage.AddChild(ingredients);
         Control delivery = BuildDelivery();
-        Place(delivery, UtilityAreaRect);
+        Place(delivery, UseServingTray ? TianjinWorkbenchLayout.Utilities : UtilityAreaRect);
         stage.AddChild(delivery);
         _batterLadle = new TextureRect
         {
@@ -265,6 +276,11 @@ public partial class PancakeWorkstation : Control
             ZIndex = 900,
         };
         AddChild(_batterLadle);
+        _bagTransfer = TianjinUi.Texture(_art.FinishedPancake, TianjinWorkbenchLayout.FinishedVisual);
+        _bagTransfer.Name = "BagTransferVisual";
+        _bagTransfer.Visible = false;
+        _bagTransfer.ZIndex = 900;
+        AddChild(_bagTransfer);
         _drag.DragStarted += _ => _audio.Play(PancakeSound.PickUp);
         _drag.DragEnded += OnDragEnded;
     }
@@ -274,7 +290,8 @@ public partial class PancakeWorkstation : Control
         var root = FramelessRoot("FryerArea", 520);
         _fryerPanel = root;
         Label title = FloatingText("油条", 21, TianjinUi.BrownText);
-        Place(title, 4, 0, 430, 32);
+        if (UseServingTray) title.HorizontalAlignment = HorizontalAlignment.Center;
+        Place(title, UseServingTray ? 12 : 4, UseServingTray ? 306 : 0, UseServingTray ? 304 : 330, 32);
         root.AddChild(title);
 
         var fryerStack = new Control { Name = "FryerStack" };
@@ -293,26 +310,27 @@ public partial class PancakeWorkstation : Control
         root.AddChild(fryerStack);
 
         var loadColumn = new VBoxContainer();
-        Place(loadColumn, 342, 48, 170, 150);
+        Place(loadColumn, UseServingTray ? TianjinWorkbenchLayout.RawYoutiao : new Rect2(342, 48, 170, 150));
         var rawSlot = new WorkstationSlotView { Name = "RawYoutiaoSlot", SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        rawSlot.Configure(_art.IngredientTray, _art.RawYoutiao, "生油条", RawYoutiaoSlotSpec(), IngredientVisualMode.WideSingle);
+        rawSlot.Configure(_art.IngredientTray, _art.RawYoutiao, "生油条",
+            UseServingTray ? TianjinWorkbenchLayout.RawYoutiaoSlot() : RawYoutiaoSlotSpec(), IngredientVisualMode.WideSingle);
         var raw = new DragItem { Name = "RawYoutiaoInput" };
         raw.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        raw.Configure(_drag, RawYoutiaoPayload, "生油条", new Color("#F7D892"), new DragVisualSpec(_art.RawYoutiao, new Vector2(105, 105)), CanLoadRawYoutiao);
+        raw.Configure(_drag, RawYoutiaoPayload, "生油条", new Color("#F7D892"), new DragVisualSpec(_art.RawYoutiao, UseServingTray ? TianjinWorkbenchLayout.RawYoutiaoDragVisual : new Vector2(105, 105)), CanLoadRawYoutiao);
         raw.StartRejected += () => Reject("炸篮当前不能继续装料。");
         rawSlot.SetInteraction(raw);
         ConfigureArtInteraction(raw, rawSlot.HoverTarget);
         loadColumn.AddChild(rawSlot);
         root.AddChild(loadColumn);
 
-        PanelContainer fryerStatusTag = StatusTag("FryerStatusTag", new Vector2(330, 40));
-        Place(fryerStatusTag, 12, 350, 330, 40);
+        PanelContainer fryerStatusTag = StatusTag("FryerStatusTag", new Vector2(UseServingTray ? 304 : 330, 40));
+        Place(fryerStatusTag, 12, 350, UseServingTray ? 304 : 330, 40);
         _fryerStatus = Text("尚未解锁", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
         _fryerStatus.VerticalAlignment = VerticalAlignment.Center;
         fryerStatusTag.AddChild(_fryerStatus);
         root.AddChild(fryerStatusTag);
         var actions = new HBoxContainer();
-        Place(actions, 80, 398, 270, 54);
+        Place(actions, UseServingTray ? 12 : 80, 398, UseServingTray ? 304 : 270, 54);
         _fryerActions = actions;
         _lowerBasket = ActionButton("下锅", () => ExecuteFryer(FryerCommand.LowerBasket));
         _raiseBasket = ActionButton("抬篮", () => ExecuteFryer(FryerCommand.RaiseBasket));
@@ -324,19 +342,19 @@ public partial class PancakeWorkstation : Control
         root.AddChild(actions);
 
         _finishedYoutiaoSlot = new WorkstationSlotView { Name = "FinishedYoutiaoArea" };
-        Place(_finishedYoutiaoSlot, 342, 224, 170, 132);
+        Place(_finishedYoutiaoSlot, UseServingTray ? TianjinWorkbenchLayout.FinishedYoutiao : new Rect2(342, 224, 170, 132));
         _finishedYoutiaoSlot.Configure(
             _art.YoutiaoRack,
             _art.Ingredient(StableIds.Ingredients.Youtiao),
             "熟油条",
-            FinishedYoutiaoSlotSpec(),
+            UseServingTray ? TianjinWorkbenchLayout.FinishedYoutiaoSlot() : FinishedYoutiaoSlotSpec(),
             IngredientVisualMode.WideSingle);
         _fryerStock = _finishedYoutiaoSlot.CountLabel;
         _fryerStock.Name = "FinishedYoutiaoStock";
         _fryerStock.Text = "0";
         _storedYoutiao = new DragItem { Name = "FinishedYoutiaoDrag", Visible = false };
         _storedYoutiao.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        _storedYoutiao.Configure(_drag, StoredYoutiaoPayload, "熟油条", TianjinUi.Yellow, new DragVisualSpec(_art.Ingredient(StableIds.Ingredients.Youtiao), new Vector2(115, 105)), () => InteractionEnabled && !Paused && FryerMachine?.Inventory.Count > 0);
+        _storedYoutiao.Configure(_drag, StoredYoutiaoPayload, "熟油条", TianjinUi.Yellow, new DragVisualSpec(_art.Ingredient(StableIds.Ingredients.Youtiao), UseServingTray ? TianjinWorkbenchLayout.FinishedYoutiaoDragVisual : new Vector2(115, 105)), () => InteractionEnabled && !Paused && FryerMachine?.Inventory.Count > 0);
         _storedYoutiao.StartRejected += () => Reject("没有可用的成品油条。");
         ConfigureArtInteraction(_storedYoutiao, _finishedYoutiaoSlot.HoverTarget);
         _finishedYoutiaoSlot.SetInteraction(_storedYoutiao);
@@ -346,6 +364,19 @@ public partial class PancakeWorkstation : Control
 
     private Control BuildIngredients()
     {
+        if (UseServingTray)
+        {
+            var fixedRoot = FramelessRoot("IngredientArea", TianjinWorkbenchLayout.Ingredients.Size.X);
+            for (int index = 0; index < TianjinWorkbenchLayout.IngredientOrder.Length; index++)
+            {
+                string id = TianjinWorkbenchLayout.IngredientOrder[index];
+                var ingredient = Ingredients.Single(item => item.Id == id);
+                var slot = BuildIngredientSlot(id, ingredient.Name, ingredient.Color, ingredient.Drag);
+                Place(slot, TianjinWorkbenchLayout.IngredientPlacement(index));
+                fixedRoot.AddChild(slot);
+            }
+            return fixedRoot;
+        }
         var root = FramelessRoot("IngredientArea", 794);
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 4);
@@ -382,7 +413,16 @@ public partial class PancakeWorkstation : Control
             or StableIds.Ingredients.Ham
             ? IngredientVisualMode.RepresentativeCluster
             : IngredientVisualMode.Single;
-        slot.ConfigureStock(containerTexture, texture, name, IngredientSlotSpec(id), visualMode);
+        slot.ConfigureStock(containerTexture, texture, name,
+            UseServingTray ? TianjinWorkbenchLayout.IngredientSlot(id) : IngredientSlotSpec(id), visualMode);
+        if (UseServingTray)
+        {
+            Label hint = FloatingText(TianjinWorkbenchLayout.ActionHint(id), 16, TianjinUi.BrownText, HorizontalAlignment.Center);
+            hint.Name = "IngredientActionHint";
+            Place(hint, TianjinWorkbenchLayout.HintPlacement(id));
+            hint.MouseFilter = MouseFilterEnum.Ignore;
+            slot.AddChild(hint);
+        }
         Control input;
         if (drag)
         {
@@ -435,6 +475,7 @@ public partial class PancakeWorkstation : Control
             MouseFilter = MouseFilterEnum.Ignore,
             DisplayScale = 0.90f,
             DisplayOffset = new Vector2(-16, 0),
+            ShowBaggedPancake = !UseServingTray,
         };
         FullRect(_canvas, 8, -8, -8, -64);
         stage.AddChild(_canvas);
@@ -500,7 +541,7 @@ public partial class PancakeWorkstation : Control
 
     private Control BuildDelivery()
     {
-        var root = FramelessRoot("DeliveryArea", 794);
+        var root = FramelessRoot("DeliveryArea", UseServingTray ? TianjinWorkbenchLayout.Utilities.Size.X : 794);
         var delivery = new DropZone { Name = "DeliveryDropZone", CustomMinimumSize = DeliveryDropZoneRect.Size };
         Place(delivery, DeliveryDropZoneRect);
         _deliveryZone = delivery;
@@ -523,48 +564,92 @@ public partial class PancakeWorkstation : Control
         delivery.Configure(CanDeliverPayload, DeliverPayload, _ => delivery.GetGlobalRect().GetCenter());
         root.AddChild(delivery);
         _drag.RegisterZone(delivery);
-        _directDeliveryHint = FloatingText("成品拖给顾客", 20, TianjinUi.BrownText, HorizontalAlignment.Center);
+        _directDeliveryHint = FloatingText(UseServingTray ? "拖给顾客" : "成品拖给顾客", UseServingTray ? 16 : 20, TianjinUi.BrownText, HorizontalAlignment.Center);
         _directDeliveryHint.Name = "DirectDeliveryHint";
         _directDeliveryHint.VerticalAlignment = VerticalAlignment.Center;
         _directDeliveryHint.MouseFilter = MouseFilterEnum.Ignore;
-        Place(_directDeliveryHint, DeliveryDropZoneRect);
+        Place(_directDeliveryHint, UseServingTray
+            ? new Rect2(TianjinWorkbenchLayout.Finished.Position + TianjinWorkbenchLayout.FinishedPickupHint.Position, TianjinWorkbenchLayout.FinishedPickupHint.Size)
+            : DeliveryDropZoneRect);
         root.AddChild(_directDeliveryHint);
-        var finishedSlot = new Control { Name = "FinishedPancakeSlot", CustomMinimumSize = FinishedPancakeSlotRect.Size };
-        Place(finishedSlot, FinishedPancakeSlotRect);
-        _finished = new DragItem { CustomMinimumSize = FinishedPancakeSlotRect.Size, Visible = false };
+        Rect2 finishedRect = UseServingTray ? TianjinWorkbenchLayout.Finished : FinishedPancakeSlotRect;
+        var finishedSlot = new Control { Name = "FinishedPancakeSlot", CustomMinimumSize = finishedRect.Size, MouseFilter = MouseFilterEnum.Ignore };
+        Place(finishedSlot, finishedRect);
+        if (UseServingTray)
+        {
+            finishedSlot.ZIndex = 40;
+            _directDeliveryHint.ZIndex = 41;
+            var tray = TianjinUi.Texture(_art.ServingTray, finishedRect.Size);
+            tray.Name = "FinishedTrayArt";
+            FullRect(tray, 0, 0, 0, 0);
+            finishedSlot.AddChild(tray);
+            var emptyLabel = FloatingText("成品托盘", 18, TianjinUi.BrownText, HorizontalAlignment.Center);
+            emptyLabel.Name = "FinishedTrayLabel";
+            Place(emptyLabel, TianjinWorkbenchLayout.FinishedCaption);
+            emptyLabel.MouseFilter = MouseFilterEnum.Ignore;
+            finishedSlot.AddChild(emptyLabel);
+            _finishedTrayLabel = emptyLabel;
+        }
+        _finished = new DragItem { Name = "FinishedPancakeDrag", CustomMinimumSize = UseServingTray ? TianjinWorkbenchLayout.FinishedInput.Size : finishedRect.Size, Visible = false };
         _finished.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        var finishedRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        FullRect(finishedRow, 0, 0, 0, 0);
-        finishedRow.AddChild(TianjinUi.Texture(_art.FinishedPancake, new Vector2(78, 68)));
-        finishedRow.AddChild(FloatingText("煎饼", 17, TianjinUi.BrownText, HorizontalAlignment.Center));
-        _finished.AddChild(finishedRow);
-        _finished.Configure(_drag, "finished_pancake", "装袋煎饼", TianjinUi.Cream, new DragVisualSpec(_art.FinishedPancake, new Vector2(150, 125)), () => CanInteract && Machine.Runtime.State == PancakeState.Bagged);
+        if (UseServingTray)
+        {
+            var content = new Control { MouseFilter = MouseFilterEnum.Ignore };
+            var bag = TianjinUi.Texture(_art.FinishedPancake, TianjinWorkbenchLayout.FinishedVisual);
+            bag.Name = "FinishedPancakeArt";
+            Place(bag, new Rect2(TianjinWorkbenchLayout.FinishedArtPosition, TianjinWorkbenchLayout.FinishedVisual));
+            content.AddChild(bag);
+            _finished.AddChild(content);
+        }
+        else
+        {
+            var finishedRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+            FullRect(finishedRow, 0, 0, 0, 0);
+            finishedRow.AddChild(TianjinUi.Texture(_art.FinishedPancake, new Vector2(78, 68)));
+            finishedRow.AddChild(FloatingText("煎饼", 17, TianjinUi.BrownText, HorizontalAlignment.Center));
+            _finished.AddChild(finishedRow);
+        }
+        _finished.Configure(_drag, "finished_pancake", "装袋煎饼", TianjinUi.Cream, new DragVisualSpec(_art.FinishedPancake, UseServingTray ? TianjinWorkbenchLayout.FinishedVisual : new Vector2(150, 125)), () => CanDeliverProduct("finished_pancake"));
         ConfigureArtInteraction(_finished);
         finishedSlot.AddChild(_finished);
-        FullRect(_finished, 0, 0, 0, 0);
+        if (UseServingTray) Place(_finished, TianjinWorkbenchLayout.FinishedInput);
+        else FullRect(_finished, 0, 0, 0, 0);
         root.AddChild(finishedSlot);
-        _soyPanel = new Control { Name = "SoyMilkSlot", CustomMinimumSize = SoyMilkSlotRect.Size };
-        Place(_soyPanel, SoyMilkSlotRect);
-        TextureRect soyTray = TianjinUi.Texture(_art.SoyTray, SoyMilkSlotRect.Size);
+        Rect2 soyRect = UseServingTray ? TianjinWorkbenchLayout.SoyMilk : SoyMilkSlotRect;
+        _soyPanel = new Control { Name = "SoyMilkSlot", CustomMinimumSize = soyRect.Size, MouseFilter = MouseFilterEnum.Ignore };
+        Place(_soyPanel, soyRect);
+        TextureRect soyTray = TianjinUi.Texture(_art.SoyTray, soyRect.Size);
         FullRect(soyTray, 0, 0, 0, 0);
-        soyTray.Modulate = new Color(1, 1, 1, 0.68f);
+        soyTray.Modulate = new Color(1, 1, 1, UseServingTray ? 1f : 0.68f);
         soyTray.MouseFilter = MouseFilterEnum.Ignore;
         _soyPanel.AddChild(soyTray);
-        _soyCup = new DragItem { CustomMinimumSize = new Vector2(72, 82) };
-        Place(_soyCup, 8, 7, 72, 82);
+        _soyCup = new DragItem { Name = "SoyMilkCupDrag", CustomMinimumSize = new Vector2(72, 82) };
+        Place(_soyCup, UseServingTray ? TianjinWorkbenchLayout.SoyCupInput : new Rect2(8, 7, 72, 82));
         _soyCup.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-        var soyContent = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        soyContent.AddChild(TianjinUi.Texture(_art.Product(ProductKind.SoyMilk), new Vector2(48, 64)));
-        _soyCup.AddChild(soyContent);
-        _soyCup.Configure(_drag, SoyMilkPayload, "豆浆", TianjinUi.Cream, new DragVisualSpec(_art.Product(ProductKind.SoyMilk), new Vector2(88, 98)), () => CanInteract && SoyMilkTray?.CanStartDrag == true);
+        if (UseServingTray)
+        {
+            var content = new Control { MouseFilter = MouseFilterEnum.Ignore };
+            var cup = TianjinUi.Texture(_art.Product(ProductKind.SoyMilk), TianjinWorkbenchLayout.SoyVisual);
+            cup.Name = "SoyMilkCupArt";
+            Place(cup, new Rect2(TianjinWorkbenchLayout.SoyArtPosition, TianjinWorkbenchLayout.SoyVisual));
+            content.AddChild(cup);
+            _soyCup.AddChild(content);
+        }
+        else
+        {
+            var soyContent = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+            soyContent.AddChild(TianjinUi.Texture(_art.Product(ProductKind.SoyMilk), new Vector2(48, 64)));
+            _soyCup.AddChild(soyContent);
+        }
+        _soyCup.Configure(_drag, SoyMilkPayload, "豆浆", TianjinUi.Cream, new DragVisualSpec(_art.Product(ProductKind.SoyMilk), UseServingTray ? TianjinWorkbenchLayout.SoyVisual : new Vector2(88, 98)), () => CanInteract && SoyMilkTray?.CanStartDrag == true);
         _soyCup.StartRejected += () => Reject("豆浆托盘正在取杯、补货或已经空了。");
         ConfigureArtInteraction(_soyCup);
         _soyPanel.AddChild(_soyCup);
         var soyActions = new VBoxContainer();
-        Place(soyActions, 78, 2, 96, 88);
+        Place(soyActions, UseServingTray ? TianjinWorkbenchLayout.SoyActions : new Rect2(78, 2, 96, 88));
         soyActions.AddThemeConstantOverride("separation", 2);
-        _soyStatus = FloatingText("豆浆 ×6", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
-        _soyStatus.CustomMinimumSize = new Vector2(96, 30);
+        _soyStatus = FloatingText("豆浆 ×6", UseServingTray ? 18 : 17, TianjinUi.BrownText, HorizontalAlignment.Center);
+        _soyStatus.CustomMinimumSize = new Vector2(UseServingTray ? 84 : 96, 26);
         soyActions.AddChild(_soyStatus);
         _soyRefill = SmallButton("+");
         _soyRefill.CustomMinimumSize = new Vector2(66, 56);
@@ -575,18 +660,20 @@ public partial class PancakeWorkstation : Control
         _soyPanel.AddChild(soyActions);
         root.AddChild(_soyPanel);
 
-        _trashZone = new DropZone { Name = "TrashZone", CustomMinimumSize = TrashZoneRect.Size, HitPadding = 8 };
-        Place(_trashZone, TrashZoneRect);
+        Rect2 trashRect = UseServingTray ? TianjinWorkbenchLayout.Trash : TrashZoneRect;
+        _trashZone = new DropZone { Name = "TrashZone", CustomMinimumSize = trashRect.Size, HitPadding = 8 };
+        if (UseServingTray) _trashZone.ZIndex = 40;
+        Place(_trashZone, trashRect);
         _trashZone.Configure(CanTrashPayload, DiscardPayload, _ => _trashZone.GetGlobalRect().GetCenter());
-        TextureRect trashArt = TianjinUi.Texture(_art.Trash, TrashZoneRect.Size);
+        TextureRect trashArt = TianjinUi.Texture(_art.Trash, trashRect.Size);
         trashArt.Name = "TrashArt";
         trashArt.MouseFilter = MouseFilterEnum.Ignore;
-        AddDropZoneFill(_trashZone, trashArt, TrashZoneRect.Size);
+        AddDropZoneFill(_trashZone, trashArt, trashRect.Size);
         Label trashLabel = FloatingText("拖入丢弃", 17, TianjinUi.BrownText, HorizontalAlignment.Center);
         trashLabel.Name = "TrashLabel";
         trashLabel.VerticalAlignment = VerticalAlignment.Bottom;
         trashLabel.MouseFilter = MouseFilterEnum.Ignore;
-        AddDropZoneFill(_trashZone, trashLabel, TrashZoneRect.Size);
+        AddDropZoneFill(_trashZone, trashLabel, trashRect.Size);
         root.AddChild(_trashZone);
         _drag.RegisterZone(_trashZone);
         return root;
@@ -810,7 +897,7 @@ public partial class PancakeWorkstation : Control
     }
     private bool CanTrashPayload(string id) => CanInteract && id switch
     {
-        "finished_pancake" => Machine.Runtime.State == PancakeState.Bagged,
+        "finished_pancake" => Machine.Runtime.State == PancakeState.Bagged && !IsTransferringBag,
         StoredYoutiaoPayload => FryerMachine?.Inventory.Count > 0,
         _ => false,
     };
@@ -904,7 +991,7 @@ public partial class PancakeWorkstation : Control
                 _lowStockNotified.Remove(id);
             }
         }
-        _finished.Visible = state == PancakeState.Bagged;
+        UpdateBagPresentation(state);
         SetContextAction(_flip, state is PancakeState.SideAReady or PancakeState.SideAOverdone);
         SetContextAction(_fold, state is PancakeState.Sauced or PancakeState.Toppings);
         SetContextAction(_bag, state == PancakeState.Folded);
@@ -953,7 +1040,7 @@ public partial class PancakeWorkstation : Control
             _lastFryerQuality = fryer.Quality;
         }
         _deliveryZone.Visible = !DirectCustomerDelivery;
-        _directDeliveryHint.Visible = DirectCustomerDelivery;
+        _directDeliveryHint.Visible = DirectCustomerDelivery && (!UseServingTray || state == PancakeState.Bagged);
         _soyPanel.Visible = SoyMilkTray is not null;
         if (SoyMilkTray is not null)
         {
@@ -969,6 +1056,8 @@ public partial class PancakeWorkstation : Control
     {
         if (!_initialized) return;
         _state.Text = _batterDropAnimating ? "正在落浆"
+            : UseServingTray && Machine.Runtime.State == PancakeState.Bagged
+                ? IsTransferringBag ? "正在放入成品托盘" : "从炉边托盘拖给顾客"
             : DirectCustomerDelivery && Machine.Runtime.State == PancakeState.Bagged ? "拖给顾客"
             : PancakeStatus(Machine.Runtime);
         _state.Modulate = Machine.Runtime.State switch
@@ -980,6 +1069,40 @@ public partial class PancakeWorkstation : Control
         };
         _canvas.QueueRedraw();
         _stroke.RefreshVisualState();
+    }
+
+    private void UpdateBagPresentation(PancakeState state)
+    {
+        if (_finishedTrayLabel is not null) _finishedTrayLabel.Visible = state != PancakeState.Bagged;
+        if (state != PancakeState.Bagged) ResetBagPresentation();
+        else if (UseServingTray && !_baggedPresented)
+        {
+            _baggedPresented = true;
+            _bagTransferRemaining = ReducedMotion ? 0 : BagTransferDuration;
+            TickBagTransfer(0);
+        }
+        _finished.Visible = state == PancakeState.Bagged && !IsTransferringBag;
+    }
+
+    private void TickBagTransfer(double delta)
+    {
+        if (!UseServingTray || !IsTransferringBag) return;
+        _bagTransferRemaining = Math.Max(0, _bagTransferRemaining - delta);
+        float progress = Mathf.SmoothStep(0, 1, (float)(1 - _bagTransferRemaining / BagTransferDuration));
+        Transform2D toLocal = GetGlobalTransform().AffineInverse();
+        Vector2 origin = toLocal * (_canvas.GetGlobalTransform() * _canvas.GetSurfaceRect().GetCenter());
+        Vector2 target = toLocal * (_finished.GetGlobalTransform()
+            * (TianjinWorkbenchLayout.FinishedArtPosition + TianjinWorkbenchLayout.FinishedVisual * 0.5f));
+        _bagTransfer.Position = origin.Lerp(target, progress) - _bagTransfer.Size * 0.5f;
+        _bagTransfer.Visible = IsTransferringBag;
+        _finished.Visible = !IsTransferringBag && Machine.Runtime.State == PancakeState.Bagged;
+    }
+
+    private void ResetBagPresentation()
+    {
+        _baggedPresented = false;
+        _bagTransferRemaining = 0;
+        if (IsInstanceValid(_bagTransfer)) _bagTransfer.Visible = false;
     }
     private void Reject(string message) { _audio.Play(PancakeSound.Error); Inform(message, true); }
     private void Inform(string message, bool error) => Feedback?.Invoke(message, error);
@@ -1020,6 +1143,10 @@ public partial class PancakeWorkstation : Control
     {
         if (stockStatus == IngredientStockStatus.Refilling) return WorkstationSlotAttentionState.Refilling;
         if (stockStatus == IngredientStockStatus.Empty) return WorkstationSlotAttentionState.Empty;
+        if (!CanInteract) return stockStatus == IngredientStockStatus.Low
+            ? WorkstationSlotAttentionState.LowStock : WorkstationSlotAttentionState.Normal;
+        if (UseServingTray && id == StableIds.Ingredients.Sauce && pancakeState is PancakeState.SideBReady or PancakeState.Saucing)
+            return WorkstationSlotAttentionState.Actionable;
         if (id == StableIds.Ingredients.Batter && pancakeState == PancakeState.Empty)
             return WorkstationSlotAttentionState.Required;
         if (id == StableIds.Ingredients.Egg && pancakeState == PancakeState.Spread)

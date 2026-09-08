@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="GuangzhouEquipmentData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/GuangzhouEquipmentData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+EquipmentId = "guangzhou_station"
+DisplayName = "配料台"
+Level = 2
+UpgradePrice = 100
+UnlockAfterDay = 3
+BatterCapacity = 12
+EggCapacity = 10
+PorkCapacity = 10
+ShrimpCapacity = 8
+SauceCapacity = 16

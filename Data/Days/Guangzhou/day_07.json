@@ -1,0 +1,76 @@
+{
+  "cityId": "city:guangzhou",
+  "satisfactionAverageMode": "completedCustomers",
+  "day": 7,
+  "durationSeconds": 110,
+  "customerCount": 13,
+  "expectedRevenue": 158,
+  "patienceMultiplier": 1,
+  "maxWaitingCustomers": 4,
+  "randomSeed": 4007,
+  "customerWeights": {
+    "gz_normal": 0.85,
+    "gz_office": 0.15
+  },
+  "orderTypeWeights": {
+    "gz_a": 0.55,
+    "gz_b": 0.1,
+    "gz_e": 0.35
+  },
+  "recipeWeights": {
+    "gz_plain": 0.05,
+    "gz_egg": 0.2,
+    "gz_pork": 0.3,
+    "gz_shrimp": 0.45
+  },
+  "arrivalSegments": [
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.15
+    },
+    {
+      "start": 0.2,
+      "end": 0.75,
+      "customerRatio": 0.7
+    },
+    {
+      "start": 0.75,
+      "end": 1,
+      "customerRatio": 0.15
+    }
+  ],
+  "startUnlocks": [
+    "recipe:gz_shrimp"
+  ],
+  "completionUnlocks": [
+    "equipment:guangzhou_cabinet_lv2"
+  ],
+  "availableRecipeIds": [
+    "gz_plain",
+    "gz_egg",
+    "gz_pork",
+    "gz_shrimp"
+  ],
+  "availableProductKinds": [
+    "riceRoll",
+    "siuMai"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 2,
+    "maxPancakesPerCustomer": 2,
+    "maxConsecutiveComplexOrders": 2,
+    "pressureDelaySeconds": 2,
+    "maxPressureDelaySeconds": 4
+  },
+  "starGoals": [],
+  "guangzhou": {
+    "dimSumWeights": {
+      "gz_siu_mai": 1
+    },
+    "emptyStockWeightMultiplier": 0.2,
+    "waitingOrdersThreshold": 2
+  }
+}

@@ -2,7 +2,7 @@ using ProjectCake.Data;
 
 namespace ProjectCake.Orders;
 
-public sealed class OrderGenerator
+public sealed partial class OrderGenerator
 {
     public const double ArrivalJitterSeconds = 1.5;
     private const int CandidateAttempts = 10;
@@ -13,6 +13,10 @@ public sealed class OrderGenerator
         IReadOnlyDictionary<string, ProductData>? products = null,
         IReadOnlyDictionary<string, CustomerTypeData>? customers = null)
     {
+        if (config.CityId == StableIds.Cities.Guangzhou)
+            return GenerateGuangzhou(config, recipes, products, customers);
+        if (config.CityId == StableIds.Cities.Xian)
+            return GenerateXian(config, recipes, products, customers);
         if (config.CityId == StableIds.Cities.Wuhan)
             return GenerateWuhan(config, recipes, products, customers);
 

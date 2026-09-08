@@ -21,10 +21,15 @@ public sealed class CustomerQueue
     private int _pressurePlanIndex = -1;
     private double _pressureDelayApplied;
     private double _pressureBlockedUntil;
+    private readonly DayConstraintConfig? _xian;
+    public double AppliedPressureDelay => _pressureDelayApplied;
+    // Runs exactly once, after pressure delays and immediately before the order becomes visible.
+    public Func<PlannedCustomer, int, OrderData>? ResolveBeforeArrival { get; set; }
 
-    public CustomerQueue(DayPlan plan, IReadOnlyDictionary<string, CustomerTypeData> types, double patienceMultiplier, int capacity, double pressureDelaySeconds = 0, double maxPressureDelaySeconds = 0)
+    public CustomerQueue(DayPlan plan, IReadOnlyDictionary<string, CustomerTypeData> types, double patienceMultiplier, int capacity, double pressureDelaySeconds = 0, double maxPressureDelaySeconds = 0, DayConstraintConfig? xian = null)
     {
         _plan = plan;
+        _xian = xian;
         _types = types;
         _patienceMultiplier = patienceMultiplier;
         _capacity = capacity;
@@ -52,6 +57,8 @@ public sealed class CustomerQueue
             while (_nextPlanIndex < _plan.Customers.Count && _plan.Customers[_nextPlanIndex].ArrivalTime <= dayElapsedSeconds)
             {
                 if (_maxPressureDelaySeconds > 0 && _slots.Count + _pending.Count >= _capacity) break;
+                if (_xian is not null && ProjectCake.Xian.XianRules.IsDouble(_plan.Customers[_nextPlanIndex].Order.OrderTypeId)
+                    && _slots.Count(c => IsActive(c) && ProjectCake.Xian.XianRules.IsDouble(c.Order.OrderTypeId)) >= _xian.MaxSimultaneousDoubleOrders) break;
                 if (_pressurePlanIndex != _nextPlanIndex)
                 {
                     _pressurePlanIndex = _nextPlanIndex; _pressureDelayApplied = 0; _pressureBlockedUntil = 0;
@@ -64,7 +71,9 @@ public sealed class CustomerQueue
                     _pressureBlockedUntil = dayElapsedSeconds + delay;
                     break;
                 }
-                PlannedCustomer plan = _plan.Customers[_nextPlanIndex++];
+                PlannedCustomer plan = _plan.Customers[_nextPlanIndex];
+                if (ResolveBeforeArrival is not null) plan.Order = ResolveBeforeArrival(plan, _nextPlanIndex);
+                _nextPlanIndex++;
                 _pending.Enqueue(new CustomerRuntime(plan, _types[plan.CustomerTypeId], _patienceMultiplier));
                 _pressurePlanIndex = -1;
                 changed = true;
@@ -217,8 +226,21 @@ public sealed class CustomerQueue
         return changed;
     }
 
+    private static bool IsActive(CustomerRuntime c) => c.State is not (CustomerState.Leaving or CustomerState.Served or CustomerState.Left);
+
     private bool IsUnderComplexPressure()
     {
+        if (_plan.Customers.FirstOrDefault()?.Order.CityId == StableIds.Cities.Guangzhou)
+        {
+            var active = _slots.Where(IsActive).ToArray();
+            return active.Count(c => c.Order.IsComplex) >= 2
+                || active.Any(big => big.Type.IsBigOrderCustomer && active.Any(c => c != big && c.Order.IsComplex));
+        }
+        if (_xian is not null)
+        {
+            double pressure = _slots.Where(IsActive).Sum(c => ProjectCake.Xian.XianRules.Pressure(c.Order.OrderTypeId));
+            return pressure + .00001 >= (_pressureDelayApplied == 0 ? _xian.WaitingPressureThreshold : _xian.AdditionalPressureThreshold);
+        }
         int complex = _slots.Count(customer => customer.Order.IsComplex && customer.State is not (CustomerState.Leaving or CustomerState.Served));
         int big = _slots.Count(customer => customer.Type.IsBigOrderCustomer && customer.State is not (CustomerState.Leaving or CustomerState.Served));
         return complex >= 2 || big >= 1 && complex >= 1;

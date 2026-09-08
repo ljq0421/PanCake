@@ -62,6 +62,11 @@ public sealed class TianjinArtCatalog
         Load("ingredient_tray", "通用食材托盘.png", true);
         Load("batter_container", "面糊容器.png", true);
         Load("sauce_container", "酱料容器.png", true);
+        Load("batter_empty", "StockUI/batter_empty.png");
+        Load("sauce_empty", "StockUI/sauce_empty.png");
+        Load("order_body", "StockUI/order_body.png");
+        Load("order_tail", "StockUI/order_tail.png");
+        Load("patience_frame", "StockUI/patience_frame.png");
         Load("trash", "卡通垃圾桶.png", true);
         Load("heart_effect", "开心爱心特效.png", true);
         Load("star_effect", "星星特效图标.png", true);
@@ -108,6 +113,11 @@ public sealed class TianjinArtCatalog
     public Texture2D IngredientTray => Get("ingredient_tray");
     public Texture2D BatterContainer => Get("batter_container");
     public Texture2D SauceContainer => Get("sauce_container");
+    public Texture2D EmptyBatterContainer => Get("batter_empty");
+    public Texture2D EmptySauceContainer => Get("sauce_empty");
+    public Texture2D OrderBody => Get("order_body");
+    public Texture2D OrderTail => Get("order_tail");
+    public Texture2D PatienceFrame => Get("patience_frame");
     public Texture2D Trash => Get("trash");
     public Texture2D HeartEffect => Get("heart_effect");
     public Texture2D StarEffect => Get("star_effect");
@@ -192,6 +202,7 @@ public sealed class TianjinArtCatalog
             "soy_tray", "soy_milk", "serving_tray", "ingredient_tray", "batter_container", "sauce_container", "trash", "heart_effect", "star_effect",
             "map_background", "tianjin_map_node", "locked_map_node", "scraper", "spatula", "stove_1", "stove_2", "stove_3",
             "fryer_body_1", "fryer_body_2", "fryer_body_3", "fryer_basket_6", "fryer_basket_8",
+            "batter_empty", "sauce_empty", "order_body", "order_tail", "patience_frame",
         };
         var missing = required.Where(key => !_textures.ContainsKey(key)).ToList();
         foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/CustomerTypeData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+Id = "gz_regular"
+DisplayName = "西关老茶客"
+HappyUntilSeconds = 18.599999999999998
+NormalUntilSeconds = 37.199999999999996
+ImpatientUntilSeconds = 52.08
+LeaveAtSeconds = 62
+PerfectTipRate = 0.1
+IsBigOrderCustomer = false
+OrderProfile = 1

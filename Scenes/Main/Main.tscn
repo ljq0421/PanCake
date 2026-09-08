@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Core/GameController.cs" id="1_game"]
 [ext_resource type="Script" path="res://Scripts/Core/DayController.cs" id="2_day"]
@@ -10,6 +10,9 @@
 [ext_resource type="PackedScene" path="res://Scenes/UI/TianjinMapScreen.tscn" id="8_map"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/WuhanHub.tscn" id="9_wuhan_hub"]
 [ext_resource type="PackedScene" path="res://Scenes/Gameplay/WuhanDayScreen.tscn" id="10_wuhan_day"]
+
+[ext_resource type="PackedScene" path="res://Scenes/UI/XianHub.tscn" id="11_xian_hub"]
+[ext_resource type="PackedScene" path="res://Scenes/Gameplay/XianDayScreen.tscn" id="12_xian_day"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_game")
@@ -48,6 +51,10 @@ script = ExtResource("2_day")
 [node name="WuhanHub" parent="UI" instance=ExtResource("9_wuhan_hub")]
 
 [node name="WuhanDayScreen" parent="UI" instance=ExtResource("10_wuhan_day")]
+
+[node name="XianHub" parent="UI" instance=ExtResource("11_xian_hub")]
+
+[node name="XianDayScreen" parent="UI" instance=ExtResource("12_xian_day")]
 
 [node name="PancakeLab" parent="UI" instance=ExtResource("5_lab")]
 

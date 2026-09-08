@@ -20,6 +20,8 @@ public partial class TianjinDayScreen : Control
     private const float CustomerStripTop = 160;
     private const float CountertopTop = 575;
     private const float CustomerStripHeight = CountertopTop - CustomerStripTop;
+    private const float OrderContentHeight = 140;
+    private const float OrderCardHeight = 152;
 
     public event Action? HubRequested;
 
@@ -182,6 +184,26 @@ public partial class TianjinDayScreen : Control
         Theme = TianjinUi.CreateTheme();
         _art = new TianjinArtCatalog();
         var background = TianjinUi.Texture(_art.Background, Vector2.Zero, TextureRect.StretchModeEnum.Scale);
+        background.Name = "ShopBackground";
+        background.Material = new ShaderMaterial
+        {
+            Shader = new Shader
+            {
+                Code = """
+                    shader_type canvas_item;
+
+                    void fragment() {
+                        vec4 source = texture(TEXTURE, UV);
+                        // Soften the storefront only; the painted counter retains its original color.
+                        float storefront = 1.0 - smoothstep(0.475, 0.5324, UV.y);
+                        float sides = smoothstep(0.18, 0.44, abs(UV.x - 0.5));
+                        float softness = storefront * mix(0.065, 0.115, sides);
+                        vec3 cream = vec3(1.0, 0.945, 0.824);
+                        COLOR = vec4(mix(source.rgb, cream, softness), source.a);
+                    }
+                    """,
+            },
+        };
         TianjinUi.FullRect(background);
         AddChild(background);
 
@@ -238,27 +260,42 @@ public partial class TianjinDayScreen : Control
         hud.OffsetBottom = 90;
         hud.ZIndex = 70;
         AddChild(hud);
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
-        hud.AddChild(row);
+        var content = new Control { CustomMinimumSize = new Vector2(0, 52), MouseFilter = MouseFilterEnum.Ignore };
+        hud.AddChild(content);
+        HBoxContainer dayGroup = HudGroup(content, "DayContext", 0, 0.28f, BoxContainer.AlignmentMode.Begin);
+        HBoxContainer serviceGroup = HudGroup(content, "ServiceProgress", 0.28f, 0.72f, BoxContainer.AlignmentMode.Center);
+        serviceGroup.AddThemeConstantOverride("separation", 24);
+        HBoxContainer actionsGroup = HudGroup(content, "IncomeAndPause", 0.72f, 1, BoxContainer.AlignmentMode.End);
         _dayTitle = TianjinUi.Label("Day 1", 28, TianjinUi.BrownDark);
-        _dayTitle.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        row.AddChild(_dayTitle);
-        _completedOrders = TianjinUi.Label("完成订单 0/0", 18, TianjinUi.BrownText);
+        dayGroup.AddChild(_dayTitle);
+        _completedOrders = TianjinUi.Label("完成订单 0/0", 20, TianjinUi.BrownText);
         _completedOrders.Name = "CompletedOrders";
-        row.AddChild(_completedOrders);
+        serviceGroup.AddChild(_completedOrders);
         _door = TianjinUi.Label("门外候场 0", 18, TianjinUi.Brown);
-        row.AddChild(_door);
-        _clock = TianjinUi.Label("01:00", 26, TianjinUi.BrownDark);
-        row.AddChild(_clock);
-        _coinTarget = TianjinUi.Texture(_art.Coin, new Vector2(44, 44));
-        row.AddChild(_coinTarget);
-        _income = TianjinUi.Label("今日收入 ¥0", 21, TianjinUi.Green);
-        row.AddChild(_income);
+        serviceGroup.AddChild(_door);
+        _clock = TianjinUi.Label("01:00", 28, TianjinUi.BrownDark);
+        _clock.CustomMinimumSize = new Vector2(158, 0);
+        serviceGroup.AddChild(_clock);
+        _coinTarget = TianjinUi.Texture(_art.Coin, new Vector2(36, 36));
+        _coinTarget.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        actionsGroup.AddChild(_coinTarget);
+        _income = TianjinUi.Label("今日收入 ¥0", 22, TianjinUi.BrownText);
+        actionsGroup.AddChild(_income);
         var pause = TianjinUi.Button("暂停", false, new Vector2(112, 52));
         pause.Name = "PauseButton";
         pause.Pressed += () => SetManualPaused(true);
-        row.AddChild(pause);
+        actionsGroup.AddChild(pause);
+    }
+
+    private static HBoxContainer HudGroup(Control parent, string name, float left, float right, BoxContainer.AlignmentMode alignment)
+    {
+        var group = new HBoxContainer { Name = name, Alignment = alignment, MouseFilter = MouseFilterEnum.Ignore };
+        parent.AddChild(group);
+        TianjinUi.FullRect(group);
+        group.AnchorLeft = left;
+        group.AnchorRight = right;
+        group.AddThemeConstantOverride("separation", 16);
+        return group;
     }
 
     private void BuildCustomers()
@@ -292,11 +329,11 @@ public partial class TianjinDayScreen : Control
             var column = new VBoxContainer { Name = "CustomerColumn" };
             TianjinUi.FullRect(column, 4, 4, -4, 0);
             column.MouseFilter = MouseFilterEnum.Ignore;
-            column.AddThemeConstantOverride("separation", 2);
+            column.AddThemeConstantOverride("separation", 16);
             button.AddChild(column);
             var bubble = TianjinUi.Panel(TianjinUi.Paper, 14, 4, true);
-            bubble.AddThemeStyleboxOverride("panel", OrderCardStyle());
-            bubble.CustomMinimumSize = new Vector2(220, 136);
+            OrderBubbleSkin.Apply(bubble, _art);
+            bubble.CustomMinimumSize = new Vector2(220, OrderCardHeight);
             bubble.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
             bubble.MouseFilter = MouseFilterEnum.Ignore;
             column.AddChild(bubble);
@@ -306,13 +343,13 @@ public partial class TianjinDayScreen : Control
             var orderContent = new Control
             {
                 Name = "OrderContent",
-                CustomMinimumSize = new Vector2(200, 124),
+                CustomMinimumSize = new Vector2(200, OrderContentHeight),
                 MouseFilter = MouseFilterEnum.Ignore,
             };
             bubble.AddChild(orderContent);
             _orderRows[index] = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
             _orderRows[index].AddThemeConstantOverride("separation", 6);
-            TianjinUi.FullRect(_orderRows[index], 0, 20, 0, -38);
+            TianjinUi.FullRect(_orderRows[index], 0, 22, 0, -38);
             orderContent.AddChild(_orderRows[index]);
             var toppings = new HFlowContainer
             {
@@ -321,20 +358,20 @@ public partial class TianjinDayScreen : Control
             };
             toppings.AddThemeConstantOverride("h_separation", 8);
             toppings.AddThemeConstantOverride("v_separation", 2);
-            TianjinUi.FullRect(toppings, 0, 88, 0, -12);
+            TianjinUi.FullRect(toppings, 0, 104, 0, -12);
             orderContent.AddChild(toppings);
             _orderToppings[index] = toppings;
 
             _customerBadges[index] = OrderBadge("CustomerTypeBadge", HorizontalAlignment.Left);
             _customerBadges[index].Position = new Vector2(4, 0);
-            _customerBadges[index].Size = new Vector2(84, 16);
+            _customerBadges[index].Size = new Vector2(90, 18);
             orderContent.AddChild(_customerBadges[index]);
             _customerStateBadges[index] = OrderBadge("CustomerStateBadge", HorizontalAlignment.Right);
             _customerStateBadges[index].SetAnchorsPreset(LayoutPreset.TopRight);
-            _customerStateBadges[index].OffsetLeft = -96;
+            _customerStateBadges[index].OffsetLeft = -100;
             _customerStateBadges[index].OffsetTop = 0;
             _customerStateBadges[index].OffsetRight = -4;
-            _customerStateBadges[index].OffsetBottom = 16;
+            _customerStateBadges[index].OffsetBottom = 18;
             orderContent.AddChild(_customerStateBadges[index]);
 
             _patienceBars[index] = new ProgressBar
@@ -352,7 +389,7 @@ public partial class TianjinDayScreen : Control
             _patienceBars[index].OffsetBottom = 0;
             _patienceBars[index].AddThemeStyleboxOverride("background", PatienceStyle(new Color("#E2CDA8"), true));
             _patienceBars[index].AddThemeStyleboxOverride("fill", PatienceStyle(TianjinUi.Green));
-            orderContent.AddChild(_patienceBars[index]);
+            orderContent.AddChild(OrderBubbleSkin.PatienceTrack(_art.PatienceFrame, _patienceBars[index]));
             CustomerPortraitVisual customerVisual = _art.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId, CustomerExpression.Normal);
             _portraits[index] = new CustomerPortraitView
             {
@@ -634,7 +671,6 @@ public partial class TianjinDayScreen : Control
             _customerStateBadges[index].Modulate = stateBadge.Length == 0 ? Colors.Transparent : StateColor(customer.State);
             _patienceBars[index].Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
             ((StyleBoxFlat)_patienceBars[index].GetThemeStylebox("fill")).BgColor = StateColor(customer.State);
-            _orderCards[index].AddThemeStyleboxOverride("panel", OrderCardStyle());
         }
     }
 
@@ -644,46 +680,44 @@ public partial class TianjinDayScreen : Control
         foreach (Node child in row.GetChildren()) { row.RemoveChild(child); child.QueueFree(); }
         HFlowContainer toppings = _orderToppings[slot];
         foreach (Node child in toppings.GetChildren()) { toppings.RemoveChild(child); child.QueueFree(); }
-        float contentWidth = customer.Order.Lines.Sum(line => line.ProductKind == ProductKind.Pancake ? 104 : 76)
+        float contentWidth = customer.Order.Lines.Sum(line => line.ProductKind == ProductKind.Pancake ? 104 : 84)
             + Math.Max(0, customer.Order.Lines.Count - 1) * 6;
-        float cardWidth = Math.Clamp(contentWidth + 20, 220, 328);
-        _orderCards[slot].CustomMinimumSize = new Vector2(cardWidth, 136);
+        float cardWidth = Math.Clamp(contentWidth + 24, 220, 328);
+        _orderCards[slot].CustomMinimumSize = new Vector2(cardWidth, OrderCardHeight);
         for (int index = 0; index < customer.Order.Lines.Count; index++)
         {
             OrderLineData line = customer.Order.Lines[index];
             int delivered = customer.Progress.GetDeliveredQuantity(index);
             bool completed = delivered >= line.Quantity;
-            float itemWidth = line.ProductKind == ProductKind.Pancake ? 104 : 76;
+            float itemWidth = line.ProductKind == ProductKind.Pancake ? 104 : 84;
             var item = new Control
             {
                 Name = "OrderItem",
-                CustomMinimumSize = new Vector2(itemWidth, 66),
+                CustomMinimumSize = new Vector2(itemWidth, 80),
                 MouseFilter = MouseFilterEnum.Ignore,
                 Modulate = completed ? new Color(0.78f, 0.85f, 0.72f, 1f) : Colors.White,
             };
             ArtVisual productVisual = _art.ProductVisual(line.ProductKind);
-            TextureRect productIcon = TianjinUi.Texture(productVisual.Texture, new Vector2(52, 32));
+            TextureRect productIcon = TianjinUi.Texture(productVisual.Texture, new Vector2(56, 40));
             productIcon.Name = "OrderProductIcon";
-            productIcon.Position = new Vector2((itemWidth - 52) * 0.5f, 0);
-            productIcon.Size = new Vector2(52, 32);
+            productIcon.Position = new Vector2((itemWidth - 56) * 0.5f, 0);
+            productIcon.Size = new Vector2(56, 40);
             item.AddChild(productIcon);
             string name = line.ProductKind switch { ProductKind.Pancake => "煎饼", ProductKind.Youtiao => "单卖油条", _ => "豆浆" };
-            Label nameLabel = TianjinUi.Label(name, 16, TianjinUi.BrownText, HorizontalAlignment.Center);
-            nameLabel.Position = new Vector2(0, 32);
-            nameLabel.Size = new Vector2(itemWidth, 20);
+            Label nameLabel = TianjinUi.Label(name, 18, TianjinUi.BrownText, HorizontalAlignment.Center);
+            nameLabel.Position = new Vector2(0, 40);
+            nameLabel.Size = new Vector2(itemWidth, 22);
             item.AddChild(nameLabel);
             string quantity = completed
                 ? line.Quantity > 1 ? $"✓ {line.Quantity}/{line.Quantity}" : "✓"
                 : line.Quantity > 1 ? $"{delivered}/{line.Quantity}" : string.Empty;
             if (quantity.Length > 0)
             {
-                Label quantityLabel = TianjinUi.Label(quantity, 13, completed ? TianjinUi.Green : TianjinUi.BrownText, HorizontalAlignment.Center);
+                Label quantityLabel = TianjinUi.Label(quantity, 16, completed ? TianjinUi.Green : TianjinUi.BrownText, HorizontalAlignment.Center);
                 quantityLabel.Name = "OrderQuantity";
                 float quantityWidth = completed && line.Quantity == 1 ? 24 : 48;
-                quantityLabel.Position = new Vector2((itemWidth - quantityWidth) * 0.5f, 52);
-                quantityLabel.Size = new Vector2(quantityWidth, 16);
-                quantityLabel.AddThemeConstantOverride("outline_size", 3);
-                quantityLabel.AddThemeColorOverride("font_outline_color", TianjinUi.Paper);
+                quantityLabel.Position = new Vector2((itemWidth - quantityWidth) * 0.5f, 62);
+                quantityLabel.Size = new Vector2(quantityWidth, 18);
                 item.AddChild(quantityLabel);
             }
             if (line.ProductKind == ProductKind.Pancake && _catalog.RecipesById.TryGetValue(line.DefinitionId, out RecipeData? recipe) && recipe.ExtraIngredients.Count > 0)
@@ -693,11 +727,11 @@ public partial class TianjinDayScreen : Control
             }
             row.AddChild(item);
         }
-        int perRow = Math.Max(1, (int)((cardWidth - 20 + 8) / 72));
+        int perRow = Math.Max(1, (int)((cardWidth - 24 + 8) / 80));
         int toppingRows = Math.Max(1, (toppings.GetChildCount() + perRow - 1) / perRow);
         float extraHeight = (toppingRows - 1) * 26;
-        ((Control)row.GetParent()).CustomMinimumSize = new Vector2(200, 124 + extraHeight);
-        _orderCards[slot].CustomMinimumSize = new Vector2(cardWidth, 136 + extraHeight);
+        ((Control)row.GetParent()).CustomMinimumSize = new Vector2(200, OrderContentHeight + extraHeight);
+        _orderCards[slot].CustomMinimumSize = new Vector2(cardWidth, OrderCardHeight + extraHeight);
         row.OffsetBottom = -38 - extraHeight;
     }
 
@@ -705,13 +739,13 @@ public partial class TianjinDayScreen : Control
     {
         var group = new HBoxContainer
         {
-            CustomMinimumSize = new Vector2(64, 24),
+            CustomMinimumSize = new Vector2(72, 24),
             MouseFilter = MouseFilterEnum.Ignore,
             Alignment = BoxContainer.AlignmentMode.Center,
         };
-        group.AddThemeConstantOverride("separation", 1);
+        group.AddThemeConstantOverride("separation", 4);
         group.AddChild(TianjinUi.Texture(_art.Ingredient(ingredientId), new Vector2(28, 22)));
-        Label label = TianjinUi.Label(IngredientDisplayName(ingredientId), 14, TianjinUi.BrownText, HorizontalAlignment.Left);
+        Label label = TianjinUi.Label(IngredientDisplayName(ingredientId), 18, TianjinUi.BrownText, HorizontalAlignment.Left);
         label.CustomMinimumSize = new Vector2(21, 22);
         label.VerticalAlignment = VerticalAlignment.Center;
         group.AddChild(label);
@@ -824,23 +858,10 @@ public partial class TianjinDayScreen : Control
 
     private static Label OrderBadge(string name, HorizontalAlignment alignment)
     {
-        Label label = TianjinUi.Label(string.Empty, 13, TianjinUi.BrownText, alignment);
+        Label label = TianjinUi.Label(string.Empty, 14, TianjinUi.BrownText, alignment);
         label.Name = name;
         label.MouseFilter = MouseFilterEnum.Ignore;
-        label.AddThemeConstantOverride("outline_size", 3);
-        label.AddThemeColorOverride("font_outline_color", new Color(1f, 0.94f, 0.79f, 0.96f));
         return label;
-    }
-
-    private static StyleBoxFlat OrderCardStyle(bool selected = false)
-    {
-        StyleBoxFlat style = TianjinUi.Box(selected ? new Color("#FFF2C4") : TianjinUi.Paper, 14, selected ? 5 : 4, true);
-        if (selected) style.BorderColor = TianjinUi.Orange;
-        style.ContentMarginLeft = 10;
-        style.ContentMarginTop = 6;
-        style.ContentMarginRight = 10;
-        style.ContentMarginBottom = 6;
-        return style;
     }
 
     private static StyleBoxFlat PatienceStyle(Color color, bool border = false) => new()

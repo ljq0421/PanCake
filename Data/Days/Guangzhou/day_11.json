@@ -1,0 +1,86 @@
+{
+  "cityId": "city:guangzhou",
+  "satisfactionAverageMode": "completedCustomers",
+  "day": 11,
+  "durationSeconds": 150,
+  "customerCount": 20,
+  "expectedRevenue": 335,
+  "patienceMultiplier": 1,
+  "maxWaitingCustomers": 4,
+  "randomSeed": 4011,
+  "customerWeights": {
+    "gz_normal": 0.45,
+    "gz_office": 0.15,
+    "gz_regular": 0.15,
+    "gz_tourist": 0.15,
+    "gz_family": 0.1
+  },
+  "orderTypeWeights": {
+    "gz_a": 0.2,
+    "gz_b": 0.05,
+    "gz_c": 0.05,
+    "gz_d": 0.2,
+    "gz_e": 0.2,
+    "gz_f": 0.3
+  },
+  "recipeWeights": {
+    "gz_plain": 0.05,
+    "gz_egg": 0.15,
+    "gz_pork": 0.25,
+    "gz_shrimp": 0.35,
+    "gz_egg_pork": 0.2
+  },
+  "arrivalSegments": [
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.15
+    },
+    {
+      "start": 0.2,
+      "end": 0.75,
+      "customerRatio": 0.7
+    },
+    {
+      "start": 0.75,
+      "end": 1,
+      "customerRatio": 0.15
+    }
+  ],
+  "startUnlocks": [],
+  "completionUnlocks": [
+    "equipment:guangzhou_stove_lv3",
+    "equipment:guangzhou_cabinet_lv3"
+  ],
+  "availableRecipeIds": [
+    "gz_plain",
+    "gz_egg",
+    "gz_pork",
+    "gz_shrimp",
+    "gz_egg_pork"
+  ],
+  "availableProductKinds": [
+    "riceRoll",
+    "siuMai",
+    "morningTea",
+    "harGow"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 2,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 2,
+    "maxPancakesPerCustomer": 2,
+    "maxConsecutiveComplexOrders": 2,
+    "pressureDelaySeconds": 2,
+    "maxPressureDelaySeconds": 4
+  },
+  "starGoals": [],
+  "guangzhou": {
+    "dimSumWeights": {
+      "gz_siu_mai": 0.6,
+      "gz_har_gow": 0.4
+    },
+    "emptyStockWeightMultiplier": 0.2,
+    "waitingOrdersThreshold": 2
+  }
+}

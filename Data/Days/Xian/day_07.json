@@ -1,0 +1,73 @@
+{
+  "cityId": "city:xian",
+  "satisfactionAverageMode": "completedCustomers",
+  "day": 7,
+  "durationSeconds": 120,
+  "customerCount": 15,
+  "expectedRevenue": 207,
+  "patienceMultiplier": 1,
+  "maxWaitingCustomers": 4,
+  "randomSeed": 3007,
+  "customerWeights": {
+    "xian_normal": 0.85,
+    "xian_office_worker": 0.15
+  },
+  "orderTypeWeights": {
+    "xian_a": 0.6,
+    "xian_b": 0.1,
+    "xian_c": 0.3
+  },
+  "recipeWeights": {
+    "roujiamo_standard": 0.2,
+    "roujiamo_juicy": 0.25,
+    "roujiamo_extra_meat": 0.3,
+    "roujiamo_extra_juicy": 0.25
+  },
+  "arrivalSegments": [
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.2
+    },
+    {
+      "start": 0.2,
+      "end": 0.75,
+      "customerRatio": 0.6
+    },
+    {
+      "start": 0.75,
+      "end": 1,
+      "customerRatio": 0.2
+    }
+  ],
+  "startUnlocks": [
+    "recipe:roujiamo_extra_juicy"
+  ],
+  "completionUnlocks": [
+    "equipment:xian_board_lv3"
+  ],
+  "availableRecipeIds": [
+    "roujiamo_standard",
+    "roujiamo_juicy",
+    "roujiamo_extra_meat",
+    "roujiamo_extra_juicy"
+  ],
+  "availableProductKinds": [
+    "roujiamo",
+    "hulatang"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 0,
+    "maxPancakesPerCustomer": 0,
+    "maxConsecutiveComplexOrders": 2,
+    "pressureDelaySeconds": 2,
+    "maxPressureDelaySeconds": 4,
+    "maxDoubleOrders": 0,
+    "maxSimultaneousDoubleOrders": 0,
+    "waitingPressureThreshold": 4,
+    "additionalPressureThreshold": 5
+  },
+  "starGoals": []
+}

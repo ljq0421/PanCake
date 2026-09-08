@@ -39,6 +39,7 @@ public partial class DayController : Node
     public double ClosingRemainingSeconds { get; private set; }
     public bool IsPaused { get; set; }
     public double DayRemainingSeconds => Math.Max(0, (CurrentConfig?.DurationSeconds ?? 0) - DayElapsedSeconds);
+    public Func<string, int>? GuangzhouStockCount { get; set; }
 
     public bool TryPrepareDay(int dayNumber, DataCatalog catalog, out string error)
         => TryPrepareDay(StableIds.Cities.Tianjin, dayNumber, catalog, out error);
@@ -60,7 +61,11 @@ public partial class DayController : Node
         CurrentConfig = config;
         CurrentPlan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
         CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers,
-            config.Constraints.PressureDelaySeconds, config.Constraints.MaxPressureDelaySeconds);
+            config.Constraints.PressureDelaySeconds, config.Constraints.MaxPressureDelaySeconds, config.CityId == StableIds.Cities.Xian ? config.Constraints : null);
+        GuangzhouStockCount = null;
+        if (cityId == StableIds.Cities.Guangzhou)
+            CustomerQueue.ResolveBeforeArrival = (planned, ordinal) => ProjectCake.Guangzhou.GuangzhouOrderProtection.Resolve(
+                planned, ordinal, config, CustomerQueue.Slots, id => GuangzhouStockCount?.Invoke(id) ?? 0, catalog.ProductsById);
         Ledger = new DayLedger(config.Day, config.CustomerCount, config.SatisfactionAverageMode);
         CustomerQueue.CustomerLost += _ => Ledger.RecordLost();
         DayElapsedSeconds = 0;
@@ -189,6 +194,21 @@ public partial class DayController : Node
         return customer is null ? rejection : TryDeliverItem(customer, item, consume, null);
     }
 
+    public DeliveryEvaluation TryDeliverXianTo(string? customerId, DeliveredItem item, Func<bool> consume)
+    {
+        if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Xian || item.ProductKind is not (ProductKind.Roujiamo or ProductKind.Hulatang)) return Rejected("当前不能交付。");
+        var customer = FindDeliveryCustomer(customerId);
+        return customer is null ? Rejected("请交给仍在等待的顾客。") : TryDeliverItem(customer, item, consume, null);
+    }
+
+    public DeliveryEvaluation TryDeliverGuangzhouTo(string? customerId, DeliveredItem item, Func<bool> consume)
+    {
+        if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Guangzhou || !ProjectCake.Guangzhou.GuangzhouRules.IsProduct(item.ProductKind))
+            return Rejected("当前不能交付广州商品。");
+        var customer = FindDeliveryCustomer(customerId);
+        return customer is null ? Rejected("请交给仍在等待的顾客。") : TryDeliverItem(customer, item, consume, null);
+    }
+
     public void AbandonDay()
     {
         if (State is DayState.Opening or DayState.Running or DayState.Closing)
@@ -245,7 +265,11 @@ public partial class DayController : Node
             return incomplete;
         }
 
-        DeliveryEvaluation evaluation = customer.Order.CityId == StableIds.Cities.Wuhan
+        DeliveryEvaluation evaluation = customer.Order.CityId == StableIds.Cities.Guangzhou
+            ? new OrderEvaluator().EvaluateCompletedGuangzhou(customer.Progress, customer.PatienceProgress, customer.Type)
+            : customer.Order.CityId == StableIds.Cities.Xian
+            ? new OrderEvaluator().EvaluateCompletedXian(customer.Progress, customer.PatienceProgress, customer.Type)
+            : customer.Order.CityId == StableIds.Cities.Wuhan
             ? new OrderEvaluator().EvaluateCompletedWuhan(customer.Progress, customer.PatienceProgress, customer.Type)
             : new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
         if (!CustomerQueue!.TryMarkServed(customer.Id)) return Rejected("顾客状态已经变化，本次交付未生效。");

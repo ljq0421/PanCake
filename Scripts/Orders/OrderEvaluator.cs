@@ -6,6 +6,32 @@ namespace ProjectCake.Orders;
 
 public sealed class OrderEvaluator
 {
+    public DeliveryEvaluation EvaluateCompletedGuangzhou(OrderProgress progress, double waitRatio, CustomerTypeData type)
+    {
+        if (!progress.IsComplete) return new(DeliveryGrade.Incomplete, 0, 0, 0, "还缺少商品。", true);
+        int waiting = waitRatio <= .30 ? 0 : waitRatio <= .60 ? 5 : waitRatio < .84 ? 15 : 30;
+        int score = Math.Clamp(100 - waiting - (progress.HasRecipeMismatch ? 20 : 0) - (progress.HasRiceRollDry ? 10 : 0)
+            - (progress.HasRiceRollBroken ? 5 : 0) - (progress.HasDimSumOversteamed ? 5 : 0), 0, 100);
+        bool perfect = waitRatio <= .30 && !progress.HasRecipeMismatch && !progress.HasQualityIssue;
+        int revenue = progress.HasRecipeMismatch ? RoundSeventyPercent(progress.Order.BasePrice) : progress.Order.BasePrice;
+        int tip = perfect ? (int)Math.Ceiling(progress.Order.BasePrice * (double)Math.Round(type.PerfectTipRate, 4)) : 0;
+        var grade = progress.HasRecipeMismatch ? DeliveryGrade.Incorrect : perfect ? DeliveryGrade.Perfect : DeliveryGrade.Correct;
+        return new(grade, revenue, tip, score, perfect ? $"Perfect！小费 ¥{tip}" : progress.HasRecipeMismatch
+            ? $"配料有误 · 整单七折 ¥{revenue} · 满意度 {score}" : $"出餐完成 · 满意度 {score}", true);
+    }
+
+    public DeliveryEvaluation EvaluateCompletedXian(OrderProgress progress, double waitRatio, CustomerTypeData type)
+    {
+        if (!progress.IsComplete) return new(DeliveryGrade.Incomplete, 0, 0, 0, "还缺少商品。", true);
+        int waiting = waitRatio <= .30 ? 0 : waitRatio <= .60 ? 5 : waitRatio < .84 ? 15 : 30;
+        int score = Math.Clamp(100 - waiting - (progress.HasMeatMismatch ? 20 : 0) - (progress.HasJuiceMismatch ? 20 : 0) - (progress.HasBunOverbrowned ? 5 : 0), 0, 100);
+        bool perfect = waitRatio <= .30 && !progress.HasRecipeMismatch && !progress.HasBunOverbrowned;
+        int revenue = progress.HasRecipeMismatch ? RoundSeventyPercent(progress.Order.BasePrice) : progress.Order.BasePrice;
+        int tip = perfect ? (int)Math.Ceiling(progress.Order.BasePrice * type.PerfectTipRate) : 0;
+        var grade = progress.HasRecipeMismatch ? DeliveryGrade.Incorrect : perfect ? DeliveryGrade.Perfect : DeliveryGrade.Correct;
+        return new(grade, revenue, tip, score, perfect ? $"Perfect！小费 ¥{tip}" : progress.HasRecipeMismatch ? $"配方有误，整单七折 ¥{revenue} · 满意度 {score}" : $"出餐完成 · 满意度 {score}", true);
+    }
+
     public DeliveryEvaluation EvaluateCompletedWuhan(OrderProgress progress, double waitRatio, CustomerTypeData customerType)
     {
         if (!progress.IsComplete) return new DeliveryEvaluation(DeliveryGrade.Incomplete, 0, 0, 0, "订单还缺少商品。", true);

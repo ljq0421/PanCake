@@ -32,6 +32,9 @@ public partial class DataCatalog : Node
     private readonly Dictionary<int, DoupiGriddleLevelData> _doupiGriddlesByLevel = new();
     private readonly Dictionary<int, WuhanIngredientStationLevelData> _wuhanIngredientStationsByLevel = new();
     private readonly List<ValidationIssue> _validationIssues = new();
+    private readonly Dictionary<string, XianEquipmentData> _xianEquipment = new();
+    public IReadOnlyDictionary<string, XianEquipmentData> XianEquipment => _xianEquipment;
+    public XianEquipmentData GetXianEquipment(string id, int level) => _xianEquipment[$"{id}_lv{level}"];
 
     public IReadOnlyDictionary<string, RecipeData> RecipesById => _recipesById;
 
@@ -70,6 +73,7 @@ public partial class DataCatalog : Node
         _doupiGriddlesByLevel.Clear();
         _wuhanIngredientStationsByLevel.Clear();
         _validationIssues.Clear();
+        _xianEquipment.Clear();
 
         var recipes = LoadResources<RecipeData>(RecipeDirectory, _validationIssues);
         recipes.AddRange(LoadResources<RecipeData>(WuhanRecipeDirectory, _validationIssues));
@@ -107,6 +111,22 @@ public partial class DataCatalog : Node
         List<DayConfig> wuhanDays = days.Where(day => day.CityId == StableIds.Cities.Wuhan).ToList();
         _validationIssues.AddRange(CatalogValidator.ValidateAll(recipes, stoves, ingredientStations, fryers, products, customers, tianjinDays));
         _validationIssues.AddRange(WuhanCatalogValidator.Validate(wuhanDays, recipes, customers, noodleCookers, doupiGriddles, wuhanStations));
+
+        var xianRecipes = LoadResources<XianRecipeData>("res://Data/Recipes/Xian", _validationIssues);
+        var xianProducts = LoadResources<ProductData>("res://Data/Products/Xian", _validationIssues);
+        var xianCustomers = LoadResources<CustomerTypeData>("res://Data/Customers/Xian", _validationIssues);
+        var xianEquipment = LoadResources<XianEquipmentData>("res://Data/Equipment/Xian", _validationIssues);
+        var xianDays = new List<DayConfig>();
+        foreach (var result in dayLoader.LoadDirectory("res://Data/Days/Xian"))
+        {
+            _validationIssues.AddRange(result.Issues);
+            if (result.Config is not null) xianDays.Add(result.Config);
+        }
+        _validationIssues.AddRange(XianCatalogValidator.Validate(xianDays, xianRecipes, xianProducts, xianCustomers, xianEquipment));
+        recipes.AddRange(xianRecipes); products.AddRange(xianProducts); customers.AddRange(xianCustomers); days.AddRange(xianDays);
+        foreach (var equipment in xianEquipment) _xianEquipment.TryAdd($"{equipment.EquipmentId}_lv{equipment.Level}", equipment);
+
+        LoadGuangzhou(recipes, products, customers, days, dayLoader);
 
         foreach (RecipeData recipe in recipes)
         {

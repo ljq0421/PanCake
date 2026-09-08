@@ -6,6 +6,9 @@ public static class StableIds
     {
         public const string Tianjin = "city:tianjin";
         public const string Wuhan = "city:wuhan";
+        public const string Xian = "city:xian";
+        public const string Guangzhou = "city:guangzhou";
+        public const string Yangzhou = "city:yangzhou";
     }
 
     public static class Products
@@ -103,6 +106,7 @@ public static class StableIds
         "wuhan_regular",
         "wuhan_tourist",
         "wuhan_big_order",
+        "xian_normal", "xian_office_worker", "xian_regular", "xian_tourist",
     };
 
     public static readonly IReadOnlySet<string> OrderTypeIds = new HashSet<string>(StringComparer.Ordinal)
@@ -119,6 +123,7 @@ public static class StableIds
         "noodles_doupi",
         "noodles_egg_rice_wine",
         "wuhan_full_combo",
+        "xian_a", "xian_b", "xian_c", "xian_d", "xian_e",
     };
 
     public static readonly IReadOnlySet<string> UnlockIds = BuildUnlockIds();
@@ -159,6 +164,10 @@ public static class StableIds
         values.Add("equipment:doupi_griddle_lv3");
         values.Add("equipment:egg_rice_wine_station");
 
+        foreach (string recipe in ProjectCake.Xian.XianRules.Recipes) values.Add(RecipeUnlock(recipe));
+        foreach (string eq in new[] { "xian_oven", "xian_board", "xian_soup" })
+            for (int level = 1; level <= 3; level++) values.Add($"equipment:{eq}_lv{level}");
+        values.Add("product:hulatang");
         return values;
     }
 }

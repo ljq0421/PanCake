@@ -28,7 +28,8 @@ public sealed class OrderData
 
     public string PancakeRecipeId => Lines.FirstOrDefault(line => line.ProductKind == ProductKind.Pancake)?.DefinitionId ?? string.Empty;
     public string NoodleRecipeId => Lines.FirstOrDefault(line => line.ProductKind == ProductKind.HotDryNoodles)?.DefinitionId ?? string.Empty;
-    public bool IsComplex => OrderTypeId is "noodles_doupi" or "noodles_egg_rice_wine" or "wuhan_full_combo";
+    public bool IsComplex => OrderTypeId is "noodles_doupi" or "noodles_egg_rice_wine" or "wuhan_full_combo"
+        || ProjectCake.Guangzhou.GuangzhouRules.IsComplex(OrderTypeId);
 }
 
 public enum DeliveryGrade
@@ -58,7 +59,11 @@ public sealed record DeliveredItem(
     PancakeQuality? PancakeQuality = null,
     YoutiaoQuality? YoutiaoQuality = null,
     YoutiaoQuality? InternalYoutiaoQuality = null,
-    WuhanFoodQuality? WuhanQuality = null);
+    WuhanFoodQuality? WuhanQuality = null,
+    ProjectCake.Xian.BunQuality? BunQuality = null,
+    int MeatPortions = 0,
+    bool HasJuice = false,
+    ProjectCake.Guangzhou.GuangzhouFoodQuality? GuangzhouQuality = null);
 
 [Flags]
 public enum WuhanFoodQuality

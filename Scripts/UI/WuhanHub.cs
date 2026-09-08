@@ -59,7 +59,7 @@ public partial class WuhanHub : Control
             int day = index + 1; var button = (Button)_days.GetChild(index); button.Disabled = day > city.HighestUnlockedDay || _save.HasLoadError;
             button.Text = city.DayBestRecords.TryGetValue(day, out DayBestRecord? best) ? $"Day {day} · {Subtitle(day)}\n最佳 ¥{best.TotalRevenue} · 满意 {best.Satisfaction:0}%" : day <= city.HighestUnlockedDay ? $"Day {day} · {Subtitle(day)}\n等待开店" : $"Day {day}\n尚未解锁";
         }
-        _message.Text = city.Completed ? $"武汉已点亮  {new string('★',city.BestStars)}{new string('☆',3-city.BestStars)} · 下一站筹备中" : "合理安排面锅、豆皮库存和顾客优先级。";
+        _message.Text = city.Completed ? $"武汉已点亮  {new string('★',city.BestStars)}{new string('☆',3-city.BestStars)} · 下一站：西安已开放" : "合理安排面锅、豆皮库存和顾客优先级。";
         RenderEquipment(city);
     }
 

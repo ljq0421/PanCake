@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="XianEquipmentData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/XianEquipmentData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+EquipmentId = "xian_board"
+Level = 3
+StockCapacity = 12
+IngredientCapacity = 24
+WorkMultiplier = 0.8
+UpgradePrice = 320
+UnlockAfterDay = 7

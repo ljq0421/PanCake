@@ -12,5 +12,5 @@ public sealed class PlannedCustomer
     public required string CustomerId { get; init; }
     public required string CustomerTypeId { get; init; }
     public double ArrivalTime { get; init; }
-    public required OrderData Order { get; init; }
+    public required OrderData Order { get; set; }
 }

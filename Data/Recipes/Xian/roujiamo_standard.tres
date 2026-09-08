@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="XianRecipeData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/XianRecipeData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+Id = "roujiamo_standard"
+DisplayName = "标准肉夹馍"
+Price = 10
+MeatPortions = 1
+HasJuice = false

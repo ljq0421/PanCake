@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="XianEquipmentData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/XianEquipmentData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+EquipmentId = "xian_soup"
+Level = 1
+Capacity = 8
+ActionSeconds = 0.6
+RefillSeconds = 0.8
+UpgradePrice = 0
+UnlockAfterDay = 0

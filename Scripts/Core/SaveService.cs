@@ -9,9 +9,11 @@ namespace ProjectCake.Core;
 
 public sealed class DayBestRecord
 {
+    public int PerfectGansi { get; set; }
     public int TotalRevenue { get; set; }
     public int CompletedCustomers { get; set; }
     public int PerfectOrders { get; set; }
+    public int IncorrectOrders { get; set; }
     public int HighestCorrectStreak { get; set; }
     public double Satisfaction { get; set; }
     public int YoutiaoUsed { get; set; }
@@ -39,6 +41,9 @@ public sealed class SaveData
 
     [JsonIgnore] public CityProgressData Tianjin => GetCity(StableIds.Cities.Tianjin);
     [JsonIgnore] public CityProgressData Wuhan => GetCity(StableIds.Cities.Wuhan);
+    [JsonIgnore] public CityProgressData Xian => GetCity(StableIds.Cities.Xian);
+    [JsonIgnore] public CityProgressData Guangzhou => GetCity(StableIds.Cities.Guangzhou);
+    [JsonIgnore] public CityProgressData Yangzhou => GetCity(StableIds.Cities.Yangzhou);
     [JsonIgnore] public int HighestUnlockedDay { get => Tianjin.HighestUnlockedDay; set => Tianjin.HighestUnlockedDay = value; }
     [JsonIgnore] public int PurchasedStoveLevel { get => Equipment(Tianjin, "pancake_stove", 1); set => Tianjin.EquipmentLevels["pancake_stove"] = value; }
     [JsonIgnore] public int PurchasedIngredientStationLevel { get => Equipment(Tianjin, "ingredient_station", 1); set => Tianjin.EquipmentLevels["ingredient_station"] = value; }
@@ -53,7 +58,7 @@ public sealed class SaveData
     {
         if (!Cities.TryGetValue(cityId, out CityProgressData? progress))
         {
-            progress = cityId == StableIds.Cities.Wuhan ? SaveService.NewWuhanProgress() : SaveService.NewTianjinProgress();
+            progress = cityId switch { StableIds.Cities.Yangzhou => SaveService.NewYangzhouProgress(), StableIds.Cities.Guangzhou => SaveService.NewGuangzhouProgress(), StableIds.Cities.Xian => SaveService.NewXianProgress(), StableIds.Cities.Wuhan => SaveService.NewWuhanProgress(), StableIds.Cities.Tianjin => SaveService.NewTianjinProgress(), _ => throw new ArgumentException("未知城市", nameof(cityId)) };
             Cities[cityId] = progress;
         }
         return progress;
@@ -125,7 +130,7 @@ public partial class SaveService : Node
             if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
             Data = new SaveData(); Changed?.Invoke(); return;
         }
-        try { SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions); Validate(loaded); Data = loaded!; }
+        try { SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions); Validate(loaded); Data = loaded!; EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); }
         catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
@@ -146,6 +151,15 @@ public partial class SaveService : Node
             if (unlock == "equipment:doupi_griddle_lv1" && city.EquipmentLevels.GetValueOrDefault("doupi_griddle") < 1) { city.EquipmentLevels["doupi_griddle"] = 1; changed = true; }
             if (unlock == "equipment:egg_rice_wine_station" && city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station") < 1) { city.EquipmentLevels["egg_rice_wine_station"] = 1; changed = true; }
         }
+        if (config.CityId == StableIds.Cities.Xian)
+        {
+            foreach (string equipment in new[] { "xian_oven", "xian_soup" })
+                if (config.StartUnlocks.Contains($"equipment:{equipment}_lv1") && city.EquipmentLevels.GetValueOrDefault(equipment) < 1)
+                { city.EquipmentLevels[equipment] = 1; changed = true; }
+        }
+        if (config.CityId == StableIds.Cities.Guangzhou && config.StartUnlocks.Contains("equipment:guangzhou_cabinet_lv1")
+            && city.EquipmentLevels.GetValueOrDefault(ProjectCake.Guangzhou.GuangzhouRules.Cabinet) < 1)
+        { city.EquipmentLevels[ProjectCake.Guangzhou.GuangzhouRules.Cabinet] = 1; changed = true; }
         if (!changed) { error = string.Empty; return true; }
         city.UnlockedContentIds.Sort(StringComparer.Ordinal);
         if (!TrySave(out error)) { Data = snapshot; return false; }
@@ -158,7 +172,7 @@ public partial class SaveService : Node
         bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out DayBestRecord? best);
         int previousBest = hadBest ? best!.TotalRevenue : 0; int gain = Math.Max(0, result.TotalRevenue - previousBest); bool newBest = !hadBest || result.TotalRevenue > previousBest;
         Data.Coins += gain; if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
-        int chapterDays = config.CityId == StableIds.Cities.Wuhan ? 12 : 15;
+        int chapterDays = ChapterDays(config.CityId);
         city.HighestUnlockedDay = Math.Min(chapterDays, Math.Max(city.HighestUnlockedDay, result.Day + 1));
         foreach (string unlock in config.CompletionUnlocks) if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) city.UnlockedContentIds.Add(unlock);
         city.UnlockedContentIds.Sort(StringComparer.Ordinal); city.LastDayPlan = plan;
@@ -173,6 +187,9 @@ public partial class SaveService : Node
         if (config.CityId == StableIds.Cities.Wuhan && city.Completed)
             foreach (string id in new[] { "collectible:wuhan_hot_dry_noodles", "collectible:wuhan_doupi", "collectible:wuhan_egg_rice_wine", "badge:wuhan_chapter" })
                 if (!city.UnlockedCollectibleIds.Contains(id, StringComparer.Ordinal)) city.UnlockedCollectibleIds.Add(id);
+        EnsureXianUnlocked();
+        EnsureGuangzhouUnlocked();
+        EnsureYangzhouUnlocked();
         Data.UnlockedCityIds.Sort(StringComparer.Ordinal);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
         Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted);
@@ -183,9 +200,13 @@ public partial class SaveService : Node
     {
         CityProgressData city = Data.GetCity(cityId);
         if (!city.UnlockedContentIds.Contains(upgradeId, StringComparer.Ordinal)) { error = "该升级尚未开放。"; return false; }
-        (string equipment, int target, int price, string display) = cityId == StableIds.Cities.Wuhan ? ResolveWuhanUpgrade(upgradeId, catalog) : ResolveTianjinUpgrade(upgradeId, catalog);
+        (string equipment, int target, int price, string display) = cityId == StableIds.Cities.Guangzhou ? ResolveGuangzhouUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Xian ? ResolveXianUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Wuhan ? ResolveWuhanUpgrade(upgradeId, catalog) : ResolveTianjinUpgrade(upgradeId, catalog);
         if (equipment.Length == 0) return Fail("不支持该升级。", out error);
-        int current = city.EquipmentLevels.GetValueOrDefault(equipment, equipment is "pancake_stove" or "ingredient_station" or "noodle_cooker" ? 1 : 0);
+        if (cityId == StableIds.Cities.Guangzhou && catalog.GuangzhouEquipment.TryGetValue(upgradeId.Replace("equipment:", ""), out var gzUpgrade)
+            && !city.DayBestRecords.ContainsKey(gzUpgrade.UnlockAfterDay)) return Fail("请先完成对应营业日。", out error);
+        int current = city.EquipmentLevels.GetValueOrDefault(equipment, equipment is "pancake_stove" or "ingredient_station" or "noodle_cooker" or "xian_board" ? 1 : 0);
+        if (cityId == StableIds.Cities.Xian && catalog.XianEquipment.TryGetValue(upgradeId.Replace("equipment:", ""), out var xianUpgrade)
+            && !city.DayBestRecords.ContainsKey(xianUpgrade.UnlockAfterDay)) return Fail("请先完成对应营业日。", out error);
         if (current >= target) return Fail($"{display} 已经购买。", out error);
         if (current != target - 1) return Fail($"需要先购买上一等级的{display[..^3]}。", out error);
         if (Data.Coins < price) return Fail($"金币不足，需要 ¥{price}。", out error);
@@ -217,8 +238,23 @@ public partial class SaveService : Node
     {
         int stars = 0;
         foreach (StarGoalConfig goal in config.StarGoals.OrderBy(goal => goal.Stars))
-            if (result.CompletedCustomers >= goal.MinimumCompletedCustomers && result.Satisfaction + .0001 >= goal.MinimumSatisfaction && result.PerfectOrders >= goal.MinimumPerfectOrders) stars = goal.Stars;
+            if (result.CompletedCustomers >= goal.MinimumCompletedCustomers && result.Satisfaction + .0001 >= goal.MinimumSatisfaction && result.PerfectOrders >= goal.MinimumPerfectOrders && (goal.MaximumIncorrectOrders is null || result.IncorrectOrders <= goal.MaximumIncorrectOrders)) stars = goal.Stars;
         return stars;
+    }
+
+    public static int ChapterDays(string cityId) => cityId switch { StableIds.Cities.Tianjin => 15, StableIds.Cities.Wuhan or StableIds.Cities.Xian or StableIds.Cities.Guangzhou or StableIds.Cities.Yangzhou => 12, _ => throw new ArgumentException("未知城市") };
+    public static CityProgressData NewXianProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["xian_board"] = 1, ["xian_oven"] = 0, ["xian_soup"] = 0 } };
+    private void EnsureXianUnlocked()
+    {
+        if (!Data.Cities.TryGetValue(StableIds.Cities.Wuhan, out var wuhan) || !wuhan.Completed) return;
+        if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Xian)) Data.UnlockedCityIds.Add(StableIds.Cities.Xian);
+        Data.GetCity(StableIds.Cities.Xian);
+    }
+    private static (string, int, int, string) ResolveXianUpgrade(string id, DataCatalog catalog)
+    {
+        if (catalog.XianEquipment.TryGetValue(id.Replace("equipment:", ""), out var d) && d.Level > 1)
+            return (d.EquipmentId, d.Level, d.UpgradePrice, $"{ProjectCake.Xian.XianRules.EquipmentName(d.EquipmentId)} Lv{d.Level}");
+        return (string.Empty, 0, 0, string.Empty);
     }
 
     public static CityProgressData NewTianjinProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["pancake_stove"] = 1, ["ingredient_station"] = 1, ["fryer"] = 0 } };
@@ -270,7 +306,7 @@ public partial class SaveService : Node
         "equipment:doupi_griddle_lv2" when catalog.TryGetDoupiGriddle(2, out var d) => ("doupi_griddle", 2, d.UpgradePrice, "豆皮锅 Lv2"),
         "equipment:doupi_griddle_lv3" when catalog.TryGetDoupiGriddle(3, out var d) => ("doupi_griddle", 3, d.UpgradePrice, "豆皮锅 Lv3"), _ => (string.Empty, 0, 0, string.Empty),
     };
-    private static DayBestRecord ToRecord(DayResult r) => new() { TotalRevenue = r.TotalRevenue, CompletedCustomers = r.CompletedCustomers, PerfectOrders = r.PerfectOrders, HighestCorrectStreak = r.HighestCorrectStreak, Satisfaction = r.Satisfaction, YoutiaoUsed = r.YoutiaoUsed, YoutiaoBurnt = r.YoutiaoBurnt };
+    private static DayBestRecord ToRecord(DayResult r) => new() { TotalRevenue = r.TotalRevenue, CompletedCustomers = r.CompletedCustomers, PerfectOrders = r.PerfectOrders, IncorrectOrders = r.IncorrectOrders, HighestCorrectStreak = r.HighestCorrectStreak, Satisfaction = r.Satisfaction, YoutiaoUsed = r.YoutiaoUsed, YoutiaoBurnt = r.YoutiaoBurnt };
     private static bool Fail(string message, out string error) { error = message; return false; }
     private static SaveData Clone(SaveData data) => JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(data, JsonOptions), JsonOptions)!;
     private static void Validate(SaveData? data)
@@ -278,7 +314,7 @@ public partial class SaveService : Node
         if (data is null || data.Version != CurrentVersion || data.Coins < 0) throw new InvalidDataException("存档版本或金币数值无效。");
         foreach ((string id, CityProgressData city) in data.Cities)
         {
-            int max = id == StableIds.Cities.Wuhan ? 12 : 15;
+            int max = ChapterDays(id);
             if (city.HighestUnlockedDay is < 1 || city.HighestUnlockedDay > max || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
         }
     }

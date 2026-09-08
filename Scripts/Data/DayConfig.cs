@@ -11,6 +11,12 @@ public enum ProductKind
     HotDryNoodles,
     Doupi,
     EggRiceWine,
+    Roujiamo,
+    Hulatang,
+    RiceRoll,
+    SiuMai,
+    HarGow,
+    MorningTea,
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<SatisfactionAverageMode>))]
@@ -78,10 +84,19 @@ public sealed class DayConfig
     public DayConstraintConfig Constraints { get; set; } = new();
 
     public List<StarGoalConfig> StarGoals { get; set; } = new();
+    public GuangzhouDaySettings? Guangzhou { get; set; }
+}
+
+public sealed class GuangzhouDaySettings
+{
+    public Dictionary<string, double> DimSumWeights { get; set; } = new();
+    public double EmptyStockWeightMultiplier { get; set; } = .2;
+    public int WaitingOrdersThreshold { get; set; } = 2;
 }
 
 public sealed class StarGoalConfig
 {
+    public int? MaximumIncorrectOrders { get; set; }
     [JsonRequired]
     public int Stars { get; set; }
 
@@ -109,6 +124,10 @@ public sealed class ArrivalSegmentConfig
 
 public sealed class DayConstraintConfig
 {
+    public int MaxDoubleOrders { get; set; } = int.MaxValue;
+    public int MaxSimultaneousDoubleOrders { get; set; } = int.MaxValue;
+    public double WaitingPressureThreshold { get; set; }
+    public double AdditionalPressureThreshold { get; set; }
     [JsonRequired]
     public int MaxBigOrderCustomers { get; set; }
 

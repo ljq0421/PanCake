@@ -42,7 +42,7 @@ The player moves through a shop-management home, a timed service shift, a receip
 - Complete Tianjin chapter design and balancing documents in `docs`.
 - Background, three stove levels, three fryer levels, food layers, ingredients, tools, 24 customer appearances with four expressions each, soy milk, finished products, and coin art in `resource/art/TianJin`.
 - Existing deterministic self-tests and visual-capture scenes for all gameplay systems.
-- Customer portraits are integrated. A bespoke order bubble and a bespoke patience frame are not yet available; their runtime-drawn replacements must remain swappable.
+- Customer portraits, a bespoke Tianjin order bubble, and a bespoke patience frame are integrated. Order text, food icons, delivery progress, and patience fill remain dynamic. Tianjin stock art shows exact units up to six, up to ten separated density slots above six, and separate liquid levels.
 
 ## Product Principles
 

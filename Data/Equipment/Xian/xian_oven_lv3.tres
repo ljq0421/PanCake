@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="XianEquipmentData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/XianEquipmentData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+EquipmentId = "xian_oven"
+Level = 3
+Capacity = 6
+StockCapacity = 10
+ActionSeconds = 2.4
+BurnProof = true
+Automatic = true
+UpgradePrice = 480
+UnlockAfterDay = 10

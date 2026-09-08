@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="GuangzhouEquipmentData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://Scripts/Data/GuangzhouEquipmentData.cs" id="1"]
+[resource]
+script = ExtResource("1")
+EquipmentId = "guangzhou_stove"
+DisplayName = "恒温双屉肠粉炉"
+Level = 2
+Capacity = 2
+CookSeconds = 2.5
+BestWindowSeconds = 2
+NormalWindowSeconds = 1.5
+KeepWarm = true
+PopOut = false
+UpgradePrice = 180
+UnlockAfterDay = 4

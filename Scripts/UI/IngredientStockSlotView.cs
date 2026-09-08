@@ -14,6 +14,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     private readonly ProgressBar _stock;
     private readonly StyleBoxFlat _stockFill;
     private string _displayName = string.Empty;
+    private bool _usesCaption;
     private IngredientStockStatus? _lastStatus;
     private Tween? _feedbackTween;
 
@@ -60,6 +61,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         IngredientVisualMode visualMode)
     {
         _displayName = displayName;
+        _usesCaption = spec.CaptionRect.HasValue;
         Configure(trayTexture, ingredientTexture, displayName, spec, visualMode);
         CountLabel.Text = "0/0";
         _refill.Name = $"IngredientRefill_{StableNodeKey(Name)}";
@@ -79,9 +81,15 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         CountLabel.Text = status == IngredientStockStatus.Refilling
             ? $"{refillProgress:P0}"
             : $"{quantity}/{capacity}";
-        CountLabel.Modulate = StatusColor(status);
-        SetStockFraction(shownFraction);
-        SetIngredientAvailable(quantity > 0 || status == IngredientStockStatus.Refilling);
+        if (_usesCaption)
+        {
+            CountLabel.Modulate = Colors.White;
+            CountLabel.AddThemeColorOverride("font_color", status == IngredientStockStatus.Normal
+                ? TianjinUi.Brown : TianjinUi.BrownDark);
+        }
+        else CountLabel.Modulate = StatusColor(status);
+        SetStock(quantity, capacity);
+        SetIngredientAvailable(quantity > 0);
 
         _stock.Value = shownFraction * 100;
         _stock.Visible = status == IngredientStockStatus.Refilling;

@@ -50,6 +50,7 @@ public partial class VisualCapture : Node
             ? Math.Clamp(parsedPage, 1, 6) : 1;
         bool captureExpressions = args.Contains("--capture-customer-expressions", StringComparer.Ordinal) || expressionPageArg is not null;
         bool captureFryerSlots = args.Contains("--capture-fryer-slots", StringComparer.Ordinal);
+        bool captureStockGallery = args.Contains("--capture-stock-gallery", StringComparer.Ordinal);
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
@@ -57,7 +58,11 @@ public partial class VisualCapture : Node
             GetNode<SaveService>("/root/SaveService").UsePathForTests(temporarySave);
         }
 
-        if (captureFryerSlots)
+        if (captureStockGallery)
+        {
+            BuildIngredientStockGallery();
+        }
+        else if (captureFryerSlots)
         {
             BuildFryerSlotGallery();
         }
@@ -124,6 +129,17 @@ public partial class VisualCapture : Node
                         ReduceTo(workstation.Inventory, StableIds.Ingredients.Batter, 5);
                         ReduceTo(workstation.Inventory, StableIds.Ingredients.Egg, 2);
                         ReduceTo(workstation.Inventory, StableIds.Ingredients.Sauce, 0);
+                    }
+                    string? stockArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-stock=", StringComparison.Ordinal));
+                    if (stockArg is not null && int.TryParse(stockArg.Split('=')[1], out int stockQuantity))
+                    {
+                        foreach (string ingredient in TianjinWorkbenchLayout.IngredientOrder)
+                            ReduceTo(workstation.Inventory, ingredient, Math.Max(0, stockQuantity));
+                        while (workstation.SoyMilkTray is { Quantity: > 0 } soy && soy.Quantity > stockQuantity)
+                        {
+                            soy.TryConsumeForDelivery();
+                            soy.Tick(1);
+                        }
                     }
                     if (captureInteraction)
                     {
@@ -199,6 +215,12 @@ public partial class VisualCapture : Node
                     }
                     if (phase4Day == 11)
                     {
+                        if (args.Contains("--capture-low-patience", StringComparer.Ordinal)
+                            && controller.CustomerQueue?.Slots.FirstOrDefault() is CustomerRuntime impatient)
+                        {
+                            impatient.WaitSeconds = impatient.LeaveAtSeconds * .9;
+                            impatient.State = CustomerState.Angry;
+                        }
                         dayScreen.RefreshForCapture(true);
                         workstation.Tick(.3);
                         dayScreen.SetProcess(false);
@@ -259,6 +281,7 @@ public partial class VisualCapture : Node
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string? outputArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-output=", StringComparison.Ordinal));
         string output = outputArg is not null ? outputArg["--capture-output=".Length..]
+            : captureStockGallery ? $"res://.godot/ingredient_stock_gallery{sizeSuffix}.png"
             : captureBagged ? $"res://.godot/phase4_bagged{sizeSuffix}.png"
             : captureRefilling ? $"res://.godot/phase4_refilling{sizeSuffix}.png"
             : captureDirectDelivery ? $"res://.godot/direct_delivery{sizeSuffix}.png"
@@ -292,6 +315,111 @@ public partial class VisualCapture : Node
             if (File.Exists(absolute)) File.Delete(absolute);
         }
         GetTree().Quit(0);
+    }
+
+    private void BuildIngredientStockGallery()
+    {
+        Node main = GetNode("../Main");
+        main.ProcessMode = ProcessModeEnum.Disabled;
+        main.GetNode<Node2D>("ShopRoot").Visible = false;
+        foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Visible = false;
+
+        var gallery = new ColorRect
+        {
+            Color = TianjinUi.Cream,
+            Theme = TianjinUi.CreateTheme(),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        TianjinUi.FullRect(gallery);
+        AddChild(gallery);
+
+        Label title = TianjinUi.Label("天津工作台 · 小料库存变化", 36, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        title.Position = new Vector2(100, 28);
+        title.Size = new Vector2(1720, 58);
+        gallery.AddChild(title);
+
+        Label subtitle = TianjinUi.Label("Lv3 配料台 · 同一盘面尺寸与固定位置 · 从满盘到空盘，再完成补货", 22,
+            TianjinUi.Brown, HorizontalAlignment.Center);
+        subtitle.Position = new Vector2(100, 92);
+        subtitle.Size = new Vector2(1720, 40);
+        gallery.AddChild(subtitle);
+
+        var counter = new ColorRect
+        {
+            Color = TianjinUi.Orange.Lerp(TianjinUi.CreamMuted, .42f),
+            Position = new Vector2(144, 200),
+            Size = new Vector2(1640, 756),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        gallery.AddChild(counter);
+
+        string[] states = { "满盘", "半盘", "剩 3 份", "空盘", "补货完成" };
+        for (int column = 0; column < states.Length; column++)
+        {
+            Label heading = TianjinUi.Label(states[column], 27, TianjinUi.BrownDark, HorizontalAlignment.Center);
+            heading.Position = new Vector2(184 + column * 318, 144);
+            heading.Size = new Vector2(280, 44);
+            gallery.AddChild(heading);
+        }
+
+        DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        var level = catalog.IngredientStationsByLevel[3];
+        var art = new TianjinArtCatalog();
+        (string Id, string Name)[] ingredients =
+        {
+            (StableIds.Ingredients.Crispy, "薄脆"),
+            (StableIds.Ingredients.Egg, "鸡蛋"),
+            (StableIds.Ingredients.Ham, "火腿"),
+            (StableIds.Ingredients.Scallion, "香葱"),
+        };
+
+        for (int row = 0; row < ingredients.Length; row++)
+        {
+            (string id, string displayName) = ingredients[row];
+            for (int column = 0; column < states.Length; column++)
+            {
+                var inventory = new IngredientInventory(level);
+                int capacity = inventory.GetCapacity(id);
+                int target = column switch
+                {
+                    0 => capacity,
+                    1 => capacity / 2,
+                    2 => Math.Min(3, capacity),
+                    _ => 0,
+                };
+                ReduceTo(inventory, id, target);
+                var slot = new IngredientStockSlotView
+                {
+                    Name = $"StockGallery_{id}_{column}",
+                    Position = new Vector2(184 + column * 318, 212 + row * 190),
+                    Size = TianjinWorkbenchLayout.IngredientSlot(id).MinimumSize,
+                };
+                gallery.AddChild(slot);
+                slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), displayName,
+                    TianjinWorkbenchLayout.IngredientSlot(id), id == StableIds.Ingredients.Scallion
+                        ? IngredientVisualMode.LooseStock : IngredientVisualMode.HybridStock);
+                slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id), 0, true);
+
+                if (column == 4)
+                {
+                    // Exercise a real refill before capturing its completed state;
+                    // the gallery never derives ingredient quantities from progress.
+                    inventory.TryBeginRefill(id);
+                    inventory.Tick(level.RefillSeconds * .5);
+                    slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id),
+                        inventory.GetRefillProgress(id), true);
+                    inventory.Tick(level.RefillSeconds);
+                    slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id),
+                        inventory.GetRefillProgress(id), true);
+                }
+            }
+        }
+
+        Label note = TianjinUi.Label("高库存看疏密，少量逐份可数；标牌保留实际数量。补货完成后恢复满盘。", 22,
+            TianjinUi.BrownDark, HorizontalAlignment.Center);
+        note.Position = new Vector2(100, 980);
+        note.Size = new Vector2(1720, 52);
+        gallery.AddChild(note);
     }
 
     private void BuildFryerSlotGallery()

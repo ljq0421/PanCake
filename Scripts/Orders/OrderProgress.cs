@@ -24,7 +24,13 @@ public sealed class OrderProgress
     public OrderData Order { get; }
     public IReadOnlyList<DeliveredItem> DeliveredItems => _delivered;
     public bool HasRecipeMismatch { get; private set; }
+    public bool HasMeatMismatch { get; private set; }
+    public bool HasJuiceMismatch { get; private set; }
+    public bool HasBunOverbrowned { get; private set; }
     public bool HasQualityIssue { get; private set; }
+    public bool HasRiceRollDry { get; private set; }
+    public bool HasRiceRollBroken { get; private set; }
+    public bool HasDimSumOversteamed { get; private set; }
     public bool HasNoodlesSoft { get; private set; }
     public bool HasNoodlesOvercooked { get; private set; }
     public bool HasDoupiOverbrowned { get; private set; }
@@ -40,16 +46,31 @@ public sealed class OrderProgress
 
     public bool CanAccept(DeliveredItem item, out string error)
     {
+        if (ProjectCake.Guangzhou.GuangzhouRules.IsProduct(item.ProductKind))
+        {
+            var q = item.GuangzhouQuality;
+            bool valid = Order.CityId == StableIds.Cities.Guangzhou && q?.Complete == true && (item.ProductKind switch
+            {
+                ProductKind.RiceRoll => q.RiceRoll is not null,
+                ProductKind.SiuMai => q.DimSum is not null && item.DefinitionId == ProjectCake.Guangzhou.GuangzhouRules.SiuMai,
+                ProductKind.HarGow => q.DimSum is not null && item.DefinitionId == ProjectCake.Guangzhou.GuangzhouRules.HarGow,
+                ProductKind.MorningTea => item.DefinitionId == ProjectCake.Guangzhou.GuangzhouRules.Tea,
+                _ => false,
+            });
+            if (!valid) { error = "广州商品尚未制作完整或商品类型不匹配。"; return false; }
+        }
         if (IsComplete)
         {
             error = "订单已经完成。";
             return false;
         }
-        if (item.PancakeQuality == PancakeQuality.Burnt || item.YoutiaoQuality == Fryer.YoutiaoQuality.Burnt)
+        if (item.BunQuality == ProjectCake.Xian.BunQuality.Burnt || item.PancakeQuality == PancakeQuality.Burnt || item.YoutiaoQuality == Fryer.YoutiaoQuality.Burnt)
         {
             error = "焦糊商品不能交付。";
             return false;
         }
+        if (item.ProductKind == ProductKind.Roujiamo && (item.MeatPortions is < 1 or > 2 || item.BunQuality is null || item.DefinitionId != ProjectCake.Xian.XianRules.RecipeId(item.MeatPortions, item.HasJuice)))
+        { error = "肉夹馍尚未制作完整。"; return false; }
         if (!CanAccept(item.ProductKind))
         {
             error = "这位顾客不需要更多这种商品。";
@@ -63,7 +84,7 @@ public sealed class OrderProgress
     {
         if (!CanAccept(item, out string error)) return OrderItemAcceptance.Reject(error);
 
-        int lineIndex = item.ProductKind is ProductKind.Pancake or ProductKind.HotDryNoodles
+        int lineIndex = item.ProductKind is ProductKind.Pancake or ProductKind.HotDryNoodles or ProductKind.Roujiamo or ProductKind.RiceRoll
             ? FindRecipeLine(item.ProductKind, item.DefinitionId)
             : FindAvailableLine(item.ProductKind);
         if (lineIndex < 0) return OrderItemAcceptance.Reject("这位顾客不需要更多这种商品。");
@@ -71,7 +92,29 @@ public sealed class OrderProgress
         OrderLineData target = Order.Lines[lineIndex];
         _fulfilled[lineIndex]++;
         _delivered.Add(item);
-        if (item.ProductKind == ProductKind.Pancake)
+        if (item.ProductKind == ProductKind.RiceRoll)
+        {
+            var q = item.GuangzhouQuality!;
+            HasRecipeMismatch |= target.DefinitionId != item.DefinitionId;
+            HasRiceRollDry |= q.RiceRoll == ProjectCake.Guangzhou.RiceRollQuality.Dry;
+            HasRiceRollBroken |= q.Broken;
+            HasQualityIssue |= q.RiceRoll != ProjectCake.Guangzhou.RiceRollQuality.Perfect || q.Broken;
+        }
+        else if (item.ProductKind is ProductKind.SiuMai or ProductKind.HarGow)
+        {
+            var q = item.GuangzhouQuality!;
+            HasDimSumOversteamed |= q.DimSum == ProjectCake.Guangzhou.DimSumQuality.Oversteamed;
+            HasQualityIssue |= q.DimSum != ProjectCake.Guangzhou.DimSumQuality.Perfect;
+        }
+        else if (item.ProductKind == ProductKind.Roujiamo)
+        {
+            HasMeatMismatch |= item.MeatPortions != ProjectCake.Xian.XianRules.Meat(target.DefinitionId);
+            HasJuiceMismatch |= item.HasJuice != ProjectCake.Xian.XianRules.Juice(target.DefinitionId);
+            HasRecipeMismatch |= HasMeatMismatch || HasJuiceMismatch;
+            HasBunOverbrowned |= item.BunQuality == ProjectCake.Xian.BunQuality.Overbrowned;
+            HasQualityIssue |= HasBunOverbrowned;
+        }
+        else if (item.ProductKind == ProductKind.Pancake)
         {
             if (!string.Equals(target.DefinitionId, item.DefinitionId, StringComparison.Ordinal)) HasRecipeMismatch = true;
             if (item.PancakeQuality != Pancake.PancakeQuality.Perfect) HasQualityIssue = true;

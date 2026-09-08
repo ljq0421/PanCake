@@ -1,0 +1,93 @@
+{
+  "cityId": "city:xian",
+  "satisfactionAverageMode": "completedCustomers",
+  "day": 12,
+  "durationSeconds": 180,
+  "customerCount": 26,
+  "expectedRevenue": 520,
+  "patienceMultiplier": 1,
+  "maxWaitingCustomers": 4,
+  "randomSeed": 3012,
+  "customerWeights": {
+    "xian_normal": 0.4,
+    "xian_office_worker": 0.2,
+    "xian_regular": 0.2,
+    "xian_tourist": 0.2
+  },
+  "orderTypeWeights": {
+    "xian_a": 0.3,
+    "xian_b": 0.05,
+    "xian_c": 0.35,
+    "xian_d": 0.15,
+    "xian_e": 0.15
+  },
+  "recipeWeights": {
+    "roujiamo_standard": 0.1,
+    "roujiamo_juicy": 0.2,
+    "roujiamo_extra_meat": 0.35,
+    "roujiamo_extra_juicy": 0.35
+  },
+  "arrivalSegments": [
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.15
+    },
+    {
+      "start": 0.2,
+      "end": 0.75,
+      "customerRatio": 0.7
+    },
+    {
+      "start": 0.75,
+      "end": 1,
+      "customerRatio": 0.15
+    }
+  ],
+  "startUnlocks": [],
+  "completionUnlocks": [],
+  "availableRecipeIds": [
+    "roujiamo_standard",
+    "roujiamo_juicy",
+    "roujiamo_extra_meat",
+    "roujiamo_extra_juicy"
+  ],
+  "availableProductKinds": [
+    "roujiamo",
+    "hulatang"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 0,
+    "maxPancakesPerCustomer": 0,
+    "maxConsecutiveComplexOrders": 2,
+    "pressureDelaySeconds": 2,
+    "maxPressureDelaySeconds": 4,
+    "maxDoubleOrders": 26,
+    "maxSimultaneousDoubleOrders": 2,
+    "waitingPressureThreshold": 4,
+    "additionalPressureThreshold": 5
+  },
+  "starGoals": [
+    {
+      "stars": 1,
+      "minimumCompletedCustomers": 19,
+      "minimumSatisfaction": 70,
+      "minimumPerfectOrders": 0
+    },
+    {
+      "stars": 2,
+      "minimumCompletedCustomers": 22,
+      "minimumSatisfaction": 82,
+      "minimumPerfectOrders": 0
+    },
+    {
+      "stars": 3,
+      "minimumCompletedCustomers": 24,
+      "minimumSatisfaction": 90,
+      "minimumPerfectOrders": 0,
+      "maximumIncorrectOrders": 2
+    }
+  ]
+}

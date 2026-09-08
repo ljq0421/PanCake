@@ -18,6 +18,8 @@ public partial class TianjinMapScreen : Control
     private TextureRect _wuhanLockedIcon = null!;
     private Label _wuhanUnlockedEmblem = null!;
     private bool _lightUpPlayed;
+    private PanelContainer _xianCard = null!;
+    private Label _xianState = null!;
 
     // Production keeps progression gating intact. QA can reach any map card with
     // the existing --dev-ui launch flag, without marking that city as unlocked.
@@ -78,8 +80,10 @@ public partial class TianjinMapScreen : Control
         var back = TianjinUi.Button("返回经营首页", false, new Vector2(210, 58));
         back.Pressed += () => HubRequested?.Invoke(); header.AddChild(back);
 
+        var xianTest = TianjinUi.Button("测试直达西安", false, new Vector2(190, 58));
+        xianTest.Visible = DeveloperToolsVisible; xianTest.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Xian); header.AddChild(xianTest);
         var route = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, SizeFlagsVertical = SizeFlags.ExpandFill };
-        route.AddThemeConstantOverride("separation", 45); root.AddChild(route);
+        route.AddThemeConstantOverride("separation", 24); root.AddChild(route);
         _tianjinCard = CityCard(_art.TianjinMapNode, "天津", "煎饼果子 · 油条 · 豆浆", out _tianjinState); route.AddChild(_tianjinCard);
         _tianjinCard.MouseDefaultCursorShape = CursorShape.PointingHand;
         _tianjinCard.GuiInput += input => { if (IsClick(input)) CityRequested?.Invoke(StableIds.Cities.Tianjin); };
@@ -91,14 +95,26 @@ public partial class TianjinMapScreen : Control
             bool unlocked = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
             if (IsClick(input) && CanEnterCity(unlocked, DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Wuhan);
         };
+        var nextArrow = Text("➜", 40, TianjinUi.Brown); nextArrow.VerticalAlignment = VerticalAlignment.Center; route.AddChild(nextArrow);
+        _xianCard = CityCard(_art.LockedMapNode, "西安", "肉夹馍 · 胡辣汤", out _xianState); _xianCard.Name = "XianCityCard"; route.AddChild(_xianCard);
+        _xianCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon").Visible = false;
+        _xianCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem").Visible = true;
+        _xianCard.GuiInput += input => { if (IsClick(input) && CanEnterCity(_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian), DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Xian); };
         _wuhanLockedIcon = _wuhanCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon");
         _wuhanUnlockedEmblem = _wuhanCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem");
-        root.AddChild(Text("完成天津 Day 15 并获得一星即可前往武汉；点亮武汉后，下一站进入筹备。", 19, TianjinUi.BrownText));
+        BuildGuangzhouEntry(root);
+        BuildYangzhouEntry(root);
+        root.AddChild(Text("天津 Day 15 一星开放武汉；武汉 Day 12 一星开放西安；西安 Day 12 一星开放广州。", 19, TianjinUi.BrownText));
     }
 
     private void Render()
     {
         if (_save is null) return;
+        RenderGuangzhouEntry();
+        RenderYangzhouEntry();
+        var xian = _save.Data.Xian; bool xianOpen = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian);
+        _xianState.Text = xian.Completed ? $"已点亮 {new string('★', xian.BestStars)}{new string('☆', 3 - xian.BestStars)}" : xianOpen ? $"已开放 · Day {xian.HighestUnlockedDay}" : "完成武汉 Day 12 一星后开放";
+        SetCardColor(_xianCard, xian.Completed ? TianjinUi.Yellow : xianOpen ? TianjinUi.CreamMuted : TianjinUi.Paper);
         int stars = _save.Data.TianjinBestStars;
         bool complete = _save.Data.TianjinCompleted;
         _tianjinState.Text = complete ? $"已点亮  {new string('★', stars)}{new string('☆', 3 - stars)}\n最高星级：{stars}" : "尚未点亮\n完成 Day 15 并至少获得一星";
@@ -110,14 +126,14 @@ public partial class TianjinMapScreen : Control
         _wuhanUnlockedEmblem.Visible = false;
         CityProgressData wuhanProgress = _save.Data.GetCity(StableIds.Cities.Wuhan);
         _wuhanState.Text = !wuhan && DeveloperToolsVisible ? "测试直达\n不写入城市解锁" : !wuhan ? "未开放\n可使用上方测试入口" : wuhanProgress.Completed
-            ? $"已点亮  {new string('★', wuhanProgress.BestStars)}{new string('☆', 3 - wuhanProgress.BestStars)}\n下一站筹备中"
+            ? $"已点亮  {new string('★', wuhanProgress.BestStars)}{new string('☆', 3 - wuhanProgress.BestStars)}\n下一站：西安"
             : $"路线已开放\n武汉 Day {wuhanProgress.HighestUnlockedDay}";
         SetCardColor(_wuhanCard, wuhanProgress.Completed ? TianjinUi.Yellow : wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);
     }
 
     private static PanelContainer CityCard(Texture2D icon, string city, string subtitle, out Label state)
     {
-        var card = new PanelContainer { CustomMinimumSize = new Vector2(470, 390) };
+        var card = new PanelContainer { CustomMinimumSize = new Vector2(430, 390) };
         var box = new VBoxContainer { Name = "VBoxContainer", Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
         box.AddThemeConstantOverride("separation", 10); card.AddChild(box);
         var iconStack = new Control { Name = "IconStack", CustomMinimumSize = new Vector2(170, 170) };

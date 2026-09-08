@@ -39,7 +39,7 @@ public partial class StageThreeSelfTest : Node
     {
         Check(catalog.IsValid, "阶段 3 数据目录通过校验");
         bool found = catalog.TryGetCustomer("normal", out CustomerTypeData normal);
-        Check(catalog.CustomersById.Count == 9 && found, "加载天津与武汉共九类顾客");
+        Check(new[] { "normal", "office_worker", "regular", "big_order", "wuhan_normal", "wuhan_office_worker", "wuhan_regular", "wuhan_tourist", "wuhan_big_order" }.All(catalog.CustomersById.ContainsKey) && found, "加载天津与武汉共九类顾客");
         if (!found) return;
         Check(Close(normal.HappyUntilSeconds, 15) && Close(normal.NormalUntilSeconds, 30) && Close(normal.ImpatientUntilSeconds, 42) && Close(normal.LeaveAtSeconds, 50) && Close(normal.PerfectTipRate, .1), "普通顾客耐心与小费数值正确");
     }

@@ -1,0 +1,65 @@
+{
+  "cityId": "city:xian",
+  "satisfactionAverageMode": "completedCustomers",
+  "day": 2,
+  "durationSeconds": 85,
+  "customerCount": 9,
+  "expectedRevenue": 94,
+  "patienceMultiplier": 1,
+  "maxWaitingCustomers": 4,
+  "randomSeed": 3002,
+  "customerWeights": {
+    "xian_normal": 1.0
+  },
+  "orderTypeWeights": {
+    "xian_a": 1.0
+  },
+  "recipeWeights": {
+    "roujiamo_standard": 0.6,
+    "roujiamo_juicy": 0.4
+  },
+  "arrivalSegments": [
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.2
+    },
+    {
+      "start": 0.2,
+      "end": 0.75,
+      "customerRatio": 0.6
+    },
+    {
+      "start": 0.75,
+      "end": 1,
+      "customerRatio": 0.2
+    }
+  ],
+  "startUnlocks": [
+    "recipe:roujiamo_juicy"
+  ],
+  "completionUnlocks": [
+    "equipment:xian_board_lv2"
+  ],
+  "availableRecipeIds": [
+    "roujiamo_standard",
+    "roujiamo_juicy"
+  ],
+  "availableProductKinds": [
+    "roujiamo"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 0,
+    "maxPancakesPerCustomer": 0,
+    "maxConsecutiveComplexOrders": 2,
+    "pressureDelaySeconds": 2,
+    "maxPressureDelaySeconds": 4,
+    "maxDoubleOrders": 0,
+    "maxSimultaneousDoubleOrders": 0,
+    "waitingPressureThreshold": 4,
+    "additionalPressureThreshold": 5
+  },
+  "starGoals": []
+}

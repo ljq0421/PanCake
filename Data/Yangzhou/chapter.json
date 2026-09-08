@@ -1,0 +1,538 @@
+{
+  "Products": [
+    {
+      "Id": "G01",
+      "Name": "烫干丝",
+      "Price": 10,
+      "UnlockDay": 1
+    },
+    {
+      "Id": "B01",
+      "Name": "三丁包",
+      "Price": 4,
+      "UnlockDay": 3
+    },
+    {
+      "Id": "B02",
+      "Name": "翡翠烧卖",
+      "Price": 4,
+      "UnlockDay": 5
+    },
+    {
+      "Id": "T01",
+      "Name": "绿杨春茶",
+      "Price": 3,
+      "UnlockDay": 2
+    }
+  ],
+  "Templates": [
+    {
+      "Id": "A",
+      "Name": "一碟干丝",
+      "Items": {
+        "G01": 1
+      }
+    },
+    {
+      "Id": "B",
+      "Name": "一杯茶",
+      "Items": {
+        "T01": 1
+      }
+    },
+    {
+      "Id": "C",
+      "Name": "三丁早点",
+      "Items": {
+        "B01": 2
+      }
+    },
+    {
+      "Id": "D",
+      "Name": "翡翠早点",
+      "Items": {
+        "B02": 2
+      }
+    },
+    {
+      "Id": "E",
+      "Name": "干丝早茶",
+      "Items": {
+        "G01": 1,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "F",
+      "Name": "三丁茶点",
+      "Items": {
+        "B01": 2,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "G",
+      "Name": "翡翠茶点",
+      "Items": {
+        "B02": 2,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "H",
+      "Name": "三丁招牌早茶",
+      "Items": {
+        "G01": 1,
+        "B01": 1,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "I",
+      "Name": "翡翠招牌早茶",
+      "Items": {
+        "G01": 1,
+        "B02": 1,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "J",
+      "Name": "蒸点组合",
+      "Items": {
+        "B01": 2,
+        "B02": 2,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "K",
+      "Name": "完整扬州早茶",
+      "Items": {
+        "G01": 1,
+        "B01": 1,
+        "B02": 1,
+        "T01": 1
+      }
+    },
+    {
+      "Id": "L",
+      "Name": "结伴早茶大单",
+      "Items": {
+        "G01": 2,
+        "B01": 3,
+        "B02": 2,
+        "T01": 2
+      }
+    }
+  ],
+  "Customers": [
+    {
+      "Id": "ordinary",
+      "Name": "普通茶客",
+      "Patience": 60,
+      "TipRate": 0.1,
+      "Preferences": {}
+    },
+    {
+      "Id": "regular",
+      "Name": "老茶客",
+      "Patience": 72,
+      "TipRate": 0.15,
+      "Preferences": {
+        "A": 15,
+        "E": 45,
+        "H": 15,
+        "I": 10,
+        "K": 15
+      }
+    },
+    {
+      "Id": "tourist",
+      "Name": "游客",
+      "Patience": 52,
+      "TipRate": 0.2,
+      "Preferences": {
+        "H": 25,
+        "I": 20,
+        "J": 10,
+        "K": 45
+      }
+    },
+    {
+      "Id": "group",
+      "Name": "结伴茶客",
+      "Patience": 80,
+      "TipRate": 0.1,
+      "Preferences": {
+        "J": 30,
+        "K": 30,
+        "L": 40
+      }
+    }
+  ],
+  "Days": [
+    {
+      "Day": 1,
+      "Duration": 70,
+      "Customers": 5,
+      "Title": "一碟干丝",
+      "Hint": "切一批 → 拖入漏勺 → 下压提起三次 → 调味 → 放入托盘 → 整套出餐",
+      "Weights": {
+        "A": 100
+      },
+      "CustomerWeights": {
+        "ordinary": 100,
+        "regular": 0,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8200
+    },
+    {
+      "Day": 2,
+      "Duration": 80,
+      "Customers": 6,
+      "Title": "添一杯绿杨春",
+      "Hint": "茶只需取用，凑齐后再整套出餐。",
+      "Weights": {
+        "A": 55,
+        "B": 10,
+        "E": 35
+      },
+      "CustomerWeights": {
+        "ordinary": 100,
+        "regular": 0,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8201
+    },
+    {
+      "Day": 3,
+      "Duration": 90,
+      "Customers": 8,
+      "Title": "第一笼三丁包",
+      "Hint": "装入生坯、盖笼开蒸；等包子时继续烫干丝。",
+      "Weights": {
+        "A": 35,
+        "C": 30,
+        "F": 15,
+        "H": 20
+      },
+      "CustomerWeights": {
+        "ordinary": 100,
+        "regular": 0,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8202
+    },
+    {
+      "Day": 4,
+      "Duration": 100,
+      "Customers": 9,
+      "Title": "三线早茶",
+      "Hint": "提前备一笼包子，别等顾客来了才开蒸。",
+      "Weights": {
+        "A": 20,
+        "C": 15,
+        "E": 20,
+        "F": 20,
+        "H": 25
+      },
+      "CustomerWeights": {
+        "ordinary": 100,
+        "regular": 0,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8203
+    },
+    {
+      "Day": 5,
+      "Duration": 105,
+      "Customers": 10,
+      "Title": "翡翠烧卖",
+      "Hint": "烧卖5.5秒熟，比三丁包早；一层不能混蒸。",
+      "Weights": {
+        "A": 10,
+        "C": 10,
+        "D": 10,
+        "F": 15,
+        "G": 15,
+        "H": 10,
+        "I": 10,
+        "J": 10,
+        "K": 10
+      },
+      "CustomerWeights": {
+        "ordinary": 100,
+        "regular": 0,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8204
+    },
+    {
+      "Day": 6,
+      "Duration": 120,
+      "Customers": 12,
+      "Title": "第一次早茶高峰",
+      "Hint": "订单切换后托盘保留，先完成能凑齐的一桌。",
+      "Weights": {
+        "A": 8,
+        "C": 8,
+        "D": 8,
+        "E": 10,
+        "F": 10,
+        "G": 10,
+        "H": 12,
+        "I": 12,
+        "J": 10,
+        "K": 12
+      },
+      "CustomerWeights": {
+        "ordinary": 100,
+        "regular": 0,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8205
+    },
+    {
+      "Day": 7,
+      "Duration": 125,
+      "Customers": 12,
+      "Title": "老茶客",
+      "Hint": "老茶客耐心72秒，讲究三烫品质。",
+      "Weights": {
+        "A": 6,
+        "C": 6,
+        "D": 6,
+        "E": 10,
+        "F": 10,
+        "G": 10,
+        "H": 13,
+        "I": 13,
+        "J": 12,
+        "K": 14
+      },
+      "CustomerWeights": {
+        "ordinary": 70,
+        "regular": 30,
+        "tourist": 0,
+        "group": 0
+      },
+      "MaxLarge": 0,
+      "Seed": 8206
+    },
+    {
+      "Day": 8,
+      "Duration": 135,
+      "Customers": 14,
+      "Title": "结伴而来",
+      "Hint": "结伴大单会吃掉多份库存，出餐后及时补产。",
+      "Weights": {
+        "A": 5,
+        "C": 5,
+        "D": 5,
+        "E": 8,
+        "F": 8,
+        "G": 8,
+        "H": 10,
+        "I": 10,
+        "J": 12,
+        "K": 19,
+        "L": 10
+      },
+      "CustomerWeights": {
+        "ordinary": 60,
+        "regular": 20,
+        "tourist": 0,
+        "group": 20
+      },
+      "MaxLarge": 2,
+      "Seed": 8207
+    },
+    {
+      "Day": 9,
+      "Duration": 140,
+      "Customers": 15,
+      "Title": "游客尝鲜",
+      "Hint": "游客喜欢招牌套餐，Perfect小费20%。",
+      "Weights": {
+        "A": 4,
+        "C": 4,
+        "D": 4,
+        "E": 8,
+        "F": 8,
+        "G": 8,
+        "H": 10,
+        "I": 10,
+        "J": 12,
+        "K": 22,
+        "L": 10
+      },
+      "CustomerWeights": {
+        "ordinary": 50,
+        "regular": 20,
+        "tourist": 20,
+        "group": 10
+      },
+      "MaxLarge": 4,
+      "Seed": 8208
+    },
+    {
+      "Day": 10,
+      "Duration": 150,
+      "Customers": 16,
+      "Title": "双层蒸笼",
+      "Hint": "双层各有计时器，可同时蒸三丁包和烧卖。",
+      "Weights": {
+        "A": 3,
+        "C": 4,
+        "D": 4,
+        "E": 7,
+        "F": 7,
+        "G": 7,
+        "H": 9,
+        "I": 9,
+        "J": 12,
+        "K": 24,
+        "L": 14
+      },
+      "CustomerWeights": {
+        "ordinary": 45,
+        "regular": 20,
+        "tourist": 20,
+        "group": 15
+      },
+      "MaxLarge": 4,
+      "Seed": 8209
+    },
+    {
+      "Day": 11,
+      "Duration": 165,
+      "Customers": 18,
+      "Title": "满堂早茶",
+      "Hint": "趁空档切丝、补茶，照顾每桌还缺的商品。",
+      "Weights": {
+        "A": 3,
+        "C": 3,
+        "D": 3,
+        "E": 6,
+        "F": 6,
+        "G": 6,
+        "H": 8,
+        "I": 8,
+        "J": 12,
+        "K": 28,
+        "L": 17
+      },
+      "CustomerWeights": {
+        "ordinary": 40,
+        "regular": 20,
+        "tourist": 20,
+        "group": 20
+      },
+      "MaxLarge": 4,
+      "Seed": 8210
+    },
+    {
+      "Day": 12,
+      "Duration": 180,
+      "Customers": 20,
+      "Title": "扬州早茶大会",
+      "Hint": "三星：完成18组、满意度90%、交付10份Perfect干丝。",
+      "Weights": {
+        "A": 2,
+        "C": 3,
+        "D": 3,
+        "E": 5,
+        "F": 5,
+        "G": 5,
+        "H": 7,
+        "I": 7,
+        "J": 12,
+        "K": 31,
+        "L": 20
+      },
+      "CustomerWeights": {
+        "ordinary": 35,
+        "regular": 20,
+        "tourist": 25,
+        "group": 20
+      },
+      "MaxLarge": 4,
+      "Seed": 8211
+    }
+  ],
+  "Boards": [
+    {
+      "Level": 1,
+      "Yield": 4,
+      "Capacity": 4,
+      "Snap": 0.85,
+      "Seconds": 1.8,
+      "Price": 0,
+      "UnlockAfterDay": 0
+    },
+    {
+      "Level": 2,
+      "Yield": 5,
+      "Capacity": 6,
+      "Snap": 0.7,
+      "Seconds": 1.35,
+      "Price": 140,
+      "UnlockAfterDay": 2
+    },
+    {
+      "Level": 3,
+      "Yield": 6,
+      "Capacity": 8,
+      "Snap": 0.6,
+      "Seconds": 1.05,
+      "Price": 300,
+      "UnlockAfterDay": 8
+    }
+  ],
+  "Steamers": [
+    {
+      "Level": 1,
+      "Capacity": 6,
+      "Layers": 1,
+      "Hold": false,
+      "BunSeconds": 7,
+      "SiumaiSeconds": 5.5,
+      "Price": 0,
+      "UnlockAfterDay": 2
+    },
+    {
+      "Level": 2,
+      "Capacity": 8,
+      "Layers": 1,
+      "Hold": true,
+      "BunSeconds": 7,
+      "SiumaiSeconds": 5.5,
+      "Price": 180,
+      "UnlockAfterDay": 4
+    },
+    {
+      "Level": 3,
+      "Capacity": 8,
+      "Layers": 2,
+      "Hold": true,
+      "BunSeconds": 6,
+      "SiumaiSeconds": 4.7,
+      "Price": 360,
+      "UnlockAfterDay": 9
+    }
+  ]
+}

@@ -29,6 +29,11 @@ public static class TianjinUi
         theme.SetStylebox("pressed", "Button", Box(Cream.Darkened(0.08f), 14, 4, false));
         theme.SetStylebox("focus", "Button", Box(Cream, 14, 6));
         theme.SetStylebox("panel", "PanelContainer", Box(Paper));
+        theme.SetStylebox("panel", "TooltipPanel", Box(Paper, 10, 2));
+        theme.SetFontSize("font_size", "TooltipLabel", 18);
+        theme.SetColor("font_color", "TooltipLabel", BrownText);
+        theme.SetColor("font_shadow_color", "TooltipLabel", Colors.Transparent);
+        theme.SetConstant("outline_size", "TooltipLabel", 0);
         return theme;
     }
 

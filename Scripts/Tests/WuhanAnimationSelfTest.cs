@@ -77,7 +77,7 @@ public partial class WuhanAnimationSelfTest : Node
         Check(mixed>0&&s.Bowl.MixProgress==mixed&&!v.IsMixing,"离开碗口立即结束手势，重入不会连线加进度");
         Click(v,v.BowlCenter);for(int i=0;i<5;i++)Move(v,v.BowlCenter+new Vector2(i%2==0?85:-85,0));
         Check(s.Bowl.State==NoodleBowlState.Ready&&!v.IsMixing,"碗内拌匀后筷子归位");
-        s.DeliverNoodles();Check(s.Bowl.State==NoodleBowlState.Ready&&!v.Busy("bowl"),"未选顾客拒绝交付，食物和画面保留");
+        s.DeliverToCustomer("missing",ProductKind.HotDryNoodles);Check(s.Bowl.State==NoodleBowlState.Ready&&!v.Busy("bowl"),"无效顾客拒绝交付，食物和画面保留");
         DisposeDay(f);
     }
     private void TestAutomatic()
@@ -113,16 +113,16 @@ public partial class WuhanAnimationSelfTest : Node
     {
         var f=NewDay();var s=f.Screen;s.EggAction();s.EggAction();
         Check(s.Egg!.BaseCups==5&&s.Egg.IsPreparing,"冲泡连点只消耗一杯底料");s._Process(.61);s.EggAction();
-        Check(s.Egg.HasFinishedCup&&!s.Workstation.Busy("egg"),"蛋酒交付拒绝时保留成品杯");
+        Check(s.Egg.HasFinishedCup&&!s.Workstation.Busy("egg"),"点击蛋酒设备保留成品杯等待拖拽");
         s.Egg.TryTake();for(int i=0;i<5;i++){s.EggAction();s._Process(.61);s.Egg.TryTake();}
         s.EggAction();s._Process(.3);Check(s.Egg.IsRefilling&&s.Egg.BaseCups==0,"补底料等待真实计时");s._Process(.31);
         Check(s.Egg.BaseCups==6&&!s.Egg.IsRefilling,"补料结束六杯底料恢复");DisposeDay(f);
         f=NewDay(1,1);s=f.Screen;s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
         for(int i=0;i<80 && f.Controller.CustomerQueue!.Slots.Count==0;i++)s._Process(.25);
         for(int i=0;i<10;i++)s._Process(.25);
-        var customer=f.Controller.CustomerQueue!.Slots[0];f.Controller.CustomerQueue.TrySelect(customer.Id);
-        s.DeliverNoodles();s.DeliverNoodles();
-        Check(s.Bowl.State==NoodleBowlState.Empty&&s.Workstation.Busy("bowl")&&customer.Progress.IsComplete,"接受交付后清空食品，重复点击不重复交付");DisposeDay(f);
+        var customer=f.Controller.CustomerQueue!.Slots[0];
+        s.DeliverToCustomer(customer.Id,ProductKind.HotDryNoodles);s.DeliverToCustomer(customer.Id,ProductKind.HotDryNoodles);
+        Check(s.Bowl.State==NoodleBowlState.Empty&&!s.Workstation.Busy("bowl")&&customer.Progress.IsComplete,"接受交付后清空食品，重复点击不重复交付");DisposeDay(f);
     }
     private void TestLifecycle()
     {

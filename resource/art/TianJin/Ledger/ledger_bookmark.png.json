@@ -1,0 +1,4 @@
+{
+  "prompt": "二维休闲早餐经营游戏 UI 美术，扁平、圆润、大色块、低细节，深暖棕 #4A291C 粗描边，奶油米白 #FFF8E8、暖棕和浅橙配色。不带文字、数字、水印。背景必须均匀纯绿色 #00FF00（供后续抠图），主体内部不用绿色，不要真实纹理、写实光影、渐变、3D 或透视。 方形512×512画布，单条竖向浅橙色短布条书签，正面平视，顶端平整、下端燕尾切口，中央留白。单个物体完整居中，约占画布宽度40%、高度80%，四周留安全距离。不要文字、数字、图案、账本、真实布纹或投影。\n\nPost-processing: Built-in imagegen background-extraction: remove only green background, actual alpha, preserve foreground, no added content.",
+  "source": "Sources/ledger_bookmark_green.png"
+}

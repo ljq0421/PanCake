@@ -18,7 +18,6 @@ public partial class MorningHub : Control
     public event Action? DebugRequested;
     public event Action? MapRequested;
 
-    private readonly List<Button> _dayButtons = new();
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
     private TianjinArtCatalog _art = null!;
@@ -30,7 +29,7 @@ public partial class MorningHub : Control
     private Label _message = null!;
     private Button _openButton = null!;
     private HBoxContainer _equipment = null!;
-    private PanelContainer _ledger = null!;
+    private TianjinLedger _ledger = null!;
     private ConfirmationDialog _resetDialog = null!;
 
     public bool DeveloperToolsVisible => OS.GetCmdlineUserArgs().Contains("--dev-ui", StringComparer.Ordinal);
@@ -172,41 +171,14 @@ public partial class MorningHub : Control
 
     private void BuildLedger()
     {
-        _ledger = TianjinUi.Panel(TianjinUi.Paper, 22);
-        _ledger.Position = new Vector2(240, 120);
-        _ledger.Size = new Vector2(1440, 840);
-        _ledger.ZIndex = 100;
-        _ledger.Visible = false;
+        _ledger = new TianjinLedger { Name = "TianjinLedger", Visible = false, ZIndex = 100 };
         AddChild(_ledger);
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 16);
-        _ledger.AddChild(column);
-        var heading = new HBoxContainer();
-        var title = TianjinUi.Label("经营手账", 34, TianjinUi.BrownText);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        heading.AddChild(title);
-        var reset = TianjinUi.Button("重置进度");
-        reset.Pressed += () => _resetDialog.PopupCentered();
-        heading.AddChild(reset);
-        var close = TianjinUi.Button("合上手账");
-        close.Pressed += () => _ledger.Visible = false;
-        heading.AddChild(close);
-        column.AddChild(heading);
-        column.AddChild(TianjinUi.Label("点击已经解锁的日期可以再次营业；重玩只补发超过历史最佳的收入差额。", 18, TianjinUi.Brown));
-        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        column.AddChild(scroll);
-        var grid = new GridContainer { Columns = 5, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        grid.AddThemeConstantOverride("h_separation", 12);
-        grid.AddThemeConstantOverride("v_separation", 12);
-        scroll.AddChild(grid);
-        for (int day = 1; day <= 15; day++)
+        _ledger.DayRequested += day => DayRequested?.Invoke(day);
+        _ledger.ResetRequested += () =>
         {
-            int selected = day;
-            var button = TianjinUi.Button($"Day {day}\n{DaySubtitle(day)}", false, new Vector2(250, 112));
-            button.Pressed += () => { _ledger.Visible = false; DayRequested?.Invoke(selected); };
-            grid.AddChild(button);
-            _dayButtons.Add(button);
-        }
+            _ledger.ConfirmationOpen = true;
+            _resetDialog.PopupCentered();
+        };
     }
 
     private void BuildResetDialog()
@@ -219,18 +191,25 @@ public partial class MorningHub : Control
         };
         _resetDialog.Confirmed += () =>
         {
-            _save.ResetProgress(out string error);
+            bool reset = _save.ResetProgress(out string error);
             _message.Text = string.IsNullOrEmpty(error) ? "进度已重置，今天重新开张。" : error;
             _message.Modulate = string.IsNullOrEmpty(error) ? TianjinUi.Green : TianjinUi.Red;
+            if (reset) _ledger.Open(_save);
+            _ledger.ShowNotice(_message.Text, !reset);
         };
+        _resetDialog.CloseRequested += RestoreLedgerFocus;
+        _resetDialog.Canceled += RestoreLedgerFocus;
+        _resetDialog.Confirmed += RestoreLedgerFocus;
         AddChild(_resetDialog);
     }
 
-    public void ShowLedger()
+    private void RestoreLedgerFocus()
     {
-        RenderLedger();
-        _ledger.Visible = true;
+        _ledger.ConfirmationOpen = false;
+        _ledger.FocusSelectedDay();
     }
+
+    public void ShowLedger() => _ledger.Open(_save);
 
     private void Render()
     {
@@ -330,18 +309,7 @@ public partial class MorningHub : Control
 
     private void RenderLedger()
     {
-        if (_save is null) return;
-        for (int index = 0; index < _dayButtons.Count; index++)
-        {
-            int day = index + 1;
-            Button button = _dayButtons[index];
-            button.Disabled = _save.HasLoadError || day > _save.Data.HighestUnlockedDay;
-            button.Text = _save.Data.DayBestRecords.TryGetValue(day, out DayBestRecord? best)
-                ? $"Day {day} · {DaySubtitle(day)}\n最佳 ¥{best.TotalRevenue}\n满意 {best.Satisfaction:0}%"
-                : day <= _save.Data.HighestUnlockedDay
-                    ? $"Day {day} · {DaySubtitle(day)}\n等待开店"
-                    : $"Day {day}\n尚未解锁";
-        }
+        if (_save is not null) _ledger.Refresh(_save);
     }
 
     private void StartPrimaryDay() => DayRequested?.Invoke(Math.Clamp(_save.Data.HighestUnlockedDay, 1, 15));
@@ -394,7 +362,7 @@ public partial class MorningHub : Control
         return null;
     }
 
-    private static string DaySubtitle(int day) => day switch
+    internal static string DaySubtitle(int day) => day switch
     {
         1 => "第一张煎饼", 2 => "薄脆上桌", 3 => "香葱飘香", 4 => "第一次早高峰",
         5 => "油条开锅", 6 => "双线忙起来", 7 => "油条卷进煎饼", 8 => "火腿新品",

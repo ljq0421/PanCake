@@ -1,0 +1,4 @@
+{
+  "prompt": "二维休闲早餐经营游戏 UI 美术，扁平、圆润、大色块、低细节，深暖棕 #4A291C 粗描边，奶油米白 #FFF8E8、暖棕和浅橙配色。不带文字、数字、水印。背景必须均匀纯绿色 #00FF00（供后续抠图），主体内部不用绿色，不要真实纹理、写实光影、渐变、3D 或透视。 横向1536×1024画布，一本完全摊开的空白双页账本，正面俯视、没有透视倾斜。左右页面等宽且平坦，中间一道窄书脊。纸张奶油米白，封皮边缘暖棕色。每页中央至少80%完全空白供程序排版，装饰仅限页边和书脊。整本书完整居中，横向几乎充满画布，整体书本宽高比约1.8:1，四周保留少量安全距离。不要文字、数字、横线、格子、食物、按钮、书签、印章、金属装订。背景没有投影。\n\nPost-processing: User-approved local chroma key via tools/prepare_tianjin_stock_ui.ps1 (Windows PowerShell 5.1), preserves opaque foreground and crops transparent margins.",
+  "source": "Sources/ledger_book_green.png"
+}

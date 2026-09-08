@@ -263,6 +263,15 @@ public sealed partial class OrderGenerator
             double last = Math.Max(first, end - 0.5);
             for (int index = 0; index < count; index++)
             {
+                if (config.CityId == StableIds.Cities.Tianjin)
+                {
+                    // Leave room at both ends of each segment so adjacent segments cannot bunch up.
+                    // Daily duration and customer count determine the pace as the chapter progresses.
+                    double interval = (end - start) / count;
+                    double variation = Math.Min(ArrivalJitterSeconds, interval * 0.1);
+                    arrivals.Add(start + (index + 0.5) * interval + random.Range(-variation, variation));
+                    continue;
+                }
                 double normalized = count == 1 ? 0 : (double)index / (count - 1);
                 double baseTime = first + (last - first) * normalized;
                 double jitter = random.Range(-ArrivalJitterSeconds, ArrivalJitterSeconds);

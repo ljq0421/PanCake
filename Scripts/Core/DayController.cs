@@ -157,11 +157,26 @@ public partial class DayController : Node
             return new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "请先完成并装袋一张未焦糊的煎饼。");
         }
 
+        return DeliverPreparedPancake(customer, prepared, catalog, pancake.TryAcceptPrepared);
+    }
+
+    public DeliveryEvaluation TryDeliverPreparedPancakeTo(string? customerId, PreparedPancake prepared,
+        DataCatalog catalog, Func<bool> consume)
+    {
+        CustomerRuntime? customer = FindDeliveryCustomer(customerId);
+        return customer is null ? Rejected("请把成品拖给仍在等待的顾客。")
+            : DeliverPreparedPancake(customer, prepared, catalog, consume);
+    }
+
+    private DeliveryEvaluation DeliverPreparedPancake(CustomerRuntime customer, PreparedPancake prepared,
+        DataCatalog catalog, Func<bool> consume)
+    {
+
         string actualRecipeId = catalog.RecipesById.Values
             .FirstOrDefault(recipe => prepared.ExtraIngredients.SetEquals(recipe.ExtraIngredients))?.Id
             ?? $"invalid:{string.Join('+', prepared.ExtraIngredients.OrderBy(id => id, StringComparer.Ordinal))}";
         var item = new DeliveredItem(ProductKind.Pancake, actualRecipeId, prepared.Quality, null, prepared.InternalYoutiaoQuality);
-        return TryDeliverItem(customer, item, null, pancake.TryAcceptPrepared);
+        return TryDeliverItem(customer, item, consume, null);
     }
 
     public DeliveryEvaluation TryDeliverYoutiaoSelected(YoutiaoInventory inventory) =>
@@ -188,10 +203,16 @@ public partial class DayController : Node
         return TryDeliverItem(customer, item, tray.TryConsumeForDelivery, null);
     }
 
-    public DeliveryEvaluation TryDeliverWuhanSelected(DeliveredItem item, Func<bool> consume)
+    public DeliveryEvaluation TryDeliverWuhanSelected(DeliveredItem item, Func<bool> consume) =>
+        TryDeliverWuhanTo(CustomerQueue?.SelectedCustomerId, item, consume);
+
+    public DeliveryEvaluation TryDeliverWuhanTo(string? customerId, DeliveredItem item, Func<bool> consume)
     {
-        CustomerRuntime? customer = GetDeliveryCustomer(out DeliveryEvaluation rejection);
-        return customer is null ? rejection : TryDeliverItem(customer, item, consume, null);
+        if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Wuhan
+            || item.ProductKind is not (ProductKind.HotDryNoodles or ProductKind.Doupi or ProductKind.EggRiceWine))
+            return Rejected("当前不能交付武汉商品。");
+        CustomerRuntime? customer = FindDeliveryCustomer(customerId);
+        return customer is null ? Rejected("请把成品拖给仍在等待的顾客。") : TryDeliverItem(customer, item, consume, null);
     }
 
     public DeliveryEvaluation TryDeliverXianTo(string? customerId, DeliveredItem item, Func<bool> consume)
@@ -252,11 +273,17 @@ public partial class DayController : Node
     private DeliveryEvaluation TryDeliverItem(CustomerRuntime customer, DeliveredItem item, Func<bool>? consume, Func<bool>? acceptPrepared)
     {
         if (!customer.Progress.CanAccept(item, out string error)) return Rejected(error);
+        bool matchesRequestedItem = customer.Order.Lines.Select((line, index) =>
+            line.ProductKind == item.ProductKind && line.DefinitionId == item.DefinitionId
+            && customer.Progress.GetRemainingQuantity(index) > 0).Any(matches => matches);
         if (consume is not null && !consume()) return Rejected("商品库存已经变化，请重试。");
 
         OrderItemAcceptance acceptance = customer.Progress.TryAccept(item);
         if (!acceptance.Accepted || acceptPrepared is not null && !acceptPrepared())
             return Rejected("顾客状态已经变化，本次交付未生效。");
+
+        if (customer.Order.CityId == StableIds.Cities.Tianjin && matchesRequestedItem)
+            customer.RestorePatience(0.15);
 
         if (!acceptance.OrderComplete)
         {

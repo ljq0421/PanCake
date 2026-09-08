@@ -15,8 +15,10 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     private readonly StyleBoxFlat _stockFill;
     private string _displayName = string.Empty;
     private bool _usesCaption;
+    private bool _previewsRefill;
     private IngredientStockStatus? _lastStatus;
     private Tween? _feedbackTween;
+    private readonly Label _refillHint;
 
     public IngredientStockSlotView()
     {
@@ -45,6 +47,15 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         _stockFill = StockBarStyle(TianjinUi.Green);
         _stock.AddThemeStyleboxOverride("fill", _stockFill);
         SetStockControl(_stock);
+        _refillHint = TianjinUi.Label("长按补货", 16, TianjinUi.BrownDark, HorizontalAlignment.Center);
+        _refillHint.Name = "HoldRefillHint";
+        _refillHint.Position = new Vector2(54, 94);
+        _refillHint.Size = new Vector2(140, 26);
+        _refillHint.MouseFilter = MouseFilterEnum.Ignore;
+        _refillHint.Visible = false;
+        _refillHint.AddThemeColorOverride("font_outline_color", TianjinUi.Cream);
+        _refillHint.AddThemeConstantOverride("outline_size", 5);
+        AddChild(_refillHint);
     }
 
     public event Action? RefillRequested;
@@ -52,6 +63,19 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     public Label StockLabel => CountLabel;
     public Button RefillButton => _refill;
     public ProgressBar StockBar => _stock;
+    public bool HoldToRefill { get; set; }
+    public bool ShowStockNumbers { get; set; } = true;
+    private double _holdProgress;
+
+    public void RenderHoldProgress(double progress)
+    {
+        _holdProgress = progress;
+        if (HoldToRefill && progress > 0) { _refillHint.Visible = true; _refillHint.Text = "松开取消"; }
+        else { _refillHint.Text = "长按补货"; _refillHint.Visible = HoldToRefill && _lastStatus is IngredientStockStatus.Low or IngredientStockStatus.Empty; }
+        if (_lastStatus == IngredientStockStatus.Refilling) return;
+        _stock.Visible = progress > 0;
+        _stock.Value = progress * 100;
+    }
 
     public void ConfigureStock(
         Texture2D trayTexture,
@@ -62,6 +86,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     {
         _displayName = displayName;
         _usesCaption = spec.CaptionRect.HasValue;
+        _previewsRefill = visualMode is IngredientVisualMode.HybridStock or IngredientVisualMode.LooseStock;
         Configure(trayTexture, ingredientTexture, displayName, spec, visualMode);
         CountLabel.Text = "0/0";
         _refill.Name = $"IngredientRefill_{StableNodeKey(Name)}";
@@ -76,9 +101,11 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         double refillProgress,
         bool canInteract)
     {
+        refillProgress = Math.Clamp(refillProgress, 0, 1);
         double fraction = capacity > 0 ? (double)quantity / capacity : 0;
         double shownFraction = status == IngredientStockStatus.Refilling ? refillProgress : fraction;
-        CountLabel.Text = status == IngredientStockStatus.Refilling
+        CountLabel.Visible = ShowStockNumbers;
+        CountLabel.Text = !ShowStockNumbers ? string.Empty : status == IngredientStockStatus.Refilling
             ? $"{refillProgress:P0}"
             : $"{quantity}/{capacity}";
         if (_usesCaption)
@@ -88,15 +115,26 @@ public partial class IngredientStockSlotView : WorkstationSlotView
                 ? TianjinUi.Brown : TianjinUi.BrownDark);
         }
         else CountLabel.Modulate = StatusColor(status);
-        SetStock(quantity, capacity);
-        SetIngredientAvailable(quantity > 0);
+        // Preview newly replenished portions from the gameplay clock. Inventory
+        // stays unchanged and unavailable until the refill actually completes.
+        // Recomputing from progress also freezes on pause and resets on cancel.
+        int shownQuantity = quantity;
+        if (_previewsRefill && status == IngredientStockStatus.Refilling)
+        {
+            int remaining = Math.Max(0, capacity - quantity);
+            shownQuantity += (int)Math.Floor(remaining * refillProgress);
+        }
+        SetStock(shownQuantity, capacity);
+        SetIngredientAvailable(shownQuantity > 0);
 
         _stock.Value = shownFraction * 100;
-        _stock.Visible = status == IngredientStockStatus.Refilling;
+        _stock.Visible = status == IngredientStockStatus.Refilling || _holdProgress > 0;
+        if (status != IngredientStockStatus.Refilling && _holdProgress > 0) _stock.Value = _holdProgress * 100;
         _stockFill.BgColor = TianjinUi.Green;
 
         bool needsRefill = status is IngredientStockStatus.Low or IngredientStockStatus.Empty;
-        _refill.Visible = needsRefill || status == IngredientStockStatus.Refilling;
+        _refillHint.Visible = HoldToRefill && (needsRefill || _holdProgress > 0);
+        _refill.Visible = !HoldToRefill && (needsRefill || status == IngredientStockStatus.Refilling);
         _refill.Disabled = !canInteract || status == IngredientStockStatus.Refilling || quantity >= capacity;
         _refill.Text = status == IngredientStockStatus.Refilling ? "…" : "+";
         _refill.TooltipText = status == IngredientStockStatus.Refilling ? $"{_displayName}补货中" : $"补满{_displayName}";

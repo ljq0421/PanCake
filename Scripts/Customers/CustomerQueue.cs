@@ -43,6 +43,7 @@ public sealed class CustomerQueue
     public event Action? Changed;
 
     public IReadOnlyList<CustomerRuntime> Slots => _slots;
+    public CustomerRuntime? CustomerAtSlot(int slotIndex) => _slots.FirstOrDefault(customer => customer.SlotIndex == slotIndex);
     public IReadOnlyCollection<CustomerRuntime> DoorQueue => _pending.ToArray();
     public string? SelectedCustomerId { get; private set; }
     public CustomerRuntime? SelectedCustomer => _slots.FirstOrDefault(customer => customer.Id == SelectedCustomerId);
@@ -210,6 +211,7 @@ public sealed class CustomerQueue
         while (_slots.Count < _capacity && _pending.Count > 0)
         {
             CustomerRuntime customer = _pending.Dequeue();
+            customer.SlotIndex = Enumerable.Range(0, _capacity).First(index => CustomerAtSlot(index) is null);
             var unavailableAppearances = _slots.Select(item => item.AppearanceId).ToHashSet(StringComparer.Ordinal);
             customer.AppearanceId = CustomerAppearanceCatalog.Select(
                 customer.Type.Id,

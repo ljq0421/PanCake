@@ -26,27 +26,27 @@ public partial class WuhanHub : Control
 
     private void Build()
     {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); Theme = TianjinUi.CreateTheme(); _art = new WuhanArtCatalog();
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); Theme = WuhanUi.CreateTheme(); _art = new WuhanArtCatalog();
         var bg = TianjinUi.Texture(_art.Background, Vector2.Zero, TextureRect.StretchModeEnum.Scale); TianjinUi.FullRect(bg); bg.Modulate = new Color(1,1,1,.68f); AddChild(bg);
-        var shade = new ColorRect { Color = new Color("#F9E8C9D8"), MouseFilter = MouseFilterEnum.Ignore }; TianjinUi.FullRect(shade); AddChild(shade);
+        var shade = new ColorRect { Color = new Color(WuhanUi.Paper, .85f), MouseFilter = MouseFilterEnum.Ignore }; TianjinUi.FullRect(shade); AddChild(shade);
         var margin = new MarginContainer(); TianjinUi.FullRect(margin, 70, 42, -70, -42); AddChild(margin);
         var root = new VBoxContainer(); root.AddThemeConstantOverride("separation", 18); margin.AddChild(root);
         var header = new HBoxContainer(); root.AddChild(header);
         var title = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; header.AddChild(title);
-        title.AddChild(TianjinUi.Label("武汉 · 过早之城", 42, TianjinUi.BrownDark)); title.AddChild(TianjinUi.Label("热干面即时制作 · 三鲜豆皮批量备货 · 蛋酒快速配餐", 20, TianjinUi.Brown));
-        header.AddChild(TianjinUi.Texture(_art.Shared.Coin, new Vector2(42,42))); _coins = TianjinUi.Label("¥0", 26, TianjinUi.Green); header.AddChild(_coins);
-        var map = TianjinUi.Button("早餐地图", false, new Vector2(170,56)); map.Pressed += () => MapRequested?.Invoke(); header.AddChild(map);
-        _message = TianjinUi.Label("", 19, TianjinUi.BrownText, HorizontalAlignment.Center); root.AddChild(_message);
+        title.AddChild(WuhanUi.Label("武汉 · 过早之城", 42, WuhanUi.Ink)); title.AddChild(WuhanUi.Label("热干面即时制作 · 三鲜豆皮批量备货 · 蛋酒快速配餐", 20, WuhanUi.Muted));
+        header.AddChild(TianjinUi.Texture(_art.Shared.Coin, new Vector2(42,42))); _coins = WuhanUi.Label("¥0", 26, WuhanUi.Ink); header.AddChild(_coins);
+        var map = WuhanUi.Button("早餐地图", false, new Vector2(170,56)); map.Pressed += () => MapRequested?.Invoke(); header.AddChild(map);
+        _message = WuhanUi.Label("", 19, WuhanUi.Text, HorizontalAlignment.Center); root.AddChild(_message);
         var body = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; body.AddThemeConstantOverride("separation", 22); root.AddChild(body);
-        var dayPanel = TianjinUi.Panel(TianjinUi.Paper, 18); dayPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill; body.AddChild(dayPanel);
+        var dayPanel = WuhanUi.Panel(WuhanUi.Paper, 18); dayPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill; body.AddChild(dayPanel);
         var dayColumn = new VBoxContainer(); dayColumn.AddThemeConstantOverride("separation", 10); dayPanel.AddChild(dayColumn);
-        dayColumn.AddChild(TianjinUi.Label("武汉经营日历 · 12 天", 28, TianjinUi.BrownDark));
+        dayColumn.AddChild(WuhanUi.Label("武汉经营日历 · 12 天", 28, WuhanUi.Ink));
         var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; dayColumn.AddChild(scroll);
         _days = new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill }; _days.AddThemeConstantOverride("h_separation", 8); _days.AddThemeConstantOverride("v_separation", 8); scroll.AddChild(_days);
-        for (int day = 1; day <= 12; day++) { int selected = day; var button = TianjinUi.Button($"Day {day}", false, new Vector2(240,92)); button.Pressed += () => DayRequested?.Invoke(selected); _days.AddChild(button); }
-        _primary = TianjinUi.Button("打开铺门", true, new Vector2(0,70)); _primary.Pressed += () => DayRequested?.Invoke(Math.Clamp(_save.Data.Wuhan.HighestUnlockedDay,1,12)); dayColumn.AddChild(_primary);
-        var equipmentPanel = TianjinUi.Panel(new Color("#FFF4D5"), 18); equipmentPanel.CustomMinimumSize = new Vector2(680,0); body.AddChild(equipmentPanel);
-        var equipmentColumn = new VBoxContainer(); equipmentColumn.AddThemeConstantOverride("separation", 12); equipmentPanel.AddChild(equipmentColumn); equipmentColumn.AddChild(TianjinUi.Label("武汉设备", 28, TianjinUi.BrownDark));
+        for (int day = 1; day <= 12; day++) { int selected = day; var button = WuhanUi.Button($"Day {day}", false, new Vector2(240,92)); button.Pressed += () => DayRequested?.Invoke(selected); _days.AddChild(button); }
+        _primary = WuhanUi.Button("打开铺门", true, new Vector2(0,70)); _primary.Pressed += () => DayRequested?.Invoke(Math.Clamp(_save.Data.Wuhan.HighestUnlockedDay,1,12)); dayColumn.AddChild(_primary);
+        var equipmentPanel = WuhanUi.Panel(WuhanUi.Surface, 18); equipmentPanel.CustomMinimumSize = new Vector2(680,0); body.AddChild(equipmentPanel);
+        var equipmentColumn = new VBoxContainer(); equipmentColumn.AddThemeConstantOverride("separation", 12); equipmentPanel.AddChild(equipmentColumn); equipmentColumn.AddChild(WuhanUi.Label("武汉设备", 28, WuhanUi.Ink));
         _equipment = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; _equipment.AddThemeConstantOverride("separation",8); equipmentColumn.AddChild(_equipment);
     }
 
@@ -74,13 +74,13 @@ public partial class WuhanHub : Control
 
     private Control Card(string title, Texture2D texture, int level, string? offer)
     {
-        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; box.AddChild(TianjinUi.Label(level == 0 ? $"{title} · 未解锁" : $"{title} · Lv{level}",18,TianjinUi.BrownDark,HorizontalAlignment.Center));
+        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; box.AddChild(WuhanUi.Label(level == 0 ? $"{title} · 未解锁" : $"{title} · Lv{level}",18,WuhanUi.Ink,HorizontalAlignment.Center));
         box.AddChild(TianjinUi.Texture(texture,new Vector2(180,210)));
         if (offer is not null)
         {
-            int price = Price(offer); var buy = TianjinUi.Button($"升级 ¥{price}", true, new Vector2(0,54)); buy.Disabled = _save.Data.Coins < price; buy.Pressed += () => Purchase(offer); box.AddChild(buy);
+            int price = Price(offer); var buy = WuhanUi.Button($"升级 ¥{price}", true, new Vector2(0,54)); buy.Disabled = _save.Data.Coins < price; buy.Pressed += () => Purchase(offer); box.AddChild(buy);
         }
-        else box.AddChild(TianjinUi.Label(level == 0 ? "完成对应营业日解锁" : "当前最好设备",15,TianjinUi.Brown,HorizontalAlignment.Center));
+        else box.AddChild(WuhanUi.Label(level == 0 ? "完成对应营业日解锁" : "当前最好设备",15,WuhanUi.Muted,HorizontalAlignment.Center));
         return box;
     }
     private string? Next(CityProgressData city, params string[] ids) => ids.FirstOrDefault(id => city.UnlockedContentIds.Contains(id,StringComparer.Ordinal) && !Owned(city,id));

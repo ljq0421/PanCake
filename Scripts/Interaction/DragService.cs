@@ -59,7 +59,7 @@ public partial class DragService : Node
         if (visual is DragVisualSpec art)
         {
             _proxy.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-            _proxy.AddChild(new TextureRect
+            _proxy.AddChild(art.PreviewFactory?.Invoke() ?? new TextureRect
             {
                 Texture = art.Texture,
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,

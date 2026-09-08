@@ -2,11 +2,16 @@ using Godot;
 
 namespace ProjectCake.Interaction;
 
-public readonly record struct DragVisualSpec(Texture2D Texture, Vector2 DisplaySize);
+public readonly record struct DragVisualSpec(Texture2D Texture, Vector2 DisplaySize, Func<Control>? PreviewFactory = null);
 
 public partial class DragItem : PanelContainer
 {
     public event Action? StartRejected;
+
+    public Func<Vector2, bool>? HitTest { get; set; }
+
+    public override bool _HasPoint(Vector2 point) =>
+        new Rect2(Vector2.Zero, Size).HasPoint(point) && (HitTest?.Invoke(point) ?? true);
 
     private DragService? _dragService;
     private Func<bool>? _canStart;
@@ -50,15 +55,19 @@ public partial class DragItem : PanelContainer
             return;
         }
 
+        TryBeginDrag();
+        AcceptEvent();
+    }
+
+    internal void TryBeginDrag()
+    {
         if (_dragService is null || !(_canStart?.Invoke() ?? true))
         {
             StartRejected?.Invoke();
-            AcceptEvent();
             return;
         }
 
         _dragService.BeginDrag(this, _payloadId, _displayName, _color, _visual);
 
-        AcceptEvent();
     }
 }

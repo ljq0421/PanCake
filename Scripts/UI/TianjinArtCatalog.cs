@@ -40,6 +40,9 @@ public sealed class TianjinArtCatalog
         _portraitLayouts = LoadPortraitLayouts();
         Load("background", "早餐铺主界面-1920x1080.png");
         Load("coin", "金币图标.png", true);
+        Load("ledger_book", "Ledger/ledger_book.png", true);
+        Load("ledger_bookmark", "Ledger/ledger_bookmark.png", true);
+        Load("ledger_record_stamp", "Ledger/ledger_record_stamp.png", true);
         Load("pancake_base", "展开煎饼基础层-v2.png", true);
         Load("pancake_egg", "鸡蛋覆盖层.png", true);
         Load("pancake_sauce", "酱料覆盖层.png", true);
@@ -96,6 +99,9 @@ public sealed class TianjinArtCatalog
 
     public Texture2D Background => Get("background");
     public Texture2D Coin => Get("coin");
+    public Texture2D LedgerBook => Get("ledger_book");
+    public Texture2D LedgerBookmark => Get("ledger_bookmark");
+    public Texture2D LedgerRecordStamp => Get("ledger_record_stamp");
     public Texture2D PancakeBase => Get("pancake_base");
     public Texture2D PancakeEgg => Get("pancake_egg");
     public Texture2D PancakeSauce => Get("pancake_sauce");
@@ -197,7 +203,7 @@ public sealed class TianjinArtCatalog
     {
         string[] required =
         {
-            "background", "coin", "pancake_base", "pancake_egg", "pancake_sauce", "pancake_folded", "pancake_bagged", "pancake_burnt_overlay",
+            "background", "coin", "ledger_book", "ledger_bookmark", "ledger_record_stamp", "pancake_base", "pancake_egg", "pancake_sauce", "pancake_folded", "pancake_bagged", "pancake_burnt_overlay",
             "batter", "egg", "sauce_brush", "crispy", "scallion", "ham", "raw_youtiao", "youtiao", "burnt_youtiao", "youtiao_rack",
             "soy_tray", "soy_milk", "serving_tray", "ingredient_tray", "batter_container", "sauce_container", "trash", "heart_effect", "star_effect",
             "map_background", "tianjin_map_node", "locked_map_node", "scraper", "spatula", "stove_1", "stove_2", "stove_3",

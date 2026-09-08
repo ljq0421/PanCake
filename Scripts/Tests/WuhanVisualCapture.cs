@@ -11,6 +11,12 @@ public partial class WuhanVisualCapture : Node
 {
     public override async void _Ready()
     {
+        if(OS.GetCmdlineUserArgs().Contains("--layout"))
+        {
+            try { await CaptureLayout(); GD.Print("WUHAN_LAYOUT_CAPTURE_DONE");GetTree().Quit(); }
+            catch(Exception e){GD.PushError(e.ToString());GetTree().Quit(1);}
+            return;
+        }
         if(OS.GetCmdlineUserArgs().Contains("--animations"))
         {
             try { await CaptureAnimations(); GD.Print("WUHAN_ANIMATION_CAPTURE_DONE");GetTree().Quit(); }
@@ -26,6 +32,113 @@ public partial class WuhanVisualCapture : Node
     }
     private async Task Frames(int count){for(int i=0;i<count;i++)await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);}
     private void Save(string path){Directory.CreateDirectory(Path.GetDirectoryName(ProjectSettings.GlobalizePath(path))!);GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(path));}
+
+    private async Task CaptureLayout()
+    {
+        bool small=OS.GetCmdlineUserArgs().Contains("--capture-720");
+        GetWindow().Size=small?new Vector2I(1280,720):new Vector2I(1920,1080);
+        ProjectSettings.SetSetting("accessibility/reduce_motion",false);
+        DataCatalog catalog=GetNode<DataCatalog>("/root/DataCatalog");
+        string root=$"res://.tmp/wuhan-layout/{(small?"720":"1080")}";
+        await Frames(3);
+        for(int level=1;level<=3;level++)
+        {
+            var save=new SaveService();save.UsePathForTests($"res://.tmp/wuhan-capture-layout-{level}.json");AddChild(save);
+            CityProgressData progress=save.Data.Wuhan;progress.HighestUnlockedDay=12;
+            progress.EquipmentLevels["noodle_cooker"]=level;progress.EquipmentLevels["ingredient_station"]=3;
+            progress.EquipmentLevels["doupi_griddle"]=level;progress.EquipmentLevels["egg_rice_wine_station"]=1;
+            var controller=new DayController();AddChild(controller);var day=new WuhanDayScreen();AddChild(day);
+            day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);day.BeginDay();
+            WuhanWorkstationView view=day.Workstation;
+            int eggClicks=0;
+            view.EggPressed+=()=>eggClicks++;
+            void Require(bool condition,string message)
+            {
+                if(!condition)throw new InvalidOperationException($"Layout Lv{level} {(small?720:1080)}: {message}");
+                GD.Print($"PASS layout Lv{level}: {message}");
+            }
+            void Step(double seconds)
+            {
+                day._Notification((int)NotificationApplicationFocusIn);
+                while(seconds>0){double dt=Math.Min(1.0/60,seconds);day._Process(dt);seconds-=dt;}
+            }
+            Vector2 Point(Vector2 local)=>view.GetGlobalTransformWithCanvas()*local;
+            void Move(Vector2 local,bool held=false)
+            {
+                Vector2 p=Point(local);
+                GetViewport().PushInput(new InputEventMouseMotion{Position=p,GlobalPosition=p,ButtonMask=held?MouseButtonMask.Left:0},true);
+            }
+            void Button(Vector2 local,bool pressed)
+            {
+                Vector2 p=Point(local);
+                GetViewport().PushInput(new InputEventMouseButton{ButtonIndex=MouseButton.Left,Pressed=pressed,Position=p,GlobalPosition=p},true);
+            }
+            void Click(Vector2 local)
+            {
+                Move(local);Button(local,true);Button(local,false);
+            }
+            async Task Shot(string name)
+            {
+                // Keep rendering deterministic while layout and viewport hit testing remain real.
+                Move(new Vector2(-10,-10));Step(.00001);view.QueueRedraw();
+                await Frames(2);await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
+                Save($"{root}/lv{level}/{name}.png");
+            }
+
+            Step(6);await Shot("01-idle");
+            for(int basket=0;basket<day.Cooker.Baskets.Count;basket++)
+            {
+                int before=day.Ingredients.Count(StableIds.Ingredients.WuhanNoodles);
+                Click(view.BasketRect(basket).GetCenter());
+                Require(day.Cooker.Baskets[basket].State==NoodleBasketState.Cooking&&day.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==before-1,$"viewport basket {basket+1} starts one portion");
+            }
+            // Legal state-machine transitions avoid replaying the long animation capture suite.
+            day.Cooker.Tick(catalog.NoodleCookersByLevel[level].OptimalSeconds+.001);
+            for(int basket=0;basket<day.Cooker.Baskets.Count;basket++)
+            {
+                day.Cooker.TryRaise(basket);
+                Require(day.Cooker.TryQuickDrain(basket),$"basket {basket+1} reaches drained fixture");
+            }
+            view.CancelAnimations();
+            Require(day.Cooker.TryTransferTo(0,day.Bowl),"noodles reach bowl fixture");
+            view.PlayBasket(0,NoodleBasketState.Drained,NoodleQuality.Optimal);
+            Step(.55);await Shot("02-basket-return");Step(.15);
+            for(int ingredient=0;ingredient<WuhanWorkstationView.IngredientIds.Length;ingredient++)
+            {
+                string id=WuhanWorkstationView.IngredientIds[ingredient];int before=day.Ingredients.Count(id);
+                Click(view.IngredientCenter(ingredient));
+                Require(day.Ingredients.Count(id)==before-1,$"viewport ingredient {ingredient+1} adds one serving");
+                Step(.5);
+            }
+            Click(view.PanCenter);Require(day.Doupi!.State==DoupiState.Batter,"viewport pan accepts batter");
+            Click(view.CupCenter);Require(eggClicks==1&&day.Egg!.IsPreparing,"viewport cup starts brewing");
+            Step(.18);await Shot("02-preparing");Step(.5);
+
+            Vector2 center=view.BowlCenter;
+            Require(view.InBowl(center+new Vector2(60,0))&&view.InBowl(center-new Vector2(60,0)),"bowl contains mixing gesture");
+            Move(center);Button(center,true);
+            for(int i=0;i<5;i++)Move(center+new Vector2(i%2==0?60:-60,0),true);
+            Button(center,false);
+            Require(day.Bowl.State==NoodleBowlState.Ready&&!view.IsMixing,"viewport bowl drag completes mixing");
+            Click(view.PanCenter);Require(day.Doupi.State==DoupiState.SkinCooking,"viewport pan adds egg");
+            DoupiGriddleLevelData griddle=catalog.DoupiGriddlesByLevel[level];
+            day.Doupi.Tick(griddle.StageSeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
+            if(!griddle.AutoFlip)Require(day.Doupi.TryFlip(),"doupi skin flips for fixture");
+            Require(day.Doupi.TryAddFilling(),"doupi filling enters fixture");
+            day.Doupi.Tick(griddle.SecondStageReadySeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
+            for(int cut=0;cut<day.Doupi.RequiredCuts;cut++)Require(day.Doupi.TryCut(),$"doupi fixture cut {cut+1}");
+            view.CancelAnimations();Step(2.5);
+            Require(day.Egg!.HasFinishedCup,"finished egg cup remains visible");
+            await Shot("03-ready");
+
+            Require(day.DoupiStock.TryAddBatch(DoupiInventory.Capacity),"stock fixture fills all 16 portions");
+            Step(.001); Click(view.StockCenter); day.DeliveryDrag.CancelDrag(); Require(day.DoupiStock.Count==16,"stock click without customer drop retains food");
+            Click(view.CupCenter); day.DeliveryDrag.CancelDrag(); Require(day.Egg.HasFinishedCup,"cup click without customer drop retains food");
+            Click(view.BowlCenter); day.DeliveryDrag.CancelDrag(); Require(day.Bowl.State==NoodleBowlState.Ready,"bowl click without customer drop retains food");
+            Step(2.5);await Shot("04-stock-full");
+            day.Free();controller.Free();save.Free();await Frames(2);
+        }
+    }
 
     private async Task CaptureAnimations()
     {
@@ -67,11 +180,20 @@ public partial class WuhanVisualCapture : Node
                 Vector2 viewportPoint=day.Workstation.GetGlobalTransformWithCanvas()*p;
                 GetViewport().PushInput(new InputEventMouseMotion{ButtonMask=MouseButtonMask.Left,Position=viewportPoint,GlobalPosition=viewportPoint},true);
             }
-            bool SelectCustomer(ProductKind kind)
+            async Task Deliver(ProductKind kind,string shot)
             {
-                foreach(var customer in controller.CustomerQueue!.Slots)
-                    if(customer.Progress.CanAccept(kind)&&controller.CustomerQueue.TrySelect(customer.Id))return true;
-                return false;
+                Step(.001);
+                int slot=controller.CustomerQueue!.Slots.ToList().FindIndex(c=>controller.CanDeliverTo(c.Id,kind));
+                if(slot<0)throw new InvalidOperationException($"Capture: no customer for {kind}");
+                Vector2 source=kind==ProductKind.HotDryNoodles?day.Workstation.BowlCenter:kind==ProductKind.Doupi?day.Workstation.StockCenter:day.Workstation.CupCenter;
+                Click(source,true);
+                var zone=(Control)day.FindChild($"WuhanCustomerDropZone{slot+1}",true,false);
+                Vector2 target=zone.GetGlobalTransformWithCanvas()*(zone.Size*.5f);
+                GetViewport().PushInput(new InputEventMouseMotion{Position=target,ButtonMask=MouseButtonMask.Left},true);
+                await Shot(shot);
+                GetViewport().PushInput(new InputEventMouseButton{ButtonIndex=MouseButton.Left,Position=target},true);
+                await ToSignal(GetTree().CreateTimer(.3),SceneTreeTimer.SignalName.Timeout);
+                Step(.001);
             }
             Step(6);await Shot("01-empty");
             Click(day.Workstation.BasketRect(0).GetCenter());Step(.1);await Shot("02-noodles-dropping");
@@ -91,8 +213,7 @@ public partial class WuhanVisualCapture : Node
             await Shot("11-mixing-half");
             Drag(center+new Vector2(75,0));Drag(center+new Vector2(-75,0));await Shot("12-noodles-ready");
             if(day.Bowl.State!=NoodleBowlState.Ready)throw new InvalidOperationException("Capture: mixing did not complete");
-            if(!SelectCustomer(ProductKind.HotDryNoodles))throw new InvalidOperationException("Capture: no noodle customer");
-            day.DeliverNoodles();Step(.18);await Shot("13-noodles-delivery");Step(.4);
+            await Deliver(ProductKind.HotDryNoodles,"13-noodles-delivery");
             day.DoupiAction();Step(.17);await Shot("14-batter-spreading");Step(.25);
             day.DoupiAction();Step(.17);await Shot("15-egg-spreading");Step(2.4);
             if(level<3)day.DoupiAction();Step(.18);await Shot("16-flipping");Step(.35);
@@ -101,10 +222,10 @@ public partial class WuhanVisualCapture : Node
             {day.DoupiAction();Step(.15);await Shot($"19-cut-{cut}");Step(.24);}
             day.DoupiAction();Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");
             if(day.DoupiStock.Count!=8)throw new InvalidOperationException("Capture: doupi batch was not stocked");
-            if(SelectCustomer(ProductKind.Doupi)){day.DeliverDoupi();Step(.18);await Shot("22-doupi-delivery");Step(.4);}
+            await Deliver(ProductKind.Doupi,"22-doupi-delivery");
             Click(day.Workstation.CupCenter);Step(.30);await Shot("23-egg-brewing");Step(.32);await Shot("24-egg-finished");
             if(!day.Egg!.HasFinishedCup)throw new InvalidOperationException("Capture: egg cup not prepared");
-            if(SelectCustomer(ProductKind.EggRiceWine)){day.EggAction();Step(.18);await Shot("25-egg-delivery");Step(.4);}
+            await Deliver(ProductKind.EggRiceWine,"25-egg-delivery");
             // Exhaust isolated fixtures only, then exercise the real refill commands.
             day.Egg.TryTake();for(int i=0;i<5;i++){day.Egg.TryStart();day.Egg.Tick(.61);day.Egg.TryTake();}
             day.EggAction();Step(.25);await Shot("26-egg-refilling");Step(.4);

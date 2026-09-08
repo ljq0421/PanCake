@@ -38,9 +38,9 @@ public partial class StageTwoSelfTest : Node
     private void RunEquipmentAndInventoryTests(DataCatalog catalog)
     {
         Check(catalog.IngredientStationsByLevel.Count == 3, "加载 3 级配料台");
-        CheckStation(catalog, 1, 10, 10, 12, 6, 6, 4, 0);
-        CheckStation(catalog, 2, 16, 16, 18, 10, 10, 8, 60);
-        CheckStation(catalog, 3, 24, 24, 28, 16, 16, 12, 180);
+        CheckStation(catalog, 1, 10, 6, 12, 8, 8, 6, 0);
+        CheckStation(catalog, 2, 16, 10, 18, 12, 12, 10, 60);
+        CheckStation(catalog, 3, 24, 12, 28, 16, 16, 12, 180);
 
         catalog.TryGetIngredientStation(1, out IngredientStationLevelData levelOne);
         var inventory = new IngredientInventory(levelOne);

@@ -9,6 +9,7 @@ public enum IngredientVisualMode
     CountLayout,
     RepresentativeCluster,
     WideSingle,
+    WideStock,
     HybridStock,
     LooseStock,
 }
@@ -61,6 +62,7 @@ public partial class WorkstationSlotView : Control
     private int _quantity;
     private int _capacity;
     private Rect2 _rotatedOpaqueBounds;
+    private Bitmap? _ingredientHitMask;
     private LiquidStockView? _liquid;
     private WorkstationSlotAttentionState _attentionState;
 
@@ -115,7 +117,7 @@ public partial class WorkstationSlotView : Control
             Rect2? combined = null;
             foreach (TextureRect visual in _ingredientVisuals.Where(visual => visual.Visible))
             {
-                Rect2 rect = _visualMode == IngredientVisualMode.WideSingle
+                Rect2 rect = _visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock
                     ? new Rect2(_spec.IngredientAnchorRect.Position + visual.Position + visual.PivotOffset
                         + _rotatedOpaqueBounds.Position * (visual.Size.X / visual.Texture.GetWidth()),
                         _rotatedOpaqueBounds.Size * (visual.Size.X / visual.Texture.GetWidth()))
@@ -152,10 +154,17 @@ public partial class WorkstationSlotView : Control
             IngredientVisualMode.RepresentativeCluster => 3,
             IngredientVisualMode.HybridStock => spec.CaptionRect.HasValue ? 10 : 12,
             IngredientVisualMode.LooseStock => 3,
+            IngredientVisualMode.WideStock => 3,
             _ => 1,
         }, ingredientTexture);
-        if (visualMode == IngredientVisualMode.WideSingle)
+        if (visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
+        {
             _rotatedOpaqueBounds = RotatedOpaqueBounds(ingredientTexture, Mathf.DegToRad(32));
+            _ingredientHitMask?.Dispose();
+            _ingredientHitMask = new Bitmap();
+            using Image image = ingredientTexture.GetImage();
+            _ingredientHitMask.CreateFromImageAlpha(image, 0.05f);
+        }
         _label.Text = label;
         _captionPlate.Visible = spec.CaptionRect.HasValue;
         if (spec.CaptionRect.HasValue)
@@ -214,6 +223,27 @@ public partial class WorkstationSlotView : Control
         ClearChildren(_clickArea);
         _clickArea.AddChild(interaction);
         interaction.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        if (interaction is ProjectCake.Interaction.DragItem drag)
+            drag.HitTest = point => _visualMode is not (IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
+                || ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
+    }
+
+    private bool ContainsVisibleIngredient(Vector2 globalPoint)
+    {
+        if (_ingredientHitMask is null || !_ingredientAvailable || !_ingredient.IsVisibleInTree()) return false;
+        Vector2 anchorPoint = _ingredientAnchor.GetGlobalTransform().AffineInverse() * globalPoint;
+        if (_ingredientAnchor.ClipContents && !new Rect2(Vector2.Zero, _ingredientAnchor.Size).HasPoint(anchorPoint)) return false;
+
+        // Undo the displayed sprite's rotation, pivot and all parent transforms.
+        foreach (TextureRect visual in _ingredientVisuals.Where(item => item.IsVisibleInTree()))
+        {
+            Vector2 localPoint = visual.GetGlobalTransform().AffineInverse() * globalPoint;
+            Rect2 drawn = FitInside(visual.Texture.GetSize(), new Rect2(Vector2.Zero, visual.Size));
+            if (!drawn.HasPoint(localPoint)) continue;
+            Vector2 pixel = (localPoint - drawn.Position) / drawn.Size * (Vector2)_ingredientHitMask.GetSize();
+            if (_ingredientHitMask.GetBitv(new Vector2I((int)pixel.X, (int)pixel.Y))) return true;
+        }
+        return false;
     }
 
     public void SetRefillControl(Control control)
@@ -334,20 +364,24 @@ public partial class WorkstationSlotView : Control
         }
 
         Rect2 localBounds = CenteredScale(new Rect2(Vector2.Zero, _spec.IngredientAnchorRect.Size), _spec.MaxVisualRatio);
-        if (_visualMode == IngredientVisualMode.WideSingle)
+        if (_visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
         {
-            _ingredient.Visible = _ingredientAvailable;
+            bool stock = _visualMode == IngredientVisualMode.WideStock;
+            int visible = stock ? StockTier : 1;
+            float stackHeight = stock ? 24f : 0f;
             Vector2 sourceSize = _ingredient.Texture.GetSize();
             float wideScale = Math.Min(localBounds.Size.X / _rotatedOpaqueBounds.Size.X,
-                localBounds.Size.Y / _rotatedOpaqueBounds.Size.Y);
-            _ingredient.Size = sourceSize * wideScale;
-            _ingredient.PivotOffset = _ingredient.Size * 0.5f;
-            _ingredient.RotationDegrees = 32;
-            _ingredient.Position = localBounds.GetCenter() - _ingredient.PivotOffset - _rotatedOpaqueBounds.GetCenter() * wideScale;
-            _ingredient.Modulate = IngredientTint();
-            for (int index = 1; index < _ingredientVisuals.Count; index++)
+                (localBounds.Size.Y - stackHeight) / _rotatedOpaqueBounds.Size.Y);
+            for (int index = 0; index < _ingredientVisuals.Count; index++)
             {
-                _ingredientVisuals[index].Visible = false;
+                TextureRect visual = _ingredientVisuals[index];
+                visual.Visible = _ingredientAvailable && index < visible;
+                visual.Size = sourceSize * wideScale;
+                visual.PivotOffset = visual.Size * 0.5f;
+                visual.RotationDegrees = 32;
+                visual.Position = localBounds.GetCenter() + new Vector2(0, stock ? 12 - index * 12 : 0)
+                    - visual.PivotOffset - _rotatedOpaqueBounds.GetCenter() * wideScale;
+                visual.Modulate = IngredientTint();
             }
             return;
         }

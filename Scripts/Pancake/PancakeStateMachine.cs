@@ -59,10 +59,10 @@ public sealed class PancakeStateMachine
         {
             PancakeCommand.PlaceBatter => PlaceBatter(tryConsume),
             PancakeCommand.BeginSpread => Transition(PancakeState.BatterPlaced, PancakeState.Spreading, "开始摊开面糊。"),
-            PancakeCommand.CompleteSpread => Transition(PancakeState.Spreading, PancakeState.Spread, "面糊已经摊匀。"),
+            PancakeCommand.CompleteSpread => Transition(PancakeState.Spreading, PancakeState.SideACooking, "面糊已经摊匀，第一面开始加热。"),
             PancakeCommand.AddEgg => AddEgg(tryConsume),
             PancakeCommand.Flip => Flip(),
-            PancakeCommand.BeginSauce => Transition(PancakeState.SideBReady, PancakeState.Saucing, "开始抹酱。"),
+            PancakeCommand.BeginSauce => BeginSauce(),
             PancakeCommand.CompleteSauce => CompleteSauce(tryConsume),
             PancakeCommand.AddIngredient => AddIngredient(ingredientId, tryConsume),
             PancakeCommand.Fold => Fold(),
@@ -181,10 +181,13 @@ public sealed class PancakeStateMachine
 
     private PancakeActionResult AddEgg(Func<string, bool> tryConsume)
     {
-        if (Runtime.State != PancakeState.Spread)
+        if (Runtime.State is not (PancakeState.SideACooking or PancakeState.SideAReady or PancakeState.SideAOverdone))
         {
-            return Invalid("请先把面糊摊匀。" );
+            return Invalid("请在面糊摊匀后、翻面前添加鸡蛋。" );
         }
+
+        if (Runtime.HasEgg)
+            return PancakeActionResult.Fail(PancakeActionError.DuplicateIngredient, "鸡蛋已经放过了。");
 
         if (!tryConsume(StableIds.Ingredients.Egg))
         {
@@ -192,9 +195,7 @@ public sealed class PancakeStateMachine
         }
 
         Runtime.HasEgg = true;
-        Runtime.CookingSeconds = 0;
-        Runtime.State = PancakeState.SideACooking;
-        return PancakeActionResult.Ok("鸡蛋已加入，第一面开始熟制。", StableIds.Ingredients.Egg);
+        return PancakeActionResult.Ok("鸡蛋已加入，继续加热。", StableIds.Ingredients.Egg);
     }
 
     private PancakeActionResult Flip()
@@ -226,11 +227,19 @@ public sealed class PancakeStateMachine
         return PancakeActionResult.Ok("酱料已经抹匀。", StableIds.Ingredients.Sauce);
     }
 
+    private PancakeActionResult BeginSauce()
+    {
+        if (Runtime.State is not (PancakeState.SideBCooking or PancakeState.SideBReady))
+            return Invalid("请先翻面，再加酱。");
+        Runtime.State = PancakeState.Saucing;
+        return PancakeActionResult.Ok("开始抹酱。");
+    }
+
     private PancakeActionResult AddIngredient(string? ingredientId, Func<string, bool> tryConsume)
     {
         if (Runtime.State is not (PancakeState.Sauced or PancakeState.Toppings))
         {
-            return Invalid("请先完成第二面熟制并抹酱。" );
+            return Invalid("请先翻面并抹酱。" );
         }
 
         if (ingredientId is null || !SliceIngredients.Contains(ingredientId))

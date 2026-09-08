@@ -31,6 +31,7 @@ public partial class StrokeInteractor : Control
     public Func<EllipseGeometry>? ResolveSpreadGeometry { get; set; }
     public Texture2D? SpreadToolTexture { get; set; }
     public Texture2D? SauceToolTexture { get; set; }
+    public Func<bool>? IsToolHeld { get; set; }
     public float PancakeRadius { get; set; } = 180;
 
     public double SpreadProgress => _spread.Progress;
@@ -47,8 +48,13 @@ public partial class StrokeInteractor : Control
         MouseExited += () =>
         {
             _pointerInside = false;
-            SetToolVisible(false);
+            RefreshVisualState();
         };
+    }
+
+    public override void _Process(double delta)
+    {
+        if (IsToolHeld?.Invoke() == true || _toolVisible) RefreshVisualState();
     }
 
     public override void _GuiInput(InputEvent @event)
@@ -93,7 +99,10 @@ public partial class StrokeInteractor : Control
 
     public void RefreshVisualState()
     {
-        bool show = _pointerInside && ResolveMode?.Invoke() is StrokeMode.Spread or StrokeMode.Sauce;
+        bool held = IsToolHeld?.Invoke() == true;
+        bool show = IsVisibleInTree() && (_pointerInside || held)
+            && ResolveMode?.Invoke() is StrokeMode.Spread or StrokeMode.Sauce;
+        ZIndex = held ? 88 : 0;
         SetToolVisible(show);
         if (show)
         {
@@ -126,7 +135,7 @@ public partial class StrokeInteractor : Control
         }
         else
         {
-            _lastPoint = position - Size * 0.5f;
+            _lastPoint = SaucePoint(position);
         }
         StrokeStarted?.Invoke(mode);
         ContinueStroke(position);
@@ -147,7 +156,7 @@ public partial class StrokeInteractor : Control
         }
         else
         {
-            Vector2 current = position - Size * 0.5f;
+            Vector2 current = SaucePoint(position);
             _sauce.AddSegment(_lastPoint, current, PancakeRadius);
             _lastPoint = current;
             progress = _sauce.Progress;
@@ -200,6 +209,13 @@ public partial class StrokeInteractor : Control
 
     private EllipseGeometry GetSpreadGeometry() => ResolveSpreadGeometry?.Invoke()
         ?? new EllipseGeometry(Size * 0.5f, new Vector2(PancakeRadius, PancakeRadius * 0.62f));
+
+    private Vector2 SaucePoint(Vector2 position)
+    {
+        EllipseGeometry geometry = GetSpreadGeometry();
+        return new Vector2((position.X - geometry.Center.X) / Math.Max(1, geometry.Radii.X),
+            (position.Y - geometry.Center.Y) / Math.Max(1, geometry.Radii.Y)) * PancakeRadius;
+    }
 
     private void UpdateTool(Vector2 position)
     {

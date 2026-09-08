@@ -39,9 +39,18 @@ public sealed class CustomerRuntime
     public double ArrivalDelaySeconds { get; internal set; }
     public bool WasServed { get; internal set; }
     public string AppearanceId { get; internal set; } = CustomerAppearanceCatalog.DefaultAppearanceId;
+    // Zero-based physical position, assigned on entry and retained until departure.
+    public int SlotIndex { get; internal set; } = -1;
 
     public double LeaveAtSeconds => Type.LeaveAtSeconds * PatienceMultiplier;
     public double PatienceProgress => Math.Clamp(WaitSeconds / LeaveAtSeconds, 0, 1);
+
+    internal void RestorePatience(double fraction)
+    {
+        if (State is not (CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry)) return;
+        WaitSeconds = Math.Max(0, WaitSeconds - LeaveAtSeconds * Math.Clamp(fraction, 0, 1));
+        Tick(0); // Refresh the expression immediately along with the patience bar.
+    }
 
     internal bool Tick(double deltaSeconds)
     {

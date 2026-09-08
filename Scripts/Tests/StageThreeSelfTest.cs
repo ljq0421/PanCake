@@ -47,6 +47,16 @@ public partial class StageThreeSelfTest : Node
     private void TestGenerator(DataCatalog catalog)
     {
         var generator = new OrderGenerator();
+        foreach (DayConfig config in catalog.DaysByNumber.Values)
+        {
+            DayPlan plan = generator.Generate(config, catalog.RecipesById);
+            int[] counts = OrderGenerator.AllocateByLargestRemainder(config.CustomerCount,
+                config.ArrivalSegments.Select(segment => segment.CustomerRatio).ToArray());
+            double shortestInterval = config.ArrivalSegments.Select((segment, index) => counts[index] == 0
+                ? double.PositiveInfinity : (segment.End - segment.Start) * config.DurationSeconds / counts[index]).Min();
+            Check(plan.Customers.Zip(plan.Customers.Skip(1), (a, b) => b.ArrivalTime - a.ArrivalTime)
+                .All(gap => gap >= shortestInterval * .8 - .0002), $"Day {config.Day} 相邻顾客保持间隔，跨时段也不会扎堆");
+        }
         foreach (DayConfig config in catalog.DaysByNumber.Values.Where(day => day.Day <= 4).OrderBy(day => day.Day))
         {
             DayPlan first = generator.Generate(config, catalog.RecipesById);
@@ -78,6 +88,8 @@ public partial class StageThreeSelfTest : Node
         queue.Tick(0, .35, false);
         Check(queue.Slots.All(customer => customer.State == CustomerState.Happy), "进店 0.35 秒后进入 Happy");
         CustomerRuntime first = queue.Slots[0];
+        var originalSlots = queue.Slots.ToDictionary(customer => customer.Id, customer => customer.SlotIndex);
+        Check(queue.Slots.Select(customer => customer.SlotIndex).SequenceEqual(Enumerable.Range(0, 5)), "首批顾客按 1–5 号固定站位");
         queue.Tick(0, 18, false);
         Check(first.State == CustomerState.Normal, "Day 1 倍率后 18 秒进入 Normal");
         queue.Tick(0, 18, false);
@@ -88,6 +100,13 @@ public partial class StageThreeSelfTest : Node
         Check(queue.TryMarkServed(first.Id) && queue.SelectedCustomerId is null, "出餐后取消顾客选择");
         queue.Tick(0, .45, false);
         Check(queue.Slots.Count == 5 && queue.Slots[^1].Id == door.Id, "离场 0.45 秒后门外顾客 FIFO 补位");
+        Check(queue.CustomerAtSlot(0) == door && queue.Slots.Where(customer => customer != door)
+            .All(customer => customer.SlotIndex == originalSlots[customer.Id]), "新顾客补入 1 号空位，其余顾客保持原位");
+        CustomerRuntime middle = queue.CustomerAtSlot(2)!;
+        Check(queue.TryMarkServed(middle.Id), "中间位置顾客可正常出餐离场");
+        queue.Tick(0, .45, false);
+        Check(queue.CustomerAtSlot(2) is null && queue.CustomerAtSlot(3)?.SlotIndex == 3
+            && queue.CustomerAtSlot(4)?.SlotIndex == 4, "中间空位保留，右侧顾客不会向前挤位");
 
         CustomerRuntime leave = queue.Slots.First(customer => customer.Id != door.Id);
         queue.Tick(0, 60, false);

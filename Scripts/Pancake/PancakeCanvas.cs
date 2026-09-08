@@ -84,7 +84,7 @@ public partial class PancakeCanvas : Control
 
         if (runtime.HasSauce || runtime.State == PancakeState.Saucing)
         {
-            float alpha = runtime.HasSauce ? 1f : Mathf.Clamp((float)runtime.SauceCoverage + 0.22f, 0.22f, 1f);
+            float alpha = runtime.HasSauce ? 1f : Mathf.Clamp((float)runtime.SauceCoverage, 0, 1f);
             DrawCentered(_art.PancakeSauce, surface.GetCenter(), surface.Size, new Color(1, 1, 1, alpha));
         }
 

@@ -30,6 +30,8 @@ public partial class VisualCapture : Node
         bool capturePause = args.Contains("--capture-pause", StringComparer.Ordinal);
         bool capturePartialOrder = args.Contains("--capture-partial-order", StringComparer.Ordinal);
         bool captureBagged = args.Contains("--capture-bagged", StringComparer.Ordinal);
+        bool captureMultiple = args.Contains("--capture-multiple-pancakes", StringComparer.Ordinal);
+        bool captureClosingBag = args.Contains("--capture-closing-bag", StringComparer.Ordinal);
         bool captureRefilling = args.Contains("--capture-refilling", StringComparer.Ordinal);
         bool captureDay = captureFryerWorkstation || captureRunning || capturePause || capturePartialOrder
             || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
@@ -50,7 +52,8 @@ public partial class VisualCapture : Node
             ? Math.Clamp(parsedPage, 1, 6) : 1;
         bool captureExpressions = args.Contains("--capture-customer-expressions", StringComparer.Ordinal) || expressionPageArg is not null;
         bool captureFryerSlots = args.Contains("--capture-fryer-slots", StringComparer.Ordinal);
-        bool captureStockGallery = args.Contains("--capture-stock-gallery", StringComparer.Ordinal);
+        bool captureRefillGallery = args.Contains("--capture-refill-gallery", StringComparer.Ordinal);
+        bool captureStockGallery = captureRefillGallery || args.Contains("--capture-stock-gallery", StringComparer.Ordinal);
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
@@ -60,7 +63,7 @@ public partial class VisualCapture : Node
 
         if (captureStockGallery)
         {
-            BuildIngredientStockGallery();
+            BuildIngredientStockGallery(captureRefillGallery);
         }
         else if (captureFryerSlots)
         {
@@ -199,8 +202,18 @@ public partial class VisualCapture : Node
                         DeliverPartialOrderForCapture(controller, workstation, GetNode<DataCatalog>("/root/DataCatalog"));
                         workstation.RefreshForCapture();
                     }
-                    if (captureBagged)
+                    if (captureBagged || captureMultiple || captureClosingBag)
                         MakeBagged(workstation.Machine, GetNode<DataCatalog>("/root/DataCatalog").RecipesById[StableIds.Recipes.Basic]);
+                    if (captureMultiple)
+                    {
+                        workstation.Tick(.3);
+                        MakeBagged(workstation.Machine, GetNode<DataCatalog>("/root/DataCatalog").RecipesById[StableIds.Recipes.Ham]);
+                        workstation.Tick(.3);
+                        ((Button)workstation.FindChild("NextPancake", true, false)).EmitSignal(Button.SignalName.Pressed);
+                        workstation.Machine.TryExecute(PancakeCommand.PlaceBatter);
+                        workstation.Machine.TryExecute(PancakeCommand.BeginSpread);
+                        workstation.Machine.TryExecute(PancakeCommand.CompleteSpread);
+                    }
                     if (captureRefilling)
                     {
                         ReduceTo(workstation.Inventory, StableIds.Ingredients.Batter, 0);
@@ -228,6 +241,17 @@ public partial class VisualCapture : Node
                     }
                     if (capturePause && dayScreen.FindChild("PauseButton", true, false) is Button pause)
                         pause.EmitSignal(Button.SignalName.Pressed);
+                    if (captureClosingBag)
+                    {
+                        // Close while a newly bagged pancake is still in flight.
+                        workstation.ResetForDay();
+                        MakeBagged(workstation.Machine, GetNode<DataCatalog>("/root/DataCatalog").RecipesById[StableIds.Recipes.Basic]);
+                        workstation.Tick(.08);
+                        var drag = workstation.GetChildren().OfType<DragService>().Single();
+                        drag.BeginDrag(workstation, "soy_milk_cup", "豆浆", TianjinUi.Cream);
+                        controller.Tick(controller.CurrentConfig!.DurationSeconds);
+                        controller.Tick(DayController.ClosingDurationSeconds);
+                    }
                 }
             }
         }
@@ -277,10 +301,79 @@ public partial class VisualCapture : Node
             drag._Input(motion);
             await ToSignal(GetTree().CreateTimer(.2), SceneTreeTimer.SignalName.Timeout);
         }
+        if (captureMultiple)
+        {
+            var screen = GetNode("../Main").GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
+            Control food = (Control)screen.FindChild("FinishedPancakeDrag", true, false);
+            using var motion = new InputEventMouseMotion { Position = food.GetGlobalRect().GetCenter() };
+            GetViewport().PushInput(motion, true);
+            await ToSignal(GetTree().CreateTimer(1.2), SceneTreeTimer.SignalName.Timeout);
+        }
+        if (captureSauceReady && args.Contains("--capture-held-brush", StringComparer.Ordinal))
+        {
+            var screen = GetNode("../Main").GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
+            var station = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+            screen.RefreshForCapture(true);
+            ((Button)station.FindChild("IngredientInput_sauce", true, false)).EmitSignal(Button.SignalName.Pressed);
+            Control jar = (Control)station.FindChild("IngredientInput_sauce", true, false);
+            using var motion = new InputEventMouseMotion { Position = jar.GetGlobalRect().GetCenter() + new Vector2(-50, -65) };
+            GetViewport().PushInput(motion, true);
+            await ToSignal(GetTree().CreateTimer(.2), SceneTreeTimer.SignalName.Timeout);
+        }
+        if (args.Contains("--capture-hold", StringComparer.Ordinal) || args.Contains("--capture-coins", StringComparer.Ordinal))
+        {
+            var screen = GetNode("../Main").GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
+            var station = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+            screen.SetProcess(false);
+            screen.RefreshForCapture(true);
+            if (args.Contains("--capture-coins", StringComparer.Ordinal))
+            {
+                var controller = GetNode("../Main").GetNode<DayController>("DayController");
+                var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+                foreach (CustomerRuntime customer in controller.CustomerQueue!.Slots.Take(3).ToArray())
+                {
+                    var zone = (DropZone)screen.FindChild($"CustomerDropZone{customer.SlotIndex + 1}", true, false);
+                    for (int i = 0; i < customer.Order.Lines.Count; i++)
+                    {
+                        OrderLineData line = customer.Order.Lines[i];
+                        for (int n = 0; n < line.Quantity; n++)
+                        {
+                            string payload;
+                            if (line.ProductKind == ProductKind.Pancake)
+                            {
+                                MakeBagged(station.Machine, catalog.RecipesById[line.DefinitionId]);
+                                station.Tick(.3);
+                                payload = "finished_pancake";
+                            }
+                            else if (line.ProductKind == ProductKind.Youtiao)
+                            {
+                                station.FryerMachine!.Inventory.TryStore(1, YoutiaoQuality.Golden);
+                                payload = "stored_youtiao";
+                            }
+                            else { station.SoyMilkTray!.Tick(.3); payload = "soy_milk_cup"; }
+                            if (!zone.TryAccept(payload)) throw new InvalidOperationException("收款截图交付失败：" + payload);
+                        }
+                    }
+                }
+                screen.RefreshForCapture(true);
+                await ToSignal(GetTree().CreateTimer(1.1), SceneTreeTimer.SignalName.Timeout);
+            }
+            if (args.Contains("--capture-hold", StringComparer.Ordinal))
+            {
+                ReduceTo(station.Inventory, "egg", 1);
+                var gesture = (StockGesture)station.FindChild("StockGesture_egg", true, false);
+                using var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = new Vector2(100, 60) };
+                gesture._GuiInput(press);
+                gesture.Tick(.28);
+            }
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string? outputArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-output=", StringComparison.Ordinal));
         string output = outputArg is not null ? outputArg["--capture-output=".Length..]
+            : captureRefillGallery ? $"res://.godot/ingredient_refill_gallery{sizeSuffix}.png"
             : captureStockGallery ? $"res://.godot/ingredient_stock_gallery{sizeSuffix}.png"
             : captureBagged ? $"res://.godot/phase4_bagged{sizeSuffix}.png"
             : captureRefilling ? $"res://.godot/phase4_refilling{sizeSuffix}.png"
@@ -317,7 +410,7 @@ public partial class VisualCapture : Node
         GetTree().Quit(0);
     }
 
-    private void BuildIngredientStockGallery()
+    private void BuildIngredientStockGallery(bool refillPreview = false)
     {
         Node main = GetNode("../Main");
         main.ProcessMode = ProcessModeEnum.Disabled;
@@ -338,7 +431,9 @@ public partial class VisualCapture : Node
         title.Size = new Vector2(1720, 58);
         gallery.AddChild(title);
 
-        Label subtitle = TianjinUi.Label("Lv3 配料台 · 同一盘面尺寸与固定位置 · 从满盘到空盘，再完成补货", 22,
+        Label subtitle = TianjinUi.Label(refillPreview
+            ? "Lv3 配料台 · 1 秒补货 · 随进度逐步补入，完成后恢复取料"
+            : "Lv3 配料台 · 同一盘面尺寸与固定位置 · 从满盘到空盘，再完成补货", 22,
             TianjinUi.Brown, HorizontalAlignment.Center);
         subtitle.Position = new Vector2(100, 92);
         subtitle.Size = new Vector2(1720, 40);
@@ -353,7 +448,8 @@ public partial class VisualCapture : Node
         };
         gallery.AddChild(counter);
 
-        string[] states = { "满盘", "半盘", "剩 3 份", "空盘", "补货完成" };
+        string[] states = refillPreview ? new[] { "开始补货", "25%", "50%", "75%", "补货完成" }
+            : new[] { "满盘", "半盘", "剩 3 份", "空盘", "补货完成" };
         for (int column = 0; column < states.Length; column++)
         {
             Label heading = TianjinUi.Label(states[column], 27, TianjinUi.BrownDark, HorizontalAlignment.Center);
@@ -380,7 +476,7 @@ public partial class VisualCapture : Node
             {
                 var inventory = new IngredientInventory(level);
                 int capacity = inventory.GetCapacity(id);
-                int target = column switch
+                int target = refillPreview ? 0 : column switch
                 {
                     0 => capacity,
                     1 => capacity / 2,
@@ -400,10 +496,16 @@ public partial class VisualCapture : Node
                         ? IngredientVisualMode.LooseStock : IngredientVisualMode.HybridStock);
                 slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id), 0, true);
 
-                if (column == 4)
+                if (refillPreview)
                 {
-                    // Exercise a real refill before capturing its completed state;
-                    // the gallery never derives ingredient quantities from progress.
+                    inventory.TryBeginRefill(id);
+                    inventory.Tick(level.RefillSeconds * column / 4d);
+                    slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id),
+                        inventory.GetRefillProgress(id), true);
+                }
+                else if (column == 4)
+                {
+                    // Exercise a real refill before capturing its completed state.
                     inventory.TryBeginRefill(id);
                     inventory.Tick(level.RefillSeconds * .5);
                     slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id),
@@ -415,7 +517,9 @@ public partial class VisualCapture : Node
             }
         }
 
-        Label note = TianjinUi.Label("高库存看疏密，少量逐份可数；标牌保留实际数量。补货完成后恢复满盘。", 22,
+        Label note = TianjinUi.Label(refillPreview
+            ? "补货时标牌显示进度，盘内逐步补入食材；完成前不能取料，香葱按簇增加。"
+            : "高库存看疏密，少量逐份可数；标牌保留实际数量。补货完成后恢复满盘。", 22,
             TianjinUi.BrownDark, HorizontalAlignment.Center);
         note.Position = new Vector2(100, 980);
         note.Size = new Vector2(1720, 52);
@@ -622,7 +726,8 @@ public partial class VisualCapture : Node
         if (line.ProductKind == ProductKind.Pancake)
         {
             MakeBagged(workstation.Machine, catalog.RecipesById[line.DefinitionId]);
-            controller.TryDeliverSelected(workstation.Machine, catalog);
+            workstation.Tick(.3);
+            workstation.DeliverPancakeTo(controller, controller.CustomerQueue?.SelectedCustomerId, catalog);
         }
     }
 

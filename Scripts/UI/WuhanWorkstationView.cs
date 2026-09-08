@@ -1,6 +1,7 @@
 using Godot;
 using ProjectCake.Data;
 using ProjectCake.Wuhan;
+using ProjectCake.Interaction;
 
 namespace ProjectCake.UI;
 
@@ -13,9 +14,106 @@ public partial class WuhanWorkstationView : Control
 {
     public event Action<int>? BasketPressed;
     public event Action<string>? IngredientPressed;
-    public event Action? DoupiPressed, StockPressed, EggPressed, NoodlesPressed;
+    public event Action? DoupiPressed, EggPressed;
     public event Action<float>? MixMoved;
     public Func<bool>? CanInteract { get; set; }
+    private DragService? _drag;
+    private ProductKind? _draggedProduct;
+    private readonly Dictionary<ProductKind, DragItem> _deliverySources = new();
+    private bool _deliveryConfigured;
+    public ProductKind? DraggedProduct => _draggedProduct;
+    public static string DeliveryPayload(ProductKind kind) => $"wuhan:{kind}";
+    public static ProductKind? DeliveryProduct(string payload) => payload switch
+    {
+        "wuhan:HotDryNoodles" => ProductKind.HotDryNoodles,
+        "wuhan:Doupi" => ProductKind.Doupi,
+        "wuhan:EggRiceWine" => ProductKind.EggRiceWine,
+        _ => null,
+    };
+    private static string DeliveryChannel(ProductKind kind) => kind switch
+    {
+        ProductKind.HotDryNoodles => "bowl", ProductKind.Doupi => "stock", _ => "egg",
+    };
+
+    public bool CanDeliver(ProductKind kind) => _cooker is not null && CanInteract?.Invoke() == true
+        && !_motions.Any(m => m.Locks.Contains(DeliveryChannel(kind))) && kind switch
+        {
+            ProductKind.HotDryNoodles => _bowl.State == NoodleBowlState.Ready,
+            ProductKind.Doupi => _stock.Count > 0,
+            ProductKind.EggRiceWine => _egg?.HasFinishedCup == true,
+            _ => false,
+        };
+
+    public void ConfigureDelivery(DragService drag)
+    {
+        _drag = drag;
+        drag.DragStarted += OnDragStarted;
+        drag.DragEnded += OnDragEnded;
+        foreach (ProductKind kind in new[] { ProductKind.HotDryNoodles, ProductKind.Doupi, ProductKind.EggRiceWine })
+        {
+            var source = new DragItem { Name = $"WuhanDrag_{kind}", MouseFilter = MouseFilterEnum.Stop, Visible = false };
+            source.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+            AddChild(source);
+            _deliverySources[kind] = source;
+        }
+    }
+
+    private void OnDragStarted(string payload)
+    {
+        _draggedProduct = DeliveryProduct(payload);
+        EndMix(); QueueRedraw();
+    }
+    private void OnDragEnded(DragResult result)
+    {
+        _draggedProduct = null;
+        RefreshDeliverySources(); QueueRedraw();
+    }
+    public void CancelInput() { _drag?.CancelDrag(); EndMix(); }
+
+    public void RefreshDeliverySources()
+    {
+        if (_cooker is null || _drag is null) return;
+        foreach (var (kind, source) in _deliverySources)
+        {
+            Rect2 rect = kind == ProductKind.HotDryNoodles ? BowlRect : kind == ProductKind.Doupi ? StockRect : CupRect.Grow(4);
+            source.Position = rect.Position; source.Size = rect.Size;
+            source.Visible = CanDeliver(kind);
+            if (_deliveryConfigured) continue;
+            source.Configure(_drag, DeliveryPayload(kind), kind == ProductKind.HotDryNoodles ? "热干面" : kind == ProductKind.Doupi ? "三鲜豆皮" : "蛋酒",
+                WuhanUi.Paper, new DragVisualSpec(_art.Product(kind), kind == ProductKind.HotDryNoodles ? BowlRect.Size : kind == ProductKind.Doupi ? new Vector2(100, 75) : CupSize,
+                    () => CreateDeliveryPreview(kind)), () => CanDeliver(kind) && !_drag.IsDragging);
+        }
+        _deliveryConfigured = true;
+    }
+
+    private Control CreateDeliveryPreview(ProductKind kind)
+    {
+        var root = new Control { MouseFilter = MouseFilterEnum.Ignore };
+        void Layer(string id, Rect2 rect, bool fit = false, float alpha = 1)
+        {
+            Texture2D texture = _art.Texture(id);
+            if (fit) rect = FitSprite(texture, rect);
+            var image = new TextureRect
+            {
+                Texture = new AtlasTexture { Atlas = texture, Region = Source(texture) },
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, Position = rect.Position, Size = rect.Size,
+                StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = MouseFilterEnum.Ignore,
+                Modulate = new Color(1, 1, 1, alpha),
+            };
+            root.AddChild(image);
+        }
+        if (kind == ProductKind.HotDryNoodles)
+        {
+            Rect2 bowl = new(Vector2.Zero, BowlRect.Size), food = new(BowlFood.Position - BowlRect.Position, BowlFood.Size);
+            Layer("empty_bowl", bowl); Layer("bowl_noodles", food); Layer("mixed", food);
+            if (_bowl.Quality == NoodleQuality.Overcooked) Layer("overcooked", food, alpha: .35f);
+            foreach (string topping in _bowl.Toppings)
+                Layer(topping == StableIds.Ingredients.WuhanScallion ? "scallion" : topping == StableIds.Ingredients.WuhanChiliOil ? "chili_overlay" : "beef_overlay",
+                    topping == StableIds.Ingredients.WuhanBraisedBeef ? RelativeRect(food, new Rect2(.25f, .17f, .64f, .67f)) : food);
+        }
+        else Layer(kind == ProductKind.Doupi ? "doupi_single" : "egg_finished", new Rect2(Vector2.Zero, kind == ProductKind.Doupi ? new Vector2(100, 75) : CupSize), true);
+        return root;
+    }
 
     public static readonly string[] IngredientIds = { StableIds.Ingredients.WuhanBaseSeasoning,
         StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef };
@@ -46,29 +144,34 @@ public partial class WuhanWorkstationView : Control
         public float Progress;
         public int Index;
         public string Ingredient = "";
-        public Vector2 Target;
         public NoodleQuality Quality;
-        public string[] Toppings = Array.Empty<string>();
         public DoupiState Before;
     }
 
-    // Coordinates live in the existing 1920 x 1080 design space; this view starts at y=555.
-    private static readonly Rect2 BowlRect = new(583, 97, 262, 202);
-    private static readonly Rect2 BowlFood = new(602, 111, 224, 111);
-    private static readonly Rect2 PanRect = new(987, 3, 433, 300);
-    private static readonly Rect2 StockRect = new(1080, 274, 235, 87);
-    private static readonly Rect2 EggMachine = new(1530, 2, 332, 343);
-    private static readonly Rect2 CupRect = new(1687, 187, 75, 62);
-    private static readonly Rect2 RawRect = new(45, 49, 94, 53);
+    // Local coordinates in the 1920 x 1080 design, with the v3 counter at y=600.
+    // Independent objects keep their source aspect; surfaces use explicit anchors.
+    private Rect2 BowlRect => FitSprite(_art.Texture("empty_bowl"), new Rect2(603, 120, 224, 174));
+    private Rect2 BowlFood => RelativeRect(BowlRect, new Rect2(.075f, .07f, .85f, .55f));
+    private Rect2 PanRect => FitSprite(_art.Griddle(Math.Max(1, _doupiLevel)), new Rect2(1004, -46, 400, 318), new Vector2(.5f, 1));
+    private Rect2 StockRect => FitSprite(_art.Texture("doupi_stock"), new Rect2(1086, 246, 238, 80));
+    private Rect2 EggMachine => FitSprite(_art.Texture("egg_station"), new Rect2(1610, 0, 266, 320), new Vector2(.5f, 1));
+    private Vector2 EggSpout => EggMachine.Position + EggMachine.Size * new Vector2(.39f, .525f);
+    private Rect2 CupRect => At(new Vector2(EggSpout.X, EggMachine.Position.Y + EggMachine.Size.Y * .76f), CupSize);
+    private Vector2 CupSize => FitSprite(_art.Texture("egg_base"), new Rect2(0, 0, 56, 60)).Size;
+    private Rect2 BaseCupRect(int index) => new(new Vector2(1460 + (index % 2) * 66, 139 + (index / 2) * 68), CupSize);
+    private static readonly Rect2 RawRect = new(58, 268, 94, 53);
+    private static readonly Rect2 SauceBottleRect = new(588, 231, 35, 60);
+    private static readonly Rect2 BatterRect = new(997, 262, 74, 64);
+    private static readonly Rect2 FillingRect = new(1340, 262, 74, 64);
     private static Rect2 IngredientRect(int index) => index switch
     {
-        0 => new Rect2(475, 64, 88, 102), 1 => new Rect2(475, 208, 94, 67),
-        2 => new Rect2(859, 61, 87, 108), _ => new Rect2(855, 207, 99, 73)
+        0 => new Rect2(485, 114, 104, 84), 1 => new Rect2(482, 230, 96, 68),
+        2 => new Rect2(841, 110, 100, 88), _ => new Rect2(852, 231, 96, 70)
     };
     public Vector2 BowlCenter => BowlFood.GetCenter();
     public Vector2 IngredientCenter(int index) => IngredientRect(index).GetCenter();
     public Vector2 StockCenter => StockRect.GetCenter();
-    public Vector2 PanCenter => new(1205, 154);
+    public Vector2 PanCenter => (PanCorners[0] + PanCorners[2]) / 2;
     public Vector2 CupCenter => CupRect.GetCenter();
 
     public override void _Ready()
@@ -84,18 +187,24 @@ public partial class WuhanWorkstationView : Control
         CancelAnimations();
         _art = art; _cooker = cooker; _bowl = bowl; _doupi = doupi; _stock = stock;
         _egg = egg; _ingredients = ingredients; _cookerLevel = cookerLevel; _doupiLevel = doupiLevel;
-        _phase=0; RememberStates(); QueueRedraw();
+        _bounds.Clear(); _phase=0; _deliveryConfigured=false; RememberStates(); RefreshDeliverySources(); QueueRedraw();
     }
 
-    public bool Busy(string channel) => _motions.Any(m => m.Locks.Contains(channel));
+    public bool Busy(string channel) => (_draggedProduct is ProductKind kind && DeliveryChannel(kind) == channel)
+        || _motions.Any(m => m.Locks.Contains(channel));
     public float MotionProgress(string channel) => _motions.FirstOrDefault(m => m.Locks.Contains(channel))?.Progress ?? 1;
     public void EndMix() { _mixLast = null; QueueRedraw(); }
     public void CancelAnimations()
     {
+        CancelInput();
         foreach (Motion m in _motions) m.Tween.Kill();
         _motions.Clear(); EndMix(); _hover = ""; QueueRedraw();
     }
-    public override void _ExitTree() => CancelAnimations();
+    public override void _ExitTree()
+    {
+        CancelAnimations();
+        if (_drag is not null) { _drag.DragStarted -= OnDragStarted; _drag.DragEnded -= OnDragEnded; }
+    }
 
     private Motion Play(string kind, double seconds, params string[] channels)
     {
@@ -128,13 +237,6 @@ public partial class WuhanWorkstationView : Control
         m.Before = before; m.Index = _doupi?.CompletedCuts ?? 0; RememberStates();
     }
     public void PlayEgg(bool refill) => Play(refill ? "egg_refill" : "brew", .6, "egg");
-    public void PlayDelivery(ProductKind kind, Vector2 target, NoodleQuality quality = NoodleQuality.Optimal, string[]? toppings = null)
-    {
-        Motion m = Play("delivery", .48, kind == ProductKind.HotDryNoodles ? "bowl" : kind == ProductKind.Doupi ? "stock" : "egg");
-        m.Index = (int)kind; m.Target = target; m.Quality = quality; m.Toppings = toppings ?? Array.Empty<string>();
-        EndMix();
-    }
-
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
@@ -166,7 +268,7 @@ public partial class WuhanWorkstationView : Control
 
     public override void _GuiInput(InputEvent input)
     {
-        if (_cooker is null || CanInteract?.Invoke() != true) { EndMix(); return; }
+        if (_cooker is null || CanInteract?.Invoke() != true || _drag?.IsDragging == true) { EndMix(); return; }
         if (input is InputEventMouseButton mb && mb.ButtonIndex == MouseButton.Left)
         {
             if (!mb.Pressed) { EndMix(); return; }
@@ -174,7 +276,7 @@ public partial class WuhanWorkstationView : Control
             if (hit.StartsWith("basket")) BasketPressed?.Invoke(int.Parse(hit[^1..]));
             else if (hit.StartsWith("ingredient")) IngredientPressed?.Invoke(IngredientIds[int.Parse(hit[^1..])]);
             else if (hit == "pan") DoupiPressed?.Invoke();
-            else if (hit == "stock") StockPressed?.Invoke();
+            else if (hit == "stock") { }
             else if (hit == "egg") EggPressed?.Invoke();
             else if (hit == "raw")
             {
@@ -183,8 +285,7 @@ public partial class WuhanWorkstationView : Control
             }
             else if (hit == "bowl" && !Busy("bowl"))
             {
-                if (_bowl.State == NoodleBowlState.Ready) NoodlesPressed?.Invoke();
-                else if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing) _mixLast = mb.Position;
+                if (InBowl(mb.Position) && _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing) _mixLast = mb.Position;
             }
             AcceptEvent(); QueueRedraw();
         }
@@ -207,13 +308,17 @@ public partial class WuhanWorkstationView : Control
     {
         if (_cooker is null) return "";
         if (InBowl(p)) return "bowl";
+        if (SauceBottleRect.Grow(4).HasPoint(p)) return "ingredient0";
         for (int i = 0; i < 4; i++) if (IngredientRect(i).Grow(4).HasPoint(p)) return $"ingredient{i}";
+        if (BowlRect.HasPoint(p)) return "bowl";
         for (int i = 0; i < _cooker.Baskets.Count; i++)
             if (BasketRect(i).HasPoint(p)) return $"basket{i}";
         if (RawRect.HasPoint(p)) return "raw";
         if (StockRect.HasPoint(p)) return "stock";
-        if (new Rect2(1003, 65, 400, 195).HasPoint(p)) return "pan";
-        if (EggMachine.HasPoint(p)) return "egg";
+        if (Geometry2D.IsPointInPolygon(p, PanCorners) || BatterRect.HasPoint(p) || FillingRect.HasPoint(p)) return "pan";
+        if (EggMachine.HasPoint(p) || CupRect.HasPoint(p)) return "egg";
+        if (_egg is not null)
+            for (int i = 0; i < _egg.BaseCups; i++) if (BaseCupRect(i).HasPoint(p)) return "egg";
         return "";
     }
 
@@ -245,6 +350,20 @@ public partial class WuhanWorkstationView : Control
     }
     private void Sprite(string id, Rect2 rect, float alpha = 1, float angle = 0) => Sprite(_art.Texture(id), rect, alpha, angle);
     private void Sprite(Texture2D texture, Rect2 rect, float alpha = 1, float angle = 0)
+        => DrawSprite(texture, FitSprite(texture, rect), alpha, angle);
+    private Rect2 FitSprite(Texture2D texture, Rect2 box, Vector2? alignment = null)
+    {
+        Vector2 source = Source(texture).Size;
+        float scale = Math.Min(box.Size.X / source.X, box.Size.Y / source.Y);
+        Vector2 size = source * scale;
+        return new Rect2(box.Position + (box.Size - size) * (alignment ?? new Vector2(.5f, .5f)), size);
+    }
+    private static Rect2 RelativeRect(Rect2 parent, Rect2 normalized)
+        => new(parent.Position + parent.Size * normalized.Position, parent.Size * normalized.Size);
+    // Flat food overlays are deliberately projected onto the authored bowl opening.
+    private void FoodLayer(string id, Rect2 rect, float alpha = 1)
+        => DrawSprite(_art.Texture(id), rect, alpha, 0);
+    private void DrawSprite(Texture2D texture, Rect2 rect, float alpha, float angle)
     {
         if (alpha <= 0) return;
         DrawSetTransform(rect.GetCenter(), angle);
@@ -259,12 +378,21 @@ public partial class WuhanWorkstationView : Control
     private void Hint(Rect2 rect, string target)
     {
         if (_hover == target && CanInteract?.Invoke() == true)
-            Ellipse(rect.GetCenter(), rect.Size * .55f, new Color(1, .85f, .3f, .18f));
+            Ellipse(rect.GetCenter(), rect.Size * .55f, new Color(WuhanUi.Accent, .18f));
     }
     private static Rect2 At(Vector2 center, Vector2 size) => new(center - size / 2, size);
 
-    private Rect2 CookerCanvas => _cookerLevel == 3 ? new Rect2(24, 74, 417, 282) : new Rect2(29, -7, 412, 412);
-    private Vector2 BasketHome(int index) => _cookerLevel == 3 ? new Vector2(index == 0 ? 161 : 305, 187) : new Vector2(191, 162);
+    // All v2 cookers use square source canvases. Keep the pot bases on the counter
+    // and align the separate baskets with each model's authored water surface.
+    private Rect2 CookerCanvas => _cookerLevel switch
+    {
+        2 => new Rect2(66, -22, 363, 363),
+        3 => new Rect2(61, -2, 367, 367),
+        _ => new Rect2(66, -2, 363, 363)
+    };
+    private Vector2 BasketHome(int index) => CookerCanvas.Position + CookerCanvas.Size *
+        (_cookerLevel == 3 ? new Vector2(index == 0 ? .37f : .714f, .477f) : new Vector2(.546f, .437f));
+    private Vector2 BasketSize => FitSprite(_art.Texture("basket"), new Rect2(0, 0, _cookerLevel == 3 ? 116 : 136, _cookerLevel == 3 ? 120 : 140)).Size;
     public Rect2 BasketRect(int index)
     {
         Motion? m = Find($"basket{index}");
@@ -272,22 +400,13 @@ public partial class WuhanWorkstationView : Control
         if (m?.Kind == "raise") raised = ReducedMotion ? 1 : Ease(m.Progress);
         Vector2 center = BasketHome(index) + new Vector2(0, -67 * raised);
         if (m?.Kind == "shake" && !ReducedMotion) center.Y += Mathf.Sin(m.Progress * Mathf.Tau * 2) * 10;
-        return At(center, _cookerLevel == 3 ? new Vector2(121, 151) : new Vector2(144, 179));
+        return At(center, BasketSize);
     }
     private void DrawCooker()
     {
         Rect2 c = CookerCanvas;
         DrawTextureRect(_art.Cooker(_cookerLevel), c, false);
-        // Rebuild the inner water surface only. It covers the baked-in baskets while
-        // leaving the outer pot rim and upgrade machinery visible.
-        Vector2[] water = _cookerLevel == 3
-            ? new[] { new Vector2(.205f,.365f), new(.235f,.32f), new(.32f,.295f), new(.5f,.288f), new(.69f,.295f), new(.78f,.335f), new(.812f,.42f), new(.785f,.50f), new(.70f,.55f), new(.51f,.565f), new(.32f,.55f), new(.21f,.485f) }
-            : new[] { new Vector2(.175f,.388f), new(.19f,.31f), new(.32f,.264f), new(.49f,.244f), new(.67f,.264f), new(.79f,.335f), new(.825f,.435f), new(.795f,.513f), new(.69f,.55f), new(.51f,.567f), new(.345f,.548f), new(.21f,.51f), new(.16f,.435f) };
-        DrawColoredPolygon(water.Select(p => c.Position + p * c.Size).ToArray(), new Color("#8EDCF2"));
-        Ellipse(c.Position + c.Size * new Vector2(.55f, .39f), c.Size * new Vector2(.145f, .045f), new Color("#AAE8F6"));
-        Hint(RawRect, "raw"); Sprite(_art.Shared.IngredientTray, RawRect.Grow(8));
-        Sprite("raw_noodles", RawRect, _ingredients.Count(StableIds.Ingredients.WuhanNoodles) > 0 ? 1 : .25f);
-        DrawString(ThemeDB.FallbackFont, new Vector2(148, 78), $"面条 {_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}", fontSize: 17, modulate: TianjinUi.BrownDark);
+        // The v2 artwork already contains water without baked-in baskets.
         for (int i = 0; i < _cooker.Baskets.Count; i++)
         {
             Motion? m = Find($"basket{i}"); NoodleBasketRuntime basket = _cooker.Baskets[i];
@@ -295,7 +414,7 @@ public partial class WuhanWorkstationView : Control
             Rect2 r = BasketRect(i); Hint(r, $"basket{i}"); Sprite("basket", r);
             if (basket.State != NoodleBasketState.Empty)
             {
-                Rect2 noodles = new(r.Position + r.Size * new Vector2(.10f, .42f), r.Size * new Vector2(.59f, .24f));
+                Rect2 noodles = new(r.Position + r.Size * new Vector2(.08f, .50f), r.Size * new Vector2(.60f, .24f));
                 if (m?.Kind == "drop" && !ReducedMotion)
                 {
                     float p = Ease(m.Progress); noodles = At(RawRect.GetCenter().Lerp(noodles.GetCenter(), p), RawRect.Size.Lerp(noodles.Size, p));
@@ -310,20 +429,33 @@ public partial class WuhanWorkstationView : Control
                     Drips(r.Position + r.Size * new Vector2(.38f,.94f), m?.Kind == "shake" ? 8 : 4);
             }
         }
-        // Repaint the authored front rim over submerged basket bottoms. The source
-        // starts below the baked-in baskets, so none of those can be reintroduced.
+        DrawCookerFront();
+        DrawRawTray();
+    }
+
+    private void DrawRawTray()
+    {
+        Hint(RawRect, "raw"); Sprite(_art.Shared.IngredientTray, RawRect.Grow(8));
+        Sprite("raw_noodles", RawRect, _ingredients.Count(StableIds.Ingredients.WuhanNoodles) > 0 ? 1 : .25f);
+        DrawString(ThemeDB.FallbackFont, new Vector2(RawRect.End.X + 14, RawRect.End.Y + 5), $"面条 {_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}", fontSize: 18, modulate: WuhanUi.Text);
+    }
+
+    private void DrawCookerFront()
+    {
+        // Each v2 pot has its own front-rim height, shared by idle and return motion.
+        Rect2 c = CookerCanvas;
         Texture2D pot = _art.Cooker(_cookerLevel);
-        const float front = .568f;
+        float front = _cookerLevel switch { 2 => .645f, 3 => .595f, _ => .568f };
         DrawTextureRectRegion(pot, new Rect2(c.Position + new Vector2(0,c.Size.Y*front),c.Size*new Vector2(1,1-front)),
             new Rect2(new Vector2(0,pot.GetHeight()*front),pot.GetSize()*new Vector2(1,1-front)));
     }
 
     private void DrawMixStation()
     {
-        Sprite("mix_station", new Rect2(465, 111, 493, 235));
+        Sprite("mix_station", new Rect2(505, 128, 420, 200));
         Hint(BowlRect, "bowl");
         Motion? m = Find("bowl");
-        bool delivering = m?.Kind == "delivery";
+        bool delivering = _draggedProduct == ProductKind.HotDryNoodles;
         if (!delivering)
         {
             Sprite("empty_bowl", BowlRect);
@@ -338,35 +470,35 @@ public partial class WuhanWorkstationView : Control
             bool movingContainer=m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[i]&&i is 0 or 2&&!ReducedMotion;
             if(!movingContainer)Sprite(_art.Ingredient(IngredientIds[i]), r, _ingredients.Count(IngredientIds[i]) > 0 ? 1 : .3f);
         }
-        if(!(m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[0]&&!ReducedMotion))Sprite("base_sauce", new Rect2(525, 175, 42, 64));
+        if(!(m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[0]&&!ReducedMotion))Sprite("base_sauce", SauceBottleRect);
         if (_mixLast is Vector2 pointer)
         {
             Vector2 center = BowlFood.GetCenter();
             float angle = ReducedMotion ? -.3f : (pointer-center).Angle() * .12f - .4f;
-            Sprite("chopsticks", At(pointer + new Vector2(20,-27), new Vector2(91,121)), 1, angle);
+            Sprite("chopsticks", At(pointer + new Vector2(20,-27), new Vector2(99,99)), 1, angle);
         }
-        else Sprite("chopsticks", new Rect2(801,244,103,65), .9f, -.15f);
+        else Sprite("chopsticks", new Rect2(749,235,91,88), .9f, -.15f);
         if (m?.Kind == "ingredient") DrawIngredientMotion(m);
     }
     private void DrawBowlContents(Rect2 food, NoodleBowlState state, float progress, NoodleQuality quality,
         IEnumerable<string> toppings, string hidden = "", float opacity = 1)
     {
-        Sprite("bowl_noodles", food,opacity);
+        FoodLayer("bowl_noodles", food,opacity);
         bool seasoned = state is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready;
         if (seasoned && hidden != StableIds.Ingredients.WuhanBaseSeasoning)
         {
             float half = Mathf.Clamp(progress / 50, 0, 1), mixed = Mathf.Clamp((progress - 40) / 60, 0, 1);
-            Sprite("unmixed", food, (1-half)*opacity);
-            Sprite("half_mixed", food, half * (1-mixed)*opacity);
-            Sprite("mixed", food, mixed*opacity);
+            FoodLayer("unmixed", food, (1-half)*opacity);
+            FoodLayer("half_mixed", food, half * (1-mixed)*opacity);
+            FoodLayer("mixed", food, mixed*opacity);
         }
-        if (quality == NoodleQuality.Overcooked) Sprite("overcooked", food, (seasoned ? .35f : .8f)*opacity);
+        if (quality == NoodleQuality.Overcooked) FoodLayer("overcooked", food, (seasoned ? .35f : .8f)*opacity);
         foreach (string topping in toppings)
             if (topping != hidden)
             {
                 bool beef=topping==StableIds.Ingredients.WuhanBraisedBeef;
                 Rect2 placement=beef?new Rect2(food.Position+food.Size*new Vector2(.25f,.17f),food.Size*new Vector2(.64f,.67f)):food;
-                Sprite(topping == StableIds.Ingredients.WuhanScallion ? "scallion" : topping == StableIds.Ingredients.WuhanChiliOil ? "chili_overlay" : "beef_overlay", placement,opacity);
+                FoodLayer(topping == StableIds.Ingredients.WuhanScallion ? "scallion" : topping == StableIds.Ingredients.WuhanChiliOil ? "chili_overlay" : "beef_overlay", placement,opacity);
             }
     }
     private void DrawIngredientMotion(Motion m)
@@ -386,9 +518,13 @@ public partial class WuhanWorkstationView : Control
         else Sprite(index==1?"scallion":"beef_overlay",At(source.GetCenter().Lerp(BowlFood.GetCenter(),Ease(p)),source.Size.Lerp(BowlFood.Size,p)),1-p);
     }
 
-    private Vector2[] PanCorners => _doupiLevel == 3
-        ? new[] {new Vector2(1060,93),new Vector2(1361,93),new Vector2(1380,221),new Vector2(1041,221)}
-        : new[] {new Vector2(1061,61),new Vector2(1356,61),new Vector2(1378,194),new Vector2(1038,194)};
+    private Vector2[] PanCorners => (_doupiLevel switch
+    {
+        3 => new[] {new Vector2(.1895f,.3590f),new Vector2(.8073f,.3590f),new Vector2(.8543f,.6708f),new Vector2(.1433f,.6708f)},
+        2 => new[] {new Vector2(.1900f,.1529f),new Vector2(.8067f,.1529f),new Vector2(.8561f,.5918f),new Vector2(.1447f,.5918f)},
+        _ => new[] {new Vector2(.1867f,.1522f),new Vector2(.8091f,.1522f),new Vector2(.8589f,.5928f),new Vector2(.1411f,.5928f)}
+    })
+        .Select(p => PanRect.Position + p * PanRect.Size).ToArray();
     private void PanLayer(string id,float alpha=1,float grow=1,float flip=1)
     {
         Vector2[] corners=PanCorners; Vector2 center=(corners[0]+corners[2])/2;
@@ -404,15 +540,15 @@ public partial class WuhanWorkstationView : Control
     private void DrawDoupi()
     {
         Sprite(_art.Griddle(Math.Max(1,_doupiLevel)),PanRect,_doupi is null?.4f:1);
-        Sprite("doupi_batter",new Rect2(997,271,70,71),_doupi is null?.35f:1);
-        Sprite("doupi_filling",new Rect2(1327,278,84,65),_doupi is null?.35f:1);
+        Sprite("doupi_batter",BatterRect,_doupi is null?.35f:1);
+        Sprite("doupi_filling",FillingRect,_doupi is null?.35f:1);
         Hint(StockRect,"stock");Sprite("doupi_stock",StockRect);
-        int displayed=_stock.Count;
+        int displayed=_stock.Count - (_draggedProduct == ProductKind.Doupi ? 1 : 0);
         Motion? m=Find("pan");
         if(m?.Kind=="stock")displayed=Math.Max(0,displayed-8);
         for(int i=0;i<displayed;i++)Sprite("doupi_single",StockItemRect(i));
         if(_doupi is null)return;
-        Hint(new Rect2(1035,65,348,156),"pan");
+        Hint(At(PanCenter, PanRect.Size * new Vector2(.7f, .4f)),"pan");
         DoupiState state=_doupi.State;
         if(m?.Kind=="discard"){PanLayer("doupi_egg",1-m.Progress);PanLayer("doupi_burnt",1-m.Progress);}
         if(state!=DoupiState.Empty)
@@ -435,7 +571,8 @@ public partial class WuhanWorkstationView : Control
         }
         if(m is not null)DrawPanMotion(m);
     }
-    private static Rect2 StockItemRect(int index)=>new(1100+(index%4)*45,289+(index/4)*13,48,27);
+    private Rect2 StockItemRect(int index) => RelativeRect(StockRect,
+        new Rect2(.11f + (index % 4) * .195f, .16f + (index / 4) * .13f, .19f, .30f));
     private void DrawCut(int index,float progress)
     {
         Vector2[] c=PanCorners;
@@ -460,7 +597,7 @@ public partial class WuhanWorkstationView : Control
         }
         else if(m.Kind is "batter" or "egg" or "filling")
         {
-            Vector2 from=m.Kind=="filling"?new Vector2(1360,300):new Vector2(1030,300);
+            Vector2 from=(m.Kind=="filling"?FillingRect:BatterRect).GetCenter();
             Vector2 center=from.Lerp(PanCenter+new Vector2(0,-78),Mathf.Sin(p*Mathf.Pi));
             Texture2D tex=m.Kind=="egg"?_art.Shared.Ingredient(StableIds.Ingredients.Egg):_art.Texture(m.Kind=="batter"?"doupi_batter":"doupi_filling");
             Sprite(tex,At(center,new Vector2(73,68)),1,-Mathf.Sin(p*Mathf.Pi)*.65f);
@@ -474,25 +611,27 @@ public partial class WuhanWorkstationView : Control
     {
         Hint(EggMachine,"egg");Sprite("egg_station",EggMachine,_egg is null?.4f:1);
         if(_egg is null)return;
-        for(int i=0;i<_egg.BaseCups;i++)Sprite("egg_base",new Rect2(1450+(i%2)*37,227-(i/2)*50,42,45));
+        for(int i=0;i<_egg.BaseCups;i++)Sprite("egg_base",BaseCupRect(i));
         Motion? m=Find("egg");
-        if(_egg.HasFinishedCup||_egg.IsPreparing)
+        if((_egg.HasFinishedCup||_egg.IsPreparing) && _draggedProduct != ProductKind.EggRiceWine)
         {
             Rect2 r=CupRect;
-            if(m?.Kind=="brew"&&!ReducedMotion)r=At(new Vector2(1490,233).Lerp(CupRect.GetCenter(),Segment(m.Progress,0,.28f)),CupRect.Size);
+            if(m?.Kind=="brew"&&!ReducedMotion)r=At(BaseCupRect(_egg.BaseCups).GetCenter().Lerp(CupRect.GetCenter(),Segment(m.Progress,0,.28f)),CupSize);
             float progress=_egg.HasFinishedCup?1:Mathf.Clamp(1-(float)(_egg.RemainingSeconds/EggRiceWineRuntime.ActionSeconds),0,1);
             Sprite("egg_base",r,1-progress);
             Sprite("egg_finished",r,progress);
             if(_egg.IsPreparing&&progress>.25f)
             {
-                // The authored spout is at 58%/53% of the cropped station image.
-                Vector2 spout=EggMachine.Position+EggMachine.Size*new Vector2(.584f,.525f);
-                DrawLine(spout,r.Position+r.Size*new Vector2(.5f,.24f),new Color(.9f,.96f,1,.8f),5,true);
+                DrawLine(EggSpout,r.Position+r.Size*new Vector2(.5f,.24f),new Color(.9f,.96f,1,.8f),5,true);
             }
             Steam(r.Position+new Vector2(r.Size.X/2,5),.45f);
         }
         if(m?.Kind=="egg_refill")
-            for(int i=0;i<6;i++)Sprite("egg_base",new Rect2(1450+(i%2)*37,227-(i/2)*50-(ReducedMotion?0:30*(1-Ease(m.Progress))),42,45),m.Progress);
+            for(int i=0;i<6;i++)
+            {
+                Rect2 r=BaseCupRect(i);r.Position-=new Vector2(0,ReducedMotion?0:30*(1-Ease(m.Progress)));
+                Sprite("egg_base",r,m.Progress);
+            }
     }
     private void DrawRefills()
     {
@@ -510,7 +649,7 @@ public partial class WuhanWorkstationView : Control
         {
             if(m.Kind=="pour"&&!ReducedMotion)
             {
-                Rect2 home=At(BasketHome(m.Index)+new Vector2(0,-67),_cookerLevel==3?new Vector2(121,151):new Vector2(144,179));
+                Rect2 home=At(BasketHome(m.Index)+new Vector2(0,-67),BasketSize);
                 Vector2 destination=BowlFood.GetCenter()+new Vector2(-32,-105);
                 float enter=Segment(m.Progress,0,.36f),leave=Segment(m.Progress,.7f,1);
                 Vector2 center=home.GetCenter().Lerp(destination,enter).Lerp(BasketHome(m.Index),leave);
@@ -519,11 +658,8 @@ public partial class WuhanWorkstationView : Control
                 if(leave>0)
                 {
                     // The returning empty basket descends behind the front rim.
-                    Rect2 potRect=_cookerLevel==3?new Rect2(24,74,417,282):new Rect2(29,-7,412,412);
-                    Texture2D pot=_art.Cooker(_cookerLevel);
-                    const float front=.568f;
-                    DrawTextureRectRegion(pot,new Rect2(potRect.Position+new Vector2(0,potRect.Size.Y*front),potRect.Size*new Vector2(1,1-front)),
-                        new Rect2(new Vector2(0,pot.GetHeight()*front),pot.GetSize()*new Vector2(1,1-front)));
+                    DrawCookerFront();
+                    DrawRawTray();
                 }
                 if(m.Progress<.68f)
                 {
@@ -532,20 +668,7 @@ public partial class WuhanWorkstationView : Control
                     Sprite(m.Quality==NoodleQuality.Overcooked?"overcooked":"cooked_basket",At(start.Lerp(BowlFood.GetCenter(),fall),new Vector2(88,45).Lerp(BowlFood.Size,fall)),1,angle*(1-fall));
                 }
             }
-            if(m.Kind=="delivery")
-            {
-                ProductKind kind=(ProductKind)m.Index;
-                Vector2 from=kind==ProductKind.HotDryNoodles?BowlRect.GetCenter():kind==ProductKind.Doupi?StockCenter:CupRect.GetCenter();
-                float p=Ease(m.Progress);Vector2 center=ReducedMotion?from:from.Lerp(m.Target,p)+new Vector2(0,-Mathf.Sin(p*Mathf.Pi)*50);
-                float scale=ReducedMotion?1:Mathf.Lerp(1,.55f,p),alpha=1-Segment(m.Progress,.8f,1);
-                if(kind==ProductKind.HotDryNoodles)
-                {
-                    Sprite("empty_bowl",At(center,BowlRect.Size*scale),alpha);
-                    // Food moves with the bowl, including its actual recipe and quality.
-                    DrawBowlContents(At(center+new Vector2(0,-32)*scale,BowlFood.Size*scale),NoodleBowlState.Ready,100,m.Quality,m.Toppings,opacity:alpha);
-                }
-                else Sprite(kind==ProductKind.Doupi?"doupi_single":"egg_finished",At(center,new Vector2(100,85)*scale),alpha);
-            }
+
         }
     }
     private void Steam(Vector2 origin,float scale)

@@ -66,11 +66,14 @@ public partial class TianjinDayScreen : Control
     private bool _manualPaused;
     private bool _focusPaused;
     private double _feedbackRemaining;
+    private readonly Dictionary<Control, Tween> _coinFlights = new();
+    internal IReadOnlyCollection<Control> PaymentCoins => _coinFlights.Keys;
 
     public override void _Ready() => Build();
 
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        ClearCoinFlights();
         _catalog = catalog;
         _save = save;
         _controller = controller;
@@ -171,8 +174,18 @@ public partial class TianjinDayScreen : Control
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is not InputEventKey { Keycode: Key.Escape, Pressed: true, Echo: false }) return;
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key) return;
+        if (!IsVisibleInTree() || !_focused) return;
         if (_abandonDialog.Visible) return;
+        if (key.Keycode is Key.F or Key.G)
+        {
+            if (key.AltPressed || key.CtrlPressed || key.MetaPressed || key.ShiftPressed) return;
+            if (_controller?.State is not (DayState.Running or DayState.Closing)
+                || _manualPaused || _focusPaused || _pausePanel.Visible || _results.Visible) return;
+            if (_workstation.TryInvokeProductionShortcut(key.Keycode)) GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (key.Keycode != Key.Escape) return;
         if (_controller?.State is not (DayState.Opening or DayState.Running or DayState.Closing)) return;
         SetManualPaused(!_manualPaused);
         GetViewport().SetInputAsHandled();
@@ -207,7 +220,7 @@ public partial class TianjinDayScreen : Control
         TianjinUi.FullRect(background);
         AddChild(background);
 
-        _workstation = new PancakeWorkstation { UseServingTray = true };
+        _workstation = new PancakeWorkstation { UseServingTray = true, ProductionShortcutsEnabled = true };
         TianjinUi.FullRect(_workstation);
         _workstation.Feedback += ShowFeedback;
         _workstation.YoutiaoConsumed += quantity => _controller?.Ledger?.RecordYoutiaoUsed(quantity);
@@ -300,12 +313,12 @@ public partial class TianjinDayScreen : Control
 
     private void BuildCustomers()
     {
-        var customers = new HBoxContainer();
+        // Food on the back edge of the counter rises into this layout rectangle.
+        // Delivery zones resolve drops themselves; the empty strip must not eat pickup clicks.
+        var customers = new Control { MouseFilter = MouseFilterEnum.Ignore };
         customers.Name = "CustomerStrip";
         customers.Position = new Vector2(54, CustomerStripTop);
         customers.Size = new Vector2(1812, CustomerStripHeight);
-        customers.Alignment = BoxContainer.AlignmentMode.Center;
-        customers.AddThemeConstantOverride("separation", 12);
         customers.ZIndex = 30;
         AddChild(customers);
         for (int index = 0; index < _customerSlots.Length; index++)
@@ -314,6 +327,8 @@ public partial class TianjinDayScreen : Control
             {
                 Name = $"CustomerSlot{index + 1}",
                 CustomMinimumSize = new Vector2(340, CustomerStripHeight),
+                Position = new Vector2(32 + index * 352, 0),
+                Size = new Vector2(340, CustomerStripHeight),
                 SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
                 MouseFilter = MouseFilterEnum.Ignore,
                 Visible = false,
@@ -522,6 +537,7 @@ public partial class TianjinDayScreen : Control
         if (_committed) return;
         _committed = true;
         _workstation.InteractionEnabled = false;
+        _workstation.CancelInput();
         try
         {
             _commit = _save.CommitDay(result, _controller.CurrentPlan!, _controller.CurrentConfig!);
@@ -549,7 +565,7 @@ public partial class TianjinDayScreen : Control
         ProductKind? kind = PancakeWorkstation.DeliveryProduct(payload);
         DeliveryEvaluation evaluation = kind switch
         {
-            ProductKind.Pancake => _controller.TryDeliverPancakeTo(customerId, _workstation.Machine, _catalog),
+            ProductKind.Pancake => _workstation.DeliverPancakeTo(_controller, customerId, _catalog),
             ProductKind.Youtiao when _workstation.FryerMachine is not null => _controller.TryDeliverYoutiaoTo(customerId, _workstation.FryerMachine.Inventory),
             ProductKind.SoyMilk when _workstation.SoyMilkTray is not null => _controller.TryDeliverSoyMilkTo(customerId, _workstation.SoyMilkTray),
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
@@ -598,6 +614,11 @@ public partial class TianjinDayScreen : Control
         bool paused = _manualPaused || _focusPaused;
         if (_controller is not null) _controller.IsPaused = paused;
         if (_workstation is not null) _workstation.Paused = paused;
+        foreach (Tween tween in _coinFlights.Values)
+        {
+            if (paused) tween.Pause();
+            else tween.Play();
+        }
     }
 
     private void Render()
@@ -615,18 +636,19 @@ public partial class TianjinDayScreen : Control
         DayResult? progress = _controller.Ledger?.Build();
         _completedOrders.Text = $"完成订单 {progress?.CompletedCustomers ?? 0}/{_controller.CurrentConfig.CustomerCount}";
         _income.Text = $"今日收入 ¥{progress?.TotalRevenue ?? 0}";
+        _workstation.CoinTray?.RenderRevenue(progress?.TotalRevenue ?? 0);
         RenderCustomers();
     }
 
     private void RenderCustomers()
     {
         if (_controller?.CustomerQueue is null) return;
-        IReadOnlyList<CustomerRuntime> slots = _controller.CustomerQueue.Slots;
         _door.Text = $"门外候场 {_controller.CustomerQueue.DoorQueue.Count}";
         for (int index = 0; index < _customerSlots.Length; index++)
         {
             Control button = _customerSlots[index];
-            if (index >= slots.Count)
+            CustomerRuntime? customer = _controller.CustomerQueue.CustomerAtSlot(index);
+            if (customer is null)
             {
                 button.Visible = false;
                 _portraits[index].Rotation = 0;
@@ -637,7 +659,6 @@ public partial class TianjinDayScreen : Control
                 _deliveryCustomerIds[index] = null;
                 continue;
             }
-            CustomerRuntime customer = slots[index];
             button.Visible = true;
             BindDeliveryCustomer(index, customer.Id);
             string progress = string.Join(',', customer.Order.Lines.Select((_, line) => customer.Progress.GetDeliveredQuantity(line)));
@@ -780,9 +801,9 @@ public partial class TianjinDayScreen : Control
             for (int index = 0; index < 3; index++)
                 SpawnCelebration(_art.StarEffect, origin + new Vector2((index - 1) * 44, -20), new Vector2((index - 1) * 25, -142), 0.05 + index * 0.04);
         }
-        if (evaluation.TotalRevenue > 0)
+        if (evaluation.TotalRevenue > 0 && !ReducedMotion)
         {
-            Vector2 target = GetGlobalTransform().AffineInverse() * _coinTarget.GetGlobalRect().GetCenter();
+            Vector2 target = GetGlobalTransform().AffineInverse() * (_workstation.CoinTray?.LandingPoint ?? _coinTarget.GetGlobalRect().GetCenter());
             for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08);
         }
     }
@@ -808,16 +829,30 @@ public partial class TianjinDayScreen : Control
     private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay)
     {
         var coin = TianjinUi.Texture(_art.Coin, new Vector2(38, 38));
+        coin.Name = "FlyingPaymentCoin";
         coin.Position = origin - coin.Size * 0.5f;
         coin.MouseFilter = MouseFilterEnum.Ignore;
         coin.ZIndex = 87;
         AddChild(coin);
         Tween tween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
+        _coinFlights[coin] = tween;
         tween.TweenProperty(coin, "position", target - coin.Size * 0.5f, 0.62).SetDelay(delay);
         tween.Parallel().TweenProperty(coin, "scale", new Vector2(0.65f, 0.65f), 0.62).SetDelay(delay);
         tween.TweenProperty(coin, "modulate", new Color(1, 1, 1, 0), 0.12);
-        tween.Finished += coin.QueueFree;
+        tween.Finished += () => { _coinFlights.Remove(coin); coin.QueueFree(); };
     }
+
+    private void ClearCoinFlights()
+    {
+        foreach ((Control coin, Tween tween) in _coinFlights)
+        {
+            tween.Kill();
+            if (IsInstanceValid(coin)) coin.QueueFree();
+        }
+        _coinFlights.Clear();
+    }
+
+    public override void _ExitTree() => ClearCoinFlights();
 
     private static string CustomerTypeBadge(string id)
     {

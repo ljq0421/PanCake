@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.Fryer;
 using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.Gameplay;
@@ -41,8 +42,10 @@ public partial class StageFourSelfTest
             Check(inventory.TryBeginRefill(id), $"Lv{level} {id} 空库存可开始真实补货");
             inventory.Tick(inventory.LevelData.RefillSeconds * .5);
             slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id), inventory.GetRefillProgress(id), true);
-            Check(slot.VisibleIngredientVisualCount == 0 && slot.StockBar.Value == 50 && slot.RefillButton.Disabled,
-                $"Lv{level} {id} 实际空盘补货一半仍无食材，进度独立且禁止重复补货");
+            int halfVisible = capacity switch { 6 => 3, 8 => 4, 10 => 5, 12 => 6, 16 => 7, _ => -1 };
+            Check(slot.VisibleIngredientVisualCount == halfVisible && slot.StockBar.Value == 50 && slot.RefillButton.Disabled
+                && inventory.GetQuantity(id) == 0 && !inventory.TryConsume(id),
+                $"Lv{level} {id} 空盘补货一半显示逐份补入预览，真实库存仍为空且禁止取用和重复补货");
             inventory.Tick(inventory.LevelData.RefillSeconds * .5);
             slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id), inventory.GetRefillProgress(id), true);
             Check(inventory.GetQuantity(id) == capacity && slot.VisibleIngredientVisualCount == Math.Min(capacity, 10)
@@ -56,8 +59,8 @@ public partial class StageFourSelfTest
                 previousVisible = CheckFrame(quantity, previousVisible, increasing: true);
             }
             slot.RenderStock(1, capacity, IngredientStockStatus.Refilling, .5, true);
-            Check(slot.VisibleIngredientVisualCount == 1 && slot.StockBar.Value == 50 && slot.RefillButton.Disabled,
-                $"Lv{level} {id} 补货一半时仍显示实际一份，进度独立且禁止重复补货");
+            Check(slot.VisibleIngredientVisualCount == halfVisible && slot.StockBar.Value == 50 && slot.RefillButton.Disabled,
+                $"Lv{level} {id} 从余下一份开始补货，半程逐步补入缺少部分且禁止重复补货");
             slot.RenderStock(capacity, capacity, IngredientStockStatus.Normal, 1, true);
             Check(slot.VisibleIngredientVisualCount == Math.Min(capacity, 10) && !slot.RefillButton.Visible,
                 $"Lv{level} {id} 有余量补货完成后恢复满库存");
@@ -153,7 +156,8 @@ public partial class StageFourSelfTest
                     $"香葱{quantity}/10的整簇轮廓均避开盘沿，簇与簇之间互不重叠");
             }
             slot.RenderStock(0, 10, IngredientStockStatus.Refilling, .5, true);
-            Check(loose ? slot.VisibleIngredientVisualCount == 0 : slot.LiquidTier == 0, $"{id} 补货未完成不会凭进度制造食材");
+            Check(loose ? slot.VisibleIngredientVisualCount == 2 : slot.LiquidTier == 0,
+                $"{id} 香葱半程显示两簇补货预览，液面仍保持实际库存");
             slot.Free();
         }
 
@@ -174,6 +178,25 @@ public partial class StageFourSelfTest
         var workstation = new PancakeWorkstation { UseServingTray = true };
         AddChild(workstation);
         workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11], art);
+        var rack = (WorkstationSlotView)workstation.FindChild("FinishedYoutiaoArea", true, false);
+        YoutiaoInventory friedStock = workstation.FryerMachine!.Inventory;
+        friedStock.TryStore(friedStock.Capacity, YoutiaoQuality.Golden);
+        var rackPositions = rack.IngredientVisuals.Select(item => (item.Position, item.Size)).ToArray();
+        int previousRackCount = rack.VisibleIngredientVisualCount;
+        while (friedStock.TryTake(out _))
+        {
+            Check(rack.VisibleIngredientVisualCount <= previousRackCount
+                && (friedStock.Count == 0 ? rack.VisibleIngredientVisualCount == 0 : rack.VisibleIngredientVisualCount > 0)
+                && rack.IngredientIsInsideTray(4)
+                && rack.IngredientVisuals.Select(item => (item.Position, item.Size)).SequenceEqual(rackPositions),
+                "熟油条取用后按余量减少堆叠，空库存露出空架，剩余素材位置与尺寸不变");
+            previousRackCount = rack.VisibleIngredientVisualCount;
+        }
+        Check(!rack.CountLabel.IsVisibleInTree()
+            && workstation.FindChildren("IngredientSlot_*", "Control", true, false).OfType<IngredientStockSlotView>()
+                .All(slot => !slot.StockLabel.IsVisibleInTree())
+            && workstation.FindChild("SoyMilkStatus", true, false) is Label soyLabel && !soyLabel.Text.Any(char.IsDigit),
+            "天津小料、熟油条与豆浆通过素材余量表达库存，不显示库存数字");
         var cups = (SoyMilkStockView)workstation.FindChild("SoyMilkStockArt", true, false);
         var cupNodes = cups.Cups.ToArray();
         var cupPositions = cupNodes.Select(cup => cup.Position).ToArray();
@@ -193,7 +216,8 @@ public partial class StageFourSelfTest
         {
             Rect2 cupBoundsNow = cupNodes[index].GetGlobalRect();
             Vector2 foot = new(cupBoundsNow.GetCenter().X, cupBoundsNow.End.Y);
-            Rect2 floor = new(trayBounds.Position + trayBounds.Size * new Vector2(.12f, .24f), trayBounds.Size * new Vector2(.76f, .51f));
+            Rect2 floor = new(trayArt.GlobalPosition + TianjinWorkbenchLayout.ServingTrayFloor.Position,
+                TianjinWorkbenchLayout.ServingTrayFloor.Size);
             Check(floor.HasPoint(foot) && source.GetGlobalRect().Encloses(cupBoundsNow),
                 $"豆浆第{index + 1}杯落在盘内且整个杯子可拖取");
             if (index % 3 != 2)
@@ -201,8 +225,8 @@ public partial class StageFourSelfTest
                     $"豆浆第{index + 1}杯与同排下一杯有间隔");
         }
         var refill = (Button)soyPanel.FindChild("SoyMilkRefill", true, false);
-        Check(!source.GetGlobalRect().Intersects(refill.GetGlobalRect()) && !trayBounds.Intersects(refill.GetGlobalRect()),
-            "豆浆补货在盘外，既不占盘面也不遮挡取杯热区");
+        Check(!refill.IsVisibleInTree() && soyPanel.FindChild("StockGesture_soy_milk", true, false) is StockGesture gesture
+            && gesture.GetGlobalRect().Encloses(trayBounds), "豆浆使用覆盖托盘的长按区域且隐藏加号");
         // Starting and cancelling a real drag must not reserve or consume a cup.
         drag.BeginDrag(source, "soy_milk", "豆浆", TianjinUi.Cream, new DragVisualSpec(art.Product(ProductKind.SoyMilk), TianjinWorkbenchLayout.SoyVisual));
         drag.CancelDrag();
@@ -227,6 +251,159 @@ public partial class StageFourSelfTest
         workstation.RefreshForCapture();
         Check(cups.VisibleCupCount == 6 && tray.CanStartDrag, "豆浆补货完成恢复六杯和取杯交互");
         workstation.Free();
+    }
+
+    private void TestRefillPreview(DataCatalog catalog)
+    {
+        var art = new TianjinArtCatalog();
+        Variant previousMotion = ProjectSettings.GetSetting("accessibility/reduce_motion", false);
+        try
+        {
+            foreach (bool reducedMotion in new[] { false, true })
+            foreach (int level in Enumerable.Range(1, 3))
+            foreach (string id in new[] { StableIds.Ingredients.Crispy, StableIds.Ingredients.Egg,
+                StableIds.Ingredients.Scallion, StableIds.Ingredients.Ham })
+            foreach (int remainder in new[] { 0, 2 })
+            {
+                ProjectSettings.SetSetting("accessibility/reduce_motion", reducedMotion);
+                var inventory = new IngredientInventory(catalog.IngredientStationsByLevel[level]);
+                int capacity = inventory.GetCapacity(id);
+                inventory.TryConsume(id, capacity - remainder);
+                var slot = new IngredientStockSlotView();
+                AddChild(slot);
+                bool loose = id == StableIds.Ingredients.Scallion;
+                slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), id,
+                    TianjinWorkbenchLayout.IngredientSlot(id), loose ? IngredientVisualMode.LooseStock : IngredientVisualMode.HybridStock);
+                slot.RenderStock(remainder, capacity, inventory.GetStatus(id), 0, true);
+                var identities = slot.IngredientVisuals.ToArray();
+                var positions = identities.Select(item => (item.Position, item.Size)).ToArray();
+                int previousVisible = slot.VisibleIngredientVisualCount;
+                string context = $"Lv{level} {id} 余量{remainder} reducedMotion={reducedMotion}";
+                Check(inventory.TryBeginRefill(id), $"{context} 开始补货");
+                // Sample every portion boundary halfway through its interval,
+                // including repeated frames with no gameplay time advancing.
+                int missing = capacity - remainder;
+                for (int portion = 0; portion < missing; portion++)
+                {
+                    double progress = (portion + .5) / missing;
+                    slot.RenderStock(remainder, capacity, IngredientStockStatus.Refilling, progress, false);
+                    int visible = slot.VisibleIngredientVisualCount;
+                    Check(visible >= previousVisible && visible <= previousVisible + 1
+                        && (remainder != 0 || portion != 0 || visible == 0)
+                        && (remainder != 0 || portion != 1 || visible == 1),
+                        $"{context} 第{portion}份按顺序出现，不提前全盘填满");
+                    Check(slot.RefillButton.Disabled && inventory.GetQuantity(id) == remainder
+                        && !inventory.TryConsume(id) && !inventory.TryBeginRefill(id),
+                        $"{context} 预览不提前入库、不能取料或重复补货");
+                    inventory.Tick(0);
+                    slot.RenderStock(remainder, capacity, IngredientStockStatus.Refilling, progress, false);
+                    Check(slot.VisibleIngredientVisualCount == visible && slot.IngredientVisuals.SequenceEqual(identities)
+                        && identities.Select(item => (item.Position, item.Size)).SequenceEqual(positions)
+                        && slot.IngredientIsInsideTray(4) && VisibleStockSpritesDoNotOverlap(slot),
+                        $"{context} 暂停时数量和布局不变，食材不重叠、不出盘");
+                    previousVisible = visible;
+                }
+                inventory.Tick(inventory.LevelData.RefillSeconds);
+                slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id), 0, true);
+                Check(slot.VisibleIngredientVisualCount == (loose ? 3 : Math.Min(capacity, 10))
+                    && slot.VisibleIngredientVisualCount >= previousVisible && !slot.RefillButton.Visible
+                    && slot.CountLabel.Text == $"{capacity}/{capacity}" && inventory.TryConsume(id),
+                    $"{context} 补满后预览衔接真实库存，恢复取料");
+                slot.RenderStock(0, capacity, IngredientStockStatus.Refilling, .75, true);
+                slot.RenderStock(0, capacity, IngredientStockStatus.Empty, 0, true);
+                Check(slot.VisibleIngredientVisualCount == 0, $"{context} 退出补货时清除预览");
+                slot.RenderStock(0, capacity, IngredientStockStatus.Refilling, 0, true);
+                Check(slot.VisibleIngredientVisualCount == 0, $"{context} 再次补货从空盘开始");
+                slot.Free();
+            }
+        }
+        finally { ProjectSettings.SetSetting("accessibility/reduce_motion", previousMotion); }
+    }
+
+    private async System.Threading.Tasks.Task TestYoutiaoPicking()
+    {
+        DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        string savePath = $"user://youtiao-picking-{Guid.NewGuid():N}.json";
+        var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
+        var controller = new DayController(); AddChild(controller);
+        var screen = new TianjinDayScreen(); AddChild(screen);
+        screen.ConnectController(controller);
+        screen.Initialize(catalog, save, controller, 11);
+        screen.SetProcess(false);
+        screen.BeginDay(); controller.Tick(3);
+        screen.RefreshForCapture(true);
+        var workstation = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+        workstation.FryerMachine!.Inventory.TryStore(2, YoutiaoQuality.Golden);
+        workstation.RefreshForCapture();
+        var service = workstation.GetChildren().OfType<DragService>().Single();
+        foreach ((string slotName, string inputName, WorkstationSlotSpec spec) in new[] {
+            ("RawYoutiaoSlot", "RawYoutiaoInput", TianjinWorkbenchLayout.RawYoutiaoSlot()),
+            ("FinishedYoutiaoArea", "FinishedYoutiaoDrag", TianjinWorkbenchLayout.FinishedYoutiaoSlot()) })
+        {
+            var slot = (WorkstationSlotView)workstation.FindChild(slotName, true, false);
+            var input = (DragItem)workstation.FindChild(inputName, true, false);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            TextureRect visual = slot.IngredientVisuals[0];
+            Texture2D texture = visual.Texture;
+            using Image image = texture.GetImage();
+            var opaqueSamples = new List<Vector2>();
+            Vector2 opaque = Vector2.Zero, transparent = Vector2.Zero;
+            bool foundOpaque = false, foundTransparent = false;
+            for (int y = 0; y < image.GetHeight(); y += 8)
+            for (int x = 0; x < image.GetWidth(); x += 8)
+            {
+                Vector2 point = (new Vector2(x, y) + Vector2.One * .5f) / texture.GetSize() * visual.Size;
+                Vector2 inSlot = slot.GetGlobalTransform().AffineInverse() * (visual.GetGlobalTransform() * point);
+                if (!spec.IngredientAnchorRect.HasPoint(inSlot) || !spec.ClickRect.HasPoint(inSlot)) continue;
+                if (!foundOpaque && image.GetPixel(x, y).A > .9f) { opaque = point; foundOpaque = true; }
+                if (!foundTransparent && image.GetPixel(x, y).A == 0) { transparent = point; foundTransparent = true; }
+                if (x % 64 == 0 && y % 64 == 0 && image.GetPixel(x, y).A > .9f) opaqueSamples.Add(point);
+            }
+            Check(foundOpaque && foundTransparent, "生熟油条素材具有可验证的实体点与透明点");
+            foreach (float scale in new[] { 1f, 2f / 3f })
+            {
+                screen.Scale = Vector2.One * scale;
+                Click(visual.GetGlobalTransform() * transparent, false, "透明像素不会开始拖拽");
+                Click(slot.GetGlobalTransform() * spec.CaptionRect!.Value.GetCenter(), false, "标牌不会开始拖拽");
+                Click(slot.GetGlobalTransform() * (spec.ClickRect.Position + new Vector2(5, 5)), false, "托盘空白不会开始拖拽");
+                Click(visual.GetGlobalTransform() * opaque, true, "旋转缩放后的实体像素可以拖拽");
+                int picked = 0;
+                foreach (Vector2 sample in opaqueSamples)
+                {
+                    Vector2 global = visual.GetGlobalTransform() * sample;
+                    using var motion = new InputEventMouseMotion { Position = global };
+                    GetViewport().PushInput(motion, true);
+                    using var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = global };
+                    GetViewport().PushInput(press, true);
+                    if (service.IsDragging) picked++;
+                    service.CancelDrag();
+                    using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = global };
+                    GetViewport().PushInput(release, true);
+                }
+                Check(opaqueSamples.Count > 0 && picked == opaqueSamples.Count,
+                    $"完整营业页面 {slotName} 缩放{scale:F2}的全部实体采样点可取用", $"{picked}/{opaqueSamples.Count}");
+                // Hover animations transform the visible ingredient anchor too.
+                using (var motion = new InputEventMouseMotion { Position = visual.GetGlobalTransform() * opaque })
+                    GetViewport().PushInput(motion, true);
+                await WaitForAnimation(.16);
+                Click(visual.GetGlobalTransform() * opaque, true, "悬停动画完成后实体像素仍可取用");
+                slot.SetIngredientAvailable(false);
+                Click(visual.GetGlobalTransform() * opaque, false, "油条隐藏后不能取用");
+                slot.SetIngredientAvailable(true);
+            }
+        }
+        screen.Free(); controller.Free(); save.Free();
+        DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(savePath));
+
+        void Click(Vector2 point, bool expected, string label)
+        {
+            using var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = point };
+            GetViewport().PushInput(press, true);
+            Check(service.IsDragging == expected, $"生熟油条鼠标事件：{label}");
+            service.CancelDrag();
+            using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = point };
+            GetViewport().PushInput(release, true);
+        }
     }
 
     private static bool VisibleStockSpritesDoNotOverlap(WorkstationSlotView slot)

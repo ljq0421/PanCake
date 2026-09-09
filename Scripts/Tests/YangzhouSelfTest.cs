@@ -86,12 +86,16 @@ public partial class YangzhouSelfTest : Node
     {
         var kitchen = new YangzhouKitchen(_catalog, 12, 3, 3);
         var a = new YangzhouOrder(new(1, 0, "ordinary", "F"), _catalog, false);
+        a.Tick(a.Patience * .1, false);
+        double waitBeforeStaging = a.Wait;
         var b = new YangzhouOrder(new(2, 0, "ordinary", "B"), _catalog, false);
         kitchen.Buns.Enqueue(new("B01")); kitchen.Buns.Enqueue(new("B01")); a.Stage("B01", kitchen);
+        Check(a.Wait == waitBeforeStaging && !a.Served, "扬州放入部分餐品不算交付、不恢复耐心");
         kitchen.TakeTea(); kitchen.Tick(.31); b.Stage("T01", kitchen); b.Serve();
         Check(a.StagedItems.Count == 1 && !a.Serve() && b.Served, "切换托盘保留，缺件禁止正式出餐");
         a.Stage("B01", kitchen); kitchen.TakeTea(); kitchen.Tick(.31); a.Stage("T01", kitchen);
         Check(a.Perfect && a.Serve() && !a.Serve() && a.Satisfaction == 100 && a.Tip == 1, "完整套餐一次出餐、正确收入及小费");
+        Check(a.Wait == waitBeforeStaging, "扬州整盘上桌保留实际等待时间");
         var wrong = new YangzhouOrder(new(3, 0, "ordinary", "B"), _catalog, false); kitchen.Buns.Enqueue(new("B01"));
         Check(!wrong.Stage("B01", kitchen) && kitchen.Buns.Count == 1 && wrong.Mistakes == 1, "错商品扣分但不吃掉库存");
         kitchen.TakeTea(); kitchen.Tick(.31); wrong.Stage("T01", kitchen);

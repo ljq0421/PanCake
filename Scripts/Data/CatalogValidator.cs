@@ -354,6 +354,8 @@ public static class CatalogValidator
             ValidatePositive(day.PatienceMultiplier, source, "patienceMultiplier", "耐心倍率", issues);
             ValidatePositive(day.MaxWaitingCustomers, source, "maxWaitingCustomers", "最大等待人数", issues);
             ValidatePositive(day.RandomSeed, source, "randomSeed", "随机种子", issues);
+            if (day.SatisfactionAverageMode != SatisfactionAverageMode.CompletedCustomers)
+                Add(issues, source, "satisfactionAverageMode", "满意度必须只统计已完成订单的顾客，流失顾客不参与平均。");
 
             ValidateUnlockList(day.StartUnlocks, source, "startUnlocks", unlockedIds, unlockedRecipes, issues);
             ApplyProductUnlocks(day.StartUnlocks, unlockedProductKinds);

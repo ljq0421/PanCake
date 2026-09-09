@@ -103,7 +103,8 @@ public partial class StageFourSelfTest
             var ledger = controller.Ledger!.Build();
             Check(delivered is not null && delivered.SaleRevenue == customer.Order.BasePrice
                 && delivered.SatisfactionScore == (quality == YoutiaoQuality.Golden ? 100 : 85)
-                && (quality == YoutiaoQuality.Golden ? delivered.Tip > 0 : delivered.Tip == 0)
+                && delivered.Tip == (quality == YoutiaoQuality.Golden
+                    ? (int)Math.Round(customer.Order.BasePrice * (decimal)customer.Type.PerfectTipRate, MidpointRounding.AwayFromZero) : 0)
                 && ledger.TotalRevenue == delivered.TotalRevenue && ledger.Tips == delivered.Tip,
                 $"{quality} 实际交付及账本金币按原价和品质小费准确记账");
             controller.Free();

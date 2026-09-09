@@ -16,6 +16,7 @@ public partial class WuhanWorkstationView
     private int _gestureBasket;
     private bool _cutCommitted;
     private readonly Dictionary<string, Button> _refillButtons = new();
+    private Vector2 _pointer = new(-1000, -1000);
     public bool HasProductionGesture => _gesture.Length > 0;
 
     private bool TryBeginGesture(string hit, Vector2 point)
@@ -153,7 +154,7 @@ public partial class WuhanWorkstationView
         if (_gesture == "basket" && _bowl.State == NoodleBowlState.Empty && !_cooker.PendingPourBasket.HasValue) Target(BowlRect.Grow(10));
         if (_gesture is "flip" or "cut") DrawLine(_gestureStart, _gesturePoint, WuhanUi.Ink, 3, true);
         string sprite = _gesture switch { "raw" => "raw_noodles", "flip" => "flip_tool", "cut" => "cut_tool", _ => "basket" };
-        Vector2 size = _gesture switch { "raw" => RawRect.Size, _ => new Vector2(100, 100) };
+        Vector2 size = _gesture switch { "raw" => RawRect.Size, "basket" => BasketSize, _ => new Vector2(100, 100) };
         Sprite(sprite, At(_gesturePoint, size), .9f);
         if (_gesture == "basket") Sprite("cooked_basket", At(_gesturePoint + new Vector2(-8, 12), new Vector2(55, 30)));
     }
@@ -164,6 +165,22 @@ public partial class WuhanWorkstationView
         foreach(Button button in GetChildren().OfType<Button>().Where(candidate => candidate.HasMeta("ingredient_id"))) {
             string id=button.GetMeta("ingredient_id").AsString();
             button.Pressed+=()=>{if(id=="egg")EggRefillRequested?.Invoke();else RefillRequested?.Invoke(id);};
+            button.Text = "";
+            foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
+                button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+            button.Draw += () =>
+            {
+                Color ink = button.Disabled ? WuhanUi.Muted : WuhanUi.Ink;
+                button.DrawCircle(new Vector2(24, 24), 17, button.IsHovered() || button.HasFocus() ? WuhanUi.Surface : WuhanUi.Paper);
+                if (button.HasFocus()) button.DrawArc(new Vector2(24, 24), 21, 0, Mathf.Tau, 32, ink, 2, true);
+                if (button.GetMeta("refilling", false).AsBool())
+                    for (int dot = 0; dot < 3; dot++) button.DrawCircle(new Vector2(17 + dot * 7, 24), 2, ink);
+                else
+                {
+                    button.DrawLine(new Vector2(16, 24), new Vector2(32, 24), ink, 3, true);
+                    button.DrawLine(new Vector2(24, 16), new Vector2(24, 32), ink, 3, true);
+                }
+            };
             _refillButtons[id]=button;
         }
     }
@@ -173,18 +190,21 @@ public partial class WuhanWorkstationView
         {
             bool egg = id == "egg";
             int index = Array.IndexOf(IngredientIds, id);
-            Vector2 position = egg ? new Vector2(1756, 324) : index >= 0
+            Vector2 position = egg ? EggStockRect.End + new Vector2(-48, 4) : index >= 0
                 ? IngredientReadout(index).Position + new Vector2(72, 0) : new Vector2(RawTrayRect.End.X + 12, RawTrayRect.Position.Y + 18);
             button.Position = position;
             button.Size = new Vector2(48, 48);
-            button.Visible = !egg || _egg is not null;
             int count = egg ? _egg?.Count ?? 0 : _ingredients.Count(id);
             int capacity = egg ? EggRiceWineRuntime.Capacity : _ingredients.Capacity(id);
             bool working = egg ? _egg?.IsRefilling == true : Busy("refill:" + id);
-            button.Text = working ? "…" : "补";
-            button.TooltipText = working ? "正在补货" : count >= capacity ? "库存已满" : "补充库存";
+            Rect2 supply = egg ? EggStockRect : index >= 0 ? IngredientRect(index) : RawTrayRect;
+            bool nearby = supply.Grow(18).HasPoint(_pointer) || button.GetRect().Grow(18).HasPoint(_pointer) || button.IsHovered() || button.HasFocus();
+            button.Visible = (!egg || _egg is not null) && (working || count <= capacity * .3f || nearby);
+            button.SetMeta("refilling", working);
+            button.TooltipText = working ? "正在补货" : $"{count}/{capacity} · " + (count >= capacity ? "库存已满" : "补充库存");
             button.Disabled = CanInteract?.Invoke() != true || working || count >= capacity || (egg && Busy("egg"));
             button.Modulate = count <= capacity * .2 && !working ? new Color("#FFD49B") : Colors.White;
+            button.QueueRedraw();
         }
     }
     private void DrawSupplyLabels()
@@ -199,8 +219,7 @@ public partial class WuhanWorkstationView
             string id = IngredientIds[i];
             bool added = i == 0 ? _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready : _bowl.Toppings.Contains(id);
             Vector2 origin = IngredientReadout(i).Position;
-            LabelAt(origin + new Vector2(0, 17), new[]{"调味", "葱花", "辣油", "牛肉"}[i]);
-            LabelAt(origin + new Vector2(0, 42), $"{_ingredients.Count(id)}/{_ingredients.Capacity(id)}");
+            LabelAt(origin + new Vector2(42, 27), $"{_ingredients.Count(id)}");
             if (added)
             {
                 Vector2 mark = IngredientRect(i).Position + new Vector2(70, -8);
@@ -208,8 +227,8 @@ public partial class WuhanWorkstationView
                 DrawLine(mark + new Vector2(5, 5), mark + new Vector2(15, -7), WuhanUi.Ink, 3, true);
             }
         }
-        LabelAt(new Vector2(RawTrayRect.Position.X, RawTrayRect.End.Y + 24), $"生面 {_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}/{_ingredients.Capacity(StableIds.Ingredients.WuhanNoodles)}");
-        if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 8, StockRect.End.Y + 24), $"备餐 {_stock.Count}/16");
-        if (_egg is not null) LabelAt(new Vector2(EggStockRect.Position.X + 10, 350), $"蛋酒 {_egg.Count}/6");
+        LabelAt(new Vector2(RawTrayRect.End.X + 12, RawTrayRect.End.Y - 14), $"{_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}");
+        if (_doupi is not null) LabelAt(new Vector2(StockRect.End.X + 8, StockRect.End.Y - 14), $"{_stock.Count}");
+        if (_egg is not null) LabelAt(new Vector2(EggStockRect.GetCenter().X - 6, EggStockRect.End.Y + 28), $"{_egg.Count}");
     }
 }

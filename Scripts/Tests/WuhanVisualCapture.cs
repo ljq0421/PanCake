@@ -101,11 +101,45 @@ public partial class WuhanVisualCapture : Node
             Type viewType = typeof(WuhanWorkstationView);
             Rect2 stockBounds = (Rect2)viewType.GetField("StockRect", hidden)!.GetValue(view)!;
             var art = (WuhanArtCatalog)viewType.GetField("_art", hidden)!.GetValue(view)!;
+            Rect2 VisualRect(string property) => (Rect2)viewType.GetProperty(property, hidden)!.GetValue(view)!;
+            Rect2 ingredientTray = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { 1 })!;
+            Require(Math.Abs(ingredientTray.Size.X / 120 - 1.25f) < .001f && Math.Abs(stockBounds.Size.X / 196 - 1.25f) < .001f,
+                "ingredient and stock containers keep the approved 25 percent enlargement");
+            Require(Math.Abs(VisualRect("CookerCanvas").Size.X / (level == 3 ? 392 : 384) - 1.2f) < .001f,
+                "all cooker levels keep the approved 20 percent enlargement");
+            Require(VisualRect("BowlRect").Size.X <= 275.01f, "noodle bowl keeps its existing size");
+            // Elevated rear machinery can project above the back edge; its base must stay on the counter.
+            var countertop = new Rect2(0, -60, 1920, 475);
+            var equipment = new Dictionary<string, Rect2> {
+                ["pan"] = VisualRect("PanRect"), ["bowl"] = VisualRect("BowlRect"),
+                ["batter"] = VisualRect("BatterRect"), ["filling"] = VisualRect("FillingRect"),
+                ["stock"] = stockBounds,
+                ["egg"] = (Rect2)viewType.GetField("EggStockRect", hidden)!.GetValue(view)!,
+                ["raw"] = (Rect2)viewType.GetField("RawTrayRect", hidden)!.GetValue(view)!,
+            };
+            for (int ingredient = 0; ingredient < 4; ingredient++)
+                equipment[$"ingredient{ingredient}"] = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { ingredient })!;
+            foreach (var (name, bounds) in equipment)
+            {
+                Require(countertop.Encloses(bounds), $"{name} fits the workstation and clears the front counter edge");
+                foreach (var other in equipment.Where(pair => string.CompareOrdinal(pair.Key, name) > 0))
+                    Require(!bounds.Intersects(other.Value), $"{name} does not cover {other.Key}");
+            }
+            Control coinArt = day.CoinTray.GetNode<Control>("CoinTrayArt");
+            Transform2D coinTransform = day.CoinTray.GetTransform();
+            var coinBounds = new Rect2(coinTransform * coinArt.Position, coinArt.Size * day.CoinTray.Scale);
+            Require(!coinBounds.Intersects(equipment["pan"]) && !coinBounds.Intersects(equipment["egg"]), "coin tray clears cooking and cup areas");
+            Control coinCaption = day.CoinTray.GetNode<Control>("CoinTrayHint");
+            var captionBounds = new Rect2(coinTransform * coinCaption.Position, coinCaption.Size * day.CoinTray.Scale);
+            Require(!captionBounds.Intersects(equipment["egg"]) && !captionBounds.Intersects(equipment["pan"]), "money caption clears cups and cooking surface");
+            // Conservative straight segment inside the background's rounded right edge.
+            float rightEdgeAtTrayTop = 1690 + (coinBounds.Position.Y + 625 - 580) * .78f;
+            Require(coinBounds.End.X + 20 <= rightEdgeAtTrayTop, "coin tray leaves at least 20px inside the sloping counter edge");
             Rect2 singleSource = (Rect2)viewType.GetMethod("Source", hidden)!.Invoke(view, new object[] { art.Texture("doupi_single") })!;
             for (int piece = 0; piece < 16; piece++)
             {
                 Rect2 placement = (Rect2)viewType.GetMethod("StockItemRect", hidden)!.Invoke(view, new object[] { piece })!;
-                Require(placement.Size.X <= 34 && placement.Size.Y <= 24, $"stock piece {piece + 1} is a compact thumbnail");
+                Require(placement.Size.X <= 52.5f && placement.Size.Y <= 37.5f, $"stock piece {piece + 1} fits the enlarged serving tray");
                 Require(Math.Abs(placement.Size.Aspect() - singleSource.Size.Aspect()) < .01f, "stock thumbnail keeps source aspect");
                 Require(stockBounds.Encloses(placement), $"stock piece {piece + 1} remains inside tray");
             }
@@ -178,6 +212,7 @@ public partial class WuhanVisualCapture : Node
             await Shot("06-low-stock-labels");
             Button[] refills = view.GetChildren().OfType<Button>().Where(b => b.Visible).ToArray();
             Rect2[] supplyBounds = { stockBounds,
+                VisualRect("SauceBottleRect"),
                 (Rect2)viewType.GetProperty("BatterRect", hidden)!.GetValue(view)!,
                 (Rect2)viewType.GetProperty("FillingRect", hidden)!.GetValue(view)! };
             foreach (Button refill in refills)
@@ -212,6 +247,39 @@ public partial class WuhanVisualCapture : Node
             }
             foreach (string id in WuhanWorkstationView.IngredientIds)
                 Require(day.Ingredients.Count(id) == day.Ingredients.Capacity(id), $"refill completes {id}");
+            var last = controller.CustomerQueue.Slots[3];
+            var lastCard = strip.GetChild<Control>(3);
+            var portrait = lastCard.GetChildren().OfType<CustomerPortraitView>().Single();
+            var bubble = lastCard.GetChildren().OfType<OrderBubbleView>().Single();
+            Rect2 portraitBefore = portrait.GetGlobalRect();
+            Vector2 layerScaleBefore = portrait.BodyLayerScale;
+            float orderHeightBefore = bubble.Size.Y;
+            var fullOrder = last.Plan.Order;
+            last.Plan.Order = new ProjectCake.Orders.OrderData
+            {
+                OrderId = fullOrder.OrderId, CityId = fullOrder.CityId, CustomerTypeId = fullOrder.CustomerTypeId,
+                BasePrice = fullOrder.BasePrice, PatienceSeconds = fullOrder.PatienceSeconds,
+                Lines = new[] { new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesScallion, 1) },
+            };
+            await Shot("10-mixed-order-heights");
+            Require(bubble.Size.Y < orderHeightBefore, "single-portion order shrinks after full combo");
+            Require(portrait.GetGlobalRect() == portraitBefore && portrait.BodyLayerScale == layerScaleBefore,
+                "short order does not move or enlarge the customer");
+            foreach (Control customer in strip.GetChildren().OfType<Control>().Where(c => c.Visible))
+            {
+                var person = customer.GetChildren().OfType<CustomerPortraitView>().Single();
+                Require(person.Size == portrait.Size && Math.Abs(person.GetGlobalRect().End.Y - 580) < 1,
+                    "all customer viewports share size and counter baseline");
+            }
+            last.Plan.Order = fullOrder;
+            day.CoinTray.RenderRevenue(13, 1);
+            await Frames(2);
+            await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            Save($"{root}/lv{level}/11-coins-pending.png");
+            Require(day.CoinTray.GetNode<Label>("CoinTrayHint").Text == "¥13", "Wuhan money caption contains only amount");
+            Require(day.CoinTray.TryCollect(), "relocated coin tray still collects pending money");
+            Require(!day.CoinTray.GetNode<Label>("CoinTrayHint").Visible, "empty coin tray has no caption plaque");
+            await Shot("12-coins-collected");
             day.Free();controller.Free();save.Free();await Frames(2);
         }
     }

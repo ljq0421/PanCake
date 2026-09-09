@@ -162,11 +162,11 @@ public partial class WuhanLedger : Control
             TextureRect baseLayer = slot.GetNode<TextureRect>("Base");
             TextureRect overlay = slot.GetNode<TextureRect>("Overlay");
             slot.CustomMinimumSize = new Vector2(width, 212);
-            baseLayer.Visible = id == "noodles";
-            baseLayer.Texture = id == "noodles" ? _art.Texture("empty_bowl") : null;
-            overlay.Texture = _art.Texture(id == "noodles" ? "mixed" : id);
-            overlay.Position = id == "noodles" ? new Vector2(width * .15f, 12) : Vector2.Zero;
-            overlay.Size = id == "noodles" ? new Vector2(width * .7f, 140) : new Vector2(width, 212);
+            baseLayer.Visible = false;
+            baseLayer.Texture = null;
+            overlay.Texture = _art.Texture(id == "noodles" ? "noodles_finished" : id);
+            overlay.Position = Vector2.Zero;
+            overlay.Size = new Vector2(width, 212);
             slot.Visible = true;
         }
     }

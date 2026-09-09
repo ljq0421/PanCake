@@ -272,7 +272,7 @@ public partial class StageFourSelfTest : Node
         Check(!progress.IsComplete, "尚缺豆浆时订单不结算");
         Check(progress.TryAccept(new DeliveredItem(ProductKind.SoyMilk, StableIds.Products.SoyMilk)).OrderComplete, "最后一件商品补齐订单");
         DeliveryEvaluation perfect = new OrderEvaluator().EvaluateCompleted(progress, CustomerState.Happy, catalog.CustomersById["office_worker"]);
-        Check(perfect.Grade == DeliveryGrade.Perfect && perfect.SaleRevenue == 16 && perfect.Tip == 4, "上班族完美套餐获得 20% 向上取整小费");
+        Check(perfect.Grade == DeliveryGrade.Perfect && perfect.SaleRevenue == 16 && perfect.Tip == 3, "上班族完美套餐获得 20% 四舍五入小费");
         Check(!progress.TryAccept(new DeliveredItem(ProductKind.SoyMilk, StableIds.Products.SoyMilk)).Accepted, "完整订单拒绝额外商品");
 
         OrderData wrongOrder = Order("wrong", "normal", 10, Pancake(StableIds.Recipes.Basic), SoyMilk());
@@ -564,7 +564,7 @@ public partial class StageFourSelfTest : Node
 
     private async Task TestDirectDelivery(DataCatalog catalog)
     {
-        string savePath = $"user://direct-delivery-{Guid.NewGuid():N}.json";
+        string savePath = $"res://.tmp/direct-delivery-{Guid.NewGuid():N}.json";
         var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
         var controller = new DayController(); AddChild(controller);
         var screen = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen);
@@ -723,8 +723,8 @@ public partial class StageFourSelfTest : Node
         Check(SaveService.EvaluateStars(Result(15, 24, 90, 15), day15) == 3, "Day 15 三星边界准确");
         Check(SaveService.EvaluateStars(Result(15, 24, 89.9, 15), day15) == 2, "未满足三星满意度时不越级");
 
-        string current = $"user://stage4-v2-{Guid.NewGuid():N}.json";
-        string legacy = $"user://stage4-v1-{Guid.NewGuid():N}.json";
+        string current = $"res://.tmp/stage4-v2-{Guid.NewGuid():N}.json";
+        string legacy = $"res://.tmp/stage4-v1-{Guid.NewGuid():N}.json";
         string legacyAbsolute = ProjectSettings.GlobalizePath(legacy);
         Directory.CreateDirectory(Path.GetDirectoryName(legacyAbsolute)!);
         File.WriteAllText(legacyAbsolute, "{\"Version\":1,\"Coins\":500,\"HighestUnlockedDay\":4,\"PurchasedStoveLevel\":2,\"PurchasedIngredientStationLevel\":2,\"UnlockedUpgradeIds\":[],\"DayBestRecords\":{\"4\":{\"TotalRevenue\":82,\"CompletedCustomers\":10,\"PerfectOrders\":5,\"HighestCorrectStreak\":3,\"Satisfaction\":90,\"YoutiaoUsed\":0,\"YoutiaoBurnt\":0}},\"LastDayPlan\":null}");
@@ -805,7 +805,7 @@ public partial class StageFourSelfTest : Node
             "短时反馈位于 HUD 下方且不会遮挡或截获顾客交付");
         dayLayout.QueueFree();
 
-        string pauseSavePath = $"user://stage4-pause-{Guid.NewGuid():N}.json";
+        string pauseSavePath = $"res://.tmp/stage4-pause-{Guid.NewGuid():N}.json";
         var pauseSave = new SaveService();
         AddChild(pauseSave);
         pauseSave.UsePathForTests(pauseSavePath);

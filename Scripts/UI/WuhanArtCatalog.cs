@@ -13,13 +13,15 @@ public sealed class WuhanArtCatalog
     public WuhanArtCatalog()
     {
         Load("background", "武汉早餐铺主界面背景＋空工作台_v4.png");
-        Load("ingredient_tray", "通用托盘.png");
+        Load("ingredient_tray", "Trays_v2/ingredient.png");
+        Load("egg_tray", "Trays_v2/egg.png");
         Load("city_node", "武汉已解锁城市节点.png");
         Load("empty_bowl", "热干面空碗_v2.png");
+        Load("noodles_finished", "热干面完整成品.png");
         Load("bowl_noodles", "碗中熟面基础层.png"); Load("unmixed", "芝麻酱未拌匀覆盖层.png"); Load("half_mixed", "半拌匀热干面状态覆盖层.png"); Load("mixed", "拌匀热干面基础层.png"); Load("overcooked", "煮过头热干面覆盖层.png"); Load("chopsticks", "拌面筷子_v2.png");
         Load("raw_noodles", "生热干面面条.png"); Load("basket", "通用热干面漏勺_v2.png"); Load("cooked_basket", "漏勺中的熟面状态.png");
         Load("base_seasoning", "芝麻酱容器_v2.png"); Load("scallion", "葱花覆盖层.png"); Load("chili", "辣油壶_v2.png"); Load("beef", "卤牛肉片.png");
-        Load("doupi_batter", "豆皮豆米浆容器_v2.png"); Load("doupi_skin", "豆皮薄皮基础层.png"); Load("doupi_egg", "豆皮鸡蛋覆盖层.png"); Load("doupi_filling", "三鲜糯米馅容器_v2.png"); Load("doupi_finished", "整张三鲜豆皮完成状态.png"); Load("doupi_cut", "切块后的整锅豆皮 .png"); Load("doupi_single", "单块三鲜豆皮成品.png"); Load("doupi_stock", "豆皮成品备货托盘.png"); Load("doupi_burnt", "豆皮焦糊覆盖层.png");
+        Load("doupi_batter", "豆皮豆米浆容器_v2.png"); Load("doupi_skin", "豆皮薄皮基础层.png"); Load("doupi_egg", "豆皮鸡蛋覆盖层.png"); Load("doupi_filling", "三鲜糯米馅容器_v2.png"); Load("doupi_finished", "整张三鲜豆皮完成状态.png"); Load("doupi_cut", "切块后的整锅豆皮 .png"); Load("doupi_single", "单块三鲜豆皮成品.png"); Load("doupi_stock", "Trays_v2/stock.png"); Load("doupi_burnt", "豆皮焦糊覆盖层.png");
         Load("egg_finished", "成品蛋酒杯_v2.png");
         Load("base_sauce", "基础酱汁瓶_v2.png"); Load("chili_overlay", "辣油覆盖层.png"); Load("beef_overlay", "牛肉覆盖层.png");
         Load("doupi_filling_overlay", "豆皮糯米馅覆盖层.png"); Load("flip_tool", "豆皮手动翻面铲.png");

@@ -89,6 +89,11 @@ public partial class WuhanLedgerSelfTest : Node
             _save.Data.Wuhan.DayBestRecords[8] = new DayBestRecord { TotalRevenue = 386, Satisfaction = 96, PerfectOrders = 18 };
             _hub.ShowLedger();
             Check(_ledger.SelectedDay == 9, "open always selects highest unlocked day");
+            if (_capture)
+            {
+                _ledger.SelectDay(7);
+                await Capture("day7");
+            }
             await Click(Find<Button>("Date8"));
             Check(Find<Label>("BestRevenue").Text == "¥386" && Find<Label>("BestSatisfaction").Text == "满意度 96%" && Find<Label>("BestPerfect").Text == "Perfect 18 单", "detail displays exact saved best record");
             Check(Find<Control>("RecordStamp").Visible, "record stamp denotes existing record");

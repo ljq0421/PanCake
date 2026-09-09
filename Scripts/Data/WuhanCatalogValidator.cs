@@ -26,7 +26,7 @@ public static class WuhanCatalogValidator
             ValidateWeights(day.CustomerWeights, knownCustomers, source, "customerWeights", issues);
             ValidateWeights(day.OrderTypeWeights, StableIds.OrderTypeIds, source, "orderTypeWeights", issues);
             ValidateWeights(day.RecipeWeights, knownRecipes, source, "recipeWeights", issues);
-            if (day.MaxWaitingCustomers != 4) Add(issues, source, "maxWaitingCustomers", "武汉同屏未完成顾客硬上限必须为 4。");
+            if (day.MaxWaitingCustomers != 5) Add(issues, source, "maxWaitingCustomers", "武汉同屏未完成顾客硬上限必须为 5。");
             if (day.SatisfactionAverageMode != SatisfactionAverageMode.CompletedCustomers) Add(issues, source, "satisfactionAverageMode", "武汉满意度必须只统计已完成订单。");
         }
         DayConfig? day12 = days.FirstOrDefault(day => day.Day == 12);

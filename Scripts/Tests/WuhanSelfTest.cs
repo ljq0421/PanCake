@@ -15,7 +15,39 @@ public partial class WuhanSelfTest : Node
     {
         DataCatalog catalog=GetNode<DataCatalog>("/root/DataCatalog");
         TestData(catalog); TestOrders(catalog); TestNoodles(catalog); TestDoupi(catalog); TestSatisfaction(catalog); TestPressure(catalog); TestSave(catalog); TestV2Migration();
+        TestCustomerParity(catalog);
         GD.Print($"WUHAN_TEST_RESULT passed={_passed} failed={_failed}"); GetTree().Quit(_failed==0?0:1);
+    }
+    private void TestCustomerParity(DataCatalog catalog)
+    {
+        Check(catalog.GetDays(StableIds.Cities.Wuhan).Values.All(day => day.MaxWaitingCustomers == 5), "武汉所有营业日最多五名同屏顾客");
+        var controller = new DayController(); AddChild(controller);
+        Check(controller.TryPrepareDay(StableIds.Cities.Wuhan, 1, catalog, out _), "准备顾客机制测试");
+        foreach (var planned in controller.CurrentPlan!.Customers)
+            planned.Order = new OrderData { OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
+                CustomerTypeId = planned.CustomerTypeId, BasePrice = 15,
+                Lines = new[] { new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 1),
+                    new OrderLineData(ProductKind.EggRiceWine, StableIds.Products.EggRiceWine, 1) } };
+        controller.TryStartDay(out _); controller.Tick(3.01);
+        var queue = controller.CustomerQueue!;
+        queue.Tick(60, 0, true); queue.Tick(60, .4, true);
+        Check(queue.Slots.Count == 5 && queue.CustomerAtSlot(4) is not null && queue.HasUnscheduled,
+            "第五名顾客入位，满员时延后后续顾客入场");
+        var customer = queue.CustomerAtSlot(4)!;
+        customer.WaitSeconds = customer.LeaveAtSeconds * .7; customer.Tick(0);
+        var doupi = new DeliveredItem(ProductKind.Doupi, StableIds.Products.Doupi);
+        Check(!controller.TryDeliverWuhanTo(customer.Id, doupi, () => false).ItemAccepted
+            && Math.Abs(customer.PatienceProgress - .7) < .001, "库存不足不恢复耐心");
+        Check(controller.TryDeliverWuhanTo(customer.Id, doupi, () => true).ItemAccepted
+            && !customer.Progress.IsComplete && Math.Abs(customer.PatienceProgress - .55) < .001,
+            "第五位顾客收到部分商品后恢复15%耐心");
+        Check(!controller.TryDeliverWuhanTo(customer.Id, doupi, () => true).ItemAccepted
+            && Math.Abs(customer.PatienceProgress - .55) < .001, "重复交付不恢复耐心");
+        customer.WaitSeconds = 1;
+        Check(controller.TryDeliverWuhanTo(customer.Id, new DeliveredItem(ProductKind.EggRiceWine,
+            StableIds.Products.EggRiceWine), () => true).CompletesOrder && customer.WaitSeconds == 0,
+            "耐心恢复不超过满值且整单正常完成");
+        controller.Free();
     }
     private void TestData(DataCatalog c)
     {

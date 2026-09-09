@@ -86,7 +86,19 @@ public partial class WuhanGestureSelfTest : Node
                 Step(.001);await Frames();
                 var refill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()==scallion);
                 Click(refill.Position+refill.Size/2);Check(View.Busy("refill:"+scallion),"separate refill control starts timed replenishment");Step(1.01);
-                Check(_screen.Ingredients.Count(scallion)==_screen.Ingredients.Capacity(scallion)&&refill.Visible&&refill.Disabled,"full ingredient stock keeps a disabled refill control");
+                Check(_screen.Ingredients.Count(scallion)==_screen.Ingredients.Capacity(scallion)&&refill.Visible&&refill.Disabled,"hovered full stock shows a disabled refill control");
+                refill.ReleaseFocus(); Move(new Vector2(800, 390)); Step(.001);
+                Check(!refill.Visible, "full stock hides refill when pointer leaves");
+                _screen.Ingredients.TryConsume(scallion); Step(.001);
+                Check(!refill.Visible, "healthy partial stock keeps refill hidden at rest");
+                Move(View.IngredientCenter(1)); Step(.001);
+                Check(refill.Visible && !refill.Disabled && refill.Text.Length == 0, "container hover reveals actionable icon-only refill");
+                Move(new Vector2(800,390));
+                while (_screen.Ingredients.Count(scallion)>1) _screen.Ingredients.TryConsume(scallion);
+                Step(.001); Check(refill.Visible, "low stock reveals refill without hover");
+                _screen.Ingredients.TryConsume(scallion); Step(.001);
+                Check(refill.Visible && !refill.Disabled, "empty stock can always refill");
+                Click(refill.Position+refill.Size/2); Step(1.01);
                 Drag(View.CupCenter,new Vector2(1400,20));
                 await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
                 Check(_screen.Egg!.Count==6&&!_screen.DeliveryDrag.IsDragging,"wrong cup drop returns finished stock and releases input");
@@ -218,6 +230,7 @@ public partial class WuhanGestureSelfTest : Node
                     new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2),new ProjectCake.Orders.OrderLineData(ProductKind.EggRiceWine,StableIds.Products.EggRiceWine,1)} };
         _screen.BeginDay();Step(6);for(int i=0;i<120&&controller.CustomerQueue!.Slots.Count<4;i++)Step(.25);await Frames();
         Check(controller.CustomerQueue!.Slots.Count==4,"operation budget uses four fixed identical orders and level-one equipment");
+        var budgetCustomers = controller.CustomerQueue.Slots.ToArray();
         bool reduced=WuhanWorkstationView.ReducedMotion;ProjectSettings.SetSetting("accessibility/reduce_motion",true);
         void Deliver(Vector2 source,int slot) {
             var zone=(Control)_screen.FindChild($"WuhanCustomerDropZone{slot+1}",true,false);
@@ -237,7 +250,10 @@ public partial class WuhanGestureSelfTest : Node
         Drag(View.PanCenter-new Vector2(0,45),View.PanCenter+new Vector2(0,45));Step(.4);Step(.5);
         Check(_pressCount-before==6&&_screen.DoupiStock.Count==8,"one doupi batch automatically stocks eight with exactly six presses");
         for(int i=0;i<4;i++)Deliver(View.StockCenter,i);
-        Check(_pressCount-before==10&&_screen.DoupiStock.Count==0&&controller.CustomerQueue.Slots.All(c=>c.Progress.GetDeliveredQuantity(1)==2),"batch and four quantity-two deliveries total ten presses");
+        // Day 8 now admits a fifth waiting customer during cooking. The measured
+        // budget still covers the four original quantity-two orders only.
+        Check(_pressCount-before==10&&_screen.DoupiStock.Count==0&&budgetCustomers.All(c=>c.Progress.GetDeliveredQuantity(1)==2),
+            $"batch and four quantity-two deliveries total ten presses (presses={_pressCount-before}, stock={_screen.DoupiStock.Count}, delivered={string.Join(',', controller.CustomerQueue.Slots.Select(c=>c.Progress.GetDeliveredQuantity(1)))})");
         before=_pressCount;Deliver(View.CupCenter,0);
         Check(_pressCount-before==1&&controller.Ledger!.Build().CompletedCustomers==1,"egg needs one delivery to complete first combo");
         GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=1");

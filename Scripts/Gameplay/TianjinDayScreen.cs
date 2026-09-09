@@ -249,6 +249,8 @@ public partial class TianjinDayScreen : Control
 
     private void OnDayFinished(DayResult result)
     {
+        // All city screens share this controller, including uninitialized hidden screens.
+        if (_controller.CurrentConfig?.CityId != StableIds.Cities.Tianjin) return;
         _collectionFeedback.Clear();
         ClearCoinFlights();
         if (_committed) return;

@@ -14,7 +14,7 @@ public sealed class OrderEvaluator
             - (progress.HasRiceRollBroken ? 5 : 0) - (progress.HasDimSumOversteamed ? 5 : 0), 0, 100);
         bool perfect = waitRatio <= .30 && !progress.HasRecipeMismatch && !progress.HasQualityIssue;
         int revenue = progress.HasRecipeMismatch ? RoundSeventyPercent(progress.Order.BasePrice) : progress.Order.BasePrice;
-        int tip = perfect ? (int)Math.Ceiling(progress.Order.BasePrice * (double)Math.Round(type.PerfectTipRate, 4)) : 0;
+        int tip = perfect ? TipCalculator.Calculate(progress.Order.BasePrice, type.PerfectTipRate) : 0;
         var grade = progress.HasRecipeMismatch ? DeliveryGrade.Incorrect : perfect ? DeliveryGrade.Perfect : DeliveryGrade.Correct;
         return new(grade, revenue, tip, score, perfect ? $"Perfect！小费 ¥{tip}" : progress.HasRecipeMismatch
             ? $"配料有误 · 整单七折 ¥{revenue} · 满意度 {score}" : $"出餐完成 · 满意度 {score}", true);
@@ -27,7 +27,7 @@ public sealed class OrderEvaluator
         int score = Math.Clamp(100 - waiting - (progress.HasMeatMismatch ? 20 : 0) - (progress.HasJuiceMismatch ? 20 : 0) - (progress.HasBunOverbrowned ? 5 : 0), 0, 100);
         bool perfect = waitRatio <= .30 && !progress.HasRecipeMismatch && !progress.HasBunOverbrowned;
         int revenue = progress.HasRecipeMismatch ? RoundSeventyPercent(progress.Order.BasePrice) : progress.Order.BasePrice;
-        int tip = perfect ? (int)Math.Ceiling(progress.Order.BasePrice * type.PerfectTipRate) : 0;
+        int tip = perfect ? TipCalculator.Calculate(progress.Order.BasePrice, type.PerfectTipRate) : 0;
         var grade = progress.HasRecipeMismatch ? DeliveryGrade.Incorrect : perfect ? DeliveryGrade.Perfect : DeliveryGrade.Correct;
         return new(grade, revenue, tip, score, perfect ? $"Perfect！小费 ¥{tip}" : progress.HasRecipeMismatch ? $"配方有误，整单七折 ¥{revenue} · 满意度 {score}" : $"出餐完成 · 满意度 {score}", true);
     }
@@ -45,7 +45,7 @@ public sealed class OrderEvaluator
             && !progress.HasNoodlesOvercooked && !progress.HasDoupiOverbrowned && progress.AllNoodlesMixed;
         if (perfect)
         {
-            int tip = (int)Math.Ceiling(progress.Order.BasePrice * customerType.PerfectTipRate);
+            int tip = TipCalculator.Calculate(progress.Order.BasePrice, customerType.PerfectTipRate);
             return new DeliveryEvaluation(DeliveryGrade.Perfect, revenue, tip, satisfaction, $"Perfect！获得 ¥{tip} 小费。", true);
         }
         DeliveryGrade grade = progress.HasRecipeMismatch ? DeliveryGrade.Incorrect : DeliveryGrade.Correct;
@@ -77,7 +77,7 @@ public sealed class OrderEvaluator
             return new DeliveryEvaluation(DeliveryGrade.Correct, progress.Order.BasePrice, 0, 85, message, true);
         }
 
-        int tip = (int)Math.Ceiling(progress.Order.BasePrice * customerType.PerfectTipRate);
+        int tip = TipCalculator.Calculate(progress.Order.BasePrice, customerType.PerfectTipRate);
         return new DeliveryEvaluation(DeliveryGrade.Perfect, progress.Order.BasePrice, tip, 100, $"Perfect！获得 ¥{tip} 小费。", true);
     }
 
@@ -107,7 +107,7 @@ public sealed class OrderEvaluator
 
         if (pancake.Quality == PancakeQuality.Perfect && customerState == CustomerState.Happy)
         {
-            int tip = (int)Math.Ceiling(order.BasePrice * perfectTipRate);
+            int tip = TipCalculator.Calculate(order.BasePrice, perfectTipRate);
             return new DeliveryEvaluation(DeliveryGrade.Perfect, order.BasePrice, tip, 100, $"Perfect！获得 ¥{tip} 小费。");
         }
 

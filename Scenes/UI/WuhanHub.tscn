@@ -10,8 +10,7 @@
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/Ledger/ledger_book.png" id="8_f71pg"]
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/Ledger/ledger_bookmark.png" id="9_frvnm"]
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/Ledger/ledger_record_stamp.png" id="10_dderc"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/热干面空碗_v2.png" id="11_3v1bd"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/拌匀热干面基础层.png" id="12_hpd7l"]
+[ext_resource type="Texture2D" path="res://resource/art/Wuhan/热干面完整成品.png" id="12_hpd7l"]
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/开心爱心特效.png" id="13_vq2je"]
 [ext_resource type="Script" path="res://Scripts/UI/WuhanLedgerCheckIcon.cs" id="14_check_icon"]
 [ext_resource type="Script" path="res://Scripts/UI/WuhanLedgerLockIcon.cs" id="15_lock_icon"]
@@ -3405,7 +3404,7 @@ layout_mode = 0
 offset_right = 210.0
 offset_bottom = 212.0
 mouse_filter = 2
-texture = ExtResource("11_3v1bd")
+visible = false
 expand_mode = 1
 stretch_mode = 5
 
@@ -3465,10 +3464,8 @@ script = ExtResource("15_lock_icon")
 
 [node name="Overlay" type="TextureRect" parent="WuhanLedger/Book/RightPage/DayIllustrations/Illustration1" unique_id=922367943]
 layout_mode = 0
-offset_left = 31.500002
-offset_top = 12.0
-offset_right = 178.5
-offset_bottom = 152.0
+offset_right = 210.0
+offset_bottom = 212.0
 mouse_filter = 2
 texture = ExtResource("12_hpd7l")
 expand_mode = 1

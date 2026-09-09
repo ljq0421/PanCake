@@ -33,7 +33,7 @@ public sealed class DayConfig
 
     public string CityId { get; set; } = StableIds.Cities.Tianjin;
 
-    public SatisfactionAverageMode SatisfactionAverageMode { get; set; } = SatisfactionAverageMode.PlannedCustomers;
+    public SatisfactionAverageMode SatisfactionAverageMode { get; set; } = SatisfactionAverageMode.CompletedCustomers;
 
     [JsonRequired]
     public int Day { get; set; }

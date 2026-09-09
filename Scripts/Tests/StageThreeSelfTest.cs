@@ -23,6 +23,7 @@ public partial class StageThreeSelfTest : Node
             TestGenerator(catalog);
             TestCustomers(catalog);
             TestDeliveryAndLedger(catalog);
+            TestSharedSettlementRules(catalog);
             TestDayController(catalog);
             TestSave(catalog);
             TestScenes();
@@ -122,7 +123,7 @@ public partial class StageThreeSelfTest : Node
         var evaluator = new OrderEvaluator();
         OrderData order = MakeOrder("test", basic, 7);
         DeliveryEvaluation perfect = evaluator.Evaluate(order, CustomerState.Happy, new PreparedPancake(PancakeQuality.Perfect, new HashSet<string>()), basic);
-        Check(perfect.Grade == DeliveryGrade.Perfect && perfect.SaleRevenue == 7 && perfect.Tip == 1 && perfect.SatisfactionScore == 100, "Perfect 获得全价与向上取整 10% 小费");
+        Check(perfect.Grade == DeliveryGrade.Perfect && perfect.SaleRevenue == 7 && perfect.Tip == 1 && perfect.SatisfactionScore == 100, "Perfect 获得全价与四舍五入 10% 小费");
         DeliveryEvaluation late = evaluator.Evaluate(order, CustomerState.Normal, new PreparedPancake(PancakeQuality.Perfect, new HashSet<string>()), basic);
         Check(late.Grade == DeliveryGrade.Correct && late.SaleRevenue == 7 && late.Tip == 0, "离开 Happy 后正确订单无 Perfect");
         DeliveryEvaluation overdone = evaluator.Evaluate(order, CustomerState.Happy, new PreparedPancake(PancakeQuality.Overdone, new HashSet<string>()), basic);
@@ -132,10 +133,44 @@ public partial class StageThreeSelfTest : Node
 
         var ledger = new DayLedger(1, 4); ledger.RecordDelivery(perfect); ledger.RecordDelivery(late); ledger.RecordDelivery(wrong); ledger.RecordLost(); DayResult result = ledger.Build();
         Check(result.TotalRevenue == 20 && result.CompletedCustomers == 3 && result.LostCustomers == 1, "营业收入和完成流失统计准确");
-        Check(result.HighestCorrectStreak == 2 && Close(result.Satisfaction, 60), "连击和 100/85/55/0 满意度平均准确");
+        Check(result.HighestCorrectStreak == 2 && Close(result.Satisfaction, 80), "连击和 100/85/55 满意度平均准确，流失不计入");
         _ = crispy;
     }
 
+    private void TestSharedSettlementRules(DataCatalog catalog)
+    {
+        foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou })
+        {
+            Check(catalog.GetDays(city).Values.All(day => day.SatisfactionAverageMode == SatisfactionAverageMode.CompletedCustomers),
+                $"{city} 全部关卡满意度排除流失顾客");
+            var controller = new DayController(); AddChild(controller);
+            Check(controller.TryPrepareDay(city, 1, catalog, out _), $"{city} 准备结算规则测试");
+            controller.Ledger!.RecordLost();
+            Check(controller.Ledger.Build().Satisfaction == 0, $"{city} 无完成顾客时满意度为零");
+            controller.Ledger.RecordDelivery(new(DeliveryGrade.Correct, 10, 0, 80, ""));
+            Check(controller.Ledger.Build().Satisfaction == 80 && controller.Ledger.Build().LostCustomers == 1,
+                $"{city} 流失单独统计且不降低满意度");
+            controller.Free();
+        }
+        var evaluator = new OrderEvaluator();
+        var recipe = catalog.RecipesById[StableIds.Recipes.Basic];
+        using var type = new CustomerTypeData();
+        foreach (var (price, rate, expected) in new[] { (10, .14f, 1), (10, .25f, 3), (10, .26f, 3), (25, .7f, 18), (4, .1f, 0) })
+        {
+            type.PerfectTipRate = rate;
+            var order = MakeOrder("rounding", recipe, price);
+            var progress = new OrderProgress(order);
+            progress.TryAccept(new DeliveredItem(ProductKind.Pancake, recipe.Id, PancakeQuality.Perfect));
+            Check(new[] {
+                evaluator.EvaluateCompleted(progress, CustomerState.Happy, type).Tip,
+                evaluator.EvaluateCompletedWuhan(progress, 0, type).Tip,
+                evaluator.EvaluateCompletedXian(progress, 0, type).Tip,
+                evaluator.EvaluateCompletedGuangzhou(progress, 0, type).Tip,
+                evaluator.Evaluate(order, CustomerState.Happy, new PreparedPancake(PancakeQuality.Perfect, new HashSet<string>()), recipe, (double)(decimal)rate).Tip,
+                TipCalculator.Calculate(price, (double)(decimal)rate)
+            }.All(tip => tip == expected), $"所有结算入口小费 {price}×{rate} 四舍五入为 {expected}");
+        }
+    }
     private void TestDayController(DataCatalog catalog)
     {
         var controller = new DayController(); AddChild(controller);
@@ -161,7 +196,7 @@ public partial class StageThreeSelfTest : Node
 
     private void TestSave(DataCatalog catalog)
     {
-        string relative = $"user://stage3-selftest-{Guid.NewGuid():N}.json";
+        string relative = $"res://.tmp/stage3-selftest-{Guid.NewGuid():N}.json";
         string absolute = ProjectSettings.GlobalizePath(relative);
         var save = new SaveService(); AddChild(save); save.UsePathForTests(relative);
         DayConfig day1 = catalog.DaysByNumber[1]; DayPlan plan = new OrderGenerator().Generate(day1, catalog.RecipesById);
@@ -238,7 +273,7 @@ public partial class StageThreeSelfTest : Node
             && main.HasNode("UI/DataDebugPanel"), "Main 固定包含五城首页、五城营业页、实验台和数据调试入口");
         main.Free();
 
-        string relative = $"user://stage3-screen-{Guid.NewGuid():N}.json";
+        string relative = $"res://.tmp/stage3-screen-{Guid.NewGuid():N}.json";
         string absolute = ProjectSettings.GlobalizePath(relative);
         var save = new SaveService(); AddChild(save); save.UsePathForTests(relative);
         var controller = new DayController(); AddChild(controller);

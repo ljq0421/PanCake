@@ -1,5 +1,5 @@
 {
-  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":6,"durationSeconds":110,"customerCount":13,"expectedRevenue":162,"patienceMultiplier":1.0,"maxWaitingCustomers":4,"randomSeed":2006,
+  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":6,"durationSeconds":110,"customerCount":13,"expectedRevenue":162,"patienceMultiplier":1.0,"maxWaitingCustomers":5,"randomSeed":2006,
   "customerWeights":{"wuhan_normal":1.0},"orderTypeWeights":{"hot_dry_noodles":0.45,"doupi":0.10,"egg_rice_wine":0.10,"noodles_doupi":0.15,"noodles_egg_rice_wine":0.20},"recipeWeights":{"hot_dry_noodles_classic":0.25,"hot_dry_noodles_scallion":0.25,"hot_dry_noodles_chili":0.25,"hot_dry_noodles_scallion_chili":0.25},
   "arrivalSegments":[{"start":0.0,"end":0.2,"customerRatio":0.15},{"start":0.2,"end":0.75,"customerRatio":0.70},{"start":0.75,"end":1.0,"customerRatio":0.15}],
   "startUnlocks":["equipment:egg_rice_wine_station","product:egg_rice_wine"],"completionUnlocks":["equipment:doupi_griddle_lv2"],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion","hot_dry_noodles_chili","hot_dry_noodles_scallion_chili"],"availableProductKinds":["hotDryNoodles","doupi","eggRiceWine"],

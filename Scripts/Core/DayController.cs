@@ -310,7 +310,7 @@ public partial class DayController : Node
         if (!acceptance.Accepted || acceptPrepared is not null && !acceptPrepared())
             return Rejected("顾客状态已经变化，本次交付未生效。");
 
-        if (customer.Order.CityId == StableIds.Cities.Tianjin && matchesRequestedItem)
+        if (customer.Order.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan && matchesRequestedItem)
             customer.RestorePatience(0.15);
 
         if (!acceptance.OrderComplete)

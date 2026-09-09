@@ -35,6 +35,7 @@ public partial class WuhanDeliverySelfTest : Node
             await TestDelivery();
             await TestBatchDelivery();
             await TestLifecycle();
+            await TestFifthCustomer();
             TestTheme();
             if (_capture) await CaptureScreens();
             DisposeDay();
@@ -50,6 +51,26 @@ public partial class WuhanDeliverySelfTest : Node
         }
     }
 
+    private async Task TestFifthCustomer()
+    {
+        await NewDay();
+        var queue = _controller.CustomerQueue!;
+        for (int elapsed = 100; elapsed <= 140; elapsed += 2) queue.Tick(elapsed, 0, true);
+        queue.Tick(140, .4, true); Step(.001); await Frames();
+        Check(queue.Slots.Count == 5, "queue stops at five customers");
+        var fifth = queue.CustomerAtSlot(4)!;
+        for (int i = 0; i < 5; i++)
+        {
+            Rect2 bounds = Zone(i).GetGlobalRect();
+            Check(bounds.Position.X >= 0 && bounds.End.X <= _screen.Size.X,
+                $"customer {i + 1} delivery zone fits the screen");
+            if (i > 0) Check(Zone(i - 1).GetGlobalRect().End.X <= bounds.Position.X,
+                "adjacent delivery zones do not overlap");
+        }
+        PrepareFood(); await Frames();
+        await Drop(ProductKind.EggRiceWine, 4);
+        Check(fifth.Progress.GetDeliveredQuantity(2) == 1, "fifth customer accepts a real viewport drag");
+    }
     private void Check(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);
@@ -147,8 +168,9 @@ public partial class WuhanDeliverySelfTest : Node
         Check(_screen.Ingredients.Count(StableIds.Ingredients.WuhanScallion) == scallion, "drag cannot mutate recipe or consume ingredients");
         var overlay = (Control)_screen.FindChild("WuhanDragOverlay", true, false);
         Check(overlay.GetChild(0).GetChild(0).GetChildCount() == 7, "preview contains bowl, noodles, mixed sauce, overcooking and three toppings");
-        Check(overlay.GetChild(0).GetChild(0).GetChildren().OfType<TextureRect>().All(layer => layer.Size.X <= 224 && layer.Size.Y <= 174),
-            "preview layers use authored bowl dimensions instead of source PNG minimum size");
+        Vector2 bowlSize = _screen.Workstation.GetNode<Control>("WuhanDrag_HotDryNoodles").Size;
+        Check(overlay.GetChild(0).GetChild(0).GetChildren().OfType<TextureRect>().All(layer => layer.Size.X <= bowlSize.X + .1f && layer.Size.Y <= bowlSize.Y + .1f),
+            $"preview layers fit the displayed bowl {bowlSize}: {string.Join(", ", overlay.GetChild(0).GetChild(0).GetChildren().OfType<TextureRect>().Select(layer => layer.Size))}");
         Move(new Vector2(950, 125), true); Button(new Vector2(950, 125), false); await Settled();
         Check(_screen.Bowl.State == NoodleBowlState.Ready && !_screen.Workstation.Busy("bowl"), "miss returns intact bowl and releases lock");
         Press(ProductKind.Doupi); GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);

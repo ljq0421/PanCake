@@ -12,14 +12,14 @@ namespace ProjectCake.Gameplay;
 public partial class WuhanDayScreen : Control
 {
     public event Action? HubRequested;
-    private readonly Control[] _customers = new Control[4];
-    private readonly DropZone[] _customerDropZones = new DropZone[4];
-    private readonly string?[] _deliveryCustomerIds = new string?[4];
+    private readonly Control[] _customers = new Control[5];
+    private readonly DropZone[] _customerDropZones = new DropZone[5];
+    private readonly string?[] _deliveryCustomerIds = new string?[5];
     internal DragService DeliveryDrag { get; private set; } = null!;
-    private readonly OrderBubbleView[] _orders = new OrderBubbleView[4];
-    private readonly ProgressBar[] _patience = new ProgressBar[4];
-    private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[4];
-    private readonly Label[] _deliveryQuantityLabels = new Label[4];
+    private readonly OrderBubbleView[] _orders = new OrderBubbleView[5];
+    private readonly ProgressBar[] _patience = new ProgressBar[5];
+    private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[5];
+    private readonly Label[] _deliveryQuantityLabels = new Label[5];
     private readonly Label[] _basketLabels = new Label[2];
     private readonly Dictionary<string,double> _refills = new(StringComparer.Ordinal);
     private DataCatalog _catalog = null!; private SaveService _save = null!; private DayController _controller = null!; private WuhanArtCatalog _art = null!;
@@ -45,6 +45,7 @@ public partial class WuhanDayScreen : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        ConfigurePresentation();
         _art = new WuhanArtCatalog();
         DeliveryDrag.Configure(GetNode<Control>("WuhanDragOverlay"));
         DeliveryDrag.DragEnded += result =>
@@ -74,13 +75,64 @@ public partial class WuhanDayScreen : Control
             if (CanInteract && !Workstation.Busy("egg") && _egg?.TryRefill() == true) Workstation.PlayEggRefill();
         };
         Workstation.GestureRejected += message => Feedback(message, true);
-        this.FindButton("提前打烊").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
+        GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
         this.FindButton("收好收入 · 返回武汉经营首页").Pressed += () => HubRequested?.Invoke();
         _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HubRequested?.Invoke(); };
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { Workstation.CancelAnimations(); CollectionFeedback.Clear(); }
         };
+    }
+    private void ConfigurePresentation()
+    {
+        // Orders must never determine the scale or counter crop of a customer.
+        for (int i = 0; i < _customers.Length; i++)
+        {
+            _portraits[i].Reparent(_customers[i], false);
+            _portraits[i].Position = new Vector2(5, 162);
+            _portraits[i].Size = new Vector2(340, 268);
+            _orders[i].Reparent(_customers[i], false);
+            _orders[i].Position = new Vector2(29, 5);
+            _orders[i].Scale = Vector2.One * .88f;
+            _patience[i].CustomMinimumSize = new Vector2(0, 6);
+            foreach (string style in new[] { "background", "fill" })
+            {
+                var box = (StyleBoxFlat)_patience[i].GetThemeStylebox(style).Duplicate();
+                box.SetBorderWidthAll(0);
+                _patience[i].AddThemeStyleboxOverride(style, box);
+            }
+        }
+        _door.Visible = false;
+        _tutorial.Visible = false;
+        foreach (Label label in _basketLabels) label.Visible = false;
+        _bowlStatus.Visible = _doupiStatus.Visible = _eggStatus.Visible = false;
+        var header = GetNode<PanelContainer>("@PanelContainer@312");
+        var headerStyle = (StyleBoxFlat)header.GetThemeStylebox("panel").Duplicate();
+        headerStyle.ContentMarginTop = headerStyle.ContentMarginBottom = 6;
+        header.AddThemeStyleboxOverride("panel", headerStyle);
+        header.Position = new Vector2(1236, 18);
+        header.Size = new Vector2(660, 60);
+        var row = (HBoxContainer)_day.GetParent();
+        void IconBefore(Control target, string kind)
+        {
+            var icon = new WuhanHudIcon { Kind = kind, CustomMinimumSize = new Vector2(30, 30), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore };
+            row.AddChild(icon); row.MoveChild(icon, target.GetIndex());
+        }
+        IconBefore(_day, "day"); IconBefore(_clock, "clock");
+        _day.AddThemeFontSizeOverride("font_size", 24);
+        _coinTarget.CustomMinimumSize = new Vector2(32, 32);
+        var close = this.FindButton("提前打烊");
+        close.Text = ""; close.TooltipText = "提前打烊";
+        close.CustomMinimumSize = new Vector2(48, 48);
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
+        {
+            var style = (StyleBoxFlat)close.GetThemeStylebox(state).Duplicate();
+            style.ContentMarginLeft = style.ContentMarginRight = style.ContentMarginTop = style.ContentMarginBottom = 0;
+            close.AddThemeStyleboxOverride(state, style);
+        }
+        var exit = new WuhanHudIcon { Kind = "exit", Position = new Vector2(9, 9), Size = new Vector2(30, 30), MouseFilter = MouseFilterEnum.Ignore };
+        close.AddChild(exit);
+        CoinTray.AmountOnly = true;
     }
     public void ConnectController(DayController controller)
     {
@@ -96,7 +148,7 @@ public partial class WuhanDayScreen : Control
         CityProgressData city=save.Data.Wuhan; _cookerLevel=city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1); _stationLevel=city.EquipmentLevels.GetValueOrDefault("ingredient_station",1); _doupiLevel=city.EquipmentLevels.GetValueOrDefault("doupi_griddle");
         _cooker=new NoodleCookerStateMachine(catalog.NoodleCookersByLevel[_cookerLevel]); _bowl=new HotDryNoodlesStateMachine(); _ingredients=new WuhanIngredientInventory(catalog.WuhanIngredientStationsByLevel[_stationLevel]); _doupiStock=new DoupiInventory();
         _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _egg=city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station")>0?new EggRiceWineRuntime():null;
-        _basketLabels[1].Visible=_cooker.Baskets.Count>1;
+        _basketLabels[1].Visible=false;
         Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_egg,_ingredients,_cookerLevel,_doupiLevel);
         Render();
     }
@@ -224,37 +276,20 @@ public partial class WuhanDayScreen : Control
     private void Render()
     {
         CoinTray.RenderRevenue(_controller?.Ledger?.Build().TotalRevenue ?? 0, _controller?.Ledger?.PaidCustomers ?? 0);
-        if(_controller?.CurrentConfig is null||_cooker is null)return;_day.Text=$"武汉 Day {_controller.CurrentConfig.Day} · {Subtitle(_controller.CurrentConfig.Day)}";_clock.Text=_controller.State switch{DayState.Opening=>$"开门 {_controller.OpeningRemainingSeconds:0.0}",DayState.Closing=>$"收尾 {_controller.ClosingRemainingSeconds:0.0}",_=>$"剩余 {(int)_controller.DayRemainingSeconds/60:00}:{(int)_controller.DayRemainingSeconds%60:00}"};_income.Text=$"¥{_controller.Ledger?.Build().TotalRevenue??0}";_door.Text=$"候场 {_controller.CustomerQueue?.DoorQueue.Count??0}";_tutorial.Text=Tutorial(_controller.CurrentConfig.Day);
-        for(int i=0;i<_cooker.Baskets.Count;i++) {
-            NoodleBasketRuntime b=_cooker.Baskets[i];
-            _basketLabels[i].Text=$"漏勺 {i+1} · "+(b.State switch {
-                NoodleBasketState.Empty=>"拖面入锅",NoodleBasketState.Cooking=>$"烫制 {b.CookSeconds:0.0}s",
-                NoodleBasketState.Ready=>"最佳，向上提",NoodleBasketState.Soft=>"偏软，向上提",
-                NoodleBasketState.Overcooked=>"过熟，向上提",NoodleBasketState.Locked=>"锁熟，向上提",
-                NoodleBasketState.Raised or NoodleBasketState.Draining=>_cooker.PendingPourBasket==i?"碗上方沥水中":"沥水，可拖入碗",_=>"沥干，拖入碗"});
-        }
-        _bowlStatus.Text=_bowl.State switch {
-            NoodleBowlState.Empty=>_cooker.PendingPourBasket.HasValue?"沥水中":"等待熟面",
-            NoodleBowlState.Noodles=>"待调味",
-            NoodleBowlState.Ready=>"可出餐",
-            _=>$"拌匀 {_bowl.MixProgress:0}%"};
-        _doupiStatus.Text=_doupi is null?"豆皮 · Day 4 解锁":_doupi.State switch {
-            DoupiState.Empty=>"待浇浆",DoupiState.Batter=>"待加蛋",
-            DoupiState.ReadyToFlip=>"待翻面",DoupiState.Flipped=>"待铺馅",
-            DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting=>$"{(_doupi.CutDirections.Contains(DoupiCutDirection.Horizontal)?"横切完成":"请横划") } · {(_doupi.CutDirections.Contains(DoupiCutDirection.Vertical)?"竖切完成":"请竖划")} · {(_doupi.Quality==DoupiQuality.Overbrowned?"偏焦":_doupi.State==DoupiState.Cutting?"已离火":"已熟")}",
-            DoupiState.Cut=>$"锅内余 {_doupi.RemainingPieces} 块 · 腾位后自动补入",DoupiState.Burnt=>"焦糊 · 待清理",_=>"豆皮煎制中"};
-        _eggStatus.Text = _egg is null ? "蛋酒 · Day 6 解锁" : _egg.IsRefilling ? "补货中" : _egg.Count == 0 ? "已售空" : "成品蛋酒";
-        _bowlStatus.Position = Workstation.Position + Workstation.BowlStatusPosition;
-        _bowlStatus.Size = new Vector2(300, 26);
-        _doupiStatus.Position = Workstation.Position + Workstation.DoupiStatusPosition;
-        _doupiStatus.Size = new Vector2(385, 26);
-        _eggStatus.Position = Workstation.Position + Workstation.EggStatusPosition;
-        _eggStatus.Size = new Vector2(250, 26);
-        for (int i = 0; i < _basketLabels.Length; i++)
+        if (_controller?.CurrentConfig is null || _cooker is null) return;
+        int day = _controller.CurrentConfig.Day;
+        _day.Text = $"{day}";
+        _day.TooltipText = $"武汉 Day {day} · {Subtitle(day)}\n{Tutorial(day)}";
+        _clock.Text = _controller.State switch
         {
-            _basketLabels[i].Position = Workstation.Position + Workstation.BasketStatusPosition(i);
-            _basketLabels[i].Size = new Vector2(300, 24);
-        }
+            DayState.Opening => $"开门 {_controller.OpeningRemainingSeconds:0}",
+            DayState.Closing => $"收尾 {_controller.ClosingRemainingSeconds:0}",
+            _ => $"{(int)_controller.DayRemainingSeconds / 60:00}:{(int)_controller.DayRemainingSeconds % 60:00}",
+        };
+        _clock.TooltipText = $"候场 {_controller.CustomerQueue?.DoorQueue.Count ?? 0}";
+        _income.Text = $"{_controller.Ledger?.Build().TotalRevenue ?? 0}";
+        _tutorial.Text = $"武汉 Day {day} · {Subtitle(day)}\n{Tutorial(day)}";
+        _tutorial.Visible = _controller.State == DayState.Opening;
         Workstation.RefreshRefillControls();
         Workstation.RefreshDeliverySources(); Workstation.QueueRedraw();
         RenderCustomers();
@@ -263,7 +298,7 @@ public partial class WuhanDayScreen : Control
     {
         if (_controller.CustomerQueue is null) return;
         var slots = _controller.CustomerQueue.Slots;
-        for (int i=0;i<4;i++)
+        for (int i=0;i<_customers.Length;i++)
         {
             CustomerRuntime? customer=i<slots.Count?slots[i]:null;
             _customers[i].Visible=customer is not null;
@@ -284,11 +319,16 @@ public partial class WuhanDayScreen : Control
             _deliveryQuantityLabels[i].Visible = quantity > 0;
             if (customer is null) continue;
             _orders[i].Render(customer.Order,customer.Progress,_catalog.RecipesById);
+            _orders[i].Size = new Vector2(332, _orders[i].GetCombinedMinimumSize().Y);
             _patience[i].Value=(1-customer.PatienceProgress)*100;
+            double remaining = 1 - customer.PatienceProgress;
+            ((StyleBoxFlat)_patience[i].GetThemeStylebox("fill")).BgColor = remaining < .2
+                ? new Color("#B95035") : remaining < .4 ? new Color("#C69536") : new Color("#9AB88A");
+            _patience[i].Modulate = new Color(1, 1, 1, remaining > .85 ? .4f : 1);
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
     }
-    private void Feedback(string text,bool error){_feedback.Text=(error?"！ ":"✓ ")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
+    private void Feedback(string text,bool error){if (!error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"✓ ")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
     private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
     private void OnDeliveryCompleted(DeliveryEvaluation result)=>Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     public override void _ExitTree()

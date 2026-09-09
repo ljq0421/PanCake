@@ -82,12 +82,13 @@ public sealed class YangzhouOrder
         if (Resolved || !kitchen.HasFood(product)) return false;
         if (!Needs(product)) { Mistakes++; return false; }
         if (!kitchen.TryTake(product, out var item)) return false;
+        // Staging is kitchen preparation, not partial delivery; it never restores patience.
         _stagedItems.Add(item); return true;
     }
     public int Satisfaction => Math.Clamp(100 - (WaitRatio <= .3 ? 0 : WaitRatio <= .6 ? 5 : WaitRatio <= .84 ? 15 : 30)
         - Mistakes * 20 - _stagedItems.Sum(i => i.Quality == YangzhouQuality.Perfect ? 0 : i.Quality == YangzhouQuality.Good ? 5 : 10), 0, 100);
     public bool Perfect => Complete && Mistakes == 0 && WaitRatio <= .3 && _stagedItems.All(i => i.Quality == YangzhouQuality.Perfect);
-    public int Tip => Perfect ? (int)Math.Round(Price * Type.TipRate, MidpointRounding.AwayFromZero) : 0;
+    public int Tip => Perfect ? ProjectCake.Orders.TipCalculator.Calculate(Price, Type.TipRate) : 0;
     public bool Serve() { if (Resolved || !Complete) return false; Resolved = Served = true; return true; }
     public void Lose() { if (Resolved) return; Resolved = true; _stagedItems.Clear(); }
 }

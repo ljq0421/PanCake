@@ -16,6 +16,8 @@ public partial class CoinTrayView : Control
     public event Action<int>? Collected;
     public int PendingAmount => Math.Max(0, _revenue - _collectedRevenue);
     public int VisibleCoinCount { get; private set; }
+    [Export] public bool AmountOnly { get; set; }
+    [Export] public Rect2 CoinSurface { get; set; } = new(26, 16, 198, 52);
     public Vector2 LandingPoint => _surface.GetGlobalTransform() * (_surface.Size * .5f);
     internal Rect2 SurfaceBounds => _surface.GetGlobalRect();
     internal IReadOnlyList<TextureRect> Coins => _coins;
@@ -23,8 +25,8 @@ public partial class CoinTrayView : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
-        _surface.Position = new Vector2(26, 16);
-        _surface.Size = new Vector2(198, 52);
+        _surface.Position = CoinSurface.Position;
+        _surface.Size = CoinSurface.Size;
         for (int i = 0; i < _coins.Count; i++) LayoutCoin(_coins[i], i);
         _collect.Pressed += () => TryCollect();
         RenderRevenue(0);
@@ -66,7 +68,9 @@ public partial class CoinTrayView : Control
         VisibleCoinCount = PendingAmount == 0 ? 0 : Math.Max(0, _paymentCount - _collectedPaymentCount) * CoinsPerPayment;
         EnsureCoins(VisibleCoinCount);
         for (int i = 0; i < _coins.Count; i++) _coins[i].Visible = i < VisibleCoinCount;
-        _caption.Text = PendingAmount > 0 ? $"点击收钱 ¥{PendingAmount}" : "金币盘";
+        _caption.Text = AmountOnly ? (PendingAmount > 0 ? $"¥{PendingAmount}" : "")
+            : PendingAmount > 0 ? $"点击收钱 ¥{PendingAmount}" : "金币盘";
+        _caption.Visible = !AmountOnly || PendingAmount > 0;
         _collect.MouseDefaultCursorShape = PendingAmount > 0 ? CursorShape.PointingHand : CursorShape.Arrow;
     }
 
@@ -83,7 +87,7 @@ public partial class CoinTrayView : Control
         }
     }
 
-    private static void LayoutCoin(TextureRect coin, int index)
+    private void LayoutCoin(TextureRect coin, int index)
     {
         // Irrational strides spread successive handfuls across both tray axes.
         // Positions depend only on the coin index; existing coins never reshuffle.
@@ -91,8 +95,10 @@ public partial class CoinTrayView : Control
         float y = (float)((.37 + index * .41421356237) % 1);
         coin.Size = new Vector2(24, 24);
         coin.PivotOffset = coin.Size * .5f;
-        coin.Position = new Vector2(15 + x * 168, 14 + y * 24) - coin.PivotOffset;
-        coin.Scale = new Vector2(.9f, index % 2 == 0 ? .66f : .78f);
+        coin.Position = new Vector2((15 + x * 168) / 198 * CoinSurface.Size.X,
+            (14 + y * 24) / 52 * CoinSurface.Size.Y) - coin.PivotOffset;
+        float fit = Math.Min(1, Math.Min(CoinSurface.Size.X / 198, CoinSurface.Size.Y / 52));
+        coin.Scale = new Vector2(.9f, index % 2 == 0 ? .66f : .78f) * fit;
         coin.Rotation = Mathf.DegToRad(-24 + (index * 37 % 49));
         coin.ZIndex = index + 1;
     }

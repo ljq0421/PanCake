@@ -29,7 +29,7 @@ public sealed class DayLedger
     private int _satisfactionPoints;
     private int _currentStreak;
 
-    public DayLedger(int day, int plannedCustomers, SatisfactionAverageMode averageMode = SatisfactionAverageMode.PlannedCustomers)
+    public DayLedger(int day, int plannedCustomers, SatisfactionAverageMode averageMode = SatisfactionAverageMode.CompletedCustomers)
     {
         _day = day;
         _plannedCustomers = plannedCustomers;

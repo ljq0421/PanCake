@@ -19,7 +19,7 @@ public partial class StageFourSelfTest
         string savePath = $"user://coin-payments-{Guid.NewGuid():N}.json";
         save.UsePathForTests(savePath);
         var controller = new DayController(); AddChild(controller);
-        var screen = new TianjinDayScreen(); AddChild(screen);
+        var screen = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen);
         screen.ConnectController(controller);
         screen.SetProcess(false);
         screen.Initialize(catalog, save, controller, 11);
@@ -95,7 +95,7 @@ public partial class StageFourSelfTest
 
     private async Task TestStockGestures(DataCatalog catalog)
     {
-        var station = new PancakeWorkstation { UseServingTray = true };
+        var station = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
         AddChild(station);
         station.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11]);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

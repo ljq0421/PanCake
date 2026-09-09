@@ -1,13 +1,1867 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
+[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v3.png" id="2_3027d"]
+[ext_resource type="Script" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
+[ext_resource type="Script" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
+[ext_resource type="Script" path="res://Scripts/UI/OrderBubbleView.cs" id="6_33f4f"]
+[ext_resource type="Script" path="res://Scripts/UI/CustomerPortraitView.cs" id="7_kbbhe"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/Customers/young_woman/body.png" id="8_s81ek"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/Customers/young_woman/head_normal.png" id="9_r76ct"]
+[ext_resource type="Script" path="res://Scripts/UI/WuhanWorkstationView.cs" id="10_o1v37"]
+[ext_resource type="Script" path="res://Scripts/Interaction/DragItem.cs" id="11_jo6ni"]
+[ext_resource type="Script" path="res://Scripts/UI/CoinTrayView.cs" id="12_h747o"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/出餐托盘.png" id="13_o8akn"]
+[ext_resource type="Script" path="res://Scripts/UI/CoinCollectionFeedback.cs" id="14_77nn7"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/PancakeAudio.cs" id="15_qks6d"]
 
-[node name="WuhanDayScreen" type="Control"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jc4ej"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1c42a"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8352941, 0.8627451, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1t8dd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yyhh2"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9708235, 0.9562353, 0.91611767, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vhkmb"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7r7bw"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9105098, 0.8957647, 0.85521567, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_l52jf"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5icp6"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.9137255, 0.9137255, 0.8627451, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vmut0"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y58d8"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2qvdk"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9137255, 0.9137255, 0.8627451, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_de023"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9137255, 0.9137255, 0.8627451, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="Theme" id="Theme_o3bxv"]
+AcceptDialog/styles/panel = SubResource("StyleBoxFlat_jc4ej")
+Button/colors/font_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+Button/colors/font_disabled_color = Color(0.27058825, 0.34901962, 0.30980393, 1)
+Button/colors/font_focus_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+Button/colors/font_hover_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+Button/colors/font_pressed_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+Button/font_sizes/font_size = 18
+Button/styles/disabled = SubResource("StyleBoxFlat_1c42a")
+Button/styles/focus = SubResource("StyleBoxFlat_1t8dd")
+Button/styles/hover = SubResource("StyleBoxFlat_yyhh2")
+Button/styles/normal = SubResource("StyleBoxFlat_vhkmb")
+Button/styles/pressed = SubResource("StyleBoxFlat_7r7bw")
+Label/colors/font_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+Label/font_sizes/font_size = 18
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_l52jf")
+ProgressBar/styles/background = SubResource("StyleBoxFlat_5icp6")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_vmut0")
+RichTextLabel/colors/default_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+RichTextLabel/font_sizes/normal_font_size = 22
+TooltipLabel/colors/font_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+TooltipLabel/colors/font_shadow_color = Color(1, 1, 1, 0)
+TooltipLabel/constants/outline_size = 0
+TooltipLabel/font_sizes/font_size = 18
+TooltipPanel/styles/panel = SubResource("StyleBoxFlat_y58d8")
+Window/colors/title_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+Window/styles/embedded_border = SubResource("StyleBoxFlat_2qvdk")
+Window/styles/embedded_unfocused_border = SubResource("StyleBoxFlat_de023")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oaios"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9137255, 0.9137255, 0.8627451, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acw6j"]
+atlas = ExtResource("4_s7cqp")
+region = Rect2(206, 182, 839, 841)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_33ous"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8oyyn"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9105098, 0.8957647, 0.85521567, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k2urn"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9708235, 0.9562353, 0.91611767, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_snevk"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8352941, 0.8627451, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c1cda"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_axew4"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c5ysn"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 4
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_58clv"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.8980392, 0.84705883, 0.7490196, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eyg8k"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h841y"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lbu32"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 4
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_siuv5"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.8980392, 0.84705883, 0.7490196, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s1r7g"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4atw"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_henha"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 4
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8pt7n"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.8980392, 0.84705883, 0.7490196, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r5xf1"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y3ghk"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j8e4r"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 4
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xbyxr"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.8980392, 0.84705883, 0.7490196, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7laty"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_m1r2r"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_cffhm"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0swnx"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_71qxo"]
+atlas = ExtResource("13_o8akn")
+region = Rect2(33, 230, 1470, 558)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vfoh0"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vqal8"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_he338"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lc0t6"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4bokb"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8enr8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1ahki"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8obww"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2o03j"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.13270588, 0.32807845, 0.2912157, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lwaek"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.20129412, 0.39458823, 0.35811764, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.1, 0.19, 0.15, 0.26)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3crsl"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8352941, 0.8627451, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v3ktd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[node name="WuhanDayScreen" type="Control" unique_id=950747278]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-visible = false
+theme = SubResource("Theme_o3bxv")
 script = ExtResource("1")
+
+[node name="@TextureRect@310" type="TextureRect" parent="." unique_id=131375831]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("2_3027d")
+expand_mode = 1
+
+[node name="@Node@311" type="Node" parent="." unique_id=746579247]
+script = ExtResource("3_p1fpg")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<DeliveryDrag>k__BackingField")
+
+[node name="WuhanDragOverlay" type="Control" parent="." unique_id=186547591]
+z_index = 110
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="@PanelContainer@312" type="PanelContainer" parent="." unique_id=240692325]
+z_index = 70
+layout_mode = 0
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 1896.0
+offset_bottom = 88.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_oaios")
+
+[node name="@HBoxContainer@313" type="HBoxContainer" parent="@PanelContainer@312" unique_id=223035303]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="@Label@314" type="Label" parent="@PanelContainer@312/@HBoxContainer@313" unique_id=1604513832]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 27
+text = "武汉 Day 1"
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_day")
+
+[node name="@Label@315" type="Label" parent="@PanelContainer@312/@HBoxContainer@313" unique_id=1836596671]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.27058825, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 18
+text = "候场 0"
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_door")
+
+[node name="@Label@316" type="Label" parent="@PanelContainer@312/@HBoxContainer@313" unique_id=523324761]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 26
+text = "00:00"
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_clock")
+
+[node name="@TextureRect@317" type="TextureRect" parent="@PanelContainer@312/@HBoxContainer@313" unique_id=18905188]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_coinTarget")
+
+[node name="@Label@318" type="Label" parent="@PanelContainer@312/@HBoxContainer@313" unique_id=1159014922]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 25
+text = "¥0"
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_income")
+
+[node name="@Button@319" type="Button" parent="@PanelContainer@312/@HBoxContainer@313" unique_id=1337506880]
+custom_minimum_size = Vector2(145, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+theme_override_colors/font_focus_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+theme_override_colors/font_pressed_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+theme_override_colors/font_hover_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+theme_override_colors/font_disabled_color = Color(0.27058825, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_33ous")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_8oyyn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_k2urn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_snevk")
+theme_override_styles/focus = SubResource("StyleBoxFlat_c1cda")
+text = "提前打烊"
+
+[node name="WuhanCustomerStrip" type="HBoxContainer" parent="." unique_id=917246360]
+z_index = 25
+layout_mode = 0
+offset_left = 180.0
+offset_top = 224.0
+offset_right = 1740.0
+offset_bottom = 670.0
+mouse_filter = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="WuhanCustomer1" type="Control" parent="WuhanCustomerStrip" unique_id=502758148]
+visible = false
+custom_minimum_size = Vector2(375, 440)
+layout_mode = 2
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|0")
+
+[node name="DoupiDeliveryQuantity1" type="Label" parent="WuhanCustomerStrip/WuhanCustomer1" unique_id=769398659]
+z_index = 5
+layout_mode = 0
+offset_left = 80.0
+offset_top = 270.0
+offset_right = 295.0
+offset_bottom = 315.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_deliveryQuantityLabels|array|0")
+
+[node name="WuhanCustomerDropZone1" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer1" unique_id=766278216]
+z_index = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_axew4")
+script = ExtResource("5_m3qug")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customerDropZones|array|0")
+
+[node name="@VBoxContainer@320" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer1" unique_id=373836170]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="OrderBubble" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320" unique_id=1223289578]
+custom_minimum_size = Vector2(332, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
+script = ExtResource("6_33f4f")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_orders|array|0")
+
+[node name="OrderContent" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320/OrderBubble" unique_id=7809281]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_content")
+
+[node name="OrderRows" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320/OrderBubble/OrderContent" unique_id=1332935191]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_rows")
+
+[node name="OrderPatience" type="ProgressBar" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320/OrderBubble/OrderContent" unique_id=2044315084]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_58clv")
+theme_override_styles/fill = SubResource("StyleBoxFlat_eyg8k")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_patience|array|0", "ProjectCake.UI.OrderBubbleView|<Patience>k__BackingField")
+
+[node name="@Control@323" type="Control" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320" unique_id=631621364]
+custom_minimum_size = Vector2(0, 220)
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("7_kbbhe")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0")
+
+[node name="@TextureRect@321" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320/@Control@323" unique_id=1837196550]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("8_s81ek")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
+
+[node name="@TextureRect@322" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320/@Control@323" unique_id=1299853575]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("9_r76ct")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
+
+[node name="WuhanCustomer2" type="Control" parent="WuhanCustomerStrip" unique_id=497109150]
+visible = false
+custom_minimum_size = Vector2(375, 440)
+layout_mode = 2
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|1")
+
+[node name="DoupiDeliveryQuantity2" type="Label" parent="WuhanCustomerStrip/WuhanCustomer2" unique_id=1225566995]
+z_index = 5
+layout_mode = 0
+offset_left = 80.0
+offset_top = 270.0
+offset_right = 295.0
+offset_bottom = 315.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_deliveryQuantityLabels|array|1")
+
+[node name="WuhanCustomerDropZone2" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer2" unique_id=1473483494]
+z_index = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_h841y")
+script = ExtResource("5_m3qug")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customerDropZones|array|1")
+
+[node name="@VBoxContainer@324" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer2" unique_id=1680205025]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="OrderBubble" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324" unique_id=679577442]
+custom_minimum_size = Vector2(332, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_lbu32")
+script = ExtResource("6_33f4f")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_orders|array|1")
+
+[node name="OrderContent" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324/OrderBubble" unique_id=233676801]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_content")
+
+[node name="OrderRows" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324/OrderBubble/OrderContent" unique_id=1833482336]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_rows")
+
+[node name="OrderPatience" type="ProgressBar" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324/OrderBubble/OrderContent" unique_id=568834826]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_siuv5")
+theme_override_styles/fill = SubResource("StyleBoxFlat_s1r7g")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_patience|array|1", "ProjectCake.UI.OrderBubbleView|<Patience>k__BackingField")
+
+[node name="@Control@327" type="Control" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324" unique_id=806401135]
+custom_minimum_size = Vector2(0, 220)
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("7_kbbhe")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|1")
+
+[node name="@TextureRect@325" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324/@Control@327" unique_id=1883282616]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("8_s81ek")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
+
+[node name="@TextureRect@326" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324/@Control@327" unique_id=967464400]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("9_r76ct")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
+
+[node name="WuhanCustomer3" type="Control" parent="WuhanCustomerStrip" unique_id=1554841040]
+visible = false
+custom_minimum_size = Vector2(375, 440)
+layout_mode = 2
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|2")
+
+[node name="DoupiDeliveryQuantity3" type="Label" parent="WuhanCustomerStrip/WuhanCustomer3" unique_id=1642028327]
+z_index = 5
+layout_mode = 0
+offset_left = 80.0
+offset_top = 270.0
+offset_right = 295.0
+offset_bottom = 315.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_deliveryQuantityLabels|array|2")
+
+[node name="WuhanCustomerDropZone3" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer3" unique_id=1498398878]
+z_index = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_q4atw")
+script = ExtResource("5_m3qug")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customerDropZones|array|2")
+
+[node name="@VBoxContainer@328" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer3" unique_id=1693302342]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="OrderBubble" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328" unique_id=1290565977]
+custom_minimum_size = Vector2(332, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_henha")
+script = ExtResource("6_33f4f")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_orders|array|2")
+
+[node name="OrderContent" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328/OrderBubble" unique_id=1402569260]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_content")
+
+[node name="OrderRows" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328/OrderBubble/OrderContent" unique_id=1380435327]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_rows")
+
+[node name="OrderPatience" type="ProgressBar" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328/OrderBubble/OrderContent" unique_id=2134957905]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_8pt7n")
+theme_override_styles/fill = SubResource("StyleBoxFlat_r5xf1")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_patience|array|2", "ProjectCake.UI.OrderBubbleView|<Patience>k__BackingField")
+
+[node name="@Control@331" type="Control" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328" unique_id=1015519465]
+custom_minimum_size = Vector2(0, 220)
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("7_kbbhe")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|2")
+
+[node name="@TextureRect@329" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328/@Control@331" unique_id=2075976255]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("8_s81ek")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
+
+[node name="@TextureRect@330" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328/@Control@331" unique_id=342410584]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("9_r76ct")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
+
+[node name="WuhanCustomer4" type="Control" parent="WuhanCustomerStrip" unique_id=848583783]
+visible = false
+custom_minimum_size = Vector2(375, 440)
+layout_mode = 2
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|3")
+
+[node name="DoupiDeliveryQuantity4" type="Label" parent="WuhanCustomerStrip/WuhanCustomer4" unique_id=363151256]
+z_index = 5
+layout_mode = 0
+offset_left = 80.0
+offset_top = 270.0
+offset_right = 295.0
+offset_bottom = 315.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_deliveryQuantityLabels|array|3")
+
+[node name="WuhanCustomerDropZone4" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer4" unique_id=1675844556]
+z_index = 1
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_y3ghk")
+script = ExtResource("5_m3qug")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customerDropZones|array|3")
+
+[node name="@VBoxContainer@332" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer4" unique_id=407774435]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="OrderBubble" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332" unique_id=1404625033]
+custom_minimum_size = Vector2(332, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_j8e4r")
+script = ExtResource("6_33f4f")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_orders|array|3")
+
+[node name="OrderContent" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332/OrderBubble" unique_id=1477568350]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_content")
+
+[node name="OrderRows" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332/OrderBubble/OrderContent" unique_id=1108954169]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_rows")
+
+[node name="OrderPatience" type="ProgressBar" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332/OrderBubble/OrderContent" unique_id=511064060]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_xbyxr")
+theme_override_styles/fill = SubResource("StyleBoxFlat_7laty")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_patience|array|3", "ProjectCake.UI.OrderBubbleView|<Patience>k__BackingField")
+
+[node name="@Control@335" type="Control" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332" unique_id=1889122576]
+custom_minimum_size = Vector2(0, 220)
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("7_kbbhe")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|3")
+
+[node name="@TextureRect@333" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332/@Control@335" unique_id=1145216596]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("8_s81ek")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
+
+[node name="@TextureRect@334" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332/@Control@335" unique_id=1442900568]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("9_r76ct")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
+
+[node name="WuhanWorkstation" type="Control" parent="." unique_id=498277126]
+z_index = 45
+anchors_preset = 0
+offset_top = 625.0
+offset_right = 1920.0
+offset_bottom = 1050.0
+script = ExtResource("10_o1v37")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<Workstation>k__BackingField")
+
+[node name="WuhanDrag_HotDryNoodles" type="PanelContainer" parent="WuhanWorkstation" unique_id=2024425189]
+visible = false
+layout_mode = 0
+offset_left = 603.0
+offset_top = 120.0
+offset_right = 827.0
+offset_bottom = 294.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_m1r2r")
+script = ExtResource("11_jo6ni")
+PayloadId = "wuhan:HotDryNoodles"
+DisplayName = "热干面"
+DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
+DragDisplaySize = Vector2(224, 174)
+mouse_default_cursor_shape = 2
+
+[node name="WuhanDrag_Doupi" type="PanelContainer" parent="WuhanWorkstation" unique_id=1230188628]
+visible = false
+layout_mode = 0
+offset_left = 1095.0
+offset_top = 282.0
+offset_right = 1347.0
+offset_bottom = 372.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_cffhm")
+script = ExtResource("11_jo6ni")
+PayloadId = "wuhan:Doupi"
+DisplayName = "三鲜豆皮"
+DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
+DragDisplaySize = Vector2(100, 75)
+mouse_default_cursor_shape = 2
+
+[node name="WuhanDrag_EggRiceWine" type="PanelContainer" parent="WuhanWorkstation" unique_id=773993104]
+visible = false
+layout_mode = 0
+offset_left = 1690.0
+offset_top = 223.0
+offset_right = 1754.0
+offset_bottom = 292.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_0swnx")
+script = ExtResource("11_jo6ni")
+PayloadId = "wuhan:EggRiceWine"
+DisplayName = "蛋酒"
+DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
+DragDisplaySize = Vector2(56, 60)
+mouse_default_cursor_shape = 2
+
+[node name="RefillNoodles" type="Button" parent="WuhanWorkstation"]
+offset_left = 16.0
+offset_top = 311.0
+offset_right = 64.0
+offset_bottom = 359.0
+theme_override_font_sizes/font_size = 16
+text = "补"
+tooltip_text = "补充库存"
+metadata/ingredient_id = "wuhan_noodles"
+
+[node name="RefillBaseSeasoning" type="Button" parent="WuhanWorkstation"]
+offset_left = 507.0
+offset_top = 338.0
+offset_right = 555.0
+offset_bottom = 386.0
+theme_override_font_sizes/font_size = 16
+text = "补"
+tooltip_text = "补充库存"
+metadata/ingredient_id = "wuhan_base_seasoning"
+
+[node name="RefillScallion" type="Button" parent="WuhanWorkstation"]
+offset_left = 646.0
+offset_top = 338.0
+offset_right = 694.0
+offset_bottom = 386.0
+theme_override_font_sizes/font_size = 16
+text = "补"
+tooltip_text = "补充库存"
+metadata/ingredient_id = "wuhan_scallion"
+
+[node name="RefillChiliOil" type="Button" parent="WuhanWorkstation"]
+offset_left = 785.0
+offset_top = 338.0
+offset_right = 833.0
+offset_bottom = 386.0
+theme_override_font_sizes/font_size = 16
+text = "补"
+tooltip_text = "补充库存"
+metadata/ingredient_id = "wuhan_chili_oil"
+
+[node name="RefillBraisedBeef" type="Button" parent="WuhanWorkstation"]
+offset_left = 924.0
+offset_top = 338.0
+offset_right = 972.0
+offset_bottom = 386.0
+theme_override_font_sizes/font_size = 16
+text = "补"
+tooltip_text = "补充库存"
+metadata/ingredient_id = "wuhan_braised_beef"
+
+[node name="RefillEgg" type="Button" parent="WuhanWorkstation"]
+offset_left = 1650.0
+offset_top = 329.0
+offset_right = 1698.0
+offset_bottom = 377.0
+theme_override_font_sizes/font_size = 16
+text = "补"
+tooltip_text = "补充库存"
+metadata/ingredient_id = "egg"
+
+[node name="CoinTray" type="Control" parent="WuhanWorkstation" unique_id=641626216]
+z_index = 40
+anchors_preset = 0
+offset_left = 1395.0
+offset_top = 16.0
+offset_right = 1645.0
+offset_bottom = 126.0
+scale = Vector2(0.9, 0.9)
+pivot_offset = Vector2(125, 43)
+mouse_filter = 2
+script = ExtResource("12_h747o")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<CoinTray>k__BackingField")
+
+[node name="CoinTrayArt" type="TextureRect" parent="WuhanWorkstation/CoinTray" unique_id=160943642]
+custom_minimum_size = Vector2(250, 86)
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_71qxo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinTraySurface" type="Control" parent="WuhanWorkstation/CoinTray" unique_id=1732833467]
+clip_contents = true
+anchors_preset = 0
+offset_left = 48.0
+offset_top = 18.0
+offset_right = 202.0
+offset_bottom = 60.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_surface")
+
+[node name="@TextureRect@336" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=305843549]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 66.0
+offset_top = 14.0
+offset_right = 90.0
+offset_bottom = 38.0
+rotation = -0.29670596
+scale = Vector2(0.96, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|0")
+
+[node name="@TextureRect@337" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=659154401]
+visible = false
+z_index = 17
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 54.0
+offset_top = 5.0
+offset_right = 78.0
+offset_bottom = 29.0
+rotation = 0.20943952
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|1")
+
+[node name="@TextureRect@338" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=507140092]
+visible = false
+z_index = 23
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 97.0
+offset_top = 11.0
+offset_right = 121.0
+offset_bottom = 35.0
+rotation = -0.15707964
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|2")
+
+[node name="@TextureRect@339" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1036835040]
+visible = false
+z_index = 25
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 11.0
+offset_top = 13.0
+offset_right = 35.0
+offset_bottom = 37.0
+rotation = 0.36651915
+scale = Vector2(0.96, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|3")
+
+[node name="@TextureRect@340" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1827767758]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 119.0
+offset_top = 4.0
+offset_right = 143.0
+offset_bottom = 28.0
+rotation = -0.2617994
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|4")
+
+[node name="@TextureRect@341" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1641679333]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 32.0
+offset_top = 4.0
+offset_right = 56.0
+offset_bottom = 28.0
+rotation = 0.13962634
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|5")
+
+[node name="@TextureRect@342" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1192789432]
+visible = false
+z_index = 15
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 82.0
+offset_top = 3.0
+offset_right = 106.0
+offset_bottom = 27.0
+rotation = -0.38397244
+scale = Vector2(0.96, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|6")
+
+[node name="@TextureRect@343" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1817350951]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 41.0
+offset_top = 14.0
+offset_right = 65.0
+offset_bottom = 38.0
+rotation = 0.27925268
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|7")
+
+[node name="@TextureRect@344" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=556125230]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 108.0
+offset_top = 14.0
+offset_right = 132.0
+offset_bottom = 38.0
+rotation = 0.10471976
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|8")
+
+[node name="@TextureRect@345" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1550399561]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 69.0
+offset_top = 4.0
+offset_right = 93.0
+offset_bottom = 28.0
+rotation = -0.20943952
+scale = Vector2(0.96, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|9")
+
+[node name="@TextureRect@346" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=2085665448]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 22.0
+offset_top = 14.0
+offset_right = 46.0
+offset_bottom = 38.0
+rotation = 0.31415927
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|10")
+
+[node name="@TextureRect@347" type="TextureRect" parent="WuhanWorkstation/CoinTray/CoinTraySurface" unique_id=1138536947]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 88.0
+offset_top = 14.0
+offset_right = 112.0
+offset_bottom = 38.0
+rotation = -0.08726646
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|11")
+
+[node name="CoinTrayHint" type="Label" parent="WuhanWorkstation/CoinTray" unique_id=1792473253]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 80.0
+offset_right = 209.0
+offset_bottom = 106.0
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_constants/outline_size = 0
+theme_override_font_sizes/font_size = 17
+theme_override_styles/normal = SubResource("StyleBoxFlat_vfoh0")
+text = "金币盘"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_caption")
+
+[node name="CollectCoins" type="Button" parent="WuhanWorkstation/CoinTray" unique_id=1191795468]
+layout_mode = 0
+offset_left = 12.0
+offset_right = 238.0
+offset_bottom = 86.0
+tooltip_text = "点击收走金币 · 收入已自动入账，未点击也不会丢失"
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vqal8")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_he338")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_lc0t6")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_4bokb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_8enr8")
+flat = true
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_collect")
+
+[node name="@Node@348" type="Node" parent="." unique_id=178073584]
+script = ExtResource("14_77nn7")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<CollectionFeedback>k__BackingField")
+
+[node name="@Node@349" type="Node" parent="@Node@348" unique_id=126914532]
+script = ExtResource("15_qks6d")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinCollectionFeedback|_audio")
+
+[node name="@AudioStreamPlayer@350" type="AudioStreamPlayer" parent="@Node@348/@Node@349" unique_id=1658542015]
+volume_db = -10.0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeAudio|_player")
+
+[node name="@Label@351" type="Label" parent="." unique_id=1306282663]
+z_index = 46
+layout_mode = 0
+offset_left = 205.0
+offset_top = 990.0
+offset_right = 440.0
+offset_bottom = 1014.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_basketLabels|array|0")
+
+[node name="@Label@352" type="Label" parent="." unique_id=506341798]
+z_index = 46
+layout_mode = 0
+offset_left = 205.0
+offset_top = 1015.0
+offset_right = 440.0
+offset_bottom = 1039.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_basketLabels|array|1")
+
+[node name="@Label@353" type="Label" parent="." unique_id=436831788]
+z_index = 46
+layout_mode = 0
+offset_left = 424.0
+offset_top = 682.0
+offset_right = 1004.0
+offset_bottom = 708.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_bowlStatus")
+
+[node name="@Label@354" type="Label" parent="." unique_id=1527755973]
+z_index = 46
+layout_mode = 0
+offset_left = 1000.0
+offset_top = 1020.0
+offset_right = 1415.0
+offset_bottom = 1046.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_doupiStatus")
+
+[node name="@Label@355" type="Label" parent="." unique_id=662358138]
+z_index = 46
+layout_mode = 0
+offset_left = 1450.0
+offset_top = 990.0
+offset_right = 1855.0
+offset_bottom = 1048.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_eggStatus")
+
+[node name="@ColorRect@356" type="ColorRect" parent="." unique_id=881084473]
+visible = false
+z_index = 95
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.2, 0.09, 0.04, 0.48)
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_blocker")
+
+[node name="@PanelContainer@357" type="PanelContainer" parent="." unique_id=2145220654]
+visible = false
+z_index = 100
+layout_mode = 0
+offset_left = 550.0
+offset_top = 170.0
+offset_right = 1370.0
+offset_bottom = 870.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1ahki")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_results")
+
+[node name="@VBoxContainer@358" type="VBoxContainer" parent="@PanelContainer@357" unique_id=524836476]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="@Label@359" type="Label" parent="@PanelContainer@357/@VBoxContainer@358" unique_id=1290043222]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 36
+text = "武汉今日营业收据"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="@RichTextLabel@362" type="RichTextLabel" parent="@PanelContainer@357/@VBoxContainer@358" unique_id=237961870]
+custom_minimum_size = Vector2(740, 430)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
+theme_override_font_sizes/normal_font_size = 22
+bbcode_enabled = true
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_resultText")
+
+[node name="@Label@363" type="Label" parent="@PanelContainer@357/@VBoxContainer@358" unique_id=313431342]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_unlock")
+
+[node name="@Button@364" type="Button" parent="@PanelContainer@357/@VBoxContainer@358" unique_id=896637400]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_colors/font_focus_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_colors/font_pressed_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_colors/font_hover_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_colors/font_disabled_color = Color(0.27058825, 0.34901962, 0.30980393, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_8obww")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2o03j")
+theme_override_styles/hover = SubResource("StyleBoxFlat_lwaek")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_3crsl")
+theme_override_styles/focus = SubResource("StyleBoxFlat_v3ktd")
+text = "收好收入 · 返回武汉经营首页"
+
+[node name="@Label@365" type="Label" parent="." unique_id=1628316351]
+visible = false
+z_index = 80
+layout_mode = 0
+offset_left = 560.0
+offset_top = 146.0
+offset_right = 1360.0
+offset_bottom = 186.0
+theme_override_colors/font_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_feedback")
+
+[node name="@Label@366" type="Label" parent="." unique_id=1618166176]
+z_index = 65
+layout_mode = 0
+offset_left = 400.0
+offset_top = 92.0
+offset_right = 1520.0
+offset_bottom = 136.0
+theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_tutorial")
+
+[node name="@ConfirmationDialog@375" type="ConfirmationDialog" parent="." unique_id=2083357355]
+title = "提前打烊？"
+theme = SubResource("Theme_o3bxv")
+ok_button_text = "打烊并返回"
+dialog_text = "本日收入和成绩不会保存。"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_abandon")

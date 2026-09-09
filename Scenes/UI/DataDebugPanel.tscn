@@ -1,0 +1,275 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/DataDebugPanel.cs" id="1_b74kf"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6pjym"]
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.14117648, 0.11764706, 0.09803922, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_32dyi"]
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.09803922, 0.2, 0.13725491, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="DataDebugPanel" type="Control" unique_id=360212023]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_b74kf")
+
+[node name="@ColorRect@519" type="ColorRect" parent="." unique_id=1578123018]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.09019608, 0.07450981, 0.0627451, 1)
+
+[node name="@MarginContainer@520" type="MarginContainer" parent="." unique_id=918403605]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 96.0
+offset_top = 64.0
+offset_right = -96.0
+offset_bottom = -64.0
+
+[node name="@VBoxContainer@521" type="VBoxContainer" parent="@MarginContainer@520" unique_id=113647010]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="@Label@522" type="Label" parent="@MarginContainer@520/@VBoxContainer@521" unique_id=1245763578]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8352941, 0.5882353, 1)
+theme_override_font_sizes/font_size = 44
+text = "早餐铺子 · 天津数据调试台"
+
+[node name="@Label@523" type="Label" parent="@MarginContainer@520/@VBoxContainer@521" unique_id=370300985]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7411765, 0.6862745, 0.62352943, 1)
+theme_override_font_sizes/font_size = 22
+text = "完整天津章节 / Day 1～15 配置与资源验证"
+
+[node name="@HBoxContainer@524" type="HBoxContainer" parent="@MarginContainer@520/@VBoxContainer@521" unique_id=746591789]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="@Button@525" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@HBoxContainer@524" unique_id=225713237]
+custom_minimum_size = Vector2(220, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "返回煎饼实验台"
+
+[node name="@Button@526" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@HBoxContainer@524" unique_id=2034628443]
+custom_minimum_size = Vector2(180, 58)
+layout_mode = 2
+text = "营业大厅"
+
+[node name="@ScrollContainer@529" type="ScrollContainer" parent="@MarginContainer@520/@VBoxContainer@521" unique_id=1975561504]
+custom_minimum_size = Vector2(0, 122)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="@GridContainer@530" type="GridContainer" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529" unique_id=1632569979]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 8
+columns = 8
+
+[node name="@Button@531" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=824336805]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+button_pressed = true
+text = "Day 1"
+
+[node name="@Button@532" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1372520088]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 2"
+
+[node name="@Button@533" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1743486807]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 3"
+
+[node name="@Button@534" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1246870518]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 4"
+
+[node name="@Button@535" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=694423262]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 5"
+
+[node name="@Button@536" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1525218400]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 6"
+
+[node name="@Button@537" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1660832949]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 7"
+
+[node name="@Button@538" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=880859173]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 8"
+
+[node name="@Button@539" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=67389815]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 9"
+
+[node name="@Button@540" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=816549602]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 10"
+
+[node name="@Button@541" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=763434119]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 11"
+
+[node name="@Button@542" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1324505785]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 12"
+
+[node name="@Button@543" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=2005643743]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 13"
+
+[node name="@Button@544" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1887048242]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 14"
+
+[node name="@Button@545" type="Button" parent="@MarginContainer@520/@VBoxContainer@521/@ScrollContainer@529/@GridContainer@530" unique_id=1409284206]
+custom_minimum_size = Vector2(130, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+toggle_mode = true
+text = "Day 15"
+
+[node name="@HBoxContainer@546" type="HBoxContainer" parent="@MarginContainer@520/@VBoxContainer@521" unique_id=898777501]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="@PanelContainer@547" type="PanelContainer" parent="@MarginContainer@520/@VBoxContainer@521/@HBoxContainer@546" unique_id=1557181209]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6pjym")
+
+[node name="@RichTextLabel@550" type="RichTextLabel" parent="@MarginContainer@520/@VBoxContainer@521/@HBoxContainer@546/@PanelContainer@547" unique_id=1161238891]
+custom_minimum_size = Vector2(960, 640)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 22
+bbcode_enabled = true
+text = "[font_size=34][color=#FFD596]Day 1[/color][/font_size]
+[color=#BDAF9F]当前状态[/color]  Preparing
+
+[color=#D6C2A8]营业时长[/color]  60 秒
+[color=#D6C2A8]顾客数量[/color]  6
+[color=#D6C2A8]预期收入[/color]  ¥42
+[color=#D6C2A8]耐心倍率[/color]  1.20
+[color=#D6C2A8]等待上限[/color]  5 人
+[color=#D6C2A8]随机种子[/color]  1001
+
+[color=#D6C2A8]顾客权重[/color]
+  normal  100 %
+
+[color=#D6C2A8]订单权重[/color]
+  pancake  100 %
+
+[color=#D6C2A8]配方权重[/color]
+  pancake_basic  100 %
+
+[color=#D6C2A8]到店分段[/color]
+  0%～20%  →  20% 顾客
+  20%～75%  →  60% 顾客
+  75%～100%  →  20% 顾客
+
+[color=#D6C2A8]开店解锁[/color]  recipe:pancake_basic
+[color=#D6C2A8]结算解锁[/color]  —
+[color=#D6C2A8]可用配方[/color]  pancake_basic
+[color=#D6C2A8]可用商品[/color]  Pancake
+[color=#D6C2A8]大订单上限[/color]  0
+[color=#D6C2A8]单客最多煎饼[/color]  1
+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.DataDebugPanel|_details")
+
+[node name="@PanelContainer@551" type="PanelContainer" parent="@MarginContainer@520/@VBoxContainer@521/@HBoxContainer@546" unique_id=2136107804]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_32dyi")
+
+[node name="@RichTextLabel@554" type="RichTextLabel" parent="@MarginContainer@520/@VBoxContainer@521/@HBoxContainer@546/@PanelContainer@551" unique_id=1984149442]
+custom_minimum_size = Vector2(480, 640)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[font_size=28][color=#E8DCCB]启动校验[/color][/font_size]
+
+配方 Resource：23 / 8
+独立商品 Resource：8 / 2
+煎饼炉等级：3 / 3
+配料台等级：3 / 3
+天津库存：鸡蛋/薄脆/火腿/香葱 Lv1各6份、Lv2各8份、Lv3各10份；面糊/酱料不限；豆浆10杯。
+油条锅等级：3 / 3
+顾客类型：18 / 4
+每日 JSON：15 / 15
+
+[font_size=26][color=#78D892]✓ 全部数据校验通过[/color][/font_size]
+
+15 天配置、商品、顾客与三级设备均已通过启动校验。
+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.DataDebugPanel|_status")

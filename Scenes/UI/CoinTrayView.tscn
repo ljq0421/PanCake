@@ -1,0 +1,314 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/CoinTrayView.cs" id="1_tmp0b"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/出餐托盘.png" id="2_ig61c"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/金币图标.png" id="3_8lnmn"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_71qxo"]
+atlas = ExtResource("2_ig61c")
+region = Rect2(33, 230, 1470, 558)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acw6j"]
+atlas = ExtResource("3_8lnmn")
+region = Rect2(206, 182, 839, 841)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vfoh0"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vqal8"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_he338"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lc0t6"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4bokb"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8enr8"]
+
+[node name="CoinTrayView" type="Control" unique_id=641626216]
+z_index = 40
+anchors_preset = 0
+offset_left = 1395.0
+offset_top = 16.0
+offset_right = 1645.0
+offset_bottom = 126.0
+scale = Vector2(0.9, 0.9)
+pivot_offset = Vector2(125, 43)
+mouse_filter = 2
+script = ExtResource("1_tmp0b")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<CoinTray>k__BackingField")
+
+[node name="CoinTrayArt" type="TextureRect" parent="." unique_id=160943642]
+custom_minimum_size = Vector2(250, 86)
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_71qxo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinTraySurface" type="Control" parent="." unique_id=1732833467]
+clip_contents = true
+anchors_preset = 0
+offset_left = 48.0
+offset_top = 18.0
+offset_right = 202.0
+offset_bottom = 60.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_surface")
+
+[node name="@TextureRect@336" type="TextureRect" parent="CoinTraySurface" unique_id=305843549]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 66.0
+offset_top = 14.0
+offset_right = 90.0
+offset_bottom = 38.0
+rotation = -0.29670596
+scale = Vector2(0.96, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|0")
+
+[node name="@TextureRect@337" type="TextureRect" parent="CoinTraySurface" unique_id=659154401]
+visible = false
+z_index = 17
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 54.0
+offset_top = 5.0
+offset_right = 78.0
+offset_bottom = 29.0
+rotation = 0.20943952
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|1")
+
+[node name="@TextureRect@338" type="TextureRect" parent="CoinTraySurface" unique_id=507140092]
+visible = false
+z_index = 23
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 97.0
+offset_top = 11.0
+offset_right = 121.0
+offset_bottom = 35.0
+rotation = -0.15707964
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|2")
+
+[node name="@TextureRect@339" type="TextureRect" parent="CoinTraySurface" unique_id=1036835040]
+visible = false
+z_index = 25
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 11.0
+offset_top = 13.0
+offset_right = 35.0
+offset_bottom = 37.0
+rotation = 0.36651915
+scale = Vector2(0.96, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|3")
+
+[node name="@TextureRect@340" type="TextureRect" parent="CoinTraySurface" unique_id=1827767758]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 119.0
+offset_top = 4.0
+offset_right = 143.0
+offset_bottom = 28.0
+rotation = -0.2617994
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|4")
+
+[node name="@TextureRect@341" type="TextureRect" parent="CoinTraySurface" unique_id=1641679333]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 32.0
+offset_top = 4.0
+offset_right = 56.0
+offset_bottom = 28.0
+rotation = 0.13962634
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|5")
+
+[node name="@TextureRect@342" type="TextureRect" parent="CoinTraySurface" unique_id=1192789432]
+visible = false
+z_index = 15
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 82.0
+offset_top = 3.0
+offset_right = 106.0
+offset_bottom = 27.0
+rotation = -0.38397244
+scale = Vector2(0.96, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|6")
+
+[node name="@TextureRect@343" type="TextureRect" parent="CoinTraySurface" unique_id=1817350951]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 41.0
+offset_top = 14.0
+offset_right = 65.0
+offset_bottom = 38.0
+rotation = 0.27925268
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|7")
+
+[node name="@TextureRect@344" type="TextureRect" parent="CoinTraySurface" unique_id=556125230]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 108.0
+offset_top = 14.0
+offset_right = 132.0
+offset_bottom = 38.0
+rotation = 0.10471976
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|8")
+
+[node name="@TextureRect@345" type="TextureRect" parent="CoinTraySurface" unique_id=1550399561]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 69.0
+offset_top = 4.0
+offset_right = 93.0
+offset_bottom = 28.0
+rotation = -0.20943952
+scale = Vector2(0.96, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|9")
+
+[node name="@TextureRect@346" type="TextureRect" parent="CoinTraySurface" unique_id=2085665448]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 22.0
+offset_top = 14.0
+offset_right = 46.0
+offset_bottom = 38.0
+rotation = 0.31415927
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|10")
+
+[node name="@TextureRect@347" type="TextureRect" parent="CoinTraySurface" unique_id=1138536947]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 88.0
+offset_top = 14.0
+offset_right = 112.0
+offset_bottom = 38.0
+rotation = -0.08726646
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|11")
+
+[node name="CoinTrayHint" type="Label" parent="." unique_id=1792473253]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 80.0
+offset_right = 209.0
+offset_bottom = 106.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_vfoh0")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_constants/outline_size = 0
+text = "金币盘"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_caption")
+
+[node name="CollectCoins" type="Button" parent="." unique_id=1191795468]
+layout_mode = 0
+offset_left = 12.0
+offset_right = 238.0
+offset_bottom = 86.0
+tooltip_text = "点击收走金币 · 收入已自动入账，未点击也不会丢失"
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_vqal8")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_he338")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_lc0t6")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_4bokb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_8enr8")
+flat = true
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_collect")

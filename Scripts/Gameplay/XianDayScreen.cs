@@ -31,7 +31,67 @@ public partial class XianDayScreen : Control
     private SpinBox _batch = null!;
     private double _cutDistance, _feedbackTime;
 
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        foreach (XianSurface surface in this.Descendants<XianSurface>())
+        {
+            _surfaces[surface.Name] = surface;
+            surface.CanInteract = () => CanInteract;
+        }
+        foreach (Button button in this.Descendants<Button>())
+            if (!string.IsNullOrEmpty(button.Name)) _buttons[button.Name] = button;
+
+        void Wire(string id, Action action, bool gameplay = true)
+        {
+            if (!_buttons.TryGetValue(id, out Button? button)) return;
+            button.Pressed += () => { if (!gameplay || CanInteract) { action(); Render(); } };
+        }
+
+        Wire("pause", Pause, false);
+        Wire("exit", AskExit, false);
+        Wire("oven", OvenAction);
+        Wire("chop", StartChop);
+        Wire("refill_meat", () => Action(Session.Meat.TryRefill(), "补肉中，0.8秒后补满。", "肉锅已满或正在补充。"));
+        Wire("wrap", () => Action(Session.Sandwich.TryWrap(), "包装好了，拖给顾客或点击交付。", "切开馍并填入肉后才能包装。"));
+        Wire("deliver", () => Deliver("sandwich"));
+        Wire("refill_juice", () => Action(Session.Juice.TryRefill(), "补汁中，0.6秒后补满。", "腊汁已满或正在补充。"));
+        Wire("deliver_soup", () => Deliver("soup"));
+        Wire("refill_soup", () => Action(Session.Soup?.Stock.TryRefill() == true, "正在补汤。", "汤锅未开放、已满或正在补充。"));
+        Wire("retry_save", SaveResult, false);
+        Wire("result_back", () => { if (_committed) HubRequested?.Invoke(); }, false);
+
+        for (int i = 0; i < _customers.Count; i++)
+        {
+            int slot = i;
+            XianSurface customer = _customers[i];
+            customer.Pressed = () => { if (CustomerAt(slot) is { } c) _controller.CustomerQueue!.TrySelect(c.Id); };
+            customer.AcceptToken = token => token is "sandwich" or "soup" && CustomerAt(slot) is { } c
+                && c.Progress.CanAccept(token == "soup" ? ProductKind.Hulatang : ProductKind.Roujiamo);
+            customer.Dropped = token => { if (CustomerAt(slot) is { } c) Deliver(token, c.Id); };
+        }
+        XianSurface oven = _surfaces["oven"];
+        oven.Pressed = OvenAction;
+        XianSurface board = _surfaces["board"];
+        board.Pressed = StartChop;
+        board.HorizontalStroke = dx => { if (CanInteract) { Session.Board.AddMotion(dx); board.QueueRedraw(); } };
+        board.GestureEnded = () => Session?.Board.EndGesture();
+        XianSurface bun = _surfaces["bun"];
+        bun.Pressed = () => { _cutDistance = 0; if (Session.Sandwich.State == RoujiamoState.Empty) Action(Session.Sandwich.TryTakeBun(Session.Buns), "取好馍了，从侧面划过切开。", "缺馍，请先烙一炉。"); };
+        bun.HorizontalStroke = dx => { if (CanInteract && Session.Sandwich.State == RoujiamoState.Whole) { _cutDistance += dx; if (Session.Sandwich.TryCut(_cutDistance)) Feedback("馍已切开，把右边的肉拖进来。", false); } };
+        bun.GestureEnded = () => _cutDistance = 0;
+        bun.DragToken = () => Session.Sandwich.Prepared is null ? "" : "sandwich";
+        bun.AcceptToken = token => Session.Sandwich.State == RoujiamoState.Open && token is "meat" or "juice";
+        bun.Dropped = token => { if (token == "meat") AddMeat(); else AddJuice(); };
+        _surfaces["meat"].DragToken = () => Session.Board.Portions > 0 ? "meat" : "";
+        XianSurface juice = _surfaces["juice"];
+        juice.Pressed = AddJuice;
+        juice.DragToken = () => Session.Day >= 2 && Session.Juice.Count > 0 ? "juice" : "";
+        XianSurface soup = _surfaces["soup"];
+        soup.Pressed = ServeSoup;
+        soup.DragToken = () => Session.Soup?.HasBowl == true ? "soup" : "";
+        _exitDialog.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; CancelGestures(); HubRequested?.Invoke(); };
+    }
     public void ConnectController(DayController controller)
     {
         if (_controller is not null) _controller.DayFinished -= OnFinished;
@@ -80,71 +140,6 @@ public partial class XianDayScreen : Control
         _cutDistance = 0; Session?.Board.EndGesture();
         foreach (var surface in _surfaces.Values) surface.CancelGesture();
     }
-    private void Build()
-    {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); Theme = TianjinUi.CreateTheme();
-        var bg = new ColorRect { Color = new Color("#DED3BE"), MouseFilter = MouseFilterEnum.Ignore }; TianjinUi.FullRect(bg); AddChild(bg);
-        var bench = new ColorRect { Position = new(0, 402), Size = new(1920, 678), Color = new Color("#BCAD91"), MouseFilter = MouseFilterEnum.Ignore }; AddChild(bench);
-        _heading = LabelAt("西安 · 长安晨食", 34, new(50, 22), new(1150, 62));
-        _clock = LabelAt("", 25, new(1170, 25), new(370, 58));
-        ButtonAt("pause", "暂停", new(1570, 28), new(130, 58), Pause, false);
-        ButtonAt("exit", "返回首页", new(1720, 28), new(150, 58), AskExit, false);
-        _inventory = LabelAt("", 23, new(52, 87), new(1500, 40));
-        for (int i = 0; i < 4; i++)
-        {
-            int slot = i;
-            var customer = Surface("customer" + i, "customer", new(50 + i * 457, 142), new(447, 244)); _customers.Add(customer);
-            customer.Pressed = () => { if (CustomerAt(slot) is { } c) _controller.CustomerQueue!.TrySelect(c.Id); };
-            customer.AcceptToken = token => token is "sandwich" or "soup" && CustomerAt(slot) is { } c && c.Progress.CanAccept(token == "soup" ? ProductKind.Hulatang : ProductKind.Roujiamo);
-            customer.Dropped = token => { if (CustomerAt(slot) is { } c) Deliver(token, c.Id); };
-        }
-        var oven = Surface("oven", "oven", new(50, 434), new(315, 330));
-        oven.Pressed = OvenAction;
-        var board = Surface("board", "board", new(390, 434), new(435, 330));
-        board.Pressed = StartChop; board.HorizontalStroke = dx => { if (CanInteract) { Session.Board.AddMotion(dx); board.QueueRedraw(); } };
-        board.GestureEnded = () => Session?.Board.EndGesture();
-        var bun = Surface("bun", "bun", new(850, 434), new(435, 330));
-        bun.Pressed = () => { _cutDistance = 0; if (Session.Sandwich.State == RoujiamoState.Empty) Action(Session.Sandwich.TryTakeBun(Session.Buns), "取好馍了，从侧面划过切开。", "缺馍，请先烙一炉。"); };
-        bun.HorizontalStroke = dx => { if (CanInteract && Session.Sandwich.State == RoujiamoState.Whole) { _cutDistance += dx; if (Session.Sandwich.TryCut(_cutDistance)) Feedback("馍已切开，把右边的肉拖进来。", false); } };
-        bun.GestureEnded = () => _cutDistance = 0;
-        bun.DragToken = () => Session.Sandwich.Prepared is null ? "" : "sandwich";
-        bun.AcceptToken = token => Session.Sandwich.State == RoujiamoState.Open && token is "meat" or "juice";
-        bun.Dropped = token => { if (token == "meat") AddMeat(); else AddJuice(); };
-        var meat = Surface("meat", "meat", new(1310, 434), new(240, 180));
-        meat.DragToken = () => Session.Board.Portions > 0 ? "meat" : "";
-        var juice = Surface("juice", "juice", new(1310, 630), new(240, 134));
-        juice.Pressed = AddJuice; juice.DragToken = () => Session.Day >= 2 && Session.Juice.Count > 0 ? "juice" : "";
-        var soup = Surface("soup", "soup", new(1575, 434), new(295, 330));
-        soup.Pressed = ServeSoup; soup.DragToken = () => Session.Soup?.HasBowl == true ? "soup" : "";
-        _batch = new SpinBox { Name = "BatchQuantity", Position = new(50, 790), Size = new(130, 56), MinValue = 1, MaxValue = 4, Value = 4, Step = 1 }; AddChild(_batch);
-        ButtonAt("oven", "整批下炉", new(193, 790), new(172, 56), OvenAction);
-        ButtonAt("chop", "取肉 · 剁肉", new(390, 790), new(210, 56), StartChop);
-        ButtonAt("refill_meat", "补肉锅", new(615, 790), new(210, 56), () => Action(Session.Meat.TryRefill(), "补肉中，0.8秒后补满。", "肉锅已满或正在补充。"));
-        ButtonAt("wrap", "包装", new(850, 790), new(205, 56), () => Action(Session.Sandwich.TryWrap(), "包装好了，拖给顾客或点击交付。", "切开馍并填入肉后才能包装。"));
-        ButtonAt("deliver", "交付肉夹馍", new(1070, 790), new(215, 56), () => Deliver("sandwich"));
-        ButtonAt("refill_juice", "补腊汁", new(1310, 790), new(240, 56), () => Action(Session.Juice.TryRefill(), "补汁中，0.6秒后补满。", "腊汁已满或正在补充。"));
-        ButtonAt("deliver_soup", "交付胡辣汤", new(1575, 790), new(295, 56), () => Deliver("soup"));
-        ButtonAt("refill_soup", "补汤锅", new(1575, 862), new(295, 56), () => Action(Session.Soup?.Stock.TryRefill() == true, "正在补汤。", "汤锅未开放、已满或正在补充。"));
-        _feedback = LabelAt("", 25, new(52, 862), new(1470, 58)); _feedback.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _tutorial = LabelAt("", 24, new(52, 956), new(1818, 96)); _tutorial.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _exitDialog = new ConfirmationDialog { Title = "离开本次营业？", DialogText = "本日尚未结算的收入和库存不会保留。", OkButtonText = "离开营业", CancelButtonText = "继续营业", MinSize = new(620, 210) }; AddChild(_exitDialog);
-        _exitDialog.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; CancelGestures(); HubRequested?.Invoke(); };
-        BuildResults();
-    }
-    private XianSurface Surface(string id, string kind, Vector2 position, Vector2 size)
-    {
-        var surface = new XianSurface { Name = id, Kind = kind, Position = position, Size = size, CanInteract = () => CanInteract };
-        AddChild(surface); _surfaces[id] = surface; return surface;
-    }
-    private Label LabelAt(string text, int font, Vector2 position, Vector2 size)
-    {
-        var label = TianjinUi.Label(text, font, new Color("#513D32")); label.Position = position; label.Size = size; label.MouseFilter = MouseFilterEnum.Ignore; AddChild(label); return label;
-    }
-    private Button ButtonAt(string id, string text, Vector2 position, Vector2 size, Action action, bool gameplay = true)
-    {
-        var button = TianjinUi.Button(text, id is "wrap" or "deliver", size); button.Name = id; button.Position = position;
-        button.Pressed += () => { if (!gameplay || CanInteract) { action(); Render(); } }; AddChild(button); _buttons[id] = button; return button;
-    }
     public void StartChop()
     {
         if (!CanInteract || Session.Board.IsChopping) return;
@@ -180,7 +175,7 @@ public partial class XianDayScreen : Control
         Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect); Render(); return result;
     }
     private CustomerRuntime? CustomerAt(int i) => _controller?.CustomerQueue is { } queue && i < queue.Slots.Count ? queue.Slots[i] : null;
-    private void Action(bool ok, string success, string failure) { Feedback(ok ? success : failure, !ok); }
+    private void Action(bool ok, string success, string failure) => Feedback(ok ? success : failure, !ok);
     private void Feedback(string text, bool error) { if (_feedback is null) return; _feedback.Text = text; _feedback.Modulate = error ? new Color("#872F29") : new Color("#455D33"); _feedbackTime = 3; }
     private void Pause()
     {
@@ -227,16 +222,6 @@ public partial class XianDayScreen : Control
             view.Detail = customer is null ? "空档可以提前备货" : string.Join("\n", customer.Order.Lines.Select((line, index) => $"{(customer.Progress.GetRemainingQuantity(index) == 0 ? "✓" : "·")} {(line.ProductKind == ProductKind.Hulatang ? "胡辣汤" : _catalog.RecipesById[line.DefinitionId].DisplayName)}  {customer.Progress.GetDeliveredQuantity(index)}/{line.Quantity}"));
         }
         foreach (var surface in _surfaces.Values) surface.Refresh();
-    }
-    private void BuildResults()
-    {
-        _blocker = new ColorRect { Color = new Color(0, 0, 0, .5f), Visible = false, ZIndex = 90 }; TianjinUi.FullRect(_blocker); AddChild(_blocker);
-        _results = TianjinUi.Panel(new Color("#FFF4DC"), 22); _results.Position = new(505, 165); _results.Size = new(910, 735); _results.Visible = false; _results.ZIndex = 100; AddChild(_results);
-        var col = new VBoxContainer(); col.AddThemeConstantOverride("separation", 22); _results.AddChild(col);
-        col.AddChild(TianjinUi.Label("西安 · 今日营业收据", 38, TianjinUi.BrownDark, HorizontalAlignment.Center));
-        _resultText = TianjinUi.Label("", 26, TianjinUi.BrownText, HorizontalAlignment.Center); _resultText.AutowrapMode = TextServer.AutowrapMode.WordSmart; _resultText.CustomMinimumSize = new(820, 470); col.AddChild(_resultText);
-        var retry = TianjinUi.Button("重试保存", true, new(800, 58)); retry.Pressed += SaveResult; col.AddChild(retry); _buttons["retry_save"] = retry;
-        var back = TianjinUi.Button("收好收入 · 返回西安首页", true, new(800, 66)); back.Pressed += () => { if (_committed) HubRequested?.Invoke(); }; col.AddChild(back); _buttons["result_back"] = back;
     }
     private void OnFinished(DayResult result)
     {

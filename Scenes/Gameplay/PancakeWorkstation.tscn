@@ -1,12 +1,4788 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://Scripts/Gameplay/PancakeWorkstation.cs" id="1_workstation"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/PancakeWorkstation.cs" id="1_ng5tn"]
+[ext_resource type="Script" path="res://Scripts/Interaction/DragService.cs" id="2_pik2f"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/PancakeAudio.cs" id="3_pfmp2"]
+[ext_resource type="Script" path="res://Scripts/UI/FryerVisualView.cs" id="4_quyr2"]
+[ext_resource type="Script" path="res://Scripts/UI/WorkstationSlotView.cs" id="5_gu111"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/通用食材托盘.png" id="6_sbwhx"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/生油条面坯.png" id="7_jmgdj"]
+[ext_resource type="Script" path="res://Scripts/Interaction/PressRepeatGesture.cs" id="8_updx7"]
+[ext_resource type="Script" path="res://Scripts/Interaction/ClickInteractable.cs" id="9_cw3ha"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/油条沥油架.png" id="10_5yee6"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/熟油条.png" id="11_mnjqs"]
+[ext_resource type="Script" path="res://Scripts/Interaction/DragItem.cs" id="12_op86b"]
+[ext_resource type="Script" path="res://Scripts/Pancake/PancakeCanvas.cs" id="13_q4kdi"]
+[ext_resource type="Script" path="res://Scripts/Interaction/DropZone.cs" id="14_w1i8y"]
+[ext_resource type="Script" path="res://Scripts/Interaction/StrokeInteractor.cs" id="15_yadab"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/煎饼铲子.png" id="16_7mukx"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/煎饼刮板.png" id="17_ca5jk"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/装袋后的通用煎饼果子.png" id="18_na4ow"]
+[ext_resource type="Script" path="res://Scripts/UI/IngredientStockSlotView.cs" id="19_5n6ht"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/StockUI/batter_empty.png" id="20_lie4a"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/面糊容器.png" id="21_i0wd2"]
+[ext_resource type="Script" path="res://Scripts/UI/LiquidStockView.cs" id="22_xs7wx"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/面糊勺.png" id="23_onii8"]
+[ext_resource type="Script" path="res://Scripts/Interaction/StockGesture.cs" id="24_4mknw"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/鸡蛋.png" id="25_3oheb"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/薄脆.png" id="26_3qhow"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/StockUI/sauce_empty.png" id="27_kju1l"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/酱料容器.png" id="28_s5n62"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/酱刷.png" id="29_pru82"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/香葱碎.png" id="30_rs4v8"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/火腿片.png" id="31_luut3"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/出餐托盘.png" id="32_jnixa"]
+[ext_resource type="Script" path="res://Scripts/UI/SoyMilkStockView.cs" id="33_c2l0a"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/成品豆浆杯.png" id="34_dw1l8"]
+[ext_resource type="Script" path="res://Scripts/UI/CoinTrayView.cs" id="35_kc5an"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/金币图标.png" id="36_76dph"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/卡通垃圾桶.png" id="37_fnt5a"]
 
-[node name="PancakeWorkstation" type="Control"]
-layout_mode = 3
-anchors_preset = 15
+[sub_resource type="AtlasTexture" id="AtlasTexture_gu6ll"]
+atlas = ExtResource("6_sbwhx")
+region = Rect2(179, 445, 896, 343)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sglck"]
+atlas = ExtResource("7_jmgdj")
+region = Rect2(258, 245, 814, 830)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iih81"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1yvxu"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rhpwu"]
+content_margin_left = 16.0
+content_margin_top = 4.0
+content_margin_right = 16.0
+content_margin_bottom = 4.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mwvak"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yk8g1"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ps22r"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4ap78"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h8jk2"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wlvmg"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qah54"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bjft8"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o6tve"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d2mho"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_etqw4"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vamu4"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mho7m"]
+atlas = ExtResource("10_5yee6")
+region = Rect2(59, 288, 1135, 685)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p4n2y"]
+atlas = ExtResource("11_mnjqs")
+region = Rect2(154, 199, 978, 923)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7eblp"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qmcb4"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6gjej"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iuiln"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0qkn3"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oxuqw"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qn26m"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0miyi"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_itv7g"]
+atlas = ExtResource("16_7mukx")
+region = Rect2(93, 74, 1068, 1115)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d8y5s"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hfv0s"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4g8mp"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v0jpg"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grucd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c5wvd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ohktn"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n2u65"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jectd"]
+atlas = ExtResource("17_ca5jk")
+region = Rect2(117, 138, 980, 1012)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gb183"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yph5e"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1edpd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vmcvi"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o6gk7"]
+atlas = ExtResource("18_na4ow")
+region = Rect2(270, 269, 756, 778)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grv5j"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nvk2w"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vyd5l"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9494902, 0.8376471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btvif"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.84705883, 0.77254903, 0.65882355, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b3asd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.96, 0.84, 0.94)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="Shader" id="Shader_2nj4e"]
+code = "shader_type canvas_item;
+uniform vec2 source_center;
+uniform vec2 source_radius;
+uniform float amount = 1.0;
+void fragment() {
+    vec2 center = source_center + vec2(0.0, (1.0 - amount) * 0.16);
+    vec2 radius = source_radius * vec2(0.6 + 0.4 * amount, amount);
+    vec2 local = (UV - center) / radius;
+    float distance_to_edge = length(local);
+    float coverage = 1.0 - smoothstep(1.0 - fwidth(distance_to_edge), 1.0, distance_to_edge);
+    vec4 liquid = texture(TEXTURE, source_center + local * source_radius);
+    COLOR = vec4(liquid.rgb, liquid.a * coverage);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8ychm"]
+shader = SubResource("Shader_2nj4e")
+shader_parameter/source_center = Vector2(0.498, 0.403)
+shader_parameter/source_radius = Vector2(0.365, 0.224)
+shader_parameter/amount = null
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1kpql"]
+atlas = ExtResource("21_i0wd2")
+region = Rect2(48, 217, 1159, 890)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x0d88"]
+atlas = ExtResource("23_onii8")
+region = Rect2(141, 154, 1048, 938)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sdg16"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7iib0"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_80e6r"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e337f"]
+bg_color = Color(0.25, 0.14, 0.09, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bu7t1"]
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_03ymv"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_246yb"]
+atlas = ExtResource("25_3oheb")
+region = Rect2(361, 318, 528, 628)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rqknj"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_30fv5"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_i0ult"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7jdog"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t837o"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h8uqb"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_m4ilc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_aoqsv"]
+bg_color = Color(0.25, 0.14, 0.09, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ejr17"]
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7wkac"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iwbn7"]
+atlas = ExtResource("26_3qhow")
+region = Rect2(154, 333, 948, 622)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ufc4c"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8blg4"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_rm6cl"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_402py"]
+bg_color = Color(0.25, 0.14, 0.09, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_su8an"]
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0kuth"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="Shader" id="Shader_ptyc0"]
+code = "shader_type canvas_item;
+uniform vec2 source_center;
+uniform vec2 source_radius;
+uniform float amount = 1.0;
+void fragment() {
+    vec2 center = source_center + vec2(0.0, (1.0 - amount) * 0.16);
+    vec2 radius = source_radius * vec2(0.6 + 0.4 * amount, amount);
+    vec2 local = (UV - center) / radius;
+    float distance_to_edge = length(local);
+    float coverage = 1.0 - smoothstep(1.0 - fwidth(distance_to_edge), 1.0, distance_to_edge);
+    vec4 liquid = texture(TEXTURE, source_center + local * source_radius);
+    COLOR = vec4(liquid.rgb, liquid.a * coverage);
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ws26j"]
+shader = SubResource("Shader_ptyc0")
+shader_parameter/source_center = Vector2(0.495, 0.41)
+shader_parameter/source_radius = Vector2(0.385, 0.235)
+shader_parameter/amount = null
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5k2o5"]
+atlas = ExtResource("28_s5n62")
+region = Rect2(183, 284, 889, 731)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w6qir"]
+atlas = ExtResource("29_pru82")
+region = Rect2(232, 158, 925, 998)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i8lph"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_swfja"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_a53t3"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hq6kf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8qx8h"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2fe01"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ujj63"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gppwh"]
+bg_color = Color(0.25, 0.14, 0.09, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p8cjp"]
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xo6oo"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_77ws8"]
+atlas = ExtResource("30_rs4v8")
+region = Rect2(335, 345, 588, 521)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7ebcl"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pghvj"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_b7jdl"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_n3hpp"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ugs3l"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2pyva"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_m3ww1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ev1n2"]
+bg_color = Color(0.25, 0.14, 0.09, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3rw32"]
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3gme8"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8ck5"]
+atlas = ExtResource("31_luut3")
+region = Rect2(215, 303, 824, 610)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oeg0d"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a2ke1"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8ppos"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2nhnk"]
+bg_color = Color(0.25, 0.14, 0.09, 0.24)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pfl4m"]
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gvl14"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sd13d"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_71qxo"]
+atlas = ExtResource("32_jnixa")
+region = Rect2(33, 230, 1470, 558)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wechm"]
+atlas = SubResource("AtlasTexture_71qxo")
+region = Rect2(0, 224, 1536, 576)
+filter_clip = true
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q8eak"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_55mrj"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t2i6f"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vyrhv"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tbld0"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0ywrk"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gbh62"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7lwvs"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6mbqu"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_diy8j"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uud7t"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bjxdh"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0mnce"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2t6xo"]
+atlas = ExtResource("34_dw1l8")
+region = Rect2(334, 302, 586, 633)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gi83d"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qkl1q"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r15ir"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tpxa7"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m4y64"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt1qd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_acw6j"]
+atlas = ExtResource("36_76dph")
+region = Rect2(206, 182, 839, 841)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fyb1c"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kvsqy"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_e8xyu"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dmeqo"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yr3d8"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nb7rh"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bra52"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 0)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e4gam"]
+atlas = ExtResource("37_fnt5a")
+region = Rect2(234, 203, 819, 904)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0m81d"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(1, 1, 1, 0)
+
+[node name="PancakeWorkstation" type="Control" unique_id=1538688126]
+anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_workstation")
+script = ExtResource("1_ng5tn")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_workstation")
+
+[node name="@Node@106" type="Node" parent="." unique_id=50317868]
+script = ExtResource("2_pik2f")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_drag")
+
+[node name="@Node@107" type="Node" parent="." unique_id=817368931]
+script = ExtResource("3_pfmp2")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_audio")
+
+[node name="@AudioStreamPlayer@108" type="AudioStreamPlayer" parent="@Node@107" unique_id=251032961]
+volume_db = -10.0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeAudio|_player")
+
+[node name="@Control@109" type="Control" parent="." unique_id=1595622536]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="FryerArea" type="Control" parent="@Control@109" unique_id=1459092587]
+custom_minimum_size = Vector2(520, 0)
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 525.0
+offset_right = 544.0
+offset_bottom = 1060.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_fryerPanel")
+
+[node name="@Label@110" type="Label" parent="@Control@109/FryerArea" unique_id=1662746812]
+visible = false
+layout_mode = 0
+offset_left = 12.0
+offset_top = 306.0
+offset_right = 316.0
+offset_bottom = 338.0
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(0.18, 0.08, 0.03, 0.22)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 4
+text = "油条"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FryerStack" type="Control" parent="@Control@109/FryerArea" unique_id=1880814689]
+anchors_preset = 0
+offset_top = 18.0
+offset_right = 340.0
+offset_bottom = 358.0
+
+[node name="FryerVisual" type="Control" parent="@Control@109/FryerArea/FryerStack" unique_id=714960621]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("4_quyr2")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_fryerVisual")
+
+[node name="@VBoxContainer@111" type="VBoxContainer" parent="@Control@109/FryerArea" unique_id=1524052342]
+layout_mode = 0
+offset_left = 326.0
+offset_top = 66.0
+offset_right = 566.0
+offset_bottom = 240.0
+
+[node name="RawYoutiaoSlot" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111" unique_id=1913709571]
+custom_minimum_size = Vector2(240, 174)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("5_gu111")
+metadata/_slot_visual_mode = 4
+metadata/_slot_minimum_size = Vector2(240, 174)
+metadata/_slot_tray_rect = Rect2(0, 48.0625, 240, 91.875)
+metadata/_slot_anchor_rect = Rect2(34, 55, 172, 64)
+metadata/_slot_label_rect = Rect2(34, 144, 172, 30)
+metadata/_slot_count_rect = Rect2(0, 0, 1, 26)
+metadata/_slot_refill_rect = Rect2(0, 0, 0, 0)
+metadata/_slot_click_rect = Rect2(0, 30, 240, 144)
+metadata/_slot_stock_rect = Rect2(0, 0, 0, 0)
+metadata/_slot_max_visual_ratio = 1.0
+metadata/_slot_tray_vertical_scale = 1.0
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(0, 48.0625, 240, 91.875)
+metadata/_slot_has_caption = false
+metadata/_slot_has_footprint = false
+metadata/_slot_has_stack = false
+
+[node name="VisualLayer" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot" unique_id=1422600874]
+anchors_preset = 0
+offset_right = 240.0
+offset_bottom = 174.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_visualLayer")
+
+[node name="Tray" type="TextureRect" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/VisualLayer" unique_id=248844753]
+layout_mode = 0
+offset_top = 48.0625
+offset_right = 240.0
+offset_bottom = 139.9375
+mouse_filter = 2
+texture = SubResource("AtlasTexture_gu6ll")
+expand_mode = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_tray")
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/VisualLayer" unique_id=308522540]
+clip_contents = true
+anchors_preset = 0
+offset_left = 34.0
+offset_top = 55.0
+offset_right = 206.0
+offset_bottom = 119.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientAnchor")
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/VisualLayer/IngredientAnchor" unique_id=1484300227]
+layout_mode = 0
+offset_left = 38.42641
+offset_top = -16.708923
+offset_right = 132.71423
+offset_bottom = 79.43222
+rotation = 0.55850536
+pivot_offset = Vector2(47.143913, 48.07057)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_sglck")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredient", "ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|0")
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/VisualLayer" unique_id=1346254595]
+visible = false
+layout_mode = 0
+offset_left = 28.0
+offset_top = 144.0
+offset_right = 212.0
+offset_bottom = 174.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_iih81")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_captionPlate")
+
+[node name="Label" type="Label" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/VisualLayer" unique_id=2139874122]
+visible = false
+layout_mode = 0
+offset_left = 34.0
+offset_top = 144.0
+offset_right = 206.0
+offset_bottom = 174.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "生油条"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_label")
+
+[node name="Count" type="Label" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/VisualLayer" unique_id=1668352888]
+visible = false
+layout_mode = 0
+offset_right = 1.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_count")
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot" unique_id=1197140295]
+layout_mode = 0
+offset_top = 30.0
+offset_right = 240.0
+offset_bottom = 174.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_1yvxu")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_attentionFrame")
+
+[node name="ClickArea" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot" unique_id=1692929722]
+anchors_preset = 0
+offset_top = 30.0
+offset_right = 240.0
+offset_bottom = 174.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_clickArea")
+
+[node name="RawYoutiaoInput" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot/ClickArea" unique_id=360502390]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "生油条 · 点击装一根，长按连续装入，松开停止"
+mouse_default_cursor_shape = 2
+script = ExtResource("8_updx7")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_rawYoutiaoInput")
+
+[node name="RefillStatus" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot" unique_id=344851807]
+anchors_preset = 0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_refillStatus")
+
+[node name="StockStatus" type="Control" parent="@Control@109/FryerArea/@VBoxContainer@111/RawYoutiaoSlot" unique_id=279463484]
+anchors_preset = 0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_stockStatus")
+
+[node name="FryerStatusTag" type="PanelContainer" parent="@Control@109/FryerArea" unique_id=2050541180]
+custom_minimum_size = Vector2(304, 40)
+layout_mode = 0
+offset_left = 12.0
+offset_top = 350.0
+offset_right = 316.0
+offset_bottom = 390.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rhpwu")
+
+[node name="@Label@112" type="Label" parent="@Control@109/FryerArea/FryerStatusTag" unique_id=490029726]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+text = "尚未解锁"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_fryerStatus")
+
+[node name="@HBoxContainer@113" type="HBoxContainer" parent="@Control@109/FryerArea" unique_id=522338956]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 398.0
+offset_right = 316.0
+offset_bottom = 452.0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_fryerActions")
+
+[node name="FryerLowerAction" type="Button" parent="@Control@109/FryerArea/@HBoxContainer@113" unique_id=1676276518]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_mwvak")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yk8g1")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ps22r")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_4ap78")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "下锅 G"
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_lowerBasket")
+
+[node name="FryerRaiseAction" type="Button" parent="@Control@109/FryerArea/@HBoxContainer@113" unique_id=1174228060]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_h8jk2")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_wlvmg")
+theme_override_styles/hover = SubResource("StyleBoxFlat_qah54")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_bjft8")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "抬篮 G"
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_raiseBasket")
+
+[node name="FryerDiscardAction" type="Button" parent="@Control@109/FryerArea/@HBoxContainer@113" unique_id=913756346]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_o6tve")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_d2mho")
+theme_override_styles/hover = SubResource("StyleBoxFlat_etqw4")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_vamu4")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "清理炸锅"
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_discardBatch")
+
+[node name="FinishedYoutiaoArea" type="Control" parent="@Control@109/FryerArea" unique_id=903646045]
+custom_minimum_size = Vector2(240, 184)
+anchors_preset = 0
+offset_left = 326.0
+offset_top = 220.0
+offset_right = 566.0
+offset_bottom = 404.0
+mouse_filter = 2
+script = ExtResource("5_gu111")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_finishedYoutiaoSlot")
+metadata/_slot_visual_mode = 5
+metadata/_slot_minimum_size = Vector2(240, 184)
+metadata/_slot_tray_rect = Rect2(14.121895, 15, 211.75623, 127.8)
+metadata/_slot_anchor_rect = Rect2(44.4, 34.8, 147.6, 70.2)
+metadata/_slot_label_rect = Rect2(26, 148, 126, 30)
+metadata/_slot_count_rect = Rect2(152, 148, 50, 30)
+metadata/_slot_refill_rect = Rect2(0, 0, 0, 0)
+metadata/_slot_click_rect = Rect2(0, 8, 240, 172)
+metadata/_slot_stock_rect = Rect2(0, 0, 0, 0)
+metadata/_slot_max_visual_ratio = 1.0
+metadata/_slot_tray_vertical_scale = 1.0
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(14.121895, 15, 211.75623, 127.8)
+metadata/_slot_has_caption = false
+metadata/_slot_has_footprint = false
+metadata/_slot_has_stack = false
+
+[node name="VisualLayer" type="Control" parent="@Control@109/FryerArea/FinishedYoutiaoArea" unique_id=161239758]
+anchors_preset = 0
+offset_right = 240.0
+offset_bottom = 184.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_visualLayer")
+
+[node name="Tray" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer" unique_id=592187826]
+layout_mode = 0
+offset_left = 14.121895
+offset_top = 15.0
+offset_right = 225.87811
+offset_bottom = 142.8
+mouse_filter = 2
+texture = SubResource("AtlasTexture_mho7m")
+expand_mode = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_tray")
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer" unique_id=2045620392]
+clip_contents = true
+anchors_preset = 0
+offset_left = 44.4
+offset_top = 34.8
+offset_right = 192.0
+offset_bottom = 105.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientAnchor")
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor" unique_id=1684537392]
+layout_mode = 0
+offset_left = 34.21359
+offset_top = 10.031164
+offset_right = 112.69719
+offset_bottom = 84.10107
+rotation = 0.55850536
+pivot_offset = Vector2(39.2418, 37.03495)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredient", "ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|0")
+
+[node name="Ingredient2" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor" unique_id=2042391460]
+layout_mode = 0
+offset_left = 34.21359
+offset_top = -1.9688363
+offset_right = 112.69719
+offset_bottom = 72.10107
+rotation = 0.55850536
+pivot_offset = Vector2(39.2418, 37.03495)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|1")
+
+[node name="Ingredient3" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor" unique_id=1499119408]
+layout_mode = 0
+offset_left = 34.21359
+offset_top = -13.968836
+offset_right = 112.69719
+offset_bottom = 60.101067
+rotation = 0.55850536
+pivot_offset = Vector2(39.2418, 37.03495)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|2")
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer" unique_id=2033479509]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 148.0
+offset_right = 210.0
+offset_bottom = 178.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7eblp")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_captionPlate")
+
+[node name="Label" type="Label" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer" unique_id=271140362]
+visible = false
+layout_mode = 0
+offset_left = 26.0
+offset_top = 148.0
+offset_right = 152.0
+offset_bottom = 178.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "熟油条"
+theme_override_styles/normal = SubResource("StyleBoxFlat_03ymv")
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_label")
+
+[node name="FinishedYoutiaoStock" type="Label" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer" unique_id=1233321343]
+visible = false
+layout_mode = 0
+offset_left = 152.0
+offset_top = 148.0
+offset_right = 202.0
+offset_bottom = 178.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_fryerStock", "ProjectCake.UI.WorkstationSlotView|_count")
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/FryerArea/FinishedYoutiaoArea" unique_id=1827354025]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 15.0
+offset_right = 240.0
+offset_bottom = 180.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_qmcb4")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_attentionFrame")
+
+[node name="ClickArea" type="Control" parent="@Control@109/FryerArea/FinishedYoutiaoArea" unique_id=1780121881]
+anchors_preset = 0
+offset_top = 8.0
+offset_right = 240.0
+offset_bottom = 180.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_clickArea")
+
+[node name="FinishedYoutiaoDrag" type="PanelContainer" parent="@Control@109/FryerArea/FinishedYoutiaoArea/ClickArea" unique_id=1523418735]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "熟油条 · 拖到煎饼或交给顾客"
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_6gjej")
+script = ExtResource("12_op86b")
+PayloadId = "stored_youtiao"
+DisplayName = "熟油条"
+DragColor = Color(0.9607843, 0.72156864, 0.23921569, 1)
+DragTexture = ExtResource("11_mnjqs")
+DragDisplaySize = Vector2(164, 110)
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_storedYoutiao")
+
+[node name="RefillStatus" type="Control" parent="@Control@109/FryerArea/FinishedYoutiaoArea" unique_id=1577913807]
+anchors_preset = 0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_refillStatus")
+
+[node name="StockStatus" type="Control" parent="@Control@109/FryerArea/FinishedYoutiaoArea" unique_id=634822700]
+anchors_preset = 0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_stockStatus")
+
+[node name="StoveArea" type="Control" parent="@Control@109" unique_id=708943474]
+custom_minimum_size = Vector2(760, 0)
+anchors_preset = 0
+offset_left = 496.0
+offset_top = 525.0
+offset_right = 1256.0
+offset_bottom = 1060.0
+mouse_filter = 2
+
+[node name="@Control@114" type="Control" parent="@Control@109/StoveArea" unique_id=1364059478]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="PancakeCanvas" type="Control" parent="@Control@109/StoveArea/@Control@114" unique_id=2131239060]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -8.0
+offset_right = -8.0
+offset_bottom = -64.0
+mouse_filter = 2
+script = ExtResource("13_q4kdi")
+DisplayScale = 0.9
+DisplayOffset = Vector2(-16, 0)
+ShowBaggedPancake = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_canvas")
+
+[node name="PancakeDropZone" type="PanelContainer" parent="@Control@109/StoveArea/@Control@114" unique_id=716330289]
+layout_mode = 0
+offset_left = 143.11076
+offset_top = 67.858406
+offset_right = 584.8892
+offset_bottom = 351.81982
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_iuiln")
+script = ExtResource("14_w1i8y")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stoveDropZone")
+
+[node name="PancakeStrokeInput" type="Control" parent="@Control@109/StoveArea/@Control@114" unique_id=85479211]
+anchors_preset = 0
+offset_left = 143.11076
+offset_top = 67.858406
+offset_right = 584.8892
+offset_bottom = 351.81982
+mouse_default_cursor_shape = 3
+script = ExtResource("15_yadab")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stroke")
+
+[node name="@HBoxContainer@115" type="HBoxContainer" parent="@Control@109/StoveArea/@Control@114" unique_id=800240347]
+layout_mode = 0
+offset_left = 430.0
+offset_top = 400.0
+offset_right = 570.0
+offset_bottom = 456.0
+theme_override_constants/separation = 8
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_pancakeActions")
+
+[node name="PancakeFlipAction" type="Button" parent="@Control@109/StoveArea/@Control@114/@HBoxContainer@115" unique_id=1212500591]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_0qkn3")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_oxuqw")
+theme_override_styles/hover = SubResource("StyleBoxFlat_qn26m")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_0miyi")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "翻面 F"
+icon = SubResource("AtlasTexture_itv7g")
+expand_icon = true
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_flip")
+
+[node name="PancakeFinishSauceAction" type="Button" parent="@Control@109/StoveArea/@Control@114/@HBoxContainer@115" unique_id=1630529757]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "保留当前酱量，进入配料步骤
+少酱：低于50%；正常：50%～100%；多酱：高于100%，最高150%
+鼠标右键或 F 收刷"
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_d8y5s")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_hfv0s")
+theme_override_styles/hover = SubResource("StyleBoxFlat_4g8mp")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_v0jpg")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "收刷 F"
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_finishSauce")
+
+[node name="PancakeFoldAction" type="Button" parent="@Control@109/StoveArea/@Control@114/@HBoxContainer@115" unique_id=742016057]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_grucd")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_c5wvd")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ohktn")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_n2u65")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "折叠 F"
+icon = SubResource("AtlasTexture_jectd")
+expand_icon = true
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_fold")
+
+[node name="PancakeBagAction" type="Button" parent="@Control@109/StoveArea/@Control@114/@HBoxContainer@115" unique_id=472096407]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_gb183")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yph5e")
+theme_override_styles/hover = SubResource("StyleBoxFlat_1edpd")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_vmcvi")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "装袋 F"
+icon = SubResource("AtlasTexture_o6gk7")
+expand_icon = true
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_bag")
+
+[node name="PancakeDiscardAction" type="Button" parent="@Control@109/StoveArea/@Control@114/@HBoxContainer@115" unique_id=1171485596]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_grv5j")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_nvk2w")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vyd5l")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_btvif")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 17
+text = "清理炉面"
+script = ExtResource("9_cw3ha")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_discard")
+
+[node name="PancakeStatusTag" type="PanelContainer" parent="@Control@109/StoveArea/@Control@114" unique_id=1357150390]
+custom_minimum_size = Vector2(410, 56)
+layout_mode = 0
+offset_left = 160.0
+offset_top = 400.0
+offset_right = 570.0
+offset_bottom = 456.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_b3asd")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_pancakeStatusTag")
+
+[node name="PancakeStatusText" type="Label" parent="@Control@109/StoveArea/@Control@114/PancakeStatusTag" unique_id=2022269791]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+text = "拖入面糊"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_state")
+
+[node name="IngredientArea" type="Control" parent="@Control@109" unique_id=1873792255]
+custom_minimum_size = Vector2(714, 0)
+anchors_preset = 0
+offset_left = 1120.0
+offset_top = 692.0
+offset_right = 1834.0
+offset_bottom = 988.0
+mouse_filter = 2
+
+[node name="IngredientSlot_batter" type="Control" parent="@Control@109/IngredientArea" unique_id=1158963109]
+custom_minimum_size = Vector2(248, 144)
+anchors_preset = 0
+offset_top = 16.0
+offset_right = 248.0
+offset_bottom = 160.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("19_5n6ht")
+metadata/_slot_visual_mode = 0
+metadata/_slot_minimum_size = Vector2(248, 144)
+metadata/_slot_tray_rect = Rect2(0, 0, 228, 124)
+metadata/_slot_anchor_rect = Rect2(58, 2, 112, 86)
+metadata/_slot_label_rect = Rect2(24, 120, 74, 24)
+metadata/_slot_count_rect = Rect2(98, 120, 104, 24)
+metadata/_slot_refill_rect = Rect2(224, 94, 66, 56)
+metadata/_slot_click_rect = Rect2(0, 0, 228, 128)
+metadata/_slot_stock_rect = Rect2(24, 144, 176, 4)
+metadata/_slot_max_visual_ratio = 0.85
+metadata/_slot_tray_vertical_scale = 1.0
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(64, 4, 104, 84)
+metadata/_slot_has_caption = true
+metadata/_slot_caption = Rect2(18, 120, 190, 24)
+metadata/_slot_has_footprint = false
+metadata/_slot_has_stack = false
+metadata/_stock_display_name = "面糊"
+metadata/_stock_uses_caption = true
+metadata/_stock_previews_refill = true
+metadata/_stock_hold_to_refill = true
+metadata/_stock_show_numbers = false
+[node name="VisualLayer" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=446049170]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer" unique_id=456127448]
+layout_mode = 0
+offset_left = 33.1548
+offset_right = 194.8452
+offset_bottom = 124.0
+mouse_filter = 2
+texture = ExtResource("20_lie4a")
+expand_mode = 1
+
+[node name="LiquidSurface" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer" unique_id=1524634989]
+material = SubResource("ShaderMaterial_8ychm")
+layout_mode = 0
+offset_left = 33.1548
+offset_right = 194.8452
+offset_bottom = 124.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_1kpql")
+expand_mode = 1
+script = ExtResource("22_xs7wx")
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer" unique_id=1698761383]
+clip_contents = true
+anchors_preset = 0
+offset_left = 58.0
+offset_top = 2.0
+offset_right = 170.0
+offset_bottom = 88.0
+mouse_filter = 2
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer/IngredientAnchor" unique_id=1090213878]
+layout_mode = 0
+offset_left = 15.1637535
+offset_top = 6.450001
+offset_right = 96.83624
+offset_bottom = 79.55
+mouse_filter = 2
+texture = SubResource("AtlasTexture_x0d88")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer" unique_id=1704121023]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_sdg16")
+
+[node name="Label" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer" unique_id=834915494]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 98.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "面糊"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientCount_batter" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_batter/VisualLayer" unique_id=698419043]
+visible = false
+layout_mode = 0
+offset_left = 98.0
+offset_top = 120.0
+offset_right = 202.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=581559983]
+layout_mode = 0
+offset_right = 228.0
+offset_bottom = 128.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7iib0")
+
+[node name="ClickArea" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=1891193588]
+anchors_preset = 0
+offset_right = 228.0
+offset_bottom = 128.0
+mouse_filter = 2
+
+[node name="IngredientInput_batter" type="PanelContainer" parent="@Control@109/IngredientArea/IngredientSlot_batter/ClickArea" unique_id=1848408999]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "面糊
+将面糊拖到炉面"
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_80e6r")
+script = ExtResource("12_op86b")
+PayloadId = "batter"
+DisplayName = "面糊"
+DragColor = Color(0.9137255, 0.7764706, 0.5294118, 1)
+DragTexture = ExtResource("23_onii8")
+DragDisplaySize = Vector2(105, 105)
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_batterItem")
+
+[node name="RefillStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=342923128]
+anchors_preset = 0
+offset_left = 224.0
+offset_top = 94.0
+offset_right = 290.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="IngredientRefill_batter" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_batter/RefillStatus" unique_id=187301000]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "补满面糊"
+theme_override_font_sizes/font_size = 27
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=2095644597]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 148.0
+mouse_filter = 2
+
+[node name="IngredientStock_batter" type="ProgressBar" parent="@Control@109/IngredientArea/IngredientSlot_batter/StockStatus" unique_id=1121329051]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_e337f")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bu7t1")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=1900878917]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_03ymv")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_colors/font_outline_color = Color(1, 0.94509804, 0.8235294, 1)
+theme_override_constants/outline_size = 0
+text = "长按补货"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")
+
+[node name="StockGesture_batter" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_batter" unique_id=300915180]
+anchors_preset = 0
+offset_right = 248.0
+offset_bottom = 144.0
+tooltip_text = "面糊
+将面糊拖到炉面
+不限量，无需补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|0")
+
+[node name="IngredientSlot_egg" type="Control" parent="@Control@109/IngredientArea" unique_id=1874708746]
+custom_minimum_size = Vector2(248, 144)
+anchors_preset = 0
+offset_left = 208.0
+offset_top = 16.0
+offset_right = 456.0
+offset_bottom = 160.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("19_5n6ht")
+metadata/_slot_visual_mode = 6
+metadata/_slot_minimum_size = Vector2(248, 144)
+metadata/_slot_tray_rect = Rect2(0, 0, 248, 124)
+metadata/_slot_anchor_rect = Rect2(22, -20, 204, 120)
+metadata/_slot_label_rect = Rect2(24, 120, 74, 24)
+metadata/_slot_count_rect = Rect2(98, 120, 104, 24)
+metadata/_slot_refill_rect = Rect2(224, 94, 66, 56)
+metadata/_slot_click_rect = Rect2(20, -12, 208, 132)
+metadata/_slot_stock_rect = Rect2(24, 144, 176, 4)
+metadata/_slot_max_visual_ratio = 1.0
+metadata/_slot_tray_vertical_scale = 1.12
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(36, 40, 176, 48)
+metadata/_slot_has_caption = true
+metadata/_slot_caption = Rect2(18, 120, 190, 24)
+metadata/_slot_has_footprint = true
+metadata/_slot_footprint = Rect2(30, 42, 188, 48)
+metadata/_slot_has_stack = false
+metadata/_stock_display_name = "鸡蛋"
+metadata/_stock_uses_caption = true
+metadata/_stock_previews_refill = true
+metadata/_stock_hold_to_refill = true
+metadata/_stock_show_numbers = false
+[node name="VisualLayer" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=1661764155]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=2048220303]
+layout_mode = 0
+offset_top = 8.835003
+offset_right = 248.0
+offset_bottom = 115.16499
+mouse_filter = 2
+texture = SubResource("AtlasTexture_gu6ll")
+expand_mode = 1
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=1638042103]
+clip_contents = true
+anchors_preset = 0
+offset_left = 22.0
+offset_top = -20.0
+offset_right = 226.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor" unique_id=756427051]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient2" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient3" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient4" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient5" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient6" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient7" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient8" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient9" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient10" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 80.61576
+offset_top = 16.39198
+offset_right = 126.61576
+offset_bottom = 71.104095
+rotation = -0.08726646
+pivot_offset = Vector2(23, 27.35606)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_246yb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=1541332034]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rqknj")
+
+[node name="Label" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=1430426643]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 98.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "鸡蛋"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientCount_egg" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=427676321]
+visible = false
+layout_mode = 0
+offset_left = 98.0
+offset_top = 120.0
+offset_right = 202.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=2020356602]
+layout_mode = 0
+offset_right = 248.0
+offset_bottom = 124.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_30fv5")
+
+[node name="ClickArea" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=366245302]
+anchors_preset = 0
+offset_left = 20.0
+offset_top = -12.0
+offset_right = 228.0
+offset_bottom = 120.0
+mouse_filter = 2
+
+[node name="IngredientInput_egg" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_egg/ClickArea" unique_id=545130746]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "鸡蛋
+点击添加鸡蛋"
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_i0ult")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_7jdog")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_t837o")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_h8uqb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_m4ilc")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 16
+script = ExtResource("9_cw3ha")
+
+[node name="RefillStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=1485192145]
+anchors_preset = 0
+offset_left = 224.0
+offset_top = 94.0
+offset_right = 290.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="IngredientRefill_egg" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_egg/RefillStatus" unique_id=580517794]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "补满鸡蛋"
+theme_override_font_sizes/font_size = 27
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=1933678510]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 148.0
+mouse_filter = 2
+
+[node name="IngredientStock_egg" type="ProgressBar" parent="@Control@109/IngredientArea/IngredientSlot_egg/StockStatus" unique_id=1941305626]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_aoqsv")
+theme_override_styles/fill = SubResource("StyleBoxFlat_ejr17")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=1457205451]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_7wkac")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_colors/font_outline_color = Color(1, 0.94509804, 0.8235294, 1)
+theme_override_constants/outline_size = 0
+text = "长按补货"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")
+
+[node name="StockGesture_egg" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg" unique_id=595196972]
+anchors_preset = 0
+offset_top = -12.0
+offset_right = 248.0
+offset_bottom = 144.0
+tooltip_text = "鸡蛋
+点击添加鸡蛋
+长按盘碗补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|1")
+
+[node name="IngredientSlot_crispy" type="Control" parent="@Control@109/IngredientArea" unique_id=559334381]
+custom_minimum_size = Vector2(248, 144)
+anchors_preset = 0
+offset_left = 466.0
+offset_top = 16.0
+offset_right = 714.0
+offset_bottom = 160.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("19_5n6ht")
+metadata/_slot_visual_mode = 6
+metadata/_slot_minimum_size = Vector2(248, 144)
+metadata/_slot_tray_rect = Rect2(0, 0, 248, 124)
+metadata/_slot_anchor_rect = Rect2(22, -20, 204, 120)
+metadata/_slot_label_rect = Rect2(24, 120, 74, 24)
+metadata/_slot_count_rect = Rect2(98, 120, 104, 24)
+metadata/_slot_refill_rect = Rect2(224, 94, 66, 56)
+metadata/_slot_click_rect = Rect2(20, -12, 208, 132)
+metadata/_slot_stock_rect = Rect2(24, 144, 176, 4)
+metadata/_slot_max_visual_ratio = 1.0
+metadata/_slot_tray_vertical_scale = 1.12
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(36, 40, 176, 48)
+metadata/_slot_has_caption = true
+metadata/_slot_caption = Rect2(18, 120, 190, 24)
+metadata/_slot_has_footprint = true
+metadata/_slot_footprint = Rect2(30, 42, 188, 48)
+metadata/_slot_has_stack = true
+metadata/_slot_stack_max_size = Vector2(69.6, 74.4)
+metadata/_slot_stack_column_spacing = 28
+metadata/_slot_stack_back_foot_y = 64
+metadata/_slot_stack_front_foot_y = 82
+metadata/_slot_stack_row_offset = 4
+metadata/_slot_has_stack_silhouette = false
+metadata/_stock_display_name = "薄脆"
+metadata/_stock_uses_caption = true
+metadata/_stock_previews_refill = true
+metadata/_stock_hold_to_refill = true
+metadata/_stock_show_numbers = false
+[node name="VisualLayer" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=1516676599]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=599762057]
+layout_mode = 0
+offset_top = 8.835003
+offset_right = 248.0
+offset_bottom = 115.16499
+mouse_filter = 2
+texture = SubResource("AtlasTexture_gu6ll")
+expand_mode = 1
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=901588550]
+clip_contents = true
+anchors_preset = 0
+offset_left = 22.0
+offset_top = -20.0
+offset_right = 226.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor" unique_id=1921348907]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient2" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient3" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient4" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient5" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient6" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient7" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient8" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient9" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient10" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 69.20998
+offset_top = 38.421062
+offset_right = 138.80997
+offset_bottom = 84.08688
+rotation = -0.08726646
+pivot_offset = Vector2(34.8, 22.832912)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_iwbn7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=1368995563]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ufc4c")
+
+[node name="Label" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=1607864601]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 98.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "薄脆"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientCount_crispy" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=398855167]
+visible = false
+layout_mode = 0
+offset_left = 98.0
+offset_top = 120.0
+offset_right = 202.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=261451342]
+layout_mode = 0
+offset_right = 248.0
+offset_bottom = 124.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_8blg4")
+
+[node name="ClickArea" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=214196756]
+anchors_preset = 0
+offset_left = 20.0
+offset_top = -12.0
+offset_right = 228.0
+offset_bottom = 120.0
+mouse_filter = 2
+
+[node name="IngredientInput_crispy" type="PanelContainer" parent="@Control@109/IngredientArea/IngredientSlot_crispy/ClickArea" unique_id=405037623]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "薄脆
+将薄脆拖到炉面"
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_rm6cl")
+script = ExtResource("12_op86b")
+PayloadId = "crispy"
+DisplayName = "薄脆"
+DragColor = Color(0.8509804, 0.5411765, 0.21568628, 1)
+DragTexture = ExtResource("26_3qhow")
+DragDisplaySize = Vector2(105, 105)
+
+[node name="RefillStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=1993896949]
+anchors_preset = 0
+offset_left = 224.0
+offset_top = 94.0
+offset_right = 290.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="IngredientRefill_crispy" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_crispy/RefillStatus" unique_id=1797142182]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "补满薄脆"
+theme_override_font_sizes/font_size = 27
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=11518218]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 148.0
+mouse_filter = 2
+
+[node name="IngredientStock_crispy" type="ProgressBar" parent="@Control@109/IngredientArea/IngredientSlot_crispy/StockStatus" unique_id=378743727]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_402py")
+theme_override_styles/fill = SubResource("StyleBoxFlat_su8an")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=519255709]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_0kuth")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_colors/font_outline_color = Color(1, 0.94509804, 0.8235294, 1)
+theme_override_constants/outline_size = 0
+text = "长按补货"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")
+
+[node name="StockGesture_crispy" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy" unique_id=744141012]
+anchors_preset = 0
+offset_top = -12.0
+offset_right = 248.0
+offset_bottom = 144.0
+tooltip_text = "薄脆
+将薄脆拖到炉面
+长按盘碗补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|2")
+
+[node name="IngredientSlot_sauce" type="Control" parent="@Control@109/IngredientArea" unique_id=1206065541]
+custom_minimum_size = Vector2(248, 144)
+anchors_preset = 0
+offset_top = 148.0
+offset_right = 248.0
+offset_bottom = 292.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("19_5n6ht")
+metadata/_slot_visual_mode = 0
+metadata/_slot_minimum_size = Vector2(248, 144)
+metadata/_slot_tray_rect = Rect2(0, 0, 228, 124)
+metadata/_slot_anchor_rect = Rect2(60, 2, 112, 86)
+metadata/_slot_label_rect = Rect2(24, 120, 74, 24)
+metadata/_slot_count_rect = Rect2(98, 120, 104, 24)
+metadata/_slot_refill_rect = Rect2(224, 94, 66, 56)
+metadata/_slot_click_rect = Rect2(0, 0, 228, 128)
+metadata/_slot_stock_rect = Rect2(24, 144, 176, 4)
+metadata/_slot_max_visual_ratio = 0.85
+metadata/_slot_tray_vertical_scale = 1.0
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(64, 4, 104, 84)
+metadata/_slot_has_caption = true
+metadata/_slot_caption = Rect2(18, 120, 190, 24)
+metadata/_slot_has_footprint = false
+metadata/_slot_has_stack = false
+metadata/_stock_display_name = "酱料"
+metadata/_stock_uses_caption = true
+metadata/_stock_previews_refill = true
+metadata/_stock_hold_to_refill = true
+metadata/_stock_show_numbers = false
+[node name="VisualLayer" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=573502273]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer" unique_id=1122260462]
+layout_mode = 0
+offset_left = 38.562416
+offset_right = 189.43759
+offset_bottom = 124.0
+mouse_filter = 2
+texture = ExtResource("27_kju1l")
+expand_mode = 1
+
+[node name="LiquidSurface" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer" unique_id=1655802489]
+material = SubResource("ShaderMaterial_ws26j")
+layout_mode = 0
+offset_left = 38.562416
+offset_right = 189.43759
+offset_bottom = 124.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_5k2o5")
+expand_mode = 1
+script = ExtResource("22_xs7wx")
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer" unique_id=181795553]
+clip_contents = true
+anchors_preset = 0
+offset_left = 60.0
+offset_top = 2.0
+offset_right = 172.0
+offset_bottom = 88.0
+mouse_filter = 2
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer/IngredientAnchor" unique_id=1200960233]
+layout_mode = 0
+offset_left = 22.123497
+offset_top = 6.450001
+offset_right = 89.8765
+offset_bottom = 79.55
+mouse_filter = 2
+texture = SubResource("AtlasTexture_w6qir")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer" unique_id=54283674]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_i8lph")
+
+[node name="Label" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer" unique_id=616620028]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 98.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "酱料"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientCount_sauce" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_sauce/VisualLayer" unique_id=1504503663]
+visible = false
+layout_mode = 0
+offset_left = 98.0
+offset_top = 120.0
+offset_right = 202.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=1180426913]
+layout_mode = 0
+offset_right = 228.0
+offset_bottom = 128.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_swfja")
+
+[node name="ClickArea" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=2033461599]
+anchors_preset = 0
+offset_right = 228.0
+offset_bottom = 128.0
+mouse_filter = 2
+
+[node name="IngredientInput_sauce" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_sauce/ClickArea" unique_id=309868069]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "酱料
+翻面后点击拿起酱刷，再在饼面按住左键刷酱"
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_a53t3")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hq6kf")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_8qx8h")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_2fe01")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ujj63")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 16
+script = ExtResource("9_cw3ha")
+
+[node name="RefillStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=273936527]
+anchors_preset = 0
+offset_left = 224.0
+offset_top = 94.0
+offset_right = 290.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="IngredientRefill_sauce" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_sauce/RefillStatus" unique_id=1759676979]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "补满酱料"
+theme_override_font_sizes/font_size = 27
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=1275347591]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 148.0
+mouse_filter = 2
+
+[node name="IngredientStock_sauce" type="ProgressBar" parent="@Control@109/IngredientArea/IngredientSlot_sauce/StockStatus" unique_id=1526624535]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_gppwh")
+theme_override_styles/fill = SubResource("StyleBoxFlat_p8cjp")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=1309178535]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_xo6oo")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_colors/font_outline_color = Color(1, 0.94509804, 0.8235294, 1)
+theme_override_constants/outline_size = 0
+text = "长按补货"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")
+
+[node name="StockGesture_sauce" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_sauce" unique_id=615481882]
+anchors_preset = 0
+offset_right = 248.0
+offset_bottom = 144.0
+tooltip_text = "酱料
+翻面后点击拿起酱刷，再在饼面按住左键刷酱
+不限量，无需补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|3")
+
+[node name="IngredientSlot_scallion" type="Control" parent="@Control@109/IngredientArea" unique_id=1053191164]
+custom_minimum_size = Vector2(248, 144)
+anchors_preset = 0
+offset_left = 208.0
+offset_top = 148.0
+offset_right = 456.0
+offset_bottom = 292.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("19_5n6ht")
+metadata/_slot_visual_mode = 7
+metadata/_slot_minimum_size = Vector2(248, 144)
+metadata/_slot_tray_rect = Rect2(0, 0, 248, 124)
+metadata/_slot_anchor_rect = Rect2(22, -20, 204, 120)
+metadata/_slot_label_rect = Rect2(24, 120, 74, 24)
+metadata/_slot_count_rect = Rect2(98, 120, 104, 24)
+metadata/_slot_refill_rect = Rect2(224, 94, 66, 56)
+metadata/_slot_click_rect = Rect2(20, -12, 208, 132)
+metadata/_slot_stock_rect = Rect2(24, 144, 176, 4)
+metadata/_slot_max_visual_ratio = 1.0
+metadata/_slot_tray_vertical_scale = 1.12
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(36, 40, 176, 48)
+metadata/_slot_has_caption = true
+metadata/_slot_caption = Rect2(18, 120, 190, 24)
+metadata/_slot_has_footprint = true
+metadata/_slot_footprint = Rect2(30, 42, 188, 48)
+metadata/_slot_has_stack = true
+metadata/_slot_stack_max_size = Vector2(55.2, 40.8)
+metadata/_slot_stack_column_spacing = 32
+metadata/_slot_stack_back_foot_y = 81
+metadata/_slot_stack_front_foot_y = 86
+metadata/_slot_stack_row_offset = 8
+metadata/_slot_has_stack_silhouette = true
+metadata/_slot_stack_silhouette = Rect2(32, 40, 184, 46)
+metadata/_stock_display_name = "葱花"
+metadata/_stock_uses_caption = true
+metadata/_stock_previews_refill = true
+metadata/_stock_hold_to_refill = true
+metadata/_stock_show_numbers = false
+[node name="VisualLayer" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=1442967731]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=2097446906]
+layout_mode = 0
+offset_top = 8.835003
+offset_right = 248.0
+offset_bottom = 115.16499
+mouse_filter = 2
+texture = SubResource("AtlasTexture_gu6ll")
+expand_mode = 1
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=129831997]
+clip_contents = true
+anchors_preset = 0
+offset_left = 22.0
+offset_top = -20.0
+offset_right = 226.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor" unique_id=932182732]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient2" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient3" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient4" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient5" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient6" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient7" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient8" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient9" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient10" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 85.1986
+offset_top = 62.428993
+offset_right = 131.24542
+offset_bottom = 103.22899
+rotation = -0.08726646
+pivot_offset = Vector2(23.023415, 20.4)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_77ws8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=1176594377]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_7ebcl")
+
+[node name="Label" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=1342194214]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 98.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "香葱"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientCount_scallion" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=2104845393]
+visible = false
+layout_mode = 0
+offset_left = 98.0
+offset_top = 120.0
+offset_right = 202.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=1912784553]
+layout_mode = 0
+offset_right = 248.0
+offset_bottom = 124.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pghvj")
+
+[node name="ClickArea" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=1072971443]
+anchors_preset = 0
+offset_left = 20.0
+offset_top = -12.0
+offset_right = 228.0
+offset_bottom = 120.0
+mouse_filter = 2
+
+[node name="IngredientInput_scallion" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_scallion/ClickArea" unique_id=501603844]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "香葱
+点击添加香葱"
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_b7jdl")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_n3hpp")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_ugs3l")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_2pyva")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_m3ww1")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 16
+script = ExtResource("9_cw3ha")
+
+[node name="RefillStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=1083338949]
+anchors_preset = 0
+offset_left = 224.0
+offset_top = 94.0
+offset_right = 290.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="IngredientRefill_scallion" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_scallion/RefillStatus" unique_id=534611152]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "补满香葱"
+theme_override_font_sizes/font_size = 27
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=1859740590]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 148.0
+mouse_filter = 2
+
+[node name="IngredientStock_scallion" type="ProgressBar" parent="@Control@109/IngredientArea/IngredientSlot_scallion/StockStatus" unique_id=1574607936]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_ev1n2")
+theme_override_styles/fill = SubResource("StyleBoxFlat_3rw32")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=304079074]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_3gme8")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_colors/font_outline_color = Color(1, 0.94509804, 0.8235294, 1)
+theme_override_constants/outline_size = 0
+text = "长按补货"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")
+
+[node name="StockGesture_scallion" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion" unique_id=973449739]
+anchors_preset = 0
+offset_top = -12.0
+offset_right = 248.0
+offset_bottom = 144.0
+tooltip_text = "香葱
+点击添加香葱
+长按盘碗补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|4")
+
+[node name="IngredientSlot_ham" type="Control" parent="@Control@109/IngredientArea" unique_id=1266847684]
+custom_minimum_size = Vector2(248, 144)
+anchors_preset = 0
+offset_left = 466.0
+offset_top = 148.0
+offset_right = 714.0
+offset_bottom = 292.0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("19_5n6ht")
+metadata/_slot_visual_mode = 6
+metadata/_slot_minimum_size = Vector2(248, 144)
+metadata/_slot_tray_rect = Rect2(0, 0, 248, 124)
+metadata/_slot_anchor_rect = Rect2(22, -20, 204, 120)
+metadata/_slot_label_rect = Rect2(24, 120, 74, 24)
+metadata/_slot_count_rect = Rect2(98, 120, 104, 24)
+metadata/_slot_refill_rect = Rect2(224, 94, 66, 56)
+metadata/_slot_click_rect = Rect2(20, -12, 208, 132)
+metadata/_slot_stock_rect = Rect2(24, 144, 176, 4)
+metadata/_slot_max_visual_ratio = 1.0
+metadata/_slot_tray_vertical_scale = 1.12
+metadata/_slot_has_containment = true
+metadata/_slot_containment = Rect2(36, 40, 176, 48)
+metadata/_slot_has_caption = true
+metadata/_slot_caption = Rect2(18, 120, 190, 24)
+metadata/_slot_has_footprint = true
+metadata/_slot_footprint = Rect2(30, 42, 188, 48)
+metadata/_slot_has_stack = true
+metadata/_slot_stack_max_size = Vector2(55.2, 74.4)
+metadata/_slot_stack_column_spacing = 30
+metadata/_slot_stack_back_foot_y = 64
+metadata/_slot_stack_front_foot_y = 82
+metadata/_slot_stack_row_offset = 4
+metadata/_slot_has_stack_silhouette = false
+metadata/_stock_display_name = "火腿"
+metadata/_stock_uses_caption = true
+metadata/_stock_previews_refill = true
+metadata/_stock_hold_to_refill = true
+metadata/_stock_show_numbers = false
+[node name="VisualLayer" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=667528093]
+anchors_preset = 0
+mouse_filter = 2
+
+[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=1021968518]
+layout_mode = 0
+offset_top = 8.835003
+offset_right = 248.0
+offset_bottom = 115.16499
+mouse_filter = 2
+texture = SubResource("AtlasTexture_gu6ll")
+expand_mode = 1
+
+[node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=551727411]
+clip_contents = true
+anchors_preset = 0
+offset_left = 22.0
+offset_top = -20.0
+offset_right = 226.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Ingredient" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor" unique_id=1343415178]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient2" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient3" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient4" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient5" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient6" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient7" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient8" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient9" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient10" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+offset_left = 76.61923
+offset_top = 43.21367
+offset_right = 131.81923
+offset_bottom = 84.07774
+rotation = -0.08726646
+pivot_offset = Vector2(27.6, 20.43204)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_g8ck5")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=570618144]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_oeg0d")
+
+[node name="Label" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=617686073]
+visible = false
+layout_mode = 0
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 98.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "火腿"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IngredientCount_ham" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=76240492]
+visible = false
+layout_mode = 0
+offset_left = 98.0
+offset_top = 120.0
+offset_right = 202.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttentionFrame" type="Panel" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=1947828267]
+layout_mode = 0
+offset_right = 248.0
+offset_bottom = 124.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_a2ke1")
+
+[node name="ClickArea" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=1727350311]
+anchors_preset = 0
+offset_left = 20.0
+offset_top = -12.0
+offset_right = 228.0
+offset_bottom = 120.0
+mouse_filter = 2
+
+[node name="IngredientInput_ham" type="PanelContainer" parent="@Control@109/IngredientArea/IngredientSlot_ham/ClickArea" unique_id=387309845]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "火腿
+将火腿拖到炉面"
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_8ppos")
+script = ExtResource("12_op86b")
+PayloadId = "ham"
+DisplayName = "火腿"
+DragColor = Color(0.84705883, 0.41568628, 0.33333334, 1)
+DragTexture = ExtResource("31_luut3")
+DragDisplaySize = Vector2(105, 105)
+
+[node name="RefillStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=1913924611]
+anchors_preset = 0
+offset_left = 224.0
+offset_top = 94.0
+offset_right = 290.0
+offset_bottom = 150.0
+mouse_filter = 2
+
+[node name="IngredientRefill_ham" type="Button" parent="@Control@109/IngredientArea/IngredientSlot_ham/RefillStatus" unique_id=1722772326]
+visible = false
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+tooltip_text = "补满火腿"
+theme_override_font_sizes/font_size = 27
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=953195730]
+anchors_preset = 0
+offset_left = 24.0
+offset_top = 144.0
+offset_right = 200.0
+offset_bottom = 148.0
+mouse_filter = 2
+
+[node name="IngredientStock_ham" type="ProgressBar" parent="@Control@109/IngredientArea/IngredientSlot_ham/StockStatus" unique_id=175154025]
+visible = false
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_2nhnk")
+theme_override_styles/fill = SubResource("StyleBoxFlat_pfl4m")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=1856615696]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_gvl14")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_colors/font_outline_color = Color(1, 0.94509804, 0.8235294, 1)
+theme_override_constants/outline_size = 0
+text = "长按补货"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")
+
+[node name="StockGesture_ham" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham" unique_id=2121970018]
+anchors_preset = 0
+offset_top = -12.0
+offset_right = 248.0
+offset_bottom = 144.0
+tooltip_text = "火腿
+将火腿拖到炉面
+长按盘碗补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|5")
+
+[node name="DeliveryArea" type="Control" parent="@Control@109" unique_id=1844936815]
+custom_minimum_size = Vector2(950, 0)
+anchors_preset = 0
+offset_left = 950.0
+offset_top = 590.0
+offset_right = 1900.0
+offset_bottom = 700.0
+mouse_filter = 2
+
+[node name="DeliveryDropZone" type="PanelContainer" parent="@Control@109/DeliveryArea" unique_id=1135251562]
+custom_minimum_size = Vector2(190, 108)
+layout_mode = 0
+offset_left = 40.0
+offset_top = 2.0
+offset_right = 230.0
+offset_bottom = 110.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_sd13d")
+script = ExtResource("14_w1i8y")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_deliveryZone")
+
+[node name="ServingTrayArtLayer" type="Control" parent="@Control@109/DeliveryArea/DeliveryDropZone" unique_id=2033814288]
+custom_minimum_size = Vector2(184, 102)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ServingTrayArt" type="TextureRect" parent="@Control@109/DeliveryArea/DeliveryDropZone/ServingTrayArtLayer" unique_id=1799736880]
+modulate = Color(1, 1, 1, 0.82)
+custom_minimum_size = Vector2(190, 108)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 6.0
+offset_bottom = 6.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_wechm")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="@Label@128" type="Label" parent="@Control@109/DeliveryArea/DeliveryDropZone" unique_id=1149856299]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(0.18, 0.08, 0.03, 0.22)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 4
+text = "出餐口"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="FinishedPancakeSlot" type="Control" parent="@Control@109/DeliveryArea" unique_id=1271225219]
+z_index = 40
+custom_minimum_size = Vector2(250, 110)
+anchors_preset = 0
+offset_left = 286.0
+offset_right = 536.0
+offset_bottom = 110.0
+mouse_filter = 2
+
+[node name="FinishedTrayArt" type="TextureRect" parent="@Control@109/DeliveryArea/FinishedPancakeSlot" unique_id=1564392730]
+custom_minimum_size = Vector2(250, 86)
+layout_mode = 0
+offset_right = 250.0
+offset_bottom = 86.0
+tooltip_text = "成品托盘 · 装袋后放在这里，拖给顾客"
+texture = SubResource("AtlasTexture_71qxo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DirectDeliveryHint" type="Label" parent="@Control@109/DeliveryArea/FinishedPancakeSlot" unique_id=595079294]
+z_index = 41
+layout_mode = 0
+offset_left = 41.0
+offset_top = 80.0
+offset_right = 209.0
+offset_bottom = 106.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_q8eak")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "拖给顾客"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_directDeliveryHint")
+
+[node name="FinishedPancakeDrag" type="PanelContainer" parent="@Control@109/DeliveryArea/FinishedPancakeSlot" unique_id=1282226426]
+visible = false
+custom_minimum_size = Vector2(226, 122)
+layout_mode = 0
+offset_left = 12.0
+offset_top = -36.0
+offset_right = 238.0
+offset_bottom = 86.0
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_55mrj")
+script = ExtResource("12_op86b")
+PayloadId = "finished_pancake"
+DisplayName = "装袋煎饼"
+DragColor = Color(1, 0.94509804, 0.8235294, 1)
+DragTexture = ExtResource("18_na4ow")
+DragDisplaySize = Vector2(158, 116)
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_finished")
+
+[node name="@Control@129" type="Control" parent="@Control@109/DeliveryArea/FinishedPancakeSlot/FinishedPancakeDrag" unique_id=621119430]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="FinishedPancakeArt" type="TextureRect" parent="@Control@109/DeliveryArea/FinishedPancakeSlot/FinishedPancakeDrag/@Control@129" unique_id=1095594506]
+custom_minimum_size = Vector2(158, 116)
+layout_mode = 0
+offset_left = 10.0
+offset_right = 168.0
+offset_bottom = 116.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_o6gk7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PreviousPancake" type="Button" parent="@Control@109/DeliveryArea/FinishedPancakeSlot" unique_id=1068229200]
+custom_minimum_size = Vector2(48, 44)
+layout_mode = 0
+offset_left = 198.0
+offset_top = -20.0
+offset_right = 198.0
+offset_bottom = -20.0
+tooltip_text = "选择上一张成品"
+theme_override_styles/normal = SubResource("StyleBoxFlat_t2i6f")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_vyrhv")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tbld0")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_0ywrk")
+theme_override_styles/focus = SubResource("StyleBoxFlat_gbh62")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 18
+text = "‹"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_previousPancake")
+
+[node name="NextPancake" type="Button" parent="@Control@109/DeliveryArea/FinishedPancakeSlot" unique_id=747889649]
+custom_minimum_size = Vector2(48, 44)
+layout_mode = 0
+offset_left = 198.0
+offset_top = 28.0
+offset_right = 198.0
+offset_bottom = 28.0
+tooltip_text = "选择下一张成品"
+theme_override_styles/normal = SubResource("StyleBoxFlat_7lwvs")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_6mbqu")
+theme_override_styles/hover = SubResource("StyleBoxFlat_diy8j")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_uud7t")
+theme_override_styles/focus = SubResource("StyleBoxFlat_bjxdh")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 18
+text = "›"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_nextPancake")
+
+[node name="SoyMilkSlot" type="Control" parent="@Control@109/DeliveryArea" unique_id=266078045]
+z_index = 40
+custom_minimum_size = Vector2(250, 110)
+anchors_preset = 0
+offset_left = 532.0
+offset_right = 782.0
+offset_bottom = 110.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_soyPanel")
+
+[node name="SoyMilkTrayArt" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot" unique_id=2117601581]
+custom_minimum_size = Vector2(250, 86)
+layout_mode = 0
+offset_right = 250.0
+offset_bottom = 86.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_71qxo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SoyMilkCupDrag" type="PanelContainer" parent="@Control@109/DeliveryArea/SoyMilkSlot" unique_id=2109591550]
+custom_minimum_size = Vector2(72, 82)
+layout_mode = 0
+offset_left = 26.0
+offset_top = -22.0
+offset_right = 222.0
+offset_bottom = 84.0
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_0mnce")
+script = ExtResource("12_op86b")
+PayloadId = "soy_milk_cup"
+DisplayName = "豆浆"
+DragColor = Color(1, 0.94509804, 0.8235294, 1)
+DragTexture = ExtResource("34_dw1l8")
+DragDisplaySize = Vector2(102, 110)
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_soyCup")
+
+[node name="SoyMilkStockArt" type="Control" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag" unique_id=362345867]
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("33_c2l0a")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_soyStockArt")
+
+[node name="SoyMilkCupArt1" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=1228674313]
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 14.0
+offset_top = 2.0
+offset_right = 54.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|0")
+
+[node name="SoyMilkCupArt2" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=1039466165]
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 48.0
+offset_top = 2.0
+offset_right = 88.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|1")
+
+[node name="SoyMilkCupArt3" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=295493855]
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 82.0
+offset_top = 2.0
+offset_right = 122.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|2")
+
+[node name="SoyMilkCupArt4" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=187559224]
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 116.0
+offset_top = 2.0
+offset_right = 156.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|3")
+
+[node name="SoyMilkCupArt5" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=1124603359]
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 150.0
+offset_top = 2.0
+offset_right = 190.0
+offset_bottom = 54.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|4")
+
+[node name="SoyMilkCupArt6" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=2047185350]
+z_index = 1
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 8.0
+offset_top = 28.0
+offset_right = 48.0
+offset_bottom = 80.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|5")
+
+[node name="SoyMilkCupArt7" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=2100662891]
+z_index = 1
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 42.0
+offset_top = 28.0
+offset_right = 82.0
+offset_bottom = 80.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|6")
+
+[node name="SoyMilkCupArt8" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=632518789]
+z_index = 1
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 76.0
+offset_top = 28.0
+offset_right = 116.0
+offset_bottom = 80.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|7")
+
+[node name="SoyMilkCupArt9" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=845662885]
+z_index = 1
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 110.0
+offset_top = 28.0
+offset_right = 150.0
+offset_bottom = 80.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|8")
+
+[node name="SoyMilkCupArt10" type="TextureRect" parent="@Control@109/DeliveryArea/SoyMilkSlot/SoyMilkCupDrag/SoyMilkStockArt" unique_id=455406882]
+z_index = 1
+custom_minimum_size = Vector2(40, 52)
+layout_mode = 0
+offset_left = 144.0
+offset_top = 28.0
+offset_right = 184.0
+offset_bottom = 80.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_2t6xo")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.SoyMilkStockView|_cups|array|9")
+
+[node name="SoyMilkStatus" type="Label" parent="@Control@109/DeliveryArea/SoyMilkSlot" unique_id=1242229716]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 80.0
+offset_right = 209.0
+offset_bottom = 106.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_gi83d")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_soyStatus")
+
+[node name="@VBoxContainer@130" type="VBoxContainer" parent="@Control@109/DeliveryArea/SoyMilkSlot" unique_id=106316669]
+visible = false
+layout_mode = 0
+offset_left = 246.0
+offset_top = 14.0
+offset_right = 330.0
+offset_bottom = 100.0
+theme_override_constants/separation = 2
+
+[node name="SoyMilkRefill" type="Button" parent="@Control@109/DeliveryArea/SoyMilkSlot/@VBoxContainer@130" unique_id=761494562]
+custom_minimum_size = Vector2(66, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+tooltip_text = "补满豆浆"
+theme_override_styles/normal = SubResource("StyleBoxFlat_qkl1q")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_r15ir")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tpxa7")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_m4y64")
+theme_override_styles/focus = SubResource("StyleBoxFlat_nt1qd")
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 16
+text = "+"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_soyRefill")
+
+[node name="SoyMilkHoldProgress" type="ProgressBar" parent="@Control@109/DeliveryArea/SoyMilkSlot" unique_id=1216297490]
+visible = false
+layout_mode = 0
+offset_left = 41.0
+offset_top = 108.0
+offset_right = 209.0
+offset_bottom = 114.0
+mouse_filter = 2
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_soyHoldProgress")
+
+[node name="StockGesture_soy_milk" type="Control" parent="@Control@109/DeliveryArea/SoyMilkSlot" unique_id=1827100039]
+anchors_preset = 0
+offset_left = 12.0
+offset_top = -22.0
+offset_right = 238.0
+offset_bottom = 86.0
+tooltip_text = "豆浆
+拖动交给顾客，长按托盘补货"
+mouse_default_cursor_shape = 2
+script = ExtResource("24_4mknw")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_stockGestures|list|6")
+
+[node name="CoinTray" type="Control" parent="@Control@109/DeliveryArea" unique_id=1186003979]
+z_index = 40
+anchors_preset = 0
+offset_left = 40.0
+offset_right = 290.0
+offset_bottom = 110.0
+pivot_offset = Vector2(125, 43)
+mouse_filter = 2
+script = ExtResource("35_kc5an")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|<CoinTray>k__BackingField")
+
+[node name="CoinTrayArt" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray" unique_id=445284112]
+custom_minimum_size = Vector2(250, 86)
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_71qxo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoinTraySurface" type="Control" parent="@Control@109/DeliveryArea/CoinTray" unique_id=285408865]
+clip_contents = true
+anchors_preset = 0
+offset_left = 48.0
+offset_top = 18.0
+offset_right = 202.0
+offset_bottom = 60.0
+mouse_filter = 2
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_surface")
+
+[node name="@TextureRect@131" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=1354411763]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 66.0
+offset_top = 14.0
+offset_right = 90.0
+offset_bottom = 38.0
+rotation = -0.29670596
+scale = Vector2(0.96, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|0")
+
+[node name="@TextureRect@132" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=55846692]
+visible = false
+z_index = 17
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 54.0
+offset_top = 5.0
+offset_right = 78.0
+offset_bottom = 29.0
+rotation = 0.20943952
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|1")
+
+[node name="@TextureRect@133" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=119220912]
+visible = false
+z_index = 23
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 97.0
+offset_top = 11.0
+offset_right = 121.0
+offset_bottom = 35.0
+rotation = -0.15707964
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|2")
+
+[node name="@TextureRect@134" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=1693839766]
+visible = false
+z_index = 25
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 11.0
+offset_top = 13.0
+offset_right = 35.0
+offset_bottom = 37.0
+rotation = 0.36651915
+scale = Vector2(0.96, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|3")
+
+[node name="@TextureRect@135" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=2048591493]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 119.0
+offset_top = 4.0
+offset_right = 143.0
+offset_bottom = 28.0
+rotation = -0.2617994
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|4")
+
+[node name="@TextureRect@136" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=1183433887]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 32.0
+offset_top = 4.0
+offset_right = 56.0
+offset_bottom = 28.0
+rotation = 0.13962634
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|5")
+
+[node name="@TextureRect@137" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=987138121]
+visible = false
+z_index = 15
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 82.0
+offset_top = 3.0
+offset_right = 106.0
+offset_bottom = 27.0
+rotation = -0.38397244
+scale = Vector2(0.96, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|6")
+
+[node name="@TextureRect@138" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=1316255132]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 41.0
+offset_top = 14.0
+offset_right = 65.0
+offset_bottom = 38.0
+rotation = 0.27925268
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|7")
+
+[node name="@TextureRect@139" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=377275927]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 108.0
+offset_top = 14.0
+offset_right = 132.0
+offset_bottom = 38.0
+rotation = 0.10471976
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|8")
+
+[node name="@TextureRect@140" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=1048837600]
+visible = false
+z_index = 16
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 69.0
+offset_top = 4.0
+offset_right = 93.0
+offset_bottom = 28.0
+rotation = -0.20943952
+scale = Vector2(0.96, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|9")
+
+[node name="@TextureRect@141" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=468048620]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 22.0
+offset_top = 14.0
+offset_right = 46.0
+offset_bottom = 38.0
+rotation = 0.31415927
+scale = Vector2(0.9, 0.66)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|10")
+
+[node name="@TextureRect@142" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTraySurface" unique_id=348403059]
+visible = false
+z_index = 26
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 0
+offset_left = 88.0
+offset_top = 14.0
+offset_right = 112.0
+offset_bottom = 38.0
+rotation = -0.08726646
+scale = Vector2(0.9, 0.78)
+pivot_offset = Vector2(12, 12)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_acw6j")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_coins|array|11")
+
+[node name="CoinTrayHint" type="Label" parent="@Control@109/DeliveryArea/CoinTray" unique_id=716913813]
+layout_mode = 0
+offset_left = 41.0
+offset_top = 80.0
+offset_right = 209.0
+offset_bottom = 106.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_fyb1c")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_constants/outline_size = 0
+text = "金币盘"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_caption")
+
+[node name="CollectCoins" type="Button" parent="@Control@109/DeliveryArea/CoinTray" unique_id=977529181]
+layout_mode = 0
+offset_left = 12.0
+offset_right = 238.0
+offset_bottom = 86.0
+tooltip_text = "点击收走金币 · 收入已自动入账，未点击也不会丢失"
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_kvsqy")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_e8xyu")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_dmeqo")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_yr3d8")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_nb7rh")
+flat = true
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_collect")
+
+[node name="TrashZone" type="PanelContainer" parent="@Control@109/DeliveryArea" unique_id=1977633241]
+z_index = 40
+custom_minimum_size = Vector2(146, 120)
+layout_mode = 0
+offset_left = 804.0
+offset_top = -56.0
+offset_right = 950.0
+offset_bottom = 64.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bra52")
+script = ExtResource("14_w1i8y")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_trashZone")
+
+[node name="TrashArtLayer" type="Control" parent="@Control@109/DeliveryArea/TrashZone" unique_id=918299126]
+custom_minimum_size = Vector2(140, 114)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TrashArt" type="TextureRect" parent="@Control@109/DeliveryArea/TrashZone/TrashArtLayer" unique_id=15715674]
+custom_minimum_size = Vector2(146, 120)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 6.0
+offset_bottom = 6.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_e4gam")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TrashLabelLayer" type="Control" parent="@Control@109/DeliveryArea/TrashZone" unique_id=2134236712]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TrashLabel" type="Label" parent="@Control@109/DeliveryArea/TrashZone/TrashLabelLayer" unique_id=576099116]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 122.0
+offset_right = 128.0
+offset_bottom = 148.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_0m81d")
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 0)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_colors/font_outline_color = Color(1, 0.94, 0.79, 0.92)
+theme_override_constants/outline_size = 0
+text = "拖入丢弃"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="@TextureRect@143" type="TextureRect" parent="." unique_id=1907959835]
+visible = false
+z_index = 89
+custom_minimum_size = Vector2(112, 112)
+layout_mode = 0
+offset_right = 112.0
+offset_bottom = 112.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_x0d88")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_batterLadle")
+
+[node name="BagTransferVisual" type="TextureRect" parent="." unique_id=815508007]
+visible = false
+z_index = 89
+custom_minimum_size = Vector2(158, 116)
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_o6gk7")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_bagTransfer")

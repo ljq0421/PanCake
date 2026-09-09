@@ -158,7 +158,8 @@ public partial class StageFourSelfTest : Node
                     && visible.End.X <= portrait.Head.GetWidth() - 8 && visible.End.Y <= portrait.Head.GetHeight() - 8,
                     $"{appearance.DisplayName} 头像保留透明安全边界");
             }
-            var portraitView = new CustomerPortraitView();
+            var portraitView = ProjectCake.Core.SceneFactory.Instantiate<CustomerPortraitView>("res://Scenes/UI/CustomerPortraitView.tscn");
+            AddChild(portraitView);
             portraitView.SetVisual(portraits[0]);
             Check(portraitView.BodyLayerScale.IsEqualApprox(portraitView.HeadLayerScale)
                 && portraitView.BodyLayerScale.IsEqualApprox(Vector2.One * portraits[0].PortraitScale),
@@ -412,8 +413,8 @@ public partial class StageFourSelfTest : Node
     {
         for (int level = 1; level <= 3; level++)
         {
-            var workstation = new PancakeWorkstation { UseServingTray = true };
-            var legacy = new PancakeWorkstation();
+            var workstation = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
+            var legacy = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeLabWorkstation.tscn");
             AddChild(workstation); AddChild(legacy);
             workstation.Initialize(catalog, level, level, level, catalog.DaysByNumber[11]);
             legacy.Initialize(catalog, level, level, level, catalog.DaysByNumber[11]);
@@ -566,7 +567,7 @@ public partial class StageFourSelfTest : Node
         string savePath = $"user://direct-delivery-{Guid.NewGuid():N}.json";
         var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
         var controller = new DayController(); AddChild(controller);
-        var screen = new TianjinDayScreen(); AddChild(screen);
+        var screen = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen);
         screen.ConnectController(controller);
         screen.Initialize(catalog, save, controller, 15);
         screen.SetProcess(false);
@@ -749,7 +750,7 @@ public partial class StageFourSelfTest : Node
 
     private void TestScenes(DataCatalog catalog)
     {
-        var hub = new MorningHub();
+        var hub = ProjectCake.Core.SceneFactory.Instantiate<MorningHub>("res://Scenes/UI/MorningHub.tscn");
         Check(!hub.DeveloperToolsVisible, "正式启动参数不显示煎饼实验台与 Day 数据入口");
         hub.Free();
         foreach (string path in new[] { "res://Scenes/Main/Main.tscn", "res://Scenes/UI/TianjinMapScreen.tscn", "res://Scenes/Gameplay/TianjinDayScreen.tscn" })
@@ -758,7 +759,7 @@ public partial class StageFourSelfTest : Node
         Check(main.HasNode("UI/TianjinMapScreen"), "Main 接入天津完成与武汉占位地图");
         main.Free();
 
-        var dayLayout = new TianjinDayScreen();
+        var dayLayout = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
         AddChild(dayLayout);
         var customerStrip = dayLayout.FindChild("CustomerStrip", true, false) as Control;
         var feedbackPanel = dayLayout.FindChild("FeedbackPanel", true, false) as Control;
@@ -810,7 +811,7 @@ public partial class StageFourSelfTest : Node
         pauseSave.UsePathForTests(pauseSavePath);
         var pauseController = new DayController();
         AddChild(pauseController);
-        var pauseLayout = new TianjinDayScreen();
+        var pauseLayout = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
         AddChild(pauseLayout);
         pauseLayout.ConnectController(pauseController);
         pauseLayout.Initialize(catalog, pauseSave, pauseController, 15);
@@ -837,7 +838,7 @@ public partial class StageFourSelfTest : Node
         string pauseSaveAbsolute = ProjectSettings.GlobalizePath(pauseSavePath);
         if (File.Exists(pauseSaveAbsolute)) File.Delete(pauseSaveAbsolute);
 
-        var workstation = new PancakeWorkstation();
+        var workstation = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeLabWorkstation.tscn");
         AddChild(workstation);
         workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[5], new TianjinArtCatalog());
         Check(workstation.FindChild("FryerVisual", true, false) is FryerVisualView, "工作台使用锅体与滤篮分层的炸锅视图");
@@ -973,7 +974,7 @@ public partial class StageFourSelfTest : Node
         Check(deliveryZone?.CanAccept("finished_pancake") == true, "选择有效顾客后出餐口接收已装袋煎饼");
         workstation.QueueFree();
 
-        var recipeAttentionWorkstation = new PancakeWorkstation();
+        var recipeAttentionWorkstation = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeLabWorkstation.tscn");
         AddChild(recipeAttentionWorkstation);
         recipeAttentionWorkstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[15], new TianjinArtCatalog());
         recipeAttentionWorkstation.RequiredToppingsForSelectedCustomer = () => new HashSet<string>(StringComparer.Ordinal)

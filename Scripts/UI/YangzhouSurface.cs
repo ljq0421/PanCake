@@ -24,9 +24,7 @@ public partial class YangzhouSurface : Control
     private Label _title = null!, _detail = null!;
     public override void _Ready()
     {
-        MouseDefaultCursorShape = CursorShape.PointingHand;
-        _title = GuangzhouUi.Text(this, "", new(14, 10, Size.X - 28, 40), 24);
-        _detail = GuangzhouUi.Text(this, "", new(14, Size.Y - 78, Size.X - 28, 70), 21);
+        SceneNodeBinder.Bind(this);
         MouseExited += Cancel;
     }
     public void Refresh()

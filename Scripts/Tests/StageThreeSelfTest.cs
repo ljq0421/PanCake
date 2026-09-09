@@ -197,12 +197,46 @@ public partial class StageThreeSelfTest : Node
 
     private void TestScenes()
     {
-        foreach (string path in new[] { "res://Scenes/UI/MorningHub.tscn", "res://Scenes/Gameplay/TianjinDayScreen.tscn", "res://Scenes/Gameplay/PancakeWorkstation.tscn", "res://Scenes/Main/Main.tscn" })
+        string[] productionScenes =
+        {
+            "res://Scenes/UI/MorningHub.tscn",
+            "res://Scenes/UI/WuhanHub.tscn",
+            "res://Scenes/UI/XianHub.tscn",
+            "res://Scenes/UI/GuangzhouHub.tscn",
+            "res://Scenes/UI/YangzhouHub.tscn",
+            "res://Scenes/UI/TianjinMapScreen.tscn",
+            "res://Scenes/UI/DataDebugPanel.tscn",
+            "res://Scenes/UI/OrderBubbleView.tscn",
+            "res://Scenes/UI/CustomerPortraitView.tscn",
+            "res://Scenes/UI/CoinTrayView.tscn",
+            "res://Scenes/UI/CoinCollectionFeedback.tscn",
+            "res://Scenes/Gameplay/TianjinDayScreen.tscn",
+            "res://Scenes/Gameplay/WuhanDayScreen.tscn",
+            "res://Scenes/Gameplay/XianDayScreen.tscn",
+            "res://Scenes/Gameplay/GuangzhouDayScreen.tscn",
+            "res://Scenes/Gameplay/YangzhouDayScreen.tscn",
+            "res://Scenes/Gameplay/PancakeLab.tscn",
+            "res://Scenes/Gameplay/PancakeWorkstation.tscn",
+            "res://Scenes/Gameplay/PancakeLabWorkstation.tscn",
+            "res://Scenes/Shop/TianjinShop.tscn",
+            "res://Scenes/Main/Main.tscn",
+        };
+        foreach (string path in productionScenes)
         {
             Check(ResourceLoader.Load<PackedScene>(path) is not null, $"场景可加载：{path.GetFile()}");
         }
+        foreach (string path in productionScenes.Where(path => !path.EndsWith("Main.tscn", StringComparison.Ordinal)))
+            CheckStaticSceneArchitecture(path);
+        CheckStaticUiSourceGuard();
+
         PackedScene mainScene = ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn"); Node main = mainScene.Instantiate();
-        Check(main.HasNode("UI/MorningHub") && main.HasNode("UI/TianjinDayScreen") && main.HasNode("UI/PancakeLab") && main.HasNode("UI/DataDebugPanel"), "Main 保留大厅、营业、实验台和数据调试入口"); main.Free();
+        Check(main.HasNode("UI/MorningHub") && main.HasNode("UI/WuhanHub") && main.HasNode("UI/XianHub")
+            && main.HasNode("UI/GuangzhouHub") && main.HasNode("UI/YangzhouHub")
+            && main.HasNode("UI/TianjinDayScreen") && main.HasNode("UI/WuhanDayScreen")
+            && main.HasNode("UI/XianDayScreen") && main.HasNode("UI/GuangzhouDayScreen")
+            && main.HasNode("UI/YangzhouDayScreen") && main.HasNode("UI/PancakeLab")
+            && main.HasNode("UI/DataDebugPanel"), "Main 固定包含五城首页、五城营业页、实验台和数据调试入口");
+        main.Free();
 
         string relative = $"user://stage3-screen-{Guid.NewGuid():N}.json";
         string absolute = ProjectSettings.GlobalizePath(relative);
@@ -213,6 +247,100 @@ public partial class StageThreeSelfTest : Node
         controller.TryStartDay(out _); controller.Tick(3); controller.Tick(60); controller.Tick(15);
         Check(controller.State == DayState.Results && save.Data.DayBestRecords.ContainsKey(1), "正式营业界面可接收结算并写入存档");
         screen.QueueFree(); controller.QueueFree(); save.QueueFree(); if (File.Exists(absolute)) File.Delete(absolute);
+    }
+
+    private void CheckStaticSceneArchitecture(string path)
+    {
+        PackedScene scene = ResourceLoader.Load<PackedScene>(path);
+        Node first = scene.Instantiate();
+        Node second = scene.Instantiate();
+        string[] firstSignature = SceneSignature(first).ToArray();
+        string[] secondSignature = SceneSignature(second).ToArray();
+        Check(firstSignature.SequenceEqual(secondSignature), $"场景重复实例化结构稳定：{path.GetFile()}");
+        second.Free();
+
+        AddChild(first);
+        Node[] unexpected = Descendants(first)
+            .Where(node => node.Owner is null && !HasDynamicAncestor(node, first))
+            .ToArray();
+        Check(unexpected.Length == 0, $"场景就绪后无未登记的 ownerless 固定节点：{path.GetFile()}",
+            string.Join(", ", unexpected.Select(node => first.GetPathTo(node))));
+        RemoveChild(first);
+        first.Free();
+    }
+
+    private void CheckStaticUiSourceGuard()
+    {
+        string[] pageSources =
+        {
+            "res://Scripts/UI/MorningHub.cs", "res://Scripts/UI/WuhanHub.cs",
+            "res://Scripts/UI/XianHub.cs", "res://Scripts/UI/GuangzhouHub.cs",
+            "res://Scripts/UI/YangzhouHub.cs", "res://Scripts/UI/TianjinMapScreen.cs",
+            "res://Scripts/UI/DataDebugPanel.cs", "res://Scripts/UI/TianjinLedger.cs",
+            "res://Scripts/UI/WuhanLedger.cs", "res://Scripts/Gameplay/TianjinDayScreen.cs",
+            "res://Scripts/Gameplay/WuhanDayScreen.cs", "res://Scripts/Gameplay/XianDayScreen.cs",
+            "res://Scripts/Gameplay/GuangzhouDayScreen.cs", "res://Scripts/Gameplay/YangzhouDayScreen.cs",
+            "res://Scripts/Gameplay/PancakeLab.cs",
+        };
+        string[] forbiddenStaticBuilders =
+        {
+            "private void Build(", "BuildHud(", "BuildCustomers(",
+            "new Button {", "new PanelContainer", "new VBoxContainer",
+            "new HBoxContainer", "new GridContainer", "new MarginContainer",
+        };
+        foreach (string path in pageSources)
+        {
+            string source = Godot.FileAccess.GetFileAsString(path);
+            string[] found = forbiddenStaticBuilders.Where(source.Contains).ToArray();
+            Check(found.Length == 0, $"页面源码不再搭建固定 UI：{path.GetFile()}", string.Join(", ", found));
+        }
+
+        string controller = Godot.FileAccess.GetFileAsString("res://Scripts/Core/GameController.cs");
+        string[] forbiddenController = { "PackedScene", ".Instantiate(", "new GuangzhouHub", "new YangzhouHub", ".AddChild(" };
+        string[] controllerFound = forbiddenController.Where(controller.Contains).ToArray();
+        Check(controllerFound.Length == 0, "GameController 仅引用 Main 预建页面", string.Join(", ", controllerFound));
+
+        string slot = Godot.FileAccess.GetFileAsString("res://Scripts/UI/WorkstationSlotView.cs");
+        Check(!slot.Contains("_ingredientAnchor.AddChild", StringComparison.Ordinal),
+            "库存视觉使用 .tscn 预建节点池，不在 C# 中扩容");
+
+        string pancakeWorkstation = Godot.FileAccess.GetFileAsString("res://Scripts/Gameplay/PancakeWorkstation.cs");
+        string[] runtimeDragAppearance = { "_storedYoutiao.Configure(", "item.Configure(_drag", "_finished.Configure(", "_soyCup.Configure(" };
+        Check(runtimeDragAppearance.All(token => !pancakeWorkstation.Contains(token, StringComparison.Ordinal)),
+            "正式工作台与实验台的拖拽外观由各自场景变体声明");
+
+        string wuhanWorkstation = Godot.FileAccess.GetFileAsString("res://Scripts/UI/WuhanWorkstationView.cs");
+        string wuhanGestures = Godot.FileAccess.GetFileAsString("res://Scripts/UI/WuhanWorkstationGestures.cs");
+        Check(!wuhanWorkstation.Contains("source.Position =", StringComparison.Ordinal)
+              && !wuhanWorkstation.Contains("source.Size =", StringComparison.Ordinal)
+              && !wuhanGestures.Contains("button.Position =", StringComparison.Ordinal),
+            "武汉交付热区与补货按钮坐标只保存在场景中");
+
+        string dragItem = Godot.FileAccess.GetFileAsString("res://Scripts/Interaction/DragItem.cs");
+        Check(!dragItem.Contains("MouseDefaultCursorShape =", StringComparison.Ordinal),
+            "固定拖拽光标样式由场景声明");
+    }
+
+    private static IEnumerable<Node> Descendants(Node root)
+    {
+        foreach (Node child in root.GetChildren())
+        {
+            yield return child;
+            foreach (Node descendant in Descendants(child)) yield return descendant;
+        }
+    }
+
+    private static IEnumerable<string> SceneSignature(Node root)
+    {
+        yield return $".:{root.GetClass()}";
+        foreach (Node node in Descendants(root)) yield return $"{root.GetPathTo(node)}:{node.GetClass()}";
+    }
+
+    private static bool HasDynamicAncestor(Node node, Node sceneRoot)
+    {
+        for (Node? current = node.GetParent(); current is not null && current != sceneRoot; current = current.GetParent())
+            if (current.HasMeta("_dynamic_children") && current.GetMeta("_dynamic_children").AsBool()) return true;
+        return false;
     }
 
     private static DayPlan MakePlan(int count, string typeId, RecipeData recipe)

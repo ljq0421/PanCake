@@ -50,18 +50,18 @@ public readonly record struct WorkstationSlotSpec(
 /// </summary>
 public partial class WorkstationSlotView : Control
 {
-    private readonly Control _visualLayer;
-    private readonly TextureRect _tray;
-    private readonly Control _ingredientAnchor;
-    private readonly TextureRect _ingredient;
+    private Control _visualLayer = null!;
+    private TextureRect _tray = null!;
+    private Control _ingredientAnchor = null!;
+    private TextureRect _ingredient = null!;
     private readonly List<TextureRect> _ingredientVisuals = new();
-    private readonly Label _label;
-    private readonly Label _count;
-    private readonly Control _clickArea;
-    private readonly Control _refillStatus;
-    private readonly Control _stockStatus;
-    private readonly Panel _attentionFrame;
-    private readonly Panel _captionPlate;
+    private Label _label = null!;
+    private Label _count = null!;
+    private Control _clickArea = null!;
+    private Control _refillStatus = null!;
+    private Control _stockStatus = null!;
+    private Panel _attentionFrame = null!;
+    private Panel _captionPlate = null!;
     private WorkstationSlotSpec _spec;
     private IngredientVisualMode _visualMode;
     private float _stockFraction = 1f;
@@ -73,49 +73,139 @@ public partial class WorkstationSlotView : Control
     private Color[] _wideStockTints = Array.Empty<Color>();
     private LiquidStockView? _liquid;
     private WorkstationSlotAttentionState _attentionState;
-    private bool _emptyCaptionStyled;
     private Rect2 _stackBounds;
     private (Vector2 Center, Vector2 Size, float Angle)[] _stackLayout = Array.Empty<(Vector2, Vector2, float)>();
 
-    public WorkstationSlotView()
+    protected WorkstationSlotSpec ConfiguredSpec => _spec;
+    protected IngredientVisualMode ConfiguredVisualMode => _visualMode;
+    protected string ConfiguredLabel => _label.Text;
+
+    public override void _Ready()
     {
-        MouseFilter = MouseFilterEnum.Ignore;
-
-        _visualLayer = new Control { Name = "VisualLayer", MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_visualLayer);
-        _tray = TextureNode("Tray");
-        _visualLayer.AddChild(_tray);
-
-        _ingredientAnchor = new Control
-        {
-            Name = "IngredientAnchor",
-            ClipContents = true,
-            MouseFilter = MouseFilterEnum.Ignore,
-        };
-        _visualLayer.AddChild(_ingredientAnchor);
-        _ingredient = TextureNode("Ingredient");
-        _ingredientAnchor.AddChild(_ingredient);
-        _ingredientVisuals.Add(_ingredient);
-
-        _captionPlate = new Panel { Name = "CaptionPlate", MouseFilter = MouseFilterEnum.Ignore, Visible = false };
-        _visualLayer.AddChild(_captionPlate);
-        _label = SlotLabel("Label", 18);
-        _visualLayer.AddChild(_label);
-        _count = SlotLabel("Count", 18);
-        _visualLayer.AddChild(_count);
-
-        _attentionFrame = new Panel { Name = "AttentionFrame", MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_attentionFrame);
+        SceneNodeBinder.Bind(this);
+        _visualLayer ??= GetNode<Control>("VisualLayer");
+        _tray ??= _visualLayer.GetNode<TextureRect>("Tray");
+        _ingredientAnchor ??= _visualLayer.GetNode<Control>("IngredientAnchor");
+        _ingredient ??= _ingredientAnchor.GetNode<TextureRect>("Ingredient");
+        _captionPlate ??= _visualLayer.GetNode<Panel>("CaptionPlate");
+        _label ??= _visualLayer.GetNode<Label>("Label");
+        _count ??= _visualLayer.GetNodeOrNull<Label>("Count")
+            ?? _visualLayer.GetChildren().OfType<Label>().First(label => label != _label);
+        _attentionFrame ??= GetNode<Panel>("AttentionFrame");
+        _clickArea ??= GetNode<Control>("ClickArea");
+        _refillStatus ??= GetNode<Control>("RefillStatus");
+        _stockStatus ??= GetNode<Control>("StockStatus");
+        _liquid = _visualLayer.GetNodeOrNull<LiquidStockView>("LiquidSurface");
+        _ingredientVisuals.Clear();
+        _ingredientVisuals.AddRange(_ingredientAnchor.GetChildren().OfType<TextureRect>());
+        if (_ingredientVisuals.Count == 0)
+            throw new InvalidOperationException($"{Name} 缺少场景预建的 Ingredient 视觉节点。");
+        LoadSceneConfiguration();
         ApplyAttentionStyle();
-
-        _clickArea = new Control { Name = "ClickArea", MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_clickArea);
-        _refillStatus = new Control { Name = "RefillStatus", MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_refillStatus);
-        _stockStatus = new Control { Name = "StockStatus", MouseFilter = MouseFilterEnum.Ignore };
-        AddChild(_stockStatus);
-
         Resized += LayoutChildren;
+    }
+
+    public virtual void SaveSceneConfiguration()
+    {
+        if (_spec.MinimumSize == Vector2.Zero)
+        {
+            string key = Name.ToString();
+            _visualMode = key.Contains("FinishedYoutiao", StringComparison.Ordinal) ? IngredientVisualMode.WideStock
+                : key.Contains("RawYoutiao", StringComparison.Ordinal) ? IngredientVisualMode.WideSingle
+                : key.Contains("scallion", StringComparison.Ordinal) ? IngredientVisualMode.LooseStock
+                : key.Contains("egg", StringComparison.Ordinal) || key.Contains("crispy", StringComparison.Ordinal) || key.Contains("ham", StringComparison.Ordinal)
+                    ? IngredientVisualMode.HybridStock
+                    : IngredientVisualMode.Single;
+            Rect2? caption = _captionPlate.Visible ? new Rect2(_captionPlate.Position, _captionPlate.Size) : null;
+            _spec = new WorkstationSlotSpec(
+                CustomMinimumSize,
+                new Rect2(_tray.Position, _tray.Size),
+                new Rect2(_ingredientAnchor.Position, _ingredientAnchor.Size),
+                new Rect2(_label.Position, _label.Size),
+                new Rect2(_count.Position, _count.Size),
+                new Rect2(_refillStatus.Position, _refillStatus.Size),
+                new Rect2(_clickArea.Position, _clickArea.Size),
+                new Rect2(_stockStatus.Position, _stockStatus.Size),
+                1f,
+                new Rect2(_tray.Position, _tray.Size),
+                caption);
+        }
+        SetMeta("_slot_visual_mode", (int)_visualMode);
+        SetMeta("_slot_minimum_size", _spec.MinimumSize);
+        SetMeta("_slot_tray_rect", _spec.TrayRect);
+        SetMeta("_slot_anchor_rect", _spec.IngredientAnchorRect);
+        SetMeta("_slot_label_rect", _spec.LabelRect);
+        SetMeta("_slot_count_rect", _spec.CountRect);
+        SetMeta("_slot_refill_rect", _spec.RefillRect);
+        SetMeta("_slot_click_rect", _spec.ClickRect);
+        SetMeta("_slot_stock_rect", _spec.StockRect);
+        SetMeta("_slot_max_visual_ratio", _spec.MaxVisualRatio);
+        SetMeta("_slot_tray_vertical_scale", _spec.TrayVerticalScale);
+        SaveOptionalRect("containment", _spec.IngredientContainmentRect);
+        SaveOptionalRect("caption", _spec.CaptionRect);
+        SaveOptionalRect("footprint", _spec.StockFootprintRect);
+        SetMeta("_slot_has_stack", _spec.StackLayout.HasValue);
+        if (_spec.StackLayout is StockStackLayout stack)
+        {
+            SetMeta("_slot_stack_max_size", stack.MaxSize);
+            SetMeta("_slot_stack_column_spacing", stack.ColumnSpacing);
+            SetMeta("_slot_stack_back_foot_y", stack.BackFootY);
+            SetMeta("_slot_stack_front_foot_y", stack.FrontFootY);
+            SetMeta("_slot_stack_row_offset", stack.RowOffset);
+            SaveOptionalRect("stack_silhouette", stack.SilhouetteBounds);
+        }
+    }
+
+    private void SaveOptionalRect(string key, Rect2? value)
+    {
+        SetMeta($"_slot_has_{key}", value.HasValue);
+        if (value.HasValue) SetMeta($"_slot_{key}", value.Value);
+    }
+
+    private Rect2? LoadOptionalRect(string key) =>
+        HasMeta($"_slot_has_{key}") && GetMeta($"_slot_has_{key}").AsBool()
+            ? GetMeta($"_slot_{key}").AsRect2()
+            : null;
+
+    private void LoadSceneConfiguration()
+    {
+        if (!HasMeta("_slot_visual_mode")) return;
+        _visualMode = (IngredientVisualMode)GetMeta("_slot_visual_mode").AsInt32();
+        StockStackLayout? stack = null;
+        if (HasMeta("_slot_has_stack") && GetMeta("_slot_has_stack").AsBool())
+        {
+            stack = new StockStackLayout(
+                GetMeta("_slot_stack_max_size").AsVector2(),
+                (float)GetMeta("_slot_stack_column_spacing").AsDouble(),
+                (float)GetMeta("_slot_stack_back_foot_y").AsDouble(),
+                (float)GetMeta("_slot_stack_front_foot_y").AsDouble(),
+                LoadOptionalRect("stack_silhouette"),
+                (float)GetMeta("_slot_stack_row_offset").AsDouble());
+        }
+        _spec = new WorkstationSlotSpec(
+            GetMeta("_slot_minimum_size").AsVector2(),
+            GetMeta("_slot_tray_rect").AsRect2(),
+            GetMeta("_slot_anchor_rect").AsRect2(),
+            GetMeta("_slot_label_rect").AsRect2(),
+            GetMeta("_slot_count_rect").AsRect2(),
+            GetMeta("_slot_refill_rect").AsRect2(),
+            GetMeta("_slot_click_rect").AsRect2(),
+            GetMeta("_slot_stock_rect").AsRect2(),
+            (float)GetMeta("_slot_max_visual_ratio").AsDouble(),
+            LoadOptionalRect("containment"),
+            LoadOptionalRect("caption"),
+            (float)GetMeta("_slot_tray_vertical_scale").AsDouble(),
+            LoadOptionalRect("footprint"),
+            stack);
+        if (_visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
+        {
+            _rotatedOpaqueBounds = RotatedOpaqueBounds(_ingredient.Texture, Mathf.DegToRad(32));
+            _ingredientHitMask?.Dispose();
+            _ingredientHitMask = new Bitmap();
+            using Image image = _ingredient.Texture.GetImage();
+            _ingredientHitMask.CreateFromImageAlpha(image, 0.05f);
+        }
+        LayoutChildren();
     }
 
     public Label CountLabel => _count;
@@ -182,11 +272,6 @@ public partial class WorkstationSlotView : Control
         _count.Hide();
         _label.Visible = visible;
         if (_spec.CaptionRect is Rect2 caption) Place(_label, caption);
-        if (!_emptyCaptionStyled)
-        {
-            TianjinUi.ApplyCounterHint(_label);
-            _emptyCaptionStyled = true;
-        }
     }
 
     public void Configure(
@@ -220,13 +305,6 @@ public partial class WorkstationSlotView : Control
         }
         _label.Text = label;
         _captionPlate.Visible = spec.CaptionRect.HasValue;
-        if (spec.CaptionRect.HasValue)
-        {
-            _label.AddThemeFontSizeOverride("font_size", 20);
-            _label.AddThemeConstantOverride("outline_size", 0);
-            _count.AddThemeConstantOverride("outline_size", 0);
-            _count.AddThemeColorOverride("font_color", TianjinUi.Brown);
-        }
         ApplyAttentionStyle();
         LayoutChildren();
     }
@@ -253,9 +331,9 @@ public partial class WorkstationSlotView : Control
     public void ConfigureLiquid(Texture2D emptyBowl, Texture2D fullBowl, bool sauce)
     {
         _tray.Texture = emptyBowl;
-        _liquid = new LiquidStockView(fullBowl, sauce) { Name = "LiquidSurface" };
-        _visualLayer.AddChild(_liquid);
-        _visualLayer.MoveChild(_liquid, 1);
+        _liquid ??= _visualLayer.GetNodeOrNull<LiquidStockView>("LiquidSurface")
+            ?? throw new InvalidOperationException($"{Name} 缺少场景节点 LiquidSurface。");
+        _liquid.Configure(fullBowl, sauce);
         LayoutChildren();
     }
 
@@ -273,23 +351,23 @@ public partial class WorkstationSlotView : Control
         ApplyAttentionStyle();
     }
 
-    public void SetInteraction(Control interaction)
-    {
-        ClearChildren(_clickArea);
-        _clickArea.AddChild(interaction);
-        interaction.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        if (interaction is ProjectCake.Interaction.DragItem drag)
-            drag.HitTest = point => _visualMode is not (IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
-                || ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
-        if (interaction is ProjectCake.Interaction.PressRepeatGesture repeat)
-            repeat.Contains = point => ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
-    }
 
     public void SetWideStockTints(IReadOnlyList<Color> tints)
     {
         if (_wideStockTints.SequenceEqual(tints)) return;
         _wideStockTints = tints.Take(3).ToArray();
         LayoutIngredientVisuals();
+    }
+
+    public void BindInteraction(Control interaction)
+    {
+        if (interaction.GetParent() != _clickArea)
+            throw new InvalidOperationException($"{interaction.Name} 必须预建在 {Name}/ClickArea 下。");
+        if (interaction is ProjectCake.Interaction.DragItem drag)
+            drag.HitTest = point => _visualMode is not (IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
+                || ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
+        if (interaction is ProjectCake.Interaction.PressRepeatGesture repeat)
+            repeat.Contains = point => ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
     }
 
     private bool ContainsVisibleIngredient(Vector2 globalPoint)
@@ -308,20 +386,6 @@ public partial class WorkstationSlotView : Control
             if (_ingredientHitMask.GetBitv(new Vector2I((int)pixel.X, (int)pixel.Y))) return true;
         }
         return false;
-    }
-
-    public void SetRefillControl(Control control)
-    {
-        ClearChildren(_refillStatus);
-        _refillStatus.AddChild(control);
-        control.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-    }
-
-    public void SetStockControl(Control control)
-    {
-        ClearChildren(_stockStatus);
-        _stockStatus.AddChild(control);
-        control.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
     }
 
     public bool IngredientIsInsideTray(float safetyMargin = 0)
@@ -381,7 +445,8 @@ public partial class WorkstationSlotView : Control
             _attentionFrame.Visible = false;
             Color plateColor = _attentionState == WorkstationSlotAttentionState.Required
                 ? TianjinUi.Yellow.Lightened(0.42f) : TianjinUi.Cream;
-            StyleBoxFlat plate = TianjinUi.Box(plateColor, 10, 2, false);
+            if (_captionPlate.GetThemeStylebox("panel") is not StyleBoxFlat plate) return;
+            plate.BgColor = plateColor;
             plate.BorderColor = _attentionState switch
             {
                 WorkstationSlotAttentionState.Empty => TianjinUi.Red,
@@ -389,7 +454,6 @@ public partial class WorkstationSlotView : Control
                 WorkstationSlotAttentionState.Refilling => TianjinUi.Green,
                 _ => TianjinUi.Brown,
             };
-            _captionPlate.AddThemeStyleboxOverride("panel", plate);
             return;
         }
         _attentionFrame.Visible = true;
@@ -411,20 +475,20 @@ public partial class WorkstationSlotView : Control
         Color fill = _attentionState == WorkstationSlotAttentionState.Required
             ? new Color(1f, 0.91f, 0.52f, 0.10f)
             : Colors.Transparent;
-        StyleBoxFlat style = TianjinUi.Box(fill, 14, borderWidth, false);
-        style.BorderColor = border;
-        _attentionFrame.AddThemeStyleboxOverride("panel", style);
+        if (_attentionFrame.GetThemeStylebox("panel") is StyleBoxFlat style)
+        {
+            style.BgColor = fill;
+            style.BorderColor = border;
+            style.BorderWidthLeft = style.BorderWidthTop = style.BorderWidthRight = style.BorderWidthBottom = borderWidth;
+        }
     }
 
 
     private void EnsureIngredientVisuals(int count, Texture2D texture)
     {
-        while (_ingredientVisuals.Count < count)
-        {
-            TextureRect copy = TextureNode($"Ingredient{_ingredientVisuals.Count + 1}");
-            _ingredientAnchor.AddChild(copy);
-            _ingredientVisuals.Add(copy);
-        }
+        if (_ingredientVisuals.Count < count)
+            throw new InvalidOperationException(
+                $"{Name} 的场景库存节点池不足：需要 {count}，实际 {_ingredientVisuals.Count}。请在 .tscn 中补齐固定节点。");
 
         for (int index = 0; index < _ingredientVisuals.Count; index++)
         {
@@ -668,14 +732,6 @@ public partial class WorkstationSlotView : Control
             : 1f;
         return new Color(1f, 1f, 1f, _ingredientAvailable ? stockAlpha : 0.45f);
     }
-
-    private static TextureRect TextureNode(string name) => new()
-    {
-        Name = name,
-        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-        StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-        MouseFilter = MouseFilterEnum.Ignore,
-    };
 
     private static Label SlotLabel(string name, int fontSize)
     {

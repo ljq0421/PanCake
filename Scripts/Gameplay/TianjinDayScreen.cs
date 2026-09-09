@@ -66,7 +66,36 @@ public partial class TianjinDayScreen : Control
     private CoinCollectionFeedback _collectionFeedback = null!;
     internal IReadOnlyCollection<Control> PaymentCoins => _coinFlights.Keys;
 
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        _art = new TianjinArtCatalog();
+        _workstation.Feedback += ShowFeedback;
+        _workstation.YoutiaoConsumed += quantity => _controller?.Ledger?.RecordYoutiaoUsed(quantity);
+        _workstation.YoutiaoBurnt += quantity => _controller?.Ledger?.RecordYoutiaoBurnt(quantity);
+        for (int i = 0; i < _customerDropZones.Length; i++)
+        {
+            _workstation.RegisterCustomerZone(_customerDropZones[i]);
+            _orderCards[i].Configure(_art);
+        }
+        _collectionFeedback.Collecting = ClearCoinFlights;
+        VisibilityChanged += () =>
+        {
+            if (!IsVisibleInTree()) { ClearCoinFlights(); _collectionFeedback.Clear(); }
+        };
+        this.FindButton("暂停").Pressed += () => SetManualPaused(true);
+        this.FindButton("继续营业").Pressed += () => SetManualPaused(false);
+        this.FindButton("放弃本日").Pressed += RequestAbandon;
+        this.FindButton("收好收入 · 返回经营首页").Pressed += () => HubRequested?.Invoke();
+        _abandonDialog.Confirmed += () =>
+        {
+            _controller.AbandonDay();
+            _workstation.ResetForDay();
+            SetManualPaused(false);
+            HubRequested?.Invoke();
+        };
+        _abandonDialog.Canceled += () => { if (_manualPaused) _pausePanel.Visible = true; };
+    }
 
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
@@ -205,281 +234,6 @@ public partial class TianjinDayScreen : Control
         SetManualPaused(!_manualPaused);
         GetViewport().SetInputAsHandled();
     }
-
-    private void Build()
-    {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Theme = TianjinUi.CreateTheme();
-        _art = new TianjinArtCatalog();
-        var background = TianjinUi.Texture(_art.Background, Vector2.Zero, TextureRect.StretchModeEnum.Scale);
-        background.Name = "ShopBackground";
-        background.Material = new ShaderMaterial
-        {
-            Shader = new Shader
-            {
-                Code = """
-                    shader_type canvas_item;
-
-                    void fragment() {
-                        vec4 source = texture(TEXTURE, UV);
-                        // Soften the storefront only; the painted counter retains its original color.
-                        float storefront = 1.0 - smoothstep(0.475, 0.5324, UV.y);
-                        float sides = smoothstep(0.18, 0.44, abs(UV.x - 0.5));
-                        float softness = storefront * mix(0.065, 0.115, sides);
-                        vec3 cream = vec3(1.0, 0.945, 0.824);
-                        COLOR = vec4(mix(source.rgb, cream, softness), source.a);
-                    }
-                    """,
-            },
-        };
-        TianjinUi.FullRect(background);
-        AddChild(background);
-
-        _workstation = new PancakeWorkstation { UseServingTray = true, ProductionShortcutsEnabled = true };
-        TianjinUi.FullRect(_workstation);
-        _workstation.Feedback += ShowFeedback;
-        _workstation.YoutiaoConsumed += quantity => _controller?.Ledger?.RecordYoutiaoUsed(quantity);
-        _workstation.YoutiaoBurnt += quantity => _controller?.Ledger?.RecordYoutiaoBurnt(quantity);
-        AddChild(_workstation);
-
-        BuildCustomers();
-        BuildHud();
-        _collectionFeedback = new CoinCollectionFeedback { Collecting = ClearCoinFlights }; AddChild(_collectionFeedback);
-        VisibilityChanged += () => { if (!IsVisibleInTree()) { ClearCoinFlights(); _collectionFeedback.Clear(); } };
-        BuildFeedback();
-        BuildPauseOverlay();
-        BuildResultOverlay();
-
-        _countdown = TianjinUi.Label("3", 112, TianjinUi.Paper, HorizontalAlignment.Center);
-        _countdown.Position = new Vector2(850, 450);
-        _countdown.Size = new Vector2(220, 180);
-        _countdown.AddThemeConstantOverride("outline_size", 12);
-        _countdown.AddThemeColorOverride("font_outline_color", TianjinUi.BrownDark);
-        _countdown.ZIndex = 90;
-        _countdown.Visible = false;
-        AddChild(_countdown);
-
-        _abandonDialog = new ConfirmationDialog
-        {
-            Title = "放弃本日？",
-            DialogText = "本日收入和成绩不会保存，重新开始仍会遇到同一批顾客。",
-            OkButtonText = "确认放弃",
-            CancelButtonText = "继续营业",
-        };
-        _abandonDialog.Confirmed += () =>
-        {
-            _controller.AbandonDay();
-            _workstation.ResetForDay();
-            SetManualPaused(false);
-            HubRequested?.Invoke();
-        };
-        _abandonDialog.Canceled += () =>
-        {
-            if (_manualPaused) _pausePanel.Visible = true;
-        };
-        AddChild(_abandonDialog);
-    }
-
-    private void BuildHud()
-    {
-        var hud = TianjinUi.Panel(new Color("#FFF4D5"), 16);
-        hud.SetAnchorsPreset(LayoutPreset.TopWide);
-        hud.OffsetLeft = 24;
-        hud.OffsetTop = 18;
-        hud.OffsetRight = -24;
-        hud.OffsetBottom = 90;
-        hud.ZIndex = 70;
-        AddChild(hud);
-        var content = new Control { CustomMinimumSize = new Vector2(0, 52), MouseFilter = MouseFilterEnum.Ignore };
-        hud.AddChild(content);
-        HBoxContainer dayGroup = HudGroup(content, "DayContext", 0, 0.28f, BoxContainer.AlignmentMode.Begin);
-        HBoxContainer serviceGroup = HudGroup(content, "ServiceProgress", 0.28f, 0.72f, BoxContainer.AlignmentMode.Center);
-        serviceGroup.AddThemeConstantOverride("separation", 24);
-        HBoxContainer actionsGroup = HudGroup(content, "IncomeAndPause", 0.72f, 1, BoxContainer.AlignmentMode.End);
-        _dayTitle = TianjinUi.Label("Day 1", 28, TianjinUi.BrownDark);
-        dayGroup.AddChild(_dayTitle);
-        _completedOrders = TianjinUi.Label("完成订单 0/0", 20, TianjinUi.BrownText);
-        _completedOrders.Name = "CompletedOrders";
-        serviceGroup.AddChild(_completedOrders);
-        _door = TianjinUi.Label("门外候场 0", 18, TianjinUi.Brown);
-        serviceGroup.AddChild(_door);
-        _clock = TianjinUi.Label("01:00", 28, TianjinUi.BrownDark);
-        _clock.CustomMinimumSize = new Vector2(158, 0);
-        serviceGroup.AddChild(_clock);
-        _coinTarget = TianjinUi.Texture(_art.Coin, new Vector2(36, 36));
-        _coinTarget.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        actionsGroup.AddChild(_coinTarget);
-        _income = TianjinUi.Label("今日收入 ¥0", 22, TianjinUi.BrownText);
-        actionsGroup.AddChild(_income);
-        var pause = TianjinUi.Button("暂停", false, new Vector2(112, 52));
-        pause.Name = "PauseButton";
-        pause.Pressed += () => SetManualPaused(true);
-        actionsGroup.AddChild(pause);
-    }
-
-    private static HBoxContainer HudGroup(Control parent, string name, float left, float right, BoxContainer.AlignmentMode alignment)
-    {
-        var group = new HBoxContainer { Name = name, Alignment = alignment, MouseFilter = MouseFilterEnum.Ignore };
-        parent.AddChild(group);
-        TianjinUi.FullRect(group);
-        group.AnchorLeft = left;
-        group.AnchorRight = right;
-        group.AddThemeConstantOverride("separation", 16);
-        return group;
-    }
-
-    private void BuildCustomers()
-    {
-        // Food on the back edge of the counter rises into this layout rectangle.
-        // Delivery zones resolve drops themselves; the empty strip must not eat pickup clicks.
-        var customers = new Control { MouseFilter = MouseFilterEnum.Ignore };
-        customers.Name = "CustomerStrip";
-        customers.Position = new Vector2(54, CustomerStripTop);
-        customers.Size = new Vector2(1812, CustomerStripHeight);
-        customers.ZIndex = 30;
-        AddChild(customers);
-        for (int index = 0; index < _customerSlots.Length; index++)
-        {
-            var button = new Control
-            {
-                Name = $"CustomerSlot{index + 1}",
-                CustomMinimumSize = new Vector2(340, CustomerStripHeight),
-                Position = new Vector2(32 + index * 352, 0),
-                Size = new Vector2(340, CustomerStripHeight),
-                SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
-                MouseFilter = MouseFilterEnum.Ignore,
-                Visible = false,
-            };
-            customers.AddChild(button);
-            _customerSlots[index] = button;
-            var dropZone = new DropZone { Name = $"CustomerDropZone{index + 1}", HitPadding = 5, ZIndex = 1 };
-            TianjinUi.FullRect(dropZone);
-            button.AddChild(dropZone);
-            _customerDropZones[index] = dropZone;
-            _workstation.RegisterCustomerZone(dropZone);
-
-            var column = new VBoxContainer { Name = "CustomerColumn" };
-            TianjinUi.FullRect(column, 4, 4, -4, 0);
-            column.MouseFilter = MouseFilterEnum.Ignore;
-            column.AddThemeConstantOverride("separation", 16);
-            button.AddChild(column);
-            var bubble = new OrderBubbleView(_art);
-            column.AddChild(bubble);
-            _orderCards[index] = bubble;
-            CustomerPortraitVisual customerVisual = _art.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId, CustomerExpression.Normal);
-            _portraits[index] = new CustomerPortraitView
-            {
-                Presentation = CustomerPortraitPresentation.CounterHalfBody,
-            };
-            _portraits[index].SetVisual(customerVisual);
-            var portraitStack = new Control
-            {
-                Name = "PortraitStack",
-                ClipContents = true,
-                MouseFilter = MouseFilterEnum.Ignore,
-                SizeFlagsVertical = SizeFlags.ExpandFill,
-            };
-            column.AddChild(portraitStack);
-            portraitStack.AddChild(_portraits[index]);
-            TianjinUi.FullRect(_portraits[index]);
-        }
-    }
-
-    private void BuildFeedback()
-    {
-        _feedbackPanel = TianjinUi.Panel(TianjinUi.Paper, 14);
-        _feedbackPanel.Name = "FeedbackPanel";
-        _feedbackPanel.Position = new Vector2(600, 100);
-        _feedbackPanel.Size = new Vector2(720, 48);
-        _feedbackPanel.MouseFilter = MouseFilterEnum.Ignore;
-        _feedbackPanel.ZIndex = 80;
-        _feedbackPanel.Visible = false;
-        AddChild(_feedbackPanel);
-        _feedback = TianjinUi.Label(string.Empty, 19, TianjinUi.Green, HorizontalAlignment.Center);
-        _feedback.MouseFilter = MouseFilterEnum.Ignore;
-        _feedbackPanel.AddChild(_feedback);
-    }
-
-    private void BuildPauseOverlay()
-    {
-        _pauseBlocker = new ColorRect
-        {
-            Name = "PauseBlocker",
-            Color = new Color(0.20f, 0.09f, 0.04f, 0.42f),
-            MouseFilter = MouseFilterEnum.Stop,
-            ZIndex = 91,
-            Visible = false,
-        };
-        TianjinUi.FullRect(_pauseBlocker);
-        AddChild(_pauseBlocker);
-
-        _pausePanel = TianjinUi.Panel(TianjinUi.Paper, 22);
-        _pausePanel.Name = "PausePanel";
-        _pausePanel.Position = new Vector2(680, 330);
-        _pausePanel.Size = new Vector2(560, 360);
-        _pausePanel.ZIndex = 92;
-        _pausePanel.Visible = false;
-        AddChild(_pausePanel);
-
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 18);
-        _pausePanel.AddChild(column);
-        column.AddChild(TianjinUi.Label("营业暂停", 38, TianjinUi.BrownDark, HorizontalAlignment.Center));
-        Label explanation = TianjinUi.Label("计时、顾客耐心和工作台都已暂停。", 20, TianjinUi.BrownText, HorizontalAlignment.Center);
-        explanation.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        column.AddChild(explanation);
-        Button resume = TianjinUi.Button("继续营业", true, new Vector2(0, 72));
-        resume.Name = "ResumeButton";
-        resume.Pressed += () => SetManualPaused(false);
-        column.AddChild(resume);
-        Button abandon = TianjinUi.Button("放弃本日", false, new Vector2(0, 58));
-        abandon.Name = "AbandonDayButton";
-        abandon.Pressed += RequestAbandon;
-        column.AddChild(abandon);
-        Label warning = TianjinUi.Label("放弃后，本日收入与成绩不会保存。", 17, TianjinUi.Red, HorizontalAlignment.Center);
-        column.AddChild(warning);
-    }
-
-    private void BuildResultOverlay()
-    {
-        _resultBlocker = new ColorRect
-        {
-            Color = new Color(0.20f, 0.09f, 0.04f, 0.48f),
-            MouseFilter = MouseFilterEnum.Stop,
-            ZIndex = 95,
-            Visible = false,
-        };
-        TianjinUi.FullRect(_resultBlocker);
-        AddChild(_resultBlocker);
-        _results = TianjinUi.Panel(TianjinUi.Paper, 22);
-        _results.Position = new Vector2(530, 150);
-        _results.Size = new Vector2(860, 780);
-        _results.ZIndex = 100;
-        _results.Visible = false;
-        AddChild(_results);
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 16);
-        _results.AddChild(column);
-        var title = TianjinUi.Label("今日营业收据", 38, TianjinUi.BrownDark, HorizontalAlignment.Center);
-        column.AddChild(title);
-        _resultText = new RichTextLabel
-        {
-            BbcodeEnabled = true,
-            FitContent = false,
-            CustomMinimumSize = new Vector2(760, 450),
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-        };
-        _resultText.AddThemeFontSizeOverride("normal_font_size", 22);
-        _resultText.AddThemeColorOverride("default_color", TianjinUi.BrownText);
-        column.AddChild(_resultText);
-        _unlockText = TianjinUi.Label(string.Empty, 18, TianjinUi.Orange, HorizontalAlignment.Center);
-        _unlockText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        column.AddChild(_unlockText);
-        var hub = TianjinUi.Button("收好收入 · 返回经营首页", true, new Vector2(0, 76));
-        hub.Pressed += () => HubRequested?.Invoke();
-        column.AddChild(hub);
-    }
-
     private void OnStateChanged(DayState state)
     {
         if (state == DayState.Running)

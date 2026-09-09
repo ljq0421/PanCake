@@ -41,14 +41,11 @@ public partial class GameController : Node
         var wuhanDay = GetNode<WuhanDayScreen>(WuhanDayPath);
         var save = GetNode<SaveService>("/root/SaveService");
         var yangzhouCatalog = ProjectCake.Yangzhou.YangzhouCatalog.Load();
-        _yangzhouHub = new YangzhouHub { Name = "YangzhouHub", Visible = false };
-        _yangzhouDay = new YangzhouDayScreen { Name = "YangzhouDayScreen", Visible = false };
-        GetNode("UI").AddChild(_yangzhouHub); GetNode("UI").AddChild(_yangzhouDay);
+        _yangzhouHub = GetNode<YangzhouHub>("UI/YangzhouHub");
+        _yangzhouDay = GetNode<YangzhouDayScreen>("UI/YangzhouDayScreen");
         _yangzhouHub.Initialize(yangzhouCatalog, save);
-        _guangzhouHub = GD.Load<PackedScene>("res://Scenes/UI/GuangzhouHub.tscn").Instantiate<GuangzhouHub>();
-        _guangzhouDay = GD.Load<PackedScene>("res://Scenes/Gameplay/GuangzhouDayScreen.tscn").Instantiate<GuangzhouDayScreen>();
-        _guangzhouHub.Visible = _guangzhouDay.Visible = false;
-        GetNode("UI").AddChild(_guangzhouHub); GetNode("UI").AddChild(_guangzhouDay);
+        _guangzhouHub = GetNode<GuangzhouHub>("UI/GuangzhouHub");
+        _guangzhouDay = GetNode<GuangzhouDayScreen>("UI/GuangzhouDayScreen");
         _guangzhouHub.Initialize(catalog, save); _guangzhouDay.ConnectController(dayController);
         _xianHub = GetNode<XianHub>("UI/XianHub");
         _xianDay = GetNode<XianDayScreen>("UI/XianDayScreen");

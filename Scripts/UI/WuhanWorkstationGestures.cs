@@ -170,29 +170,18 @@ public partial class WuhanWorkstationView
         if (_gesture == "basket") Sprite("cooked_basket", At(_gesturePoint + new Vector2(-8, 12), new Vector2(55, 30)));
     }
 
-    private void BuildRefillControls()
+    private void BindRefillControls()
     {
         if(_refillButtons.Count>0)return;
-        foreach(string id in IngredientIds.Prepend(StableIds.Ingredients.WuhanNoodles).Append("egg")) {
-            var button=WuhanUi.Button("补",false,new Vector2(48,48));
-            button.SetMeta("ingredient_id",id);
-            button.AddThemeFontSizeOverride("font_size",16);button.TooltipText="补充库存";
+        foreach(Button button in GetChildren().OfType<Button>().Where(candidate => candidate.HasMeta("ingredient_id"))) {
+            string id=button.GetMeta("ingredient_id").AsString();
             button.Pressed+=()=>{if(id=="egg")EggRefillRequested?.Invoke();else RefillRequested?.Invoke(id);};
-            AddChild(button);_refillButtons[id]=button;
+            _refillButtons[id]=button;
         }
     }
     public void RefreshRefillControls()
     {
         foreach(var (id,button) in _refillButtons) {
-            int index=Array.IndexOf(IngredientIds,id);
-            Rect2 supply = index < 0 ? RawTrayRect : IngredientRect(index);
-            button.Position = id == "egg" ? new Vector2(EggMachine.Position.X + 10, EggMachine.End.Y + 8)
-                : new Vector2(supply.Position.X - button.Size.X - 12, supply.End.Y - button.Size.Y);
-            if (index >= 0)
-            {
-                Rect2 readout = IngredientReadout(index);
-                button.Position = new Vector2(readout.End.X - button.Size.X, readout.Position.Y);
-            }
             button.Visible=id=="egg" ? _egg is not null && _egg.BaseCups<6 : _ingredients.Count(id)<_ingredients.Capacity(id);
             bool working=id=="egg"?_egg?.IsRefilling==true:Busy("refill:"+id);
             button.Text=working?"…":"补";

@@ -41,7 +41,7 @@ public partial class OrderBubbleSelfTest : Node
                 save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
                 save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
                 var controller = new DayController(); AddChild(controller);
-                Control screen = wuhan ? new WuhanDayScreen() : new TianjinDayScreen(); AddChild(screen); screen.SetProcess(false);
+                Control screen = wuhan ? ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn") : ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen); screen.SetProcess(false);
                 if (screen is WuhanDayScreen ws) { ws.ConnectController(controller); ws.Initialize(catalog, save, controller, 12); }
                 else { var ts = (TianjinDayScreen)screen; ts.ConnectController(controller); ts.Initialize(catalog, save, controller, 15); }
                 OrderLineData Main(string recipe, int quantity = 1, SaucePreference sauce = SaucePreference.Normal) =>
@@ -90,7 +90,8 @@ public partial class OrderBubbleSelfTest : Node
                     Check(rows.All(r => Math.Abs(r.Size.X - rows[0].Size.X) < .5 && Math.Abs(r.Position.X - rows[0].Position.X) < .5), "all food rows have equal width and aligned edges");
                     Check(bubble.GetGlobalRect().End.Y + 12 < (wuhan ? 625 : 575), "bubble tail stays above workbench");
                     foreach (Control icon in bubble.FindChildren("*", "TextureRect", true, false).OfType<Control>())
-                        Check(bubble.GetGlobalRect().Grow(.5f).Encloses(icon.GetGlobalRect()), "food and sauce icons remain within the paper");
+                        Check(bubble.GetGlobalRect().Grow(.5f).Encloses(icon.GetGlobalRect()),
+                            $"food and sauce icons remain within the paper ({(wuhan ? "wuhan" : "tianjin")}/{width}/{icon.Name}: bubble={bubble.GetGlobalRect()}, icon={icon.GetGlobalRect()})");
                     Check(bubble.Size.X <= (wuhan ? 365 : 332) && bubble.Size.Y <= 196, "largest order remains inside customer column budget");
                 }
                 for (int i = 1; i < bubbles.Length; i++) Check(!bubbles[i-1].GetGlobalRect().Intersects(bubbles[i].GetGlobalRect()), "adjacent customers' bubbles do not overlap");

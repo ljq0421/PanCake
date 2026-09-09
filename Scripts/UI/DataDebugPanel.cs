@@ -12,7 +12,7 @@ public partial class DataDebugPanel : Control
     public event Action? HubRequested;
 
     private readonly Dictionary<int, Button> _dayButtons = new();
-    private readonly StyleBoxFlat _statusStyle = new();
+    private StyleBoxFlat _statusStyle = null!;
     private RichTextLabel _details = null!;
     private RichTextLabel _status = null!;
     private DataCatalog? _catalog;
@@ -20,7 +20,20 @@ public partial class DataDebugPanel : Control
 
     public override void _Ready()
     {
-        BuildInterface();
+        SceneNodeBinder.Bind(this);
+        _statusStyle = (StyleBoxFlat)_status.GetParent<PanelContainer>().GetThemeStylebox("panel");
+        foreach (Button button in this.Descendants<Button>())
+        {
+            if (button.Text.StartsWith("Day ", StringComparison.Ordinal)
+                && int.TryParse(button.Text.AsSpan(4), out int day))
+            {
+                _dayButtons[day] = button;
+                int selectedDay = day;
+                button.Pressed += () => SelectDay(selectedDay);
+            }
+        }
+        this.FindButton("返回煎饼实验台").Pressed += () => PancakeLabRequested?.Invoke();
+        this.FindButton("营业大厅").Pressed += () => HubRequested?.Invoke();
     }
 
     public void Initialize(DataCatalog catalog, DayController dayController)
@@ -45,152 +58,6 @@ public partial class DataDebugPanel : Control
             _dayController.DayPrepared -= RenderDay;
         }
     }
-
-    private void BuildInterface()
-    {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-
-        var background = new ColorRect
-        {
-            Color = new Color("#171310"),
-            MouseFilter = MouseFilterEnum.Ignore,
-        };
-        background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        AddChild(background);
-
-        var margin = new MarginContainer();
-        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        margin.OffsetLeft = 96;
-        margin.OffsetTop = 64;
-        margin.OffsetRight = -96;
-        margin.OffsetBottom = -64;
-        AddChild(margin);
-
-        var content = new VBoxContainer();
-        content.AddThemeConstantOverride("separation", 24);
-        margin.AddChild(content);
-
-        var title = new Label
-        {
-            Text = "早餐铺子 · 天津数据调试台",
-        };
-        title.AddThemeFontSizeOverride("font_size", 44);
-        title.AddThemeColorOverride("font_color", new Color("#FFD596"));
-        content.AddChild(title);
-
-        var subtitle = new Label
-        {
-            Text = "完整天津章节 / Day 1～15 配置与资源验证",
-        };
-        subtitle.AddThemeFontSizeOverride("font_size", 22);
-        subtitle.AddThemeColorOverride("font_color", new Color("#BDAF9F"));
-        content.AddChild(subtitle);
-
-        var buttonRow = new HBoxContainer();
-        buttonRow.AddThemeConstantOverride("separation", 16);
-        content.AddChild(buttonRow);
-
-        var labButton = new Button
-        {
-            Text = "返回煎饼实验台",
-            CustomMinimumSize = new Vector2(220, 58),
-        };
-        labButton.AddThemeFontSizeOverride("font_size", 21);
-        labButton.Pressed += () => PancakeLabRequested?.Invoke();
-        buttonRow.AddChild(labButton);
-
-        var hubButton = new Button { Text = "营业大厅", CustomMinimumSize = new Vector2(180, 58) };
-        hubButton.Pressed += () => HubRequested?.Invoke();
-        buttonRow.AddChild(hubButton);
-
-        var dayScroll = new ScrollContainer { CustomMinimumSize = new Vector2(0, 122), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        content.AddChild(dayScroll);
-        var dayGrid = new GridContainer { Columns = 8, SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        dayGrid.AddThemeConstantOverride("h_separation", 10);
-        dayGrid.AddThemeConstantOverride("v_separation", 8);
-        dayScroll.AddChild(dayGrid);
-
-        for (int day = 1; day <= 15; day++)
-        {
-            int selectedDay = day;
-            var button = new Button
-            {
-                Text = $"Day {day}",
-                CustomMinimumSize = new Vector2(130, 48),
-                ToggleMode = true,
-            };
-            button.AddThemeFontSizeOverride("font_size", 19);
-            button.Pressed += () => SelectDay(selectedDay);
-            dayGrid.AddChild(button);
-            _dayButtons.Add(day, button);
-        }
-
-        var columns = new HBoxContainer
-        {
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-        };
-        columns.AddThemeConstantOverride("separation", 24);
-        content.AddChild(columns);
-
-        var detailsPanel = CreatePanel(new Color("#241E19"));
-        detailsPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        detailsPanel.SizeFlagsStretchRatio = 2.2f;
-        columns.AddChild(detailsPanel);
-
-        _details = new RichTextLabel
-        {
-            BbcodeEnabled = true,
-            FitContent = false,
-            ScrollActive = true,
-            CustomMinimumSize = new Vector2(960, 640),
-        };
-        _details.AddThemeFontSizeOverride("normal_font_size", 22);
-        detailsPanel.AddChild(_details);
-
-        var statusPanel = CreatePanel(new Color("#1C2920"));
-        statusPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        statusPanel.SizeFlagsStretchRatio = 1.0f;
-        columns.AddChild(statusPanel);
-        _statusStyle.CornerRadiusTopLeft = 14;
-        _statusStyle.CornerRadiusTopRight = 14;
-        _statusStyle.CornerRadiusBottomLeft = 14;
-        _statusStyle.CornerRadiusBottomRight = 14;
-        _statusStyle.ContentMarginLeft = 28;
-        _statusStyle.ContentMarginTop = 24;
-        _statusStyle.ContentMarginRight = 28;
-        _statusStyle.ContentMarginBottom = 24;
-        statusPanel.AddThemeStyleboxOverride("panel", _statusStyle);
-
-        _status = new RichTextLabel
-        {
-            BbcodeEnabled = true,
-            FitContent = false,
-            ScrollActive = true,
-            CustomMinimumSize = new Vector2(480, 640),
-        };
-        _status.AddThemeFontSizeOverride("normal_font_size", 20);
-        statusPanel.AddChild(_status);
-    }
-
-    private static PanelContainer CreatePanel(Color color)
-    {
-        var panel = new PanelContainer();
-        var style = new StyleBoxFlat
-        {
-            BgColor = color,
-            CornerRadiusTopLeft = 14,
-            CornerRadiusTopRight = 14,
-            CornerRadiusBottomLeft = 14,
-            CornerRadiusBottomRight = 14,
-            ContentMarginLeft = 28,
-            ContentMarginTop = 24,
-            ContentMarginRight = 28,
-            ContentMarginBottom = 24,
-        };
-        panel.AddThemeStyleboxOverride("panel", style);
-        return panel;
-    }
-
     private void SelectDay(int day)
     {
         if (_catalog is null || _dayController is null)

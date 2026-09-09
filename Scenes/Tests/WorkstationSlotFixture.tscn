@@ -1,0 +1,137 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/IngredientStockSlotView.cs" id="1_slot"]
+[ext_resource type="Script" path="res://Scripts/UI/LiquidStockView.cs" id="2_liquid"]
+
+[sub_resource type="StyleBoxFlat" id="Style_attention"]
+bg_color = Color(0, 0, 0, 0)
+border_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="Style_caption"]
+bg_color = Color(1, 0.945098, 0.823529, 1)
+border_color = Color(0.290196, 0.160784, 0.109804, 1)
+
+[sub_resource type="StyleBoxFlat" id="Style_stock"]
+bg_color = Color(0.35, 0.74, 0.38, 1)
+
+[sub_resource type="Shader" id="Shader_liquid"]
+code = "shader_type canvas_item;
+uniform vec2 source_center;
+uniform vec2 source_radius;
+uniform float amount = 1.0;
+void fragment() {
+    vec2 center = source_center + vec2(0.0, (1.0 - amount) * 0.16);
+    vec2 radius = source_radius * vec2(0.6 + 0.4 * amount, amount);
+    vec2 local = (UV - center) / radius;
+    float distance_to_edge = length(local);
+    float coverage = 1.0 - smoothstep(1.0 - fwidth(distance_to_edge), 1.0, distance_to_edge);
+    vec4 liquid = texture(TEXTURE, source_center + local * source_radius);
+    COLOR = vec4(liquid.rgb, liquid.a * coverage);
+}"
+
+[sub_resource type="ShaderMaterial" id="Material_liquid"]
+shader = SubResource("Shader_liquid")
+
+[node name="WorkstationSlotFixture" type="Control"]
+script = ExtResource("1_slot")
+
+[node name="VisualLayer" type="Control" parent="."]
+
+[node name="Tray" type="TextureRect" parent="VisualLayer"]
+expand_mode = 1
+
+[node name="LiquidSurface" type="TextureRect" parent="VisualLayer"]
+material = SubResource("Material_liquid")
+expand_mode = 1
+script = ExtResource("2_liquid")
+
+[node name="IngredientAnchor" type="Control" parent="VisualLayer"]
+clip_contents = true
+
+[node name="Ingredient" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient2" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient3" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient4" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient5" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient6" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient7" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient8" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient9" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient10" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient11" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Ingredient12" type="TextureRect" parent="VisualLayer/IngredientAnchor"]
+visible = false
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CaptionPlate" type="Panel" parent="VisualLayer"]
+visible = false
+theme_override_styles/panel = SubResource("Style_caption")
+
+[node name="Label" type="Label" parent="VisualLayer"]
+
+[node name="Count" type="Label" parent="VisualLayer"]
+
+[node name="AttentionFrame" type="Panel" parent="."]
+mouse_filter = 2
+theme_override_styles/panel = SubResource("Style_attention")
+
+[node name="ClickArea" type="Control" parent="."]
+
+[node name="RefillStatus" type="Control" parent="."]
+
+[node name="Refill" type="Button" parent="RefillStatus"]
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refill")
+
+[node name="StockStatus" type="Control" parent="."]
+
+[node name="Stock" type="ProgressBar" parent="StockStatus"]
+theme_override_styles/fill = SubResource("Style_stock")
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_stock")
+
+[node name="HoldRefillHint" type="Label" parent="."]
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.IngredientStockSlotView|_refillHint")

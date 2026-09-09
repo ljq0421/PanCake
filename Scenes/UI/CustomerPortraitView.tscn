@@ -1,0 +1,39 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/CustomerPortraitView.cs" id="1_yqf2f"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/Customers/young_woman/body.png" id="2_nokds"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/Customers/young_woman/head_normal.png" id="3_ej2sr"]
+
+[node name="CustomerPortraitView" type="Control" unique_id=631621364]
+custom_minimum_size = Vector2(0, 220)
+clip_contents = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("1_yqf2f")
+Presentation = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0")
+
+[node name="@TextureRect@321" type="TextureRect" parent="." unique_id=1837196550]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("2_nokds")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
+
+[node name="@TextureRect@322" type="TextureRect" parent="." unique_id=1299853575]
+layout_mode = 0
+offset_top = 6.0
+offset_bottom = 344.46155
+scale = Vector2(0.9235983, 0.9235983)
+pivot_offset = Vector2(0, 169.23077)
+mouse_filter = 2
+texture = ExtResource("3_ej2sr")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")

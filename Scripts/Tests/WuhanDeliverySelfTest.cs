@@ -70,7 +70,7 @@ public partial class WuhanDeliverySelfTest : Node
         city.EquipmentLevels["noodle_cooker"] = 3; city.EquipmentLevels["ingredient_station"] = 3;
         city.EquipmentLevels["doupi_griddle"] = 3; city.EquipmentLevels["egg_rice_wine_station"] = 1;
         _controller = new DayController(); AddChild(_controller);
-        _screen = new WuhanDayScreen(); AddChild(_screen); _screen.ConnectController(_controller);
+        _screen = ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(_screen); _screen.ConnectController(_controller);
         _screen.Initialize(_catalog, _save, _controller, 8); _screen.SetProcess(false);
         // Order data is replaced before admission; production, delivery and queue logic remain real.
         for (int i = 0; i < _controller.CurrentPlan!.Customers.Count; i++)
@@ -271,7 +271,7 @@ public partial class WuhanDeliverySelfTest : Node
     {
         await NewDay();
         _screen.Hide();
-        var hub = new WuhanHub(); AddChild(hub); hub.Initialize(_catalog, _save);
+        var hub = ProjectCake.Core.SceneFactory.Instantiate<WuhanHub>("res://Scenes/UI/WuhanHub.tscn"); AddChild(hub); hub.Initialize(_catalog, _save);
         await Shot("01-hub"); hub.Free(); _screen.Show();
         PrepareFood(NoodleQuality.Overcooked, true); await Frames(); await Shot("02-workbench");
         Press(ProductKind.HotDryNoodles); Move(Target(0), true); await Shot("03-drag-noodles"); _screen.Workstation.CancelInput();

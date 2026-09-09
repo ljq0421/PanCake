@@ -25,7 +25,36 @@ public partial class TianjinMapScreen : Control
     // the existing --dev-ui launch flag, without marking that city as unlocked.
     public bool DeveloperToolsVisible => OS.GetCmdlineUserArgs().Contains("--dev-ui", StringComparer.Ordinal);
 
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        _art = new TianjinArtCatalog();
+        this.FindButton("测试直达武汉").Pressed += () => CityRequested?.Invoke(StableIds.Cities.Wuhan);
+        this.FindButton("返回经营首页").Pressed += () => HubRequested?.Invoke();
+        Button xianTest = this.FindButton("测试直达西安");
+        xianTest.Visible = DeveloperToolsVisible;
+        xianTest.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Xian);
+        this.FindButton("测试直达广州").Pressed += () => CityRequested?.Invoke(StableIds.Cities.Guangzhou);
+        Button? yangzhouTest = this.FindOptionalButton("测试直达扬州");
+        if (yangzhouTest is not null)
+        {
+            yangzhouTest.Visible = DeveloperToolsVisible;
+            yangzhouTest.Pressed += () => CityRequested?.Invoke(ProjectCake.Yangzhou.YangzhouCatalog.CityId);
+        }
+        _guangzhouEnter.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Guangzhou);
+        _yangzhouEnter.Pressed += () => CityRequested?.Invoke(ProjectCake.Yangzhou.YangzhouCatalog.CityId);
+        _tianjinCard.GuiInput += input => { if (IsClick(input)) CityRequested?.Invoke(StableIds.Cities.Tianjin); };
+        _wuhanCard.GuiInput += input =>
+        {
+            bool unlocked = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
+            if (IsClick(input) && CanEnterCity(unlocked, DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Wuhan);
+        };
+        _xianCard.GuiInput += input =>
+        {
+            bool unlocked = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian, StringComparer.Ordinal);
+            if (IsClick(input) && CanEnterCity(unlocked, DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Xian);
+        };
+    }
 
     public void Initialize(SaveService save)
     {
@@ -51,62 +80,6 @@ public partial class TianjinMapScreen : Control
         tween.TweenProperty(_tianjinCard, "scale", Vector2.One, .65);
         tween.TweenProperty(_tianjinCard, "modulate", Colors.White, .8);
     }
-
-    private void Build()
-    {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Theme = TianjinUi.CreateTheme();
-        _art = new TianjinArtCatalog();
-        var background = TianjinUi.Texture(_art.MapBackground, Vector2.Zero, TextureRect.StretchModeEnum.Scale);
-        background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        background.Modulate = new Color(1, 1, 1, 0.92f);
-        background.MouseFilter = MouseFilterEnum.Ignore;
-        AddChild(background);
-
-        var margin = new MarginContainer();
-        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        margin.OffsetLeft = 150; margin.OffsetTop = 80; margin.OffsetRight = -150; margin.OffsetBottom = -80;
-        AddChild(margin);
-
-        var root = new VBoxContainer(); root.AddThemeConstantOverride("separation", 28); margin.AddChild(root);
-        var header = new HBoxContainer(); root.AddChild(header);
-        var titles = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; header.AddChild(titles);
-        titles.AddChild(Text("早餐地图", 46, TianjinUi.BrownText));
-        titles.AddChild(Text("从天津的清晨，走向下一座城市", 22, TianjinUi.Brown));
-        var testEntry = TianjinUi.Button("测试直达武汉", false, new Vector2(190, 58));
-        testEntry.TooltipText = "临时测试入口：不要求天津章节已完成，也不会改变城市解锁状态。正式发布前移除。";
-        testEntry.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Wuhan);
-        header.AddChild(testEntry);
-        var back = TianjinUi.Button("返回经营首页", false, new Vector2(210, 58));
-        back.Pressed += () => HubRequested?.Invoke(); header.AddChild(back);
-
-        var xianTest = TianjinUi.Button("测试直达西安", false, new Vector2(190, 58));
-        xianTest.Visible = DeveloperToolsVisible; xianTest.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Xian); header.AddChild(xianTest);
-        var route = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, SizeFlagsVertical = SizeFlags.ExpandFill };
-        route.AddThemeConstantOverride("separation", 24); root.AddChild(route);
-        _tianjinCard = CityCard(_art.TianjinMapNode, "天津", "煎饼果子 · 油条 · 豆浆", out _tianjinState); route.AddChild(_tianjinCard);
-        _tianjinCard.MouseDefaultCursorShape = CursorShape.PointingHand;
-        _tianjinCard.GuiInput += input => { if (IsClick(input)) CityRequested?.Invoke(StableIds.Cities.Tianjin); };
-        var arrow = Text("➜", 56, TianjinUi.Brown); arrow.VerticalAlignment = VerticalAlignment.Center; route.AddChild(arrow);
-        _wuhanCard = CityCard(_art.LockedMapNode, "武汉", "下一章", out _wuhanState); route.AddChild(_wuhanCard);
-        _wuhanCard.MouseDefaultCursorShape = CursorShape.PointingHand;
-        _wuhanCard.GuiInput += input =>
-        {
-            bool unlocked = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
-            if (IsClick(input) && CanEnterCity(unlocked, DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Wuhan);
-        };
-        var nextArrow = Text("➜", 40, TianjinUi.Brown); nextArrow.VerticalAlignment = VerticalAlignment.Center; route.AddChild(nextArrow);
-        _xianCard = CityCard(_art.LockedMapNode, "西安", "肉夹馍 · 胡辣汤", out _xianState); _xianCard.Name = "XianCityCard"; route.AddChild(_xianCard);
-        _xianCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon").Visible = false;
-        _xianCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem").Visible = true;
-        _xianCard.GuiInput += input => { if (IsClick(input) && CanEnterCity(_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian), DeveloperToolsVisible)) CityRequested?.Invoke(StableIds.Cities.Xian); };
-        _wuhanLockedIcon = _wuhanCard.GetNode<TextureRect>("VBoxContainer/IconStack/CityIcon");
-        _wuhanUnlockedEmblem = _wuhanCard.GetNode<Label>("VBoxContainer/IconStack/UnlockedEmblem");
-        BuildGuangzhouEntry(root);
-        BuildYangzhouEntry(root);
-        root.AddChild(Text("天津 Day 15 一星开放武汉；武汉 Day 12 一星开放西安；西安 Day 12 一星开放广州。", 19, TianjinUi.BrownText));
-    }
-
     private void Render()
     {
         if (_save is null) return;
@@ -130,60 +103,12 @@ public partial class TianjinMapScreen : Control
             : $"路线已开放\n武汉 Day {wuhanProgress.HighestUnlockedDay}";
         SetCardColor(_wuhanCard, wuhanProgress.Completed ? TianjinUi.Yellow : wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);
     }
-
-    private static PanelContainer CityCard(Texture2D icon, string city, string subtitle, out Label state)
-    {
-        var card = new PanelContainer { CustomMinimumSize = new Vector2(430, 390) };
-        var box = new VBoxContainer { Name = "VBoxContainer", Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
-        box.AddThemeConstantOverride("separation", 10); card.AddChild(box);
-        var iconStack = new Control { Name = "IconStack", CustomMinimumSize = new Vector2(170, 170) };
-        TextureRect cityIcon = TianjinUi.Texture(icon, Vector2.Zero);
-        cityIcon.Name = "CityIcon";
-        TianjinUi.FullRect(cityIcon);
-        iconStack.AddChild(cityIcon);
-        Label unlockedEmblem = Text(city[..1], 88, TianjinUi.BrownDark);
-        unlockedEmblem.Name = "UnlockedEmblem";
-        unlockedEmblem.HorizontalAlignment = HorizontalAlignment.Center;
-        unlockedEmblem.VerticalAlignment = VerticalAlignment.Center;
-        unlockedEmblem.Visible = false;
-        TianjinUi.FullRect(unlockedEmblem);
-        iconStack.AddChild(unlockedEmblem);
-        box.AddChild(iconStack);
-        var name = Text(city, 38, TianjinUi.BrownText); name.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(name);
-        var sub = Text(subtitle, 20, TianjinUi.Brown); sub.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(sub);
-        state = Text(string.Empty, 22, TianjinUi.BrownText); state.HorizontalAlignment = HorizontalAlignment.Center; box.AddChild(state);
-        return card;
-    }
-
     private static void SetCardColor(PanelContainer card, Color background)
     {
-        card.AddThemeStyleboxOverride("panel", new StyleBoxFlat
-        {
-            BgColor = background, BorderColor = TianjinUi.BrownDark,
-            BorderWidthLeft = 4, BorderWidthTop = 4, BorderWidthRight = 4, BorderWidthBottom = 4,
-            CornerRadiusTopLeft = 24, CornerRadiusTopRight = 24, CornerRadiusBottomLeft = 24, CornerRadiusBottomRight = 24,
-            ContentMarginLeft = 34, ContentMarginRight = 34, ContentMarginTop = 34, ContentMarginBottom = 34,
-            ShadowColor = TianjinUi.Shadow, ShadowSize = 5, ShadowOffset = new Vector2(0, 6),
-        });
+        if (card.GetThemeStylebox("panel") is StyleBoxFlat style) style.BgColor = background;
     }
 
     private static bool IsClick(InputEvent input) => input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false };
 
     public static bool CanEnterCity(bool isUnlocked, bool developerToolsVisible) => isUnlocked || developerToolsVisible;
-
-    private static Label Text(string text, int size, string color)
-    {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", new Color(color));
-        return label;
-    }
-
-    private static Label Text(string text, int size, Color color)
-    {
-        var label = new Label { Text = text };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color);
-        return label;
-    }
 }

@@ -14,9 +14,9 @@ public partial class CoinTrayView : Control
     ];
     private static readonly float[] CoinAngles = [-17, 12, -9, 21, -15, 8, -22, 16, 6, -12, 18, -5];
     private readonly TextureRect[] _coins = new TextureRect[12];
-    private readonly Control _surface;
-    private readonly Label _caption;
-    private readonly Button _collect;
+    private Control _surface = null!;
+    private Label _caption = null!;
+    private Button _collect = null!;
     private int _revenue, _collectedRevenue;
     public Func<bool>? CanCollect { get; set; }
     public event Action<int>? Collected;
@@ -26,54 +26,9 @@ public partial class CoinTrayView : Control
     internal Rect2 SurfaceBounds => _surface.GetGlobalRect();
     internal IReadOnlyList<TextureRect> Coins => _coins;
 
-    public CoinTrayView(TianjinArtCatalog art)
+    public override void _Ready()
     {
-        Name = "CoinTray";
-        Size = new Vector2(250, 110);
-        PivotOffset = new Vector2(125, 43);
-        ZIndex = 40;
-        MouseFilter = MouseFilterEnum.Ignore;
-        var tray = TianjinUi.Texture(art.ServingTray, TianjinWorkbenchLayout.FinishedTray.Size);
-        tray.Name = "CoinTrayArt";
-        tray.MouseFilter = MouseFilterEnum.Ignore;
-        AddChild(tray);
-        _surface = new Control
-        {
-            Name = "CoinTraySurface",
-            Position = TianjinWorkbenchLayout.ServingTrayFloor.Position,
-            Size = TianjinWorkbenchLayout.ServingTrayFloor.Size,
-            ClipContents = true,
-            MouseFilter = MouseFilterEnum.Ignore,
-        };
-        AddChild(_surface);
-        for (int i = 0; i < _coins.Length; i++)
-        {
-            var coin = TianjinUi.Texture(art.Coin, new Vector2(24, 24));
-            coin.Size = coin.CustomMinimumSize;
-            coin.PivotOffset = coin.Size * .5f;
-            coin.Position = CoinCenters[i] - coin.PivotOffset;
-            coin.RotationDegrees = CoinAngles[i];
-            coin.Scale = new Vector2(i % 3 == 0 ? .96f : .9f, i % 2 == 0 ? .66f : .78f);
-            coin.ZIndex = (int)CoinCenters[i].Y;
-            coin.MouseFilter = MouseFilterEnum.Ignore;
-            coin.Visible = false;
-            _surface.AddChild(coin);
-            _coins[i] = coin;
-        }
-        _caption = TianjinUi.Label("金币盘", 18, TianjinUi.BrownText, HorizontalAlignment.Center);
-        _caption.Name = "CoinTrayHint";
-        _caption.Position = TianjinWorkbenchLayout.FinishedCaption.Position;
-        _caption.Size = TianjinWorkbenchLayout.FinishedCaption.Size;
-        _caption.MouseFilter = MouseFilterEnum.Ignore;
-        TianjinUi.ApplyCounterHint(_caption);
-        AddChild(_caption);
-        _collect = new Button { Name = "CollectCoins", Flat = true, MouseDefaultCursorShape = CursorShape.PointingHand,
-            FocusMode = FocusModeEnum.None, TooltipText = "点击收走金币 · 收入已自动入账，未点击也不会丢失" };
-        foreach (string state in new[] { "normal", "hover", "pressed", "focus", "disabled" })
-            _collect.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-        AddChild(_collect);
-        _collect.Position = TianjinWorkbenchLayout.TrayInput.Position;
-        _collect.Size = TianjinWorkbenchLayout.TrayInput.Size;
+        SceneNodeBinder.Bind(this);
         _collect.Pressed += () => TryCollect();
         RenderRevenue(0);
     }

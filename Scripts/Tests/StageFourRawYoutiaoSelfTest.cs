@@ -15,7 +15,7 @@ public partial class StageFourSelfTest
         string savePath = $"user://raw-youtiao-{Guid.NewGuid():N}.json";
         var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
         var controller = new DayController(); AddChild(controller);
-        var screen = new TianjinDayScreen(); AddChild(screen);
+        var screen = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen);
         screen.ConnectController(controller);
         screen.Initialize(catalog, save, controller, 11);
         screen.SetProcess(false);

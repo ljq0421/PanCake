@@ -19,42 +19,34 @@ public partial class GuangzhouHub : Control
     private readonly Button[] _upgrades = new Button[3];
     private Label _coins = null!, _message = null!;
     private Button _open = null!;
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        for (int index = 0; index < _days.Length; index++)
+        {
+            int day = index + 1;
+            _days[index].Pressed += () => DayRequested?.Invoke(day);
+        }
+        for (int index = 0; index < _upgrades.Length; index++)
+        {
+            int equipment = index;
+            _upgrades[index].Pressed += () => Purchase(equipment);
+        }
+        _open.Pressed += () => DayRequested?.Invoke(_save.Data.Guangzhou.HighestUnlockedDay);
+        this.FindButton("早餐地图").Pressed += () => MapRequested?.Invoke();
+        Button? practice = this.FindOptionalButton("Day 9 练习 · Lv2设备 · 不保存");
+        if (practice is not null)
+        {
+            practice.Visible = OS.GetCmdlineUserArgs().Contains("--dev-ui");
+            practice.Pressed += () => PracticeRequested?.Invoke();
+        }
+    }
     public void Initialize(DataCatalog catalog, SaveService save)
     {
         if (_save is not null) _save.Changed -= Render;
         _catalog = catalog; _save = save; save.Changed += Render; Render();
     }
     public override void _ExitTree() { if (_save is not null) _save.Changed -= Render; }
-    private void Build()
-    {
-        _canvas = GuangzhouUi.Canvas(this);
-        _canvas.AddChild(new ColorRect { Color = GuangzhouUi.Background, Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore });
-        GuangzhouUi.Text(_canvas, "广州 · 蒸汽早茶", new(70, 50, 1000, 70), 46);
-        GuangzhouUi.Text(_canvas, "现蒸肠粉，提前备点，顺手添茶。", new(74, 120, 1050, 48), 26, GuangzhouUi.Muted);
-        _coins = GuangzhouUi.Text(_canvas, "", new(1280, 64, 270, 55), 30, GuangzhouUi.Green);
-        GuangzhouUi.Button(_canvas, "早餐地图", new(1580, 65, 250, 60), () => MapRequested?.Invoke());
-        _message = GuangzhouUi.Text(_canvas, "", new(74, 181, 1750, 64), 22, GuangzhouUi.Muted);
-        GuangzhouUi.Panel(_canvas, new(70, 264, 1000, 718));
-        GuangzhouUi.Text(_canvas, "十二个清晨", new(102, 281, 870, 53), 32);
-        for (int i = 0; i < 12; i++)
-        {
-            int day = i + 1;
-            _days[i] = GuangzhouUi.Button(_canvas, $"Day {day}", new(100 + i % 3 * 317, 354 + i / 3 * 125, 300, 108), () => DayRequested?.Invoke(day));
-        }
-        _open = GuangzhouUi.Button(_canvas, "打开铺门", new(100, 875, 935, 72), () => DayRequested?.Invoke(_save.Data.Guangzhou.HighestUnlockedDay), true);
-        GuangzhouUi.Panel(_canvas, new(1100, 264, 730, 718));
-        GuangzhouUi.Text(_canvas, "升级，让工作台更顺", new(1130, 281, 660, 53), 32);
-        for (int i = 0; i < 3; i++)
-        {
-            int index = i;
-            _equipmentInfo[i] = GuangzhouUi.Text(_canvas, "", new(1130, 354 + i * 176, 660, 108), 23);
-            _upgrades[i] = GuangzhouUi.Button(_canvas, "", new(1130, 463 + i * 176, 660, 51), () => Purchase(index));
-        }
-        if (OS.GetCmdlineUserArgs().Contains("--dev-ui"))
-            GuangzhouUi.Button(_canvas, "Day 9 练习 · Lv2设备 · 不保存", new(1130, 906, 660, 48), () => PracticeRequested?.Invoke());
-        GuangzhouUi.Text(_canvas, "肠粉保留铺浆与刮卷；设备升级先降低过蒸风险，再提高连续出餐速度。", new(74, 1000, 1750, 45), 23, GuangzhouUi.Muted);
-    }
     public void Render()
     {
         if (_save is null || _catalog is null) return;

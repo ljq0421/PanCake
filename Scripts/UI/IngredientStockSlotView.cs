@@ -10,52 +10,40 @@ namespace ProjectCake.UI;
 /// </summary>
 public partial class IngredientStockSlotView : WorkstationSlotView
 {
-    private readonly Button _refill;
-    private readonly ProgressBar _stock;
-    private readonly StyleBoxFlat _stockFill;
+    private Button _refill = null!;
+    private ProgressBar _stock = null!;
+    private StyleBoxFlat _stockFill = null!;
     private string _displayName = string.Empty;
     private bool _usesCaption;
     private bool _previewsRefill;
     private IngredientStockStatus? _lastStatus;
     private Tween? _feedbackTween;
-    private readonly Label _refillHint;
+    private Label _refillHint = null!;
 
-    public IngredientStockSlotView()
+    public override void _Ready()
     {
-        _refill = new Button
+        base._Ready();
+        SceneNodeBinder.Bind(this);
+        if (HasMeta("_stock_display_name"))
         {
-            Text = "+",
-            FocusMode = FocusModeEnum.All,
-            CustomMinimumSize = new Vector2(48, 48),
-            Visible = false,
-        };
-        _refill.AddThemeFontSizeOverride("font_size", 27);
+            _displayName = GetMeta("_stock_display_name").AsString();
+            _usesCaption = GetMeta("_stock_uses_caption").AsBool();
+            _previewsRefill = GetMeta("_stock_previews_refill").AsBool();
+            HoldToRefill = GetMeta("_stock_hold_to_refill").AsBool();
+            ShowStockNumbers = GetMeta("_stock_show_numbers").AsBool();
+        }
+        _stockFill = (StyleBoxFlat)_stock.GetThemeStylebox("fill");
         _refill.Pressed += () => RefillRequested?.Invoke();
-        SetRefillControl(_refill);
+    }
 
-        _stock = new ProgressBar
-        {
-            MinValue = 0,
-            MaxValue = 100,
-            Value = 100,
-            ShowPercentage = false,
-            CustomMinimumSize = new Vector2(0, 6),
-            MouseFilter = MouseFilterEnum.Ignore,
-            Visible = false,
-        };
-        _stock.AddThemeStyleboxOverride("background", StockBarStyle(new Color(0.25f, 0.14f, 0.09f, 0.24f)));
-        _stockFill = StockBarStyle(TianjinUi.Green);
-        _stock.AddThemeStyleboxOverride("fill", _stockFill);
-        SetStockControl(_stock);
-        _refillHint = TianjinUi.Label("长按补货", 16, TianjinUi.BrownDark, HorizontalAlignment.Center);
-        _refillHint.Name = "HoldRefillHint";
-        _refillHint.Position = new Vector2(54, 94);
-        _refillHint.Size = new Vector2(140, 26);
-        _refillHint.MouseFilter = MouseFilterEnum.Ignore;
-        _refillHint.Visible = false;
-        _refillHint.AddThemeColorOverride("font_outline_color", TianjinUi.Cream);
-        _refillHint.AddThemeConstantOverride("outline_size", 5);
-        AddChild(_refillHint);
+    public override void SaveSceneConfiguration()
+    {
+        base.SaveSceneConfiguration();
+        SetMeta("_stock_display_name", _displayName);
+        SetMeta("_stock_uses_caption", _usesCaption);
+        SetMeta("_stock_previews_refill", _previewsRefill);
+        SetMeta("_stock_hold_to_refill", HoldToRefill);
+        SetMeta("_stock_show_numbers", ShowStockNumbers);
     }
 
     public event Action? RefillRequested;
@@ -230,13 +218,11 @@ public partial class IngredientStockSlotView : WorkstationSlotView
             ("disabled", background.Darkened(0.08f)),
         })
         {
-            _refill.AddThemeStyleboxOverride(state, TianjinUi.Box(color, 12, state == "focus" ? 5 : 3, false));
+            if (_refill.GetThemeStylebox(state) is not StyleBoxFlat style) continue;
+            style.BgColor = color;
+            int border = state == "focus" ? 5 : 3;
+            style.BorderWidthLeft = style.BorderWidthTop = style.BorderWidthRight = style.BorderWidthBottom = border;
         }
-        _refill.AddThemeColorOverride("font_color", TianjinUi.BrownText);
-        _refill.AddThemeColorOverride("font_hover_color", TianjinUi.BrownText);
-        _refill.AddThemeColorOverride("font_pressed_color", TianjinUi.BrownText);
-        _refill.AddThemeColorOverride("font_focus_color", TianjinUi.BrownText);
-        _refill.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
     }
 
     private static Color StatusColor(IngredientStockStatus status) => status switch

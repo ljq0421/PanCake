@@ -34,7 +34,27 @@ public partial class MorningHub : Control
 
     public bool DeveloperToolsVisible => OS.GetCmdlineUserArgs().Contains("--dev-ui", StringComparer.Ordinal);
 
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        _art = new TianjinArtCatalog();
+        _openButton.Pressed += StartPrimaryDay;
+        this.FindButton("经营手账").Pressed += ShowLedger;
+        this.FindButton("城市地图").Pressed += () => MapRequested?.Invoke();
+        Button? lab = this.FindOptionalButton("煎饼实验台");
+        if (lab is not null) lab.Pressed += () => LabRequested?.Invoke();
+        Button? data = this.FindOptionalButton("Day 数据");
+        if (data is not null) data.Pressed += () => DebugRequested?.Invoke();
+        _ledger.DayRequested += day => DayRequested?.Invoke(day);
+        _ledger.ResetRequested += () => { _ledger.ConfirmationOpen = true; _resetDialog.PopupCentered(); };
+        _resetDialog.Confirmed += ResetProgress;
+        _resetDialog.CloseRequested += RestoreLedgerFocus;
+        _resetDialog.Canceled += RestoreLedgerFocus;
+        _resetDialog.Confirmed += RestoreLedgerFocus;
+        GetNode<Button>("%StoveUpgrade").Pressed += () => Purchase(NextStoveUpgrade()?.Id ?? string.Empty);
+        GetNode<Button>("%FryerUpgrade").Pressed += () => Purchase(NextFryerUpgrade()?.Id ?? string.Empty);
+        GetNode<Button>("%StationUpgrade").Pressed += () => Purchase(NextStationUpgrade()?.Id ?? string.Empty);
+    }
 
     public void Initialize(DataCatalog catalog, SaveService save)
     {
@@ -48,165 +68,19 @@ public partial class MorningHub : Control
     {
         if (_save is not null) _save.Changed -= Render;
     }
-
-    private void Build()
-    {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Theme = TianjinUi.CreateTheme();
-        _art = new TianjinArtCatalog();
-        var background = new ColorRect { Color = new Color("#F1C47C"), MouseFilter = MouseFilterEnum.Ignore };
-        TianjinUi.FullRect(background);
-        AddChild(background);
-
-        var topBand = new ColorRect { Color = new Color("#C95335"), MouseFilter = MouseFilterEnum.Ignore };
-        topBand.SetAnchorsPreset(LayoutPreset.TopWide);
-        topBand.OffsetBottom = 112;
-        AddChild(topBand);
-
-        var margin = new MarginContainer();
-        TianjinUi.FullRect(margin, 58, 32, -58, -38);
-        AddChild(margin);
-        var root = new VBoxContainer();
-        root.AddThemeConstantOverride("separation", 24);
-        margin.AddChild(root);
-
-        var header = new HBoxContainer { CustomMinimumSize = new Vector2(0, 76) };
-        root.AddChild(header);
-        var title = TianjinUi.Label("早餐铺子 · 天津", 42, TianjinUi.Paper);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        header.AddChild(title);
-        var coin = TianjinUi.Texture(_art.Coin, new Vector2(58, 58));
-        header.AddChild(coin);
-        _coins = TianjinUi.Label("¥0", 30, TianjinUi.Paper);
-        header.AddChild(_coins);
-        _progress = TianjinUi.Label("Day 1 · 0星", 22, TianjinUi.Paper);
-        _progress.CustomMinimumSize = new Vector2(230, 0);
-        _progress.HorizontalAlignment = HorizontalAlignment.Right;
-        header.AddChild(_progress);
-
-        var content = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-        content.AddThemeConstantOverride("separation", 28);
-        root.AddChild(content);
-        content.AddChild(BuildTodayBoard());
-        content.AddChild(BuildEquipmentBoard());
-
-        _message = TianjinUi.Label(string.Empty, 18, TianjinUi.BrownText, HorizontalAlignment.Center);
-        _message.CustomMinimumSize = new Vector2(0, 30);
-        root.AddChild(_message);
-
-        BuildLedger();
-        BuildResetDialog();
-    }
-
-    private Control BuildTodayBoard()
-    {
-        var board = TianjinUi.Panel(new Color("#FFF5DA"), 22);
-        board.CustomMinimumSize = new Vector2(650, 0);
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 18);
-        board.AddChild(column);
-
-        column.AddChild(TianjinUi.Label("今天的营业牌", 28, TianjinUi.BrownText));
-        _dayTitle = TianjinUi.Label("Day 1", 60, TianjinUi.BrownDark);
-        column.AddChild(_dayTitle);
-        _daySubtitle = TianjinUi.Label("基础煎饼", 28, TianjinUi.Orange);
-        column.AddChild(_daySubtitle);
-        var divider = new HSeparator();
-        divider.AddThemeConstantOverride("separation", 18);
-        column.AddChild(divider);
-        _dayRecord = TianjinUi.Label("第一次开店，慢慢来。", 20, TianjinUi.BrownText);
-        _dayRecord.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _dayRecord.SizeFlagsVertical = SizeFlags.ExpandFill;
-        column.AddChild(_dayRecord);
-
-        _openButton = TianjinUi.Button("打开铺门 · 开始营业", true, new Vector2(0, 84));
-        _openButton.Pressed += StartPrimaryDay;
-        column.AddChild(_openButton);
-
-        var navigation = new HBoxContainer();
-        navigation.AddThemeConstantOverride("separation", 12);
-        var ledger = TianjinUi.Button("经营手账", false, new Vector2(0, 60));
-        ledger.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        ledger.Pressed += ShowLedger;
-        navigation.AddChild(ledger);
-        var map = TianjinUi.Button("城市地图", false, new Vector2(0, 60));
-        map.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        map.Pressed += () => MapRequested?.Invoke();
-        navigation.AddChild(map);
-        column.AddChild(navigation);
-
-        if (DeveloperToolsVisible)
-        {
-            var dev = new HBoxContainer();
-            dev.AddThemeConstantOverride("separation", 8);
-            var lab = TianjinUi.Button("煎饼实验台");
-            lab.Pressed += () => LabRequested?.Invoke();
-            dev.AddChild(lab);
-            var data = TianjinUi.Button("Day 数据");
-            data.Pressed += () => DebugRequested?.Invoke();
-            dev.AddChild(data);
-            column.AddChild(dev);
-        }
-        return board;
-    }
-
-    private Control BuildEquipmentBoard()
-    {
-        var board = TianjinUi.Panel(new Color("#F9E4B7"), 22);
-        board.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        var column = new VBoxContainer();
-        column.AddThemeConstantOverride("separation", 16);
-        board.AddChild(column);
-        var heading = new HBoxContainer();
-        var title = TianjinUi.Label("店里现在这样", 28, TianjinUi.BrownText);
-        title.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        heading.AddChild(title);
-        heading.AddChild(TianjinUi.Label("升级会直接改变设备", 18, TianjinUi.Brown));
-        column.AddChild(heading);
-        _equipment = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-        _equipment.AddThemeConstantOverride("separation", 14);
-        column.AddChild(_equipment);
-        return board;
-    }
-
-    private void BuildLedger()
-    {
-        _ledger = new TianjinLedger { Name = "TianjinLedger", Visible = false, ZIndex = 100 };
-        AddChild(_ledger);
-        _ledger.DayRequested += day => DayRequested?.Invoke(day);
-        _ledger.ResetRequested += () =>
-        {
-            _ledger.ConfirmationOpen = true;
-            _resetDialog.PopupCentered();
-        };
-    }
-
-    private void BuildResetDialog()
-    {
-        _resetDialog = new ConfirmationDialog
-        {
-            Title = "重置进度",
-            DialogText = "将清除金币、升级与每日最佳记录。此操作不可撤销。",
-            OkButtonText = "确认重置",
-        };
-        _resetDialog.Confirmed += () =>
-        {
-            bool reset = _save.ResetProgress(out string error);
-            _message.Text = string.IsNullOrEmpty(error) ? "进度已重置，今天重新开张。" : error;
-            _message.Modulate = string.IsNullOrEmpty(error) ? TianjinUi.Green : TianjinUi.Red;
-            if (reset) _ledger.Open(_save);
-            _ledger.ShowNotice(_message.Text, !reset);
-        };
-        _resetDialog.CloseRequested += RestoreLedgerFocus;
-        _resetDialog.Canceled += RestoreLedgerFocus;
-        _resetDialog.Confirmed += RestoreLedgerFocus;
-        AddChild(_resetDialog);
-    }
-
     private void RestoreLedgerFocus()
     {
         _ledger.ConfirmationOpen = false;
         _ledger.FocusSelectedDay();
+    }
+
+    private void ResetProgress()
+    {
+        bool reset = _save.ResetProgress(out string error);
+        _message.Text = string.IsNullOrEmpty(error) ? "进度已重置，今天重新开张。" : error;
+        _message.Modulate = string.IsNullOrEmpty(error) ? TianjinUi.Green : TianjinUi.Red;
+        if (reset) _ledger.Open(_save);
+        _ledger.ShowNotice(_message.Text, !reset);
     }
 
     public void ShowLedger() => _ledger.Open(_save);
@@ -235,76 +109,28 @@ public partial class MorningHub : Control
 
     private void RenderEquipment()
     {
-        foreach (Node child in _equipment.GetChildren()) child.QueueFree();
-        _equipment.AddChild(EquipmentCard(
-            "煎饼炉",
-            _art.Stove(_save.Data.PurchasedStoveLevel),
-            _save.Data.PurchasedStoveLevel,
-            NextStoveUpgrade()));
-        _equipment.AddChild(EquipmentCard(
-            "油条锅",
-            FryerPreview(Math.Max(1, _save.Data.PurchasedFryerLevel)),
-            _save.Data.PurchasedFryerLevel,
-            NextFryerUpgrade()));
-        _equipment.AddChild(EquipmentCard(
-            "配料台",
-            IngredientStationPreview(),
-            _save.Data.PurchasedIngredientStationLevel,
-            NextStationUpgrade()));
+        UpdateEquipmentCard("Stove", "煎饼炉", _save.Data.PurchasedStoveLevel, NextStoveUpgrade());
+        GetNode<TextureRect>("%StoveImage").Texture = _art.Stove(_save.Data.PurchasedStoveLevel);
+        UpdateEquipmentCard("Fryer", "油条锅", _save.Data.PurchasedFryerLevel, NextFryerUpgrade());
+        int fryerLevel = Math.Max(1, _save.Data.PurchasedFryerLevel);
+        GetNode<TextureRect>("%FryerBody").Texture = _art.FryerBody(fryerLevel);
+        GetNode<TextureRect>("%FryerBasket").Texture = _art.FryerBasket(fryerLevel);
+        UpdateEquipmentCard("Station", "配料台", _save.Data.PurchasedIngredientStationLevel, NextStationUpgrade());
     }
 
-    private Control EquipmentCard(string name, Texture2D texture, int level, UpgradeOffer? offer)
+    private void UpdateEquipmentCard(string prefix, string name, int level, UpgradeOffer? offer)
     {
-        var image = TianjinUi.Texture(texture, new Vector2(0, 340));
-        image.SizeFlagsVertical = SizeFlags.ExpandFill;
-        return EquipmentCard(name, image, level, offer);
-    }
-
-    private Control EquipmentCard(string name, Control visual, int level, UpgradeOffer? offer)
-    {
-        var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        card.AddThemeConstantOverride("separation", 8);
-        visual.CustomMinimumSize = new Vector2(0, 340);
-        visual.SizeFlagsVertical = SizeFlags.ExpandFill;
-        card.AddChild(visual);
-        card.AddChild(TianjinUi.Label(level == 0 ? $"{name} · 尚未解锁" : $"{name} · Lv{level}", 22, TianjinUi.BrownText, HorizontalAlignment.Center));
-        if (offer is UpgradeOffer upgrade)
+        GetNode<Label>($"%{prefix}Title").Text = level == 0 ? $"{name} · 尚未解锁" : $"{name} · Lv{level}";
+        Label note = GetNode<Label>($"%{prefix}Note");
+        Button upgrade = GetNode<Button>($"%{prefix}Upgrade");
+        note.Visible = offer is null;
+        note.Text = level == 0 ? "完成对应营业日自动安装" : "当前可用的最好设备";
+        upgrade.Visible = offer is not null;
+        if (offer is UpgradeOffer value)
         {
-            var button = TianjinUi.Button($"{upgrade.Effect}\n¥{upgrade.Price}", true, new Vector2(0, 74));
-            button.Disabled = _save.Data.Coins < upgrade.Price;
-            button.Pressed += () => Purchase(upgrade.Id);
-            card.AddChild(button);
+            upgrade.Text = $"{value.Effect}\n¥{value.Price}";
+            upgrade.Disabled = _save.Data.Coins < value.Price;
         }
-        else
-        {
-            string note = level == 0 ? "完成 Day 5 自动安装" : "当前可用的最好设备";
-            card.AddChild(TianjinUi.Label(note, 17, TianjinUi.Brown, HorizontalAlignment.Center));
-        }
-        return card;
-    }
-
-    private Control FryerPreview(int level)
-    {
-        var preview = new Control();
-        TextureRect body = TianjinUi.Texture(_art.FryerBody(level), Vector2.Zero);
-        TianjinUi.FullRect(body);
-        preview.AddChild(body);
-        TextureRect basket = TianjinUi.Texture(_art.FryerBasket(level), Vector2.Zero);
-        TianjinUi.FullRect(basket);
-        preview.AddChild(basket);
-        return preview;
-    }
-
-    private Control IngredientStationPreview()
-    {
-        var preview = new Control();
-        TextureRect tray = TianjinUi.Texture(_art.IngredientTray, Vector2.Zero);
-        TianjinUi.FullRect(tray, 22, 24, -22, -24);
-        preview.AddChild(tray);
-        TextureRect crispy = TianjinUi.Texture(_art.Ingredient(StableIds.Ingredients.Crispy), Vector2.Zero);
-        TianjinUi.FullRect(crispy, 86, 76, -86, -76);
-        preview.AddChild(crispy);
-        return preview;
     }
 
     private void RenderLedger()

@@ -28,7 +28,93 @@ public partial class YangzhouDayScreen : Control
     private double _feedbackSeconds;
     private PancakeAudio _audio = null!;
     private ulong _lastCutSound;
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        void FitCanvas()
+        {
+            float scale = Math.Min(Size.X / 1920, Size.Y / 1080);
+            _canvas.Scale = Vector2.One * scale;
+            _canvas.Position = (Size - _canvas.Size * scale) * .5f;
+        }
+        Resized += FitCanvas;
+        FitCanvas();
+        foreach (YangzhouSurface surface in this.Descendants<YangzhouSurface>()) surface.CanInteract = CanWork;
+
+        _pause.Pressed += () =>
+        {
+            if (Session is null || _leave.Visible) return;
+            Session.Pause(!Session.Paused); CancelGestures(); Render();
+        };
+        this.FindButton("返回店铺").Pressed += RequestLeave;
+        for (int i = 0; i < _customers.Length; i++)
+        {
+            int index = i;
+            _customers[i].Pressed += () => { if (CanWork() && index < Session.Waiting.Count) Session.Select(Session.Waiting[index].Plan.Id); Render(); };
+        }
+        for (int i = 0; i < _steam.Length; i++)
+        {
+            int layer = i;
+            _steam[i].AcceptToken = token => token is "raw:B01" or "raw:B02";
+            _steam[i].Dropped = token => Act(() => Session.LoadSteamer(layer, token[4..], 1), "不能混蒸；请检查容量、解锁日期与生坯库存。");
+            Button[] loads = this.Descendants<Button>()
+                .Where(button => button.Position.Y > _steam[i].Position.Y + 140 && button.Position.Y < _steam[i].Position.Y + 225
+                    && (button.Text.StartsWith("三丁包", StringComparison.Ordinal) || button.Text.StartsWith("烧卖", StringComparison.Ordinal)))
+                .OrderBy(button => button.Position.X).ToArray();
+            if (loads.Length >= 2)
+            {
+                _loadButtons[i, 0] = loads[0];
+                _loadButtons[i, 1] = loads[1];
+                loads[0].Pressed += () => Act(() => Session.LoadSteamer(layer, "B01", 2), "装笼失败：检查库存、剩余格数；准备阶段只允许一笼。");
+                loads[1].Pressed += () => Act(() => Session.LoadSteamer(layer, "B02", 2), "Day 5开放烧卖；同一层不能混蒸。");
+            }
+            _steamActions[i].Pressed += () => Act(() => Session.SteamAction(layer), "请先装笼、等熟后揭盖；成品盘空间不足时先出餐。");
+        }
+        _board.Pressed = () => { if (!Session.Kitchen.Board.Cutting) Session.Cut(); };
+        _board.Motion = (_, movement, dt) =>
+        {
+            Session.Stroke(movement.X, dt);
+            if (Session.Kitchen.Board.Cutting && Time.GetTicksMsec() - _lastCutSound > 150)
+            { _lastCutSound = Time.GetTicksMsec(); _audio.Play(PancakeSound.Stroke); }
+        };
+        _cutStock.DragToken = () => Session.Kitchen.Board.Portions > 0 ? "cut" : "";
+        _scald.AcceptToken = token => token == "cut";
+        _scald.Dropped = _ => Act(Session.LoadGansi, "漏勺已有一份，先调味并放入托盘。");
+        _scald.Motion = (position, _, _) =>
+        {
+            if (position.Y > 190) Session.Dip();
+            else if (position.Y < 130 && Session.Lift()) _audio.Play(PancakeSound.Sizzle);
+        };
+        _scald.Released = () => Session?.Kitchen.Scald.CancelGesture();
+        _scald.DragToken = () => Session.Kitchen.Scald.Ready ? "G01" : "";
+        this.FindButton("调味 · 一次完成").Pressed += () => Act(() => Session.Season(), "至少有效烫1次并提起漏勺；调味料不足请补满。");
+        _tea.Pressed = () => { if (!Session.Kitchen.TeaReady) Act(Session.TakeTea, "茶在Day 2开放；无茶时补满茶盘。"); };
+        _tea.DragToken = () => Session.Kitchen.TeaReady ? "T01" : "";
+        _tray.AcceptToken = token => token is "G01" or "B01" or "B02" or "T01";
+        _tray.Dropped = Stage;
+        _serve.Pressed += () =>
+        {
+            Act(() => { bool ok = Session.Serve(); if (ok) Say("早茶上齐了！"); return ok; }, "还没凑齐这桌早茶。");
+            if (CanWork()) _audio.Play(PancakeSound.Success);
+        };
+        _stock[0].DragToken = () => Session.Kitchen.HasFood("B01") ? "B01" : "";
+        _stock[1].DragToken = () => Session.Kitchen.HasFood("B02") ? "B02" : "";
+        var supplies = new[] { ("tofu", "补豆干"), ("B01", "补三丁坯"), ("B02", "补烧卖坯"), ("season", "补调味"), ("T01", "补茶") };
+        foreach ((string id, string text) in supplies)
+        {
+            Button button = this.FindButton(text);
+            _refills[id] = button;
+            if (button is GuangzhouDragSource source)
+            {
+                source.Payload = "raw:" + id;
+                source.CanDrag = () => CanWork() && id is "B01" or "B02";
+            }
+            button.Pressed += () => Act(() => Session.Refill(id), "库存已满或正在补给。");
+        }
+        _leave.Confirmed += () => { _leave.Hide(); Session.Pause(true); HubRequested?.Invoke(); };
+        _leave.Canceled += () => Session.Pause(_pausedBeforeLeave);
+        _return.Pressed += ReturnAfterResult;
+    }
     public bool Initialize(YangzhouCatalog catalog, SaveService save, int day, bool practice = false)
     {
         if (practice && !OS.GetCmdlineUserArgs().Contains("--dev-ui")) return false;
@@ -72,103 +158,6 @@ public partial class YangzhouDayScreen : Control
         if (Session.Stage(id)) { Say($"已放入{_catalog.Product(id).Name}，切换顾客会保留托盘。"); _audio.Play(PancakeSound.PickUp); }
         else Say(needed ? "这份商品还没准备好。" : "这桌不需要这份商品，满意度降低；商品留在原位。");
         Render();
-    }
-    private Button Work(string text, Rect2 rect, Func<bool> action, string failure)
-    {
-        var button = GuangzhouUi.Button(_canvas, text, rect, () => Act(action, failure)); _workButtons.Add(button); return button;
-    }
-    private YangzhouSurface Surface(string name, string kind, Rect2 rect)
-    {
-        var target = new YangzhouSurface { Name = name, Kind = kind, Position = rect.Position, Size = rect.Size, CanInteract = CanWork };
-        _canvas.AddChild(target); return target;
-    }
-    private void Build()
-    {
-        _audio = new PancakeAudio(); AddChild(_audio);
-        _canvas = GuangzhouUi.Canvas(this);
-        _canvas.AddChild(new ColorRect { Size = new(1920, 1080), Color = new("#E1EDE5"), MouseFilter = MouseFilterEnum.Ignore });
-        _header = GuangzhouUi.Text(_canvas, "扬州 · 一席早茶", new(50, 25, 1430, 65), 30);
-        _pause = GuangzhouUi.Button(_canvas, "暂停", new(1510, 30, 155, 58), () => { if (Session is null || _leave.Visible) return; Session.Pause(!Session.Paused); CancelGestures(); Render(); });
-        GuangzhouUi.Button(_canvas, "返回店铺", new(1685, 30, 180, 58), RequestLeave).Name = "Exit";
-        _hint = GuangzhouUi.Text(_canvas, "", new(55, 99, 1790, 46), 23);
-        for (int i = 0; i < 4; i++)
-        {
-            int index = i;
-            _customers[i] = GuangzhouUi.Button(_canvas, "等待茶客", new(55 + i * 455, 164, 435, 225), () => { if (CanWork() && index < Session.Waiting.Count) Session.Select(Session.Waiting[index].Plan.Id); Render(); });
-            _customers[i].Name = $"Customer{i}"; _customers[i].AddThemeFontSizeOverride("font_size", 23);
-            _patience[i] = new ProgressBar { Position = new(74 + i * 455, 366), Size = new(397, 12), ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore };
-            _patience[i].AddThemeStyleboxOverride("background", new StyleBoxFlat { BgColor = new("#D5DFD3"), CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6 });
-            _patience[i].AddThemeStyleboxOverride("fill", new StyleBoxFlat { BgColor = new("#719D79"), CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6 });
-            _canvas.AddChild(_patience[i]);
-        }
-        GuangzhouUi.Text(_canvas, "竹蒸笼 · 批量备点", new(55, 411, 480, 47), 28);
-        GuangzhouUi.Text(_canvas, "干丝台 · 切丝与三烫", new(570, 411, 820, 47), 28);
-        GuangzhouUi.Text(_canvas, "茶与早茶托盘", new(1450, 411, 410, 47), 28);
-        for (int i = 0; i < 2; i++)
-        {
-            int layer = i; float y = 466 + i * 223;
-            _steam[i] = Surface($"Steamer{i}", "steam", new(55, y, 475, 154));
-            _steam[i].AcceptToken = token => token is "raw:B01" or "raw:B02";
-            _steam[i].Dropped = token => Act(() => Session.LoadSteamer(layer, token[4..], 1), "不能混蒸；请检查容量、解锁日期与生坯库存。");
-            _loadButtons[i, 0] = Work("三丁包 +2", new(55, y + 162, 145, 50), () => Session.LoadSteamer(layer, "B01", 2), "装笼失败：检查库存、剩余格数；准备阶段只允许一笼。");
-            _loadButtons[i, 1] = Work("烧卖 +2", new(209, y + 162, 145, 50), () => Session.LoadSteamer(layer, "B02", 2), "Day 5开放烧卖；同一层不能混蒸。");
-            _steamActions[i] = Work("盖笼开蒸", new(363, y + 162, 167, 50), () => Session.SteamAction(layer), "请先装笼、等熟后揭盖；成品盘空间不足时先出餐。");
-        }
-        _board = Surface("CuttingBoard", "board", new(570, 466, 380, 271));
-        _board.Pressed = () => { if (!Session.Kitchen.Board.Cutting) Session.Cut(); };
-        _board.Motion = (_, movement, dt) =>
-        {
-            Session.Stroke(movement.X, dt);
-            if (Session.Kitchen.Board.Cutting && Time.GetTicksMsec() - _lastCutSound > 150) { _lastCutSound = Time.GetTicksMsec(); _audio.Play(PancakeSound.Stroke); }
-        };
-        _cutStock = Surface("CutStock", "stock", new(570, 749, 380, 157));
-        _cutStock.DragToken = () => Session.Kitchen.Board.Portions > 0 ? "cut" : "";
-        _scald = Surface("Scalding", "scald", new(976, 466, 424, 330));
-        _scald.AcceptToken = token => token == "cut";
-        _scald.Dropped = _ => Act(Session.LoadGansi, "漏勺已有一份，先调味并放入托盘。");
-        _scald.Motion = (position, _, _) =>
-        {
-            if (position.Y > 190) Session.Dip();
-            else if (position.Y < 130 && Session.Lift()) _audio.Play(PancakeSound.Sizzle);
-        };
-        _scald.Released = () => Session?.Kitchen.Scald.CancelGesture();
-        _scald.DragToken = () => Session.Kitchen.Scald.Ready ? "G01" : "";
-        Work("调味 · 一次完成", new(976, 808, 424, 60), () => Session.Season(), "至少有效烫1次并提起漏勺；调味料不足请补满。").Name = "Season";
-        GuangzhouUi.Text(_canvas, "按住漏勺，下拉浸入0.3秒，再上提。\n三次最佳；完成后拖入右侧托盘。", new(976, 875, 424, 64), 21);
-        _tea = Surface("Tea", "stock", new(1450, 466, 415, 141));
-        _tea.Pressed = () => { if (!Session.Kitchen.TeaReady) Act(Session.TakeTea, "茶在Day 2开放；无茶时补满茶盘。"); };
-        _tea.DragToken = () => Session.Kitchen.TeaReady ? "T01" : "";
-        _tray = Surface("Tray", "tray", new(1450, 621, 415, 278));
-        _tray.AcceptToken = token => token is "G01" or "B01" or "B02" or "T01";
-        _tray.Dropped = Stage;
-        _trayText = GuangzhouUi.Text(_tray, "", new(20, 62, 375, 198), 24);
-        _serve = Work("整套出餐", new(1450, 913, 415, 62), () => { bool ok = Session.Serve(); if (ok) Say("早茶上齐了！"); return ok; }, "还没凑齐这桌早茶。");
-        _serve.Pressed += () => { if (CanWork()) _audio.Play(PancakeSound.Success); };
-        for (int i = 0; i < 2; i++)
-        {
-            string id = i == 0 ? "B01" : "B02";
-            _stock[i] = Surface($"Stock{id}", "stock", new(55 + i * 245, 917, 230, 121));
-            _stock[i].DragToken = () => Session.Kitchen.HasFood(id) ? id : "";
-        }
-        var supplies = new[] { ("tofu", "补豆干"), ("B01", "补三丁坯"), ("B02", "补烧卖坯"), ("season", "补调味"), ("T01", "补茶") };
-        for (int i = 0; i < supplies.Length; i++)
-        {
-            var supply = supplies[i];
-            var button = new GuangzhouDragSource { Text = supply.Item2, Payload = "raw:" + supply.Item1, CanDrag = () => CanWork() && supply.Item1 is "B01" or "B02" };
-            GuangzhouUi.Button(_canvas, button, new(570 + i * 169, 977, 159, 62), () => Act(() => Session.Refill(supply.Item1), "库存已满或正在补给。"));
-            button.AddThemeFontSizeOverride("font_size", 18);
-            _refills[supply.Item1] = button;
-        }
-        _feedback = GuangzhouUi.Text(_canvas, "", new(55, 1042, 1810, 36), 21, new Color("#8C4537"));
-        _leave = new ConfirmationDialog { Title = "返回店铺", DialogText = "放弃本次营业并返回店铺？本次收入不保存。", OkButtonText = "放弃并返回", CancelButtonText = "继续营业" };
-        AddChild(_leave); _leave.Confirmed += () => { _leave.Hide(); Session.Pause(true); HubRequested?.Invoke(); };
-        _leave.Canceled += () => Session.Pause(_pausedBeforeLeave);
-        _resultPanel = new Control { Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Stop }; _canvas.AddChild(_resultPanel);
-        _resultPanel.AddChild(new ColorRect { Size = new(1920, 1080), Color = new(0, 0, 0, .4f), MouseFilter = MouseFilterEnum.Stop });
-        GuangzhouUi.Panel(_resultPanel, new(500, 165, 920, 748));
-        _resultText = GuangzhouUi.Text(_resultPanel, "", new(558, 201, 802, 564), 28);
-        _return = GuangzhouUi.Button(_resultPanel, "收好收入 · 返回经营首页", new(558, 805, 802, 68), ReturnAfterResult, true);
-        _resultPanel.Hide();
     }
     private void CancelGestures() { _board?.Cancel(); _scald?.Cancel(); }
     private void RequestLeave()

@@ -30,7 +30,7 @@ public partial class TianjinLedgerSelfTest : Node
             _save = new SaveService();
             _save.UsePathForTests(_savePath);
             AddChild(_save);
-            _hub = new MorningHub(); AddChild(_hub);
+            _hub = ProjectCake.Core.SceneFactory.Instantiate<MorningHub>("res://Scenes/UI/MorningHub.tscn"); AddChild(_hub);
             _hub.Initialize(GetNode<DataCatalog>("/root/DataCatalog"), _save);
             _ledger = _hub.GetNode<TianjinLedger>("TianjinLedger");
             await Frames();

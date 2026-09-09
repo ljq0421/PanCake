@@ -24,9 +24,9 @@ public partial class XianVisualCapture : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = new SaveService(); save.UsePathForTests($"{_output}/capture-{Guid.NewGuid():N}.json"); AddChild(save);
             save.Data.Coins = 2000; save.Data.Xian.HighestUnlockedDay = 12;
-            var hub = new XianHub(); AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
+            var hub = ProjectCake.Core.SceneFactory.Instantiate<XianHub>("res://Scenes/UI/XianHub.tscn"); AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
             var controller = new DayController(); AddChild(controller);
-            _screen = new XianDayScreen(); AddChild(_screen); _screen.SetProcess(false); _screen.ConnectController(controller);
+            _screen = ProjectCake.Core.SceneFactory.Instantiate<XianDayScreen>("res://Scenes/Gameplay/XianDayScreen.tscn"); AddChild(_screen); _screen.SetProcess(false); _screen.ConnectController(controller);
             Require(_screen.Initialize(catalog, save, controller, 1), "Day1初始化"); _screen.BeginDay(); Step(7);
             await Frames(2);
             await Click(new(1060, 580));
@@ -68,7 +68,7 @@ public partial class XianVisualCapture : Node
                 controller.AbandonDay();
             }
             _screen.Hide(); save.Data.Wuhan.Completed = true; save.Data.Wuhan.BestStars = 1; save.Data.UnlockedCityIds.Add(StableIds.Cities.Xian);
-            var map = new TianjinMapScreen(); AddChild(map); map.Initialize(save); await Shot("05-map");
+            var map = ProjectCake.Core.SceneFactory.Instantiate<TianjinMapScreen>("res://Scenes/UI/TianjinMapScreen.tscn"); AddChild(map); map.Initialize(save); await Shot("05-map");
             map.QueueFree(); hub.QueueFree(); _screen.QueueFree(); await Frames(2);
             var globalSave = GetNode<SaveService>("/root/SaveService"); globalSave.UsePathForTests($"{_output}/navigation-{Guid.NewGuid():N}.json");
             globalSave.Data.Wuhan.Completed = true; globalSave.Data.Wuhan.BestStars = 1;

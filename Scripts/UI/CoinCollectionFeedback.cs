@@ -22,7 +22,7 @@ public partial class CoinCollectionFeedback : Node
 
     public override void _Ready()
     {
-        _audio = new PancakeAudio(); AddChild(_audio);
+        SceneNodeBinder.Bind(this);
     }
 
     public void Bind(CoinTrayView tray, Control root, Control target, Texture2D coin, Func<bool> canAnimate)

@@ -1,0 +1,81 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/OrderBubbleView.cs" id="1_20gjn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c5ysn"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 4
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_58clv"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.8980392, 0.84705883, 0.7490196, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eyg8k"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="OrderBubbleView" type="PanelContainer" unique_id=1223289578]
+custom_minimum_size = Vector2(332, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
+script = ExtResource("1_20gjn")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_orders|array|0")
+
+[node name="OrderContent" type="VBoxContainer" parent="." unique_id=7809281]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_content")
+
+[node name="OrderRows" type="VBoxContainer" parent="OrderContent" unique_id=1332935191]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_rows")
+metadata/_dynamic_children = true
+
+[node name="OrderPatience" type="ProgressBar" parent="OrderContent" unique_id=2044315084]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_58clv")
+theme_override_styles/fill = SubResource("StyleBoxFlat_eyg8k")
+value = 100.0
+show_percentage = false
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_patience|array|0", "ProjectCake.UI.OrderBubbleView|<Patience>k__BackingField")

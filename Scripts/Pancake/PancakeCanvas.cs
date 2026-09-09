@@ -14,9 +14,9 @@ public partial class PancakeCanvas : Control
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
 
-    public float DisplayScale { get; set; } = 1.0f;
-    public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
-    public bool ShowBaggedPancake { get; set; } = true;
+    [Export] public float DisplayScale { get; set; } = 1.0f;
+    [Export] public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
+    [Export] public bool ShowBaggedPancake { get; set; } = true;
 
     public float BatterDropProgress
     {

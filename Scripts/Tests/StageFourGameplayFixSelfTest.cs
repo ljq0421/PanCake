@@ -92,7 +92,9 @@ public partial class StageFourSelfTest
 
     private async Task TestMultiPancakeTray(DataCatalog catalog)
     {
-        var station = new PancakeWorkstation { UseServingTray = true, DirectCustomerDelivery = true, Theme = TianjinUi.CreateTheme() };
+        var station = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
+        station.DirectCustomerDelivery = true;
+        station.Theme = TianjinUi.CreateTheme();
         AddChild(station);
         station.Initialize(catalog, 2, 1, 0, catalog.DaysByNumber[15]);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);

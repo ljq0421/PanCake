@@ -28,11 +28,7 @@ public partial class XianSurface : Control
 
     public override void _Ready()
     {
-        MouseDefaultCursorShape = CursorShape.PointingHand;
-        _title = TianjinUi.Label("", Kind == "customer" ? 22 : 24, Ink, HorizontalAlignment.Center);
-        _title.MouseFilter = MouseFilterEnum.Ignore; AddChild(_title);
-        _detail = TianjinUi.Label("", 20, Ink, HorizontalAlignment.Center);
-        _detail.AutowrapMode = TextServer.AutowrapMode.WordSmart; _detail.MouseFilter = MouseFilterEnum.Ignore; AddChild(_detail);
+        SceneNodeBinder.Bind(this);
         MouseExited += CancelGesture;
     }
     public void Refresh()

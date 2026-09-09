@@ -33,7 +33,7 @@ public partial class WuhanAnimationSelfTest : Node
         save.Data.Wuhan.EquipmentLevels["doupi_griddle"]=level;
         save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"]=1;
         var controller=new DayController();AddChild(controller);
-        var screen=new WuhanDayScreen();AddChild(screen);screen.ConnectController(controller);screen.Initialize(_catalog,save,controller,day);
+        var screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(screen);screen.ConnectController(controller);screen.Initialize(_catalog,save,controller,day);
         screen.SetProcess(false);screen.BeginDay();screen._Process(3.1);
         return (screen,controller,save);
     }

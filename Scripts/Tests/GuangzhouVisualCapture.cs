@@ -26,9 +26,9 @@ public partial class GuangzhouVisualCapture : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog"); var save = GetNode<SaveService>("/root/SaveService"); save.UsePathForTests(savePath);
             save.Data.Coins = 800; save.Data.Guangzhou.HighestUnlockedDay = 12;
             foreach (string id in GuangzhouRules.Equipment) save.Data.Guangzhou.EquipmentLevels[id] = 2;
-            var hub = new GuangzhouHub(); AddChild(hub); hub.Initialize(catalog, save); await Shot("hub"); hub.Free();
+            var hub = ProjectCake.Core.SceneFactory.Instantiate<GuangzhouHub>("res://Scenes/UI/GuangzhouHub.tscn"); AddChild(hub); hub.Initialize(catalog, save); await Shot("hub"); hub.Free();
             var controller = new DayController(); AddChild(controller);
-            var day = new GuangzhouDayScreen(); AddChild(day); day.ConnectController(controller);
+            var day = ProjectCake.Core.SceneFactory.Instantiate<GuangzhouDayScreen>("res://Scenes/Gameplay/GuangzhouDayScreen.tscn"); AddChild(day); day.ConnectController(controller);
             Require(day.Initialize(catalog, save, controller, 9, true), "Day9独立练习初始化"); day.SetProcess(false); day.BeginDay();
             var canvas = day.GetNode<Control>("Canvas");
             void Step(double seconds)

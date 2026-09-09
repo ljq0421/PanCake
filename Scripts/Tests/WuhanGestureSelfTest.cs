@@ -40,7 +40,7 @@ public partial class WuhanGestureSelfTest : Node
                 var city=save.Data.Wuhan;city.HighestUnlockedDay=12;
                 city.EquipmentLevels["noodle_cooker"]=level;city.EquipmentLevels["ingredient_station"]=3;
                 city.EquipmentLevels["doupi_griddle"]=level;city.EquipmentLevels["egg_rice_wine_station"]=1;
-                var controller=new DayController();AddChild(controller);_screen=new WuhanDayScreen();AddChild(_screen);
+                var controller=new DayController();AddChild(controller);_screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(_screen);
                 _screen.ConnectController(controller);_screen.Initialize(catalog,save,controller,8);_screen.SetProcess(false);_screen.BeginDay();Step(6);await Frames();
                 async Task Shot(string name) {
                     if (!capture) return;
@@ -211,7 +211,7 @@ public partial class WuhanGestureSelfTest : Node
         var save=new SaveService();save.UsePathForTests("res://.tmp/wuhan-operation-budget.json");AddChild(save);
         save.Data.Wuhan.HighestUnlockedDay=12;
         foreach(string id in new[]{"noodle_cooker","ingredient_station","doupi_griddle","egg_rice_wine_station"})save.Data.Wuhan.EquipmentLevels[id]=1;
-        var controller=new DayController();AddChild(controller);_screen=new WuhanDayScreen();AddChild(_screen);
+        var controller=new DayController();AddChild(controller);_screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(_screen);
         _screen.ConnectController(controller);_screen.Initialize(catalog,save,controller,8);_screen.SetProcess(false);
         foreach(var planned in controller.CurrentPlan!.Customers)
             planned.Order=new ProjectCake.Orders.OrderData {

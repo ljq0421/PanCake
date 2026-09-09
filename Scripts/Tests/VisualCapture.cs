@@ -490,12 +490,10 @@ public partial class VisualCapture : Node
                     _ => 0,
                 };
                 ReduceTo(inventory, id, target);
-                var slot = new IngredientStockSlotView
-                {
-                    Name = $"StockGallery_{id}_{column}",
-                    Position = new Vector2(184 + column * 318, 212 + row * 190),
-                    Size = TianjinWorkbenchLayout.IngredientSlot(id).MinimumSize,
-                };
+                var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
+                slot.Name = $"StockGallery_{id}_{column}";
+                slot.Position = new Vector2(184 + column * 318, 212 + row * 190);
+                slot.Size = TianjinWorkbenchLayout.IngredientSlot(id).MinimumSize;
                 gallery.AddChild(slot);
                 slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), displayName,
                     TianjinWorkbenchLayout.IngredientSlot(id), id == StableIds.Ingredients.Scallion
@@ -560,7 +558,9 @@ public partial class VisualCapture : Node
             machine.Runtime.Quality = stocks[column][0];
             var fryer = new FryerVisualView { Position = new Vector2(35, 72), Size = new Vector2(360, 340) };
             card.AddChild(fryer); fryer.Bind(art, machine);
-            var rack = new WorkstationSlotView { Position = new Vector2(35, 400), Scale = Vector2.One * 1.5f };
+            var rack = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
+            rack.Position = new Vector2(35, 400);
+            rack.Scale = Vector2.One * 1.5f;
             card.AddChild(rack);
             rack.Configure(art.YoutiaoRack, art.Ingredient(StableIds.Ingredients.Youtiao), "熟油条",
                 TianjinWorkbenchLayout.FinishedYoutiaoSlot(), IngredientVisualMode.WideStock);
@@ -694,7 +694,7 @@ public partial class VisualCapture : Node
             {
                 var panel = TianjinUi.Panel(TianjinUi.Paper, 14, 3, false);
                 panel.CustomMinimumSize = new Vector2(365, 202);
-                var portrait = new CustomerPortraitView();
+                var portrait = ProjectCake.Core.SceneFactory.Instantiate<CustomerPortraitView>("res://Scenes/UI/CustomerPortraitView.tscn");
                 portrait.SetVisual(art.CustomerPortrait(appearance.Id, expression));
                 portrait.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
                 panel.AddChild(portrait);

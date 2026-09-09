@@ -20,7 +20,6 @@ public partial class WuhanWorkstationView : Control
     private DragService? _drag;
     private ProductKind? _draggedProduct;
     private readonly Dictionary<ProductKind, DragItem> _deliverySources = new();
-    private bool _deliveryConfigured;
     public ProductKind? DraggedProduct => _draggedProduct;
     public static string DeliveryPayload(ProductKind kind) => $"wuhan:{kind}";
     public static ProductKind? DeliveryProduct(string payload) => payload switch
@@ -46,14 +45,15 @@ public partial class WuhanWorkstationView : Control
 
     public void ConfigureDelivery(DragService drag)
     {
+        if (_drag == drag && _deliverySources.Count == 3) return;
         _drag = drag;
         drag.DragStarted += OnDragStarted;
         drag.DragEnded += OnDragEnded;
         foreach (ProductKind kind in new[] { ProductKind.HotDryNoodles, ProductKind.Doupi, ProductKind.EggRiceWine })
         {
-            var source = new DragItem { Name = $"WuhanDrag_{kind}", MouseFilter = MouseFilterEnum.Stop, Visible = false };
-            source.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-            AddChild(source);
+            DragItem source = GetNode<DragItem>($"WuhanDrag_{kind}");
+            source.BindRuntime(drag, () => CanDeliver(kind) && !drag.IsDragging,
+                () => CreateDeliveryPreview(kind));
             _deliverySources[kind] = source;
         }
     }
@@ -75,15 +75,8 @@ public partial class WuhanWorkstationView : Control
         if (_cooker is null || _drag is null) return;
         foreach (var (kind, source) in _deliverySources)
         {
-            Rect2 rect = kind == ProductKind.HotDryNoodles ? BowlRect : kind == ProductKind.Doupi ? StockRect : CupRect.Grow(4);
-            source.Position = rect.Position; source.Size = rect.Size;
             source.Visible = CanDeliver(kind) && !(kind == ProductKind.HotDryNoodles && _mixHeld);
-            if (_deliveryConfigured) continue;
-            source.Configure(_drag, DeliveryPayload(kind), kind == ProductKind.HotDryNoodles ? "热干面" : kind == ProductKind.Doupi ? "三鲜豆皮" : "蛋酒",
-                WuhanUi.Paper, new DragVisualSpec(_art.Product(kind), kind == ProductKind.HotDryNoodles ? BowlRect.Size : kind == ProductKind.Doupi ? new Vector2(100, 75) : CupSize,
-                    () => CreateDeliveryPreview(kind)), () => CanDeliver(kind) && !_drag.IsDragging);
         }
-        _deliveryConfigured = true;
     }
 
     private Control CreateDeliveryPreview(ProductKind kind)
@@ -193,7 +186,6 @@ public partial class WuhanWorkstationView : Control
 
     public override void _Ready()
     {
-        MouseFilter = MouseFilterEnum.Stop;
         MouseExited += () => { _hover = ""; QueueRedraw(); };
     }
 
@@ -204,7 +196,7 @@ public partial class WuhanWorkstationView : Control
         CancelAnimations();
         _art = art; _cooker = cooker; _bowl = bowl; _doupi = doupi; _stock = stock;
         _egg = egg; _ingredients = ingredients; _cookerLevel = cookerLevel; _doupiLevel = doupiLevel;
-        _bounds.Clear(); _phase=0; _deliveryConfigured=false; RememberStates(); BuildRefillControls(); RefreshDeliverySources(); QueueRedraw();
+        _bounds.Clear(); _phase=0; RememberStates(); BindRefillControls(); RefreshDeliverySources(); QueueRedraw();
     }
 
     public bool Busy(string channel) => (_draggedProduct is ProductKind kind && DeliveryChannel(kind) == channel)

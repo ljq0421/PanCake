@@ -15,7 +15,7 @@ public partial class StageFourSelfTest
 {
     private async Task TestYoutiaoQualityPresentation(DataCatalog catalog)
     {
-        var station = new PancakeWorkstation { UseServingTray = true };
+        var station = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
         AddChild(station);
         station.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11]);
         var rack = (WorkstationSlotView)station.FindChild("FinishedYoutiaoArea", true, false);

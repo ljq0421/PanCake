@@ -16,21 +16,16 @@ public partial class CustomerPortraitView : Control
     private const float TopInset = 6.0f;
     private const float CounterVisibleFraction = 0.65f;
 
-    private readonly TextureRect _body;
-    private readonly TextureRect _head;
+    private TextureRect _body = null!;
+    private TextureRect _head = null!;
     private Vector2 _displaySize;
     private CustomerPortraitPresentation _presentation;
     private float _portraitScale = 1.0f;
     private Vector2 _headAnchor = new(0.5f, 0.25f);
 
-    public CustomerPortraitView()
+    public override void _Ready()
     {
-        MouseFilter = MouseFilterEnum.Ignore;
-        ClipContents = true;
-        _body = CreateLayer();
-        _head = CreateLayer();
-        AddChild(_body);
-        AddChild(_head);
+        SceneNodeBinder.Bind(this);
         Resized += LayoutLayers;
         LayoutLayers();
     }
@@ -45,6 +40,7 @@ public partial class CustomerPortraitView : Control
         ? CounterVisibleFraction
         : 1.0f;
 
+    [Export]
     public CustomerPortraitPresentation Presentation
     {
         get => _presentation;
@@ -52,6 +48,7 @@ public partial class CustomerPortraitView : Control
         {
             if (_presentation == value) return;
             _presentation = value;
+            if (!IsInstanceValid(_body) || !IsInstanceValid(_head)) return;
             RefreshMinimumSize();
             LayoutLayers();
         }
@@ -66,16 +63,6 @@ public partial class CustomerPortraitView : Control
         _headAnchor = visual.HeadAnchor;
         RefreshMinimumSize();
         LayoutLayers();
-    }
-
-    private static TextureRect CreateLayer()
-    {
-        return new TextureRect
-        {
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            MouseFilter = MouseFilterEnum.Ignore,
-        };
     }
 
     private void LayoutLayers()

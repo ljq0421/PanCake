@@ -17,62 +17,34 @@ public partial class OrderBubbleView : PanelContainer
 {
     private const float MainHeight = 54;
     private const float SideHeight = 44;
-    private readonly VBoxContainer _content;
-    private readonly VBoxContainer _rows;
+    private VBoxContainer _content = null!;
+    private VBoxContainer _rows = null!;
     private readonly List<(int Line, int Portion, PanelContainer Region, Label? Quantity)> _regions = new();
     private readonly Dictionary<Texture2D, Texture2D> _trimmed = new();
-    private readonly TianjinArtCatalog _shared;
-    private readonly WuhanArtCatalog? _wuhan;
-    private readonly Color _paper;
-    private readonly Color _ink;
-    private readonly Color _rule;
+    private TianjinArtCatalog _shared = null!;
+    private WuhanArtCatalog? _wuhan;
+    private Color _paper;
+    private Color _ink;
+    private Color _rule;
     private readonly Color _complete = new("#DCECC8");
     private OrderData? _order;
-    public ProgressBar Patience { get; }
+    public ProgressBar Patience { get; private set; } = null!;
 
-    public OrderBubbleView() : this(new TianjinArtCatalog()) { }
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        Configure(new TianjinArtCatalog());
+        Resized += QueueRedraw;
+    }
 
-    public OrderBubbleView(TianjinArtCatalog art, WuhanArtCatalog? wuhan = null)
+    public void Configure(TianjinArtCatalog art, WuhanArtCatalog? wuhan = null)
     {
         _shared = art;
         _wuhan = wuhan;
         _paper = wuhan is null ? TianjinUi.Paper : WuhanUi.Paper;
         _ink = wuhan is null ? TianjinUi.BrownDark : WuhanUi.Ink;
         _rule = wuhan is null ? new Color("#CDB38E") : new Color("#BAC9B8");
-        Name = "OrderBubble";
-        MouseFilter = MouseFilterEnum.Ignore;
-        CustomMinimumSize = new Vector2(wuhan is null ? 300 : 332, 0);
-        SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        StyleBoxFlat paper = TianjinUi.Box(_paper, 20, 4);
-        paper.BorderColor = _ink;
-        paper.ContentMarginLeft = paper.ContentMarginRight = 12;
-        paper.ContentMarginTop = 8;
-        paper.ContentMarginBottom = 12;
-        paper.ShadowSize = 4;
-        paper.ShadowOffset = new Vector2(0, 4);
-        AddThemeStyleboxOverride("panel", paper);
-        Resized += QueueRedraw;
-
-        _content = new VBoxContainer { Name = "OrderContent", MouseFilter = MouseFilterEnum.Ignore };
-        _content.AddThemeConstantOverride("separation", 6);
-        AddChild(_content);
-        _rows = new VBoxContainer { Name = "OrderRows", MouseFilter = MouseFilterEnum.Ignore };
-        _rows.AddThemeConstantOverride("separation", 0);
-        _content.AddChild(_rows);
-        Patience = new ProgressBar
-        {
-            Name = "OrderPatience", MaxValue = 100, Value = 100, ShowPercentage = false,
-            CustomMinimumSize = new Vector2(0, 10), MouseFilter = MouseFilterEnum.Ignore,
-        };
-        StyleBoxFlat track = Flat(new Color("#E5D8BF"));
-        track.BorderColor = _ink;
-        track.SetBorderWidthAll(1);
-        track.SetCornerRadiusAll(5);
-        StyleBoxFlat fill = Flat(TianjinUi.Green);
-        fill.SetCornerRadiusAll(5);
-        Patience.AddThemeStyleboxOverride("background", track);
-        Patience.AddThemeStyleboxOverride("fill", fill);
-        _content.AddChild(Patience);
+        QueueRedraw();
     }
 
     public override void _Draw()

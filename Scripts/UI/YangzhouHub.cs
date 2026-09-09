@@ -16,34 +16,25 @@ public partial class YangzhouHub : Control
     private Button _open = null!;
     public override void _Ready()
     {
-        var canvas = GuangzhouUi.Canvas(this);
-        canvas.AddChild(new ColorRect { Size = new(1920, 1080), Color = new("#E1EDE5"), MouseFilter = MouseFilterEnum.Ignore });
-        GuangzhouUi.Text(canvas, "扬州 · 一席早茶", new(70, 48, 1000, 75), 48);
-        GuangzhouUi.Text(canvas, "切一碟干丝，候一笼点心，添一杯绿杨春。", new(74, 125, 1100, 50), 25);
-        _coins = GuangzhouUi.Text(canvas, "", new(1250, 62, 310, 55), 28);
-        GuangzhouUi.Button(canvas, "早餐地图", new(1580, 62, 260, 60), () => MapRequested?.Invoke());
-        _message = GuangzhouUi.Text(canvas, "", new(74, 190, 1750, 60), 22);
-        GuangzhouUi.Panel(canvas, new(70, 274, 1020, 718));
-        GuangzhouUi.Text(canvas, "十二个清晨", new(100, 295, 900, 50), 32);
-        for (int i = 0; i < 12; i++)
+        SceneNodeBinder.Bind(this);
+        for (int index = 0; index < _days.Length; index++)
         {
-            int day = i + 1;
-            _days[i] = GuangzhouUi.Button(canvas, "", new(100 + i % 3 * 320, 366 + i / 3 * 120, 302, 104), () => DayRequested?.Invoke(day));
-            _days[i].Name = $"Day{day}";
+            int day = index + 1;
+            _days[index].Pressed += () => DayRequested?.Invoke(day);
         }
-        _open = GuangzhouUi.Button(canvas, "打开铺门", new(100, 876, 942, 72), () => DayRequested?.Invoke(_save.Data.Yangzhou.HighestUnlockedDay), true);
-        GuangzhouUi.Panel(canvas, new(1120, 274, 720, 718));
-        GuangzhouUi.Text(canvas, "置办店里设备", new(1150, 295, 650, 50), 32);
-        for (int i = 0; i < 2; i++)
+        for (int index = 0; index < _upgrades.Length; index++)
         {
-            int index = i;
-            _equipment[i] = GuangzhouUi.Text(canvas, "", new(1150, 365 + i * 195, 640, 112), 24);
-            _upgrades[i] = GuangzhouUi.Button(canvas, "", new(1150, 485 + i * 195, 640, 58), () => Purchase(index));
+            int equipment = index;
+            _upgrades[index].Pressed += () => Purchase(equipment);
         }
-        _collection = GuangzhouUi.Text(canvas, "", new(1150, 773, 640, 108), 23);
-        if (OS.GetCmdlineUserArgs().Contains("--dev-ui"))
-            GuangzhouUi.Button(canvas, "Day 8 练习 · Lv2设备 · 不保存", new(1150, 899, 640, 58), () => PracticeRequested?.Invoke());
-        GuangzhouUi.Text(canvas, "开店前有5秒备货。升级先减轻重复操作，再增加备货与并行能力。", new(74, 1008, 1750, 44), 23);
+        _open.Pressed += () => DayRequested?.Invoke(_save.Data.Yangzhou.HighestUnlockedDay);
+        this.FindButton("早餐地图").Pressed += () => MapRequested?.Invoke();
+        Button? practice = this.FindOptionalButton("Day 8 练习 · Lv2设备 · 不保存");
+        if (practice is not null)
+        {
+            practice.Visible = OS.GetCmdlineUserArgs().Contains("--dev-ui");
+            practice.Pressed += () => PracticeRequested?.Invoke();
+        }
     }
     public void Initialize(YangzhouCatalog catalog, SaveService save)
     {

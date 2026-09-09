@@ -21,8 +21,8 @@ public partial class YangzhouVisualCapture : Node
             _output = ProjectSettings.GlobalizePath($"res://.tmp/yangzhou-visual/{(small ? "720" : "1080")}"); Directory.CreateDirectory(_output);
             var catalog = YangzhouCatalog.Load(); var save = GetNode<SaveService>("/root/SaveService"); save.UsePathForTests(_output + $"/capture-{Guid.NewGuid():N}.json");
             save.Data.Yangzhou.HighestUnlockedDay = 12; save.Data.Coins = 1000;
-            var hub = new YangzhouHub(); AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
-            _screen = new YangzhouDayScreen(); AddChild(_screen); _screen.SetProcess(false);
+            var hub = ProjectCake.Core.SceneFactory.Instantiate<YangzhouHub>("res://Scenes/UI/YangzhouHub.tscn"); AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
+            _screen = ProjectCake.Core.SceneFactory.Instantiate<YangzhouDayScreen>("res://Scenes/Gameplay/YangzhouDayScreen.tscn"); AddChild(_screen); _screen.SetProcess(false);
             Require(_screen.Initialize(catalog, save, 1), "Day1初始化"); await Frames(2); Step(15);
             Move(new(730, 580), false); Mouse(new(730, 580), true);
             for (int i = 0; i < 240 && _screen.Session.Kitchen.Board.Portions == 0; i++)
@@ -66,7 +66,7 @@ public partial class YangzhouVisualCapture : Node
             }
             else Require(!_screen.Initialize(catalog, save, 8, true), "正常模式拒绝开发练习入口");
             _screen.Hide(); save.Data.Guangzhou.Completed = true; save.Data.Guangzhou.BestStars = 1; save.TrySave(out _); save.Load();
-            var map = new TianjinMapScreen(); AddChild(map); map.Initialize(save); await Shot("05-map");
+            var map = ProjectCake.Core.SceneFactory.Instantiate<TianjinMapScreen>("res://Scenes/UI/TianjinMapScreen.tscn"); AddChild(map); map.Initialize(save); await Shot("05-map");
             Require(!Find<Button>(map, b => b.Name == "EnterYangzhou").Disabled, "广州一星后地图扬州入口开放");
             map.Free(); hub.Free(); _screen.Free();
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate(); AddChild(main); await Frames(2);

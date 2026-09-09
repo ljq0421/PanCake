@@ -6,6 +6,12 @@ public readonly record struct DragVisualSpec(Texture2D Texture, Vector2 DisplayS
 
 public partial class DragItem : PanelContainer
 {
+    [Export] public string PayloadId { get; set; } = string.Empty;
+    [Export] public string DisplayName { get; set; } = string.Empty;
+    [Export] public Color DragColor { get; set; } = Colors.White;
+    [Export] public Texture2D? DragTexture { get; set; }
+    [Export] public Vector2 DragDisplaySize { get; set; }
+
     public event Action? StartRejected;
 
     public Func<Vector2, bool>? HitTest { get; set; }
@@ -20,6 +26,18 @@ public partial class DragItem : PanelContainer
     private Color _color = Colors.White;
     private DragVisualSpec? _visual;
 
+    public void BindRuntime(DragService dragService, Func<bool>? canStart = null, Func<Control>? previewFactory = null)
+    {
+        _dragService = dragService;
+        _payloadId = PayloadId;
+        _displayName = DisplayName;
+        _color = DragColor;
+        _canStart = canStart;
+        _visual = DragTexture is not null || previewFactory is not null
+            ? new DragVisualSpec(DragTexture!, DragDisplaySize, previewFactory)
+            : null;
+    }
+
     public void Configure(
         DragService dragService,
         string payloadId,
@@ -33,7 +51,6 @@ public partial class DragItem : PanelContainer
         _color = color;
         _visual = null;
         _canStart = canStart;
-        MouseDefaultCursorShape = CursorShape.PointingHand;
     }
 
     public void Configure(

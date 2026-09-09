@@ -20,7 +20,7 @@ public partial class PancakeSpreadCapture : Node
         background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(background);
 
-        var workstation = new PancakeWorkstation();
+        var workstation = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeLabWorkstation.tscn");
         workstation.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(workstation);
         workstation.Initialize(GetNode<DataCatalog>("/root/DataCatalog"), level, 1);

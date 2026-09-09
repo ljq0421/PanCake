@@ -30,7 +30,7 @@ public partial class WuhanLedgerSelfTest : Node
             _save = new SaveService();
             _save.UsePathForTests(_savePath);
             AddChild(_save);
-            _hub = new WuhanHub(); AddChild(_hub);
+            _hub = ProjectCake.Core.SceneFactory.Instantiate<WuhanHub>("res://Scenes/UI/WuhanHub.tscn"); AddChild(_hub);
             _hub.Initialize(GetNode<DataCatalog>("/root/DataCatalog"), _save);
             _ledger = _hub.GetNode<WuhanLedger>("WuhanLedger");
             await Frames();

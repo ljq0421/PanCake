@@ -20,7 +20,7 @@ public partial class StageFourSelfTest
         foreach (string id in new[] { StableIds.Ingredients.Egg, StableIds.Ingredients.Crispy, StableIds.Ingredients.Ham, StableIds.Ingredients.Scallion })
         {
             int capacity = catalog.IngredientStationsByLevel[level].GetCapacity(id);
-            var slot = new IngredientStockSlotView();
+            var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
             AddChild(slot);
             slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), id, TianjinWorkbenchLayout.IngredientSlot(id),
                 id == StableIds.Ingredients.Scallion ? IngredientVisualMode.LooseStock : IngredientVisualMode.HybridStock);
@@ -29,22 +29,24 @@ public partial class StageFourSelfTest
             // change it. Configure alone has not received that capacity yet.
             slot.RenderStock(inventory.GetQuantity(id), capacity, inventory.GetStatus(id), 0, true);
             var identities = slot.IngredientVisuals.ToArray();
+            var capacityVisuals = identities.Take(capacity).ToArray();
             var positions = identities.Select(item => (item.Position, item.Size, item.Rotation)).ToArray();
-            Check(identities.All(item => Mathf.IsEqualApprox(item.Size.X / item.Size.Y,
+            Check(capacityVisuals.All(item => Mathf.IsEqualApprox(item.Size.X / item.Size.Y,
                     item.Texture.GetWidth() / (float)item.Texture.GetHeight())),
                 $"Lv{level} {id} 拉高托盘后食材仍保持原始宽高比");
-            Check(identities.Length == capacity, $"Lv{level} {id} 按完整容量创建{capacity}个独立库存位置");
+            Check(identities.Length >= 10 && capacityVisuals.Length == capacity,
+                $"Lv{level} {id} 复用场景预建节点池并启用{capacity}个库存位置");
             if (level == 1) levelOneSizes[id] = identities[0].Size;
             Check(capacity == 4 + level * 2 && identities[0].Size.IsEqualApprox(levelOneSizes[id]),
                 $"Lv{level} {id} 使用6/8/10份容量，升级不缩小实物");
             int columns = capacity / 2;
-            Check(identities.Take(columns).Average(back => back.Position.Y) < identities.Skip(columns).Average(front => front.Position.Y)
-                && identities.Take(columns).All(back => back.GetIndex() < identities[columns].GetIndex()),
+            Check(capacityVisuals.Take(columns).Average(back => back.Position.Y) < capacityVisuals.Skip(columns).Average(front => front.Position.Y)
+                && capacityVisuals.Take(columns).All(back => back.GetIndex() < capacityVisuals[columns].GetIndex()),
                 $"Lv{level} {id} 后排先绘制，前排后绘制，取料从前排最后一份开始");
             if (id == StableIds.Ingredients.Egg)
             {
                 Rect2 anchor = TianjinWorkbenchLayout.IngredientSlot(id).IngredientAnchorRect;
-                Check(identities.Select((visual, index) =>
+                Check(capacityVisuals.Select((visual, index) =>
                 {
                     int row = index / columns, column = index % columns;
                     Vector2 foot = anchor.Position + visual.GetTransform() * new Vector2(visual.Size.X * .5f, visual.Size.Y);
@@ -54,7 +56,7 @@ public partial class StageFourSelfTest
             }
             else
             {
-                Check(slot.IngredientBounds(identities[0]).Intersects(slot.IngredientBounds(identities[columns])),
+                Check(slot.IngredientBounds(capacityVisuals[0]).Intersects(slot.IngredientBounds(capacityVisuals[columns])),
                     $"Lv{level} {id} 前后排实物相互覆盖");
                 Vector2 previousFrame = id switch
                 {
@@ -64,11 +66,11 @@ public partial class StageFourSelfTest
                 };
                 Vector2 sourceSize = identities[0].Texture.GetSize();
                 Vector2 previousSize = sourceSize * Math.Min(previousFrame.X / sourceSize.X, previousFrame.Y / sourceSize.Y);
-                Check(identities.All(item => item.Size.IsEqualApprox(previousSize * 1.2f)),
+                Check(capacityVisuals.All(item => item.Size.IsEqualApprox(previousSize * 1.2f)),
                     $"Lv{level} {id} 比上一版等比放大1.2倍");
                 if (id == StableIds.Ingredients.Scallion)
                 {
-                    Check(identities.All(item => new Rect2(32, 40, 184, 46).Encloses(slot.IngredientBounds(item))),
+                    Check(capacityVisuals.All(item => new Rect2(32, 40, 184, 46).Encloses(slot.IngredientBounds(item))),
                         $"Lv{level} 每团香葱旋转后的完整轮廓收在盘底，覆盖也不越沿",
                         string.Join("; ", identities.Select(item => slot.IngredientBounds(item).ToString())));
                     Check(slot.IngredientVisualRect.Size.X >= (level == 3 ? 180 : level == 2 ? 160 : 128)
@@ -76,8 +78,8 @@ public partial class StageFourSelfTest
                         $"Lv{level} 香葱铺开盘底宽度和纵深，不再挤成窄条");
                 }
             }
-            Check(identities.Any(item => item.Rotation > .02f) && identities.Any(item => item.Rotation < -.02f)
-                && identities.All(item => item.Size.Length() > 40),
+            Check(capacityVisuals.Any(item => item.Rotation > .02f) && capacityVisuals.Any(item => item.Rotation < -.02f)
+                && capacityVisuals.All(item => item.Size.Length() > 40),
                 $"Lv{level} {id} 保持大尺寸，前后两排错位叠放");
             int previousVisible = capacity;
             for (int quantity = capacity; quantity >= 0; quantity--)
@@ -152,7 +154,7 @@ public partial class StageFourSelfTest
         // Include capacities above today's upgrades and shrinking pooled layouts.
         foreach (string id in new[] { StableIds.Ingredients.Egg, StableIds.Ingredients.Crispy, StableIds.Ingredients.Ham })
         {
-            var slot = new IngredientStockSlotView();
+            var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
             AddChild(slot);
             slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), id,
                 TianjinWorkbenchLayout.IngredientSlot(id), IngredientVisualMode.HybridStock);
@@ -173,7 +175,7 @@ public partial class StageFourSelfTest
             }
             slot.Free();
 
-            var legacy = new IngredientStockSlotView();
+            var legacy = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
             AddChild(legacy);
             legacy.ConfigureStock(art.IngredientTray, art.Ingredient(id), id,
                 TianjinWorkbenchLayout.IngredientSlot(id) with { CaptionRect = null, StockFootprintRect = null }, IngredientVisualMode.HybridStock);
@@ -190,7 +192,7 @@ public partial class StageFourSelfTest
         {
             bool sauce = id == StableIds.Ingredients.Sauce;
             bool loose = id == StableIds.Ingredients.Scallion;
-            var slot = new IngredientStockSlotView();
+            var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
             AddChild(slot);
             Texture2D bowl = sauce ? art.SauceContainer : art.BatterContainer;
             slot.ConfigureStock(loose ? art.IngredientTray : bowl, art.Ingredient(id), id,
@@ -225,7 +227,7 @@ public partial class StageFourSelfTest
             (art.RawYoutiao, art.IngredientTray, TianjinWorkbenchLayout.RawYoutiaoSlot()),
             (art.Ingredient(StableIds.Ingredients.Youtiao), art.YoutiaoRack, TianjinWorkbenchLayout.FinishedYoutiaoSlot()) })
         {
-            var slot = new WorkstationSlotView();
+            var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
             AddChild(slot);
             slot.Configure(trayTexture, texture, "油条", spec, IngredientVisualMode.WideSingle);
             TextureRect visual = slot.IngredientVisuals[0];
@@ -235,7 +237,7 @@ public partial class StageFourSelfTest
             slot.Free();
         }
 
-        var workstation = new PancakeWorkstation { UseServingTray = true };
+        var workstation = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
         AddChild(workstation);
         workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11], art);
         var rack = (WorkstationSlotView)workstation.FindChild("FinishedYoutiaoArea", true, false);
@@ -330,7 +332,7 @@ public partial class StageFourSelfTest
                 var inventory = new IngredientInventory(catalog.IngredientStationsByLevel[level]);
                 int capacity = inventory.GetCapacity(id);
                 inventory.TryConsume(id, capacity - remainder);
-                var slot = new IngredientStockSlotView();
+                var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
                 AddChild(slot);
                 bool loose = id == StableIds.Ingredients.Scallion;
                 slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), id,
@@ -385,7 +387,7 @@ public partial class StageFourSelfTest
         string savePath = $"user://youtiao-picking-{Guid.NewGuid():N}.json";
         var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
         var controller = new DayController(); AddChild(controller);
-        var screen = new TianjinDayScreen(); AddChild(screen);
+        var screen = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen);
         screen.ConnectController(controller);
         screen.Initialize(catalog, save, controller, 11);
         screen.SetProcess(false);

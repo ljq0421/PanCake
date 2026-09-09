@@ -42,7 +42,47 @@ public partial class WuhanDayScreen : Control
     private bool CanInteract => _focused && IsVisibleInTree() && !_committed && !_abandon.Visible
         && _controller is not null && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing;
 
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        _art = new WuhanArtCatalog();
+        DeliveryDrag.Configure(GetNode<Control>("WuhanDragOverlay"));
+        DeliveryDrag.DragEnded += result =>
+        {
+            if (result.Completion is DragCompletion.Missed or DragCompletion.Rejected)
+                Feedback("请拖给仍需要这份餐品的顾客。", true);
+        };
+        for (int i = 0; i < _customerDropZones.Length; i++)
+        {
+            DeliveryDrag.RegisterZone(_customerDropZones[i]);
+            _orders[i].Configure(_art.Shared, _art);
+        }
+        Workstation.CanInteract = () => CanInteract;
+        Workstation.ConfigureDelivery(DeliveryDrag);
+        CollectionFeedback.Bind(CoinTray, this, _coinTarget, _art.Shared.Coin, () => CanInteract);
+        CoinTray.CanCollect = () => CanInteract && !DeliveryDrag.IsDragging && !Workstation.HasProductionGesture;
+        Workstation.RaiseRequested = RaiseBasket;
+        Workstation.PourRequested = ReservePour;
+        Workstation.CutRequested = CutDoupi;
+        Workstation.BasketPressed += BasketAction;
+        Workstation.IngredientPressed += IngredientAction;
+        Workstation.DoupiPressed += DoupiAction;
+        Workstation.EggPressed += EggAction;
+        Workstation.MixMoved += distance => { if (CanInteract && !Workstation.Busy("bowl")) _bowl.AddMixDistance(distance); };
+        Workstation.RefillRequested += RefillIngredient;
+        Workstation.EggRefillRequested += () =>
+        {
+            if (CanInteract && !Workstation.Busy("egg") && _egg?.TryRefill() == true) Workstation.PlayEgg(true);
+        };
+        Workstation.GestureRejected += message => Feedback(message, true);
+        this.FindButton("提前打烊").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
+        this.FindButton("收好收入 · 返回武汉经营首页").Pressed += () => HubRequested?.Invoke();
+        _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HubRequested?.Invoke(); };
+        VisibilityChanged += () =>
+        {
+            if (!IsVisibleInTree()) { Workstation.CancelAnimations(); CollectionFeedback.Clear(); }
+        };
+    }
     public void ConnectController(DayController controller)
     {
         _controller = controller; controller.StateChanged += OnStateChanged; controller.DayFinished += OnFinished;
@@ -78,83 +118,6 @@ public partial class WuhanDayScreen : Control
     {
         if (what==NotificationApplicationFocusOut) { _focused=false; Workstation?.CancelInput(); }
         if (what==NotificationApplicationFocusIn) _focused=true;
-    }
-
-    private void Build()
-    {
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); Theme=WuhanUi.CreateTheme(); _art=new WuhanArtCatalog();
-        var bg=TianjinUi.Texture(_art.Background,Vector2.Zero,TextureRect.StretchModeEnum.Scale); TianjinUi.FullRect(bg); AddChild(bg);
-        DeliveryDrag = new DragService(); AddChild(DeliveryDrag);
-        var overlay = new Control { Name="WuhanDragOverlay", MouseFilter=MouseFilterEnum.Ignore, ZIndex=110 }; TianjinUi.FullRect(overlay); AddChild(overlay); DeliveryDrag.Configure(overlay);
-        BuildHud(); BuildCustomers(); BuildWorkstation(); BuildResults();
-        DeliveryDrag.DragEnded += result => { if(result.Completion is DragCompletion.Missed or DragCompletion.Rejected) Feedback("请拖给仍需要这份餐品的顾客。",true); };
-        _feedback=WuhanUi.Label("",20,TianjinUi.Green,HorizontalAlignment.Center); _feedback.Position=new Vector2(560,146); _feedback.Size=new Vector2(800,40); _feedback.ZIndex=80; _feedback.Visible=false; _feedback.AddThemeConstantOverride("outline_size",5); _feedback.AddThemeColorOverride("font_outline_color",WuhanUi.Paper); AddChild(_feedback);
-        _tutorial=WuhanUi.Label("",18,WuhanUi.Ink,HorizontalAlignment.Center); _tutorial.Position=new Vector2(400,92); _tutorial.Size=new Vector2(1120,44); _tutorial.ZIndex=65; _tutorial.AddThemeConstantOverride("outline_size",5); _tutorial.AddThemeColorOverride("font_outline_color",WuhanUi.Paper); AddChild(_tutorial);
-        _abandon=new ConfirmationDialog { Title="提前打烊？",DialogText="本日收入和成绩不会保存。",OkButtonText="打烊并返回", Theme=Theme }; _abandon.Confirmed+=()=>{Workstation.CancelAnimations();_controller.AbandonDay();HubRequested?.Invoke();}; AddChild(_abandon);
-        VisibilityChanged += () => { if (!IsVisibleInTree()) { Workstation.CancelAnimations(); CollectionFeedback.Clear(); } };
-    }
-    private void BuildHud()
-    {
-        var panel=WuhanUi.Panel(WuhanUi.Surface,15); panel.Position=new Vector2(24,18); panel.Size=new Vector2(1872,70); panel.ZIndex=70; AddChild(panel);
-        var row=new HBoxContainer(); row.AddThemeConstantOverride("separation",20); panel.AddChild(row); _day=WuhanUi.Label("武汉 Day 1",27,WuhanUi.Ink); _day.SizeFlagsHorizontal=SizeFlags.ExpandFill; row.AddChild(_day);
-        _door=WuhanUi.Label("候场 0",18,WuhanUi.Muted); row.AddChild(_door); _clock=WuhanUi.Label("00:00",26,WuhanUi.Ink); row.AddChild(_clock); _coinTarget=TianjinUi.Texture(_art.Shared.Coin,new Vector2(42,42)); row.AddChild(_coinTarget); _income=WuhanUi.Label("¥0",25,WuhanUi.Ink); row.AddChild(_income);
-        var back=WuhanUi.Button("提前打烊",false,new Vector2(145,50)); back.Pressed+=()=>{Workstation.CancelInput();_abandon.PopupCentered();}; row.AddChild(back);
-    }
-    private void BuildCustomers()
-    {
-        var row=new HBoxContainer { Name="WuhanCustomerStrip", MouseFilter=MouseFilterEnum.Ignore, Position=new Vector2(180,224),Size=new Vector2(1560,446),Alignment=BoxContainer.AlignmentMode.Center,ZIndex=25 }; row.AddThemeConstantOverride("separation",20); AddChild(row);
-        for(int i=0;i<4;i++)
-        {
-            var button=new Control { Name=$"WuhanCustomer{i+1}", CustomMinimumSize=new Vector2(375,440), Visible=false, MouseFilter=MouseFilterEnum.Ignore };
-            row.AddChild(button); _customers[i]=button;
-            var zone=new DropZone { Name=$"WuhanCustomerDropZone{i+1}", HitPadding=5, ZIndex=1 };
-            var quantityLabel = WuhanUi.Label("", 24, WuhanUi.Ink, HorizontalAlignment.Center);
-            quantityLabel.Name = $"DoupiDeliveryQuantity{i+1}"; quantityLabel.Position = new Vector2(80, 270); quantityLabel.Size = new Vector2(215, 45);
-            quantityLabel.MouseFilter = MouseFilterEnum.Ignore; quantityLabel.ZIndex = 5;
-            quantityLabel.AddThemeConstantOverride("outline_size", 5); quantityLabel.AddThemeColorOverride("font_outline_color", WuhanUi.Paper);
-            button.AddChild(quantityLabel); _deliveryQuantityLabels[i] = quantityLabel;
-            button.AddChild(zone); TianjinUi.FullRect(zone); _customerDropZones[i]=zone; DeliveryDrag.RegisterZone(zone);
-            var col=new VBoxContainer(); col.AddThemeConstantOverride("separation",16); TianjinUi.FullRect(col,5,5,-5,-5); col.MouseFilter=MouseFilterEnum.Ignore; button.AddChild(col);
-            var bubble=new OrderBubbleView(_art.Shared,_art); col.AddChild(bubble); _orders[i]=bubble; _patience[i]=bubble.Patience;
-            _portraits[i]=new CustomerPortraitView { Presentation=CustomerPortraitPresentation.CounterHalfBody }; _portraits[i].SetVisual(_art.Shared.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId,CustomerExpression.Normal)); _portraits[i].SizeFlagsVertical=SizeFlags.ExpandFill; col.AddChild(_portraits[i]);
-        }
-    }
-    private void BuildWorkstation()
-    {
-        Workstation=new WuhanWorkstationView { Name="WuhanWorkstation",Position=new Vector2(0,625),Size=new Vector2(1920,425),ZIndex=45 };
-        AddChild(Workstation); Workstation.CanInteract=()=>CanInteract; Workstation.ConfigureDelivery(DeliveryDrag);
-        CoinTray = new CoinTrayView(_art.Shared) { Position = new Vector2(1395, 16), Scale = new Vector2(.9f, .9f) };
-        Workstation.AddChild(CoinTray);
-        CollectionFeedback = new CoinCollectionFeedback(); AddChild(CollectionFeedback);
-        CollectionFeedback.Bind(CoinTray, this, _coinTarget, _art.Shared.Coin, () => CanInteract);
-        CoinTray.CanCollect = () => CanInteract && !DeliveryDrag.IsDragging && !Workstation.HasProductionGesture;
-        Workstation.RaiseRequested = RaiseBasket;
-        Workstation.PourRequested = ReservePour;
-        Workstation.CutRequested = CutDoupi;
-        Workstation.BasketPressed+=BasketAction; Workstation.IngredientPressed+=IngredientAction;
-        Workstation.DoupiPressed+=DoupiAction; Workstation.EggPressed+=EggAction;
-        Workstation.MixMoved+=distance=>{if(CanInteract&&!Workstation.Busy("bowl"))_bowl.AddMixDistance(distance);};
-        Workstation.RefillRequested += RefillIngredient;
-        Workstation.EggRefillRequested += () => {
-            if(CanInteract && !Workstation.Busy("egg") && _egg?.TryRefill()==true) Workstation.PlayEgg(true);
-        };
-        Workstation.GestureRejected += message => Feedback(message,true);
-        for(int i=0;i<2;i++) {
-            _basketLabels[i]=StationStatus("");
-            _basketLabels[i].Position=new Vector2(205,990+i*25);
-            _basketLabels[i].Size=new Vector2(235,24);_basketLabels[i].AddThemeFontSizeOverride("font_size",16);AddChild(_basketLabels[i]);
-        }
-        _bowlStatus=Footer(465,500); _doupiStatus=Footer(1000,415); _eggStatus=Footer(1450,405);
-        _bowlStatus.Position = new Vector2(424, 682); _bowlStatus.Size = new Vector2(580, 24);
-        _doupiStatus.Position = new Vector2(1000, 1020); _doupiStatus.Size = new Vector2(415, 22);
-    }
-    private Label Footer(float x,float width) {
-        var label=StationStatus("");label.Position=new Vector2(x,990);label.Size=new Vector2(width,58);AddChild(label);return label;
-    }
-    private static Label StationStatus(string text) {
-        var label=WuhanUi.Label(text,18,WuhanUi.Ink,HorizontalAlignment.Center);
-        label.ZIndex=46;label.MouseFilter=MouseFilterEnum.Ignore;
-        label.AddThemeConstantOverride("outline_size",3);label.AddThemeColorOverride("font_outline_color",WuhanUi.Paper);return label;
     }
     private void RefillIngredient(string id) {
         if(!CanInteract || Workstation.Busy("refill:"+id) || _refills.ContainsKey(id))return;
@@ -337,7 +300,6 @@ public partial class WuhanDayScreen : Control
         CollectionFeedback.Clear();
         if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得三件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
-    private void BuildResults(){_blocker=new ColorRect{Color=new Color(0.2f,.09f,.04f,.48f),Visible=false,ZIndex=95};TianjinUi.FullRect(_blocker);AddChild(_blocker);_results=WuhanUi.Panel(WuhanUi.Paper,22);_results.Position=new Vector2(550,170);_results.Size=new Vector2(820,700);_results.Visible=false;_results.ZIndex=100;AddChild(_results);var col=new VBoxContainer();col.AddThemeConstantOverride("separation",18);_results.AddChild(col);col.AddChild(WuhanUi.Label("武汉今日营业收据",36,WuhanUi.Ink,HorizontalAlignment.Center));_resultText=new RichTextLabel{BbcodeEnabled=true,CustomMinimumSize=new Vector2(740,430),SizeFlagsVertical=SizeFlags.ExpandFill};_resultText.AddThemeFontSizeOverride("normal_font_size",22);_resultText.AddThemeColorOverride("default_color",WuhanUi.Text);col.AddChild(_resultText);_unlock=WuhanUi.Label("",18,WuhanUi.Ink,HorizontalAlignment.Center);_unlock.AutowrapMode=TextServer.AutowrapMode.WordSmart;col.AddChild(_unlock);var back=WuhanUi.Button("收好收入 · 返回武汉经营首页",true,new Vector2(0,70));back.Pressed+=()=>HubRequested?.Invoke();col.AddChild(back);}
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"蛋酒",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
     private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"点击底料杯，冲泡后拖给顾客；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

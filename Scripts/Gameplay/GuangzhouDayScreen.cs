@@ -39,7 +39,102 @@ public partial class GuangzhouDayScreen : Control
     private bool CanInteract => IsVisibleInTree() && _focused && !_manuallyPaused && !_abandon.Visible && !_committed
         && _controller is not null && _controller.State is DayState.Running or DayState.Closing;
 
-    public override void _Ready() => Build();
+    public override void _Ready()
+    {
+        SceneNodeBinder.Bind(this);
+        void FitCanvas()
+        {
+            float scale = Math.Min(Size.X / 1920, Size.Y / 1080);
+            _canvas.Scale = Vector2.One * scale;
+            _canvas.Position = (Size - _canvas.Size * scale) * .5f;
+        }
+        Resized += FitCanvas;
+        FitCanvas();
+
+        for (int i = 0; i < _customers.Length; i++)
+        {
+            int slot = i;
+            _customers[i].Pressed += () => SelectCustomer(slot);
+            _customers[i].Accepts = payload => CanDropOnCustomer(slot, payload);
+            _customers[i].Delivered = payload => DeliverPayload(payload, CustomerAt(slot)?.Id);
+        }
+        for (int i = 0; i < _trays.Length; i++)
+        {
+            int index = i;
+            GuangzhouTrayView tray = _trays[i];
+            tray.Index = i;
+            tray.CanInteract = () => CanInteract;
+            tray.SauceSelected = () => _tool == GuangzhouRules.Sauce;
+            tray.SauceRequested = () => ApplySauce(index);
+            tray.Selected = () => _selectedTray = index;
+            tray.Feedback = Feedback;
+            tray.IngredientDropped = id => ApplyIngredient(index, id);
+            tray.IngredientAllowed = id => CanAddIngredient(index, id);
+            _cuts[i].Pressed += () => { if (CanInteract) { Session.Trays[index].TryCut(); Render(); } };
+            _deliverRolls[i].Payload = $"roll:{i}";
+            _deliverRolls[i].CanDrag = () => CanInteract && Session.Trays.Count > index && Session.Trays[index].State == RiceRollState.Ready;
+            _deliverRolls[i].Pressed += () => DeliverPayload($"roll:{index}", SelectedCustomerId);
+            _discards[i].Pressed += () => { if (CanInteract) { Session.Trays[index].Reset(); _trays[index].CancelGesture(); } };
+        }
+        _pause.Pressed += () => { _manuallyPaused = !_manuallyPaused; CancelGestures(); };
+        this.FindButton("返回经营").Pressed += RequestAbandon;
+        _loadSiuMai.Pressed += () => LoadBasket(GuangzhouRules.SiuMai);
+        _loadHarGow.Pressed += () => LoadBasket(GuangzhouRules.HarGow);
+        for (int i = 0; i < _baskets.Length; i++)
+        {
+            int index = i;
+            _baskets[i].Pressed += () =>
+            {
+                if (!CanInteract || Session.Cabinet is null) return;
+                if (!Session.Cabinet.TryStock(index, Session.DimSum)) Feedback("尚未蒸熟，或该蒸点库存已满4笼。");
+            };
+        }
+
+        GuangzhouDragSource[] looseSources = this.Descendants<GuangzhouDragSource>()
+            .Where(source => !_deliverRolls.Contains(source) && source != _teaCup).ToArray();
+        string[] ingredients = GuangzhouRules.Ingredients;
+        GuangzhouDragSource[] ingredientSources = looseSources.Where(source => source.Position.Y > 880).OrderBy(source => source.Position.X).ToArray();
+        for (int i = 0; i < Math.Min(ingredients.Length, ingredientSources.Length); i++)
+        {
+            string id = ingredients[i];
+            GuangzhouDragSource source = ingredientSources[i];
+            _ingredients[id] = source;
+            source.Payload = id;
+            source.CanDrag = () => CanInteract && Session.IngredientUnlocked(id) && !Session.Ingredients[id].Refilling && Session.Ingredients[id].Count > 0;
+            source.Pressed += () =>
+            {
+                if (!CanInteract) return;
+                if (id == GuangzhouRules.Sauce) { _tool = id; Feedback("已拿起豉油壶，在切好的肠粉上短划一下。"); }
+                else if (id == GuangzhouRules.Batter) Feedback("把米浆拖到空蒸盘，再按住鼠标铺开。");
+                else ApplyIngredient(_selectedTray, id);
+            };
+        }
+        string[] dimIds = { GuangzhouRules.SiuMai, GuangzhouRules.HarGow };
+        GuangzhouDragSource[] dimSources = looseSources.Where(source => source.Position.Y > 700 && source.Position.Y < 880).OrderBy(source => source.Position.X).ToArray();
+        for (int i = 0; i < Math.Min(dimIds.Length, dimSources.Length); i++)
+        {
+            string id = dimIds[i];
+            _dimSum[id] = dimSources[i];
+            dimSources[i].Payload = "dim:" + id;
+            dimSources[i].CanDrag = () => CanInteract && Session.DimSum.Count(id) > 0;
+            dimSources[i].Pressed += () => DeliverPayload("dim:" + id, SelectedCustomerId);
+        }
+        Button[] refillButtons = this.Descendants<Button>().Where(button => button.Position.Y > 970 && button.Text.StartsWith("补满", StringComparison.Ordinal)).OrderBy(button => button.Position.X).ToArray();
+        for (int i = 0; i < Math.Min(ingredients.Length, refillButtons.Length); i++)
+        {
+            string id = ingredients[i];
+            _refills[id] = refillButtons[i];
+            refillButtons[i].Pressed += () => { if (CanInteract && Session.IngredientUnlocked(id)) Session.Ingredients[id].TryRefill(); };
+        }
+        _pourTea.Pressed += () => { if (CanInteract) Session.Tea?.TryPour(); };
+        _teaCup.Payload = "tea";
+        _teaCup.CanDrag = () => CanInteract && Session.Tea?.HasCup == true;
+        _teaCup.Pressed += () => DeliverPayload("tea", SelectedCustomerId);
+        _refillTea.Pressed += () => { if (CanInteract) Session.Tea?.Stock.TryRefill(); };
+        _abandon.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; HubRequested?.Invoke(); };
+        _back.Pressed += () => HubRequested?.Invoke();
+        _retry.Pressed += CommitResult;
+    }
     public void ConnectController(DayController controller)
     {
         if (_controller is not null) _controller.DayFinished -= OnFinished;
@@ -90,100 +185,6 @@ public partial class GuangzhouDayScreen : Control
         if (what == NotificationVisibilityChanged && !IsVisibleInTree()) CancelGestures();
     }
     private void CancelGestures() { foreach (var tray in _trays) tray?.CancelGesture(); }
-
-    private void Build()
-    {
-        _canvas = GuangzhouUi.Canvas(this);
-        var bg = new ColorRect { Color = GuangzhouUi.Background, Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore }; _canvas.AddChild(bg);
-        _title = GuangzhouUi.Text(_canvas, "广州 · 蒸汽早茶", new(48, 22, 950, 68), 36);
-        _clock = GuangzhouUi.Text(_canvas, "", new(1070, 22, 210, 68), 27);
-        _income = GuangzhouUi.Text(_canvas, "", new(1290, 22, 220, 68), 25, GuangzhouUi.Green);
-        _pause = GuangzhouUi.Button(_canvas, "暂停", new(1550, 30, 120, 52), () => { _manuallyPaused = !_manuallyPaused; CancelGestures(); });
-        GuangzhouUi.Button(_canvas, "返回经营", new(1690, 30, 180, 52), RequestAbandon);
-        for (int i = 0; i < 4; i++)
-        {
-            int slot = i; float x = 48 + i * 460;
-            _customers[i] = GuangzhouUi.Button(_canvas, new GuangzhouCustomerCard { Text = "", Alignment = HorizontalAlignment.Left }, new(x, 108, 444, 206), () => SelectCustomer(slot));
-            _orders[i] = GuangzhouUi.Text(_customers[i], "", new(20, 12, 404, 157), 23);
-            _patience[i] = new ProgressBar { Position = new(20, 178), Size = new(404, 10), ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore };
-            _patience[i].AddThemeStyleboxOverride("background", GuangzhouUi.Style(new Color("#DDE5D6"), 0));
-            _patience[i].AddThemeStyleboxOverride("fill", GuangzhouUi.Style(GuangzhouUi.Green, 0)); _customers[i].AddChild(_patience[i]);
-            _customers[i].Accepts = payload => CanDropOnCustomer(slot, payload);
-            _customers[i].Delivered = payload => DeliverPayload(payload, CustomerAt(slot)?.Id);
-        }
-        _feedback = GuangzhouUi.Text(_canvas, "", new(48, 322, 1824, 48), 22, GuangzhouUi.Green);
-        BuildCabinet(); BuildTrays(); BuildTea(); BuildIngredients();
-        _abandon = new ConfirmationDialog { Title = "结束本次营业？", DialogText = "本次尚未结算的收入和制作进度将不保存。", OkButtonText = "放弃本次营业", CancelButtonText = "继续营业" };
-        _abandon.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; HubRequested?.Invoke(); }; AddChild(_abandon);
-        BuildResults();
-    }
-    private void BuildTrays()
-    {
-        _stoveTitle = GuangzhouUi.Text(_canvas, "肠粉主操作", new(466, 374, 1014, 42), 25);
-        for (int i = 0; i < 2; i++)
-        {
-            int index = i; float x = 466 + i * 516;
-            var tray = new GuangzhouTrayView { Position = new(x, 425), Size = new(494, 380), Index = i,
-                CanInteract = () => CanInteract, SauceSelected = () => _tool == GuangzhouRules.Sauce,
-                SauceRequested = () => ApplySauce(index), Selected = () => _selectedTray = index,
-                Feedback = Feedback, IngredientDropped = id => ApplyIngredient(index, id), IngredientAllowed = id => CanAddIngredient(index, id) };
-            _trays[i] = tray; _canvas.AddChild(tray);
-            _cuts[i] = GuangzhouUi.Button(_canvas, "切段", new(x, 820, 112, 62), () => { if (CanInteract) { Session.Trays[index].TryCut(); Render(); } });
-            _deliverRolls[i] = GuangzhouUi.Button(_canvas, new GuangzhouDragSource { Text = "交付肠粉", Payload = $"roll:{i}", CanDrag = () => CanInteract && Session.Trays.Count > index && Session.Trays[index].State == RiceRollState.Ready },
-                new(x + 122, 820, 244, 62), () => DeliverPayload($"roll:{index}", SelectedCustomerId), true);
-            _discards[i] = GuangzhouUi.Button(_canvas, "丢弃", new(x + 376, 820, 118, 62), () => { if (CanInteract) { Session.Trays[index].Reset(); _trays[index].CancelGesture(); } });
-        }
-    }
-    private void BuildCabinet()
-    {
-        GuangzhouUi.Panel(_canvas, new(48, 374, 394, 508));
-        _cabinetTitle = GuangzhouUi.Text(_canvas, "点心蒸柜", new(66, 382, 358, 40), 25);
-        _loadSiuMai = GuangzhouUi.Button(_canvas, "放一笼烧卖", new(66, 431, 171, 54), () => LoadBasket(GuangzhouRules.SiuMai));
-        _loadHarGow = GuangzhouUi.Button(_canvas, "放一笼虾饺", new(247, 431, 177, 54), () => LoadBasket(GuangzhouRules.HarGow));
-        for (int i = 0; i < 4; i++)
-        {
-            int index = i;
-            _baskets[i] = GuangzhouUi.Button(_canvas, $"第{i + 1}层", new(66, 498 + i * 59, 358, 51), () =>
-            {
-                if (!CanInteract || Session.Cabinet is null) return;
-                if (!Session.Cabinet.TryStock(index, Session.DimSum)) Feedback("尚未蒸熟，或该蒸点库存已满4笼。");
-            });
-        }
-        foreach (var pair in new[] { (GuangzhouRules.SiuMai, 66), (GuangzhouRules.HarGow, 247) })
-        {
-            string id = pair.Item1;
-            _dimSum[id] = GuangzhouUi.Button(_canvas, new GuangzhouDragSource { Text = "", Payload = "dim:" + id, CanDrag = () => CanInteract && Session.DimSum.Count(id) > 0 },
-                new(pair.Item2, 752, 171, 96), () => DeliverPayload("dim:" + id, SelectedCustomerId));
-        }
-        GuangzhouUi.Text(_canvas, "熟后点击层位取出 · 每种最多4笼", new(66, 851, 358, 25), 18, GuangzhouUi.Muted);
-    }
-    private void BuildTea()
-    {
-        GuangzhouUi.Panel(_canvas, new(1506, 374, 366, 508));
-        GuangzhouUi.Text(_canvas, "一杯早茶", new(1530, 386, 316, 40), 27);
-        _pourTea = GuangzhouUi.Button(_canvas, "取茶 · 0.3秒", new(1530, 440, 316, 62), () => { if (CanInteract) Session.Tea?.TryPour(); });
-        _teaCup = GuangzhouUi.Button(_canvas, new GuangzhouDragSource { Text = "交付早茶", Payload = "tea", CanDrag = () => CanInteract && Session.Tea?.HasCup == true }, new(1530, 518, 316, 62), () => DeliverPayload("tea", SelectedCustomerId), true);
-        _refillTea = GuangzhouUi.Button(_canvas, "补茶 · 0.5秒", new(1530, 596, 316, 54), () => { if (CanInteract) Session.Tea?.Stock.TryRefill(); });
-        _tutorial = GuangzhouUi.Text(_canvas, "", new(1530, 674, 316, 190), 21, GuangzhouUi.Muted);
-    }
-    private void BuildIngredients()
-    {
-        for (int i = 0; i < GuangzhouRules.Ingredients.Length; i++)
-        {
-            string id = GuangzhouRules.Ingredients[i]; float x = 48 + i * 369;
-            _ingredients[id] = GuangzhouUi.Button(_canvas, new GuangzhouDragSource { Text = GuangzhouRules.Name(id), Payload = id,
-                CanDrag = () => CanInteract && Session.IngredientUnlocked(id) && !Session.Ingredients[id].Refilling && Session.Ingredients[id].Count > 0 },
-                new(x, 916, 350, 65), () =>
-                {
-                    if (!CanInteract) return;
-                    if (id == GuangzhouRules.Sauce) { _tool = id; Feedback("已拿起豉油壶，在切好的肠粉上短划一下。"); }
-                    else if (id == GuangzhouRules.Batter) Feedback("把米浆拖到空蒸盘，再按住鼠标铺开。");
-                    else ApplyIngredient(_selectedTray, id);
-                });
-            _refills[id] = GuangzhouUi.Button(_canvas, "补满 · 0.8秒", new(x, 991, 350, 48), () => { if (CanInteract && Session.IngredientUnlocked(id)) Session.Ingredients[id].TryRefill(); });
-        }
-        GuangzhouUi.Text(_canvas, "铺浆 → 加料 → 推入 → 拉出 → 刮卷 → 切段 → 淋汁 → 交付    ·    点击顾客可选中，成品也可直接拖给顾客", new(48, 1045, 1824, 25), 19, GuangzhouUi.Muted);
-    }
     private bool CanAddIngredient(int tray, string id)
     {
         if (!CanInteract || tray >= Session.Trays.Count || !Session.IngredientUnlocked(id) || !Session.Ingredients.TryGetValue(id, out var stock) || stock.Count == 0 || stock.Refilling) return false;
@@ -253,7 +254,12 @@ public partial class GuangzhouDayScreen : Control
         {
             var c = CustomerAt(i); _customers[i].Disabled = c is null || !CanInteract;
             _patience[i].Visible = c is not null;
-            _customers[i].AddThemeStyleboxOverride("normal", GuangzhouUi.Style(c?.Id == SelectedCustomerId ? new Color("#D4E4CC") : GuangzhouUi.Paper, c?.Id == SelectedCustomerId ? 3 : 1));
+            if (_customers[i].GetThemeStylebox("normal") is StyleBoxFlat customerStyle)
+            {
+                customerStyle.BgColor = c?.Id == SelectedCustomerId ? new Color("#D4E4CC") : GuangzhouUi.Paper;
+                int border = c?.Id == SelectedCustomerId ? 3 : 1;
+                customerStyle.BorderWidthLeft = customerStyle.BorderWidthTop = customerStyle.BorderWidthRight = customerStyle.BorderWidthBottom = border;
+            }
             if (c is null) { _orders[i].Text = $"{i + 1:00}    等待街坊\n\n肠粉现蒸 · 点心提前备"; continue; }
             string lines = string.Join("\n", c.Order.Lines.Select((l, n) => $"{(c.Progress.GetRemainingQuantity(n) == 0 ? "✓" : "·")} {LineName(l)}  {c.Progress.GetDeliveredQuantity(n)}/{l.Quantity}"));
             _orders[i].Text = $"{c.Type.DisplayName}  ¥{c.Order.BasePrice}\n{lines}";
@@ -298,15 +304,6 @@ public partial class GuangzhouDayScreen : Control
         if (_controller is null || _controller.CurrentConfig?.CityId != StableIds.Cities.Guangzhou) return;
         if (_controller.State is DayState.Preparing || _committed) { HubRequested?.Invoke(); return; }
         CancelGestures(); _abandon.PopupCentered(new Vector2I(580, 230));
-    }
-    private void BuildResults()
-    {
-        _overlay = new ColorRect { Color = new(0.08f, .15f, .1f, .65f), Size = new(1920, 1080), Visible = false, ZIndex = 100 }; _canvas.AddChild(_overlay);
-        GuangzhouUi.Panel(_overlay, new(450, 175, 1020, 730));
-        GuangzhouUi.Text(_overlay, "广州 · 今日营业收据", new(500, 200, 920, 65), 38);
-        _results = GuangzhouUi.Text(_overlay, "", new(510, 290, 900, 445), 27);
-        _back = GuangzhouUi.Button(_overlay, "收好收入 · 返回经营", new(510, 790, 900, 64), () => HubRequested?.Invoke(), true);
-        _retry = GuangzhouUi.Button(_overlay, "重试保存", new(510, 711, 900, 56), CommitResult);
     }
     private void OnFinished(DayResult result)
     {

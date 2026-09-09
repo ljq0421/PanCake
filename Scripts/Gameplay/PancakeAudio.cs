@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.UI;
 
 namespace ProjectCake.Gameplay;
 
@@ -22,8 +23,7 @@ public partial class PancakeAudio : Node
 
     public override void _Ready()
     {
-        _player = new AudioStreamPlayer { VolumeDb = -10 };
-        AddChild(_player);
+        SceneNodeBinder.Bind(this);
         _sounds[PancakeSound.PickUp] = MakeTone(720, 0.06, 0.28);
         _sounds[PancakeSound.Stroke] = MakeTone(320, 0.08, 0.18);
         _sounds[PancakeSound.Sizzle] = MakeNoise(0.12, 0.16);

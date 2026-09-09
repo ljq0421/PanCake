@@ -1,12 +1,1201 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/TianjinMapScreen.cs" id="1_map"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/中国区域地图基础背景.png" id="2_qsem1"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/天津城市节点.png" id="3_d5dk4"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/通用未解锁城市节点.png" id="4_6mlq6"]
 
-[node name="TianjinMapScreen" type="Control"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_my0s8"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jjqsf"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fpk13"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nxwxb"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sc73u"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.972549, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_alxkh"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.972549, 0.9098039, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="Theme" id="Theme_kxlsf"]
+Button/colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+Button/colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+Button/colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+Button/font_sizes/font_size = 18
+Button/styles/focus = SubResource("StyleBoxFlat_my0s8")
+Button/styles/hover = SubResource("StyleBoxFlat_jjqsf")
+Button/styles/normal = SubResource("StyleBoxFlat_fpk13")
+Button/styles/pressed = SubResource("StyleBoxFlat_nxwxb")
+Label/colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+Label/font_sizes/font_size = 18
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_sc73u")
+TooltipLabel/colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+TooltipLabel/colors/font_shadow_color = Color(1, 1, 1, 0)
+TooltipLabel/constants/outline_size = 0
+TooltipLabel/font_sizes/font_size = 18
+TooltipPanel/styles/panel = SubResource("StyleBoxFlat_alxkh")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wlcp0"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4xmkk"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7a32s"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bh2pr"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_txr6m"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kd4bs"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qkygs"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quxae"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8ts03"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sww6p"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xygb3"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3ndn5"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7abgt"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1t3oc"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cnduw"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d816w"]
+content_margin_left = 34.0
+content_margin_top = 34.0
+content_margin_right = 34.0
+content_margin_bottom = 34.0
+bg_color = Color(0.95686275, 0.8666667, 0.70980394, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 5
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7j21m"]
+atlas = ExtResource("3_d5dk4")
+region = Rect2(135, 155, 1025, 930)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x4514"]
+content_margin_left = 34.0
+content_margin_top = 34.0
+content_margin_right = 34.0
+content_margin_bottom = 34.0
+bg_color = Color(1, 0.972549, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 5
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4g4k1"]
+atlas = ExtResource("4_6mlq6")
+region = Rect2(118, 166, 1029, 932)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8ctgh"]
+content_margin_left = 34.0
+content_margin_top = 34.0
+content_margin_right = 34.0
+content_margin_bottom = 34.0
+bg_color = Color(1, 0.972549, 0.9098039, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 5
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_aktx3"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 0.99215686, 0.95686275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7254902, 0.78039217, 0.7137255, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6yyxs"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9607843, 0.72156864, 0.23921569, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cef0r"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.88392156, 0.66384315, 0.22007844, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6d3y7"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96431375, 0.74662745, 0.30768627, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_evx2u"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e46qw"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9607843, 0.72156864, 0.23921569, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cbviy"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ocg4t"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.92, 0.8694902, 0.7576471, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vfpqh"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.9500392, 0.8394118, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lp4fi"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_alrt0"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.94509804, 0.8235294, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eh2i2"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 0.99215686, 0.95686275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7254902, 0.78039217, 0.7137255, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uoovy"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9607843, 0.72156864, 0.23921569, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ngy3g"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.88392156, 0.66384315, 0.22007844, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a3cxd"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96431375, 0.74662745, 0.30768627, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4t2s3"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.8509804, 0.78039217, 0.6666667, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mbw6e"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.9607843, 0.72156864, 0.23921569, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.21, 0.1, 0.045, 0.34)
+shadow_size = 8
+shadow_offset = Vector2(0, 6)
+
+[node name="TianjinMapScreen" type="Control" unique_id=725803073]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_kxlsf")
 script = ExtResource("1_map")
+
+[node name="@TextureRect@193" type="TextureRect" parent="." unique_id=910001647]
+modulate = Color(1, 1, 1, 0.92)
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("2_qsem1")
+expand_mode = 1
+
+[node name="@MarginContainer@194" type="MarginContainer" parent="." unique_id=526219770]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 150.0
+offset_top = 80.0
+offset_right = -150.0
+offset_bottom = -80.0
+
+[node name="@VBoxContainer@195" type="VBoxContainer" parent="@MarginContainer@194" unique_id=1548426252]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="@HBoxContainer@196" type="HBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195" unique_id=726191480]
+layout_mode = 2
+
+[node name="@VBoxContainer@197" type="VBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196" unique_id=414147587]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="@Label@198" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196/@VBoxContainer@197" unique_id=1969862725]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 46
+text = "早餐地图"
+
+[node name="@Label@199" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196/@VBoxContainer@197" unique_id=1543374987]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_font_sizes/font_size = 22
+text = "从天津的清晨，走向下一座城市"
+
+[node name="@Button@200" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196" unique_id=828857774]
+custom_minimum_size = Vector2(190, 58)
+layout_mode = 2
+tooltip_text = "临时测试入口：不要求天津章节已完成，也不会改变城市解锁状态。正式发布前移除。"
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_wlcp0")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_4xmkk")
+theme_override_styles/hover = SubResource("StyleBoxFlat_7a32s")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_bh2pr")
+theme_override_styles/focus = SubResource("StyleBoxFlat_txr6m")
+text = "测试直达武汉"
+
+[node name="@Button@201" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196" unique_id=681891852]
+custom_minimum_size = Vector2(210, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_kd4bs")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_qkygs")
+theme_override_styles/hover = SubResource("StyleBoxFlat_quxae")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_8ts03")
+theme_override_styles/focus = SubResource("StyleBoxFlat_sww6p")
+text = "返回经营首页"
+
+[node name="@Button@202" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196" unique_id=1389468961]
+visible = false
+custom_minimum_size = Vector2(190, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_xygb3")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_3ndn5")
+theme_override_styles/hover = SubResource("StyleBoxFlat_7abgt")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_1t3oc")
+theme_override_styles/focus = SubResource("StyleBoxFlat_cnduw")
+text = "测试直达西安"
+
+[node name="@HBoxContainer@203" type="HBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195" unique_id=2084533606]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="@PanelContainer@207" type="PanelContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203" unique_id=260244046]
+custom_minimum_size = Vector2(430, 390)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_d816w")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_tianjinCard")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207" unique_id=659219655]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="IconStack" type="Control" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207/VBoxContainer" unique_id=340084780]
+custom_minimum_size = Vector2(170, 170)
+layout_mode = 2
+
+[node name="CityIcon" type="TextureRect" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207/VBoxContainer/IconStack" unique_id=835791562]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_7j21m")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="UnlockedEmblem" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207/VBoxContainer/IconStack" unique_id=1555579348]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+theme_override_font_sizes/font_size = 88
+text = "天"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="@Label@204" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207/VBoxContainer" unique_id=1758656421]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 38
+text = "天津"
+horizontal_alignment = 1
+
+[node name="@Label@205" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207/VBoxContainer" unique_id=292648462]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_font_sizes/font_size = 20
+text = "煎饼果子 · 油条 · 豆浆"
+horizontal_alignment = 1
+
+[node name="@Label@206" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@207/VBoxContainer" unique_id=971232147]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 22
+text = "尚未点亮
+完成 Day 15 并至少获得一星"
+horizontal_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_tianjinState")
+
+[node name="@Label@208" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203" unique_id=1501130381]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_font_sizes/font_size = 56
+text = "➜"
+vertical_alignment = 1
+
+[node name="@PanelContainer@212" type="PanelContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203" unique_id=1585788585]
+custom_minimum_size = Vector2(430, 390)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_x4514")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_wuhanCard")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212" unique_id=1238164209]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="IconStack" type="Control" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212/VBoxContainer" unique_id=1575909088]
+custom_minimum_size = Vector2(170, 170)
+layout_mode = 2
+
+[node name="CityIcon" type="TextureRect" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212/VBoxContainer/IconStack" unique_id=349703505]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_4g4k1")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_wuhanLockedIcon")
+
+[node name="UnlockedEmblem" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212/VBoxContainer/IconStack" unique_id=1994856991]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+theme_override_font_sizes/font_size = 88
+text = "武"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_wuhanUnlockedEmblem")
+
+[node name="@Label@209" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212/VBoxContainer" unique_id=1795936898]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 38
+text = "武汉"
+horizontal_alignment = 1
+
+[node name="@Label@210" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212/VBoxContainer" unique_id=841047990]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_font_sizes/font_size = 20
+text = "下一章"
+horizontal_alignment = 1
+
+[node name="@Label@211" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/@PanelContainer@212/VBoxContainer" unique_id=1610023327]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 22
+text = "未开放
+可使用上方测试入口"
+horizontal_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_wuhanState")
+
+[node name="@Label@213" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203" unique_id=30829293]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_font_sizes/font_size = 40
+text = "➜"
+vertical_alignment = 1
+
+[node name="XianCityCard" type="PanelContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203" unique_id=223474540]
+custom_minimum_size = Vector2(430, 390)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_8ctgh")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_xianCard")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard" unique_id=1305675373]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="IconStack" type="Control" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard/VBoxContainer" unique_id=534222795]
+custom_minimum_size = Vector2(170, 170)
+layout_mode = 2
+
+[node name="CityIcon" type="TextureRect" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard/VBoxContainer/IconStack" unique_id=994561998]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_4g4k1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="UnlockedEmblem" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard/VBoxContainer/IconStack" unique_id=241872743]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.2901961, 0.16078432, 0.10980392, 1)
+theme_override_font_sizes/font_size = 88
+text = "西"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="@Label@214" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard/VBoxContainer" unique_id=7677514]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 38
+text = "西安"
+horizontal_alignment = 1
+
+[node name="@Label@215" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard/VBoxContainer" unique_id=791374064]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6039216, 0.34901962, 0.1764706, 1)
+theme_override_font_sizes/font_size = 20
+text = "肉夹馍 · 胡辣汤"
+horizontal_alignment = 1
+
+[node name="@Label@216" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@203/XianCityCard/VBoxContainer" unique_id=1019547351]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 22
+text = "完成武汉 Day 12 一星后开放"
+horizontal_alignment = 1
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_xianState")
+
+[node name="@PanelContainer@217" type="PanelContainer" parent="@MarginContainer@194/@VBoxContainer@195" unique_id=397642252]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_aktx3")
+
+[node name="@HBoxContainer@218" type="HBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@217" unique_id=579652957]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="@Label@219" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@217/@HBoxContainer@218" unique_id=1914610363]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.15686275, 0.35686275, 0.29411766, 1)
+theme_override_font_sizes/font_size = 52
+text = "广"
+
+[node name="@Label@220" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@217/@HBoxContainer@218" unique_id=1626370634]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.15294118, 0.24705882, 0.20784314, 1)
+theme_override_font_sizes/font_size = 24
+text = "广州 · 蒸汽早茶
+肠粉 · 烧卖 · 虾饺 · 早茶"
+
+[node name="@Label@221" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@217/@HBoxContainer@218" unique_id=1856016524]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.39215687, 0.4745098, 0.42352942, 1)
+theme_override_font_sizes/font_size = 20
+text = "西安 Day 12 一星后开放
+可使用临时测试入口"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_guangzhouState")
+
+[node name="@Button@222" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@217/@HBoxContainer@218" unique_id=1189786945]
+custom_minimum_size = Vector2(180, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_6yyxs")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_cef0r")
+theme_override_styles/hover = SubResource("StyleBoxFlat_6d3y7")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_evx2u")
+theme_override_styles/focus = SubResource("StyleBoxFlat_e46qw")
+disabled = true
+text = "前往广州"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_guangzhouEnter")
+
+[node name="@Button@223" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@217/@HBoxContainer@218" unique_id=208816701]
+custom_minimum_size = Vector2(210, 58)
+layout_mode = 2
+tooltip_text = "临时入口：从广州Day 1正常推进并保存，不改变正式城市解锁状态。"
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_cbviy")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ocg4t")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vfpqh")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_lp4fi")
+theme_override_styles/focus = SubResource("StyleBoxFlat_alrt0")
+text = "测试直达广州"
+
+[node name="@PanelContainer@224" type="PanelContainer" parent="@MarginContainer@194/@VBoxContainer@195" unique_id=990512460]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_eh2i2")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_yangzhouPanel")
+
+[node name="@HBoxContainer@225" type="HBoxContainer" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@224" unique_id=1062575694]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="@Label@226" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@224/@HBoxContainer@225" unique_id=1500756183]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.15686275, 0.35686275, 0.29411766, 1)
+theme_override_font_sizes/font_size = 52
+text = "扬"
+
+[node name="@Label@227" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@224/@HBoxContainer@225" unique_id=930026916]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.15294118, 0.24705882, 0.20784314, 1)
+theme_override_font_sizes/font_size = 23
+text = "扬州 · 一席早茶
+烫干丝 · 三丁包 · 翡翠烧卖 · 绿杨春"
+
+[node name="@Label@228" type="Label" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@224/@HBoxContainer@225" unique_id=1886517178]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.39215687, 0.4745098, 0.42352942, 1)
+theme_override_font_sizes/font_size = 20
+text = "广州 Day 12 一星后开放"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_yangzhouState")
+
+[node name="EnterYangzhou" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@PanelContainer@224/@HBoxContainer@225" unique_id=473156116]
+custom_minimum_size = Vector2(180, 58)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_uoovy")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ngy3g")
+theme_override_styles/hover = SubResource("StyleBoxFlat_a3cxd")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_4t2s3")
+theme_override_styles/focus = SubResource("StyleBoxFlat_mbw6e")
+disabled = true
+text = "前往扬州"
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_yangzhouEnter")
+
+[node name="@Label@229" type="Label" parent="@MarginContainer@194/@VBoxContainer@195" unique_id=1586924562]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
+theme_override_font_sizes/font_size = 19
+text = "天津 Day 15 一星开放武汉；武汉 Day 12 一星开放西安；西安 Day 12 一星开放广州。"

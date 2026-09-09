@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/CoinCollectionFeedback.cs" id="1_cpgvr"]
+[ext_resource type="Script" path="res://Scripts/Gameplay/PancakeAudio.cs" id="2_gyf83"]
+
+[node name="CoinCollectionFeedback" type="Node" unique_id=178073584]
+script = ExtResource("1_cpgvr")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<CollectionFeedback>k__BackingField")
+
+[node name="@Node@349" type="Node" parent="." unique_id=126914532]
+script = ExtResource("2_gyf83")
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinCollectionFeedback|_audio")
+
+[node name="@AudioStreamPlayer@350" type="AudioStreamPlayer" parent="@Node@349" unique_id=1658542015]
+volume_db = -10.0
+metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeAudio|_player")

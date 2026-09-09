@@ -2372,30 +2372,6 @@ mouse_filter = 2
 script = ExtResource("44_e3we0")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0", "ProjectCake.Gameplay.TianjinDayScreen|_portraits|array|0")
 
-[node name="@TextureRect@321" type="TextureRect" parent="CustomerStrip/CustomerSlot1/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=1837196550]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("45_84c21")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
-
-[node name="@TextureRect@322" type="TextureRect" parent="CustomerStrip/CustomerSlot1/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=1299853575]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("46_xsl5t")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
-
 [node name="CustomerSlot2" type="Control" parent="CustomerStrip" unique_id=571051917]
 visible = false
 custom_minimum_size = Vector2(340, 415)
@@ -2474,30 +2450,6 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("44_e3we0")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0", "ProjectCake.Gameplay.TianjinDayScreen|_portraits|array|1")
-
-[node name="@TextureRect@321" type="TextureRect" parent="CustomerStrip/CustomerSlot2/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=665513792]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("45_84c21")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
-
-[node name="@TextureRect@322" type="TextureRect" parent="CustomerStrip/CustomerSlot2/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=1061919406]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("46_xsl5t")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
 
 [node name="CustomerSlot3" type="Control" parent="CustomerStrip" unique_id=482146771]
 visible = false
@@ -2578,30 +2530,6 @@ mouse_filter = 2
 script = ExtResource("44_e3we0")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0", "ProjectCake.Gameplay.TianjinDayScreen|_portraits|array|2")
 
-[node name="@TextureRect@321" type="TextureRect" parent="CustomerStrip/CustomerSlot3/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=961489418]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("45_84c21")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
-
-[node name="@TextureRect@322" type="TextureRect" parent="CustomerStrip/CustomerSlot3/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=1090151758]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("46_xsl5t")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
-
 [node name="CustomerSlot4" type="Control" parent="CustomerStrip" unique_id=1679144941]
 visible = false
 custom_minimum_size = Vector2(340, 415)
@@ -2681,30 +2609,6 @@ mouse_filter = 2
 script = ExtResource("44_e3we0")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0", "ProjectCake.Gameplay.TianjinDayScreen|_portraits|array|3")
 
-[node name="@TextureRect@321" type="TextureRect" parent="CustomerStrip/CustomerSlot4/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=93128310]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("45_84c21")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
-
-[node name="@TextureRect@322" type="TextureRect" parent="CustomerStrip/CustomerSlot4/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=717630949]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("46_xsl5t")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
-
 [node name="CustomerSlot5" type="Control" parent="CustomerStrip" unique_id=1485932616]
 visible = false
 custom_minimum_size = Vector2(340, 415)
@@ -2783,30 +2687,6 @@ size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("44_e3we0")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0", "ProjectCake.Gameplay.TianjinDayScreen|_portraits|array|4")
-
-[node name="@TextureRect@321" type="TextureRect" parent="CustomerStrip/CustomerSlot5/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=1299501294]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("45_84c21")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
-
-[node name="@TextureRect@322" type="TextureRect" parent="CustomerStrip/CustomerSlot5/CustomerColumn/PortraitStack/CustomerPortraitView" unique_id=454464611]
-layout_mode = 0
-offset_top = 6.0
-offset_bottom = 344.46155
-scale = Vector2(0.9235983, 0.9235983)
-pivot_offset = Vector2(0, 169.23077)
-mouse_filter = 2
-texture = ExtResource("46_xsl5t")
-expand_mode = 1
-stretch_mode = 5
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
 
 [node name="@PanelContainer@2" type="PanelContainer" parent="." unique_id=2143706625]
 z_index = 70

@@ -353,7 +353,7 @@ public partial class TianjinDayScreen : Control
         DayResult? progress = _controller.Ledger?.Build();
         _completedOrders.Text = $"完成订单 {progress?.CompletedCustomers ?? 0}/{_controller.CurrentConfig.CustomerCount}";
         _income.Text = $"今日收入 ¥{progress?.TotalRevenue ?? 0}";
-        _workstation.CoinTray?.RenderRevenue(progress?.TotalRevenue ?? 0);
+        _workstation.CoinTray?.RenderRevenue(progress?.TotalRevenue ?? 0, _controller.Ledger?.PaidCustomers ?? 0);
         RenderCustomers();
     }
 
@@ -439,6 +439,7 @@ public partial class TianjinDayScreen : Control
         }
         if (evaluation.TotalRevenue > 0 && !ReducedMotion)
         {
+            _workstation.CoinTray?.RenderRevenue(_controller.Ledger!.Build().TotalRevenue, _controller.Ledger.PaidCustomers);
             Vector2 target = GetGlobalTransform().AffineInverse() * (_workstation.CoinTray?.LandingPoint ?? _coinTarget.GetGlobalRect().GetCenter());
             for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08, index);
         }

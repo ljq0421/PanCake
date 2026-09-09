@@ -39,6 +39,7 @@ public sealed class DayLedger
     public int SaleRevenue { get; private set; }
     public int Tips { get; private set; }
     public int CompletedCustomers { get; private set; }
+    public int PaidCustomers { get; private set; }
     public int LostCustomers { get; private set; }
     public int PerfectOrders { get; private set; }
     public int CorrectOrders { get; private set; }
@@ -59,6 +60,7 @@ public sealed class DayLedger
         SaleRevenue += evaluation.SaleRevenue;
         Tips += evaluation.Tip;
         CompletedCustomers++;
+        if (evaluation.TotalRevenue > 0) PaidCustomers++;
         _satisfactionPoints += evaluation.SatisfactionScore;
         if (evaluation.Grade == DeliveryGrade.Perfect)
         {

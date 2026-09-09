@@ -49,16 +49,30 @@ public partial class CoinCollectionSelfTest : Node
                 var tray = wuhan ? ((WuhanDayScreen)screen).CoinTray : screen.GetChildren().OfType<PancakeWorkstation>().Single().CoinTray!;
                 var feedback = screen.GetChildren().OfType<CoinCollectionFeedback>().Single(); feedback.SetProcess(false);
                 await Frames();
-                var resting = tray.Coins.Select(c => c.GetTransform()).ToArray();
-                for (int pileCount = 0; pileCount <= 12; pileCount++)
+                controller.Tick(10);
+                screen._Process(.00001);
+                await Frames();
+                if (!wuhan)
                 {
-                    tray.RenderRevenue(pileCount * 10);
+                    var portrait = (CustomerPortraitView)screen.FindChild("CustomerPortraitView", true, false);
+                    var layers = portrait.GetChildren().OfType<TextureRect>().ToArray();
+                    Check(portrait.IsVisibleInTree() && layers.Length == 2
+                        && layers.All(layer => layer.IsVisibleInTree() && layer.Size.X > 200 && layer.Size.Y > 220)
+                        && layers[0].Texture == portrait.BodyTexture && layers[1].Texture == portrait.HeadTexture,
+                        "customer has exactly two visible, laid-out portrait layers without duplicate scene overrides");
+                }
+                var resting = tray.Coins.Select(c => c.GetTransform()).ToArray();
+                for (int pileCount = 0; pileCount <= 26; pileCount++)
+                {
+                    tray.RenderRevenue(pileCount * 10, pileCount);
+                    Check(tray.VisibleCoinCount == pileCount * CoinTrayView.CoinsPerPayment,
+                        $"{pileCount} customers each leave a handful, including beyond the old 12-coin cap");
                     Check(tray.Coins.Where(c => c.Visible).All(c => new[]
                     {
                         Vector2.Zero, new Vector2(c.Size.X, 0), c.Size, new Vector2(0, c.Size.Y),
                     }.All(p => tray.SurfaceBounds.HasPoint(c.GetGlobalTransform() * p))),
                         $"{width}px scatter {pileCount}: all rotated corners remain within tray");
-                    Check(tray.Coins.Select((c, i) => c.GetTransform() == resting[i]).All(same => same),
+                    Check(tray.Coins.Take(resting.Length).Select((c, i) => c.GetTransform() == resting[i]).All(same => same),
                         "revenue refresh preserves settled coin positions");
                 }
                 if (Capture && !reduced) await Shot($"{(wuhan ? "wuhan" : "tianjin")}-{width}-full-pile");
@@ -74,7 +88,7 @@ public partial class CoinCollectionSelfTest : Node
                 }
                 await Frames(); Pay(56); await Frames();
                 string context = $"{(wuhan ? "wuhan" : "tianjin")}-{width}-{(reduced ? "reduced" : "normal")}";
-                Check(tray.PendingAmount == 56 && tray.VisibleCoinCount == 6, context + " auto-booked money awaits visual collection");
+                Check(tray.PendingAmount == 56 && tray.VisibleCoinCount == 3, context + " each paid customer leaves one handful regardless of amount");
                 if (Capture && !reduced) await Shot(context + "-before");
                 feedback.PaymentFrom(tray.LandingPoint - new Vector2(0, 100));
                 if (reduced) Check(feedback.Effects.Count == 0, "reduced motion omits payment scatter and bounce");

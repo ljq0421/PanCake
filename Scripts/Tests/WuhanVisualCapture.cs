@@ -49,10 +49,16 @@ public partial class WuhanVisualCapture : Node
             progress.EquipmentLevels["noodle_cooker"]=level;progress.EquipmentLevels["ingredient_station"]=3;
             progress.EquipmentLevels["doupi_griddle"]=level;progress.EquipmentLevels["egg_rice_wine_station"]=1;
             var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);
-            day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);day.BeginDay();
+            day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);
+            foreach (var planned in controller.CurrentPlan!.Customers)
+                planned.Order = new ProjectCake.Orders.OrderData {
+                    OrderId=planned.Order.OrderId, CityId=StableIds.Cities.Wuhan, CustomerTypeId=planned.CustomerTypeId,
+                    BasePrice=30, PatienceSeconds=1000,
+                    Lines=new[]{new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesScallion,2),
+                        new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2),
+                        new ProjectCake.Orders.OrderLineData(ProductKind.EggRiceWine,StableIds.Products.EggRiceWine,2)} };
+            day.BeginDay();
             WuhanWorkstationView view=day.Workstation;
-            int eggClicks=0;
-            view.EggPressed+=()=>eggClicks++;
             void Require(bool condition,string message)
             {
                 if(!condition)throw new InvalidOperationException($"Layout Lv{level} {(small?720:1080)}: {message}");
@@ -86,9 +92,11 @@ public partial class WuhanVisualCapture : Node
                 Save($"{root}/lv{level}/{name}.png");
             }
 
-            Step(6);await Shot("01-idle");
-            // Read presentation geometry without adding production API solely for
-            // tests. The baseline bounds are frozen from the previous 252x90 tray.
+            Step(6);
+            for (int i=0;i<200 && controller.CustomerQueue!.Slots.Count<4;i++) Step(.25);
+            Require(controller.CustomerQueue!.Slots.Count==4, "four full combo orders visible");
+            await Shot("01-idle");
+            // Inspect thumbnail bounds without exposing presentation-only test APIs.
             const BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
             Type viewType = typeof(WuhanWorkstationView);
             Rect2 stockBounds = (Rect2)viewType.GetField("StockRect", hidden)!.GetValue(view)!;
@@ -97,10 +105,8 @@ public partial class WuhanVisualCapture : Node
             for (int piece = 0; piece < 16; piece++)
             {
                 Rect2 placement = (Rect2)viewType.GetMethod("StockItemRect", hidden)!.Invoke(view, new object[] { piece })!;
-                float oldWidth = piece % 8 < 4 ? 34.564f : 39.856f;
-                float oldScale = Math.Min(oldWidth / singleSource.Size.X, 29 / singleSource.Size.Y);
-                Vector2 expectedSize = singleSource.Size * oldScale * 1.2f;
-                Require(placement.Size.DistanceTo(expectedSize) < .01f, $"stock piece {piece + 1} is exactly 1.2x baseline");
+                Require(placement.Size.X <= 34 && placement.Size.Y <= 24, $"stock piece {piece + 1} is a compact thumbnail");
+                Require(Math.Abs(placement.Size.Aspect() - singleSource.Size.Aspect()) < .01f, "stock thumbnail keeps source aspect");
                 Require(stockBounds.Encloses(placement), $"stock piece {piece + 1} remains inside tray");
             }
             for(int basket=0;basket<day.Cooker.Baskets.Count;basket++)
@@ -128,7 +134,7 @@ public partial class WuhanVisualCapture : Node
                 Step(.5);
             }
             Click(view.PanCenter);Require(day.Doupi!.State==DoupiState.Batter,"viewport pan accepts batter");
-            Move(view.BaseCupCenter);Button(view.BaseCupCenter,true);Move(view.CupCenter,true);Button(view.CupCenter,false);Require(eggClicks==1&&day.Egg!.IsPreparing,"viewport cup starts brewing");
+            Require(day.Egg!.Count==6 && view.CanDeliver(ProductKind.EggRiceWine), "six finished egg cups immediately available");
             Step(.18);await Shot("02-preparing");Step(.5);
 
             Vector2 center=view.BowlCenter;
@@ -145,12 +151,12 @@ public partial class WuhanVisualCapture : Node
             day.Doupi.Tick(griddle.SecondStageReadySeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
             for(int cut=0;cut<day.Doupi.RequiredCuts;cut++)Require(day.Doupi.TryCut((DoupiCutDirection)cut),$"doupi fixture cut {cut+1}");
             view.CancelAnimations();Step(2.5);
-            Require(day.Egg!.HasFinishedCup,"finished egg cup remains visible");
+            Require(day.Egg!.CanTake,"finished egg cup remains visible");
             await Shot("03-ready");
 
             Require(day.DoupiStock.TryAddBatch(DoupiInventory.Capacity-day.DoupiStock.Count),"stock fixture fills all 16 portions");
             Step(.001); Click(view.StockCenter); day.DeliveryDrag.CancelDrag(); Require(day.DoupiStock.Count==16,"stock click without customer drop retains food");
-            Click(view.CupCenter); day.DeliveryDrag.CancelDrag(); Require(day.Egg.HasFinishedCup,"cup click without customer drop retains food");
+            Click(view.CupCenter); day.DeliveryDrag.CancelDrag(); Require(day.Egg.CanTake,"cup click without customer drop retains food");
             Click(view.BowlCenter); day.DeliveryDrag.CancelDrag(); Require(day.Bowl.State==NoodleBowlState.Ready,"bowl click without customer drop retains food");
             Step(2.5);await Shot("04-stock-full");
             // Fixed-count fixtures expose both rows and the second layer, including
@@ -161,11 +167,11 @@ public partial class WuhanVisualCapture : Node
                 if (count > 0) Require(day.DoupiStock.TryAddBatch(count), $"stock fixture sets {count} portions");
                 await Shot($"05-stock-{count:00}");
             }
-            // The tray extends below the old parent Control boundary. Dispatch a
-            // drag from its front edge through the viewport to catch clipped input.
-            Vector2 front = view.StockCenter + new Vector2(0, 40);
+            // Dispatch from the compact tray front edge to verify the entire
+            // inventory remains an accessible drag source.
+            Vector2 front = view.StockCenter + new Vector2(0, 30);
             Move(front);Button(front,true);Move(front + new Vector2(0,-15),true);
-            Require(day.DeliveryDrag.IsDragging, "front edge of enlarged stock tray starts delivery");
+            Require(day.DeliveryDrag.IsDragging, "front edge of compact stock tray starts delivery");
             day.DeliveryDrag.CancelDrag();Button(front,false);
             foreach (string id in WuhanWorkstationView.IngredientIds)
                 while (day.Ingredients.Count(id) > 1) day.Ingredients.TryConsume(id);
@@ -186,6 +192,24 @@ public partial class WuhanVisualCapture : Node
                 Require(view.Busy("refill:" + id), $"relocated refill button starts {id}");
             }
             Step(.3);await Shot("07-refilling");Step(.8);
+            foreach (int count in new[] { 0, 1, 2, 3, 6 })
+            {
+                day.Egg!.Refill();
+                for (int take=6;take>count;take--) day.Egg.TryTake();
+                await Shot($"08-egg-stock-{count}");
+                Require(view.CanDeliver(ProductKind.EggRiceWine) == (count > 0), "egg drag availability follows exact stock");
+            }
+            day.Egg!.TryTake();Require(day.Egg.TryRefill(), "partial egg stock can refill");view.PlayEggRefill();
+            Step(.3);await Shot("09-egg-refilling");
+            Require(!view.CanDeliver(ProductKind.EggRiceWine), "refilling egg stock cannot be dragged");
+            Step(.31);Require(day.Egg.Count==6, "egg refill restores six finished cups");
+            var strip=day.GetNode<Control>("WuhanCustomerStrip");
+            Require(strip.ClipContents && Math.Abs(strip.GetGlobalRect().End.Y - 580)<1, "customer crop matches counter edge");
+            foreach (var customer in strip.GetChildren().OfType<Control>().Where(c=>c.Visible))
+            {
+                var order=customer.FindChild("OrderBubble",true,false) as Control;
+                Require(order is not null && order.GetGlobalRect().End.Y<580, "complete order remains above counter crop");
+            }
             foreach (string id in WuhanWorkstationView.IngredientIds)
                 Require(day.Ingredients.Count(id) == day.Ingredients.Capacity(id), $"refill completes {id}");
             day.Free();controller.Free();save.Free();await Frames(2);
@@ -206,7 +230,15 @@ public partial class WuhanVisualCapture : Node
             progress.EquipmentLevels["noodle_cooker"]=level;progress.EquipmentLevels["ingredient_station"]=3;
             progress.EquipmentLevels["doupi_griddle"]=level;progress.EquipmentLevels["egg_rice_wine_station"]=1;
             var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);
-            day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);day.BeginDay();
+            day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);
+            foreach (var planned in controller.CurrentPlan!.Customers)
+                planned.Order = new ProjectCake.Orders.OrderData {
+                    OrderId=planned.Order.OrderId, CityId=StableIds.Cities.Wuhan, CustomerTypeId=planned.CustomerTypeId,
+                    BasePrice=30, PatienceSeconds=1000,
+                    Lines=new[]{new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesScallion,2),
+                        new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2),
+                        new ProjectCake.Orders.OrderLineData(ProductKind.EggRiceWine,StableIds.Products.EggRiceWine,2)} };
+            day.BeginDay();
             void Step(double seconds)
             {
                 day._Notification((int)NotificationApplicationFocusIn);
@@ -277,12 +309,12 @@ public partial class WuhanVisualCapture : Node
             day.DoupiAction();Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");
             if(day.DoupiStock.Count!=8)throw new InvalidOperationException("Capture: doupi batch was not stocked");
             await Deliver(ProductKind.Doupi,"22-doupi-delivery");
-            day.EggAction();Step(.30);await Shot("23-egg-brewing");Step(.32);await Shot("24-egg-finished");
-            if(!day.Egg!.HasFinishedCup)throw new InvalidOperationException("Capture: egg cup not prepared");
+            await Shot("23-egg-stock");await Shot("24-egg-finished");
+            if(!day.Egg!.CanTake)throw new InvalidOperationException("Capture: egg cup not prepared");
             await Deliver(ProductKind.EggRiceWine,"25-egg-delivery");
             // Exhaust isolated fixtures only, then exercise the real refill commands.
-            day.Egg.TryTake();for(int i=0;i<5;i++){day.Egg.TryStart();day.Egg.Tick(.61);day.Egg.TryTake();}
-            day.Egg.TryRefill();day.Workstation.PlayEgg(true);Step(.25);await Shot("26-egg-refilling");Step(.4);
+            while(day.Egg.TryTake()) {}
+            day.Egg.TryRefill();day.Workstation.PlayEggRefill();Step(.25);await Shot("26-egg-refilling");Step(.4);
             while(day.Ingredients.TryConsume(StableIds.Ingredients.WuhanScallion)){}
             var refillButton=day.Workstation.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()==StableIds.Ingredients.WuhanScallion);
             Step(.001);Click(refillButton.Position+refillButton.Size/2);Step(.3);await Shot("27-ingredient-refilling");Step(.8);

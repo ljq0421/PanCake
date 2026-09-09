@@ -65,7 +65,7 @@ public partial class WuhanAnimationSelfTest : Node
         s._Process(.25);s.BasketAction(0);
         int seasoning=s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning);s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(v.Busy("basket0")&&v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Noodles&&s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==seasoning,"倒面同时锁住漏勺和碗，期间不能提前加料");
-        s.EggAction();Check(s.Egg!.IsPreparing,"倒面不阻塞其他工位");
+        Check(s.Workstation.CanDeliver(ProductKind.EggRiceWine),"倒面不阻塞蛋酒直接交付");
         s._Process(.7);Click(v,v.IngredientCenter(0));s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==seasoning-1,"基础调味动画只扣一次库存");
         s._Process(.5);Click(v,v.IngredientCenter(1));s._Process(.5);
@@ -111,12 +111,22 @@ public partial class WuhanAnimationSelfTest : Node
     }
     private void TestEgg()
     {
-        var f=NewDay();var s=f.Screen;s.EggAction();s.EggAction();
-        Check(s.Egg!.BaseCups==5&&s.Egg.IsPreparing,"冲泡连点只消耗一杯底料");s._Process(.61);s.EggAction();
-        Check(s.Egg.HasFinishedCup&&!s.Workstation.Busy("egg"),"点击蛋酒设备保留成品杯等待拖拽");
-        s.Egg.TryTake();for(int i=0;i<5;i++){s.EggAction();s._Process(.61);s.Egg.TryTake();}
-        s.Egg.TryRefill();s.Workstation.PlayEgg(true);s._Process(.3);Check(s.Egg.IsRefilling&&s.Egg.BaseCups==0,"补底料等待真实计时");s._Process(.31);
-        Check(s.Egg.BaseCups==6&&!s.Egg.IsRefilling,"补料结束六杯底料恢复");DisposeDay(f);
+        var f=NewDay();var s=f.Screen;
+        Check(s.Egg!.Count == 6 && s.Egg.CanTake, "初始六杯成品立即可取");
+        Check(!s.Egg.TryRefill(), "满库存不能补货");
+        for (int i=0;i<6;i++) Check(s.Egg.TryTake(), "每次取杯扣一份");
+        Check(s.Egg.Count==0 && !s.Egg.CanTake && !s.Egg.TryTake(), "耗尽后不能超扣");
+        Check(s.Egg.TryRefill() && !s.Egg.TryRefill(), "补货不能重复启动");
+        s.Workstation.PlayEggRefill();s._Process(.3);
+        Check(s.Egg.IsRefilling && s.Egg.Count==0 && !s.Egg.TryTake(), "补货期间不能取杯");
+        double remaining=s.Egg.RemainingSeconds;
+        f.Controller.IsPaused=true;s._Process(2);
+        Check(s.Egg.RemainingSeconds==remaining, "暂停冻结蛋酒补货计时");
+        f.Controller.IsPaused=false;s._Process(.31);
+        Check(s.Egg.Count==6 && s.Egg.CanTake && !s.Egg.IsRefilling, "0.6秒补满成品");
+        s.Egg.TryTake();s.Egg.TryRefill();
+        Check(!s.Egg.TryTake() && s.Egg.Count==5, "非空库存补货时也暂停取杯");
+        s.Egg.Tick(.6);Check(s.Egg.Count==6, "部分库存补货填满而非追加");DisposeDay(f);
         f=NewDay(1,1);s=f.Screen;s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
         for(int i=0;i<80 && f.Controller.CustomerQueue!.Slots.Count==0;i++)s._Process(.25);
         for(int i=0;i<10;i++)s._Process(.25);
@@ -127,11 +137,11 @@ public partial class WuhanAnimationSelfTest : Node
     private void TestLifecycle()
     {
         var f=NewDay();var s=f.Screen;s.BasketAction(0);s._Process(.1);float progress=s.Workstation.MotionProgress("basket0");double cook=s.Cooker.Baskets[0].CookSeconds;
-        f.Controller.IsPaused=true;s._Process(2);s.EggAction();
-        Check(s.Workstation.MotionProgress("basket0")==progress&&s.Cooker.Baskets[0].CookSeconds==cook&&!s.Egg!.IsPreparing,"暂停冻结动作、制作和输入");
+        f.Controller.IsPaused=true;s._Process(2);
+        Check(s.Workstation.MotionProgress("basket0")==progress&&s.Cooker.Baskets[0].CookSeconds==cook&&s.Egg!.Count==6,"暂停冻结动作、制作和输入");
         f.Controller.IsPaused=false;s._Notification((int)NotificationApplicationFocusOut);s._Process(2);
         Check(s.Workstation.MotionProgress("basket0")==progress,"失焦冻结动画");s._Notification((int)NotificationApplicationFocusIn);s._Process(.2);
-        Check(!s.Workstation.Busy("basket0"),"恢复后继续原动画");s.EggAction();s.Hide();
+        Check(!s.Workstation.Busy("basket0"),"恢复后继续原动画");s.Hide();
         Check(s.Workstation.ActiveMotionCount==0,"隐藏页面清理所有临时动作");s.Show();s.Initialize(_catalog,f.Save,f.Controller,8);
         Check(s.Cooker.Baskets[0].State==NoodleBasketState.Empty&&s.Workstation.ActiveMotionCount==0,"重新开局复位全部制作画面");DisposeDay(f);
         ProjectSettings.SetSetting("accessibility/reduce_motion",true);

@@ -20,15 +20,35 @@ public sealed class WuhanIngredientInventory
 public sealed class EggRiceWineRuntime
 {
     public const int Capacity = 6;
-    public const double ActionSeconds = .6;
-    public int BaseCups { get; private set; } = Capacity;
-    public bool IsPreparing { get; private set; }
+    public const double RefillSeconds = .6;
+    public int Count { get; private set; } = Capacity;
     public bool IsRefilling { get; private set; }
-    public bool HasFinishedCup { get; private set; }
+    public bool CanTake => Count > 0 && !IsRefilling;
     public double RemainingSeconds { get; private set; }
-    public bool TryStart() { if (IsPreparing || IsRefilling || HasFinishedCup || BaseCups <= 0) return false; BaseCups--; IsPreparing = true; RemainingSeconds = ActionSeconds; return true; }
-    public bool TryRefill() { if (IsPreparing || IsRefilling || BaseCups >= Capacity) return false; IsRefilling = true; RemainingSeconds = ActionSeconds; return true; }
-    public void Tick(double delta) { if (!IsPreparing && !IsRefilling) return; RemainingSeconds -= delta; if (RemainingSeconds <= 0) { if (IsPreparing) HasFinishedCup = true; else BaseCups = Capacity; IsPreparing = false; IsRefilling = false; } }
-    public bool TryTake() { if (!HasFinishedCup) return false; HasFinishedCup = false; return true; }
-    public void Refill() { BaseCups = Capacity; IsRefilling = false; }
+
+    public bool TryTake()
+    {
+        if (!CanTake) return false;
+        Count--;
+        return true;
+    }
+    public bool TryRefill()
+    {
+        if (IsRefilling || Count >= Capacity) return false;
+        IsRefilling = true;
+        RemainingSeconds = RefillSeconds;
+        return true;
+    }
+    public void Tick(double delta)
+    {
+        if (!IsRefilling || delta <= 0) return;
+        RemainingSeconds = Math.Max(0, RemainingSeconds - delta);
+        if (RemainingSeconds == 0) Refill();
+    }
+    public void Refill()
+    {
+        Count = Capacity;
+        IsRefilling = false;
+        RemainingSeconds = 0;
+    }
 }

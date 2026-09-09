@@ -86,10 +86,11 @@ public partial class WuhanGestureSelfTest : Node
                 Step(.001);await Frames();
                 var refill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()==scallion);
                 Click(refill.Position+refill.Size/2);Check(View.Busy("refill:"+scallion),"separate refill control starts timed replenishment");Step(1.01);
-                Check(_screen.Ingredients.Count(scallion)==_screen.Ingredients.Capacity(scallion)&&!refill.Visible,"full ingredient stock hides refill control");
-                Drag(View.BaseCupCenter,new Vector2(1400,20));Check(_screen.Egg!.BaseCups==6,"wrong cup drop preserves base cups");
-                Drag(View.BaseCupCenter,View.CupCenter);Check(_screen.Egg.IsPreparing&&_screen.Egg.BaseCups==5,"base cup at spout starts brewing once");Step(.7);
-                Check(_screen.Egg.HasFinishedCup,"brewed cup becomes deliverable");await Shot("02-noodles-egg-ready");
+                Check(_screen.Ingredients.Count(scallion)==_screen.Ingredients.Capacity(scallion)&&refill.Visible&&refill.Disabled,"full ingredient stock keeps a disabled refill control");
+                Drag(View.CupCenter,new Vector2(1400,20));
+                await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
+                Check(_screen.Egg!.Count==6&&!_screen.DeliveryDrag.IsDragging,"wrong cup drop returns finished stock and releases input");
+                Check(_screen.Egg.CanTake,"finished cup is deliverable without preparation");await Shot("02-noodles-egg-ready");
                 Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
                 if(level<3) {
                     Click(View.PanCenter);Check(_screen.Doupi!.State==DoupiState.ReadyToFlip,"pan click does not flip");
@@ -170,22 +171,19 @@ public partial class WuhanGestureSelfTest : Node
         Button(center,false);Step(.001);
         await shot("06-mixed-ready");
 
-        _screen.Egg!.TryTake();Step(.001);await Frames();int cups=_screen.Egg.BaseCups;
-        Move(View.BaseCupCenter);Button(View.BaseCupCenter,true);Move(View.BaseCupCenter+new Vector2(15,0),true);Move(View.BaseCupCenter,true);Button(View.BaseCupCenter,false);
-        Check(_screen.Egg.BaseCups==cups&&!_screen.Egg.IsPreparing,"cup drag returning to source never becomes click brew");
-        Click(View.BaseCupCenter);Click(View.BaseCupCenter);
-        Check(_screen.Egg.BaseCups==cups-1&&_screen.Egg.IsPreparing,"cup click brews once and duplicate click is ignored");
-        await shot("07-click-brew");Step(.7);
-        Click(View.BaseCupCenter);Check(_screen.Egg.BaseCups==cups-1,"occupied station cannot consume another base cup");
-        _screen.Egg.TryTake();Step(.001);await Frames();
-        Drag(View.BaseCupCenter,View.BrewTargetRect.Position+new Vector2(8,8));
-        Check(_screen.Egg.BaseCups==cups-2&&_screen.Egg.IsPreparing,"whole brew base accepts cup drag away from spout");Step(.7);
+        _screen.Egg!.TryTake();Step(.001);await Frames();int cups=_screen.Egg.Count;
+        Move(View.CupCenter);Button(View.CupCenter,true);Move(View.CupCenter+new Vector2(15,0),true);Move(View.CupCenter,true);Button(View.CupCenter,false);
+        Check(_screen.Egg.Count==cups,"cup drag returning to source preserves stock");
+        Click(View.CupCenter);Click(View.CupCenter);
+        Check(_screen.Egg.Count==cups,"repeated clicks never consume stock");
+        await shot("07-finished-stock");
+        _screen.DeliveryDrag.CancelDrag();Step(.001);
         foreach(var button in View.GetChildren().OfType<Button>().Where(b=>b.HasMeta("ingredient_id")))
-            Check(button.Size.X>=44&&button.Size.Y>=44,"refill hit target at least 44 design pixels");
+            Check(button.Size.X>=48&&button.Size.Y>=48,"refill hit target at least 48 design pixels");
         var eggRefill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()=="egg");
         Click(eggRefill.Position+eggRefill.Size/2);Click(eggRefill.Position+eggRefill.Size/2);
         Check(_screen.Egg.IsRefilling,"explicit egg refill starts once");Step(.7);
-        Check(_screen.Egg.BaseCups==6&&!_screen.Egg.IsRefilling,"egg refill restores exact capacity");
+        Check(_screen.Egg.Count==6&&!_screen.Egg.IsRefilling,"egg refill restores exact capacity");
 
         _screen.DoupiStock.TryTake(_screen.DoupiStock.Count,out _);View.CancelAnimations();
         Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
@@ -240,9 +238,9 @@ public partial class WuhanGestureSelfTest : Node
         Check(_pressCount-before==6&&_screen.DoupiStock.Count==8,"one doupi batch automatically stocks eight with exactly six presses");
         for(int i=0;i<4;i++)Deliver(View.StockCenter,i);
         Check(_pressCount-before==10&&_screen.DoupiStock.Count==0&&controller.CustomerQueue.Slots.All(c=>c.Progress.GetDeliveredQuantity(1)==2),"batch and four quantity-two deliveries total ten presses");
-        before=_pressCount;Click(View.BaseCupCenter);Step(.61);Deliver(View.CupCenter,0);
-        Check(_pressCount-before==2&&controller.Ledger!.Build().CompletedCustomers==1,"egg needs one click and one delivery to complete first combo");
-        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=2");
+        before=_pressCount;Deliver(View.CupCenter,0);
+        Check(_pressCount-before==1&&controller.Ledger!.Build().CompletedCustomers==1,"egg needs one delivery to complete first combo");
+        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=1");
         ProjectSettings.SetSetting("accessibility/reduce_motion",reduced);
         _screen.Free();controller.Free();save.Free();await Frames();
     }

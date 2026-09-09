@@ -67,12 +67,11 @@ public partial class WuhanDayScreen : Control
         Workstation.BasketPressed += BasketAction;
         Workstation.IngredientPressed += IngredientAction;
         Workstation.DoupiPressed += DoupiAction;
-        Workstation.EggPressed += EggAction;
         Workstation.MixMoved += distance => { if (CanInteract && !Workstation.Busy("bowl")) _bowl.AddMixDistance(distance); };
         Workstation.RefillRequested += RefillIngredient;
         Workstation.EggRefillRequested += () =>
         {
-            if (CanInteract && !Workstation.Busy("egg") && _egg?.TryRefill() == true) Workstation.PlayEgg(true);
+            if (CanInteract && !Workstation.Busy("egg") && _egg?.TryRefill() == true) Workstation.PlayEggRefill();
         };
         Workstation.GestureRejected += message => Feedback(message, true);
         this.FindButton("提前打烊").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
@@ -202,6 +201,7 @@ public partial class WuhanDayScreen : Control
         }
         if (result.CompletesOrder && result.TotalRevenue > 0 && !_committed)
         {
+            CoinTray.RenderRevenue(_controller.Ledger!.Build().TotalRevenue, _controller.Ledger.PaidCustomers);
             int slot = Array.IndexOf(_deliveryCustomerIds, customerId);
             if (slot >= 0) CollectionFeedback.PaymentFrom(_portraits[slot].GetGlobalRect().GetCenter());
         }
@@ -220,18 +220,10 @@ public partial class WuhanDayScreen : Control
         Feedback(ok?"豆皮操作完成一步。":before==DoupiState.Cut?"备餐盘已满，豆皮保留在锅中。":"豆皮正在煎制，请观察状态。",!ok);Render();
     }
     private bool DiscardDoupi(){_doupi!.Discard();return true;}
-    internal void EggAction()
-    {
-        if(!CanInteract||Workstation.Busy("egg"))return;
-        if(_egg is null){Feedback("蛋酒台将在 Day 6 解锁。",true);return;}
-        if(_egg.HasFinishedCup){Feedback("按住成品杯拖给顾客。",false);return;}
-        if(_egg.BaseCups==0){Feedback("底料用完了，请点旁边的补货。",true);return;}
-        bool started=_egg.TryStart();if(started)Workstation.PlayEgg(false);Feedback(started?"正在冲蛋酒，0.6 秒后拖动成品杯交付。":"蛋酒台正在工作。",!started);Render();
-    }
     internal void RefreshForCapture() => Render();
     private void Render()
     {
-        CoinTray.RenderRevenue(_controller?.Ledger?.Build().TotalRevenue ?? 0);
+        CoinTray.RenderRevenue(_controller?.Ledger?.Build().TotalRevenue ?? 0, _controller?.Ledger?.PaidCustomers ?? 0);
         if(_controller?.CurrentConfig is null||_cooker is null)return;_day.Text=$"武汉 Day {_controller.CurrentConfig.Day} · {Subtitle(_controller.CurrentConfig.Day)}";_clock.Text=_controller.State switch{DayState.Opening=>$"开门 {_controller.OpeningRemainingSeconds:0.0}",DayState.Closing=>$"收尾 {_controller.ClosingRemainingSeconds:0.0}",_=>$"剩余 {(int)_controller.DayRemainingSeconds/60:00}:{(int)_controller.DayRemainingSeconds%60:00}"};_income.Text=$"¥{_controller.Ledger?.Build().TotalRevenue??0}";_door.Text=$"候场 {_controller.CustomerQueue?.DoorQueue.Count??0}";_tutorial.Text=Tutorial(_controller.CurrentConfig.Day);
         for(int i=0;i<_cooker.Baskets.Count;i++) {
             NoodleBasketRuntime b=_cooker.Baskets[i];
@@ -242,16 +234,27 @@ public partial class WuhanDayScreen : Control
                 NoodleBasketState.Raised or NoodleBasketState.Draining=>_cooker.PendingPourBasket==i?"碗上方沥水中":"沥水，可拖入碗",_=>"沥干，拖入碗"});
         }
         _bowlStatus.Text=_bowl.State switch {
-            NoodleBowlState.Empty=>_cooker.PendingPourBasket.HasValue?"漏勺沥水中 · 稍后自动倒面":"热干面 · 等待熟面入碗",
-            NoodleBowlState.Noodles=>"点击酱罐加入基础调味",
-            NoodleBowlState.Ready=>"热干面已拌好 · 拖给顾客",
-            _=>$"点击小料 · 在碗中划动拌匀 {_bowl.MixProgress:0}%"};
+            NoodleBowlState.Empty=>_cooker.PendingPourBasket.HasValue?"沥水中":"等待熟面",
+            NoodleBowlState.Noodles=>"待调味",
+            NoodleBowlState.Ready=>"可出餐",
+            _=>$"拌匀 {_bowl.MixProgress:0}%"};
         _doupiStatus.Text=_doupi is null?"豆皮 · Day 4 解锁":_doupi.State switch {
-            DoupiState.Empty=>"豆皮 · 点击浆碗浇浆",DoupiState.Batter=>"点击锅面加蛋",
-            DoupiState.ReadyToFlip=>"向上划动锅面翻面",DoupiState.Flipped=>"点击馅碗铺馅",
+            DoupiState.Empty=>"待浇浆",DoupiState.Batter=>"待加蛋",
+            DoupiState.ReadyToFlip=>"待翻面",DoupiState.Flipped=>"待铺馅",
             DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting=>$"{(_doupi.CutDirections.Contains(DoupiCutDirection.Horizontal)?"横切完成":"请横划") } · {(_doupi.CutDirections.Contains(DoupiCutDirection.Vertical)?"竖切完成":"请竖划")} · {(_doupi.Quality==DoupiQuality.Overbrowned?"偏焦":_doupi.State==DoupiState.Cutting?"已离火":"已熟")}",
-            DoupiState.Cut=>$"锅内余 {_doupi.RemainingPieces} 块 · 腾位后自动补入",DoupiState.Burnt=>"已焦糊 · 点击锅面清理",_=>"豆皮煎制中"};
-        _eggStatus.Text=_egg is null?"蛋酒 · Day 6 解锁":_egg.HasFinishedCup?"蛋酒已冲好 · 拖给顾客":_egg.IsPreparing?$"冲泡 {_egg.RemainingSeconds:0.0}s":_egg.IsRefilling?"正在补充底料":"点击底料杯冲泡 · 成品拖给顾客";
+            DoupiState.Cut=>$"锅内余 {_doupi.RemainingPieces} 块 · 腾位后自动补入",DoupiState.Burnt=>"焦糊 · 待清理",_=>"豆皮煎制中"};
+        _eggStatus.Text = _egg is null ? "蛋酒 · Day 6 解锁" : _egg.IsRefilling ? "补货中" : _egg.Count == 0 ? "已售空" : "成品蛋酒";
+        _bowlStatus.Position = Workstation.Position + Workstation.BowlStatusPosition;
+        _bowlStatus.Size = new Vector2(300, 26);
+        _doupiStatus.Position = Workstation.Position + Workstation.DoupiStatusPosition;
+        _doupiStatus.Size = new Vector2(385, 26);
+        _eggStatus.Position = Workstation.Position + Workstation.EggStatusPosition;
+        _eggStatus.Size = new Vector2(250, 26);
+        for (int i = 0; i < _basketLabels.Length; i++)
+        {
+            _basketLabels[i].Position = Workstation.Position + Workstation.BasketStatusPosition(i);
+            _basketLabels[i].Size = new Vector2(300, 24);
+        }
         Workstation.RefreshRefillControls();
         Workstation.RefreshDeliverySources(); Workstation.QueueRedraw();
         RenderCustomers();
@@ -301,5 +304,5 @@ public partial class WuhanDayScreen : Control
         if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得三件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"蛋酒",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"点击底料杯，冲泡后拖给顾客；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"成品蛋酒直接拖给顾客，缺货时手动补满；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

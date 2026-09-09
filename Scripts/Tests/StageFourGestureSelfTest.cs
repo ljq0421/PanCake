@@ -69,7 +69,7 @@ public partial class StageFourSelfTest
                 }
             }
             int revenue = controller.Ledger.Build().TotalRevenue;
-            Check(revenue > before && station.CoinTray!.VisibleCoinCount == Math.Min(12, (int)Math.Ceiling(revenue / 10.0))
+            Check(revenue > before && station.CoinTray!.VisibleCoinCount == controller.Ledger.PaidCustomers * CoinTrayView.CoinsPerPayment
                 && screen.PaymentCoins.Count == flightsBefore + (reduceMotion ? 0 : 3),
                 reduceMotion ? "减少动态效果时直接更新钱堆，不播放金币飞行" : "完成订单准确入账，钱堆同步并仅播放一组付款动画");
             ProjectSettings.SetSetting("accessibility/reduce_motion", originalMotion);
@@ -199,7 +199,7 @@ public partial class StageFourSelfTest
         foreach (float scale in new[] { 1f, 2f / 3f })
         {
             station.Scale = Vector2.One * scale;
-            foreach ((int amount, int expected) in new[] { (0, 0), (1, 1), (10, 1), (11, 2), (120, 12), (500, 12) })
+            foreach ((int amount, int expected) in new[] { (0, 0), (1, 3), (10, 6), (11, 9), (120, 12), (500, 15) })
             {
                 coins.RenderRevenue(amount);
                 Check(coins.VisibleCoinCount == expected, $"金币托盘收入{amount}显示{expected}枚示意币");

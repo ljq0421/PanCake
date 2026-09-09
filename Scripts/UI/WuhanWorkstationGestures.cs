@@ -15,10 +15,8 @@ public partial class WuhanWorkstationView
     private float _gestureTravel, _cutTravel, _maximumExcursion;
     private int _gestureBasket;
     private bool _cutCommitted;
-    private Rect2 _clickedCup;
     private readonly Dictionary<string, Button> _refillButtons = new();
     public bool HasProductionGesture => _gesture.Length > 0;
-    public Rect2 BrewTargetRect => new(EggMachine.Position + EggMachine.Size * new Vector2(0, .55f), EggMachine.Size * new Vector2(1, .45f));
 
     private bool TryBeginGesture(string hit, Vector2 point)
     {
@@ -33,8 +31,6 @@ public partial class WuhanWorkstationView
         }
         else if (hit == "pan" && NearPan(point) && !Busy("pan")) gesture = _doupi?.State switch {
             DoupiState.ReadyToFlip => "flip", DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting => "cut", _ => "" };
-        else if (hit == "egg" && _egg is { BaseCups: > 0, HasFinishedCup: false, IsPreparing: false, IsRefilling: false } && !Busy("egg"))
-            for (int i = 0; i < _egg.BaseCups; i++) if (BaseCupRect(i).Grow(6).HasPoint(point)) { gesture = "brew"; _clickedCup = BaseCupRect(i).Grow(6); break; }
         if (gesture.Length == 0) return false;
         EndMix(); _gesture = gesture; _gestureStart = _gesturePoint = _gesturePrevious = point;
         _gestureTravel = _cutTravel = _maximumExcursion = 0; _cutDisplacement = Vector2.Zero; _cutCommitted = false;
@@ -137,16 +133,9 @@ public partial class WuhanWorkstationView
             if (accepted) DoupiPressed?.Invoke();
         }
         else if (gesture == "cut") accepted = committed;
-        else if (gesture == "brew")
-        {
-            bool click = _maximumExcursion <= 8 && _clickedCup.HasPoint(point);
-            accepted = (click || (_maximumExcursion > 8 && BrewTargetRect.HasPoint(point))) && !Busy("egg")
-                && _egg is { BaseCups: > 0, HasFinishedCup: false, IsPreparing: false, IsRefilling: false };
-            if (accepted) EggPressed?.Invoke();
-        }
         if (!accepted) GestureRejected?.Invoke(gesture switch {
             "raw" => "把生面拖进空漏勺。", "basket" => "向上提篮后拖到空碗；也可先放下等待沥干。",
-            "flip" => "按住锅面向上划动翻面。", "cut" => "横、竖各划一次；已完成方向无需重复。", _ => "点击底料杯，或拖到冲泡底座。" });
+            "flip" => "按住锅面向上划动翻面。", "cut" => "横、竖各划一次；已完成方向无需重复。", _ => "请在对应食物区域完成操作。" });
     }
 
     private void DrawGesture()
@@ -162,10 +151,9 @@ public partial class WuhanWorkstationView
         if (!HasProductionGesture) return;
         if (_gesture == "raw") for (int i = 0; i < _cooker.Baskets.Count; i++) if (_cooker.Baskets[i].State == NoodleBasketState.Empty) Target(BasketRect(i).Grow(12));
         if (_gesture == "basket" && _bowl.State == NoodleBowlState.Empty && !_cooker.PendingPourBasket.HasValue) Target(BowlRect.Grow(10));
-        if (_gesture == "brew") Target(BrewTargetRect);
         if (_gesture is "flip" or "cut") DrawLine(_gestureStart, _gesturePoint, WuhanUi.Ink, 3, true);
-        string sprite = _gesture switch { "raw" => "raw_noodles", "brew" => "egg_base", "flip" => "flip_tool", "cut" => "cut_tool", _ => "basket" };
-        Vector2 size = _gesture switch { "brew" => CupSize, "raw" => RawRect.Size, _ => new Vector2(100, 100) };
+        string sprite = _gesture switch { "raw" => "raw_noodles", "flip" => "flip_tool", "cut" => "cut_tool", _ => "basket" };
+        Vector2 size = _gesture switch { "raw" => RawRect.Size, _ => new Vector2(100, 100) };
         Sprite(sprite, At(_gesturePoint, size), .9f);
         if (_gesture == "basket") Sprite("cooked_basket", At(_gesturePoint + new Vector2(-8, 12), new Vector2(55, 30)));
     }
@@ -181,33 +169,47 @@ public partial class WuhanWorkstationView
     }
     public void RefreshRefillControls()
     {
-        foreach(var (id,button) in _refillButtons) {
-            button.Visible=id=="egg" ? _egg is not null && _egg.BaseCups<6 : _ingredients.Count(id)<_ingredients.Capacity(id);
-            bool working=id=="egg"?_egg?.IsRefilling==true:Busy("refill:"+id);
-            button.Text=working?"…":"补";
-            button.TooltipText=working?"正在补货":"补充库存";
-            button.Disabled=CanInteract?.Invoke()!=true || working || (id=="egg" && (Busy("egg") || _egg?.IsPreparing==true || _egg?.BaseCups>=6));
+        foreach (var (id, button) in _refillButtons)
+        {
+            bool egg = id == "egg";
+            int index = Array.IndexOf(IngredientIds, id);
+            Vector2 position = egg ? new Vector2(1756, 324) : index >= 0
+                ? IngredientReadout(index).Position + new Vector2(72, 0) : new Vector2(RawTrayRect.End.X + 12, RawTrayRect.Position.Y + 18);
+            button.Position = position;
+            button.Size = new Vector2(48, 48);
+            button.Visible = !egg || _egg is not null;
+            int count = egg ? _egg?.Count ?? 0 : _ingredients.Count(id);
+            int capacity = egg ? EggRiceWineRuntime.Capacity : _ingredients.Capacity(id);
+            bool working = egg ? _egg?.IsRefilling == true : Busy("refill:" + id);
+            button.Text = working ? "…" : "补";
+            button.TooltipText = working ? "正在补货" : count >= capacity ? "库存已满" : "补充库存";
+            button.Disabled = CanInteract?.Invoke() != true || working || count >= capacity || (egg && Busy("egg"));
+            button.Modulate = count <= capacity * .2 && !working ? new Color("#FFD49B") : Colors.White;
         }
     }
     private void DrawSupplyLabels()
     {
-        void LabelAt(Vector2 point,string text) {
-            DrawStringOutline(ThemeDB.FallbackFont,point,text,fontSize:17,size:4,modulate:WuhanUi.Paper);
-            DrawString(ThemeDB.FallbackFont,point,text,fontSize:17,modulate:WuhanUi.Ink);
+        void LabelAt(Vector2 point, string text)
+        {
+            DrawStringOutline(ThemeDB.FallbackFont, point, text, fontSize:18, size:4, modulate:WuhanUi.Paper);
+            DrawString(ThemeDB.FallbackFont, point, text, fontSize:18, modulate:WuhanUi.Ink);
         }
-        string State(string id) => Busy("refill:" + id) ? " 补货中" : _ingredients.Count(id) <= _ingredients.Capacity(id) * .2 ? " 余量低" : "";
-        for(int i=0;i<4;i++) {
+        for (int i = 0; i < 4; i++)
+        {
             string id = IngredientIds[i];
             bool added = i == 0 ? _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready : _bowl.Toppings.Contains(id);
-            Rect2 readout = IngredientReadout(i);
-            Vector2 label = readout.Position + new Vector2(0, 29);
-            LabelAt(label,$"{new[]{"调味","葱花","辣油","牛肉"}[i]} {_ingredients.Count(id)}");
-            string state = State(id).Trim();
-            string status = string.Join(" · ", new[] { added ? "已加" : "", state }.Where(s => s.Length > 0));
-            if (status.Length > 0) LabelAt(new Vector2(readout.Position.X, readout.End.Y - 3), status);
+            Vector2 origin = IngredientReadout(i).Position;
+            LabelAt(origin + new Vector2(0, 17), new[]{"调味", "葱花", "辣油", "牛肉"}[i]);
+            LabelAt(origin + new Vector2(0, 42), $"{_ingredients.Count(id)}/{_ingredients.Capacity(id)}");
+            if (added)
+            {
+                Vector2 mark = IngredientRect(i).Position + new Vector2(70, -8);
+                DrawLine(mark, mark + new Vector2(5, 5), WuhanUi.Ink, 3, true);
+                DrawLine(mark + new Vector2(5, 5), mark + new Vector2(15, -7), WuhanUi.Ink, 3, true);
+            }
         }
-        LabelAt(new Vector2(RawTrayRect.Position.X,RawTrayRect.End.Y+21),$"生面 {_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}{State(StableIds.Ingredients.WuhanNoodles)}");
-        if(_doupi is not null)LabelAt(new Vector2(StockRect.Position.X+12,StockRect.End.Y+19),$"备餐 {_stock.Count}/16 · 拖给顾客");
-        if(_egg is not null)LabelAt(new Vector2(1465,350),$"底料 {_egg.BaseCups}/6{(_egg.IsRefilling ? " 补货中" : _egg.BaseCups <= 1 ? " 余量低" : "")}");
+        LabelAt(new Vector2(RawTrayRect.Position.X, RawTrayRect.End.Y + 24), $"生面 {_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}/{_ingredients.Capacity(StableIds.Ingredients.WuhanNoodles)}");
+        if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 8, StockRect.End.Y + 24), $"备餐 {_stock.Count}/16");
+        if (_egg is not null) LabelAt(new Vector2(EggStockRect.Position.X + 10, 350), $"蛋酒 {_egg.Count}/6");
     }
 }

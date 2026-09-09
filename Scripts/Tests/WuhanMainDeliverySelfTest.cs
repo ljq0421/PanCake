@@ -51,8 +51,8 @@ public partial class WuhanMainDeliverySelfTest : Node
                 && controller.CanDeliverTo(controller.CustomerQueue.Slots[0].Id,ProductKind.HotDryNoodles), 12);
             Check(!controller.IsPaused, "shared controller is running");
             _day.Bowl.TryAddNoodles(NoodleQuality.Optimal); _day.Bowl.TryAddBaseSeasoning(); _day.Bowl.AddMixDistance(425);
-            _day.DoupiStock.TryAddBatch(8); _day.Egg!.TryStart();
-            await Until(() => _day.Egg.HasFinishedCup, 2); await Frames(4);
+            _day.DoupiStock.TryAddBatch(8);
+            await Until(() => _day.Workstation.CanDeliver(ProductKind.EggRiceWine), 2); await Frames(4);
             foreach (ProductKind kind in new[] { ProductKind.HotDryNoodles, ProductKind.Doupi, ProductKind.EggRiceWine })
             {
                 var source=(DragItem)_day.FindChild($"WuhanDrag_{kind}",true,false);

@@ -14,7 +14,7 @@ public partial class WuhanWorkstationView : Control
 {
     public event Action<int>? BasketPressed;
     public event Action<string>? IngredientPressed;
-    public event Action? DoupiPressed, EggPressed;
+    public event Action? DoupiPressed;
     public event Action<float>? MixMoved;
     public Func<bool>? CanInteract { get; set; }
     private DragService? _drag;
@@ -39,7 +39,7 @@ public partial class WuhanWorkstationView : Control
         {
             ProductKind.HotDryNoodles => _bowl.State == NoodleBowlState.Ready,
             ProductKind.Doupi => _stock.Count > 0,
-            ProductKind.EggRiceWine => _egg?.HasFinishedCup == true,
+            ProductKind.EggRiceWine => _egg?.CanTake == true,
             _ => false,
         };
 
@@ -75,6 +75,11 @@ public partial class WuhanWorkstationView : Control
         if (_cooker is null || _drag is null) return;
         foreach (var (kind, source) in _deliverySources)
         {
+            Rect2 bounds = kind switch { ProductKind.HotDryNoodles => BowlRect,
+                ProductKind.Doupi => StockRect, _ => EggStockRect };
+            source.Position = bounds.Position;
+            source.Size = bounds.Size;
+            source.TooltipText = "按住成品拖给顾客";
             source.Visible = CanDeliver(kind) && !(kind == ProductKind.HotDryNoodles && _mixHeld);
         }
     }
@@ -98,11 +103,9 @@ public partial class WuhanWorkstationView : Control
         if (kind == ProductKind.HotDryNoodles)
         {
             Rect2 bowl = new(Vector2.Zero, BowlRect.Size), food = new(BowlFood.Position - BowlRect.Position, BowlFood.Size);
-            Layer("empty_bowl", bowl); Layer("bowl_noodles", food); Layer("mixed", food);
-            if (_bowl.Quality == NoodleQuality.Overcooked) Layer("overcooked", food, alpha: .35f);
-            foreach (string topping in _bowl.Toppings)
-                Layer(topping == StableIds.Ingredients.WuhanScallion ? "scallion" : topping == StableIds.Ingredients.WuhanChiliOil ? "chili_overlay" : "beef_overlay",
-                    topping == StableIds.Ingredients.WuhanBraisedBeef ? RelativeRect(food, new Rect2(.25f, .17f, .64f, .67f)) : food);
+            Layer("empty_bowl", bowl);
+            foreach (var layer in BowlLayers(food, _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings))
+                Layer(layer.Id, layer.Rect, alpha: layer.Alpha);
         }
         else Layer(kind == ProductKind.Doupi ? "doupi_single" : "egg_finished", new Rect2(Vector2.Zero, kind == ProductKind.Doupi ? new Vector2(100, 75) : CupSize), true);
         return root;
@@ -146,32 +149,30 @@ public partial class WuhanWorkstationView : Control
         public DoupiState Before;
     }
 
-    // Local coordinates below the customer layer; the view starts at y=625.
-    // Independent objects keep their source aspect; surfaces use explicit anchors.
-    private Rect2 BowlRect => FitSprite(_art.Texture("empty_bowl"), new Rect2(603, 120, 224, 174));
+    // 1920x1080 design coordinates relative to the view at y=625.
+    // Visual bounds, input sources and animation anchors share these definitions.
+    private Rect2 BowlRect => FitSprite(_art.Texture("empty_bowl"), new Rect2(610, 20, 210, 174));
     private Rect2 BowlFood => RelativeRect(BowlRect, new Rect2(.075f, .07f, .85f, .55f));
-    private static readonly Rect2 MixStationRect = new(424, 87, 580, 276);
-    private static readonly Rect2 ChopsticksRect = new(786, 227, 49, 62);
-    private Rect2 PanRect => FitSprite(_art.Griddle(Math.Max(1, _doupiLevel)), new Rect2(1040, 15, 340, 270), new Vector2(.5f, 1));
-    private static readonly Rect2 StockRect = new(1095, 282, 252, 90);
-    private Rect2 EggMachine => FitSprite(_art.Texture("egg_station"), new Rect2(1640, 55, 210, 266), new Vector2(.5f, 1));
-    private Vector2 EggSpout => EggMachine.Position + EggMachine.Size * new Vector2(.39f, .525f);
-    private Rect2 CupRect => At(new Vector2(EggSpout.X, EggMachine.Position.Y + EggMachine.Size.Y * .76f), CupSize);
-    private Vector2 CupSize => FitSprite(_art.Texture("egg_base"), new Rect2(0, 0, 56, 60)).Size;
-    private Rect2 BaseCupRect(int index) => new(new Vector2(1465 + (index % 2) * 70, 128 + (index / 2) * 66), CupSize);
-    private static readonly Rect2 RawTrayRect = new(76, 277, 140, 82);
+    private Rect2 ChopsticksRect => new(BowlRect.End.X + 10, BowlRect.Position.Y + 65, 49, 62);
+    private Rect2 PanRect => FitSprite(_art.Griddle(Math.Max(1, _doupiLevel)), new Rect2(1035, -5, 320, 250), new Vector2(.5f, 1));
+    private static readonly Rect2 StockRect = new(1230, 284, 160, 76);
+    private static readonly Rect2 EggStockRect = new(1580, 180, 228, 124);
+    private Vector2 CupSize => FitSprite(_art.Texture("egg_finished"), new Rect2(0, 0, 60, 72)).Size;
+    private Rect2 CupRect => EggCupRect(0);
+    private Rect2 EggCupRect(int index) => At(new Vector2(1624 + index * 68, 236), CupSize);
+    private static readonly Rect2 RawTrayRect = new(142, 294, 140, 82);
     private Rect2 RawRect => TrayFoodRect(_art.Texture("raw_noodles"), RawTrayRect);
-    private static readonly Rect2 SauceBottleRect = new(588, 157, 25, 39);
-    private Rect2 BatterRect => FitSprite(_art.Texture("doupi_batter"), new Rect2(981, 280, 107, 93), new Vector2(.5f, 1));
-    private Rect2 FillingRect => FitSprite(_art.Texture("doupi_filling"), new Rect2(1353, 280, 107, 93), new Vector2(.5f, 1));
-    private static Rect2 IngredientRect(int index) => index switch
-    {
-        0 => new Rect2(478, 110, 110, 94), 1 => new Rect2(474, 214, 118, 68),
-        2 => new Rect2(842, 110, 110, 94), _ => new Rect2(838, 214, 118, 68)
-    };
-    // One ordered inventory row below the utensils: the left pair belongs to
-    // the left shoulder and the right pair to the right shoulder of the station.
-    private static Rect2 IngredientReadout(int index) => new(MixStationRect.Position.X + 6 + index * 139, 338, 125, 70);
+    private static Rect2 IngredientModule(int index) => new(448 + index * 132, 238, 120, 166);
+    private static Rect2 IngredientRect(int index) => new(IngredientModule(index).Position + new Vector2(15, index is 0 or 2 ? 0 : 30), new Vector2(90, index is 0 or 2 ? 92 : 62));
+    private static Rect2 IngredientReadout(int index) => new(IngredientModule(index).Position + new Vector2(0, 104), new Vector2(120, 60));
+    private static Rect2 SauceBottleRect => new(IngredientRect(0).End + new Vector2(-8, -39), new Vector2(20, 32));
+    private Rect2 BatterRect => FitSprite(_art.Texture("doupi_batter"), new Rect2(1005, 270, 90, 90), new Vector2(.5f, 1));
+    private Rect2 FillingRect => FitSprite(_art.Texture("doupi_filling"), new Rect2(1110, 270, 90, 90), new Vector2(.5f, 1));
+    public Vector2 BowlStatusPosition => new(565, 193);
+    public Vector2 DoupiStatusPosition => new(1010, 240);
+    public Vector2 EggStatusPosition => new(1568, 132);
+    public Vector2 BasketStatusPosition(int index) => new(100, 236 + index * 25);
+
     // The opening is deliberately deeper than the original shallow tray. Keep
     // whole food silhouettes eight design pixels inside its conservative bounds.
     private Rect2 TrayFoodRect(Texture2D texture, Rect2 tray)
@@ -268,7 +269,7 @@ public partial class WuhanWorkstationView : Control
             _mixLast = point; QueueRedraw(); GetViewport().SetInputAsHandled();
         }
     }
-    public void PlayEgg(bool refill) => Play(refill ? "egg_refill" : "brew", .6, "egg");
+    public void PlayEggRefill() => Play("egg_refill", EggRiceWineRuntime.RefillSeconds, "egg");
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
@@ -319,6 +320,8 @@ public partial class WuhanWorkstationView : Control
         else if (input is InputEventMouseMotion mm)
         {
             _hover = HitTarget(mm.Position);
+            TooltipText = _hover switch { "raw" => "按住生面拖进空漏勺", "bowl" => "加入调味后，在碗内划动拌匀；成品拖给顾客",
+                "pan" => "点击加浆、加蛋和铺馅；向上划翻面，横竖划切块", "egg" => "成品蛋酒直接拖给顾客；库存不足时点补货", _ => "" };
             MouseDefaultCursorShape = _hover.Length > 0 ? CursorShape.PointingHand : CursorShape.Arrow;
             QueueRedraw();
         }
@@ -337,9 +340,7 @@ public partial class WuhanWorkstationView : Control
         if (RawTrayRect.HasPoint(p)) return "raw";
         if (StockRect.HasPoint(p)) return "stock";
         if (NearPan(p) || BatterRect.HasPoint(p) || FillingRect.HasPoint(p)) return "pan";
-        if (EggMachine.HasPoint(p) || CupRect.HasPoint(p)) return "egg";
-        if (_egg is not null)
-            for (int i = 0; i < _egg.BaseCups; i++) if (BaseCupRect(i).HasPoint(p)) return "egg";
+        if (EggStockRect.HasPoint(p)) return "egg";
         return "";
     }
 
@@ -362,7 +363,7 @@ public partial class WuhanWorkstationView : Control
             for(int y=0;y<height;y++)for(int x=0;x<width;x++)
                 if(pixels[(y*width+x)*4+3]>=32){left=Math.Min(left,x);right=Math.Max(right,x);top=Math.Min(top,y);bottom=Math.Max(bottom,y);}
             // Steam is already painted above the finished cup. Align the ceramic
-            // body to the base cup and draw animated steam separately.
+            // body independently of the decorative steam above it.
             if(texture==_art.Texture("egg_finished"))top=Math.Max(top,(int)(height*.222f));
             bounds=right>=left?new Rect2(left,top,right-left+1,bottom-top+1):new Rect2(Vector2.Zero,texture.GetSize());
             _bounds[texture] = bounds;
@@ -421,9 +422,9 @@ public partial class WuhanWorkstationView : Control
     // and align the separate baskets with each model's authored water surface.
     private Rect2 CookerCanvas => _cookerLevel switch
     {
-        2 => new Rect2(95, 32, 310, 310),
-        3 => new Rect2(92, 48, 316, 316),
-        _ => new Rect2(95, 48, 310, 310)
+        2 => new Rect2(95, -38, 310, 310),
+        3 => new Rect2(92, -22, 316, 316),
+        _ => new Rect2(95, -22, 310, 310)
     };
     private Vector2 BasketHome(int index) => CookerCanvas.Position + CookerCanvas.Size *
         (_cookerLevel == 3 ? new Vector2(index == 0 ? .37f : .714f, .477f) : new Vector2(.546f, .437f));
@@ -470,10 +471,9 @@ public partial class WuhanWorkstationView : Control
     }
 
     public Vector2 RawCenter => RawRect.GetCenter();
-    public Vector2 BaseCupCenter => BaseCupRect(0).GetCenter();
     private void DrawRawTray()
     {
-        Hint(RawTrayRect, "raw"); DrawTray(_art.Shared.IngredientTray, RawTrayRect);
+        Hint(RawTrayRect, "raw"); DrawTray(_art.Texture("ingredient_tray"), RawTrayRect);
         Sprite("raw_noodles", RawRect, _ingredients.Count(StableIds.Ingredients.WuhanNoodles) > 0 ? 1 : .25f);
 
     }
@@ -490,7 +490,6 @@ public partial class WuhanWorkstationView : Control
 
     private void DrawMixStation()
     {
-        Sprite("mix_station", MixStationRect);
         Hint(BowlRect, "bowl");
         Motion? m = Find("bowl");
         bool delivering = _draggedProduct == ProductKind.HotDryNoodles;
@@ -504,7 +503,7 @@ public partial class WuhanWorkstationView : Control
         for (int i=0;i<4;i++)
         {
             Rect2 r = IngredientRect(i); Hint(r, $"ingredient{i}");
-            if (i is 1 or 3) DrawTray(_art.Shared.IngredientTray, r);
+            if (i is 1 or 3) DrawTray(_art.Texture("ingredient_tray"), r);
             bool movingContainer=m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[i]&&i is 0 or 2&&!ReducedMotion;
             if(!movingContainer)Sprite(_art.Ingredient(IngredientIds[i]), IngredientFoodRect(i), _ingredients.Count(IngredientIds[i]) > 0 ? 1 : .3f);
         }
@@ -518,26 +517,39 @@ public partial class WuhanWorkstationView : Control
         else Sprite("chopsticks", ChopsticksRect, .9f, -.15f);
         if (m?.Kind == "ingredient") DrawIngredientMotion(m);
     }
-    private void DrawBowlContents(Rect2 food, NoodleBowlState state, float progress, NoodleQuality quality,
-        IEnumerable<string> toppings, string hidden = "", float opacity = 1)
+    private static string ToppingArt(string ingredient) => ingredient == StableIds.Ingredients.WuhanScallion ? "scallion"
+        : ingredient == StableIds.Ingredients.WuhanChiliOil ? "chili_overlay" : "beef_overlay";
+    private static Rect2 ToppingPlacement(Rect2 food, string id) => RelativeRect(food, id switch
     {
-        FoodLayer("bowl_noodles", food,opacity);
+        "scallion" => new Rect2(.10f, .12f, .70f, .65f),
+        "chili_overlay" => new Rect2(.12f, .14f, .74f, .68f),
+        _ => new Rect2(.48f, .28f, .40f, .43f),
+    });
+    private static IEnumerable<(string Id, Rect2 Rect, float Alpha)> BowlLayers(Rect2 food,
+        NoodleBowlState state, float progress, NoodleQuality quality, IEnumerable<string> toppings, string hidden = "")
+    {
+        yield return ("bowl_noodles", food, 1);
         bool seasoned = state is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready;
         if (seasoned && hidden != StableIds.Ingredients.WuhanBaseSeasoning)
         {
             float half = Mathf.Clamp(progress / 50, 0, 1), mixed = Mathf.Clamp((progress - 40) / 60, 0, 1);
-            FoodLayer("unmixed", food, (1-half)*opacity);
-            FoodLayer("half_mixed", food, half * (1-mixed)*opacity);
-            FoodLayer("mixed", food, mixed*opacity);
+            if (half < 1) yield return ("unmixed", food, 1 - half);
+            if (half > 0 && mixed < 1) yield return ("half_mixed", food, half * (1 - mixed));
+            if (mixed > 0) yield return ("mixed", food, mixed);
         }
-        if (quality == NoodleQuality.Overcooked) FoodLayer("overcooked", food, (seasoned ? .35f : .8f)*opacity);
+        if (quality == NoodleQuality.Overcooked) yield return ("overcooked", food, seasoned ? .35f : .8f);
         foreach (string topping in toppings)
             if (topping != hidden)
             {
-                bool beef=topping==StableIds.Ingredients.WuhanBraisedBeef;
-                Rect2 placement=beef?new Rect2(food.Position+food.Size*new Vector2(.25f,.17f),food.Size*new Vector2(.64f,.67f)):food;
-                FoodLayer(topping == StableIds.Ingredients.WuhanScallion ? "scallion" : topping == StableIds.Ingredients.WuhanChiliOil ? "chili_overlay" : "beef_overlay", placement,opacity);
+                string id = ToppingArt(topping);
+                yield return (id, ToppingPlacement(food, id), 1);
             }
+    }
+    private void DrawBowlContents(Rect2 food, NoodleBowlState state, float progress, NoodleQuality quality,
+        IEnumerable<string> toppings, string hidden = "", float opacity = 1)
+    {
+        foreach (var layer in BowlLayers(food, state, progress, quality, toppings, hidden))
+            FoodLayer(layer.Id, layer.Rect, layer.Alpha * opacity);
     }
     private void DrawIngredientMotion(Motion m)
     {
@@ -554,7 +566,12 @@ public partial class WuhanWorkstationView : Control
             if(p>.35f&&p<.74f) DrawLine(center+new Vector2(12,22),BowlFood.GetCenter(),index==0?new Color("#BE803B"):new Color("#CB4627"),6,true);
             if(index==0) Sprite("base_sauce",At(center+(SauceBottleRect.GetCenter()-source.GetCenter()).Rotated(angle),SauceBottleRect.Size),1,angle);
         }
-        else Sprite(index==1?"scallion":"beef_overlay",At(source.GetCenter().Lerp(BowlFood.GetCenter(),Ease(p)),source.Size.Lerp(BowlFood.Size,p)),1-p);
+        else
+        {
+            string id = ToppingArt(m.Ingredient);
+            Rect2 targetRect = ToppingPlacement(BowlFood, id);
+            Sprite(id, At(source.GetCenter().Lerp(targetRect.GetCenter(), Ease(p)), source.Size.Lerp(targetRect.Size, Ease(p))), 1 - p);
+        }
     }
 
     private Vector2[] PanCorners => (_doupiLevel switch
@@ -632,12 +649,11 @@ public partial class WuhanWorkstationView : Control
         float left = Mathf.Lerp(.20f, .13f, depth), right = 1 - left;
         Vector2 center = StockRect.Position + StockRect.Size * new Vector2(
             Mathf.Lerp(left, right, (slot % 4 + .5f) / 4), Mathf.Lerp(.20f, .81f, depth));
-        // Enlarge the previously fitted silhouette, not its bounding box before
-        // fitting. This preserves an exact 1.2x increase for both rows.
-        Vector2 size = new(StockRect.Size.X * (right - left) / 4 - 5, 29);
-        size = FitSprite(_art.Texture("doupi_single"), At(center, size)).Size * 1.2f;
+        // Inventory thumbnails share positions with transfers; delivery stays full size.
+        Vector2 size = new(StockRect.Size.X * (right - left) / 4 - 2, 24);
+        size = FitSprite(_art.Texture("doupi_single"), At(center, size)).Size;
         center = StockRect.GetCenter() + (center - StockRect.GetCenter()) * new Vector2(.96f, .80f);
-        center += new Vector2(layer * 2, -layer * 6);
+        center += new Vector2(layer * 1.5f, -layer * 4);
         return At(center, size);
     }
     private void DrawCut(int index,float progress)
@@ -677,29 +693,22 @@ public partial class WuhanWorkstationView : Control
 
     private void DrawEgg()
     {
-        Hint(EggMachine,"egg");Sprite("egg_station",EggMachine,_egg is null?.4f:1);
-        if(_egg is null)return;
-        for(int i=0;i<_egg.BaseCups;i++)Sprite("egg_base",BaseCupRect(i));
-        Motion? m=Find("egg");
-        if((_egg.HasFinishedCup||_egg.IsPreparing) && _draggedProduct != ProductKind.EggRiceWine)
+        Hint(EggStockRect, "egg");
+        DrawTray(_art.Texture("ingredient_tray"), EggStockRect);
+        int count = Math.Min(3, _egg?.Count ?? 0);
+        if (_draggedProduct == ProductKind.EggRiceWine) count = Math.Min(3, Math.Max(0, (_egg?.Count ?? 0) - 1));
+        Motion? motion = Find("egg");
+        for (int i = 0; i < (motion?.Kind == "egg_refill" ? 3 : count); i++)
         {
-            Rect2 r=CupRect;
-            if(m?.Kind=="brew"&&!ReducedMotion)r=At(BaseCupRect(_egg.BaseCups).GetCenter().Lerp(CupRect.GetCenter(),Segment(m.Progress,0,.28f)),CupSize);
-            float progress=_egg.HasFinishedCup?1:Mathf.Clamp(1-(float)(_egg.RemainingSeconds/EggRiceWineRuntime.ActionSeconds),0,1);
-            Sprite("egg_base",r,1-progress);
-            Sprite("egg_finished",r,progress);
-            if(_egg.IsPreparing&&progress>.25f)
+            Rect2 cup = EggCupRect(i);
+            float alpha = _egg?.IsRefilling == true ? .45f : 1;
+            if (motion?.Kind == "egg_refill")
             {
-                DrawLine(EggSpout,r.Position+r.Size*new Vector2(.5f,.24f),new Color(.9f,.96f,1,.8f),5,true);
+                cup.Position -= new Vector2(0, ReducedMotion ? 0 : 18 * (1 - Ease(motion.Progress)));
+                alpha = .45f + .55f * motion.Progress;
             }
-            Steam(r.Position+new Vector2(r.Size.X/2,5),.45f);
+            Sprite("egg_finished", cup, alpha);
         }
-        if(m?.Kind=="egg_refill")
-            for(int i=0;i<6;i++)
-            {
-                Rect2 r=BaseCupRect(i);r.Position-=new Vector2(0,ReducedMotion?0:30*(1-Ease(m.Progress)));
-                Sprite("egg_base",r,m.Progress);
-            }
     }
     private void DrawRefills()
     {

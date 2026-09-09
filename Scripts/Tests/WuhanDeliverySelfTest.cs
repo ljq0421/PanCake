@@ -108,7 +108,7 @@ public partial class WuhanDeliverySelfTest : Node
         if (toppings) foreach (string id in WuhanWorkstationView.IngredientIds.Skip(1)) bowl.TryAddTopping(id);
         bowl.AddMixDistance(425);
         if (_screen.DoupiStock.Count == 0) _screen.DoupiStock.TryAddBatch(8);
-        if (!_screen.Egg!.HasFinishedCup) { _screen.Egg.TryStart(); _screen.Egg.Tick(.61); }
+        if (!_screen.Egg!.CanTake) _screen.Egg.Refill();
         _screen.Workstation.CancelAnimations(); Step(.001);
     }
     private Vector2 Source(ProductKind kind)
@@ -149,7 +149,7 @@ public partial class WuhanDeliverySelfTest : Node
         Check(overlay.GetChild(0).GetChild(0).GetChildCount() == 7, "preview contains bowl, noodles, mixed sauce, overcooking and three toppings");
         Check(overlay.GetChild(0).GetChild(0).GetChildren().OfType<TextureRect>().All(layer => layer.Size.X <= 224 && layer.Size.Y <= 174),
             "preview layers use authored bowl dimensions instead of source PNG minimum size");
-        Move(new Vector2(950, 150), true); Button(new Vector2(950, 150), false); await Settled();
+        Move(new Vector2(950, 125), true); Button(new Vector2(950, 125), false); await Settled();
         Check(_screen.Bowl.State == NoodleBowlState.Ready && !_screen.Workstation.Busy("bowl"), "miss returns intact bowl and releases lock");
         Press(ProductKind.Doupi); GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
         Check(_screen.DoupiStock.Count == 8 && !_screen.DeliveryDrag.IsDragging, "Escape retains stock and cancels drag");
@@ -162,11 +162,16 @@ public partial class WuhanDeliverySelfTest : Node
         queue.TrySelect(first.Id); await Drop(ProductKind.Doupi, 1);
         Check(second.Progress.GetDeliveredQuantity(1) == 2 && first.Progress.GetDeliveredQuantity(1) == 0
             && _screen.DoupiStock.Count == 6, "drop target wins over selection and receives its two missing pieces");
-        _screen.EggAction();
-        Check(_screen.Egg!.HasFinishedCup && second.Progress.GetDeliveredQuantity(2) == 0, "egg action never performs click delivery");
+        int eggBefore = _screen.Egg!.Count;
+        Vector2 eggClick = _screen.Workstation.GetGlobalTransformWithCanvas() * _screen.Workstation.CupCenter;
+        Move(eggClick); Button(eggClick, true); Button(eggClick, false);
+        Check(_screen.Egg!.Count == eggBefore && second.Progress.GetDeliveredQuantity(2) == 0, "egg action never performs click delivery");
+        await Settled();Step(.001);
         await Drop(ProductKind.EggRiceWine, 1);
-        Check(!_screen.Egg.HasFinishedCup && second.Progress.GetDeliveredQuantity(2) == 1, "finished cup can be dragged directly to customer");
-        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine), "duplicate submit cannot consume an absent cup");
+        Check(_screen.Egg.Count == eggBefore - 1 && second.Progress.GetDeliveredQuantity(2) == 1, "finished cup can be dragged directly to customer");
+        await Drop(ProductKind.EggRiceWine, 1);
+        Check(_screen.Egg.Count == eggBefore - 2 && second.Progress.GetDeliveredQuantity(2) == 2, "another stock cup satisfies the remaining quantity");
+        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine) && _screen.Egg.Count == eggBefore - 2, "fulfilled egg line cannot consume another cup");
         Move(Source(ProductKind.HotDryNoodles)); Button(Source(ProductKind.HotDryNoodles), true); Button(Source(ProductKind.HotDryNoodles), false);
         Check(!_screen.DeliveryDrag.IsDragging, "empty bowl cannot start a delivery");
         _screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); _screen.Bowl.TryAddBaseSeasoning(); Step(.001);

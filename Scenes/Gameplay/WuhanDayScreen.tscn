@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v3.png" id="2_3027d"]
+[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v4.png" id="2_3027d"]
 [ext_resource type="Script" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
 [ext_resource type="Script" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
@@ -12,7 +12,7 @@
 [ext_resource type="Script" path="res://Scripts/UI/WuhanWorkstationView.cs" id="10_o1v37"]
 [ext_resource type="Script" path="res://Scripts/Interaction/DragItem.cs" id="11_jo6ni"]
 [ext_resource type="Script" path="res://Scripts/UI/CoinTrayView.cs" id="12_h747o"]
-[ext_resource type="Texture2D" path="res://resource/art/TianJin/出餐托盘.png" id="13_o8akn"]
+[ext_resource type="Texture2D" path="res://resource/art/Wuhan/通用托盘.png" id="13_o8akn"]
 [ext_resource type="Script" path="res://Scripts/UI/CoinCollectionFeedback.cs" id="14_77nn7"]
 [ext_resource type="Script" path="res://Scripts/Gameplay/PancakeAudio.cs" id="15_qks6d"]
 
@@ -611,7 +611,7 @@ corner_radius_bottom_left = 5
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_71qxo"]
 atlas = ExtResource("13_o8akn")
-region = Rect2(33, 230, 1470, 558)
+region = Rect2(126, 470, 1000, 345)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vfoh0"]
 content_margin_left = 8.0
@@ -845,19 +845,20 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_c1cda")
 text = "提前打烊"
 
 [node name="WuhanCustomerStrip" type="HBoxContainer" parent="." unique_id=917246360]
+clip_contents = true
 z_index = 25
 layout_mode = 0
 offset_left = 180.0
-offset_top = 224.0
+offset_top = 150.0
 offset_right = 1740.0
-offset_bottom = 670.0
+offset_bottom = 580.0
 mouse_filter = 2
 theme_override_constants/separation = 20
 alignment = 1
 
 [node name="WuhanCustomer1" type="Control" parent="WuhanCustomerStrip" unique_id=502758148]
 visible = false
-custom_minimum_size = Vector2(375, 440)
+custom_minimum_size = Vector2(375, 350)
 layout_mode = 2
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|0")
@@ -936,6 +937,7 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("7_kbbhe")
+Presentation = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|0")
 
 [node name="@TextureRect@321" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer1/@VBoxContainer@320/@Control@323" unique_id=1837196550]
@@ -964,7 +966,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 
 [node name="WuhanCustomer2" type="Control" parent="WuhanCustomerStrip" unique_id=497109150]
 visible = false
-custom_minimum_size = Vector2(375, 440)
+custom_minimum_size = Vector2(375, 350)
 layout_mode = 2
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|1")
@@ -1043,6 +1045,7 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("7_kbbhe")
+Presentation = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|1")
 
 [node name="@TextureRect@325" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer2/@VBoxContainer@324/@Control@327" unique_id=1883282616]
@@ -1071,7 +1074,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 
 [node name="WuhanCustomer3" type="Control" parent="WuhanCustomerStrip" unique_id=1554841040]
 visible = false
-custom_minimum_size = Vector2(375, 440)
+custom_minimum_size = Vector2(375, 350)
 layout_mode = 2
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|2")
@@ -1150,6 +1153,7 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("7_kbbhe")
+Presentation = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|2")
 
 [node name="@TextureRect@329" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer3/@VBoxContainer@328/@Control@331" unique_id=2075976255]
@@ -1178,7 +1182,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 
 [node name="WuhanCustomer4" type="Control" parent="WuhanCustomerStrip" unique_id=848583783]
 visible = false
-custom_minimum_size = Vector2(375, 440)
+custom_minimum_size = Vector2(375, 350)
 layout_mode = 2
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|3")
@@ -1257,6 +1261,7 @@ layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("7_kbbhe")
+Presentation = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|3")
 
 [node name="@TextureRect@333" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer4/@VBoxContainer@332/@Control@335" unique_id=1145216596]
@@ -1832,10 +1837,11 @@ text = "收好收入 · 返回武汉经营首页"
 visible = false
 z_index = 80
 layout_mode = 0
-offset_left = 560.0
-offset_top = 146.0
-offset_right = 1360.0
-offset_bottom = 186.0
+offset_left = 360.0
+offset_top = 588.0
+offset_right = 1560.0
+offset_bottom = 620.0
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
 theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
 theme_override_constants/outline_size = 5

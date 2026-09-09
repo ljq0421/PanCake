@@ -23,7 +23,12 @@ public sealed class OrderProgress
 
     public OrderData Order { get; }
     public IReadOnlyList<DeliveredItem> DeliveredItems => _delivered;
+    public bool HasLightYoutiao => _delivered.Any(item => item.YoutiaoQuality == Fryer.YoutiaoQuality.Light
+        || item.InternalYoutiaoQuality == Fryer.YoutiaoQuality.Light);
+    public bool HasDeepYoutiao => _delivered.Any(item => item.YoutiaoQuality == Fryer.YoutiaoQuality.Deep
+        || item.InternalYoutiaoQuality == Fryer.YoutiaoQuality.Deep);
     public bool HasRecipeMismatch { get; private set; }
+    public bool HasSauceMismatch { get; private set; }
     public bool HasMeatMismatch { get; private set; }
     public bool HasJuiceMismatch { get; private set; }
     public bool HasBunOverbrowned { get; private set; }
@@ -84,7 +89,8 @@ public sealed class OrderProgress
     {
         if (!CanAccept(item, out string error)) return OrderItemAcceptance.Reject(error);
 
-        int lineIndex = item.ProductKind is ProductKind.Pancake or ProductKind.HotDryNoodles or ProductKind.Roujiamo or ProductKind.RiceRoll
+        int lineIndex = item.ProductKind == ProductKind.Pancake ? FindPancakeLine(item)
+            : item.ProductKind is ProductKind.HotDryNoodles or ProductKind.Roujiamo or ProductKind.RiceRoll
             ? FindRecipeLine(item.ProductKind, item.DefinitionId)
             : FindAvailableLine(item.ProductKind);
         if (lineIndex < 0) return OrderItemAcceptance.Reject("这位顾客不需要更多这种商品。");
@@ -117,6 +123,8 @@ public sealed class OrderProgress
         else if (item.ProductKind == ProductKind.Pancake)
         {
             if (!string.Equals(target.DefinitionId, item.DefinitionId, StringComparison.Ordinal)) HasRecipeMismatch = true;
+            HasSauceMismatch |= !SauceRules.Matches(target.Sauce, item.SauceAmount);
+            HasRecipeMismatch |= HasSauceMismatch;
             if (item.PancakeQuality != Pancake.PancakeQuality.Perfect) HasQualityIssue = true;
             if (target.DefinitionId is StableIds.Recipes.Youtiao or StableIds.Recipes.ScallionYoutiao
                 && item.InternalYoutiaoQuality != Fryer.YoutiaoQuality.Golden)
@@ -144,6 +152,16 @@ public sealed class OrderProgress
         }
 
         return OrderItemAcceptance.Accept(IsComplete, IsComplete ? "订单商品已经齐全。" : "商品已加入订单，顾客仍在等待其余内容。");
+    }
+
+    private int FindPancakeLine(DeliveredItem item)
+    {
+        int exact = Enumerable.Range(0, Order.Lines.Count).FirstOrDefault(index =>
+            Order.Lines[index].ProductKind == ProductKind.Pancake
+            && _fulfilled[index] < Order.Lines[index].Quantity
+            && Order.Lines[index].DefinitionId == item.DefinitionId
+            && SauceRules.Matches(Order.Lines[index].Sauce, item.SauceAmount), -1);
+        return exact >= 0 ? exact : FindRecipeLine(ProductKind.Pancake, item.DefinitionId);
     }
 
     private int FindRecipeLine(ProductKind kind, string actualRecipeId)

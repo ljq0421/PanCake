@@ -12,6 +12,7 @@ public enum PancakeSound
     Success,
     Overdone,
     Error,
+    CoinCollect,
 }
 
 public partial class PancakeAudio : Node
@@ -31,6 +32,7 @@ public partial class PancakeAudio : Node
         _sounds[PancakeSound.Success] = MakeChord(new[] { 660.0, 880.0 }, 0.18, 0.25);
         _sounds[PancakeSound.Overdone] = MakeTone(230, 0.18, 0.24);
         _sounds[PancakeSound.Error] = MakeTone(145, 0.12, 0.28);
+        _sounds[PancakeSound.CoinCollect] = MakeCoinChime();
     }
 
     public void Play(PancakeSound sound)
@@ -40,9 +42,27 @@ public partial class PancakeAudio : Node
             return;
         }
 
+        _player.StreamPaused = false;
         _player.Stream = stream;
         _player.Play();
     }
+
+    public void SetPaused(bool paused) => _player.StreamPaused = paused;
+    public void Stop() => _player?.Stop();
+
+    private static AudioStreamWav MakeCoinChime() => MakeWave(.28, sample =>
+    {
+        double t = sample / 22050.0, value = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            double local = t - i * .055;
+            if (local < 0) continue;
+            double frequency = 1046.5 * Math.Pow(1.25, i);
+            value += (Math.Sin(Math.Tau * frequency * local) + .3 * Math.Sin(Math.Tau * frequency * 2.76 * local))
+                * Math.Exp(-local * 30) * Math.Min(1, local * 800) * .24;
+        }
+        return value;
+    });
 
     private static AudioStreamWav MakeTone(double frequency, double seconds, double amplitude) =>
         MakeWave(seconds, sample => Math.Sin(Math.Tau * frequency * sample / 22050.0) * amplitude);

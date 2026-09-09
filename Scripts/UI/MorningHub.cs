@@ -352,8 +352,8 @@ public partial class MorningHub : Control
         ("equipment:fryer_lv2", "扩容加速", 160, _save.Data.PurchasedFryerLevel >= 2),
         ("equipment:fryer_lv3", "自动抬篮", 320, _save.Data.PurchasedFryerLevel >= 3));
     private UpgradeOffer? NextStationUpgrade() => FirstAvailable(
-        ("equipment:ingredient_station_lv2", "料盒扩容", 60, _save.Data.PurchasedIngredientStationLevel >= 2),
-        ("equipment:ingredient_station_lv3", "再次扩容", 180, _save.Data.PurchasedIngredientStationLevel >= 3));
+        ("equipment:ingredient_station_lv2", "四种小料各8份", 60, _save.Data.PurchasedIngredientStationLevel >= 2),
+        ("equipment:ingredient_station_lv3", "四种小料各10份", 180, _save.Data.PurchasedIngredientStationLevel >= 3));
 
     private UpgradeOffer? FirstAvailable(params (string Id, string Effect, int Price, bool Owned)[] choices)
     {

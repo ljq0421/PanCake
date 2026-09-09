@@ -54,6 +54,7 @@ public partial class VisualCapture : Node
         bool captureFryerSlots = args.Contains("--capture-fryer-slots", StringComparer.Ordinal);
         bool captureRefillGallery = args.Contains("--capture-refill-gallery", StringComparer.Ordinal);
         bool captureStockGallery = captureRefillGallery || args.Contains("--capture-stock-gallery", StringComparer.Ordinal);
+        bool captureYoutiaoQuality = args.Contains("--capture-youtiao-quality", StringComparer.Ordinal);
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
@@ -61,7 +62,11 @@ public partial class VisualCapture : Node
             GetNode<SaveService>("/root/SaveService").UsePathForTests(temporarySave);
         }
 
-        if (captureStockGallery)
+        if (captureYoutiaoQuality)
+        {
+            BuildYoutiaoQualityGallery();
+        }
+        else if (captureStockGallery)
         {
             BuildIngredientStockGallery(captureRefillGallery);
         }
@@ -373,6 +378,7 @@ public partial class VisualCapture : Node
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string? outputArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-output=", StringComparison.Ordinal));
         string output = outputArg is not null ? outputArg["--capture-output=".Length..]
+            : captureYoutiaoQuality ? $"res://.godot/youtiao_quality{sizeSuffix}.png"
             : captureRefillGallery ? $"res://.godot/ingredient_refill_gallery{sizeSuffix}.png"
             : captureStockGallery ? $"res://.godot/ingredient_stock_gallery{sizeSuffix}.png"
             : captureBagged ? $"res://.godot/phase4_bagged{sizeSuffix}.png"
@@ -524,6 +530,49 @@ public partial class VisualCapture : Node
         note.Position = new Vector2(100, 980);
         note.Size = new Vector2(1720, 52);
         gallery.AddChild(note);
+    }
+
+    private void BuildYoutiaoQualityGallery()
+    {
+        Node main = GetNode("../Main");
+        main.ProcessMode = ProcessModeEnum.Disabled;
+        main.GetNode<Node2D>("ShopRoot").Visible = false;
+        foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Hide();
+        var gallery = new ColorRect { Color = new Color("#FFF4D5"), Theme = TianjinUi.CreateTheme() };
+        TianjinUi.FullRect(gallery); AddChild(gallery);
+        var art = new TianjinArtCatalog();
+        string[] titles = { "偏浅", "金黄", "偏深", "混合品质 · 先取偏浅" };
+        YoutiaoQuality[][] stocks = {
+            Enumerable.Repeat(YoutiaoQuality.Light, 6).ToArray(),
+            Enumerable.Repeat(YoutiaoQuality.Golden, 6).ToArray(),
+            Enumerable.Repeat(YoutiaoQuality.Deep, 6).ToArray(),
+            new[] { YoutiaoQuality.Light, YoutiaoQuality.Light, YoutiaoQuality.Golden, YoutiaoQuality.Golden, YoutiaoQuality.Deep, YoutiaoQuality.Deep },
+        };
+        for (int column = 0; column < stocks.Length; column++)
+        {
+            var card = new Control { Position = new Vector2(40 + column * 470, 80), Size = new Vector2(430, 880) };
+            gallery.AddChild(card);
+            Label title = TianjinUi.Label(titles[column], 30, TianjinUi.BrownDark, HorizontalAlignment.Center);
+            title.Size = new Vector2(430, 56); card.AddChild(title);
+            var machine = new FryerStateMachine(GetNode<DataCatalog>("/root/DataCatalog").FryersByLevel[1]);
+            for (int i = 0; i < 6; i++) machine.TryExecute(FryerCommand.LoadOne);
+            machine.Runtime.State = FryerState.Draining;
+            machine.Runtime.Quality = stocks[column][0];
+            var fryer = new FryerVisualView { Position = new Vector2(35, 72), Size = new Vector2(360, 340) };
+            card.AddChild(fryer); fryer.Bind(art, machine);
+            var rack = new WorkstationSlotView { Position = new Vector2(35, 400), Scale = Vector2.One * 1.5f };
+            card.AddChild(rack);
+            rack.Configure(art.YoutiaoRack, art.Ingredient(StableIds.Ingredients.Youtiao), "熟油条",
+                TianjinWorkbenchLayout.FinishedYoutiaoSlot(), IngredientVisualMode.WideStock);
+            rack.HideNameplate(); rack.SetStock(6, 6);
+            rack.SetWideStockTints(YoutiaoPresentation.RackTints(stocks[column], rack.StockTier));
+            var preview = TianjinUi.Texture(art.Ingredient(StableIds.Ingredients.Youtiao), new Vector2(160, 110));
+            preview.Position = new Vector2(135, 665);
+            preview.Modulate = YoutiaoPresentation.Tint(stocks[column][0]); card.AddChild(preview);
+            Label caption = TianjinUi.Label(column == 1 ? "下一根金黄 · 有小费 · 评价100" : "下一根" + YoutiaoPresentation.Name(stocks[column][0]) + " · 无小费 · 评价85",
+                23, TianjinUi.BrownDark, HorizontalAlignment.Center);
+            caption.Position = new Vector2(0, 800); caption.Size = new Vector2(430, 50); card.AddChild(caption);
+        }
     }
 
     private void BuildFryerSlotGallery()

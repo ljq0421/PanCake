@@ -33,6 +33,7 @@ public partial class WuhanDeliverySelfTest : Node
             ProjectSettings.SetSetting("accessibility/reduce_motion", false);
             await NewDay();
             await TestDelivery();
+            await TestBatchDelivery();
             await TestLifecycle();
             TestTheme();
             if (_capture) await CaptureScreens();
@@ -60,7 +61,7 @@ public partial class WuhanDeliverySelfTest : Node
     }
     private async Task Settled() => await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
 
-    private async Task NewDay()
+    private async Task NewDay(bool batchOnly = false)
     {
         if (_screen is not null) DisposeDay();
         _save = new SaveService(); _save.UsePathForTests($"res://.tmp/wuhan-delivery-{Guid.NewGuid():N}.json"); AddChild(_save);
@@ -80,7 +81,7 @@ public partial class WuhanDeliverySelfTest : Node
                 OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
                 CustomerTypeId = planned.CustomerTypeId, OrderTypeId = "wuhan_full_combo",
                 BasePrice = 30, PatienceSeconds = 100,
-                Lines = i == 2 ? new[] { new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 2) }
+                Lines = batchOnly ? new[] { new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 1), new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 2) } : i == 2 ? new[] { new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 2) }
                     : new[] { new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 2),
                         new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 2),
                         new OrderLineData(ProductKind.EggRiceWine, StableIds.Products.EggRiceWine, 2) },
@@ -159,8 +160,8 @@ public partial class WuhanDeliverySelfTest : Node
         Check(first.Progress.HasNoodlesOvercooked && first.Progress.HasRecipeMismatch, "actual recipe and low quality follow existing scoring rules");
         Check(!first.Progress.IsComplete, "partial delivery keeps multi-item order active");
         queue.TrySelect(first.Id); await Drop(ProductKind.Doupi, 1);
-        Check(second.Progress.GetDeliveredQuantity(1) == 1 && first.Progress.GetDeliveredQuantity(1) == 0
-            && _screen.DoupiStock.Count == 7, "drop target wins over selected customer and consumes one piece");
+        Check(second.Progress.GetDeliveredQuantity(1) == 2 && first.Progress.GetDeliveredQuantity(1) == 0
+            && _screen.DoupiStock.Count == 6, "drop target wins over selection and receives its two missing pieces");
         _screen.EggAction();
         Check(_screen.Egg!.HasFinishedCup && second.Progress.GetDeliveredQuantity(2) == 0, "egg action never performs click delivery");
         await Drop(ProductKind.EggRiceWine, 1);
@@ -179,11 +180,44 @@ public partial class WuhanDeliverySelfTest : Node
         // Completion must be atomic even if the target changes during the snap animation.
         Press(ProductKind.Doupi); Vector2 target = Target(1); Move(target, true); Button(target, false);
         second.State = CustomerState.Leaving; Step(.5); await Settled();
-        Check(_screen.DoupiStock.Count == 7 && second.Progress.GetDeliveredQuantity(1) == 1, "departing customer and slot rebinding cancel pending snap");
+        Check(_screen.DoupiStock.Count == 6 && second.Progress.GetDeliveredQuantity(1) == 2, "satisfied or departing customer cannot consume additional pieces");
         ProjectSettings.SetSetting("accessibility/reduce_motion", true);
         await Drop(ProductKind.Doupi, 0);
-        Check(_screen.DoupiStock.Count == 6, "reduced motion also commits exactly one piece");
+        Check(_screen.DoupiStock.Count == 4, "reduced motion commits the two missing pieces once");
         ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+    }
+
+    private async Task TestBatchDelivery()
+    {
+        await NewDay(true);
+        var first = _controller.CustomerQueue!.Slots[0];
+        _screen.DoupiStock.TryAddBatch(1, DoupiQuality.Overbrowned);
+        _screen.DoupiStock.TryAddBatch(2, DoupiQuality.Normal);
+        Step(.001); await Frames();
+        int notifications = 0; _controller.DeliveryCompleted += _ => notifications++;
+        Press(ProductKind.Doupi); Move(Target(0), true); Step(.001); await Frames();
+        Check(_screen.DoupiStock.Count == 3 && first.Progress.DeliveredItems.Count == 0, "hover reserves no stock or order quantity");
+        var preview = (Label)_screen.FindChild("DoupiDeliveryQuantity1", true, false);
+        Check(preview.Visible && preview.Text == "豆皮×3", "hover preview sums remaining quantity across order lines");
+        if (_capture) await Shot("07-batch-preview");
+        Button(Target(0), false); await Settled(); Step(.001);
+        Check(_screen.DoupiStock.Count == 0 && first.Progress.GetDeliveredQuantity(0) == 1 && first.Progress.GetDeliveredQuantity(1) == 2, "one drop fills multiple doupi lines without overdelivery");
+        Check(first.Progress.DeliveredItems[0].WuhanQuality == WuhanFoodQuality.DoupiOverbrowned
+            && first.Progress.DeliveredItems.Skip(1).All(item => item.WuhanQuality == WuhanFoodQuality.None), "batch preserves each piece quality in FIFO order");
+        Check(first.Progress.HasDoupiOverbrowned && first.Progress.IsComplete && notifications == 1
+            && _controller.Ledger!.Build().CompletedCustomers == 1, "mixed quality order evaluates and notifies exactly once");
+        Check(!_screen.DeliverToCustomer(first.Id, ProductKind.Doupi) && notifications == 1, "duplicate batch cannot settle twice");
+        await NewDay(true); first = _controller.CustomerQueue!.Slots[0];
+        _screen.DoupiStock.TryAddBatch(1); Step(.001); await Frames();
+        await Drop(ProductKind.Doupi, 0);
+        Check(first.Progress.DeliveredItems.Count == 1 && !first.Progress.IsComplete && _screen.DoupiStock.Count == 0, "insufficient stock delivers available piece and leaves remaining demand");
+        _screen.DoupiStock.TryAddBatch(3); Step(.001); await Frames();
+        Press(ProductKind.Doupi); Move(Target(1), true); Button(Target(1), false);
+        var leaving = _controller.CustomerQueue.Slots[1]; leaving.State = CustomerState.Leaving;
+        Step(.01); await Settled();
+        Check(_screen.DoupiStock.Count == 3 && leaving.Progress.DeliveredItems.Count == 0, "customer leaving during snap cancels entire pending batch");
+        Step(.001); await Frames(); Press(ProductKind.Doupi); _screen.Workstation.CancelInput();
+        Check(_screen.DoupiStock.Count == 3, "cancelled batch keeps all pieces");
     }
 
     private async Task TestLifecycle()

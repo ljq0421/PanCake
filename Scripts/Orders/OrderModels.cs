@@ -12,7 +12,8 @@ public enum OrderStatus
     Lost,
 }
 
-public sealed record OrderLineData(ProductKind ProductKind, string DefinitionId, int Quantity);
+public sealed record OrderLineData(ProductKind ProductKind, string DefinitionId, int Quantity,
+    SaucePreference Sauce = SaucePreference.Normal);
 
 public sealed class OrderData
 {
@@ -63,7 +64,8 @@ public sealed record DeliveredItem(
     ProjectCake.Xian.BunQuality? BunQuality = null,
     int MeatPortions = 0,
     bool HasJuice = false,
-    ProjectCake.Guangzhou.GuangzhouFoodQuality? GuangzhouQuality = null);
+    ProjectCake.Guangzhou.GuangzhouFoodQuality? GuangzhouQuality = null,
+    double SauceAmount = 1);
 
 [Flags]
 public enum WuhanFoodQuality

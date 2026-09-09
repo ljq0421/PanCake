@@ -2,7 +2,7 @@ namespace ProjectCake.Inventory;
 
 public sealed class SoyMilkTrayRuntime
 {
-    public const int DefaultCapacity = 6;
+    public const int DefaultCapacity = 10;
     public const double TakeSeconds = 0.3;
     public const double RefillSeconds = 0.6;
 

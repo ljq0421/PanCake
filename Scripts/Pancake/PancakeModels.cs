@@ -96,4 +96,5 @@ public sealed class PancakeDeliveryResult
 public sealed record PreparedPancake(
     PancakeQuality Quality,
     IReadOnlySet<string> ExtraIngredients,
-    YoutiaoQuality? InternalYoutiaoQuality = null);
+    YoutiaoQuality? InternalYoutiaoQuality = null,
+    double SauceAmount = 1);

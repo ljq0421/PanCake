@@ -12,6 +12,7 @@ public sealed class WuhanIngredientInventory
         foreach (string id in new[] { StableIds.Ingredients.WuhanNoodles, StableIds.Ingredients.WuhanBaseSeasoning, StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef }) _counts[id] = data.GetCapacity(id);
     }
     public int Count(string id) => _counts.GetValueOrDefault(id);
+    public int Capacity(string id) => _data.GetCapacity(id);
     public bool TryConsume(string id) { if (Count(id) <= 0) return false; _counts[id]--; return true; }
     public void Refill(string id) => _counts[id] = _data.GetCapacity(id);
 }

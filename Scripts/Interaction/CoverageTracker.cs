@@ -12,7 +12,7 @@ public sealed class CoverageTracker
 
     private readonly bool[] _covered = new bool[CellCount];
 
-    public CoverageTracker(int requiredCells)
+    public CoverageTracker(int requiredCells, double maximumProgress = 1)
     {
         if (requiredCells is < 1 or > CellCount)
         {
@@ -20,15 +20,19 @@ public sealed class CoverageTracker
         }
 
         RequiredCells = requiredCells;
+        if (!double.IsFinite(maximumProgress) || maximumProgress < 1 || requiredCells * maximumProgress > CellCount)
+            throw new ArgumentOutOfRangeException(nameof(maximumProgress));
+        MaximumProgress = maximumProgress;
     }
 
     public int RequiredCells { get; }
+    public double MaximumProgress { get; }
 
     public int CoveredCells { get; private set; }
 
-    public double Progress => Math.Clamp((double)CoveredCells / RequiredCells, 0, 1);
+    public double Progress => Math.Clamp((double)CoveredCells / RequiredCells, 0, MaximumProgress);
 
-    public bool IsComplete => CoveredCells >= RequiredCells;
+    public bool IsComplete => CoveredCells >= RequiredCells * MaximumProgress;
 
     public IReadOnlyList<bool> Covered => _covered;
 
@@ -95,4 +99,3 @@ public sealed class CoverageTracker
         return true;
     }
 }
-

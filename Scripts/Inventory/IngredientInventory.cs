@@ -45,11 +45,15 @@ public sealed class IngredientInventory
         _quantities.TryGetValue(ingredientId, out int quantity) ? quantity : 0;
 
     public int GetCapacity(string ingredientId) => LevelData.GetCapacity(ingredientId);
+    public bool IsUnlimited(string ingredientId) => LevelData.IsUnlimited(ingredientId);
+    public bool HasAvailable(string ingredientId, int amount = 1) => amount > 0 && !IsRefilling(ingredientId)
+        && (IsUnlimited(ingredientId) || GetQuantity(ingredientId) >= amount);
 
     public bool IsRefilling(string ingredientId) => _refillRemaining.ContainsKey(ingredientId);
 
     public IngredientStockStatus GetStatus(string ingredientId)
     {
+        if (IsUnlimited(ingredientId)) return IngredientStockStatus.Normal;
         if (IsRefilling(ingredientId))
         {
             return IngredientStockStatus.Refilling;
@@ -68,6 +72,7 @@ public sealed class IngredientInventory
 
     public bool CanRefill(string ingredientId) =>
         SupportedIngredients.Contains(ingredientId, StringComparer.Ordinal)
+        && !IsUnlimited(ingredientId)
         && !IsRefilling(ingredientId)
         && GetQuantity(ingredientId) < GetCapacity(ingredientId);
 
@@ -83,11 +88,12 @@ public sealed class IngredientInventory
 
     public bool TryConsume(string ingredientId, int amount = 1)
     {
-        if (amount <= 0 || IsRefilling(ingredientId) || GetQuantity(ingredientId) < amount)
+        if (!HasAvailable(ingredientId, amount))
         {
             return false;
         }
 
+        if (IsUnlimited(ingredientId)) return true;
         _quantities[ingredientId] -= amount;
         Changed?.Invoke();
         return true;

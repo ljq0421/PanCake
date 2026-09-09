@@ -81,6 +81,21 @@ public static class TianjinUi
         return label;
     }
 
+    public static void ApplyCounterHint(Label label)
+    {
+        StyleBoxFlat style = Box(Cream, 9, 0, false);
+        style.ContentMarginLeft = style.ContentMarginRight = 8;
+        style.ContentMarginTop = style.ContentMarginBottom = 2;
+        label.AddThemeStyleboxOverride("normal", style);
+        label.AddThemeFontSizeOverride("font_size", 17);
+        label.AddThemeColorOverride("font_color", BrownText);
+        label.AddThemeConstantOverride("outline_size", 0);
+        label.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.VerticalAlignment = VerticalAlignment.Center;
+        label.MouseFilter = Control.MouseFilterEnum.Ignore;
+    }
+
     public static Button Button(string text, bool primary = false, Vector2? minimumSize = null)
     {
         var button = new Button

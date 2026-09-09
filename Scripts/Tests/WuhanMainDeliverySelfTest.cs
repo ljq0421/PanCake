@@ -32,7 +32,8 @@ public partial class WuhanMainDeliverySelfTest : Node
             await ClickButton(_main.GetNode<Control>("UI/TianjinMapScreen"), "测试直达武汉");
             var hub = _main.GetNode<WuhanHub>("UI/WuhanHub");
             Check(hub.IsVisibleInTree(), "Main navigation opens Wuhan hub");
-            await ClickButton(hub, "Day 8", true);
+            await ClickButton(hub, "经营手账");
+            await ClickButton(hub.GetNode<WuhanLedger>("WuhanLedger"), "开始营业 · Day 8");
             _day = _main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen");
             var controller = _main.GetNode<DayController>("DayController");
             Check(_day.IsVisibleInTree() && _day.IsProcessing(), "real Wuhan day is visible and frame processing stays enabled");
@@ -67,7 +68,7 @@ public partial class WuhanMainDeliverySelfTest : Node
                 Vector2 target=zone.GetGlobalTransformWithCanvas()*(zone.Size*.5f);
                 Move(target,true); await Frames(3); Button(target,false);
                 await Until(()=>!_day.DeliveryDrag.IsDragging,2);
-                Check(customer.Progress.DeliveredItems.Count==before+1,$"{kind} reaches customer in real Main");
+                Check(customer.Progress.DeliveredItems.Count==before+(kind==ProductKind.Doupi?2:1),$"{kind} reaches customer in real Main");
             }
             _main.Free(); await Frames(3); GC.Collect(); GC.WaitForPendingFinalizers();
             GD.Print($"WUHAN_MAIN_DELIVERY_RESULT passed={_passed} failed=0"); GetTree().Quit();

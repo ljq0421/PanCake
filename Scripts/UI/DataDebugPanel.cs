@@ -263,6 +263,7 @@ public partial class DataDebugPanel : Control
         text.AppendLine($"独立商品 Resource：{_catalog.ProductsById.Count} / 2");
         text.AppendLine($"煎饼炉等级：{_catalog.StovesByLevel.Count} / 3");
         text.AppendLine($"配料台等级：{_catalog.IngredientStationsByLevel.Count} / 3");
+        text.AppendLine("天津库存：鸡蛋/薄脆/火腿/香葱 Lv1各6份、Lv2各8份、Lv3各10份；面糊/酱料不限；豆浆10杯。");
         text.AppendLine($"油条锅等级：{_catalog.FryersByLevel.Count} / 3");
         text.AppendLine($"顾客类型：{_catalog.CustomersById.Count} / 4");
         text.AppendLine($"每日 JSON：{_catalog.DaysByNumber.Count} / 15");

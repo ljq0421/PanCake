@@ -245,7 +245,8 @@ public partial class StageThreeSelfTest : Node
             }
             controller.CustomerQueue!.TrySelect(customer.Id);
             RecipeData recipe = catalog.RecipesById[customer.Order.PancakeRecipeId];
-            MakeBagged(machine, recipe.ExtraIngredients);
+            SaucePreference sauce = customer.Order.Lines.First(line => line.ProductKind == ProductKind.Pancake).Sauce;
+            MakeBagged(machine, recipe.ExtraIngredients, sauce == SaucePreference.Light ? .25 : sauce == SaucePreference.Extra ? 1.25 : .75);
             DeliveryEvaluation evaluation = controller.TryDeliverSelected(machine, catalog);
             Check(evaluation.CompletesOrder, $"Day {day} 顾客 {customer.Id} 交付成功");
             machine.TryExecute(PancakeCommand.Discard);
@@ -253,7 +254,7 @@ public partial class StageThreeSelfTest : Node
         controller.QueueFree();
         return finished ?? throw new InvalidOperationException($"Day {day} 确定性模拟未进入结算。");
     }
-    private static void MakeBagged(PancakeStateMachine machine, IEnumerable<string> ingredients)
+    private static void MakeBagged(PancakeStateMachine machine, IEnumerable<string> ingredients, double sauceAmount = 1)
     {
         machine.TryExecute(PancakeCommand.PlaceBatter);
         machine.TryExecute(PancakeCommand.BeginSpread);
@@ -264,7 +265,7 @@ public partial class StageThreeSelfTest : Node
         machine.TryExecute(PancakeCommand.Flip);
         machine.Tick(machine.Stove.SideBReadySeconds);
         machine.TryExecute(PancakeCommand.BeginSauce);
-        machine.SetSauceCoverage(1);
+        machine.SetSauceCoverage(sauceAmount);
         machine.TryExecute(PancakeCommand.CompleteSauce);
         foreach (string ingredient in ingredients) machine.TryExecute(PancakeCommand.AddIngredient, ingredient);
         machine.TryExecute(PancakeCommand.Fold);

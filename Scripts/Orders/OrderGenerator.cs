@@ -1,4 +1,5 @@
 using ProjectCake.Data;
+using ProjectCake.Pancake;
 
 namespace ProjectCake.Orders;
 
@@ -21,6 +22,8 @@ public sealed partial class OrderGenerator
             return GenerateWuhan(config, recipes, products, customers);
 
         var random = new DeterministicRandom(config.RandomSeed);
+        // Keep sauce preferences independent of arrivals, recipes and tutorial assignment.
+        var sauceRandom = new DeterministicRandom(config.RandomSeed ^ 0x53415543);
         IReadOnlyList<double> arrivals = GenerateArrivals(config, random);
         IReadOnlyDictionary<int, TutorialOrder> tutorials = BuildTutorialAssignments(config, random);
         var planned = new List<PlannedCustomer>(config.CustomerCount);
@@ -54,6 +57,17 @@ public sealed partial class OrderGenerator
             }
 
             generated ??= GenerateFallback(recipes);
+            if (generated.PancakeQuantity > 0)
+            {
+                double roll = sauceRandom.NextDouble();
+                SaucePreference sauce = roll < .8 ? SaucePreference.Normal
+                    : roll < .9 ? SaucePreference.Light : SaucePreference.Extra;
+                generated = generated with
+                {
+                    Lines = generated.Lines.Select(line => line.ProductKind == ProductKind.Pancake
+                        ? line with { Sauce = sauce } : line).ToArray(),
+                };
+            }
             if (generated.CustomerTypeId == "big_order") bigOrderCount++;
             consecutiveYoutiao = generated.IsYoutiaoRelated ? consecutiveYoutiao + 1 : 0;
             string ordinal = (index + 1).ToString("D3");

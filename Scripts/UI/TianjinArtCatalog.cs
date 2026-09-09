@@ -70,6 +70,8 @@ public sealed class TianjinArtCatalog
         Load("order_body", "StockUI/order_body.png");
         Load("order_tail", "StockUI/order_tail.png");
         Load("patience_frame", "StockUI/patience_frame.png");
+        Load("sauce_light_icon", "OrderUI/sauce_light.png");
+        Load("sauce_extra_icon", "OrderUI/sauce_extra.png");
         Load("trash", "卡通垃圾桶.png", true);
         Load("heart_effect", "开心爱心特效.png", true);
         Load("star_effect", "星星特效图标.png", true);
@@ -124,6 +126,8 @@ public sealed class TianjinArtCatalog
     public Texture2D OrderBody => Get("order_body");
     public Texture2D OrderTail => Get("order_tail");
     public Texture2D PatienceFrame => Get("patience_frame");
+    public Texture2D SaucePreferenceIcon(ProjectCake.Pancake.SaucePreference preference) =>
+        Get(preference == ProjectCake.Pancake.SaucePreference.Light ? "sauce_light_icon" : "sauce_extra_icon");
     public Texture2D Trash => Get("trash");
     public Texture2D HeartEffect => Get("heart_effect");
     public Texture2D StarEffect => Get("star_effect");

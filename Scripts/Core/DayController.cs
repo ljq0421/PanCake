@@ -175,7 +175,8 @@ public partial class DayController : Node
         string actualRecipeId = catalog.RecipesById.Values
             .FirstOrDefault(recipe => prepared.ExtraIngredients.SetEquals(recipe.ExtraIngredients))?.Id
             ?? $"invalid:{string.Join('+', prepared.ExtraIngredients.OrderBy(id => id, StringComparer.Ordinal))}";
-        var item = new DeliveredItem(ProductKind.Pancake, actualRecipeId, prepared.Quality, null, prepared.InternalYoutiaoQuality);
+        var item = new DeliveredItem(ProductKind.Pancake, actualRecipeId, prepared.Quality, null, prepared.InternalYoutiaoQuality,
+            SauceAmount: prepared.SauceAmount);
         return TryDeliverItem(customer, item, consume, null);
     }
 
@@ -213,6 +214,32 @@ public partial class DayController : Node
             return Rejected("当前不能交付武汉商品。");
         CustomerRuntime? customer = FindDeliveryCustomer(customerId);
         return customer is null ? Rejected("请把成品拖给仍在等待的顾客。") : TryDeliverItem(customer, item, consume, null);
+    }
+
+    public int GetWuhanDoupiDeliveryQuantity(string? customerId, ProjectCake.Wuhan.DoupiInventory inventory)
+    {
+        if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Wuhan || FindDeliveryCustomer(customerId) is not CustomerRuntime customer) return 0;
+        int remaining = customer.Order.Lines.Select((line, index) => line.ProductKind == ProductKind.Doupi
+            ? customer.Progress.GetRemainingQuantity(index) : 0).Sum();
+        return Math.Min(inventory.Count, remaining);
+    }
+
+    public DeliveryEvaluation TryDeliverWuhanDoupiTo(string? customerId, ProjectCake.Wuhan.DoupiInventory inventory)
+    {
+        int count = GetWuhanDoupiDeliveryQuantity(customerId, inventory);
+        if (count == 0 || FindDeliveryCustomer(customerId) is not CustomerRuntime customer) return Rejected("没有可交付的豆皮或顾客已不再需要。");
+        DeliveryEvaluation result = Rejected("豆皮交付未生效。");
+        // Synchronous FIFO commits preserve each piece's quality. No callbacks until the batch ends.
+        for (int i = 0; i < count; i++)
+        {
+            if (!inventory.TryPeek(out var quality)) break;
+            var item = new DeliveredItem(ProductKind.Doupi, StableIds.Products.Doupi, WuhanQuality:
+                quality == ProjectCake.Wuhan.DoupiQuality.Overbrowned ? WuhanFoodQuality.DoupiOverbrowned : WuhanFoodQuality.None);
+            result = TryDeliverItem(customer, item, () => inventory.TryTake(1, out _), null, false);
+            if (!result.ItemAccepted || result.CompletesOrder) break;
+        }
+        if (result.ItemAccepted || result.CompletesOrder) DeliveryCompleted?.Invoke(result);
+        return result;
     }
 
     public DeliveryEvaluation TryDeliverXianTo(string? customerId, DeliveredItem item, Func<bool> consume)
@@ -270,11 +297,12 @@ public partial class DayController : Node
                 && customer.State is CustomerState.Happy or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry)
             : null;
 
-    private DeliveryEvaluation TryDeliverItem(CustomerRuntime customer, DeliveredItem item, Func<bool>? consume, Func<bool>? acceptPrepared)
+    private DeliveryEvaluation TryDeliverItem(CustomerRuntime customer, DeliveredItem item, Func<bool>? consume, Func<bool>? acceptPrepared, bool notify = true)
     {
         if (!customer.Progress.CanAccept(item, out string error)) return Rejected(error);
         bool matchesRequestedItem = customer.Order.Lines.Select((line, index) =>
             line.ProductKind == item.ProductKind && line.DefinitionId == item.DefinitionId
+            && (item.ProductKind != ProductKind.Pancake || SauceRules.Matches(line.Sauce, item.SauceAmount))
             && customer.Progress.GetRemainingQuantity(index) > 0).Any(matches => matches);
         if (consume is not null && !consume()) return Rejected("商品库存已经变化，请重试。");
 
@@ -288,7 +316,7 @@ public partial class DayController : Node
         if (!acceptance.OrderComplete)
         {
             var incomplete = new DeliveryEvaluation(DeliveryGrade.Incomplete, 0, 0, 0, acceptance.Message, true);
-            DeliveryCompleted?.Invoke(incomplete);
+            if (notify) DeliveryCompleted?.Invoke(incomplete);
             return incomplete;
         }
 
@@ -301,7 +329,7 @@ public partial class DayController : Node
             : new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
         if (!CustomerQueue!.TryMarkServed(customer.Id)) return Rejected("顾客状态已经变化，本次交付未生效。");
         Ledger!.RecordDelivery(evaluation);
-        DeliveryCompleted?.Invoke(evaluation);
+        if (notify) DeliveryCompleted?.Invoke(evaluation);
         return evaluation;
     }
 

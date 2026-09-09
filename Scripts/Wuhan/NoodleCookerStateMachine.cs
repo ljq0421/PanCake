@@ -25,6 +25,28 @@ public sealed class NoodleCookerStateMachine
     }
 
     public IReadOnlyList<NoodleBasketRuntime> Baskets => _baskets;
+    public int? PendingPourBasket { get; private set; }
+    private HotDryNoodlesStateMachine? _reservedBowl;
+
+    public bool TryReservePour(int basket, HotDryNoodlesStateMachine bowl)
+    {
+        if (PendingPourBasket.HasValue || bowl.State != NoodleBowlState.Empty
+            || !TryGet(basket, out var item) || item.State is not (NoodleBasketState.Raised or NoodleBasketState.Draining or NoodleBasketState.Drained)) return false;
+        PendingPourBasket = basket; _reservedBowl = bowl;
+        return true;
+    }
+
+    public void CancelPendingPour() { PendingPourBasket = null; _reservedBowl = null; }
+
+    public bool TryCompletePendingPour(out int basket, out NoodleQuality quality)
+    {
+        basket = PendingPourBasket ?? -1; quality = NoodleQuality.Optimal;
+        if (_reservedBowl is null || basket < 0) return false;
+        if (_reservedBowl.State != NoodleBowlState.Empty) { CancelPendingPour(); return false; }
+        quality = _baskets[basket].Quality;
+        if (!TryTransferTo(basket, _reservedBowl)) return false;
+        CancelPendingPour(); return true;
+    }
 
     public bool TryStart(int basket)
     {
@@ -84,6 +106,7 @@ public sealed class NoodleCookerStateMachine
     // Validate the destination before consuming the source. Both mutations are synchronous.
     public bool TryTransferTo(int basket, HotDryNoodlesStateMachine bowl)
     {
+        if (PendingPourBasket.HasValue && (PendingPourBasket != basket || !ReferenceEquals(bowl, _reservedBowl))) return false;
         if (!TryGet(basket, out NoodleBasketRuntime item) || item.State != NoodleBasketState.Drained
             || !bowl.TryAddNoodles(item.Quality)) return false;
         return TryTake(basket, out _);

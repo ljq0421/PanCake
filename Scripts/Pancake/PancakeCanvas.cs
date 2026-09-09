@@ -84,7 +84,7 @@ public partial class PancakeCanvas : Control
 
         if (runtime.HasSauce || runtime.State == PancakeState.Saucing)
         {
-            float alpha = runtime.HasSauce ? 1f : Mathf.Clamp((float)runtime.SauceCoverage, 0, 1f);
+            float alpha = Mathf.Clamp((float)(runtime.SauceCoverage / SauceRules.MaximumAmount), 0, 1f);
             DrawCentered(_art.PancakeSauce, surface.GetCenter(), surface.Size, new Color(1, 1, 1, alpha));
         }
 
@@ -96,12 +96,7 @@ public partial class PancakeCanvas : Control
             DrawCentered(_art.Ingredient(StableIds.Ingredients.Ham), surface.GetCenter() + new Vector2(surface.Size.X * 0.14f, surface.Size.Y * 0.14f), surface.Size * new Vector2(0.38f, 0.5f));
         if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao))
         {
-            Color youtiaoTint = runtime.InternalYoutiaoQuality switch
-            {
-                YoutiaoQuality.Light => new Color(1f, 0.88f, 0.66f, 1),
-                YoutiaoQuality.Deep => new Color(0.72f, 0.48f, 0.28f, 1),
-                _ => Colors.White,
-            };
+            Color youtiaoTint = YoutiaoPresentation.Tint(runtime.InternalYoutiaoQuality ?? YoutiaoQuality.Golden);
             DrawCentered(_art.Ingredient(StableIds.Ingredients.Youtiao), surface.GetCenter() + new Vector2(-surface.Size.X * 0.03f, surface.Size.Y * 0.1f), surface.Size * new Vector2(0.51f, 0.66f), youtiaoTint);
         }
 

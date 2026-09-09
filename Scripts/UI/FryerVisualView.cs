@@ -130,12 +130,8 @@ public partial class FryerVisualView : Control
         Texture2D texture = runtime.Quality == YoutiaoQuality.Burnt || runtime.State == FryerState.Burnt
             ? _art.BurntYoutiao
             : runtime.State is FryerState.Empty or FryerState.Loaded ? _art.RawYoutiao : _art.Ingredient(Data.StableIds.Ingredients.Youtiao);
-        Color tint = runtime.Quality switch
-        {
-            YoutiaoQuality.Light when runtime.State == FryerState.Frying => new Color(1f, 0.91f, 0.72f),
-            YoutiaoQuality.Deep => new Color(0.78f, 0.56f, 0.34f),
-            _ => Colors.White,
-        };
+        Color tint = runtime.State is FryerState.Empty or FryerState.Loaded
+            ? Colors.White : YoutiaoPresentation.Tint(runtime.Quality);
         IReadOnlyList<SnapSlot> layout = LayoutForLevel(_machine.Level.Level);
         Vector2 slotBounds = canvas.Size * 0.18f * Mathf.Min(basketPlacement.Size.X, basketPlacement.Size.Y);
         int visibleCount = Math.Min(runtime.Quantity, layout.Count);
@@ -200,18 +196,6 @@ public partial class FryerVisualView : Control
             DrawLine(center - diagonal, center + diagonal, TianjinUi.Red, 5, true);
             DrawLine(center + new Vector2(-diagonal.X, diagonal.Y), center + new Vector2(diagonal.X, -diagonal.Y), TianjinUi.Red, 5, true);
         }
-    }
-
-    public Vector2 NextLoadSlotGlobalCenter()
-    {
-        if (_machine is null || Size.X <= 0 || Size.Y <= 0) return GetGlobalRect().GetCenter();
-        IReadOnlyList<SnapSlot> layout = LayoutForLevel(_machine.Level.Level);
-        int index = Math.Clamp(_machine.Runtime.Quantity, 0, layout.Count - 1);
-        Rect2 canvas = FittedSquare(Size, 2);
-        Rect2 placement = BasketPlacementForLevel(_machine.Level.Level);
-        Vector2 normalized = placement.Position + layout[index].NormalizedPosition * placement.Size;
-        Vector2 localCenter = canvas.Position + canvas.Size * normalized;
-        return GetGlobalTransform() * localCenter;
     }
 
     internal static int SlotCountForLevel(int level) => LayoutForLevel(level).Count;

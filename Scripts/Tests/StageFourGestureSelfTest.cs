@@ -107,6 +107,13 @@ public partial class StageFourSelfTest
             {
                 station.ResetForDay();
                 var gesture = (StockGesture)station.FindChild($"StockGesture_{id}", true, false);
+                if (station.Inventory.IsUnlimited(id))
+                {
+                    Press(gesture); station.Tick(.6); Release(gesture);
+                    Check(!station.Inventory.IsRefilling(id) && station.Inventory.HasAvailable(id)
+                        && !station.Inventory.CanRefill(id), $"{id}/{scale} 无限原料长按不补货且始终可用");
+                    continue;
+                }
                 int capacity = station.Inventory.GetCapacity(id);
                 station.Inventory.TryConsume(id, capacity);
                 Press(gesture);
@@ -120,8 +127,20 @@ public partial class StageFourSelfTest
                 Release(gesture);
                 Press(gesture); station.Tick(.45); Release(gesture);
                 Check(station.Inventory.GetRefillProgress(id) > 0, $"{id}/{scale} 重复长按不重置补货进度");
+                var slot = (IngredientStockSlotView)station.FindChild($"IngredientSlot_{id}", true, false);
+                int previewQuantity = (int)Math.Floor(capacity * station.Inventory.GetRefillProgress(id));
+                bool liquid = id is StableIds.Ingredients.Batter or StableIds.Ingredients.Sauce;
+                Check(liquid ? slot.LiquidTier == slot.StockTier && slot.LiquidTier > 0
+                    : slot.VisibleIngredientVisualCount == previewQuantity,
+                    $"{id}/{scale} 真实长按补货将新增份数同步到盘内实物或液面");
+                int pausedVisualCount = slot.VisibleIngredientVisualCount, pausedLiquidTier = slot.LiquidTier;
+                station.Paused = true; station.Tick(1); station.Paused = false;
+                Check(slot.VisibleIngredientVisualCount == pausedVisualCount && slot.LiquidTier == pausedLiquidTier,
+                    $"{id}/{scale} 暂停冻结盘内补货显示");
                 station.Tick(station.Inventory.LevelData.RefillSeconds);
                 Check(station.Inventory.GetQuantity(id) == capacity && !station.Inventory.IsRefilling(id), $"{id}/{scale} 松手后按原耗时补满");
+                Check(liquid ? slot.LiquidTier == 3 : slot.VisibleIngredientVisualCount == capacity,
+                    $"{id}/{scale} 补满后显示完整容量");
                 Press(gesture); station.Tick(.45); Release(gesture);
                 Check(!station.Inventory.IsRefilling(id) && station.Inventory.GetQuantity(id) == capacity, $"{id}/{scale} 满盘长按不补货也不取料");
                 station.Inventory.TryConsume(id);
@@ -155,16 +174,25 @@ public partial class StageFourSelfTest
             Check(!tray.IsRefilling && tray.IsTaking, "豆浆取杯冷却期间不能补货");
             tray.Tick(.3);
             Press(soy); station.Tick(.45); Release(soy);
-            Check(tray.IsRefilling && tray.Quantity == 5, "豆浆长按触发后松手不取杯");
+            Check(tray.IsRefilling && tray.Quantity == 9, "豆浆长按触发后松手不取杯");
             station.Tick(.59);
-            Check(tray.Quantity == 5, "豆浆保持0.6秒补货耗时");
+            Check(tray.Quantity == 9, "豆浆保持0.6秒补货耗时");
             station.Tick(.01);
-            Check(tray.Quantity == 6 && !tray.IsRefilling, "豆浆完成后恢复六杯");
+            Check(tray.Quantity == 10 && !tray.IsRefilling, "豆浆完成后恢复十杯");
             while (tray.Quantity > 0) { tray.TryConsumeForDelivery(); tray.Tick(.3); }
             Press(soy); station.Tick(.1); Release(soy);
             Check(!tray.IsRefilling, "豆浆空盘短按不补货");
             Press(soy); station.Tick(.45); Release(soy);
             Check(tray.IsRefilling, "豆浆空盘长按补货");
+            var cups = (SoyMilkStockView)station.FindChild("SoyMilkStockArt", true, false);
+            station.Tick(SoyMilkTrayRuntime.RefillSeconds * .5);
+            Check(cups.VisibleCupCount == 5 && tray.Quantity == 0 && !tray.CanStartDrag,
+                "豆浆长按补货半程托盘显示五杯，完成前不能取杯");
+            station.Paused = true; station.Tick(1); station.Paused = false;
+            Check(cups.VisibleCupCount == 5, "暂停冻结豆浆补货杯数");
+            station.Tick(SoyMilkTrayRuntime.RefillSeconds);
+            Check(cups.VisibleCupCount == tray.Capacity && tray.CanStartDrag,
+                "豆浆长按补货结束显示完整十杯并恢复取用");
         }
 
         var coins = station.CoinTray!;

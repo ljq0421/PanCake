@@ -2,7 +2,8 @@ using ProjectCake.Data;
 
 namespace ProjectCake.Wuhan;
 
-public enum DoupiState { Empty, Batter, SkinCooking, ReadyToFlip, Flipped, SecondCooking, ReadyToCut, Overbrowned, Burnt, Cut }
+public enum DoupiState { Empty, Batter, SkinCooking, ReadyToFlip, Flipped, SecondCooking, ReadyToCut, Overbrowned, Burnt, Cut, Cutting }
+public enum DoupiCutDirection { Horizontal, Vertical }
 public enum DoupiQuality { Normal, Overbrowned, Burnt }
 
 public sealed class DoupiInventory
@@ -19,11 +20,13 @@ public sealed class DoupiStateMachine
 {
     private readonly DoupiGriddleLevelData _data;
     private double _seconds;
-    private int _cuts;
+    private readonly HashSet<DoupiCutDirection> _cuts = new();
     public DoupiState State { get; private set; }
     public DoupiQuality Quality { get; private set; }
-    public int RequiredCuts => 4;
-    public int CompletedCuts => _cuts;
+    public int RequiredCuts => 2;
+    public int CompletedCuts => _cuts.Count;
+    public IReadOnlySet<DoupiCutDirection> CutDirections => _cuts;
+    public int RemainingPieces { get; private set; }
 
     public DoupiStateMachine(DoupiGriddleLevelData data) => _data = data;
     public bool TryPourBatter() { if (State != DoupiState.Empty) return false; State = DoupiState.Batter; return true; }
@@ -60,18 +63,22 @@ public sealed class DoupiStateMachine
             if (_data.CanBurn && _seconds > _data.SecondStageBurnSeconds) { State = DoupiState.Burnt; Quality = DoupiQuality.Burnt; }
         }
     }
-    public bool TryCut()
+    public bool TryCut(DoupiCutDirection direction)
     {
-        if (State is not (DoupiState.ReadyToCut or DoupiState.Overbrowned)) return false;
-        _cuts++;
-        if (_cuts >= RequiredCuts) State = DoupiState.Cut;
+        if (!Enum.IsDefined(direction) || State is not (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting) || !_cuts.Add(direction)) return false;
+        State = DoupiState.Cutting;
+        if (_cuts.Count == RequiredCuts) { State = DoupiState.Cut; RemainingPieces = _data.BatchYield; }
         return true;
     }
-    public bool TryStock(DoupiInventory inventory)
+    public int TransferAvailable(DoupiInventory inventory)
     {
-        if (State != DoupiState.Cut || !inventory.TryAddBatch(_data.BatchYield, Quality)) return false;
-        Reset(); return true;
+        if (State != DoupiState.Cut) return 0;
+        int amount = Math.Min(RemainingPieces, DoupiInventory.Capacity - inventory.Count);
+        if (!inventory.TryAddBatch(amount, Quality)) return 0;
+        RemainingPieces -= amount;
+        if (RemainingPieces == 0) Reset();
+        return amount;
     }
     public void Discard() => Reset();
-    private void Reset() { State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts = 0; }
+    private void Reset() { State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; }
 }

@@ -23,6 +23,21 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            TestSauceOrders(catalog);
+            await TestSauceWorkstation(catalog);
+            if (OS.GetCmdlineUserArgs().Contains("--sauce-only", StringComparer.Ordinal))
+            {
+                GD.Print($"酱量自测完成：{_passed} 项通过，{_failed} 项失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--youtiao-quality-only", StringComparer.Ordinal))
+            {
+                await TestYoutiaoQualityPresentation(catalog);
+                GD.Print($"油条品质自测完成：{_passed} 项通过，{_failed} 项失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             TestCatalog(catalog);
             TestArtCatalog();
             TestStockPresentation(catalog);
@@ -34,6 +49,8 @@ public partial class StageFourSelfTest : Node
                 return;
             }
             await TestYoutiaoPicking();
+            await TestYoutiaoQualityPresentation(catalog);
+            await TestRawYoutiaoGestures(catalog);
             await TestWorkbenchPicking();
             await TestStockGestures(catalog);
             await TestCoinPayments(catalog);
@@ -235,11 +252,11 @@ public partial class StageFourSelfTest : Node
     private void TestSoyMilk()
     {
         var tray = new SoyMilkTrayRuntime();
-        Check(tray.Capacity == 6 && tray.Quantity == 6, "豆浆托盘容量为 6 杯");
-        Check(tray.TryConsumeForDelivery() && tray.Quantity == 5 && tray.IsTaking, "合法交付立即扣除一杯");
+        Check(tray.Capacity == 10 && tray.Quantity == 10, "豆浆托盘容量为 10 杯");
+        Check(tray.TryConsumeForDelivery() && tray.Quantity == 9 && tray.IsTaking, "合法交付立即扣除一杯");
         tray.Tick(.29); Check(tray.IsTaking, "取杯反馈持续 0.3 秒"); tray.Tick(.01); Check(!tray.IsTaking, "取杯反馈按时结束");
-        Check(tray.TryBeginRefill(), "未满托盘可开始补货"); tray.Tick(.59); Check(tray.Quantity == 5, "0.6 秒前不补满"); tray.Tick(.01);
-        Check(tray.Quantity == 6 && !tray.IsRefilling, "0.6 秒后补满豆浆");
+        Check(tray.TryBeginRefill(), "未满托盘可开始补货"); tray.Tick(.59); Check(tray.Quantity == 9, "0.6 秒前不补满"); tray.Tick(.01);
+        Check(tray.Quantity == 10 && !tray.IsRefilling, "0.6 秒后补满豆浆");
     }
 
     private void TestOrderProgress(DataCatalog catalog)
@@ -321,7 +338,8 @@ public partial class StageFourSelfTest : Node
                         DeliveredItem item = line.ProductKind switch
                         {
                             ProductKind.Pancake => new DeliveredItem(ProductKind.Pancake, line.DefinitionId, PancakeQuality.Perfect, null,
-                                line.DefinitionId is StableIds.Recipes.Youtiao or StableIds.Recipes.ScallionYoutiao ? YoutiaoQuality.Golden : null),
+                                line.DefinitionId is StableIds.Recipes.Youtiao or StableIds.Recipes.ScallionYoutiao ? YoutiaoQuality.Golden : null,
+                                SauceAmount: TestSauceAmount(line.Sauce)),
                             ProductKind.Youtiao => new DeliveredItem(ProductKind.Youtiao, StableIds.Products.Youtiao, null, YoutiaoQuality.Golden),
                             _ => new DeliveredItem(ProductKind.SoyMilk, StableIds.Products.SoyMilk),
                         };
@@ -360,7 +378,7 @@ public partial class StageFourSelfTest : Node
                     {
                         if (line.ProductKind == ProductKind.Pancake)
                         {
-                            MakeBagged(pancake, catalog.RecipesById[line.DefinitionId]);
+                            MakeBagged(pancake, catalog.RecipesById[line.DefinitionId], TestSauceAmount(line.Sauce));
                             DeliveryEvaluation delivery = controller.TryDeliverPancakeTo(customer.Id, pancake, catalog);
                             Check(delivery.Grade != DeliveryGrade.Rejected, $"Day {day} 营业闭环接收煎饼");
                             pancake.TryExecute(PancakeCommand.Discard);
@@ -409,8 +427,8 @@ public partial class StageFourSelfTest : Node
                 && stoveZone.GetGlobalRect() == Moved(((Control)legacy.FindChild("PancakeDropZone", true, false)).GetGlobalRect())
                 && ((Control)workstation.FindChild("PancakeStrokeInput", true, false)).GetGlobalRect()
                     == Moved(((Control)legacy.FindChild("PancakeStrokeInput", true, false)).GetGlobalRect())
-                && ((Control)workstation.FindChild("FryerBasketDropZone", true, false)).GetGlobalRect()
-                    == new Rect2(((Control)legacy.FindChild("FryerBasketDropZone", true, false)).GetGlobalRect().Position + new Vector2(0, 50), ((Control)legacy.FindChild("FryerBasketDropZone", true, false)).Size),
+                && ((Control)workstation.FindChild("FryerVisual", true, false)).GetGlobalRect()
+                    == new Rect2(((Control)legacy.FindChild("FryerVisual", true, false)).GetGlobalRect().Position + new Vector2(0, 50), ((Control)legacy.FindChild("FryerVisual", true, false)).Size),
                 $"Lv{level} 炉子与操作区右移50，炸篮保持原位置，尺寸不变");
 
             var slots = workstation.FindChildren("IngredientSlot_*", "Control", true, false).OfType<IngredientStockSlotView>().ToArray();
@@ -422,21 +440,20 @@ public partial class StageFourSelfTest : Node
                 $"Lv{level} 底排保留桌沿间距，槽宽收紧为248");
             Check(slots.All(slot => slot.FindChild("CaptionPlate", true, false) is Control plate
                     && slot.FindChild("Label", true, false) is Label label
-                    && plate.GetGlobalRect().Encloses(label.GetGlobalRect())
-                    && plate.GetGlobalRect().Encloses(slot.CountLabel.GetGlobalRect())
+                    && !plate.IsVisibleInTree() && !label.IsVisibleInTree() && !slot.CountLabel.IsVisibleInTree()
                     && plate.MouseFilter == Control.MouseFilterEnum.Ignore
                     && label.MouseFilter == Control.MouseFilterEnum.Ignore
                     && slot.CountLabel.MouseFilter == Control.MouseFilterEnum.Ignore),
-                $"Lv{level} 配料标牌收拢名称与准确库存，且不会截获取料输入");
+                $"Lv{level} 配料名称与库存标牌隐藏，且不会截获取料输入");
             var soy = (Control)workstation.FindChild("SoyMilkSlot", true, false);
             var cup = (Control)workstation.FindChild("SoyMilkCupDrag", true, false);
             var refill = (Button)soy.FindChild("SoyMilkRefill", true, false);
             Check(!refill.IsVisibleInTree() && soy.FindChild("StockGesture_soy_milk", true, false) is StockGesture,
                 $"Lv{level} 豆浆托盘采用长按手势");
-            Check(soy.FindChild("SoyMilkCaption", true, false) is Control soyCaption
-                    && soy.GetGlobalRect().Encloses(soyCaption.GetGlobalRect())
-                    && soyCaption.MouseFilter == Control.MouseFilterEnum.Ignore,
-                $"Lv{level} 豆浆标牌归属杯盘");
+            Check(soy.FindChild("SoyMilkCaption", true, false) is null
+                    && soy.FindChild("SoyMilkStatus", true, false) is Label { Visible: false } soyStatus
+                    && soyStatus.MouseFilter == Control.MouseFilterEnum.Ignore,
+                $"Lv{level} 豆浆无名称标牌，正常库存不显示状态文字");
             var trash = (DropZone)workstation.FindChild("TrashZone", true, false);
             var finishedTray = (Control)workstation.FindChild("FinishedPancakeSlot", true, false);
             var finishedTrayArt = (TextureRect)workstation.FindChild("FinishedTrayArt", true, false);
@@ -445,10 +462,20 @@ public partial class StageFourSelfTest : Node
             Check(ReferenceEquals(finishedTrayArt.Texture, soyTrayArt.Texture) && ReferenceEquals(finishedTrayArt.Texture, coinTrayArt.Texture)
                 && finishedTrayArt.Size == new Vector2(250, 86) && soyTrayArt.Size == finishedTrayArt.Size && coinTrayArt.Size == finishedTrayArt.Size,
                 $"Lv{level} 金币、成品、豆浆托盘共用同一素材与250×86尺寸");
-            Check(workstation.CoinTray!.GetGlobalRect().End.X < finishedTray.GetGlobalRect().Position.X
-                && finishedTray.GetGlobalRect().End.X < soy.GetGlobalRect().Position.X
-                && soy.GetGlobalRect().End.X < trash.GetGlobalRect().Position.X,
-                $"Lv{level} 金币、成品、豆浆、垃圾桶按顺序排列且互不重叠");
+            var collectInput = (Control)workstation.CoinTray!.FindChild("CollectCoins", true, false);
+            var finishedInput = (Control)workstation.FindChild("FinishedPancakeDrag", true, false);
+            var soyInput = (Control)soy.FindChild("StockGesture_soy_milk", true, false);
+            Check(collectInput.GetGlobalRect().End.X < finishedInput.GetGlobalRect().Position.X
+                && finishedInput.GetGlobalRect().End.X < soyInput.GetGlobalRect().Position.X
+                && soyInput.GetGlobalRect().End.X < trash.GetGlobalRect().Position.X,
+                $"Lv{level} 紧凑排列后金币、成品、豆浆、垃圾桶的热区互不重叠");
+            Check(((Label)workstation.CoinTray.FindChild("CoinTrayHint", true, false)).Text == "金币盘"
+                && workstation.FindChild("DirectDeliveryHint", true, false) is Label { Visible: true, Text: "成品盘" }
+                && workstation.FindChild("FinishedYoutiaoArea", true, false)?.FindChild("Label", true, false) is Label { Visible: true, Text: "熟油条" },
+                $"Lv{level} 三个空容器显示用途提示");
+            foreach (Control input in new[] { collectInput, finishedInput, soyInput })
+                Check(slots.All(slot => !input.GetGlobalRect().Intersects(new Rect2(slot.GlobalPosition, slot.ClickBounds.Size))),
+                    $"Lv{level} {input.Name} 与下方食材热区隔离");
             Check(slots.All(slot => !trash.GetGlobalRect().Grow(trash.HitPadding).Intersects(slot.GetGlobalRect()))
                 && !trash.GetGlobalRect().Intersects(soy.GetGlobalRect()), $"Lv{level} 丢弃区与配料和豆浆操作区隔离");
 
@@ -473,16 +500,9 @@ public partial class StageFourSelfTest : Node
                 workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[1]);
                 Check(slots.Select(slot => slot.Position).SequenceEqual(positions), "早期未解锁配料隐藏后保留固定空位");
                 workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11]);
-                var rawInput = (DragItem)workstation.FindChild("RawYoutiaoInput", true, false);
-                var rawDrag = workstation.GetChildren().OfType<DragService>().Single();
-                using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true }) rawInput._GuiInput(press);
-                using (var release = new InputEventMouseButton
-                {
-                    ButtonIndex = MouseButton.Left, Pressed = false,
-                    Position = ((Control)workstation.FindChild("FryerBasketDropZone", true, false)).GetGlobalRect().GetCenter(),
-                }) rawDrag._Input(release);
-                await WaitForAnimation(.35);
-                Check(workstation.FryerMachine?.Runtime.Quantity == 1, "前移后生油条实际拖入炸篮只装入一根");
+                Check(workstation.FindChild("RawYoutiaoInput", true, false) is PressRepeatGesture
+                    && workstation.FindChild("FryerBasketDropZone", true, false) is null,
+                    "生油条改用点击与长按装篮，移除旧投放区域");
                 workstation.ResetForDay();
                 PancakeStateMachine machine = workstation.Machine;
                 machine.TryExecute(PancakeCommand.PlaceBatter); machine.TryExecute(PancakeCommand.BeginSpread);
@@ -763,16 +783,15 @@ public partial class StageFourSelfTest : Node
             && portrait is { AnchorBottom: 1, Presentation: CustomerPortraitPresentation.CounterHalfBody }
             && Math.Abs(portrait.VisibleBodyFraction - 0.65f) < 0.001f,
             "天津顾客使用约 65% 半身裁切且人物视窗止于桌沿");
-        Check(orderCard is { CustomMinimumSize.Y: 152 }
-            && orderContent is { CustomMinimumSize.Y: 140 }
-            && orderCard.GetThemeStylebox("panel") is StyleBoxTexture
-            && patience?.GetParent() is NinePatchRect { Name: var frameName, AnchorTop: 1, AnchorBottom: 1 }
-            && frameName == "OrderPatienceFrame" && patience.GetParent().GetParent() == orderContent
-            && orderCard.FindChild("OrderBubbleTail", true, false) is TextureRect { MouseFilter: Control.MouseFilterEnum.Ignore }
+        Check(orderCard is OrderBubbleView { MouseFilter: Control.MouseFilterEnum.Ignore }
+            && orderContent is VBoxContainer
+            && orderCard.GetThemeStylebox("panel") is StyleBoxFlat
+            && patience?.GetParent() == orderContent
+            && orderContent.GetChildren().Last() == patience
             && portraitStack?.GetChildren().OfType<ProgressBar>().Any() == false,
-            "订单卡分层显示商品与配料，耐心条固定在卡片底部");
-        Check(customerBadge?.GetParent() == orderContent && customerStateBadge?.GetParent() == orderContent,
-            "顾客类型与动态状态分别固定在订单卡左右上角");
+            "订单卡使用图标分行，耐心条位于内容底部，装饰不截获鼠标");
+        Check(customerBadge is null && customerStateBadge is null,
+            "订单卡移除顾客类型和动态状态文字");
         Check(dayLayout.FindChild("CompletedOrders", true, false) is Label
             && dayLayout.FindChild("PauseButton", true, false) is Button { Text: "暂停" }
             && dayLayout.FindChild("PausePanel", true, false) is PanelContainer { Visible: false }
@@ -924,26 +943,17 @@ public partial class StageFourSelfTest : Node
             && workstation.FindChild("PancakeStatusTag", true, false) is PanelContainer
             && workstation.FindChild("FryerStatusTag", true, false) is PanelContainer,
             "空炉突出面糊并使用贴近设备的全关卡动作状态签");
-        var batterStock = workstation.FindChild("IngredientStock_batter", true, false) as ProgressBar;
-        var batterRefill = workstation.FindChild("IngredientRefill_batter", true, false) as Button;
-        for (int index = 0; index < 5; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: false, Value: 50 }
-            && batterRefill is { Visible: false }
-            && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "5/10" }, "正常库存使用当前/上限并隐藏补货入口");
-        WorkstationSlotView? batterSlot = ingredientSlots.FirstOrDefault(slot => slot.Name.ToString() == "IngredientSlot_batter");
-        for (int index = 0; index < 3; index++) workstation.Inventory.TryConsume(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: false, Value: 20 }
-            && batterRefill is { Visible: true, Text: "+", Disabled: false }
-            && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "2/10" } lowCount
-            && lowCount.Modulate == TianjinUi.Orange, "剩余两份进入低库存状态、隐藏比例条并显示一键补满入口");
-        Check(batterSlot is not null && batterSlot.IngredientIsInsideTray(4), "库存视觉档位变化后仍位于托盘安全边界内");
-        workstation.Inventory.TryConsume(StableIds.Ingredients.Batter, 2);
-        Check(workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "0/10" } emptyCount
-            && emptyCount.Modulate == TianjinUi.Red
-            && batterSlot is { IngredientVisualOpacity: 0.45f }, "零库存数量使用红色且食材图保持 45% 弱化显示");
-        workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Batter);
-        Check(batterStock is { Visible: true, Value: 0 } && batterRefill is { Text: "…", Disabled: true }
-            && workstation.FindChild("IngredientCount_batter", true, false) is Label { Text: "0%" }, "补货中显示进度并禁用重复补货");
+        foreach (string unlimitedId in new[] { StableIds.Ingredients.Batter, StableIds.Ingredients.Sauce })
+        {
+            for (int use = 0; use < 200; use++)
+                Check(workstation.Inventory.TryConsume(unlimitedId), $"{unlimitedId} 不限量使用第{use + 1}次");
+            var unlimitedSlot = (IngredientStockSlotView)workstation.FindChild($"IngredientSlot_{unlimitedId}", true, false);
+            Check(workstation.Inventory.IsUnlimited(unlimitedId) && workstation.Inventory.HasAvailable(unlimitedId)
+                && !workstation.Inventory.TryBeginRefill(unlimitedId)
+                && unlimitedSlot.CountLabel.Text == "不限" && unlimitedSlot.LiquidTier == 3
+                && !unlimitedSlot.RefillButton.Visible && !unlimitedSlot.StockBar.Visible,
+                $"{unlimitedId} 始终满碗、不缺料、没有补货入口且显示不限");
+        }
         var stoveCanvas = workstation.FindChild("PancakeCanvas", true, false) as PancakeCanvas;
         var stoveDropZone = workstation.FindChild("PancakeDropZone", true, false) as DropZone;
         var stoveStroke = workstation.FindChild("PancakeStrokeInput", true, false) as StrokeInteractor;
@@ -1027,12 +1037,12 @@ public partial class StageFourSelfTest : Node
         Day = day, PlannedCustomers = day == 15 ? 26 : Math.Max(1, completed), CompletedCustomers = completed,
         Satisfaction = satisfaction, PerfectOrders = perfect, SaleRevenue = revenue,
     };
-    private static void MakeBagged(PancakeStateMachine machine, RecipeData recipe)
+    private static void MakeBagged(PancakeStateMachine machine, RecipeData recipe, double sauceAmount = 1)
     {
         machine.TryExecute(PancakeCommand.PlaceBatter); machine.TryExecute(PancakeCommand.BeginSpread); machine.SetSpreadCoverage(1);
         machine.TryExecute(PancakeCommand.CompleteSpread); machine.TryExecute(PancakeCommand.AddEgg); machine.Tick(machine.Stove.SideAReadySeconds);
         machine.TryExecute(PancakeCommand.Flip); machine.Tick(machine.Stove.SideBReadySeconds); machine.TryExecute(PancakeCommand.BeginSauce);
-        machine.SetSauceCoverage(1); machine.TryExecute(PancakeCommand.CompleteSauce);
+        machine.SetSauceCoverage(sauceAmount); machine.TryExecute(PancakeCommand.CompleteSauce);
         foreach (string ingredient in recipe.ExtraIngredients) machine.TryExecute(PancakeCommand.AddIngredient, ingredient);
         if (recipe.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao)) machine.TrySetInternalYoutiaoQuality(YoutiaoQuality.Golden);
         machine.TryExecute(PancakeCommand.Fold); machine.TryExecute(PancakeCommand.Bag);

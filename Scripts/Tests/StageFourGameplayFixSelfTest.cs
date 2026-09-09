@@ -168,9 +168,9 @@ public partial class StageFourSelfTest
             using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left }) stroke._GuiInput(release);
             if (station.Machine.Runtime.State == PancakeState.Sauced) break;
         }
-        Check(station.Machine.Runtime.State == PancakeState.Sauced && station.Machine.Runtime.SauceCoverage == 1
-            && station.Inventory.GetQuantity(StableIds.Ingredients.Sauce) == sauce - 1 && stroke.IsToolHeld?.Invoke() == false,
-            "在饼面实际划动刷匀后才完成加酱、收刷并扣除一份库存");
+        Check(station.Machine.Runtime.State == PancakeState.Sauced && station.Machine.Runtime.SauceCoverage == 1.5
+            && station.Inventory.GetQuantity(StableIds.Ingredients.Sauce) == sauce && stroke.IsToolHeld?.Invoke() == false,
+            "在饼面实际划动达到150%自动收刷，无限酱料不扣库存");
         station.ResetForDay();
         Check(station.PancakeTray.Count == 0 && !station.IsTransferringBag, "重开清空托盘和装袋动画");
         station.QueueFree(); controller.QueueFree();

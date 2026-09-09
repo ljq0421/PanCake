@@ -38,37 +38,47 @@ public partial class StageTwoSelfTest : Node
     private void RunEquipmentAndInventoryTests(DataCatalog catalog)
     {
         Check(catalog.IngredientStationsByLevel.Count == 3, "加载 3 级配料台");
-        CheckStation(catalog, 1, 10, 6, 12, 8, 8, 6, 0);
-        CheckStation(catalog, 2, 16, 10, 18, 12, 12, 10, 60);
-        CheckStation(catalog, 3, 24, 12, 28, 16, 16, 12, 180);
+        CheckStation(catalog, 1, 0, 6, 0, 6, 6, 6, 0);
+        CheckStation(catalog, 2, 0, 8, 0, 8, 8, 8, 60);
+        CheckStation(catalog, 3, 0, 10, 0, 10, 10, 10, 180);
+        foreach (var data in catalog.IngredientStationsByLevel.Values)
+        foreach (string id in new[] { StableIds.Ingredients.Batter, StableIds.Ingredients.Sauce })
+        {
+            var unlimited = new IngredientInventory(data);
+            Check(data.IsUnlimited(id) && unlimited.HasAvailable(id, 1000) && unlimited.TryConsume(id, 1000)
+                && unlimited.GetQuantity(id) == 0 && unlimited.GetCapacity(id) == 0
+                && unlimited.GetStatus(id) == IngredientStockStatus.Normal && !unlimited.CanRefill(id)
+                && !unlimited.TryBeginRefill(id) && !unlimited.TryConsume(id, 0) && !unlimited.TryConsume(id, -1),
+                $"Lv{data.Level} {id} 无限原料无需补货，不使用虚假大容量，仍拒绝无效消耗量");
+        }
 
         catalog.TryGetIngredientStation(1, out IngredientStationLevelData levelOne);
         var inventory = new IngredientInventory(levelOne);
-        for (int index = 0; index < levelOne.BatterCapacity; index++)
+        for (int index = 0; index < levelOne.HamCapacity; index++)
         {
-            Check(inventory.TryConsume(StableIds.Ingredients.Batter), $"面糊第 {index + 1} 次消耗成功");
+            Check(inventory.TryConsume(StableIds.Ingredients.Ham), $"火腿第 {index + 1} 次消耗成功");
         }
 
-        Check(!inventory.TryConsume(StableIds.Ingredients.Batter), "库存不会减为负数");
-        Check(inventory.GetStatus(StableIds.Ingredients.Batter) == IngredientStockStatus.Empty, "零库存进入缺货状态");
-        Check(inventory.CanRefill(StableIds.Ingredients.Batter), "缺货配料允许一键补满");
+        Check(!inventory.TryConsume(StableIds.Ingredients.Ham), "库存不会减为负数");
+        Check(inventory.GetStatus(StableIds.Ingredients.Ham) == IngredientStockStatus.Empty, "零库存进入缺货状态");
+        Check(inventory.CanRefill(StableIds.Ingredients.Ham), "缺货配料允许一键补满");
         inventory.TryConsume(StableIds.Ingredients.Egg);
-        Check(inventory.TryBeginRefill(StableIds.Ingredients.Batter), "面糊可独立开始补料");
+        Check(inventory.TryBeginRefill(StableIds.Ingredients.Ham), "火腿可独立开始补料");
         Check(inventory.TryBeginRefill(StableIds.Ingredients.Egg), "鸡蛋可同时开始补料");
-        Check(inventory.GetStatus(StableIds.Ingredients.Batter) == IngredientStockStatus.Refilling, "补货期间进入补货中状态");
+        Check(inventory.GetStatus(StableIds.Ingredients.Ham) == IngredientStockStatus.Refilling, "补货期间进入补货中状态");
         inventory.Tick(0.5);
-        Check(inventory.IsRefilling(StableIds.Ingredients.Batter) && inventory.IsRefilling(StableIds.Ingredients.Egg), "多个料盒同时计时");
-        Check(!inventory.TryConsume(StableIds.Ingredients.Batter), "补料中不能消耗");
+        Check(inventory.IsRefilling(StableIds.Ingredients.Ham) && inventory.IsRefilling(StableIds.Ingredients.Egg), "多个料盒同时计时");
+        Check(!inventory.TryConsume(StableIds.Ingredients.Ham), "补料中不能消耗");
         inventory.Tick(0.5);
-        Check(inventory.GetQuantity(StableIds.Ingredients.Batter) == levelOne.BatterCapacity, "面糊 1 秒后补满");
+        Check(inventory.GetQuantity(StableIds.Ingredients.Ham) == levelOne.HamCapacity, "火腿 1 秒后补满");
         Check(inventory.GetQuantity(StableIds.Ingredients.Egg) == levelOne.EggCapacity, "鸡蛋 1 秒后补满");
-        Check(inventory.GetStatus(StableIds.Ingredients.Batter) == IngredientStockStatus.Normal, "补满后恢复正常状态");
+        Check(inventory.GetStatus(StableIds.Ingredients.Ham) == IngredientStockStatus.Normal, "补满后恢复正常状态");
 
         inventory.TryConsume(StableIds.Ingredients.Crispy, levelOne.CrispyCapacity - levelOne.LowStockThreshold);
         Check(inventory.GetStatus(StableIds.Ingredients.Crispy) == IngredientStockStatus.Low, "库存剩余两份时进入低库存状态");
 
-        inventory.TryConsume(StableIds.Ingredients.Sauce);
-        inventory.TryBeginRefill(StableIds.Ingredients.Sauce);
+        inventory.TryConsume(StableIds.Ingredients.Scallion);
+        inventory.TryBeginRefill(StableIds.Ingredients.Scallion);
         catalog.TryGetIngredientStation(2, out IngredientStationLevelData levelTwo);
         Check(!inventory.TrySwitchLevel(levelTwo), "补料时禁止切换配料台");
         inventory.Tick(1);

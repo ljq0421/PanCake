@@ -44,9 +44,44 @@ public partial class StageFourSelfTest
             machine.Tick(machine.Stove.SideBReadySeconds);
             Send(Key.F);
             Check(machine.Runtime.State == PancakeState.SideBReady, "F 不能代替手动抹酱");
+            RightClick();
+            Check(machine.Runtime.State == PancakeState.SideBReady, "未拿刷时右键不开始刷酱");
             machine.TryExecute(PancakeCommand.BeginSauce);
-            machine.SetSauceCoverage(1);
-            machine.TryExecute(PancakeCommand.CompleteSauce);
+            screen.RefreshForCapture(true);
+            RightClick(pressed: false);
+            Check(machine.Runtime.State == PancakeState.Saucing, "右键松开不收刷");
+            Send(Key.Escape); RightClick();
+            Check(machine.Runtime.State == PancakeState.Saucing, "暂停时右键不收刷");
+            Send(Key.Escape);
+            screen._Notification((int)NotificationApplicationFocusOut); RightClick();
+            Check(machine.Runtime.State == PancakeState.Saucing, "失焦时右键不收刷");
+            screen._Notification((int)NotificationApplicationFocusIn);
+            screen.Hide(); RightClick(); screen.Show();
+            Check(machine.Runtime.State == PancakeState.Saucing, "隐藏天津界面时右键不收刷");
+            var sauceDialog = screen.GetChildren().OfType<ConfirmationDialog>().Single();
+            sauceDialog.Show();
+            using (var mouse = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true }) screen._Input(mouse);
+            sauceDialog.Hide();
+            Check(machine.Runtime.State == PancakeState.Saucing, "确认弹窗时右键不收刷");
+            drag.BeginDrag(station, "stored_youtiao", "熟油条", Colors.White);
+            RightClick();
+            Check(machine.Runtime.State == PancakeState.Saucing && drag.IsDragging, "拖拽期间右键不收刷或取消物品");
+            drag.CancelDrag();
+            var stroke = (StrokeInteractor)station.FindChild("PancakeStrokeInput", true, false);
+            Vector2 brushPoint = stroke.GetGlobalRect().GetCenter();
+            using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = brushPoint })
+                GetViewport().PushInput(press);
+            machine.SetSauceCoverage(0.35);
+            RightClick();
+            Check(machine.Runtime.State == PancakeState.Sauced && Close(machine.Runtime.SauceCoverage, 0.35)
+                && Input.MouseMode == Input.MouseModeEnum.Visible, "饼面按住左键时右键收刷，保留少酱量并恢复鼠标");
+            using (var motion = new InputEventMouseMotion { Position = brushPoint + new Vector2(40, 0), ButtonMask = MouseButtonMask.Left })
+                GetViewport().PushInput(motion);
+            using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = brushPoint })
+                GetViewport().PushInput(release);
+            RightClick();
+            Check(machine.Runtime.State == PancakeState.Sauced && Close(machine.Runtime.SauceCoverage, 0.35),
+                "收刷后移动、松开左键和重复右键不继续刷酱或折叠");
             Send(Key.F);
             Check(machine.Runtime.State == PancakeState.Folded, "一次 F 只折叠，不连带装袋");
             Send(Key.F, echo: true);
@@ -55,7 +90,7 @@ public partial class StageFourSelfTest
             Check(machine.Runtime.State == PancakeState.Folded, "长按重复、松键与 Ctrl+F 不装袋");
 
             fryer.TryExecute(FryerCommand.LoadOne);
-            drag.BeginDrag(station, "raw_youtiao", "生油条", Colors.White);
+            drag.BeginDrag(station, "stored_youtiao", "熟油条", Colors.White);
             Send(Key.F); Send(Key.G);
             Check(machine.Runtime.State == PancakeState.Folded && fryer.Runtime.State == FryerState.Loaded,
                 "拖拽物品时 F/G 均不推进生产");
@@ -139,6 +174,15 @@ public partial class StageFourSelfTest
         void Send(Key code, bool pressed = true, bool echo = false, bool ctrl = false)
         {
             using var input = new InputEventKey { Keycode = code, Pressed = pressed, Echo = echo, CtrlPressed = ctrl };
+            GetViewport().PushInput(input);
+        }
+        void RightClick(bool pressed = true)
+        {
+            var stroke = (Control)station.FindChild("PancakeStrokeInput", true, false);
+            using var input = new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Right, Pressed = pressed, Position = stroke.GetGlobalRect().GetCenter(),
+            };
             GetViewport().PushInput(input);
         }
     }

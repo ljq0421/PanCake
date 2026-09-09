@@ -5,12 +5,15 @@
 [resource]
 script = ExtResource("1_station")
 Level = 2
-BatterCapacity = 16
-EggCapacity = 10
-SauceCapacity = 18
-CrispyCapacity = 12
-ScallionCapacity = 12
-HamCapacity = 10
+BatterCapacity = 0
+EggCapacity = 8
+SauceCapacity = 0
+CrispyCapacity = 8
+ScallionCapacity = 8
+HamCapacity = 8
 LowStockThreshold = 2
 RefillSeconds = 1.0
 UpgradePrice = 60
+
+UnlimitedBatter = true
+UnlimitedSauce = true

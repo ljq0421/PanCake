@@ -9,6 +9,8 @@ public partial class IngredientStationLevelData : Resource
     [Export] public int BatterCapacity { get; set; }
     [Export] public int EggCapacity { get; set; }
     [Export] public int SauceCapacity { get; set; }
+    [Export] public bool UnlimitedBatter { get; set; }
+    [Export] public bool UnlimitedSauce { get; set; }
     [Export] public int CrispyCapacity { get; set; }
     [Export] public int ScallionCapacity { get; set; }
     [Export] public int HamCapacity { get; set; }
@@ -16,7 +18,15 @@ public partial class IngredientStationLevelData : Resource
     [Export] public float RefillSeconds { get; set; } = 1.0f;
     [Export] public int UpgradePrice { get; set; }
 
-    public int GetCapacity(string ingredientId) => ingredientId switch
+    public bool IsUnlimited(string ingredientId) => ingredientId switch
+    {
+        StableIds.Ingredients.Batter => UnlimitedBatter,
+        StableIds.Ingredients.Sauce => UnlimitedSauce,
+        _ => false,
+    };
+
+    // Unlimited ingredients have no numeric stock; callers use IsUnlimited.
+    public int GetCapacity(string ingredientId) => IsUnlimited(ingredientId) ? 0 : ingredientId switch
     {
         StableIds.Ingredients.Batter => BatterCapacity,
         StableIds.Ingredients.Egg => EggCapacity,

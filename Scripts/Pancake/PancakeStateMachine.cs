@@ -112,7 +112,8 @@ public sealed class PancakeStateMachine
         prepared = new PreparedPancake(
             Runtime.Quality,
             new HashSet<string>(Runtime.ExtraIngredients, StringComparer.Ordinal),
-            Runtime.InternalYoutiaoQuality);
+            Runtime.InternalYoutiaoQuality,
+            Runtime.SauceCoverage);
         return true;
     }
 
@@ -159,7 +160,7 @@ public sealed class PancakeStateMachine
 
     public void SetSauceCoverage(double coverage)
     {
-        Runtime.SauceCoverage = Math.Clamp(coverage, 0, 1);
+        Runtime.SauceCoverage = double.IsFinite(coverage) ? Math.Clamp(coverage, 0, SauceRules.MaximumAmount) : 0;
         Changed?.Invoke();
     }
 
@@ -224,7 +225,7 @@ public sealed class PancakeStateMachine
 
         Runtime.HasSauce = true;
         Runtime.State = PancakeState.Sauced;
-        return PancakeActionResult.Ok("酱料已经抹匀。", StableIds.Ingredients.Sauce);
+        return PancakeActionResult.Ok($"刷酱完成 · {SauceRules.Describe(Runtime.SauceCoverage)}", StableIds.Ingredients.Sauce);
     }
 
     private PancakeActionResult BeginSauce()

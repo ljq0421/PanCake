@@ -13,7 +13,10 @@ public partial class WuhanHub : Control
     private WuhanArtCatalog _art = null!;
     private Label _coins = null!;
     private Label _message = null!;
-    private GridContainer _days = null!;
+    private Label _dayTitle = null!;
+    private Label _daySubtitle = null!;
+    private Label _dayRecord = null!;
+    private WuhanLedger _ledger = null!;
     private HBoxContainer _equipment = null!;
     private Button _primary = null!;
 
@@ -40,26 +43,43 @@ public partial class WuhanHub : Control
         var body = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; body.AddThemeConstantOverride("separation", 22); root.AddChild(body);
         var dayPanel = WuhanUi.Panel(WuhanUi.Paper, 18); dayPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill; body.AddChild(dayPanel);
         var dayColumn = new VBoxContainer(); dayColumn.AddThemeConstantOverride("separation", 10); dayPanel.AddChild(dayColumn);
-        dayColumn.AddChild(WuhanUi.Label("武汉经营日历 · 12 天", 28, WuhanUi.Ink));
-        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; dayColumn.AddChild(scroll);
-        _days = new GridContainer { Columns = 3, SizeFlagsHorizontal = SizeFlags.ExpandFill }; _days.AddThemeConstantOverride("h_separation", 8); _days.AddThemeConstantOverride("v_separation", 8); scroll.AddChild(_days);
-        for (int day = 1; day <= 12; day++) { int selected = day; var button = WuhanUi.Button($"Day {day}", false, new Vector2(240,92)); button.Pressed += () => DayRequested?.Invoke(selected); _days.AddChild(button); }
-        _primary = WuhanUi.Button("打开铺门", true, new Vector2(0,70)); _primary.Pressed += () => DayRequested?.Invoke(Math.Clamp(_save.Data.Wuhan.HighestUnlockedDay,1,12)); dayColumn.AddChild(_primary);
+        dayColumn.AddChild(WuhanUi.Label("今天的营业牌", 28, WuhanUi.Ink));
+        _dayTitle = WuhanUi.Label("Day 1", 60, WuhanUi.Ink); dayColumn.AddChild(_dayTitle);
+        _daySubtitle = WuhanUi.Label("", 28, WuhanUi.Accent); dayColumn.AddChild(_daySubtitle);
+        dayColumn.AddChild(new HSeparator());
+        _dayRecord = WuhanUi.Label("", 22, WuhanUi.Text);
+        _dayRecord.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _dayRecord.SizeFlagsVertical = SizeFlags.ExpandFill; dayColumn.AddChild(_dayRecord);
+        _primary = WuhanUi.Button("打开铺门", true, new Vector2(0,70));
+        _primary.Name = "StartWuhanDay";
+        _primary.Pressed += () => { if (!_save.HasLoadError) DayRequested?.Invoke(Math.Clamp(_save.Data.Wuhan.HighestUnlockedDay,1,12)); };
+        dayColumn.AddChild(_primary);
+        var ledgerButton = WuhanUi.Button("经营手账", false, new Vector2(0,60));
+        ledgerButton.Name = "OpenWuhanLedger"; ledgerButton.Pressed += ShowLedger; dayColumn.AddChild(ledgerButton);
         var equipmentPanel = WuhanUi.Panel(WuhanUi.Surface, 18); equipmentPanel.CustomMinimumSize = new Vector2(680,0); body.AddChild(equipmentPanel);
         var equipmentColumn = new VBoxContainer(); equipmentColumn.AddThemeConstantOverride("separation", 12); equipmentPanel.AddChild(equipmentColumn); equipmentColumn.AddChild(WuhanUi.Label("武汉设备", 28, WuhanUi.Ink));
         _equipment = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; _equipment.AddThemeConstantOverride("separation",8); equipmentColumn.AddChild(_equipment);
+        _ledger = new WuhanLedger { Name = "WuhanLedger", Visible = false, ZIndex = 100 };
+        AddChild(_ledger);
+        _ledger.DayRequested += day => DayRequested?.Invoke(day);
     }
+
+    public void ShowLedger() => _ledger.Open(_save);
 
     private void Render()
     {
         if (_save is null) return; CityProgressData city = _save.Data.Wuhan; _coins.Text = $"¥{_save.Data.Coins}";
-        _primary.Text = city.Completed ? "再次挑战 · Day 12" : $"打开铺门 · Day {city.HighestUnlockedDay}";
-        for (int index = 0; index < _days.GetChildCount(); index++)
-        {
-            int day = index + 1; var button = (Button)_days.GetChild(index); button.Disabled = day > city.HighestUnlockedDay || _save.HasLoadError;
-            button.Text = city.DayBestRecords.TryGetValue(day, out DayBestRecord? best) ? $"Day {day} · {Subtitle(day)}\n最佳 ¥{best.TotalRevenue} · 满意 {best.Satisfaction:0}%" : day <= city.HighestUnlockedDay ? $"Day {day} · {Subtitle(day)}\n等待开店" : $"Day {day}\n尚未解锁";
-        }
-        _message.Text = city.Completed ? $"武汉已点亮  {new string('★',city.BestStars)}{new string('☆',3-city.BestStars)} · 下一站：西安已开放" : "合理安排面锅、豆皮库存和顾客优先级。";
+        int day = Math.Clamp(city.HighestUnlockedDay, 1, 12);
+        _primary.Text = city.Completed ? "再次挑战 · Day 12" : $"打开铺门 · Day {day}";
+        _primary.Disabled = _save.HasLoadError;
+        _dayTitle.Text = $"Day {day}";
+        _daySubtitle.Text = DaySubtitle(day);
+        _dayRecord.Text = _save.HasLoadError ? "存档无法读取，暂时无法营业。\n请返回天津经营手账重置进度。"
+            : city.DayBestRecords.TryGetValue(day, out DayBestRecord? best)
+                ? $"历史最佳营业额  ¥{best.TotalRevenue}\n满意度  {best.Satisfaction:0}%  ·  Perfect {best.PerfectOrders} 单\n\n设备和食材已经备好，随时可以开门。"
+                : "这是新的营业日，先看订单再安排工作台。\n\n翻开经营手账，可以查看往日记录或重玩。";
+        _message.Text = city.Completed ? $"武汉已点亮  {new string('★',city.BestStars)}{new string('☆',3-city.BestStars)} · 下一站：西安已开放" : $"已到 Day {day} / 12 · 合理安排面锅、豆皮库存和顾客优先级。";
+        _ledger.Refresh(_save);
         RenderEquipment(city);
     }
 
@@ -87,5 +107,5 @@ public partial class WuhanHub : Control
     private static bool Owned(CityProgressData city,string id) => id.Contains("ingredient_station") ? city.EquipmentLevels.GetValueOrDefault("ingredient_station",1) >= (id.EndsWith("lv3")?3:2) : id.Contains("noodle_cooker") ? city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1) >= (id.EndsWith("lv3")?3:2) : city.EquipmentLevels.GetValueOrDefault("doupi_griddle") >= (id.EndsWith("lv3")?3:2);
     private static int Price(string id) => id switch { "equipment:wuhan_ingredient_station_lv2"=>120,"equipment:noodle_cooker_lv2"=>220,"equipment:doupi_griddle_lv2"=>280,"equipment:wuhan_ingredient_station_lv3"=>300,"equipment:noodle_cooker_lv3"=>520,"equipment:doupi_griddle_lv3"=>560,_=>0 };
     private void Purchase(string id) { bool ok=_save.TryPurchase(StableIds.Cities.Wuhan,id,_catalog,out string error); _message.Text=ok?"新设备已经装好，下次营业生效。":error; _message.Modulate=ok?TianjinUi.Green:TianjinUi.Red; Render(); }
-    private static string Subtitle(int day) => day switch {1=>"初到武汉",2=>"葱花",3=>"辣油高峰",4=>"豆皮开锅",5=>"双线程",6=>"蛋酒",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",10=>"高级豆皮锅",11=>"过早高峰",_=>"最终挑战"};
+    public static string DaySubtitle(int day) => day switch {1=>"初到武汉",2=>"葱花",3=>"辣油高峰",4=>"豆皮开锅",5=>"双线程",6=>"蛋酒",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",10=>"高级豆皮锅",11=>"过早高峰",_=>"最终挑战"};
 }

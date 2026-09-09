@@ -4,6 +4,7 @@ using ProjectCake.Customers;
 using ProjectCake.Data;
 using ProjectCake.Interaction;
 using ProjectCake.Orders;
+using ProjectCake.Pancake;
 using ProjectCake.UI;
 
 namespace ProjectCake.Gameplay;
@@ -20,21 +21,16 @@ public partial class TianjinDayScreen : Control
     private const float CustomerStripTop = 160;
     private const float CountertopTop = 575;
     private const float CustomerStripHeight = CountertopTop - CustomerStripTop;
-    private const float OrderContentHeight = 140;
-    private const float OrderCardHeight = 152;
+
+
 
     public event Action? HubRequested;
 
     private readonly Control[] _customerSlots = new Control[5];
     private readonly DropZone[] _customerDropZones = new DropZone[5];
     private readonly string?[] _deliveryCustomerIds = new string?[5];
-    private readonly PanelContainer[] _orderCards = new PanelContainer[5];
-    private readonly HBoxContainer[] _orderRows = new HBoxContainer[5];
-    private readonly HFlowContainer[] _orderToppings = new HFlowContainer[5];
+    private readonly OrderBubbleView[] _orderCards = new OrderBubbleView[5];
     private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[5];
-    private readonly Label[] _customerBadges = new Label[5];
-    private readonly Label[] _customerStateBadges = new Label[5];
-    private readonly ProgressBar[] _patienceBars = new ProgressBar[5];
     private readonly string[] _customerSignatures = new string[5];
     private readonly string[] _portraitSignatures = new string[5];
     private readonly CustomerState?[] _displayedCustomerStates = new CustomerState?[5];
@@ -67,6 +63,7 @@ public partial class TianjinDayScreen : Control
     private bool _focusPaused;
     private double _feedbackRemaining;
     private readonly Dictionary<Control, Tween> _coinFlights = new();
+    private CoinCollectionFeedback _collectionFeedback = null!;
     internal IReadOnlyCollection<Control> PaymentCoins => _coinFlights.Keys;
 
     public override void _Ready() => Build();
@@ -74,6 +71,7 @@ public partial class TianjinDayScreen : Control
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         ClearCoinFlights();
+        _collectionFeedback.Clear();
         _catalog = catalog;
         _save = save;
         _controller = controller;
@@ -106,6 +104,13 @@ public partial class TianjinDayScreen : Control
         _workstation.DirectCustomerDelivery = true;
         _workstation.InteractionEnabled = false;
         _workstation.ResetForDay();
+        if (_workstation.CoinTray is { } tray)
+        {
+            _collectionFeedback.Bind(tray, this, _coinTarget, _art.Coin, () =>
+                _focused && IsVisibleInTree() && !_committed && !_manualPaused && !_focusPaused
+                && !_abandonDialog.Visible && !_controller.IsPaused
+                && _controller.State is DayState.Running or DayState.Closing);
+        }
         ApplyPauseState();
         Render();
     }
@@ -172,6 +177,16 @@ public partial class TianjinDayScreen : Control
         }
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true }) return;
+        if (!IsVisibleInTree() || !_focused || _abandonDialog.Visible
+            || _controller?.State is not (DayState.Running or DayState.Closing)
+            || _manualPaused || _focusPaused || _pausePanel.Visible || _results.Visible) return;
+        // Handle before GUI controls consume the click, including while brushing on the pancake.
+        if (_workstation.TryFinishSauceWithRightClick()) GetViewport().SetInputAsHandled();
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         if (@event is not InputEventKey { Pressed: true, Echo: false } key) return;
@@ -229,6 +244,8 @@ public partial class TianjinDayScreen : Control
 
         BuildCustomers();
         BuildHud();
+        _collectionFeedback = new CoinCollectionFeedback { Collecting = ClearCoinFlights }; AddChild(_collectionFeedback);
+        VisibilityChanged += () => { if (!IsVisibleInTree()) { ClearCoinFlights(); _collectionFeedback.Clear(); } };
         BuildFeedback();
         BuildPauseOverlay();
         BuildResultOverlay();
@@ -346,65 +363,9 @@ public partial class TianjinDayScreen : Control
             column.MouseFilter = MouseFilterEnum.Ignore;
             column.AddThemeConstantOverride("separation", 16);
             button.AddChild(column);
-            var bubble = TianjinUi.Panel(TianjinUi.Paper, 14, 4, true);
-            OrderBubbleSkin.Apply(bubble, _art);
-            bubble.CustomMinimumSize = new Vector2(220, OrderCardHeight);
-            bubble.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-            bubble.MouseFilter = MouseFilterEnum.Ignore;
+            var bubble = new OrderBubbleView(_art);
             column.AddChild(bubble);
             _orderCards[index] = bubble;
-            button.MouseEntered += () => AnimateControl(bubble, new Vector2(1.012f, 1.012f), Colors.White, 0.12);
-            button.MouseExited += () => AnimateControl(bubble, Vector2.One, Colors.White, 0.12);
-            var orderContent = new Control
-            {
-                Name = "OrderContent",
-                CustomMinimumSize = new Vector2(200, OrderContentHeight),
-                MouseFilter = MouseFilterEnum.Ignore,
-            };
-            bubble.AddChild(orderContent);
-            _orderRows[index] = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, MouseFilter = MouseFilterEnum.Ignore };
-            _orderRows[index].AddThemeConstantOverride("separation", 6);
-            TianjinUi.FullRect(_orderRows[index], 0, 22, 0, -38);
-            orderContent.AddChild(_orderRows[index]);
-            var toppings = new HFlowContainer
-            {
-                Name = "OrderToppings", Alignment = FlowContainer.AlignmentMode.Center,
-                MouseFilter = MouseFilterEnum.Ignore,
-            };
-            toppings.AddThemeConstantOverride("h_separation", 8);
-            toppings.AddThemeConstantOverride("v_separation", 2);
-            TianjinUi.FullRect(toppings, 0, 104, 0, -12);
-            orderContent.AddChild(toppings);
-            _orderToppings[index] = toppings;
-
-            _customerBadges[index] = OrderBadge("CustomerTypeBadge", HorizontalAlignment.Left);
-            _customerBadges[index].Position = new Vector2(4, 0);
-            _customerBadges[index].Size = new Vector2(90, 18);
-            orderContent.AddChild(_customerBadges[index]);
-            _customerStateBadges[index] = OrderBadge("CustomerStateBadge", HorizontalAlignment.Right);
-            _customerStateBadges[index].SetAnchorsPreset(LayoutPreset.TopRight);
-            _customerStateBadges[index].OffsetLeft = -100;
-            _customerStateBadges[index].OffsetTop = 0;
-            _customerStateBadges[index].OffsetRight = -4;
-            _customerStateBadges[index].OffsetBottom = 18;
-            orderContent.AddChild(_customerStateBadges[index]);
-
-            _patienceBars[index] = new ProgressBar
-            {
-                Name = "OrderPatience",
-                MinValue = 0,
-                MaxValue = 100,
-                Value = 100,
-                ShowPercentage = false,
-                CustomMinimumSize = new Vector2(0, 8),
-                MouseFilter = MouseFilterEnum.Ignore,
-            };
-            _patienceBars[index].SetAnchorsPreset(LayoutPreset.BottomWide);
-            _patienceBars[index].OffsetTop = -8;
-            _patienceBars[index].OffsetBottom = 0;
-            _patienceBars[index].AddThemeStyleboxOverride("background", PatienceStyle(new Color("#E2CDA8"), true));
-            _patienceBars[index].AddThemeStyleboxOverride("fill", PatienceStyle(TianjinUi.Green));
-            orderContent.AddChild(OrderBubbleSkin.PatienceTrack(_art.PatienceFrame, _patienceBars[index]));
             CustomerPortraitVisual customerVisual = _art.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId, CustomerExpression.Normal);
             _portraits[index] = new CustomerPortraitView
             {
@@ -534,6 +495,8 @@ public partial class TianjinDayScreen : Control
 
     private void OnDayFinished(DayResult result)
     {
+        _collectionFeedback.Clear();
+        ClearCoinFlights();
         if (_committed) return;
         _committed = true;
         _workstation.InteractionEnabled = false;
@@ -684,94 +647,13 @@ public partial class TianjinDayScreen : Control
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)
                 PulseCustomer(_portraits[index], customer.State == CustomerState.Angry ? TianjinUi.Red : TianjinUi.Orange, false);
             _displayedCustomerStates[index] = customer.State;
-            string badge = CustomerTypeBadge(customer.Type.Id);
-            _customerBadges[index].Text = badge;
-            _customerBadges[index].Modulate = badge.Length == 0 ? Colors.Transparent : CustomerBadgeColor(customer.Type.Id);
-            string stateBadge = CustomerStateBadge(customer.State);
-            _customerStateBadges[index].Text = stateBadge;
-            _customerStateBadges[index].Modulate = stateBadge.Length == 0 ? Colors.Transparent : StateColor(customer.State);
-            _patienceBars[index].Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
-            ((StyleBoxFlat)_patienceBars[index].GetThemeStylebox("fill")).BgColor = StateColor(customer.State);
+            _orderCards[index].Patience.Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
+            ((StyleBoxFlat)_orderCards[index].Patience.GetThemeStylebox("fill")).BgColor = StateColor(customer.State);
         }
     }
 
-    private void RenderOrder(int slot, CustomerRuntime customer)
-    {
-        HBoxContainer row = _orderRows[slot];
-        foreach (Node child in row.GetChildren()) { row.RemoveChild(child); child.QueueFree(); }
-        HFlowContainer toppings = _orderToppings[slot];
-        foreach (Node child in toppings.GetChildren()) { toppings.RemoveChild(child); child.QueueFree(); }
-        float contentWidth = customer.Order.Lines.Sum(line => line.ProductKind == ProductKind.Pancake ? 104 : 84)
-            + Math.Max(0, customer.Order.Lines.Count - 1) * 6;
-        float cardWidth = Math.Clamp(contentWidth + 24, 220, 328);
-        _orderCards[slot].CustomMinimumSize = new Vector2(cardWidth, OrderCardHeight);
-        for (int index = 0; index < customer.Order.Lines.Count; index++)
-        {
-            OrderLineData line = customer.Order.Lines[index];
-            int delivered = customer.Progress.GetDeliveredQuantity(index);
-            bool completed = delivered >= line.Quantity;
-            float itemWidth = line.ProductKind == ProductKind.Pancake ? 104 : 84;
-            var item = new Control
-            {
-                Name = "OrderItem",
-                CustomMinimumSize = new Vector2(itemWidth, 80),
-                MouseFilter = MouseFilterEnum.Ignore,
-                Modulate = completed ? new Color(0.78f, 0.85f, 0.72f, 1f) : Colors.White,
-            };
-            ArtVisual productVisual = _art.ProductVisual(line.ProductKind);
-            TextureRect productIcon = TianjinUi.Texture(productVisual.Texture, new Vector2(56, 40));
-            productIcon.Name = "OrderProductIcon";
-            productIcon.Position = new Vector2((itemWidth - 56) * 0.5f, 0);
-            productIcon.Size = new Vector2(56, 40);
-            item.AddChild(productIcon);
-            string name = line.ProductKind switch { ProductKind.Pancake => "煎饼", ProductKind.Youtiao => "单卖油条", _ => "豆浆" };
-            Label nameLabel = TianjinUi.Label(name, 18, TianjinUi.BrownText, HorizontalAlignment.Center);
-            nameLabel.Position = new Vector2(0, 40);
-            nameLabel.Size = new Vector2(itemWidth, 22);
-            item.AddChild(nameLabel);
-            string quantity = completed
-                ? line.Quantity > 1 ? $"✓ {line.Quantity}/{line.Quantity}" : "✓"
-                : line.Quantity > 1 ? $"{delivered}/{line.Quantity}" : string.Empty;
-            if (quantity.Length > 0)
-            {
-                Label quantityLabel = TianjinUi.Label(quantity, 16, completed ? TianjinUi.Green : TianjinUi.BrownText, HorizontalAlignment.Center);
-                quantityLabel.Name = "OrderQuantity";
-                float quantityWidth = completed && line.Quantity == 1 ? 24 : 48;
-                quantityLabel.Position = new Vector2((itemWidth - quantityWidth) * 0.5f, 62);
-                quantityLabel.Size = new Vector2(quantityWidth, 18);
-                item.AddChild(quantityLabel);
-            }
-            if (line.ProductKind == ProductKind.Pancake && _catalog.RecipesById.TryGetValue(line.DefinitionId, out RecipeData? recipe) && recipe.ExtraIngredients.Count > 0)
-            {
-                foreach (string ingredient in recipe.ExtraIngredients)
-                    toppings.AddChild(OrderTopping(ingredient));
-            }
-            row.AddChild(item);
-        }
-        int perRow = Math.Max(1, (int)((cardWidth - 24 + 8) / 80));
-        int toppingRows = Math.Max(1, (toppings.GetChildCount() + perRow - 1) / perRow);
-        float extraHeight = (toppingRows - 1) * 26;
-        ((Control)row.GetParent()).CustomMinimumSize = new Vector2(200, OrderContentHeight + extraHeight);
-        _orderCards[slot].CustomMinimumSize = new Vector2(cardWidth, OrderCardHeight + extraHeight);
-        row.OffsetBottom = -38 - extraHeight;
-    }
-
-    private Control OrderTopping(string ingredientId)
-    {
-        var group = new HBoxContainer
-        {
-            CustomMinimumSize = new Vector2(72, 24),
-            MouseFilter = MouseFilterEnum.Ignore,
-            Alignment = BoxContainer.AlignmentMode.Center,
-        };
-        group.AddThemeConstantOverride("separation", 4);
-        group.AddChild(TianjinUi.Texture(_art.Ingredient(ingredientId), new Vector2(28, 22)));
-        Label label = TianjinUi.Label(IngredientDisplayName(ingredientId), 18, TianjinUi.BrownText, HorizontalAlignment.Left);
-        label.CustomMinimumSize = new Vector2(21, 22);
-        label.VerticalAlignment = VerticalAlignment.Center;
-        group.AddChild(label);
-        return group;
-    }
+    private void RenderOrder(int slot, CustomerRuntime customer) =>
+        _orderCards[slot].Render(customer.Order, customer.Progress, _catalog.RecipesById);
 
     private void ShowFeedback(string message, bool error)
     {
@@ -804,7 +686,7 @@ public partial class TianjinDayScreen : Control
         if (evaluation.TotalRevenue > 0 && !ReducedMotion)
         {
             Vector2 target = GetGlobalTransform().AffineInverse() * (_workstation.CoinTray?.LandingPoint ?? _coinTarget.GetGlobalRect().GetCenter());
-            for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08);
+            for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08, index);
         }
     }
 
@@ -826,11 +708,13 @@ public partial class TianjinDayScreen : Control
         tween.Finished += effect.QueueFree;
     }
 
-    private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay)
+    private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay, int index)
     {
         var coin = TianjinUi.Texture(_art.Coin, new Vector2(38, 38));
         coin.Name = "FlyingPaymentCoin";
+        coin.Size = coin.CustomMinimumSize;
         coin.Position = origin - coin.Size * 0.5f;
+        coin.PivotOffset = coin.Size * .5f;
         coin.MouseFilter = MouseFilterEnum.Ignore;
         coin.ZIndex = 87;
         AddChild(coin);
@@ -838,7 +722,8 @@ public partial class TianjinDayScreen : Control
         _coinFlights[coin] = tween;
         tween.TweenProperty(coin, "position", target - coin.Size * 0.5f, 0.62).SetDelay(delay);
         tween.Parallel().TweenProperty(coin, "scale", new Vector2(0.65f, 0.65f), 0.62).SetDelay(delay);
-        tween.TweenProperty(coin, "modulate", new Color(1, 1, 1, 0), 0.12);
+        if (_workstation.CoinTray is { } tray) tray.AppendPaymentLanding(tween, coin, this, index);
+        else tween.TweenProperty(coin, "modulate", new Color(1, 1, 1, 0), 0.12);
         tween.Finished += () => { _coinFlights.Remove(coin); coin.QueueFree(); };
     }
 
@@ -853,62 +738,6 @@ public partial class TianjinDayScreen : Control
     }
 
     public override void _ExitTree() => ClearCoinFlights();
-
-    private static string CustomerTypeBadge(string id)
-    {
-        return id switch
-        {
-            "office_worker" => "赶时间",
-            "regular" => "耐心等待",
-            "big_order" => "多件订单",
-            _ => string.Empty,
-        };
-    }
-
-    private static string CustomerStateBadge(CustomerState state) => state switch
-    {
-        CustomerState.Impatient => "着急",
-        CustomerState.Angry => "即将离开",
-        CustomerState.Leaving => "正在离开",
-        CustomerState.Served => "已取餐",
-        _ => string.Empty,
-    };
-
-    private static string IngredientDisplayName(string id) => id switch
-    {
-        StableIds.Ingredients.Crispy => "薄脆",
-        StableIds.Ingredients.Scallion => "香葱",
-        StableIds.Ingredients.Ham => "火腿",
-        StableIds.Ingredients.Youtiao => "油条",
-        _ => string.Empty,
-    };
-
-    private static Color CustomerBadgeColor(string id) => id switch
-    {
-        "office_worker" => TianjinUi.Orange,
-        "regular" => TianjinUi.Green,
-        "big_order" => TianjinUi.Brown,
-        _ => TianjinUi.BrownText,
-    };
-
-    private static Label OrderBadge(string name, HorizontalAlignment alignment)
-    {
-        Label label = TianjinUi.Label(string.Empty, 14, TianjinUi.BrownText, alignment);
-        label.Name = name;
-        label.MouseFilter = MouseFilterEnum.Ignore;
-        return label;
-    }
-
-    private static StyleBoxFlat PatienceStyle(Color color, bool border = false) => new()
-    {
-        BgColor = color, BorderColor = TianjinUi.BrownDark,
-        BorderWidthLeft = border ? 1 : 0, BorderWidthRight = border ? 1 : 0,
-        BorderWidthTop = border ? 1 : 0, BorderWidthBottom = border ? 1 : 0,
-        CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
-        CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4,
-        ContentMarginLeft = 0, ContentMarginRight = 0,
-        ContentMarginTop = 0, ContentMarginBottom = 0,
-    };
 
     private void AnimateControl(Control control, Vector2 targetScale, Color targetModulate, double duration)
     {

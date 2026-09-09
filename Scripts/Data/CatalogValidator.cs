@@ -151,6 +151,8 @@ public static class CatalogValidator
                 ["ScallionCapacity"] = station.ScallionCapacity,
                 ["HamCapacity"] = station.HamCapacity,
             };
+            if (station.UnlimitedBatter) capacities.Remove("BatterCapacity");
+            if (station.UnlimitedSauce) capacities.Remove("SauceCapacity");
             foreach ((string field, int capacity) in capacities)
             {
                 if (capacity <= 0)

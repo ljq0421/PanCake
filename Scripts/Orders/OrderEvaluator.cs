@@ -63,12 +63,18 @@ public sealed class OrderEvaluator
         if (progress.HasRecipeMismatch)
         {
             int revenue = RoundSeventyPercent(progress.Order.BasePrice);
-            return new DeliveryEvaluation(DeliveryGrade.Incorrect, revenue, 0, 55, $"配方错误，整单按 70% 结算 ¥{revenue}。", true);
+            string reason = progress.HasSauceMismatch ? "酱量不符" : "配方错误";
+            return new DeliveryEvaluation(DeliveryGrade.Incorrect, revenue, 0, 55, $"{reason}，整单按 70% 结算 ¥{revenue}。", true);
         }
 
         if (progress.HasQualityIssue || customerState != CustomerState.Happy)
         {
-            return new DeliveryEvaluation(DeliveryGrade.Correct, progress.Order.BasePrice, 0, 85, "订单正确完成。", true);
+            string reason = progress.HasLightYoutiao && progress.HasDeepYoutiao ? "油条偏浅、偏深"
+                : progress.HasLightYoutiao ? "油条偏浅" : progress.HasDeepYoutiao ? "油条偏深" : string.Empty;
+            string message = reason.Length > 0
+                ? $"{reason} · 原价 ¥{progress.Order.BasePrice} · 无小费 · 评价 85"
+                : "订单正确完成。";
+            return new DeliveryEvaluation(DeliveryGrade.Correct, progress.Order.BasePrice, 0, 85, message, true);
         }
 
         int tip = (int)Math.Ceiling(progress.Order.BasePrice * customerType.PerfectTipRate);
@@ -87,11 +93,16 @@ public sealed class OrderEvaluator
             return new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "焦糊煎饼不能交付。");
         }
 
-        bool matches = pancake.ExtraIngredients.SetEquals(target.ExtraIngredients);
+        OrderLineData? targetLine = order.Lines.FirstOrDefault(line => line.ProductKind == ProductKind.Pancake
+            && line.DefinitionId == target.Id && SauceRules.Matches(line.Sauce, pancake.SauceAmount))
+            ?? order.Lines.FirstOrDefault(line => line.ProductKind == ProductKind.Pancake && line.DefinitionId == target.Id);
+        bool sauceMatches = SauceRules.Matches(targetLine?.Sauce ?? SaucePreference.Normal, pancake.SauceAmount);
+        bool matches = pancake.ExtraIngredients.SetEquals(target.ExtraIngredients) && sauceMatches;
         if (!matches)
         {
             int revenue = RoundSeventyPercent(order.BasePrice);
-            return new DeliveryEvaluation(DeliveryGrade.Incorrect, revenue, 0, 55, $"配料错误，按 70% 结算 ¥{revenue}。");
+            string reason = sauceMatches ? "配料错误" : "酱量不符";
+            return new DeliveryEvaluation(DeliveryGrade.Incorrect, revenue, 0, 55, $"{reason}，按 70% 结算 ¥{revenue}。");
         }
 
         if (pancake.Quality == PancakeQuality.Perfect && customerState == CustomerState.Happy)

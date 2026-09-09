@@ -42,7 +42,7 @@ The player moves through a shop-management home, a timed service shift, a receip
 - Complete Tianjin chapter design and balancing documents in `docs`.
 - Background, three stove levels, three fryer levels, food layers, ingredients, tools, 24 customer appearances with four expressions each, soy milk, finished products, and coin art in `resource/art/TianJin`.
 - Existing deterministic self-tests and visual-capture scenes for all gameplay systems.
-- Customer portraits, a bespoke Tianjin order bubble, and a bespoke patience frame are integrated. Order text, food icons, delivery progress, and patience fill remain dynamic. Tianjin stock art shows exact units up to six, up to ten separated density slots above six, and separate liquid levels.
+- Customer portraits and the shared Tianjin/Wuhan `OrderBubbleView` are integrated. Each pancake or noodle portion has its own icon row and extras; side products share a bottom row with delivered/required fractions. Completed regions turn green independently. Product names, ordinals, customer types, status copy, and overall progress are absent; patience remains a dynamic bar. See [天津与武汉图标订单气泡](docs/天津与武汉图标订单气泡.md). Tianjin stock art shows exact units up to six, up to ten separated density slots above six, and separate liquid levels.
 
 ## Product Principles
 
@@ -54,4 +54,4 @@ The player moves through a shop-management home, a timed service shift, a receip
 
 ## Accessibility & Inclusion
 
-Status is never communicated by color alone. Interactive targets are at least 48×48 design pixels, Chinese body copy is at least 18 design pixels, and the largest five-customer order layout must remain readable at 1280×720.
+Status normally has a non-color cue. The user-approved icon-only order bubble is a local exception: main-portion completion changes its region to green without adding status text or marks; side products also show delivered/required fractions, and patience uses bar length. Interactive targets are at least 48×48 design pixels, Chinese body copy is at least 18 design pixels, and the largest five-customer order layout must remain readable at 1280×720.

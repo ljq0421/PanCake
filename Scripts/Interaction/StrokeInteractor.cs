@@ -14,7 +14,7 @@ public readonly record struct EllipseGeometry(Vector2 Center, Vector2 Radii);
 public partial class StrokeInteractor : Control
 {
     private readonly CircularStrokeTracker _spread = new();
-    private readonly CoverageTracker _sauce = new(16);
+    private readonly CoverageTracker _sauce = new(16, ProjectCake.Pancake.SauceRules.MaximumAmount);
     private StrokeMode _activeMode;
     private bool _dragging;
     private bool _pointerInside;

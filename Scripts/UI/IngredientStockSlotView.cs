@@ -86,8 +86,15 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     {
         _displayName = displayName;
         _usesCaption = spec.CaptionRect.HasValue;
-        _previewsRefill = visualMode is IngredientVisualMode.HybridStock or IngredientVisualMode.LooseStock;
+        _previewsRefill = visualMode is IngredientVisualMode.HybridStock or IngredientVisualMode.LooseStock
+            or IngredientVisualMode.Single;
         Configure(trayTexture, ingredientTexture, displayName, spec, visualMode);
+        if (spec.CaptionRect is Rect2 caption)
+        {
+            _refillHint.Position = caption.Position;
+            _refillHint.Size = caption.Size;
+            TianjinUi.ApplyCounterHint(_refillHint);
+        }
         CountLabel.Text = "0/0";
         _refill.Name = $"IngredientRefill_{StableNodeKey(Name)}";
         _stock.Name = $"IngredientStock_{StableNodeKey(Name)}";
@@ -99,8 +106,22 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         int capacity,
         IngredientStockStatus status,
         double refillProgress,
-        bool canInteract)
+        bool canInteract,
+        bool unlimited = false)
     {
+        if (unlimited)
+        {
+            _holdProgress = 0;
+            SetStock(1, 1);
+            SetIngredientAvailable(true);
+            CountLabel.Visible = ShowStockNumbers;
+            CountLabel.Text = ShowStockNumbers ? "不限" : string.Empty;
+            CountLabel.Modulate = Colors.White;
+            _stock.Visible = _refill.Visible = _refillHint.Visible = false;
+            _refill.Disabled = true;
+            _lastStatus = IngredientStockStatus.Normal;
+            return;
+        }
         refillProgress = Math.Clamp(refillProgress, 0, 1);
         double fraction = capacity > 0 ? (double)quantity / capacity : 0;
         double shownFraction = status == IngredientStockStatus.Refilling ? refillProgress : fraction;

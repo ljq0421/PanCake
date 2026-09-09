@@ -16,20 +16,21 @@ public partial class WuhanDayScreen : Control
     private readonly DropZone[] _customerDropZones = new DropZone[4];
     private readonly string?[] _deliveryCustomerIds = new string?[4];
     internal DragService DeliveryDrag { get; private set; } = null!;
-    private readonly Label[] _orders = new Label[4];
+    private readonly OrderBubbleView[] _orders = new OrderBubbleView[4];
     private readonly ProgressBar[] _patience = new ProgressBar[4];
     private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[4];
+    private readonly Label[] _deliveryQuantityLabels = new Label[4];
     private readonly Label[] _basketLabels = new Label[2];
-    private readonly Button[] _basketButtons = new Button[2];
     private readonly Dictionary<string,double> _refills = new(StringComparer.Ordinal);
     private DataCatalog _catalog = null!; private SaveService _save = null!; private DayController _controller = null!; private WuhanArtCatalog _art = null!;
     private NoodleCookerStateMachine _cooker = null!; private HotDryNoodlesStateMachine _bowl = null!; private DoupiStateMachine? _doupi;
     private DoupiInventory _doupiStock = null!; private WuhanIngredientInventory _ingredients = null!; private EggRiceWineRuntime? _egg;
     private int _stationLevel; private int _cookerLevel; private int _doupiLevel;
     private Label _day = null!, _clock = null!, _income = null!, _door = null!, _feedback = null!, _bowlStatus = null!, _doupiStatus = null!, _eggStatus = null!, _tutorial = null!;
-    private Button _doupiButton = null!, _eggButton = null!;
-    private HBoxContainer _basketRow = null!, _ingredientRow = null!;
     internal WuhanWorkstationView Workstation { get; private set; } = null!;
+    internal CoinTrayView CoinTray { get; private set; } = null!;
+    internal CoinCollectionFeedback CollectionFeedback { get; private set; } = null!;
+    private TextureRect _coinTarget = null!;
     internal NoodleCookerStateMachine Cooker => _cooker;
     internal HotDryNoodlesStateMachine Bowl => _bowl;
     internal DoupiStateMachine? Doupi => _doupi;
@@ -50,12 +51,13 @@ public partial class WuhanDayScreen : Control
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         Workstation.CancelAnimations(); _refills.Clear();
+        CollectionFeedback.Clear(); CoinTray.RenderRevenue(0);
         _catalog=catalog; _save=save; _controller=controller; _committed=false; _results.Visible=false; _blocker.Visible=false;
         if (!controller.TryPrepareDay(StableIds.Cities.Wuhan,day,catalog,out string error) || !save.ApplyStartUnlocks(controller.CurrentConfig!,out error)) { Feedback(error,true); return; }
         CityProgressData city=save.Data.Wuhan; _cookerLevel=city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1); _stationLevel=city.EquipmentLevels.GetValueOrDefault("ingredient_station",1); _doupiLevel=city.EquipmentLevels.GetValueOrDefault("doupi_griddle");
         _cooker=new NoodleCookerStateMachine(catalog.NoodleCookersByLevel[_cookerLevel]); _bowl=new HotDryNoodlesStateMachine(); _ingredients=new WuhanIngredientInventory(catalog.WuhanIngredientStationsByLevel[_stationLevel]); _doupiStock=new DoupiInventory();
         _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _egg=city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station")>0?new EggRiceWineRuntime():null;
-        ((Control)_basketButtons[1].GetParent()).Visible=_cooker.Baskets.Count>1;
+        _basketLabels[1].Visible=_cooker.Baskets.Count>1;
         Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_egg,_ingredients,_cookerLevel,_doupiLevel);
         Render();
     }
@@ -70,7 +72,7 @@ public partial class WuhanDayScreen : Control
         if (!CanInteract) { Render(); return; }
         _cooker?.Tick(delta); _doupi?.Tick(delta); _egg?.Tick(delta);
         foreach (string id in _refills.Keys.ToArray()) { _refills[id]-=delta; if (_refills[id]<=0) { _ingredients.Refill(id); _refills.Remove(id); Feedback("备料已补满。",false); } }
-        Workstation.Tick(delta); Render();
+        Workstation.Tick(delta); AdvanceAutomaticTransfers(); Render();
     }
     public override void _Notification(int what)
     {
@@ -86,103 +88,160 @@ public partial class WuhanDayScreen : Control
         var overlay = new Control { Name="WuhanDragOverlay", MouseFilter=MouseFilterEnum.Ignore, ZIndex=110 }; TianjinUi.FullRect(overlay); AddChild(overlay); DeliveryDrag.Configure(overlay);
         BuildHud(); BuildCustomers(); BuildWorkstation(); BuildResults();
         DeliveryDrag.DragEnded += result => { if(result.Completion is DragCompletion.Missed or DragCompletion.Rejected) Feedback("请拖给仍需要这份餐品的顾客。",true); };
-        _feedback=WuhanUi.Label("",20,TianjinUi.Green,HorizontalAlignment.Center); _feedback.Position=new Vector2(560,666); _feedback.Size=new Vector2(800,40); _feedback.ZIndex=80; _feedback.Visible=false; _feedback.AddThemeConstantOverride("outline_size",5); _feedback.AddThemeColorOverride("font_outline_color",WuhanUi.Paper); AddChild(_feedback);
+        _feedback=WuhanUi.Label("",20,TianjinUi.Green,HorizontalAlignment.Center); _feedback.Position=new Vector2(560,146); _feedback.Size=new Vector2(800,40); _feedback.ZIndex=80; _feedback.Visible=false; _feedback.AddThemeConstantOverride("outline_size",5); _feedback.AddThemeColorOverride("font_outline_color",WuhanUi.Paper); AddChild(_feedback);
         _tutorial=WuhanUi.Label("",18,WuhanUi.Ink,HorizontalAlignment.Center); _tutorial.Position=new Vector2(400,92); _tutorial.Size=new Vector2(1120,44); _tutorial.ZIndex=65; _tutorial.AddThemeConstantOverride("outline_size",5); _tutorial.AddThemeColorOverride("font_outline_color",WuhanUi.Paper); AddChild(_tutorial);
         _abandon=new ConfirmationDialog { Title="提前打烊？",DialogText="本日收入和成绩不会保存。",OkButtonText="打烊并返回", Theme=Theme }; _abandon.Confirmed+=()=>{Workstation.CancelAnimations();_controller.AbandonDay();HubRequested?.Invoke();}; AddChild(_abandon);
-        VisibilityChanged += () => { if (!IsVisibleInTree()) Workstation.CancelAnimations(); };
+        VisibilityChanged += () => { if (!IsVisibleInTree()) { Workstation.CancelAnimations(); CollectionFeedback.Clear(); } };
     }
     private void BuildHud()
     {
         var panel=WuhanUi.Panel(WuhanUi.Surface,15); panel.Position=new Vector2(24,18); panel.Size=new Vector2(1872,70); panel.ZIndex=70; AddChild(panel);
         var row=new HBoxContainer(); row.AddThemeConstantOverride("separation",20); panel.AddChild(row); _day=WuhanUi.Label("武汉 Day 1",27,WuhanUi.Ink); _day.SizeFlagsHorizontal=SizeFlags.ExpandFill; row.AddChild(_day);
-        _door=WuhanUi.Label("候场 0",18,WuhanUi.Muted); row.AddChild(_door); _clock=WuhanUi.Label("00:00",26,WuhanUi.Ink); row.AddChild(_clock); row.AddChild(TianjinUi.Texture(_art.Shared.Coin,new Vector2(42,42))); _income=WuhanUi.Label("¥0",25,WuhanUi.Ink); row.AddChild(_income);
+        _door=WuhanUi.Label("候场 0",18,WuhanUi.Muted); row.AddChild(_door); _clock=WuhanUi.Label("00:00",26,WuhanUi.Ink); row.AddChild(_clock); _coinTarget=TianjinUi.Texture(_art.Shared.Coin,new Vector2(42,42)); row.AddChild(_coinTarget); _income=WuhanUi.Label("¥0",25,WuhanUi.Ink); row.AddChild(_income);
         var back=WuhanUi.Button("提前打烊",false,new Vector2(145,50)); back.Pressed+=()=>{Workstation.CancelInput();_abandon.PopupCentered();}; row.AddChild(back);
     }
     private void BuildCustomers()
     {
-        var row=new HBoxContainer { Position=new Vector2(70,220),Size=new Vector2(1780,446),Alignment=BoxContainer.AlignmentMode.Center,ZIndex=25 }; row.AddThemeConstantOverride("separation",20); AddChild(row);
+        var row=new HBoxContainer { Name="WuhanCustomerStrip", MouseFilter=MouseFilterEnum.Ignore, Position=new Vector2(180,224),Size=new Vector2(1560,446),Alignment=BoxContainer.AlignmentMode.Center,ZIndex=25 }; row.AddThemeConstantOverride("separation",20); AddChild(row);
         for(int i=0;i<4;i++)
         {
-            var button=new Control { Name=$"WuhanCustomer{i+1}", CustomMinimumSize=new Vector2(425,440), Visible=false, MouseFilter=MouseFilterEnum.Ignore };
+            var button=new Control { Name=$"WuhanCustomer{i+1}", CustomMinimumSize=new Vector2(375,440), Visible=false, MouseFilter=MouseFilterEnum.Ignore };
             row.AddChild(button); _customers[i]=button;
             var zone=new DropZone { Name=$"WuhanCustomerDropZone{i+1}", HitPadding=5, ZIndex=1 };
+            var quantityLabel = WuhanUi.Label("", 24, WuhanUi.Ink, HorizontalAlignment.Center);
+            quantityLabel.Name = $"DoupiDeliveryQuantity{i+1}"; quantityLabel.Position = new Vector2(80, 270); quantityLabel.Size = new Vector2(215, 45);
+            quantityLabel.MouseFilter = MouseFilterEnum.Ignore; quantityLabel.ZIndex = 5;
+            quantityLabel.AddThemeConstantOverride("outline_size", 5); quantityLabel.AddThemeColorOverride("font_outline_color", WuhanUi.Paper);
+            button.AddChild(quantityLabel); _deliveryQuantityLabels[i] = quantityLabel;
             button.AddChild(zone); TianjinUi.FullRect(zone); _customerDropZones[i]=zone; DeliveryDrag.RegisterZone(zone);
-            var col=new VBoxContainer(); TianjinUi.FullRect(col,5,5,-5,-5); col.MouseFilter=MouseFilterEnum.Ignore; button.AddChild(col);
-            var bubble=WuhanUi.Panel(WuhanUi.Paper,12,3,true); bubble.CustomMinimumSize=new Vector2(0,104); col.AddChild(bubble); _orders[i]=WuhanUi.Label("",18,WuhanUi.Ink,HorizontalAlignment.Center); _orders[i].AutowrapMode=TextServer.AutowrapMode.WordSmart; bubble.AddChild(_orders[i]);
-            _portraits[i]=new CustomerPortraitView(); _portraits[i].SetVisual(_art.Shared.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId,CustomerExpression.Normal)); _portraits[i].SizeFlagsVertical=SizeFlags.ExpandFill; col.AddChild(_portraits[i]);
-            _patience[i]=new ProgressBar { MaxValue=100,Value=100,ShowPercentage=false,CustomMinimumSize=new Vector2(0,12) }; col.AddChild(_patience[i]);
+            var col=new VBoxContainer(); col.AddThemeConstantOverride("separation",16); TianjinUi.FullRect(col,5,5,-5,-5); col.MouseFilter=MouseFilterEnum.Ignore; button.AddChild(col);
+            var bubble=new OrderBubbleView(_art.Shared,_art); col.AddChild(bubble); _orders[i]=bubble; _patience[i]=bubble.Patience;
+            _portraits[i]=new CustomerPortraitView { Presentation=CustomerPortraitPresentation.CounterHalfBody }; _portraits[i].SetVisual(_art.Shared.CustomerPortrait(CustomerAppearanceCatalog.DefaultAppearanceId,CustomerExpression.Normal)); _portraits[i].SizeFlagsVertical=SizeFlags.ExpandFill; col.AddChild(_portraits[i]);
         }
     }
     private void BuildWorkstation()
     {
-        Workstation=new WuhanWorkstationView { Name="WuhanWorkstation",Position=new Vector2(0,600),Size=new Vector2(1920,350),ZIndex=45 };
+        Workstation=new WuhanWorkstationView { Name="WuhanWorkstation",Position=new Vector2(0,625),Size=new Vector2(1920,425),ZIndex=45 };
         AddChild(Workstation); Workstation.CanInteract=()=>CanInteract; Workstation.ConfigureDelivery(DeliveryDrag);
+        CoinTray = new CoinTrayView(_art.Shared) { Position = new Vector2(1395, 16), Scale = new Vector2(.9f, .9f) };
+        Workstation.AddChild(CoinTray);
+        CollectionFeedback = new CoinCollectionFeedback(); AddChild(CollectionFeedback);
+        CollectionFeedback.Bind(CoinTray, this, _coinTarget, _art.Shared.Coin, () => CanInteract);
+        CoinTray.CanCollect = () => CanInteract && !DeliveryDrag.IsDragging && !Workstation.HasProductionGesture;
+        Workstation.RaiseRequested = RaiseBasket;
+        Workstation.PourRequested = ReservePour;
+        Workstation.CutRequested = CutDoupi;
         Workstation.BasketPressed+=BasketAction; Workstation.IngredientPressed+=IngredientAction;
         Workstation.DoupiPressed+=DoupiAction; Workstation.EggPressed+=EggAction;
         Workstation.MixMoved+=distance=>{if(CanInteract&&!Workstation.Busy("bowl"))_bowl.AddMixDistance(distance);};
-        var cookerCol=ActionColumn(30,410);_basketRow=new HBoxContainer();_basketRow.AddThemeConstantOverride("separation",6);cookerCol.AddChild(_basketRow);
-        for(int i=0;i<2;i++){int slot=i;_basketButtons[i]=WuhanUi.Button($"漏勺 {i+1}",true,new Vector2(0,52));_basketButtons[i].SizeFlagsHorizontal=SizeFlags.ExpandFill;_basketButtons[i].Pressed+=()=>BasketAction(slot);_basketLabels[i]=StationStatus("空");var col=new VBoxContainer{SizeFlagsHorizontal=SizeFlags.ExpandFill};col.AddThemeConstantOverride("separation",4);col.AddChild(_basketLabels[i]);col.AddChild(_basketButtons[i]);_basketRow.AddChild(col);}
-        var bowlCol=ActionColumn(455,520);_bowlStatus=StationStatus("空碗");bowlCol.AddChild(_bowlStatus);
-        _ingredientRow=new HBoxContainer();_ingredientRow.AddThemeConstantOverride("separation",4);bowlCol.AddChild(_ingredientRow);
-        AddIngredient("基础调味",StableIds.Ingredients.WuhanBaseSeasoning);AddIngredient("葱花",StableIds.Ingredients.WuhanScallion);AddIngredient("辣油",StableIds.Ingredients.WuhanChiliOil);AddIngredient("牛肉",StableIds.Ingredients.WuhanBraisedBeef);
-        bowlCol.AddChild(DeliveryHint("拌好后，按住面碗拖给顾客"));
-        var doupiCol=ActionColumn(990,430);_doupiStatus=StationStatus("Day 4 解锁");doupiCol.AddChild(_doupiStatus);
-        _doupiButton=WuhanUi.Button("浇浆",true,new Vector2(0,52));_doupiButton.Pressed+=DoupiAction;doupiCol.AddChild(_doupiButton);
-        doupiCol.AddChild(DeliveryHint("从备餐盘拖给顾客 · 每次一块"));
-        var eggCol=ActionColumn(1435,455);_eggStatus=StationStatus("Day 6 解锁");eggCol.AddChild(_eggStatus);
-        _eggButton=WuhanUi.Button("冲一杯蛋酒",true,new Vector2(0,52));_eggButton.Pressed+=EggAction;eggCol.AddChild(_eggButton);
+        Workstation.RefillRequested += RefillIngredient;
+        Workstation.EggRefillRequested += () => {
+            if(CanInteract && !Workstation.Busy("egg") && _egg?.TryRefill()==true) Workstation.PlayEgg(true);
+        };
+        Workstation.GestureRejected += message => Feedback(message,true);
+        for(int i=0;i<2;i++) {
+            _basketLabels[i]=StationStatus("");
+            _basketLabels[i].Position=new Vector2(205,990+i*25);
+            _basketLabels[i].Size=new Vector2(235,24);_basketLabels[i].AddThemeFontSizeOverride("font_size",16);AddChild(_basketLabels[i]);
+        }
+        _bowlStatus=Footer(465,500); _doupiStatus=Footer(1000,415); _eggStatus=Footer(1450,405);
+        _bowlStatus.Position = new Vector2(424, 682); _bowlStatus.Size = new Vector2(580, 24);
+        _doupiStatus.Position = new Vector2(1000, 1020); _doupiStatus.Size = new Vector2(415, 22);
     }
-    private static Label DeliveryHint(string text) => WuhanUi.Label(text,18,WuhanUi.Paper,HorizontalAlignment.Center);
-    private static Label StationStatus(string text){var label=WuhanUi.Label(text,18,WuhanUi.Ink,HorizontalAlignment.Center);label.CustomMinimumSize=new Vector2(0,24);label.AddThemeConstantOverride("outline_size",3);label.AddThemeColorOverride("font_outline_color",WuhanUi.Paper);return label;}
-    private VBoxContainer ActionColumn(float x,float width){var col=new VBoxContainer{Position=new Vector2(x,932),Size=new Vector2(width,132),ZIndex=46};col.AddThemeConstantOverride("separation",4);AddChild(col);return col;}
-    private void AddIngredient(string name,string id){var button=WuhanUi.Button(name,false,new Vector2(0,52));button.AddThemeFontSizeOverride("font_size",16);button.SizeFlagsHorizontal=SizeFlags.ExpandFill;button.Pressed+=()=>IngredientAction(id);button.SetMeta("ingredient_id",id);_ingredientRow.AddChild(button);}
+    private Label Footer(float x,float width) {
+        var label=StationStatus("");label.Position=new Vector2(x,990);label.Size=new Vector2(width,58);AddChild(label);return label;
+    }
+    private static Label StationStatus(string text) {
+        var label=WuhanUi.Label(text,18,WuhanUi.Ink,HorizontalAlignment.Center);
+        label.ZIndex=46;label.MouseFilter=MouseFilterEnum.Ignore;
+        label.AddThemeConstantOverride("outline_size",3);label.AddThemeColorOverride("font_outline_color",WuhanUi.Paper);return label;
+    }
+    private void RefillIngredient(string id) {
+        if(!CanInteract || Workstation.Busy("refill:"+id) || _refills.ContainsKey(id))return;
+        if(_ingredients.Count(id)>=_catalog.WuhanIngredientStationsByLevel[_stationLevel].GetCapacity(id))return;
+        StartRefill(id);Feedback("开始补料，约 1 秒后补满。",false);
+    }
+
+    internal bool RaiseBasket(int index)
+    {
+        if (!CanInteract || Workstation.Busy($"basket{index}")) return false;
+        bool raised = _cooker.TryRaise(index);
+        if (raised) Workstation.RememberProductionState();
+        return raised;
+    }
+    internal bool ReservePour(int index)
+    {
+        if (!CanInteract || Workstation.Busy("bowl") || !_cooker.TryReservePour(index, _bowl)) return false;
+        AdvanceAutomaticTransfers(); Render(); return true;
+    }
+    internal bool CutDoupi(DoupiCutDirection direction)
+    {
+        if (!CanInteract || Workstation.Busy("pan") || _doupi?.TryCut(direction) != true) return false;
+        Workstation.PlayCut(direction); Feedback(_doupi.State == DoupiState.Cut ? "切块完成，将自动补入备餐盘。" : "已离火，品质锁定；再划另一个方向。", false); Render(); return true;
+    }
+    private void AdvanceAutomaticTransfers()
+    {
+        if (!CanInteract) return;
+        if (!Workstation.Busy("bowl") && _cooker.TryCompletePendingPour(out int basket, out NoodleQuality quality))
+            Workstation.PlayBasket(basket, NoodleBasketState.Drained, quality, Workstation.PourPosition);
+        if (_doupi is not null && !Workstation.Busy("pan") && !Workstation.Busy("stock"))
+        {
+            int start = _doupiStock.Count;
+            int moved = _doupi.TransferAvailable(_doupiStock);
+            if (moved > 0) Workstation.PlayStock(moved, start);
+        }
+    }
 
     internal void BasketAction(int index)
     {
         if(!CanInteract||index<0||index>=_cooker.Baskets.Count||Workstation.Busy($"basket{index}"))return;
         NoodleBasketRuntime item=_cooker.Baskets[index]; bool ok=false; string message="";
         NoodleBasketState before=item.State;NoodleQuality quality=item.Quality;
-        if(item.State==NoodleBasketState.Empty){if(_ingredients.TryConsume(StableIds.Ingredients.WuhanNoodles)){ok=_cooker.TryStart(index);message="面条下锅。";}else message="面条用完了，再点一次补料。";}
+        if(item.State==NoodleBasketState.Empty){if(_ingredients.TryConsume(StableIds.Ingredients.WuhanNoodles)){ok=_cooker.TryStart(index);message="面条下锅。";}else message="面条用完了，请点旁边的补货。";}
         else if(item.State is NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked){ok=_cooker.TryRaise(index);message="提篮，开始沥水。";}
-        else if(item.State is NoodleBasketState.Raised or NoodleBasketState.Draining){ok=_cooker.TryQuickDrain(index);message="快速抖水完成。";}
+        else if(item.State is NoodleBasketState.Raised or NoodleBasketState.Draining){message="自然沥水中，可拖到空碗上方等待。";}
         else if(item.State==NoodleBasketState.Drained){if(!Workstation.Busy("bowl")&&_cooker.TryTransferTo(index,_bowl)){ok=true;message="熟面倒入碗中。";}else message="拌面碗还没有空出来。";}
         else message="面还在烫，等到最佳窗口再提篮。";
         if(ok)Workstation.PlayBasket(index,before,quality);
-        if(!ok&&item.State==NoodleBasketState.Empty&&_ingredients.Count(StableIds.Ingredients.WuhanNoodles)==0)StartRefill(StableIds.Ingredients.WuhanNoodles);Feedback(message,!ok);Render();
+        Feedback(message,!ok);Render();
     }
     internal void IngredientAction(string id)
     {
         if(!CanInteract||Workstation.Busy("bowl")||Workstation.Busy("refill:"+id))return;
-        if(_ingredients.Count(id)<=0){StartRefill(id);Feedback("开始补料，约 1 秒后补满。",false);return;}
+        if(_ingredients.Count(id)<=0){Feedback("配料用完了，点旁边的补货。",true);return;}
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
-        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);Feedback("配料已经加入。",false);}else if(_ingredients.Count(id)<=2){StartRefill(id);Feedback("当前步骤不能加料，已开始补充低库存。",false);}else Feedback("先把熟面和基础调味放进碗里。",true);Render();
+        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);Feedback("配料已经加入。",false);}else Feedback("先把熟面和基础调味放进碗里。",true);Render();
     }
     private void StartRefill(string id){if(!_refills.ContainsKey(id)){_refills[id]=1.0;Workstation.PlayRefill(id);}}
     internal bool DeliverToCustomer(string customerId, ProductKind kind)
     {
         if (!CanInteract || !Workstation.CanDeliver(kind)) return false;
-        DeliveredItem item;
-        Func<bool> consume;
-        switch (kind)
+        DeliveryEvaluation result;
+        if (kind == ProductKind.Doupi) result = _controller.TryDeliverWuhanDoupiTo(customerId, _doupiStock);
+        else
         {
-            case ProductKind.HotDryNoodles:
-                if (!_bowl.TryPrepare(_catalog.RecipesById, out PreparedHotDryNoodles prepared)) return false;
-                item = new DeliveredItem(kind, prepared.RecipeId, null, null, null, HotDryNoodlesStateMachine.ToQuality(prepared));
-                consume = () => { _bowl.Reset(); return true; };
-                break;
-            case ProductKind.Doupi:
-                if (!_doupiStock.TryPeek(out DoupiQuality quality)) return false;
-                item = new DeliveredItem(kind, StableIds.Products.Doupi, null, null, null,
-                    quality == DoupiQuality.Overbrowned ? WuhanFoodQuality.DoupiOverbrowned : WuhanFoodQuality.None);
-                consume = () => _doupiStock.TryTake(1, out _);
-                break;
-            case ProductKind.EggRiceWine:
-                item = new DeliveredItem(kind, StableIds.Products.EggRiceWine);
-                consume = () => _egg?.TryTake() == true;
-                break;
-            default: return false;
+            DeliveredItem item;
+            Func<bool> consume;
+            switch (kind)
+            {
+                case ProductKind.HotDryNoodles:
+                    if (!_bowl.TryPrepare(_catalog.RecipesById, out PreparedHotDryNoodles prepared)) return false;
+                    item = new DeliveredItem(kind, prepared.RecipeId, null, null, null, HotDryNoodlesStateMachine.ToQuality(prepared));
+                    consume = () => { _bowl.Reset(); return true; };
+                    break;
+                case ProductKind.EggRiceWine:
+                    item = new DeliveredItem(kind, StableIds.Products.EggRiceWine);
+                    consume = () => _egg?.TryTake() == true;
+                    break;
+                default: return false;
+            }
+            result = _controller.TryDeliverWuhanTo(customerId, item, consume);
         }
-        DeliveryEvaluation result = _controller.TryDeliverWuhanTo(customerId, item, consume);
+        if (result.CompletesOrder && result.TotalRevenue > 0 && !_committed)
+        {
+            int slot = Array.IndexOf(_deliveryCustomerIds, customerId);
+            if (slot >= 0) CollectionFeedback.PaymentFrom(_portraits[slot].GetGlobalRect().GetCenter());
+        }
         Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect);
         Render();
         return result.ItemAccepted || result.CompletesOrder;
@@ -193,7 +252,7 @@ public partial class WuhanDayScreen : Control
         if(!CanInteract||Workstation.Busy("pan"))return;
         if(_doupi?.State==DoupiState.Cut&&Workstation.Busy("stock"))return;
         DoupiState before=_doupi?.State??DoupiState.Empty;
-        if(_doupi is null){Feedback("豆皮锅将在 Day 4 解锁。",true);return;} bool ok=_doupi.State switch{DoupiState.Empty=>_doupi.TryPourBatter(),DoupiState.Batter=>_doupi.TryAddEgg(),DoupiState.ReadyToFlip=>_doupi.TryFlip(),DoupiState.Flipped=>_doupi.TryAddFilling(),DoupiState.ReadyToCut or DoupiState.Overbrowned=>_doupi.TryCut(),DoupiState.Cut=>_doupi.TryStock(_doupiStock),DoupiState.Burnt=>DiscardDoupi(),_=>false};
+        if(_doupi is null){Feedback("豆皮锅将在 Day 4 解锁。",true);return;} bool ok=_doupi.State switch{DoupiState.Empty=>_doupi.TryPourBatter(),DoupiState.Batter=>_doupi.TryAddEgg(),DoupiState.ReadyToFlip=>_doupi.TryFlip(),DoupiState.Flipped=>_doupi.TryAddFilling(),DoupiState.Burnt=>DiscardDoupi(),_=>false};
         if(ok)Workstation.PlayDoupi(before);
         Feedback(ok?"豆皮操作完成一步。":before==DoupiState.Cut?"备餐盘已满，豆皮保留在锅中。":"豆皮正在煎制，请观察状态。",!ok);Render();
     }
@@ -203,21 +262,34 @@ public partial class WuhanDayScreen : Control
         if(!CanInteract||Workstation.Busy("egg"))return;
         if(_egg is null){Feedback("蛋酒台将在 Day 6 解锁。",true);return;}
         if(_egg.HasFinishedCup){Feedback("按住成品杯拖给顾客。",false);return;}
-        if(_egg.BaseCups==0){bool refill=_egg.TryRefill();if(refill)Workstation.PlayEgg(true);Feedback(refill?"补充蛋酒底料，0.6 秒后完成。":"蛋酒台正在工作。",!refill);Render();return;}
+        if(_egg.BaseCups==0){Feedback("底料用完了，请点旁边的补货。",true);return;}
         bool started=_egg.TryStart();if(started)Workstation.PlayEgg(false);Feedback(started?"正在冲蛋酒，0.6 秒后拖动成品杯交付。":"蛋酒台正在工作。",!started);Render();
     }
+    internal void RefreshForCapture() => Render();
     private void Render()
     {
+        CoinTray.RenderRevenue(_controller?.Ledger?.Build().TotalRevenue ?? 0);
         if(_controller?.CurrentConfig is null||_cooker is null)return;_day.Text=$"武汉 Day {_controller.CurrentConfig.Day} · {Subtitle(_controller.CurrentConfig.Day)}";_clock.Text=_controller.State switch{DayState.Opening=>$"开门 {_controller.OpeningRemainingSeconds:0.0}",DayState.Closing=>$"收尾 {_controller.ClosingRemainingSeconds:0.0}",_=>$"剩余 {(int)_controller.DayRemainingSeconds/60:00}:{(int)_controller.DayRemainingSeconds%60:00}"};_income.Text=$"¥{_controller.Ledger?.Build().TotalRevenue??0}";_door.Text=$"候场 {_controller.CustomerQueue?.DoorQueue.Count??0}";_tutorial.Text=Tutorial(_controller.CurrentConfig.Day);
-        for(int i=0;i<_basketButtons.Length;i++){if(i>=_cooker.Baskets.Count)continue;NoodleBasketRuntime b=_cooker.Baskets[i];_basketLabels[i].Text=b.State switch{NoodleBasketState.Empty=>"空 · 点击下面",NoodleBasketState.Cooking=>$"烫制 {b.CookSeconds:0.0}s",NoodleBasketState.Ready=>"最佳 · 点击提篮",NoodleBasketState.Soft=>"偏软 · 点击提篮",NoodleBasketState.Overcooked=>"煮过头 · 点击提篮",NoodleBasketState.Locked=>"已锁熟 · 点击提篮",NoodleBasketState.Raised or NoodleBasketState.Draining=>"沥水中 · 点击抖水",_=>"已沥干 · 点击倒入碗"};}
-        _bowlStatus.Text=$"{BowlName(_bowl.State)} · 拌匀 {_bowl.MixProgress:0}%";foreach(Node node in _ingredientRow.GetChildren()){var button=(Button)node;string id=button.GetMeta("ingredient_id").AsString();button.Text=$"{IngredientName(id)} {_ingredients.Count(id)}{(_refills.ContainsKey(id)?" 补料中":"")}";}
-        _doupiStatus.Text=_doupi is null?"Day 4 解锁":$"{DoupiName(_doupi.State)} · 已切 {_doupi.CompletedCuts}/4 · 库存 {_doupiStock.Count}/16";_doupiButton.Text=_doupi?.State switch{DoupiState.Empty=>"浇浆",DoupiState.Batter=>"加鸡蛋",DoupiState.ReadyToFlip=>"翻面",DoupiState.Flipped=>"铺三鲜糯米馅",DoupiState.ReadyToCut or DoupiState.Overbrowned=>"切块",DoupiState.Cut=>"收入备餐盘",DoupiState.Burnt=>"丢弃焦糊豆皮",_=>"煎制中"};
-        _eggStatus.Text=_egg is null?"Day 6 解锁":_egg.HasFinishedCup?$"成品待交付 · 底料 {_egg.BaseCups}/6":_egg.IsPreparing?$"冲泡 {_egg.RemainingSeconds:0.0}s":_egg.IsRefilling?$"补料 {_egg.RemainingSeconds:0.0}s":$"底料 {_egg.BaseCups}/6";
-        for(int i=0;i<_cooker.Baskets.Count;i++)_basketButtons[i].Disabled=!CanInteract||Workstation.Busy($"basket{i}");
-        foreach(Button button in _ingredientRow.GetChildren().OfType<Button>())button.Disabled=!CanInteract||Workstation.Busy("bowl")||Workstation.Busy("refill:"+button.GetMeta("ingredient_id").AsString());
-        _doupiButton.Disabled=!CanInteract||_doupi is null||Workstation.Busy("pan")||(_doupi.State==DoupiState.Cut&&Workstation.Busy("stock"));
-        _eggButton.Disabled=!CanInteract||_egg is null||Workstation.Busy("egg")||_egg.HasFinishedCup||_egg.IsPreparing||_egg.IsRefilling;
-        _eggButton.Text=_egg?.HasFinishedCup==true?"拖动成品杯交付":_egg?.BaseCups==0?"补充蛋酒底料":"冲一杯蛋酒";
+        for(int i=0;i<_cooker.Baskets.Count;i++) {
+            NoodleBasketRuntime b=_cooker.Baskets[i];
+            _basketLabels[i].Text=$"漏勺 {i+1} · "+(b.State switch {
+                NoodleBasketState.Empty=>"拖面入锅",NoodleBasketState.Cooking=>$"烫制 {b.CookSeconds:0.0}s",
+                NoodleBasketState.Ready=>"最佳，向上提",NoodleBasketState.Soft=>"偏软，向上提",
+                NoodleBasketState.Overcooked=>"过熟，向上提",NoodleBasketState.Locked=>"锁熟，向上提",
+                NoodleBasketState.Raised or NoodleBasketState.Draining=>_cooker.PendingPourBasket==i?"碗上方沥水中":"沥水，可拖入碗",_=>"沥干，拖入碗"});
+        }
+        _bowlStatus.Text=_bowl.State switch {
+            NoodleBowlState.Empty=>_cooker.PendingPourBasket.HasValue?"漏勺沥水中 · 稍后自动倒面":"热干面 · 等待熟面入碗",
+            NoodleBowlState.Noodles=>"点击酱罐加入基础调味",
+            NoodleBowlState.Ready=>"热干面已拌好 · 拖给顾客",
+            _=>$"点击小料 · 在碗中划动拌匀 {_bowl.MixProgress:0}%"};
+        _doupiStatus.Text=_doupi is null?"豆皮 · Day 4 解锁":_doupi.State switch {
+            DoupiState.Empty=>"豆皮 · 点击浆碗浇浆",DoupiState.Batter=>"点击锅面加蛋",
+            DoupiState.ReadyToFlip=>"向上划动锅面翻面",DoupiState.Flipped=>"点击馅碗铺馅",
+            DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting=>$"{(_doupi.CutDirections.Contains(DoupiCutDirection.Horizontal)?"横切完成":"请横划") } · {(_doupi.CutDirections.Contains(DoupiCutDirection.Vertical)?"竖切完成":"请竖划")} · {(_doupi.Quality==DoupiQuality.Overbrowned?"偏焦":_doupi.State==DoupiState.Cutting?"已离火":"已熟")}",
+            DoupiState.Cut=>$"锅内余 {_doupi.RemainingPieces} 块 · 腾位后自动补入",DoupiState.Burnt=>"已焦糊 · 点击锅面清理",_=>"豆皮煎制中"};
+        _eggStatus.Text=_egg is null?"蛋酒 · Day 6 解锁":_egg.HasFinishedCup?"蛋酒已冲好 · 拖给顾客":_egg.IsPreparing?$"冲泡 {_egg.RemainingSeconds:0.0}s":_egg.IsRefilling?"正在补充底料":"点击底料杯冲泡 · 成品拖给顾客";
+        Workstation.RefreshRefillControls();
         Workstation.RefreshDeliverySources(); Workstation.QueueRedraw();
         RenderCustomers();
     }
@@ -240,30 +312,32 @@ public partial class WuhanDayScreen : Control
                         && WuhanWorkstationView.DeliveryProduct(payload) is ProductKind kind && DeliverToCustomer(id,kind),
                     _ => _portraits[slot].GetGlobalRect().GetCenter());
             }
+            bool preview = Workstation.DraggedProduct == ProductKind.Doupi && _customerDropZones[i].VisualState == DropZoneVisualState.HoverValid;
+            int quantity = preview ? _controller.GetWuhanDoupiDeliveryQuantity(id, _doupiStock) : 0;
+            _deliveryQuantityLabels[i].Text = quantity > 0 ? $"豆皮×{quantity}" : "";
+            _deliveryQuantityLabels[i].Visible = quantity > 0;
             if (customer is null) continue;
-            _orders[i].Text=$"{customer.Type.DisplayName}\n{string.Join("\n",customer.Order.Lines.Select((line,index)=>$"{LineText(line)} {customer.Progress.GetDeliveredQuantity(index)}/{line.Quantity}"))}";
+            _orders[i].Render(customer.Order,customer.Progress,_catalog.RecipesById);
             _patience[i].Value=(1-customer.PatienceProgress)*100;
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
     }
-    private string LineText(OrderLineData line){string name=line.ProductKind switch{ProductKind.HotDryNoodles=>_catalog.RecipesById.TryGetValue(line.DefinitionId,out RecipeData? r)?r.DisplayName:"热干面",ProductKind.Doupi=>"三鲜豆皮",_=>"蛋酒"};return name;}
     private void Feedback(string text,bool error){_feedback.Text=(error?"！ ":"✓ ")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
     private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
     private void OnDeliveryCompleted(DeliveryEvaluation result)=>Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     public override void _ExitTree()
     {
+        CollectionFeedback.Clear();
         Workstation.CancelAnimations();
         if(_controller is null)return;
         _controller.StateChanged-=OnStateChanged;_controller.DayFinished-=OnFinished;_controller.DeliveryCompleted-=OnDeliveryCompleted;
     }
-    private static string BowlName(NoodleBowlState state)=>state switch { NoodleBowlState.Empty=>"空碗",NoodleBowlState.Noodles=>"熟面待调味",NoodleBowlState.Seasoned=>"已调味 · 按住碗内拌面",NoodleBowlState.Mixing=>"正在拌面",_=>"已拌匀 · 可出餐" };
-    private static string DoupiName(DoupiState state)=>state switch { DoupiState.Empty=>"空锅",DoupiState.Batter=>"已浇浆",DoupiState.SkinCooking=>"蛋皮煎制中",DoupiState.ReadyToFlip=>"可以翻面",DoupiState.Flipped=>"已翻面 · 待铺馅",DoupiState.SecondCooking=>"三鲜馅煎制中",DoupiState.ReadyToCut=>"已熟 · 可以切块",DoupiState.Overbrowned=>"偏焦 · 可以切块",DoupiState.Burnt=>"焦糊 · 请丢弃",_=>"已切好 · 待入盘" };
     private void OnFinished(DayResult result)
     {
+        CollectionFeedback.Clear();
         if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得三件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
     private void BuildResults(){_blocker=new ColorRect{Color=new Color(0.2f,.09f,.04f,.48f),Visible=false,ZIndex=95};TianjinUi.FullRect(_blocker);AddChild(_blocker);_results=WuhanUi.Panel(WuhanUi.Paper,22);_results.Position=new Vector2(550,170);_results.Size=new Vector2(820,700);_results.Visible=false;_results.ZIndex=100;AddChild(_results);var col=new VBoxContainer();col.AddThemeConstantOverride("separation",18);_results.AddChild(col);col.AddChild(WuhanUi.Label("武汉今日营业收据",36,WuhanUi.Ink,HorizontalAlignment.Center));_resultText=new RichTextLabel{BbcodeEnabled=true,CustomMinimumSize=new Vector2(740,430),SizeFlagsVertical=SizeFlags.ExpandFill};_resultText.AddThemeFontSizeOverride("normal_font_size",22);_resultText.AddThemeColorOverride("default_color",WuhanUi.Text);col.AddChild(_resultText);_unlock=WuhanUi.Label("",18,WuhanUi.Ink,HorizontalAlignment.Center);_unlock.AutowrapMode=TextServer.AutowrapMode.WordSmart;col.AddChild(_unlock);var back=WuhanUi.Button("收好收入 · 返回武汉经营首页",true,new Vector2(0,70));back.Pressed+=()=>HubRequested?.Invoke();col.AddChild(back);}
-    private static string IngredientName(string id)=>id switch{StableIds.Ingredients.WuhanBaseSeasoning=>"调味",StableIds.Ingredients.WuhanScallion=>"葱花",StableIds.Ingredients.WuhanChiliOil=>"辣油",_=>"牛肉"};
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"蛋酒",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"下锅 → 最佳时提篮 → 抖水 → 倒入碗 → 基础调味 → 按住画圈拌匀 → 松开后拖给顾客",4=>"豆皮一次做 8 块：浇浆、加蛋、翻面、铺馅、煎熟、切四刀、收入备餐盘",6=>"蛋酒点击冲泡 0.6 秒，按住成品杯拖给顾客；底料用完后补满",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"点击底料杯，冲泡后拖给顾客；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

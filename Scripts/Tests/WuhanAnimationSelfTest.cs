@@ -40,7 +40,7 @@ public partial class WuhanAnimationSelfTest : Node
     private void DisposeDay((WuhanDayScreen Screen,DayController Controller,SaveService Save) f)
     { f.Screen.Free();f.Controller.Free();f.Save.Free(); }
     private static void Click(WuhanWorkstationView view,Vector2 p) => view._GuiInput(new InputEventMouseButton { ButtonIndex=MouseButton.Left,Pressed=true,Position=p });
-    private static void Move(WuhanWorkstationView view,Vector2 p) => view._GuiInput(new InputEventMouseMotion { ButtonMask=MouseButtonMask.Left,Position=p });
+    private static void Move(WuhanWorkstationView view,Vector2 p) => view._Input(new InputEventMouseMotion { ButtonMask=MouseButtonMask.Left,Position=view.GetGlobalTransformWithCanvas()*p });
 
     private void TestTransfer()
     {
@@ -58,10 +58,10 @@ public partial class WuhanAnimationSelfTest : Node
         var f=NewDay();var s=f.Screen;var v=s.Workstation;
         int stock=s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles);
         Click(v,v.BasketRect(0).GetCenter());s.BasketAction(0);
-        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==stock-1&&v.Busy("basket0"),"实物和按钮共用下面动作，连点只扣一份");
+        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==stock-1&&v.Busy("basket0"),"空漏勺点击不下面，制作提交只扣一份");
         s._Process(.12);Check(v.MotionProgress("basket0")>.1f&&v.MotionProgress("basket0")<1,"下面动画存在可捕获的中间帧");
-        s._Process(1.5);s.BasketAction(0);s._Process(.25);s.BasketAction(0);
-        Check(s.Cooker.Baskets[0].State==NoodleBasketState.Drained&&v.Busy("basket0"),"手动提篮、快速抖水均有动作锁");
+        s._Process(1.5);s.BasketAction(0);s._Process(.71);
+        Check(s.Cooker.Baskets[0].State==NoodleBasketState.Drained&&!v.Busy("basket0"),"提篮后自然沥水完成");
         s._Process(.25);s.BasketAction(0);
         int seasoning=s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning);s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(v.Busy("basket0")&&v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Noodles&&s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==seasoning,"倒面同时锁住漏勺和碗，期间不能提前加料");
@@ -74,9 +74,9 @@ public partial class WuhanAnimationSelfTest : Node
         Check(s.Bowl.MixProgress==0,"碗外按下不能带入拌面手势");
         Click(v,v.BowlCenter);Move(v,v.BowlCenter+new Vector2(70,0));
         double mixed=s.Bowl.MixProgress;Move(v,new Vector2(600,320));Move(v,v.BowlCenter);
-        Check(mixed>0&&s.Bowl.MixProgress==mixed&&!v.IsMixing,"离开碗口立即结束手势，重入不会连线加进度");
+        Check(mixed>0&&s.Bowl.MixProgress==mixed&&v.IsMixing,"离开碗口保持会话，重入不会连线加进度");
         Click(v,v.BowlCenter);for(int i=0;i<5;i++)Move(v,v.BowlCenter+new Vector2(i%2==0?85:-85,0));
-        Check(s.Bowl.State==NoodleBowlState.Ready&&!v.IsMixing,"碗内拌匀后筷子归位");
+        Check(s.Bowl.State==NoodleBowlState.Ready&&v.IsMixing,"拌匀后保持当前输入模式直到松手");
         s.DeliverToCustomer("missing",ProductKind.HotDryNoodles);Check(s.Bowl.State==NoodleBowlState.Ready&&!v.Busy("bowl"),"无效顾客拒绝交付，食物和画面保留");
         DisposeDay(f);
     }
@@ -94,12 +94,12 @@ public partial class WuhanAnimationSelfTest : Node
     {
         s.DoupiAction();s._Process(.4);s.DoupiAction();s._Process(2.51);
         if(!automatic)s.DoupiAction();s._Process(.5);s.DoupiAction();s._Process(3.51);
-        for(int i=0;i<4;i++){s.DoupiAction();s._Process(.4);}
+        foreach(var direction in Enum.GetValues<DoupiCutDirection>()){s.CutDoupi(direction);s._Process(.4);}
     }
     private void TestDoupi()
     {
         var f=NewDay();var s=f.Screen;MakeDoupi(s);
-        Check(s.Doupi!.State==DoupiState.Cut&&s.Doupi.CompletedCuts==4,"豆皮实物流程完成四刀且未被动画延迟烧焦");
+        Check(s.Doupi!.State==DoupiState.Empty&&s.DoupiStock.Count==8,"豆皮两向切割后自动入盘");
         s.DoupiAction();s.DoupiAction();Check(s.DoupiStock.Count==8&&s.Workstation.Busy("stock"),"豆皮入库连点不重复增加一锅");
         s._Process(.5);MakeDoupi(s);s.DoupiAction();s._Process(.5);MakeDoupi(s);s.DoupiAction();
         Check(s.DoupiStock.Count==16&&s.Doupi.State==DoupiState.Cut&&!s.Workstation.Busy("pan"),"备货满盘保留锅内成品，不播放入库动作");DisposeDay(f);
@@ -115,7 +115,7 @@ public partial class WuhanAnimationSelfTest : Node
         Check(s.Egg!.BaseCups==5&&s.Egg.IsPreparing,"冲泡连点只消耗一杯底料");s._Process(.61);s.EggAction();
         Check(s.Egg.HasFinishedCup&&!s.Workstation.Busy("egg"),"点击蛋酒设备保留成品杯等待拖拽");
         s.Egg.TryTake();for(int i=0;i<5;i++){s.EggAction();s._Process(.61);s.Egg.TryTake();}
-        s.EggAction();s._Process(.3);Check(s.Egg.IsRefilling&&s.Egg.BaseCups==0,"补底料等待真实计时");s._Process(.31);
+        s.Egg.TryRefill();s.Workstation.PlayEgg(true);s._Process(.3);Check(s.Egg.IsRefilling&&s.Egg.BaseCups==0,"补底料等待真实计时");s._Process(.31);
         Check(s.Egg.BaseCups==6&&!s.Egg.IsRefilling,"补料结束六杯底料恢复");DisposeDay(f);
         f=NewDay(1,1);s=f.Screen;s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
         for(int i=0;i<80 && f.Controller.CustomerQueue!.Slots.Count==0;i++)s._Process(.25);

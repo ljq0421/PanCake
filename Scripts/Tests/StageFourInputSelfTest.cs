@@ -105,7 +105,11 @@ public partial class StageFourSelfTest
                 using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = point }) GetViewport().PushInput(press, true);
                 station.Tick(.45);
                 using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = point }) GetViewport().PushInput(release, true);
-                Check(station.Inventory.GetStatus(id) == IngredientStockStatus.Refilling, $"Lv{level} {id} 原地长按独立响应");
+                Check(station.Inventory.IsUnlimited(id)
+                        ? station.Inventory.GetStatus(id) == IngredientStockStatus.Normal && !station.Inventory.CanRefill(id)
+                            && slot.LiquidTier == 3 && !slot.StockBar.Visible
+                        : station.Inventory.GetStatus(id) == IngredientStockStatus.Refilling,
+                    $"Lv{level} {id} 原地长按按有限/无限库存规则响应");
             }
         }
         screen.Free(); controller.Free(); save.Free();

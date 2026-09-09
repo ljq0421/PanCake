@@ -24,6 +24,10 @@ public enum WorkstationSlotAttentionState
     Refilling,
 }
 
+public readonly record struct StockStackLayout(
+    Vector2 MaxSize, float ColumnSpacing, float BackFootY, float FrontFootY,
+    Rect2? SilhouetteBounds = null, float RowOffset = 4);
+
 public readonly record struct WorkstationSlotSpec(
     Vector2 MinimumSize,
     Rect2 TrayRect,
@@ -35,7 +39,10 @@ public readonly record struct WorkstationSlotSpec(
     Rect2 StockRect,
     float MaxVisualRatio,
     Rect2? IngredientContainmentRect = null,
-    Rect2? CaptionRect = null);
+    Rect2? CaptionRect = null,
+    float TrayVerticalScale = 1f,
+    Rect2? StockFootprintRect = null,
+    StockStackLayout? StackLayout = null);
 
 /// <summary>
 /// Keeps a workstation item visually anchored inside its container while input
@@ -63,8 +70,12 @@ public partial class WorkstationSlotView : Control
     private int _capacity;
     private Rect2 _rotatedOpaqueBounds;
     private Bitmap? _ingredientHitMask;
+    private Color[] _wideStockTints = Array.Empty<Color>();
     private LiquidStockView? _liquid;
     private WorkstationSlotAttentionState _attentionState;
+    private bool _emptyCaptionStyled;
+    private Rect2 _stackBounds;
+    private (Vector2 Center, Vector2 Size, float Angle)[] _stackLayout = Array.Empty<(Vector2, Vector2, float)>();
 
     public WorkstationSlotView()
     {
@@ -109,7 +120,15 @@ public partial class WorkstationSlotView : Control
 
     public Label CountLabel => _count;
     public Control HoverTarget => _ingredientAnchor;
-    public Rect2 TrayVisualRect => FitInside(_tray.Texture?.GetSize() ?? Vector2.Zero, _spec.TrayRect);
+    public Rect2 TrayVisualRect
+    {
+        get
+        {
+            Rect2 fitted = FitInside(_tray.Texture?.GetSize() ?? Vector2.Zero, _spec.TrayRect);
+            Vector2 size = fitted.Size * new Vector2(1, _spec.TrayVerticalScale);
+            return new Rect2(fitted.GetCenter() - size * .5f, size);
+        }
+    }
     public Rect2 IngredientVisualRect
     {
         get
@@ -121,7 +140,7 @@ public partial class WorkstationSlotView : Control
                     ? new Rect2(_spec.IngredientAnchorRect.Position + visual.Position + visual.PivotOffset
                         + _rotatedOpaqueBounds.Position * (visual.Size.X / visual.Texture.GetWidth()),
                         _rotatedOpaqueBounds.Size * (visual.Size.X / visual.Texture.GetWidth()))
-                    : new Rect2(_spec.IngredientAnchorRect.Position + visual.Position, visual.Size);
+                    : IngredientBounds(visual);
                 combined = combined is null ? rect : combined.Value.Merge(rect);
             }
             return combined ?? new Rect2(_spec.IngredientAnchorRect.GetCenter(), Vector2.Zero);
@@ -137,6 +156,39 @@ public partial class WorkstationSlotView : Control
     public IReadOnlyList<TextureRect> IngredientVisuals => _ingredientVisuals;
     public int LiquidTier => _liquid?.Tier ?? 0;
 
+    // Transform all four corners, so rotations cannot pass a bounds check by
+    // reporting only the unrotated TextureRect's position and size.
+    public Rect2 IngredientBounds(TextureRect visual)
+    {
+        Transform2D transform = visual.GetTransform();
+        Vector2 first = transform * Vector2.Zero;
+        Rect2 bounds = new(first, Vector2.Zero);
+        bounds = bounds.Expand(transform * new Vector2(visual.Size.X, 0));
+        bounds = bounds.Expand(transform * visual.Size);
+        bounds = bounds.Expand(transform * new Vector2(0, visual.Size.Y));
+        return new Rect2(_spec.IngredientAnchorRect.Position + bounds.Position, bounds.Size);
+    }
+
+    public void HideNameplate()
+    {
+        _captionPlate.Hide();
+        _label.Hide();
+        _count.Hide();
+    }
+
+    public void ShowEmptyCaption(bool visible)
+    {
+        _captionPlate.Hide();
+        _count.Hide();
+        _label.Visible = visible;
+        if (_spec.CaptionRect is Rect2 caption) Place(_label, caption);
+        if (!_emptyCaptionStyled)
+        {
+            TianjinUi.ApplyCounterHint(_label);
+            _emptyCaptionStyled = true;
+        }
+    }
+
     public void Configure(
         Texture2D trayTexture,
         Texture2D ingredientTexture,
@@ -146,14 +198,15 @@ public partial class WorkstationSlotView : Control
     {
         _spec = spec;
         _visualMode = visualMode;
+        _stackLayout = Array.Empty<(Vector2, Vector2, float)>();
         CustomMinimumSize = spec.MinimumSize;
         _tray.Texture = trayTexture;
         EnsureIngredientVisuals(visualMode switch
         {
             IngredientVisualMode.CountLayout => 4,
             IngredientVisualMode.RepresentativeCluster => 3,
-            IngredientVisualMode.HybridStock => spec.CaptionRect.HasValue ? 10 : 12,
-            IngredientVisualMode.LooseStock => 3,
+            IngredientVisualMode.HybridStock => spec.CaptionRect.HasValue ? Math.Max(1, _capacity) : 12,
+            IngredientVisualMode.LooseStock => spec.CaptionRect.HasValue ? Math.Max(1, _capacity) : 3,
             IngredientVisualMode.WideStock => 3,
             _ => 1,
         }, ingredientTexture);
@@ -190,6 +243,8 @@ public partial class WorkstationSlotView : Control
         if (_quantity == quantity && _capacity == capacity) return;
         _quantity = quantity;
         _capacity = capacity;
+        if (_visualMode is IngredientVisualMode.HybridStock or IngredientVisualMode.LooseStock && _spec.CaptionRect.HasValue)
+            EnsureIngredientVisuals(Math.Max(1, capacity), _ingredient.Texture);
         _stockFraction = capacity > 0 ? (float)quantity / capacity : 0;
         LayoutIngredientVisuals();
         _liquid?.SetTier(StockTier);
@@ -226,6 +281,15 @@ public partial class WorkstationSlotView : Control
         if (interaction is ProjectCake.Interaction.DragItem drag)
             drag.HitTest = point => _visualMode is not (IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
                 || ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
+        if (interaction is ProjectCake.Interaction.PressRepeatGesture repeat)
+            repeat.Contains = point => ContainsVisibleIngredient(interaction.GetGlobalTransform() * point);
+    }
+
+    public void SetWideStockTints(IReadOnlyList<Color> tints)
+    {
+        if (_wideStockTints.SequenceEqual(tints)) return;
+        _wideStockTints = tints.Take(3).ToArray();
+        LayoutIngredientVisuals();
     }
 
     private bool ContainsVisibleIngredient(Vector2 globalPoint)
@@ -262,6 +326,18 @@ public partial class WorkstationSlotView : Control
 
     public bool IngredientIsInsideTray(float safetyMargin = 0)
     {
+        if (_spec.StockFootprintRect is Rect2 floor)
+        {
+            Rect2 silhouetteArea = _spec.StackLayout?.SilhouetteBounds ?? _spec.IngredientAnchorRect;
+            foreach (TextureRect visual in _ingredientVisuals.Where(item => item.Visible))
+            {
+                Rect2 rect = IngredientBounds(visual);
+                Vector2 foot = _spec.IngredientAnchorRect.Position
+                    + visual.GetTransform() * new Vector2(visual.Size.X * .5f, visual.Size.Y);
+                if (!floor.Grow(-safetyMargin).HasPoint(foot) || !silhouetteArea.Encloses(rect)) return false;
+            }
+            return true;
+        }
         // The visible outer tray includes its rim. Some vessels supply a tighter
         // interior rectangle so an item on the front lip cannot pass this check.
         Rect2 safeTray = (_spec.IngredientContainmentRect ?? TrayVisualRect).Grow(-safetyMargin);
@@ -277,7 +353,8 @@ public partial class WorkstationSlotView : Control
     {
         _visualLayer.Position = Vector2.Zero;
         _visualLayer.Size = Size;
-        Place(_tray, _spec.TrayRect);
+        _tray.StretchMode = TextureRect.StretchModeEnum.Scale;
+        Place(_tray, TrayVisualRect);
         if (_liquid is not null) Place(_liquid, TrayVisualRect);
         Place(_ingredientAnchor, _spec.IngredientAnchorRect);
         LayoutIngredientVisuals();
@@ -367,7 +444,7 @@ public partial class WorkstationSlotView : Control
         if (_visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
         {
             bool stock = _visualMode == IngredientVisualMode.WideStock;
-            int visible = stock ? StockTier : 1;
+            int visible = stock ? Math.Max(StockTier, _wideStockTints.Length) : 1;
             float stackHeight = stock ? 24f : 0f;
             Vector2 sourceSize = _ingredient.Texture.GetSize();
             float wideScale = Math.Min(localBounds.Size.X / _rotatedOpaqueBounds.Size.X,
@@ -381,7 +458,9 @@ public partial class WorkstationSlotView : Control
                 visual.RotationDegrees = 32;
                 visual.Position = localBounds.GetCenter() + new Vector2(0, stock ? 12 - index * 12 : 0)
                     - visual.PivotOffset - _rotatedOpaqueBounds.GetCenter() * wideScale;
-                visual.Modulate = IngredientTint();
+                Color qualityTint = _wideStockTints.Length == 0 ? Colors.White
+                    : stock ? _wideStockTints[Math.Min(index, _wideStockTints.Length - 1)] : _wideStockTints[^1];
+                visual.Modulate = IngredientTint() * qualityTint;
             }
             return;
         }
@@ -414,6 +493,11 @@ public partial class WorkstationSlotView : Control
 
         if (_visualMode == IngredientVisualMode.LooseStock)
         {
+            if (_spec.CaptionRect.HasValue)
+            {
+                LayoutSeparatedStock(localBounds);
+                return;
+            }
             for (int index = 0; index < _ingredientVisuals.Count; index++)
             {
                 TextureRect visual = _ingredientVisuals[index];
@@ -483,31 +567,64 @@ public partial class WorkstationSlotView : Control
 
     private void LayoutSeparatedStock(Rect2 bounds)
     {
-        // Small quantities are literal; larger quantities use up to ten clear
-        // silhouettes to communicate density. Never draw more than real stock.
-        int visible = _quantity <= 6 ? _quantity : Math.Min(_quantity,
-            Math.Min(10, 6 + (int)Math.Ceiling((_quantity - 6) * 4d / Math.Max(1, _capacity - 6))));
-        // Capacity chooses the layout once. Taking or replenishing ingredients
-        // only toggles slots, keeping the remaining food steady under the mouse.
-        int slots = Math.Clamp(_capacity, 1, 10);
-        int rows = slots <= 5 ? 1 : 2;
-        int columns = (slots + rows - 1) / rows;
-        Vector2 step = bounds.Size / new Vector2(columns, rows);
-        Vector2 gap = new(4, 3);
+        // Generate the full capacity once. Stock changes only reveal/hide these
+        // positions; neither a refill nor a refresh reshuffles the remaining food.
+        int slots = Math.Max(1, _capacity);
+        bool layoutChanged = _stackLayout.Length != slots || _stackBounds != bounds;
+        if (layoutChanged)
+        {
+            _stackBounds = bounds;
+            _stackLayout = BuildStackedStock(bounds, slots);
+        }
         for (int index = 0; index < _ingredientVisuals.Count; index++)
         {
             TextureRect visual = _ingredientVisuals[index];
-            visual.Visible = index < visible;
-            // The unused nodes remain pooled for another station capacity.
-            int cell = index % slots;
-            Vector2 origin = bounds.Position + gap * 0.5f
-                + step * new Vector2(cell % columns, rows - 1 - cell / columns);
-            Place(visual, FitInside(visual.Texture.GetSize(), new Rect2(origin, step - gap)));
+            visual.Visible = index < _quantity;
+            if (!layoutChanged || index >= slots) continue;
+            var placement = _stackLayout[index];
+            visual.Size = placement.Size;
+            visual.PivotOffset = placement.Size * .5f;
+            visual.Position = placement.Center - visual.PivotOffset;
+            visual.Rotation = placement.Angle;
             visual.ZIndex = 0;
             visual.Modulate = Colors.White;
         }
     }
 
+    private (Vector2 Center, Vector2 Size, float Angle)[] BuildStackedStock(Rect2 bounds, int count)
+    {
+        int columns = (count + 1) / 2;
+        Vector2 source = _ingredient.Texture.GetSize();
+        // Same large food size at every equipment level; only the number of
+        // positions changes. Back row is painted first, front row overlaps it.
+        StockStackLayout layout = _spec.StackLayout ?? new(new Vector2(46, 62), 34, 51, 82);
+        Vector2 size = source * Math.Min(layout.MaxSize.X / source.X, layout.MaxSize.Y / source.Y);
+        var result = new (Vector2 Center, Vector2 Size, float Angle)[count];
+        for (int index = 0; index < count; index++)
+        {
+            int row = index / columns, column = index % columns;
+            float angle = Mathf.DegToRad(new[] { -5f, 2f, -2f, 4f, -3f }[column % 5]);
+            float x = 124 + (column - (columns - 1) * .5f) * layout.ColumnSpacing
+                + (row == 0 ? layout.RowOffset : -layout.RowOffset);
+            float footY = row == 0 ? layout.BackFootY : layout.FrontFootY;
+            Vector2 foot = new(x, footY);
+            Vector2 center = foot - new Vector2(0, size.Y * .5f).Rotated(angle);
+            if (layout.SilhouetteBounds is Rect2 safeArea)
+            {
+                // Loose scallion leaves must all sit on the floor, unlike an
+                // upright egg. Include rotation, then move the whole cluster in.
+                float cos = Math.Abs(Mathf.Cos(angle)), sin = Math.Abs(Mathf.Sin(angle));
+                Vector2 half = new((size.X * cos + size.Y * sin) * .5f,
+                    (size.X * sin + size.Y * cos) * .5f);
+                // Leave a subpixel inset so Control transform rounding cannot
+                // put a rotated corner across the floor edge.
+                safeArea = safeArea.Grow(-.5f);
+                center = center.Clamp(safeArea.Position + half, safeArea.End - half);
+            }
+            result[index] = (center - _spec.IngredientAnchorRect.Position, size, angle);
+        }
+        return result;
+    }
     private static int VisibleUnitCount(float fraction) => fraction switch
     {
         <= 0f => 0,

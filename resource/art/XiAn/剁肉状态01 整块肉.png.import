@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b5xiqxw2kdj1k"
-path="res://.godot/imported/卡通红烧肉块堆叠图标.png-bb09a5a0d82b5965bff8e585e60e8a22.ctex"
+uid="uid://cvq7y4jgphg2x"
+path="res://.godot/imported/剁肉状态01 整块肉.png-897883776d91b9a53dd6bae592614cfc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resource/art/XiAn/卡通红烧肉块堆叠图标.png"
-dest_files=["res://.godot/imported/卡通红烧肉块堆叠图标.png-bb09a5a0d82b5965bff8e585e60e8a22.ctex"]
+source_file="res://resource/art/XiAn/剁肉状态01 整块肉.png"
+dest_files=["res://.godot/imported/剁肉状态01 整块肉.png-897883776d91b9a53dd6bae592614cfc.ctex"]
 
 [params]
 

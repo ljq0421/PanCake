@@ -1,0 +1,91 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+PASS new save opens Day 1
+PASS new day has an honest empty state
+PASS new day offers opening action
+PASS all 12 dates in three columns
+PASS dates outside Wuhan chapter are ignored
+PASS date selection never starts a shift
+PASS locked date explains prerequisite and disables starting
+PASS activation handler guards locked dates too
+PASS modal blocks mouse clicks outside book
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS Tab stays inside ledger
+PASS arrow focus cannot escape first date
+PASS Shift+Tab wraps to close button
+PASS arrow focus cannot escape last date
+PASS close hides entire modal
+PASS closing restores focus to entry button
+PASS background receives input again after closing
+PASS open always selects highest unlocked day
+PASS detail displays exact saved best record
+PASS record stamp denotes existing record
+PASS only action button dispatches selected day and closes ledger
+PASS unplayed unlocked day dispatches correctly
+PASS preview and replay requests leave global coins and Tianjin records unchanged
+PASS Space previews focused date without starting
+PASS start rechecks progress changed after preview
+PASS complete chapter remains replayable
+PASS largest saved revenue fits its allotted width
+ERROR: 存档无法读取：'i' is an invalid start of a property name. Expected a '"'. Path: $ | LineNumber: 0 | BytePositionInLine: 1.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:358)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:358)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Tests.WuhanLedgerSelfTest+<_Ready>d__8.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanLedgerSelfTest.cs:127)
+       [4] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [5] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [6] void System.Threading.Tasks.AwaitTaskContinuation.RunCallback(System.Threading.ContextCallback, object, System.Threading.Tasks.Task&)
+       [7] void System.Threading.Tasks.Task.RunContinuations(object)
+       [8] bool System.Threading.Tasks.Task`1.TrySetResult(TResult)
+       [9] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.SetExistingTaskResult(System.Threading.Tasks.Task`1[TResult], TResult)
+       [10] void ProjectCake.Tests.WuhanLedgerSelfTest+<Frames>d__11.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanLedgerSelfTest.cs:167)
+       [11] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [12] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [13] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS corrupt save blocks opening and explains recovery
+PASS corrupt-save activation cannot dispatch a day
+PASS hub primary also guards corrupt saves
+ERROR: 存档无法读取：'i' is an invalid start of a property name. Expected a '"'. Path: $ | LineNumber: 0 | BytePositionInLine: 1.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:358)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:358)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Tests.WuhanLedgerSelfTest+<_Ready>d__8.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanLedgerSelfTest.cs:138)
+       [4] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [5] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [6] void System.Threading.Tasks.AwaitTaskContinuation.RunCallback(System.Threading.ContextCallback, object, System.Threading.Tasks.Task&)
+       [7] void System.Threading.Tasks.Task.RunContinuations(object)
+       [8] bool System.Threading.Tasks.Task`1.TrySetResult(TResult)
+       [9] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.SetExistingTaskResult(System.Threading.Tasks.Task`1[TResult], TResult)
+       [10] void ProjectCake.Tests.WuhanLedgerSelfTest+<Frames>d__11.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanLedgerSelfTest.cs:167)
+       [11] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [12] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [13] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS live save refresh preserves inspected date and rechecks availability
+PASS Escape closes ledger
+WUHAN_LEDGER_TEST_RESULT passed=51 failed=0

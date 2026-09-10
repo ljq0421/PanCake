@@ -1,0 +1,43 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+PASS 全量数据目录校验通过
+PASS 武汉包含 Day 1～12
+PASS 营业时长合计 1400 秒
+PASS 预计收入合计 2389
+PASS 升级价格合计 2000
+PASS 开发测试入口可绕过城市前置解锁
+PASS 固定种子结果可重现
+PASS Day 12 顾客精确配额
+PASS Day 12 订单精确配额
+PASS 大单顾客不连续
+PASS F 类最多连续两单
+PASS 三种大单跨章节各出现三次
+PASS Lv1 面条下锅
+PASS 1.6 秒进入最佳
+PASS 超过 3 秒偏软
+PASS 超过 4 秒煮过头
+PASS Lv2 最佳点锁熟且不自动提篮
+PASS Lv3 双漏勺独立自动提篮
+PASS 拌匀 85% 自动吸附至 100%
+PASS 豆皮一锅固定八块
+PASS 豆皮备餐盘容量十六块
+PASS 库存满时成品留在锅中等待
+PASS 等待、错配方、过熟叠加且同类只扣一次
+PASS 武汉满意度只统计已完成订单
+PASS 两个复杂单触发软延迟
+PASS 持续高压累计第二次延迟
+PASS 软延迟到四秒后仍按原计划生成
+PASS 武汉升级扣全局金币且不改变天津设备
+PASS 武汉三星完成并保存收藏徽章
+PASS V2 存档无损迁移并建立武汉进度
+PASS 武汉所有营业日最多五名同屏顾客
+PASS 准备顾客机制测试
+PASS 第五名顾客入位，满员时延后后续顾客入场
+PASS 库存不足不恢复耐心
+PASS 第五位顾客收到部分商品后恢复15%耐心
+PASS 重复交付不恢复耐心
+PASS 耐心恢复不超过满值且整单正常完成
+WUHAN_TEST_RESULT passed=37 failed=0

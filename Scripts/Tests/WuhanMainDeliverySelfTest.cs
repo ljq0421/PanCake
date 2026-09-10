@@ -26,8 +26,14 @@ public partial class WuhanMainDeliverySelfTest : Node
             save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
             save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
             save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
+            Check(save.TrySave(out _), "isolated progress is saved before continuing from title");
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate(); AddChild(_main);
             await Frames(4);
+            var title = _main.GetNode<Control>("UI/StartScreen");
+            var resume = (Button)title.FindChild("Continue", true, false);
+            Check(title.IsVisibleInTree() && !resume.Disabled, "title offers saved progress");
+            Vector2 resumePoint = resume.GetGlobalTransformWithCanvas() * (resume.Size * .5f);
+            Move(resumePoint); Button(resumePoint, true); Button(resumePoint, false); await Frames(3);
             await ClickButton(_main.GetNode<Control>("UI/MorningHub"), "城市地图");
             await ClickButton(_main.GetNode<Control>("UI/TianjinMapScreen"), "测试直达武汉");
             var hub = _main.GetNode<WuhanHub>("UI/WuhanHub");

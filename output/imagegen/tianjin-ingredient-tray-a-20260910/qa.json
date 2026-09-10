@@ -1,0 +1,18 @@
+{
+  "Path": "D:\\Project\\ProjectCake\\project-cake\\resource\\art\\TianJin\\鸡蛋香葱托盘-A型-v1.png",
+  "Width": 512,
+  "Height": 512,
+  "PixelFormat": "Format32bppArgb",
+  "Counts": {
+    "Partial": 1344,
+    "NonzeroTransparentRgb": 0,
+    "Opaque": 82946,
+    "Transparent": 177854,
+    "GreenResiduePixels": 0
+  },
+  "EdgePixelsDespilled": 85,
+  "CornerAlpha": 0,
+  "InteriorAlpha": 255,
+  "GreenResidueCriterion": "Alpha > 0 and G > max(R,B) + 4; 18 opaque near-white highlight pixels have only a 1-level green-channel difference and are preserved.",
+  "VisualReview": "Passed on warm light and dark backgrounds; no visible green fringe, clipped outline, or background artifacts."
+}

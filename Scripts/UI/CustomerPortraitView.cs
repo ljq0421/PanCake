@@ -22,6 +22,14 @@ public partial class CustomerPortraitView : Control
     private CustomerPortraitPresentation _presentation;
     private float _portraitScale = 1.0f;
     private Vector2 _headAnchor = new(0.5f, 0.25f);
+    private Rect2? _counterHeadBounds;
+
+    /// <summary>Tianjin-only fitting: a 155px head above a fixed 240px waist crop.</summary>
+    public void SetCounterCalibration(Rect2 normalHeadBounds)
+    {
+        _counterHeadBounds = normalHeadBounds;
+        LayoutLayers();
+    }
 
     public override void _Ready()
     {
@@ -67,6 +75,20 @@ public partial class CustomerPortraitView : Control
 
     private void LayoutLayers()
     {
+        if (_counterHeadBounds is Rect2 head)
+        {
+            float counterScale = 155f / head.Size.Y;
+            Vector2 sourceWaist = new(head.GetCenter().X, head.Position.Y + 240f / counterScale);
+            Vector2 position = new Vector2(Size.X * .5f, Size.Y) - sourceWaist * counterScale;
+            foreach (TextureRect layer in new[] { _body, _head })
+            {
+                layer.Position = position;
+                layer.Size = new Vector2(PortraitCanvasWidth, PortraitSourceHeight) * counterScale;
+                layer.PivotOffset = Vector2.Zero;
+                layer.Scale = Vector2.One;
+            }
+            return;
+        }
         float layerHeight = _presentation == CustomerPortraitPresentation.CounterHalfBody
             ? Math.Max(PortraitCanvasHeight, Size.Y / CounterVisibleFraction)
             : PortraitCanvasHeight;

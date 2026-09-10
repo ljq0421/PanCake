@@ -16,6 +16,11 @@ public partial class VisualCapture : Node
 {
     public override async void _Ready()
     {
+        // This capture suite targets the incumbent city pages, beyond the new title page.
+        Node startup = GetNode("../Main");
+        startup.GetNode<Control>("UI/StartScreen").Hide();
+        startup.GetNode<Control>("UI/MorningHub").Show();
+        startup.GetNode<Node2D>("ShopRoot").Show();
         string[] args = OS.GetCmdlineUserArgs();
         bool captureFryerWorkstation = args.Contains("--capture-fryer-workstation", StringComparer.Ordinal);
         int captureFryerLevel = args.Contains("--capture-fryer-level2", StringComparer.Ordinal) ? 2
@@ -85,6 +90,8 @@ public partial class VisualCapture : Node
             var controller = main.GetNode<DayController>("DayController");
             int day = captureResult ? 15 : phase4Day > 0 ? phase4Day : 1;
             var captureSave = GetNode<SaveService>("/root/SaveService");
+            if (args.Contains("--capture-trained", StringComparer.Ordinal))
+                captureSave.Data.Tianjin.LearnedWorkbenchActions.UnionWith(PancakeWorkstation.AllWorkbenchActions);
             if (captureFryerWorkstation) captureSave.Data.PurchasedFryerLevel = captureFryerLevel;
             if (capturePancakeReady || captureSauceReady) captureSave.Data.PurchasedStoveLevel = 2;
             if (day == 15)
@@ -115,6 +122,9 @@ public partial class VisualCapture : Node
                 else
                 {
                     int targetCustomerCount = captureThreeCustomers ? 3 : phase4Day is 11 or 15 ? 5 : 1;
+                    string? customerCountArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-customers=", StringComparison.Ordinal));
+                    if (customerCountArg is not null && int.TryParse(customerCountArg.Split('=')[1], out int customerCount))
+                        targetCustomerCount = Math.Clamp(customerCount, 1, 5);
                     int steps = phase4Day is 11 or 15 ? 900 : 80;
                     for (int step = 0; step < steps; step++)
                     {
@@ -132,6 +142,12 @@ public partial class VisualCapture : Node
                         if (controller.CustomerQueue?.Slots.Count >= targetCustomerCount) break;
                     }
                     PancakeWorkstation workstation = dayScreen.GetChildren().OfType<PancakeWorkstation>().Single();
+                    if (args.Contains("--capture-mixed-stock", StringComparer.Ordinal))
+                    {
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Egg, 2);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Crispy, 4);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Ham, 6);
+                    }
                     if (captureLowStock)
                     {
                         ReduceTo(workstation.Inventory, StableIds.Ingredients.Batter, 5);
@@ -207,7 +223,7 @@ public partial class VisualCapture : Node
                         DeliverPartialOrderForCapture(controller, workstation, GetNode<DataCatalog>("/root/DataCatalog"));
                         workstation.RefreshForCapture();
                     }
-                    if (captureBagged || captureMultiple || captureClosingBag)
+                    if ((captureBagged && !args.Contains("--capture-coins", StringComparer.Ordinal)) || captureMultiple || captureClosingBag)
                         MakeBagged(workstation.Machine, GetNode<DataCatalog>("/root/DataCatalog").RecipesById[StableIds.Recipes.Basic]);
                     if (captureMultiple)
                     {
@@ -221,15 +237,17 @@ public partial class VisualCapture : Node
                     }
                     if (captureRefilling)
                     {
-                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Batter, 0);
-                        workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Batter);
-                        workstation.Inventory.Tick(.5);
                         ReduceTo(workstation.Inventory, StableIds.Ingredients.Egg, 0);
+                        workstation.Inventory.TryBeginRefill(StableIds.Ingredients.Egg);
+                        workstation.Inventory.Tick(workstation.Inventory.LevelData.RefillSeconds * .45);
                         while (workstation.SoyMilkTray?.Quantity > 0)
                         {
                             workstation.SoyMilkTray.TryConsumeForDelivery();
                             workstation.SoyMilkTray.Tick(1);
                         }
+                        workstation.SoyMilkTray?.TryBeginRefill();
+                        workstation.SoyMilkTray?.Tick(.5);
+                        dayScreen.SetProcess(false);
                     }
                     if (phase4Day == 11)
                     {
@@ -242,7 +260,7 @@ public partial class VisualCapture : Node
                         dayScreen.RefreshForCapture(true);
                         workstation.Tick(.3);
                         dayScreen.SetProcess(false);
-                        ((Control)dayScreen.FindChild("FeedbackPanel", true, false)).Visible = captureRefilling || capturePartialOrder;
+                        ((Control)dayScreen.FindChild("FeedbackPanel", true, false)).Visible = capturePartialOrder;
                     }
                     if (capturePause && dayScreen.FindChild("PauseButton", true, false) is Button pause)
                         pause.EmitSignal(Button.SignalName.Pressed);
@@ -360,7 +378,27 @@ public partial class VisualCapture : Node
                         }
                     }
                 }
+                for (int step = 0; step < 900; step++)
+                {
+                    controller.Tick(.1);
+                    foreach (CustomerRuntime customer in controller.CustomerQueue!.Slots)
+                        customer.WaitSeconds = 0;
+                    if (controller.CustomerQueue.Slots.Count == 5 && controller.CustomerQueue.Slots.All(customer =>
+                        customer.State is CustomerState.Happy or CustomerState.Normal)) break;
+                }
+                if (captureBagged)
+                {
+                    MakeBagged(station.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
+                    station.Tick(.3);
+                }
+                if (args.Contains("--capture-mixed-stock", StringComparer.Ordinal))
+                {
+                    ReduceTo(station.Inventory, StableIds.Ingredients.Egg, 2);
+                    ReduceTo(station.Inventory, StableIds.Ingredients.Crispy, 4);
+                    ReduceTo(station.Inventory, StableIds.Ingredients.Ham, 6);
+                }
                 screen.RefreshForCapture(true);
+                ((Control)screen.FindChild("FeedbackPanel", true, false)).Visible = false;
                 await ToSignal(GetTree().CreateTimer(1.1), SceneTreeTimer.SignalName.Timeout);
             }
             if (args.Contains("--capture-hold", StringComparer.Ordinal))

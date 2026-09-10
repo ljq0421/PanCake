@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="PackedScene" path="res://Scenes/UI/IngredientTray_Right.tscn" id="right_tray_base"]
+
 [ext_resource type="Script" path="res://Scripts/Gameplay/PancakeWorkstation.cs" id="1_ng5tn"]
 [ext_resource type="Script" path="res://Scripts/Interaction/DragService.cs" id="2_pik2f"]
 [ext_resource type="Script" path="res://Scripts/Gameplay/PancakeAudio.cs" id="3_pfmp2"]
@@ -2471,13 +2473,12 @@ metadata/_stock_show_numbers = false
 anchors_preset = 0
 mouse_filter = 2
 
-[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=2048220303]
+[node name="Tray" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" instance=ExtResource("right_tray_base")]
 layout_mode = 0
 offset_top = 8.835003
 offset_right = 248.0
 offset_bottom = 115.16499
 mouse_filter = 2
-texture = SubResource("AtlasTexture_gu6ll")
 expand_mode = 1
 
 [node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_egg/VisualLayer" unique_id=1638042103]
@@ -2817,13 +2818,12 @@ metadata/_stock_show_numbers = false
 anchors_preset = 0
 mouse_filter = 2
 
-[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=599762057]
+[node name="Tray" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" instance=ExtResource("right_tray_base")]
 layout_mode = 0
 offset_top = 8.835003
 offset_right = 248.0
 offset_bottom = 115.16499
 mouse_filter = 2
-texture = SubResource("AtlasTexture_gu6ll")
 expand_mode = 1
 
 [node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_crispy/VisualLayer" unique_id=901588550]
@@ -3376,13 +3376,12 @@ metadata/_stock_show_numbers = false
 anchors_preset = 0
 mouse_filter = 2
 
-[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=2097446906]
+[node name="Tray" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" instance=ExtResource("right_tray_base")]
 layout_mode = 0
 offset_top = 8.835003
 offset_right = 248.0
 offset_bottom = 115.16499
 mouse_filter = 2
-texture = SubResource("AtlasTexture_gu6ll")
 expand_mode = 1
 
 [node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_scallion/VisualLayer" unique_id=129831997]
@@ -3722,13 +3721,12 @@ metadata/_stock_show_numbers = false
 anchors_preset = 0
 mouse_filter = 2
 
-[node name="Tray" type="TextureRect" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=1021968518]
+[node name="Tray" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" instance=ExtResource("right_tray_base")]
 layout_mode = 0
 offset_top = 8.835003
 offset_right = 248.0
 offset_bottom = 115.16499
 mouse_filter = 2
-texture = SubResource("AtlasTexture_gu6ll")
 expand_mode = 1
 
 [node name="IngredientAnchor" type="Control" parent="@Control@109/IngredientArea/IngredientSlot_ham/VisualLayer" unique_id=551727411]
@@ -4786,3 +4784,75 @@ texture = SubResource("AtlasTexture_o6gk7")
 expand_mode = 1
 stretch_mode = 5
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_bagTransfer")
+
+[node name="BasketAnchor" type="Node2D" parent="@Control@109/FryerArea/FryerStack/FryerVisual"]
+
+[node name="FirstUseHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_batter"]
+visible = false
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="FirstUseHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_egg"]
+visible = false
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="FirstUseHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_sauce"]
+visible = false
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="FirstUseHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_crispy"]
+visible = false
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="FirstUseHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_ham"]
+visible = false
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="FirstUseHint" type="Label" parent="@Control@109/IngredientArea/IngredientSlot_scallion"]
+visible = false
+offset_left = 18.0
+offset_top = 120.0
+offset_right = 208.0
+offset_bottom = 144.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="CoinTrayInlay" type="TextureRect" parent="@Control@109/DeliveryArea/CoinTray/CoinTrayArt"]
+modulate = Color(0.9, 0.78, 0.5, 0.5)
+offset_left = 109.0
+offset_top = 41.0
+offset_right = 139.0
+offset_bottom = 63.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5

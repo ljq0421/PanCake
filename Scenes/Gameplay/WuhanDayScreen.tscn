@@ -1,20 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://lthaitcspayg"]
 
-[ext_resource type="Script" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v4.png" id="2_3027d"]
-[ext_resource type="Script" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
-[ext_resource type="Texture2D" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
-[ext_resource type="Script" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
-[ext_resource type="Script" path="res://Scripts/UI/OrderBubbleView.cs" id="6_33f4f"]
-[ext_resource type="Script" path="res://Scripts/UI/CustomerPortraitView.cs" id="7_kbbhe"]
-[ext_resource type="Texture2D" path="res://resource/art/TianJin/Customers/young_woman/body.png" id="8_s81ek"]
-[ext_resource type="Texture2D" path="res://resource/art/TianJin/Customers/young_woman/head_normal.png" id="9_r76ct"]
-[ext_resource type="Script" path="res://Scripts/UI/WuhanWorkstationView.cs" id="10_o1v37"]
-[ext_resource type="Script" path="res://Scripts/Interaction/DragItem.cs" id="11_jo6ni"]
-[ext_resource type="Script" path="res://Scripts/UI/CoinTrayView.cs" id="12_h747o"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/Trays_v2/coin.png" id="13_o8akn"]
-[ext_resource type="Script" path="res://Scripts/UI/CoinCollectionFeedback.cs" id="14_77nn7"]
-[ext_resource type="Script" path="res://Scripts/Gameplay/PancakeAudio.cs" id="15_qks6d"]
+[ext_resource type="Script" uid="uid://bem3g720e4oa7" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
+[ext_resource type="Texture2D" uid="uid://3rbxpdulvovh" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v4.png" id="2_3027d"]
+[ext_resource type="Script" uid="uid://crlqrj5cucv88" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
+[ext_resource type="Texture2D" uid="uid://l46r51x58hug" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
+[ext_resource type="Script" uid="uid://cyw6mdd60r1k0" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
+[ext_resource type="Script" uid="uid://biipnhyulosv7" path="res://Scripts/UI/OrderBubbleView.cs" id="6_33f4f"]
+[ext_resource type="Script" uid="uid://ku8xqjg4cg5i" path="res://Scripts/UI/CustomerPortraitView.cs" id="7_kbbhe"]
+[ext_resource type="Texture2D" uid="uid://b3m4t0ua4olur" path="res://resource/art/TianJin/Customers/young_woman/body.png" id="8_s81ek"]
+[ext_resource type="Texture2D" uid="uid://ckiyd00lwakc0" path="res://resource/art/TianJin/Customers/young_woman/head_normal.png" id="9_r76ct"]
+[ext_resource type="Script" uid="uid://db0so71ug6cay" path="res://Scripts/UI/WuhanWorkstationView.cs" id="10_o1v37"]
+[ext_resource type="Script" uid="uid://duou0625qgvq6" path="res://Scripts/Interaction/DragItem.cs" id="11_jo6ni"]
+[ext_resource type="Script" uid="uid://el3lursq2scr" path="res://Scripts/UI/CoinTrayView.cs" id="12_h747o"]
+[ext_resource type="Texture2D" uid="uid://db7xp6w4tsubv" path="res://resource/art/Wuhan/Trays_v2/coin.png" id="13_o8akn"]
+[ext_resource type="Script" uid="uid://db4b5vmt7wjd8" path="res://Scripts/UI/CoinCollectionFeedback.cs" id="14_77nn7"]
+[ext_resource type="Script" uid="uid://dlpulcbl5w1bp" path="res://Scripts/Gameplay/PancakeAudio.cs" id="15_qks6d"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jc4ej"]
 content_margin_left = 16.0
@@ -841,8 +841,8 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_c1cda")
 text = "提前打烊"
 
 [node name="WuhanCustomerStrip" type="HBoxContainer" parent="." unique_id=917246360]
-clip_contents = true
 z_index = 25
+clip_contents = true
 layout_mode = 0
 offset_left = 45.0
 offset_top = 130.0
@@ -1284,14 +1284,14 @@ expand_mode = 1
 stretch_mode = 5
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_head")
 
-[node name="WuhanCustomer5" type="Control" parent="WuhanCustomerStrip"]
+[node name="WuhanCustomer5" type="Control" parent="WuhanCustomerStrip" unique_id=905678019]
 visible = false
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 2
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|4")
 
-[node name="DoupiDeliveryQuantity5" type="Label" parent="WuhanCustomerStrip/WuhanCustomer5"]
+[node name="DoupiDeliveryQuantity5" type="Label" parent="WuhanCustomerStrip/WuhanCustomer5" unique_id=1637400511]
 z_index = 5
 layout_mode = 0
 offset_left = 80.0
@@ -1306,7 +1306,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_deliveryQuantityLabels|array|4")
 
-[node name="WuhanCustomerDropZone5" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer5"]
+[node name="WuhanCustomerDropZone5" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer5" unique_id=1981008834]
 z_index = 1
 layout_mode = 0
 anchor_right = 1.0
@@ -1316,7 +1316,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_y3ghk")
 script = ExtResource("5_m3qug")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customerDropZones|array|4")
 
-[node name="@VBoxContainer@332" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer5"]
+[node name="@VBoxContainer@332" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer5" unique_id=732320163]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1327,7 +1327,7 @@ offset_bottom = -5.0
 mouse_filter = 2
 theme_override_constants/separation = 16
 
-[node name="OrderBubble" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332"]
+[node name="OrderBubble" type="PanelContainer" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332" unique_id=263751000]
 custom_minimum_size = Vector2(332, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1336,19 +1336,19 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_j8e4r")
 script = ExtResource("6_33f4f")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_orders|array|4")
 
-[node name="OrderContent" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/OrderBubble"]
+[node name="OrderContent" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/OrderBubble" unique_id=590914923]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_content")
 
-[node name="OrderRows" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/OrderBubble/OrderContent"]
+[node name="OrderRows" type="VBoxContainer" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/OrderBubble/OrderContent" unique_id=61102540]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 0
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.OrderBubbleView|_rows")
 
-[node name="OrderPatience" type="ProgressBar" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/OrderBubble/OrderContent"]
+[node name="OrderPatience" type="ProgressBar" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/OrderBubble/OrderContent" unique_id=2010991919]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 mouse_filter = 2
@@ -1358,7 +1358,7 @@ value = 100.0
 show_percentage = false
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_patience|array|4", "ProjectCake.UI.OrderBubbleView|<Patience>k__BackingField")
 
-[node name="@Control@335" type="Control" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332"]
+[node name="@Control@335" type="Control" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332" unique_id=908924595]
 custom_minimum_size = Vector2(0, 220)
 clip_contents = true
 layout_mode = 2
@@ -1368,7 +1368,7 @@ script = ExtResource("7_kbbhe")
 Presentation = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_portraits|array|4")
 
-[node name="@TextureRect@333" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/@Control@335"]
+[node name="@TextureRect@333" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/@Control@335" unique_id=1517894092]
 layout_mode = 0
 offset_top = 6.0
 offset_bottom = 344.46155
@@ -1380,7 +1380,7 @@ expand_mode = 1
 stretch_mode = 5
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitView|_body")
 
-[node name="@TextureRect@334" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/@Control@335"]
+[node name="@TextureRect@334" type="TextureRect" parent="WuhanCustomerStrip/WuhanCustomer5/@VBoxContainer@332/@Control@335" unique_id=1407358611]
 layout_mode = 0
 offset_top = 6.0
 offset_bottom = 344.46155
@@ -1408,13 +1408,13 @@ offset_left = 603.0
 offset_top = 120.0
 offset_right = 827.0
 offset_bottom = 294.0
+mouse_default_cursor_shape = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_m1r2r")
 script = ExtResource("11_jo6ni")
 PayloadId = "wuhan:HotDryNoodles"
 DisplayName = "热干面"
 DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
 DragDisplaySize = Vector2(224, 174)
-mouse_default_cursor_shape = 2
 
 [node name="WuhanDrag_Doupi" type="PanelContainer" parent="WuhanWorkstation" unique_id=1230188628]
 visible = false
@@ -1423,13 +1423,13 @@ offset_left = 1095.0
 offset_top = 282.0
 offset_right = 1347.0
 offset_bottom = 372.0
+mouse_default_cursor_shape = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_cffhm")
 script = ExtResource("11_jo6ni")
 PayloadId = "wuhan:Doupi"
 DisplayName = "三鲜豆皮"
 DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
 DragDisplaySize = Vector2(100, 75)
-mouse_default_cursor_shape = 2
 
 [node name="WuhanDrag_EggRiceWine" type="PanelContainer" parent="WuhanWorkstation" unique_id=773993104]
 visible = false
@@ -1438,22 +1438,23 @@ offset_left = 1690.0
 offset_top = 223.0
 offset_right = 1754.0
 offset_bottom = 292.0
+mouse_default_cursor_shape = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_0swnx")
 script = ExtResource("11_jo6ni")
 PayloadId = "wuhan:EggRiceWine"
 DisplayName = "蛋酒"
 DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
 DragDisplaySize = Vector2(56, 60)
-mouse_default_cursor_shape = 2
 
-[node name="RefillNoodles" type="Button" parent="WuhanWorkstation"]
+[node name="RefillNoodles" type="Button" parent="WuhanWorkstation" unique_id=1251300914]
+layout_mode = 0
 offset_left = 16.0
 offset_top = 311.0
 offset_right = 64.0
 offset_bottom = 359.0
+tooltip_text = "补充库存"
 theme_override_font_sizes/font_size = 16
 text = "补"
-tooltip_text = "补充库存"
 metadata/ingredient_id = "wuhan_noodles"
 
 [node name="CoinTray" type="Control" parent="WuhanWorkstation" unique_id=641626216]
@@ -1896,7 +1897,6 @@ offset_left = 360.0
 offset_top = 588.0
 offset_right = 1560.0
 offset_bottom = 620.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.4627451, 0.6627451, 0.31764707, 1)
 theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
 theme_override_constants/outline_size = 5

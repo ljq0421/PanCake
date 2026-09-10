@@ -42,7 +42,9 @@ public readonly record struct WorkstationSlotSpec(
     Rect2? CaptionRect = null,
     float TrayVerticalScale = 1f,
     Rect2? StockFootprintRect = null,
-    StockStackLayout? StackLayout = null);
+    StockStackLayout? StackLayout = null,
+    Vector2? TableContactAnchor = null,
+    Vector2? VisualContactRatio = null);
 
 /// <summary>
 /// Keeps a workstation item visually anchored inside its container while input
@@ -144,6 +146,8 @@ public partial class WorkstationSlotView : Control
         SaveOptionalRect("containment", _spec.IngredientContainmentRect);
         SaveOptionalRect("caption", _spec.CaptionRect);
         SaveOptionalRect("footprint", _spec.StockFootprintRect);
+        SaveOptionalVector("contact", _spec.TableContactAnchor);
+        SaveOptionalVector("visual_contact_ratio", _spec.VisualContactRatio);
         SetMeta("_slot_has_stack", _spec.StackLayout.HasValue);
         if (_spec.StackLayout is StockStackLayout stack)
         {
@@ -161,6 +165,16 @@ public partial class WorkstationSlotView : Control
         SetMeta($"_slot_has_{key}", value.HasValue);
         if (value.HasValue) SetMeta($"_slot_{key}", value.Value);
     }
+
+    private void SaveOptionalVector(string key, Vector2? value)
+    {
+        SetMeta($"_slot_has_{key}", value.HasValue);
+        if (value.HasValue) SetMeta($"_slot_{key}", value.Value);
+    }
+
+    private Vector2? LoadOptionalVector(string key) =>
+        HasMeta($"_slot_has_{key}") && GetMeta($"_slot_has_{key}").AsBool()
+            ? GetMeta($"_slot_{key}").AsVector2() : null;
 
     private Rect2? LoadOptionalRect(string key) =>
         HasMeta($"_slot_has_{key}") && GetMeta($"_slot_has_{key}").AsBool()
@@ -196,7 +210,9 @@ public partial class WorkstationSlotView : Control
             LoadOptionalRect("caption"),
             (float)GetMeta("_slot_tray_vertical_scale").AsDouble(),
             LoadOptionalRect("footprint"),
-            stack);
+            stack,
+            LoadOptionalVector("contact"),
+            LoadOptionalVector("visual_contact_ratio"));
         if (_visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
         {
             _rotatedOpaqueBounds = RotatedOpaqueBounds(_ingredient.Texture, Mathf.DegToRad(32));
@@ -210,12 +226,16 @@ public partial class WorkstationSlotView : Control
 
     public Label CountLabel => _count;
     public Control HoverTarget => _ingredientAnchor;
+    public Vector2 TableContactAnchor => _spec.TableContactAnchor ?? new Vector2(TrayVisualRect.GetCenter().X, TrayVisualRect.End.Y);
+    public Vector2 VisualPivot => TrayVisualRect.GetCenter();
     public Rect2 TrayVisualRect
     {
         get
         {
             Rect2 fitted = FitInside(_tray.Texture?.GetSize() ?? Vector2.Zero, _spec.TrayRect);
             Vector2 size = fitted.Size * new Vector2(1, _spec.TrayVerticalScale);
+            if (_spec.TableContactAnchor is Vector2 contact)
+                return new Rect2(contact - size * (_spec.VisualContactRatio ?? new Vector2(.5f, 1)), size);
             return new Rect2(fitted.GetCenter() - size * .5f, size);
         }
     }
@@ -266,8 +286,9 @@ public partial class WorkstationSlotView : Control
         _count.Hide();
     }
 
-    public void ShowEmptyCaption(bool visible)
+    public void ShowEmptyCaption(bool visible, string? text = null)
     {
+        if (text is not null) _label.Text = text;
         _captionPlate.Hide();
         _count.Hide();
         _label.Visible = visible;

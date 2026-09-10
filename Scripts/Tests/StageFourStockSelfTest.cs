@@ -22,7 +22,7 @@ public partial class StageFourSelfTest
             int capacity = catalog.IngredientStationsByLevel[level].GetCapacity(id);
             var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
             AddChild(slot);
-            slot.ConfigureStock(art.IngredientTray, art.Ingredient(id), id, TianjinWorkbenchLayout.IngredientSlot(id),
+            slot.ConfigureStock(art.WorkbenchTray, art.Ingredient(id), id, TianjinWorkbenchLayout.IngredientSlot(id),
                 id == StableIds.Ingredients.Scallion ? IngredientVisualMode.LooseStock : IngredientVisualMode.HybridStock);
             var inventory = new IngredientInventory(catalog.IngredientStationsByLevel[level]);
             // Capacity chooses the fixed cell layout once; taking stock must not
@@ -45,29 +45,16 @@ public partial class StageFourSelfTest
                 $"Lv{level} {id} 后排先绘制，前排后绘制，取料从前排最后一份开始");
             if (id == StableIds.Ingredients.Egg)
             {
-                Rect2 anchor = TianjinWorkbenchLayout.IngredientSlot(id).IngredientAnchorRect;
-                Check(capacityVisuals.Select((visual, index) =>
-                {
-                    int row = index / columns, column = index % columns;
-                    Vector2 foot = anchor.Position + visual.GetTransform() * new Vector2(visual.Size.X * .5f, visual.Size.Y);
-                    return foot.IsEqualApprox(new Vector2(124 + (column - (columns - 1) * .5f) * 34 + (row == 0 ? 4 : -4), row == 0 ? 51 : 82));
-                }).All(matches => matches) && Mathf.IsEqualApprox(identities[0].Size.X, 46),
-                    $"Lv{level} 鸡蛋保持已确认的大小和全部落点");
+                Check(capacityVisuals.All(visual => new Rect2(28, 22, 196, 68).Encloses(slot.IngredientBounds(visual)))
+                    && capacityVisuals.All(visual => visual.Size.X >= 34 && visual.Size.Y >= 40),
+                    $"Lv{level} 鸡蛋完整落在盘沿内并保留可辨认的大小");
             }
             else
             {
                 Check(slot.IngredientBounds(capacityVisuals[0]).Intersects(slot.IngredientBounds(capacityVisuals[columns])),
                     $"Lv{level} {id} 前后排实物相互覆盖");
-                Vector2 previousFrame = id switch
-                {
-                    StableIds.Ingredients.Crispy => new(58, 62),
-                    StableIds.Ingredients.Ham => new(46, 62),
-                    _ => new(46, 34),
-                };
-                Vector2 sourceSize = identities[0].Texture.GetSize();
-                Vector2 previousSize = sourceSize * Math.Min(previousFrame.X / sourceSize.X, previousFrame.Y / sourceSize.Y);
-                Check(capacityVisuals.All(item => item.Size.IsEqualApprox(previousSize * 1.2f)),
-                    $"Lv{level} {id} 比上一版等比放大1.2倍");
+                Check(capacityVisuals.All(item => item.Size.X >= 40 && item.Size.Y >= 24),
+                    $"Lv{level} {id} 在盘内保持可辨认的实物大小");
                 if (id == StableIds.Ingredients.Scallion)
                 {
                     Check(capacityVisuals.All(item => new Rect2(32, 40, 184, 46).Encloses(slot.IngredientBounds(item))),

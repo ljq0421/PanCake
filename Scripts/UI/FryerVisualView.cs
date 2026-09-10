@@ -60,6 +60,32 @@ public partial class FryerVisualView : Control
     private float _effectPhase;
     private bool _lastLowered;
     private Tween? _basketTween;
+    private Node2D _basketAnchor = null!;
+    public bool UseTableContact { get; set; }
+    public Vector2 TableContactAnchor => FittedSquare(Size, 2).Position + FittedSquare(Size, 2).Size * new Vector2(.5f, .86f);
+    public Vector2 OpeningCenter => FittedSquare(Size, 2).Position + FittedSquare(Size, 2).Size * new Vector2(.5f, .4025f);
+
+    public override void _Ready()
+    {
+        _basketAnchor = GetNodeOrNull<Node2D>("BasketAnchor")!;
+        if (_basketAnchor is null)
+        {
+            _basketAnchor = new Node2D { Name = "BasketAnchor" };
+            AddChild(_basketAnchor); // Programmatic previews may omit the packed scene.
+        }
+        _basketAnchor.Draw += DrawBasket;
+    }
+
+    private Rect2 BodyCanvas()
+    {
+        Rect2 canvas = FittedSquare(Size, 2);
+        if (!UseTableContact || _machine is null) return canvas;
+        // Measured opaque feet, independent of transparent image padding.
+        float contact = _machine.Level.Level switch { 1 => 1059f / 1254, 2 => 1049f / 1254, _ => 1107f / 1254 };
+        float factor = (.86f - .4025f) / (contact - InnerFrameForLevel(_machine.Level.Level).GetCenter().Y);
+        Vector2 size = canvas.Size * factor;
+        return new Rect2(TableContactAnchor - size * new Vector2(.5f, contact), size);
+    }
 
     public void Bind(TianjinArtCatalog art, FryerStateMachine machine)
     {
@@ -109,16 +135,27 @@ public partial class FryerVisualView : Control
     {
         if (_art is null || _machine is null || Size.X <= 0 || Size.Y <= 0) return;
 
-        Rect2 canvas = FittedSquare(Size, 2);
+        Rect2 canvas = BodyCanvas();
         DrawTextureRect(_art.FryerBody(_machine.Level.Level), canvas, false);
 
+        _basketAnchor.Position = canvas.Position;
+        _basketAnchor.QueueRedraw();
+    }
+
+    private void DrawBasket()
+    {
+        if (_art is null || _machine is null) return;
+        Rect2 canvas = new(Vector2.Zero, BodyCanvas().Size);
+
         FryerBatchRuntime runtime = _machine.Runtime;
+        Rect2 lowered = LoweredBasketPlacementForLevel(_machine.Level.Level);
+        Rect2 raised = UseTableContact ? new Rect2(lowered.Position + new Vector2(0, -.07f), lowered.Size)
+            : BasketPlacementForLevel(_machine.Level.Level);
         Rect2 basketPlacement = InterpolateRect(
-            BasketPlacementForLevel(_machine.Level.Level),
-            LoweredBasketPlacementForLevel(_machine.Level.Level),
+            raised, lowered,
             _loweredProgress);
         Rect2 basketRect = ResolveBasketRect(canvas, basketPlacement);
-        DrawTextureRect(_art.FryerBasket(_machine.Level.Level), basketRect, false);
+        _basketAnchor.DrawTextureRect(_art.FryerBasket(_machine.Level.Level), basketRect, false);
         DrawBatch(runtime, canvas, basketPlacement);
         DrawCookingEffects(runtime, canvas, basketPlacement);
         DrawStateIndicator(runtime, canvas, basketPlacement);
@@ -141,10 +178,10 @@ public partial class FryerVisualView : Control
             Vector2 normalizedPosition = basketPlacement.Position + slot.NormalizedPosition * basketPlacement.Size;
             Vector2 center = canvas.Position + canvas.Size * normalizedPosition;
             Vector2 itemSize = FitInside(texture.GetSize(), slotBounds * slot.Scale);
-            DrawSetTransform(center, Mathf.DegToRad(slot.RotationDegrees), Vector2.One);
-            DrawTextureRect(texture, new Rect2(itemSize * -0.5f, itemSize), false, tint);
+            _basketAnchor.DrawSetTransform(center, Mathf.DegToRad(slot.RotationDegrees), Vector2.One);
+            _basketAnchor.DrawTextureRect(texture, new Rect2(itemSize * -0.5f, itemSize), false, tint);
         }
-        DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        _basketAnchor.DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
     private void DrawCookingEffects(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)
@@ -158,7 +195,7 @@ public partial class FryerVisualView : Control
             float y = 0.61f - phase * 0.19f;
             Vector2 normalizedPosition = basketPlacement.Position + new Vector2(x, y) * basketPlacement.Size;
             float radius = canvas.Size.X * basketPlacement.Size.X * (0.008f + (i % 3) * 0.003f);
-            DrawCircle(canvas.Position + canvas.Size * normalizedPosition, radius, new Color(bubble, 0.78f * (1f - phase)));
+            _basketAnchor.DrawCircle(canvas.Position + canvas.Size * normalizedPosition, radius, new Color(bubble, 0.78f * (1f - phase)));
         }
     }
 
@@ -173,7 +210,7 @@ public partial class FryerVisualView : Control
             for (int index = -1; index <= 1; index++)
             {
                 Vector2 center = new(basket.GetCenter().X + index * basket.Size.X * 0.16f, y);
-                DrawArc(center, 8, Mathf.Pi * 1.10f, Mathf.Pi * 1.90f, 12, ready, 4, true);
+                _basketAnchor.DrawArc(center, 8, Mathf.Pi * 1.10f, Mathf.Pi * 1.90f, 12, ready, 4, true);
             }
         }
         else if (runtime.State is FryerState.Raised or FryerState.Draining)
@@ -186,15 +223,15 @@ public partial class FryerVisualView : Control
             {
                 float offset = (index + 1) * 0.14f + progress * 0.08f;
                 Vector2 center = new(basket.GetCenter().X + index * basket.Size.X * 0.13f, basket.End.Y - basket.Size.Y * offset);
-                DrawCircle(center, 4, drop);
+                _basketAnchor.DrawCircle(center, 4, drop);
             }
         }
         else if (runtime.State == FryerState.Burnt)
         {
             Vector2 center = basket.GetCenter() + new Vector2(0, -basket.Size.Y * 0.08f);
             Vector2 diagonal = new(11, 11);
-            DrawLine(center - diagonal, center + diagonal, TianjinUi.Red, 5, true);
-            DrawLine(center + new Vector2(-diagonal.X, diagonal.Y), center + new Vector2(diagonal.X, -diagonal.Y), TianjinUi.Red, 5, true);
+            _basketAnchor.DrawLine(center - diagonal, center + diagonal, TianjinUi.Red, 5, true);
+            _basketAnchor.DrawLine(center + new Vector2(-diagonal.X, diagonal.Y), center + new Vector2(diagonal.X, -diagonal.Y), TianjinUi.Red, 5, true);
         }
     }
 

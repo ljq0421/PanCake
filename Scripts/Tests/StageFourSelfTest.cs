@@ -23,6 +23,13 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--workbench-v1-only", StringComparer.Ordinal))
+            {
+                await TestTianjinWorkbenchV1(catalog);
+                GD.Print($"天津工作台 V1 自测完成：{_passed} 项通过，{_failed} 项失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             TestSauceOrders(catalog);
             await TestSauceWorkstation(catalog);
             if (OS.GetCmdlineUserArgs().Contains("--sauce-only", StringComparer.Ordinal))
@@ -68,6 +75,7 @@ public partial class StageFourSelfTest : Node
             await TestDirectDelivery(catalog);
             await TestProductionShortcuts(catalog);
             await TestMultiPancakeTray(catalog);
+            await TestTianjinWorkbenchV1(catalog);
         }
         catch (Exception exception)
         {
@@ -423,14 +431,13 @@ public partial class StageFourSelfTest : Node
             var oldCanvas = (PancakeCanvas)legacy.FindChild("PancakeCanvas", true, false);
             var stoveZone = (DropZone)workstation.FindChild("PancakeDropZone", true, false);
             Rect2 Moved(Rect2 rect) => new(rect.Position + new Vector2(50, 50), rect.Size);
-            Check(canvas.GetSurfaceRect() == oldCanvas.GetSurfaceRect()
+            Rect2 surface = canvas.GetSurfaceRect();
+            Rect2 surfaceInput = new(canvas.GetGlobalRect().Position + surface.Position - new Vector2(42, 42), surface.Size + new Vector2(84, 84));
+            Check(canvas.UseTableContact && !oldCanvas.UseTableContact
                 && canvas.GetGlobalRect() == Moved(oldCanvas.GetGlobalRect())
-                && stoveZone.GetGlobalRect() == Moved(((Control)legacy.FindChild("PancakeDropZone", true, false)).GetGlobalRect())
-                && ((Control)workstation.FindChild("PancakeStrokeInput", true, false)).GetGlobalRect()
-                    == Moved(((Control)legacy.FindChild("PancakeStrokeInput", true, false)).GetGlobalRect())
-                && ((Control)workstation.FindChild("FryerVisual", true, false)).GetGlobalRect()
-                    == new Rect2(((Control)legacy.FindChild("FryerVisual", true, false)).GetGlobalRect().Position + new Vector2(0, 50), ((Control)legacy.FindChild("FryerVisual", true, false)).Size),
-                $"Lv{level} 炉子与操作区右移50，炸篮保持原位置，尺寸不变");
+                && stoveZone.GetGlobalRect().IsEqualApprox(surfaceInput)
+                && ((Control)workstation.FindChild("PancakeStrokeInput", true, false)).GetGlobalRect().IsEqualApprox(surfaceInput),
+                $"Lv{level} 天津炉面校准后拖放与划动热区跟随同一几何，练习页保持原配置");
 
             var slots = workstation.FindChildren("IngredientSlot_*", "Control", true, false).OfType<IngredientStockSlotView>().ToArray();
             Check(slots.All(slot => slot.IngredientIsInsideTray(4)), $"Lv{level} 配料图片均在容器安全区域内",
@@ -461,8 +468,9 @@ public partial class StageFourSelfTest : Node
             var soyTrayArt = (TextureRect)workstation.FindChild("SoyMilkTrayArt", true, false);
             var coinTrayArt = (TextureRect)workstation.FindChild("CoinTrayArt", true, false);
             Check(ReferenceEquals(finishedTrayArt.Texture, soyTrayArt.Texture) && ReferenceEquals(finishedTrayArt.Texture, coinTrayArt.Texture)
-                && finishedTrayArt.Size == new Vector2(250, 86) && soyTrayArt.Size == finishedTrayArt.Size && coinTrayArt.Size == finishedTrayArt.Size,
-                $"Lv{level} 金币、成品、豆浆托盘共用同一素材与250×86尺寸");
+                && finishedTrayArt.Size == new Vector2(250, 82) && soyTrayArt.Size == finishedTrayArt.Size && coinTrayArt.Size == finishedTrayArt.Size
+                && coinTrayArt.SelfModulate != finishedTrayArt.SelfModulate,
+                $"Lv{level} 后排托盘深度一致，金币盘有独立材质");
             var collectInput = (Control)workstation.CoinTray!.FindChild("CollectCoins", true, false);
             var finishedInput = (Control)workstation.FindChild("FinishedPancakeDrag", true, false);
             var soyInput = (Control)soy.FindChild("StockGesture_soy_milk", true, false);

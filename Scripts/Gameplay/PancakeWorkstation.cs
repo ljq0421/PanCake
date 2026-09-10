@@ -177,6 +177,9 @@ public partial class PancakeWorkstation : Control
     public bool DeliverToCustomer(string payload, Func<bool> deliver)
     {
         if (!CanDeliverProduct(payload) || !deliver()) return false;
+        LearnWorkbenchAction($"deliver:{payload}");
+        if (payload == SoyMilkPayload) LearnWorkbenchAction("take:soy_milk");
+        if (payload == StoredYoutiaoPayload) LearnWorkbenchAction("take:youtiao");
         _audio.Play(PancakeSound.Success);
         if (payload == "finished_pancake" && !UseServingTray)
         {
@@ -199,6 +202,7 @@ public partial class PancakeWorkstation : Control
                 _ingredientSlots[key["IngredientSlot_".Length..]] = slot;
         }
 
+        if (UseServingTray) ConfigureTianjinPresentation();
         _drag.Configure(this);
         _drag.DragStarted += _ => _audio.Play(PancakeSound.PickUp);
         _drag.DragEnded += OnDragEnded;
@@ -317,6 +321,12 @@ public partial class PancakeWorkstation : Control
             };
         }
         _trashZone.Configure(CanTrashPayload, DiscardPayload, _ => _trashZone.GetGlobalRect().GetCenter());
+        if (UseServingTray)
+        {
+            _trashZone.HitPadding = 0;
+            _trashZone.FixedHitRect = new Rect2(_trashZone.Position, _trashZone.Size);
+            BuildFirstUseHints();
+        }
         _drag.RegisterZone(_trashZone);
     }
 
@@ -626,6 +636,7 @@ public partial class PancakeWorkstation : Control
             return false;
         }
 
+        LearnPancakeAction(command, id);
         if (command == PancakeCommand.CompleteSauce) _stroke.CancelStroke();
 
         if (consumedYoutiao is YoutiaoQuality quality)
@@ -660,6 +671,13 @@ public partial class PancakeWorkstation : Control
         if (!result.Success) Reject(result.Message);
         else
         {
+            LearnWorkbenchAction(command switch
+            {
+                FryerCommand.LoadOne => "fryer:load",
+                FryerCommand.LowerBasket => "fryer:lower",
+                FryerCommand.RaiseBasket => "fryer:raise",
+                _ => "discard",
+            });
             if (command == FryerCommand.LoadOne) _audio.Play(PancakeSound.PickUp);
             else if (command == FryerCommand.LowerBasket) _audio.Play(PancakeSound.Sizzle);
             else if (command == FryerCommand.RaiseBasket) _audio.Play(PancakeSound.Flip);
@@ -694,6 +712,7 @@ public partial class PancakeWorkstation : Control
             {
                 if (PancakeTray.Selected is PreparedPancake prepared && PancakeTray.TryTake(prepared))
                 {
+                    LearnWorkbenchAction("discard");
                     Render();
                     Inform("选中的装袋煎饼已丢弃。", false);
                 }
@@ -701,13 +720,17 @@ public partial class PancakeWorkstation : Control
             }
             if (Machine.TryExecute(PancakeCommand.Discard).Success)
             {
+                LearnWorkbenchAction("discard");
                 _stroke.ResetCoverage();
                 Inform("装袋煎饼已丢弃。", false);
             }
             return;
         }
         if (id == StoredYoutiaoPayload && FryerMachine?.Inventory.TryTake(out _) == true)
+        {
+            LearnWorkbenchAction("discard");
             Inform("一根库存油条已丢弃。", false);
+        }
     }
     private void SubmitStandalone(ProductKind kind)
     {
@@ -721,17 +744,17 @@ public partial class PancakeWorkstation : Control
     private void RefillSoyMilk()
     {
         if (!CanInteract || SoyMilkTray?.TryBeginRefill() != true) Reject("豆浆托盘已满或当前不能补货。");
-        else Inform("开始补豆浆，0.6 秒后补满。", false);
+        else { LearnWorkbenchAction("refill:soy_milk"); Inform("开始补豆浆，0.6 秒后补满。", false); }
     }
     private void Refill(string id)
     {
         if (!CanInteract || !Inventory.TryBeginRefill(id)) Reject("料盒已满或正在补料。");
-        else Inform($"{IngredientName(id)}开始补货，{Inventory.LevelData.RefillSeconds:0.0} 秒后补满。", false);
+        else { LearnWorkbenchAction($"refill:{id}"); Inform($"{IngredientName(id)}开始补货，{Inventory.LevelData.RefillSeconds:0.0} 秒后补满。", false); }
     }
     private void Discard()
     {
         PancakeActionResult result = Machine.TryExecute(PancakeCommand.Discard);
-        if (!result.Success) Reject(result.Message); else { _stroke.ResetCoverage(); Inform("炉面已清理。", false); }
+        if (!result.Success) Reject(result.Message); else { LearnWorkbenchAction("discard"); _stroke.ResetCoverage(); Inform("炉面已清理。", false); }
     }
     private void Submit()
     {
@@ -789,6 +812,8 @@ public partial class PancakeWorkstation : Control
                         ? $"{IngredientName(id)}已经用完，{(UseServingTray ? "长按" : "点击 + ")}补货。"
                         : UseServingTray ? $"{IngredientName(id)}快用完了，长按补货。"
                         : $"{IngredientName(id)}只剩 {quantity} 份，可以点击 + 补货。";
+                    if (_tutorialMemory && !NeedsTeaching($"refill:{id}"))
+                        message = status == IngredientStockStatus.Empty ? $"{IngredientName(id)}已用完。" : $"{IngredientName(id)}余量不足。";
                     Inform(message, false);
                 }
             }
@@ -909,6 +934,7 @@ public partial class PancakeWorkstation : Control
         });
         _canvas.QueueRedraw();
         _stroke.RefreshVisualState();
+        RenderTutorial();
     }
 
     private void UpdateBagPresentation(PancakeState state)

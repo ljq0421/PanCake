@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-10T01:54:10.260Z",
+  "title": "早餐铺子：全局标题页",
+  "scope": "仅 Scenes/UI/StartScreen.tscn；不包含城市皮肤；运行平台为 Godot PC。",
+  "extensions": {
+    "colorMeta": {
+      "cover-cream": {
+        "displayName": "cover-cream",
+        "tonalRamp": [
+          "oklch(from #FFF6E5 15% c h)",
+          "oklch(from #FFF6E5 26% c h)",
+          "oklch(from #FFF6E5 38% c h)",
+          "oklch(from #FFF6E5 49% c h)",
+          "oklch(from #FFF6E5 61% c h)",
+          "oklch(from #FFF6E5 72% c h)",
+          "oklch(from #FFF6E5 84% c h)",
+          "oklch(from #FFF6E5 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      },
+      "cover-teal": {
+        "displayName": "cover-teal",
+        "tonalRamp": [
+          "oklch(from #286354 15% c h)",
+          "oklch(from #286354 26% c h)",
+          "oklch(from #286354 38% c h)",
+          "oklch(from #286354 49% c h)",
+          "oklch(from #286354 61% c h)",
+          "oklch(from #286354 72% c h)",
+          "oklch(from #286354 84% c h)",
+          "oklch(from #286354 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      },
+      "cover-ink": {
+        "displayName": "cover-ink",
+        "tonalRamp": [
+          "oklch(from #3E382B 15% c h)",
+          "oklch(from #3E382B 26% c h)",
+          "oklch(from #3E382B 38% c h)",
+          "oklch(from #3E382B 49% c h)",
+          "oklch(from #3E382B 61% c h)",
+          "oklch(from #3E382B 72% c h)",
+          "oklch(from #3E382B 84% c h)",
+          "oklch(from #3E382B 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      },
+      "cover-apricot": {
+        "displayName": "cover-apricot",
+        "tonalRamp": [
+          "oklch(from #F2C67D 15% c h)",
+          "oklch(from #F2C67D 26% c h)",
+          "oklch(from #F2C67D 38% c h)",
+          "oklch(from #F2C67D 49% c h)",
+          "oklch(from #F2C67D 61% c h)",
+          "oklch(from #F2C67D 72% c h)",
+          "oklch(from #F2C67D 84% c h)",
+          "oklch(from #F2C67D 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      },
+      "cover-brick": {
+        "displayName": "cover-brick",
+        "tonalRamp": [
+          "oklch(from #983F32 15% c h)",
+          "oklch(from #983F32 26% c h)",
+          "oklch(from #983F32 38% c h)",
+          "oklch(from #983F32 49% c h)",
+          "oklch(from #983F32 61% c h)",
+          "oklch(from #983F32 72% c h)",
+          "oklch(from #983F32 84% c h)",
+          "oklch(from #983F32 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      },
+      "cover-muted": {
+        "displayName": "cover-muted",
+        "tonalRamp": [
+          "oklch(from #665C49 15% c h)",
+          "oklch(from #665C49 26% c h)",
+          "oklch(from #665C49 38% c h)",
+          "oklch(from #665C49 49% c h)",
+          "oklch(from #665C49 61% c h)",
+          "oklch(from #665C49 72% c h)",
+          "oklch(from #665C49 84% c h)",
+          "oklch(from #665C49 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      },
+      "cover-disabled": {
+        "displayName": "cover-disabled",
+        "tonalRamp": [
+          "oklch(from #E1DDCF 15% c h)",
+          "oklch(from #E1DDCF 26% c h)",
+          "oklch(from #E1DDCF 38% c h)",
+          "oklch(from #E1DDCF 49% c h)",
+          "oklch(from #E1DDCF 61% c h)",
+          "oklch(from #E1DDCF 72% c h)",
+          "oklch(from #E1DDCF 84% c h)",
+          "oklch(from #E1DDCF 95% c h)"
+        ],
+        "note": "色阶仅供文档预览，并非游戏运行令牌。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "cover-control",
+        "value": "0 5px 5px rgba(48,43,31,.16)",
+        "purpose": "单层向下阴影；按下与禁用态移除。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "cover-enter",
+        "value": "250ms Expo Out",
+        "purpose": "设计画布淡入。"
+      },
+      {
+        "name": "cover-button",
+        "value": "120ms Quad Out",
+        "purpose": "按下缩至 0.98，释放恢复；新反馈中断旧反馈。"
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "开始游戏",
+      "kind": "button",
+      "refersTo": "cover-button-primary",
+      "description": "全局开始页 Godot 控件的 HTML/CSS 文档预览；运行样式以 StartScreenTheme.cs 为准。",
+      "html": "<button class=\"ds-cover-button-primary\">开始游戏</button>",
+      "css": ".ds-cover-button-primary{font-family:system-ui,sans-serif;font-size:30px;border:3px solid #3E382B;border-radius:20px;padding:12px 24px;min-height:82px;box-shadow:0 5px 5px rgba(48,43,31,.16);transition:transform 120ms ease-out;background:#286354;color:#FFF6E5;width:420px}.ds-cover-button-primary:hover:not(:disabled){background:color-mix(in srgb,#286354,white 7%)}.ds-cover-button-primary:focus-visible{outline:4px solid #286354;outline-offset:2px}.ds-cover-button-primary:active:not(:disabled){background:color-mix(in srgb,#286354,black 6%);box-shadow:none;transform:scale(.98)}.ds-cover-button-primary:disabled{border-width:2px;box-shadow:none;background:#E1DDCF;color:#665C49}"
+    },
+    {
+      "name": "退出游戏",
+      "kind": "button",
+      "refersTo": "cover-button-secondary",
+      "description": "全局开始页 Godot 控件的 HTML/CSS 文档预览；运行样式以 StartScreenTheme.cs 为准。",
+      "html": "<button class=\"ds-cover-button-secondary\">退出游戏</button>",
+      "css": ".ds-cover-button-secondary{font-family:system-ui,sans-serif;font-size:30px;border:3px solid #3E382B;border-radius:20px;padding:12px 24px;min-height:82px;box-shadow:0 5px 5px rgba(48,43,31,.16);transition:transform 120ms ease-out;background:#FFF6E5;color:#3E382B;width:420px}.ds-cover-button-secondary:hover:not(:disabled){background:color-mix(in srgb,#FFF6E5,white 7%)}.ds-cover-button-secondary:focus-visible{outline:4px solid #286354;outline-offset:2px}.ds-cover-button-secondary:active:not(:disabled){background:color-mix(in srgb,#FFF6E5,black 6%);box-shadow:none;transform:scale(.98)}.ds-cover-button-secondary:disabled{border-width:2px;box-shadow:none;background:#E1DDCF;color:#665C49}"
+    },
+    {
+      "name": "重新开始",
+      "kind": "button",
+      "refersTo": "cover-button-destructive",
+      "description": "全局开始页 Godot 控件的 HTML/CSS 文档预览；运行样式以 StartScreenTheme.cs 为准。",
+      "html": "<button class=\"ds-cover-button-destructive\">重新开始</button>",
+      "css": ".ds-cover-button-destructive{font-family:system-ui,sans-serif;font-size:30px;border:3px solid #3E382B;border-radius:20px;padding:12px 24px;min-height:82px;box-shadow:0 5px 5px rgba(48,43,31,.16);transition:transform 120ms ease-out;background:#983F32;color:#FFF6E5;width:420px}.ds-cover-button-destructive:hover:not(:disabled){background:color-mix(in srgb,#983F32,white 7%)}.ds-cover-button-destructive:focus-visible{outline:4px solid #286354;outline-offset:2px}.ds-cover-button-destructive:active:not(:disabled){background:color-mix(in srgb,#983F32,black 6%);box-shadow:none;transform:scale(.98)}.ds-cover-button-destructive:disabled{border-width:2px;box-shadow:none;background:#E1DDCF;color:#665C49}"
+    },
+    {
+      "name": "继续游戏 · 暂无存档",
+      "kind": "button",
+      "refersTo": "cover-button-disabled",
+      "description": "全局开始页 Godot 控件的 HTML/CSS 文档预览；运行样式以 StartScreenTheme.cs 为准。",
+      "html": "<button class=\"ds-cover-button-disabled\" disabled>继续游戏 · 暂无存档</button>",
+      "css": ".ds-cover-button-disabled{font-family:system-ui,sans-serif;font-size:30px;border:3px solid #3E382B;border-radius:20px;padding:12px 24px;min-height:82px;box-shadow:0 5px 5px rgba(48,43,31,.16);transition:transform 120ms ease-out;background:#E1DDCF;color:#665C49;width:420px}.ds-cover-button-disabled:hover:not(:disabled){background:color-mix(in srgb,#E1DDCF,white 7%)}.ds-cover-button-disabled:focus-visible{outline:4px solid #286354;outline-offset:2px}.ds-cover-button-disabled:active:not(:disabled){background:color-mix(in srgb,#E1DDCF,black 6%);box-shadow:none;transform:scale(.98)}.ds-cover-button-disabled:disabled{border-width:2px;box-shadow:none;background:#E1DDCF;color:#665C49}"
+    },
+    {
+      "name": "覆盖确认纸面",
+      "kind": "custom",
+      "description": "确认面板的视觉预览；实际模态焦点与输入行为由 Godot 控制。",
+      "html": "<section class=\"ds-cover-confirmation\"><h2>重新开始旅程？</h2><p>开始新游戏将清空所有城市的营业进度、金币和设备升级。</p></section>",
+      "css": ".ds-cover-confirmation{font-family:system-ui,sans-serif;background:#FFF6E5;color:#3E382B;border:4px solid #3E382B;border-radius:20px;padding:46px 56px;box-shadow:0 5px 5px rgba(48,43,31,.16)}.ds-cover-confirmation h2{font-size:40px}.ds-cover-confirmation p{font-size:28px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "去各地开早餐铺",
+    "overview": "清晨开店与旅行同时构成游戏的第一印象。封面采用奶油、青绿、杏黄与砖红的温暖二维画面，保留圆润轮廓、清楚描边与低细节。它不绑定城市地标、已解锁城市或城市数量。",
+    "keyCharacteristics": [],
+    "rules": [],
+    "dos": [
+      "Do 保留全局封面的独立品牌、三项固定菜单和明确的存档状态；新增城市无需改封面。"
+    ],
+    "donts": [
+      "Don't 用天津专属素材、城市数量或解锁状态定义全局标题页，也不要将封面配色覆盖到已有城市皮肤。"
+    ]
+  }
+}

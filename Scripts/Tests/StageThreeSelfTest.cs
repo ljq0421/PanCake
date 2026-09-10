@@ -234,6 +234,7 @@ public partial class StageThreeSelfTest : Node
     {
         string[] productionScenes =
         {
+            "res://Scenes/UI/StartScreen.tscn",
             "res://Scenes/UI/MorningHub.tscn",
             "res://Scenes/UI/WuhanHub.tscn",
             "res://Scenes/UI/XianHub.tscn",
@@ -265,7 +266,7 @@ public partial class StageThreeSelfTest : Node
         CheckStaticUiSourceGuard();
 
         PackedScene mainScene = ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn"); Node main = mainScene.Instantiate();
-        Check(main.HasNode("UI/MorningHub") && main.HasNode("UI/WuhanHub") && main.HasNode("UI/XianHub")
+        Check(main.HasNode("UI/StartScreen") && main.HasNode("UI/MorningHub") && main.HasNode("UI/WuhanHub") && main.HasNode("UI/XianHub")
             && main.HasNode("UI/GuangzhouHub") && main.HasNode("UI/YangzhouHub")
             && main.HasNode("UI/TianjinDayScreen") && main.HasNode("UI/WuhanDayScreen")
             && main.HasNode("UI/XianDayScreen") && main.HasNode("UI/GuangzhouDayScreen")
@@ -308,6 +309,7 @@ public partial class StageThreeSelfTest : Node
     {
         string[] pageSources =
         {
+            "res://Scripts/UI/StartScreen.cs",
             "res://Scripts/UI/MorningHub.cs", "res://Scripts/UI/WuhanHub.cs",
             "res://Scripts/UI/XianHub.cs", "res://Scripts/UI/GuangzhouHub.cs",
             "res://Scripts/UI/YangzhouHub.cs", "res://Scripts/UI/TianjinMapScreen.cs",

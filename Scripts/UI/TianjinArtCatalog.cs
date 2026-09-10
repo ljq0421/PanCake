@@ -119,6 +119,23 @@ public sealed class TianjinArtCatalog
     public Texture2D SoyTray => Get("soy_tray");
     public Texture2D ServingTray => Get("serving_tray");
     public Texture2D IngredientTray => Get("ingredient_tray");
+    public Texture2D WorkbenchTray => LoadWorkbenchTray();
+    public Texture2D WorkbenchRack
+    {
+        get
+        {
+            const string key = "workbench_rack_v1";
+            if (!_textures.ContainsKey(key)) Load(key, "Workbench/rack_left_v1.png");
+            return Get(key);
+        }
+    }
+
+    private Texture2D LoadWorkbenchTray()
+    {
+        const string key = "workbench_tray_v1";
+        if (!_textures.ContainsKey(key)) Load(key, "Workbench/tray_right_v1.png");
+        return Get(key);
+    }
     public Texture2D BatterContainer => Get("batter_container");
     public Texture2D SauceContainer => Get("sauce_container");
     public Texture2D EmptyBatterContainer => Get("batter_empty");

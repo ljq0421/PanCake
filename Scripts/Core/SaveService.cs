@@ -30,11 +30,13 @@ public sealed class CityProgressData
     public List<string> UnlockedCollectibleIds { get; set; } = new();
     public Dictionary<int, DayBestRecord> DayBestRecords { get; set; } = new();
     public DayPlan? LastDayPlan { get; set; }
+    public HashSet<string> LearnedWorkbenchActions { get; set; } = new(StringComparer.Ordinal);
 }
 
 public sealed class SaveData
 {
     public int Version { get; set; } = SaveService.CurrentVersion;
+    public string LastVisitedCityId { get; set; } = StableIds.Cities.Tianjin;
     public int Coins { get; set; }
     public Dictionary<string, CityProgressData> Cities { get; set; } = new(StringComparer.Ordinal) { [StableIds.Cities.Tianjin] = SaveService.NewTianjinProgress() };
     public List<string> UnlockedCityIds { get; set; } = new() { StableIds.Cities.Tianjin };
@@ -116,13 +118,36 @@ public partial class SaveService : Node
     public string LoadErrorMessage { get; private set; } = string.Empty;
     public string CorruptBackupPath { get; private set; } = string.Empty;
     public bool MigratedLegacySave { get; private set; }
+    public bool HasSavedGame { get; private set; }
+    public bool CanContinue => HasSavedGame && !HasLoadError;
+    public bool RequiresNewGameConfirmation => HasSavedGame || HasLoadError;
+    public string ContinueCityId => IsKnownCity(Data.LastVisitedCityId)
+        && Data.UnlockedCityIds.Contains(Data.LastVisitedCityId)
+        ? Data.LastVisitedCityId : StableIds.Cities.Tianjin;
+
+    private static bool IsKnownCity(string? cityId) => cityId is StableIds.Cities.Tianjin
+        or StableIds.Cities.Wuhan or StableIds.Cities.Xian or StableIds.Cities.Guangzhou or StableIds.Cities.Yangzhou;
+
+    public bool TryRecordCityVisit(string cityId, out string error)
+    {
+        error = string.Empty;
+        // Previewing locked cities through developer tools must never change the resume target.
+        if (!IsKnownCity(cityId) || !Data.UnlockedCityIds.Contains(cityId)) return true;
+        if (HasLoadError) { error = LoadErrorMessage; return false; }
+        if (!HasSavedGame || Data.LastVisitedCityId == cityId) return true;
+        string previous = Data.LastVisitedCityId;
+        Data.LastVisitedCityId = cityId;
+        if (!TrySave(out error)) { Data.LastVisitedCityId = previous; return false; }
+        Changed?.Invoke();
+        return true;
+    }
     public override void _Ready() => Load();
     public void UsePathForTests(string path) { _savePath = path; _legacyPath = null; Load(); }
     public void UsePathsForTests(string currentPath, string legacyPath) { _savePath = currentPath; _legacyPath = legacyPath; Load(); }
 
     public void Load()
     {
-        ClearLoadError(); MigratedLegacySave = false;
+        ClearLoadError(); MigratedLegacySave = false; HasSavedGame = false;
         string absolute = ProjectSettings.GlobalizePath(_savePath);
         if (!File.Exists(absolute))
         {
@@ -130,7 +155,7 @@ public partial class SaveService : Node
             if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
             Data = new SaveData(); Changed?.Invoke(); return;
         }
-        try { SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions); Validate(loaded); Data = loaded!; EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); }
+        try { SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions); Validate(loaded); Data = loaded!; EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; }
         catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
@@ -138,7 +163,7 @@ public partial class SaveService : Node
     public bool ConfirmCreateNewAfterCorruption(out string error)
     {
         if (!HasLoadError) { error = "当前没有需要恢复的损坏存档。"; return false; }
-        Data = new SaveData(); ClearLoadError(); bool saved = TrySave(out error); Changed?.Invoke(); return saved;
+        return ResetProgress(out error);
     }
 
     public bool ApplyStartUnlocks(DayConfig config, out string error)
@@ -217,8 +242,15 @@ public partial class SaveService : Node
 
     public bool ResetProgress(out string error)
     {
-        SaveData snapshot = Clone(Data); Data = new SaveData(); ClearLoadError();
-        if (!TrySave(out error)) { Data = snapshot; return false; }
+        SaveData snapshot = Clone(Data);
+        var previous = (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame);
+        Data = new SaveData(); ClearLoadError(); MigratedLegacySave = false;
+        if (!TrySave(out error))
+        {
+            Data = snapshot;
+            (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame) = previous;
+            return false;
+        }
         Changed?.Invoke(); return true;
     }
 
@@ -229,7 +261,7 @@ public partial class SaveService : Node
         {
             string absolute = ProjectSettings.GlobalizePath(_savePath); Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
             string temporary = absolute + ".tmp"; File.WriteAllText(temporary, JsonSerializer.Serialize(Data, JsonOptions)); File.Move(temporary, absolute, true);
-            error = string.Empty; return true;
+            HasSavedGame = true; error = string.Empty; return true;
         }
         catch (Exception exception) { error = $"保存失败：{exception.Message}"; GD.PushError(error); return false; }
     }
@@ -314,6 +346,7 @@ public partial class SaveService : Node
         if (data is null || data.Version != CurrentVersion || data.Coins < 0) throw new InvalidDataException("存档版本或金币数值无效。");
         foreach ((string id, CityProgressData city) in data.Cities)
         {
+            city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);
             int max = ChapterDays(id);
             if (city.HighestUnlockedDay is < 1 || city.HighestUnlockedDay > max || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
         }

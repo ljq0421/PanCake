@@ -23,10 +23,17 @@ public partial class DropZone : PanelContainer
     public DropZoneVisualState VisualState => _visualState;
     public int ConfigurationVersion { get; private set; }
     public float HitPadding { get; set; }
+    // Optional fixed geometry in the parent coordinate space. Feedback tweens
+    // may animate this Control without enlarging a destructive drop target.
+    public Rect2? FixedHitRect { get; set; }
 
-    public bool ContainsPoint(Vector2 globalPosition, bool padded = true) =>
-        new Rect2(Vector2.Zero, Size).Grow(padded ? HitPadding : 0)
+    public bool ContainsPoint(Vector2 globalPosition, bool padded = true)
+    {
+        if (FixedHitRect is Rect2 fixedRect && GetParent() is CanvasItem parent)
+            return fixedRect.HasPoint(parent.GetGlobalTransform().AffineInverse() * globalPosition);
+        return new Rect2(Vector2.Zero, Size).Grow(padded ? HitPadding : 0)
             .HasPoint(GetGlobalTransform().AffineInverse() * globalPosition);
+    }
 
     public override void _Ready()
     {

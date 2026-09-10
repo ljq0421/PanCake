@@ -17,6 +17,7 @@ public partial class CoinTrayView : Control
     public int PendingAmount => Math.Max(0, _revenue - _collectedRevenue);
     public int VisibleCoinCount { get; private set; }
     [Export] public bool AmountOnly { get; set; }
+    public bool CompactCaption { get; set; }
     [Export] public Rect2 CoinSurface { get; set; } = new(26, 16, 198, 52);
     public Vector2 LandingPoint => _surface.GetGlobalTransform() * (_surface.Size * .5f);
     internal Rect2 SurfaceBounds => _surface.GetGlobalRect();
@@ -68,9 +69,9 @@ public partial class CoinTrayView : Control
         VisibleCoinCount = PendingAmount == 0 ? 0 : Math.Max(0, _paymentCount - _collectedPaymentCount) * CoinsPerPayment;
         EnsureCoins(VisibleCoinCount);
         for (int i = 0; i < _coins.Count; i++) _coins[i].Visible = i < VisibleCoinCount;
-        _caption.Text = AmountOnly ? (PendingAmount > 0 ? $"¥{PendingAmount}" : "")
+        _caption.Text = AmountOnly || CompactCaption ? (PendingAmount > 0 ? $"¥{PendingAmount}" : "")
             : PendingAmount > 0 ? $"点击收钱 ¥{PendingAmount}" : "金币盘";
-        _caption.Visible = !AmountOnly || PendingAmount > 0;
+        _caption.Visible = !(AmountOnly || CompactCaption) || PendingAmount > 0;
         _collect.MouseDefaultCursorShape = PendingAmount > 0 ? CursorShape.PointingHand : CursorShape.Arrow;
     }
 

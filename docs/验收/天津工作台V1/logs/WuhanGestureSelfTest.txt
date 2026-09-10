@@ -1,0 +1,183 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+PASS missed raw noodle drop preserves stock
+PASS Escape cancels production without consumption
+PASS focus loss cancels production
+PASS Lv1 raw drag starts once
+PASS basket click cannot substitute for lifting
+PASS upward stroke raises basket
+PASS early drop reserves bowl and releases mouse
+PASS reserved pour commits once after draining
+PASS mixing requires release before delivery
+PASS invalid seasoning click never silently refills inventory
+PASS separate refill control starts timed replenishment
+PASS remaining raw noodles can be dragged during replenishment
+PASS hovered full stock shows a disabled refill control
+PASS full stock hides refill when pointer leaves
+PASS healthy partial stock keeps refill hidden at rest
+PASS container hover reveals actionable icon-only refill
+PASS low stock reveals refill without hover
+PASS empty stock can always refill
+PASS wrong cup drop returns finished stock and releases input
+PASS finished cup is deliverable without preparation
+PASS pan click does not flip
+PASS upward pan stroke flips skin
+PASS pan click does not cut
+PASS short accidental stroke does not cut
+PASS first effective stroke locks quality before release
+PASS same press cannot cut another direction or burn
+PASS duplicate direction does not advance
+PASS two directions finish eight pieces
+PASS three free slots receive three pieces with five left in pan
+PASS leftover pieces block new batch
+PASS selling two automatically replenishes two
+PASS last pieces transfer without duplication and free pan
+PASS pause cancels pending production
+PASS continuous lift commits before release
+PASS same press reaches bowl and releases mouse while waiting
+PASS escape cancels pending bowl reservation
+PASS escape keeps lifted noodles and does not advance suspended processing
+PASS pause cancels pending bowl reservation
+PASS pause keeps lifted noodles and does not advance suspended processing
+PASS focus cancels pending bowl reservation
+PASS focus keeps lifted noodles and does not advance suspended processing
+PASS hidden cancels pending bowl reservation
+PASS hidden keeps lifted noodles and does not advance suspended processing
+PASS resumed transfer completes exactly once
+PASS duplicate base seasoning does not consume stock
+PASS outside bowl path adds no progress and preserves held session
+PASS vertical mixing advances and release keeps progress
+PASS completed mixing remains mixing outside bowl until release
+PASS cup drag returning to source preserves stock
+PASS repeated clicks never consume stock
+PASS refill hit target at least 48 design pixels
+PASS only raw noodles expose a refill control
+PASS diagonal stroke is not classified as either cut direction
+PASS vertical first and fast stroke ending outside pan are accepted
+PASS full tray keeps entire cut batch in pan
+PASS fully cut batch does not burn while waiting for capacity
+PASS emptying tray transfers leftover batch once
+PASS missed raw noodle drop preserves stock
+PASS Escape cancels production without consumption
+PASS focus loss cancels production
+PASS Lv2 raw drag starts once
+PASS basket click cannot substitute for lifting
+PASS upward stroke raises basket
+PASS early drop reserves bowl and releases mouse
+PASS reserved pour commits once after draining
+PASS mixing requires release before delivery
+PASS invalid seasoning click never silently refills inventory
+PASS separate refill control starts timed replenishment
+PASS remaining raw noodles can be dragged during replenishment
+PASS hovered full stock shows a disabled refill control
+PASS full stock hides refill when pointer leaves
+PASS healthy partial stock keeps refill hidden at rest
+PASS container hover reveals actionable icon-only refill
+PASS low stock reveals refill without hover
+PASS empty stock can always refill
+PASS wrong cup drop returns finished stock and releases input
+PASS finished cup is deliverable without preparation
+PASS pan click does not flip
+PASS upward pan stroke flips skin
+PASS pan click does not cut
+PASS short accidental stroke does not cut
+PASS first effective stroke locks quality before release
+PASS same press cannot cut another direction or burn
+PASS duplicate direction does not advance
+PASS two directions finish eight pieces
+PASS three free slots receive three pieces with five left in pan
+PASS leftover pieces block new batch
+PASS selling two automatically replenishes two
+PASS last pieces transfer without duplication and free pan
+PASS pause cancels pending production
+PASS continuous lift commits before release
+PASS same press reaches bowl and releases mouse while waiting
+PASS escape cancels pending bowl reservation
+PASS escape keeps lifted noodles and does not advance suspended processing
+PASS pause cancels pending bowl reservation
+PASS pause keeps lifted noodles and does not advance suspended processing
+PASS focus cancels pending bowl reservation
+PASS focus keeps lifted noodles and does not advance suspended processing
+PASS hidden cancels pending bowl reservation
+PASS hidden keeps lifted noodles and does not advance suspended processing
+PASS resumed transfer completes exactly once
+PASS duplicate base seasoning does not consume stock
+PASS outside bowl path adds no progress and preserves held session
+PASS vertical mixing advances and release keeps progress
+PASS completed mixing remains mixing outside bowl until release
+PASS cup drag returning to source preserves stock
+PASS repeated clicks never consume stock
+PASS refill hit target at least 48 design pixels
+PASS only raw noodles expose a refill control
+PASS diagonal stroke is not classified as either cut direction
+PASS vertical first and fast stroke ending outside pan are accepted
+PASS full tray keeps entire cut batch in pan
+PASS fully cut batch does not burn while waiting for capacity
+PASS emptying tray transfers leftover batch once
+PASS missed raw noodle drop preserves stock
+PASS Escape cancels production without consumption
+PASS focus loss cancels production
+PASS Lv3 raw drag starts once
+PASS second basket accepts independent noodle drag
+PASS early drop reserves bowl and releases mouse
+PASS second basket cannot replace reservation
+PASS reserved pour commits once after draining
+PASS occupied bowl rejects second basket
+PASS mixing requires release before delivery
+PASS invalid seasoning click never silently refills inventory
+PASS separate refill control starts timed replenishment
+PASS remaining raw noodles can be dragged during replenishment
+PASS hovered full stock shows a disabled refill control
+PASS full stock hides refill when pointer leaves
+PASS healthy partial stock keeps refill hidden at rest
+PASS container hover reveals actionable icon-only refill
+PASS low stock reveals refill without hover
+PASS empty stock can always refill
+PASS wrong cup drop returns finished stock and releases input
+PASS finished cup is deliverable without preparation
+PASS upgraded griddle still flips automatically
+PASS pan click does not cut
+PASS short accidental stroke does not cut
+PASS first effective stroke locks quality before release
+PASS same press cannot cut another direction or burn
+PASS duplicate direction does not advance
+PASS two directions finish eight pieces
+PASS three free slots receive three pieces with five left in pan
+PASS leftover pieces block new batch
+PASS selling two automatically replenishes two
+PASS last pieces transfer without duplication and free pan
+PASS pause cancels pending production
+PASS continuous lift commits before release
+PASS same press reaches bowl and releases mouse while waiting
+PASS escape cancels pending bowl reservation
+PASS escape keeps lifted noodles and does not advance suspended processing
+PASS pause cancels pending bowl reservation
+PASS pause keeps lifted noodles and does not advance suspended processing
+PASS focus cancels pending bowl reservation
+PASS focus keeps lifted noodles and does not advance suspended processing
+PASS hidden cancels pending bowl reservation
+PASS hidden keeps lifted noodles and does not advance suspended processing
+PASS resumed transfer completes exactly once
+PASS duplicate base seasoning does not consume stock
+PASS outside bowl path adds no progress and preserves held session
+PASS vertical mixing advances and release keeps progress
+PASS completed mixing remains mixing outside bowl until release
+PASS cup drag returning to source preserves stock
+PASS repeated clicks never consume stock
+PASS refill hit target at least 48 design pixels
+PASS only raw noodles expose a refill control
+PASS diagonal stroke is not classified as either cut direction
+PASS vertical first and fast stroke ending outside pan are accepted
+PASS full tray keeps entire cut batch in pan
+PASS fully cut batch does not burn while waiting for capacity
+PASS emptying tray transfers leftover batch once
+PASS operation budget uses four fixed identical orders and level-one equipment
+PASS one scallion noodle bowl including delivery needs exactly six presses
+PASS one doupi batch automatically stocks eight with exactly six presses
+PASS batch and four quantity-two deliveries total ten presses (presses=10, stock=0, delivered=2,2,2,2,0)
+PASS egg needs one delivery to complete first combo
+WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=1
+WUHAN_GESTURE_TEST_RESULT passed=176 failed=0

@@ -1,0 +1,278 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+[PASS] 阶段 3 数据目录通过校验
+[PASS] 加载天津与武汉共九类顾客
+[PASS] 普通顾客耐心与小费数值正确
+[PASS] Day 1 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 2 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 3 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 4 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 5 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 6 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 7 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 8 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 9 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 10 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 11 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 12 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 13 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 14 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 15 相邻顾客保持间隔，跨时段也不会扎堆
+[PASS] Day 1 相同种子逐字段复现
+[PASS] Day 1 生成顾客数准确
+[PASS] Day 1 顾客 ID 唯一
+[PASS] Day 1 到店时间有序
+[PASS] Day 1 到店时间位于营业期内
+[PASS] Day 1 只引用可用配方
+[PASS] Day 1 仅生成普通顾客单张煎饼
+[PASS] Day 1 时段人数按最大余数分配
+[PASS] Day 2 相同种子逐字段复现
+[PASS] Day 2 生成顾客数准确
+[PASS] Day 2 顾客 ID 唯一
+[PASS] Day 2 到店时间有序
+[PASS] Day 2 到店时间位于营业期内
+[PASS] Day 2 只引用可用配方
+[PASS] Day 2 仅生成普通顾客单张煎饼
+[PASS] Day 2 时段人数按最大余数分配
+[PASS] Day 3 相同种子逐字段复现
+[PASS] Day 3 生成顾客数准确
+[PASS] Day 3 顾客 ID 唯一
+[PASS] Day 3 到店时间有序
+[PASS] Day 3 到店时间位于营业期内
+[PASS] Day 3 只引用可用配方
+[PASS] Day 3 仅生成普通顾客单张煎饼
+[PASS] Day 3 时段人数按最大余数分配
+[PASS] Day 4 相同种子逐字段复现
+[PASS] Day 4 生成顾客数准确
+[PASS] Day 4 顾客 ID 唯一
+[PASS] Day 4 到店时间有序
+[PASS] Day 4 到店时间位于营业期内
+[PASS] Day 4 只引用可用配方
+[PASS] Day 4 仅生成普通顾客单张煎饼
+[PASS] Day 4 时段人数按最大余数分配
+[PASS] 可见顾客不超过五人
+[PASS] 满员延迟 3 秒后门外候场且不扣耐心
+[PASS] 进店 0.35 秒后进入 Happy
+[PASS] 首批顾客按 1–5 号固定站位
+[PASS] Day 1 倍率后 18 秒进入 Normal
+[PASS] Day 1 倍率后 36 秒进入 Impatient
+[PASS] Day 1 倍率后 50.4 秒进入 Angry
+[PASS] 可选择等待顾客
+[PASS] 出餐后取消顾客选择
+[PASS] 离场 0.45 秒后门外顾客 FIFO 补位
+[PASS] 新顾客补入 1 号空位，其余顾客保持原位
+[PASS] 中间位置顾客可正常出餐离场
+[PASS] 中间空位保留，右侧顾客不会向前挤位
+[PASS] 超过倍率化离店时间触发 Lost
+[PASS] 强制收尾后队列完全清空
+[PASS] Perfect 获得全价与四舍五入 10% 小费
+[PASS] 离开 Happy 后正确订单无 Perfect
+[PASS] 偏焦正确配方评为 Correct
+[PASS] ¥7 错单按 70% 半数向上结算为 ¥5
+[PASS] 营业收入和完成流失统计准确
+[PASS] 连击和 100/85/55 满意度平均准确，流失不计入
+[PASS] city:tianjin 全部关卡满意度排除流失顾客
+[PASS] city:tianjin 准备结算规则测试
+[PASS] city:tianjin 无完成顾客时满意度为零
+[PASS] city:tianjin 流失单独统计且不降低满意度
+[PASS] city:wuhan 全部关卡满意度排除流失顾客
+[PASS] city:wuhan 准备结算规则测试
+[PASS] city:wuhan 无完成顾客时满意度为零
+[PASS] city:wuhan 流失单独统计且不降低满意度
+[PASS] city:xian 全部关卡满意度排除流失顾客
+[PASS] city:xian 准备结算规则测试
+[PASS] city:xian 无完成顾客时满意度为零
+[PASS] city:xian 流失单独统计且不降低满意度
+[PASS] city:guangzhou 全部关卡满意度排除流失顾客
+[PASS] city:guangzhou 准备结算规则测试
+[PASS] city:guangzhou 无完成顾客时满意度为零
+[PASS] city:guangzhou 流失单独统计且不降低满意度
+[PASS] 所有结算入口小费 10×0.14 四舍五入为 1
+[PASS] 所有结算入口小费 10×0.25 四舍五入为 3
+[PASS] 所有结算入口小费 10×0.26 四舍五入为 3
+[PASS] 所有结算入口小费 25×0.7 四舍五入为 18
+[PASS] 所有结算入口小费 4×0.1 四舍五入为 0
+[PASS] Day 1 可进入 Preparing
+[PASS] 点击开店进入 Opening
+[PASS] 3 秒倒计时结束前保持 Opening
+[PASS] 3 秒倒计时后进入 Running
+[PASS] 营业计时归零进入 Closing
+[PASS] 15 秒保护期结束前保持 Closing
+[PASS] 15 秒结束强制流失并结算
+[PASS] 中途放弃整日结果作废
+[PASS] 未选择顾客时拒绝交付
+[PASS] Day 1 顾客 D01-C001 交付成功
+[PASS] Day 1 顾客 D01-C002 交付成功
+[PASS] Day 1 顾客 D01-C003 交付成功
+[PASS] Day 1 顾客 D01-C004 交付成功
+[PASS] Day 1 顾客 D01-C005 交付成功
+[PASS] Day 1 顾客 D01-C006 交付成功
+[PASS] Day 1 可从开店完整服务至结算
+[PASS] 未选择顾客时拒绝交付
+[PASS] Day 2 顾客 D02-C001 交付成功
+[PASS] Day 2 顾客 D02-C002 交付成功
+[PASS] Day 2 顾客 D02-C003 交付成功
+[PASS] Day 2 顾客 D02-C004 交付成功
+[PASS] Day 2 顾客 D02-C005 交付成功
+[PASS] Day 2 顾客 D02-C006 交付成功
+[PASS] Day 2 顾客 D02-C007 交付成功
+[PASS] Day 2 可从开店完整服务至结算
+[PASS] 未选择顾客时拒绝交付
+[PASS] Day 3 顾客 D03-C001 交付成功
+[PASS] Day 3 顾客 D03-C002 交付成功
+[PASS] Day 3 顾客 D03-C003 交付成功
+[PASS] Day 3 顾客 D03-C004 交付成功
+[PASS] Day 3 顾客 D03-C005 交付成功
+[PASS] Day 3 顾客 D03-C006 交付成功
+[PASS] Day 3 顾客 D03-C007 交付成功
+[PASS] Day 3 顾客 D03-C008 交付成功
+[PASS] Day 3 可从开店完整服务至结算
+[PASS] 未选择顾客时拒绝交付
+[PASS] Day 4 顾客 D04-C001 交付成功
+[PASS] Day 4 顾客 D04-C002 交付成功
+[PASS] Day 4 顾客 D04-C003 交付成功
+[PASS] Day 4 顾客 D04-C004 交付成功
+[PASS] Day 4 顾客 D04-C005 交付成功
+[PASS] Day 4 顾客 D04-C006 交付成功
+[PASS] Day 4 顾客 D04-C007 交付成功
+[PASS] Day 4 顾客 D04-C008 交付成功
+[PASS] Day 4 顾客 D04-C009 交付成功
+[PASS] Day 4 顾客 D04-C010 交付成功
+[PASS] Day 4 可从开店完整服务至结算
+[PASS] 首次结算获得全额并解锁下一天
+[PASS] 较低重玩成绩不重复发金币
+[PASS] 提高最佳成绩只补发差额
+[PASS] Day 3 结算开放配料台 Lv2
+[PASS] 购买配料台扣款并永久保存
+[PASS] Day 4 结算开放煎饼炉并解锁 Day 5
+[PASS] 购买煎饼炉 Lv2 并永久保存
+[PASS] 存档往返保留金币、设备和最近 DayPlan
+ERROR: 存档无法读取：'i' is an invalid start of a property name. Expected a '"'. Path: $ | LineNumber: 0 | BytePositionInLine: 2.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:358)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:358)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Tests.StageThreeSelfTest.TestSave(ProjectCake.Core.DataCatalog) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:223)
+       [4] void ProjectCake.Tests.StageThreeSelfTest._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:28)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [6] bool ProjectCake.Tests.StageThreeSelfTest.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Tests.StageThreeSelfTest_ScriptMethods.generated.cs:180)
+       [7] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+[PASS] 损坏存档备份并阻止静默覆盖
+[PASS] 未确认重置前禁止覆盖损坏存档
+[PASS] 确认后可建立全新存档
+[PASS] 场景可加载：StartScreen.tscn
+[PASS] 场景可加载：MorningHub.tscn
+[PASS] 场景可加载：WuhanHub.tscn
+[PASS] 场景可加载：XianHub.tscn
+[PASS] 场景可加载：GuangzhouHub.tscn
+[PASS] 场景可加载：YangzhouHub.tscn
+[PASS] 场景可加载：TianjinMapScreen.tscn
+[PASS] 场景可加载：DataDebugPanel.tscn
+[PASS] 场景可加载：OrderBubbleView.tscn
+[PASS] 场景可加载：CustomerPortraitView.tscn
+[PASS] 场景可加载：CoinTrayView.tscn
+[PASS] 场景可加载：CoinCollectionFeedback.tscn
+[PASS] 场景可加载：TianjinDayScreen.tscn
+[PASS] 场景可加载：WuhanDayScreen.tscn
+[PASS] 场景可加载：XianDayScreen.tscn
+[PASS] 场景可加载：GuangzhouDayScreen.tscn
+[PASS] 场景可加载：YangzhouDayScreen.tscn
+[PASS] 场景可加载：PancakeLab.tscn
+[PASS] 场景可加载：PancakeWorkstation.tscn
+[PASS] 场景可加载：PancakeLabWorkstation.tscn
+[PASS] 场景可加载：TianjinShop.tscn
+[PASS] 场景可加载：Main.tscn
+[PASS] 场景重复实例化结构稳定：StartScreen.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：StartScreen.tscn
+[PASS] 场景重复实例化结构稳定：MorningHub.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：MorningHub.tscn
+[PASS] 场景重复实例化结构稳定：WuhanHub.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：WuhanHub.tscn
+[PASS] 场景重复实例化结构稳定：XianHub.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：XianHub.tscn
+[PASS] 场景重复实例化结构稳定：GuangzhouHub.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：GuangzhouHub.tscn
+[PASS] 场景重复实例化结构稳定：YangzhouHub.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：YangzhouHub.tscn
+[PASS] 场景重复实例化结构稳定：TianjinMapScreen.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：TianjinMapScreen.tscn
+[PASS] 场景重复实例化结构稳定：DataDebugPanel.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：DataDebugPanel.tscn
+[PASS] 场景重复实例化结构稳定：OrderBubbleView.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：OrderBubbleView.tscn
+[PASS] 场景重复实例化结构稳定：CustomerPortraitView.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：CustomerPortraitView.tscn
+[PASS] 场景重复实例化结构稳定：CoinTrayView.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：CoinTrayView.tscn
+[PASS] 场景重复实例化结构稳定：CoinCollectionFeedback.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：CoinCollectionFeedback.tscn
+[PASS] 场景重复实例化结构稳定：TianjinDayScreen.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：TianjinDayScreen.tscn
+[PASS] 场景重复实例化结构稳定：WuhanDayScreen.tscn
+ERROR: [FAIL] 场景就绪后无未登记的 ownerless 固定节点：WuhanDayScreen.tscn：@PanelContainer@312/@HBoxContainer@313/@Control@81, @PanelContainer@312/@HBoxContainer@313/@Control@82, @PanelContainer@312/@HBoxContainer@313/@Button@319/@Control@83
+   at: void ProjectCake.Tests.StageThreeSelfTest.Fail(string, string) (res://Scripts/Tests/StageThreeSelfTest.cs:441)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Tests.StageThreeSelfTest.Fail(string, string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:441)
+       [2] void ProjectCake.Tests.StageThreeSelfTest.Check(bool, string, string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:440)
+       [3] void ProjectCake.Tests.StageThreeSelfTest.CheckStaticSceneArchitecture(string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:302)
+       [4] void ProjectCake.Tests.StageThreeSelfTest.TestScenes() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:265)
+       [5] void ProjectCake.Tests.StageThreeSelfTest._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:29)
+       [6] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [7] bool ProjectCake.Tests.StageThreeSelfTest.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Tests.StageThreeSelfTest_ScriptMethods.generated.cs:180)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+[PASS] 场景重复实例化结构稳定：XianDayScreen.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：XianDayScreen.tscn
+[PASS] 场景重复实例化结构稳定：GuangzhouDayScreen.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：GuangzhouDayScreen.tscn
+[PASS] 场景重复实例化结构稳定：YangzhouDayScreen.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：YangzhouDayScreen.tscn
+[PASS] 场景重复实例化结构稳定：PancakeLab.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：PancakeLab.tscn
+[PASS] 场景重复实例化结构稳定：PancakeWorkstation.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：PancakeWorkstation.tscn
+[PASS] 场景重复实例化结构稳定：PancakeLabWorkstation.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：PancakeLabWorkstation.tscn
+[PASS] 场景重复实例化结构稳定：TianjinShop.tscn
+[PASS] 场景就绪后无未登记的 ownerless 固定节点：TianjinShop.tscn
+[PASS] 页面源码不再搭建固定 UI：StartScreen.cs
+[PASS] 页面源码不再搭建固定 UI：MorningHub.cs
+[PASS] 页面源码不再搭建固定 UI：WuhanHub.cs
+[PASS] 页面源码不再搭建固定 UI：XianHub.cs
+[PASS] 页面源码不再搭建固定 UI：GuangzhouHub.cs
+[PASS] 页面源码不再搭建固定 UI：YangzhouHub.cs
+[PASS] 页面源码不再搭建固定 UI：TianjinMapScreen.cs
+[PASS] 页面源码不再搭建固定 UI：DataDebugPanel.cs
+[PASS] 页面源码不再搭建固定 UI：TianjinLedger.cs
+[PASS] 页面源码不再搭建固定 UI：WuhanLedger.cs
+[PASS] 页面源码不再搭建固定 UI：TianjinDayScreen.cs
+[PASS] 页面源码不再搭建固定 UI：WuhanDayScreen.cs
+[PASS] 页面源码不再搭建固定 UI：XianDayScreen.cs
+[PASS] 页面源码不再搭建固定 UI：GuangzhouDayScreen.cs
+[PASS] 页面源码不再搭建固定 UI：YangzhouDayScreen.cs
+[PASS] 页面源码不再搭建固定 UI：PancakeLab.cs
+[PASS] GameController 仅引用 Main 预建页面
+[PASS] 库存视觉使用 .tscn 预建节点池，不在 C# 中扩容
+[PASS] 正式工作台与实验台的拖拽外观由各自场景变体声明
+ERROR: [FAIL] 武汉交付热区与补货按钮坐标只保存在场景中
+   at: void ProjectCake.Tests.StageThreeSelfTest.Fail(string, string) (res://Scripts/Tests/StageThreeSelfTest.cs:441)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Tests.StageThreeSelfTest.Fail(string, string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:441)
+       [2] void ProjectCake.Tests.StageThreeSelfTest.Check(bool, string, string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:440)
+       [3] void ProjectCake.Tests.StageThreeSelfTest.CheckStaticUiSourceGuard() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:351)
+       [4] void ProjectCake.Tests.StageThreeSelfTest.TestScenes() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:266)
+       [5] void ProjectCake.Tests.StageThreeSelfTest._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageThreeSelfTest.cs:29)
+       [6] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [7] bool ProjectCake.Tests.StageThreeSelfTest.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Tests.StageThreeSelfTest_ScriptMethods.generated.cs:180)
+       [8] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+[PASS] 固定拖拽光标样式由场景声明
+[PASS] Main 固定包含五城首页、五城营业页、实验台和数据调试入口
+[PASS] 正式营业界面可接收结算并写入存档
+阶段 3 自测完成：235 项通过，2 项失败。
+WARNING: 12 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

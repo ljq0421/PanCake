@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://Scripts/UI/TianjinDeskGuide.cs" id="desk_guide"]
+
 [ext_resource type="Script" path="res://Scripts/Gameplay/TianjinDayScreen.cs" id="1_30fv5"]
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/早餐铺主界面-1920x1080.png" id="2_8blg4"]
 [ext_resource type="PackedScene" path="res://Scenes/Gameplay/PancakeWorkstation.tscn" id="3_swfja"]
@@ -2314,7 +2316,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_a53t3")
 script = ExtResource("17_0vpxl")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_customerDropZones|array|0")
 
-[node name="CustomerColumn" type="VBoxContainer" parent="CustomerStrip/CustomerSlot1" unique_id=931705060]
+[node name="CustomerColumn" type="Control" parent="CustomerStrip/CustomerSlot1" unique_id=931705060]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2326,7 +2328,10 @@ theme_override_constants/separation = 16
 
 [node name="OrderBubble" type="PanelContainer" parent="CustomerStrip/CustomerSlot1/CustomerColumn" unique_id=1223289578]
 custom_minimum_size = Vector2(332, 0)
-layout_mode = 2
+layout_mode = 0
+offset_top = -40.0
+offset_right = 332.0
+offset_bottom = -40.0
 size_flags_horizontal = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
@@ -2357,7 +2362,10 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScree
 
 [node name="PortraitStack" type="Control" parent="CustomerStrip/CustomerSlot1/CustomerColumn" unique_id=409567564]
 clip_contents = true
-layout_mode = 2
+layout_mode = 0
+offset_top = 156.0
+offset_right = 332.0
+offset_bottom = 411.0
 size_flags_vertical = 3
 mouse_filter = 2
 
@@ -2393,7 +2401,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_hq6kf")
 script = ExtResource("17_0vpxl")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_customerDropZones|array|1")
 
-[node name="CustomerColumn" type="VBoxContainer" parent="CustomerStrip/CustomerSlot2" unique_id=397925683]
+[node name="CustomerColumn" type="Control" parent="CustomerStrip/CustomerSlot2" unique_id=397925683]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2405,7 +2413,10 @@ theme_override_constants/separation = 16
 
 [node name="OrderBubble" type="PanelContainer" parent="CustomerStrip/CustomerSlot2/CustomerColumn" unique_id=208516102]
 custom_minimum_size = Vector2(332, 0)
-layout_mode = 2
+layout_mode = 0
+offset_top = -40.0
+offset_right = 332.0
+offset_bottom = -40.0
 size_flags_horizontal = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
@@ -2436,7 +2447,10 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScree
 
 [node name="PortraitStack" type="Control" parent="CustomerStrip/CustomerSlot2/CustomerColumn" unique_id=835620098]
 clip_contents = true
-layout_mode = 2
+layout_mode = 0
+offset_top = 156.0
+offset_right = 332.0
+offset_bottom = 411.0
 size_flags_vertical = 3
 mouse_filter = 2
 
@@ -2472,7 +2486,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_8qx8h")
 script = ExtResource("17_0vpxl")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_customerDropZones|array|2")
 
-[node name="CustomerColumn" type="VBoxContainer" parent="CustomerStrip/CustomerSlot3" unique_id=1975912477]
+[node name="CustomerColumn" type="Control" parent="CustomerStrip/CustomerSlot3" unique_id=1975912477]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2484,7 +2498,10 @@ theme_override_constants/separation = 16
 
 [node name="OrderBubble" type="PanelContainer" parent="CustomerStrip/CustomerSlot3/CustomerColumn" unique_id=1785524743]
 custom_minimum_size = Vector2(332, 0)
-layout_mode = 2
+layout_mode = 0
+offset_top = -40.0
+offset_right = 332.0
+offset_bottom = -40.0
 size_flags_horizontal = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
@@ -2515,7 +2532,10 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScree
 
 [node name="PortraitStack" type="Control" parent="CustomerStrip/CustomerSlot3/CustomerColumn" unique_id=1417844449]
 clip_contents = true
-layout_mode = 2
+layout_mode = 0
+offset_top = 156.0
+offset_right = 332.0
+offset_bottom = 411.0
 size_flags_vertical = 3
 mouse_filter = 2
 
@@ -2551,7 +2571,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_2fe01")
 script = ExtResource("17_0vpxl")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_customerDropZones|array|3")
 
-[node name="CustomerColumn" type="VBoxContainer" parent="CustomerStrip/CustomerSlot4" unique_id=1630740843]
+[node name="CustomerColumn" type="Control" parent="CustomerStrip/CustomerSlot4" unique_id=1630740843]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2563,7 +2583,10 @@ theme_override_constants/separation = 16
 
 [node name="OrderBubble" type="PanelContainer" parent="CustomerStrip/CustomerSlot4/CustomerColumn" unique_id=780566398]
 custom_minimum_size = Vector2(332, 0)
-layout_mode = 2
+layout_mode = 0
+offset_top = -40.0
+offset_right = 332.0
+offset_bottom = -40.0
 size_flags_horizontal = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
@@ -2594,7 +2617,10 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScree
 
 [node name="PortraitStack" type="Control" parent="CustomerStrip/CustomerSlot4/CustomerColumn" unique_id=352563992]
 clip_contents = true
-layout_mode = 2
+layout_mode = 0
+offset_top = 156.0
+offset_right = 332.0
+offset_bottom = 411.0
 size_flags_vertical = 3
 mouse_filter = 2
 
@@ -2630,7 +2656,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_ujj63")
 script = ExtResource("17_0vpxl")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_customerDropZones|array|4")
 
-[node name="CustomerColumn" type="VBoxContainer" parent="CustomerStrip/CustomerSlot5" unique_id=1285071948]
+[node name="CustomerColumn" type="Control" parent="CustomerStrip/CustomerSlot5" unique_id=1285071948]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -2642,7 +2668,10 @@ theme_override_constants/separation = 16
 
 [node name="OrderBubble" type="PanelContainer" parent="CustomerStrip/CustomerSlot5/CustomerColumn" unique_id=709977401]
 custom_minimum_size = Vector2(332, 0)
-layout_mode = 2
+layout_mode = 0
+offset_top = -40.0
+offset_right = 332.0
+offset_bottom = -40.0
 size_flags_horizontal = 4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_c5ysn")
@@ -2673,7 +2702,10 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScree
 
 [node name="PortraitStack" type="Control" parent="CustomerStrip/CustomerSlot5/CustomerColumn" unique_id=1803591236]
 clip_contents = true
-layout_mode = 2
+layout_mode = 0
+offset_top = 156.0
+offset_right = 332.0
+offset_bottom = 411.0
 size_flags_vertical = 3
 mouse_filter = 2
 
@@ -2997,3 +3029,7 @@ ok_button_text = "确认放弃"
 dialog_text = "本日收入和成绩不会保存，重新开始仍会遇到同一批顾客。"
 cancel_button_text = "继续营业"
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_abandonDialog")
+
+[node name="TianjinDeskGuide" type="Control" parent="."]
+mouse_filter = 2
+script = ExtResource("desk_guide")

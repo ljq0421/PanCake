@@ -17,6 +17,7 @@ public partial class PancakeCanvas : Control
     [Export] public float DisplayScale { get; set; } = 1.0f;
     [Export] public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
     [Export] public bool ShowBaggedPancake { get; set; } = true;
+    public bool UseTableContact { get; set; }
 
     public float BatterDropProgress
     {
@@ -124,6 +125,15 @@ public partial class PancakeCanvas : Control
     {
         Vector2 center = Size * 0.5f + new Vector2(0, 16) + DisplayOffset;
         float stoveSize = Mathf.Min(Size.X * 0.72f, Size.Y * 1.04f) * Mathf.Max(0.1f, DisplayScale);
+        if (UseTableContact)
+        {
+            const float targetContact = 1038f / 1254 - .5f;
+            float sourceContact = (_stoveLevel switch { 1 => 1061f, 2 => 1043f, _ => 1038f }) / 1254 - .5f;
+            float sourceCenter = _stoveLevel switch { 1 => -.084f, 2 => -.086f, _ => -.108f };
+            float fit = (targetContact + .108f) / (sourceContact - sourceCenter);
+            center.Y += stoveSize * (targetContact - fit * sourceContact);
+            stoveSize *= fit;
+        }
         return (center, stoveSize);
     }
 

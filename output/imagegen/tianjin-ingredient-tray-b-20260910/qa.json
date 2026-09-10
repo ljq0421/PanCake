@@ -1,0 +1,31 @@
+{
+  "path": "D:\\Project\\ProjectCake\\project-cake\\resource\\art\\TianJin\\薄脆火腿托盘-B型-v1.png",
+  "width": 512,
+  "height": 512,
+  "channels": 4,
+  "format": "RGBA PNG",
+  "cutoutSize": [
+    456,
+    168
+  ],
+  "placement": [
+    28,
+    172
+  ],
+  "alphaBBox": [
+    28,
+    172,
+    483,
+    339
+  ],
+  "counts": {
+    "transparent": 189223,
+    "partial": 1274,
+    "opaque": 71647,
+    "greenResidue": 0,
+    "nonzeroTransparentRgb": 0
+  },
+  "despilledEdges": 79,
+  "cornerAlpha": 0,
+  "interiorAlpha": 255
+}

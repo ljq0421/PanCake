@@ -3888,3 +3888,5 @@ texture = SubResource("AtlasTexture_o6gk7")
 expand_mode = 1
 stretch_mode = 5
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeWorkstation|_bagTransfer")
+
+[node name="BasketAnchor" type="Node2D" parent="@Control@487/FryerArea/FryerStack/FryerVisual"]

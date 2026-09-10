@@ -6,6 +6,14 @@ namespace ProjectCake.UI;
 /// <summary>1920×1080 counter geometry. Appliances move together with their input regions.</summary>
 internal static class TianjinWorkbenchLayout
 {
+    public const float BackEdge = 580;
+    public const float FrontEdge = 995;
+    public const float CenterX = 960;
+    public static readonly float[] CustomerCenters = { 256, 608, 960, 1312, 1664 };
+    public static readonly Rect2 PortraitWindow = new(0, 156, 332, 255);
+    public const float OrderCardBottom = 152;
+    public static readonly Rect2 RearTrayVisual = new(0, 4, 250, 82);
+    public static float DepthAt(float contactY) => (contactY - BackEdge) / (FrontEdge - BackEdge);
     public static readonly Vector2 ApplianceOffset = new(0, 50);
     public static readonly Vector2 StoveOffset = new(50, 50);
     public static readonly Rect2 StoveFooter = new(160, 400, 410, 56);
@@ -62,18 +70,21 @@ internal static class TianjinWorkbenchLayout
             bowl ? new Rect2(0, 0, 228, 128) : new Rect2(20, -12, 208, 132),
             new Rect2(24, 144, 176, 4), bowl ? .85f : 1f,
             bowl ? new Rect2(64, 4, 104, 84) : new Rect2(36, 40, 176, 48),
-            new Rect2(18, 120, 190, 24), TrayVerticalScale: bowl ? 1f : 1.12f,
+            new Rect2(18, 120, 190, 24), TrayVerticalScale: 1f,
             StockFootprintRect: bowl ? null : new Rect2(30, 42, 188, 48),
             StackLayout: id switch
             {
-                StableIds.Ingredients.Crispy => new(new Vector2(69.6f, 74.4f), 28, 64, 82),
-                StableIds.Ingredients.Ham => new(new Vector2(55.2f, 74.4f), 30, 64, 82),
+                StableIds.Ingredients.Egg => new(new Vector2(37, 49), 32, 72, 84, new Rect2(32, 24, 188, 62)),
+                StableIds.Ingredients.Crispy => new(new Vector2(57, 58), 28, 68, 82, new Rect2(32, 24, 188, 62)),
+                StableIds.Ingredients.Ham => new(new Vector2(49, 54), 30, 68, 82, new Rect2(32, 24, 188, 62)),
                 // Spread the larger clusters across the full floor, with a wider
                 // row stagger so the two rows do not pile onto the same centers.
                 StableIds.Ingredients.Scallion => new(new Vector2(55.2f, 40.8f), 32, 81, 86,
                     new Rect2(32, 40, 184, 46), RowOffset: 8),
                 _ => null,
-            });
+            },
+            TableContactAnchor: bowl ? null : new Vector2(124, 103),
+            VisualContactRatio: bowl ? null : new Vector2(.5f, 1));
     }
 
     public static Rect2 IngredientPlacement(int index) => new(
@@ -88,4 +99,11 @@ internal static class TianjinWorkbenchLayout
         FinishedYoutiao.Size, new Rect2(12, 15, 216, 127.8f), new Rect2(44.4f, 34.8f, 147.6f, 70.2f),
         new Rect2(26, 148, 126, 30), new Rect2(152, 148, 50, 30), new Rect2(),
         new Rect2(0, 8, 240, 172), new Rect2(), 1f, CaptionRect: new Rect2(18, 148, 192, 30));
+
+    public static WorkstationSlotSpec FinishedYoutiaoTableSlot() => FinishedYoutiaoSlot() with
+    {
+        IngredientAnchorRect = new Rect2(44, 60, 148, 52),
+        TableContactAnchor = new Vector2(120, 120),
+        VisualContactRatio = new Vector2(.5f, 1),
+    };
 }

@@ -1,12 +1,98 @@
+---
+name: 早餐铺子
+description: 全局标题页令牌；城市皮肤按正文各章维护
+colors:
+  cover-cream: "#FFF6E5"
+  cover-teal: "#286354"
+  cover-ink: "#3E382B"
+  cover-apricot: "#F2C67D"
+  cover-brick: "#983F32"
+  cover-muted: "#665C49"
+  cover-disabled: "#E1DDCF"
+typography:
+  cover-display:
+    fontSize: "94px"
+  cover-label:
+    fontSize: "30px"
+  cover-body:
+    fontSize: "28px"
+rounded:
+  cover-control: "20px"
+components:
+  cover-button-primary:
+    backgroundColor: "{colors.cover-teal}"
+    textColor: "{colors.cover-cream}"
+    rounded: "{rounded.cover-control}"
+    padding: "12px 24px"
+    width: "420px"
+    height: "82px"
+  cover-button-secondary:
+    backgroundColor: "{colors.cover-cream}"
+    textColor: "{colors.cover-ink}"
+    rounded: "{rounded.cover-control}"
+  cover-button-destructive:
+    backgroundColor: "{colors.cover-brick}"
+    textColor: "{colors.cover-cream}"
+    rounded: "{rounded.cover-control}"
+  cover-button-disabled:
+    backgroundColor: "{colors.cover-disabled}"
+    textColor: "{colors.cover-muted}"
+    rounded: "{rounded.cover-control}"
+---
+
 <!-- design-system-schema: 1 -->
 
 # 《早餐铺子》界面设计规范
 
 ## 设计目标
 
-界面属于二维休闲模拟经营游戏。视觉应像早餐铺里的营业牌、账本、纸质订单和设备标签，而不是手机 App、后台面板或写实餐饮软件。天津章节的现有二维卡通素材是画风基准；武汉章节沿用控件结构与卡通画风，配色遵循下方“武汉城市皮肤”，并使用武汉背景与地方食物素材。
+界面属于二维休闲模拟经营游戏。视觉应像早餐铺里的营业牌、账本、纸质订单和设备标签，而不是手机 App、后台面板或写实餐饮软件。全局品牌以“去各地开早餐铺”为主题，独立于天津及城市数量；圆润二维画风与各城市共通。全局封面以 `resource/art/Global/start-journey.png` 和 `StartScreenTheme` 为视觉依据。天津素材只作为天津章节的视觉基准；武汉章节沿用控件结构与卡通画风，配色遵循下方“武汉城市皮肤”，并使用武汉背景与地方食物素材。
+
+## 全局标题页
+
+### Overview
+
+**Creative North Star: "去各地开早餐铺"**
+
+清晨开店与旅行同时构成游戏的第一印象。封面采用奶油、青绿、杏黄与砖红的温暖二维画面，保留圆润轮廓、清楚描边与低细节。它不绑定城市地标、已解锁城市或城市数量。
+
+### Colors
+
+上方 `cover-*` 令牌只对应 `Scripts/UI/StartScreenTheme.cs`：青绿用于标题、主操作与键盘焦点，奶油用于纸面与深色按钮文字，深墨用于正文及描边，杏黄呼应晨光，砖红用于重置确认及错误，暖灰棕用于辅助和禁用文字。
+
+### Typography
+
+使用 Godot 当前中文系统字体回退。1920×1080 设计画布下标题 94px、主题句和确认正文 28px、按钮 30px、状态说明 22px、弹窗标题 40px；文字与按钮由程序绘制，不烘焙进背景。
+
+### Layout
+
+左侧为游戏名、主题句和固定位置的“开始游戏／继续游戏／退出游戏”；主菜单按钮 420×82px、纵向间距 26px。右侧是通用清晨早餐铺、旅行箱、合起的手账和延伸的街道。设计画布等比居中，非 16:9 窗口保留深色留边；页面显示期间临时采用 Expand，隐藏或释放时恢复城市页面原有窗口适配方式。
+
+### Elevation & Depth
+
+控件使用单层向下 5px 的柔和阴影，按下态去除阴影。背景靠街道透视与色块前后关系形成深度，不增加循环装饰动画。
+
+### Shapes
+
+按钮与确认面板圆角 20px，普通按钮描边 3px，禁用态 2px。焦点使用向外扩展 6px 的 4px 青绿边框；与奶油纸面对比度为 6.52:1。
+
+### Components
+
+- 有效存档时“继续游戏”为主操作且默认获得焦点，返回上次城市的经营首页；无存档或损坏时保留并禁用继续按钮，显示具体原因，“开始游戏”为主操作。
+- 无存档直接新建；已有或损坏存档先显示覆盖确认，明确清空所有城市进度、金币和设备升级，默认聚焦“取消”。保存成功后进入天津，失败留在标题页并说明恢复方法。
+- 确认弹窗阻挡背景输入，Tab／方向键循环有效按钮；Enter／Space 激活，Esc 取消并恢复开始按钮焦点。退出直接结束应用。
+- 页面淡入 250ms（Expo Out）；按钮按下缩至 0.98、释放恢复，均为 120ms（Quad Out），连续输入会中断前一反馈。
+
+### Do's and Don'ts
+
+- Do 保留全局封面的独立品牌、三项固定菜单和明确的存档状态；新增城市无需改封面。
+- Don't 用天津专属素材、城市数量或解锁状态定义全局标题页，也不要将封面配色覆盖到已有城市皮肤。
+
+实现、存档兼容与多尺寸验收见 [游戏开始页](docs/游戏开始页.md)。`.impeccable/design.json` 仅提供该全局表面的文档预览扩展，运行平台仍为 Godot PC。
 
 ## 基础风格
+
+以下默认配色、描边和城市页面组件描述沿用天津章节；武汉等城市按各自皮肤覆盖。全局标题页以独立章节为准。
 
 - 二维、扁平、圆润、简约、粗描边、大色块、低细节。
 - 主色：奶油米白、暖黄色、浅橙色、暖棕色。
@@ -33,7 +119,7 @@
 | 成功浅绿 | `#76A951` |
 | 错误浅红 | `#D95D47` |
 
-颜色与公共控件样式集中在 `Scripts/UI/TianjinUi.cs` 的 Godot `Theme` 中维护，不在单个页面建立另一套视觉语言。
+天津颜色与公共控件样式集中在 `Scripts/UI/TianjinUi.cs` 的 Godot `Theme` 中维护，不在天津单个页面建立另一套视觉语言。
 
 ## 字体与可操作性
 

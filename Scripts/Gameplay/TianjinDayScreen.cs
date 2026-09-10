@@ -71,14 +71,26 @@ public partial class TianjinDayScreen : Control
         SceneNodeBinder.Bind(this);
         _art = new TianjinArtCatalog();
         _workstation.Feedback += ShowFeedback;
+        _workstation.WorkbenchActionLearned += RememberWorkbenchAction;
         _workstation.YoutiaoConsumed += quantity => _controller?.Ledger?.RecordYoutiaoUsed(quantity);
         _workstation.YoutiaoBurnt += quantity => _controller?.Ledger?.RecordYoutiaoBurnt(quantity);
         for (int i = 0; i < _customerDropZones.Length; i++)
         {
             _workstation.RegisterCustomerZone(_customerDropZones[i]);
             _orderCards[i].Configure(_art);
+            OrderBubbleView card = _orderCards[i];
+            card.Resized += () => AlignOrderCard(card);
+            AlignOrderCard(card);
         }
+        var feedbackStyle = (StyleBoxFlat)_feedbackPanel.GetThemeStylebox("panel").Duplicate();
+        feedbackStyle.ContentMarginTop = feedbackStyle.ContentMarginBottom = 0;
+        _feedbackPanel.AddThemeStyleboxOverride("panel", feedbackStyle);
+        _feedback.AddThemeFontSizeOverride("font_size", 16);
+        _feedbackPanel.CustomMinimumSize = new Vector2(720, 0);
+        _feedbackPanel.ResetSize();
         _collectionFeedback.Collecting = ClearCoinFlights;
+        if (_workstation.CoinTray is { } coinTray)
+            coinTray.Collected += _ => _workstation.LearnWorkbenchAction("collect_coins");
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { ClearCoinFlights(); _collectionFeedback.Clear(); }
@@ -104,6 +116,7 @@ public partial class TianjinDayScreen : Control
         _catalog = catalog;
         _save = save;
         _controller = controller;
+        _workstation.ConfigureTutorial(save.Data.Tianjin.LearnedWorkbenchActions);
         _committed = false;
         _results.Visible = false;
         _resultBlocker.Visible = false;
@@ -398,6 +411,7 @@ public partial class TianjinDayScreen : Control
             {
                 _portraitSignatures[index] = portraitSignature;
                 _portraits[index].SetVisual(_art.CustomerPortrait(customer.AppearanceId, expression));
+                _portraits[index].SetCounterCalibration(_art.CustomerLayout(customer.AppearanceId).NormalVisibleBounds);
             }
             if (_displayedCustomerStates[index] is CustomerState previousState && previousState != customer.State
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)
@@ -408,8 +422,23 @@ public partial class TianjinDayScreen : Control
         }
     }
 
-    private void RenderOrder(int slot, CustomerRuntime customer) =>
-        _orderCards[slot].Render(customer.Order, customer.Progress, _catalog.RecipesById);
+    private void RenderOrder(int slot, CustomerRuntime customer)
+    {
+        OrderBubbleView card = _orderCards[slot];
+        card.Render(customer.Order, customer.Progress, _catalog.RecipesById);
+        card.ResetSize();
+        AlignOrderCard(card);
+    }
+
+    private static void AlignOrderCard(OrderBubbleView card) =>
+        card.Position = new Vector2(0, TianjinWorkbenchLayout.OrderCardBottom - card.Size.Y);
+
+    private void RememberWorkbenchAction(string action)
+    {
+        if (_save is null || !_save.Data.Tianjin.LearnedWorkbenchActions.Add(action)) return;
+        // Keep the session's learned action even if storage is temporarily unavailable.
+        if (!_save.TrySave(out string error)) Callable.From(() => ShowFeedback(error, true)).CallDeferred();
+    }
 
     private void ShowFeedback(string message, bool error)
     {
@@ -417,7 +446,7 @@ public partial class TianjinDayScreen : Control
         _feedback.Modulate = error ? TianjinUi.Red : TianjinUi.Green;
         _feedbackPanel.Visible = true;
         _feedbackPanel.Modulate = new Color(1, 1, 1, 0.2f);
-        _feedbackPanel.Position = new Vector2(600, 96);
+        _feedbackPanel.Position = new Vector2(600, 94);
         _feedbackRemaining = 2.4;
         CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
             .TweenProperty(_feedbackPanel, "modulate", Colors.White, 0.18);

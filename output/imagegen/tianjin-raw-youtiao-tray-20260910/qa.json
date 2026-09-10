@@ -1,0 +1,30 @@
+{
+  "source_size": [
+    1254,
+    1254
+  ],
+  "final_size": [
+    512,
+    512
+  ],
+  "mode": "RGBA",
+  "alpha_range": [
+    0,
+    255
+  ],
+  "alpha_bounds": [
+    22,
+    156,
+    490,
+    352
+  ],
+  "transparent_pixels": 174801,
+  "partial_alpha_pixels": 4210,
+  "visible_green_spill_pixels": 0,
+  "measured_outer_side_receding_right_degrees": [
+    7.407908857556515,
+    2.9594018468751573
+  ],
+  "average_outer_side_receding_right_degrees": 5.183655352215836,
+  "final": "D:\\Project\\ProjectCake\\project-cake\\resource\\art\\TianJin\\生油条盘-左侧-v1.png"
+}

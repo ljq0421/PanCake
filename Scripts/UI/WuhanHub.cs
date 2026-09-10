@@ -62,8 +62,8 @@ public partial class WuhanHub : Control
     private void RenderEquipment(CityProgressData city)
     {
         int cooker = city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1), griddle = city.EquipmentLevels.GetValueOrDefault("doupi_griddle"), station = city.EquipmentLevels.GetValueOrDefault("ingredient_station",1);
-        UpdateCard("Cooker", "煮面锅", _art.Cooker(cooker), cooker, Next(city, "equipment:noodle_cooker_lv2", "equipment:noodle_cooker_lv3"));
-        UpdateCard("Griddle", "豆皮锅", _art.Griddle(Math.Max(1,griddle)), griddle, Next(city, "equipment:doupi_griddle_lv2", "equipment:doupi_griddle_lv3"));
+        UpdateCard("Cooker", "煮面锅", _art.Cooker(1), cooker, Next(city, "equipment:noodle_cooker_lv2", "equipment:noodle_cooker_lv3"));
+        UpdateCard("Griddle", "豆皮锅", _art.Griddle(1), griddle, Next(city, "equipment:doupi_griddle_lv2", "equipment:doupi_griddle_lv3"));
         UpdateCard("WuhanStation", "备料台", _art.Texture("raw_noodles"), station, Next(city, "equipment:wuhan_ingredient_station_lv2", "equipment:wuhan_ingredient_station_lv3"));
     }
 

@@ -81,7 +81,7 @@ public partial class CoinCollectionSelfTest : Node
                 void Pay(int amount) { controller.Ledger!.RecordDelivery(new(DeliveryGrade.Correct, amount, 0, 100, "fixture", true)); Render(); }
                 void Click()
                 {
-                    Vector2 p = tray.GetGlobalTransformWithCanvas() * new Vector2(125, 43);
+                    Vector2 p = tray.GetGlobalTransformWithCanvas() * (tray.IsButtonPresentation ? tray.Size * .5f : new Vector2(125, 43));
                     GetViewport().PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p }, true);
                     foreach (bool pressed in new[] { true, false })
                         GetViewport().PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, ButtonIndex = MouseButton.Left, Pressed = pressed }, true);
@@ -92,6 +92,19 @@ public partial class CoinCollectionSelfTest : Node
                 if (Capture && !reduced) await Shot(context + "-before");
                 feedback.PaymentFrom(tray.LandingPoint - new Vector2(0, 100));
                 if (reduced) Check(feedback.Effects.Count == 0, "reduced motion omits payment scatter and bounce");
+                else if (tray.IsButtonPresentation)
+                {
+                    Check(tray.GetGlobalRect().HasPoint(tray.LandingPoint), "UI payment targets the button");
+                    var incoming = feedback.Effects.ToArray();
+                    feedback.Advance(.28);
+                    var paused = incoming.Select(c => c.Position).ToArray();
+                    screen._Notification((int)NotificationApplicationFocusOut);
+                    feedback._Process(.2);
+                    Check(incoming.Select((c, i) => c.Position == paused[i]).All(same => same), "focus loss freezes UI payment");
+                    screen._Notification((int)NotificationApplicationFocusIn);
+                    feedback.Advance(1);
+                    Check(feedback.Effects.Count == 0, "UI payments fade without an invisible pile landing");
+                }
                 else
                 {
                     var incoming = feedback.Effects.ToArray();

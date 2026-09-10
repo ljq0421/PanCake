@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/WuhanHub.cs" id="1"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v3.png" id="2_qxp38"]
+[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v4.png" id="2_qxp38"]
 [ext_resource type="Texture2D" path="res://resource/art/TianJin/金币图标.png" id="3_wvkco"]
 [ext_resource type="Texture2D" path="res://resource/art/Wuhan/煮面锅 Lv1 基础锅体_v2.png" id="4_n3me6"]
 [ext_resource type="Texture2D" path="res://resource/art/Wuhan/三鲜豆皮锅 Lv1 基础锅体_v2.png" id="5_5akte"]

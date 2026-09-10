@@ -187,7 +187,7 @@ public partial class WuhanWorkstationView
     {
         foreach (var (id, button) in _refillButtons)
         {
-            button.Position = new Vector2(RawTrayRect.End.X + 12, RawTrayRect.Position.Y + 18);
+            button.Position = new Vector2(RawTrayRect.End.X - 56, RawTrayRect.End.Y + 4);
             button.Size = new Vector2(48, 48);
             int count = _ingredients.Count(id), capacity = _ingredients.Capacity(id);
             bool working = NoodlesRefilling?.Invoke() == true;
@@ -219,9 +219,11 @@ public partial class WuhanWorkstationView
                 DrawLine(mark + new Vector2(5, 5), mark + new Vector2(15, -7), WuhanUi.Ink, 3, true);
             }
         }
-        LabelAt(new Vector2(RawTrayRect.End.X + 12, RawTrayRect.End.Y - 14), $"{_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}");
-        if (_doupi is not null) LabelAt(new Vector2(StockRect.End.X + 8, StockRect.End.Y - 14), $"{_stock.Count}");
+        int noodles = _ingredients.Count(StableIds.Ingredients.WuhanNoodles);
+        string supply = NoodlesRefilling?.Invoke() == true ? " · 补货中" : noodles == 0 ? " · 请补面" : "";
+        LabelAt(new Vector2(RawTrayRect.Position.X + 12, RawTrayRect.End.Y + 30), $"生面 {noodles}/{_ingredients.Capacity(StableIds.Ingredients.WuhanNoodles)}{supply}");
+        if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 30), $"豆皮 {_stock.Count}/{DoupiInventory.Capacity}");
         if (_doupi is not null && DoupiSupplyHint.Length > 0)
-            LabelAt(new Vector2(StockRect.Position.X, StockRect.End.Y + 23), DoupiSupplyHint);
+            LabelAt(new Vector2(PanRect.Position.X + 18, StockRect.End.Y + 30), DoupiSupplyHint);
     }
 }

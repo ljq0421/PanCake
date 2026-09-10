@@ -76,7 +76,10 @@ public partial class WuhanGestureSelfTest : Node
                 Step(.71);
                 Check(_screen.Bowl.State==NoodleBowlState.Noodles&&_screen.Cooker.Baskets[0].State==NoodleBasketState.Empty,"reserved pour commits once after draining");Step(.7);
                 if(level==3) { Step(1);Drag(View.BasketRect(1).GetCenter(),View.BowlCenter);Check(_screen.Cooker.Baskets[1].State==NoodleBasketState.Drained,"occupied bowl rejects second basket"); }
-                Click(View.IngredientCenter(0));Step(.5);
+                Click(View.SauceCenter);Step(.5);
+                Check(_screen.Bowl.State == NoodleBowlState.Seasoned, "dark sauce bowl is a viewport seasoning alias");
+                Click(View.IngredientCenter(0));
+                Check(_screen.Bowl.State == NoodleBowlState.Seasoned && !View.Busy("bowl"), "second seasoning bowl does not repeat the action");
                 Click(View.IngredientCenter(1));Step(.5);
                 Vector2 center=View.BowlCenter;Move(center);Button(center,true);for(int i=0;i<6;i++)Move(center+new Vector2(i%2==0?70:-70,0),true);Button(center,false);
                 Check(_screen.Bowl.State==NoodleBowlState.Ready&&!_screen.DeliveryDrag.IsDragging,"mixing requires release before delivery");

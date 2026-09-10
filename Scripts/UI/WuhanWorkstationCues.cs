@@ -99,7 +99,7 @@ public partial class WuhanWorkstationView
         else if (_bowl.State == NoodleBowlState.Ready) Cue(bowlCue, "done");
 
         if (_doupi is null) return;
-        Vector2 panCue = new(PanRect.Position.X - 24, PanRect.End.Y - 12);
+        Vector2 panCue = new(PanRect.Position.X + 26, PanRect.End.Y - 25);
         switch (_doupi.State)
         {
             case DoupiState.Empty: break;

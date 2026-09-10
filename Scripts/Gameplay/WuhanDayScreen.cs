@@ -130,6 +130,11 @@ public partial class WuhanDayScreen : Control
         var exit = new WuhanHudIcon { Kind = "exit", Position = new Vector2(9, 9), Size = new Vector2(30, 30), MouseFilter = MouseFilterEnum.Ignore };
         close.AddChild(exit);
         CoinTray.AmountOnly = true;
+        CoinTray.Position = WuhanWorkbenchLayout.CoinUi.Position;
+        CoinTray.Size = WuhanWorkbenchLayout.CoinUi.Size;
+        CoinTray.Scale = Vector2.One;
+        CoinTray.PivotOffset = CoinTray.Size * .5f;
+        CoinTray.ConfigureButtonPresentation();
     }
     public void ConnectController(DayController controller)
     {
@@ -145,6 +150,7 @@ public partial class WuhanDayScreen : Control
         CityProgressData city=save.Data.Wuhan; _cookerLevel=city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1); _stationLevel=city.EquipmentLevels.GetValueOrDefault("ingredient_station",1); _doupiLevel=city.EquipmentLevels.GetValueOrDefault("doupi_griddle");
         _cooker=new NoodleCookerStateMachine(catalog.NoodleCookersByLevel[_cookerLevel]); _bowl=new HotDryNoodlesStateMachine(); _ingredients=new WuhanIngredientInventory(catalog.WuhanIngredientStationsByLevel[_stationLevel]); _doupiStock=new DoupiInventory();
         _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _eggUnlocked=city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station")>0;
+        GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
         _basketLabels[1].Visible=false;
         Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_eggUnlocked,_ingredients,_cookerLevel,_doupiLevel);
         Render();

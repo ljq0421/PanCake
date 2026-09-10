@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://lthaitcspayg"]
 
 [ext_resource type="Script" uid="uid://bem3g720e4oa7" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
-[ext_resource type="Texture2D" uid="uid://3rbxpdulvovh" path="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v4.png" id="2_3027d"]
+[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉早餐铺主界面-热干面-豆皮-v1.png" id="2_3027d"]
 [ext_resource type="Script" uid="uid://crlqrj5cucv88" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
 [ext_resource type="Texture2D" uid="uid://l46r51x58hug" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
 [ext_resource type="Script" uid="uid://cyw6mdd60r1k0" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
@@ -750,7 +750,7 @@ grow_vertical = 2
 theme = SubResource("Theme_o3bxv")
 script = ExtResource("1")
 
-[node name="@TextureRect@310" type="TextureRect" parent="." unique_id=131375831]
+[node name="WorkbenchBackground" type="TextureRect" parent="." unique_id=131375831]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -1395,9 +1395,9 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 [node name="WuhanWorkstation" type="Control" parent="." unique_id=498277126]
 z_index = 45
 anchors_preset = 0
-offset_top = 585.0
+offset_top = 0.0
 offset_right = 1920.0
-offset_bottom = 1010.0
+offset_bottom = 1080.0
 script = ExtResource("10_o1v37")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<Workstation>k__BackingField")
 

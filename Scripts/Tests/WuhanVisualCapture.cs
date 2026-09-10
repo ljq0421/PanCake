@@ -12,6 +12,12 @@ public partial class WuhanVisualCapture : Node
 {
     public override async void _Ready()
     {
+        if (OS.GetCmdlineUserArgs().Contains("--stages"))
+        {
+            try { await CaptureUnlockStages(); GD.Print("WUHAN_STAGES_CAPTURE_DONE"); GetTree().Quit(); }
+            catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
+            return;
+        }
         if(OS.GetCmdlineUserArgs().Contains("--supply-hub"))
         {
             try
@@ -59,6 +65,27 @@ public partial class WuhanVisualCapture : Node
         string absolute=ProjectSettings.GlobalizePath(savePath);if(File.Exists(absolute))File.Delete(absolute);GD.Print("WUHAN_CAPTURE_DONE");GetTree().Quit();
     }
     private async Task Frames(int count){for(int i=0;i<count;i++)await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);}
+    private async Task CaptureUnlockStages()
+    {
+        bool small = OS.GetCmdlineUserArgs().Contains("--capture-720");
+        GetWindow().Size = small ? new Vector2I(1280, 720) : new Vector2I(1920, 1080);
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        foreach (int number in new[] { 1, 3, 4, 5, 6, 7, 12 })
+        {
+            var save = new SaveService(); save.UsePathForTests($"res://.tmp/wuhan-stages-{Guid.NewGuid():N}.json"); AddChild(save);
+            for (int previous = 1; previous < number; previous++)
+                if (!save.ApplyStartUnlocks(catalog.GetDays(StableIds.Cities.Wuhan)[previous], out string error)) throw new InvalidOperationException(error);
+            var controller = new DayController(); AddChild(controller);
+            var day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(day);
+            day.ConnectController(controller); day.Initialize(catalog, save, controller, number); day.SetProcess(false);
+            day.BeginDay(); day._Notification((int)NotificationApplicationFocusIn); day._Process(3.1);
+            if ((day.Doupi is not null) != (number >= 4) || day.EggUnlocked != (number >= 6))
+                throw new InvalidOperationException($"Incorrect unlock stage: {number}");
+            await Frames(3); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            Save($"res://.tmp/wuhan-integrated-stages/{(small ? 720 : 1080)}/day-{number:00}.png");
+            day.Free(); controller.Free(); save.Free(); await Frames(2);
+        }
+    }
     private void Save(string path){Directory.CreateDirectory(Path.GetDirectoryName(ProjectSettings.GlobalizePath(path))!);GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(path));}
 
     private async Task CaptureLayout()
@@ -120,8 +147,8 @@ public partial class WuhanVisualCapture : Node
             }
 
             Step(6);
-            for (int i=0;i<200 && controller.CustomerQueue!.Slots.Count<4;i++) Step(.25);
-            Require(controller.CustomerQueue!.Slots.Count==4, "four full combo orders visible");
+            for (int i=0;i<300 && controller.CustomerQueue!.Slots.Count<5;i++) Step(.25);
+            Require(controller.CustomerQueue!.Slots.Count==5, "five full combo orders visible");
             await Shot("01-idle");
             // Inspect thumbnail bounds without exposing presentation-only test APIs.
             const BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
@@ -130,18 +157,16 @@ public partial class WuhanVisualCapture : Node
             var art = (WuhanArtCatalog)viewType.GetField("_art", hidden)!.GetValue(view)!;
             Rect2 VisualRect(string property) => (Rect2)viewType.GetProperty(property, hidden)!.GetValue(view)!;
             Rect2 ingredientTray = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { 1 })!;
-            Require(Math.Abs(ingredientTray.Size.X / 120 - 1.25f) < .001f && Math.Abs(stockBounds.Size.X / 196 - 1.25f) < .001f,
-                "ingredient and stock containers keep the approved 25 percent enlargement");
-            Require(Math.Abs(VisualRect("CookerCanvas").Size.X / (level == 3 ? 392 : 384) - 1.2f) < .001f,
-                "all cooker levels keep the approved 20 percent enlargement");
-            Require(VisualRect("BowlRect").Size.X <= 275.01f, "noodle bowl keeps its existing size");
-            // Elevated rear machinery can project above the back edge; its base must stay on the counter.
-            var countertop = new Rect2(0, -60, 1920, 475);
+            Require(ingredientTray == WuhanWorkbenchLayout.Ingredient(1) && stockBounds == WuhanWorkbenchLayout.Stock,
+                "ingredient and stock anchors follow the integrated background");
+            Require(VisualRect("CookerCanvas") == WuhanWorkbenchLayout.Cooker && VisualRect("PanRect") == WuhanWorkbenchLayout.Pan,
+                "all equipment levels keep identical body geometry");
+            Require(VisualRect("BowlRect") == WuhanWorkbenchLayout.Bowl, "bowl stays aligned with the baked-in bowl");
+            var countertop = new Rect2(0, 560, 1920, 520);
             var equipment = new Dictionary<string, Rect2> {
                 ["pan"] = VisualRect("PanRect"), ["bowl"] = VisualRect("BowlRect"),
                 ["batter"] = VisualRect("BatterRect"), ["filling"] = VisualRect("FillingRect"),
                 ["stock"] = stockBounds,
-                ["egg"] = (Rect2)viewType.GetField("EggStockRect", hidden)!.GetValue(view)!,
                 ["raw"] = (Rect2)viewType.GetField("RawTrayRect", hidden)!.GetValue(view)!,
                 ["base sauce"] = VisualRect("SauceBottleRect"),
             };
@@ -149,20 +174,17 @@ public partial class WuhanVisualCapture : Node
                 equipment[$"ingredient{ingredient}"] = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { ingredient })!;
             foreach (var (name, bounds) in equipment)
             {
-                Require(countertop.Encloses(bounds), $"{name} fits the workstation and clears the front counter edge");
+                Require(new Rect2(Vector2.Zero, WuhanWorkbenchLayout.DesignSize).Encloses(bounds), $"{name} fits the workbench");
                 foreach (var other in equipment.Where(pair => string.CompareOrdinal(pair.Key, name) > 0))
                     Require(!bounds.Intersects(other.Value), $"{name} does not cover {other.Key}");
             }
-            Control coinArt = day.CoinTray.GetNode<Control>("CoinTrayArt");
-            Transform2D coinTransform = day.CoinTray.GetTransform();
-            var coinBounds = new Rect2(coinTransform * coinArt.Position, coinArt.Size * day.CoinTray.Scale);
-            Require(!coinBounds.Intersects(equipment["pan"]) && !coinBounds.Intersects(equipment["egg"]), "coin tray clears cooking and cup areas");
-            Control coinCaption = day.CoinTray.GetNode<Control>("CoinTrayHint");
-            var captionBounds = new Rect2(coinTransform * coinCaption.Position, coinCaption.Size * day.CoinTray.Scale);
-            Require(!captionBounds.Intersects(equipment["egg"]) && !captionBounds.Intersects(equipment["pan"]), "money caption clears cups and cooking surface");
-            // The current background reaches the full width below its rounded rear corners.
-            Require(coinBounds.Position.Y + view.Position.Y >= 625 && coinBounds.End.X + 20 <= 1920,
-                "coin tray leaves at least 20px inside the current counter edge");
+            Rect2 eggUi = WuhanWorkbenchLayout.EggUi;
+            Require(!day.CoinTray.GetNode<Control>("CoinTrayArt").Visible, "UI collection hides the physical coin tray");
+            Require(day.CoinTray.GetRect() == WuhanWorkbenchLayout.CoinUi && !day.CoinTray.GetRect().Intersects(eggUi),
+                "egg and collection UI are separate HUD controls");
+            Require(day.CoinTray.LandingPoint.IsEqualApprox(day.CoinTray.GetGlobalRect().GetCenter()),
+                "payment feedback lands on the collection button");
+            Require(eggUi.End.Y < 130 && day.CoinTray.GetRect().End.Y < 130, "HUD controls clear all customer orders");
             Rect2 singleSource = (Rect2)viewType.GetMethod("Source", hidden)!.Invoke(view, new object[] { art.Texture("doupi_single") })!;
             for (int piece = 0; piece < 16; piece++)
             {
@@ -196,7 +218,7 @@ public partial class WuhanVisualCapture : Node
                 Step(.5);
             }
             Click(view.PanCenter);Require(day.Doupi!.State==DoupiState.Batter,"viewport pan accepts batter");
-            Require(day.EggUnlocked && view.CanDeliver(ProductKind.EggRiceWine), "egg cups are continuously available");
+            Require(day.EggUnlocked && view.CanDeliver(ProductKind.EggRiceWine), "egg UI is continuously available");
             Step(.18);await Shot("02-preparing");Step(.5);
 
             Vector2 center=view.BowlCenter;
@@ -286,9 +308,9 @@ public partial class WuhanVisualCapture : Node
             await Frames(2);
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             Save($"{root}/lv{level}/11-coins-pending.png");
-            Require(day.CoinTray.GetNode<Label>("CoinTrayHint").Text == "¥13", "Wuhan money caption contains only amount");
+            Require(day.CoinTray.GetNode<Label>("CoinTrayHint").Text == "收钱 ¥13", "collection UI shows the pending amount");
             Require(day.CoinTray.TryCollect(), "relocated coin tray still collects pending money");
-            Require(!day.CoinTray.GetNode<Label>("CoinTrayHint").Visible, "empty coin tray has no caption plaque");
+            Require(day.CoinTray.GetNode<Label>("CoinTrayHint").Text == "收钱", "empty collection UI retains its label");
             await Shot("12-coins-collected");
             day.Free();controller.Free();save.Free();await Frames(2);
         }

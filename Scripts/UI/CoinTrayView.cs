@@ -6,6 +6,7 @@ namespace ProjectCake.UI;
 public partial class CoinTrayView : Control
 {
     private bool _buttonPresentation;
+    internal bool IsButtonPresentation => _buttonPresentation;
     public void ConfigureButtonPresentation()
     {
         _buttonPresentation = true;
@@ -41,7 +42,8 @@ public partial class CoinTrayView : Control
     [Export] public bool AmountOnly { get; set; }
     public bool CompactCaption { get; set; }
     [Export] public Rect2 CoinSurface { get; set; } = new(26, 16, 198, 52);
-    public Vector2 LandingPoint => _surface.GetGlobalTransform() * (_surface.Size * .5f);
+    public Vector2 LandingPoint => _buttonPresentation ? GetGlobalRect().GetCenter()
+        : _surface.GetGlobalTransform() * (_surface.Size * .5f);
     internal Rect2 SurfaceBounds => _surface.GetGlobalRect();
     internal IReadOnlyList<TextureRect> Coins => _coins;
 
@@ -58,6 +60,11 @@ public partial class CoinTrayView : Control
     /// <summary>Append a short outward hop to the existing payment tween, preserving its pause/cleanup owner.</summary>
     internal void AppendPaymentLanding(Tween tween, Control coin, Control root, int index)
     {
+        if (_buttonPresentation)
+        {
+            tween.Chain().TweenProperty(coin, "modulate:a", 0f, .1);
+            return;
+        }
         int slot = Math.Max(0, VisibleCoinCount - CoinsPerPayment) + index % CoinsPerPayment;
         EnsureCoins(slot + 1);
         Transform2D surfaceToRoot = root.GetGlobalTransform().AffineInverse() * _surface.GetGlobalTransform();

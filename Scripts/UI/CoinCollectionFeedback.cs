@@ -68,6 +68,7 @@ public partial class CoinCollectionFeedback : Node
         var text = TianjinUi.Label($"+¥{amount}", 34, new Color("#FFE27A"), HorizontalAlignment.Center);
         text.Name = "CollectedAmount";
         text.Position = origin - new Vector2(110, 70); text.Size = new Vector2(220, 50);
+        if (_tray.IsButtonPresentation) text.Position = origin + new Vector2(-110, 38);
         text.AddThemeConstantOverride("outline_size", 5);
         text.AddThemeColorOverride("font_outline_color", TianjinUi.BrownDark);
         Tween labelTween = Effect(text);
@@ -76,7 +77,7 @@ public partial class CoinCollectionFeedback : Node
         labelTween.TweenProperty(text, "modulate:a", 0f, .2).SetDelay(.4);
         if (!ReducedMotion)
         {
-            _trayPulse?.Kill(); _tray.PivotOffset = new Vector2(125, 43);
+            _trayPulse?.Kill(); _tray.PivotOffset = _tray.IsButtonPresentation ? _tray.Size * .5f : new Vector2(125, 43);
             _trayPulse = CreateTween(); _trayPulse.Stop();
             _trayPulse.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
             _trayPulse.TweenProperty(_tray, "scale", _trayScale * .96f, .1);

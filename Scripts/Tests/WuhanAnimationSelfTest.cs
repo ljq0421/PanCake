@@ -17,7 +17,7 @@ public partial class WuhanAnimationSelfTest : Node
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             Check(new WuhanArtCatalog().MissingRequiredAssets().Count == 0, "全部武汉必需美术可加载");
-            TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestLifecycle();
+            TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle();
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
         GD.Print($"WUHAN_ANIMATION_TEST_RESULT passed={_passed} failed={_failed}");
@@ -31,7 +31,7 @@ public partial class WuhanAnimationSelfTest : Node
         save.Data.Wuhan.EquipmentLevels["noodle_cooker"]=level;
         save.Data.Wuhan.EquipmentLevels["ingredient_station"]=3;
         save.Data.Wuhan.EquipmentLevels["doupi_griddle"]=level;
-        save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"]=1;
+        if (day >= 6) save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"]=1;
         var controller=new DayController();AddChild(controller);
         var screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(screen);screen.ConnectController(controller);screen.Initialize(_catalog,save,controller,day);
         screen.SetProcess(false);screen.BeginDay();screen._Process(3.1);
@@ -63,11 +63,11 @@ public partial class WuhanAnimationSelfTest : Node
         s._Process(1.5);s.BasketAction(0);s._Process(.71);
         Check(s.Cooker.Baskets[0].State==NoodleBasketState.Drained&&!v.Busy("basket0"),"提篮后自然沥水完成");
         s._Process(.25);s.BasketAction(0);
-        int seasoning=s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning);s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
-        Check(v.Busy("basket0")&&v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Noodles&&s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==seasoning,"倒面同时锁住漏勺和碗，期间不能提前加料");
+        s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
+        Check(v.Busy("basket0")&&v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Noodles,"倒面同时锁住漏勺和碗，期间不能提前加料");
         Check(s.Workstation.CanDeliver(ProductKind.EggRiceWine),"倒面不阻塞蛋酒直接交付");
         s._Process(.7);Click(v,v.IngredientCenter(0));s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
-        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==seasoning-1,"基础调味动画只扣一次库存");
+        Check(s.Bowl.State==NoodleBowlState.Seasoned && s.Ingredients.CanUse(StableIds.Ingredients.WuhanBaseSeasoning),"基础调味加入一次后仍持续供应");
         s._Process(.5);Click(v,v.IngredientCenter(1));s._Process(.5);
         Check(s.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanScallion),"点击葱花实物加入碗内");
         Click(v,new Vector2(600,320));Move(v,v.BowlCenter+new Vector2(70,0));
@@ -112,33 +112,60 @@ public partial class WuhanAnimationSelfTest : Node
     private void TestEgg()
     {
         var f=NewDay();var s=f.Screen;
-        Check(s.Egg!.Count == 6 && s.Egg.CanTake, "初始六杯成品立即可取");
-        Check(!s.Egg.TryRefill(), "满库存不能补货");
-        for (int i=0;i<6;i++) Check(s.Egg.TryTake(), "每次取杯扣一份");
-        Check(s.Egg.Count==0 && !s.Egg.CanTake && !s.Egg.TryTake(), "耗尽后不能超扣");
-        Check(s.Egg.TryRefill() && !s.Egg.TryRefill(), "补货不能重复启动");
-        s.Workstation.PlayEggRefill();s._Process(.3);
-        Check(s.Egg.IsRefilling && s.Egg.Count==0 && !s.Egg.TryTake(), "补货期间不能取杯");
-        double remaining=s.Egg.RemainingSeconds;
+        Check(s.EggUnlocked && s.Workstation.CanDeliver(ProductKind.EggRiceWine), "蛋酒解锁后直接可取");
+        s.Workstation.PlayCupReplacement();s._Process(.1);
+        Check(s.Workstation.CanDeliver(ProductKind.EggRiceWine), "杯子补位动画不阻塞取杯");
+        float progress=s.Workstation.MotionProgress("egg_visual");
         f.Controller.IsPaused=true;s._Process(2);
-        Check(s.Egg.RemainingSeconds==remaining, "暂停冻结蛋酒补货计时");
-        f.Controller.IsPaused=false;s._Process(.31);
-        Check(s.Egg.Count==6 && s.Egg.CanTake && !s.Egg.IsRefilling, "0.6秒补满成品");
-        s.Egg.TryTake();s.Egg.TryRefill();
-        Check(!s.Egg.TryTake() && s.Egg.Count==5, "非空库存补货时也暂停取杯");
-        s.Egg.Tick(.6);Check(s.Egg.Count==6, "部分库存补货填满而非追加");DisposeDay(f);
-        f=NewDay(1,1);s=f.Screen;s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
+        Check(s.Workstation.MotionProgress("egg_visual")==progress && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "暂停冻结补位动画并禁用交付");
+        f.Controller.IsPaused=false;s._Process(.21);
+        Check(!s.Workstation.Busy("egg_visual") && s.Workstation.CanDeliver(ProductKind.EggRiceWine), "恢复后补位结束，蛋酒持续可取");
+        DisposeDay(f);
+        f=NewDay(1,1);s=f.Screen;Check(!s.EggUnlocked && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "Day 1 不可提前交付蛋酒");s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
         for(int i=0;i<80 && f.Controller.CustomerQueue!.Slots.Count==0;i++)s._Process(.25);
         for(int i=0;i<10;i++)s._Process(.25);
         var customer=f.Controller.CustomerQueue!.Slots[0];
         s.DeliverToCustomer(customer.Id,ProductKind.HotDryNoodles);s.DeliverToCustomer(customer.Id,ProductKind.HotDryNoodles);
         Check(s.Bowl.State==NoodleBowlState.Empty&&!s.Workstation.Busy("bowl")&&customer.Progress.IsComplete,"接受交付后清空食品，重复点击不重复交付");DisposeDay(f);
     }
+    private void TestSupply()
+    {
+        foreach (int level in new[] { 1, 2, 3 })
+        {
+            var inventory = new WuhanIngredientInventory(_catalog.WuhanIngredientStationsByLevel[level]);
+            string noodles = StableIds.Ingredients.WuhanNoodles;
+            Check(inventory.Count(noodles) == 6 + 2 * level, $"Lv{level} 生面开局满库存");
+            foreach (string id in WuhanWorkstationView.IngredientIds)
+                Check(Enumerable.Range(0, 100).All(_ => inventory.TryConsume(id)) && inventory.CanUse(id), $"{id} 连续使用不耗尽");
+            for (int i=0;i<inventory.Capacity(noodles);i++) inventory.TryConsume(noodles);
+            Check(!inventory.TryConsume(noodles) && !inventory.TryConsume("unknown"), "空生面和未知原料不能消耗");
+        }
+        var f=NewDay(3);var s=f.Screen;string raw=StableIds.Ingredients.WuhanNoodles;
+        while(s.Ingredients.Count(raw)>2)s.Ingredients.TryConsume(raw);
+        var refill=s.Workstation.GetNode<Button>("RefillNoodles");
+        refill.EmitSignal(Button.SignalName.Pressed);s._Process(.3);
+        s.BasketAction(0);
+        Check(s.Ingredients.Count(raw)==1 && s.Cooker.Baskets[0].State==NoodleBasketState.Cooking, "补面期间仍能使用剩余生面");
+        refill.EmitSignal(Button.SignalName.Pressed);
+        f.Controller.IsPaused=true;s._Process(2);
+        Check(s.Ingredients.Count(raw)==1, "暂停不推进补面");
+        f.Controller.IsPaused=false;s._Notification((int)NotificationApplicationFocusOut);s._Process(2);
+        Check(s.Ingredients.Count(raw)==1, "失焦不推进补面");
+        s._Notification((int)NotificationApplicationFocusIn);s._Process(.71);
+        Check(s.Ingredients.Count(raw)==s.Ingredients.Capacity(raw), "重复补货不重启计时，到时补满而非追加");
+        DisposeDay(f);
+        ProjectSettings.SetSetting("accessibility/reduce_motion",true);
+        f=NewDay();s=f.Screen;s.Ingredients.TryConsume(raw);
+        refill=s.Workstation.GetNode<Button>("RefillNoodles");refill.EmitSignal(Button.SignalName.Pressed);s._Process(.2);
+        Check(refill.Visible && refill.Disabled && refill.GetMeta("refilling").AsBool(), "减少动态模式不提前结束补货状态");
+        s._Process(.81);Check(!refill.GetMeta("refilling").AsBool(), "完整补货时长后清除状态");
+        DisposeDay(f);ProjectSettings.SetSetting("accessibility/reduce_motion",false);
+    }
     private void TestLifecycle()
     {
         var f=NewDay();var s=f.Screen;s.BasketAction(0);s._Process(.1);float progress=s.Workstation.MotionProgress("basket0");double cook=s.Cooker.Baskets[0].CookSeconds;
         f.Controller.IsPaused=true;s._Process(2);
-        Check(s.Workstation.MotionProgress("basket0")==progress&&s.Cooker.Baskets[0].CookSeconds==cook&&s.Egg!.Count==6,"暂停冻结动作、制作和输入");
+        Check(s.Workstation.MotionProgress("basket0")==progress&&s.Cooker.Baskets[0].CookSeconds==cook&&!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"暂停冻结动作、制作和输入");
         f.Controller.IsPaused=false;s._Notification((int)NotificationApplicationFocusOut);s._Process(2);
         Check(s.Workstation.MotionProgress("basket0")==progress,"失焦冻结动画");s._Notification((int)NotificationApplicationFocusIn);s._Process(.2);
         Check(!s.Workstation.Busy("basket0"),"恢复后继续原动画");s.Hide();

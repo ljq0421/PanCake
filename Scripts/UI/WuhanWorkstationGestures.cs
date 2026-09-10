@@ -7,7 +7,6 @@ namespace ProjectCake.UI;
 public partial class WuhanWorkstationView
 {
     public event Action<string>? RefillRequested, GestureRejected;
-    public event Action? EggRefillRequested;
     public Func<int, bool>? RaiseRequested, PourRequested;
     public Func<DoupiCutDirection, bool>? CutRequested;
     private string _gesture = "";
@@ -22,7 +21,7 @@ public partial class WuhanWorkstationView
     private bool TryBeginGesture(string hit, Vector2 point)
     {
         string gesture = "";
-        if (hit == "raw" && _ingredients.Count(StableIds.Ingredients.WuhanNoodles) > 0 && !Busy("refill:" + StableIds.Ingredients.WuhanNoodles)) gesture = "raw";
+        if (hit == "raw" && _ingredients.Count(StableIds.Ingredients.WuhanNoodles) > 0) gesture = "raw";
         else if (hit.StartsWith("basket"))
         {
             _gestureBasket = int.Parse(hit[^1..]);
@@ -164,7 +163,7 @@ public partial class WuhanWorkstationView
         if(_refillButtons.Count>0)return;
         foreach(Button button in GetChildren().OfType<Button>().Where(candidate => candidate.HasMeta("ingredient_id"))) {
             string id=button.GetMeta("ingredient_id").AsString();
-            button.Pressed+=()=>{if(id=="egg")EggRefillRequested?.Invoke();else RefillRequested?.Invoke(id);};
+            button.Pressed+=()=>RefillRequested?.Invoke(id);
             button.Text = "";
             foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
                 button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
@@ -188,22 +187,17 @@ public partial class WuhanWorkstationView
     {
         foreach (var (id, button) in _refillButtons)
         {
-            bool egg = id == "egg";
-            int index = Array.IndexOf(IngredientIds, id);
-            Vector2 position = egg ? EggStockRect.End + new Vector2(-48, 4) : index >= 0
-                ? IngredientReadout(index).Position + new Vector2(72, 0) : new Vector2(RawTrayRect.End.X + 12, RawTrayRect.Position.Y + 18);
-            button.Position = position;
+            button.Position = new Vector2(RawTrayRect.End.X + 12, RawTrayRect.Position.Y + 18);
             button.Size = new Vector2(48, 48);
-            int count = egg ? _egg?.Count ?? 0 : _ingredients.Count(id);
-            int capacity = egg ? EggRiceWineRuntime.Capacity : _ingredients.Capacity(id);
-            bool working = egg ? _egg?.IsRefilling == true : Busy("refill:" + id);
-            Rect2 supply = egg ? EggStockRect : index >= 0 ? IngredientRect(index) : RawTrayRect;
-            bool nearby = supply.Grow(18).HasPoint(_pointer) || button.GetRect().Grow(18).HasPoint(_pointer) || button.IsHovered() || button.HasFocus();
-            button.Visible = (!egg || _egg is not null) && (working || count <= capacity * .3f || nearby);
+            int count = _ingredients.Count(id), capacity = _ingredients.Capacity(id);
+            bool working = NoodlesRefilling?.Invoke() == true;
+            bool nearby = RawTrayRect.Grow(18).HasPoint(_pointer) || button.GetRect().Grow(18).HasPoint(_pointer) || button.IsHovered() || button.HasFocus();
+            bool low = count <= _ingredients.LowStockThreshold;
+            button.Visible = working || low || nearby;
             button.SetMeta("refilling", working);
-            button.TooltipText = working ? "正在补货" : $"{count}/{capacity} · " + (count >= capacity ? "库存已满" : "补充库存");
-            button.Disabled = CanInteract?.Invoke() != true || working || count >= capacity || (egg && Busy("egg"));
-            button.Modulate = count <= capacity * .2 && !working ? new Color("#FFD49B") : Colors.White;
+            button.TooltipText = working ? "正在补面；剩余面条仍可下锅" : $"{count}/{capacity} · " + (count >= capacity ? "面条已满" : "补满面条");
+            button.Disabled = CanInteract?.Invoke() != true || working || count >= capacity;
+            button.Modulate = low && !working ? new Color("#FFD49B") : Colors.White;
             button.QueueRedraw();
         }
     }
@@ -218,8 +212,6 @@ public partial class WuhanWorkstationView
         {
             string id = IngredientIds[i];
             bool added = i == 0 ? _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready : _bowl.Toppings.Contains(id);
-            Vector2 origin = IngredientReadout(i).Position;
-            LabelAt(origin + new Vector2(42, 27), $"{_ingredients.Count(id)}");
             if (added)
             {
                 Vector2 mark = IngredientRect(i).Position + new Vector2(70, -8);
@@ -229,6 +221,7 @@ public partial class WuhanWorkstationView
         }
         LabelAt(new Vector2(RawTrayRect.End.X + 12, RawTrayRect.End.Y - 14), $"{_ingredients.Count(StableIds.Ingredients.WuhanNoodles)}");
         if (_doupi is not null) LabelAt(new Vector2(StockRect.End.X + 8, StockRect.End.Y - 14), $"{_stock.Count}");
-        if (_egg is not null) LabelAt(new Vector2(EggStockRect.GetCenter().X - 6, EggStockRect.End.Y + 28), $"{_egg.Count}");
+        if (_doupi is not null && DoupiSupplyHint.Length > 0)
+            LabelAt(new Vector2(StockRect.Position.X, StockRect.End.Y + 23), DoupiSupplyHint);
     }
 }

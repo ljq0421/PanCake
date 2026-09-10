@@ -36,6 +36,7 @@ public partial class WuhanDeliverySelfTest : Node
             await TestBatchDelivery();
             await TestLifecycle();
             await TestFifthCustomer();
+            await TestContinuousSupply();
             TestTheme();
             if (_capture) await CaptureScreens();
             DisposeDay();
@@ -75,6 +76,46 @@ public partial class WuhanDeliverySelfTest : Node
     {
         if (!condition) throw new InvalidOperationException(message);
         _passed++; GD.Print($"PASS {message}");
+    }
+
+    private async Task TestContinuousSupply()
+    {
+        await NewDay();
+        var view = _screen.Workstation;
+        Check(view.PendingDoupiDemand == 4 && view.DoupiSupplyHint == "订单缺豆皮，做一锅",
+            "doupi warning counts only remaining live orders");
+        _screen.DoupiStock.TryAddBatch(4); Step(.001);
+        Check(view.DoupiSupplyHint.Length == 0, "enough finished doupi clears the warning");
+        var first = _controller.CustomerQueue!.Slots[0];
+        await Drop(ProductKind.Doupi, 0); Step(.001);
+        Check(view.PendingDoupiDemand == 2 && _screen.DoupiStock.Count == 2 && view.DoupiSupplyHint.Length == 0,
+            "delivered doupi reduces demand immediately");
+        _screen.DoupiStock.TryTake(2, out _); Step(.001);
+        _screen.DoupiAction(); Step(.01);
+        Check(view.DoupiSupplyHint == "制作中", "starting a batch replaces shortage warning with production state");
+        _screen.Doupi!.Discard();
+        _controller.CustomerQueue.Slots[1].State = ProjectCake.Customers.CustomerState.Leaving; Step(.001);
+        Check(view.PendingDoupiDemand == 0 && view.DoupiSupplyHint.Length == 0, "departing customers do not cause false shortage warnings");
+
+        await NewDay();
+        var queue = _controller.CustomerQueue!;
+        for (int elapsed=100;elapsed<=140;elapsed+=2) queue.Tick(elapsed,0,true);
+        queue.Tick(140,.4,true);Step(.001);await Frames();
+        int delivered = 0;
+        foreach (int slot in new[] { 0, 1, 3, 4 })
+        {
+            var customer = queue.CustomerAtSlot(slot)!;
+            for (int cup=0;cup<2;cup++)
+            {
+                await Drop(ProductKind.EggRiceWine, slot);
+                delivered++;
+                Check(customer.Progress.GetDeliveredQuantity(2)==cup+1
+                    && _screen.Workstation.CanDeliver(ProductKind.EggRiceWine), "valid cup drop advances order and leaves supply available");
+            }
+            Check(!_screen.DeliverToCustomer(customer.Id, ProductKind.EggRiceWine)
+                && customer.Progress.GetDeliveredQuantity(2)==2, "unlimited supply still rejects fulfilled order lines");
+        }
+        Check(delivered == 8, "eight cups delivered without refill, exceeding the former six-cup limit");
     }
     private async Task Frames(int count = 2)
     {
@@ -129,7 +170,6 @@ public partial class WuhanDeliverySelfTest : Node
         if (toppings) foreach (string id in WuhanWorkstationView.IngredientIds.Skip(1)) bowl.TryAddTopping(id);
         bowl.AddMixDistance(425);
         if (_screen.DoupiStock.Count == 0) _screen.DoupiStock.TryAddBatch(8);
-        if (!_screen.Egg!.CanTake) _screen.Egg.Refill();
         _screen.Workstation.CancelAnimations(); Step(.001);
     }
     private Vector2 Source(ProductKind kind)
@@ -163,9 +203,9 @@ public partial class WuhanDeliverySelfTest : Node
         Check(queue.SelectedCustomerId is null, "no customer selection required");
         Press(ProductKind.HotDryNoodles);
         Check(_screen.Workstation.Busy("bowl"), "drag locks the current bowl");
-        int scallion = _screen.Ingredients.Count(StableIds.Ingredients.WuhanScallion);
+        var toppings = _screen.Bowl.Toppings.ToArray();
         _screen.IngredientAction(StableIds.Ingredients.WuhanScallion);
-        Check(_screen.Ingredients.Count(StableIds.Ingredients.WuhanScallion) == scallion, "drag cannot mutate recipe or consume ingredients");
+        Check(_screen.Bowl.Toppings.SequenceEqual(toppings), "drag cannot mutate recipe or consume ingredients");
         var overlay = (Control)_screen.FindChild("WuhanDragOverlay", true, false);
         Check(overlay.GetChild(0).GetChild(0).GetChildCount() == 7, "preview contains bowl, noodles, mixed sauce, overcooking and three toppings");
         Vector2 bowlSize = _screen.Workstation.GetNode<Control>("WuhanDrag_HotDryNoodles").Size;
@@ -184,16 +224,15 @@ public partial class WuhanDeliverySelfTest : Node
         queue.TrySelect(first.Id); await Drop(ProductKind.Doupi, 1);
         Check(second.Progress.GetDeliveredQuantity(1) == 2 && first.Progress.GetDeliveredQuantity(1) == 0
             && _screen.DoupiStock.Count == 6, "drop target wins over selection and receives its two missing pieces");
-        int eggBefore = _screen.Egg!.Count;
         Vector2 eggClick = _screen.Workstation.GetGlobalTransformWithCanvas() * _screen.Workstation.CupCenter;
         Move(eggClick); Button(eggClick, true); Button(eggClick, false);
-        Check(_screen.Egg!.Count == eggBefore && second.Progress.GetDeliveredQuantity(2) == 0, "egg action never performs click delivery");
+        Check(second.Progress.GetDeliveredQuantity(2) == 0, "egg action never performs click delivery");
         await Settled();Step(.001);
         await Drop(ProductKind.EggRiceWine, 1);
-        Check(_screen.Egg.Count == eggBefore - 1 && second.Progress.GetDeliveredQuantity(2) == 1, "finished cup can be dragged directly to customer");
+        Check(second.Progress.GetDeliveredQuantity(2) == 1, "finished cup can be dragged directly to customer");
         await Drop(ProductKind.EggRiceWine, 1);
-        Check(_screen.Egg.Count == eggBefore - 2 && second.Progress.GetDeliveredQuantity(2) == 2, "another stock cup satisfies the remaining quantity");
-        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine) && _screen.Egg.Count == eggBefore - 2, "fulfilled egg line cannot consume another cup");
+        Check(second.Progress.GetDeliveredQuantity(2) == 2, "another stock cup satisfies the remaining quantity");
+        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine) && second.Progress.GetDeliveredQuantity(2) == 2, "fulfilled egg line cannot consume another cup");
         Move(Source(ProductKind.HotDryNoodles)); Button(Source(ProductKind.HotDryNoodles), true); Button(Source(ProductKind.HotDryNoodles), false);
         Check(!_screen.DeliveryDrag.IsDragging, "empty bowl cannot start a delivery");
         _screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); _screen.Bowl.TryAddBaseSeasoning(); Step(.001);

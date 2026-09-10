@@ -64,7 +64,7 @@ public partial class WuhanHub : Control
         int cooker = city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1), griddle = city.EquipmentLevels.GetValueOrDefault("doupi_griddle"), station = city.EquipmentLevels.GetValueOrDefault("ingredient_station",1);
         UpdateCard("Cooker", "煮面锅", _art.Cooker(cooker), cooker, Next(city, "equipment:noodle_cooker_lv2", "equipment:noodle_cooker_lv3"));
         UpdateCard("Griddle", "豆皮锅", _art.Griddle(Math.Max(1,griddle)), griddle, Next(city, "equipment:doupi_griddle_lv2", "equipment:doupi_griddle_lv3"));
-        UpdateCard("WuhanStation", "备料台", _art.Texture("base_seasoning"), station, Next(city, "equipment:wuhan_ingredient_station_lv2", "equipment:wuhan_ingredient_station_lv3"));
+        UpdateCard("WuhanStation", "备料台", _art.Texture("raw_noodles"), station, Next(city, "equipment:wuhan_ingredient_station_lv2", "equipment:wuhan_ingredient_station_lv3"));
     }
 
     private void UpdateCard(string prefix, string title, Texture2D texture, int level, string? offer)
@@ -75,11 +75,17 @@ public partial class WuhanHub : Control
         Button upgrade = GetNode<Button>($"%{prefix}Upgrade");
         note.Visible = offer is null;
         note.Text = level == 0 ? "完成对应营业日解锁" : "当前最好设备";
+        if (prefix == "WuhanStation")
+            note.Text = $"面条容量 {_catalog.WuhanIngredientStationsByLevel[level].NoodlesCapacity} 份";
         upgrade.Visible = offer is not null;
         if (offer is not null)
         {
             int price = Price(offer);
-            upgrade.Text = $"升级 ¥{price}";
+            upgrade.Text = prefix == "WuhanStation"
+                ? $"扩至{_catalog.WuhanIngredientStationsByLevel[level + 1].NoodlesCapacity}份 · ¥{price}"
+                : $"升级 ¥{price}";
+            if (prefix == "WuhanStation")
+                upgrade.TooltipText = $"生面条容量：{_catalog.WuhanIngredientStationsByLevel[level].NoodlesCapacity} → {_catalog.WuhanIngredientStationsByLevel[level + 1].NoodlesCapacity} 份";
             upgrade.Disabled = _save.Data.Coins < price;
         }
     }

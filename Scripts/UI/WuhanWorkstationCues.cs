@@ -5,13 +5,20 @@ namespace ProjectCake.UI;
 
 public partial class WuhanWorkstationView
 {
+    internal string DoupiSupplyHint => _doupi is null ? "" : _doupi.State switch
+    {
+        DoupiState.Burnt => "清理后再做一锅",
+        DoupiState.Cut => "成品待入盘",
+        DoupiState.Empty => PendingDoupiDemand > _stock.Count ? "订单缺豆皮，做一锅" : "",
+        _ => "制作中",
+    };
+
     private string HoverDescription(string target)
     {
         if (target.StartsWith("ingredient"))
         {
             int index = int.Parse(target[^1..]);
-            string id = IngredientIds[index];
-            return $"{new[] { "基础调味", "葱花", "辣油", "牛肉" }[index]} · {_ingredients.Count(id)}/{_ingredients.Capacity(id)}\n点击加入面碗；＋补货";
+            return $"{new[] { "基础调味", "葱花", "辣油", "牛肉" }[index]}\n点击加入面碗；无需补货";
         }
         if (target.StartsWith("basket"))
         {
@@ -35,8 +42,8 @@ public partial class WuhanWorkstationView
             "pan" when _doupi is null => "豆皮锅 · Day 4 解锁",
             "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；点击清理",
             "pan" => "点击加浆、加蛋和铺馅；上划翻面，横竖各划一次切块",
-            "egg" when _egg is null => "蛋酒 · Day 6 解锁",
-            "egg" => "成品蛋酒直接拖给顾客；＋补货",
+            "egg" when !_eggUnlocked => "蛋酒 · Day 6 解锁",
+            "egg" => "成品蛋酒直接拖给顾客；持续供应",
             _ => "",
         };
     }

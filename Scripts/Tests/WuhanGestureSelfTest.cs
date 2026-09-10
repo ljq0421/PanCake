@@ -80,29 +80,33 @@ public partial class WuhanGestureSelfTest : Node
                 Click(View.IngredientCenter(1));Step(.5);
                 Vector2 center=View.BowlCenter;Move(center);Button(center,true);for(int i=0;i<6;i++)Move(center+new Vector2(i%2==0?70:-70,0),true);Button(center,false);
                 Check(_screen.Bowl.State==NoodleBowlState.Ready&&!_screen.DeliveryDrag.IsDragging,"mixing requires release before delivery");
-                string scallion=StableIds.Ingredients.WuhanScallion;
-                while(_screen.Ingredients.Count(scallion)>1)_screen.Ingredients.TryConsume(scallion);
-                Click(View.IngredientCenter(1));Check(!View.Busy("refill:"+scallion),"invalid seasoning click never silently refills inventory");
+                string raw=StableIds.Ingredients.WuhanNoodles;
+                while(_screen.Ingredients.Count(raw)>1)_screen.Ingredients.TryConsume(raw);
+                Click(View.IngredientCenter(1));Check(!View.Busy("refill:"+raw),"invalid seasoning click never silently refills inventory");
                 Step(.001);await Frames();
-                var refill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()==scallion);
-                Click(refill.Position+refill.Size/2);Check(View.Busy("refill:"+scallion),"separate refill control starts timed replenishment");Step(1.01);
-                Check(_screen.Ingredients.Count(scallion)==_screen.Ingredients.Capacity(scallion)&&refill.Visible&&refill.Disabled,"hovered full stock shows a disabled refill control");
+                var refill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()==raw);
+                Click(refill.Position+refill.Size/2);Check(View.Busy("refill:"+raw),"separate refill control starts timed replenishment");
+                Move(View.RawCenter);Button(View.RawCenter,true);Move(View.RawCenter+new Vector2(12,0),true);
+                Check(View.HasProductionGesture,"remaining raw noodles can be dragged during replenishment");
+                View.CancelInput();Button(View.RawCenter,false);
+                Move(refill.Position+refill.Size/2);Step(1.01);
+                Check(_screen.Ingredients.Count(raw)==_screen.Ingredients.Capacity(raw)&&refill.Visible&&refill.Disabled,"hovered full stock shows a disabled refill control");
                 refill.ReleaseFocus(); Move(new Vector2(800, 390)); Step(.001);
                 Check(!refill.Visible, "full stock hides refill when pointer leaves");
-                _screen.Ingredients.TryConsume(scallion); Step(.001);
+                _screen.Ingredients.TryConsume(raw); Step(.001);
                 Check(!refill.Visible, "healthy partial stock keeps refill hidden at rest");
-                Move(View.IngredientCenter(1)); Step(.001);
+                Move(View.RawCenter); Step(.001);
                 Check(refill.Visible && !refill.Disabled && refill.Text.Length == 0, "container hover reveals actionable icon-only refill");
                 Move(new Vector2(800,390));
-                while (_screen.Ingredients.Count(scallion)>1) _screen.Ingredients.TryConsume(scallion);
+                while (_screen.Ingredients.Count(raw)>1) _screen.Ingredients.TryConsume(raw);
                 Step(.001); Check(refill.Visible, "low stock reveals refill without hover");
-                _screen.Ingredients.TryConsume(scallion); Step(.001);
+                _screen.Ingredients.TryConsume(raw); Step(.001);
                 Check(refill.Visible && !refill.Disabled, "empty stock can always refill");
                 Click(refill.Position+refill.Size/2); Step(1.01);
                 Drag(View.CupCenter,new Vector2(1400,20));
                 await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
-                Check(_screen.Egg!.Count==6&&!_screen.DeliveryDrag.IsDragging,"wrong cup drop returns finished stock and releases input");
-                Check(_screen.Egg.CanTake,"finished cup is deliverable without preparation");await Shot("02-noodles-egg-ready");
+                Check(_screen.EggUnlocked&&!_screen.DeliveryDrag.IsDragging,"wrong cup drop returns finished stock and releases input");
+                Check(View.CanDeliver(ProductKind.EggRiceWine),"finished cup is deliverable without preparation");await Shot("02-noodles-egg-ready");
                 Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
                 if(level<3) {
                     Click(View.PanCenter);Check(_screen.Doupi!.State==DoupiState.ReadyToFlip,"pan click does not flip");
@@ -169,8 +173,8 @@ public partial class WuhanGestureSelfTest : Node
         Step(.71);Step(.7);
         Check(_screen.Bowl.State==NoodleBowlState.Noodles&&_screen.Cooker.PendingPourBasket is null,"resumed transfer completes exactly once");
         Click(View.IngredientCenter(0));Step(.5);
-        int seasoning=_screen.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning);Click(View.IngredientCenter(0));
-        Check(_screen.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==seasoning,"duplicate base seasoning does not consume stock");
+        var seasoning=_screen.Bowl.State;Click(View.IngredientCenter(0));
+        Check(_screen.Bowl.State==seasoning,"duplicate base seasoning does not consume stock");
         Vector2 center=View.BowlCenter;Move(center);Button(center,true);Move(center+new Vector2(60,0),true);
         double progress=_screen.Bowl.MixProgress;Move(center+new Vector2(0,150),true);Move(center,true);
         Check(View.IsMixing&&_screen.Bowl.MixProgress==progress,"outside bowl path adds no progress and preserves held session");
@@ -183,19 +187,17 @@ public partial class WuhanGestureSelfTest : Node
         Button(center,false);Step(.001);
         await shot("06-mixed-ready");
 
-        _screen.Egg!.TryTake();Step(.001);await Frames();int cups=_screen.Egg.Count;
+        Step(.001);await Frames();
         Move(View.CupCenter);Button(View.CupCenter,true);Move(View.CupCenter+new Vector2(15,0),true);Move(View.CupCenter,true);Button(View.CupCenter,false);
-        Check(_screen.Egg.Count==cups,"cup drag returning to source preserves stock");
+        Check(View.CanDeliver(ProductKind.EggRiceWine),"cup drag returning to source preserves stock");
         Click(View.CupCenter);Click(View.CupCenter);
-        Check(_screen.Egg.Count==cups,"repeated clicks never consume stock");
+        Check(View.CanDeliver(ProductKind.EggRiceWine),"repeated clicks never consume stock");
         await shot("07-finished-stock");
         _screen.DeliveryDrag.CancelDrag();Step(.001);
         foreach(var button in View.GetChildren().OfType<Button>().Where(b=>b.HasMeta("ingredient_id")))
             Check(button.Size.X>=48&&button.Size.Y>=48,"refill hit target at least 48 design pixels");
-        var eggRefill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()=="egg");
-        Click(eggRefill.Position+eggRefill.Size/2);Click(eggRefill.Position+eggRefill.Size/2);
-        Check(_screen.Egg.IsRefilling,"explicit egg refill starts once");Step(.7);
-        Check(_screen.Egg.Count==6&&!_screen.Egg.IsRefilling,"egg refill restores exact capacity");
+        Check(View.GetChildren().OfType<Button>().Count(b=>b.HasMeta("ingredient_id"))==1,
+            "only raw noodles expose a refill control");
 
         _screen.DoupiStock.TryTake(_screen.DoupiStock.Count,out _);View.CancelAnimations();
         Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
@@ -262,4 +264,3 @@ public partial class WuhanGestureSelfTest : Node
     }
 
 }
-

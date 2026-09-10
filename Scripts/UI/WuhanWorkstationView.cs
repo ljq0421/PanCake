@@ -17,6 +17,7 @@ public partial class WuhanWorkstationView : Control
     public event Action? DoupiPressed;
     public event Action<float>? MixMoved;
     public Func<bool>? CanInteract { get; set; }
+    public Func<bool>? NoodlesRefilling { get; set; }
     private DragService? _drag;
     private ProductKind? _draggedProduct;
     private readonly Dictionary<ProductKind, DragItem> _deliverySources = new();
@@ -39,7 +40,7 @@ public partial class WuhanWorkstationView : Control
         {
             ProductKind.HotDryNoodles => _bowl.State == NoodleBowlState.Ready,
             ProductKind.Doupi => _stock.Count > 0,
-            ProductKind.EggRiceWine => _egg?.CanTake == true,
+            ProductKind.EggRiceWine => _eggUnlocked,
             _ => false,
         };
 
@@ -65,6 +66,8 @@ public partial class WuhanWorkstationView : Control
     }
     private void OnDragEnded(DragResult result)
     {
+        if (_draggedProduct == ProductKind.EggRiceWine && result.Completion == DragCompletion.Accepted)
+            PlayCupReplacement();
         _draggedProduct = null;
         RefreshDeliverySources(); QueueRedraw();
     }
@@ -118,7 +121,8 @@ public partial class WuhanWorkstationView : Control
     private HotDryNoodlesStateMachine _bowl = null!;
     private DoupiStateMachine? _doupi;
     private DoupiInventory _stock = null!;
-    private EggRiceWineRuntime? _egg;
+    private bool _eggUnlocked;
+    public int PendingDoupiDemand { get; set; }
     private WuhanIngredientInventory _ingredients = null!;
     private int _cookerLevel, _doupiLevel;
     private readonly Dictionary<Texture2D, Rect2> _bounds = new();
@@ -169,7 +173,6 @@ public partial class WuhanWorkstationView : Control
         2 => new Rect2(944, 20, 142.5f, 145),
         _ => new Rect2(888, 260, 150, 103.75f),
     };
-    private static Rect2 IngredientReadout(int index) => new(IngredientRect(index).Position + new Vector2(0, IngredientRect(index).Size.Y + 4), new Vector2(120, 48));
     private static Rect2 SauceBottleRect => new(new Vector2(480, 225), IngredientRect(0).Size);
     private Rect2 BatterRect => FitSprite(_art.Texture("doupi_batter"), new Rect2(1060, 270, 140, 140), new Vector2(.5f, 1));
     private Rect2 FillingRect => FitSprite(_art.Texture("doupi_filling"), new Rect2(1210, 274, 140, 140), new Vector2(.5f, 1));
@@ -195,12 +198,12 @@ public partial class WuhanWorkstationView : Control
     }
 
     public void Bind(WuhanArtCatalog art, NoodleCookerStateMachine cooker, HotDryNoodlesStateMachine bowl,
-        DoupiStateMachine? doupi, DoupiInventory stock, EggRiceWineRuntime? egg,
+        DoupiStateMachine? doupi, DoupiInventory stock, bool eggUnlocked,
         WuhanIngredientInventory ingredients, int cookerLevel, int doupiLevel)
     {
         CancelAnimations();
         _art = art; _cooker = cooker; _bowl = bowl; _doupi = doupi; _stock = stock;
-        _egg = egg; _ingredients = ingredients; _cookerLevel = cookerLevel; _doupiLevel = doupiLevel;
+        _eggUnlocked = eggUnlocked; PendingDoupiDemand = 0; _ingredients = ingredients; _cookerLevel = cookerLevel; _doupiLevel = doupiLevel;
         _bounds.Clear(); _phase=0; RememberStates(); BindRefillControls(); RefreshDeliverySources(); QueueRedraw();
     }
 
@@ -241,7 +244,7 @@ public partial class WuhanWorkstationView : Control
     {
         Play("ingredient", .48, "bowl").Ingredient = ingredient;
     }
-    public void PlayRefill(string ingredient) => Play("refill", 1, "refill:" + ingredient).Ingredient = ingredient;
+    public void PlayRefill(string ingredient, double seconds) => Play("refill", seconds, "refill:" + ingredient).Ingredient = ingredient;
     public void PlayDoupi(DoupiState before)
     {
         string kind = before switch { DoupiState.Empty => "batter", DoupiState.Batter => "egg",
@@ -273,7 +276,13 @@ public partial class WuhanWorkstationView : Control
             _mixLast = point; QueueRedraw(); GetViewport().SetInputAsHandled();
         }
     }
-    public void PlayEggRefill() => Play("egg_refill", EggRiceWineRuntime.RefillSeconds, "egg");
+    // Cup replacement is visual only and never locks the delivery source.
+    public void PlayCupReplacement()
+    {
+        foreach (Motion motion in _motions.Where(m => m.Kind == "cup_replace").ToArray())
+        { motion.Tween.Kill(); _motions.Remove(motion); }
+        Play("cup_replace", .2, "egg_visual");
+    }
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
@@ -508,7 +517,7 @@ public partial class WuhanWorkstationView : Control
             Rect2 r = IngredientRect(i); Hint(r, $"ingredient{i}");
             if (i is 1 or 3) DrawTray(_art.Texture(i == 3 ? "beef_tray" : "ingredient_tray"), r);
             bool movingContainer=m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[i]&&i is 0 or 2&&!ReducedMotion;
-            if(!movingContainer)Sprite(_art.Ingredient(IngredientIds[i]), IngredientFoodRect(i), _ingredients.Count(IngredientIds[i]) > 0 ? 1 : .3f);
+            if(!movingContainer)Sprite(_art.Ingredient(IngredientIds[i]), IngredientFoodRect(i), 1);
         }
         if(!(m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[0]&&!ReducedMotion))Sprite("base_sauce", SauceBottleRect);
         if (_mixLast is Vector2 pointer && InBowl(pointer))
@@ -703,21 +712,21 @@ public partial class WuhanWorkstationView : Control
     {
         Hint(EggStockRect, "egg");
         DrawTray(_art.Texture("egg_tray"), EggStockRect);
-        int count = Math.Min(3, _egg?.Count ?? 0);
-        if (_draggedProduct == ProductKind.EggRiceWine) count = Math.Min(3, Math.Max(0, (_egg?.Count ?? 0) - 1));
-        Motion? motion = Find("egg");
-        for (int i = 0; i < (motion?.Kind == "egg_refill" ? 3 : count); i++)
+        int count = !_eggUnlocked ? 0 : _draggedProduct == ProductKind.EggRiceWine ? 2 : 3;
+        Motion? motion = Find("egg_visual");
+        for (int i = 0; i < count; i++)
         {
             Rect2 cup = EggCupRect(i);
-            float alpha = _egg?.IsRefilling == true ? .45f : 1;
-            if (motion?.Kind == "egg_refill")
+            float alpha = 1;
+            if (i == 2 && motion is not null)
             {
-                cup.Position -= new Vector2(0, ReducedMotion ? 0 : 18 * (1 - Ease(motion.Progress)));
+                cup.Position -= new Vector2(0, ReducedMotion ? 0 : 12 * (1 - Ease(motion.Progress)));
                 alpha = .45f + .55f * motion.Progress;
             }
             Sprite("egg_finished", cup, alpha);
         }
     }
+
     private void DrawRefills()
     {
         foreach(Motion m in _motions.Where(m=>m.Kind=="refill"))

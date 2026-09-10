@@ -4,10 +4,6 @@
 script = ExtResource("1")
 Level = 1
 NoodlesCapacity = 8
-BaseSeasoningCapacity = 8
-ScallionCapacity = 6
-ChiliOilCapacity = 6
-BraisedBeefCapacity = 4
 LowStockThreshold = 2
 RefillSeconds = 1.0
 UpgradePrice = 0

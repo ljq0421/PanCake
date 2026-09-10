@@ -5,50 +5,30 @@ namespace ProjectCake.Wuhan;
 public sealed class WuhanIngredientInventory
 {
     private readonly WuhanIngredientStationLevelData _data;
-    private readonly Dictionary<string, int> _counts = new(StringComparer.Ordinal);
+    private int _noodles;
     public WuhanIngredientInventory(WuhanIngredientStationLevelData data)
     {
         _data = data;
-        foreach (string id in new[] { StableIds.Ingredients.WuhanNoodles, StableIds.Ingredients.WuhanBaseSeasoning, StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef }) _counts[id] = data.GetCapacity(id);
+        _noodles = data.NoodlesCapacity;
     }
-    public int Count(string id) => _counts.GetValueOrDefault(id);
+    public int LowStockThreshold => _data.LowStockThreshold;
+    public double RefillSeconds => _data.RefillSeconds;
+    public bool IsUnlimited(string id) => id is StableIds.Ingredients.WuhanBaseSeasoning
+        or StableIds.Ingredients.WuhanScallion or StableIds.Ingredients.WuhanChiliOil
+        or StableIds.Ingredients.WuhanBraisedBeef;
+    public bool CanUse(string id) => IsUnlimited(id) || (id == StableIds.Ingredients.WuhanNoodles && _noodles > 0);
+    public int Count(string id) => id == StableIds.Ingredients.WuhanNoodles
+        ? _noodles : throw new ArgumentException("仅生面条计量库存。", nameof(id));
     public int Capacity(string id) => _data.GetCapacity(id);
-    public bool TryConsume(string id) { if (Count(id) <= 0) return false; _counts[id]--; return true; }
-    public void Refill(string id) => _counts[id] = _data.GetCapacity(id);
-}
-
-public sealed class EggRiceWineRuntime
-{
-    public const int Capacity = 6;
-    public const double RefillSeconds = .6;
-    public int Count { get; private set; } = Capacity;
-    public bool IsRefilling { get; private set; }
-    public bool CanTake => Count > 0 && !IsRefilling;
-    public double RemainingSeconds { get; private set; }
-
-    public bool TryTake()
+    public bool TryConsume(string id)
     {
-        if (!CanTake) return false;
-        Count--;
+        if (IsUnlimited(id)) return true;
+        if (!CanUse(id)) return false;
+        _noodles--;
         return true;
     }
-    public bool TryRefill()
+    public void Refill(string id)
     {
-        if (IsRefilling || Count >= Capacity) return false;
-        IsRefilling = true;
-        RemainingSeconds = RefillSeconds;
-        return true;
-    }
-    public void Tick(double delta)
-    {
-        if (!IsRefilling || delta <= 0) return;
-        RemainingSeconds = Math.Max(0, RemainingSeconds - delta);
-        if (RemainingSeconds == 0) Refill();
-    }
-    public void Refill()
-    {
-        Count = Capacity;
-        IsRefilling = false;
-        RemainingSeconds = 0;
+        if (id == StableIds.Ingredients.WuhanNoodles) _noodles = _data.NoodlesCapacity;
     }
 }

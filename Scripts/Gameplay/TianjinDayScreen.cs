@@ -142,6 +142,7 @@ public partial class TianjinDayScreen : Control
         int fryerLevel = controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao)
             ? Math.Max(1, save.Data.PurchasedFryerLevel)
             : 0;
+        GetNode<TextureRect>("ShopBackground").Texture = _art.WorkbenchBackground(controller.CurrentConfig.AvailableProductKinds);
         _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig, _art);
         _workstation.DirectCustomerDelivery = true;
         _workstation.InteractionEnabled = false;

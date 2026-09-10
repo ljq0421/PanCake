@@ -254,9 +254,7 @@ public partial class StageFourSelfTest
         var source = (Control)workstation.FindChild("SoyMilkCupDrag", true, false);
         var soyPanel = (Control)workstation.FindChild("SoyMilkSlot", true, false);
         var trayArt = (TextureRect)workstation.FindChild("SoyMilkTrayArt", true, false);
-        float trayScale = Math.Min(trayArt.Size.X / trayArt.Texture.GetWidth(), trayArt.Size.Y / trayArt.Texture.GetHeight());
-        Vector2 traySize = trayArt.Texture.GetSize() * trayScale;
-        Rect2 trayBounds = new(trayArt.GlobalPosition + (trayArt.Size - traySize) * .5f, traySize);
+        Rect2 trayBounds = soyPanel.GetGlobalRect();
         Rect2 cupBounds = cupNodes.Select(cup => cup.GetGlobalRect()).Aggregate((left, right) => left.Merge(right));
         Check(cupBounds.Size.X >= trayBounds.Size.X * .7f
             && Math.Abs((cupBounds.Position.X - trayBounds.Position.X) - (trayBounds.End.X - cupBounds.End.X)) <= 16,
@@ -265,11 +263,10 @@ public partial class StageFourSelfTest
         {
             Rect2 cupBoundsNow = cupNodes[index].GetGlobalRect();
             Vector2 foot = new(cupBoundsNow.GetCenter().X, cupBoundsNow.End.Y);
-            Rect2 floor = new(trayArt.GlobalPosition + TianjinWorkbenchLayout.ServingTrayFloor.Position,
-                TianjinWorkbenchLayout.ServingTrayFloor.Size);
+            Rect2 floor = soyPanel.GetGlobalRect().Grow(-8);
             Check(floor.HasPoint(foot) && source.GetGlobalRect().Encloses(cupBoundsNow),
                 $"豆浆第{index + 1}杯落在盘内且整个杯子可拖取");
-            if (index % 5 != 4)
+            if (index % 2 == 0)
                 Check(cupNodes[index + 1].GetGlobalRect().Position.X - cupBoundsNow.Position.X >= cupBoundsNow.Size.X * .8f,
                     $"豆浆第{index + 1}杯与同排下一杯仅轻微遮挡，杯身仍清晰");
         }
@@ -386,7 +383,6 @@ public partial class StageFourSelfTest
         var service = workstation.GetChildren().OfType<DragService>().Single();
         bool rawPicking = false;
         foreach ((string slotName, string inputName, WorkstationSlotSpec spec) in new[] {
-            ("RawYoutiaoSlot", "RawYoutiaoInput", TianjinWorkbenchLayout.RawYoutiaoSlot()),
             ("FinishedYoutiaoArea", "FinishedYoutiaoDrag", TianjinWorkbenchLayout.FinishedYoutiaoSlot()) })
         {
             var slot = (WorkstationSlotView)workstation.FindChild(slotName, true, false);

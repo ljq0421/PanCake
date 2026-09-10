@@ -110,11 +110,11 @@ public partial class MorningHub : Control
     private void RenderEquipment()
     {
         UpdateEquipmentCard("Stove", "煎饼炉", _save.Data.PurchasedStoveLevel, NextStoveUpgrade());
-        GetNode<TextureRect>("%StoveImage").Texture = _art.Stove(_save.Data.PurchasedStoveLevel);
+        GetNode<TextureRect>("%StoveImage").Texture = _art.WorkbenchStoveIcon;
         UpdateEquipmentCard("Fryer", "油条锅", _save.Data.PurchasedFryerLevel, NextFryerUpgrade());
         int fryerLevel = Math.Max(1, _save.Data.PurchasedFryerLevel);
-        GetNode<TextureRect>("%FryerBody").Texture = _art.FryerBody(fryerLevel);
-        GetNode<TextureRect>("%FryerBasket").Texture = _art.FryerBasket(fryerLevel);
+        GetNode<TextureRect>("%FryerBody").Texture = _art.WorkbenchFryerIcon;
+        GetNode<TextureRect>("%FryerBasket").Hide();
         UpdateEquipmentCard("Station", "配料台", _save.Data.PurchasedIngredientStationLevel, NextStationUpgrade());
     }
 

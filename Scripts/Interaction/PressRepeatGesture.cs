@@ -7,6 +7,7 @@ public partial class PressRepeatGesture : Control
 {
     public const double HoldSeconds = .45;
     public const double RepeatSeconds = .15;
+    public bool ActivateOnTap { get; set; } = true;
     public Func<bool> CanActivate { get; set; } = () => false;
     public Func<Vector2, bool>? Contains { get; set; }
     public Action? Activate { get; set; }
@@ -48,7 +49,7 @@ public partial class PressRepeatGesture : Control
         {
             bool tap = !_repeating && _HasPoint(GetGlobalTransformWithCanvas().AffineInverse() * release.Position);
             Cancel();
-            if (tap) Activate?.Invoke();
+            if (tap && ActivateOnTap) Activate?.Invoke();
             GetViewport().SetInputAsHandled();
         }
         else if (input is InputEventKey { Keycode: Key.Escape, Pressed: true }) Cancel();

@@ -135,8 +135,8 @@ public partial class StageFourSelfTest
             station.Machine.TryExecute(PancakeCommand.Fold);
             station.Machine.TryExecute(PancakeCommand.Bag);
             station.Tick(.3);
-            Check(station.PancakeTray.Selected?.SauceAmount == amount && station.Machine.Runtime.State == PancakeState.Empty,
-                "成品入盘和炉面重置不丢失酱量");
+            Check(station.Machine.Runtime.SauceCoverage == amount && station.Machine.Runtime.State == PancakeState.Bagged,
+                "炉面打包成品保留酱量");
             Check(((Control)station.FindChild("FinishedPancakeDrag", true, false)).TooltipText.Contains(SauceRules.Describe(amount)),
                 "成品提示包含实际酱量");
         }
@@ -175,7 +175,7 @@ public partial class StageFourSelfTest
         Check(station.DeliverPancakeTo(controller, extraCustomer.Id, catalog).ItemAccepted
             && extraCustomer.Progress.DeliveredItems.Single().SauceAmount == 1.25
             && !extraCustomer.Progress.HasRecipeMismatch && extraCustomer.WaitSeconds < 20 && station.PancakeTray.Count == 0,
-            "多酱成品经托盘实际交付后保留125%、匹配订单并恢复耐心");
+            "多酱成品从炉面实际交付后保留125%、匹配订单并恢复耐心");
 
         if (OS.GetCmdlineUserArgs().Contains("--sauce-capture", StringComparer.Ordinal))
         {

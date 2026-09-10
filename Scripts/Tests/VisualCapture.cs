@@ -47,6 +47,9 @@ public partial class VisualCapture : Node
             : captureFryerWorkstation || args.Contains("--capture-day5", StringComparer.Ordinal) ? 5
             : args.Contains("--capture-day9", StringComparer.Ordinal) ? 9
             : args.Contains("--capture-day15", StringComparer.Ordinal) ? 15 : 0;
+        string? tianjinDayArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-tianjin-day=", StringComparison.Ordinal));
+        if (tianjinDayArg is not null && int.TryParse(tianjinDayArg.Split('=')[1], out int selectedDay) && selectedDay is >= 1 and <= 15)
+            phase4Day = selectedDay;
         bool captureMap = args.Contains("--capture-map", StringComparer.Ordinal);
         bool capture720 = args.Contains("--capture-720", StringComparer.Ordinal);
         GetWindow().Size = capture720 ? new Vector2I(1280, 720) : new Vector2I(1920, 1080);

@@ -76,6 +76,8 @@ public partial class WorkstationSlotView : Control
     private LiquidStockView? _liquid;
     private WorkstationSlotAttentionState _attentionState;
     private Rect2 _stackBounds;
+    public bool ContainerInBackground { get; set; }
+    public bool IngredientInBackground { get; set; }
     private (Vector2 Center, Vector2 Size, float Angle)[] _stackLayout = Array.Empty<(Vector2, Vector2, float)>();
 
     protected WorkstationSlotSpec ConfiguredSpec => _spec;
@@ -346,7 +348,7 @@ public partial class WorkstationSlotView : Control
             EnsureIngredientVisuals(Math.Max(1, capacity), _ingredient.Texture);
         _stockFraction = capacity > 0 ? (float)quantity / capacity : 0;
         LayoutIngredientVisuals();
-        _liquid?.SetTier(StockTier);
+        if (!ContainerInBackground) _liquid?.SetTier(StockTier);
     }
 
     public void ConfigureLiquid(Texture2D emptyBowl, Texture2D fullBowl, bool sauce)
@@ -520,6 +522,9 @@ public partial class WorkstationSlotView : Control
 
     private void LayoutIngredientVisuals()
     {
+        _tray.Visible = !ContainerInBackground;
+        if (_liquid is not null) _liquid.Visible = !ContainerInBackground && _liquid.Tier > 0;
+        _ingredientAnchor.Visible = !IngredientInBackground;
         if (_ingredientVisuals.Count == 0)
         {
             return;
@@ -689,7 +694,7 @@ public partial class WorkstationSlotView : Control
         {
             int row = index / columns, column = index % columns;
             float angle = Mathf.DegToRad(new[] { -5f, 2f, -2f, 4f, -3f }[column % 5]);
-            float x = 124 + (column - (columns - 1) * .5f) * layout.ColumnSpacing
+            float x = (_spec.StockFootprintRect?.GetCenter().X ?? 124) + (column - (columns - 1) * .5f) * layout.ColumnSpacing
                 + (row == 0 ? layout.RowOffset : -layout.RowOffset);
             float footY = row == 0 ? layout.BackFootY : layout.FrontFootY;
             Vector2 foot = new(x, footY);

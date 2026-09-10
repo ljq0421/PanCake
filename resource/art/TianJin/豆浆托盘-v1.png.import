@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bdt43edvp0eiw"
-path="res://.godot/imported/武汉早餐铺主界面背景＋空工作台_v6.png-618301e6ed214bb8fbfe4249f1b9588b.ctex"
+uid="uid://ccobmmvwx5ipm"
+path="res://.godot/imported/豆浆托盘-v1.png-3c32b50c2367a07a284fb8ff2825e6e5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v6.png"
-dest_files=["res://.godot/imported/武汉早餐铺主界面背景＋空工作台_v6.png-618301e6ed214bb8fbfe4249f1b9588b.ctex"]
+source_file="res://resource/art/TianJin/豆浆托盘-v1.png"
+dest_files=["res://.godot/imported/豆浆托盘-v1.png-3c32b50c2367a07a284fb8ff2825e6e5.ctex"]
 
 [params]
 

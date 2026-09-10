@@ -90,7 +90,7 @@ public partial class StageFourSelfTest
         return controller;
     }
 
-    private async Task TestMultiPancakeTray(DataCatalog catalog)
+    private async Task TestSinglePancakeOnStove(DataCatalog catalog)
     {
         var station = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
         station.DirectCustomerDelivery = true;
@@ -99,37 +99,19 @@ public partial class StageFourSelfTest
         station.Initialize(catalog, 2, 1, 0, catalog.DaysByNumber[15]);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         MakeBagged(station.Machine, catalog.RecipesById[StableIds.Recipes.Basic]); station.Tick(.3);
-        MakeBagged(station.Machine, catalog.RecipesById[StableIds.Recipes.Ham]); station.Tick(.3);
-        Check(station.PancakeTray.Count == 2 && station.Machine.Runtime.State == PancakeState.Empty,
-            "托盘有成品时可连续完成第二张，炉面自动腾空");
+        Check(station.PancakeTray.Count == 0 && station.Machine.Runtime.State == PancakeState.Bagged
+            && !station.Machine.TryExecute(PancakeCommand.PlaceBatter).Success,
+            "取消成品盘后一次只能持有一张炉面成品");
+        var controller = CreateFixController(catalog);
+        var drag = station.GetChildren().OfType<DragService>().Single();
+        drag.BeginDrag(station, "finished_pancake", "成品", Colors.White); drag.CancelDrag();
+        Check(station.Machine.Runtime.State == PancakeState.Bagged, "取消拖动不会丢失炉面成品");
+        var trash = (DropZone)station.FindChild("TrashZone", true, false);
+        Check(trash.TryAccept("finished_pancake") && station.Machine.Runtime.State == PancakeState.Empty,
+            "丢弃打包成品后可制作下一张");
         station.Machine.TryExecute(PancakeCommand.PlaceBatter);
         station.Machine.TryExecute(PancakeCommand.BeginSpread);
         station.Machine.TryExecute(PancakeCommand.CompleteSpread);
-        station.Tick(.5);
-        var next = (Button)station.FindChild("NextPancake", true, false);
-        next.EmitSignal(Button.SignalName.Pressed);
-        Check(station.PancakeTray.Selected?.ExtraIngredients.Contains(StableIds.Ingredients.Ham) == true
-            && ((Control)station.FindChild("FinishedPancakeDrag", true, false)).TooltipText.Contains("火腿"),
-            "切换成品后配料提示指向第二张煎饼");
-        var drag = station.GetChildren().OfType<DragService>().Single();
-        drag.BeginDrag(station, "finished_pancake", "成品", Colors.White);
-        next.EmitSignal(Button.SignalName.Pressed);
-        Check(station.PancakeTray.SelectedIndex == 1, "拖动过程中不切换待交付成品");
-        drag.CancelDrag();
-        var controller = CreateFixController(catalog);
-        CustomerRuntime customer = controller.CustomerQueue!.Slots.First();
-        Check(station.DeliverToCustomer("finished_pancake", () => station.DeliverPancakeTo(controller, customer.Id, catalog).ItemAccepted)
-            && station.PancakeTray.Count == 1 && customer.Progress.GetDeliveredQuantity(1) == 1
-            && station.Machine.Runtime.State == PancakeState.SideACooking && Close(station.Machine.Runtime.CookingSeconds, .5),
-            "交付选中的第二张成品不影响炉面第三张煎饼和其加热进度");
-        var trash = (DropZone)station.FindChild("TrashZone", true, false);
-        using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true })
-            ((DragItem)station.FindChild("FinishedPancakeDrag", true, false))._GuiInput(press);
-        using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = trash.GetGlobalRect().GetCenter() })
-            drag._Input(release);
-        await WaitForAnimation(.4);
-        Check(station.PancakeTray.Count == 0 && station.Machine.Runtime.State == PancakeState.SideACooking,
-            "丢弃托盘成品不清掉炉面新饼");
         station.Machine.TryExecute(PancakeCommand.AddEgg);
         station.Machine.Tick(station.Machine.Stove.SideAReadySeconds);
         station.Machine.TryExecute(PancakeCommand.Flip);

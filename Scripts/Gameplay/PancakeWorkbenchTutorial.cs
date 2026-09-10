@@ -111,7 +111,7 @@ public partial class PancakeWorkstation
         {
             bool idle = FryerMachine.Runtime.State is FryerState.Empty or FryerState.Stored;
             _fryerStatus.GetParent<Control>().Visible = !idle || NeedsTeaching("fryer:load");
-            if (idle && NeedsTeaching("fryer:load")) _fryerStatus.Text = "点击面坯 · 长按连续装入";
+            if (idle && NeedsTeaching("fryer:load")) _fryerStatus.Text = "长按炸锅 · 连续装料";
             if (FryerMachine.Runtime.State == FryerState.Loaded)
                 _fryerStatus.Text = NeedsTeaching("fryer:lower") ? "装料完成 · 点击下锅" : "装料完成";
             if (FryerMachine.Runtime.State == FryerState.Frying && !FryerMachine.Level.AutoRaise

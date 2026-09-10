@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://brxbiqxyi50cl"
-path="res://.godot/imported/武汉早餐铺主界面背景＋空工作台_v2.png-485597e7c5b4dd6c94cb906e85aa47a7.ctex"
+uid="uid://csmnqum5ddd37"
+path="res://.godot/imported/初级炸锅-角度校准-v1.png-6d90efa4a807d685bd947f37354892cd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resource/art/Wuhan/武汉早餐铺主界面背景＋空工作台_v2.png"
-dest_files=["res://.godot/imported/武汉早餐铺主界面背景＋空工作台_v2.png-485597e7c5b4dd6c94cb906e85aa47a7.ctex"]
+source_file="res://resource/art/TianJin/初级炸锅-角度校准-v1.png"
+dest_files=["res://.godot/imported/初级炸锅-角度校准-v1.png-6d90efa4a807d685bd947f37354892cd.ctex"]
 
 [params]
 

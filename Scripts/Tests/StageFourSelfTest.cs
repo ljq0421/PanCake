@@ -23,6 +23,16 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--embedded-workbench-only", StringComparer.Ordinal))
+            {
+                await TestWorkbenchPicking();
+                await TestWorkbenchLayout(catalog);
+                await TestRawYoutiaoGestures(catalog);
+                await TestDirectDelivery(catalog);
+                GD.Print($"天津阶段工作台自测完成：{_passed} 项通过，{_failed} 项失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--workbench-v1-only", StringComparer.Ordinal))
             {
                 await TestTianjinWorkbenchV1(catalog);
@@ -74,7 +84,7 @@ public partial class StageFourSelfTest : Node
             await TestWorkbenchLayout(catalog);
             await TestDirectDelivery(catalog);
             await TestProductionShortcuts(catalog);
-            await TestMultiPancakeTray(catalog);
+            await TestSinglePancakeOnStove(catalog);
             await TestTianjinWorkbenchV1(catalog);
         }
         catch (Exception exception)
@@ -419,155 +429,58 @@ public partial class StageFourSelfTest : Node
 
     private async Task TestWorkbenchLayout(DataCatalog catalog)
     {
-        for (int level = 1; level <= 3; level++)
+        string path = $"user://embedded-layout-{Guid.NewGuid():N}.json";
+        var save = new SaveService(); AddChild(save); save.UsePathForTests(path);
+        var controller = new DayController(); AddChild(controller);
+        var screen = SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
+        AddChild(screen); screen.SetProcess(false); screen.ConnectController(controller);
+        var station = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+        var art = new TianjinArtCatalog();
+        foreach (int day in new[] { 1, 4, 5, 8, 9, 15, 1 })
         {
-            var workstation = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
-            var legacy = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeLabWorkstation.tscn");
-            AddChild(workstation); AddChild(legacy);
-            workstation.Initialize(catalog, level, level, level, catalog.DaysByNumber[11]);
-            legacy.Initialize(catalog, level, level, level, catalog.DaysByNumber[11]);
-            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            var canvas = (PancakeCanvas)workstation.FindChild("PancakeCanvas", true, false);
-            var oldCanvas = (PancakeCanvas)legacy.FindChild("PancakeCanvas", true, false);
-            var stoveZone = (DropZone)workstation.FindChild("PancakeDropZone", true, false);
-            Rect2 Moved(Rect2 rect) => new(rect.Position + new Vector2(50, 50), rect.Size);
-            Rect2 surface = canvas.GetSurfaceRect();
-            Rect2 surfaceInput = new(canvas.GetGlobalRect().Position + surface.Position - new Vector2(42, 42), surface.Size + new Vector2(84, 84));
-            Check(canvas.UseTableContact && !oldCanvas.UseTableContact
-                && canvas.GetGlobalRect() == Moved(oldCanvas.GetGlobalRect())
-                && stoveZone.GetGlobalRect().IsEqualApprox(surfaceInput)
-                && ((Control)workstation.FindChild("PancakeStrokeInput", true, false)).GetGlobalRect().IsEqualApprox(surfaceInput),
-                $"Lv{level} 天津炉面校准后拖放与划动热区跟随同一几何，练习页保持原配置");
-
-            var slots = workstation.FindChildren("IngredientSlot_*", "Control", true, false).OfType<IngredientStockSlotView>().ToArray();
-            Check(slots.All(slot => slot.IngredientIsInsideTray(4)), $"Lv{level} 配料图片均在容器安全区域内",
-                string.Join(" | ", slots.Select(slot => $"{slot.Name}: {slot.TrayVisualRect}/{slot.IngredientVisualRect}")));
-            Check(slots.All(slot => !slot.RefillButton.Visible && slot.GetChildren().OfType<StockGesture>().Count() == 1),
-                $"Lv{level} 缩紧配料使用统一长按手势");
-            Check(slots.All(slot => slot.GetGlobalRect().End.Y <= 988 && slot.Size.X == 248),
-                $"Lv{level} 底排保留桌沿间距，槽宽收紧为248");
-            Check(slots.All(slot => slot.FindChild("CaptionPlate", true, false) is Control plate
-                    && slot.FindChild("Label", true, false) is Label label
-                    && !plate.IsVisibleInTree() && !label.IsVisibleInTree() && !slot.CountLabel.IsVisibleInTree()
-                    && plate.MouseFilter == Control.MouseFilterEnum.Ignore
-                    && label.MouseFilter == Control.MouseFilterEnum.Ignore
-                    && slot.CountLabel.MouseFilter == Control.MouseFilterEnum.Ignore),
-                $"Lv{level} 配料名称与库存标牌隐藏，且不会截获取料输入");
-            var soy = (Control)workstation.FindChild("SoyMilkSlot", true, false);
-            var cup = (Control)workstation.FindChild("SoyMilkCupDrag", true, false);
-            var refill = (Button)soy.FindChild("SoyMilkRefill", true, false);
-            Check(!refill.IsVisibleInTree() && soy.FindChild("StockGesture_soy_milk", true, false) is StockGesture,
-                $"Lv{level} 豆浆托盘采用长按手势");
-            Check(soy.FindChild("SoyMilkCaption", true, false) is null
-                    && soy.FindChild("SoyMilkStatus", true, false) is Label { Visible: false } soyStatus
-                    && soyStatus.MouseFilter == Control.MouseFilterEnum.Ignore,
-                $"Lv{level} 豆浆无名称标牌，正常库存不显示状态文字");
-            var trash = (DropZone)workstation.FindChild("TrashZone", true, false);
-            var finishedTray = (Control)workstation.FindChild("FinishedPancakeSlot", true, false);
-            var finishedTrayArt = (TextureRect)workstation.FindChild("FinishedTrayArt", true, false);
-            var soyTrayArt = (TextureRect)workstation.FindChild("SoyMilkTrayArt", true, false);
-            var coinTrayArt = (TextureRect)workstation.FindChild("CoinTrayArt", true, false);
-            Check(ReferenceEquals(finishedTrayArt.Texture, soyTrayArt.Texture) && ReferenceEquals(finishedTrayArt.Texture, coinTrayArt.Texture)
-                && finishedTrayArt.Size == new Vector2(250, 82) && soyTrayArt.Size == finishedTrayArt.Size && coinTrayArt.Size == finishedTrayArt.Size
-                && coinTrayArt.SelfModulate != finishedTrayArt.SelfModulate,
-                $"Lv{level} 后排托盘深度一致，金币盘有独立材质");
-            var collectInput = (Control)workstation.CoinTray!.FindChild("CollectCoins", true, false);
-            var finishedInput = (Control)workstation.FindChild("FinishedPancakeDrag", true, false);
-            var soyInput = (Control)soy.FindChild("StockGesture_soy_milk", true, false);
-            Check(collectInput.GetGlobalRect().End.X < finishedInput.GetGlobalRect().Position.X
-                && finishedInput.GetGlobalRect().End.X < soyInput.GetGlobalRect().Position.X
-                && soyInput.GetGlobalRect().End.X < trash.GetGlobalRect().Position.X,
-                $"Lv{level} 紧凑排列后金币、成品、豆浆、垃圾桶的热区互不重叠");
-            Check(((Label)workstation.CoinTray.FindChild("CoinTrayHint", true, false)).Text == "金币盘"
-                && workstation.FindChild("DirectDeliveryHint", true, false) is Label { Visible: true, Text: "成品盘" }
-                && workstation.FindChild("FinishedYoutiaoArea", true, false)?.FindChild("Label", true, false) is Label { Visible: true, Text: "熟油条" },
-                $"Lv{level} 三个空容器显示用途提示");
-            foreach (Control input in new[] { collectInput, finishedInput, soyInput })
-                Check(slots.All(slot => !input.GetGlobalRect().Intersects(new Rect2(slot.GlobalPosition, slot.ClickBounds.Size))),
-                    $"Lv{level} {input.Name} 与下方食材热区隔离");
-            Check(slots.All(slot => !trash.GetGlobalRect().Grow(trash.HitPadding).Intersects(slot.GetGlobalRect()))
-                && !trash.GetGlobalRect().Intersects(soy.GetGlobalRect()), $"Lv{level} 丢弃区与配料和豆浆操作区隔离");
-
-            Vector2 target = stoveZone.GetGlobalRect().GetCenter();
-            float travel = 0, oldTravel = 0;
-            foreach (string id in new[] { "crispy", "ham" })
-            {
-                travel += ((Control)workstation.FindChild($"IngredientInput_{id}", true, false)).GetGlobalRect().GetCenter().DistanceTo(target);
-                oldTravel += ((Control)legacy.FindChild($"IngredientInput_{id}", true, false)).GetGlobalRect().GetCenter()
-                    .DistanceTo(((Control)legacy.FindChild("PancakeDropZone", true, false)).GetGlobalRect().GetCenter());
-            }
-            Check(((Control)workstation.FindChild("IngredientSlot_egg", true, false)).Position == TianjinWorkbenchLayout.IngredientPlacement(1).Position
-                && ((Control)workstation.FindChild("IngredientSlot_crispy", true, false)).Position == TianjinWorkbenchLayout.IngredientPlacement(2).Position
-                && ((Control)workstation.FindChild("IngredientSlot_scallion", true, false)).Position == TianjinWorkbenchLayout.IngredientPlacement(4).Position
-                && ((Control)workstation.FindChild("IngredientSlot_ham", true, false)).Position == TianjinWorkbenchLayout.IngredientPlacement(5).Position,
-                $"Lv{level} 鸡蛋与薄脆、香葱与火腿按指定位置交换");
-            GD.Print($"WORKBENCH_TRAVEL lv={level} before={oldTravel:F0} after={travel:F0} reduction={1 - travel / oldTravel:P1}");
-
-            if (level == 1)
-            {
-                Vector2[] positions = slots.Select(slot => slot.Position).ToArray();
-                workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[1]);
-                Check(slots.Select(slot => slot.Position).SequenceEqual(positions), "早期未解锁配料隐藏后保留固定空位");
-                workstation.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11]);
-                Check(workstation.FindChild("RawYoutiaoInput", true, false) is PressRepeatGesture
-                    && workstation.FindChild("FryerBasketDropZone", true, false) is null,
-                    "生油条改用点击与长按装篮，移除旧投放区域");
-                workstation.ResetForDay();
-                PancakeStateMachine machine = workstation.Machine;
-                machine.TryExecute(PancakeCommand.PlaceBatter); machine.TryExecute(PancakeCommand.BeginSpread);
-                machine.SetSpreadCoverage(1); machine.TryExecute(PancakeCommand.CompleteSpread);
-                machine.TryExecute(PancakeCommand.AddEgg); machine.Tick(machine.Stove.SideAReadySeconds);
-                var flipAction = (Button)workstation.FindChild("PancakeFlipAction", true, false);
-                var footer = (Control)workstation.FindChild("PancakeStatusTag", true, false);
-                Check(flipAction.Visible && flipAction.GetGlobalRect().End.Y <= 984
-                    && footer.GetGlobalRect().End.Y <= 984 && !footer.GetGlobalRect().Intersects(flipAction.GetGlobalRect()),
-                    "前移后翻面按钮与状态提示同排，不重叠且不越过桌沿");
-                flipAction.EmitSignal(Button.SignalName.Pressed);
-                Check(machine.Runtime.State == PancakeState.SideBCooking, "前移后炉边翻面按钮仍正确执行翻面");
-                machine.Tick(machine.Stove.SideBReadySeconds);
-                machine.TryExecute(PancakeCommand.BeginSauce); machine.SetSauceCoverage(1);
-                machine.TryExecute(PancakeCommand.CompleteSauce);
-                var drag = workstation.GetChildren().OfType<DragService>().Single();
-                foreach (string id in new[] { StableIds.Ingredients.Crispy, StableIds.Ingredients.Ham })
-                {
-                    int stock = workstation.Inventory.GetQuantity(id);
-                    var input = (DragItem)workstation.FindChild($"IngredientInput_{id}", true, false);
-                    using var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true };
-                    input._GuiInput(press);
-                    using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = target };
-                    drag._Input(release);
-                    await WaitForAnimation(.35);
-                    Check(machine.Runtime.ExtraIngredients.Contains(id) && workstation.Inventory.GetQuantity(id) == stock - 1,
-                        $"新位置实际拖入{id}只添加并扣除一次");
-                }
-                machine.TryExecute(PancakeCommand.Fold); machine.TryExecute(PancakeCommand.Bag);
-                workstation.Tick(.08); workstation.CancelInput(); workstation.Tick(.3);
-                Check(workstation.CanDeliverProduct("finished_pancake") && workstation.PancakeTray.Count == 1 && machine.Runtime.State == PancakeState.Empty,
-                    "取消输入不会遗失转移中的成品，转移结束可再次取用");
-                workstation.ResetForDay();
-                MakeBagged(machine, catalog.RecipesById[StableIds.Recipes.Basic]);
-                workstation.Tick(.08);
-                workstation.ResetForDay();
-                Check(!workstation.IsTransferringBag && !((Control)workstation.FindChild("BagTransferVisual", true, false)).Visible,
-                    "重开当日清除移动成品状态");
-                Variant previousMotion = ProjectSettings.GetSetting("accessibility/reduce_motion", false);
-                try
-                {
-                    ProjectSettings.SetSetting("accessibility/reduce_motion", true);
-                    MakeBagged(machine, catalog.RecipesById[StableIds.Recipes.Basic]);
-                    Check(!workstation.IsTransferringBag && workstation.CanDeliverProduct("finished_pancake"),
-                        "减少动态效果时成品立即落在托盘且可交付");
-                }
-                finally { ProjectSettings.SetSetting("accessibility/reduce_motion", previousMotion); }
-                var finished = (DragItem)workstation.FindChild("FinishedPancakeDrag", true, false);
-                using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true }) finished._GuiInput(press);
-                using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = trash.GetGlobalRect().GetCenter() }) drag._Input(release);
-                await WaitForAnimation(.35);
-                Check(machine.Runtime.State == PancakeState.Empty && !finished.Visible,
-                    "成品拖入右侧垃圾桶后清空托盘并允许下一张制作");
-            }
-            workstation.QueueFree(); legacy.QueueFree();
+            save.Data.PurchasedFryerLevel = 3;
+            screen.Initialize(catalog, save, controller, day);
+            Check(ReferenceEquals(screen.GetNode<TextureRect>("ShopBackground").Texture,
+                art.WorkbenchBackground(catalog.DaysByNumber[day].AvailableProductKinds)), $"Day{day}按当日商品选择背景，历史购买不越级显示");
+            Check(((Control)station.FindChild("FryerArea", true, false)).Visible == (day >= 5)
+                && ((Control)station.FindChild("SoyMilkSlot", true, false)).Visible == (day >= 9), $"Day{day}背景与交互同步解锁");
         }
+        screen.Initialize(catalog, save, controller, 15);
+        screen.BeginDay(); controller.Tick(3); screen.RefreshForCapture(true);
+        foreach (int level in new[] { 1, 2, 3 })
+        {
+            station.Initialize(catalog, level, level, level, catalog.DaysByNumber[15]);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            var canvas = (PancakeCanvas)station.FindChild("PancakeCanvas", true, false);
+            var zone = (DropZone)station.FindChild("PancakeDropZone", true, false);
+            Rect2 surface = new(canvas.GlobalPosition + canvas.GetSurfaceRect().Position, canvas.GetSurfaceRect().Size);
+            Check(surface.IsEqualApprox(TianjinWorkbenchLayout.EmbeddedSurface)
+                && zone.GetGlobalRect().IsEqualApprox(surface.Grow(42)), $"Lv{level}炉面和交互固定于背景同一位置");
+            Check(station.Machine.Stove.Level == level && station.FryerMachine!.Level.Capacity == catalog.FryersByLevel[level].Capacity,
+                $"Lv{level}固定外形仍使用实际升级参数");
+            foreach (string id in TianjinWorkbenchLayout.IngredientOrder)
+            {
+                var slot = (IngredientStockSlotView)station.FindChild($"IngredientSlot_{id}", true, false);
+                Check(slot.GetGlobalRect().IsEqualApprox(TianjinWorkbenchLayout.EmbeddedIngredient(id))
+                    && !slot.GetNode<TextureRect>("VisualLayer/Tray").Visible, $"Lv{level}/{id}对齐背景且不重复绘制容器");
+                if (id is "batter" or "sauce") continue;
+                Check(slot.VisibleStockUnits == station.Inventory.GetCapacity(id) && slot.IngredientIsInsideTray(),
+                    $"Lv{level}/{id}完整容量展示在盘底范围内");
+            }
+            Check(!((Control)station.FindChild("RawYoutiaoSlot", true, false)).Visible
+                && !((Control)station.FindChild("FinishedTrayArt", true, false)).Visible
+                && !station.StoreFinishedPancakes && station.PancakeTray.Count == 0,
+                $"Lv{level}没有生面坯托盘、煎饼成品盘或隐藏暂存");
+            var trash = (DropZone)station.FindChild("TrashZone", true, false);
+            Check(trash.GetGlobalRect().Position.Y == 98 && trash.Size.Y == 50
+                && !trash.GetGlobalRect().Intersects(station.CoinTray!.GetGlobalRect()), "右上角收钱与丢弃热区独立且不遮订单");
+            MakeBagged(station.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
+            Check(station.Machine.Runtime.State == PancakeState.Bagged && station.PancakeTray.Count == 0
+                && !station.Machine.TryExecute(PancakeCommand.PlaceBatter).Success, "成品占用炉面直到交付或丢弃");
+            Check(trash.TryAccept("finished_pancake") && station.Machine.Runtime.State == PancakeState.Empty,
+                "炉面成品拖入右上角垃圾桶后释放炉面");
+        }
+        screen.Free(); controller.Free(); save.Free(); DeleteIfExists(ProjectSettings.GlobalizePath(path));
     }
 
     private async Task TestDirectDelivery(DataCatalog catalog)
@@ -599,27 +512,20 @@ public partial class StageFourSelfTest : Node
         MakeBagged(workstation.Machine, recipe);
         var finishedDrag = (DragItem)workstation.FindChild("FinishedPancakeDrag", true, false);
         var transfer = (Control)workstation.FindChild("BagTransferVisual", true, false);
-        Check(workstation.IsTransferringBag && transfer.Visible && !finishedDrag.Visible
-            && !workstation.CanDeliverProduct("finished_pancake")
-            && !((PancakeCanvas)workstation.FindChild("PancakeCanvas", true, false)).ShowBaggedPancake,
-            "装袋转移只显示移动成品，炉面与托盘不重复显示且暂不可交付");
-        using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true }) finishedDrag._GuiInput(press);
-        Check(!drag.IsDragging && workstation.Machine.TryExecute(PancakeCommand.PlaceBatter).Success,
-            "成品转移时暂不能取餐，但可以制作下一张");
-        workstation.Machine.TryExecute(PancakeCommand.Discard);
-        workstation.Tick(.08);
-        Vector2 frozenBag = transfer.Position;
+        Check(!workstation.IsTransferringBag && !transfer.Visible && finishedDrag.Visible
+            && workstation.CanDeliverProduct("finished_pancake")
+            && workstation.Machine.Runtime.State == PancakeState.Bagged,
+            "打包成品直接显示于炉面，无移盘动画且立即可拖动");
+        Check(!workstation.Machine.TryExecute(PancakeCommand.PlaceBatter).Success,
+            "炉面有打包成品时不能制作下一张");
         ((Button)screen.FindChild("PauseButton", true, false)).EmitSignal(Button.SignalName.Pressed);
         workstation.Tick(1);
         screen._Notification((int)Node.NotificationApplicationFocusOut);
         screen._Notification((int)Node.NotificationApplicationFocusIn);
-        Check(workstation.Paused && transfer.Position == frozenBag && workstation.IsTransferringBag,
-            "手动暂停及失焦冻结成品移动，恢复焦点不会解除手动暂停");
+        Check(workstation.Paused && workstation.Machine.Runtime.State == PancakeState.Bagged,
+            "手动暂停及失焦保留炉面成品，恢复焦点不解除手动暂停");
         ((Button)screen.FindChild("ResumeButton", true, false)).EmitSignal(Button.SignalName.Pressed);
-        workstation.Tick(.3);
         workstation.RefreshForCapture();
-        Check(!workstation.IsTransferringBag && !transfer.Visible && finishedDrag.Visible,
-            "恢复营业后成品仅在固定托盘显示，重复刷新不重启动画");
         Check(workstation.DirectCustomerDelivery && workstation.FindChild("DeliveryDropZone", true, false) is Control { Visible: false }
             && workstation.FindChild("DirectDeliveryHint", true, false) is Label { Visible: true },
             "天津取消出餐口目标，显示直接拖给顾客提示");
@@ -648,7 +554,7 @@ public partial class StageFourSelfTest : Node
         MakeBagged(workstation.Machine, recipe);
         workstation.Tick(.3);
         Check(!workstation.DeliverPancakeTo(controller, "missing-customer", catalog).ItemAccepted
-            && workstation.PancakeTray.Count == 1, "无效顾客 ID 不消耗成品");
+            && workstation.Machine.Runtime.State == PancakeState.Bagged, "无效顾客 ID 不消耗成品");
         var soy = new SoyMilkTrayRuntime(6);
         var youtiao = new YoutiaoInventory(6); youtiao.TryStore(1, YoutiaoQuality.Golden);
         Check(!controller.TryDeliverSoyMilkTo("missing-customer", soy).ItemAccepted && soy.Quantity == 6
@@ -663,21 +569,21 @@ public partial class StageFourSelfTest : Node
         next.State = CustomerState.Leaving;
         await WaitForAnimation(.4);
         Check(result?.Completion == DragCompletion.Rejected && next.Progress.DeliveredItems.Count == 0
-            && workstation.PancakeTray.Count == 1, "吸附途中顾客离开时回弹且保留成品");
+            && workstation.Machine.Runtime.State == PancakeState.Bagged, "吸附途中顾客离开时回弹且保留成品");
         next.State = CustomerState.Happy;
         drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
         ReleaseOn(firstZone);
         firstZone.ConfigureResult(_ => true, _ => throw new InvalidOperationException("不应交给换位后的顾客"));
         await WaitForAnimation(.4);
-        Check(result?.Completion == DragCompletion.Rejected && workstation.PancakeTray.Count == 1,
+        Check(result?.Completion == DragCompletion.Rejected && workstation.Machine.Runtime.State == PancakeState.Bagged,
             "吸附途中顾客槽重新绑定时不会误送给新顾客");
         drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
         using (var escape = new InputEventKey { Keycode = Key.Escape, Pressed = true }) drag._Input(escape);
-        Check(result?.Completion == DragCompletion.Cancelled && workstation.PancakeTray.Count == 1,
+        Check(result?.Completion == DragCompletion.Cancelled && workstation.Machine.Runtime.State == PancakeState.Bagged,
             "Esc 取消直接出餐并保留成品");
         drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
         screen._Notification((int)NotificationApplicationFocusOut);
-        Check(!drag.IsDragging && workstation.Paused && workstation.PancakeTray.Count == 1,
+        Check(!drag.IsDragging && workstation.Paused && workstation.Machine.Runtime.State == PancakeState.Bagged,
             "失焦取消出餐拖拽并暂停工作台");
 
         var overlay = new Control(); AddChild(overlay);

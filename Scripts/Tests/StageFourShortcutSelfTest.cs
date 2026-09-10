@@ -118,10 +118,10 @@ public partial class StageFourSelfTest
                 "确认弹窗显式屏蔽 F/G");
             screen.RefreshForCapture(true);
             Send(Key.F);
-            Check(machine.Runtime.State == PancakeState.Empty && station.PancakeTray.Count == 1 && station.IsTransferringBag,
-                "再次按 F 装袋并保留成品转移动画");
+            Check(machine.Runtime.State == PancakeState.Bagged && station.PancakeTray.Count == 0 && !station.IsTransferringBag,
+                "再次按 F 装袋后留在炉面，无移盘动画");
             Send(Key.F);
-            Check(machine.Runtime.State == PancakeState.Empty && station.PancakeTray.Count == 1, "装袋后 F 不自动交付或丢弃");
+            Check(machine.Runtime.State == PancakeState.Bagged && station.PancakeTray.Count == 0, "装袋后 F 不自动交付或丢弃");
             Send(Key.G);
             Check(fryer.Runtime.State == FryerState.Frying && fryer.Runtime.Quantity == 1 && fryer.Runtime.FrySeconds == 0,
                 "G 只放下已装料炸篮，不自动加料或跳过炸制");

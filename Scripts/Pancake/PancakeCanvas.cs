@@ -18,6 +18,7 @@ public partial class PancakeCanvas : Control
     [Export] public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
     [Export] public bool ShowBaggedPancake { get; set; } = true;
     public bool UseTableContact { get; set; }
+    public Rect2? EmbeddedSurface { get; set; }
 
     public float BatterDropProgress
     {
@@ -41,7 +42,9 @@ public partial class PancakeCanvas : Control
     {
         if (_art is null) return;
         (Vector2 stoveCenter, float stoveSize) = GetStoveGeometry();
-        DrawCentered(_art.Stove(_stoveLevel), stoveCenter, new Vector2(stoveSize, stoveSize));
+        if (EmbeddedSurface is null)
+            DrawCentered(_art.Stove(_stoveLevel), stoveCenter, new Vector2(stoveSize, stoveSize));
+        else stoveCenter = EmbeddedSurface.Value.GetCenter();
 
         if (_runtime is null || _runtime.State == PancakeState.Empty) return;
 
@@ -109,6 +112,7 @@ public partial class PancakeCanvas : Control
 
     public Rect2 GetSurfaceRect()
     {
+        if (EmbeddedSurface is Rect2 embedded) return embedded;
         (Vector2 stoveCenter, float stoveSize) = GetStoveGeometry();
         StoveSurfaceSpec spec = _stoveLevel switch
         {

@@ -38,19 +38,24 @@ public partial class StageFourSelfTest
             MakeBagged(station.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
             station.Tick(.3);
             station.RefreshForCapture();
+            // Native tooltip windows can consume synthetic sampling events after a long
+            // audit dwell. This fixture tests control routing, not tooltip timing.
+            foreach (Control control in screen.FindChildren("*", "Control", true, false).OfType<Control>())
+                control.TooltipText = string.Empty;
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             foreach (float scale in new[] { 1f, 2f / 3f })
             {
                 screen.Scale = Vector2.One * scale;
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 foreach (string id in TianjinWorkbenchLayout.IngredientOrder)
                 {
                     var slot = (IngredientStockSlotView)station.FindChild($"IngredientSlot_{id}", true, false);
                     var input = (Control)station.FindChild($"StockGesture_{id}", true, false);
-                    AuditArt(slot.IngredientVisuals, input, $"Lv{level} {id} 缩放{scale:F2}");
+                    AuditSlot(slot, input, $"Lv{level} {id} 缩放{scale:F2}");
                     // Repeat after the same hover transform used during play.
                     await WaitForAnimation(.16);
-                    AuditArt(slot.IngredientVisuals, input, $"Lv{level} {id} 悬停后 缩放{scale:F2}");
+                    AuditSlot(slot, input, $"Lv{level} {id} 悬停后 缩放{scale:F2}");
                 }
                 var cups = (SoyMilkStockView)station.FindChild("SoyMilkStockArt", true, false);
                 AuditArt(cups.Cups, (Control)station.FindChild("StockGesture_soy_milk", true, false), $"Lv{level} 豆浆 缩放{scale:F2}");
@@ -90,7 +95,7 @@ public partial class StageFourSelfTest
             station.RefreshForCapture();
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             Click((Control)station.FindChild("PancakeBagAction", true, false));
-            Check(machine.Runtime.State == PancakeState.Empty && station.PancakeTray.Count == 1, $"Lv{level} 装袋按钮将成品入盘并腾空炉面");
+            Check(machine.Runtime.State == PancakeState.Bagged && station.PancakeTray.Count == 0, $"Lv{level} 装袋按钮将成品留在炉面");
             foreach (string id in TianjinWorkbenchLayout.IngredientOrder)
             {
                 while (station.Inventory.GetQuantity(id) > 1) station.Inventory.TryConsume(id);
@@ -98,7 +103,7 @@ public partial class StageFourSelfTest
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 var slot = (IngredientStockSlotView)station.FindChild($"IngredientSlot_{id}", true, false);
                 var gesture = (StockGesture)station.FindChild($"StockGesture_{id}", true, false);
-                AuditArt(slot.IngredientVisuals, gesture, $"Lv{level} {id} 少量库存");
+                AuditSlot(slot, gesture, $"Lv{level} {id} 少量库存");
                 Check(gesture.GetGlobalRect().End.X <= 1920 * screen.Scale.X && !slot.RefillButton.Visible,
                     $"Lv{level} {id} 长按区域位于画面内且没有独立加号");
                 Vector2 point = gesture.GetGlobalRect().GetCenter();
@@ -125,6 +130,14 @@ public partial class StageFourSelfTest
             using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = point };
             GetViewport().PushInput(release, true);
         }
+    }
+
+    private void AuditSlot(IngredientStockSlotView slot, Control expected, string label)
+    {
+        if (!slot.IngredientInBackground) { AuditArt(slot.IngredientVisuals, expected, label); return; }
+        using var motion = new InputEventMouseMotion { Position = expected.GetGlobalRect().GetCenter() };
+        GetViewport().PushInput(motion, true);
+        Check(GetViewport().GuiGetHoveredControl() == expected, $"背景碗入口路由 {label}");
     }
 
     private void AuditArt(IEnumerable<TextureRect> visuals, Control expected, string label)
@@ -154,7 +167,7 @@ public partial class StageFourSelfTest
                 GetViewport().PushInput(motion, true);
                 Control? actual = GetViewport().GuiGetHoveredControl();
                 if (actual == expected || (actual is not null && expected.IsAncestorOf(actual))) reached++;
-                else if (firstMiss.Length == 0) firstMiss = $"point={point}; receiver={actual?.GetPath()}; expected={expected.GetPath()}";
+                else if (firstMiss.Length == 0) firstMiss = $"point={point}; receiver={actual?.GetPath()}; expected={expected.GetPath()}; rect={expected.GetGlobalRect()}; local={expected.GetGlobalTransform().AffineInverse() * point}; has={expected._HasPoint(expected.GetGlobalTransform().AffineInverse() * point)}; handled={GetViewport().IsInputHandled()}; popups={string.Join(" | ", GetTree().Root.FindChildren("*", "Window", true, false).OfType<Window>().Where(w => w.Visible).Select(w => $"{w.Name}/{w.Position}/{w.Size}"))}";
             }
         }
         Check(total > 0 && reached == total, $"工作台可见部分输入路由 {label}", $"{reached}/{total}; {firstMiss}");

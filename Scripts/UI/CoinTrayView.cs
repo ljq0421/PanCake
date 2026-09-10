@@ -5,6 +5,28 @@ namespace ProjectCake.UI;
 /// <summary>Collectable money presentation; the day ledger remains the sole money owner.</summary>
 public partial class CoinTrayView : Control
 {
+    private bool _buttonPresentation;
+    public void ConfigureButtonPresentation()
+    {
+        _buttonPresentation = true;
+        GetNode<TextureRect>("CoinTrayArt").Hide();
+        _surface.Hide();
+        _collect.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _collect.CustomMinimumSize = Vector2.Zero;
+        _collect.Flat = false;
+        _caption.MouseFilter = MouseFilterEnum.Ignore;
+        _collect.AddThemeStyleboxOverride("normal", TianjinUi.Box(TianjinUi.Cream, 10, 2, false));
+        _collect.AddThemeStyleboxOverride("hover", TianjinUi.Box(TianjinUi.Yellow.Lightened(.4f), 10, 2, false));
+        _collect.AddThemeStyleboxOverride("pressed", TianjinUi.Box(TianjinUi.Yellow, 10, 2, false));
+        _collect.TooltipText = "点击收钱";
+        _caption.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _caption.CustomMinimumSize = Vector2.Zero;
+        _caption.HorizontalAlignment = HorizontalAlignment.Center;
+        _caption.VerticalAlignment = VerticalAlignment.Center;
+        _caption.ZIndex = 1;
+        _caption.AddThemeFontSizeOverride("font_size", 20);
+        _caption.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
+    }
     internal const int CoinsPerPayment = 3;
     private readonly List<TextureRect> _coins = new();
     private Control _surface = null!;
@@ -71,7 +93,8 @@ public partial class CoinTrayView : Control
         for (int i = 0; i < _coins.Count; i++) _coins[i].Visible = i < VisibleCoinCount;
         _caption.Text = AmountOnly || CompactCaption ? (PendingAmount > 0 ? $"¥{PendingAmount}" : "")
             : PendingAmount > 0 ? $"点击收钱 ¥{PendingAmount}" : "金币盘";
-        _caption.Visible = !(AmountOnly || CompactCaption) || PendingAmount > 0;
+        _caption.Visible = _buttonPresentation || !(AmountOnly || CompactCaption) || PendingAmount > 0;
+        if (_buttonPresentation) _caption.Text = PendingAmount > 0 ? $"收钱 ¥{PendingAmount}" : "收钱";
         _collect.MouseDefaultCursorShape = PendingAmount > 0 ? CursorShape.PointingHand : CursorShape.Arrow;
     }
 

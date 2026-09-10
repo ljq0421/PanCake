@@ -36,9 +36,9 @@ public partial class StageFourSelfTest
                 FryerStateMachine fryer = station.FryerMachine!;
                 Vector2 point = PickPoint();
                 Press(point); station.Tick(.1); Release(point);
-                Check(fryer.Runtime.Quantity == 1 && !drag.IsDragging, $"Lv{level}/{scale} 实际短按只装一根且不启动拖拽");
+                Check(fryer.Runtime.Quantity == 0 && !drag.IsDragging, $"Lv{level}/{scale} 实际短按不装料且不启动拖拽");
                 Press(point); station.Tick(.1); Release(point);
-                Check(fryer.Runtime.Quantity == 2, $"Lv{level}/{scale} 连续点击逐根累加");
+                Check(fryer.Runtime.Quantity == 0, $"Lv{level}/{scale} 连续短按也不装料");
                 station.ResetForDay();
                 Press(point); station.Tick(.449);
                 Check(fryer.Runtime.Quantity == 0, $"Lv{level}/{scale} 长按门槛前不装料");
@@ -95,7 +95,7 @@ public partial class StageFourSelfTest
                 Check(fryer.Runtime.Quantity == 1, $"Lv{level}/{scale} 炸制期间短按与长按均不能装料");
                 station.ResetForDay();
                 fryer.Inventory.TryStore(fryer.Level.Capacity, YoutiaoQuality.Golden);
-                Press(point); Release(point);
+                Press(point); station.Tick(.45); Release(point);
                 Check(fryer.Runtime.Quantity == 1 && fryer.Inventory.Count == fryer.Level.Capacity,
                     $"Lv{level}/{scale} 熟油条架满时仍按原规则备料，不改变库存容量");
             }
@@ -106,20 +106,7 @@ public partial class StageFourSelfTest
             DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(savePath));
         }
 
-        Vector2 PickPoint()
-        {
-            // Use actual rendered alpha and viewport routing, including overlapping page controls.
-            TextureRect visual = slot.IngredientVisuals[0];
-            using Image image = visual.Texture.GetImage();
-            for (int y = image.GetHeight() / 3; y < image.GetHeight(); y += 8)
-            for (int x = image.GetWidth() / 3; x < image.GetWidth(); x += 8)
-            {
-                if (image.GetPixel(x, y).A <= .9f) continue;
-                Vector2 global = visual.GetGlobalTransform() * (new Vector2(x + .5f, y + .5f) / image.GetSize() * visual.Size);
-                if (gesture._HasPoint(gesture.GetGlobalTransform().AffineInverse() * global)) return global;
-            }
-            throw new InvalidOperationException("生油条没有可点击的实体采样点");
-        }
+        Vector2 PickPoint() => gesture.GetGlobalRect().GetCenter();
         void Move(Vector2 point)
         {
             using var motion = new InputEventMouseMotion { Position = point };

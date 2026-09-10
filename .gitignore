@@ -5,3 +5,5 @@ obj/
 .tools/
 
 /.tmp
+/output
+/output

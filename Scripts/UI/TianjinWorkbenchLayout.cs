@@ -6,6 +6,43 @@ namespace ProjectCake.UI;
 /// <summary>1920×1080 counter geometry. Appliances move together with their input regions.</summary>
 internal static class TianjinWorkbenchLayout
 {
+    // All embedded-art anchors are measured on the user's 1672 x 941 originals.
+    public static readonly Vector2 SourceScale = new(1920f / 1672, 1080f / 941);
+    public static Rect2 FromSource(float x, float y, float width, float height) =>
+        new(new Vector2(x, y) * SourceScale, new Vector2(width, height) * SourceScale);
+    public static readonly Rect2 EmbeddedStove = FromSource(520, 510, 430, 310);
+    public static readonly Rect2 EmbeddedSurface = FromSource(550, 530, 365, 197);
+    public static readonly Rect2 EmbeddedFryer = FromSource(112, 447, 338, 258);
+    public static readonly Rect2 EmbeddedOpening = FromSource(150, 477, 253, 96);
+    public static readonly Rect2 EmbeddedYoutiaoTray = FromSource(104, 710, 343, 116);
+    public static readonly Rect2 EmbeddedSoyTray = FromSource(1468, 583, 173, 219);
+    public static Rect2 EmbeddedIngredient(string id) => id switch
+    {
+        StableIds.Ingredients.Batter => FromSource(953, 542, 145, 139),
+        StableIds.Ingredients.Sauce => FromSource(951, 673, 149, 136),
+        StableIds.Ingredients.Egg => FromSource(1107, 582, 167, 101),
+        StableIds.Ingredients.Crispy => FromSource(1287, 582, 174, 101),
+        StableIds.Ingredients.Scallion => FromSource(1105, 701, 178, 107),
+        StableIds.Ingredients.Ham => FromSource(1291, 701, 184, 107),
+        _ => throw new ArgumentOutOfRangeException(nameof(id)),
+    };
+
+    public static WorkstationSlotSpec EmbeddedIngredientSlot(string id)
+    {
+        Vector2 size = EmbeddedIngredient(id).Size;
+        Rect2 floor = new(22, 30, size.X - 44, size.Y - 53);
+        Rect2 caption = new(0, size.Y - 5, size.X, 24);
+        bool bowl = id is StableIds.Ingredients.Batter or StableIds.Ingredients.Sauce;
+        return new(size, new Rect2(Vector2.Zero, size), new Rect2(12, 5, size.X - 24, size.Y - 12),
+            caption, new Rect2(), new Rect2(), new Rect2(Vector2.Zero, size),
+            new Rect2(18, size.Y + 18, size.X - 36, 4), 1,
+            IngredientContainmentRect: floor, CaptionRect: caption,
+            StockFootprintRect: bowl ? null : floor,
+            StackLayout: bowl ? null : new StockStackLayout(
+                id == StableIds.Ingredients.Egg ? new Vector2(32, 42) : new Vector2(43, 34),
+                (floor.Size.X - 35) / 4, floor.Position.Y + 20, floor.End.Y - 3,
+                new Rect2(16, 8, size.X - 32, size.Y - 25), RowOffset: 3));
+    }
     public const float BackEdge = 580;
     public const float FrontEdge = 995;
     public const float CenterX = 960;
@@ -70,7 +107,8 @@ internal static class TianjinWorkbenchLayout
             bowl ? new Rect2(0, 0, 228, 128) : new Rect2(20, -12, 208, 132),
             new Rect2(24, 144, 176, 4), bowl ? .85f : 1f,
             bowl ? new Rect2(64, 4, 104, 84) : new Rect2(36, 40, 176, 48),
-            new Rect2(18, 120, 190, 24), TrayVerticalScale: 1f,
+            // Keep upper-row stock captions in the gap above the taller A tray below.
+            new Rect2(18, id is StableIds.Ingredients.Egg or StableIds.Ingredients.Crispy ? 104 : 120, 190, 24), TrayVerticalScale: 1f,
             StockFootprintRect: bowl ? null : new Rect2(30, 42, 188, 48),
             StackLayout: id switch
             {

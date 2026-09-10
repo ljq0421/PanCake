@@ -39,6 +39,10 @@ public sealed class TianjinArtCatalog
     {
         _portraitLayouts = LoadPortraitLayouts();
         Load("background", "早餐铺主界面-1920x1080.png");
+        Load("background_pancake", "早餐铺主界面-煎饼.png");
+        Load("background_fryer", "早餐铺主界面-炸锅-煎饼.png");
+        Load("background_soy", "早餐铺主界面-炸锅-煎饼-豆浆.png");
+        Load("embedded_basket", "Workbench/阶段工作台-升降滤篮-v1.png");
         Load("coin", "金币图标.png", true);
         Load("ledger_book", "Ledger/ledger_book.png", true);
         Load("ledger_bookmark", "Ledger/ledger_bookmark.png", true);
@@ -63,6 +67,12 @@ public sealed class TianjinArtCatalog
         Load("soy_milk", "成品豆浆杯.png", true);
         Load("serving_tray", "出餐托盘.png", true);
         Load("ingredient_tray", "通用食材托盘.png", true);
+        Load("workbench_tray_a", "鸡蛋香葱托盘-A型-v1.png", true);
+        Load("workbench_tray_b", "薄脆火腿托盘-B型-v1.png", true);
+        Load("workbench_soy_tray", "豆浆托盘-v1.png", true);
+        Load("workbench_raw_tray", "生油条盘-左侧-v1.png", true);
+        Load("workbench_finished_rack", "熟油条沥油架-圆润版-v2.png", true);
+        Load("workbench_finished_tray", "成品盘-v2.png", true);
         Load("batter_container", "面糊容器.png", true);
         Load("sauce_container", "酱料容器.png", true);
         Load("batter_empty", "StockUI/batter_empty.png");
@@ -100,6 +110,14 @@ public sealed class TianjinArtCatalog
     }
 
     public Texture2D Background => Get("background");
+    public Texture2D WorkbenchBackground(IEnumerable<ProjectCake.Data.ProductKind> products) =>
+        Get(products.Contains(ProjectCake.Data.ProductKind.SoyMilk) ? "background_soy"
+            : products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "background_fryer" : "background_pancake");
+    public Texture2D EmbeddedBasket => Get("embedded_basket");
+    public Texture2D WorkbenchStoveIcon => new AtlasTexture {
+        Atlas = Get("background_pancake"), Region = new Rect2(520, 515, 420, 300) };
+    public Texture2D WorkbenchFryerIcon => new AtlasTexture {
+        Atlas = Get("background_fryer"), Region = new Rect2(95, 445, 375, 266) };
     public Texture2D Coin => Get("coin");
     public Texture2D LedgerBook => Get("ledger_book");
     public Texture2D LedgerBookmark => Get("ledger_bookmark");
@@ -119,6 +137,12 @@ public sealed class TianjinArtCatalog
     public Texture2D SoyTray => Get("soy_tray");
     public Texture2D ServingTray => Get("serving_tray");
     public Texture2D IngredientTray => Get("ingredient_tray");
+    public Texture2D WorkbenchTrayA => Get("workbench_tray_a");
+    public Texture2D WorkbenchTrayB => Get("workbench_tray_b");
+    public Texture2D WorkbenchSoyTray => Get("workbench_soy_tray");
+    public Texture2D WorkbenchRawYoutiaoTray => Get("workbench_raw_tray");
+    public Texture2D WorkbenchFinishedYoutiaoRack => Get("workbench_finished_rack");
+    public Texture2D WorkbenchFinishedTray => Get("workbench_finished_tray");
     public Texture2D WorkbenchTray => LoadWorkbenchTray();
     public Texture2D WorkbenchRack
     {
@@ -230,6 +254,8 @@ public sealed class TianjinArtCatalog
             "map_background", "tianjin_map_node", "locked_map_node", "scraper", "spatula", "stove_1", "stove_2", "stove_3",
             "fryer_body_1", "fryer_body_2", "fryer_body_3", "fryer_basket_6", "fryer_basket_8",
             "batter_empty", "sauce_empty", "order_body", "order_tail", "patience_frame",
+            "workbench_tray_a", "workbench_tray_b", "workbench_soy_tray", "workbench_raw_tray", "workbench_finished_rack",
+            "workbench_finished_tray",
         };
         var missing = required.Where(key => !_textures.ContainsKey(key)).ToList();
         foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)

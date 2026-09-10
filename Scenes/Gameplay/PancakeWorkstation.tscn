@@ -1561,6 +1561,7 @@ anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1_ng5tn")
+IsTianjinWorkbench = true
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.TianjinDayScreen|_workstation")
 
 [node name="@Node@106" type="Node" parent="." unique_id=50317868]

@@ -7,6 +7,22 @@
 - 绿底候选：`tray-green.png`。
 - 去背景尝试输出为 RGB 棋盘格，未作为交付。
 
+## 已完成的透明交付
+
+- 用户已明确授权使用 PowerShell 校正透视、去绿并导出透明 PNG。
+- 最终素材：`resource/art/TianJin/成品盘-v1.png`，512×512 RGBA PNG。
+- 使用 `export-tray.ps1` 处理绿底定稿；绿色阈值沿用项目 `tools/prepare_tianjin_stock_ui.ps1`。
+- 对原图左右纵深边进行直线拟合，按行重采样为后方左偏 4° 的弱透视，横边保持水平；顶面深宽比 0.30，前壁高度占主体总高约 15%。
+- 使用预乘 alpha 的双线性采样和每像素 4×4 子采样导出，防止透明边缘混入绿色。
+- 最终两侧纵深边实测为向后左偏 4.058°、3.952°；主体包围框 `[27,176,484,335)`。
+- 验证：190972 个全透明像素、69415 个不透明像素、1757 个边缘半透明像素；残余绿色像素、画布边界非透明像素、盘内透明孔洞均为 0。
+- 深浅底视觉检查通过：`qa-light-dark.png`；像素检查记录：`qa.json`。
+- 脚本使用 Windows PowerShell（`powershell.exe`）及 System.Drawing，无外部图像 API。为保护已交付素材，脚本拒绝覆盖现有目标；复跑请指定新的 `-Destination`。
+
+```powershell
+powershell.exe -NoProfile -File .\output\imagegen\tianjin-finished-tray-20260910\export-tray.ps1 -Destination .\resource\art\TianJin\成品盘-v2.png
+```
+
 ## 初始生成提示词
 
 ```text
@@ -73,4 +89,3 @@ First correct two small rim geometry errors: extend the rear-left corner LEFT by
 Then remove ALL green background to actual zero-alpha transparency. No checkerboard pixels, no white background, no replacement background.
 Preserve all illustrated artwork: same empty light-honey wooden interior, cream edge highlights, shallow caramel front wall, warm brown outlines, simple warm 2D cartoon style. No new design details. The tray stays fully opaque, only silhouette antialiasing may have fractional alpha. No green fringe. Output exactly 512x512.
 ```
-

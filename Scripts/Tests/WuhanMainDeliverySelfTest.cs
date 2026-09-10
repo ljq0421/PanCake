@@ -35,9 +35,12 @@ public partial class WuhanMainDeliverySelfTest : Node
             Vector2 resumePoint = resume.GetGlobalTransformWithCanvas() * (resume.Size * .5f);
             Move(resumePoint); Button(resumePoint, true); Button(resumePoint, false); await Frames(3);
             await ClickButton(_main.GetNode<Control>("UI/MorningHub"), "城市地图");
+            Check(!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "Wuhan starts locked for preview regression");
+            Check(!_main.GetNode<GameController>(".").OpenCity(StableIds.Cities.Wuhan), "normal navigation rejects locked Wuhan");
             await ClickButton(_main.GetNode<Control>("UI/TianjinMapScreen"), "测试直达武汉");
             var hub = _main.GetNode<WuhanHub>("UI/WuhanHub");
             Check(hub.IsVisibleInTree(), "Main navigation opens Wuhan hub");
+            Check(!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "Wuhan preview does not unlock the city");
             await ClickButton(hub, "经营手账");
             await ClickButton(hub.GetNode<WuhanLedger>("WuhanLedger"), "开始营业 · Day 8");
             _day = _main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen");

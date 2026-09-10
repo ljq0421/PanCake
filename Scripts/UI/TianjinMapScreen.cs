@@ -8,6 +8,7 @@ public partial class TianjinMapScreen : Control
 {
     public event Action? HubRequested;
     public event Action<string>? CityRequested;
+    public event Action? WuhanPreviewRequested;
 
     private SaveService _save = null!;
     private TianjinArtCatalog _art = null!;
@@ -29,7 +30,7 @@ public partial class TianjinMapScreen : Control
     {
         SceneNodeBinder.Bind(this);
         _art = new TianjinArtCatalog();
-        this.FindButton("测试直达武汉").Pressed += () => CityRequested?.Invoke(StableIds.Cities.Wuhan);
+        this.FindButton("测试直达武汉").Pressed += () => WuhanPreviewRequested?.Invoke();
         this.FindButton("返回经营首页").Pressed += () => HubRequested?.Invoke();
         Button xianTest = this.FindButton("测试直达西安");
         xianTest.Visible = DeveloperToolsVisible;

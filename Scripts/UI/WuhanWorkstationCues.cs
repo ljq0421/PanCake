@@ -92,9 +92,7 @@ public partial class WuhanWorkstationView
             if (warning) DrawArc(p, 20, 0, Mathf.Tau, 32, ink, 2, true);
         }
         Vector2 bowlCue = new(BowlRect.GetCenter().X, BowlRect.End.Y + 22);
-        if (_bowl.State == NoodleBowlState.Noodles)
-            Sprite(_art.Ingredient(IngredientIds[0]), At(bowlCue, new Vector2(38, 38)));
-        else if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing)
+        if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing)
             Cue(bowlCue, "mix", progress: (float)_bowl.MixProgress / 100);
         else if (_bowl.State == NoodleBowlState.Ready) Cue(bowlCue, "done");
 
@@ -105,7 +103,7 @@ public partial class WuhanWorkstationView
             case DoupiState.Empty: break;
             case DoupiState.Batter:
                 Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), At(panCue, new Vector2(36, 36))); break;
-            case DoupiState.Flipped: Sprite("doupi_filling", At(panCue, new Vector2(38, 38))); break;
+            case DoupiState.Flipped: break;
             case DoupiState.ReadyToFlip: Cue(panCue, "up"); break;
             case DoupiState.ReadyToCut:
             case DoupiState.Cutting: Cue(panCue, "cut"); break;

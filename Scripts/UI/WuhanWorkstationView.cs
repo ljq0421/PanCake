@@ -54,7 +54,7 @@ public partial class WuhanWorkstationView : Control
         {
             DragItem source = GetNode<DragItem>($"WuhanDrag_{kind}");
             source.DragDisplaySize = kind switch {
-                ProductKind.HotDryNoodles => WuhanWorkbenchLayout.Bowl.Size,
+                ProductKind.HotDryNoodles => _layout.Bowl.Size,
                 ProductKind.Doupi => new Vector2(100, 75), _ => new Vector2(100, 50),
             };
             source.BindRuntime(drag, () => CanDeliver(kind) && !drag.IsDragging,
@@ -84,6 +84,7 @@ public partial class WuhanWorkstationView : Control
         {
             Rect2 bounds = kind switch { ProductKind.HotDryNoodles => BowlRect,
                 ProductKind.Doupi => StockRect, _ => EggStockRect };
+            if (kind == ProductKind.HotDryNoodles) source.DragDisplaySize = BowlRect.Size;
             source.Position = bounds.Position;
             source.Size = bounds.Size;
             source.TooltipText = "按住成品拖给顾客";
@@ -111,7 +112,7 @@ public partial class WuhanWorkstationView : Control
         {
             Rect2 food = new(BowlFood.Position - BowlRect.Position, BowlFood.Size);
             Texture2D sheet = _art.WorkbenchBackground(_doupi is not null);
-            Vector2[] outline = WuhanWorkbenchLayout.BowlOutline;
+            Vector2[] outline = _layout.BowlOutline;
             root.AddChild(new Polygon2D {
                 Polygon = outline.Select(p => p - BowlRect.Position).ToArray(),
                 UV = outline.Select(p => p / WuhanWorkbenchLayout.DesignSize * sheet.GetSize()).ToArray(),
@@ -134,6 +135,7 @@ public partial class WuhanWorkstationView : Control
     public static readonly string[] IngredientIds = { StableIds.Ingredients.WuhanBaseSeasoning,
         StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef };
     private WuhanArtCatalog _art = null!;
+    private WuhanWorkbenchLayout _layout = WuhanWorkbenchLayout.Noodles;
     private NoodleCookerStateMachine _cooker = null!;
     private HotDryNoodlesStateMachine _bowl = null!;
     private DoupiStateMachine? _doupi;
@@ -170,17 +172,16 @@ public partial class WuhanWorkstationView : Control
     }
 
     // The view shares the background's 1920x1080 coordinate system.
-    private Rect2 BowlRect => WuhanWorkbenchLayout.Bowl;
-    private Rect2 BowlFood => WuhanWorkbenchLayout.BowlFood;
-    private Rect2 PanRect => WuhanWorkbenchLayout.Pan;
-    private static readonly Rect2 StockRect = WuhanWorkbenchLayout.Stock;
+    private Rect2 BowlRect => _layout.Bowl;
+    private Rect2 BowlFood => _layout.BowlFood;
+    private Rect2 PanRect => _layout.Pan;
+    private Rect2 StockRect => _layout.Stock;
     private static readonly Rect2 EggStockRect = WuhanWorkbenchLayout.EggUi;
-    private static readonly Rect2 RawTrayRect = WuhanWorkbenchLayout.Raw;
-    private Rect2 RawRect => WuhanWorkbenchLayout.RawFood;
-    private static Rect2 IngredientRect(int index) => WuhanWorkbenchLayout.Ingredient(index);
-    private static Rect2 SauceBottleRect => WuhanWorkbenchLayout.Sauce;
-    private Rect2 BatterRect => WuhanWorkbenchLayout.Batter;
-    private Rect2 FillingRect => WuhanWorkbenchLayout.Filling;
+    private Rect2 RawTrayRect => _layout.Raw;
+    private Rect2 RawRect => _layout.RawFood;
+    private Rect2 IngredientRect(int index) => _layout.Ingredient(index);
+    private Rect2 BatterRect => _layout.Batter;
+    private Rect2 FillingRect => _layout.Filling;
     public Vector2 BowlStatusPosition => new(BowlRect.Position.X, BowlRect.End.Y + 10);
     public Vector2 DoupiStatusPosition => new(PanRect.Position.X, PanRect.End.Y + 10);
     public Vector2 EggStatusPosition => EggStockRect.Position;
@@ -191,7 +192,6 @@ public partial class WuhanWorkstationView : Control
     public Vector2 StockCenter => StockRect.GetCenter();
     public Vector2 PanCenter => (PanCorners[0] + PanCorners[2]) / 2;
     public Vector2 CupCenter => EggStockRect.GetCenter();
-    internal Vector2 SauceCenter => SauceBottleRect.GetCenter();
 
     public override void _Ready()
     {
@@ -204,8 +204,11 @@ public partial class WuhanWorkstationView : Control
     {
         CancelAnimations();
         _art = art; _cooker = cooker; _bowl = bowl; _doupi = doupi; _stock = stock;
+        _layout = WuhanWorkbenchLayout.ForStage(doupi is not null);
         _eggUnlocked = eggUnlocked; PendingDoupiDemand = 0; _ingredients = ingredients;
-        _bounds.Clear(); _phase=0; RememberStates(); BindRefillControls(); RefreshDeliverySources(); QueueRedraw();
+        _bounds.Clear(); _phase=0; _pointer = new Vector2(-1000, -1000); TooltipText = "";
+        MouseDefaultCursorShape = CursorShape.Arrow;
+        RememberStates(); BindRefillControls(); RefreshRefillControls(); RefreshDeliverySources(); QueueRedraw();
     }
 
     public bool Busy(string channel) => (_draggedProduct is ProductKind kind && DeliveryChannel(kind) == channel)
@@ -349,6 +352,7 @@ public partial class WuhanWorkstationView : Control
     {
         if (_cooker is null) return false;
         return (point.Y >= 560 && new Rect2(Vector2.Zero, Size).HasPoint(point))
+            || BowlRect.HasPoint(point)
             || EggStockRect.HasPoint(point)
             || Enumerable.Range(0, _cooker.Baskets.Count).Any(i => BasketRect(i).HasPoint(point));
     }
@@ -356,14 +360,13 @@ public partial class WuhanWorkstationView : Control
     {
         if (_cooker is null) return "";
         if (InBowl(p)) return "bowl";
-        if (SauceBottleRect.HasPoint(p)) return "ingredient0";
         for (int i = 0; i < 4; i++) if (IngredientRect(i).HasPoint(p)) return $"ingredient{i}";
         if (BowlRect.HasPoint(p)) return "bowl";
         for (int i = 0; i < _cooker.Baskets.Count; i++)
             if (BasketRect(i).HasPoint(p)) return $"basket{i}";
         if (RawTrayRect.HasPoint(p)) return "raw";
-        if (StockRect.HasPoint(p)) return "stock";
-        if (NearPan(p) || BatterRect.HasPoint(p) || FillingRect.HasPoint(p)) return "pan";
+        if (_doupi is not null && StockRect.HasPoint(p)) return "stock";
+        if (_doupi is not null && (NearPan(p) || BatterRect.HasPoint(p) || FillingRect.HasPoint(p))) return "pan";
         if (EggStockRect.HasPoint(p)) return "egg";
         return "";
     }
@@ -429,9 +432,8 @@ public partial class WuhanWorkstationView : Control
     }
     private static Rect2 At(Vector2 center, Vector2 size) => new(center - size / 2, size);
 
-    private Rect2 CookerCanvas => WuhanWorkbenchLayout.Cooker;
-    private Vector2 BasketHome(int index) => WuhanWorkbenchLayout.Point(
-        _cooker.Baskets.Count == 2 ? (index == 0 ? 223 : 358) : 288, 506);
+    private Rect2 CookerCanvas => _layout.Cooker;
+    private Vector2 BasketHome(int index) => _layout.BasketHome(index, _cooker.Baskets.Count);
     private Vector2 BasketSize => FitSprite(_art.Texture("basket"), new Rect2(0, 0, 156, 177)).Size;
 
     // Restore the counter above customers, including the pot silhouette above the rear edge.
@@ -441,15 +443,11 @@ public partial class WuhanWorkstationView : Control
         Rect2 table = new(0, 560, 1920, 520);
         DrawTextureRectRegion(sheet, table, new Rect2(table.Position / WuhanWorkbenchLayout.DesignSize * sheet.GetSize(),
             table.Size / WuhanWorkbenchLayout.DesignSize * sheet.GetSize()));
-        Vector2[] outline = new[] { new Vector2(77, 560), new(82, 522), new(112, 515), new(121, 493),
-            new(142, 470), new(180, 448), new(227, 434), new(280, 427), new(329, 430),
-            new(381, 444), new(429, 467), new(461, 494), new(474, 515), new(501, 521), new(507, 566) }
-            .Select(p => WuhanWorkbenchLayout.Point(p.X, p.Y)).ToArray();
-        DrawPolygon(outline, new[] { Colors.White }, outline.Select(p => p / WuhanWorkbenchLayout.DesignSize).ToArray(), sheet);
-        Vector2[] panOutline = new[] { new Vector2(1057, 495), new(1066, 479), new(1082, 468), new(1108, 465),
-            new(1487, 465), new(1505, 475), new(1523, 516), new(1050, 516) }
-            .Select(p => WuhanWorkbenchLayout.Point(p.X, p.Y)).ToArray();
-        DrawPolygon(panOutline, new[] { Colors.White }, panOutline.Select(p => p / WuhanWorkbenchLayout.DesignSize).ToArray(), sheet);
+        void Restore(Vector2[] outline) => DrawPolygon(outline, new[] { Colors.White },
+            outline.Select(p => p / WuhanWorkbenchLayout.DesignSize).ToArray(), sheet);
+        Restore(_layout.CookerOutline);
+        Restore(_layout.BowlOutline);
+        if (_doupi is not null) Restore(_layout.PanOutline);
     }
 
     public Rect2 BasketRect(int index)
@@ -502,10 +500,7 @@ public partial class WuhanWorkstationView : Control
     private void DrawCookerFront()
     {
         // Sample only the front half of the pot, preserving the water above its curved rim.
-        Vector2[] edge = Enumerable.Range(0, 25).Select(i => {
-            float angle = i * Mathf.Pi / 24;
-            return WuhanWorkbenchLayout.Point(293 + 177 * Mathf.Cos(angle), 551 + 85 * Mathf.Sin(angle));
-        }).Concat(new[] { WuhanWorkbenchLayout.Point(116, 700), WuhanWorkbenchLayout.Point(470, 700) }).ToArray();
+        Vector2[] edge = _layout.CookerFront;
         DrawPolygon(edge, new[] { Colors.White }, edge.Select(p => p / WuhanWorkbenchLayout.DesignSize).ToArray(),
             _art.WorkbenchBackground(_doupi is not null));
     }
@@ -522,7 +517,6 @@ public partial class WuhanWorkstationView : Control
                     m?.Kind == "ingredient" && m.Progress < .62f ? m.Ingredient : "");
         }
         for (int i = 0; i < 4; i++) Hint(IngredientRect(i), $"ingredient{i}");
-        Hint(SauceBottleRect, "ingredient0");
         if (_mixLast is Vector2 pointer && InBowl(pointer))
         {
             Vector2 center = BowlFood.GetCenter();
@@ -582,7 +576,7 @@ public partial class WuhanWorkstationView : Control
         else Sprite(ToppingArt(m.Ingredient), At(center, new Vector2(48, 33)), 1 - p * .5f);
     }
 
-    private Vector2[] PanCorners => WuhanWorkbenchLayout.PanCorners;
+    private Vector2[] PanCorners => _layout.PanCorners;
     private void PanLayer(string id,float alpha=1,float grow=1,float flip=1)
     {
         Vector2[] corners=PanCorners; Vector2 center=(corners[0]+corners[2])/2;
@@ -597,17 +591,12 @@ public partial class WuhanWorkstationView : Control
     }
     private void DrawDoupi()
     {
+        if (_doupi is null) return;
         Hint(StockRect, "stock");
         int displayed=_stock.Count;
         Motion? m=Find("pan");
         if(m?.Kind=="stock")displayed=Math.Max(0,displayed-m.Amount);
         for(int i=0;i<displayed;i++)Sprite("doupi_single",StockItemRect(i));
-        if (_doupi is null)
-        {
-            DrawStringOutline(ThemeDB.FallbackFont, PanCenter + new Vector2(-82, 6), "豆皮 · 第 4 天解锁", fontSize: 20, size: 4, modulate: WuhanUi.Paper);
-            DrawString(ThemeDB.FallbackFont, PanCenter + new Vector2(-82, 6), "豆皮 · 第 4 天解锁", fontSize: 20, modulate: WuhanUi.Ink);
-            return;
-        }
         Hint(At(PanCenter, PanRect.Size * new Vector2(.7f, .4f)),"pan");
         DoupiState state=_doupi.State;
         if(m?.Kind=="discard"){PanLayer("doupi_egg",1-m.Progress);PanLayer("doupi_burnt",1-m.Progress);}
@@ -649,7 +638,7 @@ public partial class WuhanWorkstationView : Control
     private Rect2 StockItemRect(int index)
     {
         int slot = index % 8, layer = index / 8;
-        Rect2 tray = WuhanWorkbenchLayout.StockFood;
+        Rect2 tray = _layout.StockFood;
         Vector2 center = tray.Position + tray.Size * new Vector2((slot % 4 + .5f) / 4, .30f + slot / 4 * .43f);
         Vector2 size = FitSprite(_art.Texture("doupi_single"), new Rect2(0, 0, tray.Size.X / 4 - 3, 37)).Size;
         center += new Vector2(layer * 1.5f, -layer * 5);

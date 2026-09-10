@@ -1,0 +1,78 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+ERROR: 存档无法读取：Access to the path 'C:\Users\Administrator\AppData\Roaming\Godot\app_userdata\早餐铺子\project_cake_save_v3.json' is denied.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:358)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:358)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Core.SaveService._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:144)
+       [4] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [5] bool ProjectCake.Core.SaveService.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Core.SaveService_ScriptMethods.generated.cs:150)
+       [6] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS 全部武汉必需美术可加载
+PASS 碗满倒面不丢失源面条及碗内品质
+PASS 空碗原子接收熟面
+PASS 双漏勺争用同一个碗只成功一次
+PASS 新一份面条清除上一份过熟品质
+PASS 空漏勺点击不下面，制作提交只扣一份
+PASS 下面动画存在可捕获的中间帧
+PASS 提篮后自然沥水完成
+PASS 倒面同时锁住漏勺和碗，期间不能提前加料
+PASS 倒面不阻塞蛋酒直接交付
+PASS 基础调味加入一次后仍持续供应
+PASS 点击葱花实物加入碗内
+PASS 碗外按下不能带入拌面手势
+PASS 离开碗口保持会话，重入不会连线加进度
+PASS 拌匀后保持当前输入模式直到松手
+PASS 无效顾客拒绝交付，食物和画面保留
+PASS Lv3 两个漏勺同帧自动提篮都播放动画
+PASS 自然沥水结束状态同步
+PASS 界面碗满拒绝倒入第二勺，不播放虚假成功动作
+PASS Lv2 只锁熟，不误播自动提篮
+PASS 豆皮两向切割后自动入盘
+PASS 豆皮入库连点不重复增加一锅
+PASS 备货满盘保留锅内成品，不播放入库动作
+PASS Lv3 豆皮自动翻面可见
+PASS 豆皮仍遵守焦糊时限
+PASS 丢弃焦糊豆皮后清空锅面与动画
+PASS 蛋酒解锁后直接可取
+PASS 杯子补位动画不阻塞取杯
+PASS 暂停冻结补位动画并禁用交付
+PASS 恢复后补位结束，蛋酒持续可取
+PASS Day 1 不可提前交付蛋酒
+PASS 接受交付后清空食品，重复点击不重复交付
+PASS Lv1 生面开局满库存
+PASS wuhan_base_seasoning 连续使用不耗尽
+PASS wuhan_scallion 连续使用不耗尽
+PASS wuhan_chili_oil 连续使用不耗尽
+PASS wuhan_braised_beef 连续使用不耗尽
+PASS 空生面和未知原料不能消耗
+PASS Lv2 生面开局满库存
+PASS wuhan_base_seasoning 连续使用不耗尽
+PASS wuhan_scallion 连续使用不耗尽
+PASS wuhan_chili_oil 连续使用不耗尽
+PASS wuhan_braised_beef 连续使用不耗尽
+PASS 空生面和未知原料不能消耗
+PASS Lv3 生面开局满库存
+PASS wuhan_base_seasoning 连续使用不耗尽
+PASS wuhan_scallion 连续使用不耗尽
+PASS wuhan_chili_oil 连续使用不耗尽
+PASS wuhan_braised_beef 连续使用不耗尽
+PASS 空生面和未知原料不能消耗
+PASS 补面期间仍能使用剩余生面
+PASS 暂停不推进补面
+PASS 失焦不推进补面
+PASS 重复补货不重启计时，到时补满而非追加
+PASS 减少动态模式不提前结束补货状态
+PASS 完整补货时长后清除状态
+PASS 暂停冻结动作、制作和输入
+PASS 失焦冻结动画
+PASS 恢复后继续原动画
+PASS 隐藏页面清理所有临时动作
+PASS 重新开局复位全部制作画面
+PASS 减少动态模式保留正确终态
+WUHAN_ANIMATION_TEST_RESULT passed=62 failed=0

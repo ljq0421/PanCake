@@ -1,0 +1,148 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+ERROR: 存档无法读取：Access to the path 'C:\Users\Administrator\AppData\Roaming\Godot\app_userdata\早餐铺子\project_cake_save_v3.json' is denied.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:358)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:358)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Core.SaveService._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:144)
+       [4] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [5] bool ProjectCake.Core.SaveService.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Core.SaveService_ScriptMethods.generated.cs:150)
+       [6] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS fixture has three waiting customers
+PASS no customer selection required
+PASS HotDryNoodles starts from visible food through viewport input
+PASS drag locks the current bowl
+PASS drag cannot mutate recipe or consume ingredients
+PASS preview contains bowl, noodles, mixed sauce, overcooking and three toppings
+PASS preview layers fit the displayed bowl (293.9713, 228.39532): (248.03827, 123.95325), (248.03827, 123.95325), (248.03827, 123.95325), (173.6268, 80.5696), (183.54834, 84.28821), (99.21532, 53.299892)
+PASS miss returns intact bowl and releases lock
+PASS Doupi starts from visible food through viewport input
+PASS Escape retains stock and cancels drag
+PASS Doupi starts from visible food through viewport input
+PASS delivery animation releases input
+PASS customer without matching product rejects without consumption
+PASS HotDryNoodles starts from visible food through viewport input
+PASS delivery animation releases input
+PASS unselected customer receives exactly one bowl
+PASS actual recipe and low quality follow existing scoring rules
+PASS partial delivery keeps multi-item order active
+PASS Doupi starts from visible food through viewport input
+PASS delivery animation releases input
+PASS drop target wins over selection and receives its two missing pieces
+PASS egg action never performs click delivery
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS finished cup can be dragged directly to customer
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS another stock cup satisfies the remaining quantity
+PASS fulfilled egg line cannot consume another cup
+PASS empty bowl cannot start a delivery
+PASS mix completion does not turn held gesture into delivery
+PASS HotDryNoodles starts from visible food through viewport input
+PASS HotDryNoodles starts from visible food through viewport input
+PASS delivery animation releases input
+PASS quantity-two line completes independently of other foods
+PASS Doupi starts from visible food through viewport input
+PASS satisfied or departing customer cannot consume additional pieces
+PASS Doupi starts from visible food through viewport input
+PASS delivery animation releases input
+PASS reduced motion commits the two missing pieces once
+PASS fixture has three waiting customers
+PASS Doupi starts from visible food through viewport input
+PASS hover reserves no stock or order quantity
+PASS hover preview sums remaining quantity across order lines
+PASS one drop fills multiple doupi lines without overdelivery
+PASS batch preserves each piece quality in FIFO order
+PASS mixed quality order evaluates and notifies exactly once
+PASS duplicate batch cannot settle twice
+PASS fixture has three waiting customers
+PASS Doupi starts from visible food through viewport input
+PASS delivery animation releases input
+PASS insufficient stock delivers available piece and leaves remaining demand
+PASS Doupi starts from visible food through viewport input
+PASS customer leaving during snap cancels entire pending batch
+PASS Doupi starts from visible food through viewport input
+PASS cancelled batch keeps all pieces
+PASS HotDryNoodles starts from visible food through viewport input
+PASS pause cancels proxy and source lock
+PASS pause keeps uncommitted food
+PASS HotDryNoodles starts from visible food through viewport input
+PASS focus cancels proxy and source lock
+PASS focus keeps uncommitted food
+PASS HotDryNoodles starts from visible food through viewport input
+PASS dialog cancels proxy and source lock
+PASS dialog keeps uncommitted food
+PASS HotDryNoodles starts from visible food through viewport input
+PASS hidden cancels proxy and source lock
+PASS hidden keeps uncommitted food
+PASS HotDryNoodles starts from visible food through viewport input
+PASS restart cancels proxy and source lock
+PASS fixture has three waiting customers
+PASS HotDryNoodles starts from visible food through viewport input
+PASS settlement cancels active drag
+PASS fixture has three waiting customers
+PASS queue stops at five customers
+PASS customer 1 delivery zone fits the screen
+PASS customer 2 delivery zone fits the screen
+PASS adjacent delivery zones do not overlap
+PASS customer 3 delivery zone fits the screen
+PASS adjacent delivery zones do not overlap
+PASS customer 4 delivery zone fits the screen
+PASS adjacent delivery zones do not overlap
+PASS customer 5 delivery zone fits the screen
+PASS adjacent delivery zones do not overlap
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS fifth customer accepts a real viewport drag
+PASS fixture has three waiting customers
+PASS doupi warning counts only remaining live orders
+PASS enough finished doupi clears the warning
+PASS Doupi starts from visible food through viewport input
+PASS delivery animation releases input
+PASS delivered doupi reduces demand immediately
+PASS starting a batch replaces shortage warning with production state
+PASS departing customers do not cause false shortage warnings
+PASS fixture has three waiting customers
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS unlimited supply still rejects fulfilled order lines
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS unlimited supply still rejects fulfilled order lines
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS unlimited supply still rejects fulfilled order lines
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS EggRiceWine starts from visible food through viewport input
+PASS delivery animation releases input
+PASS valid cup drop advances order and leaves supply available
+PASS unlimited supply still rejects fulfilled order lines
+PASS eight cups delivered without refill, exceeding the former six-cup limit
+PASS receipt text, title and unlock hint exceed 4.5:1
+PASS disabled labels remain readable
+PASS primary button normal contrast
+PASS primary button hover contrast
+PASS primary button pressed contrast
+PASS primary button disabled contrast
+PASS receipt explicitly overrides RichTextLabel color
+WUHAN_DELIVERY_TEST_RESULT passed=132 failed=0

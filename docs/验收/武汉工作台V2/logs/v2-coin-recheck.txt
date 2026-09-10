@@ -1,0 +1,806 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+ERROR: 存档无法读取：Access to the path 'C:\Users\Administrator\AppData\Roaming\Godot\app_userdata\早餐铺子\project_cake_save_v3.json' is denied.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:358)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:358)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Core.SaveService._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:144)
+       [4] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [5] bool ProjectCake.Core.SaveService.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Core.SaveService_ScriptMethods.generated.cs:150)
+       [6] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS wuhan-1920-normal each paid customer leaves one handful regardless of amount
+PASS UI payment targets the button
+PASS focus loss freezes UI payment
+PASS UI payments fade without an invisible pile landing
+PASS wuhan-1920-normal real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS wuhan-1280-normal each paid customer leaves one handful regardless of amount
+PASS UI payment targets the button
+PASS focus loss freezes UI payment
+PASS UI payments fade without an invisible pile landing
+PASS wuhan-1280-normal real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS wuhan-1920-reduced each paid customer leaves one handful regardless of amount
+PASS reduced motion omits payment scatter and bounce
+PASS wuhan-1920-reduced real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS wuhan-1280-reduced each paid customer leaves one handful regardless of amount
+PASS reduced motion omits payment scatter and bounce
+PASS wuhan-1280-reduced real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS customer has exactly two visible, laid-out portrait layers without duplicate scene overrides
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS tianjin-1920-normal each paid customer leaves one handful regardless of amount
+PASS UI payment targets the button
+PASS focus loss freezes UI payment
+PASS UI payments fade without an invisible pile landing
+PASS tianjin-1920-normal real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS customer has exactly two visible, laid-out portrait layers without duplicate scene overrides
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS tianjin-1280-normal each paid customer leaves one handful regardless of amount
+PASS UI payment targets the button
+PASS focus loss freezes UI payment
+PASS UI payments fade without an invisible pile landing
+PASS tianjin-1280-normal real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS customer has exactly two visible, laid-out portrait layers without duplicate scene overrides
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1920px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS tianjin-1920-reduced each paid customer leaves one handful regardless of amount
+PASS reduced motion omits payment scatter and bounce
+PASS tianjin-1920-reduced real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+PASS customer has exactly two visible, laid-out portrait layers without duplicate scene overrides
+PASS 0 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 0: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 1 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 1: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 2 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 2: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 3 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 3: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 4 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 4: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 5 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 5: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 6 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 6: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 7 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 7: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 8 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 8: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 9 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 9: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 10 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 10: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 11 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 11: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 12 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 12: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 13 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 13: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 14 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 14: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 15 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 15: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 16 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 16: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 17 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 17: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 18 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 18: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 19 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 19: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 20 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 20: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 21 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 21: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 22 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 22: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 23 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 23: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 24 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 24: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 25 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 25: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS 26 customers each leave a handful, including beyond the old 12-coin cap
+PASS 1280px scatter 26: all rotated corners remain within tray
+PASS revenue refresh preserves settled coin positions
+PASS tianjin-1280-reduced each paid customer leaves one handful regardless of amount
+PASS reduced motion omits payment scatter and bounce
+PASS tianjin-1280-reduced real viewport click empties tray
+PASS collection does not modify ledger or permanent money
+PASS floating amount matches collected pile
+PASS reduced motion keeps amount and omits flying coins
+PASS empty repeat click cannot replay reward
+PASS render does not refill already collected money
+PASS focus loss freezes collection animation
+PASS paused click retains new payment
+PASS new payment can be collected during prior feedback without duplicate accounting
+PASS all transient nodes clean up after completion
+PASS leaving screen clears feedback without changing income
+PASS restart clears pending visual balance and feedback
+PASS settlement preserves both collected and unclicked income exactly once
+PASS settlement clears ongoing feedback and blocks collection
+COIN_COLLECTION_TEST_RESULT passed=788 failed=0
+WARNING: 17 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

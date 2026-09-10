@@ -29,7 +29,7 @@ public partial class WuhanWorkbenchSelfTest : Node
             AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
             var art = new WuhanArtCatalog();
             Check(art.MissingRequiredAssets().Count == 0, "integrated sheet and dynamic assets load");
-            Check(art.WorkbenchBackground(false) == art.WorkbenchBackground(true), "both unlock stages temporarily share v1");
+            Check(art.WorkbenchBackground(false) != art.WorkbenchBackground(true), "unlock stages use distinct v2 sheets");
 
             // Production/gestures have their own timed viewport tests. This loop supplies valid
             // production states without advancing cooking time, to isolate all real order routes.
@@ -44,7 +44,7 @@ public partial class WuhanWorkbenchSelfTest : Node
                 {
                     screen.DoupiAction();
                     Check(screen.Doupi is null && screen.DoupiStock.Count == 0 && !screen.Workstation.CanDeliver(ProductKind.Doupi),
-                        "visible locked pan cannot make or deliver food");
+                        "locked stage cannot make or deliver doupi");
                 }
                 if (day < 6) Check(!screen.Workstation.CanDeliver(ProductKind.EggRiceWine), "locked egg UI cannot deliver");
                 int iterations = 0;
@@ -61,12 +61,12 @@ public partial class WuhanWorkbenchSelfTest : Node
                                 {
                                     screen.Bowl.Reset();
                                     Check(screen.Bowl.TryAddNoodles(NoodleQuality.Optimal), "new bowl accepts noodles");
-                                    // Exercise both real click aliases, including duplicate protection.
-                                    Vector2 source = lineIndex % 2 == 0 ? screen.Workstation.SauceCenter : screen.Workstation.IngredientCenter(0);
+                                    // Exercise the visible sesame bowl, including duplicate protection.
+                                    Vector2 source = screen.Workstation.IngredientCenter(0);
                                     screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = source });
                                     screen.Workstation.CancelAnimations();
                                     screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen.Workstation.IngredientCenter(0) });
-                                    Check(screen.Bowl.State == NoodleBowlState.Seasoned && !screen.Workstation.Busy("bowl"), "sauce aliases season once");
+                                    Check(screen.Bowl.State == NoodleBowlState.Seasoned && !screen.Workstation.Busy("bowl"), "repeated sesame clicks season once");
                                     foreach (string ingredient in catalog.RecipesById[line.DefinitionId].ExtraIngredients)
                                     {
                                         screen.IngredientAction(ingredient); screen.Workstation.CancelAnimations();

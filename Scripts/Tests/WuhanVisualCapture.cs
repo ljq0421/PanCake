@@ -153,22 +153,21 @@ public partial class WuhanVisualCapture : Node
             // Inspect thumbnail bounds without exposing presentation-only test APIs.
             const BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
             Type viewType = typeof(WuhanWorkstationView);
-            Rect2 stockBounds = (Rect2)viewType.GetField("StockRect", hidden)!.GetValue(view)!;
+            Rect2 stockBounds = (Rect2)viewType.GetProperty("StockRect", hidden)!.GetValue(view)!;
             var art = (WuhanArtCatalog)viewType.GetField("_art", hidden)!.GetValue(view)!;
             Rect2 VisualRect(string property) => (Rect2)viewType.GetProperty(property, hidden)!.GetValue(view)!;
             Rect2 ingredientTray = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { 1 })!;
-            Require(ingredientTray == WuhanWorkbenchLayout.Ingredient(1) && stockBounds == WuhanWorkbenchLayout.Stock,
+            Require(ingredientTray == WuhanWorkbenchLayout.Doupi.Ingredient(1) && stockBounds == WuhanWorkbenchLayout.Doupi.Stock,
                 "ingredient and stock anchors follow the integrated background");
-            Require(VisualRect("CookerCanvas") == WuhanWorkbenchLayout.Cooker && VisualRect("PanRect") == WuhanWorkbenchLayout.Pan,
+            Require(VisualRect("CookerCanvas") == WuhanWorkbenchLayout.Doupi.Cooker && VisualRect("PanRect") == WuhanWorkbenchLayout.Doupi.Pan,
                 "all equipment levels keep identical body geometry");
-            Require(VisualRect("BowlRect") == WuhanWorkbenchLayout.Bowl, "bowl stays aligned with the baked-in bowl");
+            Require(VisualRect("BowlRect") == WuhanWorkbenchLayout.Doupi.Bowl, "bowl stays aligned with the baked-in bowl");
             var countertop = new Rect2(0, 560, 1920, 520);
             var equipment = new Dictionary<string, Rect2> {
                 ["pan"] = VisualRect("PanRect"), ["bowl"] = VisualRect("BowlRect"),
                 ["batter"] = VisualRect("BatterRect"), ["filling"] = VisualRect("FillingRect"),
                 ["stock"] = stockBounds,
-                ["raw"] = (Rect2)viewType.GetField("RawTrayRect", hidden)!.GetValue(view)!,
-                ["base sauce"] = VisualRect("SauceBottleRect"),
+                ["raw"] = (Rect2)viewType.GetProperty("RawTrayRect", hidden)!.GetValue(view)!,
             };
             for (int ingredient = 0; ingredient < 4; ingredient++)
                 equipment[$"ingredient{ingredient}"] = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { ingredient })!;

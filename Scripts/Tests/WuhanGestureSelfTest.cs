@@ -76,10 +76,10 @@ public partial class WuhanGestureSelfTest : Node
                 Step(.71);
                 Check(_screen.Bowl.State==NoodleBowlState.Noodles&&_screen.Cooker.Baskets[0].State==NoodleBasketState.Empty,"reserved pour commits once after draining");Step(.7);
                 if(level==3) { Step(1);Drag(View.BasketRect(1).GetCenter(),View.BowlCenter);Check(_screen.Cooker.Baskets[1].State==NoodleBasketState.Drained,"occupied bowl rejects second basket"); }
-                Click(View.SauceCenter);Step(.5);
-                Check(_screen.Bowl.State == NoodleBowlState.Seasoned, "dark sauce bowl is a viewport seasoning alias");
+                Click(View.IngredientCenter(0));Step(.5);
+                Check(_screen.Bowl.State == NoodleBowlState.Seasoned, "sesame bowl seasons through viewport input");
                 Click(View.IngredientCenter(0));
-                Check(_screen.Bowl.State == NoodleBowlState.Seasoned && !View.Busy("bowl"), "second seasoning bowl does not repeat the action");
+                Check(_screen.Bowl.State == NoodleBowlState.Seasoned && !View.Busy("bowl"), "repeated sesame click does not repeat the action");
                 Click(View.IngredientCenter(1));Step(.5);
                 Vector2 center=View.BowlCenter;Move(center);Button(center,true);for(int i=0;i<6;i++)Move(center+new Vector2(i%2==0?70:-70,0),true);Button(center,false);
                 Check(_screen.Bowl.State==NoodleBowlState.Ready&&!_screen.DeliveryDrag.IsDragging,"mixing requires release before delivery");
@@ -147,10 +147,88 @@ public partial class WuhanGestureSelfTest : Node
                 }
                 _screen.Free();controller.Free();save.Free();await Frames();
             }
+            await VerifyStageSwitching();
             await OperationBudget();
             GD.Print($"WUHAN_GESTURE_TEST_RESULT passed={_passed} failed=0");GetTree().Quit();
         } catch(Exception e) {GD.PushError(e.ToString());GD.Print($"WUHAN_GESTURE_TEST_RESULT passed={_passed} failed=1");GetTree().Quit(1);}
     }
+    private async Task VerifyStageSwitching()
+    {
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        var controller = new DayController(); AddChild(controller);
+        _screen = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");
+        AddChild(_screen); _screen.ConnectController(controller); _screen.SetProcess(false);
+        // Reuse the same screen in both directions, as returning to an earlier save would do.
+        foreach (int day in new[] { 1, 4, 1 })
+        {
+            var save = new SaveService(); save.UsePathForTests($"res://.tmp/wuhan-v2-switch-{Guid.NewGuid():N}.json"); AddChild(save);
+            _screen.Initialize(catalog, save, controller, day);
+            foreach (var planned in controller.CurrentPlan!.Customers)
+                planned.Order = new ProjectCake.Orders.OrderData {
+                    OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
+                    CustomerTypeId = planned.CustomerTypeId, BasePrice = 30, PatienceSeconds = 1000,
+                    Lines = new[] { new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesScallion, 1) } };
+            _screen.BeginDay(); Step(6); await Frames();
+            async Task StageShot(string name)
+            {
+                if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
+                await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                string root = ProjectSettings.GlobalizePath($"res://.tmp/wuhan-v2-stage-motion/{GetWindow().Size.Y}");
+                Directory.CreateDirectory(root);
+                GetViewport().GetTexture().GetImage().SavePng($"{root}/day-{day}-{name}.png");
+            }
+            bool unlocked = day == 4;
+            string expected = unlocked ? "武汉早餐铺主界面-热干面-豆皮-v2.png" : "武汉早餐铺主界面-热干面-v2.png";
+            Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its v2 sheet");
+            // Independent points on the supplied PNGs, rather than deriving all input from layout constants.
+            Vector2 P(float x, float y) => new Vector2(x * 1920 / 1672, y * 1080 / 941);
+            Vector2 sesame = unlocked ? P(507, 780) : P(560, 780);
+            Vector2 scallion = unlocked ? P(800, 780) : P(912, 780);
+            Vector2 chili = unlocked ? P(655, 780) : P(738, 780);
+            Vector2 beef = unlocked ? P(950, 780) : P(1093, 780);
+            Check(View.HitTarget(sesame) == "ingredient0" && View.HitTarget(scallion) == "ingredient1"
+                && View.HitTarget(chili) == "ingredient2" && View.HitTarget(beef) == "ingredient3", "four visible bowls map to the correct ingredients");
+            if (!unlocked)
+            {
+                Check(View.HitTarget(P(1300, 550)) == "" && View.HitTarget(P(1530, 800)) == "", "empty counter has no pan or stock target");
+                Click(P(1300, 550)); Click(P(1530, 800));
+                Check(_screen.Doupi is null && !View.HasProductionGesture && View.DoupiSupplyHint == "", "empty counter produces no doupi interaction or hint");
+            }
+            Drag(View.RawCenter, View.BasketRect(0).GetCenter()); Step(1.61);
+            Vector2 basket = View.BasketRect(0).GetCenter(); Move(basket); Button(basket, true);
+            Move(basket - new Vector2(0, 65), true); Move(View.BowlCenter, true); Button(View.BowlCenter, false);
+            Step(.71); Step(.7);
+            Check(_screen.Bowl.State == NoodleBowlState.Noodles, "current stage supports cooking and pouring");
+            await StageShot("noodles");
+            Click(sesame); Step(.5); Click(scallion); Step(.5);
+            Vector2 bowl = View.BowlCenter; Move(bowl); Button(bowl, true);
+            for (int i = 0; i < 6; i++) Move(bowl + new Vector2(i % 2 == 0 ? 60 : -60, 0), true);
+            Button(bowl, false); Step(.001);
+            Check(_screen.Bowl.State == NoodleBowlState.Ready, "current stage supports seasoning and mixing");
+            await StageShot("ready");
+            Vector2 rim = unlocked ? P(777, 477) : P(832, 477);
+            Move(rim); Button(rim, true); Move(P(1400, 400), true);
+            Check(_screen.DeliveryDrag.IsDragging, "visible upper bowl rim starts delivery above the counter edge");
+            await StageShot("drag");
+            Move(P(1630, 400), true); Button(P(1630, 400), false);
+            await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(.001);
+            Check(_screen.Bowl.State == NoodleBowlState.Ready && !_screen.DeliveryDrag.IsDragging, "missed delivery preserves finished noodles");
+            var zone = (Control)_screen.FindChild("WuhanCustomerDropZone1", true, false);
+            Vector2 target = View.GetGlobalTransformWithCanvas().AffineInverse() * (zone.GetGlobalTransformWithCanvas() * (zone.Size * .5f));
+            Drag(bowl, target);
+            await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(.001);
+            Check(_screen.Bowl.State == NoodleBowlState.Empty && controller.Ledger!.Build().CompletedCustomers == 1, "current stage delivers a real order");
+            string raw = StableIds.Ingredients.WuhanNoodles;
+            while (_screen.Ingredients.Count(raw) > 0) _screen.Ingredients.TryConsume(raw);
+            Step(.001);
+            var refill = View.GetChildren().OfType<Button>().Single(b => b.HasMeta("ingredient_id"));
+            Click(refill.GetRect().GetCenter()); Step(_screen.Ingredients.RefillSeconds + .01);
+            Check(_screen.Ingredients.Count(raw) == _screen.Ingredients.Capacity(raw), "refill follows the current tray after stage switching");
+            save.Free();
+        }
+        _screen.Free(); controller.Free(); await Frames();
+    }
+
     private async Task AdditionalGestures(int level, DayController controller, Func<string,Task> shot)
     {
         var catalog=GetNode<DataCatalog>("/root/DataCatalog");

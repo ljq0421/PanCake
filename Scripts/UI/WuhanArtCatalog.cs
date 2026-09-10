@@ -14,6 +14,7 @@ public sealed class WuhanArtCatalog
     {
         Load("background", "武汉早餐铺主界面背景＋空工作台_v4.png");
         Load("ingredient_tray", "Trays_v2/ingredient.png");
+        Load("beef_tray", "通用托盘-圆.png");
         Load("egg_tray", "Trays_v2/egg.png");
         Load("city_node", "武汉已解锁城市节点.png");
         Load("empty_bowl", "热干面空碗_v2.png");

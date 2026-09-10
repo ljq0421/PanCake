@@ -149,11 +149,11 @@ public partial class WuhanWorkstationView : Control
         public DoupiState Before;
     }
 
-    // 1920x1080 design coordinates relative to the view at y=625.
+    // 1920x1080 design coordinates relative to the view at y=585.
     // Visual bounds, input sources and animation anchors share these definitions.
     private Rect2 BowlRect => FitSprite(_art.Texture("empty_bowl"), new Rect2(650, 20, 275, 228));
     private Rect2 BowlFood => RelativeRect(BowlRect, new Rect2(.075f, .07f, .85f, .55f));
-    private Rect2 ChopsticksRect => new(BowlRect.End.X - 100, BowlRect.End.Y + 14, 64, 81);
+    private Rect2 ChopsticksRect => new(BowlRect.End.X - 149, BowlRect.End.Y + 14, 96, 121.5f);
     private Rect2 PanRect => FitSprite(_art.Griddle(Math.Max(1, _doupiLevel)), new Rect2(1094, _doupiLevel == 3 ? -53 : -68, 441.6f, 344.4f), new Vector2(.5f, 1));
     private static readonly Rect2 StockRect = new(1364, 298, 245, 116.25f);
     private static readonly Rect2 EggStockRect = new(1628, 185, 274, 149);
@@ -165,24 +165,24 @@ public partial class WuhanWorkstationView : Control
     private static Rect2 IngredientRect(int index) => index switch
     {
         0 => new Rect2(492, 20, 142.5f, 145),
-        1 => new Rect2(526, 260, 150, 103.75f),
+        1 => new Rect2(630, 260, 150, 103.75f),
         2 => new Rect2(944, 20, 142.5f, 145),
         _ => new Rect2(888, 260, 150, 103.75f),
     };
     private static Rect2 IngredientReadout(int index) => new(IngredientRect(index).Position + new Vector2(0, IngredientRect(index).Size.Y + 4), new Vector2(120, 48));
-    private static Rect2 SauceBottleRect => new(IngredientRect(0).Position + new Vector2(121, 138), new Vector2(32.5f, 52.5f));
+    private static Rect2 SauceBottleRect => new(new Vector2(480, 225), IngredientRect(0).Size);
     private Rect2 BatterRect => FitSprite(_art.Texture("doupi_batter"), new Rect2(1060, 270, 140, 140), new Vector2(.5f, 1));
-    private Rect2 FillingRect => FitSprite(_art.Texture("doupi_filling"), new Rect2(1210, 270, 140, 140), new Vector2(.5f, 1));
+    private Rect2 FillingRect => FitSprite(_art.Texture("doupi_filling"), new Rect2(1210, 274, 140, 140), new Vector2(.5f, 1));
     public Vector2 BowlStatusPosition => new(565, 193);
     public Vector2 DoupiStatusPosition => new(1010, 240);
     public Vector2 EggStatusPosition => new(1568, 132);
     public Vector2 BasketStatusPosition(int index) => new(100, 236 + index * 25);
 
     // Contents use the actual fitted sprite and finish above the authored front rim.
-    private Rect2 TrayFoodRect(Texture2D texture, Rect2 tray)
-        => FitSprite(texture, RelativeRect(FitSprite(_art.Texture("ingredient_tray"), tray), new Rect2(.16f, .23f, .68f, .42f)), new Vector2(.5f, 1));
+    private Rect2 TrayFoodRect(Texture2D texture, Rect2 tray, string trayArt = "ingredient_tray")
+        => FitSprite(texture, RelativeRect(FitSprite(_art.Texture(trayArt), tray), new Rect2(.16f, .23f, .68f, .42f)), new Vector2(.5f, 1));
     private Rect2 IngredientFoodRect(int index) => index is 1 or 3
-        ? TrayFoodRect(_art.Ingredient(IngredientIds[index]), IngredientRect(index)) : IngredientRect(index);
+        ? TrayFoodRect(_art.Ingredient(IngredientIds[index]), IngredientRect(index), index == 3 ? "beef_tray" : "ingredient_tray") : IngredientRect(index);
     public Vector2 BowlCenter => BowlFood.GetCenter();
     public Vector2 IngredientCenter(int index) => IngredientRect(index).GetCenter();
     public Vector2 StockCenter => StockRect.GetCenter();
@@ -506,7 +506,7 @@ public partial class WuhanWorkstationView : Control
         for (int i=0;i<4;i++)
         {
             Rect2 r = IngredientRect(i); Hint(r, $"ingredient{i}");
-            if (i is 1 or 3) DrawTray(_art.Texture("ingredient_tray"), r);
+            if (i is 1 or 3) DrawTray(_art.Texture(i == 3 ? "beef_tray" : "ingredient_tray"), r);
             bool movingContainer=m?.Kind=="ingredient"&&m.Ingredient==IngredientIds[i]&&i is 0 or 2&&!ReducedMotion;
             if(!movingContainer)Sprite(_art.Ingredient(IngredientIds[i]), IngredientFoodRect(i), _ingredients.Count(IngredientIds[i]) > 0 ? 1 : .3f);
         }
@@ -515,7 +515,7 @@ public partial class WuhanWorkstationView : Control
         {
             Vector2 center = BowlFood.GetCenter();
             float angle = ReducedMotion ? -.3f : (pointer-center).Angle() * .12f - .4f;
-            Sprite("chopsticks", At(pointer + new Vector2(20,-27), new Vector2(99,99)), 1, angle);
+            Sprite("chopsticks", At(pointer + new Vector2(30,-40.5f), new Vector2(148.5f,148.5f)), 1, angle);
         }
         else Sprite("chopsticks", ChopsticksRect, .9f, -.15f);
         if (m?.Kind == "ingredient") DrawIngredientMotion(m);
@@ -567,7 +567,12 @@ public partial class WuhanWorkstationView : Control
             float angle = -.65f*enter*(1-leave);
             Sprite(_art.Ingredient(m.Ingredient), At(center,source.Size), 1, angle);
             if(p>.35f&&p<.74f) DrawLine(center+new Vector2(12,22),BowlFood.GetCenter(),index==0?new Color("#BE803B"):new Color("#CB4627"),6,true);
-            if(index==0) Sprite("base_sauce",At(center+(SauceBottleRect.GetCenter()-source.GetCenter()).Rotated(angle),SauceBottleRect.Size),1,angle);
+            if(index==0)
+            {
+                Vector2 sauceHome = SauceBottleRect.GetCenter();
+                Vector2 sauceTarget = target + new Vector2(-145, 0);
+                Sprite("base_sauce", At(sauceHome.Lerp(sauceTarget, enter).Lerp(sauceHome, leave), SauceBottleRect.Size), 1, angle);
+            }
         }
         else
         {

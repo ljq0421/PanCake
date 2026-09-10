@@ -845,9 +845,9 @@ clip_contents = true
 z_index = 25
 layout_mode = 0
 offset_left = 45.0
-offset_top = 150.0
+offset_top = 130.0
 offset_right = 1875.0
-offset_bottom = 580.0
+offset_bottom = 560.0
 mouse_filter = 2
 theme_override_constants/separation = 20
 alignment = 1
@@ -1395,9 +1395,9 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 [node name="WuhanWorkstation" type="Control" parent="." unique_id=498277126]
 z_index = 45
 anchors_preset = 0
-offset_top = 625.0
+offset_top = 585.0
 offset_right = 1920.0
-offset_bottom = 1050.0
+offset_bottom = 1010.0
 script = ExtResource("10_o1v37")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<Workstation>k__BackingField")
 

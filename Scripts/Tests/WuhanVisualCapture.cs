@@ -116,6 +116,7 @@ public partial class WuhanVisualCapture : Node
                 ["stock"] = stockBounds,
                 ["egg"] = (Rect2)viewType.GetField("EggStockRect", hidden)!.GetValue(view)!,
                 ["raw"] = (Rect2)viewType.GetField("RawTrayRect", hidden)!.GetValue(view)!,
+                ["base sauce"] = VisualRect("SauceBottleRect"),
             };
             for (int ingredient = 0; ingredient < 4; ingredient++)
                 equipment[$"ingredient{ingredient}"] = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { ingredient })!;
@@ -132,9 +133,9 @@ public partial class WuhanVisualCapture : Node
             Control coinCaption = day.CoinTray.GetNode<Control>("CoinTrayHint");
             var captionBounds = new Rect2(coinTransform * coinCaption.Position, coinCaption.Size * day.CoinTray.Scale);
             Require(!captionBounds.Intersects(equipment["egg"]) && !captionBounds.Intersects(equipment["pan"]), "money caption clears cups and cooking surface");
-            // Conservative straight segment inside the background's rounded right edge.
-            float rightEdgeAtTrayTop = 1690 + (coinBounds.Position.Y + 625 - 580) * .78f;
-            Require(coinBounds.End.X + 20 <= rightEdgeAtTrayTop, "coin tray leaves at least 20px inside the sloping counter edge");
+            // The current background reaches the full width below its rounded rear corners.
+            Require(coinBounds.Position.Y + view.Position.Y >= 625 && coinBounds.End.X + 20 <= 1920,
+                "coin tray leaves at least 20px inside the current counter edge");
             Rect2 singleSource = (Rect2)viewType.GetMethod("Source", hidden)!.Invoke(view, new object[] { art.Texture("doupi_single") })!;
             for (int piece = 0; piece < 16; piece++)
             {
@@ -239,11 +240,11 @@ public partial class WuhanVisualCapture : Node
             Require(!view.CanDeliver(ProductKind.EggRiceWine), "refilling egg stock cannot be dragged");
             Step(.31);Require(day.Egg.Count==6, "egg refill restores six finished cups");
             var strip=day.GetNode<Control>("WuhanCustomerStrip");
-            Require(strip.ClipContents && Math.Abs(strip.GetGlobalRect().End.Y - 580)<1, "customer crop matches counter edge");
+            Require(strip.ClipContents && Math.Abs(strip.GetGlobalRect().End.Y - 560)<1, "customer crop meets counter edge without a gap");
             foreach (var customer in strip.GetChildren().OfType<Control>().Where(c=>c.Visible))
             {
                 var order=customer.FindChild("OrderBubble",true,false) as Control;
-                Require(order is not null && order.GetGlobalRect().End.Y<580, "complete order remains above counter crop");
+                Require(order is not null && order.GetGlobalRect().End.Y<560, "complete order remains above counter crop");
             }
             foreach (string id in WuhanWorkstationView.IngredientIds)
                 Require(day.Ingredients.Count(id) == day.Ingredients.Capacity(id), $"refill completes {id}");
@@ -268,7 +269,7 @@ public partial class WuhanVisualCapture : Node
             foreach (Control customer in strip.GetChildren().OfType<Control>().Where(c => c.Visible))
             {
                 var person = customer.GetChildren().OfType<CustomerPortraitView>().Single();
-                Require(person.Size == portrait.Size && Math.Abs(person.GetGlobalRect().End.Y - 580) < 1,
+                Require(person.Size == portrait.Size && Math.Abs(person.GetGlobalRect().End.Y - 560) < 1,
                     "all customer viewports share size and counter baseline");
             }
             last.Plan.Order = fullOrder;

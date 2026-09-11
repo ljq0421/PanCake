@@ -49,10 +49,12 @@ public partial class WuhanWorkstationView
     {
         if (input is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
-            bool active = HasProductionGesture || _mixHeld || _cooker?.PendingPourBasket is not null;
+            bool active = _trashPressed || _drag?.IsDragging == true || HasProductionGesture || _mixHeld || _cooker?.PendingPourBasket is not null;
             CancelInput(); if (active) GetViewport().SetInputAsHandled(); return;
         }
         if (CanInteract?.Invoke() != true) { CancelInput(); return; }
+        if (HandleTrashInput(input)) { GetViewport().SetInputAsHandled(); return; }
+        if (_drag?.IsDragging == true) return;
         if (_mixHeld) { HandleMixInput(input); return; }
         if (!HasProductionGesture) return;
         if (input is InputEventMouseMotion motion)
@@ -198,8 +200,8 @@ public partial class WuhanWorkstationView
             DrawString(ThemeDB.FallbackFont, point, text, fontSize:18, modulate:WuhanUi.Ink);
         }
         LabelAt(new Vector2(RawTrayRect.Position.X + 12, RawTrayRect.End.Y + 30), "生面 · 无限供应");
-        if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 30), $"豆皮 {_stock.Count}/{DoupiInventory.Capacity}");
+        if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 22), $"豆皮 {_stock.Count}/{DoupiInventory.Capacity}");
         if (_doupi is not null && DoupiSupplyHint.Length > 0)
-            LabelAt(new Vector2(PanRect.Position.X + 18, StockRect.End.Y + 30), DoupiSupplyHint);
+            LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 44), DoupiSupplyHint);
     }
 }

@@ -8,6 +8,7 @@ public enum NoodleQuality { Optimal, Soft, Overcooked }
 public sealed class NoodleBasketRuntime
 {
     public NoodleBasketState State { get; internal set; }
+    public long Generation { get; internal set; }
     public double CookSeconds { get; internal set; }
     public double DrainSeconds { get; internal set; }
     public NoodleQuality Quality { get; internal set; } = NoodleQuality.Optimal;
@@ -100,7 +101,7 @@ public sealed class NoodleCookerStateMachine
     {
         quality = NoodleQuality.Optimal;
         if (!TryGet(basket, out NoodleBasketRuntime item) || item.State != NoodleBasketState.Drained) return false;
-        quality = item.Quality; item.State = NoodleBasketState.Empty; item.CookSeconds = 0; item.DrainSeconds = 0; return true;
+        quality = item.Quality; item.Generation++; item.State = NoodleBasketState.Empty; item.CookSeconds = 0; item.DrainSeconds = 0; return true;
     }
 
     // Validate the destination before consuming the source. Both mutations are synchronous.
@@ -110,6 +111,15 @@ public sealed class NoodleCookerStateMachine
         if (!TryGet(basket, out NoodleBasketRuntime item) || item.State != NoodleBasketState.Drained
             || !bowl.TryAddNoodles(item.Quality)) return false;
         return TryTake(basket, out _);
+    }
+
+    public bool TryDiscard(int basket)
+    {
+        if (!TryGet(basket, out var item) || item.State == NoodleBasketState.Empty) return false;
+        if (PendingPourBasket == basket) CancelPendingPour();
+        item.Generation++; item.State = NoodleBasketState.Empty;
+        item.CookSeconds = 0; item.DrainSeconds = 0; item.Quality = NoodleQuality.Optimal;
+        return true;
     }
 
     private bool TryGet(int index, out NoodleBasketRuntime item)

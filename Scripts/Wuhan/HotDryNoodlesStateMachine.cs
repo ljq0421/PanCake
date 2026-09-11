@@ -11,6 +11,7 @@ public sealed class HotDryNoodlesStateMachine
     private readonly HashSet<string> _toppings = new(StringComparer.Ordinal);
     private NoodleQuality _quality;
     public NoodleBowlState State { get; private set; }
+    public long Generation { get; private set; }
     public double MixProgress { get; private set; }
     public NoodleQuality Quality => _quality;
     public IReadOnlySet<string> Toppings => _toppings;
@@ -47,7 +48,7 @@ public sealed class HotDryNoodlesStateMachine
         prepared = new PreparedHotDryNoodles(id, _quality, true);
         return true;
     }
-    public void Reset() { State = NoodleBowlState.Empty; MixProgress = 0; _toppings.Clear(); }
+    public void Reset() { Generation++; State = NoodleBowlState.Empty; MixProgress = 0; _toppings.Clear(); }
     public static WuhanFoodQuality ToQuality(PreparedHotDryNoodles item) => WuhanFoodQuality.MixedComplete | item.NoodleQuality switch
     {
         NoodleQuality.Soft => WuhanFoodQuality.NoodlesSoft,

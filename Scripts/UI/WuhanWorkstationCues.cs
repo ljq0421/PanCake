@@ -7,7 +7,7 @@ public partial class WuhanWorkstationView
 {
     internal string DoupiSupplyHint => _doupi is null ? "" : _doupi.State switch
     {
-        DoupiState.Burnt => "清理后再做一锅",
+        DoupiState.Burnt => "长按右键拖入垃圾桶后再做一锅",
         DoupiState.Cut => "已收火 · 成品待入盘",
         DoupiState.Cutting => $"已收火 · 已切 {_doupi.CompletedCuts}/4 刀",
         DoupiState.Spreading => $"按住铺开 · {_doupi.Coverage:P0}",
@@ -42,7 +42,7 @@ public partial class WuhanWorkstationView
             "bowl" => "加入基础调味后在碗内划动拌匀；成品拖给顾客",
             "stock" => "豆皮拖给顾客，按订单所需数量出餐",
             "pan" when _doupi is null => "豆皮锅 · Day 4 解锁",
-            "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；点击清理",
+            "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；长按右键拖入底部垃圾桶",
             "batter" => "拖一勺浆到空锅，松手倒入",
             "doupi_egg" => "倒浆后点击鸡蛋，自动打蛋摊开",
             "filling" => "翻面后拖馅入锅，继续按住铺开",

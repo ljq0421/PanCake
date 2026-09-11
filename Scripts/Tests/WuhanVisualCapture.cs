@@ -90,7 +90,10 @@ public partial class WuhanVisualCapture : Node
             day._Process(.01); await Shot("tutorial"); day._Process(3.1);
             day.BasketAction(0); day._Process(.7); await Shot("cooking");
             day._Process(1.4); await Shot("basket-ready");
-            day.Cooker.TryRaise(0); day.Cooker.TryQuickDrain(0); day.Cooker.TryTransferTo(0, day.Bowl);
+            ProjectSettings.SetSetting("accessibility/reduce_motion", true); await Shot("basket-ready-static");
+            ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+            day.Cooker.TryRaise(0); await Shot("basket-raised");
+            day.Cooker.TryQuickDrain(0); day.Cooker.TryTransferTo(0, day.Bowl);
             day.Bowl.TryAddBaseSeasoning(); await Shot("unmixed");
             day.Bowl.AddMixDistance(10000); await Shot("mixed");
             if (number == 4)
@@ -433,7 +436,15 @@ public partial class WuhanVisualCapture : Node
             GetViewport().PushInput(new InputEventMouseButton { ButtonIndex=MouseButton.Left, Pressed=false, Position=release }, true);
             await Deliver(ProductKind.HotDryNoodles,"13-noodles-delivery");
             day.PourDoupiBatter();Step(.17);await Shot("14-batter-spreading");Step(.25);
-            day.AddDoupiEgg();Step(.17);await Shot("15-egg-spreading");Step(2.4);
+            day.AddDoupiEgg();Step(.17);await Shot("15a-egg-cracking");
+            Step(.06);await Shot("15b-egg-pouring");
+            Step(.17);await Shot("15c-egg-spreading");
+            Step(.21);await Shot("15d-egg-finished");Step(1.96);
+            if (args.Contains("--egg-only"))
+            {
+                day.Free(); controller.Free(); save.Free(); await Frames(2);
+                continue;
+            }
             if(level<3)day.FlipDoupi();Step(.18);await Shot("16-flipping");Step(.35);
             day.AddDoupiFilling();Step(.17);await Shot("17-filling");DoupiTestFixture.Spread(day.Doupi!);Step(3.4);await Shot("18-doupi-cooked");
             for(int cut=1;cut<=4;cut++)

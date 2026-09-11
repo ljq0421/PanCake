@@ -17,7 +17,11 @@ public partial class WuhanAnimationSelfTest : Node
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             Check(new WuhanArtCatalog().MissingRequiredAssets().Count == 0, "全部武汉必需美术可加载");
-            TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
+            TestBasketReadySound();
+            if (!OS.GetCmdlineUserArgs().Contains("--basket-ready-sound"))
+            {
+                TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
+            }
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
         GD.Print($"WUHAN_ANIMATION_TEST_RESULT passed={_passed} failed={_failed}");
@@ -98,6 +102,22 @@ public partial class WuhanAnimationSelfTest : Node
     }
     private void TestDoupi()
     {
+        var egg = NewDay(); var eggDay = egg.Screen;
+        eggDay.PourDoupiBatter(); eggDay._Process(.4);
+        Check(eggDay.AddDoupiEgg(), "点击一次开始打蛋及自动摊蛋");
+        eggDay._Process(.2);
+        float eggProgress = eggDay.Workstation.MotionProgress("pan");
+        Check(!eggDay.AddDoupiEgg() && eggDay.Workstation.MotionProgress("pan") == eggProgress,
+            "打蛋期间重复点击不重启动画");
+        egg.Controller.IsPaused = true; eggDay._Process(1);
+        Check(eggDay.Workstation.MotionProgress("pan") == eggProgress, "暂停冻结打蛋阶段");
+        egg.Controller.IsPaused = false; eggDay._Process(.2);
+        Check(eggDay.Workstation.Busy("pan") && eggDay.Doupi!.SkinCookProgress > 0,
+            "自动摊蛋时煎制计时继续");
+        eggDay._Process(.21);
+        Check(!eggDay.Workstation.Busy("pan") && eggDay.Doupi!.State == DoupiState.SkinCooking,
+            "无需手动摊蛋即完成动画并保留煎制状态");
+        DisposeDay(egg);
         var f=NewDay();var s=f.Screen;MakeDoupi(s);
         Check(s.Doupi!.State==DoupiState.Empty&&s.DoupiStock.Count==8,"豆皮四刀切割后自动入盘");
         s.PourDoupiBatter();s.PourDoupiBatter();Check(s.DoupiStock.Count==8&&s.Workstation.Busy("stock"),"豆皮入库连点不重复增加一锅");
@@ -157,6 +177,36 @@ public partial class WuhanAnimationSelfTest : Node
         f=NewDay();s=f.Screen;s.BasketAction(0);s._Process(.13);
         Check(!s.Workstation.Busy("basket0")&&s.Cooker.Baskets[0].State==NoodleBasketState.Cooking,"减少动态模式保留正确终态");DisposeDay(f);
         ProjectSettings.SetSetting("accessibility/reduce_motion",false);
+    }
+    private void TestBasketReadySound()
+    {
+        foreach (int level in new[] { 1, 2, 3 })
+        {
+            var f = NewDay(level); var s = f.Screen;
+            var cue = s.Workstation.GetNode<AudioStreamPlayer>("BasketReady");
+            Check(cue.Stream is AudioStreamWav { LoopMode: AudioStreamWav.LoopModeEnum.Disabled } && cue.Bus == "Master", "提篮提示为非循环音效并遵循主音量");
+            s.BasketAction(0); s._Process(.1);
+            Check(!cue.Playing, $"Lv{level} 未熟时不播放提示");
+            s._Process(_catalog.NoodleCookersByLevel[level].OptimalSeconds);
+            bool manual = !_catalog.NoodleCookersByLevel[level].AutoRaise;
+            Check(cue.Playing == manual, $"Lv{level} 仅手动提篮高亮时播放一次提示");
+            if (manual)
+            {
+                f.Controller.IsPaused = true; s._Process(.1);
+                Check(cue.StreamPaused, "暂停营业同步暂停提示音");
+                f.Controller.IsPaused = false; s._Process(.1);
+                Check(!cue.StreamPaused, "恢复营业同步恢复提示音");
+            }
+            cue.Stop(); s._Process(4);
+            Check(!cue.Playing, "等待和品质变化不会重复提示");
+            s.Cooker.TryDiscard(0); s._Process(.01);
+            s.BasketAction(0); s._Process(_catalog.NoodleCookersByLevel[level].OptimalSeconds + .1);
+            Check(cue.Playing == manual, "下一篮煮熟可重新提示");
+            s.Hide(); Check(!cue.Playing, "离开营业立即停止提示音");
+            s.Show(); s.Initialize(_catalog, f.Save, f.Controller, 8);
+            Check(!cue.Playing, "重新营业不遗留提示音");
+            DisposeDay(f);
+        }
     }
     private void TestCookingPresentation()
     {

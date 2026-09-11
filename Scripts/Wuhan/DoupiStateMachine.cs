@@ -12,10 +12,11 @@ public sealed class DoupiInventory
     public readonly record struct Piece(DoupiQuality Quality, int Tile);
     private readonly Queue<Piece> _items = new();
     public Piece PieceAt(int index) => _items.ElementAt(index);
+    public long HeadGeneration { get; private set; }
     public int Count => _items.Count;
     public bool TryAddBatch(int amount, DoupiQuality quality = DoupiQuality.Normal, int firstTile = 0) { if (amount <= 0 || Count + amount > Capacity) return false; for (int i = 0; i < amount; i++) _items.Enqueue(new Piece(quality, (firstTile + i) % 8)); return true; }
     public bool TryPeek(out DoupiQuality quality) { if (_items.Count == 0) { quality = DoupiQuality.Normal; return false; } quality = _items.Peek().Quality; return true; }
-    public bool TryTake(int amount, out DoupiQuality quality) { quality = DoupiQuality.Normal; if (amount <= 0 || Count < amount) return false; for (int i = 0; i < amount; i++) quality = _items.Dequeue().Quality; return true; }
+    public bool TryTake(int amount, out DoupiQuality quality) { quality = DoupiQuality.Normal; if (amount <= 0 || Count < amount) return false; for (int i = 0; i < amount; i++) quality = _items.Dequeue().Quality; HeadGeneration++; return true; }
 }
 
 public sealed class DoupiStateMachine
@@ -23,6 +24,7 @@ public sealed class DoupiStateMachine
     private readonly DoupiGriddleLevelData _data;
     private double _seconds;
     private readonly HashSet<DoupiCutLine> _cuts = new();
+    public long Generation { get; private set; }
     public DoupiState State { get; private set; }
     public DoupiQuality Quality { get; private set; }
     public int RequiredCuts => 4;
@@ -127,10 +129,11 @@ public sealed class DoupiStateMachine
         if (State != DoupiState.Cut) return 0;
         int amount = Math.Min(RemainingPieces, DoupiInventory.Capacity - inventory.Count);
         if (!inventory.TryAddBatch(amount, Quality, FirstRemainingPiece)) return 0;
+        Generation++; // Even a partial transfer invalidates a drag of the old batch.
         RemainingPieces -= amount;
         if (RemainingPieces == 0) Reset();
         return amount;
     }
     public void Discard() => Reset();
-    private void Reset() { State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; Array.Clear(_coverage); CoverageRevision++; }
+    private void Reset() { Generation++; State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; Array.Clear(_coverage); CoverageRevision++; }
 }

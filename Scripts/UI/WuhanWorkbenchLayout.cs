@@ -9,6 +9,7 @@ internal sealed class WuhanWorkbenchLayout
     public static readonly Vector2 SourceSize = new(1672, 941);
     public static Vector2 Point(float x, float y) => new Vector2(x, y) * DesignSize / SourceSize;
     public static Rect2 Rect(float x, float y, float width, float height) => new(Point(x, y), Point(width, height));
+    public static readonly Rect2 EmbeddedTrash = Rect(1008, 870, 150, 71);
     public static readonly Rect2 EggUi = new(520, 18, 250, 60);
     public static readonly Rect2 CashPendant = Rect(1508, 184, 134, 211);
     public static readonly Vector2 CashSlot = Point(1574, 240);
@@ -39,14 +40,13 @@ internal sealed class WuhanWorkbenchLayout
 
     private WuhanWorkbenchLayout(bool doupi)
     {
-        float shift = doupi ? 0 : 200;
-        Cooker = Rect(60 + shift, 435, 424, 269);
-        Bowl = Rect(631 + shift, 463, 256, 204);
-        BowlFood = Rect(652 + shift, 488, 214, 109);
-        Raw = Rect(43 + shift, 702, 366, 178);
-        RawFood = Rect(76 + shift, 723, 302, 111);
-        _ingredients = new[] { Rect(424 + shift, 719, 143, 134), Rect(719 + shift, 719, 144, 137), Rect(572 + shift, 719, 143, 136), Rect(868 + shift, 719, 149, 136) };
-        _basketHome = Point(268 + shift, 501);
+        Cooker = Rect(60, 435, 424, 269);
+        Bowl = Rect(631, 463, 256, 204);
+        BowlFood = Rect(652, 488, 214, 109);
+        Raw = Rect(43, 702, 366, 178);
+        RawFood = Rect(76, 723, 302, 111);
+        _ingredients = new[] { Rect(424, 719, 143, 134), Rect(719, 719, 144, 137), Rect(572, 719, 143, 136), Rect(868, 719, 149, 136) };
+        _basketHome = Point(268, 501);
         Vector2[] bowlShape = { new(0, .38f), new(.025f, .26f), new(.10f, .145f), new(.23f, .05f),
             new(.40f, .005f), new(.59f, .005f), new(.77f, .06f), new(.91f, .17f), new(.98f, .30f),
             new(1, .42f), new(.95f, .62f), new(.85f, .80f), new(.74f, .93f), new(.59f, .995f),
@@ -56,7 +56,7 @@ internal sealed class WuhanWorkbenchLayout
             new(.16f, .14f), new(.26f, .065f), new(.39f, .015f), new(.51f, 0), new(.65f, .025f),
             new(.79f, .09f), new(.89f, .19f), new(.93f, .31f), new(.985f, .34f), new(1, .52f) };
         CookerOutline = potShape.Select(p => Cooker.Position + p * Cooker.Size).ToArray();
-        float cx = 270 + shift, cy = 550, rx = 169, ry = 70;
+        float cx = 270, cy = 550, rx = 169, ry = 70;
         CookerFront = Enumerable.Range(0, 25).Select(i => {
             float angle = i * Mathf.Pi / 24;
             return Point(cx + rx * Mathf.Cos(angle), cy + ry * Mathf.Sin(angle));

@@ -238,18 +238,18 @@ public partial class WuhanGestureSelfTest : Node
                 GetViewport().GetTexture().GetImage().SavePng($"{root}/day-{day}-{name}.png");
             }
             bool unlocked = day == 4;
-            string expected = unlocked ? "武汉-热干面-豆皮.png" : "武汉-热干面.png";
+            string expected = unlocked ? "武汉-热干面-豆皮-v1.png" : "武汉-热干面-v1.png";
             Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its pendant sheet");
             // Independent points on the supplied PNGs, rather than deriving all input from layout constants.
             Vector2 P(float x, float y) => new Vector2(x * 1920 / 1672, y * 1080 / 941);
-            Vector2 sesame = unlocked ? P(497, 780) : P(697, 780);
-            Vector2 scallion = unlocked ? P(790, 780) : P(990, 780);
-            Vector2 chili = unlocked ? P(645, 780) : P(845, 780);
-            Vector2 beef = unlocked ? P(944, 780) : P(1144, 780);
+            Vector2 sesame = P(497, 780);
+            Vector2 scallion = P(790, 780);
+            Vector2 chili = P(645, 780);
+            Vector2 beef = P(944, 780);
             Check(View.HitTarget(sesame) == "ingredient0" && View.HitTarget(scallion) == "ingredient1"
                 && View.HitTarget(chili) == "ingredient2" && View.HitTarget(beef) == "ingredient3", "four visible bowls map to the correct ingredients");
-            Check(View.HitTarget(unlocked ? P(225, 782) : P(425, 782)) == "raw", "visible raw noodle tray maps to supply");
-            Check(View.HitTarget(unlocked ? P(757, 555) : P(957, 555)) == "bowl", "visible bowl maps to mixing and delivery");
+            Check(View.HitTarget(P(225, 782)) == "raw", "visible raw noodle tray maps to supply");
+            Check(View.HitTarget(P(757, 555)) == "bowl", "visible bowl maps to mixing and delivery");
             if (unlocked)
             {
                 Check(View.HitTarget(P(1540, 546)) == "doupi_egg", "upper right tray supplies eggs");
@@ -276,7 +276,7 @@ public partial class WuhanGestureSelfTest : Node
             Button(bowl, false); Step(.001);
             Check(_screen.Bowl.State == NoodleBowlState.Ready, "current stage supports seasoning and mixing");
             await StageShot("ready");
-            Vector2 rim = unlocked ? P(777, 477) : P(832, 477);
+            Vector2 rim = P(777, 477);
             Move(rim); Button(rim, true); Move(P(1400, 400), true);
             Check(_screen.DeliveryDrag.IsDragging, "visible upper bowl rim starts delivery above the counter edge");
             await StageShot("drag");

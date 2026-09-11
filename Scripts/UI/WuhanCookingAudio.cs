@@ -6,13 +6,15 @@ namespace ProjectCake.UI;
 /// <summary>Quiet cooking textures; all playback follows the workstation's lifecycle.</summary>
 internal sealed class WuhanCookingAudio
 {
-    private readonly AudioStreamPlayer _water, _pan;
+    private readonly AudioStreamPlayer _water, _pan, _ready;
     private bool _paused;
 
     internal WuhanCookingAudio(Node owner)
     {
         _water = Player(owner, "CookingWater", MakeWater());
         _pan = Player(owner, "CookingPan", MakeSizzle());
+        _ready = Player(owner, "BasketReady", MakeReady());
+        _ready.VolumeDb = -12;
     }
 
     private static AudioStreamPlayer Player(Node owner, string name, AudioStreamWav stream)
@@ -44,10 +46,19 @@ internal sealed class WuhanCookingAudio
     internal void SetPaused(bool paused)
     {
         _paused = paused;
-        _water.StreamPaused = _pan.StreamPaused = paused;
+        _water.StreamPaused = _pan.StreamPaused = _ready.StreamPaused = paused;
     }
 
-    internal void Stop() { _water.Stop(); _pan.Stop(); _paused = false; }
+    internal void PlayBasketReady()
+    {
+        if (!_paused) _ready.Play();
+    }
+
+    internal void Stop() { _water.Stop(); _pan.Stop(); _ready.Stop(); _paused = false; }
+
+    private static AudioStreamWav MakeReady() => MakeStream(t =>
+        (Math.Sin(Math.Tau * 1046.5 * t) + .3 * Math.Sin(Math.Tau * 1569.75 * t))
+        * .5 * Math.Min(1, t / .008) * Math.Exp(-t * 18), .28, false);
 
     private static AudioStreamWav MakeWater()
     {
@@ -74,9 +85,12 @@ internal sealed class WuhanCookingAudio
         });
     }
 
-    private static AudioStreamWav MakeLoop(Func<double, double> sample)
+    private static AudioStreamWav MakeLoop(Func<double, double> sample) => MakeStream(sample, 4, true);
+
+    private static AudioStreamWav MakeStream(Func<double, double> sample, double seconds, bool loop)
     {
-        const int rate = 22050, count = rate * 4;
+        const int rate = 22050;
+        int count = (int)(rate * seconds);
         var bytes = new byte[count * 2];
         for (int i = 0; i < count; i++)
         {
@@ -84,6 +98,7 @@ internal sealed class WuhanCookingAudio
             bytes[i * 2] = (byte)(value & 255); bytes[i * 2 + 1] = (byte)(value >> 8);
         }
         return new AudioStreamWav { Format = AudioStreamWav.FormatEnum.Format16Bits, MixRate = rate,
-            Data = bytes, LoopMode = AudioStreamWav.LoopModeEnum.Forward, LoopBegin = 0, LoopEnd = count };
+            Data = bytes, LoopMode = loop ? AudioStreamWav.LoopModeEnum.Forward : AudioStreamWav.LoopModeEnum.Disabled,
+            LoopBegin = 0, LoopEnd = count };
     }
 }

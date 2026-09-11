@@ -50,7 +50,9 @@ public partial class WuhanDayScreen : Control
         DeliveryDrag.DragEnded += result =>
         {
             if (result.Completion is DragCompletion.Missed or DragCompletion.Rejected)
-                Feedback("请拖给仍需要这份餐品的顾客。", true);
+                Feedback(result.PayloadId == WuhanWorkstationView.TrashPayload
+                    ? "未丢弃；请长按右键，将当前食物拖入底部垃圾桶。"
+                    : "请拖给仍需要这份餐品的顾客。", true);
         };
         for (int i = 0; i < _customerDropZones.Length; i++)
         {
@@ -71,7 +73,7 @@ public partial class WuhanDayScreen : Control
         Workstation.EggRequested = AddDoupiEgg;
         Workstation.FillingRequested = AddDoupiFilling;
         Workstation.FlipRequested = FlipDoupi;
-        Workstation.DiscardRequested = DiscardDoupi;
+        Workstation.FoodDiscarded += () => { Feedback("食物已丢弃。", false, true); Render(); };
         Workstation.SpreadRequested = SpreadDoupi;
         Workstation.MixMoved += distance => { if (CanInteract && !Workstation.Busy("bowl")) _bowl.AddMixDistance(distance); };
         Workstation.GestureRejected += message => Feedback(message, true);
@@ -293,9 +295,9 @@ public partial class WuhanDayScreen : Control
     }
     internal bool DiscardDoupi() => ApplyDoupi(d =>
     {
-        if (d.State != DoupiState.Burnt) return false;
+        if (d.State == DoupiState.Empty) return false;
         d.Discard(); return true;
-    }, "只有焦糊豆皮需要清理。");
+    }, "长按右键拖入垃圾桶丢弃。", false);
     internal void RefreshForCapture() => Render();
     private void Render()
     {
@@ -354,7 +356,7 @@ public partial class WuhanDayScreen : Control
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
     }
-    private void Feedback(string text,bool error){if (!error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
+    private void Feedback(string text,bool error,bool force=false){if (!force && !error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
     private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
     private void OnDeliveryCompleted(DeliveryEvaluation result)=>Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     public override void _ExitTree()

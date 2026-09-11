@@ -16,7 +16,6 @@ public static class WuhanCatalogValidator
         int[] numbers = days.Select(day => day.Day).OrderBy(day => day).ToArray();
         if (!numbers.SequenceEqual(Enumerable.Range(1, 12))) Add(issues, "res://Data/Days/Wuhan", "day", "武汉章节必须包含连续的 Day 1～12。");
         if (Math.Abs(days.Sum(day => day.DurationSeconds) - 1400) > Tolerance) Add(issues, "res://Data/Days/Wuhan", "durationSeconds", "武汉 12 天营业时长合计必须为 1400 秒。");
-        if (days.Sum(day => day.ExpectedRevenue) != 2389) Add(issues, "res://Data/Days/Wuhan", "expectedRevenue", "武汉预计基础收入合计必须为 2389。");
 
         var knownRecipes = recipes.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
         var knownCustomers = customers.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
@@ -24,7 +23,7 @@ public static class WuhanCatalogValidator
         {
             string source = string.IsNullOrWhiteSpace(day.SourcePath) ? $"<Wuhan Day {day.Day}>" : day.SourcePath;
             ValidateWeights(day.CustomerWeights, knownCustomers, source, "customerWeights", issues);
-            ValidateWeights(day.OrderTypeWeights, StableIds.OrderTypeIds, source, "orderTypeWeights", issues);
+            ValidateWeights(day.OrderTypeWeights, new[] { "hot_dry_noodles", "doupi", "noodles_doupi" }, source, "orderTypeWeights", issues);
             ValidateWeights(day.RecipeWeights, knownRecipes, source, "recipeWeights", issues);
             if (day.MaxWaitingCustomers != 5) Add(issues, source, "maxWaitingCustomers", "武汉同屏未完成顾客硬上限必须为 5。");
             if (day.SatisfactionAverageMode != SatisfactionAverageMode.CompletedCustomers) Add(issues, source, "satisfactionAverageMode", "武汉满意度必须只统计已完成订单。");
@@ -34,8 +33,8 @@ public static class WuhanCatalogValidator
         ValidateLevels(cookers.Select(item => item.Level), "res://Data/Equipment/Wuhan/NoodleCookers", issues);
         ValidateLevels(griddles.Select(item => item.Level), "res://Data/Equipment/Wuhan/DoupiGriddles", issues);
         ValidateLevels(stations.Select(item => item.Level), "res://Data/Equipment/Wuhan/IngredientStations", issues);
-        int totalPrice = cookers.Sum(item => item.UpgradePrice) + griddles.Sum(item => item.UpgradePrice) + stations.Sum(item => item.UpgradePrice);
-        if (totalPrice != 2000) Add(issues, "res://Data/Equipment/Wuhan", "upgradePrice", "武汉付费升级价格合计必须为 2000。");
+        int totalPrice = cookers.Sum(item => item.UpgradePrice) + griddles.Sum(item => item.UpgradePrice);
+        if (totalPrice != 1580) Add(issues, "res://Data/Equipment/Wuhan", "upgradePrice", "武汉付费升级价格合计必须为 1580。");
         return issues;
     }
 

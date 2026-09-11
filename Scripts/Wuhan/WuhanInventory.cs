@@ -2,6 +2,7 @@ using ProjectCake.Data;
 
 namespace ProjectCake.Wuhan;
 
+/// <summary>All Wuhan ingredients are continuously supplied. Count/capacity are legacy metadata only.</summary>
 public sealed class WuhanIngredientInventory
 {
     private readonly WuhanIngredientStationLevelData _data;
@@ -13,7 +14,7 @@ public sealed class WuhanIngredientInventory
     }
     public int LowStockThreshold => _data.LowStockThreshold;
     public double RefillSeconds => _data.RefillSeconds;
-    public bool IsUnlimited(string id) => id is StableIds.Ingredients.WuhanBaseSeasoning
+    public bool IsUnlimited(string id) => id is StableIds.Ingredients.WuhanNoodles or StableIds.Ingredients.WuhanBaseSeasoning
         or StableIds.Ingredients.WuhanScallion or StableIds.Ingredients.WuhanChiliOil
         or StableIds.Ingredients.WuhanBraisedBeef;
     public bool CanUse(string id) => IsUnlimited(id) || (id == StableIds.Ingredients.WuhanNoodles && _noodles > 0);

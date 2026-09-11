@@ -21,7 +21,6 @@ public partial class WuhanDayScreen : Control
     private readonly CustomerPortraitView[] _portraits = new CustomerPortraitView[5];
     private readonly Label[] _deliveryQuantityLabels = new Label[5];
     private readonly Label[] _basketLabels = new Label[2];
-    private readonly Dictionary<string,double> _refills = new(StringComparer.Ordinal);
     private DataCatalog _catalog = null!; private SaveService _save = null!; private DayController _controller = null!; private WuhanArtCatalog _art = null!;
     private NoodleCookerStateMachine _cooker = null!; private HotDryNoodlesStateMachine _bowl = null!; private DoupiStateMachine? _doupi;
     private DoupiInventory _doupiStock = null!; private WuhanIngredientInventory _ingredients = null!; private bool _eggUnlocked;
@@ -59,7 +58,6 @@ public partial class WuhanDayScreen : Control
             _orders[i].Configure(_art.Shared, _art);
         }
         Workstation.CanInteract = () => CanInteract;
-        Workstation.NoodlesRefilling = () => _refills.ContainsKey(StableIds.Ingredients.WuhanNoodles);
         Workstation.ConfigureDelivery(DeliveryDrag);
         CollectionFeedback.Bind(CoinTray, this, _coinTarget, _art.Shared.Coin, () => CanInteract);
         CoinTray.CanCollect = () => CanInteract && !DeliveryDrag.IsDragging && !Workstation.HasProductionGesture;
@@ -70,7 +68,6 @@ public partial class WuhanDayScreen : Control
         Workstation.IngredientPressed += IngredientAction;
         Workstation.DoupiPressed += DoupiAction;
         Workstation.MixMoved += distance => { if (CanInteract && !Workstation.Busy("bowl")) _bowl.AddMixDistance(distance); };
-        Workstation.RefillRequested += RefillIngredient;
         Workstation.GestureRejected += message => Feedback(message, true);
         GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
         this.FindButton("收好收入 · 返回武汉经营首页").Pressed += () => HubRequested?.Invoke();
@@ -143,13 +140,13 @@ public partial class WuhanDayScreen : Control
     }
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
-        Workstation.CancelAnimations(); _refills.Clear();
+        Workstation.CancelAnimations();
         CollectionFeedback.Clear(); CoinTray.RenderRevenue(0);
         _catalog=catalog; _save=save; _controller=controller; _committed=false; _results.Visible=false; _blocker.Visible=false;
         if (!controller.TryPrepareDay(StableIds.Cities.Wuhan,day,catalog,out string error) || !save.ApplyStartUnlocks(controller.CurrentConfig!,out error)) { Feedback(error,true); return; }
         CityProgressData city=save.Data.Wuhan; _cookerLevel=city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1); _stationLevel=city.EquipmentLevels.GetValueOrDefault("ingredient_station",1); _doupiLevel=city.EquipmentLevels.GetValueOrDefault("doupi_griddle");
         _cooker=new NoodleCookerStateMachine(catalog.NoodleCookersByLevel[_cookerLevel]); _bowl=new HotDryNoodlesStateMachine(); _ingredients=new WuhanIngredientInventory(catalog.WuhanIngredientStationsByLevel[_stationLevel]); _doupiStock=new DoupiInventory();
-        _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _eggUnlocked=city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station")>0;
+        _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _eggUnlocked=false;
         GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
         _basketLabels[1].Visible=false;
         Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_eggUnlocked,_ingredients,_cookerLevel,_doupiLevel);
@@ -165,7 +162,6 @@ public partial class WuhanDayScreen : Control
         _controller.Tick(delta);
         if (!CanInteract) { Render(); return; }
         _cooker?.Tick(delta); _doupi?.Tick(delta);
-        foreach (string id in _refills.Keys.ToArray()) { _refills[id]-=delta; if (_refills[id]<=0) { _ingredients.Refill(id); _refills.Remove(id); Feedback("面条已补满。",false); } }
         Workstation.Tick(delta); AdvanceAutomaticTransfers(); Render();
     }
     public override void _Notification(int what)
@@ -173,12 +169,6 @@ public partial class WuhanDayScreen : Control
         if (what==NotificationApplicationFocusOut) { _focused=false; Workstation?.CancelInput(); }
         if (what==NotificationApplicationFocusIn) _focused=true;
     }
-    private void RefillIngredient(string id) {
-        if(id != StableIds.Ingredients.WuhanNoodles || !CanInteract || Workstation.Busy("refill:"+id) || _refills.ContainsKey(id))return;
-        if(_ingredients.Count(id)>=_catalog.WuhanIngredientStationsByLevel[_stationLevel].GetCapacity(id))return;
-        StartRefill(id);Feedback($"开始补面，约 {_ingredients.RefillSeconds:0.#} 秒后补满；剩余面条仍可下锅。",false);
-    }
-
     internal bool RaiseBasket(int index)
     {
         if (!CanInteract || Workstation.Busy($"basket{index}")) return false;
@@ -204,8 +194,10 @@ public partial class WuhanDayScreen : Control
         if (_doupi is not null && !Workstation.Busy("pan") && !Workstation.Busy("stock"))
         {
             int start = _doupiStock.Count;
+            int firstPiece = _doupi.FirstRemainingPiece;
+            DoupiQuality doupiQuality = _doupi.Quality;
             int moved = _doupi.TransferAvailable(_doupiStock);
-            if (moved > 0) Workstation.PlayStock(moved, start);
+            if (moved > 0) Workstation.PlayStock(moved, start, firstPiece, doupiQuality);
         }
     }
 
@@ -214,7 +206,7 @@ public partial class WuhanDayScreen : Control
         if(!CanInteract||index<0||index>=_cooker.Baskets.Count||Workstation.Busy($"basket{index}"))return;
         NoodleBasketRuntime item=_cooker.Baskets[index]; bool ok=false; string message="";
         NoodleBasketState before=item.State;NoodleQuality quality=item.Quality;
-        if(item.State==NoodleBasketState.Empty){if(_ingredients.TryConsume(StableIds.Ingredients.WuhanNoodles)){ok=_cooker.TryStart(index);message="面条下锅。";}else message="面条用完了，请点旁边的补货。";}
+        if(item.State==NoodleBasketState.Empty){if(_ingredients.TryConsume(StableIds.Ingredients.WuhanNoodles)){ok=_cooker.TryStart(index);message="面条下锅。";}}
         else if(item.State is NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked){ok=_cooker.TryRaise(index);message="提篮，开始沥水。";}
         else if(item.State is NoodleBasketState.Raised or NoodleBasketState.Draining){message="自然沥水中，可拖到空碗上方等待。";}
         else if(item.State==NoodleBasketState.Drained){if(!Workstation.Busy("bowl")&&_cooker.TryTransferTo(index,_bowl)){ok=true;message="熟面倒入碗中。";}else message="拌面碗还没有空出来。";}
@@ -228,7 +220,6 @@ public partial class WuhanDayScreen : Control
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
         if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);Feedback("配料已经加入。",false);}else Feedback("先把熟面和基础调味放进碗里。",true);Render();
     }
-    private void StartRefill(string id){if(!_refills.ContainsKey(id)){_refills[id]=_ingredients.RefillSeconds;Workstation.PlayRefill(id, _ingredients.RefillSeconds);}}
     internal bool DeliverToCustomer(string customerId, ProductKind kind)
     {
         if (!CanInteract || !Workstation.CanDeliver(kind)) return false;
@@ -244,10 +235,6 @@ public partial class WuhanDayScreen : Control
                     if (!_bowl.TryPrepare(_catalog.RecipesById, out PreparedHotDryNoodles prepared)) return false;
                     item = new DeliveredItem(kind, prepared.RecipeId, null, null, null, HotDryNoodlesStateMachine.ToQuality(prepared));
                     consume = () => { _bowl.Reset(); return true; };
-                    break;
-                case ProductKind.EggRiceWine:
-                    item = new DeliveredItem(kind, StableIds.Products.EggRiceWine);
-                    consume = () => _eggUnlocked;
                     break;
                 default: return false;
             }
@@ -348,8 +335,8 @@ public partial class WuhanDayScreen : Control
     private void OnFinished(DayResult result)
     {
         CollectionFeedback.Clear();
-        if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得三件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
+        if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
-    private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"蛋酒",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"成品蛋酒持续供应，直接拖给顾客；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

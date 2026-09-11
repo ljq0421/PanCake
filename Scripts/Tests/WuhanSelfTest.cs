@@ -15,8 +15,35 @@ public partial class WuhanSelfTest : Node
     {
         DataCatalog catalog=GetNode<DataCatalog>("/root/DataCatalog");
         TestData(catalog); TestOrders(catalog); TestNoodles(catalog); TestDoupi(catalog); TestSatisfaction(catalog); TestPressure(catalog); TestSave(catalog); TestV2Migration();
-        TestCustomerParity(catalog);
+        TestCustomerParity(catalog); TestRetiredCompatibility(catalog); TestPartialPieces(catalog);
         GD.Print($"WUHAN_TEST_RESULT passed={_passed} failed={_failed}"); GetTree().Quit(_failed==0?0:1);
+    }
+    private void TestRetiredCompatibility(DataCatalog catalog)
+    {
+        string path = $"res://.tmp/wuhan-retired-{Guid.NewGuid():N}.json";
+        var save = new SaveService(); save.UsePathForTests(path); AddChild(save);
+        save.Data.Coins = 777;
+        save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
+        save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
+        save.Data.Wuhan.UnlockedCollectibleIds.Add("collectible:wuhan_egg_rice_wine");
+        Check(save.TrySave(out _), "旧设备与蛋酒收藏存档可写入");
+        var loaded = new SaveService(); loaded.UsePathForTests(path); AddChild(loaded);
+        Check(!loaded.HasLoadError && loaded.Data.Coins == 777 && loaded.Data.Wuhan.EquipmentLevels["ingredient_station"] == 3
+            && loaded.Data.Wuhan.UnlockedCollectibleIds.Contains("collectible:wuhan_egg_rice_wine"), "读取旧存档保留等级收藏且不退款");
+        var hub = SceneFactory.Instantiate<ProjectCake.UI.WuhanHub>("res://Scenes/UI/WuhanHub.tscn"); AddChild(hub); hub.Initialize(catalog, loaded);
+        Check(!hub.GetNode<Button>("%WuhanStationUpgrade").Visible && hub.GetNode<Label>("%WuhanStationNote").Text == "生面无限供应", "旧满级备料台显示无限供应且无升级入口");
+        hub.Free(); loaded.Free(); save.Free(); File.Delete(ProjectSettings.GlobalizePath(path));
+    }
+    private void TestPartialPieces(DataCatalog catalog)
+    {
+        var stock = new DoupiInventory(); stock.TryAddBatch(13);
+        var pan = new DoupiStateMachine(catalog.DoupiGriddlesByLevel[1]);
+        pan.TryPourBatter(); pan.TryAddEgg(); pan.Tick(2.5); pan.TryFlip(); pan.TryAddFilling();
+        pan.Tick(7); pan.TryCut(DoupiCutDirection.Horizontal); pan.TryCut(DoupiCutDirection.Vertical);
+        Check(pan.TransferAvailable(stock) == 3 && pan.RemainingPieces == 5 && pan.FirstRemainingPiece == 3, "部分入盘保留五块及原锅面位置");
+        Check(Enumerable.Range(0, 3).All(i => stock.PieceAt(13 + i) == new DoupiInventory.Piece(DoupiQuality.Overbrowned, i)), "前三块的纹理编号和煎制品质进入托盘");
+        stock.TryTake(16, out _);
+        Check(pan.TransferAvailable(stock) == 5 && pan.State == DoupiState.Empty && Enumerable.Range(0, 5).All(i => stock.PieceAt(i).Tile == i + 3), "释放容量后剩余块沿用原纹理且只转移一次");
     }
     private void TestCustomerParity(DataCatalog catalog)
     {
@@ -51,16 +78,31 @@ public partial class WuhanSelfTest : Node
     }
     private void TestData(DataCatalog c)
     {
-        var days=c.GetDays(StableIds.Cities.Wuhan);Check(c.IsValid,"全量数据目录校验通过");Check(days.Count==12,"武汉包含 Day 1～12");Check(days.Values.Sum(d=>d.DurationSeconds)==1400,"营业时长合计 1400 秒");Check(days.Values.Sum(d=>d.ExpectedRevenue)==2389,"预计收入合计 2389");Check(c.NoodleCookersByLevel.Values.Sum(x=>x.UpgradePrice)+c.DoupiGriddlesByLevel.Values.Sum(x=>x.UpgradePrice)+c.WuhanIngredientStationsByLevel.Values.Sum(x=>x.UpgradePrice)==2000,"升级价格合计 2000");Check(ProjectCake.UI.TianjinMapScreen.CanEnterCity(false,true)&&!ProjectCake.UI.TianjinMapScreen.CanEnterCity(false,false)&&ProjectCake.UI.TianjinMapScreen.CanEnterCity(true,false),"开发测试入口可绕过城市前置解锁");
+        var days=c.GetDays(StableIds.Cities.Wuhan);Check(c.IsValid,"全量数据目录校验通过");Check(days.Count==12,"武汉包含 Day 1～12");Check(days.Values.Sum(d=>d.DurationSeconds)==1400,"营业时长合计 1400 秒");Check(days.Values.All(d => d.ExpectedRevenue == new OrderGenerator().Generate(d,c.RecipesById,c.ProductsById,c.CustomersById).Customers.Sum(p => p.Order.BasePrice)),"预计收入与固定种子订单一致");Check(c.NoodleCookersByLevel.Values.Sum(x=>x.UpgradePrice)+c.DoupiGriddlesByLevel.Values.Sum(x=>x.UpgradePrice)==1580,"在售升级价格合计 1580");Check(ProjectCake.UI.TianjinMapScreen.CanEnterCity(false,true)&&!ProjectCake.UI.TianjinMapScreen.CanEnterCity(false,false)&&ProjectCake.UI.TianjinMapScreen.CanEnterCity(true,false),"开发测试入口可绕过城市前置解锁");
     }
     private void TestOrders(DataCatalog c)
     {
+        foreach (var day in c.GetDays(StableIds.Cities.Wuhan).Values)
+        {
+            int seed = day.RandomSeed;
+            GD.Print($"WUHAN_REVENUE {day.Day} {new OrderGenerator().Generate(day,c.RecipesById,c.ProductsById,c.CustomersById).Customers.Sum(p=>p.Order.BasePrice)}");
+            try
+            {
+                foreach (int sample in new[] { seed, 1, 42, 99, 2026 })
+                {
+                    day.RandomSeed = sample;
+                    DayPlan plan = new OrderGenerator().Generate(day,c.RecipesById,c.ProductsById,c.CustomersById);
+                    Check(plan.Customers.All(p=>p.Order.Lines.Count>0 && p.Order.Lines.All(l=>l.ProductKind is ProductKind.HotDryNoodles or ProductKind.Doupi && l.Quantity>0)), $"Day {day.Day} seed {sample}: no retired or empty orders");
+                }
+            }
+            finally { day.RandomSeed = seed; }
+        }
         DayConfig d=c.GetDays(StableIds.Cities.Wuhan)[12];DayPlan a=new OrderGenerator().Generate(d,c.RecipesById,c.ProductsById,c.CustomersById);DayPlan b=new OrderGenerator().Generate(d,c.RecipesById,c.ProductsById,c.CustomersById);
         Check(a.Customers.Select(x=>x.CustomerTypeId).SequenceEqual(b.Customers.Select(x=>x.CustomerTypeId)),"固定种子结果可重现");
         var people=a.Customers.GroupBy(x=>x.CustomerTypeId).ToDictionary(x=>x.Key,x=>x.Count());Check(people["wuhan_normal"]==9&&people["wuhan_office_worker"]==5&&people["wuhan_regular"]==4&&people["wuhan_tourist"]==4&&people["wuhan_big_order"]==4,"Day 12 顾客精确配额");
-        var orders=a.Customers.GroupBy(x=>x.Order.OrderTypeId).ToDictionary(x=>x.Key,x=>x.Count());Check(orders["hot_dry_noodles"]==4&&orders["doupi"]==1&&orders["egg_rice_wine"]==1&&orders["noodles_doupi"]==5&&orders["noodles_egg_rice_wine"]==7&&orders["wuhan_full_combo"]==8,"Day 12 订单精确配额");
-        Check(!a.Customers.Zip(a.Customers.Skip(1)).Any(pair=>pair.First.CustomerTypeId=="wuhan_big_order"&&pair.Second.CustomerTypeId=="wuhan_big_order"),"大单顾客不连续");int run=0,max=0;foreach(var x in a.Customers){run=x.Order.OrderTypeId=="wuhan_full_combo"?run+1:0;max=Math.Max(max,run);}Check(max<=2,"F 类最多连续两单");
-        var allBig=new List<string>();for(int day=9;day<=12;day++)foreach(var x in new OrderGenerator().Generate(c.GetDays(StableIds.Cities.Wuhan)[day],c.RecipesById,c.ProductsById,c.CustomersById).Customers.Where(x=>x.CustomerTypeId=="wuhan_big_order"))allBig.Add(x.Order.OrderTypeId);Check(allBig.Count==9&&allBig.GroupBy(x=>x).All(g=>g.Count()==3),"三种大单跨章节各出现三次");
+        var orders=a.Customers.GroupBy(x=>x.Order.OrderTypeId).ToDictionary(x=>x.Key,x=>x.Count());Check(orders.Count==3&&orders["hot_dry_noodles"]==10&&orders["doupi"]==3&&orders["noodles_doupi"]==13,"Day 12 订单精确配额");
+        Check(!a.Customers.Zip(a.Customers.Skip(1)).Any(pair=>pair.First.CustomerTypeId=="wuhan_big_order"&&pair.Second.CustomerTypeId=="wuhan_big_order"),"大单顾客不连续");int run=0,max=0;foreach(var x in a.Customers){run=x.Order.OrderTypeId=="noodles_doupi"?run+1:0;max=Math.Max(max,run);}Check(max<=2,"面加豆皮最多连续两单");
+        var allBig=new List<string>();for(int day=9;day<=12;day++)foreach(var x in new OrderGenerator().Generate(c.GetDays(StableIds.Cities.Wuhan)[day],c.RecipesById,c.ProductsById,c.CustomersById).Customers.Where(x=>x.CustomerTypeId=="wuhan_big_order"))allBig.Add(x.Order.OrderTypeId);Check(allBig.Count==9&&allBig.All(x=>x is "hot_dry_noodles" or "noodles_doupi"),"大单仅出现单面或面加豆皮");
     }
     private void TestNoodles(DataCatalog c)
     {
@@ -85,7 +127,7 @@ public partial class WuhanSelfTest : Node
     }
     private void TestSave(DataCatalog c)
     {
-        string path=$"res://.tmp/wuhan-v3-{Guid.NewGuid():N}.json";var save=new SaveService();AddChild(save);save.UsePathForTests(path);save.Data.Coins=3000;CityProgressData city=save.Data.Wuhan;city.UnlockedContentIds.Add("equipment:wuhan_ingredient_station_lv2");Check(save.TryPurchase(StableIds.Cities.Wuhan,"equipment:wuhan_ingredient_station_lv2",c,out _)&&save.Data.Coins==2880&&save.Data.PurchasedIngredientStationLevel==1,"武汉升级扣全局金币且不改变天津设备");DayConfig day12=c.GetDays(StableIds.Cities.Wuhan)[12];DayResult result=new(){Day=12,PlannedCustomers=26,CompletedCustomers=24,Satisfaction=90,PerfectOrders=15,SaleRevenue=411};DayPlan plan=new OrderGenerator().Generate(day12,c.RecipesById,c.ProductsById,c.CustomersById);save.CommitDay(result,plan,day12);Check(save.Data.Wuhan.Completed&&save.Data.Wuhan.BestStars==3&&save.Data.Wuhan.UnlockedCollectibleIds.Count==4,"武汉三星完成并保存收藏徽章");save.QueueFree();string absolute=ProjectSettings.GlobalizePath(path);if(File.Exists(absolute))File.Delete(absolute);
+        string path=$"res://.tmp/wuhan-v3-{Guid.NewGuid():N}.json";var save=new SaveService();AddChild(save);save.UsePathForTests(path);save.Data.Coins=3000;CityProgressData city=save.Data.Wuhan;city.UnlockedContentIds.Add("equipment:wuhan_ingredient_station_lv2");Check(!save.TryPurchase(StableIds.Cities.Wuhan,"equipment:wuhan_ingredient_station_lv2",c,out _)&&save.Data.Coins==3000&&save.Data.PurchasedIngredientStationLevel==1,"旧容量升级已下架且不扣金币");DayConfig day12=c.GetDays(StableIds.Cities.Wuhan)[12];DayResult result=new(){Day=12,PlannedCustomers=26,CompletedCustomers=24,Satisfaction=90,PerfectOrders=15,SaleRevenue=411};DayPlan plan=new OrderGenerator().Generate(day12,c.RecipesById,c.ProductsById,c.CustomersById);save.CommitDay(result,plan,day12);Check(save.Data.Wuhan.Completed&&save.Data.Wuhan.BestStars==3&&save.Data.Wuhan.UnlockedCollectibleIds.Count==3,"武汉三星完成并保存收藏徽章");save.QueueFree();string absolute=ProjectSettings.GlobalizePath(path);if(File.Exists(absolute))File.Delete(absolute);
     }
     private void TestV2Migration()
     {

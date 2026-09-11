@@ -51,18 +51,17 @@ public partial class WuhanMainDeliverySelfTest : Node
                 planned.Order = new ProjectCake.Orders.OrderData
                 {
                     OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan, CustomerTypeId = planned.CustomerTypeId,
-                    OrderTypeId = "wuhan_full_combo", BasePrice = 30, PatienceSeconds = 100,
+                    OrderTypeId = "noodles_doupi", BasePrice = 30, PatienceSeconds = 100,
                     Lines = new[] { new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic,2),
-                        new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2),
-                        new ProjectCake.Orders.OrderLineData(ProductKind.EggRiceWine,StableIds.Products.EggRiceWine,2) },
+                        new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2) },
                 };
             await Until(() => controller.State == DayState.Running && controller.CustomerQueue!.Slots.Count>0
                 && controller.CanDeliverTo(controller.CustomerQueue.Slots[0].Id,ProductKind.HotDryNoodles), 12);
             Check(!controller.IsPaused, "shared controller is running");
             _day.Bowl.TryAddNoodles(NoodleQuality.Optimal); _day.Bowl.TryAddBaseSeasoning(); _day.Bowl.AddMixDistance(425);
             _day.DoupiStock.TryAddBatch(8);
-            await Until(() => _day.Workstation.CanDeliver(ProductKind.EggRiceWine), 2); await Frames(4);
-            foreach (ProductKind kind in new[] { ProductKind.HotDryNoodles, ProductKind.Doupi, ProductKind.EggRiceWine })
+            await Until(() => _day.Workstation.CanDeliver(ProductKind.Doupi), 2); await Frames(4);
+            foreach (ProductKind kind in new[] { ProductKind.HotDryNoodles, ProductKind.Doupi })
             {
                 var source=(DragItem)_day.FindChild($"WuhanDrag_{kind}",true,false);
                 Vector2 position=source.GetGlobalTransformWithCanvas()*(source.Size*.5f);

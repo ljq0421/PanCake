@@ -109,26 +109,26 @@ public sealed partial class OrderGenerator
         int bigOrdinal = BigStructureOffset(config.Day);
         foreach (int index in Enumerable.Range(0, customerBag.Count).Where(index => customerBag[index] == "wuhan_big_order"))
         {
-            string structure = new[] { "hot_dry_noodles", "noodles_egg_rice_wine", "noodles_doupi" }[bigOrdinal++ % 3];
+            string structure = new[] { "hot_dry_noodles", "noodles_doupi" }[bigOrdinal++ % 2];
             assignedTypes[index] = TakePreferred(orderBag, structure, random);
         }
         int regularOrdinal = 0;
         int regularCount = customerBag.Count(value => value == "wuhan_regular");
-        int regularEggCount = AllocateByLargestRemainder(regularCount, new[] { .70, .30 })[0];
+        int regularClassicCount = AllocateByLargestRemainder(regularCount, new[] { .70, .30 })[0];
         for (int index = 0; index < customerBag.Count; index++)
         {
             string customerType = customerBag[index];
             if (customerType == "wuhan_big_order") continue;
             string preferred = customerType switch
             {
-                "wuhan_tourist" => "wuhan_full_combo",
-                "wuhan_regular" => regularOrdinal++ < regularEggCount ? "noodles_egg_rice_wine" : "noodles_doupi",
-                "wuhan_office_worker" => orderBag.Contains("noodles_egg_rice_wine") ? "noodles_egg_rice_wine" : "hot_dry_noodles",
+                "wuhan_tourist" => "noodles_doupi",
+                "wuhan_regular" => regularOrdinal++ < regularClassicCount ? "hot_dry_noodles" : "noodles_doupi",
+                "wuhan_office_worker" => "hot_dry_noodles",
                 _ => string.Empty,
             };
             assignedTypes[index] = TakePreferred(orderBag, preferred, random);
         }
-        RepairConsecutiveOrders(assignedTypes, "wuhan_full_combo", 2);
+        RepairConsecutiveOrders(assignedTypes, "noodles_doupi", 2);
 
         int noodlePortions = assignedTypes.Select((type, index) => NoodleQuantity(type, customerBag[index])).Sum();
         List<string> recipeBag = BuildQuotaBag(config.RecipeWeights, noodlePortions, random);
@@ -143,13 +143,13 @@ public sealed partial class OrderGenerator
             for (int item = 0; item < noodleQuantity; item++)
             {
                 string desired = string.Empty;
-                if (customerType == "wuhan_regular") desired = orderType == "noodles_egg_rice_wine" ? StableIds.Recipes.HotDryNoodlesClassic : StableIds.Recipes.HotDryNoodlesScallion;
+                if (customerType == "wuhan_regular") desired = orderType == "hot_dry_noodles" ? StableIds.Recipes.HotDryNoodlesClassic : StableIds.Recipes.HotDryNoodlesScallion;
                 noodleRecipes.Add(TakePreferred(recipeBag, desired, random));
             }
             int doupiQuantity = orderType switch
             {
                 "doupi" => config.Day == 4 && !forcedDay4Doupi ? 1 : random.NextDouble() < .6 ? 1 : 2,
-                "noodles_doupi" or "wuhan_full_combo" => customerType == "wuhan_big_order" ? 2 : 1,
+                "noodles_doupi" => customerType == "wuhan_big_order" ? 2 : 1,
                 _ => 0,
             };
             if (orderType == "doupi" && config.Day == 4) forcedDay4Doupi = true;
@@ -158,7 +158,6 @@ public sealed partial class OrderGenerator
             {
                 ProductKind.HotDryNoodles => recipes[line.DefinitionId].Price * line.Quantity,
                 ProductKind.Doupi => GetUnitPrice(products, StableIds.Products.Doupi, 5) * line.Quantity,
-                ProductKind.EggRiceWine => GetUnitPrice(products, StableIds.Products.EggRiceWine, 4) * line.Quantity,
                 _ => 0,
             });
             string ordinal = (index + 1).ToString("D3");
@@ -232,7 +231,7 @@ public sealed partial class OrderGenerator
 
     private static int BigStructureOffset(int day) => day switch { <= 9 => 0, 10 => 1, 11 => 3, _ => 5 };
     private static int NoodleQuantity(string orderType, string customerType) =>
-        orderType is "hot_dry_noodles" or "noodles_doupi" or "noodles_egg_rice_wine" or "wuhan_full_combo"
+        orderType is "hot_dry_noodles" or "noodles_doupi"
             ? customerType == "wuhan_big_order" ? 2 : 1 : 0;
 
     private static IReadOnlyList<OrderLineData> BuildWuhanLines(string orderType, IReadOnlyList<string> noodleRecipes, int doupiQuantity)
@@ -240,8 +239,7 @@ public sealed partial class OrderGenerator
         var lines = new List<OrderLineData>();
         foreach (IGrouping<string, string> group in noodleRecipes.GroupBy(value => value, StringComparer.Ordinal))
             lines.Add(new OrderLineData(ProductKind.HotDryNoodles, group.Key, group.Count()));
-        if (orderType is "doupi" or "noodles_doupi" or "wuhan_full_combo") lines.Add(new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, doupiQuantity));
-        if (orderType is "egg_rice_wine" or "noodles_egg_rice_wine" or "wuhan_full_combo") lines.Add(new OrderLineData(ProductKind.EggRiceWine, StableIds.Products.EggRiceWine, 1));
+        if (orderType is "doupi" or "noodles_doupi") lines.Add(new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, doupiQuantity));
         return lines;
     }
 

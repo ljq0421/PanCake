@@ -1,0 +1,496 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+PASS missed raw noodle drop preserves stock
+PASS Escape cancels production without consumption
+PASS focus loss cancels production
+PASS Lv1 raw drag starts once
+PASS basket click cannot substitute for lifting
+PASS upward stroke raises basket
+PASS early drop reserves bowl and releases mouse
+PASS reserved pour commits once after draining
+PASS sesame bowl seasons through viewport input
+PASS repeated sesame click does not repeat the action
+PASS mixing requires release before delivery
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS retired refill stays hidden
+PASS unlimited raw noodles remain draggable
+PASS retired cup area never begins delivery
+PASS pan click does not flip
+PASS upward pan stroke flips skin
+PASS pan click does not cut
+PASS short accidental stroke does not cut
+PASS first effective stroke locks quality before release
+PASS same press cannot cut another direction or burn
+PASS duplicate direction does not advance
+PASS two directions finish eight pieces
+PASS three free slots receive three pieces with five left in pan
+PASS leftover pieces block new batch
+PASS selling two automatically replenishes two
+PASS last pieces transfer without duplication and free pan
+PASS pause cancels pending production
+PASS continuous lift commits before release
+PASS same press reaches bowl and releases mouse while waiting
+PASS escape cancels pending bowl reservation
+PASS escape keeps lifted noodles and does not advance suspended processing
+PASS pause cancels pending bowl reservation
+PASS pause keeps lifted noodles and does not advance suspended processing
+PASS focus cancels pending bowl reservation
+PASS focus keeps lifted noodles and does not advance suspended processing
+PASS hidden cancels pending bowl reservation
+PASS hidden keeps lifted noodles and does not advance suspended processing
+PASS resumed transfer completes exactly once
+PASS duplicate base seasoning does not consume stock
+PASS outside bowl path adds no progress and preserves held session
+PASS vertical mixing advances and release keeps progress
+PASS completed mixing remains mixing outside bowl until release
+PASS retired cup area does not enable delivery
+PASS repeated clicks do not restore retired stock
+PASS retired refill controls are disabled and hidden
+PASS only legacy refill node is retained for scene compatibility
+PASS diagonal stroke is not classified as either cut direction
+PASS vertical first and fast stroke ending outside pan are accepted
+PASS full tray keeps entire cut batch in pan
+PASS fully cut batch does not burn while waiting for capacity
+PASS emptying tray transfers leftover batch once
+PASS missed raw noodle drop preserves stock
+PASS Escape cancels production without consumption
+PASS focus loss cancels production
+PASS Lv2 raw drag starts once
+PASS basket click cannot substitute for lifting
+PASS upward stroke raises basket
+PASS early drop reserves bowl and releases mouse
+PASS reserved pour commits once after draining
+PASS sesame bowl seasons through viewport input
+PASS repeated sesame click does not repeat the action
+PASS mixing requires release before delivery
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS retired refill stays hidden
+PASS unlimited raw noodles remain draggable
+PASS retired cup area never begins delivery
+PASS pan click does not flip
+PASS upward pan stroke flips skin
+PASS pan click does not cut
+PASS short accidental stroke does not cut
+PASS first effective stroke locks quality before release
+PASS same press cannot cut another direction or burn
+PASS duplicate direction does not advance
+PASS two directions finish eight pieces
+PASS three free slots receive three pieces with five left in pan
+PASS leftover pieces block new batch
+PASS selling two automatically replenishes two
+PASS last pieces transfer without duplication and free pan
+PASS pause cancels pending production
+PASS continuous lift commits before release
+PASS same press reaches bowl and releases mouse while waiting
+PASS escape cancels pending bowl reservation
+PASS escape keeps lifted noodles and does not advance suspended processing
+PASS pause cancels pending bowl reservation
+PASS pause keeps lifted noodles and does not advance suspended processing
+PASS focus cancels pending bowl reservation
+PASS focus keeps lifted noodles and does not advance suspended processing
+PASS hidden cancels pending bowl reservation
+PASS hidden keeps lifted noodles and does not advance suspended processing
+PASS resumed transfer completes exactly once
+PASS duplicate base seasoning does not consume stock
+PASS outside bowl path adds no progress and preserves held session
+PASS vertical mixing advances and release keeps progress
+PASS completed mixing remains mixing outside bowl until release
+PASS retired cup area does not enable delivery
+PASS repeated clicks do not restore retired stock
+PASS retired refill controls are disabled and hidden
+PASS only legacy refill node is retained for scene compatibility
+PASS diagonal stroke is not classified as either cut direction
+PASS vertical first and fast stroke ending outside pan are accepted
+PASS full tray keeps entire cut batch in pan
+PASS fully cut batch does not burn while waiting for capacity
+PASS emptying tray transfers leftover batch once
+PASS missed raw noodle drop preserves stock
+PASS Escape cancels production without consumption
+PASS focus loss cancels production
+PASS Lv3 raw drag starts once
+PASS second basket accepts independent noodle drag
+PASS early drop reserves bowl and releases mouse
+PASS second basket cannot replace reservation
+PASS reserved pour commits once after draining
+PASS occupied bowl rejects second basket
+PASS sesame bowl seasons through viewport input
+PASS repeated sesame click does not repeat the action
+PASS mixing requires release before delivery
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS raw noodles never run out
+PASS retired refill stays hidden
+PASS unlimited raw noodles remain draggable
+PASS retired cup area never begins delivery
+PASS upgraded griddle still flips automatically
+PASS pan click does not cut
+PASS short accidental stroke does not cut
+PASS first effective stroke locks quality before release
+PASS same press cannot cut another direction or burn
+PASS duplicate direction does not advance
+PASS two directions finish eight pieces
+PASS three free slots receive three pieces with five left in pan
+PASS leftover pieces block new batch
+PASS selling two automatically replenishes two
+PASS last pieces transfer without duplication and free pan
+PASS pause cancels pending production
+PASS continuous lift commits before release
+PASS same press reaches bowl and releases mouse while waiting
+PASS escape cancels pending bowl reservation
+PASS escape keeps lifted noodles and does not advance suspended processing
+PASS pause cancels pending bowl reservation
+PASS pause keeps lifted noodles and does not advance suspended processing
+PASS focus cancels pending bowl reservation
+PASS focus keeps lifted noodles and does not advance suspended processing
+PASS hidden cancels pending bowl reservation
+PASS hidden keeps lifted noodles and does not advance suspended processing
+PASS resumed transfer completes exactly once
+PASS duplicate base seasoning does not consume stock
+PASS outside bowl path adds no progress and preserves held session
+PASS vertical mixing advances and release keeps progress
+PASS completed mixing remains mixing outside bowl until release
+PASS retired cup area does not enable delivery
+PASS repeated clicks do not restore retired stock
+PASS retired refill controls are disabled and hidden
+PASS only legacy refill node is retained for scene compatibility
+PASS diagonal stroke is not classified as either cut direction
+PASS vertical first and fast stroke ending outside pan are accepted
+PASS full tray keeps entire cut batch in pan
+PASS fully cut batch does not burn while waiting for capacity
+PASS emptying tray transfers leftover batch once
+PASS Day 1 selects its v2 sheet
+PASS four visible bowls map to the correct ingredients
+PASS empty counter has no pan or stock target
+PASS empty counter produces no doupi interaction or hint
+PASS current stage supports cooking and pouring
+PASS current stage supports seasoning and mixing
+PASS visible upper bowl rim starts delivery above the counter edge
+PASS missed delivery preserves finished noodles
+PASS current stage delivers a real order
+PASS stage switching preserves unlimited supply
+PASS stage switching does not restore refill
+PASS Day 4 selects its v2 sheet
+PASS four visible bowls map to the correct ingredients
+PASS current stage supports cooking and pouring
+PASS current stage supports seasoning and mixing
+PASS visible upper bowl rim starts delivery above the counter edge
+PASS missed delivery preserves finished noodles
+PASS current stage delivers a real order
+PASS stage switching preserves unlimited supply
+PASS stage switching does not restore refill
+PASS Day 1 selects its v2 sheet
+PASS four visible bowls map to the correct ingredients
+PASS empty counter has no pan or stock target
+PASS empty counter produces no doupi interaction or hint
+PASS current stage supports cooking and pouring
+PASS current stage supports seasoning and mixing
+PASS visible upper bowl rim starts delivery above the counter edge
+PASS missed delivery preserves finished noodles
+PASS current stage delivers a real order
+PASS stage switching preserves unlimited supply
+PASS stage switching does not restore refill
+PASS operation budget uses four fixed identical orders and level-one equipment
+PASS one scallion noodle bowl including delivery needs exactly six presses
+PASS one doupi batch automatically stocks eight with exactly six presses
+PASS batch and four quantity-two deliveries total ten presses (presses=10, stock=0, delivered=2,2,2,2,0)
+PASS noodles and doupi complete the first combo without egg
+WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=0
+WUHAN_GESTURE_TEST_RESULT passed=489 failed=0

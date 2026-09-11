@@ -1,7 +1,7 @@
 {
-  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":2,"durationSeconds":80,"customerCount":8,"expectedRevenue":86,"patienceMultiplier":1.0,"maxWaitingCustomers":5,"randomSeed":2002,
+  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":2,"durationSeconds":80,"customerCount":8,"expectedRevenue":83,"patienceMultiplier":1.0,"maxWaitingCustomers":5,"randomSeed":2002,
   "customerWeights":{"wuhan_normal":1.0},"orderTypeWeights":{"hot_dry_noodles":1.0},"recipeWeights":{"hot_dry_noodles_classic":0.60,"hot_dry_noodles_scallion":0.40},
   "arrivalSegments":[{"start":0.0,"end":0.2,"customerRatio":0.15},{"start":0.2,"end":0.75,"customerRatio":0.70},{"start":0.75,"end":1.0,"customerRatio":0.15}],
-  "startUnlocks":["recipe:hot_dry_noodles_scallion"],"completionUnlocks":["equipment:wuhan_ingredient_station_lv2"],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion"],"availableProductKinds":["hotDryNoodles"],
+  "startUnlocks":["recipe:hot_dry_noodles_scallion"],"completionUnlocks":[],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion"],"availableProductKinds":["hotDryNoodles"],
   "constraints":{"maxBigOrderCustomers":0,"simpleNewProductOrders":0,"maxConsecutiveYoutiaoOrders":2,"maxPancakesPerCustomer":2,"maxConsecutiveComplexOrders":2,"pressureDelaySeconds":2,"maxPressureDelaySeconds":4},"starGoals":[]
 }

@@ -1,0 +1,748 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+PASS integrated sheet and dynamic assets load
+PASS unlock stages use distinct v2 sheets
+PASS Day 1: original doupi unlock
+PASS Day 1: egg retired
+PASS locked stage cannot make or deliver doupi
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 1: hot_dry_noodles_classic accepted
+PASS Day 1: reaches results
+PASS Day 1: every generated customer's order can be completed
+PASS Day 1: every recipe matches
+PASS Day 1: original progression
+PASS Day 2: original doupi unlock
+PASS Day 2: egg retired
+PASS locked stage cannot make or deliver doupi
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 2: hot_dry_noodles_classic accepted
+PASS Day 2: reaches results
+PASS Day 2: every generated customer's order can be completed
+PASS Day 2: every recipe matches
+PASS Day 2: original progression
+PASS Day 3: original doupi unlock
+PASS Day 3: egg retired
+PASS locked stage cannot make or deliver doupi
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 3: hot_dry_noodles_classic accepted
+PASS Day 3: reaches results
+PASS Day 3: every generated customer's order can be completed
+PASS Day 3: every recipe matches
+PASS Day 3: original progression
+PASS Day 4: original doupi unlock
+PASS Day 4: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 4: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 4: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 4: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 4: hot_dry_noodles_scallion accepted
+PASS Day 4: reaches results
+PASS Day 4: every generated customer's order can be completed
+PASS Day 4: every recipe matches
+PASS Day 4: original progression
+PASS Day 5: original doupi unlock
+PASS Day 5: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 5: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 5: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 5: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 5: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 5: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 5: hot_dry_noodles_classic accepted
+PASS Day 5: reaches results
+PASS Day 5: every generated customer's order can be completed
+PASS Day 5: every recipe matches
+PASS Day 5: original progression
+PASS Day 6: original doupi unlock
+PASS Day 6: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 6: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 6: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_classic accepted
+PASS real doupi order has unlocked production
+PASS Day 6: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 6: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 6: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 6: hot_dry_noodles_classic accepted
+PASS Day 6: reaches results
+PASS Day 6: every generated customer's order can be completed
+PASS Day 6: every recipe matches
+PASS Day 6: original progression
+PASS Day 7: original doupi unlock
+PASS Day 7: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 7: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 7: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_classic accepted
+PASS real doupi order has unlocked production
+PASS Day 7: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 7: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 7: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 7: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 7: doupi accepted
+PASS Day 7: reaches results
+PASS Day 7: every generated customer's order can be completed
+PASS Day 7: every recipe matches
+PASS Day 7: original progression
+PASS Day 8: original doupi unlock
+PASS Day 8: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 8: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_classic accepted
+PASS real doupi order has unlocked production
+PASS Day 8: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 8: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 8: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 8: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 8: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 8: doupi accepted
+PASS Day 8: reaches results
+PASS Day 8: every generated customer's order can be completed
+PASS Day 8: every recipe matches
+PASS Day 8: original progression
+PASS Day 9: original doupi unlock
+PASS Day 9: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 9: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 9: hot_dry_noodles_scallion_chili accepted
+PASS Day 9: reaches results
+PASS Day 9: every generated customer's order can be completed
+PASS Day 9: every recipe matches
+PASS Day 9: original progression
+PASS Day 10: original doupi unlock
+PASS Day 10: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 10: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 10: hot_dry_noodles_chili accepted
+PASS Day 10: reaches results
+PASS Day 10: every generated customer's order can be completed
+PASS Day 10: every recipe matches
+PASS Day 10: original progression
+PASS Day 11: original doupi unlock
+PASS Day 11: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 11: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 11: doupi accepted
+PASS Day 11: reaches results
+PASS Day 11: every generated customer's order can be completed
+PASS Day 11: every recipe matches
+PASS Day 11: original progression
+PASS Day 12: original doupi unlock
+PASS Day 12: egg retired
+PASS locked egg UI cannot deliver
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_classic accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_scallion_chili accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_chili accepted
+PASS real doupi order has unlocked production
+PASS Day 12: doupi accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_beef accepted
+PASS new bowl accepts noodles
+PASS repeated sesame clicks season once
+PASS Day 12: hot_dry_noodles_chili accepted
+PASS Day 12: reaches results
+PASS Day 12: every generated customer's order can be completed
+PASS Day 12: every recipe matches
+PASS Day 12: original progression
+PASS purchase noodle_cooker Lv2
+PASS purchase doupi_griddle Lv2
+PASS upgrade keeps functional basket capacity
+PASS equipment upgrades preserve unlimited raw supply
+PASS upgrade preserves integrated equipment appearance
+PASS purchase noodle_cooker Lv3
+PASS purchase doupi_griddle Lv3
+PASS upgrade keeps functional basket capacity
+PASS equipment upgrades preserve unlimited raw supply
+PASS upgrade preserves integrated equipment appearance
+WUHAN_WORKBENCH_RESULT passed=742 failed=0

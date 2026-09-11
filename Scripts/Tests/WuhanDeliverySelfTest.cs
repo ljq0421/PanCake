@@ -69,8 +69,8 @@ public partial class WuhanDeliverySelfTest : Node
                 "adjacent delivery zones do not overlap");
         }
         PrepareFood(); await Frames();
-        await Drop(ProductKind.EggRiceWine, 4);
-        Check(fifth.Progress.GetDeliveredQuantity(2) == 1, "fifth customer accepts a real viewport drag");
+        await Drop(ProductKind.HotDryNoodles, 4);
+        Check(fifth.Progress.GetDeliveredQuantity(0) == 1, "fifth customer accepts a real viewport drag");
     }
     private void Check(bool condition, string message)
     {
@@ -107,15 +107,16 @@ public partial class WuhanDeliverySelfTest : Node
             var customer = queue.CustomerAtSlot(slot)!;
             for (int cup=0;cup<2;cup++)
             {
-                await Drop(ProductKind.EggRiceWine, slot);
+                PrepareFood(); await Frames();
+                await Drop(ProductKind.HotDryNoodles, slot);
                 delivered++;
-                Check(customer.Progress.GetDeliveredQuantity(2)==cup+1
-                    && _screen.Workstation.CanDeliver(ProductKind.EggRiceWine), "valid cup drop advances order and leaves supply available");
+                Check(customer.Progress.GetDeliveredQuantity(0)==cup+1
+                    && _screen.Ingredients.CanUse(StableIds.Ingredients.WuhanNoodles), "valid noodle drop advances order and raw supply stays available");
             }
             Check(!_screen.DeliverToCustomer(customer.Id, ProductKind.EggRiceWine)
-                && customer.Progress.GetDeliveredQuantity(2)==2, "unlimited supply still rejects fulfilled order lines");
+                && customer.Progress.GetDeliveredQuantity(0)==2, "unlimited supply still rejects fulfilled order lines");
         }
-        Check(delivered == 8, "eight cups delivered without refill, exceeding the former six-cup limit");
+        Check(delivered == 8, "eight bowls delivered with continuously available raw supply");
     }
     private async Task Frames(int count = 2)
     {
@@ -141,12 +142,11 @@ public partial class WuhanDeliverySelfTest : Node
             planned.Order = new OrderData
             {
                 OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
-                CustomerTypeId = planned.CustomerTypeId, OrderTypeId = "wuhan_full_combo",
+                CustomerTypeId = planned.CustomerTypeId, OrderTypeId = "noodles_doupi",
                 BasePrice = 30, PatienceSeconds = 100,
                 Lines = batchOnly ? new[] { new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 1), new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 2) } : i == 2 ? new[] { new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 2) }
                     : new[] { new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 2),
-                        new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 2),
-                        new OrderLineData(ProductKind.EggRiceWine, StableIds.Products.EggRiceWine, 2) },
+                        new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 2) },
             };
         }
         _screen.BeginDay(); Step(3.01);
@@ -224,15 +224,7 @@ public partial class WuhanDeliverySelfTest : Node
         queue.TrySelect(first.Id); await Drop(ProductKind.Doupi, 1);
         Check(second.Progress.GetDeliveredQuantity(1) == 2 && first.Progress.GetDeliveredQuantity(1) == 0
             && _screen.DoupiStock.Count == 6, "drop target wins over selection and receives its two missing pieces");
-        Vector2 eggClick = _screen.Workstation.GetGlobalTransformWithCanvas() * _screen.Workstation.CupCenter;
-        Move(eggClick); Button(eggClick, true); Button(eggClick, false);
-        Check(second.Progress.GetDeliveredQuantity(2) == 0, "egg action never performs click delivery");
-        await Settled();Step(.001);
-        await Drop(ProductKind.EggRiceWine, 1);
-        Check(second.Progress.GetDeliveredQuantity(2) == 1, "finished cup can be dragged directly to customer");
-        await Drop(ProductKind.EggRiceWine, 1);
-        Check(second.Progress.GetDeliveredQuantity(2) == 2, "another stock cup satisfies the remaining quantity");
-        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine) && second.Progress.GetDeliveredQuantity(2) == 2, "fulfilled egg line cannot consume another cup");
+        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine) && !_screen.Workstation.GetNode<Control>("WuhanDrag_EggRiceWine").Visible, "retired egg cannot be delivered even from old save");
         Move(Source(ProductKind.HotDryNoodles)); Button(Source(ProductKind.HotDryNoodles), true); Button(Source(ProductKind.HotDryNoodles), false);
         Check(!_screen.DeliveryDrag.IsDragging, "empty bowl cannot start a delivery");
         _screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); _screen.Bowl.TryAddBaseSeasoning(); Step(.001);
@@ -341,10 +333,10 @@ public partial class WuhanDeliverySelfTest : Node
         await Shot("01-hub"); hub.Free(); _screen.Show();
         PrepareFood(NoodleQuality.Overcooked, true); await Frames(); await Shot("02-workbench");
         Press(ProductKind.HotDryNoodles); Move(Target(0), true); await Shot("03-drag-noodles"); _screen.Workstation.CancelInput();
-        Press(ProductKind.EggRiceWine); Move(Target(1), true); await Shot("04-drag-egg"); _screen.Workstation.CancelInput();
+        Press(ProductKind.Doupi); Move(Target(1), true); await Shot("04-drag-doupi"); _screen.Workstation.CancelInput();
         Press(ProductKind.Doupi); Move(Target(2), true); await Shot("05-invalid-target"); _screen.Workstation.CancelInput();
         await Drop(ProductKind.HotDryNoodles, 0);
-        for (int i=0;i<2;i++) { PrepareFood(); await Frames(); if(i==0) await Drop(ProductKind.HotDryNoodles,0); await Drop(ProductKind.Doupi,0); await Drop(ProductKind.EggRiceWine,0); }
+        for (int i=0;i<2;i++) { PrepareFood(); await Frames(); if(i==0) await Drop(ProductKind.HotDryNoodles,0); await Drop(ProductKind.Doupi,0); }
         _controller.Tick(1000); _controller.Tick(16); _screen._Process(.001); await Shot("06-receipt");
     }
     private async Task Shot(string name)

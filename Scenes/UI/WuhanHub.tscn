@@ -2301,7 +2301,7 @@ vertical_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.27058825, 0.34901962, 0.30980393, 1)
 theme_override_font_sizes/font_size = 20
-text = "热干面即时制作 · 三鲜豆皮批量备货 · 蛋酒快速配餐"
+text = "热干面即时制作 · 三鲜豆皮批量备货 · 生面无限供应"
 vertical_alignment = 1
 
 [node name="@TextureRect@238" type="TextureRect" parent="@MarginContainer@232/@VBoxContainer@233/@HBoxContainer@234" unique_id=1564949032]
@@ -2943,7 +2943,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WuhanLedger|_dateSt
 custom_minimum_size = Vector2(180, 116)
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Day 6 · 蛋酒 · 未解锁"
+tooltip_text = "Day 6 · 双线熟练 · 未解锁"
 theme_override_colors/font_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
 theme_override_colors/font_focus_color = Color(0.16078432, 0.24313726, 0.21176471, 1)
 theme_override_colors/font_pressed_color = Color(0.16078432, 0.24313726, 0.21176471, 1)

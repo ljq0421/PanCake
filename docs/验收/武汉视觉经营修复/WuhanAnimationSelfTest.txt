@@ -1,0 +1,91 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+PASS 全部武汉必需美术可加载
+PASS 碗满倒面不丢失源面条及碗内品质
+PASS 空碗原子接收熟面
+PASS 双漏勺争用同一个碗只成功一次
+PASS 新一份面条清除上一份过熟品质
+PASS 空漏勺点击不下面，制作提交不消耗无限供应
+PASS 下面动画存在可捕获的中间帧
+PASS 提篮后自然沥水完成
+PASS 倒面同时锁住漏勺和碗，期间不能提前加料
+PASS 蛋酒已下架
+PASS 基础调味加入一次后仍持续供应
+PASS 点击葱花实物加入碗内
+PASS 碗外按下不能带入拌面手势
+PASS 离开碗口保持会话，重入不会连线加进度
+PASS 拌匀后保持当前输入模式直到松手
+PASS 无效顾客拒绝交付，食物和画面保留
+PASS Lv3 两个漏勺同帧自动提篮都播放动画
+PASS 自然沥水结束状态同步
+PASS 界面碗满拒绝倒入第二勺，不播放虚假成功动作
+PASS Lv2 只锁熟，不误播自动提篮
+PASS 豆皮两向切割后自动入盘
+PASS 豆皮入库连点不重复增加一锅
+PASS 备货满盘保留锅内成品，不播放入库动作
+PASS Lv3 豆皮自动翻面可见
+PASS 豆皮仍遵守焦糊时限
+PASS 丢弃焦糊豆皮后清空锅面与动画
+PASS 旧存档解锁蛋酒也不可再交付
+PASS 旧蛋酒拖拽入口隐藏
+PASS Day 1 不可提前交付蛋酒
+PASS 接受交付后清空食品，重复点击不重复交付
+PASS Lv1 wuhan_base_seasoning 连续使用不耗尽
+PASS Lv1 wuhan_scallion 连续使用不耗尽
+PASS Lv1 wuhan_chili_oil 连续使用不耗尽
+PASS Lv1 wuhan_braised_beef 连续使用不耗尽
+PASS Lv1 wuhan_noodles 连续使用不耗尽
+PASS 未知原料不能使用
+PASS Lv2 wuhan_base_seasoning 连续使用不耗尽
+PASS Lv2 wuhan_scallion 连续使用不耗尽
+PASS Lv2 wuhan_chili_oil 连续使用不耗尽
+PASS Lv2 wuhan_braised_beef 连续使用不耗尽
+PASS Lv2 wuhan_noodles 连续使用不耗尽
+PASS 未知原料不能使用
+PASS Lv3 wuhan_base_seasoning 连续使用不耗尽
+PASS Lv3 wuhan_scallion 连续使用不耗尽
+PASS Lv3 wuhan_chili_oil 连续使用不耗尽
+PASS Lv3 wuhan_braised_beef 连续使用不耗尽
+PASS Lv3 wuhan_noodles 连续使用不耗尽
+PASS 未知原料不能使用
+PASS 旧补货事件不会创建补货动作
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 超过旧容量仍可下锅，重复操作不重置烹煮
+PASS 暂停冻结动作、制作和输入
+PASS 失焦冻结动画
+PASS 恢复后继续原动画
+PASS 隐藏页面清理所有临时动作
+PASS 重新开局复位全部制作画面
+PASS 减少动态模式保留正确终态
+WUHAN_ANIMATION_TEST_RESULT passed=85 failed=0

@@ -1,5 +1,5 @@
 {
-  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":3,"durationSeconds":90,"customerCount":10,"expectedRevenue":110,"patienceMultiplier":1.0,"maxWaitingCustomers":5,"randomSeed":2003,
+  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":3,"durationSeconds":90,"customerCount":10,"expectedRevenue":109,"patienceMultiplier":1.0,"maxWaitingCustomers":5,"randomSeed":2003,
   "customerWeights":{"wuhan_normal":1.0},"orderTypeWeights":{"hot_dry_noodles":1.0},"recipeWeights":{"hot_dry_noodles_classic":0.25,"hot_dry_noodles_scallion":0.25,"hot_dry_noodles_chili":0.25,"hot_dry_noodles_scallion_chili":0.25},
   "arrivalSegments":[{"start":0.0,"end":0.2,"customerRatio":0.15},{"start":0.2,"end":0.75,"customerRatio":0.70},{"start":0.75,"end":1.0,"customerRatio":0.15}],
   "startUnlocks":["recipe:hot_dry_noodles_chili","recipe:hot_dry_noodles_scallion_chili"],"completionUnlocks":["equipment:noodle_cooker_lv2"],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion","hot_dry_noodles_chili","hot_dry_noodles_scallion_chili"],"availableProductKinds":["hotDryNoodles"],

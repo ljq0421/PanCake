@@ -58,14 +58,14 @@ public partial class WuhanAnimationSelfTest : Node
         var f=NewDay();var s=f.Screen;var v=s.Workstation;
         int stock=s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles);
         Click(v,v.BasketRect(0).GetCenter());s.BasketAction(0);
-        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==stock-1&&v.Busy("basket0"),"空漏勺点击不下面，制作提交只扣一份");
+        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==stock&&v.Busy("basket0"),"空漏勺点击不下面，制作提交不消耗无限供应");
         s._Process(.12);Check(v.MotionProgress("basket0")>.1f&&v.MotionProgress("basket0")<1,"下面动画存在可捕获的中间帧");
         s._Process(1.5);s.BasketAction(0);s._Process(.71);
         Check(s.Cooker.Baskets[0].State==NoodleBasketState.Drained&&!v.Busy("basket0"),"提篮后自然沥水完成");
         s._Process(.25);s.BasketAction(0);
         s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(v.Busy("basket0")&&v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Noodles,"倒面同时锁住漏勺和碗，期间不能提前加料");
-        Check(s.Workstation.CanDeliver(ProductKind.EggRiceWine),"倒面不阻塞蛋酒直接交付");
+        Check(!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"蛋酒已下架");
         s._Process(.7);Click(v,v.IngredientCenter(0));s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(s.Bowl.State==NoodleBowlState.Seasoned && s.Ingredients.CanUse(StableIds.Ingredients.WuhanBaseSeasoning),"基础调味加入一次后仍持续供应");
         s._Process(.5);Click(v,v.IngredientCenter(1));s._Process(.5);
@@ -112,14 +112,8 @@ public partial class WuhanAnimationSelfTest : Node
     private void TestEgg()
     {
         var f=NewDay();var s=f.Screen;
-        Check(s.EggUnlocked && s.Workstation.CanDeliver(ProductKind.EggRiceWine), "蛋酒解锁后直接可取");
-        s.Workstation.PlayCupReplacement();s._Process(.1);
-        Check(s.Workstation.CanDeliver(ProductKind.EggRiceWine), "杯子补位动画不阻塞取杯");
-        float progress=s.Workstation.MotionProgress("egg_visual");
-        f.Controller.IsPaused=true;s._Process(2);
-        Check(s.Workstation.MotionProgress("egg_visual")==progress && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "暂停冻结补位动画并禁用交付");
-        f.Controller.IsPaused=false;s._Process(.21);
-        Check(!s.Workstation.Busy("egg_visual") && s.Workstation.CanDeliver(ProductKind.EggRiceWine), "恢复后补位结束，蛋酒持续可取");
+        Check(!s.EggUnlocked && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "旧存档解锁蛋酒也不可再交付");
+        Check(!s.Workstation.GetNode<Control>("WuhanDrag_EggRiceWine").Visible, "旧蛋酒拖拽入口隐藏");
         DisposeDay(f);
         f=NewDay(1,1);s=f.Screen;Check(!s.EggUnlocked && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "Day 1 不可提前交付蛋酒");s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
         for(int i=0;i<80 && f.Controller.CustomerQueue!.Slots.Count==0;i++)s._Process(.25);
@@ -133,33 +127,21 @@ public partial class WuhanAnimationSelfTest : Node
         foreach (int level in new[] { 1, 2, 3 })
         {
             var inventory = new WuhanIngredientInventory(_catalog.WuhanIngredientStationsByLevel[level]);
-            string noodles = StableIds.Ingredients.WuhanNoodles;
-            Check(inventory.Count(noodles) == 6 + 2 * level, $"Lv{level} 生面开局满库存");
-            foreach (string id in WuhanWorkstationView.IngredientIds)
-                Check(Enumerable.Range(0, 100).All(_ => inventory.TryConsume(id)) && inventory.CanUse(id), $"{id} 连续使用不耗尽");
-            for (int i=0;i<inventory.Capacity(noodles);i++) inventory.TryConsume(noodles);
-            Check(!inventory.TryConsume(noodles) && !inventory.TryConsume("unknown"), "空生面和未知原料不能消耗");
+            foreach (string id in WuhanWorkstationView.IngredientIds.Append(StableIds.Ingredients.WuhanNoodles))
+                Check(inventory.IsUnlimited(id) && Enumerable.Range(0, 100).All(_ => inventory.TryConsume(id)) && inventory.CanUse(id), $"Lv{level} {id} 连续使用不耗尽");
+            Check(!inventory.TryConsume("unknown"), "未知原料不能使用");
         }
-        var f=NewDay(3);var s=f.Screen;string raw=StableIds.Ingredients.WuhanNoodles;
-        while(s.Ingredients.Count(raw)>2)s.Ingredients.TryConsume(raw);
-        var refill=s.Workstation.GetNode<Button>("RefillNoodles");
-        refill.EmitSignal(Button.SignalName.Pressed);s._Process(.3);
-        s.BasketAction(0);
-        Check(s.Ingredients.Count(raw)==1 && s.Cooker.Baskets[0].State==NoodleBasketState.Cooking, "补面期间仍能使用剩余生面");
-        refill.EmitSignal(Button.SignalName.Pressed);
-        f.Controller.IsPaused=true;s._Process(2);
-        Check(s.Ingredients.Count(raw)==1, "暂停不推进补面");
-        f.Controller.IsPaused=false;s._Notification((int)NotificationApplicationFocusOut);s._Process(2);
-        Check(s.Ingredients.Count(raw)==1, "失焦不推进补面");
-        s._Notification((int)NotificationApplicationFocusIn);s._Process(.71);
-        Check(s.Ingredients.Count(raw)==s.Ingredients.Capacity(raw), "重复补货不重启计时，到时补满而非追加");
+        var f = NewDay(3); var s = f.Screen;
+        var refill = s.Workstation.GetNode<Button>("RefillNoodles");
+        refill.EmitSignal(Button.SignalName.Pressed); s._Process(.3);
+        Check(!refill.Visible && !s.Workstation.Busy("refill:" + StableIds.Ingredients.WuhanNoodles), "旧补货事件不会创建补货动作");
+        for (int i = 0; i < 30; i++)
+        {
+            s.BasketAction(0); s.BasketAction(0);
+            Check(s.Cooker.Baskets[0].State == NoodleBasketState.Cooking, "超过旧容量仍可下锅，重复操作不重置烹煮");
+            s._Process(1.31); s._Process(.8); s.BasketAction(0); s._Process(.7); s.Bowl.Reset();
+        }
         DisposeDay(f);
-        ProjectSettings.SetSetting("accessibility/reduce_motion",true);
-        f=NewDay();s=f.Screen;s.Ingredients.TryConsume(raw);
-        refill=s.Workstation.GetNode<Button>("RefillNoodles");refill.EmitSignal(Button.SignalName.Pressed);s._Process(.2);
-        Check(refill.Visible && refill.Disabled && refill.GetMeta("refilling").AsBool(), "减少动态模式不提前结束补货状态");
-        s._Process(.81);Check(!refill.GetMeta("refilling").AsBool(), "完整补货时长后清除状态");
-        DisposeDay(f);ProjectSettings.SetSetting("accessibility/reduce_motion",false);
     }
     private void TestLifecycle()
     {

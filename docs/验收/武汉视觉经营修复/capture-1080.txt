@@ -1,0 +1,15 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 581.15 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+Movie Maker mode enabled, recording movie in 1920×1080 @ 60 FPS...
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+WUHAN_REPAIR_CAPTURE_OK
+--------------------------------------------------------------------------------
+Done recording movie at path: D:\Project\ProjectCake\project-cake/.tmp/wuhan-repair/1080-normal.avi
+764 frames at 60 FPS (movie length: 00:00:12:44), recorded in 00:00:27 (44% of real-time speed).
+CPU render time: 0.33 seconds (average: 0.44 ms/frame)
+GPU render time: 0.06 seconds (average: 0.08 ms/frame)
+Encoding time: 13.97 seconds (average: 18.29 ms/frame)
+--------------------------------------------------------------------------------

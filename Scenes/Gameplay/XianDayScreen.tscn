@@ -1618,7 +1618,7 @@ max_value = 4.0
 value = 4.0
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.XianDayScreen|_batch")
 
-[node name="@Button@434" type="Button" parent="." unique_id=458782872]
+[node name="OvenAction" type="Button" parent="." unique_id=458782872]
 custom_minimum_size = Vector2(172, 56)
 layout_mode = 0
 offset_left = 193.0
@@ -1853,7 +1853,7 @@ vertical_alignment = 1
 autowrap_mode = 3
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.XianDayScreen|_resultText")
 
-[node name="@Button@451" type="Button" parent="@PanelContainer@447/@VBoxContainer@448" unique_id=2131410890]
+[node name="retry_save" type="Button" parent="@PanelContainer@447/@VBoxContainer@448" unique_id=2131410890]
 custom_minimum_size = Vector2(800, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
@@ -1869,7 +1869,7 @@ theme_override_styles/disabled = SubResource("StyleBoxFlat_3lyf0")
 theme_override_styles/focus = SubResource("StyleBoxFlat_nnxvn")
 text = "重试保存"
 
-[node name="@Button@452" type="Button" parent="@PanelContainer@447/@VBoxContainer@448" unique_id=392455177]
+[node name="result_back" type="Button" parent="@PanelContainer@447/@VBoxContainer@448" unique_id=392455177]
 custom_minimum_size = Vector2(800, 66)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)

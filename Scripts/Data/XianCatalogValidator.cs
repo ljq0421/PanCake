@@ -38,7 +38,7 @@ public static class XianCatalogValidator
         {
             void Weights(Dictionary<string, double> weights, IEnumerable<string> allowed, string name)
             { Check(weights.Count > 0 && Math.Abs(weights.Values.Sum() - 1) < .00001 && weights.All(p => double.IsFinite(p.Value) && p.Value > 0 && allowed.Contains(p.Key)), d.SourcePath, name, "权重必须使用已开放ID，正值且合计1。"); }
-            Check(d.CityId == StableIds.Cities.Xian && d.DurationSeconds is >= 75 and <= 180 && d.CustomerCount > 0 && d.MaxWaitingCustomers == 4 && d.SatisfactionAverageMode == SatisfactionAverageMode.CompletedCustomers, d.SourcePath, "day", "西安日期、时长、顾客或满意度模式无效。");
+            Check(d.CityId == StableIds.Cities.Xian && d.DurationSeconds is >= 75 and <= 180 && d.CustomerCount > 0 && d.MaxWaitingCustomers == 5 && d.SatisfactionAverageMode == SatisfactionAverageMode.CompletedCustomers, d.SourcePath, "day", "西安日期、时长、顾客或满意度模式无效。");
             var unlocked = XianRules.Recipes.Take(d.Day >= 7 ? 4 : d.Day >= 5 ? 3 : d.Day >= 2 ? 2 : 1).ToArray();
             Weights(d.RecipeWeights, unlocked, "recipeWeights");
             Check(d.AvailableRecipeIds.ToHashSet().SetEquals(unlocked), d.SourcePath, "availableRecipeIds", "配方必须遵守逐日开放。");

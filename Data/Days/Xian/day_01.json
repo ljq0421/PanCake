@@ -6,7 +6,7 @@
   "customerCount": 7,
   "expectedRevenue": 70,
   "patienceMultiplier": 1,
-  "maxWaitingCustomers": 4,
+  "maxWaitingCustomers": 5,
   "randomSeed": 3001,
   "customerWeights": {
     "xian_normal": 1.0

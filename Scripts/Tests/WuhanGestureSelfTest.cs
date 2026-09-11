@@ -58,7 +58,7 @@ public partial class WuhanGestureSelfTest : Node
                 Move(View.RawCenter);Button(View.RawCenter,true);_screen._Notification((int)NotificationApplicationFocusOut);
                 Check(!View.HasProductionGesture,"focus loss cancels production");Step(.001);
                 Drag(View.RawCenter,View.BasketRect(0).GetCenter());
-                Check(_screen.Cooker.Baskets[0].State==NoodleBasketState.Cooking&&_screen.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==noodles-1,$"Lv{level} raw drag starts once");
+                Check(_screen.Cooker.Baskets[0].State==NoodleBasketState.Cooking&&_screen.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==noodles,$"Lv{level} raw drag starts once");
                 if(level==3) { Drag(View.RawCenter,View.BasketRect(1).GetCenter());Check(_screen.Cooker.Baskets[1].State==NoodleBasketState.Cooking,"second basket accepts independent noodle drag"); }
                 Step(catalog.NoodleCookersByLevel[level].OptimalSeconds+.01);
                 if(level<3) {
@@ -84,32 +84,16 @@ public partial class WuhanGestureSelfTest : Node
                 Vector2 center=View.BowlCenter;Move(center);Button(center,true);for(int i=0;i<6;i++)Move(center+new Vector2(i%2==0?70:-70,0),true);Button(center,false);
                 Check(_screen.Bowl.State==NoodleBowlState.Ready&&!_screen.DeliveryDrag.IsDragging,"mixing requires release before delivery");
                 string raw=StableIds.Ingredients.WuhanNoodles;
-                while(_screen.Ingredients.Count(raw)>1)_screen.Ingredients.TryConsume(raw);
-                Click(View.IngredientCenter(1));Check(!View.Busy("refill:"+raw),"invalid seasoning click never silently refills inventory");
+                for(int i=0;i<100;i++) Check(_screen.Ingredients.TryConsume(raw), "raw noodles never run out");
                 Step(.001);await Frames();
-                var refill=View.GetChildren().OfType<Button>().Single(b=>b.GetMeta("ingredient_id").AsString()==raw);
-                Click(refill.Position+refill.Size/2);Check(View.Busy("refill:"+raw),"separate refill control starts timed replenishment");
+                var refill=View.GetNode<Button>("RefillNoodles");
+                Check(!refill.Visible && refill.Disabled, "retired refill stays hidden");
                 Move(View.RawCenter);Button(View.RawCenter,true);Move(View.RawCenter+new Vector2(12,0),true);
-                Check(View.HasProductionGesture,"remaining raw noodles can be dragged during replenishment");
+                Check(View.HasProductionGesture,"unlimited raw noodles remain draggable");
                 View.CancelInput();Button(View.RawCenter,false);
-                Move(refill.Position+refill.Size/2);Step(1.01);
-                Check(_screen.Ingredients.Count(raw)==_screen.Ingredients.Capacity(raw)&&refill.Visible&&refill.Disabled,"hovered full stock shows a disabled refill control");
-                refill.ReleaseFocus(); Move(new Vector2(800, 390)); Step(.001);
-                Check(!refill.Visible, "full stock hides refill when pointer leaves");
-                _screen.Ingredients.TryConsume(raw); Step(.001);
-                Check(!refill.Visible, "healthy partial stock keeps refill hidden at rest");
-                Move(View.RawCenter); Step(.001);
-                Check(refill.Visible && !refill.Disabled && refill.Text.Length == 0, "container hover reveals actionable icon-only refill");
-                Move(new Vector2(800,390));
-                while (_screen.Ingredients.Count(raw)>1) _screen.Ingredients.TryConsume(raw);
-                Step(.001); Check(refill.Visible, "low stock reveals refill without hover");
-                _screen.Ingredients.TryConsume(raw); Step(.001);
-                Check(refill.Visible && !refill.Disabled, "empty stock can always refill");
-                Click(refill.Position+refill.Size/2); Step(1.01);
                 Drag(View.CupCenter,new Vector2(1400,20));
-                await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout);
-                Check(_screen.EggUnlocked&&!_screen.DeliveryDrag.IsDragging,"wrong cup drop returns finished stock and releases input");
-                Check(View.CanDeliver(ProductKind.EggRiceWine),"finished cup is deliverable without preparation");await Shot("02-noodles-egg-ready");
+                Check(!_screen.EggUnlocked && !_screen.DeliveryDrag.IsDragging && !View.CanDeliver(ProductKind.EggRiceWine),"retired cup area never begins delivery");
+                await Shot("02-noodles-ready");
                 Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
                 if(level<3) {
                     Click(View.PanCenter);Check(_screen.Doupi!.State==DoupiState.ReadyToFlip,"pan click does not flip");
@@ -219,11 +203,9 @@ public partial class WuhanGestureSelfTest : Node
             await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(.001);
             Check(_screen.Bowl.State == NoodleBowlState.Empty && controller.Ledger!.Build().CompletedCustomers == 1, "current stage delivers a real order");
             string raw = StableIds.Ingredients.WuhanNoodles;
-            while (_screen.Ingredients.Count(raw) > 0) _screen.Ingredients.TryConsume(raw);
+            Check(Enumerable.Range(0,100).All(_ => _screen.Ingredients.TryConsume(raw)), "stage switching preserves unlimited supply");
             Step(.001);
-            var refill = View.GetChildren().OfType<Button>().Single(b => b.HasMeta("ingredient_id"));
-            Click(refill.GetRect().GetCenter()); Step(_screen.Ingredients.RefillSeconds + .01);
-            Check(_screen.Ingredients.Count(raw) == _screen.Ingredients.Capacity(raw), "refill follows the current tray after stage switching");
+            Check(!View.GetNode<Button>("RefillNoodles").Visible, "stage switching does not restore refill");
             save.Free();
         }
         _screen.Free(); controller.Free(); await Frames();
@@ -270,15 +252,15 @@ public partial class WuhanGestureSelfTest : Node
 
         Step(.001);await Frames();
         Move(View.CupCenter);Button(View.CupCenter,true);Move(View.CupCenter+new Vector2(15,0),true);Move(View.CupCenter,true);Button(View.CupCenter,false);
-        Check(View.CanDeliver(ProductKind.EggRiceWine),"cup drag returning to source preserves stock");
+        Check(!View.CanDeliver(ProductKind.EggRiceWine),"retired cup area does not enable delivery");
         Click(View.CupCenter);Click(View.CupCenter);
-        Check(View.CanDeliver(ProductKind.EggRiceWine),"repeated clicks never consume stock");
+        Check(!View.CanDeliver(ProductKind.EggRiceWine),"repeated clicks do not restore retired stock");
         await shot("07-finished-stock");
         _screen.DeliveryDrag.CancelDrag();Step(.001);
         foreach(var button in View.GetChildren().OfType<Button>().Where(b=>b.HasMeta("ingredient_id")))
-            Check(button.Size.X>=48&&button.Size.Y>=48,"refill hit target at least 48 design pixels");
+            Check(!button.Visible && button.Disabled,"retired refill controls are disabled and hidden");
         Check(View.GetChildren().OfType<Button>().Count(b=>b.HasMeta("ingredient_id"))==1,
-            "only raw noodles expose a refill control");
+            "only legacy refill node is retained for scene compatibility");
 
         _screen.DoupiStock.TryTake(_screen.DoupiStock.Count,out _);View.CancelAnimations();
         Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
@@ -310,7 +292,7 @@ public partial class WuhanGestureSelfTest : Node
             planned.Order=new ProjectCake.Orders.OrderData {
                 OrderId=planned.Order.OrderId,CityId=StableIds.Cities.Wuhan,CustomerTypeId=planned.CustomerTypeId,BasePrice=30,PatienceSeconds=1000,
                 Lines=new[]{new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesScallion,1),
-                    new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2),new ProjectCake.Orders.OrderLineData(ProductKind.EggRiceWine,StableIds.Products.EggRiceWine,1)} };
+                    new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2)} };
         _screen.BeginDay();Step(6);for(int i=0;i<120&&controller.CustomerQueue!.Slots.Count<4;i++)Step(.25);await Frames();
         Check(controller.CustomerQueue!.Slots.Count==4,"operation budget uses four fixed identical orders and level-one equipment");
         var budgetCustomers = controller.CustomerQueue.Slots.ToArray();
@@ -337,9 +319,8 @@ public partial class WuhanGestureSelfTest : Node
         // budget still covers the four original quantity-two orders only.
         Check(_pressCount-before==10&&_screen.DoupiStock.Count==0&&budgetCustomers.All(c=>c.Progress.GetDeliveredQuantity(1)==2),
             $"batch and four quantity-two deliveries total ten presses (presses={_pressCount-before}, stock={_screen.DoupiStock.Count}, delivered={string.Join(',', controller.CustomerQueue.Slots.Select(c=>c.Progress.GetDeliveredQuantity(1)))})");
-        before=_pressCount;Deliver(View.CupCenter,0);
-        Check(_pressCount-before==1&&controller.Ledger!.Build().CompletedCustomers==1,"egg needs one delivery to complete first combo");
-        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=1");
+        Check(controller.Ledger!.Build().CompletedCustomers==1,"noodles and doupi complete the first combo without egg");
+        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=0");
         ProjectSettings.SetSetting("accessibility/reduce_motion",reduced);
         _screen.Free();controller.Free();save.Free();await Frames();
     }

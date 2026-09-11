@@ -39,14 +39,14 @@ public partial class WuhanWorkbenchSelfTest : Node
                 screen._Notification((int)NotificationApplicationFocusIn);
                 screen._Process(3.1);
                 Check((screen.Doupi is not null) == (day >= 4), $"Day {day}: original doupi unlock");
-                Check(screen.EggUnlocked == (day >= 6), $"Day {day}: original egg unlock");
+                Check(!screen.EggUnlocked, $"Day {day}: egg retired");
                 if (day < 4)
                 {
                     screen.DoupiAction();
                     Check(screen.Doupi is null && screen.DoupiStock.Count == 0 && !screen.Workstation.CanDeliver(ProductKind.Doupi),
                         "locked stage cannot make or deliver doupi");
                 }
-                if (day < 6) Check(!screen.Workstation.CanDeliver(ProductKind.EggRiceWine), "locked egg UI cannot deliver");
+                Check(!screen.Workstation.CanDeliver(ProductKind.EggRiceWine), "locked egg UI cannot deliver");
                 int iterations = 0;
                 while (controller.State is DayState.Running or DayState.Closing && iterations++ < 5000)
                 {
@@ -96,12 +96,12 @@ public partial class WuhanWorkbenchSelfTest : Node
             save.Data.Coins = 10000;
             foreach (int level in new[] { 2, 3 })
             {
-                foreach (string equipment in new[] { "noodle_cooker", "doupi_griddle", "wuhan_ingredient_station" })
+                foreach (string equipment in new[] { "noodle_cooker", "doupi_griddle" })
                     Check(save.TryPurchase(StableIds.Cities.Wuhan, $"equipment:{equipment}_lv{level}", catalog, out _), $"purchase {equipment} Lv{level}");
                 screen.Initialize(catalog, save, controller, 12);
                 Check(screen.Cooker.Baskets.Count == (level == 3 ? 2 : 1), "upgrade keeps functional basket capacity");
-                Check(screen.Ingredients.Capacity(StableIds.Ingredients.WuhanNoodles) == catalog.WuhanIngredientStationsByLevel[level].NoodlesCapacity,
-                    "upgrade changes inventory capacity");
+                Check(screen.Ingredients.IsUnlimited(StableIds.Ingredients.WuhanNoodles),
+                    "equipment upgrades preserve unlimited raw supply");
                 Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture == art.WorkbenchBackground(true), "upgrade preserves integrated equipment appearance");
             }
             screen.Free(); controller.Free(); save.Free();

@@ -36,14 +36,12 @@ public partial class WuhanWorkstationView
         }
         return target switch
         {
-            "raw" => "生面拖进空漏勺；＋补货",
+            "raw" => "生面无限供应，拖进空漏勺",
             "bowl" => "加入基础调味后在碗内划动拌匀；成品拖给顾客",
             "stock" => "豆皮拖给顾客，按订单所需数量出餐",
             "pan" when _doupi is null => "豆皮锅 · Day 4 解锁",
             "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；点击清理",
             "pan" => "点击加浆、加蛋和铺馅；上划翻面，横竖各划一次切块",
-            "egg" when !_eggUnlocked => "蛋酒 · Day 6 解锁",
-            "egg" => "成品蛋酒直接拖给顾客；持续供应",
             _ => "",
         };
     }

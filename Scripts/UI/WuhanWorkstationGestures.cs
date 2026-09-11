@@ -6,22 +6,22 @@ namespace ProjectCake.UI;
 
 public partial class WuhanWorkstationView
 {
-    public event Action<string>? RefillRequested, GestureRejected;
+    public event Action<string>? GestureRejected;
     public Func<int, bool>? RaiseRequested, PourRequested;
     public Func<DoupiCutDirection, bool>? CutRequested;
     private string _gesture = "";
     private Vector2 _gestureStart, _gesturePoint, _gesturePrevious, _cutDisplacement;
     private float _gestureTravel, _cutTravel, _maximumExcursion;
     private int _gestureBasket;
+    private Vector2? _rawDropOrigin;
     private bool _cutCommitted;
-    private readonly Dictionary<string, Button> _refillButtons = new();
     private Vector2 _pointer = new(-1000, -1000);
     public bool HasProductionGesture => _gesture.Length > 0;
 
     private bool TryBeginGesture(string hit, Vector2 point)
     {
         string gesture = "";
-        if (hit == "raw" && _ingredients.Count(StableIds.Ingredients.WuhanNoodles) > 0) gesture = "raw";
+        if (hit == "raw" && _ingredients.CanUse(StableIds.Ingredients.WuhanNoodles)) gesture = "raw";
         else if (hit.StartsWith("basket"))
         {
             _gestureBasket = int.Parse(hit[^1..]);
@@ -119,7 +119,7 @@ public partial class WuhanWorkstationView
         {
             for (int i = 0; i < _cooker.Baskets.Count; i++)
                 if (BasketRect(i).Grow(22).HasPoint(point) && _cooker.Baskets[i].State == NoodleBasketState.Empty && !Busy($"basket{i}"))
-                { BasketPressed?.Invoke(i); accepted = true; break; }
+                { _rawDropOrigin = point; BasketPressed?.Invoke(i); _rawDropOrigin = null; accepted = true; break; }
         }
         else if (gesture == "basket")
         {
@@ -144,8 +144,7 @@ public partial class WuhanWorkstationView
         if (_cooker.PendingPourBasket is int pending)
         {
             Vector2 waiting = BowlFood.GetCenter() + new Vector2(-32, -105);
-            Sprite("basket", At(waiting, BasketSize));
-            Sprite("cooked_basket", At(waiting + new Vector2(-8, 12), new Vector2(55, 30)));
+            DrawLoadedBasket(At(waiting, BasketSize));
             Drips(waiting + new Vector2(0, 30), 4); Target(BowlRect.Grow(10));
         }
         if (!HasProductionGesture) return;
@@ -153,52 +152,19 @@ public partial class WuhanWorkstationView
         if (_gesture == "basket" && _bowl.State == NoodleBowlState.Empty && !_cooker.PendingPourBasket.HasValue) Target(BowlRect.Grow(10));
         if (_gesture is "flip" or "cut") DrawLine(_gestureStart, _gesturePoint, WuhanUi.Ink, 3, true);
         string sprite = _gesture switch { "raw" => "raw_noodles", "flip" => "flip_tool", "cut" => "cut_tool", _ => "basket" };
-        Vector2 size = _gesture switch { "raw" => RawRect.Size, "basket" => BasketSize, _ => new Vector2(100, 100) };
-        Sprite(sprite, At(_gesturePoint, size), .9f);
-        if (_gesture == "basket") Sprite("cooked_basket", At(_gesturePoint + new Vector2(-8, 12), new Vector2(55, 30)));
+        Vector2 size = _gesture switch { "raw" => BasketFoodRect(At(Vector2.Zero, BasketSize)).Size, "basket" => BasketSize, _ => new Vector2(100, 100) };
+        if (_gesture == "basket") DrawLoadedBasket(At(_gesturePoint, size));
+        else if (_gesture != "cut" || !_cutCommitted) Sprite(sprite, At(_gesturePoint, size), .9f);
     }
 
-    private void BindRefillControls()
-    {
-        if(_refillButtons.Count>0)return;
-        foreach(Button button in GetChildren().OfType<Button>().Where(candidate => candidate.HasMeta("ingredient_id"))) {
-            string id=button.GetMeta("ingredient_id").AsString();
-            button.Pressed+=()=>RefillRequested?.Invoke(id);
-            button.Text = "";
-            foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
-                button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-            button.Draw += () =>
-            {
-                Color ink = button.Disabled ? WuhanUi.Muted : WuhanUi.Ink;
-                button.DrawCircle(new Vector2(24, 24), 17, button.IsHovered() || button.HasFocus() ? WuhanUi.Surface : WuhanUi.Paper);
-                if (button.HasFocus()) button.DrawArc(new Vector2(24, 24), 21, 0, Mathf.Tau, 32, ink, 2, true);
-                if (button.GetMeta("refilling", false).AsBool())
-                    for (int dot = 0; dot < 3; dot++) button.DrawCircle(new Vector2(17 + dot * 7, 24), 2, ink);
-                else
-                {
-                    button.DrawLine(new Vector2(16, 24), new Vector2(32, 24), ink, 3, true);
-                    button.DrawLine(new Vector2(24, 16), new Vector2(24, 32), ink, 3, true);
-                }
-            };
-            _refillButtons[id]=button;
-        }
-    }
+    // Retain the serialized node so existing scenes still bind, but it has no action.
+    private void BindRefillControls() => RefreshRefillControls();
     public void RefreshRefillControls()
     {
-        foreach (var (id, button) in _refillButtons)
+        foreach (Button button in GetChildren().OfType<Button>().Where(b => b.HasMeta("ingredient_id")))
         {
-            button.Position = new Vector2(RawTrayRect.End.X - 56, RawTrayRect.End.Y + 4);
-            button.Size = new Vector2(48, 48);
-            int count = _ingredients.Count(id), capacity = _ingredients.Capacity(id);
-            bool working = NoodlesRefilling?.Invoke() == true;
-            bool nearby = RawTrayRect.Grow(18).HasPoint(_pointer) || button.GetRect().Grow(18).HasPoint(_pointer) || button.IsHovered() || button.HasFocus();
-            bool low = count <= _ingredients.LowStockThreshold;
-            button.Visible = working || low || nearby;
-            button.SetMeta("refilling", working);
-            button.TooltipText = working ? "正在补面；剩余面条仍可下锅" : $"{count}/{capacity} · " + (count >= capacity ? "面条已满" : "补满面条");
-            button.Disabled = CanInteract?.Invoke() != true || working || count >= capacity;
-            button.Modulate = low && !working ? new Color("#FFD49B") : Colors.White;
-            button.QueueRedraw();
+            button.Hide(); button.Disabled = true; button.FocusMode = FocusModeEnum.None;
+            button.MouseFilter = MouseFilterEnum.Ignore; button.TooltipText = "";
         }
     }
     private void DrawSupplyLabels()
@@ -219,9 +185,7 @@ public partial class WuhanWorkstationView
                 DrawLine(mark + new Vector2(5, 5), mark + new Vector2(15, -7), WuhanUi.Ink, 3, true);
             }
         }
-        int noodles = _ingredients.Count(StableIds.Ingredients.WuhanNoodles);
-        string supply = NoodlesRefilling?.Invoke() == true ? " · 补货中" : noodles == 0 ? " · 请补面" : "";
-        LabelAt(new Vector2(RawTrayRect.Position.X + 12, RawTrayRect.End.Y + 30), $"生面 {noodles}/{_ingredients.Capacity(StableIds.Ingredients.WuhanNoodles)}{supply}");
+        LabelAt(new Vector2(RawTrayRect.Position.X + 12, RawTrayRect.End.Y + 30), "生面 · 无限供应");
         if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 30), $"豆皮 {_stock.Count}/{DoupiInventory.Capacity}");
         if (_doupi is not null && DoupiSupplyHint.Length > 0)
             LabelAt(new Vector2(PanRect.Position.X + 18, StockRect.End.Y + 30), DoupiSupplyHint);

@@ -9,11 +9,13 @@ public enum DoupiQuality { Normal, Overbrowned, Burnt }
 public sealed class DoupiInventory
 {
     public const int Capacity = 16;
-    private readonly Queue<DoupiQuality> _items = new();
+    public readonly record struct Piece(DoupiQuality Quality, int Tile);
+    private readonly Queue<Piece> _items = new();
+    public Piece PieceAt(int index) => _items.ElementAt(index);
     public int Count => _items.Count;
-    public bool TryAddBatch(int amount, DoupiQuality quality = DoupiQuality.Normal) { if (amount <= 0 || Count + amount > Capacity) return false; for (int i = 0; i < amount; i++) _items.Enqueue(quality); return true; }
-    public bool TryPeek(out DoupiQuality quality) { if (_items.Count == 0) { quality = DoupiQuality.Normal; return false; } quality = _items.Peek(); return true; }
-    public bool TryTake(int amount, out DoupiQuality quality) { quality = DoupiQuality.Normal; if (amount <= 0 || Count < amount) return false; for (int i = 0; i < amount; i++) quality = _items.Dequeue(); return true; }
+    public bool TryAddBatch(int amount, DoupiQuality quality = DoupiQuality.Normal, int firstTile = 0) { if (amount <= 0 || Count + amount > Capacity) return false; for (int i = 0; i < amount; i++) _items.Enqueue(new Piece(quality, (firstTile + i) % 8)); return true; }
+    public bool TryPeek(out DoupiQuality quality) { if (_items.Count == 0) { quality = DoupiQuality.Normal; return false; } quality = _items.Peek().Quality; return true; }
+    public bool TryTake(int amount, out DoupiQuality quality) { quality = DoupiQuality.Normal; if (amount <= 0 || Count < amount) return false; for (int i = 0; i < amount; i++) quality = _items.Dequeue().Quality; return true; }
 }
 
 public sealed class DoupiStateMachine
@@ -27,6 +29,10 @@ public sealed class DoupiStateMachine
     public int CompletedCuts => _cuts.Count;
     public IReadOnlySet<DoupiCutDirection> CutDirections => _cuts;
     public int RemainingPieces { get; private set; }
+    public int FirstRemainingPiece => _data.BatchYield - RemainingPieces;
+    public float BrowningProgress => State == DoupiState.SecondCooking
+        ? (float)Math.Clamp(_seconds / _data.SecondStageReadySeconds, 0, 1)
+        : State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting or DoupiState.Cut ? 1 : 0;
 
     public DoupiStateMachine(DoupiGriddleLevelData data) => _data = data;
     public bool TryPourBatter() { if (State != DoupiState.Empty) return false; State = DoupiState.Batter; return true; }
@@ -74,7 +80,7 @@ public sealed class DoupiStateMachine
     {
         if (State != DoupiState.Cut) return 0;
         int amount = Math.Min(RemainingPieces, DoupiInventory.Capacity - inventory.Count);
-        if (!inventory.TryAddBatch(amount, Quality)) return 0;
+        if (!inventory.TryAddBatch(amount, Quality, FirstRemainingPiece)) return 0;
         RemainingPieces -= amount;
         if (RemainingPieces == 0) Reset();
         return amount;

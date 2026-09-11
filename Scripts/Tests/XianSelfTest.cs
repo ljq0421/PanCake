@@ -147,6 +147,12 @@ public partial class XianSelfTest : Node
         var first = new ProjectCake.Customers.CustomerQueue(Plan("xian_d", "xian_d"), _catalog.CustomersById, 1, 4, 2, 4, _catalog.GetDays(StableIds.Cities.Xian)[9].Constraints);
         first.Tick(0, .1, true); first.Tick(20, 1, true); Check(first.Slots.Count == 1, "Day9双份硬上限不受延迟上限影响");
         first.TryMarkServed("p0"); first.Tick(21, 1, false); Check(first.Slots.Count == 0 && first.HasUnscheduled, "收尾不再安排被硬限制的新客");
+        Check(_catalog.GetDays(StableIds.Cities.Xian).Values.All(d => d.MaxWaitingCustomers == 5), "西安12天统一同屏五人上限");
+        var five = new ProjectCake.Customers.CustomerQueue(Plan("xian_b", "xian_b", "xian_b", "xian_b", "xian_b", "xian_b"), _catalog.CustomersById, 1, 5);
+        five.Tick(10, .4, true);
+        Check(five.Slots.Count == 5 && five.Slots.Select(c => c.SlotIndex).Distinct().Count() == 5, "五个稳定位置入场，第六名等待");
+        five.TryMarkServed("p1"); five.Tick(11, 1, false); five.Tick(12, 1, true);
+        Check(five.CustomerAtSlot(2)?.Id == "p2" && five.CustomerAtSlot(1)?.Id == "p5", "离场后只补空位，其他顾客不移动");
     }
     private void TestSave()
     {

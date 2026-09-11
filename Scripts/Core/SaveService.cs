@@ -210,7 +210,7 @@ public partial class SaveService : Node
             Data.GetCity(StableIds.Cities.Wuhan);
         }
         if (config.CityId == StableIds.Cities.Wuhan && city.Completed)
-            foreach (string id in new[] { "collectible:wuhan_hot_dry_noodles", "collectible:wuhan_doupi", "collectible:wuhan_egg_rice_wine", "badge:wuhan_chapter" })
+            foreach (string id in new[] { "collectible:wuhan_hot_dry_noodles", "collectible:wuhan_doupi", "badge:wuhan_chapter" })
                 if (!city.UnlockedCollectibleIds.Contains(id, StringComparer.Ordinal)) city.UnlockedCollectibleIds.Add(id);
         EnsureXianUnlocked();
         EnsureGuangzhouUnlocked();
@@ -331,8 +331,6 @@ public partial class SaveService : Node
     };
     private static (string, int, int, string) ResolveWuhanUpgrade(string id, DataCatalog catalog) => id switch
     {
-        "equipment:wuhan_ingredient_station_lv2" when catalog.TryGetWuhanIngredientStation(2, out var d) => ("ingredient_station", 2, d.UpgradePrice, "备料台 Lv2"),
-        "equipment:wuhan_ingredient_station_lv3" when catalog.TryGetWuhanIngredientStation(3, out var d) => ("ingredient_station", 3, d.UpgradePrice, "备料台 Lv3"),
         "equipment:noodle_cooker_lv2" when catalog.TryGetNoodleCooker(2, out var d) => ("noodle_cooker", 2, d.UpgradePrice, "煮面锅 Lv2"),
         "equipment:noodle_cooker_lv3" when catalog.TryGetNoodleCooker(3, out var d) => ("noodle_cooker", 3, d.UpgradePrice, "煮面锅 Lv3"),
         "equipment:doupi_griddle_lv2" when catalog.TryGetDoupiGriddle(2, out var d) => ("doupi_griddle", 2, d.UpgradePrice, "豆皮锅 Lv2"),

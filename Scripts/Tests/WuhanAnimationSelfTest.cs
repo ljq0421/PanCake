@@ -17,7 +17,7 @@ public partial class WuhanAnimationSelfTest : Node
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             Check(new WuhanArtCatalog().MissingRequiredAssets().Count == 0, "全部武汉必需美术可加载");
-            TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle();
+            TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
         GD.Print($"WUHAN_ANIMATION_TEST_RESULT passed={_passed} failed={_failed}");
@@ -157,6 +157,35 @@ public partial class WuhanAnimationSelfTest : Node
         f=NewDay();s=f.Screen;s.BasketAction(0);s._Process(.13);
         Check(!s.Workstation.Busy("basket0")&&s.Cooker.Baskets[0].State==NoodleBasketState.Cooking,"减少动态模式保留正确终态");DisposeDay(f);
         ProjectSettings.SetSetting("accessibility/reduce_motion",false);
+    }
+    private void TestCookingPresentation()
+    {
+        var f = NewDay(); var s = f.Screen;
+        var water = s.Workstation.GetNode<AudioStreamPlayer>("CookingWater");
+        var pan = s.Workstation.GetNode<AudioStreamPlayer>("CookingPan");
+        s.BasketAction(0); s._Process(.1);
+        Check(water.Playing && !pan.Playing, "煮水声只在锅内有面时播放");
+        f.Controller.IsPaused = true; s._Process(1);
+        Check(water.StreamPaused, "营业暂停冻结煮水声");
+        f.Controller.IsPaused = false; s._Process(.1);
+        Check(water.Playing && !water.StreamPaused, "恢复营业继续煮水声");
+        s.PourDoupiBatter(); s._Process(.5); s.AddDoupiEgg(); s._Process(.7);
+        Check(pan.Playing && s.Doupi!.SkinCookProgress > 0 && s.Doupi.SkinCookProgress < 1, "皮边熟度沿用制作时钟且同步煎制声");
+        s._Process(2.1);
+        Check(s.Doupi!.State == DoupiState.ReadyToFlip && s.Doupi.HeatStress > 0 && pan.PitchScale > 1, "过热时皮边与煎制声一起变化");
+        s._Process(2);
+        Check(s.Doupi.State == DoupiState.Burnt && !pan.Playing, "焦糊后停止正常煎制声");
+        s.DiscardDoupi(); s._Process(.4);
+        Check(s.Doupi.HeatStress == 0 && s.Doupi.SkinCookProgress == 0, "清理后熟度提示复位");
+        int bus = AudioServer.GetBusIndex("Master"); bool muted = AudioServer.IsBusMute(bus);
+        AudioServer.SetBusMute(bus, true);
+        s.BasketAction(0); s._Process(.1);
+        Check(AudioServer.IsBusMute(bus) && water.Bus == "Master", "烹饪音效遵循主音量静音");
+        AudioServer.SetBusMute(bus, muted);
+        s.Hide(); Check(!water.Playing && !pan.Playing, "离开营业清理所有烹饪声音");
+        s.Show(); s.Initialize(_catalog, f.Save, f.Controller, 8);
+        Check(!water.Playing && !pan.Playing, "重新营业不遗留上一局声音");
+        DisposeDay(f);
     }
     private void Check(bool condition,string name)
     { if(condition){_passed++;GD.Print("PASS "+name);}else{_failed++;GD.PushError("FAIL "+name);} }

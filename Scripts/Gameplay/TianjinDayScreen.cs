@@ -223,12 +223,11 @@ public partial class TianjinDayScreen : Control
 
     public override void _Input(InputEvent @event)
     {
-        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true }) return;
         if (!IsVisibleInTree() || !_focused || _abandonDialog.Visible
             || _controller?.State is not (DayState.Running or DayState.Closing)
             || _manualPaused || _focusPaused || _detailsPaused || _pausePanel.Visible || _results.Visible) return;
         // Handle before GUI controls consume the click, including while brushing on the pancake.
-        if (_workstation.TryFinishSauceWithRightClick()) GetViewport().SetInputAsHandled();
+        if (_workstation.HandleRightFoodInput(@event)) GetViewport().SetInputAsHandled();
     }
 
     public override void _UnhandledInput(InputEvent @event)

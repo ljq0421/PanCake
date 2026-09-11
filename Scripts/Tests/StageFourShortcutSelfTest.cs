@@ -74,7 +74,7 @@ public partial class StageFourSelfTest
             machine.SetSauceCoverage(0.35);
             RightClick();
             Check(machine.Runtime.State == PancakeState.Sauced && Close(machine.Runtime.SauceCoverage, 0.35)
-                && Input.MouseMode == Input.MouseModeEnum.Visible, "饼面按住左键时右键收刷，保留少酱量并恢复鼠标");
+                && Input.MouseMode == Input.MouseModeEnum.Visible, "饼面按住左键时短按右键收刷，保留少酱量并恢复鼠标");
             using (var motion = new InputEventMouseMotion { Position = brushPoint + new Vector2(40, 0), ButtonMask = MouseButtonMask.Left })
                 GetViewport().PushInput(motion);
             using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = brushPoint })
@@ -143,8 +143,8 @@ public partial class StageFourSelfTest
                 "焦糊时 F/G 均不能触发清理");
             ((Button)station.FindChild("PancakeDiscardAction", true, false)).EmitSignal(Button.SignalName.Pressed);
             ((Button)station.FindChild("FryerDiscardAction", true, false)).EmitSignal(Button.SignalName.Pressed);
-            Check(machine.Runtime.State == PancakeState.Empty && fryer.Runtime.State == FryerState.Empty,
-                "清理按钮仍可独立使用鼠标操作");
+            Check(machine.Runtime.State == PancakeState.Burnt && fryer.Runtime.State == FryerState.Burnt,
+                "旧清理按钮不再绕过右键丢弃");
 
             station.Initialize(catalog, 1, 1, 3, catalog.DaysByNumber[15]);
             fryer = station.FryerMachine!;
@@ -184,6 +184,11 @@ public partial class StageFourSelfTest
                 ButtonIndex = MouseButton.Right, Pressed = pressed, Position = stroke.GetGlobalRect().GetCenter(),
             };
             GetViewport().PushInput(input);
+            if (pressed)
+            {
+                using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = input.Position };
+                GetViewport().PushInput(release);
+            }
         }
     }
 }

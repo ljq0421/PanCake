@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Scripts/UI/TianjinDeskGuide.cs" id="desk_guide"]
 
 [ext_resource type="Script" path="res://Scripts/Gameplay/TianjinDayScreen.cs" id="1_30fv5"]
-[ext_resource type="Texture2D" path="res://resource/art/TianJin/天津-煎饼.png" id="2_8blg4"]
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/天津-煎饼-v1.png" id="2_8blg4"]
 [ext_resource type="PackedScene" path="res://Scenes/Gameplay/PancakeWorkstation.tscn" id="3_swfja"]
 [ext_resource type="Script" path="res://Scripts/Gameplay/PancakeWorkstation.cs" id="4_pghvj"]
 [ext_resource type="Script" path="res://Scripts/Interaction/DragService.cs" id="5_a2ke1"]

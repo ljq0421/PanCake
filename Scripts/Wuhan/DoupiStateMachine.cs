@@ -30,6 +30,17 @@ public sealed class DoupiStateMachine
     public IReadOnlySet<DoupiCutLine> CutLines => _cuts;
     public int RemainingPieces { get; private set; }
     public int FirstRemainingPiece => _data.BatchYield - RemainingPieces;
+    // Presentation reads the same cooking clock; these values never advance production.
+    internal float SkinCookProgress => State == DoupiState.SkinCooking
+        ? (float)Math.Clamp(_seconds / _data.StageSeconds, 0, 1)
+        : State == DoupiState.ReadyToFlip ? 1 : 0;
+    internal float HeatStress => !_data.CanBurn ? 0 : State switch
+    {
+        DoupiState.ReadyToFlip => (float)Math.Clamp((_seconds - _data.StageSeconds) / Math.Max(.01, _data.BurnSeconds - _data.StageSeconds), 0, 1),
+        DoupiState.ReadyToCut or DoupiState.Overbrowned => (float)Math.Clamp((_seconds - _data.SecondStageReadySeconds) / Math.Max(.01, _data.SecondStageBurnSeconds - _data.SecondStageReadySeconds), 0, 1),
+        DoupiState.Burnt => 1,
+        _ => 0,
+    };
     public float BrowningProgress => State == DoupiState.SecondCooking
         ? (float)Math.Clamp(_seconds / _data.SecondStageReadySeconds, 0, 1)
         : State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting or DoupiState.Cut ? 1 : 0;

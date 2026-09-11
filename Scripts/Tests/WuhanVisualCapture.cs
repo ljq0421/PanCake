@@ -12,6 +12,12 @@ public partial class WuhanVisualCapture : Node
 {
     public override async void _Ready()
     {
+        if (OS.GetCmdlineUserArgs().Contains("--immersive"))
+        {
+            try { await CaptureImmersive(); GD.Print("WUHAN_IMMERSIVE_CAPTURE_DONE"); GetTree().Quit(); }
+            catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--stages"))
         {
             try { await CaptureUnlockStages(); GD.Print("WUHAN_STAGES_CAPTURE_DONE"); GetTree().Quit(); }
@@ -63,6 +69,46 @@ public partial class WuhanVisualCapture : Node
         var hub=ProjectCake.Core.SceneFactory.Instantiate<WuhanHub>("res://Scenes/UI/WuhanHub.tscn");AddChild(hub);hub.Initialize(catalog,save);await Frames(3);Save("res://.tmp/wuhan_hub.png");hub.QueueFree();await Frames(2);
         var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.BeginDay();controller.Tick(3.1);controller.Tick(32);await Frames(3);Save("res://.tmp/wuhan_day8.png");
         string absolute=ProjectSettings.GlobalizePath(savePath);if(File.Exists(absolute))File.Delete(absolute);GD.Print("WUHAN_CAPTURE_DONE");GetTree().Quit();
+    }
+    private async Task CaptureImmersive()
+    {
+        GetWindow().Size = new Vector2I(1920, 1080);
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        foreach (int number in new[] { 1, 4 })
+        {
+            var save = new SaveService(); save.UsePathForTests($"res://.tmp/immersive-{number}.json"); AddChild(save);
+            var controller = new DayController(); AddChild(controller);
+            var day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(day);
+            day.ConnectController(controller); day.Initialize(catalog, save, controller, number); day.SetProcess(false);
+            day.BeginDay(); day._Notification((int)NotificationApplicationFocusIn);
+            var view = day.Workstation;
+            async Task Shot(string name)
+            {
+                view.QueueRedraw(); await Frames(3); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                Save($"res://.tmp/wuhan-immersive/day-{number}-{name}.png");
+            }
+            day._Process(.01); await Shot("tutorial"); day._Process(3.1);
+            day.BasketAction(0); day._Process(.7); await Shot("cooking");
+            day._Process(1.4); await Shot("basket-ready");
+            day.Cooker.TryRaise(0); day.Cooker.TryQuickDrain(0); day.Cooker.TryTransferTo(0, day.Bowl);
+            day.Bowl.TryAddBaseSeasoning(); await Shot("unmixed");
+            day.Bowl.AddMixDistance(10000); await Shot("mixed");
+            if (number == 4)
+            {
+                day.PourDoupiBatter(); day._Process(.5); day.AddDoupiEgg(); day._Process(2.6);
+                await Shot("flip-ready");
+                day.FlipDoupi(); day._Process(.5); day.AddDoupiFilling(); DoupiTestFixture.Spread(day.Doupi!); day._Process(3.6);
+                await Shot("cut-ready");
+                Vector2 start = view.PanPoint(0, .5f);
+                view._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = start });
+                await Shot("cut-held"); view.CancelInput();
+                day._Process(5.1); await Shot("burnt");
+                ProjectSettings.SetSetting("accessibility/reduce_motion", true); await Shot("reduced-motion");
+                ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+                day.DiscardDoupi(); day._Process(.5); await Shot("cleared");
+            }
+            day.Free(); controller.Free(); save.Free(); await Frames(2);
+        }
     }
     private async Task Frames(int count){for(int i=0;i<count;i++)await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);}
     private async Task CaptureUnlockStages()

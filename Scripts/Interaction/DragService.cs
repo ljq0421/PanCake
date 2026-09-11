@@ -20,6 +20,7 @@ public partial class DragService : Node
     private string _payloadId = string.Empty;
     private Vector2 _sourceCenter;
     private bool _returning;
+    private MouseButton _dragButton = MouseButton.Left;
     private Tween? _motionTween;
 
     public event Action<string>? DragStarted;
@@ -40,7 +41,7 @@ public partial class DragService : Node
         }
     }
 
-    public void BeginDrag(Control source, string payloadId, string displayName, Color color, DragVisualSpec? visual = null)
+    public void BeginDrag(Control source, string payloadId, string displayName, Color color, DragVisualSpec? visual = null, MouseButton button = MouseButton.Left)
     {
         if (_overlay is null || IsDragging)
         {
@@ -48,6 +49,7 @@ public partial class DragService : Node
         }
 
         _payloadId = payloadId;
+        _dragButton = button;
         _sourceCenter = source.GetGlobalRect().GetCenter();
         _returning = false;
         _proxy = new PanelContainer
@@ -117,7 +119,7 @@ public partial class DragService : Node
             UpdateHighlights(motion.Position);
             GetViewport().SetInputAsHandled();
         }
-        else if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } release)
+        else if (@event is InputEventMouseButton { Pressed: false } release && release.ButtonIndex == _dragButton)
         {
             CompleteDrag(release.Position);
             GetViewport().SetInputAsHandled();
@@ -125,6 +127,11 @@ public partial class DragService : Node
         else if (@event is InputEventKey { Keycode: Key.Escape, Pressed: true })
         {
             CancelDrag();
+            GetViewport().SetInputAsHandled();
+        }
+        else if (_dragButton == MouseButton.Right && @event is InputEventMouseButton)
+        {
+            // Do not let a second button add ingredients while food is being discarded.
             GetViewport().SetInputAsHandled();
         }
     }

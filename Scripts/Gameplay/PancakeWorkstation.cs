@@ -135,13 +135,6 @@ public partial class PancakeWorkstation : Control
         return result;
     }
 
-    internal bool TryFinishSauceWithRightClick()
-    {
-        if (!ProductionShortcutsEnabled || !_initialized || !IsVisibleInTree()
-            || !CanInteract || _drag.IsDragging || Machine.Runtime.State != PancakeState.Saucing) return false;
-        return Execute(PancakeCommand.CompleteSauce);
-    }
-
     internal bool TryInvokeProductionShortcut(Key key)
     {
         if (!ProductionShortcutsEnabled || !_initialized || !IsVisibleInTree()
@@ -208,6 +201,7 @@ public partial class PancakeWorkstation : Control
         _drag.Configure(this);
         _drag.DragStarted += _ => _audio.Play(PancakeSound.PickUp);
         _drag.DragEnded += OnDragEnded;
+        _drag.DragEnded += _ => { _trashSourceValid = null; _trashCommit = null; };
         var rawYoutiaoSlot = _rawYoutiaoInput.GetParent().GetParent() as WorkstationSlotView
             ?? throw new InvalidOperationException("RawYoutiaoInput 必须预建在 WorkstationSlotView/ClickArea 下。");
         rawYoutiaoSlot.BindInteraction(_rawYoutiaoInput);
@@ -217,7 +211,7 @@ public partial class PancakeWorkstation : Control
         _rawYoutiaoInput.Rejected = () => { if (CanInteract) Reject("炸篮当前不能继续装料。"); };
         _lowerBasket.Pressed += () => ExecuteFryer(FryerCommand.LowerBasket);
         _raiseBasket.Pressed += () => ExecuteFryer(FryerCommand.RaiseBasket);
-        _discardBatch.Pressed += () => ExecuteFryer(FryerCommand.Discard);
+        _discardBatch.Pressed += () => { if (!IsTianjinWorkbench) ExecuteFryer(FryerCommand.Discard); };
         _storedYoutiao.BindRuntime(_drag, () => CanInteract && FryerMachine?.Inventory.Count > 0,
             CreateYoutiaoDragPreview);
         _finishedYoutiaoSlot.BindInteraction(_storedYoutiao);
@@ -296,7 +290,7 @@ public partial class PancakeWorkstation : Control
         _finishSauce.Pressed += () => Execute(PancakeCommand.CompleteSauce);
         _fold.Pressed += () => Execute(PancakeCommand.Fold);
         _bag.Pressed += () => Execute(PancakeCommand.Bag);
-        _discard.Pressed += Discard;
+        _discard.Pressed += () => { if (!IsTianjinWorkbench) Discard(); };
 
         _deliveryZone.Configure(CanDeliverPayload, DeliverPayload, _ => _deliveryZone.GetGlobalRect().GetCenter());
         _drag.RegisterZone(_deliveryZone);
@@ -388,10 +382,12 @@ public partial class PancakeWorkstation : Control
 
     public void Tick(double deltaSeconds)
     {
-        if (!_initialized || Paused || !InteractionEnabled)
+        if (!_initialized) return;
+        if (Paused || !InteractionEnabled)
         {
             foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
             _rawYoutiaoInput?.Cancel();
+            if (IsTianjinWorkbench) CancelInput();
             return;
         }
         Machine.Tick(deltaSeconds);
@@ -402,11 +398,14 @@ public partial class PancakeWorkstation : Control
         SoyMilkTray?.Tick(deltaSeconds);
         foreach (StockGesture gesture in _stockGestures) gesture.Tick(deltaSeconds);
         _rawYoutiaoInput.Tick(deltaSeconds);
+        TickRightFoodPress(deltaSeconds);
+        if (_trashSourceValid is not null && !_trashSourceValid()) _drag.CancelDrag();
         RenderLive();
     }
 
     public void CancelInput()
     {
+        CancelRightFoodPress();
         foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
         _rawYoutiaoInput?.Cancel();
         _drag.CancelDrag();
@@ -532,7 +531,7 @@ public partial class PancakeWorkstation : Control
         if (Machine.Runtime.State != PancakeState.Saucing && !Execute(PancakeCommand.BeginSauce)) return;
         _stroke.RefreshVisualState();
         Inform(ProductionShortcutsEnabled
-            ? "按住左键刷酱，达到所需酱量后按鼠标右键、F 或点击收刷。"
+            ? "按住左键刷酱，达到所需酱量后短按右键、按 F 或点击收刷。"
             : "按住左键刷酱，达到所需酱量后点击收刷。", false);
     }
     private EllipseGeometry ResolveSpreadGeometry()
@@ -837,7 +836,7 @@ public partial class PancakeWorkstation : Control
         SetContextAction(_finishSauce, state == PancakeState.Saucing);
         SetContextAction(_fold, state is PancakeState.Sauced or PancakeState.Toppings);
         SetContextAction(_bag, state == PancakeState.Folded);
-        SetContextAction(_discard, state == PancakeState.Burnt);
+        SetContextAction(_discard, !IsTianjinWorkbench && state == PancakeState.Burnt);
         _pancakeActions.Visible = _flip.Visible || _finishSauce.Visible || _fold.Visible || _bag.Visible || _discard.Visible;
         if (IsTianjinWorkbench) _pancakeActions.Size = new Vector2(143, 48);
         if (IsTianjinWorkbench)
@@ -882,7 +881,7 @@ public partial class PancakeWorkstation : Control
                     : WorkstationSlotAttentionState.Normal);
             SetContextAction(_lowerBasket, fryer.State == FryerState.Loaded);
             SetContextAction(_raiseBasket, fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise);
-            SetContextAction(_discardBatch, fryer.State == FryerState.Burnt);
+            SetContextAction(_discardBatch, !IsTianjinWorkbench && fryer.State == FryerState.Burnt);
             _fryerActions.Visible = _lowerBasket.Visible || _raiseBasket.Visible || _discardBatch.Visible;
             if (IsTianjinWorkbench) _fryerActions.Size = new Vector2(150, 44);
             bool fryerAttention = _lastFryerState is FryerState previousFryer && previousFryer != fryer.State
@@ -927,6 +926,7 @@ public partial class PancakeWorkstation : Control
             else if (_soyHoldProgress is not null && !_stockGestures.Any(gesture => gesture.HoldProgress > 0))
                 _soyHoldProgress.Visible = false;
         }
+        if (_trashSourceValid is not null && !_trashSourceValid()) _drag.CancelDrag();
         RenderLive();
     }
     private void RenderLive()
@@ -945,6 +945,8 @@ public partial class PancakeWorkstation : Control
             PancakeState.Burnt => TianjinUi.Red,
             _ => TianjinUi.BrownText,
         });
+        if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.Burnt) _state.Text = "已经焦糊 · 长按右键拖到垃圾桶丢弃";
+        if (IsTianjinWorkbench && FryerMachine?.Runtime.State == FryerState.Burnt) _fryerStatus.Text = "已经焦糊 · 长按右键拖到垃圾桶丢弃";
         _canvas.QueueRedraw();
         _stroke.RefreshVisualState();
         RenderTutorial();
@@ -961,7 +963,7 @@ public partial class PancakeWorkstation : Control
                 : string.Empty;
             string quality = PancakeTray.Selected?.Quality == PancakeQuality.Overdone ? "偏焦" : "火候正好";
             string sauce = PancakeTray.Selected is PreparedPancake sauced ? SauceRules.Describe(sauced.SauceAmount) : string.Empty;
-            _finished.TooltipText = $"第 {PancakeTray.SelectedIndex + 1} 张 / 共 {PancakeTray.Count} 张\n{recipe} · {quality}\n酱量 {sauce}\n拖给顾客，或拖到垃圾桶丢弃";
+            _finished.TooltipText = $"第 {PancakeTray.SelectedIndex + 1} 张 / 共 {PancakeTray.Count} 张\n{recipe} · {quality}\n酱量 {sauce}\n拖给顾客，或{(IsTianjinWorkbench ? "长按右键" : "")}拖到垃圾桶丢弃";
             foreach (Button? button in new[] { _previousPancake, _nextPancake })
                 if (button is not null)
                 {
@@ -981,7 +983,7 @@ public partial class PancakeWorkstation : Control
         _directDeliveryHint.Text = "拖给顾客";
         _directDeliveryHint.Visible = _finished.Visible;
         if (_finished.Visible && Machine.TryGetPrepared(out PreparedPancake onStove))
-            _finished.TooltipText = $"装袋煎饼 · 酱量 {SauceRules.Describe(onStove.SauceAmount)}\n拖给顾客，或拖到垃圾桶丢弃";
+            _finished.TooltipText = $"装袋煎饼 · 酱量 {SauceRules.Describe(onStove.SauceAmount)}\n拖给顾客，或{(IsTianjinWorkbench ? "长按右键" : "")}拖到垃圾桶丢弃";
         if (_previousPancake is not null) _previousPancake.Hide();
         if (_nextPancake is not null) _nextPancake.Hide();
     }

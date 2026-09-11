@@ -44,6 +44,7 @@ public sealed record FryerActionResult(bool Success, FryerActionError Error, str
 
 public sealed class FryerBatchRuntime
 {
+    internal long Generation { get; private set; }
     public FryerState State { get; internal set; } = FryerState.Empty;
     public int Quantity { get; internal set; }
     public double FrySeconds { get; internal set; }
@@ -52,6 +53,7 @@ public sealed class FryerBatchRuntime
 
     internal void Reset()
     {
+        Generation++;
         State = FryerState.Empty;
         Quantity = 0;
         FrySeconds = 0;

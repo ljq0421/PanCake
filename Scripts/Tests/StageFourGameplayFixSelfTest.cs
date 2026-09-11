@@ -107,7 +107,8 @@ public partial class StageFourSelfTest
         drag.BeginDrag(station, "finished_pancake", "成品", Colors.White); drag.CancelDrag();
         Check(station.Machine.Runtime.State == PancakeState.Bagged, "取消拖动不会丢失炉面成品");
         var trash = (DropZone)station.FindChild("TrashZone", true, false);
-        Check(trash.TryAccept("finished_pancake") && station.Machine.Runtime.State == PancakeState.Empty,
+        station.TryBeginTrashDrag(((Control)station.FindChild("PancakeCanvas", true, false)).GetGlobalRect().GetCenter());
+        Check(trash.TryAccept("tianjin_trash") && station.Machine.Runtime.State == PancakeState.Empty,
             "丢弃打包成品后可制作下一张");
         station.Machine.TryExecute(PancakeCommand.PlaceBatter);
         station.Machine.TryExecute(PancakeCommand.BeginSpread);

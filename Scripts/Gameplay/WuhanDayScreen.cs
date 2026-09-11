@@ -170,6 +170,7 @@ public partial class WuhanDayScreen : Control
     public override void _Process(double delta)
     {
         UpdatePendantState();
+        Workstation.SetCookingAudioPaused(!CanInteract);
         if (!CanInteract) Workstation.CancelInput();
         if (_feedbackSeconds>0 && (_feedbackSeconds-=delta)<=0) _feedback.Visible=false;
         if (!_focused || !IsVisibleInTree() || _controller?.CurrentConfig is null || _controller.IsPaused || _abandon.Visible) { Workstation.EndMix(); return; }
@@ -299,6 +300,7 @@ public partial class WuhanDayScreen : Control
     private void Render()
     {
         UpdatePendantState();
+        Workstation.SetCookingAudioPaused(!CanInteract);
         if (_controller?.CurrentConfig is null || _cooker is null) return;
         int day = _controller.CurrentConfig.Day;
         _day.Text = $"{day}";
@@ -352,7 +354,7 @@ public partial class WuhanDayScreen : Control
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
     }
-    private void Feedback(string text,bool error){if (!error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"✓ ")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
+    private void Feedback(string text,bool error){if (!error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
     private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
     private void OnDeliveryCompleted(DeliveryEvaluation result)=>Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     public override void _ExitTree()
@@ -369,5 +371,5 @@ public partial class WuhanDayScreen : Control
         if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;CloseBusinessDetails();_paymentFeedback.Clear();Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：拖浆入锅 → 点鸡蛋 → 上划翻面 → 拖馅并铺开 → 一横三竖切四刀，自动入盘",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"拖浆入锅并点鸡蛋，皮边金黄翘起后上划翻面。\n拖馅铺开；铲刀亮起后按住锅面，沿辅助线切一横三竖，8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

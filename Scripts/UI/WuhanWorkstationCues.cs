@@ -28,7 +28,7 @@ public partial class WuhanWorkstationView
             return state switch
             {
                 NoodleBasketState.Empty => "拖入生面",
-                NoodleBasketState.Cooking => "正在烫面；出现上箭头后提篮",
+                NoodleBasketState.Cooking => "正在烫面；漏勺亮起后向上提篮",
                 NoodleBasketState.Soft => "面条偏软；向上提篮后拖到空碗",
                 NoodleBasketState.Overcooked => "面条过熟；向上提篮后拖到空碗",
                 NoodleBasketState.Raised or NoodleBasketState.Draining => "沥水中；可拖到空碗上方自动等待",
@@ -49,7 +49,7 @@ public partial class WuhanWorkstationView
             "pan" when _doupi?.State == DoupiState.Batter => "点击锅右上方托盘里的鸡蛋加蛋",
             "pan" when _doupi?.State == DoupiState.Flipped => "从馅碗拖入一份馅，继续按住铺开",
             "pan" when _doupi?.State == DoupiState.Spreading => "按住锅面铺开馅料；松手保留进度",
-            "pan" when _doupi?.State is DoupiState.ReadyToCut or DoupiState.Cutting or DoupiState.Overbrowned => "沿虚线切一横三竖；第一刀完成后收火",
+            "pan" when _doupi?.State is DoupiState.ReadyToCut or DoupiState.Cutting or DoupiState.Overbrowned => "按住锅面显示切线，切一横三竖；第一刀完成后收火",
             "pan" when _doupi?.State == DoupiState.ReadyToFlip => "按住锅面向上划动，松手翻面",
             "pan" when _doupi?.State == DoupiState.Empty => "从浆碗拖一勺浆到空锅",
             "pan" => "正在煎制；观察火候提示",
@@ -57,71 +57,4 @@ public partial class WuhanWorkstationView
         };
     }
 
-    // Cues describe the next action; food layers continue to own cooking quality.
-    // Drawn strokes avoid font-dependent symbols and remain visible with reduced motion.
-    private void Cue(Vector2 p, string kind, Color? color = null, float progress = 1)
-    {
-        Color ink = color ?? WuhanUi.Ink;
-        DrawCircle(p, 18, new Color(WuhanUi.Paper, .94f));
-        void Line(Vector2 a, Vector2 b) => DrawLine(p + a, p + b, ink, 3, true);
-        if (kind == "up") { Line(new(0, 10), new(0, -10)); Line(new(0, -10), new(-7, -3)); Line(new(0, -10), new(7, -3)); }
-        else if (kind == "right") { Line(new(-10, 0), new(10, 0)); Line(new(10, 0), new(3, -7)); Line(new(10, 0), new(3, 7)); }
-        else if (kind == "done") { Line(new(-9, 0), new(-2, 7)); Line(new(-2, 7), new(10, -8)); }
-        else if (kind == "cross") { Line(new(-8, -8), new(8, 8)); Line(new(-8, 8), new(8, -8)); }
-        else if (kind == "cut")
-        {
-            if (_doupi?.CutLines.Contains(DoupiCutLine.Horizontal) != true) Line(new(-11, 0), new(11, 0));
-            for (int i = 0; i < 3; i++)
-                if (_doupi?.CutLines.Contains((DoupiCutLine)i) != true) Line(new(-7 + i * 7, -11), new(-7 + i * 7, 11));
-        }
-        else
-        {
-            DrawArc(p, 11, -Mathf.Pi / 2, -Mathf.Pi / 2 + Mathf.Tau * Math.Clamp(progress, .03f, 1), 32, ink, 3, true);
-            if (kind == "mix") { Line(new(10, -7), new(11, 1)); Line(new(11, 1), new(4, -2)); }
-            else { Line(Vector2.Zero, new(0, -6)); Line(Vector2.Zero, new(5, 0)); }
-        }
-    }
-
-    private void DrawProductionCues()
-    {
-        for (int i = 0; i < _cooker.Baskets.Count; i++)
-        {
-            var basket = _cooker.Baskets[i];
-            if (basket.State == NoodleBasketState.Empty || (_gesture == "basket" && _gestureBasket == i)) continue;
-            Vector2 p = BasketRect(i).Position + new Vector2(16, -12);
-            bool warning = basket.Quality is NoodleQuality.Soft or NoodleQuality.Overcooked;
-            Color ink = warning ? new Color("#A64A24") : WuhanUi.Ink;
-            string cue = basket.State switch
-            {
-                NoodleBasketState.Cooking => "clock",
-                NoodleBasketState.Raised or NoodleBasketState.Draining => "clock",
-                NoodleBasketState.Drained => "right",
-                _ => "up",
-            };
-            Cue(p, cue, ink);
-            if (warning) DrawArc(p, 20, 0, Mathf.Tau, 32, ink, 2, true);
-        }
-        Vector2 bowlCue = new(BowlRect.GetCenter().X, BowlRect.End.Y + 22);
-        if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing)
-            Cue(bowlCue, "mix", progress: (float)_bowl.MixProgress / 100);
-        else if (_bowl.State == NoodleBowlState.Ready) Cue(bowlCue, "done");
-
-        if (_doupi is null) return;
-        Vector2 panCue = new(PanRect.Position.X + 26, PanRect.End.Y - 25);
-        switch (_doupi.State)
-        {
-            case DoupiState.Empty: break;
-            // DrawDoupiIngredients highlights the actual egg tray for this step.
-            case DoupiState.Batter: break;
-            case DoupiState.Flipped: break;
-            case DoupiState.Spreading: Cue(panCue, "mix", progress: _doupi.Coverage); break;
-            case DoupiState.ReadyToFlip: Cue(panCue, "up"); break;
-            case DoupiState.ReadyToCut:
-            case DoupiState.Cutting: Cue(panCue, "cut"); break;
-            case DoupiState.Overbrowned: Cue(panCue, "cut", new Color("#A64A24")); break;
-            case DoupiState.Burnt: Cue(panCue, "cross", new Color("#A64A24")); break;
-            case DoupiState.Cut: Sprite("doupi_stock", At(panCue, new Vector2(38, 30))); break;
-            default: Cue(panCue, "clock"); break;
-        }
-    }
 }

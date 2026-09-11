@@ -23,6 +23,13 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--shortcuts-only", StringComparer.Ordinal))
+            {
+                await TestProductionShortcuts(catalog);
+                GD.Print($"天津快捷键自测：{_passed} 通过，{_failed} 失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--embedded-workbench-only", StringComparer.Ordinal))
             {
                 await TestWorkbenchPicking();
@@ -37,6 +44,13 @@ public partial class StageFourSelfTest : Node
             {
                 await TestTianjinWorkbenchV1(catalog);
                 GD.Print($"天津工作台 V1 自测完成：{_passed} 项通过，{_failed} 项失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
+            await TestTianjinTrash(catalog);
+            if (OS.GetCmdlineUserArgs().Contains("--trash-only", StringComparer.Ordinal))
+            {
+                GD.Print($"天津垃圾桶自测：{_passed} 通过，{_failed} 失败。");
                 GetTree().Quit(_failed == 0 ? 0 : 1);
                 return;
             }
@@ -472,13 +486,14 @@ public partial class StageFourSelfTest : Node
                 && !station.StoreFinishedPancakes && station.PancakeTray.Count == 0,
                 $"Lv{level}没有生面坯托盘、煎饼成品盘或隐藏暂存");
             var trash = (DropZone)station.FindChild("TrashZone", true, false);
-            Check(trash.GetGlobalRect().Position.Y == 98 && trash.Size.Y == 50
-                && !trash.GetGlobalRect().Intersects(station.CoinTray!.GetGlobalRect()), "右上角收钱与丢弃热区独立且不遮订单");
+            Check(trash.FixedHitRect == TianjinWorkbenchLayout.EmbeddedTrash
+                && !trash.GetGlobalRect().Intersects(station.CoinTray!.GetGlobalRect()), "底部垃圾桶对齐背景且不遮订单");
             MakeBagged(station.Machine, catalog.RecipesById[StableIds.Recipes.Basic]);
             Check(station.Machine.Runtime.State == PancakeState.Bagged && station.PancakeTray.Count == 0
                 && !station.Machine.TryExecute(PancakeCommand.PlaceBatter).Success, "成品占用炉面直到交付或丢弃");
-            Check(trash.TryAccept("finished_pancake") && station.Machine.Runtime.State == PancakeState.Empty,
-                "炉面成品拖入右上角垃圾桶后释放炉面");
+            station.TryBeginTrashDrag(((Control)station.FindChild("PancakeCanvas", true, false)).GetGlobalRect().GetCenter());
+            Check(trash.TryAccept("tianjin_trash") && station.Machine.Runtime.State == PancakeState.Empty,
+                "炉面成品右键拖入底部垃圾桶后释放炉面");
         }
         screen.Free(); controller.Free(); save.Free(); DeleteIfExists(ProjectSettings.GlobalizePath(path));
     }

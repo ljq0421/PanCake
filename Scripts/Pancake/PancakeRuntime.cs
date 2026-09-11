@@ -5,6 +5,7 @@ namespace ProjectCake.Pancake;
 
 public sealed class PancakeRuntime
 {
+    internal long Generation { get; private set; }
     private readonly HashSet<string> _extraIngredients = new(StringComparer.Ordinal);
 
     public PancakeState State { get; internal set; } = PancakeState.Empty;
@@ -21,6 +22,7 @@ public sealed class PancakeRuntime
 
     internal void Reset()
     {
+        Generation++;
         State = PancakeState.Empty;
         Quality = PancakeQuality.Perfect;
         CookingSeconds = 0;

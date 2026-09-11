@@ -154,6 +154,8 @@ public partial class WuhanWorkstationView : Control
     private readonly NoodleBasketState[] _previousBaskets = new NoodleBasketState[2];
     private DoupiState _previousDoupi;
     private float _phase;
+    private WuhanCookingAudio? _cookingAudio;
+    internal void SetCookingAudioPaused(bool paused) => _cookingAudio?.SetPaused(paused);
     private Vector2? _mixLast;
     private bool _mixHeld;
     private string _hover = "";
@@ -210,6 +212,7 @@ public partial class WuhanWorkstationView : Control
 
     public override void _Ready()
     {
+        _cookingAudio = new WuhanCookingAudio(this);
         MouseExited += () => { _hover = ""; _pointer = new Vector2(-1000, -1000); QueueRedraw(); };
     }
 
@@ -232,6 +235,7 @@ public partial class WuhanWorkstationView : Control
     public void EndMix() { _mixHeld = false; _mixLast = null; QueueRedraw(); }
     public void CancelAnimations()
     {
+        _cookingAudio?.Stop();
         CancelInput();
         foreach (Motion m in _motions) m.Tween.Kill();
         _motions.Clear(); EndMix(); _hover = ""; QueueRedraw();
@@ -301,6 +305,7 @@ public partial class WuhanWorkstationView : Control
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
+        _cookingAudio?.Update(_cooker, _doupi);
         foreach (Motion m in _motions.ToArray())
         {
             m.Tween.CustomStep(delta);
@@ -393,7 +398,7 @@ public partial class WuhanWorkstationView : Control
     {
         if (_cooker is null) return;
         DrawCounterForeground();
-        DrawCooker(); DrawMixStation(); DrawDoupi(); DrawTransfers(); DrawSupplyLabels(); DrawProductionCues(); DrawGesture();
+        DrawCooker(); DrawMixStation(); DrawDoupi(); DrawTransfers(); DrawSupplyLabels(); DrawGesture();
     }
 
     private Rect2 Source(Texture2D texture)
@@ -448,6 +453,12 @@ public partial class WuhanWorkstationView : Control
         if (_hover == target && CanInteract?.Invoke() == true)
             Ellipse(rect.GetCenter(), rect.Size * .55f, new Color(WuhanUi.Accent, .18f));
     }
+    private void HighlightTool(string id, Rect2 rect)
+    {
+        Texture2D texture = _art.Texture(id);
+        // Same silhouette and position as the tool, with a restrained warm reflection.
+        DrawTextureRectRegion(texture, FitSprite(texture, rect), Source(texture), new Color(1.6f, 1.5f, 1.25f, .32f));
+    }
     private static Rect2 At(Vector2 center, Vector2 size) => new(center - size / 2, size);
 
     private Rect2 CookerCanvas => _layout.Cooker;
@@ -499,6 +510,8 @@ public partial class WuhanWorkstationView : Control
             if (HasProductionGesture && _gestureBasket == i && _gesture == "basket" || _cooker.PendingPourBasket == i) continue;
             if (m?.Kind == "pour" && !ReducedMotion) continue;
             Rect2 r = BasketRect(i); Hint(r, $"basket{i}"); Sprite("basket", r);
+            if (basket.State is NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked)
+                HighlightTool("basket", r);
             if (basket.State != NoodleBasketState.Empty)
             {
                 Rect2 noodles = BasketFoodRect(r);
@@ -549,7 +562,7 @@ public partial class WuhanWorkstationView : Control
                     m?.Kind == "ingredient" && m.Progress < .62f ? m.Ingredient : "");
         }
         for (int i = 0; i < 4; i++) Hint(IngredientRect(i), $"ingredient{i}");
-        if (_mixLast is Vector2 pointer && InBowl(pointer))
+        if (_bowl.State != NoodleBowlState.Ready && _mixLast is Vector2 pointer && InBowl(pointer))
         {
             Vector2 center = BowlFood.GetCenter();
             float angle = ReducedMotion ? -.3f : (pointer-center).Angle() * .12f - .4f;

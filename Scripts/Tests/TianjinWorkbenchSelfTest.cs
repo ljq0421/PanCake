@@ -138,11 +138,12 @@ public partial class StageFourSelfTest
             Transform2D transform = trash.GetParent<Control>().GetGlobalTransform();
             Vector2 outside = transform * new Vector2(hit.End.X + 1, hit.GetCenter().Y);
             Vector2 inside = transform * hit.GetCenter();
+            using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = food.GetGlobalRect().GetCenter() }) screen._Input(press);
+            station.Tick(PressRepeatGesture.HoldSeconds);
             int stock = station.FryerMachine.Inventory.Count;
-            drag.BeginDrag(food, "stored_youtiao", "油条", Colors.White);
             trash.Scale = Vector2.One * 1.03f;
             Check(!trash.ContainsPoint(outside) && trash.ContainsPoint(inside), $"缩放{scale} 垃圾桶放大高亮不扩大命中区域");
-            using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = outside }) drag._Input(release);
+            using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = outside }) drag._Input(release);
             await WaitForAnimation(.15);
             Check(station.FryerMachine.Inventory.Count == stock && !station.LearnedWorkbenchActions.Contains("discard"),
                 $"缩放{scale} 桶外松手不会消费物品或学习丢弃");
@@ -151,10 +152,11 @@ public partial class StageFourSelfTest
         screen.Scale = Vector2.One;
         Check(!trash.TryAccept("soy_milk_cup"), "垃圾桶拒绝豆浆，取杯区不会成为丢弃入口");
         station.CancelInput();
-        drag.BeginDrag(food, "stored_youtiao", "油条", Colors.White);
+        using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = food.GetGlobalRect().GetCenter() }) screen._Input(press);
+        station.Tick(PressRepeatGesture.HoldSeconds);
         Vector2 target = trash.GetParent<Control>().GetGlobalTransform() * trash.FixedHitRect!.Value.GetCenter();
         int beforeDiscard = station.FryerMachine!.Inventory.Count;
-        using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = target }) drag._Input(release);
+        using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = target }) drag._Input(release);
         Check(station.FryerMachine.Inventory.Count == beforeDiscard - 1 && save.Data.Tianjin.LearnedWorkbenchActions.Contains("discard"),
             "有效垃圾桶区域松手准确丢弃一件并保存教学");
         ProjectSettings.SetSetting("accessibility/reduce_motion", motion);

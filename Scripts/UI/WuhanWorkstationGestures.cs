@@ -197,17 +197,6 @@ public partial class WuhanWorkstationView
             DrawStringOutline(ThemeDB.FallbackFont, point, text, fontSize:18, size:4, modulate:WuhanUi.Paper);
             DrawString(ThemeDB.FallbackFont, point, text, fontSize:18, modulate:WuhanUi.Ink);
         }
-        for (int i = 0; i < 4; i++)
-        {
-            string id = IngredientIds[i];
-            bool added = i == 0 ? _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready : _bowl.Toppings.Contains(id);
-            if (added)
-            {
-                Vector2 mark = IngredientRect(i).Position + new Vector2(70, -8);
-                DrawLine(mark, mark + new Vector2(5, 5), WuhanUi.Ink, 3, true);
-                DrawLine(mark + new Vector2(5, 5), mark + new Vector2(15, -7), WuhanUi.Ink, 3, true);
-            }
-        }
         LabelAt(new Vector2(RawTrayRect.Position.X + 12, RawTrayRect.End.Y + 30), "生面 · 无限供应");
         if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 30), $"豆皮 {_stock.Count}/{DoupiInventory.Capacity}");
         if (_doupi is not null && DoupiSupplyHint.Length > 0)

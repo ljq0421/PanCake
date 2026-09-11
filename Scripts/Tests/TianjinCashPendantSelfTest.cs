@@ -37,7 +37,7 @@ public partial class CoinCollectionSelfTest
             controller.CustomerQueue!.Tick(1000, .4, true);
             screen.RefreshForCapture(true); await Frames();
             Check(controller.CustomerQueue.Slots.Count == 5, "pendant preserves five physical customer slots");
-            string suffix = day == 1 ? "天津-煎饼.png" : day == 5 ? "天津-煎饼-炸锅.png" : "天津-煎饼-炸锅-豆浆.png";
+            string suffix = day == 1 ? "天津-煎饼-v1.png" : day == 5 ? "天津-煎饼-炸锅-v1.png" : "天津-煎饼-炸锅-豆浆-v1.png";
             Check(screen.GetNode<TextureRect>("ShopBackground").Texture.ResourcePath.EndsWith(suffix), "correct new stage background: " + day);
             Check(!station.CoinTray!.IsVisibleInTree() && !station.CoinTray.TryCollect(), "old Tianjin collection control stays hidden and inert");
             Check(screen.FindChildren("OrderBubble", "", true, false).OfType<OrderBubbleView>()

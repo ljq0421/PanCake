@@ -134,23 +134,16 @@ public partial class PancakeWorkstation
         CoinTray.Hide();
         CoinTray.CanCollect = () => false;
         _trashZone.Reparent(this, false);
-        PositionEmbedded(_trashZone, new Rect2(1754, 98, 130, 50));
-        _trashZone.ZIndex = 75;
         _trashZone.GetNode<Control>("TrashArtLayer").Hide();
         _trashZone.GetNode<Control>("TrashLabelLayer").Hide();
-        // Hidden legacy children used to establish a 120px minimum height.
         _trashZone.ResetSize();
-        PositionEmbedded(_trashZone, new Rect2(1754, 98, 130, 50));
-        var trashBackground = new Panel { MouseFilter = MouseFilterEnum.Ignore };
-        trashBackground.AddThemeStyleboxOverride("panel", TianjinUi.Box(TianjinUi.Cream, 10, 2, false));
-        _trashZone.AddChild(trashBackground);
-        var trashLabel = TianjinUi.Label("丢弃", 20, TianjinUi.Brown, HorizontalAlignment.Center);
-        trashLabel.VerticalAlignment = VerticalAlignment.Center;
-        trashLabel.MouseFilter = MouseFilterEnum.Ignore;
-        _trashZone.AddChild(trashLabel);
-        _trashZone.TooltipText = "把成品拖到此处丢弃";
+        PositionEmbedded(_trashZone, TianjinWorkbenchLayout.EmbeddedTrash);
+        _trashZone.ZIndex = 75;
+        _trashZone.MouseFilter = MouseFilterEnum.Stop;
+        _trashZone.TooltipText = "长按鼠标右键 0.45 秒后拖入食物，松开丢弃；豆浆不可丢弃";
         _trashZone.HitPadding = 0;
-        _trashZone.FixedHitRect = new Rect2(_trashZone.Position, _trashZone.Size);
+        _trashZone.FixedHitRect = TianjinWorkbenchLayout.EmbeddedTrash;
+        _trashZone.Configure(CanAcceptTianjinTrash, CommitTianjinTrash);
         _deliveryZone.Hide();
     }
 }

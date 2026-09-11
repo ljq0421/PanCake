@@ -68,6 +68,7 @@ public partial class PancakeWorkstation
             _firstUseHints[id] = hint;
         }
         _trashHint = _trashZone.FindChild("TrashLabel", true, false) as Label;
+        if (IsTianjinWorkbench && _trashHint is not null) _trashHint.Text = "长按右键拖入丢弃";
     }
 
     private void RenderTutorial()

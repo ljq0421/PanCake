@@ -3,6 +3,7 @@ namespace ProjectCake.Fryer;
 public sealed class YoutiaoInventory
 {
     private readonly Queue<YoutiaoQuality> _items = new();
+    internal long HeadGeneration { get; private set; }
 
     public YoutiaoInventory(int capacity)
     {
@@ -38,6 +39,7 @@ public sealed class YoutiaoInventory
         }
 
         quality = _items.Dequeue();
+        HeadGeneration++;
         Changed?.Invoke();
         return true;
     }
@@ -61,6 +63,7 @@ public sealed class YoutiaoInventory
     {
         if (_items.Count == 0) return;
         _items.Clear();
+        HeadGeneration++;
         Changed?.Invoke();
     }
 }

@@ -110,21 +110,59 @@ public partial class WuhanWorkstationView
             if (state == DoupiState.Spreading) DrawSpreading(quad);
             if (state is DoupiState.SecondCooking or DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
                 FilledSurface(quad, _doupi.BrowningProgress, motion?.Kind == "filling" ? deposit : 1, quality: _doupi.Quality);
-            if (state == DoupiState.Burnt) SurfaceLayer("doupi_burnt", quad, Colors.White);
+            if (state == DoupiState.Burnt)
+            {
+                SurfaceLayer("doupi_skin", quad, new Color(.66f, .43f, .24f));
+                if (_doupi.Coverage > 0) SurfaceLayer("doupi_filling_overlay", quad, new Color(.66f, .43f, .24f));
+                SurfaceLayer("doupi_burnt", quad, new Color(.60f, .43f, .28f));
+                Vector2[] burntRim = { quad[3], quad[2], QuadPoint(quad, 1, .94f), QuadPoint(quad, 0, .94f) };
+                DrawColoredPolygon(burntRim, new Color(.19f, .10f, .04f, .85f));
+            }
+            if (state is DoupiState.SkinCooking or DoupiState.ReadyToFlip)
+            {
+                float cooked = Smooth(_doupi.SkinCookProgress);
+                // A narrow golden crust follows the food's edge, not the pan's hit box.
+                Vector2[] rim = { quad[3], quad[2], QuadPoint(quad, 1, .95f), QuadPoint(quad, 0, .95f) };
+                DrawColoredPolygon(rim, new Color(.83f, .53f, .19f, cooked * .75f));
+                if (state == DoupiState.ReadyToFlip && heldLift == 0)
+                {
+                    Vector2 lift = new(0, -4);
+                    DrawColoredPolygon(new[] { quad[3], quad[2], quad[2] + lift, quad[3] + lift }, new Color(.90f, .66f, .29f, .85f));
+                }
+            }
+            if (_doupi.HeatStress > 0 && state != DoupiState.Burnt)
+            {
+                Vector2[] rim = { quad[3], quad[2], QuadPoint(quad, 1, .93f), QuadPoint(quad, 0, .93f) };
+                DrawColoredPolygon(rim, new Color(.24f, .12f, .055f, _doupi.HeatStress * .8f));
+            }
         }
         if (state != DoupiState.Empty)
         {
             foreach (DoupiCutLine line in _doupi.CutLines)
                 if (state != DoupiState.Cut || motion?.Kind == "cut") DrawCut((int)line, 1);
-            if (state is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
+            if (_gesture == "cut" && state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting))
                 foreach (DoupiCutLine line in Enum.GetValues<DoupiCutLine>())
                 {
                     if (_doupi.CutLines.Contains(line)) continue;
                     var (from, to) = CutLine((int)line);
-                    DrawDashedLine(from, to, new Color(1, .96f, .8f, .65f), 2, 9, true);
+                    DrawDashedLine(from, to, new Color(1, .96f, .8f, .32f), 1.5f, 9, true);
                 }
             if (state is DoupiState.SkinCooking or DoupiState.SecondCooking or DoupiState.ReadyToFlip or DoupiState.ReadyToCut)
                 Steam(PanCenter + new Vector2(0, -30), .7f);
+        }
+        if (state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting) && _gesture != "cut" && !Busy("pan"))
+        {
+            Rect2 tool = At(new Vector2(PanRect.End.X - 28, PanRect.End.Y - 30), new Vector2(110, 73));
+            Sprite("cut_tool", tool); HighlightTool("cut_tool", tool);
+        }
+        if (state == DoupiState.Burnt && !ReducedMotion)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                float t = Mathf.PosMod(_phase * .35f + i / 3f, 1);
+                Vector2 center = PanCenter + new Vector2((i - 1) * 24 + Mathf.Sin(t * 4 + i) * 8, -18 - t * 55);
+                Ellipse(center, new Vector2(9 + t * 6, 5 + t * 4), new Color(.24f, .22f, .20f, (1 - t) * .22f));
+            }
         }
         if (motion is not null) DrawPanMotion(motion);
     }

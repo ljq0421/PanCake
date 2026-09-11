@@ -61,6 +61,7 @@ public partial class WuhanWorkstationView
     {
         if (_doupi is null) return;
         Hint(StockRect, "stock");
+        DrawDoupiIngredients();
         Motion? motion = Find("pan");
         int displayed = _stock.Count - (motion?.Kind == "stock" ? motion.Amount : 0);
         for (int i = 0; i < displayed; i++)
@@ -92,33 +93,72 @@ public partial class WuhanWorkstationView
                 float lift = Mathf.Sin(Smooth(p) * Mathf.Pi) * 36;
                 quad = quad.Select(v => PanCenter + (v - PanCenter) * new Vector2(1, squash) - new Vector2(0, lift)).ToArray();
             }
+            float heldLift = _gesture == "flip" && state == DoupiState.ReadyToFlip ? _flipLift : 0;
+            if (motion?.Kind == "flip_return") heldLift = motion.Lift * (1 - Smooth(p));
+            if (motion?.Kind == "flip") heldLift = motion.Lift * (1 - Phase(p, 0, .4f));
+            if (heldLift > 0 && !ReducedMotion)
+            {
+                quad = (Vector2[])quad.Clone();
+                quad[2] -= new Vector2(0, 24 * heldLift); quad[3] -= new Vector2(0, 24 * heldLift);
+            }
             float alpha = motion?.Kind == "batter" ? deposit : 1;
             if (motion?.Kind == "batter" && !ReducedMotion)
                 quad = quad.Select(v => PanCenter + (v - PanCenter) * (.85f + .15f * deposit)).ToArray();
             SurfaceLayer("doupi_skin", quad, new Color(1, 1, 1, alpha));
             if (state != DoupiState.Batter)
                 SurfaceLayer("doupi_egg", quad, new Color(1, 1, 1, motion?.Kind == "egg" ? deposit : 1));
+            if (state == DoupiState.Spreading) DrawSpreading(quad);
             if (state is DoupiState.SecondCooking or DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
                 FilledSurface(quad, _doupi.BrowningProgress, motion?.Kind == "filling" ? deposit : 1, quality: _doupi.Quality);
             if (state == DoupiState.Burnt) SurfaceLayer("doupi_burnt", quad, Colors.White);
         }
         if (state != DoupiState.Empty)
         {
-            foreach (DoupiCutDirection direction in _doupi.CutDirections)
-                for (int i = 0; i < (direction == DoupiCutDirection.Horizontal ? 1 : 3); i++)
+            foreach (DoupiCutLine line in _doupi.CutLines)
+                if (state != DoupiState.Cut || motion?.Kind == "cut") DrawCut((int)line, 1);
+            if (state is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
+                foreach (DoupiCutLine line in Enum.GetValues<DoupiCutLine>())
                 {
-                    int line = direction == DoupiCutDirection.Horizontal ? 3 : i;
-                    float progress = motion?.Kind == "cut" && motion.Direction == direction ? CutProgress(direction, i, p) : 1;
-                    // Separate piece outlines replace the cutting overlay when transfer begins.
-                    if (state != DoupiState.Cut || motion?.Kind == "cut") DrawCut(line, progress);
+                    if (_doupi.CutLines.Contains(line)) continue;
+                    var (from, to) = CutLine((int)line);
+                    DrawDashedLine(from, to, new Color(1, .96f, .8f, .65f), 2, 9, true);
                 }
             if (state is DoupiState.SkinCooking or DoupiState.SecondCooking or DoupiState.ReadyToFlip or DoupiState.ReadyToCut)
                 Steam(PanCenter + new Vector2(0, -30), .7f);
         }
         if (motion is not null) DrawPanMotion(motion);
     }
-    private static float CutProgress(DoupiCutDirection direction, int index, float p) => direction == DoupiCutDirection.Horizontal
-        ? Phase(p, .1f, .9f) : Phase(p, .08f + index * .28f, .30f + index * .28f);
+    private void DrawDoupiIngredients()
+    {
+        Sprite("egg_tray", DoupiEggRect);
+        Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), DoupiEggRect.Grow(-9));
+        Rect2? available = _doupi?.State switch
+        { DoupiState.Empty => BatterRect, DoupiState.Batter => DoupiEggRect, DoupiState.Flipped => FillingRect, _ => null };
+        if (available is Rect2 rect && !Busy("pan"))
+            DrawStyleBox(WuhanUi.Box(new Color(1, .93f, .65f, .12f), 16, 1, false), rect);
+        Hint(BatterRect, "batter"); Hint(FillingRect, "filling"); Hint(DoupiEggRect, "doupi_egg");
+    }
+
+    private void DrawSpreading(Vector2[] quad)
+    {
+        const int width = DoupiInteraction.CoverageWidth, height = DoupiInteraction.CoverageHeight;
+        float Alpha(int x, int y)
+        {
+            float sum = 0;
+            for (int dy = -1; dy <= 0; dy++) for (int dx = -1; dx <= 0; dx++)
+                if (_doupi!.IsCovered(Math.Clamp(x + dx, 0, width - 1), Math.Clamp(y + dy, 0, height - 1))) sum += .25f;
+            return sum;
+        }
+        Texture2D texture = _art.Texture("doupi_filling_overlay");
+        for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+        {
+            Color[] colors = { new(1, 1, 1, Alpha(x, y)), new(1, 1, 1, Alpha(x + 1, y)),
+                new(1, 1, 1, Alpha(x + 1, y + 1)), new(1, 1, 1, Alpha(x, y + 1)) };
+            if (colors.All(c => c.A == 0)) continue;
+            Rect2 region = new((float)x / width, (float)y / height, 1f / width, 1f / height);
+            DrawPolygon(QuadRegion(quad, region), colors, RectQuad(RelativeRect(DoupiSurface, region)), texture);
+        }
+    }
     private (Vector2 From, Vector2 To) CutLine(int index)
     {
         Vector2[] c = PanCorners;
@@ -157,13 +197,8 @@ public partial class WuhanWorkstationView
             Vector2 center;
             if (m.Kind == "cut")
             {
-                int stroke = m.Direction == DoupiCutDirection.Horizontal ? 0 : Math.Clamp((int)((p - .08f) / .28f), 0, 2);
-                var (from, to) = CutLine(m.Direction == DoupiCutDirection.Horizontal ? 3 : stroke);
-                center = from.Lerp(to, CutProgress(m.Direction, stroke, p));
-                // Lift/fade between parallel strokes instead of sliding a blade across food.
-                if (m.Direction == DoupiCutDirection.Vertical)
-                    toolAlpha *= Phase(p, .06f + stroke * .28f, .08f + stroke * .28f)
-                        * (1 - Phase(p, .30f + stroke * .28f, .36f + stroke * .28f));
+                var (from, to) = CutLine((int)m.Line);
+                center = (m.Origin ?? to) - new Vector2(0, 10 * Smooth(p));
             }
             else center = PanCenter + new Vector2(35, -Mathf.Sin(Smooth(p) * Mathf.Pi) * 36);
             Sprite(m.Kind == "cut" ? "cut_tool" : "flip_tool", At(center + new Vector2(30, -23), new Vector2(138, 91)), toolAlpha,
@@ -171,15 +206,14 @@ public partial class WuhanWorkstationView
         }
         else if (m.Kind is "batter" or "egg" or "filling")
         {
-            Vector2 start = (m.Kind == "filling" ? FillingRect : BatterRect).GetCenter();
+            Vector2 start = m.Origin ?? (m.Kind == "egg" ? DoupiEggRect : m.Kind == "filling" ? FillingRect : BatterRect).GetCenter();
             Vector2 above = PanCenter + new Vector2(0, -60);
             float travel = Phase(p, 0, .35f), retreat = Phase(p, .8f, 1);
             Vector2 center = start.Lerp(above, travel).Lerp(start, retreat);
             if (m.Kind == "egg") Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), At(center, new Vector2(55, 50)), toolAlpha);
             else
             {
-                Ellipse(center, new Vector2(22, 12), new Color(new Color(m.Kind == "batter" ? "#EACD8C" : "#CE955A"), toolAlpha));
-                DrawLine(center, center + new Vector2(32, -35), new Color(WuhanUi.Ink, toolAlpha), 5, true);
+                Sprite("doupi_ladle", At(center, new Vector2(90, 90)), toolAlpha);
             }
             float stream = Phase(p, .3f, .42f) * (1 - Phase(p, .65f, .8f));
             if (stream > 0) DrawLine(center + new Vector2(0, 12), PanCenter,

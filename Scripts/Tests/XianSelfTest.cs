@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.Customers;
 using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.Gameplay;
@@ -67,6 +68,19 @@ public partial class XianSelfTest : Node
     }
     private void TestProduction()
     {
+        for (int day = 1; day <= 2; day++)
+        {
+            var session = new XianSession(_catalog, SaveService.NewXianProgress(), day);
+            Check(session.Oven is not null && !session.Buns.Tutorial && session.Buns.Count == 4 && session.Board.Portions == 0,
+                $"Day{day}免费炉、四个熟馍和零预剁肉");
+            for (int i = 0; i < 4; i++) session.Buns.TryTake(out _);
+            Check(!session.Buns.TryTake(out _), $"Day{day}熟馍耗尽不再无限供应");
+            session.Oven!.TryStart(4); session.Tick(3); session.Oven.TryFlip(); session.Tick(3);
+            Check(session.Oven.TryCollect(session.Buns) && session.Buns.Count == 4, $"Day{day}烙制补足熟馍");
+        }
+        foreach (string type in new[] { "normal", "office_worker", "regular", "tourist" })
+            Check(CustomerAppearanceCatalog.CandidatesFor("xian_" + type).SequenceEqual(CustomerAppearanceCatalog.CandidatesFor("wuhan_" + type)),
+                $"西安{type}复用共享人物池");
         var stock = new BunInventory(6, 0); var oven = new BunOvenStateMachine(Eq(XianRules.Oven, 1));
         Check(!oven.TryStart(0) && !oven.TryStart(5) && oven.TryStart(4), "炉子校验整批数量");
         oven.Tick(2.9, stock); Check(!oven.TryFlip(), "未满3秒不能翻面"); oven.Tick(.1, stock); Check(oven.TryFlip(), "3秒翻面");
@@ -103,7 +117,7 @@ public partial class XianSelfTest : Node
         city.EquipmentLevels[XianRules.Board] = 2; city.EquipmentLevels[XianRules.Oven] = 1; city.EquipmentLevels[XianRules.Soup] = 3;
         var later = new XianSession(_catalog, city, 9);
         Check(later.Buns.Count == 4 && later.Board.Portions == 6 && later.Soup!.Stock.Count == 6 && later.Meat.Capacity == 18, "Day9独立等级初始库存及肉锅容量");
-        var replay = new XianSession(_catalog, city, 1); Check(replay.Buns.Tutorial && replay.Board.Portions == 0 && replay.Oven is null && replay.Soup is null, "重玩Day1保留升级但不提前开放制作线");
+        var replay = new XianSession(_catalog, city, 1); Check(!replay.Buns.Tutorial && replay.Buns.Count == 4 && replay.Board.Portions == 0 && replay.Oven is not null && replay.Soup is null, "重玩Day1保留升级但不提前开放制作线");
     }
     private static void Chop(ChoppingStateMachine board)
     {
@@ -156,6 +170,19 @@ public partial class XianSelfTest : Node
     }
     private void TestSave()
     {
+        foreach (int day in new[] { 1, 2, 3, 12 })
+        {
+            var legacy = Save($"free-oven-{day}"); legacy.Data.Coins = 123;
+            var config = _catalog.GetDays(StableIds.Cities.Xian)[day];
+            Check(legacy.ApplyStartUnlocks(config, out _) && legacy.Data.Xian.EquipmentLevels[XianRules.Oven] == 1
+                && legacy.Data.Coins == 123, $"首次或旧档Day{day}免费补齐炉子");
+            Check(legacy.ApplyStartUnlocks(config, out _) && legacy.Data.Xian.UnlockedContentIds.Count(id => id == "equipment:xian_oven_lv1") == 1,
+                $"Day{day}重复初始化不重复解锁");
+            legacy.Data.Xian.EquipmentLevels[XianRules.Oven] = 3;
+            legacy.ApplyStartUnlocks(_catalog.GetDays(StableIds.Cities.Xian)[1], out _);
+            legacy.TrySave(out _); legacy.Load();
+            Check(legacy.Data.Xian.EquipmentLevels[XianRules.Oven] == 3 && legacy.Data.Coins == 123, "重玩与重载保留高级炉及金币");
+        }
         var save = Save("compatibility"); save.Data.Coins = 700;
         save.Data.Wuhan.Completed = true; save.Data.Wuhan.BestStars = 1; save.Data.Wuhan.HighestUnlockedDay = 12;
         save.TrySave(out _); save.Load();
@@ -167,6 +194,8 @@ public partial class XianSelfTest : Node
         Check(!save.TryPurchase(StableIds.Cities.Xian, "equipment:xian_board_lv2", _catalog, out _), "不能重复购买升级");
         Check(save.CommitDay(result, plan, day2).PermanentCoinGain == 0 && save.CommitDay(new DayResult { Day = 2, SaleRevenue = 120 }, plan, day2).PermanentCoinGain == 20, "重玩仅补最佳收入差额");
         var fail = Save("failure"); string directory = ProjectSettings.GlobalizePath($"{_root}/failure.json"); Directory.CreateDirectory(directory);
+        Check(!fail.ApplyStartUnlocks(day2, out _) && fail.Data.Xian.EquipmentLevels[XianRules.Oven] == 0
+            && !fail.Data.Xian.UnlockedContentIds.Contains("equipment:xian_oven_lv1"), "免费炉保存失败回滚等级与解锁");
         int coins = fail.Data.Coins; bool threw = false;
         try { fail.CommitDay(result, plan, day2); } catch (IOException) { threw = true; }
         Check(threw && fail.Data.Coins == coins && fail.Data.Xian.HighestUnlockedDay == 1, "保存失败回滚金币与西安进度");

@@ -28,6 +28,38 @@ public partial class WuhanGestureSelfTest : Node
     private void Click(Vector2 point)=>Drag(point,point);
     private void Step(double dt) { _screen._Notification((int)NotificationApplicationFocusIn);_screen._Process(dt); }
     private async Task Frames() { for(int i=0;i<3;i++)await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame); }
+    private void SpreadHeld()
+    {
+        for (int row = 0; row < 3; row++)
+        {
+            float y = .15f + row * .35f;
+            Move(View.PanPoint(row % 2 == 0 ? .02f : .98f, y), true);
+            Move(View.PanPoint(row % 2 == 0 ? .98f : .02f, y), true);
+        }
+    }
+    private void FillDoupi()
+    {
+        Move(View.FillingCenter); Button(View.FillingCenter, true);
+        Move(View.PanPoint(.02f,.15f), true); SpreadHeld();
+        Button(View.PanPoint(.98f,.85f), false);
+        Check(_screen.Doupi!.State == DoupiState.SecondCooking, "one continuous filling gesture starts second cooking");
+    }
+    private void PrepareDoupi(int level)
+    {
+        var data = GetNode<DataCatalog>("/root/DataCatalog").DoupiGriddlesByLevel[level];
+        Drag(View.BatterCenter, View.PanCenter); Step(.4); Click(View.DoupiEggCenter);
+        Step(data.StageSeconds / data.SpeedMultiplier + .01);
+        if (level < 3) Drag(View.PanCenter, View.PanCenter - new Vector2(0,55));
+        Step(.5); FillDoupi(); Step(data.SecondStageReadySeconds / data.SpeedMultiplier + .01);
+    }
+    private void Cut(DoupiCutLine line, bool reverse = false)
+    {
+        bool horizontal = line == DoupiCutLine.Horizontal;
+        float position = DoupiInteraction.Position(line);
+        Vector2 a = horizontal ? View.PanPoint(.05f,position) : View.PanPoint(position,.05f);
+        Vector2 b = horizontal ? View.PanPoint(.95f,position) : View.PanPoint(position,.95f);
+        Drag(reverse ? b : a, reverse ? a : b);
+    }
     public override async void _Ready()
     {
         try {
@@ -94,24 +126,63 @@ public partial class WuhanGestureSelfTest : Node
                 Drag(View.CupCenter,new Vector2(1400,20));
                 Check(!_screen.EggUnlocked && !_screen.DeliveryDrag.IsDragging && !View.CanDeliver(ProductKind.EggRiceWine),"retired cup area never begins delivery");
                 await Shot("02-noodles-ready");
-                Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
+                Click(View.PanCenter); Click(View.PanCenter); Click(View.DoupiEggCenter);
+                Check(_screen.Doupi!.State == DoupiState.Empty, "pan and early egg clicks cannot bypass batter drag");
+                Drag(View.FillingCenter, View.PanCenter); Drag(View.BatterCenter, new Vector2(950,1000));
+                Check(_screen.Doupi.State == DoupiState.Empty, "wrong ingredient and missed batter drop preserve empty pan");
+                Drag(View.BatterCenter, View.PanCenter); Step(.4);
+                Click(View.PanCenter); Drag(View.FillingCenter, View.PanCenter);
+                Check(_screen.Doupi.State == DoupiState.Batter, "batter state requires independent egg entry");
+                Click(View.DoupiEggCenter); Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
                 if(level<3) {
-                    Click(View.PanCenter);Check(_screen.Doupi!.State==DoupiState.ReadyToFlip,"pan click does not flip");
-                    Drag(View.PanCenter,View.PanCenter-new Vector2(0,55));Check(_screen.Doupi.State==DoupiState.Flipped,"upward pan stroke flips skin");
+                    Click(View.PanCenter);Check(_screen.Doupi.State==DoupiState.ReadyToFlip,"pan click does not flip");
+                    Drag(View.PanCenter,View.PanCenter-new Vector2(0,20)); Step(.17);
+                    Check(_screen.Doupi.State==DoupiState.ReadyToFlip,"short flip returns without changing state");
+                    Move(View.PanCenter);Button(View.PanCenter,true);Move(View.PanCenter-new Vector2(0,55),true);
+                    await Shot("02a-held-flip");Button(View.PanCenter-new Vector2(0,55),false);
+                    Check(_screen.Doupi.State==DoupiState.Flipped,"upward pan stroke flips skin");
                 }
-                else Check(_screen.Doupi!.State==DoupiState.Flipped,"upgraded griddle still flips automatically");
-                Step(.5);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
-                Click(View.PanCenter);Check(_screen.Doupi!.CompletedCuts==0,"pan click does not cut");
-                Drag(View.PanCenter,View.PanCenter+new Vector2(10,0));Check(_screen.Doupi.CompletedCuts==0,"short accidental stroke does not cut");
+                else Check(_screen.Doupi.State==DoupiState.Flipped,"upgraded griddle still flips automatically");
+                Step(.5);
+                Move(View.FillingCenter); Button(View.FillingCenter,true);Move(View.PanPoint(.1f,.3f),true);
+                Move(View.PanPoint(.35f,.3f),true);
+                Check(_screen.Doupi.State==DoupiState.Spreading && _screen.Doupi.IsCovered(5,5) && !_screen.Doupi.IsCovered(28,5), "filling appears only where the pointer travelled");
+                await Shot("02b-partial-filling");
+                for(int j=0;j<10;j++)Move(View.PanPoint(.35f,.3f),true);
+                Check(_screen.Doupi.Coverage < .5f,"stationary corner cannot fill the pan");
+                Button(View.PanPoint(.35f,.3f),false);
+                foreach(string reason in new[]{"escape","pause","focus","hidden"})
+                {
+                    Move(View.PanPoint(.35f,.3f));Button(View.PanPoint(.35f,.3f),true);
+                    float coverage = _screen.Doupi.Coverage;
+                    if(reason=="escape")GetViewport().PushInput(new InputEventKey{Pressed=true,Keycode=Key.Escape},true);
+                    if(reason=="pause"){controller.IsPaused=true;_screen._Process(2);controller.IsPaused=false;}
+                    if(reason=="focus"){_screen._Notification((int)NotificationApplicationFocusOut);_screen._Process(2);_screen._Notification((int)NotificationApplicationFocusIn);}
+                    if(reason=="hidden"){_screen.Hide();_screen._Process(2);_screen.Show();}
+                    Button(View.PanPoint(.35f,.3f),false);
+                    Check(!View.HasProductionGesture && _screen.Doupi.Coverage == coverage && _screen.Doupi.State == DoupiState.Spreading,$"{reason} retains filling coverage and releases input");
+                }
+                Step(10); Check(_screen.Doupi.State==DoupiState.Spreading,"spreading has no extra burn timer");
+                float existing=_screen.Doupi.Coverage;
+                Drag(View.FillingCenter,new Vector2(950,1000));
+                Check(_screen.Doupi.Coverage==existing,"new missed portion never resets existing filling");
+                Move(View.PanPoint(.35f,.3f));Button(View.PanPoint(.35f,.3f),true);SpreadHeld();
+                Step(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
+                Move(View.PanPoint(.05f,.5f),true);Move(View.PanPoint(.95f,.5f),true);
+                Check(_screen.Doupi.CompletedCuts==0 && View.HasProductionGesture,"completed filling press cannot become a cutting gesture");
+                Button(View.PanPoint(.95f,.5f),false);
+                Click(View.PanCenter);Check(_screen.Doupi.CompletedCuts==0,"pan click does not cut");
+                Drag(View.PanPoint(.45f,.5f),View.PanPoint(.5f,.5f));Check(_screen.Doupi.CompletedCuts==0,"short accidental stroke does not cut");
                 _screen.DoupiStock.TryAddBatch(13);
-                Move(View.PanCenter-new Vector2(45,0));Button(View.PanCenter-new Vector2(45,0),true);Move(View.PanCenter+new Vector2(45,0),true);
+                Move(View.PanPoint(.05f,.5f));Button(View.PanPoint(.05f,.5f),true);Move(View.PanPoint(.95f,.5f),true);
                 Check(_screen.Doupi.State==DoupiState.Cutting&&_screen.Doupi.CompletedCuts==1,"first effective stroke locks quality before release");
-                await Shot("03-first-cut");Step(10);Move(View.PanCenter-new Vector2(0,45),true);
-                Check(_screen.Doupi.CompletedCuts==1&&_screen.Doupi.Quality==DoupiQuality.Normal,"same press cannot cut another direction or burn");Button(View.PanCenter,false);
-                Drag(View.PanCenter-new Vector2(45,0),View.PanCenter+new Vector2(45,0));
-                Check(_screen.Doupi.CompletedCuts==1,"duplicate direction does not advance");
-                Drag(View.PanCenter-new Vector2(0,45),View.PanCenter+new Vector2(0,45));
-                Check(_screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.CompletedCuts==2,"two directions finish eight pieces");Step(.4);
+                await Shot("03-first-cut");Step(10);Move(View.PanPoint(.25f,.95f),true);
+                Check(_screen.Doupi.CompletedCuts==1&&_screen.Doupi.Quality==DoupiQuality.Normal,"same press cannot cut another line or burn");Button(View.PanCenter,false);
+                Cut(DoupiCutLine.Horizontal);
+                Check(_screen.Doupi.CompletedCuts==1,"duplicate line does not advance");
+                foreach(var line in new[]{DoupiCutLine.Right,DoupiCutLine.Left,DoupiCutLine.Center})
+                { Cut(line); if(line != DoupiCutLine.Center)Step(.4); }
+                Check(_screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.CompletedCuts==4,"four template lines finish eight pieces");Step(.4);
                 Check(_screen.DoupiStock.Count==16&&_screen.Doupi.RemainingPieces==5,"three free slots receive three pieces with five left in pan");Step(.5);
                 await Shot("04-partial-stock");
                 Check(!_screen.Doupi.TryPourBatter(),"leftover pieces block new batch");
@@ -122,6 +193,11 @@ public partial class WuhanGestureSelfTest : Node
                 Move(View.RawCenter);Button(View.RawCenter,true);controller.IsPaused=true;_screen._Process(.01);Button(View.BasketRect(0).GetCenter(),false);
                 Check(!View.HasProductionGesture&&_screen.Cooker.Baskets[0].State==NoodleBasketState.Empty,"pause cancels pending production");controller.IsPaused=false;
                 await AdditionalGestures(level, controller, Shot);
+                _screen.DoupiStock.TryTake(_screen.DoupiStock.Count,out _); View.CancelAnimations();
+                int batchPresses = _pressCount;
+                PrepareDoupi(level);
+                foreach(var line in Enum.GetValues<DoupiCutLine>()){Cut(line);Step(.4);}Step(.5);
+                Check(_pressCount-batchPresses==(level==3?7:8) && _screen.DoupiStock.Count==8,$"Lv{level} full batch uses {(level==3?7:8)} presses");
                 if(capture) {
                     // Fill all four slots for visual review without changing production fixtures.
                     for(int i=0;i<120&&controller.CustomerQueue!.Slots.Count<4;i++)Step(.2);
@@ -263,15 +339,13 @@ public partial class WuhanGestureSelfTest : Node
             "only legacy refill node is retained for scene compatibility");
 
         _screen.DoupiStock.TryTake(_screen.DoupiStock.Count,out _);View.CancelAnimations();
-        Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].StageSeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
-        if(level<3)Drag(View.PanCenter,View.PanCenter-new Vector2(0,55));Step(.5);
-        Click(View.PanCenter);Step(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
-        Drag(View.PanCenter-new Vector2(30,30),View.PanCenter+new Vector2(30,30));
+        PrepareDoupi(level);
+        Drag(View.PanPoint(.2f,.2f),View.PanPoint(.6f,.6f));
         Check(_screen.Doupi!.CompletedCuts==0,"diagonal stroke is not classified as either cut direction");
-        Drag(View.PanCenter+new Vector2(0,40),View.PanCenter-new Vector2(0,140));Step(.4);
-        Check(_screen.Doupi.CutDirections.SetEquals(new[]{DoupiCutDirection.Vertical}),"vertical first and fast stroke ending outside pan are accepted");
+        Drag(View.PanPoint(.5f,.95f),View.PanPoint(.5f,-.4f));Step(.4);
+        Check(_screen.Doupi.CutLines.SetEquals(new[]{DoupiCutLine.Center}),"vertical first and fast stroke ending outside pan are accepted");
         _screen.DoupiStock.TryAddBatch(16);
-        Drag(View.PanCenter+new Vector2(45,0),View.PanCenter-new Vector2(45,0));Step(.4);
+        foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Right,DoupiCutLine.Left}){Cut(line,true);Step(.4);}
         Check(_screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.RemainingPieces==8,"full tray keeps entire cut batch in pan");
         _screen.Doupi.Tick(100);
         Check(_screen.Doupi.Quality==DoupiQuality.Normal,"fully cut batch does not burn while waiting for capacity");
@@ -310,17 +384,16 @@ public partial class WuhanGestureSelfTest : Node
         Deliver(bowl,0);
         Check(_pressCount-before==6&&controller.CustomerQueue.Slots[0].Progress.GetDeliveredQuantity(0)==1,"one scallion noodle bowl including delivery needs exactly six presses");
         before=_pressCount;
-        Click(View.PanCenter);Step(.4);Click(View.PanCenter);Step(2.51);Drag(View.PanCenter,View.PanCenter-new Vector2(0,55));Step(.5);
-        Click(View.PanCenter);Step(3.51);Drag(View.PanCenter-new Vector2(45,0),View.PanCenter+new Vector2(45,0));Step(.4);
-        Drag(View.PanCenter-new Vector2(0,45),View.PanCenter+new Vector2(0,45));Step(.4);Step(.5);
-        Check(_pressCount-before==6&&_screen.DoupiStock.Count==8,"one doupi batch automatically stocks eight with exactly six presses");
+        PrepareDoupi(1);
+        foreach(var line in Enum.GetValues<DoupiCutLine>()){Cut(line);Step(.4);}Step(.5);
+        Check(_pressCount-before==8&&_screen.DoupiStock.Count==8,"one doupi batch automatically stocks eight with exactly eight presses");
         for(int i=0;i<4;i++)Deliver(View.StockCenter,i);
         // Day 8 now admits a fifth waiting customer during cooking. The measured
         // budget still covers the four original quantity-two orders only.
-        Check(_pressCount-before==10&&_screen.DoupiStock.Count==0&&budgetCustomers.All(c=>c.Progress.GetDeliveredQuantity(1)==2),
-            $"batch and four quantity-two deliveries total ten presses (presses={_pressCount-before}, stock={_screen.DoupiStock.Count}, delivered={string.Join(',', controller.CustomerQueue.Slots.Select(c=>c.Progress.GetDeliveredQuantity(1)))})");
+        Check(_pressCount-before==12&&_screen.DoupiStock.Count==0&&budgetCustomers.All(c=>c.Progress.GetDeliveredQuantity(1)==2),
+            $"batch and four quantity-two deliveries total twelve presses (presses={_pressCount-before}, stock={_screen.DoupiStock.Count}, delivered={string.Join(',', controller.CustomerQueue.Slots.Select(c=>c.Progress.GetDeliveredQuantity(1)))})");
         Check(controller.Ledger!.Build().CompletedCustomers==1,"noodles and doupi complete the first combo without egg");
-        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=0");
+        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=12 egg=0");
         ProjectSettings.SetSetting("accessibility/reduce_motion",reduced);
         _screen.Free();controller.Free();save.Free();await Frames();
     }

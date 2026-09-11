@@ -8,10 +8,13 @@ public partial class WuhanWorkstationView
 {
     public event Action<string>? GestureRejected;
     public Func<int, bool>? RaiseRequested, PourRequested;
-    public Func<DoupiCutDirection, bool>? CutRequested;
+    public Func<DoupiCutLine, bool>? CutRequested;
     private string _gesture = "";
-    private Vector2 _gestureStart, _gesturePoint, _gesturePrevious, _cutDisplacement;
-    private float _gestureTravel, _cutTravel, _maximumExcursion;
+    private Vector2 _gestureStart, _gesturePoint, _gesturePrevious;
+    private DoupiCutStroke? _cutStroke;
+    private bool _fillingDeposited;
+    private float _flipLift;
+    private float _gestureTravel, _maximumExcursion;
     private int _gestureBasket;
     private Vector2? _rawDropOrigin;
     private bool _cutCommitted;
@@ -29,11 +32,16 @@ public partial class WuhanWorkstationView
             if (_cooker.Baskets[_gestureBasket].State is NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked
                 or NoodleBasketState.Raised or NoodleBasketState.Draining or NoodleBasketState.Drained) gesture = "basket";
         }
+        else if (hit == "batter" && _doupi is not null && !Busy("pan")) gesture = "batter";
+        else if (hit == "filling" && _doupi is not null && !Busy("pan")) gesture = "filling";
         else if (hit == "pan" && NearPan(point) && !Busy("pan")) gesture = _doupi?.State switch {
-            DoupiState.ReadyToFlip => "flip", DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting => "cut", _ => "" };
+            DoupiState.Spreading => "spread", DoupiState.ReadyToFlip => "flip", DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting => "cut", _ => "" };
         if (gesture.Length == 0) return false;
         EndMix(); _gesture = gesture; _gestureStart = _gesturePoint = _gesturePrevious = point;
-        _gestureTravel = _cutTravel = _maximumExcursion = 0; _cutDisplacement = Vector2.Zero; _cutCommitted = false;
+        _gestureTravel = _maximumExcursion = 0; _cutCommitted = false;
+        _cutStroke = gesture == "cut" ? new DoupiCutStroke(SurfacePoint(point)) : null;
+        _fillingDeposited = gesture == "spread";
+        if (gesture == "spread") SpreadRequested?.Invoke(SurfacePoint(point), SurfacePoint(point));
         QueueRedraw(); return true;
     }
 
@@ -69,38 +77,30 @@ public partial class WuhanWorkstationView
         if (_gesture == "basket" && point.Y - _gestureStart.Y <= -38
             && _cooker.Baskets[_gestureBasket].State is NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked)
             RaiseRequested?.Invoke(_gestureBasket);
-        if (_gesture == "cut" && !_cutCommitted)
+        if (_gesture == "filling" && !_fillingDeposited && OnPan(point))
+            _fillingDeposited = FillingRequested?.Invoke() == true;
+        if ((_gesture == "filling" && _fillingDeposited) || _gesture == "spread")
         {
-            Vector2 inside = PanSegment(_gesturePrevious, point);
-            _cutTravel += inside.Length(); _cutDisplacement += inside;
-            float x = Math.Abs(_cutDisplacement.X), y = Math.Abs(_cutDisplacement.Y);
-            if (_cutTravel >= 42 && _cutDisplacement.Length() >= 42 && Math.Max(x, y) >= Math.Min(x, y) * 1.25f)
-            {
-                var direction = x > y ? DoupiCutDirection.Horizontal : DoupiCutDirection.Vertical;
-                _cutCommitted = CutRequested?.Invoke(direction) == true;
-            }
+            Vector2 from = _gesturePrevious;
+            // Entering with a new portion starts at the entry point, with no trail from the bowl.
+            if (!OnPan(from) && OnPan(point)) from = point;
+            SpreadRequested?.Invoke(SurfacePoint(from), SurfacePoint(point));
         }
+        if (_gesture == "flip" && _doupi?.State == DoupiState.ReadyToFlip)
+            _flipLift = Math.Clamp((_gestureStart.Y - point.Y) / DoupiInteraction.FlipDistance, 0, 1);
+        if (_gesture == "cut" && !_cutCommitted && _cutStroke?.Move(SurfacePoint(point)) == true)
+            _cutCommitted = CutRequested?.Invoke(_cutStroke.Line!.Value) == true;
         _gesturePrevious = point; QueueRedraw();
     }
 
-    private void CancelGesture() { _gesture = ""; _gestureTravel = 0; QueueRedraw(); }
-    private bool OnPan(Vector2 point) => Geometry2D.IsPointInPolygon(point, PanCorners);
-    // Clip input to the convex pan so fast strokes may end outside it.
-    private Vector2 PanSegment(Vector2 from, Vector2 to)
+    private void CancelGesture()
     {
-        Vector2 delta = to - from; float enter = 0, leave = 1;
-        Vector2[] corners = PanCorners; Vector2 center = PanCenter;
-        for (int i = 0; i < corners.Length; i++)
-        {
-            Vector2 a = corners[i], edge = corners[(i + 1) % corners.Length] - a;
-            float sign = Math.Sign(edge.Cross(center - a));
-            float distance = sign * edge.Cross(from - a), velocity = sign * edge.Cross(delta);
-            if (Math.Abs(velocity) < .0001f) { if (distance < 0) return Vector2.Zero; continue; }
-            float t = -distance / velocity;
-            if (velocity > 0) enter = Math.Max(enter, t); else leave = Math.Min(leave, t);
-        }
-        return leave > enter ? delta * (leave - enter) : Vector2.Zero;
+        if (_gesture == "flip" && _flipLift > 0 && _doupi?.State == DoupiState.ReadyToFlip && !Busy("pan"))
+            PlayFlipReturn(_flipLift);
+        _flipLift = 0; _gesture = ""; _gestureTravel = 0; _cutStroke = null; QueueRedraw();
     }
+    private Vector2 SurfacePoint(Vector2 point) => DoupiInteraction.ToSurface(PanCorners, point);
+    private bool OnPan(Vector2 point) => DoupiInteraction.Inside(SurfacePoint(point));
     private bool NearPan(Vector2 point)
     {
         Vector2[] corners = PanCorners;
@@ -112,7 +112,14 @@ public partial class WuhanWorkstationView
     private void FinishGesture(Vector2 point)
     {
         string gesture = _gesture; Vector2 movement = point - _gestureStart;
-        bool committed = _cutCommitted; CancelGesture();
+        bool committed = _cutCommitted;
+        bool deposited = _fillingDeposited;
+        float lift = _flipLift;
+        // Complete the flip before cancelling, so its motion inherits the held pose.
+        bool flipped = gesture == "flip" && !Busy("pan") && movement.Y <= -DoupiInteraction.FlipDistance
+            && Math.Abs(movement.X) < DoupiInteraction.FlipSideTolerance && FlipRequested?.Invoke() == true;
+        if (flipped && Find("pan") is Motion flip) flip.Lift = lift;
+        CancelGesture();
         if (CanInteract?.Invoke() != true) return;
         bool accepted = false;
         if (gesture == "raw")
@@ -127,15 +134,18 @@ public partial class WuhanWorkstationView
             if (BowlRect.Grow(20).HasPoint(point)) accepted = raised && PourRequested?.Invoke(_gestureBasket) == true;
             else accepted = raised; // Parking an already raised basket is a valid interruption.
         }
-        else if (gesture == "flip")
+        else if (gesture == "batter")
         {
-            accepted = !Busy("pan") && movement.Y <= -40 && Math.Abs(movement.X) < 150 && _doupi?.State == DoupiState.ReadyToFlip;
-            if (accepted) DoupiPressed?.Invoke();
+            accepted = OnPan(point) && BatterRequested?.Invoke() == true;
+            if (accepted && Find("pan") is Motion batter) batter.Origin = point;
         }
+        else if (gesture is "filling" or "spread") accepted = deposited;
+        else if (gesture == "flip") accepted = flipped;
         else if (gesture == "cut") accepted = committed;
         if (!accepted) GestureRejected?.Invoke(gesture switch {
             "raw" => "把生面拖进空漏勺。", "basket" => "向上提篮后拖到空碗；也可先放下等待沥干。",
-            "flip" => "按住锅面向上划动翻面。", "cut" => "横、竖各划一次；已完成方向无需重复。", _ => "请在对应食物区域完成操作。" });
+            "batter" => "从浆碗拖一勺浆到空锅再松手。", "filling" => "翻面后从馅碗取馅，按住锅面铺开。",
+            "flip" => "按住锅面向上划动翻面。", "cut" => "沿虚线划过大部分长度；一横三竖各切一刀。", _ => "请在对应食物区域完成操作。" });
     }
 
     private void DrawGesture()
@@ -150,8 +160,21 @@ public partial class WuhanWorkstationView
         if (!HasProductionGesture) return;
         if (_gesture == "raw") for (int i = 0; i < _cooker.Baskets.Count; i++) if (_cooker.Baskets[i].State == NoodleBasketState.Empty) Target(BasketRect(i).Grow(12));
         if (_gesture == "basket" && _bowl.State == NoodleBowlState.Empty && !_cooker.PendingPourBasket.HasValue) Target(BowlRect.Grow(10));
-        if (_gesture is "flip" or "cut") DrawLine(_gestureStart, _gesturePoint, WuhanUi.Ink, 3, true);
-        string sprite = _gesture switch { "raw" => "raw_noodles", "flip" => "flip_tool", "cut" => "cut_tool", _ => "basket" };
+        if ((_gesture == "batter" && _doupi?.State == DoupiState.Empty) || (_gesture == "filling" && _doupi?.State == DoupiState.Flipped))
+            DrawPolyline(PanCorners.Concat(new[] { PanCorners[0] }).ToArray(), new Color("#ADBD7B"), 3, true);
+        if (_gesture is "spread" || (_gesture == "filling" && _fillingDeposited))
+        {
+            if (_doupi?.State == DoupiState.Spreading && OnPan(_gesturePoint))
+                Sprite("cut_tool", At(_gesturePoint + new Vector2(28, -20), new Vector2(90, 65)), .85f);
+            return;
+        }
+        if (_gesture == "cut" && !_cutCommitted && _cutStroke?.Line is DoupiCutLine line)
+        {
+            var (from, to) = CutLine((int)line);
+            for (int i = 0; i < _cutStroke.SampleCount; i++)
+                if (_cutStroke.Covered(i)) DrawLine(from.Lerp(to, (float)i / _cutStroke.SampleCount), from.Lerp(to, (float)(i + 1) / _cutStroke.SampleCount), WuhanUi.Ink, 3, true);
+        }
+        string sprite = _gesture switch { "raw" => "raw_noodles", "flip" => "flip_tool", "cut" => "cut_tool", "batter" => "doupi_ladle", "filling" => "doupi_filling_overlay", _ => "basket" };
         Vector2 size = _gesture switch { "raw" => BasketFoodRect(At(Vector2.Zero, BasketSize)).Size, "basket" => BasketSize, _ => new Vector2(100, 100) };
         if (_gesture == "basket") DrawLoadedBasket(At(_gesturePoint, size));
         else if (_gesture != "cut" || !_cutCommitted) Sprite(sprite, At(_gesturePoint, size), .9f);

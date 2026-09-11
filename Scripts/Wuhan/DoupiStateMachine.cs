@@ -1,9 +1,9 @@
 using ProjectCake.Data;
+using Godot;
 
 namespace ProjectCake.Wuhan;
 
-public enum DoupiState { Empty, Batter, SkinCooking, ReadyToFlip, Flipped, SecondCooking, ReadyToCut, Overbrowned, Burnt, Cut, Cutting }
-public enum DoupiCutDirection { Horizontal, Vertical }
+public enum DoupiState { Empty, Batter, SkinCooking, ReadyToFlip, Flipped, SecondCooking, ReadyToCut, Overbrowned, Burnt, Cut, Cutting, Spreading }
 public enum DoupiQuality { Normal, Overbrowned, Burnt }
 
 public sealed class DoupiInventory
@@ -22,17 +22,52 @@ public sealed class DoupiStateMachine
 {
     private readonly DoupiGriddleLevelData _data;
     private double _seconds;
-    private readonly HashSet<DoupiCutDirection> _cuts = new();
+    private readonly HashSet<DoupiCutLine> _cuts = new();
     public DoupiState State { get; private set; }
     public DoupiQuality Quality { get; private set; }
-    public int RequiredCuts => 2;
+    public int RequiredCuts => 4;
     public int CompletedCuts => _cuts.Count;
-    public IReadOnlySet<DoupiCutDirection> CutDirections => _cuts;
+    public IReadOnlySet<DoupiCutLine> CutLines => _cuts;
     public int RemainingPieces { get; private set; }
     public int FirstRemainingPiece => _data.BatchYield - RemainingPieces;
     public float BrowningProgress => State == DoupiState.SecondCooking
         ? (float)Math.Clamp(_seconds / _data.SecondStageReadySeconds, 0, 1)
         : State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting or DoupiState.Cut ? 1 : 0;
+
+    private readonly bool[] _coverage = new bool[DoupiInteraction.CoverageWidth * DoupiInteraction.CoverageHeight];
+    public float Coverage => (float)_coverage.Count(x => x) / _coverage.Length;
+    public bool IsCovered(int x, int y) => _coverage[y * DoupiInteraction.CoverageWidth + x];
+    public int CoverageRevision { get; private set; }
+    public bool Spread(Vector2 from, Vector2 to, float surfaceAspect)
+    {
+        if (State != DoupiState.Spreading || !from.IsFinite() || !to.IsFinite() || !float.IsFinite(surfaceAspect) || surfaceAspect <= 0) return false;
+        // Clip before measuring distance: a brush entirely outside the food must not paint its edge.
+        Vector2 delta = to - from;
+        float enter = 0, leave = 1;
+        for (int axis = 0; axis < 2; axis++)
+        {
+            float a = from[axis], d = delta[axis];
+            if (Math.Abs(d) < .00001f) { if (a < 0 || a > 1) return false; continue; }
+            float t0 = -a / d, t1 = (1 - a) / d;
+            enter = Math.Max(enter, Math.Min(t0, t1)); leave = Math.Min(leave, Math.Max(t0, t1));
+        }
+        if (leave < enter) return false;
+        Vector2 scale = new(Math.Max(1, surfaceAspect), Math.Max(1, 1 / surfaceAspect));
+        Vector2 aPoint = (from + delta * enter) * scale, bPoint = (from + delta * leave) * scale;
+        bool changed = false;
+        for (int y = 0; y < DoupiInteraction.CoverageHeight; y++)
+        for (int x = 0; x < DoupiInteraction.CoverageWidth; x++)
+        {
+            int index = y * DoupiInteraction.CoverageWidth + x;
+            Vector2 center = new Vector2((x + .5f) / DoupiInteraction.CoverageWidth, (y + .5f) / DoupiInteraction.CoverageHeight) * scale;
+            if (!_coverage[index] && center.DistanceTo(Geometry2D.GetClosestPointToSegment(center, aPoint, bPoint)) <= DoupiInteraction.BrushRadius)
+            { _coverage[index] = true; changed = true; }
+        }
+        if (changed) CoverageRevision++;
+        if (Coverage >= DoupiInteraction.CoverageTarget)
+        { Array.Fill(_coverage, true); CoverageRevision++; State = DoupiState.SecondCooking; _seconds = 0; }
+        return changed;
+    }
 
     public DoupiStateMachine(DoupiGriddleLevelData data) => _data = data;
     public bool TryPourBatter() { if (State != DoupiState.Empty) return false; State = DoupiState.Batter; return true; }
@@ -42,7 +77,7 @@ public sealed class DoupiStateMachine
         if (State != DoupiState.ReadyToFlip) return false;
         State = DoupiState.Flipped; _seconds = 0; return true;
     }
-    public bool TryAddFilling() { if (State != DoupiState.Flipped) return false; State = DoupiState.SecondCooking; _seconds = 0; return true; }
+    public bool TryAddFilling() { if (State != DoupiState.Flipped) return false; State = DoupiState.Spreading; _seconds = 0; return true; }
     public void Tick(double delta)
     {
         if (delta <= 0) return;
@@ -69,7 +104,7 @@ public sealed class DoupiStateMachine
             if (_data.CanBurn && _seconds > _data.SecondStageBurnSeconds) { State = DoupiState.Burnt; Quality = DoupiQuality.Burnt; }
         }
     }
-    public bool TryCut(DoupiCutDirection direction)
+    public bool TryCut(DoupiCutLine direction)
     {
         if (!Enum.IsDefined(direction) || State is not (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting) || !_cuts.Add(direction)) return false;
         State = DoupiState.Cutting;
@@ -86,5 +121,5 @@ public sealed class DoupiStateMachine
         return amount;
     }
     public void Discard() => Reset();
-    private void Reset() { State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; }
+    private void Reset() { State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; Array.Clear(_coverage); CoverageRevision++; }
 }

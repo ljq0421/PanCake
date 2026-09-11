@@ -14,11 +14,11 @@ public sealed class XianSession
         OvenData = catalog.GetXianEquipment(XianRules.Oven, Level(XianRules.Oven));
         SoupData = catalog.GetXianEquipment(XianRules.Soup, Level(XianRules.Soup));
         int Initial(XianEquipmentData d) => day >= 9 && d.Level >= 2 ? 6 : 4;
-        Buns = new BunInventory(OvenData.StockCapacity, day >= 3 ? Initial(OvenData) : 0, day < 3);
+        Buns = new BunInventory(OvenData.StockCapacity, Initial(OvenData));
         Meat = new RefillableStock(BoardData.IngredientCapacity, .8);
         Juice = new RefillableStock(BoardData.IngredientCapacity, .6);
         Board = new ChoppingStateMachine(BoardData, day >= 3 ? Initial(BoardData) : 0);
-        if (day >= 3) Oven = new BunOvenStateMachine(OvenData);
+        Oven = new BunOvenStateMachine(OvenData);
         if (day >= 6) Soup = new HulatangRuntime(SoupData, Initial(SoupData));
     }
     public int Day { get; }

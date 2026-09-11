@@ -14,7 +14,8 @@ public partial class WuhanWorkstationView : Control
 {
     public event Action<int>? BasketPressed;
     public event Action<string>? IngredientPressed;
-    public event Action? DoupiPressed;
+    public Func<bool>? BatterRequested, EggRequested, FillingRequested, FlipRequested, DiscardRequested;
+    public Func<Vector2, Vector2, bool>? SpreadRequested;
     public event Action<float>? MixMoved;
     public Func<bool>? CanInteract { get; set; }
     private DragService? _drag;
@@ -170,7 +171,8 @@ public partial class WuhanWorkstationView : Control
         public int Amount;
         public int StockStart;
         public Vector2? Origin;
-        public DoupiCutDirection Direction;
+        public DoupiCutLine Line;
+        public float Lift;
         public string Ingredient = "";
         public NoodleQuality Quality;
         public DoupiState Before;
@@ -188,6 +190,13 @@ public partial class WuhanWorkstationView : Control
     private Rect2 IngredientRect(int index) => _layout.Ingredient(index);
     private Rect2 BatterRect => _layout.Batter;
     private Rect2 FillingRect => _layout.Filling;
+    private Rect2 DoupiEggRect => _layout.DoupiEgg;
+    public Vector2 BatterCenter => BatterRect.GetCenter();
+    public Vector2 FillingCenter => FillingRect.GetCenter();
+    public Vector2 DoupiEggCenter => DoupiEggRect.GetCenter();
+    public Vector2 PanPoint(float x, float y) => QuadPoint(PanCorners, x, y);
+    public float PanAspect => ((PanCorners[1] - PanCorners[0]).Length() + (PanCorners[2] - PanCorners[3]).Length())
+        / ((PanCorners[3] - PanCorners[0]).Length() + (PanCorners[2] - PanCorners[1]).Length());
     public Vector2 BowlStatusPosition => new(BowlRect.Position.X, BowlRect.End.Y + 10);
     public Vector2 DoupiStatusPosition => new(PanRect.Position.X, PanRect.End.Y + 10);
     public Vector2 EggStatusPosition => EggStockRect.Position;
@@ -259,12 +268,16 @@ public partial class WuhanWorkstationView : Control
         string kind = before switch { DoupiState.Empty => "batter", DoupiState.Batter => "egg",
             DoupiState.ReadyToFlip => "flip", DoupiState.Flipped => "filling", DoupiState.Burnt => "discard", _ => "cut" };
         Motion m = Play(kind, kind == "flip" ? .48 : .36, "pan");
-        m.Before = before; RememberStates();
+        m.Before = before;
+        RememberStates();
     }
-    public void PlayCut(DoupiCutDirection direction)
+    public void PlayCut(DoupiCutLine line)
     {
-        Motion m = Play("cut", .36, "pan"); m.Direction = direction; RememberStates();
+        Motion m = Play("cut", .36, "pan"); m.Line = line;
+        if (_gesture == "cut") m.Origin = _gesturePoint;
+        RememberStates();
     }
+    private void PlayFlipReturn(float lift) => Play("flip_return", .16, "pan").Lift = lift;
     public void PlayStock(int amount, int stockStart, int firstPiece = 0, DoupiQuality quality = DoupiQuality.Normal)
     {
         Motion m = Play("stock", .48, "pan", "stock");
@@ -325,7 +338,9 @@ public partial class WuhanWorkstationView : Control
             string hit = HitTarget(mb.Position);
             if (TryBeginGesture(hit, mb.Position)) { AcceptEvent(); return; }
             if (hit.StartsWith("ingredient")) IngredientPressed?.Invoke(IngredientIds[int.Parse(hit[^1..])]);
-            else if (hit == "pan" && _doupi?.State is DoupiState.Empty or DoupiState.Batter or DoupiState.Flipped or DoupiState.Burnt) DoupiPressed?.Invoke();
+            else if (hit == "doupi_egg") EggRequested?.Invoke();
+            else if (hit == "pan" && _doupi?.State == DoupiState.Burnt) DiscardRequested?.Invoke();
+            else if (hit == "pan" && _doupi is not null) GestureRejected?.Invoke(HoverDescription("pan"));
             else if (hit == "bowl" && !Busy("bowl"))
             {
                 if (InBowl(mb.Position) && _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing) { _mixLast = mb.Position; _mixHeld = true; }
@@ -363,7 +378,13 @@ public partial class WuhanWorkstationView : Control
             if (BasketRect(i).HasPoint(p)) return $"basket{i}";
         if (RawTrayRect.HasPoint(p)) return "raw";
         if (_doupi is not null && StockRect.HasPoint(p)) return "stock";
-        if (_doupi is not null && (NearPan(p) || BatterRect.HasPoint(p) || FillingRect.HasPoint(p))) return "pan";
+        if (_doupi is not null)
+        {
+            if (DoupiEggRect.HasPoint(p)) return "doupi_egg";
+            if (BatterRect.HasPoint(p)) return "batter";
+            if (FillingRect.HasPoint(p)) return "filling";
+            if (NearPan(p)) return "pan";
+        }
         return "";
     }
 

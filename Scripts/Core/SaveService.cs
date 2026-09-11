@@ -178,6 +178,12 @@ public partial class SaveService : Node
         }
         if (config.CityId == StableIds.Cities.Xian)
         {
+            // Also repair pre-Day-3 saves continuing any later day; never downgrade an upgrade.
+            const string freeOven = "equipment:xian_oven_lv1";
+            if (!city.UnlockedContentIds.Contains(freeOven, StringComparer.Ordinal))
+            { city.UnlockedContentIds.Add(freeOven); changed = true; }
+            if (city.EquipmentLevels.GetValueOrDefault("xian_oven") < 1)
+            { city.EquipmentLevels["xian_oven"] = 1; changed = true; }
             foreach (string equipment in new[] { "xian_oven", "xian_soup" })
                 if (config.StartUnlocks.Contains($"equipment:{equipment}_lv1") && city.EquipmentLevels.GetValueOrDefault(equipment) < 1)
                 { city.EquipmentLevels[equipment] = 1; changed = true; }

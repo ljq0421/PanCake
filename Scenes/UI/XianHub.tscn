@@ -1793,7 +1793,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_svtev")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_d5e8x")
 theme_override_styles/focus = SubResource("StyleBoxFlat_kkebo")
 disabled = true
-text = "Day 3 · 白吉馍炉到了
+text = "Day 3 · 补货练习
 尚未解锁"
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.XianHub|_days|list|2")
 
@@ -2040,7 +2040,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_i63m3")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_6q4wq")
 theme_override_styles/focus = SubResource("StyleBoxFlat_588gb")
 disabled = true
-text = "Day 3 开店时免费获得"
+text = "Day 1 开店时免费获得"
 
 [node name="@PanelContainer@398" type="PanelContainer" parent="." unique_id=1180898521]
 layout_mode = 0

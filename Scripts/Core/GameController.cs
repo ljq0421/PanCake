@@ -134,6 +134,7 @@ public partial class GameController : Node
             Control target = mapOriginCity switch { Data.StableIds.Cities.Yangzhou => _yangzhouHub, Data.StableIds.Cities.Guangzhou => _guangzhouHub, Data.StableIds.Cities.Xian => _xianHub, Data.StableIds.Cities.Wuhan => wuhanHub, _ => hub };
             ShowOnly(target);
         };
+        mapScreen.XianPreviewRequested += () => OpenCity(Data.StableIds.Cities.Xian, allowDeveloperPreview: true);
         mapScreen.WuhanPreviewRequested += () => OpenCity(Data.StableIds.Cities.Wuhan, allowDeveloperPreview: true);
         mapScreen.CityRequested += cityId =>
         {

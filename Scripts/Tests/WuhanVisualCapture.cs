@@ -215,7 +215,7 @@ public partial class WuhanVisualCapture : Node
                 Require((ingredient==0 ? day.Bowl.State==NoodleBowlState.Seasoned : day.Bowl.Toppings.Contains(id)) && day.Ingredients.CanUse(id),$"viewport ingredient {ingredient+1} adds one serving");
                 Step(.5);
             }
-            Click(view.PanCenter);Require(day.Doupi!.State==DoupiState.Batter,"viewport pan accepts batter");
+            Move(view.BatterCenter);Button(view.BatterCenter,true);Move(view.PanCenter,true);Button(view.PanCenter,false);Require(day.Doupi!.State==DoupiState.Batter,"viewport pan accepts dragged batter");
             Require(!day.EggUnlocked && !view.CanDeliver(ProductKind.EggRiceWine), "egg UI is retired");
             Step(.18);await Shot("02-preparing");Step(.5);
 
@@ -225,13 +225,13 @@ public partial class WuhanVisualCapture : Node
             for(int i=0;i<5;i++)Move(center+new Vector2(i%2==0?60:-60,0),true);
             Button(center,false);
             Require(day.Bowl.State==NoodleBowlState.Ready&&!view.IsMixing,"viewport bowl drag completes mixing");
-            Click(view.PanCenter);Require(day.Doupi.State==DoupiState.SkinCooking,"viewport pan adds egg");
+            Click(view.DoupiEggCenter);Require(day.Doupi.State==DoupiState.SkinCooking,"viewport pan adds egg");
             DoupiGriddleLevelData griddle=catalog.DoupiGriddlesByLevel[level];
             day.Doupi.Tick(griddle.StageSeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
             if(!griddle.AutoFlip)Require(day.Doupi.TryFlip(),"doupi skin flips for fixture");
-            Require(day.Doupi.TryAddFilling(),"doupi filling enters fixture");
+            Require(day.Doupi.TryAddFilling(),"doupi filling enters fixture");DoupiTestFixture.Spread(day.Doupi);
             day.Doupi.Tick(griddle.SecondStageReadySeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
-            for(int cut=0;cut<day.Doupi.RequiredCuts;cut++)Require(day.Doupi.TryCut((DoupiCutDirection)cut),$"doupi fixture cut {cut+1}");
+            for(int cut=0;cut<day.Doupi.RequiredCuts;cut++)Require(day.Doupi.TryCut((DoupiCutLine)cut),$"doupi fixture cut {cut+1}");
             view.CancelAnimations();Step(2.5);
             Require(!day.EggUnlocked,"retired egg stays hidden");
             await Shot("03-ready");
@@ -389,13 +389,13 @@ public partial class WuhanVisualCapture : Node
             Vector2 release = day.Workstation.GetGlobalTransformWithCanvas() * center;
             GetViewport().PushInput(new InputEventMouseButton { ButtonIndex=MouseButton.Left, Pressed=false, Position=release }, true);
             await Deliver(ProductKind.HotDryNoodles,"13-noodles-delivery");
-            day.DoupiAction();Step(.17);await Shot("14-batter-spreading");Step(.25);
-            day.DoupiAction();Step(.17);await Shot("15-egg-spreading");Step(2.4);
-            if(level<3)day.DoupiAction();Step(.18);await Shot("16-flipping");Step(.35);
-            day.DoupiAction();Step(.17);await Shot("17-filling");Step(3.4);await Shot("18-doupi-cooked");
-            for(int cut=1;cut<=2;cut++)
-            {day.CutDoupi((DoupiCutDirection)(cut-1));Step(.15);await Shot($"19-cut-{cut}");Step(.24);}
-            day.DoupiAction();Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");
+            day.PourDoupiBatter();Step(.17);await Shot("14-batter-spreading");Step(.25);
+            day.AddDoupiEgg();Step(.17);await Shot("15-egg-spreading");Step(2.4);
+            if(level<3)day.FlipDoupi();Step(.18);await Shot("16-flipping");Step(.35);
+            day.AddDoupiFilling();Step(.17);await Shot("17-filling");DoupiTestFixture.Spread(day.Doupi!);Step(3.4);await Shot("18-doupi-cooked");
+            for(int cut=1;cut<=4;cut++)
+            {day.CutDoupi((DoupiCutLine)(cut-1));Step(.15);await Shot($"19-cut-{cut}");Step(.24);}
+            Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");
             if(day.DoupiStock.Count!=8)throw new InvalidOperationException("Capture: doupi batch was not stocked");
             await Deliver(ProductKind.Doupi,"22-doupi-delivery");
             if(day.EggUnlocked)throw new InvalidOperationException("Capture: retired egg is enabled");

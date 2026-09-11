@@ -23,6 +23,8 @@ public partial class OrderBubbleView : PanelContainer
     private readonly Dictionary<Texture2D, Texture2D> _trimmed = new();
     private TianjinArtCatalog _shared = null!;
     private WuhanArtCatalog? _wuhan;
+    private XianArtCatalog? _xian;
+    private StyleBoxFlat? _xianPanel;
     private Color _paper;
     private Color _ink;
     private Color _rule;
@@ -56,6 +58,23 @@ public partial class OrderBubbleView : PanelContainer
         DrawPolyline(tail, _ink, 4, true);
     }
 
+    public void ConfigureXian(XianArtCatalog art)
+    {
+        _xian = art;
+        _xianPanel = (StyleBoxFlat)GetThemeStylebox("panel").Duplicate();
+        _xianPanel.BgColor = _paper;
+        _xianPanel.BorderColor = _ink;
+        AddThemeStyleboxOverride("panel", _xianPanel);
+        Patience.AddThemeStyleboxOverride("fill", Patience.GetThemeStylebox("fill").Duplicate() as StyleBox);
+    }
+
+    public void RenderXianState(double remaining, bool selected)
+    {
+        Patience.Value = Math.Clamp(remaining, 0, 1) * 100;
+        ((StyleBoxFlat)Patience.GetThemeStylebox("fill")).BgColor = remaining < .2 ? new Color("#b94938") : new Color("#769554");
+        if (_xianPanel is not null) _xianPanel.BorderColor = selected ? new Color("#db922e") : _ink;
+    }
+
     public void Render(OrderData order, OrderProgress progress, IReadOnlyDictionary<string, RecipeData> recipes)
     {
         if (!ReferenceEquals(_order, order))
@@ -81,7 +100,12 @@ public partial class OrderBubbleView : PanelContainer
                         sauce.SetMeta("sauce", (int)line.Sauce);
                         icons.AddChild(sauce);
                     }
-                    if (recipes.TryGetValue(line.DefinitionId, out RecipeData? recipe))
+                    if (_xian is not null && recipes.TryGetValue(line.DefinitionId, out var xianRecipe) && xianRecipe is XianRecipeData xr)
+                    {
+                        if (xr.MeatPortions > 1) icons.AddChild(Icon(_xian.Texture("多肉订单小图标"), new Vector2(44, 40), "OrderExtraMeat"));
+                        if (xr.HasJuice) icons.AddChild(Icon(_xian.Texture("加汁订单小图标"), new Vector2(32, 40), "OrderJuice"));
+                    }
+                    else if (recipes.TryGetValue(line.DefinitionId, out RecipeData? recipe))
                         foreach (string ingredient in recipe.ExtraIngredients)
                         {
                             Texture2D texture = _wuhan is null ? _shared.Ingredient(ingredient) : _wuhan.Ingredient(ingredient);
@@ -131,7 +155,7 @@ public partial class OrderBubbleView : PanelContainer
         }
     }
 
-    private static bool IsMain(ProductKind kind) => kind is ProductKind.Pancake or ProductKind.HotDryNoodles;
+    private static bool IsMain(ProductKind kind) => kind is ProductKind.Pancake or ProductKind.HotDryNoodles or ProductKind.Roujiamo;
 
     private PanelContainer Region(string name, float height, int line, int portion)
     {
@@ -153,6 +177,8 @@ public partial class OrderBubbleView : PanelContainer
 
     private Control ProductIcon(ProductKind kind, Vector2 size)
     {
+        if (_xian is not null && kind is ProductKind.Roujiamo or ProductKind.Hulatang)
+            return Icon(_xian.Texture(kind == ProductKind.Roujiamo ? "通用卡通腊汁肉夹馍成品" : "成品肉丸胡辣汤"), size, "OrderProductIcon");
         if (kind != ProductKind.HotDryNoodles || _wuhan is null)
             return Icon(_wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind), size, "OrderProductIcon");
         // The noodle texture is a food layer; place it in the same bowl as the workbench.

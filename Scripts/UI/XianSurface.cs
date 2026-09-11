@@ -5,12 +5,15 @@ namespace ProjectCake.UI;
 /// <summary>Replaceable vector placeholder with the same hit target for gestures and native drag/drop.</summary>
 public partial class XianSurface : Control
 {
-    public string Kind { get; set; } = "";
-    public bool ArtworkMode { get; set; }
+    [Export] public string Kind { get; set; } = "";
+    [Export] public bool ArtworkMode { get; set; }
     public string Title { get; set; } = "";
     public string Detail { get; set; } = "";
     public int Amount { get; set; }
     public int Stage { get; set; }
+    public bool HasJuice { get; set; }
+    public int Heat { get; set; }
+    private readonly XianArtCatalog _art = new();
     public double Meter { get; set; }
     public bool Selected { get; set; }
     public bool Unavailable { get; set; }
@@ -23,7 +26,6 @@ public partial class XianSurface : Control
     public Action<double>? HorizontalStroke { get; set; }
     public Action? GestureEnded { get; set; }
     private bool _held;
-    private bool _artworkStyled;
     private readonly StyleBoxFlat _meatBadge = new() { BgColor = new Color("#fff1d9ee"), CornerRadiusTopLeft = 9,
         CornerRadiusTopRight = 9, CornerRadiusBottomLeft = 9, CornerRadiusBottomRight = 9 };
     private Vector2 _previous;
@@ -49,6 +51,7 @@ public partial class XianSurface : Control
     }
     public override void _Draw()
     {
+        if (Kind == "customer") return;
         if (ArtworkMode && Kind != "customer") { DrawArtwork(); return; }
         var panel = new StyleBoxFlat
         {
@@ -61,14 +64,6 @@ public partial class XianSurface : Control
         if (Kind == "customer")
         {
             if (Amount == 0) return;
-            if (ArtworkMode)
-            {
-                Vector2 face = new(42, 120);
-                DrawCircle(face, 26, new Color("#eac28b"));
-                DrawCircle(face + new Vector2(-9, -6), 3, Ink); DrawCircle(face + new Vector2(9, -6), 3, Ink);
-                float mood = Meter < .3 ? 7 : Meter < .6 ? 0 : -7;
-                DrawPolyline(new[] { face + new Vector2(-11, 7), face + new Vector2(0, 7 + mood), face + new Vector2(11, 7) }, Ink, 3, true);
-            }
             DrawRect(new Rect2(18, Size.Y - 28, Size.X - 36, 10), new Color("#D9CEB9"));
             DrawRect(new Rect2(18, Size.Y - 28, (Size.X - 36) * (float)Math.Clamp(1 - Meter, 0, 1), 10), Meter > .6 ? Accent : new Color("#728658"));
             return;
@@ -115,70 +110,65 @@ public partial class XianSurface : Control
     }
     private void RefreshArtwork()
     {
-        _title.Text = Title; _detail.Text = Detail;
-        _title.MouseFilter = _detail.MouseFilter = MouseFilterEnum.Ignore;
-        _title.Position = new(8, 4); _title.Size = new(Size.X - 16, 30);
-        _detail.Position = new(8, Kind == "customer" ? 52 : Kind == "meat" ? 32 : Size.Y - 66);
-        _detail.Size = new(Size.X - 16, Kind == "customer" ? Size.Y - 95 : 64);
-        if (Kind == "customer" && Amount > 0) { _detail.Position = new(76, 52); _detail.Size = new(Size.X - 88, Size.Y - 95); }
-        _detail.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _title.ClipText = true;
-        if (!_artworkStyled)
-        {
-            _title.AddThemeFontSizeOverride("font_size", Kind == "customer" ? 23 : 22);
-            _detail.AddThemeFontSizeOverride("font_size", 21);
-            foreach (var label in new[] { _title, _detail })
-            {
-                label.AddThemeColorOverride("font_color", new Color("#422919"));
-                label.AddThemeColorOverride("font_outline_color", new Color("#fff1d9"));
-                label.AddThemeConstantOverride("outline_size", 5);
-            }
-            _artworkStyled = true;
-        }
-        // Keep the assembly plate clear: detailed recipe state appears above it.
-        if (Kind == "bun") { _title.Position = new(0, -30); _detail.Position = new(-20, 105); _detail.Size = new(Size.X + 40, 65); }
-        Modulate = Colors.White; QueueRedraw();
+        _title.Visible = _detail.Visible = Kind != "customer";
+        _title.Text = Title;
+        _detail.Text = Detail;
+        Modulate = Colors.White;
+        QueueRedraw();
+    }
+
+    private void Food(string name, Rect2 rect, Color? tint = null)
+    {
+        Texture2D texture = _art.Texture(name);
+        Vector2 size = texture.GetSize();
+        float scale = Math.Min(rect.Size.X / size.X, rect.Size.Y / size.Y);
+        Vector2 fitted = size * scale;
+        DrawTextureRect(texture, new Rect2(rect.Position + (rect.Size - fitted) / 2, fitted), false, tint ?? Colors.White);
     }
 
     private void DrawArtwork()
     {
-        Vector2 center = new(Size.X / 2, Size.Y * .40f);
-        if (Kind == "meat")
+        if (Kind == "bun" && Stage > 0)
         {
-            DrawStyleBox(_meatBadge, new Rect2(Vector2.Zero, Size));
-        }
-        else if (Kind == "bun" && Stage > 0)
-        {
-            DrawCircle(center, 55, Ink); DrawCircle(center, 51, FoodColor);
-            if (Stage >= 2)
+            Color tint = Heat > 0 ? new Color("#bb8c62") : Colors.White;
+            Food(Stage == 1 ? "完整熟白吉馍" : "切开白吉馍状态层", new Rect2(38, 0, 240, 140), tint);
+            // Each trimmed layer is calibrated to the opening, rather than stretching its source canvas.
+            if (Stage >= 2 && Amount > 0) Food("标准肉量覆盖层-v2", new Rect2(68, 76, 180, 42));
+            if (Stage >= 2 && Amount > 1) Food("多肉追加覆盖层", new Rect2(67, 62, 182, 37));
+            if (HasJuice) Food("腊汁覆盖层", new Rect2(80, 85, 156, 23));
+            if (Stage == 3)
             {
-                DrawLine(center + new Vector2(-45, 0), center + new Vector2(45, 0), Ink, 8);
-                for (int i = 0; i < Amount * 5; i++) DrawCircle(center + new Vector2(-32 + i % 5 * 16, i / 5 * 12), 10, new Color("#93553a"));
+                // Show only the front lower section of the bag; the bun and toppings remain visible.
+                var paper = _art.Texture("肉夹馍包装纸");
+                Vector2 size = paper.GetSize();
+                DrawTextureRectRegion(paper, new Rect2(36, 112, 244, 24),
+                    new Rect2(0, size.Y * .55f, size.X, size.Y * .45f));
             }
-            if (Stage == 3) DrawRect(new Rect2(center + new Vector2(-51, 15), new Vector2(102, 34)), new Color("#fff9e9"));
         }
         else if (Kind == "oven")
         {
             for (int i = 0; i < Amount; i++)
             {
-                Vector2 p = new(100 + i % 3 * 150, 68 + i / 3 * 52);
-                DrawCircle(p, 25, Ink); DrawCircle(p, 22, FoodColor);
+                Rect2 rect = new(75 + i % 3 * 150, 47 + i / 3 * 58, 100, 61);
+                Food(Stage <= 1 ? "生白吉馍坯" : "熟白吉馍", rect, Heat == 2 ? new Color("#49362e") : Colors.White);
+                if (Heat > 0) Food("白吉馍偏焦覆盖层", rect, Heat == 2 ? new Color("#49362e") : Colors.White);
             }
         }
         else if (Kind == "board" && Amount > 0)
         {
-            for (int i = 0; i < 6; i++) DrawCircle(center + new Vector2(-45 + i % 3 * 35, i / 3 * 20), 16, new Color("#93553a"));
-            float offset = (float)Math.Sin(Meter * Math.PI * 12) * 28;
-            DrawRect(new Rect2(center + new Vector2(offset, -30), new Vector2(75, 24)), new Color("#e0dcd4"));
-            DrawLine(center + new Vector2(offset + 75, -18), center + new Vector2(offset + 105, -18), Ink, 11);
-            DrawRect(new Rect2(25, Size.Y - 78, (Size.X - 50) * (float)Meter, 7), Accent);
+            Food(Meter < .34 ? "剁肉状态01 整块肉" : Meter < .7 ? "剁肉状态02 粗剁状态" : "剁肉状态03 完成剁肉", new Rect2(160, 24, 165, 108));
+            float offset = (float)Math.Sin(Meter * Math.PI * 12) * 24;
+            Food("剁肉菜刀", new Rect2(260 + offset, 3, 135, 90));
+            DrawRect(new Rect2(145, 139, 240, 7), new Color("#49362e55"));
+            DrawRect(new Rect2(145, 139, 240 * (float)Meter, 7), Accent);
         }
-        else if (Kind == "soup_bowl" && Amount > 0)
+        else if (Kind == "meat")
         {
-            DrawCircle(center, 48, Ink); DrawCircle(center, 43, new Color("#fff9e9"));
-            DrawCircle(center, 36, new Color("#9d5940"));
-            for (int i = 0; i < 4; i++) DrawCircle(center + new Vector2(-16 + i % 2 * 29, -13 + i / 2 * 25), 8, new Color("#cbb181"));
+            Food("预剁肉备货盘", new Rect2(5, 0, 118, 65));
+            if (Amount > 0) Food("剁肉状态03 完成剁肉", new Rect2(27, 6, 75, 40));
         }
+        else if (Kind == "soup_bowl")
+            Food(Amount > 0 ? "成品肉丸胡辣汤" : "胡辣汤空碗", new Rect2(66, 15, 190, 145));
     }
     public override void _GuiInput(InputEvent input)
     {

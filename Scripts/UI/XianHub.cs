@@ -67,7 +67,7 @@ public partial class XianHub : Control
                 _ => $"锅内{current.Capacity}份 · 盛汤0.6秒\n补锅{current.RefillSeconds:0.0}秒",
             };
             ui.Label.Text = $"{XianRules.EquipmentName(id)} · {(level == 0 ? "未开放" : $"Lv{level}")}\n{detail}";
-            if (level == 0) { ui.Buy.Text = $"Day {(id == XianRules.Oven ? 3 : 6)} 开店时免费获得"; ui.Buy.Disabled = true; }
+            if (level == 0) { ui.Buy.Text = $"Day {(id == XianRules.Oven ? 1 : 6)} 开店时免费获得"; ui.Buy.Disabled = true; }
             else if (level == 3) { ui.Buy.Text = "已达到最高等级"; ui.Buy.Disabled = true; }
             else
             {

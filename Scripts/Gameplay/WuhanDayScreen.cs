@@ -66,7 +66,12 @@ public partial class WuhanDayScreen : Control
         Workstation.CutRequested = CutDoupi;
         Workstation.BasketPressed += BasketAction;
         Workstation.IngredientPressed += IngredientAction;
-        Workstation.DoupiPressed += DoupiAction;
+        Workstation.BatterRequested = PourDoupiBatter;
+        Workstation.EggRequested = AddDoupiEgg;
+        Workstation.FillingRequested = AddDoupiFilling;
+        Workstation.FlipRequested = FlipDoupi;
+        Workstation.DiscardRequested = DiscardDoupi;
+        Workstation.SpreadRequested = SpreadDoupi;
         Workstation.MixMoved += distance => { if (CanInteract && !Workstation.Busy("bowl")) _bowl.AddMixDistance(distance); };
         Workstation.GestureRejected += message => Feedback(message, true);
         GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
@@ -181,10 +186,10 @@ public partial class WuhanDayScreen : Control
         if (!CanInteract || Workstation.Busy("bowl") || !_cooker.TryReservePour(index, _bowl)) return false;
         AdvanceAutomaticTransfers(); Render(); return true;
     }
-    internal bool CutDoupi(DoupiCutDirection direction)
+    internal bool CutDoupi(DoupiCutLine direction)
     {
         if (!CanInteract || Workstation.Busy("pan") || _doupi?.TryCut(direction) != true) return false;
-        Workstation.PlayCut(direction); Feedback(_doupi.State == DoupiState.Cut ? "切块完成，将自动补入备餐盘。" : "已离火，品质锁定；再划另一个方向。", false); Render(); return true;
+        ClearDoupiFeedback(); Workstation.PlayCut(direction); Feedback(_doupi.State == DoupiState.Cut ? "切块完成，将自动补入备餐盘。" : "已离火，品质锁定；继续沿其余虚线切块。", false); Render(); return true;
     }
     private void AdvanceAutomaticTransfers()
     {
@@ -251,16 +256,33 @@ public partial class WuhanDayScreen : Control
         return result.ItemAccepted || result.CompletesOrder;
     }
 
-    internal void DoupiAction()
+    private void ClearDoupiFeedback() { _feedbackSeconds = 0; _feedback.Hide(); }
+    private bool ApplyDoupi(Func<DoupiStateMachine, bool> action, string hint, bool animate = true)
     {
-        if(!CanInteract||Workstation.Busy("pan"))return;
-        if(_doupi?.State==DoupiState.Cut&&Workstation.Busy("stock"))return;
-        DoupiState before=_doupi?.State??DoupiState.Empty;
-        if(_doupi is null){Feedback("豆皮锅将在 Day 4 解锁。",true);return;} bool ok=_doupi.State switch{DoupiState.Empty=>_doupi.TryPourBatter(),DoupiState.Batter=>_doupi.TryAddEgg(),DoupiState.ReadyToFlip=>_doupi.TryFlip(),DoupiState.Flipped=>_doupi.TryAddFilling(),DoupiState.Burnt=>DiscardDoupi(),_=>false};
-        if(ok)Workstation.PlayDoupi(before);
-        Feedback(ok?"豆皮操作完成一步。":before==DoupiState.Cut?"备餐盘已满，豆皮保留在锅中。":"豆皮正在煎制，请观察状态。",!ok);Render();
+        if (!CanInteract || _doupi is null || Workstation.Busy("pan")) return false;
+        DoupiState before = _doupi.State;
+        bool ok = action(_doupi);
+        if (ok) ClearDoupiFeedback();
+        if (ok && animate) Workstation.PlayDoupi(before);
+        if (!ok) Feedback(hint, true);
+        Render(); return ok;
     }
-    private bool DiscardDoupi(){_doupi!.Discard();return true;}
+    internal bool PourDoupiBatter() => ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
+    internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击鸡蛋。");
+    internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
+    internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后再取馅；已经投入的馅直接在锅面续铺。", false);
+    internal bool SpreadDoupi(Vector2 from, Vector2 to)
+    {
+        if (!CanInteract || _doupi is null || Workstation.Busy("pan")) return false;
+        bool changed = _doupi.Spread(from, to, Workstation.PanAspect);
+        if (changed) { ClearDoupiFeedback(); Workstation.RememberProductionState(); Render(); }
+        return changed;
+    }
+    internal bool DiscardDoupi() => ApplyDoupi(d =>
+    {
+        if (d.State != DoupiState.Burnt) return false;
+        d.Discard(); return true;
+    }, "只有焦糊豆皮需要清理。");
     internal void RefreshForCapture() => Render();
     private void Render()
     {
@@ -338,5 +360,5 @@ public partial class WuhanDayScreen : Control
         if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：点浆碗、加蛋、上划翻面、点馅碗、横竖各划一次，自动入盘",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：拖浆入锅 → 点鸡蛋 → 上划翻面 → 拖馅并铺开 → 一横三竖切四刀，自动入盘",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

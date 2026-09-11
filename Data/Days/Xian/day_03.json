@@ -35,9 +35,7 @@
       "customerRatio": 0.2
     }
   ],
-  "startUnlocks": [
-    "equipment:xian_oven_lv1"
-  ],
+  "startUnlocks": [],
   "completionUnlocks": [],
   "availableRecipeIds": [
     "roujiamo_standard",

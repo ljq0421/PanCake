@@ -42,7 +42,7 @@ public partial class WuhanWorkbenchSelfTest : Node
                 Check(!screen.EggUnlocked, $"Day {day}: egg retired");
                 if (day < 4)
                 {
-                    screen.DoupiAction();
+                    screen.PourDoupiBatter();
                     Check(screen.Doupi is null && screen.DoupiStock.Count == 0 && !screen.Workstation.CanDeliver(ProductKind.Doupi),
                         "locked stage cannot make or deliver doupi");
                 }

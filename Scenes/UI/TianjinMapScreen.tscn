@@ -863,7 +863,6 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_sww6p")
 text = "返回经营首页"
 
 [node name="@Button@202" type="Button" parent="@MarginContainer@194/@VBoxContainer@195/@HBoxContainer@196" unique_id=1389468961]
-visible = false
 custom_minimum_size = Vector2(190, 58)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)

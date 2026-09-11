@@ -13,6 +13,9 @@ public static class XianCatalogValidator
         { if (!condition) issues.Add(new ValidationIssue(source, field, message)); }
         const string root = "res://Data/Days/Xian";
         Check(days.Select(x => x.Day).Order().SequenceEqual(Enumerable.Range(1, 12)), root, "day", "西安需要连续12天且不能重复。");
+        Check(days.SingleOrDefault(d => d.Day == 1)?.StartUnlocks.Contains("equipment:xian_oven_lv1") == true
+            && days.Where(d => d.Day != 1).All(d => !d.StartUnlocks.Contains("equipment:xian_oven_lv1")),
+            root, "startUnlocks", "白吉馍炉Lv1必须且仅在Day 1免费开放。");
         Check(recipes.Count == 4 && recipes.Select(x => x.Id).ToHashSet().SetEquals(XianRules.Recipes), root, "recipes", "西安需要四种明确配方。");
         foreach (var r in recipes)
             Check(r.MeatPortions is 1 or 2 && r.Id == XianRules.RecipeId(r.MeatPortions, r.HasJuice) && r.Price == (r.MeatPortions == 2 ? 14 : 10) + (r.HasJuice ? 1 : 0), r.ResourcePath, "recipe", "肉量、腊汁、价格与配方不匹配。");

@@ -6,6 +6,8 @@ namespace ProjectCake.UI;
 public partial class CoinTrayView : Control
 {
     private bool _buttonPresentation;
+    /// <summary>Use button visuals already authored in CoinButtonView.tscn.</summary>
+    [Export] public bool SceneButtonPresentation { get; set; }
     internal bool IsButtonPresentation => _buttonPresentation;
     public void ConfigureButtonPresentation()
     {
@@ -50,6 +52,7 @@ public partial class CoinTrayView : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        _buttonPresentation = SceneButtonPresentation;
         _surface.Position = CoinSurface.Position;
         _surface.Size = CoinSurface.Size;
         for (int i = 0; i < _coins.Count; i++) LayoutCoin(_coins[i], i);

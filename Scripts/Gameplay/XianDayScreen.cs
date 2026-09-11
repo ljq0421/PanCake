@@ -51,6 +51,8 @@ public partial class XianDayScreen : Control
         }
 
         Wire("pause", Pause, false);
+        Wire("resume", Pause, false);
+        Wire("help", () => _tutorial.Visible = !_tutorial.Visible, false);
         Wire("exit", AskExit, false);
         Wire("oven", OvenAction);
         Wire("chop", StartChop);
@@ -115,7 +117,7 @@ public partial class XianDayScreen : Control
         _committed = false; _pendingResult = null; _controller.IsPaused = false;
         _results.Visible = _blocker.Visible = false; _exitDialog.Hide(); CancelGestures();
         _batch.MaxValue = Session.OvenData.Capacity; _batch.Value = Session.OvenData.Capacity;
-        _tutorial.Text = Tutorial(day); Render(); return true;
+        _tutorial.Text = Tutorial(day); _tutorial.Visible = false; _feedbackTime = 0; Render(); return true;
     }
     public void BeginDay() { if (!_controller.TryStartDay(out string error)) Feedback(error, true); }
     public override void _Process(double delta)
@@ -199,24 +201,27 @@ public partial class XianDayScreen : Control
         var s = Session;
         _heading.Text = $"西安 Day {s.Day} · {XianRules.Titles[s.Day - 1]}";
         _clock.Text = !_focused || _controller.IsPaused ? "已暂停" : _controller.State switch { DayState.Opening => $"开门 {_controller.OpeningRemainingSeconds:0.0}s", DayState.Closing => $"收尾 {_controller.ClosingRemainingSeconds:0.0}s", DayState.Results => "今日已打烊", _ => $"剩余 {_controller.DayRemainingSeconds:0}s  ·  ¥{_controller.Ledger?.Build().TotalRevenue ?? 0}" };
-        _inventory.Text = $"熟馍 {(s.Buns.Tutorial ? "教学供应" : $"{s.Buns.Count}/{s.Buns.Capacity}")}   ·   预剁肉 {s.Board.Portions}/{s.Board.Capacity}   ·   肉锅 {s.Meat.Count}/{s.Meat.Capacity}   ·   腊汁 {(s.Day < 2 ? "明日开放" : $"{s.Juice.Count}/{s.Juice.Capacity}")}";
-        if (_feedbackTime == 0) { _feedback.Text = !s.Buns.Tutorial && s.Buns.Count <= 3 ? s.Buns.Count == 0 ? "缺馍：记得再开一炉。" : "熟馍只剩3个以内，可以提前开下一炉。" : "趁空档剁肉备货，高峰时快速组装。"; _feedback.AddThemeColorOverride("font_color", new Color("#513D32")); }
+        _inventory.Text = $"熟馍 {s.Buns.Count}/{s.Buns.Capacity}" + (s.Buns.Count == 0 ? " · 缺馍" : s.Buns.Count <= 3 ? " · 记得烙馍" : "");
+        _feedback.Visible = _feedbackTime > 0;
         _buttons["pause"].Text = _controller.IsPaused ? "继续" : "暂停";
-        foreach (var (id, button) in _buttons) if (id is not ("pause" or "exit" or "result_back" or "retry_save")) button.Disabled = !CanInteract;
+        foreach (var (id, button) in _buttons) if (id is not ("pause" or "resume" or "help" or "exit" or "result_back" or "retry_save")) button.Disabled = !CanInteract;
         _buttons["oven"].Disabled |= s.Oven is null; _batch.Editable = CanInteract && s.Oven?.State == BunOvenState.Empty;
         _buttons["refill_juice"].Disabled |= s.Day < 2;
         _buttons["deliver_soup"].Disabled |= s.Soup is null; _buttons["refill_soup"].Disabled |= s.Soup is null;
-        _surfaces["board"].Title = $"剁肉台 Lv{s.BoardData.Level}"; _surfaces["board"].Amount = s.Board.IsChopping ? 6 : 0;
+        _surfaces["board"].Title = $"剁肉台 Lv{s.BoardData.Level} · 肉锅 {s.Meat.Count}/{s.Meat.Capacity}"; _surfaces["board"].Amount = s.Board.IsChopping ? 6 : 0;
         _surfaces["board"].Meter = s.Board.IsChopping ? s.Board.Progress / 100 : 0;
         _surfaces["board"].Detail = s.Board.IsChopping ? $"按住左右拖动 · {s.Board.Progress:0}%\n完成后得到2份肉" : s.Meat.IsRefilling ? $"肉锅补充中 {s.Meat.RemainingSeconds:0.0}s" : "点击取2份肉\n按住砧板左右剁碎";
-        var bun = _surfaces["bun"]; bun.Title = "肉夹馍组装"; bun.Stage = (int)s.Sandwich.State; bun.Amount = s.Sandwich.MeatPortions; bun.FoodColor = s.Sandwich.Quality == BunQuality.Overbrowned ? new Color("#A77547") : new Color("#E9B963");
-        bun.Detail = s.Sandwich.State switch { RoujiamoState.Empty => "点击取熟馍", RoujiamoState.Whole => "按住从侧面划过，切开馍", RoujiamoState.Open => $"已夹{s.Sandwich.MeatPortions}份肉 · {(s.Sandwich.HasJuice ? "已加汁" : "未加汁")}\n拖入预剁肉，完成后包装", _ => $"{XianRules.RecipeNames[Array.IndexOf(XianRules.Recipes, s.Sandwich.Prepared!.DefinitionId)]}\n拖给顾客，或选中顾客后交付" };
-        if (s.Sandwich.Quality == BunQuality.Overbrowned) bun.Detail += "\n偏焦 · 可出餐";
-        _surfaces["meat"].Title = "预剁肉盘"; _surfaces["meat"].Amount = s.Board.Portions; _surfaces["meat"].Detail = $"{s.Board.Portions}/{s.Board.Capacity}份 · 拖入馍中";
-        _surfaces["juice"].Title = "腊汁"; _surfaces["juice"].Detail = s.Day < 2 ? "Day 2 开放" : s.Juice.IsRefilling ? $"补充中 {s.Juice.RemainingSeconds:0.0}s" : "点击浇汁"; _surfaces["juice"].Unavailable = s.Day < 2;
-        var oven = _surfaces["oven"]; oven.Title = s.Oven is null ? "白吉馍炉 · Day 3" : $"白吉馍炉 Lv{s.OvenData.Level}"; oven.Amount = s.Oven?.Quantity ?? 0;
+        var bun = _surfaces["bun"]; bun.Title = ""; bun.Stage = (int)s.Sandwich.State; bun.Amount = s.Sandwich.MeatPortions; bun.FoodColor = s.Sandwich.Quality == BunQuality.Overbrowned ? new Color("#A77547") : new Color("#E9B963");
+        bun.HasJuice = s.Sandwich.HasJuice; bun.Heat = s.Sandwich.Quality == BunQuality.Overbrowned ? 1 : 0;
+        bun.Detail = s.Sandwich.State switch { RoujiamoState.Empty => "点击取馍", RoujiamoState.Whole => "横划切开", RoujiamoState.Open => $"肉{s.Sandwich.MeatPortions}份 · {(s.Sandwich.HasJuice ? "已加汁" : "未加汁")}", _ => "已包装 · 拖给顾客" };
+        if (s.Sandwich.Quality == BunQuality.Overbrowned) bun.Detail += " · 偏焦";
+        _surfaces["meat"].Title = "预剁肉盘"; _surfaces["meat"].Amount = s.Board.Portions; _surfaces["meat"].Detail = $"{s.Board.Portions}/{s.Board.Capacity}份 · 拖入馍";
+        _surfaces["juice"].Title = s.Day < 2 ? "腊汁" : $"腊汁 {s.Juice.Count}/{s.Juice.Capacity}"; _surfaces["juice"].Detail = s.Day < 2 ? "Day 2 开放" : s.Juice.IsRefilling ? $"补充中 {s.Juice.RemainingSeconds:0.0}s" : "点击浇汁"; _surfaces["juice"].Unavailable = s.Day < 2;
+        var oven = _surfaces["oven"]; oven.Title = s.Oven is null ? "白吉馍炉 · Day 1" : $"白吉馍炉 Lv{s.OvenData.Level}"; oven.Amount = s.Oven?.Quantity ?? 0;
+        oven.Stage = (int)(s.Oven?.State ?? BunOvenState.Empty);
+        oven.Heat = s.Oven?.Quality == BunQuality.Burnt ? 2 : s.Oven?.Quality == BunQuality.Overbrowned ? 1 : 0;
         oven.FoodColor = s.Oven?.Quality switch { BunQuality.Burnt => new Color("#3F342F"), BunQuality.Overbrowned => new Color("#A77547"), _ => new Color("#E9B963") };
-        oven.Detail = s.Oven is null ? "先熟悉切、剁、夹\n今日提供现成熟馍" : s.Oven.State switch { BunOvenState.Empty => "选择数量，整批下炉", BunOvenState.FirstSide => s.Oven.SideSeconds >= s.OvenData.ActionSeconds ? "第一面已好 · 点击翻面" : $"第一面 {s.Oven.SideSeconds:0.0}/{s.OvenData.ActionSeconds:0.0}s", BunOvenState.SecondSide => $"第二面 {s.Oven.SideSeconds:0.0}/{s.OvenData.ActionSeconds:0.0}s", BunOvenState.Ready => s.OvenData.Automatic ? "已弹起 · 等待篮子腾出空间" : "烙好了 · 点击整批收取", _ => "焦糊了 · 点击清理" };
+        oven.Detail = s.Oven is null ? "Day 1 免费开放" : s.Oven.State switch { BunOvenState.Empty => "选择数量，整批下炉", BunOvenState.FirstSide => s.Oven.SideSeconds >= s.OvenData.ActionSeconds ? "第一面已好 · 点击翻面" : $"第一面 {s.Oven.SideSeconds:0.0}/{s.OvenData.ActionSeconds:0.0}s", BunOvenState.SecondSide => $"第二面 {s.Oven.SideSeconds:0.0}/{s.OvenData.ActionSeconds:0.0}s", BunOvenState.Ready => s.OvenData.Automatic ? "已弹起 · 等待篮子腾出空间" : "烙好了 · 点击整批收取", _ => "焦糊了 · 点击清理" };
         if (s.Oven?.Quality == BunQuality.Overbrowned) oven.Detail += "\n偏焦 · 尽快处理";
         _buttons["oven"].Text = s.Oven?.State switch { BunOvenState.FirstSide => "整批翻面", BunOvenState.Ready => "整批收取", BunOvenState.Burnt => "清理焦馍", _ => "整批下炉" };
         var soup = _surfaces["soup"]; soup.Title = s.Soup is null ? "胡辣汤 · Day 6" : $"胡辣汤 Lv{s.SoupData.Level}";
@@ -228,6 +233,17 @@ public partial class XianDayScreen : Control
             view.Title = customer is null ? "等待来客" : $"{customer.Type.DisplayName}  ·  {(customer.WasServed ? "已完成" : $"还可等{Math.Max(0, customer.Type.LeaveAtSeconds * (1 - customer.PatienceProgress)):0}s")}";
             view.Selected = customer is not null && _controller.CustomerQueue?.SelectedCustomerId == customer.Id;
             view.Amount = customer is null ? 0 : 1;
+            _portraits[i].Visible = customer is not null;
+            _orders[i].Visible = customer is not null;
+            if (customer is not null)
+            {
+                _portraits[i].SetVisual(_customerArt.CustomerPortrait(customer.AppearanceId, customer.State, customer.WasServed));
+                _portraits[i].SetCounterCalibration(_customerArt.CustomerLayout(customer.AppearanceId).NormalVisibleBounds);
+                _orders[i].Render(customer.Order, customer.Progress, _catalog.RecipesById);
+                _orders[i].ResetSize();
+                _orders[i].Position = new Vector2(26, 190 - _orders[i].Size.Y);
+                _orders[i].RenderXianState(1 - customer.PatienceProgress, view.Selected);
+            }
             view.Meter = customer?.PatienceProgress ?? 0;
             view.Detail = customer is null ? "空档可以提前备货" : string.Join("\n", customer.Order.Lines.Select((line, index) => $"{(customer.Progress.GetRemainingQuantity(index) == 0 ? "✓" : "·")} {(line.ProductKind == ProductKind.Hulatang ? "胡辣汤" : _catalog.RecipesById[line.DefinitionId].DisplayName)}  {customer.Progress.GetDeliveredQuantity(index)}/{line.Quantity}"));
         }
@@ -255,10 +271,10 @@ public partial class XianDayScreen : Control
     }
     private static string Tutorial(int day) => day switch
     {
-        1 => "① 点击取馍，按住横划切开　② 点击砧板，按住左右剁肉　③ 把肉拖入馍中　④ 包装，拖给顾客",
+        1 => "赠4个熟馍，用完需烙制：下炉 → 每面3秒、翻面后出炉。取馍横划切开 → 砧板左右剁肉 → 拖肉入馍 → 包装交付。",
         2 => "加汁肉夹馍：填肉后点击腊汁，再包装。注意订单是否需要加汁。",
-        3 => "白吉馍炉到了：整批下炉 → 3秒翻面 → 第二面3秒 → 收进熟馍篮。先用开店备好的4个馍。",
-        4 => "提前备货：没客人时先剁肉；每次剁肉产2份，高峰时直接从肉盘取用。",
+        3 => "补货练习：留意熟馍篮，及时烙一炉；肉锅和腊汁不足时点击补货，补充完成后继续制作。",
+        4 => "提前备货：趁空档烙馍、剁肉；每次剁肉产2份。今天完成后开放恒温馍炉升级。",
         5 => "多肉肉夹馍需要2份肉：从肉盘拖两次。多肉加汁将在Day 7开放。",
         6 => "胡辣汤：点击锅盛汤，0.6秒后拖给顾客。套餐可分次交付，商品齐全才结算。",
         7 => "四种肉夹馍已齐全。上班族耐心36秒，及时服务可获得20% Perfect小费。",

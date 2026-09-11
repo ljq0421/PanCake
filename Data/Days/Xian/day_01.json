@@ -35,7 +35,8 @@
     }
   ],
   "startUnlocks": [
-    "recipe:roujiamo_standard"
+    "recipe:roujiamo_standard",
+    "equipment:xian_oven_lv1"
   ],
   "completionUnlocks": [],
   "availableRecipeIds": [

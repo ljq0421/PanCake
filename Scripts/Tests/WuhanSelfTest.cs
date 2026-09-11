@@ -15,8 +15,64 @@ public partial class WuhanSelfTest : Node
     {
         DataCatalog catalog=GetNode<DataCatalog>("/root/DataCatalog");
         TestData(catalog); TestOrders(catalog); TestNoodles(catalog); TestDoupi(catalog); TestSatisfaction(catalog); TestPressure(catalog); TestSave(catalog); TestV2Migration();
-        TestCustomerParity(catalog); TestRetiredCompatibility(catalog); TestPartialPieces(catalog);
+        TestCustomerParity(catalog); TestRetiredCompatibility(catalog); TestPartialPieces(catalog); TestDoupiInteraction(catalog);
         GD.Print($"WUHAN_TEST_RESULT passed={_passed} failed={_failed}"); GetTree().Quit(_failed==0?0:1);
+    }
+    private void TestDoupiInteraction(DataCatalog catalog)
+    {
+        DoupiStateMachine NewPan()
+        {
+            var pan = new DoupiStateMachine(catalog.DoupiGriddlesByLevel[1]);
+            pan.TryPourBatter(); pan.TryAddEgg(); pan.Tick(2.5); pan.TryFlip(); pan.TryAddFilling();
+            return pan;
+        }
+        var pan = NewPan();
+        Check(!pan.TryAddFilling() && !pan.TryCut(DoupiCutLine.Left), "铺馅阶段拒绝重复加料和提前切割");
+        Check(!pan.Spread(new(-.2f,.2f),new(-.1f,.8f),2.75f) && pan.Coverage==0, "完全锅外的笔刷不增加覆盖");
+        pan.Spread(new(.02f,.15f),new(.98f,.15f),2.75f);
+        float coverage = pan.Coverage;
+        pan.Spread(new(.98f,.15f),new(.02f,.15f),2.75f);
+        pan.Tick(100);
+        Check(pan.Coverage==coverage && pan.State==DoupiState.Spreading && pan.Quality==DoupiQuality.Normal, "重复区域不累加，铺馅期间不烧焦");
+        var fine = NewPan();
+        for(int i=0;i<24;i++) fine.Spread(new(.02f+i*.04f,.15f),new(.02f+(i+1)*.04f,.15f),2.75f);
+        Check(Math.Abs(pan.Coverage-fine.Coverage)<.0001f, "快速长划与密集鼠标采样覆盖一致");
+        DoupiTestFixture.Spread(pan);
+        Check(pan.Coverage==1 && pan.State==DoupiState.SecondCooking, "85%覆盖补齐并进入第二段煎制");
+        Check(!pan.TryCut(DoupiCutLine.Left), "第二段未成熟不能收火");
+        pan.Tick(7);
+        Check(pan.TryCut(DoupiCutLine.Right) && pan.Quality==DoupiQuality.Overbrowned, "偏焦第一刀锁定原品质");
+        pan.Tick(100);
+        Check(pan.State==DoupiState.Cutting && pan.Quality==DoupiQuality.Overbrowned, "收火后长时间中断不焦糊且不恢复品质");
+        Check(!pan.TryCut(DoupiCutLine.Right) && !pan.TryCut((DoupiCutLine)99) && pan.CompletedCuts==1, "重复刀及无效刀线编号不计数");
+        foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Left,DoupiCutLine.Center})pan.TryCut(line);
+        var stock = new DoupiInventory();stock.TryAddBatch(12);
+        Check(pan.TransferAvailable(stock)==4 && pan.RemainingPieces==4, "十二块库存仅接收四块，另四块留锅");
+        Check(Enumerable.Range(0,12).All(i=>stock.PieceAt(i).Quality==DoupiQuality.Normal)
+            && Enumerable.Range(12,4).All(i=>stock.PieceAt(i).Quality==DoupiQuality.Overbrowned), "不同锅次逐块保留品质");
+        stock.TryTake(4,out _);pan.TransferAvailable(stock);
+        Check(pan.State==DoupiState.Empty && pan.Coverage==0 && pan.CompletedCuts==0, "最后余块出锅后重置铺馅和刀线");
+        var burnt = NewPan();DoupiTestFixture.Spread(burnt);burnt.Tick(9);
+        Check(burnt.State==DoupiState.Burnt && !burnt.TryCut(DoupiCutLine.Left), "焦糊不可通过切割挽救");
+        burnt.Discard();Check(burnt.Coverage==0 && burnt.Quality==DoupiQuality.Normal,"清锅清除覆盖及品质");
+        var shortStroke=new DoupiCutStroke(new(.05f,.5f));
+        for(int i=0;i<30;i++){shortStroke.Move(new(.25f,.5f));shortStroke.Move(new(.05f,.5f));}
+        Check(shortStroke.Coverage<.3f,"刀线局部来回划不靠累计路程完成");
+        var offLine=new DoupiCutStroke(new(.05f,.7f));
+        Check(!offLine.Move(new(.95f,.7f)) && offLine.Coverage==0,"吸附带外水平划动无效");
+        var diagonal=new DoupiCutStroke(new(.1f,.1f));
+        Check(!diagonal.Move(new(.9f,.9f)) && diagonal.Line is null,"对角划动不选刀线");
+        var edge=new DoupiCutStroke(new(.32f,.05f));
+        Check(edge.Move(new(.32f,.95f)) && edge.Line==DoupiCutLine.Left,"宽松吸附接受靠近左刀线的完整划动");
+        var crossing=new DoupiCutStroke(new(.5f,.5f));
+        crossing.Move(new(.51f,.51f));
+        Check(crossing.Line is null,"交点微动不会提前锁定刀线");
+        crossing.Move(new(.5f,.1f));
+        Check(crossing.Line==DoupiCutLine.Center,"明确移动方向后才锁定刀线");
+        Vector2[] quad={new(1124,491),new(1521,491),new(1550,642),new(1107,642)};
+        var uv = new Vector2(.75f,.35f);
+        var world = quad[0].Lerp(quad[1],uv.X).Lerp(quad[3].Lerp(quad[2],uv.X),uv.Y);
+        Check(DoupiInteraction.ToSurface(quad,world).DistanceTo(uv)<.0001f,"锅面透视映射与绘制坐标一致");
     }
     private void TestRetiredCompatibility(DataCatalog catalog)
     {
@@ -38,8 +94,8 @@ public partial class WuhanSelfTest : Node
     {
         var stock = new DoupiInventory(); stock.TryAddBatch(13);
         var pan = new DoupiStateMachine(catalog.DoupiGriddlesByLevel[1]);
-        pan.TryPourBatter(); pan.TryAddEgg(); pan.Tick(2.5); pan.TryFlip(); pan.TryAddFilling();
-        pan.Tick(7); pan.TryCut(DoupiCutDirection.Horizontal); pan.TryCut(DoupiCutDirection.Vertical);
+        pan.TryPourBatter(); pan.TryAddEgg(); pan.Tick(2.5); pan.TryFlip(); pan.TryAddFilling();DoupiTestFixture.Spread(pan);
+        pan.Tick(7); foreach (var line in Enum.GetValues<DoupiCutLine>()) pan.TryCut(line);
         Check(pan.TransferAvailable(stock) == 3 && pan.RemainingPieces == 5 && pan.FirstRemainingPiece == 3, "部分入盘保留五块及原锅面位置");
         Check(Enumerable.Range(0, 3).All(i => stock.PieceAt(13 + i) == new DoupiInventory.Piece(DoupiQuality.Overbrowned, i)), "前三块的纹理编号和煎制品质进入托盘");
         stock.TryTake(16, out _);
@@ -113,9 +169,9 @@ public partial class WuhanSelfTest : Node
     }
     private void TestDoupi(DataCatalog c)
     {
-        var stock=new DoupiInventory();var machine=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);MakeBatch(machine,stock);Check(stock.Count==8,"豆皮一锅固定八块");MakeBatch(machine,stock);Check(stock.Count==16,"豆皮备餐盘容量十六块");var third=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);third.TryPourBatter();third.TryAddEgg();third.Tick(2.5);third.TryFlip();third.TryAddFilling();third.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutDirection>())third.TryCut(direction);Check(third.TransferAvailable(stock)==0&&third.State==DoupiState.Cut,"库存满时成品留在锅中等待");
+        var stock=new DoupiInventory();var machine=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);MakeBatch(machine,stock);Check(stock.Count==8,"豆皮一锅固定八块");MakeBatch(machine,stock);Check(stock.Count==16,"豆皮备餐盘容量十六块");var third=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);third.TryPourBatter();third.TryAddEgg();third.Tick(2.5);third.TryFlip();third.TryAddFilling();DoupiTestFixture.Spread(third);third.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutLine>())third.TryCut(direction);Check(third.TransferAvailable(stock)==0&&third.State==DoupiState.Cut,"库存满时成品留在锅中等待");
     }
-    private static void MakeBatch(DoupiStateMachine m,DoupiInventory s){m.TryPourBatter();m.TryAddEgg();m.Tick(2.5);m.TryFlip();m.TryAddFilling();m.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutDirection>())m.TryCut(direction);m.TransferAvailable(s);}
+    private static void MakeBatch(DoupiStateMachine m,DoupiInventory s){m.TryPourBatter();m.TryAddEgg();m.Tick(2.5);m.TryFlip();m.TryAddFilling();DoupiTestFixture.Spread(m);m.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutLine>())m.TryCut(direction);m.TransferAvailable(s);}
     private void TestSatisfaction(DataCatalog c)
     {
         var order=new OrderData{OrderId="test",CityId=StableIds.Cities.Wuhan,OrderTypeId="hot_dry_noodles",CustomerTypeId="wuhan_normal",PatienceSeconds=50,BasePrice=20,Lines=new[]{new OrderLineData(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesClassic,2)}};var progress=new OrderProgress(order);var flags=WuhanFoodQuality.MixedComplete|WuhanFoodQuality.NoodlesOvercooked;progress.TryAccept(new DeliveredItem(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesChili,null,null,null,flags));progress.TryAccept(new DeliveredItem(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesChili,null,null,null,flags));DeliveryEvaluation result=new OrderEvaluator().EvaluateCompletedWuhan(progress,.70,c.CustomersById["wuhan_normal"]);Check(result.SatisfactionScore==55&&result.SaleRevenue==14,"等待、错配方、过熟叠加且同类只扣一次");

@@ -91,7 +91,7 @@ public partial class WuhanDeliverySelfTest : Node
         Check(view.PendingDoupiDemand == 2 && _screen.DoupiStock.Count == 2 && view.DoupiSupplyHint.Length == 0,
             "delivered doupi reduces demand immediately");
         _screen.DoupiStock.TryTake(2, out _); Step(.001);
-        _screen.DoupiAction(); Step(.01);
+        _screen.PourDoupiBatter(); Step(.01);
         Check(view.DoupiSupplyHint == "制作中", "starting a batch replaces shortage warning with production state");
         _screen.Doupi!.Discard();
         _controller.CustomerQueue.Slots[1].State = ProjectCake.Customers.CustomerState.Leaving; Step(.001);

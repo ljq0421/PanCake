@@ -9,6 +9,7 @@ public partial class TianjinMapScreen : Control
     public event Action? HubRequested;
     public event Action<string>? CityRequested;
     public event Action? WuhanPreviewRequested;
+    public event Action? XianPreviewRequested;
 
     private SaveService _save = null!;
     private TianjinArtCatalog _art = null!;
@@ -33,8 +34,8 @@ public partial class TianjinMapScreen : Control
         this.FindButton("测试直达武汉").Pressed += () => WuhanPreviewRequested?.Invoke();
         this.FindButton("返回经营首页").Pressed += () => HubRequested?.Invoke();
         Button xianTest = this.FindButton("测试直达西安");
-        xianTest.Visible = DeveloperToolsVisible;
-        xianTest.Pressed += () => CityRequested?.Invoke(StableIds.Cities.Xian);
+        xianTest.Visible = true;
+        xianTest.Pressed += () => XianPreviewRequested?.Invoke();
         this.FindButton("测试直达广州").Pressed += () => CityRequested?.Invoke(StableIds.Cities.Guangzhou);
         Button? yangzhouTest = this.FindOptionalButton("测试直达扬州");
         if (yangzhouTest is not null)

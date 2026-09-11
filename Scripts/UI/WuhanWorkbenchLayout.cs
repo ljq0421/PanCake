@@ -23,6 +23,7 @@ internal sealed class WuhanWorkbenchLayout
     public Rect2 Stock { get; } = Rect(1414, 744, 231, 133);
     public Rect2 StockFood { get; } = Rect(1440, 765, 178, 76);
     public Rect2 Batter { get; } = Rect(1047, 739, 179, 142);
+    public Rect2 DoupiEgg { get; } = Rect(1080, 663, 92, 65);
     public Rect2 Filling { get; } = Rect(1235, 734, 174, 158);
     public Vector2[] PanCorners { get; } = new[] { Point(1124, 491), Point(1521, 491), Point(1550, 642), Point(1107, 642) };
     public Vector2[] PanOutline { get; } = new[] { Point(1090, 514), Point(1099, 478), Point(1114, 465), Point(1145, 460), Point(1494, 460), Point(1534, 469), Point(1548, 514) };

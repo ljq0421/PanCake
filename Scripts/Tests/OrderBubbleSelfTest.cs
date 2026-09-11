@@ -130,9 +130,41 @@ public partial class OrderBubbleSelfTest : Node
                 Check(Done(sideRegions[1]) && ((Label)sideRegions[1].FindChild("OrderQuantity",true,false)).Text == "2/2", "second side greens only at full quantity");
                 screen.Free(); controller.Free(); save.Free(); await Frames();
             }
+            await CheckXian(catalog);
             GD.Print($"ORDER_BUBBLE_TEST: {_passed} passed, 0 failed"); GetTree().Quit();
         }
         catch(Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
+    }
+    private async Task CheckXian(DataCatalog catalog)
+    {
+        var bubble = SceneFactory.Instantiate<OrderBubbleView>("res://Scenes/UI/OrderBubbleView.tscn");
+        AddChild(bubble); bubble.ConfigureXian(new XianArtCatalog());
+        bubble.Position = new Vector2(40, 40);
+        foreach (var recipe in catalog.RecipesById.Values.OfType<XianRecipeData>())
+        {
+            string id = ProjectCake.Xian.XianRules.RecipeId(recipe.MeatPortions, recipe.HasJuice);
+            var order = new OrderData { OrderId = id, CityId = "xian", CustomerTypeId = "xian_normal", Lines = new[] {
+                new OrderLineData(ProductKind.Roujiamo, id, 2), new OrderLineData(ProductKind.Hulatang, "hulatang", 1) } };
+            var progress = new OrderProgress(order);
+            bubble.Render(order, progress, catalog.RecipesById); await Frames();
+            Check(Regions(bubble, "OrderMainRow").Length == 2, "Xi'an double buns own separate rows");
+            Check(bubble.FindChildren("OrderExtraMeat", "", true, false).Count == (recipe.MeatPortions == 2 ? 2 : 0), "Xi'an meat badges match both portions");
+            Check(bubble.FindChildren("OrderJuice", "", true, false).Count == (recipe.HasJuice ? 2 : 0), "Xi'an juice badges match both portions");
+            Check(bubble.Size.Y <= 200 && bubble.Size.X <= 332, "largest Xi'an combo fits customer column");
+            Check(progress.TryAccept(new DeliveredItem(ProductKind.Hulatang, "hulatang")).Accepted, "soup first accepted");
+            bubble.Render(order, progress, catalog.RecipesById);
+            Check(Done(Regions(bubble, "OrderSideProduct")[0]) && Regions(bubble, "OrderMainRow").All(r => !Done(r)), "soup delivery leaves both buns incomplete");
+            Check(progress.TryAccept(new DeliveredItem(ProductKind.Roujiamo, id, BunQuality: ProjectCake.Xian.BunQuality.Golden,
+                MeatPortions: recipe.MeatPortions, HasJuice: recipe.HasJuice)).Accepted, "Xi'an completed bun accepted");
+            bubble.Render(order, progress, catalog.RecipesById); await Frames();
+            var rows = Regions(bubble, "OrderMainRow");
+            Check(Done(rows[0]) && !Done(rows[1]), "Xi'an partial double order marks only one bun");
+            Check(!progress.TryAccept(new DeliveredItem(ProductKind.Hulatang, "hulatang")).Accepted, "duplicate soup is rejected");
+            bubble.RenderXianState(.85, true);
+            Check(Math.Abs(bubble.Patience.Value - 85) < .01, "Xi'an patience immediately reflects restored amount");
+            await Shot($"xian-{id}-partial");
+        }
+        bubble.Free();
     }
     private static Control[] Regions(OrderBubbleView bubble, string name) => bubble.FindChildren(name + "*", "PanelContainer", true, false).OfType<Control>().ToArray();
     private static bool Done(Control region) => region.GetMeta("complete").AsBool();

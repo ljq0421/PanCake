@@ -187,10 +187,7 @@ public partial class FryerVisualView : Control
         Color tint = runtime.State is FryerState.Empty or FryerState.Loaded ? Colors.White : YoutiaoPresentation.Tint(runtime.Quality);
         for (int index = 0; index < runtime.Quantity; index++)
         {
-            Vector2 center = basket.Position + basket.Size * new Vector2(
-                .16f + (index % columns + .5f) * .68f / columns, .48f + index / columns * .27f);
-            Vector2 size = FitInside(food.GetSize(), new Vector2(basket.Size.X / columns * .72f, basket.Size.Y * .43f));
-            _basketAnchor.DrawTextureRect(food, new Rect2(center - size * .5f, size), false, tint);
+            _basketAnchor.DrawTextureRect(food, EmbeddedFoodRect(basket, columns, index, food.GetSize()), false, tint);
         }
         if (runtime.State == FryerState.Frying)
             for (int i = 0; i < 7; i++)
@@ -203,6 +200,20 @@ public partial class FryerVisualView : Control
             for (int i = 0; i < 3; i++)
                 _basketAnchor.DrawCircle(new Vector2(basket.Position.X + basket.Size.X * (.3f + i * .2f), basket.End.Y + 6),
                     3, new Color(.98f, .67f, .22f, .8f));
+    }
+
+    internal static Rect2 EmbeddedFoodRect(Rect2 basket, int columns, int index, Vector2 textureSize)
+    {
+        Rect2 floor = new(basket.Position + basket.Size * new Vector2(.16f, .22f),
+            basket.Size * new Vector2(.68f, .56f));
+        // Preserve the same generous single-piece size at every capacity. Distribute
+        // the remaining space between overlapping pieces, within the mesh interior.
+        Vector2 size = FitInside(textureSize, new Vector2(floor.Size.X * .45f, floor.Size.Y));
+        Vector2 travel = floor.Size - size;
+        int count = columns * 2;
+        Vector2 position = floor.Position + new Vector2(
+            index * travel.X / (count - 1), travel.Y);
+        return new Rect2(position, size);
     }
 
     private void DrawBatch(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)

@@ -32,18 +32,45 @@ internal static class TianjinWorkbenchLayout
     public static WorkstationSlotSpec EmbeddedIngredientSlot(string id)
     {
         Vector2 size = EmbeddedIngredient(id).Size;
-        Rect2 floor = new(22, 30, size.X - 44, size.Y - 53);
-        Rect2 caption = new(0, size.Y - 5, size.X, 24);
         bool bowl = id is StableIds.Ingredients.Batter or StableIds.Ingredients.Sauce;
+        Rect2 floor = bowl ? new(22, 30, size.X - 44, size.Y - 53)
+            : new(16, 2, size.X - 32, size.Y - 25);
+        Rect2 caption = new(0, size.Y - 5, size.X, 24);
         return new(size, new Rect2(Vector2.Zero, size), new Rect2(12, 5, size.X - 24, size.Y - 12),
             caption, new Rect2(), new Rect2(), new Rect2(Vector2.Zero, size),
             new Rect2(18, size.Y + 18, size.X - 36, 4), 1,
             IngredientContainmentRect: floor, CaptionRect: caption,
             StockFootprintRect: bowl ? null : floor,
             StackLayout: bowl ? null : new StockStackLayout(
-                id == StableIds.Ingredients.Egg ? new Vector2(32, 42) : new Vector2(43, 34),
-                (floor.Size.X - 35) / 4, floor.Position.Y + 20, floor.End.Y - 3,
-                new Rect2(16, 8, size.X - 32, size.Y - 25), RowOffset: 3));
+                floor.Size * (id == StableIds.Ingredients.Egg ? new Vector2(.40f, .67f) : new Vector2(.56f, .65f)),
+                floor.Size.X * .15f, floor.End.Y - 28, floor.End.Y - 1,
+                floor, RowOffset: 0, FillRows: true));
+    }
+
+    public static Rect2 EmbeddedSoyFloor => new(16, 2, EmbeddedSoyTray.Size.X - 32, EmbeddedSoyTray.Size.Y - 26);
+
+    public static Rect2 EmbeddedSoyCup(int index, Vector2 textureSize)
+    {
+        Rect2 floor = EmbeddedSoyFloor;
+        Vector2 limit = new((floor.Size.X - 2) / 2, 112);
+        Vector2 size = textureSize * Math.Min(limit.X / textureSize.X, limit.Y / textureSize.Y);
+        // Ten cups share two columns and five overlapping rows, painted back to front.
+        Vector2 travel = floor.Size - size;
+        Vector2 position = floor.Position + new Vector2(index % 2 * travel.X, index / 2 * travel.Y / 4);
+        return new Rect2(position, size);
+    }
+
+    public static WorkstationSlotSpec EmbeddedFinishedYoutiaoSlot()
+    {
+        Rect2 rack = EmbeddedYoutiaoTray;
+        Rect2 floor = new(18, 6, rack.Size.X - 36, rack.Size.Y - 30);
+        return new(rack.Size, new Rect2(Vector2.Zero, rack.Size), floor,
+            new Rect2(20, rack.Size.Y - 10, rack.Size.X - 40, 25), new Rect2(), new Rect2(),
+            new Rect2(Vector2.Zero, rack.Size), new Rect2(), 1,
+            IngredientContainmentRect: floor, CaptionRect: new Rect2(20, rack.Size.Y - 10, rack.Size.X - 40, 25),
+            StockFootprintRect: floor,
+            StackLayout: new StockStackLayout(new Vector2(116, floor.Size.Y - 9), 0,
+                floor.End.Y, floor.End.Y, floor.Grow(-4), RowOffset: 0, FillRows: true));
     }
     public const float BackEdge = 580;
     public const float FrontEdge = 995;

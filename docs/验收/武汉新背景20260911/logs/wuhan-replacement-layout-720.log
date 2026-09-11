@@ -1,0 +1,833 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+ERROR: Can't create shader cache folder, no shader caching will happen: user://
+   at: RasterizerGLES3 (drivers/gles3/rasterizer_gles3.cpp:345)
+OpenGL API 3.3.0 NVIDIA 581.15 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+ERROR: 存档无法读取：Access to the path 'C:\Users\Administrator\AppData\Roaming\Godot\app_userdata\早餐铺子\project_cake_save_v3.json' is denied.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:362)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:362)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Core.SaveService._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:144)
+       [4] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [5] bool ProjectCake.Core.SaveService.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Core.SaveService_ScriptMethods.generated.cs:150)
+       [6] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS layout Lv1: five full combo orders visible
+PASS layout Lv1: ingredient and stock anchors follow the integrated background
+PASS layout Lv1: all equipment levels keep identical body geometry
+PASS layout Lv1: bowl stays aligned with the baked-in bowl
+PASS layout Lv1: pan fits the workbench
+PASS layout Lv1: pan does not cover stock
+PASS layout Lv1: pan does not cover raw
+PASS layout Lv1: bowl fits the workbench
+PASS layout Lv1: bowl does not cover pan
+PASS layout Lv1: bowl does not cover filling
+PASS layout Lv1: bowl does not cover doupi_egg
+PASS layout Lv1: bowl does not cover stock
+PASS layout Lv1: bowl does not cover raw
+PASS layout Lv1: bowl does not cover ingredient0
+PASS layout Lv1: bowl does not cover ingredient1
+PASS layout Lv1: bowl does not cover ingredient2
+PASS layout Lv1: bowl does not cover ingredient3
+PASS layout Lv1: batter fits the workbench
+PASS layout Lv1: batter does not cover pan
+PASS layout Lv1: batter does not cover bowl
+PASS layout Lv1: batter does not cover filling
+PASS layout Lv1: batter does not cover doupi_egg
+PASS layout Lv1: batter does not cover stock
+PASS layout Lv1: batter does not cover raw
+PASS layout Lv1: batter does not cover ingredient0
+PASS layout Lv1: batter does not cover ingredient1
+PASS layout Lv1: batter does not cover ingredient2
+PASS layout Lv1: batter does not cover ingredient3
+PASS layout Lv1: filling fits the workbench
+PASS layout Lv1: filling does not cover pan
+PASS layout Lv1: filling does not cover stock
+PASS layout Lv1: filling does not cover raw
+PASS layout Lv1: filling does not cover ingredient0
+PASS layout Lv1: filling does not cover ingredient1
+PASS layout Lv1: filling does not cover ingredient2
+PASS layout Lv1: filling does not cover ingredient3
+PASS layout Lv1: doupi_egg fits the workbench
+PASS layout Lv1: doupi_egg does not cover pan
+PASS layout Lv1: doupi_egg does not cover filling
+PASS layout Lv1: doupi_egg does not cover stock
+PASS layout Lv1: doupi_egg does not cover raw
+PASS layout Lv1: doupi_egg does not cover ingredient0
+PASS layout Lv1: doupi_egg does not cover ingredient1
+PASS layout Lv1: doupi_egg does not cover ingredient2
+PASS layout Lv1: doupi_egg does not cover ingredient3
+PASS layout Lv1: stock fits the workbench
+PASS layout Lv1: raw fits the workbench
+PASS layout Lv1: raw does not cover stock
+PASS layout Lv1: ingredient0 fits the workbench
+PASS layout Lv1: ingredient0 does not cover pan
+PASS layout Lv1: ingredient0 does not cover stock
+PASS layout Lv1: ingredient0 does not cover raw
+PASS layout Lv1: ingredient0 does not cover ingredient1
+PASS layout Lv1: ingredient0 does not cover ingredient2
+PASS layout Lv1: ingredient0 does not cover ingredient3
+PASS layout Lv1: ingredient1 fits the workbench
+PASS layout Lv1: ingredient1 does not cover pan
+PASS layout Lv1: ingredient1 does not cover stock
+PASS layout Lv1: ingredient1 does not cover raw
+PASS layout Lv1: ingredient1 does not cover ingredient2
+PASS layout Lv1: ingredient1 does not cover ingredient3
+PASS layout Lv1: ingredient2 fits the workbench
+PASS layout Lv1: ingredient2 does not cover pan
+PASS layout Lv1: ingredient2 does not cover stock
+PASS layout Lv1: ingredient2 does not cover raw
+PASS layout Lv1: ingredient2 does not cover ingredient3
+PASS layout Lv1: ingredient3 fits the workbench
+PASS layout Lv1: ingredient3 does not cover pan
+PASS layout Lv1: ingredient3 does not cover stock
+PASS layout Lv1: ingredient3 does not cover raw
+PASS layout Lv1: old collection control is hidden and inert
+PASS layout Lv1: pendant matches new artwork and clears the HUD: (1731.6747, 211.1796), (153.87561, 242.16791)
+PASS layout Lv1: payment targets the pendant opening
+PASS layout Lv1: stock piece 1 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 1 remains inside tray
+PASS layout Lv1: stock piece 2 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 2 remains inside tray
+PASS layout Lv1: stock piece 3 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 3 remains inside tray
+PASS layout Lv1: stock piece 4 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 4 remains inside tray
+PASS layout Lv1: stock piece 5 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 5 remains inside tray
+PASS layout Lv1: stock piece 6 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 6 remains inside tray
+PASS layout Lv1: stock piece 7 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 7 remains inside tray
+PASS layout Lv1: stock piece 8 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 8 remains inside tray
+PASS layout Lv1: stock piece 9 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 9 remains inside tray
+PASS layout Lv1: stock piece 10 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 10 remains inside tray
+PASS layout Lv1: stock piece 11 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 11 remains inside tray
+PASS layout Lv1: stock piece 12 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 12 remains inside tray
+PASS layout Lv1: stock piece 13 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 13 remains inside tray
+PASS layout Lv1: stock piece 14 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 14 remains inside tray
+PASS layout Lv1: stock piece 15 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 15 remains inside tray
+PASS layout Lv1: stock piece 16 fits its four-column, two-row serving slot
+PASS layout Lv1: projected stock piece stays within the tray interior
+PASS layout Lv1: stock piece 16 remains inside tray
+PASS layout Lv1: viewport basket 1 starts one portion with unlimited supply
+PASS layout Lv1: basket 1 reaches drained fixture
+PASS layout Lv1: noodles reach bowl fixture
+PASS layout Lv1: viewport ingredient 1 adds one serving
+PASS layout Lv1: viewport ingredient 2 adds one serving
+PASS layout Lv1: viewport ingredient 3 adds one serving
+PASS layout Lv1: viewport ingredient 4 adds one serving
+PASS layout Lv1: viewport pan accepts dragged batter
+PASS layout Lv1: egg UI is retired
+PASS layout Lv1: bowl contains mixing gesture
+PASS layout Lv1: viewport bowl drag completes mixing
+PASS layout Lv1: viewport pan adds egg
+PASS layout Lv1: doupi skin flips for fixture
+PASS layout Lv1: doupi filling enters fixture
+PASS layout Lv1: doupi fixture cut 1
+PASS layout Lv1: doupi fixture cut 2
+PASS layout Lv1: doupi fixture cut 3
+PASS layout Lv1: doupi fixture cut 4
+PASS layout Lv1: retired egg stays hidden
+PASS layout Lv1: stock fixture fills all 16 portions
+PASS layout Lv1: stock click without customer drop retains food
+PASS layout Lv1: retired cup cannot be reactivated by clicking
+PASS layout Lv1: bowl click without customer drop retains food
+PASS layout Lv1: stock fixture sets 1 portions
+PASS layout Lv1: stock fixture sets 7 portions
+PASS layout Lv1: stock fixture sets 8 portions
+PASS layout Lv1: stock fixture sets 9 portions
+PASS layout Lv1: stock fixture sets 15 portions
+PASS layout Lv1: stock fixture sets 16 portions
+PASS layout Lv1: stock fixture sets 8 portions
+PASS layout Lv1: front edge of compact stock tray starts delivery
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: unlimited raw supply
+PASS layout Lv1: retired refill is hidden
+PASS layout Lv1: customer crop meets counter edge without a gap
+PASS layout Lv1: complete order remains above counter crop
+PASS layout Lv1: complete order remains above counter crop
+PASS layout Lv1: complete order remains above counter crop
+PASS layout Lv1: complete order remains above counter crop
+PASS layout Lv1: complete order remains above counter crop
+PASS layout Lv1: unlimited ingredient remains available wuhan_base_seasoning
+PASS layout Lv1: unlimited ingredient remains available wuhan_scallion
+PASS layout Lv1: unlimited ingredient remains available wuhan_chili_oil
+PASS layout Lv1: unlimited ingredient remains available wuhan_braised_beef
+PASS layout Lv1: single-portion order shrinks after full combo
+PASS layout Lv1: short order does not move or enlarge the customer
+PASS layout Lv1: all customer viewports share size and counter baseline
+PASS layout Lv1: all customer viewports share size and counter baseline
+PASS layout Lv1: all customer viewports share size and counter baseline
+PASS layout Lv1: all customer viewports share size and counter baseline
+PASS layout Lv1: all customer viewports share size and counter baseline
+PASS layout Lv1: pendant shows business details and pauses
+PASS layout Lv2: five full combo orders visible
+PASS layout Lv2: ingredient and stock anchors follow the integrated background
+PASS layout Lv2: all equipment levels keep identical body geometry
+PASS layout Lv2: bowl stays aligned with the baked-in bowl
+PASS layout Lv2: pan fits the workbench
+PASS layout Lv2: pan does not cover stock
+PASS layout Lv2: pan does not cover raw
+PASS layout Lv2: bowl fits the workbench
+PASS layout Lv2: bowl does not cover pan
+PASS layout Lv2: bowl does not cover filling
+PASS layout Lv2: bowl does not cover doupi_egg
+PASS layout Lv2: bowl does not cover stock
+PASS layout Lv2: bowl does not cover raw
+PASS layout Lv2: bowl does not cover ingredient0
+PASS layout Lv2: bowl does not cover ingredient1
+PASS layout Lv2: bowl does not cover ingredient2
+PASS layout Lv2: bowl does not cover ingredient3
+PASS layout Lv2: batter fits the workbench
+PASS layout Lv2: batter does not cover pan
+PASS layout Lv2: batter does not cover bowl
+PASS layout Lv2: batter does not cover filling
+PASS layout Lv2: batter does not cover doupi_egg
+PASS layout Lv2: batter does not cover stock
+PASS layout Lv2: batter does not cover raw
+PASS layout Lv2: batter does not cover ingredient0
+PASS layout Lv2: batter does not cover ingredient1
+PASS layout Lv2: batter does not cover ingredient2
+PASS layout Lv2: batter does not cover ingredient3
+PASS layout Lv2: filling fits the workbench
+PASS layout Lv2: filling does not cover pan
+PASS layout Lv2: filling does not cover stock
+PASS layout Lv2: filling does not cover raw
+PASS layout Lv2: filling does not cover ingredient0
+PASS layout Lv2: filling does not cover ingredient1
+PASS layout Lv2: filling does not cover ingredient2
+PASS layout Lv2: filling does not cover ingredient3
+PASS layout Lv2: doupi_egg fits the workbench
+PASS layout Lv2: doupi_egg does not cover pan
+PASS layout Lv2: doupi_egg does not cover filling
+PASS layout Lv2: doupi_egg does not cover stock
+PASS layout Lv2: doupi_egg does not cover raw
+PASS layout Lv2: doupi_egg does not cover ingredient0
+PASS layout Lv2: doupi_egg does not cover ingredient1
+PASS layout Lv2: doupi_egg does not cover ingredient2
+PASS layout Lv2: doupi_egg does not cover ingredient3
+PASS layout Lv2: stock fits the workbench
+PASS layout Lv2: raw fits the workbench
+PASS layout Lv2: raw does not cover stock
+PASS layout Lv2: ingredient0 fits the workbench
+PASS layout Lv2: ingredient0 does not cover pan
+PASS layout Lv2: ingredient0 does not cover stock
+PASS layout Lv2: ingredient0 does not cover raw
+PASS layout Lv2: ingredient0 does not cover ingredient1
+PASS layout Lv2: ingredient0 does not cover ingredient2
+PASS layout Lv2: ingredient0 does not cover ingredient3
+PASS layout Lv2: ingredient1 fits the workbench
+PASS layout Lv2: ingredient1 does not cover pan
+PASS layout Lv2: ingredient1 does not cover stock
+PASS layout Lv2: ingredient1 does not cover raw
+PASS layout Lv2: ingredient1 does not cover ingredient2
+PASS layout Lv2: ingredient1 does not cover ingredient3
+PASS layout Lv2: ingredient2 fits the workbench
+PASS layout Lv2: ingredient2 does not cover pan
+PASS layout Lv2: ingredient2 does not cover stock
+PASS layout Lv2: ingredient2 does not cover raw
+PASS layout Lv2: ingredient2 does not cover ingredient3
+PASS layout Lv2: ingredient3 fits the workbench
+PASS layout Lv2: ingredient3 does not cover pan
+PASS layout Lv2: ingredient3 does not cover stock
+PASS layout Lv2: ingredient3 does not cover raw
+PASS layout Lv2: old collection control is hidden and inert
+PASS layout Lv2: pendant matches new artwork and clears the HUD: (1731.6747, 211.1796), (153.87561, 242.16791)
+PASS layout Lv2: payment targets the pendant opening
+PASS layout Lv2: stock piece 1 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 1 remains inside tray
+PASS layout Lv2: stock piece 2 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 2 remains inside tray
+PASS layout Lv2: stock piece 3 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 3 remains inside tray
+PASS layout Lv2: stock piece 4 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 4 remains inside tray
+PASS layout Lv2: stock piece 5 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 5 remains inside tray
+PASS layout Lv2: stock piece 6 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 6 remains inside tray
+PASS layout Lv2: stock piece 7 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 7 remains inside tray
+PASS layout Lv2: stock piece 8 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 8 remains inside tray
+PASS layout Lv2: stock piece 9 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 9 remains inside tray
+PASS layout Lv2: stock piece 10 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 10 remains inside tray
+PASS layout Lv2: stock piece 11 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 11 remains inside tray
+PASS layout Lv2: stock piece 12 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 12 remains inside tray
+PASS layout Lv2: stock piece 13 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 13 remains inside tray
+PASS layout Lv2: stock piece 14 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 14 remains inside tray
+PASS layout Lv2: stock piece 15 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 15 remains inside tray
+PASS layout Lv2: stock piece 16 fits its four-column, two-row serving slot
+PASS layout Lv2: projected stock piece stays within the tray interior
+PASS layout Lv2: stock piece 16 remains inside tray
+PASS layout Lv2: viewport basket 1 starts one portion with unlimited supply
+PASS layout Lv2: basket 1 reaches drained fixture
+PASS layout Lv2: noodles reach bowl fixture
+PASS layout Lv2: viewport ingredient 1 adds one serving
+PASS layout Lv2: viewport ingredient 2 adds one serving
+PASS layout Lv2: viewport ingredient 3 adds one serving
+PASS layout Lv2: viewport ingredient 4 adds one serving
+PASS layout Lv2: viewport pan accepts dragged batter
+PASS layout Lv2: egg UI is retired
+PASS layout Lv2: bowl contains mixing gesture
+PASS layout Lv2: viewport bowl drag completes mixing
+PASS layout Lv2: viewport pan adds egg
+PASS layout Lv2: doupi skin flips for fixture
+PASS layout Lv2: doupi filling enters fixture
+PASS layout Lv2: doupi fixture cut 1
+PASS layout Lv2: doupi fixture cut 2
+PASS layout Lv2: doupi fixture cut 3
+PASS layout Lv2: doupi fixture cut 4
+PASS layout Lv2: retired egg stays hidden
+PASS layout Lv2: stock fixture fills all 16 portions
+PASS layout Lv2: stock click without customer drop retains food
+PASS layout Lv2: retired cup cannot be reactivated by clicking
+PASS layout Lv2: bowl click without customer drop retains food
+PASS layout Lv2: stock fixture sets 1 portions
+PASS layout Lv2: stock fixture sets 7 portions
+PASS layout Lv2: stock fixture sets 8 portions
+PASS layout Lv2: stock fixture sets 9 portions
+PASS layout Lv2: stock fixture sets 15 portions
+PASS layout Lv2: stock fixture sets 16 portions
+PASS layout Lv2: stock fixture sets 8 portions
+PASS layout Lv2: front edge of compact stock tray starts delivery
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: unlimited raw supply
+PASS layout Lv2: retired refill is hidden
+PASS layout Lv2: customer crop meets counter edge without a gap
+PASS layout Lv2: complete order remains above counter crop
+PASS layout Lv2: complete order remains above counter crop
+PASS layout Lv2: complete order remains above counter crop
+PASS layout Lv2: complete order remains above counter crop
+PASS layout Lv2: complete order remains above counter crop
+PASS layout Lv2: unlimited ingredient remains available wuhan_base_seasoning
+PASS layout Lv2: unlimited ingredient remains available wuhan_scallion
+PASS layout Lv2: unlimited ingredient remains available wuhan_chili_oil
+PASS layout Lv2: unlimited ingredient remains available wuhan_braised_beef
+PASS layout Lv2: single-portion order shrinks after full combo
+PASS layout Lv2: short order does not move or enlarge the customer
+PASS layout Lv2: all customer viewports share size and counter baseline
+PASS layout Lv2: all customer viewports share size and counter baseline
+PASS layout Lv2: all customer viewports share size and counter baseline
+PASS layout Lv2: all customer viewports share size and counter baseline
+PASS layout Lv2: all customer viewports share size and counter baseline
+PASS layout Lv2: pendant shows business details and pauses
+PASS layout Lv3: five full combo orders visible
+PASS layout Lv3: ingredient and stock anchors follow the integrated background
+PASS layout Lv3: all equipment levels keep identical body geometry
+PASS layout Lv3: bowl stays aligned with the baked-in bowl
+PASS layout Lv3: pan fits the workbench
+PASS layout Lv3: pan does not cover stock
+PASS layout Lv3: pan does not cover raw
+PASS layout Lv3: bowl fits the workbench
+PASS layout Lv3: bowl does not cover pan
+PASS layout Lv3: bowl does not cover filling
+PASS layout Lv3: bowl does not cover doupi_egg
+PASS layout Lv3: bowl does not cover stock
+PASS layout Lv3: bowl does not cover raw
+PASS layout Lv3: bowl does not cover ingredient0
+PASS layout Lv3: bowl does not cover ingredient1
+PASS layout Lv3: bowl does not cover ingredient2
+PASS layout Lv3: bowl does not cover ingredient3
+PASS layout Lv3: batter fits the workbench
+PASS layout Lv3: batter does not cover pan
+PASS layout Lv3: batter does not cover bowl
+PASS layout Lv3: batter does not cover filling
+PASS layout Lv3: batter does not cover doupi_egg
+PASS layout Lv3: batter does not cover stock
+PASS layout Lv3: batter does not cover raw
+PASS layout Lv3: batter does not cover ingredient0
+PASS layout Lv3: batter does not cover ingredient1
+PASS layout Lv3: batter does not cover ingredient2
+PASS layout Lv3: batter does not cover ingredient3
+PASS layout Lv3: filling fits the workbench
+PASS layout Lv3: filling does not cover pan
+PASS layout Lv3: filling does not cover stock
+PASS layout Lv3: filling does not cover raw
+PASS layout Lv3: filling does not cover ingredient0
+PASS layout Lv3: filling does not cover ingredient1
+PASS layout Lv3: filling does not cover ingredient2
+PASS layout Lv3: filling does not cover ingredient3
+PASS layout Lv3: doupi_egg fits the workbench
+PASS layout Lv3: doupi_egg does not cover pan
+PASS layout Lv3: doupi_egg does not cover filling
+PASS layout Lv3: doupi_egg does not cover stock
+PASS layout Lv3: doupi_egg does not cover raw
+PASS layout Lv3: doupi_egg does not cover ingredient0
+PASS layout Lv3: doupi_egg does not cover ingredient1
+PASS layout Lv3: doupi_egg does not cover ingredient2
+PASS layout Lv3: doupi_egg does not cover ingredient3
+PASS layout Lv3: stock fits the workbench
+PASS layout Lv3: raw fits the workbench
+PASS layout Lv3: raw does not cover stock
+PASS layout Lv3: ingredient0 fits the workbench
+PASS layout Lv3: ingredient0 does not cover pan
+PASS layout Lv3: ingredient0 does not cover stock
+PASS layout Lv3: ingredient0 does not cover raw
+PASS layout Lv3: ingredient0 does not cover ingredient1
+PASS layout Lv3: ingredient0 does not cover ingredient2
+PASS layout Lv3: ingredient0 does not cover ingredient3
+PASS layout Lv3: ingredient1 fits the workbench
+PASS layout Lv3: ingredient1 does not cover pan
+PASS layout Lv3: ingredient1 does not cover stock
+PASS layout Lv3: ingredient1 does not cover raw
+PASS layout Lv3: ingredient1 does not cover ingredient2
+PASS layout Lv3: ingredient1 does not cover ingredient3
+PASS layout Lv3: ingredient2 fits the workbench
+PASS layout Lv3: ingredient2 does not cover pan
+PASS layout Lv3: ingredient2 does not cover stock
+PASS layout Lv3: ingredient2 does not cover raw
+PASS layout Lv3: ingredient2 does not cover ingredient3
+PASS layout Lv3: ingredient3 fits the workbench
+PASS layout Lv3: ingredient3 does not cover pan
+PASS layout Lv3: ingredient3 does not cover stock
+PASS layout Lv3: ingredient3 does not cover raw
+PASS layout Lv3: old collection control is hidden and inert
+PASS layout Lv3: pendant matches new artwork and clears the HUD: (1731.6747, 211.1796), (153.87561, 242.16791)
+PASS layout Lv3: payment targets the pendant opening
+PASS layout Lv3: stock piece 1 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 1 remains inside tray
+PASS layout Lv3: stock piece 2 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 2 remains inside tray
+PASS layout Lv3: stock piece 3 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 3 remains inside tray
+PASS layout Lv3: stock piece 4 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 4 remains inside tray
+PASS layout Lv3: stock piece 5 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 5 remains inside tray
+PASS layout Lv3: stock piece 6 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 6 remains inside tray
+PASS layout Lv3: stock piece 7 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 7 remains inside tray
+PASS layout Lv3: stock piece 8 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 8 remains inside tray
+PASS layout Lv3: stock piece 9 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 9 remains inside tray
+PASS layout Lv3: stock piece 10 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 10 remains inside tray
+PASS layout Lv3: stock piece 11 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 11 remains inside tray
+PASS layout Lv3: stock piece 12 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 12 remains inside tray
+PASS layout Lv3: stock piece 13 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 13 remains inside tray
+PASS layout Lv3: stock piece 14 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 14 remains inside tray
+PASS layout Lv3: stock piece 15 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 15 remains inside tray
+PASS layout Lv3: stock piece 16 fits its four-column, two-row serving slot
+PASS layout Lv3: projected stock piece stays within the tray interior
+PASS layout Lv3: stock piece 16 remains inside tray
+PASS layout Lv3: viewport basket 1 starts one portion with unlimited supply
+PASS layout Lv3: viewport basket 2 starts one portion with unlimited supply
+PASS layout Lv3: basket 1 reaches drained fixture
+PASS layout Lv3: basket 2 reaches drained fixture
+PASS layout Lv3: noodles reach bowl fixture
+PASS layout Lv3: viewport ingredient 1 adds one serving
+PASS layout Lv3: viewport ingredient 2 adds one serving
+PASS layout Lv3: viewport ingredient 3 adds one serving
+PASS layout Lv3: viewport ingredient 4 adds one serving
+PASS layout Lv3: viewport pan accepts dragged batter
+PASS layout Lv3: egg UI is retired
+PASS layout Lv3: bowl contains mixing gesture
+PASS layout Lv3: viewport bowl drag completes mixing
+PASS layout Lv3: viewport pan adds egg
+PASS layout Lv3: doupi filling enters fixture
+PASS layout Lv3: doupi fixture cut 1
+PASS layout Lv3: doupi fixture cut 2
+PASS layout Lv3: doupi fixture cut 3
+PASS layout Lv3: doupi fixture cut 4
+PASS layout Lv3: retired egg stays hidden
+PASS layout Lv3: stock fixture fills all 16 portions
+PASS layout Lv3: stock click without customer drop retains food
+PASS layout Lv3: retired cup cannot be reactivated by clicking
+PASS layout Lv3: bowl click without customer drop retains food
+PASS layout Lv3: stock fixture sets 1 portions
+PASS layout Lv3: stock fixture sets 7 portions
+PASS layout Lv3: stock fixture sets 8 portions
+PASS layout Lv3: stock fixture sets 9 portions
+PASS layout Lv3: stock fixture sets 15 portions
+PASS layout Lv3: stock fixture sets 16 portions
+PASS layout Lv3: stock fixture sets 8 portions
+PASS layout Lv3: front edge of compact stock tray starts delivery
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: unlimited raw supply
+PASS layout Lv3: retired refill is hidden
+PASS layout Lv3: customer crop meets counter edge without a gap
+PASS layout Lv3: complete order remains above counter crop
+PASS layout Lv3: complete order remains above counter crop
+PASS layout Lv3: complete order remains above counter crop
+PASS layout Lv3: complete order remains above counter crop
+PASS layout Lv3: complete order remains above counter crop
+PASS layout Lv3: unlimited ingredient remains available wuhan_base_seasoning
+PASS layout Lv3: unlimited ingredient remains available wuhan_scallion
+PASS layout Lv3: unlimited ingredient remains available wuhan_chili_oil
+PASS layout Lv3: unlimited ingredient remains available wuhan_braised_beef
+PASS layout Lv3: single-portion order shrinks after full combo
+PASS layout Lv3: short order does not move or enlarge the customer
+PASS layout Lv3: all customer viewports share size and counter baseline
+PASS layout Lv3: all customer viewports share size and counter baseline
+PASS layout Lv3: all customer viewports share size and counter baseline
+PASS layout Lv3: all customer viewports share size and counter baseline
+PASS layout Lv3: all customer viewports share size and counter baseline
+PASS layout Lv3: pendant shows business details and pauses
+WUHAN_LAYOUT_CAPTURE_DONE

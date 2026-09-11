@@ -17,6 +17,7 @@ public partial class StageFourSelfTest
 {
     private async Task TestTianjinWorkbenchV1(DataCatalog catalog)
     {
+        TestEmbeddedStockContainment(catalog);
         string path = $"res://.tmp/tianjin-workbench-save-{Guid.NewGuid():N}.json";
         string absolute = ProjectSettings.GlobalizePath(path);
         var legacyJson = JsonSerializer.SerializeToNode(new SaveData())!;
@@ -169,10 +170,77 @@ public partial class StageFourSelfTest
             Check(canvas.GetSurfaceRect().GetCenter().IsEqualApprox(stoveCenter.Value)
                 && fryer.TableContactAnchor.IsEqualApprox(fryerContact.Value) && fryer.OpeningCenter.IsEqualApprox(fryerOpening.Value)
                 && fryer.HasNode("BasketAnchor"), $"Lv{level} 炉面圆心、炸锅锅口和接触锚点升级不漂移");
+            var rack = (WorkstationSlotView)station.FindChild("FinishedYoutiaoArea", true, false);
+            var stock = station.FryerMachine!.Inventory;
+            stock.TryStore(stock.FreeSpace, YoutiaoQuality.Golden);
+            station.RefreshForCapture();
+            Check(rack.VisibleIngredientVisualCount == stock.Count,
+                $"Lv{level} 成品油条每份库存对应一根实物");
+            var visible = rack.IngredientVisuals.Where(v => v.Visible).ToArray();
+            Rect2 rackFloor = TianjinWorkbenchLayout.EmbeddedFinishedYoutiaoSlot().StockFootprintRect!.Value;
+            Check(visible.All(v => rackFloor.Encloses(rack.IngredientBounds(v)) && v.Rotation == 0)
+                && visible.Select(v => v.Position.Y).Distinct().Count() == 1,
+                $"Lv{level} 成品油条同向同高且不越出托盘");
+            for (int count = stock.Count; count >= 0; count--)
+            {
+                station.RefreshForCapture();
+                Check(rack.VisibleIngredientVisualCount == count, $"Lv{level} 成品油条取用到{count}根时逐根减少");
+                if (count > 0) stock.TryTake(out _);
+            }
         }
         screen.Initialize(catalog, save, controller, 9);
         Check(station.LearnedWorkbenchActions.Contains("take:batter") && station.LearnedWorkbenchActions.Contains("refill:egg")
             && !station.LearnedWorkbenchActions.Contains("take:ham"), "切换关卡保留已学操作，未成功的新操作继续教学");
         screen.Free(); controller.Free(); save.Free(); DeleteIfExists(absolute);
+    }
+
+    private void TestEmbeddedStockContainment(DataCatalog catalog)
+    {
+        var art = new TianjinArtCatalog();
+        foreach (int level in Enumerable.Range(1, 3))
+        foreach (string id in new[] { StableIds.Ingredients.Egg, StableIds.Ingredients.Crispy,
+            StableIds.Ingredients.Scallion, StableIds.Ingredients.Ham })
+        {
+            int capacity = catalog.IngredientStationsByLevel[level].GetCapacity(id);
+            var slot = SceneFactory.Instantiate<IngredientStockSlotView>("res://Scenes/Tests/WorkstationSlotFixture.tscn");
+            AddChild(slot);
+            WorkstationSlotSpec spec = TianjinWorkbenchLayout.EmbeddedIngredientSlot(id);
+            slot.ConfigureStock(art.WorkbenchTray, art.Ingredient(id), id, spec,
+                id == StableIds.Ingredients.Scallion ? IngredientVisualMode.LooseStock : IngredientVisualMode.HybridStock);
+            foreach (int quantity in new[] { 0, 1, capacity / 2, capacity })
+            {
+                slot.RenderStock(quantity, capacity, ProjectCake.Inventory.IngredientStockStatus.Normal, 0, true);
+                Check(slot.VisibleIngredientVisualCount == quantity, $"Lv{level} {id} 放大后仍显示{quantity}份库存");
+                Check(slot.IngredientVisuals.Where(v => v.Visible).All(v =>
+                    spec.StockFootprintRect!.Value.Encloses(slot.IngredientBounds(v))),
+                    $"Lv{level} {id} {quantity}份旋转后完整位于托盘内");
+            }
+            TextureRect first = slot.IngredientVisuals[0];
+            Check(slot.IngredientVisuals.Take(capacity).All(v => v.Rotation == 0)
+                && slot.IngredientVisuals.Take(capacity / 2).Select(v => v.Position.Y).Distinct().Count() == 1,
+                $"Lv{level} {id} 同排素材朝向与高度统一");
+            Rect2 occupied = slot.IngredientBounds(first);
+            foreach (TextureRect visual in slot.IngredientVisuals.Take(capacity)) occupied = occupied.Merge(slot.IngredientBounds(visual));
+            Rect2 floor = spec.StockFootprintRect!.Value;
+            Check(occupied.Size.X >= floor.Size.X * .95f && occupied.Size.Y >= floor.Size.Y * .95f,
+                $"Lv{level} {id} 满库存铺满托盘内部宽高");
+            Check(slot.IngredientVisuals[capacity / 2].Position.Y - first.Position.Y > 18,
+                $"Lv{level} {id} 前后两排有清晰错位");
+            Vector2 source = first.Texture.GetSize();
+            Vector2 oldLimit = id == StableIds.Ingredients.Egg ? new(32, 42) : new(43, 34);
+            Vector2 oldSize = source * Math.Min(oldLimit.X / source.X, oldLimit.Y / source.Y);
+            Check(first.Size.Y > oldSize.Y * 1.2f, $"Lv{level} {id} 单份至少放大20%");
+            slot.RenderStock(0, capacity, ProjectCake.Inventory.IngredientStockStatus.Refilling, .5, true);
+            Check(slot.VisibleIngredientVisualCount == capacity / 2
+                && slot.IngredientVisuals.Where(v => v.Visible).All(v => spec.StockFootprintRect!.Value.Encloses(slot.IngredientBounds(v))),
+                $"Lv{level} {id} 补货预览保持数量与边界");
+            slot.Free();
+        }
+        for (int index = 0; index < ProjectCake.Inventory.SoyMilkTrayRuntime.DefaultCapacity; index++)
+        {
+            Rect2 cup = TianjinWorkbenchLayout.EmbeddedSoyCup(index, art.Product(ProductKind.SoyMilk).GetSize());
+            Check(TianjinWorkbenchLayout.EmbeddedSoyFloor.Encloses(cup) && cup.Size.X > 64 * 1.2f,
+                $"豆浆第{index + 1}杯放大且完整位于托盘内");
+        }
     }
 }

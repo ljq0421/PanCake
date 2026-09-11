@@ -91,18 +91,34 @@ public partial class TianjinLedger : Control
         {
             int day = index + 1;
             bool unlocked = day <= save.Data.HighestUnlockedDay;
-            bool recorded = save.Data.DayBestRecords.ContainsKey(day);
+            bool recorded = save.Data.DayBestRecords.TryGetValue(day, out DayBestRecord? dayBest) && !save.HasLoadError;
             bool selected = day == SelectedDay;
             Button button = _dates[index];
             button.SetPressedNoSignal(selected);
-            _dateStates[index].Text = !unlocked ? "未解锁" : recorded ? "已记录" : "等待开店";
+            Label state = _dateStates[index];
+            bool showMetrics = unlocked && recorded;
+            state.Text = !unlocked ? "未解锁" : recorded
+                ? $"{dayBest!.TotalRevenue}\n{dayBest.Satisfaction:0}%" : "等待开店";
+            button.GetNode<TextureRect>("RevenueIcon").Visible = showMetrics;
+            button.GetNode<TextureRect>("SatisfactionIcon").Visible = showMetrics;
+            state.Position = new Vector2(showMetrics ? 42 : 14, 39);
+            state.Size = new Vector2(button.Size.X - state.Position.X - 14, 46);
+            // Keep even the largest saved integer inside the date card without truncation.
+            Font font = state.GetThemeFont("font");
+            int fontSize = 18;
+            float availableWidth = state.Size.X;
+            while (fontSize > 12 && state.Text.Split('\n').Any(line =>
+                font.GetStringSize(line, HorizontalAlignment.Left, -1, fontSize).X > availableWidth)) fontSize--;
+            state.AddThemeFontSizeOverride("font_size", fontSize);
             _dateStamps[index].Visible = unlocked && recorded;
             Color paper = selected ? TianjinUi.Yellow : unlocked ? TianjinUi.Paper : TianjinUi.CreamMuted;
             UpdateButtonStyle(button, "normal", paper, selected ? 4 : 2);
             UpdateButtonStyle(button, "pressed", TianjinUi.Yellow, 4);
             UpdateButtonStyle(button, "hover", paper.Lightened(.06f), 3);
             UpdateButtonStyle(button, "hover_pressed", TianjinUi.Yellow.Lightened(.06f), 4);
-            button.TooltipText = $"Day {day} · {MorningHub.DaySubtitle(day)} · {_dateStates[index].Text}";
+            string description = showMetrics
+                ? $"最佳收入 ¥{dayBest!.TotalRevenue} · 满意度 {dayBest.Satisfaction:0}%" : state.Text;
+            button.TooltipText = $"Day {day} · {MorningHub.DaySubtitle(day)} · {description}";
         }
 
         bool locked = SelectedDay > save.Data.HighestUnlockedDay;
@@ -161,7 +177,7 @@ public partial class TianjinLedger : Control
             6 or 7 => new[] { _art.FinishedPancake, _art.Product(ProductKind.Youtiao) },
             8 => new[] { _art.FinishedPancake, _art.Ingredient(StableIds.Ingredients.Ham) },
             9 => new[] { _art.FinishedPancake, _art.Product(ProductKind.SoyMilk) },
-            11 => new[] { _art.CustomerHead("male_office", CustomerExpression.Normal), _art.FinishedPancake },
+            11 => new[] { _art.LedgerOfficeCustomer, _art.FinishedPancake },
             >= 10 => new[] { _art.FinishedPancake, _art.Product(ProductKind.Youtiao), _art.Product(ProductKind.SoyMilk) },
             _ => new[] { _art.FinishedPancake },
         };

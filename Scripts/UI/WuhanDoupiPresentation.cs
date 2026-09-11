@@ -130,8 +130,8 @@ public partial class WuhanWorkstationView
     }
     private void DrawDoupiIngredients()
     {
-        Sprite("egg_tray", DoupiEggRect);
-        Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), DoupiEggRect.Grow(-9));
+        // The tray is painted into the sheet; only the eggs are a dynamic overlay.
+        Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), _layout.DoupiEggFood);
         Rect2? available = _doupi?.State switch
         { DoupiState.Empty => BatterRect, DoupiState.Batter => DoupiEggRect, DoupiState.Flipped => FillingRect, _ => null };
         if (available is Rect2 rect && !Busy("pan"))

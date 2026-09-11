@@ -417,8 +417,7 @@ public partial class TianjinDayScreen : Control
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)
                 PulseCustomer(_portraits[index], customer.State == CustomerState.Angry ? TianjinUi.Red : TianjinUi.Orange, false);
             _displayedCustomerStates[index] = customer.State;
-            _orderCards[index].Patience.Value = Math.Clamp((1 - customer.PatienceProgress) * 100, 0, 100);
-            ((StyleBoxFlat)_orderCards[index].Patience.GetThemeStylebox("fill")).BgColor = StateColor(customer.State);
+            PatienceBarPresentation.Render(_orderCards[index].Patience, 1 - customer.PatienceProgress);
         }
     }
 
@@ -578,16 +577,7 @@ public partial class TianjinDayScreen : Control
 
     private static string DaySubtitle(int day) => day switch
     {
-        1 => "第一张煎饼", 5 => "油条开锅", 9 => "豆浆套餐", 11 => "特殊顾客", 12 => "大订单", 15 => "天津最终高峰", _ => "早餐高峰",
-    };
-
-    private static Color StateColor(CustomerState state) => state switch
-    {
-        CustomerState.Happy => TianjinUi.Green,
-        CustomerState.Normal => TianjinUi.Brown,
-        CustomerState.Impatient => TianjinUi.Orange,
-        CustomerState.Angry => TianjinUi.Red,
-        _ => new Color("#8A7766"),
+        1 => "第一张煎饼", 5 => "油条开锅", 9 => "豆浆套餐", 11 => "特殊顾客", 12 => "大订单", 15 => "最终高峰", _ => "早餐高峰",
     };
 
     private static bool ReducedMotion => ProjectSettings.HasSetting("accessibility/reduce_motion")

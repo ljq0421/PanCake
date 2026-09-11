@@ -267,8 +267,9 @@ public partial class StageFourSelfTest
             Check(floor.HasPoint(foot) && source.GetGlobalRect().Encloses(cupBoundsNow),
                 $"豆浆第{index + 1}杯落在盘内且整个杯子可拖取");
             if (index % 2 == 0)
-                Check(cupNodes[index + 1].GetGlobalRect().Position.X - cupBoundsNow.Position.X >= cupBoundsNow.Size.X * .8f,
-                    $"豆浆第{index + 1}杯与同排下一杯仅轻微遮挡，杯身仍清晰");
+                Check(cupNodes[index + 1].GetGlobalRect().Position.X >= cupBoundsNow.End.X
+                    && Mathf.IsEqualApprox(cupNodes[index + 1].Position.Y, cupNodes[index].Position.Y),
+                    $"豆浆第{index + 1}杯与同排下一杯整齐并列，不横向遮挡");
         }
         var refill = (Button)soyPanel.FindChild("SoyMilkRefill", true, false);
         Check(!refill.IsVisibleInTree() && soyPanel.FindChild("StockGesture_soy_milk", true, false) is StockGesture gesture

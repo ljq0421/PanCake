@@ -179,8 +179,8 @@ public partial class YangzhouDayScreen : Control
             var order = i < s.Waiting.Count ? s.Waiting[i] : null;
             _customers[i].Disabled = order is null || !CanWork();
             _customers[i].Text = order is null ? "静候下一桌茶客" : $"{(order == s.Selected ? "当前托盘 · " : "")}{order.Type.Name} #{order.Plan.Id}  {order.Mood}\n{order.Template.Name} · ¥{order.Price}\n" + string.Join("\n", order.Template.Items.Select(item => $"{_catalog.Product(item.Key).Name}  {order.Count(item.Key)}/{item.Value}"));
-            _patience[i].Visible = order is not null; _patience[i].Value = order is null ? 0 : Math.Clamp(100 * (1 - order.WaitRatio), 0, 100);
-            ((StyleBoxFlat)_patience[i].GetThemeStylebox("fill")).BgColor = order?.WaitRatio > .84 ? new("#B85B46") : order?.WaitRatio > .6 ? new("#B18A44") : new("#719D79");
+            _patience[i].Visible = order is not null;
+            PatienceBarPresentation.Render(_patience[i], order is null ? 0 : 1 - order.WaitRatio);
         }
         _board.Title = $"豆干切丝 · Lv{k.Board.Data.Level}";
         _board.Detail = k.Board.Cutting ? $"按住往复切丝  {k.Board.Progress:P0}\n达到{k.Board.Data.Snap:P0}自动完成" : $"按住砧板，左右往复切丝\n每块{k.Board.Data.Yield}份 · 生豆干{k.Tofu.Count}/3";

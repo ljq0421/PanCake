@@ -864,8 +864,9 @@ public partial class PancakeWorkstation : Control
                 _finishedYoutiaoSlot.SetStock(FryerMachine.Inventory.Count, FryerMachine.Inventory.Capacity);
                 _finishedYoutiaoSlot.ShowEmptyCaption(FryerMachine.Inventory.Count == 0);
             }
-            _finishedYoutiaoSlot.SetWideStockTints(YoutiaoPresentation.RackTints(
-                FryerMachine.Inventory.Items, IsTianjinWorkbench ? _finishedYoutiaoSlot.StockTier : 1));
+            _finishedYoutiaoSlot.SetWideStockTints(IsTianjinWorkbench
+                ? FryerMachine.Inventory.Items.Reverse().Select(YoutiaoPresentation.Tint).ToArray()
+                : YoutiaoPresentation.RackTints(FryerMachine.Inventory.Items, 1));
             _storedYoutiao.TooltipText = FryerMachine.Inventory.TryPeek(out YoutiaoQuality nextQuality)
                 ? $"熟油条 · 下一根{QualityName(nextQuality)} · 拖到煎饼或交给顾客"
                 : "熟油条 · 暂无成品";

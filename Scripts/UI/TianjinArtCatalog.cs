@@ -47,6 +47,9 @@ public sealed class TianjinArtCatalog
         Load("ledger_book", "Ledger/ledger_book.png", true);
         Load("ledger_bookmark", "Ledger/ledger_bookmark.png", true);
         Load("ledger_record_stamp", "Ledger/ledger_record_stamp.png", true);
+        Load("ledger_office_customer", "普通男上班族.png", true);
+        Load("workbench_stove_icon", "BusinessSign/stove.png", true);
+        Load("workbench_fryer_icon", "BusinessSign/fryer.png", true);
         Load("pancake_base", "展开煎饼基础层-v2.png", true);
         Load("pancake_egg", "鸡蛋覆盖层.png", true);
         Load("pancake_sauce", "酱料覆盖层.png", true);
@@ -114,10 +117,9 @@ public sealed class TianjinArtCatalog
         Get(products.Contains(ProjectCake.Data.ProductKind.SoyMilk) ? "background_soy"
             : products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "background_fryer" : "background_pancake");
     public Texture2D EmbeddedBasket => Get("embedded_basket");
-    public Texture2D WorkbenchStoveIcon => new AtlasTexture {
-        Atlas = Get("background_pancake"), Region = new Rect2(520, 515, 420, 300) };
-    public Texture2D WorkbenchFryerIcon => new AtlasTexture {
-        Atlas = Get("background_fryer"), Region = new Rect2(95, 445, 375, 266) };
+    public Texture2D WorkbenchStoveIcon => Get("workbench_stove_icon");
+    public Texture2D WorkbenchFryerIcon => Get("workbench_fryer_icon");
+    public Texture2D LedgerOfficeCustomer => Get("ledger_office_customer");
     public Texture2D Coin => Get("coin");
     public Texture2D LedgerBook => Get("ledger_book");
     public Texture2D LedgerBookmark => Get("ledger_bookmark");

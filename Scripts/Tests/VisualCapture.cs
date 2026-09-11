@@ -66,7 +66,8 @@ public partial class VisualCapture : Node
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
-            temporarySave = $"user://visual-capture-{Guid.NewGuid():N}.json";
+            Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://.tmp"));
+            temporarySave = $"res://.tmp/visual-capture-{Guid.NewGuid():N}.json";
             GetNode<SaveService>("/root/SaveService").UsePathForTests(temporarySave);
         }
 
@@ -220,6 +221,30 @@ public partial class VisualCapture : Node
                         fryer.Tick(fryer.Level.DrainSeconds + 0.05);
                         for (int quantity = 0; quantity < 4; quantity++) fryer.TryExecute(FryerCommand.LoadOne);
                         fryer.TryExecute(FryerCommand.LowerBasket);
+                    }
+                    string? fryerState = args.FirstOrDefault(arg => arg.StartsWith("--capture-fryer-state=", StringComparison.Ordinal))?.Split('=')[1];
+                    string? storedArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-stored-youtiao=", StringComparison.Ordinal));
+                    if (storedArg is not null && int.TryParse(storedArg.Split('=')[1], out int storedQuantity))
+                    {
+                        workstation.FryerMachine!.Inventory.TryStore(
+                            Math.Min(storedQuantity, workstation.FryerMachine.Inventory.FreeSpace), YoutiaoQuality.Golden);
+                        workstation.RefreshForCapture();
+                        dayScreen.SetProcess(false);
+                    }
+                    if (fryerState is not null)
+                    {
+                        FryerStateMachine fryer = workstation.FryerMachine!;
+                        int count = args.Contains("--capture-fryer-partial", StringComparer.Ordinal) ? 2 : fryer.Level.Capacity;
+                        for (int i = 0; i < count; i++) fryer.TryExecute(FryerCommand.LoadOne);
+                        if (fryerState != "raw")
+                        {
+                            fryer.TryExecute(FryerCommand.LowerBasket);
+                            fryer.Tick(fryerState == "burnt" ? fryer.Level.BurnAtSeconds + 1 : fryer.Level.GoldenStartSeconds + .05);
+                            if (fryerState == "raised") fryer.TryExecute(FryerCommand.RaiseBasket);
+                        }
+                        workstation.RefreshForCapture();
+                        // Freeze the fixture before the capture delay drains the raised batch.
+                        dayScreen.SetProcess(false);
                     }
                     if (capturePartialOrder)
                     {

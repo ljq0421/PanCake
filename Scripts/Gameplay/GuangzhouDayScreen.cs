@@ -263,7 +263,7 @@ public partial class GuangzhouDayScreen : Control
             if (c is null) { _orders[i].Text = $"{i + 1:00}    等待街坊\n\n肠粉现蒸 · 点心提前备"; continue; }
             string lines = string.Join("\n", c.Order.Lines.Select((l, n) => $"{(c.Progress.GetRemainingQuantity(n) == 0 ? "✓" : "·")} {LineName(l)}  {c.Progress.GetDeliveredQuantity(n)}/{l.Quantity}"));
             _orders[i].Text = $"{c.Type.DisplayName}  ¥{c.Order.BasePrice}\n{lines}";
-            _patience[i].Value = Math.Max(0, 100 * (1 - c.PatienceProgress));
+            PatienceBarPresentation.Render(_patience[i], 1 - c.PatienceProgress);
         }
         for (int i = 0; i < 2; i++)
         {

@@ -1,0 +1,604 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+ERROR: 存档无法读取：Access to the path 'C:\Users\Administrator\AppData\Roaming\Godot\app_userdata\早餐铺子\project_cake_save_v3.json' is denied.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:362)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:362)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Core.SaveService._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:144)
+       [4] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [5] bool ProjectCake.Core.SaveService.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Core.SaveService_ScriptMethods.generated.cs:150)
+       [6] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan dragging cannot open details
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan preserves Perfect, correct and incorrect grades
+PASS Wuhan record income matches ledger
+PASS Wuhan payment respects reduced motion
+PASS Wuhan details freeze in-flight payments
+PASS Wuhan flight completes and cleans up
+PASS Wuhan lost customers have individual records
+PASS Wuhan lost customers excluded from satisfaction
+PASS Wuhan details never settle money twice
+PASS Wuhan long record list is scrollable
+PASS Wuhan close button resumes business
+PASS Wuhan hiding clears modal and coins
+PASS Wuhan restart clears session
+PASS Wuhan abandonment clears records
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan dragging cannot open details
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan preserves Perfect, correct and incorrect grades
+PASS Wuhan record income matches ledger
+PASS Wuhan payment respects reduced motion
+PASS Wuhan details freeze in-flight payments
+PASS Wuhan flight completes and cleans up
+PASS Wuhan lost customers have individual records
+PASS Wuhan lost customers excluded from satisfaction
+PASS Wuhan details never settle money twice
+PASS Wuhan long record list is scrollable
+PASS Wuhan close button resumes business
+PASS Wuhan hiding clears modal and coins
+PASS Wuhan restart clears session
+PASS Wuhan abandonment clears records
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan dragging cannot open details
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan preserves Perfect, correct and incorrect grades
+PASS Wuhan record income matches ledger
+PASS Wuhan payment respects reduced motion
+PASS Wuhan details freeze in-flight payments
+PASS Wuhan flight completes and cleans up
+PASS Wuhan lost customers have individual records
+PASS Wuhan lost customers excluded from satisfaction
+PASS Wuhan details never settle money twice
+PASS Wuhan long record list is scrollable
+PASS Wuhan close button resumes business
+PASS Wuhan hiding clears modal and coins
+PASS Wuhan restart clears session
+PASS Wuhan abandonment clears records
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan retains five occupied customer slots
+PASS Wuhan new background matches unlock stage
+PASS Wuhan old collection control is hidden and inert
+PASS Wuhan five bubbles leave pendant unobscured
+PASS Wuhan order bubbles do not overlap
+PASS Wuhan real pendant click opens and pauses business
+PASS Wuhan modal freezes cooking and production animation
+PASS Wuhan modal freezes clock and patience
+PASS Wuhan modal absorbs background clicks
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan modal contains keyboard focus
+PASS Wuhan Esc resumes business
+PASS Wuhan closing details preserves focus pause
+PASS Wuhan closing details preserves independent pause
+PASS Wuhan dragging cannot open details
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan accepts noodle portion
+PASS Wuhan partial delivery produces no record, income or flight
+PASS Wuhan final doupi delivery completes order
+PASS Wuhan captures actual multi-item order once
+PASS Wuhan duplicate delivery cannot duplicate outcome
+PASS Wuhan preserves Perfect, correct and incorrect grades
+PASS Wuhan record income matches ledger
+PASS Wuhan payment respects reduced motion
+PASS Wuhan details freeze in-flight payments
+PASS Wuhan flight completes and cleans up
+PASS Wuhan lost customers have individual records
+PASS Wuhan lost customers excluded from satisfaction
+PASS Wuhan details never settle money twice
+PASS Wuhan long record list is scrollable
+PASS Wuhan close button resumes business
+PASS Wuhan hiding clears modal and coins
+PASS Wuhan restart clears session
+PASS Wuhan abandonment clears records
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 1
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 5
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 9
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS dragging over the pendant cannot open details
+PASS closing details preserves an independent manual pause
+PASS new business has no outcome snapshots
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS wrong recipe completes with real incorrect evaluation
+PASS records preserve all three completed grades
+PASS snapshot income matches authoritative ledger
+PASS payment flight respects reduced motion
+PASS detail modal pauses in-flight payments
+PASS lost customers produce individual records
+PASS lost records do not enter satisfaction average
+PASS opening detailed records never changes session or permanent money
+PASS all session records are reachable by scrolling
+PASS real close button resumes business
+PASS hiding clears modal and flight nodes
+PASS restart clears records and income without modifying save format
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 1
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 5
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 9
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS dragging over the pendant cannot open details
+PASS closing details preserves an independent manual pause
+PASS new business has no outcome snapshots
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS wrong recipe completes with real incorrect evaluation
+PASS records preserve all three completed grades
+PASS snapshot income matches authoritative ledger
+PASS payment flight respects reduced motion
+PASS detail modal pauses in-flight payments
+PASS lost customers produce individual records
+PASS lost records do not enter satisfaction average
+PASS opening detailed records never changes session or permanent money
+PASS all session records are reachable by scrolling
+PASS real close button resumes business
+PASS hiding clears modal and flight nodes
+PASS restart clears records and income without modifying save format
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 1
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 5
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 9
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS dragging over the pendant cannot open details
+PASS closing details preserves an independent manual pause
+PASS new business has no outcome snapshots
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS wrong recipe completes with real incorrect evaluation
+PASS records preserve all three completed grades
+PASS snapshot income matches authoritative ledger
+PASS payment flight respects reduced motion
+PASS detail modal pauses in-flight payments
+PASS lost customers produce individual records
+PASS lost records do not enter satisfaction average
+PASS opening detailed records never changes session or permanent money
+PASS all session records are reachable by scrolling
+PASS real close button resumes business
+PASS hiding clears modal and flight nodes
+PASS restart clears records and income without modifying save format
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 1
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 5
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS pendant preserves five physical customer slots
+PASS correct new stage background: 9
+PASS old Tianjin collection control stays hidden and inert
+PASS five customer bubbles leave the pendant unobscured
+PASS real pendant click opens modal and pauses production
+PASS detail view freezes clock and customer patience
+PASS modal blocks background clicks
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Tab remains in business modal
+PASS Esc closes and resumes business
+PASS closing details cannot override focus pause
+PASS dragging over the pendant cannot open details
+PASS closing details preserves an independent manual pause
+PASS new business has no outcome snapshots
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS rejected delivery creates no record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS partial order accepts youtiao
+PASS partial delivery creates no completed record
+PASS final item completes order
+PASS completion creates exactly one snapshot
+PASS snapshot captures actual customer, order lines and evaluation
+PASS duplicate delivery cannot duplicate records
+PASS wrong recipe completes with real incorrect evaluation
+PASS records preserve all three completed grades
+PASS snapshot income matches authoritative ledger
+PASS payment flight respects reduced motion
+PASS detail modal pauses in-flight payments
+PASS lost customers produce individual records
+PASS lost records do not enter satisfaction average
+PASS opening detailed records never changes session or permanent money
+PASS all session records are reachable by scrolling
+PASS real close button resumes business
+PASS hiding clears modal and flight nodes
+PASS restart clears records and income without modifying save format
+COIN_COLLECTION_TEST_RESULT passed=588 failed=0

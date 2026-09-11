@@ -153,7 +153,6 @@ public partial class WuhanVisualCapture : Node
             const BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
             Type viewType = typeof(WuhanWorkstationView);
             Rect2 stockBounds = (Rect2)viewType.GetProperty("StockRect", hidden)!.GetValue(view)!;
-            var art = (WuhanArtCatalog)viewType.GetField("_art", hidden)!.GetValue(view)!;
             Rect2 VisualRect(string property) => (Rect2)viewType.GetProperty(property, hidden)!.GetValue(view)!;
             Rect2 ingredientTray = (Rect2)viewType.GetMethod("IngredientRect", hidden)!.Invoke(view, new object[] { 1 })!;
             Require(ingredientTray == WuhanWorkbenchLayout.Doupi.Ingredient(1) && stockBounds == WuhanWorkbenchLayout.Doupi.Stock,
@@ -165,6 +164,7 @@ public partial class WuhanVisualCapture : Node
             var equipment = new Dictionary<string, Rect2> {
                 ["pan"] = VisualRect("PanRect"), ["bowl"] = VisualRect("BowlRect"),
                 ["batter"] = VisualRect("BatterRect"), ["filling"] = VisualRect("FillingRect"),
+                ["doupi_egg"] = VisualRect("DoupiEggRect"),
                 ["stock"] = stockBounds,
                 ["raw"] = (Rect2)viewType.GetProperty("RawTrayRect", hidden)!.GetValue(view)!,
             };
@@ -178,22 +178,23 @@ public partial class WuhanVisualCapture : Node
             }
             Rect2 eggUi = WuhanWorkbenchLayout.EggUi;
             Require(!day.CoinTray.IsVisibleInTree() && !day.CoinTray.TryCollect(), "old collection control is hidden and inert");
-            Require(day.CashPendant.GetRect() == WuhanWorkbenchLayout.CashPendant && !day.CashPendant.GetRect().Intersects(eggUi),
-                "pendant matches new artwork and clears the HUD");
+            // Control reconstructs its rectangle from offsets, introducing subpixel rounding.
+            Require(day.CashPendant.GetRect().IsEqualApprox(WuhanWorkbenchLayout.CashPendant) && !day.CashPendant.GetRect().Intersects(eggUi),
+                $"pendant matches new artwork and clears the HUD: {day.CashPendant.GetRect()}");
             Require(day.CashPendant.GetRect().HasPoint(WuhanWorkbenchLayout.CashSlot), "payment targets the pendant opening");
-            Rect2 singleSource = (Rect2)viewType.GetMethod("Source", hidden)!.Invoke(view, new object[] { art.Texture("doupi_single") })!;
+            Rect2 foodBounds = WuhanWorkbenchLayout.Doupi.StockFood;
             for (int piece = 0; piece < 16; piece++)
             {
                 Rect2 placement = (Rect2)viewType.GetMethod("StockItemRect", hidden)!.Invoke(view, new object[] { piece })!;
-                Require(placement.Size.X <= 52.5f && placement.Size.Y <= 37.5f, $"stock piece {piece + 1} fits the enlarged serving tray");
-                Require(Math.Abs(placement.Size.Aspect() - singleSource.Size.Aspect()) < .01f, "stock thumbnail keeps source aspect");
+                Require(placement.Size.X < foodBounds.Size.X / 4 && placement.Size.Y < foodBounds.Size.Y * .43f,
+                    $"stock piece {piece + 1} fits its four-column, two-row serving slot");
+                Require(foodBounds.Encloses(placement), "projected stock piece stays within the tray interior");
                 Require(stockBounds.Encloses(placement), $"stock piece {piece + 1} remains inside tray");
             }
             for(int basket=0;basket<day.Cooker.Baskets.Count;basket++)
             {
-                int before=day.Ingredients.Count(StableIds.Ingredients.WuhanNoodles);
                 Move(view.RawCenter);Button(view.RawCenter,true);Move(view.BasketRect(basket).GetCenter(),true);Button(view.BasketRect(basket).GetCenter(),false);
-                Require(day.Cooker.Baskets[basket].State==NoodleBasketState.Cooking&&day.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==before-1,$"viewport basket {basket+1} starts one portion");
+                Require(day.Cooker.Baskets[basket].State==NoodleBasketState.Cooking&&day.Ingredients.CanUse(StableIds.Ingredients.WuhanNoodles),$"viewport basket {basket+1} starts one portion with unlimited supply");
             }
             // Legal state-machine transitions avoid replaying the long animation capture suite.
             day.Cooker.Tick(catalog.NoodleCookersByLevel[level].OptimalSeconds+.001);

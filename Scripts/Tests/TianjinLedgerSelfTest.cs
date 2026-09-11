@@ -79,6 +79,14 @@ public partial class TianjinLedgerSelfTest : Node
             await Click(Find<Button>("Date8"));
             Check(Find<Label>("BestRevenue").Text == "¥386" && Find<Label>("BestSatisfaction").Text == "满意度 96%" && Find<Label>("BestPerfect").Text == "Perfect 18 单", "detail displays exact saved best record");
             Check(Find<Control>("RecordStamp").Visible, "record stamp denotes existing record");
+            Check(Find<Button>("Date8").GetNode<TextureRect>("RevenueIcon").Visible
+                && Find<Button>("Date8").GetNode<TextureRect>("SatisfactionIcon").Visible
+                && DateState(8).Text == "386\n96%"
+                && Find<Button>("Date8").TooltipText.Contains("最佳收入 ¥386 · 满意度 96%"),
+                "date metrics use coin and heart with numbers and descriptive tooltip");
+            Check(!Find<Button>("Date9").GetNode<TextureRect>("RevenueIcon").Visible
+                && !Find<Button>("Date10").GetNode<TextureRect>("SatisfactionIcon").Visible,
+                "unplayed and locked dates hide metric icons");
             await Capture("record");
             await Click(Find<Button>("StartLedgerDay"));
             Check(requests.SequenceEqual(new[] { 8 }) && !_ledger.Visible, "only action button dispatches selected day and closes ledger");
@@ -92,8 +100,21 @@ public partial class TianjinLedgerSelfTest : Node
             _hub.ShowLedger(); await Frames();
             Check(_ledger.SelectedDay == 15 && !Find<Button>("StartLedgerDay").Disabled, "complete chapter remains replayable");
             await Capture("complete");
+            Check(Find<Label>("@Label@82").Text == "最终高峰", "Day 15 uses the final peak title");
+            _ledger.SelectDay(11); await Frames();
+            Check(Find<TextureRect>("Illustration1").Texture == new TianjinArtCatalog().LedgerOfficeCustomer,
+                "Day 11 displays the complete office customer sprite");
+            await Capture("day11");
+            _save.Data.DayBestRecords[11] = new DayBestRecord { TotalRevenue = 0, Satisfaction = 0 };
+            _ledger.Refresh(_save);
+            Check(DateState(11).Text == "0\n0%", "recorded zero values remain visible");
+            _ledger.SelectDay(15);
             _save.Data.DayBestRecords[15].TotalRevenue = int.MaxValue;
             _ledger.Refresh(_save);
+            await Frames();
+            Check(DateState(15).Text == $"{int.MaxValue}\n95%", "date card uses the same best shift as the right page");
+            Check(DateState(15).GetCombinedMinimumSize().X <= DateState(15).Size.X
+                && DateState(15).GetRect().End.Y <= Find<Button>("Date15").Size.Y, "maximum revenue fits inside date card");
             Check(Find<Label>("BestRevenue").GetCombinedMinimumSize().X <= 490, "largest saved revenue fits its allotted width");
             await Capture("large-record");
 
@@ -106,6 +127,8 @@ public partial class TianjinLedgerSelfTest : Node
             confirmation.GetOkButton().EmitSignal(Button.SignalName.Pressed); await Frames();
             Check(_save.Data.HighestUnlockedDay == 1 && _save.Data.DayBestRecords.Count == 0 && _ledger.SelectedDay == 1, "confirmed reset refreshes selection and record state");
             Check(!Find<Control>("BestRecord").Visible && !Find<Button>("StartLedgerDay").Disabled, "reset exposes fresh Day 1");
+            Check(!Find<Button>("Date8").GetNode<TextureRect>("RevenueIcon").Visible,
+                "reset removes previously visible metric icons");
             await Capture("reset");
 
             File.WriteAllText(_savePath, "{invalid-json"); _save.Load(); await Frames();
@@ -124,6 +147,7 @@ public partial class TianjinLedgerSelfTest : Node
             Check(_ledger.Visible && _ledger.SelectedDay == 15 && Find<Button>("StartLedgerDay").Disabled, "live save refresh preserves inspected date and rechecks availability");
             KeyPress(Key.Escape);
             Check(!_ledger.Visible, "Escape closes ledger");
+            await Capture("business-sign");
             _hub.Free(); _save.Free(); await Frames();
             GD.Print($"TIANJIN_LEDGER_TEST_RESULT passed={_passed} failed=0");
             GetTree().Quit();
@@ -139,8 +163,27 @@ public partial class TianjinLedgerSelfTest : Node
     private T Find<T>(string name) where T : Node => (T)(_ledger.FindChild(name, true, false)
         ?? throw new InvalidOperationException($"Missing {name}"));
 
+    private Label DateState(int day) => Find<Button>($"Date{day}").GetChildren().OfType<Label>().Last();
+
     private void TestAssets()
     {
+        var art = new TianjinArtCatalog();
+        foreach (Texture2D texture in new[] { art.WorkbenchStoveIcon, art.WorkbenchFryerIcon })
+        {
+            using Image icon = texture.GetImage();
+            Check(icon.GetFormat() == Image.Format.Rgba8 && icon.GetPixel(0, 0).A == 0,
+                "business sign equipment has real transparent corners");
+        }
+        foreach (int columns in new[] { 3, 4 })
+        foreach (float lift in new[] { 0f, 11f, 22f })
+        foreach (Texture2D food in new[] { art.RawYoutiao, art.Product(ProjectCake.Data.ProductKind.Youtiao), art.BurntYoutiao })
+        {
+            Rect2 basket = new(150, 477 - lift, 253, 96);
+            Rect2 floor = new(basket.Position + basket.Size * new Vector2(.16f, .22f), basket.Size * new Vector2(.68f, .56f));
+            for (int index = 0; index < columns * 2; index++)
+                Check(floor.Encloses(FryerVisualView.EmbeddedFoodRect(basket, columns, index, food.GetSize())),
+                    $"{columns * 2} capacity food {index + 1} stays on mesh floor at lift {lift}");
+        }
         foreach (string name in new[] { "ledger_book", "ledger_bookmark", "ledger_record_stamp" })
         {
             using Image image = Image.LoadFromFile($"res://resource/art/TianJin/Ledger/{name}.png");

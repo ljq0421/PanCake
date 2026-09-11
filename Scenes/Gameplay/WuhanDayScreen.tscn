@@ -843,7 +843,7 @@ text = "提前打烊"
 [node name="WuhanCustomerStrip" type="Control" parent="." unique_id=917246360]
 z_index = 25
 clip_contents = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 45.0
 offset_top = 130.0
 offset_right = 1875.0
@@ -853,7 +853,7 @@ mouse_filter = 2
 [node name="WuhanCustomer1" type="Control" parent="WuhanCustomerStrip" unique_id=502758148]
 visible = false
 custom_minimum_size = Vector2(350, 350)
-layout_mode = 2
+anchors_preset = 0
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|0")
 
@@ -961,7 +961,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 [node name="WuhanCustomer2" type="Control" parent="WuhanCustomerStrip" unique_id=497109150]
 visible = false
 custom_minimum_size = Vector2(350, 350)
-layout_mode = 2
+anchors_preset = 0
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|1")
 
@@ -1069,7 +1069,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 [node name="WuhanCustomer3" type="Control" parent="WuhanCustomerStrip" unique_id=1554841040]
 visible = false
 custom_minimum_size = Vector2(350, 350)
-layout_mode = 2
+anchors_preset = 0
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|2")
 
@@ -1177,7 +1177,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 [node name="WuhanCustomer4" type="Control" parent="WuhanCustomerStrip" unique_id=848583783]
 visible = false
 custom_minimum_size = Vector2(350, 350)
-layout_mode = 2
+anchors_preset = 0
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|3")
 
@@ -1285,7 +1285,7 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CustomerPortraitVie
 [node name="WuhanCustomer5" type="Control" parent="WuhanCustomerStrip" unique_id=905678019]
 visible = false
 custom_minimum_size = Vector2(350, 350)
-layout_mode = 2
+anchors_preset = 0
 mouse_filter = 2
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_customers|array|4")
 

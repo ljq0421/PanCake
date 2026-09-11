@@ -1,0 +1,36 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+DataCatalog 已加载：23 个配方，8 个商品，18 类顾客；天津 15 天，武汉 12 天。
+ERROR: 存档无法读取：Access to the path 'C:\Users\Administrator\AppData\Roaming\Godot\app_userdata\早餐铺子\project_cake_save_v3.json' is denied.
+   at: void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (res://Scripts/Core/SaveService.cs:362)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Core.SaveService.SetCorruptError(string, System.Exception) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:362)
+       [2] void ProjectCake.Core.SaveService.Load() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:158)
+       [3] void ProjectCake.Core.SaveService._Ready() (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:144)
+       [4] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [5] bool ProjectCake.Core.SaveService.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Core.SaveService_ScriptMethods.generated.cs:150)
+       [6] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS isolated progress is saved before continuing from title
+PASS title offers saved progress
+PASS navigation button 城市地图 is available
+PASS Wuhan starts locked for preview regression
+PASS normal navigation rejects locked Wuhan
+PASS navigation button 测试直达武汉 is available
+PASS Main navigation opens Wuhan hub
+PASS Wuhan preview does not unlock the city
+PASS navigation button 经营手账 is available
+PASS navigation button 开始营业 · Day 8 is available
+PASS real Wuhan day is visible and frame processing stays enabled
+PASS shared controller is running
+PASS HotDryNoodles source visible in real Main
+SOURCE HotDryNoodles (724.5933, 531.39215), (293.97125, 234.13391) hover=/root/WuhanMainDeliverySelfTest/Main/UI/WuhanDayScreen/WuhanWorkstation/WuhanDrag_HotDryNoodles
+PASS HotDryNoodles lifts and survives normal frames
+PASS HotDryNoodles reaches customer in real Main
+PASS Doupi source visible in real Main
+SOURCE Doupi (1469.8564, 840.1275), (417.99048, 171.00958) hover=/root/WuhanMainDeliverySelfTest/Main/UI/WuhanDayScreen/WuhanWorkstation/WuhanDrag_Doupi
+PASS Doupi lifts and survives normal frames
+PASS Doupi reaches customer in real Main
+WUHAN_MAIN_DELIVERY_RESULT passed=18 failed=0

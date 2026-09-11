@@ -1948,6 +1948,69 @@ expand_mode = 1
 stretch_mode = 5
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|2")
 
+[node name="Ingredient4" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|3")
+
+[node name="Ingredient5" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|4")
+
+[node name="Ingredient6" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|5")
+
+[node name="Ingredient7" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|6")
+
+[node name="Ingredient8" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|7")
+
+[node name="Ingredient9" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|8")
+
+[node name="Ingredient10" type="TextureRect" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer/IngredientAnchor"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_p4n2y")
+expand_mode = 1
+stretch_mode = 5
+metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.WorkstationSlotView|_ingredientVisuals|list|9")
+
 [node name="CaptionPlate" type="Panel" parent="@Control@109/FryerArea/FinishedYoutiaoArea/VisualLayer" unique_id=2033479509]
 visible = false
 layout_mode = 0

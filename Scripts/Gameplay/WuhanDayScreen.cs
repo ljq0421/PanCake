@@ -348,11 +348,7 @@ public partial class WuhanDayScreen : Control
             if (customer is null) continue;
             _orders[i].Render(customer.Order,customer.Progress,_catalog.RecipesById);
             _orders[i].Size = new Vector2(332, _orders[i].GetCombinedMinimumSize().Y);
-            _patience[i].Value=(1-customer.PatienceProgress)*100;
-            double remaining = 1 - customer.PatienceProgress;
-            ((StyleBoxFlat)_patience[i].GetThemeStylebox("fill")).BgColor = remaining < .2
-                ? new Color("#B95035") : remaining < .4 ? new Color("#C69536") : new Color("#9AB88A");
-            _patience[i].Modulate = new Color(1, 1, 1, remaining > .85 ? .4f : 1);
+            PatienceBarPresentation.Render(_patience[i], 1 - customer.PatienceProgress);
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
     }

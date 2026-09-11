@@ -68,11 +68,7 @@ public partial class PancakeWorkstation
         PositionEmbedded(_fryerActions, new Rect2(383, 955, 150, 44));
         _finishedYoutiaoSlot.Reparent(_fryerPanel, false);
         Rect2 rack = TianjinWorkbenchLayout.EmbeddedYoutiaoTray;
-        var rackSpec = new WorkstationSlotSpec(rack.Size, new Rect2(Vector2.Zero, rack.Size),
-            new Rect2(35, 15, rack.Size.X - 70, rack.Size.Y - 35),
-            new Rect2(20, rack.Size.Y - 10, rack.Size.X - 40, 25), new Rect2(), new Rect2(),
-            new Rect2(Vector2.Zero, rack.Size), new Rect2(), 1,
-            CaptionRect: new Rect2(20, rack.Size.Y - 10, rack.Size.X - 40, 25));
+        var rackSpec = TianjinWorkbenchLayout.EmbeddedFinishedYoutiaoSlot();
         _finishedYoutiaoSlot.ContainerInBackground = true;
         _finishedYoutiaoSlot.Configure(_art.WorkbenchFinishedYoutiaoRack, _art.Ingredient(StableIds.Ingredients.Youtiao),
             "熟油条", rackSpec, IngredientVisualMode.WideStock);
@@ -122,7 +118,7 @@ public partial class PancakeWorkstation
             for (int i = 0; i < _soyStockArt.Cups.Count; i++)
             {
                 var cup = _soyStockArt.Cups[i];
-                PositionEmbedded(cup, new Rect2(27 + i % 2 * 72 + i / 2 * 2, 4 + i / 2 * 37, 64, 72));
+                PositionEmbedded(cup, TianjinWorkbenchLayout.EmbeddedSoyCup(i, cup.Texture.GetSize()));
             }
         }
         PositionEmbedded(_soyStatus, new Rect2(0, soy.Size.Y - 2, soy.Size.X, 26));

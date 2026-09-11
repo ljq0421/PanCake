@@ -46,7 +46,7 @@ public partial class WuhanWorkstationView
             "batter" => "拖一勺浆到空锅，松手倒入",
             "doupi_egg" => "倒浆后点击鸡蛋，自动打蛋摊开",
             "filling" => "翻面后拖馅入锅，继续按住铺开",
-            "pan" when _doupi?.State == DoupiState.Batter => "点击锅前的鸡蛋操作位加蛋",
+            "pan" when _doupi?.State == DoupiState.Batter => "点击锅右上方托盘里的鸡蛋加蛋",
             "pan" when _doupi?.State == DoupiState.Flipped => "从馅碗拖入一份馅，继续按住铺开",
             "pan" when _doupi?.State == DoupiState.Spreading => "按住锅面铺开馅料；松手保留进度",
             "pan" when _doupi?.State is DoupiState.ReadyToCut or DoupiState.Cutting or DoupiState.Overbrowned => "沿虚线切一横三竖；第一刀完成后收火",
@@ -111,8 +111,8 @@ public partial class WuhanWorkstationView
         switch (_doupi.State)
         {
             case DoupiState.Empty: break;
-            case DoupiState.Batter:
-                Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), At(panCue, new Vector2(36, 36))); break;
+            // DrawDoupiIngredients highlights the actual egg tray for this step.
+            case DoupiState.Batter: break;
             case DoupiState.Flipped: break;
             case DoupiState.Spreading: Cue(panCue, "mix", progress: _doupi.Coverage); break;
             case DoupiState.ReadyToFlip: Cue(panCue, "up"); break;

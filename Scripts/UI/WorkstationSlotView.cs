@@ -26,7 +26,7 @@ public enum WorkstationSlotAttentionState
 
 public readonly record struct StockStackLayout(
     Vector2 MaxSize, float ColumnSpacing, float BackFootY, float FrontFootY,
-    Rect2? SilhouetteBounds = null, float RowOffset = 4);
+    Rect2? SilhouetteBounds = null, float RowOffset = 4, bool FillRows = false);
 
 public readonly record struct WorkstationSlotSpec(
     Vector2 MinimumSize,
@@ -158,6 +158,7 @@ public partial class WorkstationSlotView : Control
             SetMeta("_slot_stack_back_foot_y", stack.BackFootY);
             SetMeta("_slot_stack_front_foot_y", stack.FrontFootY);
             SetMeta("_slot_stack_row_offset", stack.RowOffset);
+            SetMeta("_slot_stack_fill_rows", stack.FillRows);
             SaveOptionalRect("stack_silhouette", stack.SilhouetteBounds);
         }
     }
@@ -196,7 +197,8 @@ public partial class WorkstationSlotView : Control
                 (float)GetMeta("_slot_stack_back_foot_y").AsDouble(),
                 (float)GetMeta("_slot_stack_front_foot_y").AsDouble(),
                 LoadOptionalRect("stack_silhouette"),
-                (float)GetMeta("_slot_stack_row_offset").AsDouble());
+                (float)GetMeta("_slot_stack_row_offset").AsDouble(),
+                HasMeta("_slot_stack_fill_rows") && GetMeta("_slot_stack_fill_rows").AsBool());
         }
         _spec = new WorkstationSlotSpec(
             GetMeta("_slot_minimum_size").AsVector2(),
@@ -217,7 +219,7 @@ public partial class WorkstationSlotView : Control
             LoadOptionalVector("visual_contact_ratio"));
         if (_visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
         {
-            _rotatedOpaqueBounds = RotatedOpaqueBounds(_ingredient.Texture, Mathf.DegToRad(32));
+            _rotatedOpaqueBounds = RotatedOpaqueBounds(_ingredient.Texture, Mathf.DegToRad(WideRotation));
             _ingredientHitMask?.Dispose();
             _ingredientHitMask = new Bitmap();
             using Image image = _ingredient.Texture.GetImage();
@@ -265,6 +267,8 @@ public partial class WorkstationSlotView : Control
     public int VisibleStockUnits => _visualMode == IngredientVisualMode.HybridStock && !_spec.CaptionRect.HasValue
         ? Math.Min(_quantity, 6) : VisibleIngredientVisualCount;
     public int StockTier => _stockFraction <= 0 ? 0 : _stockFraction <= 0.25f ? 1 : _stockFraction <= 0.6f ? 2 : 3;
+    private bool IsOrderedRack => _visualMode == IngredientVisualMode.WideStock && _spec.StackLayout?.FillRows == true;
+    private float WideRotation => IsOrderedRack ? 0 : 32;
     public IReadOnlyList<TextureRect> IngredientVisuals => _ingredientVisuals;
     public int LiquidTier => _liquid?.Tier ?? 0;
 
@@ -320,7 +324,7 @@ public partial class WorkstationSlotView : Control
         }, ingredientTexture);
         if (visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
         {
-            _rotatedOpaqueBounds = RotatedOpaqueBounds(ingredientTexture, Mathf.DegToRad(32));
+            _rotatedOpaqueBounds = RotatedOpaqueBounds(ingredientTexture, Mathf.DegToRad(WideRotation));
             _ingredientHitMask?.Dispose();
             _ingredientHitMask = new Bitmap();
             using Image image = ingredientTexture.GetImage();
@@ -378,7 +382,7 @@ public partial class WorkstationSlotView : Control
     public void SetWideStockTints(IReadOnlyList<Color> tints)
     {
         if (_wideStockTints.SequenceEqual(tints)) return;
-        _wideStockTints = tints.Take(3).ToArray();
+        _wideStockTints = tints.Take(IsOrderedRack ? _ingredientVisuals.Count : 3).ToArray();
         LayoutIngredientVisuals();
     }
 
@@ -531,6 +535,17 @@ public partial class WorkstationSlotView : Control
         }
 
         Rect2 localBounds = CenteredScale(new Rect2(Vector2.Zero, _spec.IngredientAnchorRect.Size), _spec.MaxVisualRatio);
+        if (IsOrderedRack)
+        {
+            LayoutSeparatedStock(localBounds);
+            for (int index = 0; index < _ingredientVisuals.Count; index++)
+            {
+                TextureRect visual = _ingredientVisuals[index];
+                visual.Visible = _ingredientAvailable && index < _quantity;
+                visual.Modulate = index < _wideStockTints.Length ? _wideStockTints[index] : Colors.White;
+            }
+            return;
+        }
         if (_visualMode is IngredientVisualMode.WideSingle or IngredientVisualMode.WideStock)
         {
             bool stock = _visualMode == IngredientVisualMode.WideStock;
@@ -683,7 +698,7 @@ public partial class WorkstationSlotView : Control
 
     private (Vector2 Center, Vector2 Size, float Angle)[] BuildStackedStock(Rect2 bounds, int count)
     {
-        int columns = (count + 1) / 2;
+        int columns = IsOrderedRack ? count : (count + 1) / 2;
         Vector2 source = _ingredient.Texture.GetSize();
         // Same large food size at every equipment level; only the number of
         // positions changes. Back row is painted first, front row overlaps it.
@@ -693,7 +708,7 @@ public partial class WorkstationSlotView : Control
         for (int index = 0; index < count; index++)
         {
             int row = index / columns, column = index % columns;
-            float angle = Mathf.DegToRad(new[] { -5f, 2f, -2f, 4f, -3f }[column % 5]);
+            float angle = layout.FillRows ? 0 : Mathf.DegToRad(new[] { -5f, 2f, -2f, 4f, -3f }[column % 5]);
             float x = (_spec.StockFootprintRect?.GetCenter().X ?? 124) + (column - (columns - 1) * .5f) * layout.ColumnSpacing
                 + (row == 0 ? layout.RowOffset : -layout.RowOffset);
             float footY = row == 0 ? layout.BackFootY : layout.FrontFootY;
@@ -709,6 +724,18 @@ public partial class WorkstationSlotView : Control
                 // Leave a subpixel inset so Control transform rounding cannot
                 // put a rotated corner across the floor edge.
                 safeArea = safeArea.Grow(-.5f);
+                if (layout.FillRows)
+                {
+                    // Fill the usable width at every capacity, while preserving
+                    // two distinct rows and stable positions as stock is removed.
+                    float fraction = columns == 1 ? .5f : column / (float)(columns - 1);
+                    float left = safeArea.Position.X + half.X;
+                    float right = safeArea.End.X - half.X;
+                    center.X = Mathf.Lerp(left, right, fraction)
+                        + (row == 0 ? layout.RowOffset : -layout.RowOffset);
+                    center.Y = IsOrderedRack ? safeArea.End.Y - half.Y
+                        : row == 0 ? safeArea.Position.Y + half.Y : safeArea.End.Y - half.Y;
+                }
                 center = center.Clamp(safeArea.Position + half, safeArea.End - half);
             }
             result[index] = (center - _spec.IngredientAnchorRect.Position, size, angle);

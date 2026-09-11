@@ -242,12 +242,22 @@ public partial class WuhanGestureSelfTest : Node
             Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its pendant sheet");
             // Independent points on the supplied PNGs, rather than deriving all input from layout constants.
             Vector2 P(float x, float y) => new Vector2(x * 1920 / 1672, y * 1080 / 941);
-            Vector2 sesame = P(507, 780);
-            Vector2 scallion = P(800, 780);
-            Vector2 chili = P(655, 780);
-            Vector2 beef = P(950, 780);
+            Vector2 sesame = unlocked ? P(497, 780) : P(697, 780);
+            Vector2 scallion = unlocked ? P(790, 780) : P(990, 780);
+            Vector2 chili = unlocked ? P(645, 780) : P(845, 780);
+            Vector2 beef = unlocked ? P(944, 780) : P(1144, 780);
             Check(View.HitTarget(sesame) == "ingredient0" && View.HitTarget(scallion) == "ingredient1"
                 && View.HitTarget(chili) == "ingredient2" && View.HitTarget(beef) == "ingredient3", "four visible bowls map to the correct ingredients");
+            Check(View.HitTarget(unlocked ? P(225, 782) : P(425, 782)) == "raw", "visible raw noodle tray maps to supply");
+            Check(View.HitTarget(unlocked ? P(757, 555) : P(957, 555)) == "bowl", "visible bowl maps to mixing and delivery");
+            if (unlocked)
+            {
+                Check(View.HitTarget(P(1540, 546)) == "doupi_egg", "upper right tray supplies eggs");
+                Check(View.HitTarget(P(1555, 656)) == "batter", "lower right tray supplies batter");
+                Check(View.HitTarget(P(1170, 790)) == "filling", "bamboo container supplies filling");
+                Check(View.HitTarget(P(1460, 805)) == "stock", "large lower tray holds finished doupi");
+                Check(View.HitTarget(P(1240, 560)) == "pan", "visible griddle surface supports gestures");
+            }
             if (!unlocked)
             {
                 Check(View.HitTarget(P(1300, 550)) == "" && View.HitTarget(P(1530, 800)) == "", "empty counter has no pan or stock target");

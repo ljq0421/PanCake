@@ -70,8 +70,7 @@ public partial class OrderBubbleView : PanelContainer
 
     public void RenderXianState(double remaining, bool selected)
     {
-        Patience.Value = Math.Clamp(remaining, 0, 1) * 100;
-        ((StyleBoxFlat)Patience.GetThemeStylebox("fill")).BgColor = remaining < .2 ? new Color("#b94938") : new Color("#769554");
+        PatienceBarPresentation.Render(Patience, remaining);
         if (_xianPanel is not null) _xianPanel.BorderColor = selected ? new Color("#db922e") : _ink;
     }
 

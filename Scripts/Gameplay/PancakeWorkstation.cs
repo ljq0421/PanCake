@@ -51,6 +51,7 @@ public partial class PancakeWorkstation : Control
         StableIds.Ingredients.Scallion,
     };
     private DragService _drag = null!;
+    internal bool IsDragging => _drag.IsDragging;
     private DragItem _batterItem = null!;
     private StrokeInteractor _stroke = null!;
     private DropZone _stoveDropZone = null!;

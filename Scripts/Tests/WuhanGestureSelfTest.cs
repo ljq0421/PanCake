@@ -238,14 +238,14 @@ public partial class WuhanGestureSelfTest : Node
                 GetViewport().GetTexture().GetImage().SavePng($"{root}/day-{day}-{name}.png");
             }
             bool unlocked = day == 4;
-            string expected = unlocked ? "武汉早餐铺主界面-热干面-豆皮-v2.png" : "武汉早餐铺主界面-热干面-v2.png";
-            Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its v2 sheet");
+            string expected = unlocked ? "武汉-热干面-豆皮.png" : "武汉-热干面.png";
+            Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its pendant sheet");
             // Independent points on the supplied PNGs, rather than deriving all input from layout constants.
             Vector2 P(float x, float y) => new Vector2(x * 1920 / 1672, y * 1080 / 941);
-            Vector2 sesame = unlocked ? P(507, 780) : P(560, 780);
-            Vector2 scallion = unlocked ? P(800, 780) : P(912, 780);
-            Vector2 chili = unlocked ? P(655, 780) : P(738, 780);
-            Vector2 beef = unlocked ? P(950, 780) : P(1093, 780);
+            Vector2 sesame = P(507, 780);
+            Vector2 scallion = P(800, 780);
+            Vector2 chili = P(655, 780);
+            Vector2 beef = P(950, 780);
             Check(View.HitTarget(sesame) == "ingredient0" && View.HitTarget(scallion) == "ingredient1"
                 && View.HitTarget(chili) == "ingredient2" && View.HitTarget(beef) == "ingredient3", "four visible bowls map to the correct ingredients");
             if (!unlocked)

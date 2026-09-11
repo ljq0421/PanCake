@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://lthaitcspayg"]
 
 [ext_resource type="Script" uid="uid://bem3g720e4oa7" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
-[ext_resource type="Texture2D" uid="uid://dg21g8kfbaseo" path="res://resource/art/Wuhan/武汉早餐铺主界面-热干面-v2.png" id="2_3027d"]
+[ext_resource type="Texture2D" uid="uid://hqj700dk1ha1" path="res://resource/art/Wuhan/武汉-热干面.png" id="2_3027d"]
 [ext_resource type="Script" uid="uid://crlqrj5cucv88" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
 [ext_resource type="Texture2D" uid="uid://l46r51x58hug" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
 [ext_resource type="Script" uid="uid://cyw6mdd60r1k0" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
@@ -840,7 +840,7 @@ theme_override_styles/disabled = SubResource("StyleBoxFlat_snevk")
 theme_override_styles/focus = SubResource("StyleBoxFlat_c1cda")
 text = "提前打烊"
 
-[node name="WuhanCustomerStrip" type="HBoxContainer" parent="." unique_id=917246360]
+[node name="WuhanCustomerStrip" type="Control" parent="." unique_id=917246360]
 z_index = 25
 clip_contents = true
 layout_mode = 0
@@ -849,8 +849,6 @@ offset_top = 130.0
 offset_right = 1875.0
 offset_bottom = 560.0
 mouse_filter = 2
-theme_override_constants/separation = 20
-alignment = 1
 
 [node name="WuhanCustomer1" type="Control" parent="WuhanCustomerStrip" unique_id=502758148]
 visible = false
@@ -1457,6 +1455,7 @@ text = "补"
 metadata/ingredient_id = "wuhan_noodles"
 
 [node name="CoinTray" type="Control" parent="WuhanWorkstation" unique_id=641626216]
+visible = false
 z_index = 40
 anchors_preset = 0
 offset_left = 1536.0

@@ -19,7 +19,7 @@ public partial class PancakeWorkstation
         "take:batter", "take:egg", "take:sauce", "take:crispy", "take:ham", "take:scallion", "take:youtiao", "take:soy_milk",
         "spread", "flip", "sauce", "fold", "bag", "discard", "fryer:load", "fryer:lower", "fryer:raise",
         "refill:egg", "refill:crispy", "refill:ham", "refill:scallion", "refill:soy_milk",
-        "deliver:finished_pancake", "deliver:stored_youtiao", "deliver:soy_milk_cup", "collect_coins"
+        "deliver:finished_pancake", "deliver:stored_youtiao", "deliver:soy_milk_cup"
     };
 
     public void ConfigureTutorial(IEnumerable<string>? learned)
@@ -131,7 +131,6 @@ public partial class PancakeWorkstation
             else if (soy.Quantity <= 2) _soyStatus.Text = soy.Quantity == 0 ? "已用完" : "余量不足";
             _soyStatus.Visible = !string.IsNullOrEmpty(_soyStatus.Text);
         }
-        if (CoinTray is { } coins) coins.CompactCaption = !NeedsTeaching("collect_coins");
         if (_trashHint is not null) _trashHint.Visible = NeedsTeaching("discard");
         if (FryerMachine?.Inventory.Count > 0)
         {

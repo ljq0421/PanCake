@@ -365,6 +365,7 @@ public partial class WuhanWorkstationView : Control
     {
         if (_cooker is null) return false;
         return (point.Y >= 560 && new Rect2(Vector2.Zero, Size).HasPoint(point))
+            || (_doupi is not null && NearPan(point))
             || BowlRect.HasPoint(point)
             || Enumerable.Range(0, _cooker.Baskets.Count).Any(i => BasketRect(i).HasPoint(point));
     }

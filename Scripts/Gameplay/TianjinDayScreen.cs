@@ -61,10 +61,14 @@ public partial class TianjinDayScreen : Control
     private bool _focused = true;
     private bool _manualPaused;
     private bool _focusPaused;
+    private bool _detailsPaused;
+    private Control? _detailsReturnFocus;
+    internal Button CashPendant { get; private set; } = null!;
+    internal TianjinBusinessDetails BusinessDetails { get; private set; } = null!;
     private double _feedbackRemaining;
-    private readonly Dictionary<Control, Tween> _coinFlights = new();
+    private readonly CashPendantFeedback _paymentFeedback = new();
     private CoinCollectionFeedback _collectionFeedback = null!;
-    internal IReadOnlyCollection<Control> PaymentCoins => _coinFlights.Keys;
+    internal IReadOnlyCollection<Control> PaymentCoins => _paymentFeedback.Coins;
 
     public override void _Ready()
     {
@@ -78,7 +82,12 @@ public partial class TianjinDayScreen : Control
         {
             _workstation.RegisterCustomerZone(_customerDropZones[i]);
             _orderCards[i].Configure(_art);
+            // Reserve the painted pendant between slots four and five, including large orders.
+            _customerSlots[i].Position += new Vector2(i < 4 ? -28 * i : 56, 0);
+            _customerDropZones[i].FixedHitRect = new Rect2(18, 0, 304, CustomerStripHeight);
             OrderBubbleView card = _orderCards[i];
+            card.CustomMinimumSize = new Vector2(304, card.CustomMinimumSize.Y);
+            card.Size = new Vector2(304, card.Size.Y);
             card.Resized += () => AlignOrderCard(card);
             AlignOrderCard(card);
         }
@@ -88,12 +97,10 @@ public partial class TianjinDayScreen : Control
         _feedback.AddThemeFontSizeOverride("font_size", 16);
         _feedbackPanel.CustomMinimumSize = new Vector2(720, 0);
         _feedbackPanel.ResetSize();
-        _collectionFeedback.Collecting = ClearCoinFlights;
-        if (_workstation.CoinTray is { } coinTray)
-            coinTray.Collected += _ => _workstation.LearnWorkbenchAction("collect_coins");
+        BuildCashPendant();
         VisibilityChanged += () =>
         {
-            if (!IsVisibleInTree()) { ClearCoinFlights(); _collectionFeedback.Clear(); }
+            if (!IsVisibleInTree()) { CloseBusinessDetails(); ClearCoinFlights(); _collectionFeedback.Clear(); }
         };
         this.FindButton("暂停").Pressed += () => SetManualPaused(true);
         this.FindButton("继续营业").Pressed += () => SetManualPaused(false);
@@ -111,6 +118,7 @@ public partial class TianjinDayScreen : Control
 
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        CloseBusinessDetails();
         ClearCoinFlights();
         _collectionFeedback.Clear();
         _catalog = catalog;
@@ -147,13 +155,6 @@ public partial class TianjinDayScreen : Control
         _workstation.DirectCustomerDelivery = true;
         _workstation.InteractionEnabled = false;
         _workstation.ResetForDay();
-        if (_workstation.CoinTray is { } tray)
-        {
-            _collectionFeedback.Bind(tray, this, _coinTarget, _art.Coin, () =>
-                _focused && IsVisibleInTree() && !_committed && !_manualPaused && !_focusPaused
-                && !_abandonDialog.Visible && !_controller.IsPaused
-                && _controller.State is DayState.Running or DayState.Closing);
-        }
         ApplyPauseState();
         Render();
     }
@@ -225,7 +226,7 @@ public partial class TianjinDayScreen : Control
         if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true }) return;
         if (!IsVisibleInTree() || !_focused || _abandonDialog.Visible
             || _controller?.State is not (DayState.Running or DayState.Closing)
-            || _manualPaused || _focusPaused || _pausePanel.Visible || _results.Visible) return;
+            || _manualPaused || _focusPaused || _detailsPaused || _pausePanel.Visible || _results.Visible) return;
         // Handle before GUI controls consume the click, including while brushing on the pancake.
         if (_workstation.TryFinishSauceWithRightClick()) GetViewport().SetInputAsHandled();
     }
@@ -235,6 +236,7 @@ public partial class TianjinDayScreen : Control
         if (@event is not InputEventKey { Pressed: true, Echo: false } key) return;
         if (!IsVisibleInTree() || !_focused) return;
         if (_abandonDialog.Visible) return;
+        if (_detailsPaused) return;
         if (key.Keycode is Key.F or Key.G)
         {
             if (key.AltPressed || key.CtrlPressed || key.MetaPressed || key.ShiftPressed) return;
@@ -344,14 +346,10 @@ public partial class TianjinDayScreen : Control
 
     private void ApplyPauseState()
     {
-        bool paused = _manualPaused || _focusPaused;
+        bool paused = _manualPaused || _focusPaused || _detailsPaused;
         if (_controller is not null) _controller.IsPaused = paused;
         if (_workstation is not null) _workstation.Paused = paused;
-        foreach (Tween tween in _coinFlights.Values)
-        {
-            if (paused) tween.Pause();
-            else tween.Play();
-        }
+        _paymentFeedback.SetPaused(paused);
     }
 
     private void Render()
@@ -369,7 +367,8 @@ public partial class TianjinDayScreen : Control
         DayResult? progress = _controller.Ledger?.Build();
         _completedOrders.Text = $"完成订单 {progress?.CompletedCustomers ?? 0}/{_controller.CurrentConfig.CustomerCount}";
         _income.Text = $"今日收入 ¥{progress?.TotalRevenue ?? 0}";
-        _workstation.CoinTray?.RenderRevenue(progress?.TotalRevenue ?? 0, _controller.Ledger?.PaidCustomers ?? 0);
+        CashPendant.Disabled = !_focused || _manualPaused || _focusPaused || _detailsPaused || _committed
+            || _abandonDialog.Visible || _workstation.IsDragging;
         RenderCustomers();
     }
 
@@ -432,7 +431,7 @@ public partial class TianjinDayScreen : Control
     }
 
     private static void AlignOrderCard(OrderBubbleView card) =>
-        card.Position = new Vector2(0, TianjinWorkbenchLayout.OrderCardBottom - card.Size.Y);
+        card.Position = new Vector2(14, TianjinWorkbenchLayout.OrderCardBottom - card.Size.Y);
 
     private void RememberWorkbenchAction(string action)
     {
@@ -471,8 +470,7 @@ public partial class TianjinDayScreen : Control
         }
         if (evaluation.TotalRevenue > 0 && !ReducedMotion)
         {
-            _workstation.CoinTray?.RenderRevenue(_controller.Ledger!.Build().TotalRevenue, _controller.Ledger.PaidCustomers);
-            Vector2 target = GetGlobalTransform().AffineInverse() * (_workstation.CoinTray?.LandingPoint ?? _coinTarget.GetGlobalRect().GetCenter());
+            Vector2 target = TianjinWorkbenchLayout.CashSlot;
             for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08, index);
         }
     }
@@ -495,36 +493,56 @@ public partial class TianjinDayScreen : Control
         tween.Finished += effect.QueueFree;
     }
 
-    private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay, int index)
-    {
-        var coin = TianjinUi.Texture(_art.Coin, new Vector2(38, 38));
-        coin.Name = "FlyingPaymentCoin";
-        coin.Size = coin.CustomMinimumSize;
-        coin.Position = origin - coin.Size * 0.5f;
-        coin.PivotOffset = coin.Size * .5f;
-        coin.MouseFilter = MouseFilterEnum.Ignore;
-        coin.ZIndex = 87;
-        AddChild(coin);
-        Tween tween = CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
-        _coinFlights[coin] = tween;
-        tween.TweenProperty(coin, "position", target - coin.Size * 0.5f, 0.62).SetDelay(delay);
-        tween.Parallel().TweenProperty(coin, "scale", new Vector2(0.65f, 0.65f), 0.62).SetDelay(delay);
-        if (_workstation.CoinTray is { } tray) tray.AppendPaymentLanding(tween, coin, this, index);
-        else tween.TweenProperty(coin, "modulate", new Color(1, 1, 1, 0), 0.12);
-        tween.Finished += () => { _coinFlights.Remove(coin); coin.QueueFree(); };
-    }
+    private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay, int index) =>
+        _paymentFeedback.Spawn(this, _art.Coin, origin, target, delay);
 
-    private void ClearCoinFlights()
-    {
-        foreach ((Control coin, Tween tween) in _coinFlights)
-        {
-            tween.Kill();
-            if (IsInstanceValid(coin)) coin.QueueFree();
-        }
-        _coinFlights.Clear();
-    }
+    private void ClearCoinFlights() => _paymentFeedback.Clear();
 
     public override void _ExitTree() => ClearCoinFlights();
+
+    private void BuildCashPendant()
+    {
+        Rect2 bounds = TianjinWorkbenchLayout.CashPendant;
+        CashPendant = new Button { Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
+            TooltipText = "查看营业明细", MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
+            CashPendant.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+        var focus = TianjinUi.Box(Colors.Transparent, 20, 2, false);
+        focus.BorderColor = TianjinUi.Yellow;
+        CashPendant.AddThemeStyleboxOverride("focus", focus);
+        AddChild(CashPendant);
+        CashPendant.Pressed += OpenBusinessDetails;
+        BusinessDetails = new TianjinBusinessDetails { Name = "BusinessDetails" };
+        AddChild(BusinessDetails);
+        BusinessDetails.CloseRequested += CloseBusinessDetails;
+    }
+
+    internal void OpenBusinessDetails()
+    {
+        if (_controller?.Ledger is null || !IsVisibleInTree() || !_focused || _manualPaused || _focusPaused
+            || _detailsPaused || _committed || _abandonDialog.Visible || _workstation.IsDragging) return;
+        _detailsReturnFocus = GetViewport().GuiGetFocusOwner();
+        _workstation.CancelInput();
+        _detailsPaused = true;
+        ApplyPauseState();
+        BusinessDetails.Open(_controller.Ledger.Build(), _controller.BusinessRecords, _catalog);
+    }
+
+    internal void CloseBusinessDetails()
+    {
+        if (BusinessDetails is null) return;
+        BusinessDetails.Hide();
+        bool wasOpen = _detailsPaused;
+        _detailsPaused = false;
+        if (wasOpen) ApplyPauseState();
+        if (wasOpen && IsVisibleInTree())
+        {
+            CashPendant.Disabled = false;
+            if (IsInstanceValid(_detailsReturnFocus) && _detailsReturnFocus!.IsVisibleInTree()) _detailsReturnFocus.GrabFocus();
+            else CashPendant.GrabFocus();
+        }
+        _detailsReturnFocus = null;
+    }
 
     private void AnimateControl(Control control, Vector2 targetScale, Color targetModulate, double duration)
     {

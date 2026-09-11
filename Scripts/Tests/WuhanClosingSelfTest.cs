@@ -33,11 +33,11 @@ public partial class WuhanClosingSelfTest : Node
             controller.Tick(DayController.OpeningDurationSeconds);
             controller.Ledger!.RecordDelivery(new DeliveryEvaluation(DeliveryGrade.Correct, 13, 0, 80, "test"));
             wuhan.RefreshForCapture();
-            Check(wuhan.CoinTray.PendingAmount == 13, "uncollected 13 yuan fixture");
+            Check(controller.Ledger.Build().TotalRevenue == 13 && !wuhan.CoinTray.IsVisibleInTree() && !wuhan.CoinTray.TryCollect(), "13 yuan is booked automatically without collection");
             Finish(controller);
             Check(wuhan.FindButton("收好收入 · 返回武汉经营首页").IsVisibleInTree(), "Wuhan results visible");
             Check(save.Data.Wuhan.DayBestRecords[7].TotalRevenue == 13 && save.Data.Coins == 13,
-                "uncollected revenue committed once");
+                "automatically booked revenue committed once");
             Check(save.Data.Tianjin.DayBestRecords.Count == 0, "Tianjin progress untouched");
             bool returned = false;
             wuhan.HubRequested += () => returned = true;

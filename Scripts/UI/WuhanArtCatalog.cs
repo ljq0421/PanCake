@@ -13,8 +13,8 @@ public sealed class WuhanArtCatalog
     public WuhanArtCatalog()
     {
         Load("background", "武汉早餐铺主界面背景＋空工作台_v4.png");
-        Load("workbench_noodles", "武汉早餐铺主界面-热干面-v2.png");
-        Load("workbench_doupi", "武汉早餐铺主界面-热干面-豆皮-v2.png");
+        Load("workbench_noodles", "武汉-热干面.png");
+        Load("workbench_doupi", "武汉-热干面-豆皮.png");
         Load("ingredient_tray", "Trays_v2/ingredient.png");
         Load("beef_tray", "通用托盘-圆.png");
         Load("egg_tray", "Trays_v2/egg.png");

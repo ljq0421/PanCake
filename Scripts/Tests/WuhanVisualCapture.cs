@@ -177,12 +177,10 @@ public partial class WuhanVisualCapture : Node
                     Require(!bounds.Intersects(other.Value), $"{name} does not cover {other.Key}");
             }
             Rect2 eggUi = WuhanWorkbenchLayout.EggUi;
-            Require(!day.CoinTray.GetNode<Control>("CoinTrayArt").Visible, "UI collection hides the physical coin tray");
-            Require(day.CoinTray.GetRect() == WuhanWorkbenchLayout.CoinUi && !day.CoinTray.GetRect().Intersects(eggUi),
-                "egg and collection UI are separate HUD controls");
-            Require(day.CoinTray.LandingPoint.IsEqualApprox(day.CoinTray.GetGlobalRect().GetCenter()),
-                "payment feedback lands on the collection button");
-            Require(eggUi.End.Y < 130 && day.CoinTray.GetRect().End.Y < 130, "HUD controls clear all customer orders");
+            Require(!day.CoinTray.IsVisibleInTree() && !day.CoinTray.TryCollect(), "old collection control is hidden and inert");
+            Require(day.CashPendant.GetRect() == WuhanWorkbenchLayout.CashPendant && !day.CashPendant.GetRect().Intersects(eggUi),
+                "pendant matches new artwork and clears the HUD");
+            Require(day.CashPendant.GetRect().HasPoint(WuhanWorkbenchLayout.CashSlot), "payment targets the pendant opening");
             Rect2 singleSource = (Rect2)viewType.GetMethod("Source", hidden)!.Invoke(view, new object[] { art.Texture("doupi_single") })!;
             for (int piece = 0; piece < 16; piece++)
             {
@@ -294,14 +292,12 @@ public partial class WuhanVisualCapture : Node
                     "all customer viewports share size and counter baseline");
             }
             last.Plan.Order = fullOrder;
-            day.CoinTray.RenderRevenue(13, 1);
+            day.OpenBusinessDetails();
             await Frames(2);
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-            Save($"{root}/lv{level}/11-coins-pending.png");
-            Require(day.CoinTray.GetNode<Label>("CoinTrayHint").Text == "收钱 ¥13", "collection UI shows the pending amount");
-            Require(day.CoinTray.TryCollect(), "relocated coin tray still collects pending money");
-            Require(day.CoinTray.GetNode<Label>("CoinTrayHint").Text == "收钱", "empty collection UI retains its label");
-            await Shot("12-coins-collected");
+            Save($"{root}/lv{level}/11-business-details.png");
+            Require(day.BusinessDetails.Visible && controller.IsPaused, "pendant shows business details and pauses");
+            day.CloseBusinessDetails();
             day.Free();controller.Free();save.Free();await Frames(2);
         }
     }

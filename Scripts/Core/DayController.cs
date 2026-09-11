@@ -34,10 +34,25 @@ public partial class DayController : Node
     public DayPlan? CurrentPlan { get; private set; }
     public CustomerQueue? CustomerQueue { get; private set; }
     public DayLedger? Ledger { get; private set; }
+    private readonly List<BusinessOrderRecord> _businessRecords = new();
+    private readonly HashSet<string> _recordedOrders = new(StringComparer.Ordinal);
+    public IReadOnlyList<BusinessOrderRecord> BusinessRecords => _businessRecords.AsReadOnly();
+
+    private void RecordOutcome(CustomerRuntime customer, DeliveryEvaluation? evaluation)
+    {
+        if ((CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan) && _recordedOrders.Add(customer.Order.OrderId))
+            _businessRecords.Add(BusinessOrderRecord.Capture(customer, evaluation));
+    }
     public double DayElapsedSeconds { get; private set; }
     public double OpeningRemainingSeconds { get; private set; }
     public double ClosingRemainingSeconds { get; private set; }
-    public bool IsPaused { get; set; }
+    private bool _paused;
+    private readonly HashSet<string> _pauseReasons = new(StringComparer.Ordinal);
+    public bool IsPaused { get => _paused || _pauseReasons.Count > 0; set => _paused = value; }
+    internal void SetPauseReason(string reason, bool paused)
+    {
+        if (paused) _pauseReasons.Add(reason); else _pauseReasons.Remove(reason);
+    }
     public double DayRemainingSeconds => Math.Max(0, (CurrentConfig?.DurationSeconds ?? 0) - DayElapsedSeconds);
     public Func<string, int>? GuangzhouStockCount { get; set; }
 
@@ -67,7 +82,9 @@ public partial class DayController : Node
             CustomerQueue.ResolveBeforeArrival = (planned, ordinal) => ProjectCake.Guangzhou.GuangzhouOrderProtection.Resolve(
                 planned, ordinal, config, CustomerQueue.Slots, id => GuangzhouStockCount?.Invoke(id) ?? 0, catalog.ProductsById);
         Ledger = new DayLedger(config.Day, config.CustomerCount, config.SatisfactionAverageMode);
-        CustomerQueue.CustomerLost += _ => Ledger.RecordLost();
+        _businessRecords.Clear();
+        _recordedOrders.Clear();
+        CustomerQueue.CustomerLost += customer => { Ledger.RecordLost(); RecordOutcome(customer, null); };
         DayElapsedSeconds = 0;
         OpeningRemainingSeconds = OpeningDurationSeconds;
         ClosingRemainingSeconds = ClosingDurationSeconds;
@@ -264,6 +281,8 @@ public partial class DayController : Node
             CurrentPlan = null;
             CustomerQueue = null;
             Ledger = null;
+            _businessRecords.Clear();
+            _recordedOrders.Clear();
             DayElapsedSeconds = 0;
             SetState(DayState.Preparing);
         }
@@ -329,6 +348,7 @@ public partial class DayController : Node
             : new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
         if (!CustomerQueue!.TryMarkServed(customer.Id)) return Rejected("顾客状态已经变化，本次交付未生效。");
         Ledger!.RecordDelivery(evaluation);
+        RecordOutcome(customer, evaluation);
         if (notify) DeliveryCompleted?.Invoke(evaluation);
         return evaluation;
     }

@@ -8,6 +8,8 @@ internal static class TianjinWorkbenchLayout
 {
     // All embedded-art anchors are measured on the user's 1672 x 941 originals.
     public static readonly Vector2 SourceScale = new(1920f / 1672, 1080f / 941);
+    public static readonly Rect2 CashPendant = FromSource(1220, 140, 125, 122);
+    public static readonly Vector2 CashSlot = new Vector2(1280, 162) * SourceScale;
     public static Rect2 FromSource(float x, float y, float width, float height) =>
         new(new Vector2(x, y) * SourceScale, new Vector2(width, height) * SourceScale);
     public static readonly Rect2 EmbeddedStove = FromSource(520, 510, 430, 310);
@@ -46,7 +48,7 @@ internal static class TianjinWorkbenchLayout
     public const float BackEdge = 580;
     public const float FrontEdge = 995;
     public const float CenterX = 960;
-    public static readonly float[] CustomerCenters = { 256, 608, 960, 1312, 1664 };
+    public static readonly float[] CustomerCenters = { 256, 580, 904, 1228, 1720 };
     public static readonly Rect2 PortraitWindow = new(0, 156, 332, 255);
     public const float OrderCardBottom = 152;
     public static readonly Rect2 RearTrayVisual = new(0, 4, 250, 82);

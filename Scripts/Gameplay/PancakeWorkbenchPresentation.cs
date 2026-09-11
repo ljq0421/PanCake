@@ -130,11 +130,13 @@ public partial class PancakeWorkstation
         PositionEmbedded(soyGesture, new Rect2(Vector2.Zero, soy.Size));
         if (_soyHoldProgress is not null) PositionEmbedded(_soyHoldProgress, new Rect2(14, soy.Size.Y + 23, soy.Size.X - 28, 4));
 
-        // HUD affordances preserve the shared collection/drag handlers.
+        // Tianjin uses the painted cash pendant. Keep the legacy node inert for shared scene binding.
         CoinTray!.Reparent(this, false);
         PositionEmbedded(CoinTray, new Rect2(1562, 98, 180, 50));
         CoinTray.ZIndex = 75;
         CoinTray.ConfigureButtonPresentation();
+        CoinTray.Hide();
+        CoinTray.CanCollect = () => false;
         _trashZone.Reparent(this, false);
         PositionEmbedded(_trashZone, new Rect2(1754, 98, 130, 50));
         _trashZone.ZIndex = 75;

@@ -81,7 +81,7 @@ public partial class StageFourSelfTest
         var coins = (CoinTrayView)station.FindChild("CoinTray", true, false);
         Check(!coins.TryCollect() && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("collect_coins"), "空盘收钱不学习");
         coins.RenderRevenue(20, 1);
-        Check(coins.TryCollect() && save.Data.Tianjin.LearnedWorkbenchActions.Contains("collect_coins"), "实际收钱入口成功后学习");
+        Check(!coins.IsVisibleInTree() && !coins.TryCollect() && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("collect_coins"), "天津旧收钱入口隐藏且停用，不再学习收钱");
 
         // A directory at the destination deterministically rejects the atomic file move.
         File.Delete(absolute);

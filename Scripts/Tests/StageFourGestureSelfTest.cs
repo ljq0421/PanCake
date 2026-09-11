@@ -69,9 +69,9 @@ public partial class StageFourSelfTest
                 }
             }
             int revenue = controller.Ledger.Build().TotalRevenue;
-            Check(revenue > before && station.CoinTray!.VisibleCoinCount == controller.Ledger.PaidCustomers * CoinTrayView.CoinsPerPayment
+            Check(revenue > before && !station.CoinTray!.IsVisibleInTree()
                 && screen.PaymentCoins.Count == flightsBefore + (reduceMotion ? 0 : 3),
-                reduceMotion ? "减少动态效果时直接更新钱堆，不播放金币飞行" : "完成订单准确入账，钱堆同步并仅播放一组付款动画");
+                reduceMotion ? "减少动态效果时直接入账，不播放金币飞行" : "完成订单准确入账，仅播放一组挂件付款动画");
             ProjectSettings.SetSetting("accessibility/reduce_motion", originalMotion);
         }
         screen._Notification((int)NotificationApplicationFocusOut);
@@ -80,15 +80,15 @@ public partial class StageFourSelfTest
         Check(positions.All(entry => entry.Key.Position.IsEqualApprox(entry.Value)), "失焦暂停金币飞行动画");
         screen._Notification((int)NotificationApplicationFocusIn);
         await WaitForAnimation(.68);
-        Vector2 target = screen.GetGlobalTransform().AffineInverse() * station.CoinTray!.LandingPoint;
+        Vector2 target = TianjinWorkbenchLayout.CashSlot;
         Check(screen.PaymentCoins.Count > 0 && screen.PaymentCoins.All(coin => coin.Position.DistanceTo(target - new Vector2(19, 19)) < 60),
-            "付款金币飞向桌面托盘而非顶部收入");
+            "付款金币飞向挂件投币口");
         int ledgerRevenue = controller.Ledger!.Build().TotalRevenue;
         await WaitForAnimation(.5);
         Check(screen.PaymentCoins.Count == 0 && controller.Ledger.Build().TotalRevenue == ledgerRevenue,
             "动画结束清理节点，不重复入账");
         screen.Initialize(catalog, save, controller, 11);
-        Check(station.CoinTray.VisibleCoinCount == 0 && screen.PaymentCoins.Count == 0, "重开清除钱堆与残留付款动画");
+        Check(station.CoinTray!.VisibleCoinCount == 0 && screen.PaymentCoins.Count == 0, "重开清除钱堆与残留付款动画");
         screen.Free(); controller.Free(); save.Free();
         DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(savePath));
     }

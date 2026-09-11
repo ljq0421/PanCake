@@ -59,8 +59,9 @@ public partial class WuhanDayScreen : Control
         }
         Workstation.CanInteract = () => CanInteract;
         Workstation.ConfigureDelivery(DeliveryDrag);
-        CollectionFeedback.Bind(CoinTray, this, _coinTarget, _art.Shared.Coin, () => CanInteract);
-        CoinTray.CanCollect = () => CanInteract && !DeliveryDrag.IsDragging && !Workstation.HasProductionGesture;
+        CoinTray.Hide();
+        CoinTray.CanCollect = () => false;
+        BuildCashPendant();
         Workstation.RaiseRequested = RaiseBasket;
         Workstation.PourRequested = ReservePour;
         Workstation.CutRequested = CutDoupi;
@@ -79,11 +80,21 @@ public partial class WuhanDayScreen : Control
         _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HubRequested?.Invoke(); };
         VisibilityChanged += () =>
         {
-            if (!IsVisibleInTree()) { Workstation.CancelAnimations(); CollectionFeedback.Clear(); }
+            if (!IsVisibleInTree()) { CloseBusinessDetails(); _controller?.SetPauseReason("wuhan-focus", false); Workstation.CancelAnimations(); CollectionFeedback.Clear(); _paymentFeedback.Clear(); }
         };
     }
     private void ConfigurePresentation()
     {
+        var strip = GetNode<Control>("WuhanCustomerStrip");
+        strip.Position = new Vector2(32, 190);
+        strip.Size = new Vector2(1650, 370);
+        for (int i = 0; i < _customers.Length; i++)
+        {
+            _customers[i].Position = new Vector2(i * 330, 0);
+            _customers[i].Size = new Vector2(350, 430);
+            _customers[i].Scale = Vector2.One * .86f;
+            _customers[i].ZIndex = 0;
+        }
         // Orders must never determine the scale or counter crop of a customer.
         for (int i = 0; i < _customers.Length; i++)
         {
@@ -131,12 +142,7 @@ public partial class WuhanDayScreen : Control
         }
         var exit = new WuhanHudIcon { Kind = "exit", Position = new Vector2(9, 9), Size = new Vector2(30, 30), MouseFilter = MouseFilterEnum.Ignore };
         close.AddChild(exit);
-        CoinTray.AmountOnly = true;
-        CoinTray.Position = WuhanWorkbenchLayout.CoinUi.Position;
-        CoinTray.Size = WuhanWorkbenchLayout.CoinUi.Size;
-        CoinTray.Scale = Vector2.One;
-        CoinTray.PivotOffset = CoinTray.Size * .5f;
-        CoinTray.ConfigureButtonPresentation();
+
     }
     public void ConnectController(DayController controller)
     {
@@ -145,6 +151,8 @@ public partial class WuhanDayScreen : Control
     }
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        CloseBusinessDetails();
+        _paymentFeedback.Clear();
         Workstation.CancelAnimations();
         CollectionFeedback.Clear(); CoinTray.RenderRevenue(0);
         _catalog=catalog; _save=save; _controller=controller; _committed=false; _results.Visible=false; _blocker.Visible=false;
@@ -161,6 +169,7 @@ public partial class WuhanDayScreen : Control
 
     public override void _Process(double delta)
     {
+        UpdatePendantState();
         if (!CanInteract) Workstation.CancelInput();
         if (_feedbackSeconds>0 && (_feedbackSeconds-=delta)<=0) _feedback.Visible=false;
         if (!_focused || !IsVisibleInTree() || _controller?.CurrentConfig is null || _controller.IsPaused || _abandon.Visible) { Workstation.EndMix(); return; }
@@ -171,8 +180,8 @@ public partial class WuhanDayScreen : Control
     }
     public override void _Notification(int what)
     {
-        if (what==NotificationApplicationFocusOut) { _focused=false; Workstation?.CancelInput(); }
-        if (what==NotificationApplicationFocusIn) _focused=true;
+        if (what==NotificationApplicationFocusOut) { _focused=false; Workstation?.CancelInput(); ApplyPendantPause(); }
+        if (what==NotificationApplicationFocusIn) { _focused=true; ApplyPendantPause(); }
     }
     internal bool RaiseBasket(int index)
     {
@@ -247,9 +256,12 @@ public partial class WuhanDayScreen : Control
         }
         if (result.CompletesOrder && result.TotalRevenue > 0 && !_committed)
         {
-            CoinTray.RenderRevenue(_controller.Ledger!.Build().TotalRevenue, _controller.Ledger.PaidCustomers);
             int slot = Array.IndexOf(_deliveryCustomerIds, customerId);
-            if (slot >= 0) CollectionFeedback.PaymentFrom(_portraits[slot].GetGlobalRect().GetCenter());
+            if (slot >= 0 && !WuhanWorkstationView.ReducedMotion)
+            {
+                Vector2 origin = GetGlobalTransform().AffineInverse() * _portraits[slot].GetGlobalRect().GetCenter();
+                for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, _art.Shared.Coin, origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
+            }
         }
         Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect);
         Render();
@@ -286,7 +298,7 @@ public partial class WuhanDayScreen : Control
     internal void RefreshForCapture() => Render();
     private void Render()
     {
-        CoinTray.RenderRevenue(_controller?.Ledger?.Build().TotalRevenue ?? 0, _controller?.Ledger?.PaidCustomers ?? 0);
+        UpdatePendantState();
         if (_controller?.CurrentConfig is null || _cooker is null) return;
         int day = _controller.CurrentConfig.Day;
         _day.Text = $"{day}";
@@ -349,6 +361,7 @@ public partial class WuhanDayScreen : Control
     private void OnDeliveryCompleted(DeliveryEvaluation result)=>Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     public override void _ExitTree()
     {
+        ClearPendantOnExit();
         CollectionFeedback.Clear();
         Workstation.CancelAnimations();
         if(_controller is null)return;
@@ -357,7 +370,7 @@ public partial class WuhanDayScreen : Control
     private void OnFinished(DayResult result)
     {
         CollectionFeedback.Clear();
-        if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
+        if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;CloseBusinessDetails();_paymentFeedback.Clear();Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
     private static string Tutorial(int day)=>day switch{1=>"拖面入锅 → 提篮连续拖到空碗，自动沥水 → 点击调味 → 划动拌匀 → 拖给顾客",4=>"豆皮一次做 8 块：拖浆入锅 → 点鸡蛋 → 上划翻面 → 拖馅并铺开 → 一横三竖切四刀，自动入盘",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};

@@ -25,7 +25,7 @@ public partial class CustomerPortraitView : Control
     private CustomerPortraitLayout? _counterLayout;
     private bool _fitCounterToWindow;
 
-    /// <summary>Tianjin-only fitting: the whole half-body silhouette above an authored waist.</summary>
+    /// <summary>Tianjin-only fitting with equal head footprint and a stable counter crop.</summary>
     public void SetCounterCalibration(CustomerPortraitLayout layout)
     {
         _counterLayout = layout;
@@ -92,6 +92,16 @@ public partial class CustomerPortraitView : Control
             float visibleHeight = _fitCounterToWindow ? Math.Clamp(Size.Y - TopInset, 1f, 240f) : 240f;
             float counterScale = visibleHeight / layout.CounterHeight;
             Vector2 sourceWaist = layout.CounterWaist;
+            if (_fitCounterToWindow)
+            {
+                // Equal widths still make tall hairstyles visibly larger. Normalize both dimensions
+                // together using the normal head's area; all expressions share this fixed transform.
+                // Move the crop, never the head relative to its neck or stretch either layer.
+                float referenceScale = visibleHeight / 240f;
+                Vector2 headSize = layout.NormalVisibleBounds.Size;
+                counterScale = 150f * referenceScale / MathF.Sqrt(headSize.X * headSize.Y);
+                sourceWaist.Y = layout.NormalVisibleBounds.Position.Y + visibleHeight / counterScale;
+            }
             Vector2 position = new Vector2(Size.X * .5f, Size.Y) - sourceWaist * counterScale;
             foreach (TextureRect layer in new[] { _body, _head })
             {

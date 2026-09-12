@@ -101,6 +101,13 @@ public partial class StageFourSelfTest
         afterFailure.Free();
 
         var art = new TianjinArtCatalog();
+        Control[] customerSlots = Enumerable.Range(1, 5)
+            .Select(i => screen.GetNode<Control>($"CustomerStrip/CustomerSlot{i}")).ToArray();
+        float customerSpacing = customerSlots[1].Position.X - customerSlots[0].Position.X;
+        Check(Enumerable.Range(1, 4).All(i => Math.Abs(customerSlots[i].Position.X
+            - customerSlots[i - 1].Position.X - customerSpacing) < .1f)
+            && customerSpacing >= 340 && customerSpacing <= 360,
+            "五名顾客槽位等距，最右侧不再额外隔开");
         var portrait = screen.Descendants<CustomerPortraitView>().First();
         foreach (var appearance in CustomerAppearanceCatalog.All)
         {
@@ -108,8 +115,13 @@ public partial class StageFourSelfTest
             CustomerPortraitLayout layout = art.CustomerLayout(appearance.Id);
             portrait.SetCounterCalibration(layout);
             TextureRect head = portrait.GetChildren().OfType<TextureRect>().Single(node => node.Texture == portrait.HeadTexture);
-            float halfBodyHeight = layout.CounterHeight * head.Size.Y / portrait.HeadTexture!.GetHeight();
-            Check(Math.Abs(halfBodyHeight - 240) < 1, $"{appearance.Id} 天津按半身轮廓统一视觉高度");
+            float scale = head.Size.Y / portrait.HeadTexture!.GetHeight();
+            float headWidth = layout.NormalVisibleBounds.Size.X * scale;
+            float headHeight = layout.NormalVisibleBounds.Size.Y * scale;
+            Check(Math.Abs(headWidth * headHeight - 22500f) < 1f,
+                $"{appearance.Id} 天津头部宽高共同归一，避免同宽但高大一圈");
+            Check(Math.Abs(head.Position.Y + layout.NormalVisibleBounds.Position.Y * scale
+                - (portrait.Size.Y - 240)) < 1, $"{appearance.Id} 半身窗口顶部和柜台基线稳定");
             Vector2 bodyPosition = head.Position;
             foreach (CustomerExpression expression in Enum.GetValues<CustomerExpression>())
             {
@@ -222,6 +234,9 @@ public partial class StageFourSelfTest
                 Check(slot.IngredientVisuals.Where(v => v.Visible).All(v =>
                     spec.StockFootprintRect!.Value.Encloses(slot.IngredientBounds(v))),
                     $"Lv{level} {id} {quantity}份旋转后完整位于托盘内");
+                Check(slot.IngredientVisuals.Where(v => v.Visible).All(v =>
+                    spec.IngredientAnchorRect.Encloses(slot.IngredientBounds(v))),
+                    $"Lv{level} {id} {quantity}份不被父容器裁切");
             }
             TextureRect first = slot.IngredientVisuals[0];
             Check(slot.IngredientVisuals.Take(capacity).All(v => v.Rotation == 0)

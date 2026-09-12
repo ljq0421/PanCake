@@ -82,8 +82,10 @@ public partial class TianjinDayScreen : Control
         {
             _workstation.RegisterCustomerZone(_customerDropZones[i]);
             _orderCards[i].Configure(_art);
-            // Reserve the painted pendant between slots four and five, including large orders.
-            _customerSlots[i].Position += new Vector2(i < 4 ? -28 * i : 56, 0);
+            // Move the portrait, order card and delivery zone together at equal intervals.
+            Control slot = _customerSlots[i];
+            slot.Position = new Vector2(TianjinWorkbenchLayout.CustomerCenters[i]
+                - slot.GetParent<Control>().Position.X - slot.Size.X * .5f, slot.Position.Y);
             _customerDropZones[i].FixedHitRect = new Rect2(18, 0, 304, CustomerStripHeight);
             OrderBubbleView card = _orderCards[i];
             card.CustomMinimumSize = new Vector2(304, card.CustomMinimumSize.Y);

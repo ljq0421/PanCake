@@ -37,7 +37,9 @@ internal static class TianjinWorkbenchLayout
         Rect2 floor = bowl ? new(22, 30, size.X - 44, size.Y - 53)
             : new(16, 2, size.X - 32, size.Y - 25);
         Rect2 caption = new(0, size.Y - 5, size.X, 24);
-        return new(size, new Rect2(Vector2.Zero, size), new Rect2(12, 5, size.X - 24, size.Y - 12),
+        // The back row starts at floor.Y = 2; a clipping anchor starting at 5 cuts its tops.
+        Rect2 anchor = bowl ? new Rect2(12, 5, size.X - 24, size.Y - 12) : new Rect2(Vector2.Zero, size);
+        return new(size, new Rect2(Vector2.Zero, size), anchor,
             caption, new Rect2(), new Rect2(), new Rect2(Vector2.Zero, size),
             new Rect2(18, size.Y + 18, size.X - 36, 4), 1,
             IngredientContainmentRect: floor, CaptionRect: caption,
@@ -76,7 +78,7 @@ internal static class TianjinWorkbenchLayout
     public const float BackEdge = 580;
     public const float FrontEdge = 995;
     public const float CenterX = 960;
-    public static readonly float[] CustomerCenters = { 256, 580, 904, 1228, 1720 };
+    public static readonly float[] CustomerCenters = { 256, 604, 952, 1300, 1648 };
     public static readonly Rect2 PortraitWindow = new(0, 156, 332, 255);
     public const float OrderCardBottom = 152;
     public static readonly Rect2 RearTrayVisual = new(0, 4, 250, 82);
